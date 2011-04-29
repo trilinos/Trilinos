@@ -140,7 +140,13 @@ void Ioss::GroupingEntity::field_add(const Ioss::Field& new_field)
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					void *data, size_t data_size) const
 {
-  assert(field_exists(field_name));
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
+	   << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
   Ioss::Field field = get_field(field_name);
   int retval = internal_get_field_data(field, data, data_size);
 
@@ -154,7 +160,13 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					void *data, size_t data_size) const
 {
-  assert(field_exists(field_name));
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
+	   << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
   Ioss::Field field = get_field(field_name);
   field.transform(data);
   return internal_put_field_data(field, data, data_size);
@@ -163,7 +175,13 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					 std::vector<double>    &data) const
 {
-  assert(field_exists(field_name));
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
+	   << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::REAL);
   
@@ -181,7 +199,13 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					 std::vector<int>     &data) const
 {
-  assert(field_exists(field_name));
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
+	      << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::INTEGER);
   
@@ -197,10 +221,40 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 }
 
 int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
+					 std::vector<char>     &data) const
+{
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
+	      << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
+  Ioss::Field field = get_field(field_name);
+  field.check_type(Ioss::Field::CHARACTER);
+  
+  data.resize(field.raw_count() * field.raw_storage()->component_count());
+  size_t data_size = data.size() * sizeof(char);
+  int retval = internal_get_field_data(field, &data[0], data_size);
+
+  // At this point, transform the field if specified...
+  if (retval >= 0)
+    field.transform(&data[0]);
+
+  return retval;
+}
+
+int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 					 std::vector<Complex> &data) const
 
 {
-  assert(field_exists(field_name));
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for input on "
+	      << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::COMPLEX);
 
@@ -218,7 +272,13 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					 std::vector<double> &data) const
 {
-  assert(field_exists(field_name));
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
+	      << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::REAL);
   size_t data_size = data.size() * sizeof(double);
@@ -229,7 +289,13 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					 std::vector<int> &data) const
 {
-  assert(field_exists(field_name));
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
+	      << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::INTEGER);
   size_t data_size = data.size() * sizeof(int);
@@ -238,9 +304,32 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 }
 
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
+					 std::vector<char> &data) const
+{
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
+	      << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
+  Ioss::Field field = get_field(field_name);
+  field.check_type(Ioss::Field::CHARACTER);
+  size_t data_size = data.size() * sizeof(char);
+  field.transform(&data[0]);
+  return internal_put_field_data(field, &data[0], data_size);
+}
+
+int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
 					 std::vector<Complex> &data) const
 {
-  assert(field_exists(field_name));
+  if (!field_exists(field_name)) {
+    std::ostringstream errmsg;
+    errmsg << "\nERROR: Field '" << field_name << "' does not exist for output on "
+	   << type_string() << " " << name() << "\n\n";
+    IOSS_ERROR(errmsg);
+  }
+
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::COMPLEX);
   size_t data_size = data.size() * sizeof(Complex);

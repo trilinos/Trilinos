@@ -334,7 +334,9 @@ namespace stk {
         unsigned num_child_nodes = ref_topo.num_child_nodes();
         bool homogeneous_child = ref_topo.homogeneous_child();
 
-        bool edge_exists[num_child_nodes][num_child_nodes];
+        //bool edge_exists[num_child_nodes][num_child_nodes];
+        bool edge_exists[128][128];
+        
 
         typedef Elem::StdMeshObjTopologies::RefTopoX RefTopoX;
         RefTopoX& ref_topo_x = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;

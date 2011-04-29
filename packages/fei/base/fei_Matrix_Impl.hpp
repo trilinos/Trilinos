@@ -463,8 +463,13 @@ int fei::Matrix_Impl<T>::getRowLength(int row, int& length) const
       //matrix row probably not local. maybe it's shared.
       int proc = getOwnerProc(row);
       const FillableMat* remote_mat = getRemotelyOwnedMatrix(proc);
-      const FillableVec* row_entries = remote_mat->getRow(row);
-      length = row_entries->size();
+      if (remote_mat->hasRow(row)) {
+        const FillableVec* row_entries = remote_mat->getRow(row);
+        length = row_entries->size();
+      }
+      else {
+        length = 0;
+      }
     }
   }
   return 0;

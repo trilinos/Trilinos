@@ -46,7 +46,7 @@ namespace Ioss {
 
   class Field {
   public:
-    enum BasicType {INVALID = -1, REAL, INTEGER, COMPLEX, STRING};
+    enum BasicType {INVALID = -1, REAL, INTEGER, COMPLEX, STRING, CHARACTER};
     enum RoleType {INTERNAL, MESH, ATTRIBUTE, COMMUNICATION, INFORMATION, REDUCTION, TRANSIENT};
 
     Field();
@@ -69,6 +69,9 @@ namespace Ioss {
     // Create a field from another field.
     Field(const Field&);
     Field& operator=(const Field&);
+
+    // Compare two fields (used for STL container)
+    bool operator<(const Field& other) const;
 
     ~Field();
 

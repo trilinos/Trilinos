@@ -43,22 +43,13 @@ namespace {
   void generate_gears(stk::mesh::BulkData &mesh,
 		      std::vector<stk::io::util::Gear*> &gears);
 
-  void process_surface_entity(Ioss::GroupingEntity *entity,
+  void process_surface_entity(Ioss::SideSet *entity,
 			      stk::mesh::MetaData &meta,
-			      stk::mesh::EntityRank entity_rank)
+			      stk::mesh::EntityRank)
   {
-    assert(entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET);
-    if (entity->type() == Ioss::FACESET) {
-      Ioss::FaceSet *fs = dynamic_cast<Ioss::FaceSet *>(entity);
-      assert(fs != NULL);
-      const Ioss::FaceBlockContainer& blocks = fs->get_face_blocks();
-      stk::io::default_part_processing(blocks, meta, entity_rank);
-    } else if (entity->type() == Ioss::EDGESET) {
-      Ioss::EdgeSet *es = dynamic_cast<Ioss::EdgeSet *>(entity);
-      assert(es != NULL);
-      const Ioss::EdgeBlockContainer& blocks = es->get_edge_blocks();
-      stk::io::default_part_processing(blocks, meta, entity_rank);
-    }
+    assert(entity->type() == Ioss::SIDESET);
+    const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
+    stk::io::default_part_processing(blocks, meta, 0);
 
     stk::mesh::Part* const fs_part = meta.get_part(entity->name());
     assert(fs_part != NULL);
@@ -84,10 +75,10 @@ namespace {
 	    surface_df_defined = true;
 	  }
 	  stk::io::set_distribution_factor_field(*fb_part, *distribution_factors_field);
-	  int face_node_count = fb->topology()->number_nodes();
+	  int side_node_count = fb->topology()->number_nodes();
 	  stk::mesh::put_field(*distribution_factors_field,
 			       stk::io::part_primary_entity_rank(*fb_part),
-			       *fb_part, face_node_count);
+			       *fb_part, side_node_count);
 	}
 
 	/** \todo IMPLEMENT truly handle fields... For this case we
@@ -101,15 +92,15 @@ namespace {
   }
 
   // ========================================================================
-  void process_surface_entity(const Ioss::GroupingEntity* io ,
+  void process_surface_entity(const Ioss::SideSet* sset ,
 			      stk::mesh::BulkData & bulk)
   {
-    assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
+    assert(sset->type() == Ioss::SIDESET);
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
-    size_t block_count = io->block_count();
+    size_t block_count = sset->block_count();
     for (size_t i=0; i < block_count; i++) {
-      Ioss::EntityBlock *block = io->get_block(i);
+      Ioss::EntityBlock *block = sset->get_block(i);
       if (stk::io::include_entity(block)) {
 	std::vector<int> side_ids ;
 	std::vector<int> elem_side ;
@@ -330,8 +321,7 @@ void create_input_mesh(const std::string &mesh_type,
     }
     process_elementblocks(*in_region, meta_data);
     process_nodeblocks(*in_region,    meta_data);
-    process_facesets(*in_region,      meta_data);
-    process_edgesets(*in_region,      meta_data);
+    process_sidesets(*in_region,      meta_data);
     process_nodesets(*in_region,      meta_data);
 
   }
@@ -343,7 +333,7 @@ void create_input_mesh(const std::string &mesh_type,
 
   // NOTE: THIS SHOULD NOT BE USED; USE STK_MESH SKINNING INSTEAD
   // See if caller requested that the model be "skinned".  If
-  // so, all exposed faces are generated and put in a part named
+  // so, all exposed sides are generated and put in a part named
   // "skin"
   if (mesh_data.m_generateSkinFaces) {
     stk::mesh::Part &skin_part = fem_meta.declare_part("skin", fem_meta.side_rank());
@@ -482,11 +472,8 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_m
 void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
   process_elementblocks(region, stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
 }
-void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
-  process_edgesets(region, stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
-}
-void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
-  process_facesets(region, stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
+void process_sidesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
+  process_sidesets(region, stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
 }
 void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta) {
   process_nodesets(region, stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta));
@@ -551,11 +538,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  const stk::mesh::fem::FEMMetaData * fem_meta = meta.get_attribute<stk::mesh::fem::FEMMetaData>();
-  if( fem_meta )
-    stk::io::default_part_processing(elem_blocks, meta, fem_meta->element_rank());
-  else
-    stk::io::default_part_processing(elem_blocks, meta, element_rank(meta));
+  stk::io::default_part_processing(elem_blocks, meta, 0);
 }
 
 void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -619,7 +602,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
   const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-  stk::io::default_part_processing(node_sets, meta, node_rank(meta));
+  stk::io::default_part_processing(node_sets, meta, 0);
 
   /** \todo REFACTOR should "distribution_factor" be a default field
    * that is automatically declared on all objects that it exists
@@ -656,33 +639,17 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 
 // ========================================================================
 // ========================================================================
-void process_facesets(Ioss::Region &region, stk::mesh::MetaData &meta)
+void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
-  const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-  stk::io::default_part_processing(face_sets, meta, side_rank(meta));
+  const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+  stk::io::default_part_processing(side_sets, meta, 0);
 
-  for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-      it != face_sets.end(); ++it) {
-    Ioss::FaceSet *entity = *it;
+  for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+      it != side_sets.end(); ++it) {
+    Ioss::SideSet *entity = *it;
 
     if (stk::io::include_entity(entity)) {
       process_surface_entity(entity, meta, side_rank(meta));
-    }
-  }
-}
-
-// ========================================================================
-void process_edgesets(Ioss::Region &region, stk::mesh::MetaData &meta)
-{
-  const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-  stk::io::default_part_processing(edge_sets, meta, edge_rank(meta));
-
-  for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-      it != edge_sets.end(); ++it) {
-    Ioss::EdgeSet *entity = *it;
-
-    if (stk::io::include_entity(entity)) {
-      process_surface_entity(entity, meta, edge_rank(meta));
     }
   }
 }
@@ -732,28 +699,13 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
 }
 
 // ========================================================================
-void process_facesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
+void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
-  const Ioss::FaceSetContainer& face_sets = region.get_facesets();
+  const Ioss::SideSetContainer& side_sets = region.get_sidesets();
 
-  for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-      it != face_sets.end(); ++it) {
-    Ioss::FaceSet *entity = *it;
-
-    if (stk::io::include_entity(entity)) {
-      process_surface_entity(entity, bulk);
-    }
-  }
-}
-
-// ========================================================================
-void process_edgesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
-{
-  const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-
-  for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-      it != edge_sets.end(); ++it) {
-    Ioss::EdgeSet *entity = *it;
+  for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+      it != side_sets.end(); ++it) {
+    Ioss::SideSet *entity = *it;
 
     if (stk::io::include_entity(entity)) {
       process_surface_entity(entity, bulk);
@@ -848,8 +800,7 @@ void populate_bulk_data(stk::mesh::BulkData &bulk_data,
     stk::io::util::process_elementblocks(*region, bulk_data);
     stk::io::util::process_nodeblocks(*region, bulk_data); // solution field read here
     stk::io::util::process_nodesets(*region, bulk_data);
-    stk::io::util::process_edgesets(*region, bulk_data);
-    stk::io::util::process_facesets(*region, bulk_data);
+    stk::io::util::process_sidesets(*region, bulk_data);
 
     if (step>0) region->end_state(step);
     bulk_data.modification_end();

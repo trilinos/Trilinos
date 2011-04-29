@@ -1,6 +1,8 @@
 #ifndef stk_mesh_DiagWriter_h
 #define stk_mesh_DiagWriter_h
 
+#ifdef STK_MESH_TRACE_ENABLED
+
 #include <stk_util/diag/Trace.hpp>
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/WriterOStream.hpp>
@@ -66,5 +68,6 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entit
 } // namespace mesh
 } // namespace stk
 
+#endif
 
 #endif // stk_mesh_DiagWriter_h

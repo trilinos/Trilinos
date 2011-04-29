@@ -46,10 +46,8 @@
 #include <Ioss_NodeBlock.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_NodeSet.h>
-#include <Ioss_EdgeSet.h>
-#include <Ioss_EdgeBlock.h>
-#include <Ioss_FaceSet.h>
-#include <Ioss_FaceBlock.h>
+#include <Ioss_SideSet.h>
+#include <Ioss_SideBlock.h>
 #include <Ioss_CommSet.h>
 #include <Ioss_Utils.h>
 
@@ -97,9 +95,7 @@ namespace Ioss {
     properties.add(Property(this,
 			    "element_block_count", Property::INTEGER));
     properties.add(Property(this,
-			    "face_set_count",      Property::INTEGER));
-    properties.add(Property(this,
-			    "edge_set_count",      Property::INTEGER));
+			    "side_set_count",      Property::INTEGER));
     properties.add(Property(this,
 			    "node_set_count",      Property::INTEGER));
     properties.add(Property(this,
@@ -135,18 +131,10 @@ namespace Ioss {
 	}
       }
 
-      // FaceSets...
+      // SideSets...
       {
-	FaceSetContainer::const_iterator i = faceSets.begin();
-	while (i != faceSets.end()) {
-	  delete (*i++);
-	}
-      }
-
-      // EdgeSets...
-      {
-	EdgeSetContainer::const_iterator i = edgeSets.begin();
-	while (i != edgeSets.end()) {
+	SideSetContainer::const_iterator i = sideSets.begin();
+	while (i != sideSets.end()) {
 	  delete (*i++);
 	}
       }
@@ -192,8 +180,7 @@ namespace Ioss {
     strm << " Number of nodal point sets           =" << std::setw(9)
 	 << get_property("node_set_count").get_int() << "\n";
     strm << " Number of element side sets          =" << std::setw(9)
-	 << get_property("face_set_count").get_int() +
-      get_property("edge_set_count").get_int() << "\n\n";
+	 << get_property("side_set_count").get_int() << "\n\n";
 
     if (do_transient && get_property("state_count").get_int() > 0) {
       strm << " Number of global variables           =" << std::setw(9)
@@ -233,32 +220,16 @@ namespace Ioss {
 
       {
 	Ioss::NameList names;
-	{
-	  const Ioss::FaceSetContainer fss = get_facesets();
-	  Ioss::FaceSetContainer::const_iterator i = fss.begin();
-	  while (i != fss.end()) {
-	    const Ioss::FaceBlockContainer fbs = (*i)->get_face_blocks();
-	    Ioss::FaceBlockContainer::const_iterator j = fbs.begin();
-	    while (j != fbs.end()) {
-	      (*j)->field_describe(Ioss::Field::TRANSIENT, &names);
-	      ++j;
-	    }
-	    i++;
+	const Ioss::SideSetContainer fss = get_sidesets();
+	Ioss::SideSetContainer::const_iterator i = fss.begin();
+	while (i != fss.end()) {
+	  const Ioss::SideBlockContainer fbs = (*i)->get_side_blocks();
+	  Ioss::SideBlockContainer::const_iterator j = fbs.begin();
+	  while (j != fbs.end()) {
+	    (*j)->field_describe(Ioss::Field::TRANSIENT, &names);
+	    ++j;
 	  }
-	}
-
-	{
-	  const Ioss::EdgeSetContainer ess = get_edgesets();
-	  Ioss::EdgeSetContainer::const_iterator i = ess.begin();
-	  while (i != ess.end()) {
-	    const Ioss::EdgeBlockContainer ebs = (*i)->get_edge_blocks();
-	    Ioss::EdgeBlockContainer::const_iterator j = ebs.begin();
-	    while (j != ebs.end()) {
-	      (*j)->field_describe(Ioss::Field::TRANSIENT, &names);
-	      ++j;
-	    }
-	    i++;
-	  }
+	  i++;
 	}
 
 	uniqify(names);
@@ -441,7 +412,7 @@ namespace Ioss {
     return time;
   }
 
-  std::pair<int, double> Region::get_max_time()
+  std::pair<int, double> Region::get_max_time() const
   {
     if (!get_database()->is_input() &&
 	get_database()->usage() != WRITE_RESULTS &&
@@ -465,6 +436,33 @@ namespace Ioss {
 	}
       }
       return std::make_pair(step+1, max_time);
+    }
+  }
+
+  std::pair<int, double> Region::get_min_time() const 
+  {
+    if (!get_database()->is_input() &&
+	get_database()->usage() != WRITE_RESULTS &&
+	get_database()->usage() != WRITE_RESTART ) {
+      return std::make_pair(currentState, stateTimes[0]);
+    } else {
+      // Cleanout the stateTimes vector and reload with current data in
+      // case the database is being read and written at the same time.
+      // This is rare, but is a supported use case.
+      stateCount = 0;
+      std::vector<double>().swap(stateTimes);
+      DatabaseIO *db = (DatabaseIO*)get_database();
+      db->get_step_times();
+
+      int step = 0;
+      double min_time = stateTimes[0];
+      for (int i=1; i < (int)stateTimes.size(); i++) {
+	if (stateTimes[i] < min_time) {
+	  step = i;
+	  min_time = stateTimes[i];
+	}
+      }
+      return std::make_pair(step+1, min_time);
     }
   }
 
@@ -583,26 +581,13 @@ namespace Ioss {
     }
   }
 
-  bool Region::add(FaceSet      *faceset)
+  bool Region::add(SideSet      *sideset)
   {
     // Check that region is in correct state for adding entities
     if (get_state() == STATE_DEFINE_MODEL) {
       // Add name as alias to itself to simplify later uses...
-      add_alias(faceset);
-      faceSets.push_back(faceset);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  bool Region::add(EdgeSet      *edgeset)
-  {
-    // Check that region is in correct state for adding entities
-    if (get_state() == STATE_DEFINE_MODEL) {
-      // Add name as alias to itself to simplify later uses...
-      add_alias(edgeset);
-      edgeSets.push_back(edgeset);
+      add_alias(sideset);
+      sideSets.push_back(sideset);
       return true;
     } else {
       return false;
@@ -645,13 +630,9 @@ namespace Ioss {
     case NODESET:
       return supports_nodelist_fields();
 
-    case EDGESET: // fall through
-    case EDGEBLOCK:
-      return supports_edge_fields();
-
-    case FACESET: // fall through
-    case FACEBLOCK:
-      return supports_face_fields();
+    case SIDESET: // fall through
+    case SIDEBLOCK:
+      return supports_side_fields();
     case COMMSET:
       return false;
     default:
@@ -665,11 +646,8 @@ namespace Ioss {
   const ElementBlockContainer& Region::get_element_blocks() const
   { return elementBlocks; }
 
-  const FaceSetContainer&  Region::get_facesets() const
-  { return faceSets; }
-
-  const EdgeSetContainer&  Region::get_edgesets() const
-  { return edgeSets; }
+  const SideSetContainer&  Region::get_sidesets() const
+  { return sideSets; }
 
   const NodeSetContainer&  Region::get_nodesets() const
   { return nodeSets; }
@@ -683,10 +661,8 @@ namespace Ioss {
     std::string db_name = ge->name();
     const GroupingEntity *old_ge = get_entity(db_name);
     if (old_ge != NULL && ge != old_ge) {
-      if (!((old_ge->type() == FACEBLOCK &&     ge->type() == FACESET) ||
-	    (    ge->type() == FACEBLOCK && old_ge->type() == FACESET) ||
-	    (    ge->type() == EDGEBLOCK && old_ge->type() == EDGESET) ||
-	    (old_ge->type() == EDGEBLOCK &&     ge->type() == EDGESET))) {
+      if (!((old_ge->type() == SIDEBLOCK &&     ge->type() == SIDESET) ||
+	    (    ge->type() == SIDEBLOCK && old_ge->type() == SIDESET))) {
 	int old_id = -1;
 	int new_id = -1;
 	if (old_ge->property_exists(id_str())) {
@@ -758,18 +734,14 @@ namespace Ioss {
       return get_node_block(my_name);
     } else if (io_type == ELEMENTBLOCK) {
       return get_element_block(my_name);
-    } else if (io_type == FACESET) {
-      return get_faceset(my_name);
-    } else if (io_type == EDGESET) {
-      return get_edgeset(my_name);
+    } else if (io_type == SIDESET) {
+      return get_sideset(my_name);
     } else if (io_type == NODESET) {
       return get_nodeset(my_name);
     } else if (io_type == COMMSET) {
       return get_commset(my_name);
-    } else if (io_type == FACEBLOCK) {
-      return get_faceblock(my_name);
-    } else if (io_type == EDGEBLOCK) {
-      return get_edgeblock(my_name);
+    } else if (io_type == SIDEBLOCK) {
+      return get_sideblock(my_name);
     }
     return NULL;
   }
@@ -781,17 +753,13 @@ namespace Ioss {
     if (entity != NULL) { return entity;}
     entity = get_element_block(my_name);
     if (entity != NULL) { return entity;}
-    entity = get_faceset(my_name);
-    if (entity != NULL) { return entity;}
-    entity = get_edgeset(my_name);
+    entity = get_sideset(my_name);
     if (entity != NULL) { return entity;}
     entity = get_nodeset(my_name);
     if (entity != NULL) { return entity;}
     entity = get_commset(my_name);
     if (entity != NULL) { return entity;}
-    entity = get_faceblock(my_name);
-    if (entity != NULL) { return entity;}
-    entity = get_edgeblock(my_name);
+    entity = get_sideblock(my_name);
     if (entity != NULL) { return entity;}
 
     return entity;
@@ -827,12 +795,12 @@ namespace Ioss {
     return ge;
   }
 
-  FaceSet* Region::get_faceset(const std::string& my_name) const
+  SideSet* Region::get_sideset(const std::string& my_name) const
   {
     const std::string db_name = get_alias(my_name);
-    FaceSet *ge = NULL;
-    FaceSetContainer::const_iterator i = faceSets.begin();
-    while (i != faceSets.end()) {
+    SideSet *ge = NULL;
+    SideSetContainer::const_iterator i = sideSets.begin();
+    while (i != sideSets.end()) {
       if ((*i)->name() == db_name) {
 	ge = *i;
 	break;
@@ -842,40 +810,12 @@ namespace Ioss {
     return ge;
   }
 
-  FaceBlock* Region::get_faceblock(const std::string& my_name) const
+  SideBlock* Region::get_sideblock(const std::string& my_name) const
   {
-    FaceBlock *ge = NULL;
-    FaceSetContainer::const_iterator i = faceSets.begin();
-    while (i != faceSets.end()) {
-      ge = (*i)->get_face_block(my_name);
-      if (ge != NULL)
-	break;
-      ++i;
-    }
-    return ge;
-  }
-
-  EdgeSet* Region::get_edgeset(const std::string& my_name) const
-  {
-    const std::string db_name = get_alias(my_name);
-    EdgeSet *ge = NULL;
-    EdgeSetContainer::const_iterator i = edgeSets.begin();
-    while (i != edgeSets.end()) {
-      if ((*i)->name() == db_name) {
-	ge = *i;
-	break;
-      }
-      ++i;
-    }
-    return ge;
-  }
-
-  EdgeBlock* Region::get_edgeblock(const std::string& my_name) const
-  {
-    EdgeBlock *ge = NULL;
-    EdgeSetContainer::const_iterator i = edgeSets.begin();
-    while (i != edgeSets.end()) {
-      ge = (*i)->get_edge_block(my_name);
+    SideBlock *ge = NULL;
+    SideSetContainer::const_iterator i = sideSets.begin();
+    while (i != sideSets.end()) {
+      ge = (*i)->get_side_block(my_name);
       if (ge != NULL)
 	break;
       ++i;
@@ -926,11 +866,8 @@ namespace Ioss {
     } else if ((io_type & ELEMENTBLOCK) && get_element_block(my_name) != NULL) {
       if (my_type != NULL) *my_type = "ELEMENT_BLOCK";
       return true;
-    } else if ((io_type & FACESET) && get_faceset(my_name) != NULL) {
+    } else if ((io_type & SIDESET) && get_sideset(my_name) != NULL) {
       if (my_type != NULL) *my_type = "SURFACE";
-      return true;
-    } else if ((io_type & EDGESET) && get_edgeset(my_name) != NULL) {
-      if (my_type != NULL) *my_type = "EDGESET";
       return true;
     } else if ((io_type & NODESET) && get_nodeset(my_name) != NULL) {
       if (my_type != NULL) *my_type = "NODESET";
@@ -970,11 +907,8 @@ namespace Ioss {
     if (my_name == "element_block_count")
       return Property(my_name, (int)elementBlocks.size());
 
-    if (my_name == "face_set_count")
-      return Property(my_name, (int)faceSets.size());
-
-    if (my_name == "edge_set_count")
-      return Property(my_name, (int)edgeSets.size());
+    if (my_name == "side_set_count")
+      return Property(my_name, (int)sideSets.size());
 
     if (my_name == "node_set_count")
       return Property(my_name, (int)nodeSets.size());
@@ -1189,11 +1123,11 @@ namespace Ioss {
   }
 }
 
-namespace {
-  std::string uppercase(const std::string &my_name)
-  {
-    std::string s(my_name);
-    std::transform(s.begin(), s.end(), s.begin(), toupper);
-    return s;
+  namespace {
+    std::string uppercase(const std::string &my_name)
+    {
+      std::string s(my_name);
+      std::transform(s.begin(), s.end(), s.begin(), toupper);
+      return s;
+    }
   }
-}

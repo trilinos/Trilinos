@@ -54,6 +54,8 @@ namespace {
       return std::string("complex");
     case Ioss::Field::STRING:
       return std::string("string");
+    case Ioss::Field::CHARACTER:
+      return std::string("char");
     case Ioss::Field::INVALID:
       return std::string("invalid");
     default:
@@ -259,6 +261,9 @@ namespace {
       break;
     case Ioss::Field::STRING:
       basic_size = sizeof(std::string*);
+      break;
+    case Ioss::Field::CHARACTER:
+      basic_size = sizeof(char);
       break;
     case Ioss::Field::INVALID:
       basic_size = 0;

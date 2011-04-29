@@ -18,6 +18,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/PrintTable.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
 
@@ -28,7 +29,6 @@
 #include <iostream>
 #include <string>
 #include <typeinfo>
-#include <Parallel.hpp>
 #include <math.h>
 
 namespace stk {

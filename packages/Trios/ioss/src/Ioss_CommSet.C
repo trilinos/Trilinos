@@ -44,7 +44,7 @@ Ioss::CommSet::CommSet(const Ioss::DatabaseIO *io_database,
 		       size_t entity_count)
   : Ioss::GroupingEntity(io_database, my_name)
 {
-  assert(entity_type == "node" || entity_type == "face");
+  assert(entity_type == "node" || entity_type == "side");
   properties.add(Ioss::Property("entity_count", static_cast<int>(entity_count)));
   properties.add(Ioss::Property("entity_type",  entity_type));
 

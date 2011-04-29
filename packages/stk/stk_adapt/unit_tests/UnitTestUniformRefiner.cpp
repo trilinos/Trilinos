@@ -54,7 +54,7 @@
 #include <typeinfo>
 
 #include <math.h>
-#include <Parallel.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 
 namespace stk {
   namespace adapt {

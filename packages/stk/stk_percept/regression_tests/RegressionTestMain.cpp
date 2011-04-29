@@ -10,7 +10,10 @@
 #include <cstring>
 #include <iostream>
 #include <utility>
+
+#if defined( STK_HAS_MPI )
 #include <mpi.h>
+#endif
 
 #include <stk_percept/fixtures/Fixture.hpp>
 #include <stk_percept/RunEnvironment.hpp>

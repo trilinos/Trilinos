@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_EdgeBlock_h
-#define IOSS_Ioss_EdgeBlock_h
+#ifndef IOSS_Ioss_SideBlock_h
+#define IOSS_Ioss_SideBlock_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Property.h>
@@ -40,20 +40,20 @@
 
 namespace Ioss {
   class DatabaseIO;
-  class EdgeSet;
+  class SideSet;
 
-  class EdgeBlock : public EntityBlock {
+  class SideBlock : public EntityBlock {
   public:
-    friend class EdgeSet;
+    friend class SideSet;
 
-    EdgeBlock(const DatabaseIO *io_database, const std::string& name,
-	      const std::string& edge_type, const std::string& parent_type,
-	      size_t edge_count);
+    SideBlock(const DatabaseIO *io_database, const std::string& name,
+	      const std::string& side_type, const std::string& element_type,
+	      size_t side_count);
 
-    std::string type_string() const {return "EdgeBlock";}
-    EntityType type() const {return EDGEBLOCK;}
+    std::string type_string() const {return "SideBlock";}
+    EntityType type() const {return SIDEBLOCK;}
 
-    const EdgeSet* owner() const {return owner_;}
+    const SideSet* owner() const {return owner_;}
 
     void block_membership(std::vector<std::string> &block_members);
 
@@ -68,11 +68,12 @@ namespace Ioss {
 
     int internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
+
   private:
-    // Pointer to the EdgeSet (if any) that contains this edge block.
-    const EdgeSet *owner_;
+    // Pointer to the SideSet (if any) that contains this side block.
+    const SideSet *owner_;
     std::vector<std::string> blockMembership; // What element blocks do the
-                                             // elements in this faceset belong to.
+                                             // elements in this sideset belong to.
   };
 }
 #endif

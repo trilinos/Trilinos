@@ -308,19 +308,7 @@ namespace Ioxf {
     output_only();
   }
 
-  void DatabaseIO::get_edgesets() const
-  {
-    // Assume for now that 3D models only have facesets and 2D models edgesets
-    get_edge_face_sets(2);
-  }
-
-  void DatabaseIO::get_facesets() const
-  {
-    // Assume for now that 3D models only have facesets and 2D models edgesets
-    get_edge_face_sets(3);
-  }
-
-  void DatabaseIO::get_edge_face_sets(int /* topology_dim */) const
+  void DatabaseIO::get_sidesets() const
   {
     output_only();
   }
@@ -376,15 +364,7 @@ namespace Ioxf {
     return 0;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* es */,
-				     const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    output_only();
-    return 0;
-  }
-
-  int DatabaseIO::get_field_internal(const Ioss::FaceSet* /* fs */,
+  int DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */,
 				     const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
@@ -400,7 +380,7 @@ namespace Ioxf {
     return 0;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::FaceBlock* /* fb */,
+  int DatabaseIO::get_field_internal(const Ioss::SideBlock* /* fb */,
 				     const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
@@ -408,24 +388,8 @@ namespace Ioxf {
     return 0;
   }
   
-  int DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* fb */,
-				     const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    output_only();
-    return 0;
-  }
-
-  int DatabaseIO::get_face_edge_field(const Ioss::EntityBlock* /* ef_blk */,
-				      const Ioss::Field& /* field */,
-				      void */* data */, size_t /* data_size */) const
-  {
-    output_only();
-    return 0;
-  }
-
-  int DatabaseIO::get_face_connectivity(const Ioss::EntityBlock* /* fb */,
-					int /* id */, int /* face_count */,
+  int DatabaseIO::get_side_connectivity(const Ioss::EntityBlock* /* fb */,
+					int /* id */, int /* side_count */,
 					int */* fconnect */,
 					size_t /* data_size */) const
   {
@@ -433,9 +397,9 @@ namespace Ioxf {
     return 0;
   }
 
-  // Get distribution factors for the specified face block
-  int DatabaseIO::get_face_distributions(const Ioss::EntityBlock* /* fb */,
-					 int /* id */, int /* face_count */,
+  // Get distribution factors for the specified side block
+  int DatabaseIO::get_side_distributions(const Ioss::EntityBlock* /* fb */,
+					 int /* id */, int /* side_count */,
 					 double */* dist_fact */,
 					 size_t /* data_size */) const
   {
@@ -1034,8 +998,19 @@ namespace Ioxf {
     // and add suffix to base 'field_name'.  Look up index
     // of this name in 'elementVariables' map
     int comp_count = var_type->component_count();
+    int var_index=0;
     for (int i=0; i < comp_count; i++) {
       std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
+      DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
+
+      if (type[0] == 'E')
+	var_index = new_this->elementVariables[var_name];
+      else if (type[0] == 'M')
+	var_index = new_this->nodesetVariables[var_name];
+      else if (type[0] == 'S')
+	var_index = new_this->sidesetVariables[var_name];
+
+      assert(var_index > 0);
 
       // Transfer from 'variables' array.  Note that the
       // 'reorderElementMap has '1..numel' ids in it, but the 'temp'
@@ -1276,15 +1251,7 @@ namespace Ioxf {
     }
   }
 
-  int DatabaseIO::put_field_internal(const Ioss::EdgeSet* es,
-				     const Ioss::Field& field,
-				     void */* data */, size_t /* data_size */) const
-  {
-    int num_to_get = field_warning(es, field, "output");
-    return num_to_get;
-  }
-
-  int DatabaseIO::put_field_internal(const Ioss::FaceSet* fs,
+  int DatabaseIO::put_field_internal(const Ioss::SideSet* fs,
 				     const Ioss::Field& field,
 				     void */* data */, size_t /* data_size */) const
   {
@@ -1303,10 +1270,10 @@ namespace Ioxf {
     if (num_to_get == 0)
       return 0;
 
-    // Return the <entity (node or face), processor> pair
+    // Return the <entity (node or side), processor> pair
     if (field.get_name() == "entity_processor") {
 
-      // Check type -- node or face
+      // Check type -- node or side
       std::string type = cs->get_property("entity_type").get_string();
 
       // Allocate temporary storage space
@@ -1388,12 +1355,12 @@ namespace Ioxf {
 	  */
 	}
 
-      } else if (type == "face") {
+      } else if (type == "side") {
 	std::vector<int> sides(entity_count);
 	int* entity_proc = (int*)data;
 	int j=0;
 	for (int i=0; i < entity_count; i++) {
-	  // Assume klugy face id generation.
+	  // Assume klugy side id generation.
 	  int global_id = entity_proc[j] / 10;
 	  entities[i] = element_global_to_local(global_id);
 	  sides[i] = entity_proc[j++] % 10;
@@ -1473,28 +1440,9 @@ namespace Ioxf {
     return num_to_get;
   }
 
-  int DatabaseIO::put_field_internal(const Ioss::FaceBlock* fb,
+  int DatabaseIO::put_field_internal(const Ioss::SideBlock* fb,
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
-  {
-    return put_face_edge_field(fb, field, data, data_size);
-  }
-
-  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock* eb,
-				     const Ioss::Field& field,
-				     void *data, size_t data_size) const
-  {
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-
-      return put_face_edge_field(eb, field, data, data_size);
-    }
-  }
-
-
-  int DatabaseIO::put_face_edge_field(const Ioss::EntityBlock* fb,
-				      const Ioss::Field& field,
-				      void *data, size_t data_size) const
   {
     int num_to_get = field.verify(data_size);
     if (num_to_get > 0) {
@@ -1532,12 +1480,12 @@ namespace Ioxf {
 
 	} else if (field.get_name() == "element_side") {
 #if 1
-	  // In exodusII, the 'face/edge block' is stored as a sideset.  A
+	  // In exodusII, the 'side block' is stored as a sideset.  A
 	  // sideset has a list of elements and a corresponding local
 	  // element side (1-based)
 
 	  // The 'data' passed into the function is stored as a
-	  // 2D vector e0,f0,e1,f1,... (e=element, f=face)
+	  // 2D vector e0,f0,e1,f1,... (e=element, f=side)
 
 	  // To avoid overwriting the passed in data, we allocate
 	  // two arrays to store the data for this sideset.
@@ -1711,7 +1659,7 @@ namespace Ioxf {
     // Get count of nodes, element blocks, nodesets, sidesets, ...
     std::vector<Ioxf::Block>   blocks;
     std::vector<Ioxf::NodeSet> nsets;
-    std::vector<Ioxf::SideSet> sidesets;
+    std::vector<Ioxf::SideSet> ssets;
 
     {
       Ioss::SerializeIO	serializeIO__(this);
@@ -1752,185 +1700,101 @@ namespace Ioxf {
     }
 
     // SideSets ...
-    if (spatialDimension == 3) {
-      Ioss::FaceSetContainer facesets = region->get_facesets();
-      Ioss::FaceSetContainer::const_iterator I;
-      // Set ids of all entities that have an existing "id" property
+    Ioss::SideSetContainer sidesets = region->get_sidesets();
+    Ioss::SideSetContainer::const_iterator I;
+    // Set ids of all entities that have an existing "id" property
 
 
-      // Get entity counts for all face blocks...
-      std::vector<int> sset_entity_count;
-      for (I=facesets.begin(); I != facesets.end(); ++I) {
-	Ioss::FaceBlockContainer face_blocks = (*I)->get_face_blocks();
-	Ioss::FaceBlockContainer::const_iterator J;
+    // Get entity counts for all side blocks...
+    std::vector<int> sset_entity_count;
+    for (I=sidesets.begin(); I != sidesets.end(); ++I) {
+      Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
+      Ioss::SideBlockContainer::const_iterator J;
 
-	for (J=face_blocks.begin(); J != face_blocks.end(); ++J) {
-	  int count = (*J)->get_property("entity_count").get_int();
-	  sset_entity_count.push_back(count);
-	}
+      for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	int count = (*J)->get_property("entity_count").get_int();
+	sset_entity_count.push_back(count);
+      }
+    }
+
+    // Resolve count among all side blocks on all processors...
+    // NOTE: This is a collective call.
+    if (isParallel && !sset_entity_count.empty()) {
+      util().global_array_minmax(&sset_entity_count[0], sset_entity_count.size(),
+				 Ioss::ParallelUtils::DO_MAX);
+    }
+
+    // If count > 0 on any processor, set the id if they have an id property.
+    // If the containing sideset has an id and the sideblock doesn't have an id,
+    // then set the sideblock id to the sideset id...
+    size_t fb_index = 0;
+    for (I=sidesets.begin(); I != sidesets.end(); ++I) {
+      int fs_id = 0;
+      if ((*I)->property_exists("id")) {
+	fs_id = (*I)->get_property("id").get_int();
       }
 
-      // Resolve count among all face blocks on all processors...
-      // NOTE: This is a collective call.
-      if (isParallel && !sset_entity_count.empty()) {
-	util().global_array_minmax(&sset_entity_count[0], sset_entity_count.size(),
-					 Ioss::ParallelUtils::DO_MAX);
-      }
+      Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
+      Ioss::SideBlockContainer::const_iterator J;
 
-      // If count > 0 on any processor, set the id if they have an id property.
-      // If the containing faceset has an id and the faceblock doesn't have an id,
-      // then set the faceblock id to the faceset id...
-      size_t fb_index = 0;
-      for (I=facesets.begin(); I != facesets.end(); ++I) {
-	int fs_id = 0;
-	if ((*I)->property_exists("id")) {
-	  fs_id = (*I)->get_property("id").get_int();
-	}
-
-	Ioss::FaceBlockContainer face_blocks = (*I)->get_face_blocks();
-	Ioss::FaceBlockContainer::const_iterator J;
-
-	if (fs_id > 0) {
-	  for (J=face_blocks.begin(); J != face_blocks.end(); ++J) {
-	    if (!(*J)->property_exists("id")) {
-	      (*J)->property_add(Ioss::Property("id", fs_id));
-	    }
-	    int count = sset_entity_count[fb_index++];
-	    if (count > 0) {
-	      set_id((*J), "Surface", &ids_);
-	    }
+      if (fs_id > 0) {
+	for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	  if (!(*J)->property_exists("id")) {
+	    (*J)->property_add(Ioss::Property("id", fs_id));
 	  }
-	} else {
-	  for (J=face_blocks.begin(); J != face_blocks.end(); ++J) {
-	    int count = sset_entity_count[fb_index++];
-	    if (count > 0) {
-	      set_id((*J), "Surface", &ids_);
-	    }
-	  }
-	}
-      }
-      assert(fb_index == sset_entity_count.size());
-
-      // The id has been set on all face blocks that had the id property.
-      // Now, go through again and set the id on all face blocks.
-      fb_index = 0;
-      for (I=facesets.begin(); I != facesets.end(); ++I) {
-	Ioss::FaceBlockContainer face_blocks = (*I)->get_face_blocks();
-	Ioss::FaceBlockContainer::const_iterator J;
-
-	for (J=face_blocks.begin(); J != face_blocks.end(); ++J) {
 	  int count = sset_entity_count[fb_index++];
 	  if (count > 0) {
-	    get_id((*J), 'S', &ids_);
-	    Ioxf::SideSet T(*(*J));
-	    if (std::find(sidesets.begin(),
-			  sidesets.end(), T) == sidesets.end()) {
-	      sidesets.push_back(T);
-	    }
-	  } else {
-	    // Set the "invalid" property.
-	    Ioss::FaceBlock *new_entity = const_cast<Ioss::FaceBlock*>(*J);
-	    new_entity->property_add(Ioss::Property("invalid", 1));
+	    set_id((*J), "Surface", &ids_);
+	  }
+	}
+      } else {
+	for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	  int count = sset_entity_count[fb_index++];
+	  if (count > 0) {
+	    set_id((*J), "Surface", &ids_);
 	  }
 	}
       }
-      assert(fb_index == sset_entity_count.size());
+    }
+    assert(fb_index == sset_entity_count.size());
 
-    } else {
-      Ioss::EdgeSetContainer edgesets = region->get_edgesets();
-      Ioss::EdgeSetContainer::const_iterator I;
+    // The id has been set on all side blocks that had the id property.
+    // Now, go through again and set the id on all side blocks.
+    fb_index = 0;
+    for (I=sidesets.begin(); I != sidesets.end(); ++I) {
+      Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
+      Ioss::SideBlockContainer::const_iterator J;
 
-      // Get entity counts for all edge blocks...
-      std::vector<int> sset_entity_count;
-      for (I=edgesets.begin(); I != edgesets.end(); ++I) {
-	Ioss::EdgeBlockContainer edge_blocks = (*I)->get_edge_blocks();
-	Ioss::EdgeBlockContainer::const_iterator J;
-
-	for (J=edge_blocks.begin(); J != edge_blocks.end(); ++J) {
-	  int count = (*J)->get_property("entity_count").get_int();
-	  sset_entity_count.push_back(count);
-	}
-      }
-
-      // Resolve count among all edge blocks on all processors...
-      // NOTE: This is a collective call.
-      if (isParallel && !sset_entity_count.empty()) {
-	util().global_array_minmax(&sset_entity_count[0], sset_entity_count.size(),
-					 Ioss::ParallelUtils::DO_MAX);
-      }
-
-      // If count > 0 on any processor, set the id if they have an id property.
-      // If the containing edgeset has an id and the edgeblock doesn't have an id,
-      // then set the edgeblock id to the faceset id...
-      size_t eb_index = 0;
-      for (I=edgesets.begin(); I != edgesets.end(); ++I) {
-	int es_id = 0;
-	if ((*I)->property_exists("id")) {
-	  es_id = (*I)->get_property("id").get_int();
-	}
-
-	Ioss::EdgeBlockContainer edge_blocks = (*I)->get_edge_blocks();
-	Ioss::EdgeBlockContainer::const_iterator J;
-
-	if (es_id > 0) {
-	  for (J=edge_blocks.begin(); J != edge_blocks.end(); ++J) {
-	    if (!(*J)->property_exists("id")) {
-	      (*J)->property_add(Ioss::Property("id", es_id));
-	    }
-	    int count = sset_entity_count[eb_index++];
-	    if (count > 0) {
-	      set_id((*J), "Surface", &ids_);
-	    }
+      for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	int count = sset_entity_count[fb_index++];
+	if (count > 0) {
+	  get_id((*J), 'S', &ids_);
+	  Ioxf::SideSet T(*(*J));
+	  if (std::find(ssets.begin(), ssets.end(), T) == ssets.end()) {
+	    ssets.push_back(T);
 	  }
 	} else {
-	  for (J=edge_blocks.begin(); J != edge_blocks.end(); ++J) {
-	    int count = sset_entity_count[eb_index++];
-	    if (count > 0) {
-	      set_id((*J), "Surface", &ids_);
-	    }
-	  }
+	  // Set the "invalid" property.
+	  Ioss::SideBlock *new_entity = const_cast<Ioss::SideBlock*>(*J);
+	  new_entity->property_add(Ioss::Property("invalid", 1));
 	}
       }
-      assert(eb_index == sset_entity_count.size());
-
-      // The id has been set on all edge blocks that had the id property.
-      // Now, go through again and set the id on all edge blocks.
-      eb_index = 0;
-      for (I=edgesets.begin(); I != edgesets.end(); ++I) {
-	Ioss::EdgeBlockContainer edge_blocks = (*I)->get_edge_blocks();
-	Ioss::EdgeBlockContainer::const_iterator J;
-
-	for (J=edge_blocks.begin(); J != edge_blocks.end(); ++J) {
-	  int count = sset_entity_count[eb_index++];
-	  if (count > 0) {
-	    get_id((*J), 'S', &ids_);
-	    Ioxf::SideSet T(*(*J));
-	    if (std::find(sidesets.begin(),
-			  sidesets.end(), T) == sidesets.end()) {
-	      sidesets.push_back(T);
-	    }
-	  } else {
-	    // Set the "invalid" property.
-	    Ioss::EdgeBlock *new_entity = const_cast<Ioss::EdgeBlock*>(*J);
-	    new_entity->property_add(Ioss::Property("invalid", 1));
-	  }
-	}
-      }
-      assert(eb_index == sset_entity_count.size());
     }
-    sidesetCount = sidesets.size();
+    assert(fb_index == sset_entity_count.size());
+
+    sidesetCount = ssets.size();
 
     // Nodesets ...
     {
       Ioss::NodeSetContainer nodesets = region->get_nodesets();
-      Ioss::NodeSetContainer::const_iterator I;
-      for (I=nodesets.begin(); I != nodesets.end(); ++I) {
-	set_id(*I, "Nodeset", &ids_);
+      Ioss::NodeSetContainer::const_iterator IN;
+      for (IN=nodesets.begin(); IN != nodesets.end(); ++IN) {
+	set_id(*IN, "Nodeset", &ids_);
       }
 
-      for (I=nodesets.begin(); I != nodesets.end(); ++I) {
-	get_id(*I, 'N', &ids_);
-	const Ioxf::NodeSet T(*(*I));
+      for (IN=nodesets.begin(); IN != nodesets.end(); ++IN) {
+	get_id(*IN, 'N', &ids_);
+	const Ioxf::NodeSet T(*(*IN));
 	if (std::find(nsets.begin(), nsets.end(), T) == nsets.end()) {
 	  nsets.push_back(T);
 	}
@@ -1950,7 +1814,7 @@ namespace Ioxf {
 
       *MainXML << "<BoundaryConditions>" << endl;
       WriteMetaXdmfNodesets(MainXML, nsets);
-      WriteMetaXdmfSidesets(MainXML, sidesets);
+      WriteMetaXdmfSidesets(MainXML, ssets);
       *MainXML << "</BoundaryConditions>" << endl;
       WriteMetaXdmfElementBlock(blocks);
 
@@ -2430,7 +2294,7 @@ namespace Ioxf {
 
 	if (type == "node") {
 	  meta->nodeMap.push_back(Ioxf::CommunicationMap(id, count, 'n'));
-	} else if (type == "face") {
+	} else if (type == "side") {
 	  meta->elementMap.push_back(Ioxf::CommunicationMap(id, count, 'e'));
 	} else {
 	  std::ostringstream errmsg;
@@ -2469,7 +2333,7 @@ namespace Ioxf {
 
   void DatabaseIO::write_results_metadata()
   {
-    // Does not yet support results on faceblocks or any sets
+    // Does not yet support results on sideblocks or any sets
     int glob_index = 0;
     glob_index = gather_names("G", get_region(), glob_index, true);
     assert(glob_index == (int)globalVariables.size());
@@ -2520,30 +2384,15 @@ namespace Ioxf {
 
     {
       int index = 0;
-      if (spatialDimension == 3) {
-	Ioss::FaceSetContainer facesets = get_region()->get_facesets();
-	Ioss::FaceSetContainer::const_iterator I;
-	for (I=facesets.begin(); I != facesets.end(); ++I) {
-	  Ioss::FaceBlockContainer face_blocks = (*I)->get_face_blocks();
-	  Ioss::FaceBlockContainer::const_iterator J;
+      Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
+      Ioss::SideSetContainer::const_iterator I;
+      for (I=sidesets.begin(); I != sidesets.end(); ++I) {
+	Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
+	Ioss::SideBlockContainer::const_iterator J;
 
-	  for (J=face_blocks.begin(); J != face_blocks.end(); ++J) {
-	    glob_index = gather_names("S", *J, glob_index, true);
-	    index = gather_names("S", *J, index, false);
-	  }
-	}
-      }
-      if (spatialDimension == 2) {
-	Ioss::EdgeSetContainer edgesets = get_region()->get_edgesets();
-	Ioss::EdgeSetContainer::const_iterator I;
-	for (I=edgesets.begin(); I != edgesets.end(); ++I) {
-	  Ioss::EdgeBlockContainer edge_blocks = (*I)->get_edge_blocks();
-	  Ioss::EdgeBlockContainer::const_iterator J;
-
-	  for (J=edge_blocks.begin(); J != edge_blocks.end(); ++J) {
-	    glob_index = gather_names("S", *J, glob_index, true);
-	    index = gather_names("S", *J, index, false);
-	  }
+	for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	  glob_index = gather_names("S", *J, glob_index, true);
+	  index = gather_names("S", *J, index, false);
 	}
       }
       assert(index == (int)sidesetVariables.size());
@@ -2701,30 +2550,30 @@ namespace Ioxf {
 
       Ioss::NameList::const_iterator IF;
       for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	  std::string field_name = *IF;
+	std::string field_name = *IF;
 
-	  Ioss::Field field = (*I)->get_field(field_name);
-	  const Ioss::VariableType *var_type = field.transformed_storage();
+	Ioss::Field field = (*I)->get_field(field_name);
+	const Ioss::VariableType *var_type = field.transformed_storage();
 
-	  for (int i=1; i <= var_type->component_count(); i++) {
-	      std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
+	for (int i=1; i <= var_type->component_count(); i++) {
+	  std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
 
-			 // Find position of 'var_string' in 'elementVariables'
-		  VariableNameMap::iterator VN = elementVariables.find(var_string);
-		  if (XML && VN != elementVariables.end()) {
-			 *XML << "\t<Attribute Name=\"" << var_string << "\""  << endl;
-			 *XML << "\t\tCenter=\"" << "Cell" << "\""             << endl;
-			 *XML << "\t\tType=\"" << "Scalar" << "\">"            << endl;
-			 *XML << "\t\t<DataStructure"                          << endl;
-			 *XML << "\t\t\tFormat=\"HDF\""                        << endl;
-			 *XML << "\t\t\tDimensions=\"" << count << "\""        << endl;
-			 *XML << "\t\t\tDataType=\""<< "Float"  << "\">"       << endl;
-			 *XML << "\t\t" << hdfname.tailname()
-			      << ":/" << block_name << "/Iteration/" << var_string << endl;
-			 *XML << "\t\t</DataStructure>"                        << endl;
-			 *XML << "\t</Attribute>"                              << endl;
-		    }
-	     }
+	  // Find position of 'var_string' in 'elementVariables'
+	  VariableNameMap::iterator VN = elementVariables.find(var_string);
+	  if (XML && VN != elementVariables.end()) {
+	    *XML << "\t<Attribute Name=\"" << var_string << "\""  << endl;
+	    *XML << "\t\tCenter=\"" << "Cell" << "\""             << endl;
+	    *XML << "\t\tType=\"" << "Scalar" << "\">"            << endl;
+	    *XML << "\t\t<DataStructure"                          << endl;
+	    *XML << "\t\t\tFormat=\"HDF\""                        << endl;
+	    *XML << "\t\t\tDimensions=\"" << count << "\""        << endl;
+	    *XML << "\t\t\tDataType=\""<< "Float"  << "\">"       << endl;
+	    *XML << "\t\t" << hdfname.tailname()
+		 << ":/" << block_name << "/Iteration/" << var_string << endl;
+	    *XML << "\t\t</DataStructure>"                        << endl;
+	    *XML << "\t</Attribute>"                              << endl;
+	  }
+	}
       }
       offset += var_count;
     }
@@ -2750,16 +2599,16 @@ namespace Ioxf {
     // next block, ...
     int offset = 0;
 
-    Ioss::FaceSetContainer facesets = get_region()->get_facesets();
-    Ioss::FaceSetContainer::const_iterator I;
+    Ioss::SideSetContainer sidesets = get_region()->get_sidesets();
+    Ioss::SideSetContainer::const_iterator I;
 
-    for (I=facesets.begin(); I != facesets.end(); ++I) {
-      Ioss::FaceBlockContainer face_blocks = (*I)->get_face_blocks();
-      Ioss::FaceBlockContainer::const_iterator J;
+    for (I=sidesets.begin(); I != sidesets.end(); ++I) {
+      Ioss::SideBlockContainer side_blocks = (*I)->get_side_blocks();
+      Ioss::SideBlockContainer::const_iterator J;
 
       bool found_one = false;
-      for (J=face_blocks.begin(); J != face_blocks.end(); ++J) {
-	// See if this faceblock has a corresponding entry in the sideset list.
+      for (J=side_blocks.begin(); J != side_blocks.end(); ++J) {
+	// See if this sideblock has a corresponding entry in the sideset list.
 	if ((*J)->property_exists("invalid"))
 	  continue;
 
@@ -2790,49 +2639,6 @@ namespace Ioxf {
       if (found_one)
 	offset += var_count;
     }
-
-    // Now traverse the edgesets/edgeblocks to see if any of them are sidesets...
-    Ioss::EdgeSetContainer edgesets = get_region()->get_edgesets();
-    Ioss::EdgeSetContainer::const_iterator II;
-
-    for (II=edgesets.begin(); II != edgesets.end(); ++II) {
-      Ioss::EdgeBlockContainer edge_blocks = (*II)->get_edge_blocks();
-      Ioss::EdgeBlockContainer::const_iterator J;
-
-      bool found_one = false;
-      for (J=edge_blocks.begin(); J != edge_blocks.end(); ++J) {
-	// See if this edgeblock has a corresponding entry in the sideset list.
-	if ((*J)->property_exists("invalid"))
-	  continue;
-
-	found_one = true;
-	// Get names of all transient and reduction fields...
-	Ioss::NameList results_fields;
-	(*J)->field_describe(Ioss::Field::TRANSIENT, &results_fields);
-	(*J)->field_describe(Ioss::Field::REDUCTION, &results_fields);
-
-	Ioss::NameList::const_iterator IF;
-	for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
-	  std::string field_name = *IF;
-
-	  Ioss::Field field = (*J)->get_field(field_name);
-	  const Ioss::VariableType *var_type = field.transformed_storage();
-
-	  for (int i=1; i <= var_type->component_count(); i++) {
-	    std::string var_string = var_type->label_name(field_name, i, fieldSuffixSeparator);
-	    // Find position of 'var_string' in 'elementVariables'
-	    VariableNameMap::iterator VN = sidesetVariables.find(var_string);
-	    if (VN != sidesetVariables.end()) {
-	      // Index '(*VN).second' is 1-based...
-	      sidesetTruthTable[offset + (*VN).second-1] = 1;
-	    }
-	  }
-	}
-      }
-      if (found_one)
-	offset += var_count;
-    }
-    assert(offset == var_count * sidesetCount);
   }
 
   void DatabaseIO::generate_nodeset_var_xmltable()

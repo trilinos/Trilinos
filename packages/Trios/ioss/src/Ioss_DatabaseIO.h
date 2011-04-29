@@ -48,17 +48,15 @@ namespace Ioss {
   class ElementTopology;
   class EntityBlock;
   class ElementBlock;
-  class FaceBlock;
-  class EdgeBlock;
+  class SideBlock;
   class NodeBlock;
-  class FaceSet;
-  class EdgeSet;
+  class SideSet;
   class NodeSet;
   class CommSet;
   class Region;
   class Field;
 
-  // Contains (parent_element, face) topology pairs
+  // Contains (parent_element, side) topology pairs
   typedef std::vector<std::pair<const ElementTopology*, const ElementTopology*> > TopoContainer;
 
   class DatabaseIO
@@ -70,8 +68,7 @@ namespace Ioss {
 
       // Check capabilities of input/output database...
       virtual bool supports_nodal_fields()    const = 0;
-      virtual bool supports_edge_fields()     const = 0;
-      virtual bool supports_face_fields()     const = 0;
+      virtual bool supports_side_fields()     const = 0;
       virtual bool supports_element_fields()  const = 0;
       virtual bool supports_nodelist_fields() const = 0;
 
@@ -105,21 +102,17 @@ namespace Ioss {
       int get_field(const Region* reg,      const Field& field, void *data, size_t data_size) const;
       int get_field(const NodeBlock* nb,    const Field& field, void *data, size_t data_size) const;
       int get_field(const ElementBlock* eb, const Field& field, void *data, size_t data_size) const;
-      int get_field(const FaceBlock* fb,    const Field& field, void *data, size_t data_size) const;
-      int get_field(const EdgeBlock* fb,    const Field& field, void *data, size_t data_size) const;
+      int get_field(const SideBlock* fb,    const Field& field, void *data, size_t data_size) const;
       int get_field(const NodeSet* ns,      const Field& field, void *data, size_t data_size) const;
-      int get_field(const EdgeSet* es,      const Field& field, void *data, size_t data_size) const;
-      int get_field(const FaceSet* fs,      const Field& field, void *data, size_t data_size) const;
+      int get_field(const SideSet* fs,      const Field& field, void *data, size_t data_size) const;
       int get_field(const CommSet* cs,      const Field& field, void *data, size_t data_size) const;
 
       int put_field(const Region* reg,      const Field& field, void *data, size_t data_size) const;
       int put_field(const NodeBlock* nb,    const Field& field, void *data, size_t data_size) const;
       int put_field(const ElementBlock* eb, const Field& field, void *data, size_t data_size) const;
-      int put_field(const FaceBlock* fb,    const Field& field, void *data, size_t data_size) const;
-      int put_field(const EdgeBlock* fb,    const Field& field, void *data, size_t data_size) const;
+      int put_field(const SideBlock* fb,    const Field& field, void *data, size_t data_size) const;
       int put_field(const NodeSet* ns,      const Field& field, void *data, size_t data_size) const;
-      int put_field(const EdgeSet* es,      const Field& field, void *data, size_t data_size) const;
-      int put_field(const FaceSet* fs,      const Field& field, void *data, size_t data_size) const;
+      int put_field(const SideSet* fs,      const Field& field, void *data, size_t data_size) const;
       int put_field(const CommSet* cs,      const Field& field, void *data, size_t data_size) const;
 
       bool get_logging() const {return doLogging && !singleProcOnly;}
@@ -205,13 +198,13 @@ namespace Ioss {
 
       /*!
        * Utility function that may be used by derived classes.
-       * Determines whether all elements in the model have the same face
+       * Determines whether all elements in the model have the same side
        * topology.  This can be used to speed-up certain algorithms since
-       * they don't have to check each face (or group of faces)
+       * they don't have to check each side (or group of sides)
        * individually.
        */
-      void set_common_face_topology() const;
-      ElementTopology *commonFaceTopology;
+      void set_common_side_topology() const;
+      ElementTopology *commonSideTopology;
 
       /*!
        * Filename that this Database is connected with.  Derived
@@ -236,10 +229,10 @@ namespace Ioss {
        * 'topo_dimension' is 2, then face/element pairs are generated; if
        * 'topo_dimension' is 1, then edge/element pairs are generated.
        */
-      void check_face_topology(int topo_dimension) const;
+      void check_side_topology() const;
 
       /// Used to speed up faceblock/edgeblock calculations.
-      TopoContainer faceTopology;
+      TopoContainer sideTopology;
 
       /*! Typically used for restart output, but can be used for all output...
        * Maximum number of states on the output file.  Overwrite the existing
@@ -256,8 +249,8 @@ namespace Ioss {
       Ioss::SurfaceSplitType splitType;
       Ioss::DatabaseUsage dbUsage;
 
-      // True to combine all faceblocks in a faceset into a single sideset;
-      // False to output a sideset per faceblock 
+      // True to combine all sideblocks in a sideset into a single sideset;
+      // False to output a sideset per sideblock 
       // Default is false for backward compatibility.
       mutable bool surfaceSplitBackwardCompatibility; 
 
@@ -281,15 +274,11 @@ namespace Ioss {
 				     void *data, size_t data_size) const = 0;
       virtual int get_field_internal(const ElementBlock* eb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const FaceBlock* fb, const Field& field,
-				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const EdgeBlock* fb, const Field& field,
+      virtual int get_field_internal(const SideBlock* fb, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int get_field_internal(const NodeSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const EdgeSet* es, const Field& field,
-				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const FaceSet* fs, const Field& field,
+      virtual int get_field_internal(const SideSet* fs, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int get_field_internal(const CommSet* cs, const Field& field,
 				     void *data, size_t data_size) const = 0;
@@ -300,15 +289,11 @@ namespace Ioss {
 				     void *data, size_t data_size) const = 0;
       virtual int put_field_internal(const ElementBlock* eb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const FaceBlock* fb, const Field& field,
-				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const EdgeBlock* fb, const Field& field,
+      virtual int put_field_internal(const SideBlock* fb, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int put_field_internal(const NodeSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const EdgeSet* es, const Field& field,
-				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const FaceSet* fs, const Field& field,
+      virtual int put_field_internal(const SideSet* fs, const Field& field,
 				     void *data, size_t data_size) const = 0;
       virtual int put_field_internal(const CommSet* cs, const Field& field,
 				     void *data, size_t data_size) const = 0;

@@ -48,17 +48,14 @@ namespace Ioss {
 
   class NodeBlock;
   class ElementBlock;
-  class FaceSet;
-  class FaceBlock;
-  class EdgeSet;
-  class EdgeBlock;
+  class SideSet;
+  class SideBlock;
   class NodeSet;
   class CommSet;
 
   typedef std::vector<NodeBlock*>    NodeBlockContainer;
   typedef std::vector<ElementBlock*> ElementBlockContainer;
-  typedef std::vector<FaceSet*>      FaceSetContainer;
-  typedef std::vector<EdgeSet*>      EdgeSetContainer;
+  typedef std::vector<SideSet*>      SideSetContainer;
   typedef std::vector<NodeSet*>      NodeSetContainer;
   typedef std::vector<CommSet*>      CommSetContainer;
   typedef std::vector<double>          StateTimeContainer;
@@ -80,8 +77,7 @@ namespace Ioss {
     
     // Check capabilities of input/output database...
     bool supports_nodal_fields()    const;
-    bool supports_edge_fields()     const;
-    bool supports_face_fields()     const;
+    bool supports_side_fields()     const;
     bool supports_element_fields()  const;
     bool supports_nodelist_fields() const;
     bool supports_field_type(Ioss::EntityType fld_type) const;
@@ -106,20 +102,26 @@ namespace Ioss {
      * time value. Note that this may not necessarily be the last step
      * on the database if cycle and overlay are being used.
      */
-    std::pair<int, double> get_max_time();
+    std::pair<int, double> get_max_time() const;
+
+    /**
+     * Return a pair consisting of the step (1-based) corresponding to
+     * the minimum time on the database and the corresponding minimum
+     * time value. Note that this may not necessarily be the first step
+     * on the database if cycle and overlay are being used.
+     */
+    std::pair<int, double> get_min_time() const;
 
     // Functions for an output region...
     bool add(NodeBlock    *node_block);
     bool add(ElementBlock *element_block);
-    bool add(FaceSet      *faceset);
-    bool add(EdgeSet      *edgeset);
+    bool add(SideSet      *sideset);
     bool add(NodeSet      *nodeset);
     bool add(CommSet      *commset);
 
     const NodeBlockContainer&    get_node_blocks() const;
     const ElementBlockContainer& get_element_blocks() const;
-    const FaceSetContainer&      get_facesets() const;
-    const EdgeSetContainer&      get_edgesets() const;
+    const SideSetContainer&      get_sidesets() const;
     const NodeSetContainer&      get_nodesets() const;
     const CommSetContainer&      get_commsets() const;
 
@@ -129,10 +131,8 @@ namespace Ioss {
     GroupingEntity* get_entity(const std::string& name) const;
     NodeBlock*      get_node_block(const std::string& name) const;
     ElementBlock*   get_element_block(const std::string& name) const;
-    FaceSet*        get_faceset(const std::string& name) const;
-    FaceBlock*      get_faceblock(const std::string& name) const;
-    EdgeSet*        get_edgeset(const std::string& name) const;
-    EdgeBlock*      get_edgeblock(const std::string& name) const;
+    SideSet*        get_sideset(const std::string& name) const;
+    SideBlock*      get_sideblock(const std::string& name) const;
     NodeSet*        get_nodeset(const std::string& name) const;
     CommSet*        get_commset(const std::string& name) const;
 
@@ -192,13 +192,12 @@ namespace Ioss {
     // Containers for all grouping entities
     NodeBlockContainer    nodeBlocks;
     ElementBlockContainer elementBlocks;
-    FaceSetContainer      faceSets;
-    EdgeSetContainer      edgeSets;
+    SideSetContainer      sideSets;
     NodeSetContainer      nodeSets;
     CommSetContainer      commSets;
-    StateTimeContainer    stateTimes;
+    mutable StateTimeContainer    stateTimes;
     int currentState;
-    int stateCount;
+    mutable int stateCount;
   };
 }
 inline int Ioss::Region::node_global_to_local(int global, bool must_exist) const
@@ -207,11 +206,8 @@ inline int Ioss::Region::node_global_to_local(int global, bool must_exist) const
 inline bool Ioss::Region::supports_nodal_fields() const
 { return get_database()->supports_nodal_fields(); }
 
-inline bool Ioss::Region::supports_edge_fields() const
-{ return get_database()->supports_edge_fields(); }
-
-inline bool Ioss::Region::supports_face_fields() const
-{ return get_database()->supports_face_fields(); }
+inline bool Ioss::Region::supports_side_fields() const
+{ return get_database()->supports_side_fields(); }
 
 inline bool Ioss::Region::supports_element_fields() const
 { return get_database()->supports_element_fields(); }

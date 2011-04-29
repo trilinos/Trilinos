@@ -9,8 +9,6 @@
 #ifndef stk_util_use_cases_UseCaseEnvironement_hpp
 #define stk_util_use_cases_UseCaseEnvironement_hpp
 
-#include <boost/program_options.hpp>
-
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/BroadcastArg.hpp>
 

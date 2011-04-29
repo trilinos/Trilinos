@@ -27,6 +27,7 @@
 #include <stk_util/environment/CPUTime.hpp>
 
 #include <stk_adapt/UniformRefiner.hpp>
+#include <stk_adapt/UniformRefinerPattern.hpp>
 #include <boost/shared_ptr.hpp>
 
 #define ALLOW_MEM_TEST 1

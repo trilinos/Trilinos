@@ -221,9 +221,9 @@ std::string Ioss::Utils::local_filename(const std::string& relative_filename,
 int Ioss::Utils::field_warning(const Ioss::GroupingEntity *ge,
 			       const Ioss::Field &field, const std::string& inout)
 {
-  IOSS_WARNING << ge->type() << " '" << ge->name()
+  IOSS_WARNING << ge->type_string() << " '" << ge->name()
 	       << "'. Unknown " << inout << " field '"
-	       << field.get_name() << "'";
+	       << field.get_name() << "'\n";
   return -4;
 }
 
@@ -260,11 +260,11 @@ namespace {
     return omitted;
   }
 }
-void Ioss::Utils::calculate_faceblock_membership(IntVector &face_is_member,
-						const Ioss::EntityBlock *ef_blk,
-						const int *element, const int *sides,
-						int number_sides,
-						const Ioss::Region *region)
+void Ioss::Utils::calculate_sideblock_membership(IntVector &face_is_member,
+						 const Ioss::EntityBlock *ef_blk,
+						 const int *element, const int *sides,
+						 int number_sides,
+						 const Ioss::Region *region)
 {
   // Topology of faces in this face block...
   const ElementTopology *ftopo = ef_blk->topology();

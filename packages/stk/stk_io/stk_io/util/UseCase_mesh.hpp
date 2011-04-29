@@ -99,12 +99,9 @@ namespace stk {
       void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
 
 
-      void process_edgesets(Ioss::Region &region, stk::mesh::BulkData &bulk);
-      void process_edgesets(Ioss::Region &region, stk::mesh::MetaData &meta);
-      void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) ;
-      void process_facesets(Ioss::Region &region, stk::mesh::BulkData &bulk);
-      void process_facesets(Ioss::Region &region, stk::mesh::MetaData &meta);
-      void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) ;
+      void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk);
+      void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta);
+      void process_sidesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta) ;
 
       void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk);
       void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta);

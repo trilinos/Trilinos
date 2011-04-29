@@ -81,7 +81,7 @@ namespace {
 Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
 			     Ioss::DatabaseUsage db_usage,
 			     MPI_Comm communicator)
-  : commonFaceTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
+  : commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
     isParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
     fieldSuffixSeparator('_'), splitType(Ioss::SPLIT_BY_TOPOLOGIES), dbUsage(db_usage),
     surfaceSplitBackwardCompatibility(false), nodeGlobalIdBackwardCompatibility(false),
@@ -134,7 +134,7 @@ int Ioss::DatabaseIO::get_field(const Ioss::ElementBlock* eb, const Ioss::Field&
   return get_field_internal(eb, field, data, data_size);
 }
 
-int Ioss::DatabaseIO::get_field(const Ioss::FaceBlock* fb, const Ioss::Field& field,
+int Ioss::DatabaseIO::get_field(const Ioss::SideBlock* fb, const Ioss::Field& field,
 				void *data, size_t data_size) const
 {
   assert(is_parallel_consistent(singleProcOnly, fb, field, util_));
@@ -142,16 +142,6 @@ int Ioss::DatabaseIO::get_field(const Ioss::FaceBlock* fb, const Ioss::Field& fi
     log_field(">", fb, field, singleProcOnly, util_);
   }
   return get_field_internal(fb,  field, data, data_size);
-}
-
-int Ioss::DatabaseIO::get_field(const Ioss::EdgeBlock* fb, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, fb, field, util_));
-  if (get_logging()) {
-    log_field(">", fb, field, singleProcOnly, util_);
-  }
-  return get_field_internal(fb, field, data, data_size);
 }
 
 int Ioss::DatabaseIO::get_field(const Ioss::NodeSet* ns, const Ioss::Field& field,
@@ -164,17 +154,7 @@ int Ioss::DatabaseIO::get_field(const Ioss::NodeSet* ns, const Ioss::Field& fiel
   return get_field_internal(ns, field, data, data_size);
 }
 
-int Ioss::DatabaseIO::get_field(const Ioss::EdgeSet* es, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, es, field, util_));
-  if (get_logging()) {
-    log_field(">", es, field, singleProcOnly, util_);
-  }
-  return get_field_internal(es, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::get_field(const Ioss::FaceSet* fs, const Ioss::Field& field,
+int Ioss::DatabaseIO::get_field(const Ioss::SideSet* fs, const Ioss::Field& field,
 				void *data, size_t data_size) const
 {
   assert(is_parallel_consistent(singleProcOnly, fs, field, util_));
@@ -225,17 +205,7 @@ int Ioss::DatabaseIO::put_field(const Ioss::ElementBlock* eb, const Ioss::Field&
   return put_field_internal(eb, field, data, data_size);
 }
 
-int Ioss::DatabaseIO::put_field(const Ioss::FaceBlock* fb, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, fb, field, util_));
-  if (get_logging()) {
-    log_field("<", fb, field, singleProcOnly, util_);
-  }
-  return put_field_internal(fb, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::put_field(const Ioss::EdgeBlock* fb, const Ioss::Field& field,
+int Ioss::DatabaseIO::put_field(const Ioss::SideBlock* fb, const Ioss::Field& field,
 				void *data, size_t data_size) const
 {
   assert(is_parallel_consistent(singleProcOnly, fb, field, util_));
@@ -255,17 +225,7 @@ int Ioss::DatabaseIO::put_field(const Ioss::NodeSet* ns, const Ioss::Field& fiel
   return put_field_internal(ns, field, data, data_size);
 }
 
-int Ioss::DatabaseIO::put_field(const Ioss::EdgeSet* es, const Ioss::Field& field,
-				void *data, size_t data_size) const
-{
-  assert(is_parallel_consistent(singleProcOnly, es, field, util_));
-  if (get_logging()) {
-    log_field("<", es, field, singleProcOnly, util_);
-  }
-  return put_field_internal(es, field, data, data_size);
-}
-
-int Ioss::DatabaseIO::put_field(const Ioss::FaceSet* fs, const Ioss::Field& field,
+int Ioss::DatabaseIO::put_field(const Ioss::SideSet* fs, const Ioss::Field& field,
 				void *data, size_t data_size) const
 {
   assert(is_parallel_consistent(singleProcOnly, fs, field, util_));
@@ -301,7 +261,7 @@ bool Ioss::DatabaseIO::end_state(Ioss::Region */* region */, int /* state */, do
 // whether all elements in the model have the same face topology.
 // This can be used to speed-up certain algorithms since they don't
 // have to check each face (or group of faces) individually.
-void Ioss::DatabaseIO::set_common_face_topology() const
+void Ioss::DatabaseIO::set_common_side_topology() const
 {
   Ioss::DatabaseIO *new_this = const_cast<Ioss::DatabaseIO*>(this);
 
@@ -315,12 +275,12 @@ void Ioss::DatabaseIO::set_common_face_topology() const
 
     // Check face types.
     if (element_count > 0) {
-      if (commonFaceTopology != NULL || I == element_blocks.begin()) {
-	ElementTopology* face_type = (*I)->topology()->boundary_type();
-	if (commonFaceTopology == NULL) // First block
-	  new_this->commonFaceTopology = face_type;
-	if (commonFaceTopology != face_type) { // Face topologies differ in mesh
-	  new_this->commonFaceTopology = NULL;
+      if (commonSideTopology != NULL || I == element_blocks.begin()) {
+	ElementTopology* side_type = (*I)->topology()->boundary_type();
+	if (commonSideTopology == NULL) // First block
+	  new_this->commonSideTopology = side_type;
+	if (commonSideTopology != side_type) { // Face topologies differ in mesh
+	  new_this->commonSideTopology = NULL;
 	  return;
 	}
       }
@@ -335,29 +295,26 @@ void Ioss::DatabaseIO::set_block_omissions(const std::vector<std::string> &omiss
   std::sort(blockOmissions.begin(), blockOmissions.end());
 }
 
-// Check topology of all faces in model...
-void Ioss::DatabaseIO::check_face_topology(int topo_dimension) const
+// Check topology of all sides (face/edges) in model...
+void Ioss::DatabaseIO::check_side_topology() const
 {
-  // The following code creates the faceTopology set which contains
-  // a list of the face topologies in this model.
+  // The following code creates the sideTopology sets which contain
+  // a list of the side topologies in this model.
   //
-  // If faceTopology.size() > 1 --> the model has faces with mixed
+  // If sideTopology.size() > 1 --> the model has sides with mixed
   // topology (i.e., quads and tris).
   //
-  // If faceTopology.size() == 1 --> the model has homogeneous faces
-  // and each face is of the topology type 'faceTopology[0]'
+  // If sideTopology.size() == 1 --> the model has homogeneous sides
+  // and each side is of the topology type 'sideTopology[0]'
   //
-  // This is used in other code (edgesets, facesets) to speed up some
-  // tests.
-
-  assert(topo_dimension == 1 || topo_dimension == 2);
+  // This is used in other code speed up some tests.
 
   // Spheres and Circle have no faces/edges, so handle them special...
   bool all_sphere = true;
 
-  if (faceTopology.empty()) {
+  if (sideTopology.empty()) {
     // Set contains (parent_element, boundary_topology) pairs...
-    std::set<std::pair<const ElementTopology*, const ElementTopology*> > face_topo;
+    std::set<std::pair<const ElementTopology*, const ElementTopology*> > side_topo;
 
     Ioss::ElementBlockContainer element_blocks =
       get_region()->get_element_blocks();
@@ -366,19 +323,18 @@ void Ioss::DatabaseIO::check_face_topology(int topo_dimension) const
     for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
       const Ioss::ElementBlock *block = *I;
       const ElementTopology *elem_type = block->topology();
-      const ElementTopology *face_type = elem_type->boundary_type();
-      if (face_type == NULL) {
-	// heterogeneous faces.  Iterate through...
-	int size = (topo_dimension == 2 ?
-		    elem_type->number_faces() : elem_type->number_edges());
+      const ElementTopology *side_type = elem_type->boundary_type();
+      if (side_type == NULL) {
+	// heterogeneous sides.  Iterate through...
+	int size = elem_type->number_boundaries();
 	for (int i=1; i <= size; i++) {
-	  face_type = elem_type->boundary_type(i);
-	  face_topo.insert(std::make_pair(elem_type, face_type));
+	  side_type = elem_type->boundary_type(i);
+	  side_topo.insert(std::make_pair(elem_type, side_type));
 	  all_sphere = false;
 	}
       } else {
-	// homogenous faces.
-	face_topo.insert(std::make_pair(elem_type, face_type));
+	// homogenous sides.
+	side_topo.insert(std::make_pair(elem_type, side_type));
 	all_sphere = false;
       }
     }
@@ -387,20 +343,20 @@ void Ioss::DatabaseIO::check_face_topology(int topo_dimension) const
       // element blocks in the model...
       const ElementTopology *ftopo = ElementTopology::factory("unknown");
       if (element_blocks.empty()) {
-	face_topo.insert(std::make_pair(ftopo, ftopo));
+	side_topo.insert(std::make_pair(ftopo, ftopo));
       } else {
 	const Ioss::ElementBlock *block = *element_blocks.begin();
-	face_topo.insert(std::make_pair(block->topology(), ftopo));
+	side_topo.insert(std::make_pair(block->topology(), ftopo));
       }
     }
-    assert(face_topo.size() > 0);
-    assert(faceTopology.size() == 0);
-    // Copy into the faceTopology container...
+    assert(side_topo.size() > 0);
+    assert(sideTopology.size() == 0);
+    // Copy into the sideTopology container...
     Ioss::DatabaseIO *new_this = const_cast<Ioss::DatabaseIO*>(this);
-    std::copy(face_topo.begin(), face_topo.end(),
-	      std::back_inserter(new_this->faceTopology));
+    std::copy(side_topo.begin(), side_topo.end(),
+	      std::back_inserter(new_this->sideTopology));
   }
-  assert(faceTopology.size() > 0);
+  assert(sideTopology.size() > 0);
 }
 
 #include <sys/time.h>

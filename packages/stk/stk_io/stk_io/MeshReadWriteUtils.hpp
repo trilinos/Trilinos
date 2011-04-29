@@ -52,6 +52,11 @@ namespace stk {
      * nodesets, sidesets) will have an associated stk mesh part
      * created for it.
      *
+     * If the mesh_data argument contains a non-null m_input_region
+     * data member, then this is assumed to be a valid Ioss::Region*
+     * that should be used instead of opening the file and creating a
+     * new Ioss::Region.
+     *
      * Following this call, the 'populate_bulk_data()' function should
      * be called to read the bulk data from the mesh and generate the
      * corresponding stk mesh entities (nodes, elements, faces, ...)

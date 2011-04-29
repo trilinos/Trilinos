@@ -21,13 +21,17 @@ percept convert
 
 # Convert a mesh of linear elements, e.g., HEX8,  TET4, QUAD4, TRI3,
 # into a mesh of quadratic elements, e.g., HEX27, TET8, QUAD9, TRI6
-percept enrich 
+percept enrich
 
 Some terminology in use:
   task: What the client wants done (e.g. refine, enrich, convert).
 
 """
+import os
+import sys
 import argparse
+import textwrap
+import subprocess
 
 def setup_parser():
     """Set up the parser.
@@ -35,65 +39,78 @@ def setup_parser():
     Returns:
       argparse.ArgumentParser with all options configured.
     """
-    parser = argparse.ArgumentParser(prog='percept', description='Percept verification tool.')
+
+    epilog_txt = textwrap.dedent('''\
+        Some commonly used %(prog)s commands are:
+           refine    Divide blocks of elements uniformly
+           convert   Convert blocks of elements to another specified type of element
+           enrich    Add more nodes to blocks of elements to increase polynomial order
+
+        See "%(prog)s COMMAND --help" for more information on a specific command.
+
+        ''')
+
+    parser = argparse.ArgumentParser(prog='percept', formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description='Percept is a tool for verifying modeling and simulation codes and solutions.',
+                                     epilog=epilog_txt)
 
     # version number of this script
     # TODO: get the version from percept
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 
     subparsers = parser.add_subparsers()
-    
+
     # the block argument can be used with multiple tasks, predefine string here
     blocks_arg_list = ('-b', '--blocks')
     blocks_arg_dict = {'metavar':'BLOCK_LIST', 'help':'include or exclude block numbers in a quoted, comma delimited string.'}
         #(1) empty string or option not specified: convert all blocks in the input mesh file
         #(2) file:my_filename.my_ext (e.g. file:filelist.dat) which will read input block names from the given file
         #(3) [+]block_name_1,[+]block_name_2, etc ,block_name_n to include only these blocks, plus sign is optional
-        #(4) a single input block name (e.g. block_3) to be converted 
+        #(4) a single input block name (e.g. block_3) to be converted
         #(5) -block_3,-block_5 to exclude blocks from those included (all blocks or include-only blocks), minus sign is mandatory
-        #(6) block_1..block_10 include the range of blocks #1 to #10 
-        #(7) any combination of [+] and - options and range (..) option can be specified 
-        #Note: wherever you specify block_number this can be replaced with just the #, e.g. "1,2,4,5" 
-        
+        #(6) block_1..block_10 include the range of blocks #1 to #10
+        #(7) any combination of [+] and - options and range (..) option can be specified
+        #Note: wherever you specify block_number this can be replaced with just the #, e.g. "1,2,4,5"
+
     blocks_file_arg_list = ('-B','--blocks-from')
     blocks_file_arg_dict = {'metavar':'BLOCK_FILE', 'help':'include or exclude block numbers listed in a file.'}
-    
+
     # hide the --remove-original-elements argument, for now
     #original_arg_list = ('--keep-original-elements',)
     #original_arg_dict = {'action':'store_true', 'default':False, 'help':'Keep the original mesh embedded in the output file.'}
 
     # Tasks:
     # each task has a subparser and possibly task specific options
-    
+
     # refine
     parser_refine = subparsers.add_parser('refine')
     parser_refine.add_argument('-n', '--number-refines', type=int, default=1, help='number of refinements (default: %(default)s)')
-    parser_refine.add_argument('-t', '--refine-type', default='', metavar='REFINE_TYPE', help='type of elements to refine into another type (one of: Quad4_Quad4_4, Tri3_Tri3_4, Tet4_Tet4_8, Hex8_Hex8_8, Wedge6_Wedge6_8, Tri6_Tri6_4, Quad9_Quad9_4, Hex27_Hex27_8, Tet10_Tet10_8, Wedge18_Wedge18_8, ShellTri3_ShellTri3_4, ShellQuad4_ShellQuad4_4)')
+    parser_refine.add_argument('-t', '--refine-type', default='DEFAULT', metavar='REFINE_TYPE', help='type of elements to refine into another type (one of: Quad4_Quad4_4, Tri3_Tri3_4, Tet4_Tet4_8, Hex8_Hex8_8, Wedge6_Wedge6_8, Tri6_Tri6_4, Quad9_Quad9_4, Hex27_Hex27_8, Tet10_Tet10_8, Wedge18_Wedge18_8, ShellTri3_ShellTri3_4, ShellQuad4_ShellQuad4_4)')
     parser_refine.add_argument(*blocks_arg_list, **blocks_arg_dict)
     parser_refine.add_argument(*blocks_file_arg_list, **blocks_file_arg_dict)
     #parser_refine.add_argument(*original_arg_list, **original_arg_dict)
 
     # convert
     parser_convert = subparsers.add_parser('convert')
-    parser_convert.add_argument('-t', '--convert-type', metavar='CONVERT_TYPE', help='type of elements to convert to another type (one of: Hex8_Tet4_24, Hex8_Tet4_6, Quad4_Tri3_2, Quad4_Tri3_6, Quad4_Tri3_4)')
+    parser_convert.add_argument('-t', '--convert-type', default="", metavar='CONVERT_TYPE', help='type of elements to convert to another type (one of: Hex8_Tet4_24, Hex8_Tet4_6, Quad4_Tri3_2, Quad4_Tri3_6, Quad4_Tri3_4)')
     parser_convert.add_argument(*blocks_arg_list, **blocks_arg_dict)
     parser_convert.add_argument(*blocks_file_arg_list, **blocks_file_arg_dict)
     #parser_convert.add_argument(*original_arg_list, **original_arg_dict)
 
     # enrich
     parser_enrich = subparsers.add_parser('enrich')
-    parser_enrich.add_argument('-t', '--enrich-type', default='', metavar='ENRICH_TYPE', help='type of elements to convert to another type (one of: Quad4_Quad8_1, Quad4_Quad9_1, Tri3_Tri6_1, Tet4_Tet10_1, Hex8_Hex20_1, Hex8_Hex27_1, Wedge6_Wedge15_1, Wedge6_Wedge18_1)')
+    parser_enrich.add_argument('-t', '--enrich-type', default='DEFAULT', metavar='ENRICH_TYPE', help='type of elements to convert to another type (one of: Quad4_Quad8_1, Quad4_Quad9_1, Tri3_Tri6_1, Tet4_Tet10_1, Hex8_Hex20_1, Hex8_Hex27_1, Wedge6_Wedge15_1, Wedge6_Wedge18_1)')
     parser_enrich.add_argument(*blocks_arg_list, **blocks_arg_dict)
     parser_enrich.add_argument(*blocks_file_arg_list, **blocks_file_arg_dict)
     #parser_enrich.add_argument(*original_arg_list, **original_arg_dict)
 
     # infile and outfile
-    parser.add_argument('infile', nargs=1, type=file, help='input mesh file name')
-    parser.add_argument('outfile', nargs='?', type=file, help='output mesh file name')
+    parser.add_argument('infile', nargs=1, help='input mesh file name')
+    parser.add_argument('outfile', nargs='?', help='output mesh file name')
 
     # Other options
-    parser.add_argument('-C','--directory', default=argparse.SUPPRESS, metavar='DIR', help='change working directory')
-    
+    parser.add_argument('-C','--directory', metavar='DIR', help='change working directory')
+
     # Parallel operation
     parallel = parser.add_argument_group('parallel control')
     # NOTE: --load-balance is taken care of by number of processes argument
@@ -105,7 +122,7 @@ def setup_parser():
     # NOTE: --print-info N is now verbose
     informative.add_argument('-v', '--verbose', type=int, default=0, help='print more verbose information int >= 0  (default: %(default)s)')
     informative.add_argument('--echo-command-line', default=False, action='store_true', help='output original command line and continue as normal')
-    informative.add_argument('-o','--output-log', default='%(prog)s.log', help='path where output log file will be written (default: %(prog)s.log)')
+    informative.add_argument('-o','--output-log', default=('%s.log' % os.path.basename(sys.argv[0])), help='path where output log file will be written (default: %(prog)s.log)')
     informative.add_argument('--show-defaults', action='store_true', default=False, help='show %(prog)s defaults')
 
     # diagnostic and debugging options
@@ -114,13 +131,82 @@ def setup_parser():
     diagnostic.add_argument('--pout', default='-', help='path where per processor log files will be written (default: %(default)s)')
     diagnostic.add_argument('--dout', default='cout', help='path, or stream (one of cout, cerr), where diagnostic log file will be written (default: %(default)s)')
     # NOTE: -dw is now --writer
-    diagnostic.add_argument('--writer', metavar='WRITER', default=argparse.SUPPRESS, help='name of the diagnostic writer, for example "all"')
-    diagnostic.add_argument('--timer', default=argparse.SUPPRESS, help='name of the diagnostic timer, for example "mesh"')
+    diagnostic.add_argument('--writer', metavar='WRITER', help='name of the diagnostic writer, for example "all"')
+    diagnostic.add_argument('--timer', metavar="TIMER", help='name of the diagnostic timer, for example "mesh"')
     # NOTE: for now hide more esoteric diagnostics
     #diagnostic.add_argument('--test-memory-elements', metavar='NUM-ELEMS', type=int, default=0, help='specify number of elements (default: %(default)s)')
     #diagnostic.add_argument('--test-memory-nodes', metavar='NUM-NODES', type=int, default=0, help='specify number of nodes (default: %(default)s)')
 
     return parser
+
+def convert_to_stk_adapt_option(args, arg_name):
+    arg_value = getattr(args, arg_name)
+    if (arg_name == "block"):
+        if (arg_value is not None):
+            return "--block-name=%s" % arg_value
+    elif (arg_name == "blocks_from"):
+        if (arg_value is not None):
+            return "--block-name=file:%s" % arg_value
+    elif (arg_name == "directory"):
+        if (arg_value is not None):
+            return "--directory=%s" % arg_value
+    elif (arg_name == "dout"):
+        if (arg_value is not None):
+            return "--dout=%s" % arg_value
+    elif (arg_name == "echo_command_line"):
+        if (arg_value):
+            return "--echo-command-line"
+    elif (arg_name == "infile"):
+        assert type(arg_value) == list
+        assert len(arg_value) == 1
+        return "--input_mesh=%s" % arg_value[0]
+    elif (arg_name == "number_refines"):
+        return "--number_refines=%d" % arg_value
+    elif (arg_name == "outfile"):
+        if (arg_value is None):
+            arg_value = getattr(args, "infile")[0].split(".")[0] + "_out.exo"
+        return "--output_mesh=%s" % arg_value
+    elif (arg_name == "output_log"):
+        return "--output-log=%s" % arg_value
+    elif (arg_name == "pause_for_debugging"):
+        if (arg_value):
+            return "--pause-for-debugging"
+    elif (arg_name == "pout"):
+        if (arg_value is not None):
+            return "--pout=%s" % arg_value
+    elif (arg_name == "proc_rank_field"):
+        if (arg_value):
+            return "--proc_rank_field=%d" % 1
+    elif (arg_name == "refine_type"):
+        return "--refine=%s" % arg_value
+    elif (arg_name == "convert_type"):
+        return "--convert=%s" % arg_value
+    elif (arg_name == "enrich_type"):
+        return "--enrich=%s" % arg_value
+    elif (arg_name == "show_defaults"):
+        if (arg_value):
+            return "" # TODO
+    elif (arg_name == "timer"):
+        if (arg_value is not None):
+            return "--timer=%s" % arg_value
+    elif (arg_name == "verbose"):
+        if (arg_value > 0):
+            return "--print_info=%d" % arg_value
+    elif (arg_name == "writer"):
+        if (arg_value is not None):
+            return "--writer=%s" % arg_value
+
+    return ""
+
+def run_cmd(cmd_str):
+    print cmd_str
+
+    proc = subprocess.Popen(cmd_str, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, errput = proc.communicate()
+    stat = proc.wait()
+
+    if (stat != 0):
+        raise SystemExit("%s failed:\n\nError: %s" % (os.path.basename(sys.argv[0]), errput))
 
 def main():
     """Entry point for Percept script."""
@@ -132,14 +218,27 @@ def main():
         # TODO: run_interactive(parser)
         print 'Interactive mode not yet working.'
     else:
-        print 'expand_args'
-        #args = expand_args(args)
+        # Construct the sierra command from args
+        cmd_str = "sierra"
 
-        try:
-            print args
-        #  run_once(options, args)
-        except KeyboardInterrupt:
-            print 'Interrupted.'
+        # Find what args/options need to go to the sierra command itself (not the app)
+        skip_list = ["num_proc"]
+        num_proc = args.num_proc
+        cmd_str += " -j %d" % num_proc
+
+        # Find what args/options need to go to stk_adapt
+        cmd_str += ' stk_adapt_exe -O "'
+        for arg in dir(args):
+            if (not arg.startswith("_") and arg not in skip_list):
+                cmd_str += " %s" % convert_to_stk_adapt_option(args, arg)
+
+        if (num_proc > 1):
+            cmd_str += " --loadbal=1"
+        else:
+            cmd_str += " --loadbal=0"
+
+        cmd_str += '"'
+        run_cmd(cmd_str)
 
 def exit_from_int(*args):
     """Handler for SIGINT signal."""

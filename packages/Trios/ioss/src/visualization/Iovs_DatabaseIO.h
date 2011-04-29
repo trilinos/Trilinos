@@ -41,8 +41,7 @@ namespace Iovs {
 
       // Check capabilities of input/output database...
       bool supports_nodal_fields()    const {return true;}
-      bool supports_edge_fields()     const {return true;}
-      bool supports_face_fields()     const {return true;}
+      bool supports_side_fields()     const {return true;}
       bool supports_element_fields()  const {return true;}
       bool supports_nodelist_fields() const {return true;}
 
@@ -75,18 +74,14 @@ namespace Iovs {
 
       int get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
-      int get_field_internal(const Ioss::FaceBlock* fb, const Ioss::Field& field,
-			     void *data, size_t data_size) const { return 0; }
-      int get_field_internal(const Ioss::EdgeBlock* eb, const Ioss::Field& field,
+      int get_field_internal(const Ioss::SideBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
       int get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
 
       int get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
-      int get_field_internal(const Ioss::EdgeSet* es, const Ioss::Field& field,
-			     void *data, size_t data_size) const { return 0; }
-      int get_field_internal(const Ioss::FaceSet* fs, const Ioss::Field& field,
+      int get_field_internal(const Ioss::SideSet* es, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
       int get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
@@ -96,18 +91,14 @@ namespace Iovs {
 
       int put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
-      int put_field_internal(const Ioss::FaceBlock* fb, const Ioss::Field& field,
-			     void *data, size_t data_size) const { return 0; }
-      int put_field_internal(const Ioss::EdgeBlock* eb, const Ioss::Field& field,
+      int put_field_internal(const Ioss::SideBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
       int put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
 
       int put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
-      int put_field_internal(const Ioss::EdgeSet* es, const Ioss::Field& field,
-			     void *data, size_t data_size) const { return 0; }
-      int put_field_internal(const Ioss::FaceSet* fs, const Ioss::Field& field,
+      int put_field_internal(const Ioss::SideSet* es, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
       int put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }

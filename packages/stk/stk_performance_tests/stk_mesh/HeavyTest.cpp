@@ -16,6 +16,10 @@
 
 #include <string>
 
+// Globals for command-line arguments
+extern int* STKUNIT_ARGC;
+extern char** STKUNIT_ARGV;
+
 STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 {
   // A performance test that stresses important parts of stk_mesh
@@ -56,7 +60,23 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
   // timings[6] = sum(timings[0:5])
   std::vector<double> timings(NUM_PHASES + 1, 0.0); // leave room for sum
 
-  std::string input_base_filename = "heavy_performance_test.g";
+  // Compute input/output filename
+
+  std::string input_base_filename = "heavy_performance_test.g"; // Default
+  std::string output_base_filename = "heavy_performance_test.e"; // Default
+
+  // Search cmd-line args
+  const std::string input_flag  = "--heavy-test:input-file=";
+  const std::string output_flag = "--heavy-test:output-file=";
+  for (int argitr = 1; argitr < *STKUNIT_ARGC; ++argitr) {
+    std::string argv(STKUNIT_ARGV[argitr]);
+    if (argv.find(input_flag) == 0) {
+      input_base_filename = argv.replace(0, input_flag.size(), "");
+    }
+    else if (argv.find(output_flag) == 0) {
+      output_base_filename = argv.replace(0, output_flag.size(), "");
+    }
+  }
 
   // time meta_data initialize
   {
@@ -102,7 +122,6 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 
   // time exodus file creation
   {
-    std::string output_base_filename = "heavy_performance_test.e";
     double start_time = stk::wall_time();
     fixture.create_output_mesh( output_base_filename, "exodusii" );
     timings[EXODUS_CREATE_PHASE_ID] = stk::wall_dtime(start_time);
@@ -123,7 +142,7 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 
   ThrowRequireMsg(timings.size() == NUM_PHASES+1, "Do not push back on to timings vector");
 
-  // Now process and print times
+  // Now process and print times, we print in XML to make parsing easier
   {
     stk::all_reduce(pm, stk::ReduceMax<NUM_PHASES+1>(&timings[0]));
 
@@ -132,16 +151,20 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 
     if (p_rank == 0) {
       std::cout << "\n\n";
-      std::cout << "Num procs: " << p_size << "\n";
-      for (unsigned i = 0; i < NUM_PHASES; ++i) {
-        std::cout << "\t" << PHASE_NAMES[i] << ": " << timings[i] << std::endl;
-      }
-      std::cout << "\tTotal time: " << timings[NUM_PHASES] << std::endl;
-      std::cout << "\n\n";
-
+      std::cout << "<performance_test name=\"HeavyTest\" num_procs=\"" << p_size << "\">\n";
+      std::cout << "  <mesh_stats>\n";
       for (unsigned i = 0; i < counts.size(); ++i) {
-        std::cout << "Counts for rank: " << i << ": " << counts[i] << std::endl;
+        std::cout << "    <entity rank=\"" << i << "\" count=\"" << counts[i] << "\"/>\n";
       }
+      std::cout << "  </mesh_stats>\n";
+
+      std::cout << "  <timings time=\"" << timings[NUM_PHASES] << "\">\n";
+      for (unsigned i = 0; i < NUM_PHASES; ++i) {
+        std::cout << "    <section name=\"" << PHASE_NAMES[i] << "\" time=\"" << timings[i] <<"\"/>\n";
+      }
+      std::cout << "  </timings>\n";
+      std::cout << "</performance_test>\n";
+      std::cout << "\n\n";
     }
   }
 }

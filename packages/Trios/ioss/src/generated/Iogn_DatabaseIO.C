@@ -94,7 +94,7 @@ namespace Iogn {
     get_nodeblocks();
     get_elemblocks();
     get_nodesets();
-    get_facesets();
+    get_sidesets();
     get_commsets();
     
     Ioss::Region *this_region = get_region();
@@ -192,6 +192,15 @@ namespace Iogn {
 	  int *connect = static_cast<int*>(data);
 	  std::copy(connectivity.begin(), connectivity.end(), connect);
 	}
+	else if (field.get_name() == "connectivity_raw") {
+	  assert(field.raw_storage()->component_count() == m_generatedMesh->topology_type(id).second);
+
+	  // The generated mesh connectivity is returned in a vector.  Ids are global
+	  std::vector<int> connectivity;
+	  m_generatedMesh->connectivity(id, connectivity);
+	  int *connect = static_cast<int*>(data);
+	  std::copy(connectivity.begin(), connectivity.end(), connect);
+	}
 	else if (field.get_name() == "ids") {
 	  // Map the local ids in this element block
 	  // (eb_offset+1...eb_offset+1+element_count) to global element ids.
@@ -237,7 +246,7 @@ namespace Iogn {
     return num_to_get;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::FaceBlock* ef_blk,
+  int DatabaseIO::get_field_internal(const Ioss::SideBlock* ef_blk,
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
@@ -248,7 +257,7 @@ namespace Iogn {
       size_t entity_count = ef_blk->get_property("entity_count").get_int();
       if (num_to_get != entity_count) {
 	std::ostringstream errmsg;
-	errmsg << "Partial field input not implemented for face/edge blocks";
+	errmsg << "Partial field input not implemented for side blocks";
 	IOSS_ERROR(errmsg);
       }
 
@@ -256,11 +265,11 @@ namespace Iogn {
       if (role == Ioss::Field::MESH) {
 
 	if (field.get_name() == "ids") {
-	  // A face/edge set' is basically an exodus sideset.  A
+	  // A sideset' is basically an exodus sideset.  A
 	  // sideset has a list of elements and a corresponding local
-	  // element side (1-based) The face/edge id is: face_id =
+	  // element side (1-based) The side id is: side_id =
 	  // 10*element_id + local_side_number This assumes that all
-	  // faces/edges in a sideset are boundary faces/edges.
+	  // sides in a sideset are boundary sides.
 	  std::vector<int> elem_side;
 	  m_generatedMesh->sideset_elem_sides(id, elem_side);
 	  int *ids = static_cast<int*>(data);
@@ -273,7 +282,7 @@ namespace Iogn {
 	  // Since we only have a single array, we need to allocate an extra
 	  // array to store all of the data.  Note also that the element_id
 	  // is the global id but only the local id is stored so we need to
-	  // map from local_to_global prior to generating the face/edge  id...
+	  // map from local_to_global prior to generating the side id...
 
 	  std::vector<int> elem_side;
 	  m_generatedMesh->sideset_elem_sides(id, elem_side);
@@ -301,12 +310,6 @@ namespace Iogn {
       }
     }
     return num_to_get;
-  }
-
-  int DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* eb */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
   }
 
   int DatabaseIO::get_field_internal(const Ioss::NodeSet* ns,
@@ -339,12 +342,7 @@ namespace Iogn {
     return num_to_get;
   }
     
-  int DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* es */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::get_field_internal(const Ioss::FaceSet* /* fs */, const Ioss::Field& /* field */,
+  int DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
@@ -393,12 +391,10 @@ namespace Iogn {
   // Input only database -- these will never be called...
   int DatabaseIO::put_field_internal(const Ioss::Region*,      const Ioss::Field&, void*, size_t) const {return -1;}
   int DatabaseIO::put_field_internal(const Ioss::ElementBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::FaceBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::SideBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
   int DatabaseIO::put_field_internal(const Ioss::NodeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
   int DatabaseIO::put_field_internal(const Ioss::NodeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::EdgeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
-  int DatabaseIO::put_field_internal(const Ioss::FaceSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::SideSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
   int DatabaseIO::put_field_internal(const Ioss::CommSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
 
   const Ioss::MapContainer& DatabaseIO::get_node_map() const
@@ -569,26 +565,26 @@ namespace Iogn {
     }
   }
 
-  void DatabaseIO::get_facesets()
+  void DatabaseIO::get_sidesets()
   {
-    m_faceset_names.reserve(sidesetCount);
+    m_sideset_names.reserve(sidesetCount);
     for (int ifs = 0; ifs < sidesetCount; ifs++) {
       std::string name = Ioss::Utils::encode_entity_name("surface", ifs+1);
-      m_faceset_names.push_back(name);
-      Ioss::FaceSet *faceset = new Ioss::FaceSet(this, name);
-      faceset->property_add(Ioss::Property("id", ifs+1));
-      get_region()->add(faceset);
+      m_sideset_names.push_back(name);
+      Ioss::SideSet *sideset = new Ioss::SideSet(this, name);
+      sideset->property_add(Ioss::Property("id", ifs+1));
+      get_region()->add(sideset);
 
       std::string ef_block_name = name + "_quad4";
       std::string side_topo_name = "quad4";
       std::string elem_topo_name = "unknown";
       int number_faces = m_generatedMesh->sideset_side_count_proc(ifs+1);
 
-      Ioss::FaceBlock *ef_block = new Ioss::FaceBlock(this, ef_block_name,
+      Ioss::SideBlock *ef_block = new Ioss::SideBlock(this, ef_block_name,
 						      side_topo_name,
 						      elem_topo_name,
 						      number_faces);
-      faceset->add(ef_block);
+      sideset->add(ef_block);
       ef_block->property_add(Ioss::Property("id", ifs+1));
 
       std::string storage = "Real[";

@@ -35,7 +35,7 @@
  * Example code showing a basic, but complete, mesh to results output
  * coding including subsetting and periodic field input and output.
  * Includes handling of nodeblocks, element blocks, nodesets,
- * edgesets, and facesets.  Attribute fields and distribution factor
+ * and sidesets.  Attribute fields and distribution factor
  * fields are also supported.
  *
  * This example can serve as the basis for adding binary IO support to
@@ -182,11 +182,9 @@ namespace stk {
       }
 
       template<> void local_internal_part_processing(Ioss::ElementBlock *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
-      template<> void local_internal_part_processing(Ioss::FaceBlock *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
-      template<> void local_internal_part_processing(Ioss::EdgeBlock *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::SideBlock *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::EntityBlock*)entity, meta, type);  }
 
-      template<> void local_internal_part_processing(Ioss::EdgeSet *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
-      template<> void local_internal_part_processing(Ioss::FaceSet *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
+      template<> void local_internal_part_processing(Ioss::SideSet *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
       template<> void local_internal_part_processing(Ioss::NodeSet *entity, stk::mesh::fem::FEMMetaData &meta, stk::mesh::EntityRank type) { return local_internal_part_processing((Ioss::GroupingEntity*)entity, meta, type);  }
 
 
@@ -203,6 +201,37 @@ namespace stk {
         for(size_t i=0; i < entities.size(); i++) {
           T* entity = entities[i];
           local_internal_part_processing(entity, meta, type);
+        }
+#endif
+      }
+
+      void local_default_part_processing(const std::vector<Ioss::SideBlock*> &entities,
+					 stk::mesh::fem::FEMMetaData &meta)
+      {
+#if !USE_LOCAL_PART_PROCESSING
+        stk::io::default_part_processing(entities, meta, type);
+#else
+        for(size_t i=0; i < entities.size(); i++) {
+	  Ioss::SideBlock* entity = entities[i];
+	  int my_type = entity->topology()->parametric_dimension();
+          local_internal_part_processing(entity, meta, (stk::mesh::EntityRank)my_type);
+        }
+#endif
+      }
+
+      void local_default_part_processing(const std::vector<Ioss::SideSet*> &entities,
+					 stk::mesh::fem::FEMMetaData &meta)
+      {
+#if !USE_LOCAL_PART_PROCESSING
+        stk::io::default_part_processing(entities, meta, type);
+#else
+        for(size_t i=0; i < entities.size(); i++) {
+	  // A sideset can have entities with multiple parametric dimensions.
+	  // Look at all sideblocks in the sideset and get the maximum parametric
+	  // dimension...
+	  Ioss::SideSet* entity = entities[i];
+	  int my_type = entity->max_parametric_dimension();
+          local_internal_part_processing(entity, meta, (stk::mesh::EntityRank)my_type);
         }
 #endif
       }
@@ -337,21 +366,11 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_surface_entity_meta(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
-                                            stk::mesh::EntityRank entity_rank)
+      void process_read_surface_entity_meta(Ioss::SideSet *entity, stk::mesh::fem::FEMMetaData &meta)
       {
-        assert(entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET);
-        if (entity->type() == Ioss::FACESET) {
-          Ioss::FaceSet *fs = dynamic_cast<Ioss::FaceSet *>(entity);
-          assert(fs != NULL);
-          const Ioss::FaceBlockContainer& blocks = fs->get_face_blocks();
-          local_default_part_processing(blocks, meta, entity_rank);
-        } else if (entity->type() == Ioss::EDGESET) {
-          Ioss::EdgeSet *es = dynamic_cast<Ioss::EdgeSet *>(entity);
-          assert(es != NULL);
-          const Ioss::EdgeBlockContainer& blocks = es->get_edge_blocks();
-          local_default_part_processing(blocks, meta, entity_rank);
-        }
+        assert(entity->type() == Ioss::SIDESET);
+	const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
+	local_default_part_processing(blocks, meta);
 
         stk::mesh::Part* const fs_part = meta.get_part(entity->name());
         assert(fs_part != NULL);
@@ -362,7 +381,7 @@ namespace stk {
 
         int block_count = entity->block_count();
         for (int i=0; i < block_count; i++) {
-          Ioss::EntityBlock *fb = entity->get_block(i);
+          Ioss::SideBlock *fb = entity->get_block(i);
           if (stk::io::include_entity(fb)) {
             //std::cout << "PerceptMeshReadWrite::process_read_surface_entity fb->type_string()= " <<  fb->type_string() << " " << fb->name() << "\n";
             stk::mesh::Part * const fb_part = meta.get_part(fb->name());
@@ -371,7 +390,7 @@ namespace stk {
 
             if (fb->field_exists("distribution_factors")) {
               if (!surface_df_defined) {
-                std::string field_name = entity->name() + "_distribution_factors";
+                std::string field_name = entity->name() + "_df";
                 distribution_factors_field =
                   &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
                 stk::io::set_distribution_factor_field(*fs_part, *distribution_factors_field);
@@ -396,35 +415,17 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_facesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
+      void process_read_sidesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
       {
-        const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-        local_default_part_processing(face_sets, meta, meta.face_rank());
+        const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+        local_default_part_processing(side_sets, meta);
 
-        for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-            it != face_sets.end(); ++it) {
-          Ioss::FaceSet *entity = *it;
+        for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+            it != side_sets.end(); ++it) {
+          Ioss::SideSet *entity = *it;
 
           if (stk::io::include_entity(entity)) {
-            process_read_surface_entity_meta(entity, meta, meta.face_rank());
-          }
-        }
-      }
-
-      // ========================================================================
-      void process_read_edgesets_meta(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
-      {
-        const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-        //EntityRank stk_mesh_Edge = 1;
-        //local_default_part_processing(edge_sets, meta, meta.edge_rank());
-        local_default_part_processing(edge_sets, meta, meta.edge_rank());
-
-        for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-            it != edge_sets.end(); ++it) {
-          Ioss::EdgeSet *entity = *it;
-
-          if (stk::io::include_entity(entity)) {
-            process_read_surface_entity_meta(entity, meta, meta.edge_rank());
+            process_read_surface_entity_meta(entity, meta);
           }
         }
       }
@@ -601,16 +602,16 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_surface_entity_bulk(const Ioss::GroupingEntity* io ,
+      void process_read_surface_entity_bulk(const Ioss::SideSet* io ,
                                             stk::mesh::BulkData & bulk)
       {
-        assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
+        assert(io->type() == Ioss::SIDESET);
         const stk::mesh::fem::FEMMetaData& fem_meta = mesh::fem::FEMMetaData::get(bulk);
         //const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( meta );
 
         int block_count = io->block_count();
         for (int i=0; i < block_count; i++) {
-          Ioss::EntityBlock *block = io->get_block(i);
+          Ioss::SideBlock *block = io->get_block(i);
           if (stk::io::include_entity(block)) {
             std::vector<int> side_ids ;
             std::vector<int> elem_side ;
@@ -667,28 +668,13 @@ namespace stk {
       }
 
       // ========================================================================
-      void process_read_facesets_bulk(Ioss::Region &region, stk::mesh::BulkData &bulk)
+      void process_read_sidesets_bulk(Ioss::Region &region, stk::mesh::BulkData &bulk)
       {
-        const Ioss::FaceSetContainer& face_sets = region.get_facesets();
+        const Ioss::SideSetContainer& side_sets = region.get_sidesets();
 
-        for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-            it != face_sets.end(); ++it) {
-          Ioss::FaceSet *entity = *it;
-
-          if (stk::io::include_entity(entity)) {
-            process_read_surface_entity_bulk(entity, bulk);
-          }
-        }
-      }
-
-      // ========================================================================
-      void process_read_edgesets_bulk(Ioss::Region &region, stk::mesh::BulkData &bulk)
-      {
-        const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-
-        for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-            it != edge_sets.end(); ++it) {
-          Ioss::EdgeSet *entity = *it;
+        for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+            it != side_sets.end(); ++it) {
+          Ioss::SideSet *entity = *it;
 
           if (stk::io::include_entity(entity)) {
             process_read_surface_entity_bulk(entity, bulk);
@@ -750,10 +736,11 @@ namespace stk {
             // Get Ioss::GroupingEntity corresponding to this part...
             Ioss::GroupingEntity *entity = region.get_entity(part->name());
             if (entity != NULL) {
-              if (entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET) {
-                int block_count = entity->block_count();
+              if (entity->type() == Ioss::SIDESET) {
+		Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+                int block_count = sset->block_count();
                 for (int i=0; i < block_count; i++) {
-                  Ioss::EntityBlock *fb = entity->get_block(i);
+                  Ioss::SideBlock *fb = sset->get_block(i);
                   /// \todo REFACTOR Need filtering mechanism.
                   get_field_data(bulk, *part,
                                  stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
@@ -833,11 +820,12 @@ namespace stk {
             Ioss::GroupingEntity *entity = region.get_entity(part->name());
             if (entity != NULL) {
 
-              if (entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET) {
-                int block_count = entity->block_count();
+              if (entity->type() == Ioss::SIDESET) {
+		Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+                int block_count = sset->block_count();
 
                 for (int i=0; i < block_count; i++) {
-                  Ioss::EntityBlock *fb = entity->get_block(i);
+                  Ioss::SideBlock *fb = sset->get_block(i);
                   /// \todo REFACTOR Need filtering mechanism.
                   put_field_data(bulk, *part,
                                  stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),

@@ -82,8 +82,7 @@ namespace {
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
-  void transfer_facesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
-  void transfer_edgesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
 
   void transfer_fields(Ioss::GroupingEntity *ige,
@@ -343,8 +342,7 @@ namespace {
     transfer_nodeblock(region, output_region, globals.debug);
     transfer_elementblock(region, output_region, globals.debug);
     transfer_nodesets(region, output_region, globals.debug);
-    transfer_facesets(region, output_region, globals.debug);
-    transfer_edgesets(region, output_region, globals.debug);
+    transfer_sidesets(region, output_region, globals.debug);
     transfer_commsets(region, output_region, globals.debug);
 
     if (globals.debug) OUTPUT << "END STATE_DEFINE_MODEL... " << '\n';
@@ -433,65 +431,29 @@ namespace {
       if (globals.debug) OUTPUT << '\n';
     }
 
-    // Edge Sets
+    // Side Sets
     {
-      Ioss::EdgeSetContainer ess = region.get_edgesets();
-      Ioss::EdgeSetContainer::const_iterator I = ess.begin();
-
-      while (I != ess.end()) {
-	std::string name = (*I)->name();
-	if (globals.debug) OUTPUT << name << ", ";
-
-	// Find matching output edgeset
-	Ioss::EdgeSet *oes = output_region.get_edgeset(name);
-	if (oes != NULL) {
-	  transfer_field_data(*I, oes, Ioss::Field::MESH);
-	  transfer_field_data(*I, oes, Ioss::Field::ATTRIBUTE);
-
-	  Ioss::EdgeBlockContainer ebs = (*I)->get_edge_blocks();
-	  Ioss::EdgeBlockContainer::const_iterator J = ebs.begin();
-	  while (J != ebs.end()) {
-
-	    // Find matching output faceblock
-	    std::string fbname = (*J)->name();
-	    if (globals.debug) OUTPUT << fbname << ", ";
-	    Ioss::EdgeBlock *oeb = oes->get_edge_block(fbname);
-
-	    if (oeb != NULL) {
-	      transfer_field_data(*J, oeb, Ioss::Field::MESH, "", false);
-	      transfer_field_data(*J, oeb, Ioss::Field::ATTRIBUTE, "", false);
-	    }
-	    ++J;
-	  }
-	}
-	++I;
-      }
-      if (globals.debug) OUTPUT << '\n';
-    }
-    
-    // Face Sets
-    {
-      Ioss::FaceSetContainer fss = region.get_facesets();
-      Ioss::FaceSetContainer::const_iterator I = fss.begin();
+      Ioss::SideSetContainer fss = region.get_sidesets();
+      Ioss::SideSetContainer::const_iterator I = fss.begin();
       while (I != fss.end()) {
 	std::string name     = (*I)->name();
 	if (globals.debug) OUTPUT << name << ", ";
 
-	// Find matching output faceset
-	Ioss::FaceSet *ofs = output_region.get_faceset(name);
+	// Find matching output sideset
+	Ioss::SideSet *ofs = output_region.get_sideset(name);
 
 	if (ofs != NULL) {
 	  transfer_field_data(*I, ofs, Ioss::Field::MESH);
 	  transfer_field_data(*I, ofs, Ioss::Field::ATTRIBUTE);
 
-	  Ioss::FaceBlockContainer fbs = (*I)->get_face_blocks();
-	  Ioss::FaceBlockContainer::const_iterator J = fbs.begin();
+	  Ioss::SideBlockContainer fbs = (*I)->get_side_blocks();
+	  Ioss::SideBlockContainer::const_iterator J = fbs.begin();
 	  while (J != fbs.end()) {
 
-	    // Find matching output faceblock
+	    // Find matching output sideblock
 	    std::string fbname = (*J)->name();
 	    if (globals.debug) OUTPUT << fbname << ", ";
-	    Ioss::FaceBlock *ofb = ofs->get_face_block(fbname);
+	    Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 
 	    if (ofb != NULL) {
 	      transfer_field_data(*J, ofb, Ioss::Field::MESH, "", false);
@@ -580,62 +542,28 @@ namespace {
 	  if (globals.debug) OUTPUT << '\n';
 	}
 
-	// Edge Sets
+	// Side Sets
 	{
-	  Ioss::EdgeSetContainer ess = region.get_edgesets();
-	  Ioss::EdgeSetContainer::const_iterator I = ess.begin();
-
-	  while (I != ess.end()) {
-	    std::string name = (*I)->name();
-	    if (globals.debug) OUTPUT << name << ", ";
-
-	    // Find matching output edgeset
-	    Ioss::EdgeSet *oes = output_region.get_edgeset(name);
-	    if (oes != NULL) {
-	      transfer_fields(*I, oes, Ioss::Field::TRANSIENT);
-
-	      Ioss::EdgeBlockContainer ebs = (*I)->get_edge_blocks();
-	      Ioss::EdgeBlockContainer::const_iterator J = ebs.begin();
-	      while (J != ebs.end()) {
-
-		// Find matching output faceblock
-		std::string fbname = (*J)->name();
-		if (globals.debug) OUTPUT << fbname << ", ";
-		Ioss::EdgeBlock *oeb = oes->get_edge_block(fbname);
-
-		if (oeb != NULL) {
-		  transfer_fields(*J, oeb, Ioss::Field::TRANSIENT);
-		}
-		++J;
-	      }
-	    }
-	    ++I;
-	  }
-	  if (globals.debug) OUTPUT << '\n';
-	}
-
-	// Face Sets
-	{
-	  Ioss::FaceSetContainer fss = region.get_facesets();
-	  Ioss::FaceSetContainer::const_iterator I = fss.begin();
+	  Ioss::SideSetContainer fss = region.get_sidesets();
+	  Ioss::SideSetContainer::const_iterator I = fss.begin();
 	  while (I != fss.end()) {
 	    std::string name     = (*I)->name();
 	    if (globals.debug) OUTPUT << name << ", ";
 
-	    // Find matching output faceset
-	    Ioss::FaceSet *ofs = output_region.get_faceset(name);
+	    // Find matching output sideset
+	    Ioss::SideSet *ofs = output_region.get_sideset(name);
 
 	    if (ofs != NULL) {
 	      transfer_fields(*I, ofs, Ioss::Field::TRANSIENT);
 
-	      Ioss::FaceBlockContainer fbs = (*I)->get_face_blocks();
-	      Ioss::FaceBlockContainer::const_iterator J = fbs.begin();
+	      Ioss::SideBlockContainer fbs = (*I)->get_side_blocks();
+	      Ioss::SideBlockContainer::const_iterator J = fbs.begin();
 	      while (J != fbs.end()) {
 
-		// Find matching output faceblock
+		// Find matching output sideblock
 		std::string fbname = (*J)->name();
 		if (globals.debug) OUTPUT << fbname << ", ";
-		Ioss::FaceBlock *ofb = ofs->get_face_block(fbname);
+		Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 
 		if (ofb != NULL) {
 		  transfer_fields(*J, ofb, Ioss::Field::TRANSIENT);
@@ -730,62 +658,28 @@ namespace {
 	  if (globals.debug) OUTPUT << '\n';
 	}
 
-	// Edge Sets
+	// Side Sets
 	{
-	  Ioss::EdgeSetContainer ess = region.get_edgesets();
-	  Ioss::EdgeSetContainer::const_iterator I = ess.begin();
-	
-	  while (I != ess.end()) {
-	    std::string name = (*I)->name();
-	    if (globals.debug) OUTPUT << name << ", ";
-	  
-	    // Find matching output edgeset
-	    Ioss::EdgeSet *oes = output_region.get_edgeset(name);
-	    if (oes != NULL) {
-	      transfer_field_data(*I, oes, Ioss::Field::TRANSIENT);
-	    
-	      Ioss::EdgeBlockContainer edbs = (*I)->get_edge_blocks();
-	      Ioss::EdgeBlockContainer::const_iterator J = edbs.begin();
-	      while (J != edbs.end()) {
-	      
-		// Find matching output faceblock
-		std::string fbname = (*J)->name();
-		if (globals.debug) OUTPUT << fbname << ", ";
-		Ioss::EdgeBlock *oeb = oes->get_edge_block(fbname);
-	      
-		if (oeb != NULL) {
-		  transfer_field_data(*J, oeb, Ioss::Field::TRANSIENT, "", false);
-		}
-		++J;
-	      }
-	    }
-	    ++I;
-	  }
-	  if (globals.debug) OUTPUT << '\n';
-	}
-	
-	// Face Sets
-	{
-	  Ioss::FaceSetContainer fss = region.get_facesets();
-	  Ioss::FaceSetContainer::const_iterator I = fss.begin();
+	  Ioss::SideSetContainer fss = region.get_sidesets();
+	  Ioss::SideSetContainer::const_iterator I = fss.begin();
 	  while (I != fss.end()) {
 	    std::string name     = (*I)->name();
 	    if (globals.debug) OUTPUT << name << ", ";
 	  
-	    // Find matching output faceset
-	    Ioss::FaceSet *ofs = output_region.get_faceset(name);
+	    // Find matching output sideset
+	    Ioss::SideSet *ofs = output_region.get_sideset(name);
 	  
 	    if (ofs != NULL) {
 	      transfer_field_data(*I, ofs, Ioss::Field::TRANSIENT);
 	    
-	      Ioss::FaceBlockContainer fbs = (*I)->get_face_blocks();
-	      Ioss::FaceBlockContainer::const_iterator J = fbs.begin();
+	      Ioss::SideBlockContainer fbs = (*I)->get_side_blocks();
+	      Ioss::SideBlockContainer::const_iterator J = fbs.begin();
 	      while (J != fbs.end()) {
 	      
-		// Find matching output faceblock
+		// Find matching output sideblock
 		std::string fbname = (*J)->name();
 		if (globals.debug) OUTPUT << fbname << ", ";
-		Ioss::FaceBlock *ofb = ofs->get_face_block(fbname);
+		Ioss::SideBlock *ofb = ofs->get_side_block(fbname);
 	      
 		if (ofb != NULL) {
 		  transfer_field_data(*J, ofb, Ioss::Field::TRANSIENT, "", false);
@@ -860,28 +754,28 @@ namespace {
     }
   }
 
-  void transfer_facesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::FaceSetContainer      fss = region.get_facesets();
-    Ioss::FaceSetContainer::const_iterator i = fss.begin();
-    int total_faces = 0;
+    Ioss::SideSetContainer      fss = region.get_sidesets();
+    Ioss::SideSetContainer::const_iterator i = fss.begin();
+    int total_sides = 0;
     while (i != fss.end()) {
       std::string name      = (*i)->name();
       if (debug) OUTPUT << name << ", ";
-      Ioss::FaceSet *surf = new Ioss::FaceSet(output_region.get_database(), name);
+      Ioss::SideSet *surf = new Ioss::SideSet(output_region.get_database(), name);
 
-      Ioss::FaceBlockContainer fbs = (*i)->get_face_blocks();
-      Ioss::FaceBlockContainer::const_iterator j = fbs.begin();
+      Ioss::SideBlockContainer fbs = (*i)->get_side_blocks();
+      Ioss::SideBlockContainer::const_iterator j = fbs.begin();
       while (j != fbs.end()) {
 	std::string fbname    = (*j)->name();
 	if (debug) OUTPUT << fbname << ", ";
 	std::string fbtype    = (*j)->get_property("topology_type").get_string();
 	std::string partype   = (*j)->get_property("parent_topology_type").get_string();
-	int    num_face  = (*j)->get_property("entity_count").get_int();
-	total_faces += num_face;
+	int    num_side  = (*j)->get_property("entity_count").get_int();
+	total_sides += num_side;
 
-	Ioss::FaceBlock *block = new Ioss::FaceBlock(output_region.get_database(), fbname, fbtype,
-						     partype, num_face);
+	Ioss::SideBlock *block = new Ioss::SideBlock(output_region.get_database(), fbname, fbtype,
+						     partype, num_side);
 	surf->add(block);
 	transfer_properties(*j, block);
 	transfer_fields(*j, block, Ioss::Field::MESH);
@@ -895,50 +789,8 @@ namespace {
       ++i;
     }
     if (!debug) {
-      OUTPUT << " Number of element face sets          =" << std::setw(9) << fss.size() << "\n";
-      OUTPUT << "     Number of element faces          =" << std::setw(9) << total_faces << "\n";
-    } else {
-      OUTPUT << '\n';
-    }
-  }
-
-  void transfer_edgesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
-  {
-    Ioss::EdgeSetContainer ess = region.get_edgesets();
-    Ioss::EdgeSetContainer::const_iterator i = ess.begin();
-    int total_edges = 0;
-    while (i != ess.end()) {
-      std::string name      = (*i)->name();
-      if (debug) OUTPUT << name << ", ";
-      Ioss::EdgeSet *surf = new Ioss::EdgeSet(output_region.get_database(), name);
-
-      Ioss::EdgeBlockContainer ebs = (*i)->get_edge_blocks();
-      Ioss::EdgeBlockContainer::const_iterator j = ebs.begin();
-      while (j != ebs.end()) {
-	std::string ebname    = (*j)->name();
-	if (debug) OUTPUT << ebname << ", ";
-	std::string ebtype    = (*j)->get_property("topology_type").get_string();
-	std::string partype   = (*j)->get_property("parent_topology_type").get_string();
-	int    num_edge  = (*j)->get_property("entity_count").get_int();
-	total_edges += num_edge;
-
-	Ioss::EdgeBlock *block = new Ioss::EdgeBlock(output_region.get_database(), ebname, ebtype,
-						     partype, num_edge);
-	surf->add(block);
-	transfer_properties(*j, block);
-	transfer_fields(*j, block, Ioss::Field::MESH);
-	transfer_fields(*j, block, Ioss::Field::ATTRIBUTE);
-	++j;
-      }
-      transfer_properties(*i, surf);
-      transfer_fields(*i, surf, Ioss::Field::MESH);
-      transfer_fields(*i, surf, Ioss::Field::ATTRIBUTE);
-      output_region.add(surf);
-      ++i;
-    }
-    if (!debug) {
-      OUTPUT << " Number of element edge sets          =" << std::setw(9) << ess.size() << "\n";
-      OUTPUT << "     Number of element edges          =" << std::setw(9) << total_edges << "\n";
+      OUTPUT << " Number of element side sets          =" << std::setw(9) << fss.size() << "\n";
+      OUTPUT << "     Number of element sides          =" << std::setw(9) << total_sides << "\n";
     } else {
       OUTPUT << '\n';
     }

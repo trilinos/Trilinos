@@ -20,6 +20,7 @@
 
 #include <stk_percept/stk_mesh.hpp>
 #include <stk_percept/PerceptMesh.hpp>
+#include <stk_percept/Observable.hpp>
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_adapt/Colorer.hpp>
 
@@ -76,7 +77,7 @@ namespace stk {
     //========================================================================================================================
     //========================================================================================================================
     //template<class UniformRefinerPattern>
-    class UniformRefiner //: ParallelMeshModAlgorithm
+  class UniformRefiner : public stk::percept::Observable<double> 
     {
     public:
       UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
@@ -190,6 +191,8 @@ namespace stk {
       std::vector< RefinementInfoByType > m_refinementInfoByType;
       bool m_doQueryOnly;
 
+      int m_progress_meter_frequency;
+      bool m_doProgress;
     };
 
 
