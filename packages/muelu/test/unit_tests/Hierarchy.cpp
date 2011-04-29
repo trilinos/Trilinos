@@ -17,11 +17,11 @@
 
 namespace {
 
-TEUCHOS_UNIT_TEST(Hierarchy,Constructor)
-{
-
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+TEUCHOS_UNIT_TEST(Hierarchy,Constructor)
+{
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -34,8 +34,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,Constructor)
 TEUCHOS_UNIT_TEST(Hierarchy,SetAndGetLevel)
 {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -50,8 +48,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetAndGetLevel)
 TEUCHOS_UNIT_TEST(Hierarchy,NumberOfLevels)
 {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -68,8 +64,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,NumberOfLevels)
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -92,8 +86,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_NoFactoriesGiven)
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -122,8 +114,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -149,8 +139,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
     {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -168,7 +156,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 //   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(), "Ifpack: Gauss-Seidel", out, success);
 //   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPostSmoother()->GetType(),"Ifpack: Gauss-Seidel", out, success);
 
-
+#ifdef HAVE_MUELU_IFPACK
   Teuchos::ParameterList  ifpackList;
   ifpackList.set("relaxation: type", "Jacobi");
   ifpackList.set("relaxation: sweeps", (LO) 1);
@@ -178,7 +166,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   H.SetSmoothers(*smooFactory);
   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPreSmoother()->GetType(),"Ifpack: Jacobi", out, success);
   TEUCHOS_TEST_EQUALITY(H.GetLevel(0)->GetPostSmoother()->GetType(),"Ifpack: Jacobi", out, success);
-
+#endif
     }
 } //SetSmoothers
 
@@ -186,8 +174,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
 {
   MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
     {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -200,6 +186,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
   Hierarchy H;
   H.SetLevel(levelOne);
 
+#ifdef HAVE_MUELU_IFPACK
   Teuchos::ParameterList  ifpackList;
   ifpackList.set("relaxation: type", "Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
@@ -231,6 +218,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
   postSmoo = levelOne->GetPostSmoother();
   TEUCHOS_TEST_INEQUALITY(postSmoo, Teuchos::null, out, success);
   TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Gauss-Seidel", out, success);
+#endif
     }
 } //SetCoarsestSolver
 
@@ -238,8 +226,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 {
   MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
     {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -260,8 +246,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 {
   MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
     {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -278,14 +262,15 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
   RCP<GenericPRFactory> PRFact = rcp(new GenericPRFactory(PFact));
   RCP<RAPFactory>  AcFact = rcp(new RAPFactory());
 
+#ifdef HAVE_MUELU_IFPACK
   Teuchos::ParameterList  ifpackList;
   ifpackList.set("relaxation: type", "Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smoother));
-
   H.FullPopulate(PRFact,AcFact,SmooFact,0,2);
+#endif
     }
 } //FullPopulate
 
@@ -293,8 +278,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 {
   MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
     {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -305,7 +288,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
-  RCP<Epetra_MultiVector> foo = Utils::MV2NonConstEpetraMV(nullSpace);
   Teuchos::Array<ST::magnitudeType> norms(1);
   nullSpace->norm1(norms);
 
@@ -325,6 +307,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
   RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
+
+#ifdef HAVE_MUELU_IFPACK
   Teuchos::ParameterList  ifpackList;
   ifpackList.set("relaxation: type", "Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 2);
@@ -371,6 +355,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   norms = Utils::ResidualNorm(*Op,*X,*RHS);
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEUCHOS_TEST_EQUALITY(norms[0]<1e-10, true, out, success);
+
+#endif
     }
 } //Iterate
 

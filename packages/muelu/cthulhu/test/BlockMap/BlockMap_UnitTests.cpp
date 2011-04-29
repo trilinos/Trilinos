@@ -36,12 +36,12 @@ namespace {
 #ifdef HAVE_CTHULHU_TPETRA
   using Cthulhu::TpetraMap;
   using Cthulhu::TpetraBlockMap;
+  using Tpetra::global_size_t;
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
   using Cthulhu::EpetraMap;
   using Cthulhu::EpetraBlockMap;
 #endif
-  using Tpetra::global_size_t;
   using Cthulhu::DefaultPlatform;
   using std::sort;
   using std::find;

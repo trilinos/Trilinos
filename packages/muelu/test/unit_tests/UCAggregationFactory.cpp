@@ -6,6 +6,8 @@
 
 namespace {
 
+  using std::string; //?? TODO
+
   using Teuchos::rcp;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
@@ -56,7 +58,7 @@ namespace {
       for (size_t i=0; i<aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
         Final[i] = vertex2AggId[i] + procWinner[i]*1000;
 
-      cout << *Final_ << endl;
+      out << *Final_ << std::endl;
       
     }
   } // Build

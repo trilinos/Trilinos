@@ -39,7 +39,7 @@ namespace {
       {
  
         out << "version: " << MueLu::Version() << std::endl;
-
+#ifdef HAVE_MUELU_IFPACK
         Teuchos::ParameterList  ifpackList;
         ifpackList.set("relaxation: type", "Gauss-Seidel");
         ifpackList.set("relaxation: sweeps", (LO) 1);
@@ -47,7 +47,7 @@ namespace {
         RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
         RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(smoother) );
         TEUCHOS_TEST_EQUALITY(smooFact != Teuchos::null, true, out, success);
-
+#endif
       }
   }
 
@@ -60,7 +60,7 @@ namespace {
       {
  
         out << "version: " << MueLu::Version() << std::endl;
-
+#ifdef HAVE_MUELU_IFPACK
         Teuchos::ParameterList  ifpackList;
         ifpackList.set("relaxation: type", "Gauss-Seidel");
         ifpackList.set("relaxation: sweeps", (LO) 1);
@@ -68,6 +68,7 @@ namespace {
         RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
         RCP<SmootherFactory> smooFact = rcp(new SmootherFactory(smoother,smoother) );
         TEUCHOS_TEST_EQUALITY(smooFact != Teuchos::null, true, out, success);
+#endif
       }
   }
 
@@ -77,7 +78,7 @@ namespace {
       {
  
         out << "version: " << MueLu::Version() << std::endl;
-
+#ifdef HAVE_MUELU_IFPACK
         Teuchos::ParameterList  ifpackList;
         ifpackList.set("relaxation: type", "Gauss-Seidel");
         ifpackList.set("relaxation: sweeps", (LO) 1);
@@ -94,6 +95,7 @@ namespace {
 
         TEUCHOS_TEST_EQUALITY(checkSmoo1 == newSmoo1, true, out, success);
         TEUCHOS_TEST_EQUALITY(checkSmoo2 == newSmoo2, true, out, success);
+#endif
       }
   }
 
@@ -103,7 +105,7 @@ namespace {
       {
         out << "version: " << MueLu::Version() << std::endl;
         out << "Testing SmootherFactory::Build method" << std::endl;
-
+#ifdef HAVE_MUELU_IFPACK
         //pre-smoother prototype
         Teuchos::ParameterList  ifpackList1;
         ifpackList1.set("relaxation: type", "Gauss-Seidel");
@@ -142,6 +144,7 @@ namespace {
         smooFactory->Build(aLevel,preSmoo,postSmoo);
         TEUCHOS_TEST_EQUALITY(preSmoo->GetType(),"Ifpack: Gauss-Seidel",out,success);
         TEUCHOS_TEST_EQUALITY(postSmoo->GetType(),"Ifpack: Jacobi",out,success);
+#endif
       }
   }
 

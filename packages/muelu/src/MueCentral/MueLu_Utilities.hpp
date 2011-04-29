@@ -293,8 +293,10 @@ namespace MueLu {
     } //TwoMatrixAdd()
 
     static void MatrixPrint(RCP<Operator> Op) {
+#ifdef HAVE_MUELU_EPETRA 
       RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
       std::cout << *epOp << std::endl;
+#endif
     }
 
     /*! @brief Get Operator Diagonal

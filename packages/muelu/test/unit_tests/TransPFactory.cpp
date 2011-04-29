@@ -9,6 +9,9 @@
 
 namespace {
 
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
   TEUCHOS_UNIT_TEST(TransPFactory, Test0)
   {
 

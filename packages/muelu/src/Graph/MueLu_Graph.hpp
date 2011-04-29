@@ -12,6 +12,8 @@
 ******************************************************************************/
 
 namespace MueLu {
+
+  using Teuchos::RCP;
   
   template <class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
@@ -19,7 +21,7 @@ namespace MueLu {
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
   class Graph 
     : public Teuchos::Describable {
-    
+
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:

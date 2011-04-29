@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
   X->norm2(norms);
-  std::cout << "||X_true|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+  std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
   X->putScalar( (SC) 0.0);
 
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
   H.Iterate(*RHS,its,*X);
 
   X->norm2(norms);
-  std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+  std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   
   return EXIT_SUCCESS;
 

@@ -340,7 +340,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
          if (printResidualHistory_ && startLevel==0) {
            *out_ << "iter:    "
-                 << std::setiosflags(ios::left)
+                 << std::setiosflags(std::ios::left)
                  << std::setprecision(3) << i;
            *out_ << "           residual = "
                  << std::setprecision(10) << Utils::ResidualNorm(*(Fine->GetA()),X,B)
