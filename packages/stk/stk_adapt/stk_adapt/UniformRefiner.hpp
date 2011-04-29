@@ -20,7 +20,7 @@
 
 #include <stk_percept/stk_mesh.hpp>
 #include <stk_percept/PerceptMesh.hpp>
-#include <stk_percept/Observable.hpp>
+#include <stk_percept/ProgressMeter.hpp>
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_adapt/Colorer.hpp>
 
@@ -77,7 +77,7 @@ namespace stk {
     //========================================================================================================================
     //========================================================================================================================
     //template<class UniformRefinerPattern>
-  class UniformRefiner : public stk::percept::Observable<double> 
+  class UniformRefiner : public stk::percept::Observable<ProgressMeterData> 
     {
     public:
       UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);

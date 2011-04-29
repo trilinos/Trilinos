@@ -33,7 +33,7 @@ namespace stk {
       m_geomFile(""), m_geomSnap(false),
       m_doQueryOnly(false),
       m_progress_meter_frequency(20),
-      m_doProgress(true)
+      m_doProgress(true && (0 == eMesh.getRank()) )
     {
       bp.setSubPatterns(m_breakPattern, eMesh);
     }
@@ -957,12 +957,29 @@ namespace stk {
           m_eMesh.adapt_parent_to_child_relations().clear();
           /***********************/                           TRACE_PRINT("UniformRefiner: fixElementSides1...done ");
 
+          if (m_doProgress)
+          {
+            ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "removeOldElements");
+            notifyObservers(&pd);
+          }
+
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
+              if (m_doProgress)
+              {
+                ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)irank)/((double)ranks.size()), "removeOldElements" );
+                notifyObservers(&pd);
+              }
+
               removeOldElements(ranks[irank], m_breakPattern[irank]);
               renameNewParts(ranks[irank], m_breakPattern[irank]);
               fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
             } 
+          if (m_doProgress)
+          {
+            ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "removeOldElements");
+            notifyObservers(&pd);
+          }
  
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start ");
           //bulkData.modification_end();
@@ -1006,6 +1023,8 @@ namespace stk {
           m_doProgress = false;
           progress_meter_num_total = doForAllElements(rank, function, elementColors, needed_entity_ranks, true, doAllElements);
           m_doProgress = true;
+          ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "NodeRegistry passes");
+          notifyObservers(&pd);
         }
       int progress_meter_when_to_post = progress_meter_num_total / m_progress_meter_frequency;
       if (0 == progress_meter_when_to_post) 
@@ -1043,11 +1062,19 @@ namespace stk {
               if (m_doProgress && progress_meter_when_to_post && (num_elem % progress_meter_when_to_post == 0) )
                 {
                   double progress_meter_percent = 100.0*((double)num_elem)/d_progress_meter_num_total;
+                  ProgressMeterData pd(ProgressMeterData::RUNNING, progress_meter_percent, "NodeRegistry passes");
+                  notifyObservers(&pd);
                   if (0) std::cout << "progress_meter_percent = " << progress_meter_percent << std::endl;
                 }
 
             } // elements in this color
         } // icolor
+
+      if (m_doProgress)
+        {
+          ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "NodeRegistry passes");
+          notifyObservers(&pd);
+        }
 
       return num_elem;
     }
@@ -1086,6 +1113,11 @@ namespace stk {
                     << " printEvery= " << printEvery
                     << std::endl;
         }
+      if (m_doProgress)
+        {
+          ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "createElementsAndNodesAndConnectLocal");
+          notifyObservers(&pd);
+        }
 
       for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
         {
@@ -1119,6 +1151,11 @@ namespace stk {
                   std::cout << "UniformRefiner::createElementsAndNodesAndConnectLocal: element # = " << jele << " [" 
                             << (((double)jele)/((double)nele)*100.0) << " %]" << std::endl;
                 }
+              if (m_doProgress && (jele % printEvery == 0))
+              {
+                ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)jele)/((double)nele), "createElementsAndNodesAndConnectLocal RUN" );
+                notifyObservers(&pd);
+              }
 
               stk::mesh::Entity& element = * element_p;
 
@@ -1150,6 +1187,13 @@ namespace stk {
               ++jele;
             }
         }
+
+      if (m_doProgress)
+        {
+          ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "createElementsAndNodesAndConnectLocal");
+          notifyObservers(&pd);
+        }
+
     }
 
 
