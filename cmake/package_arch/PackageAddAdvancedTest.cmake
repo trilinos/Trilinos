@@ -528,7 +528,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
   # F) Set the CTest test to run the new script
   #
 
-  IF (ADD_THE_TEST AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT)
+  IF (ADD_THE_TEST AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT_ADD_TEST)
 
     # Tell CTest to run our script for this test.  Pass the test-time
     # configuration name to the script in the TEST_CONFIG variable.

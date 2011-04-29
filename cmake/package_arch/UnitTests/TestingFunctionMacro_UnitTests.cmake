@@ -1,5 +1,9 @@
+SET( CMAKE_MODULE_PATH
+  "${PACKAGE_ARCH_SOURCE_DIR}"
+  "${PACKAGE_ARCH_SOURCE_DIR}/../utils"  # ToDo: Change utils to be under package_arch!
+  )
 
-# NOTE: The PROJECT_NAME = Trilinos gets set in the driver for this
+SET(PACKAGE_ADD_EXECUTABLE_UNIT_TESTING ON)
 
 INCLUDE(MessageWrapper)
 INCLUDE(PackageArchCategories)
@@ -894,20 +898,22 @@ ENDFUNCTION()
 # Execute the unit tests
 #
 
-
 # Set up some global environment stuff
 SET(${PROJECT_NAME}_HOSTNAME testhost.nowhere.com)
+SET(CMAKE_HOST_SYSTEM_NAME UnspecifiedHostSystemName)
 
 # Assume that all unit tests will pass by default
 GLOBAL_SET(UNITTEST_OVERALL_PASS TRUE)
 GLOBAL_SET(UNITTEST_OVERALL_NUMPASSED 0)
 GLOBAL_SET(UNITTEST_OVERALL_NUMRUN 0)
 
-
 # Set up the PACKAGE_ADD_TEST(...) function to only capture the output and not
 # actually add the test.
 SET( PACKAGE_ADD_TEST_ADD_TEST_CAPTURE TRUE )
 SET( PACKAGE_ADD_TEST_ADD_TEST_SKIP TRUE )
+
+# Don't let PACAKGE_ADD_ADVANCED_TEST(...) actually call ADD_TEST(...).
+SET( PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT_ADD_TEST TRUE )
 
 UNITEST_PACKAGE_ARCH_MISC()
 
