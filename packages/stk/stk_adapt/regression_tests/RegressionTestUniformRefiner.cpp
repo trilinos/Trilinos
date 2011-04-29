@@ -16,7 +16,9 @@
 #include <typeinfo>
 
 #include <math.h>
+#if defined( STK_HAS_MPI )
 #include <mpi.h>
+#endif
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 

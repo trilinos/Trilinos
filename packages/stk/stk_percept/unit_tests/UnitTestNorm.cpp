@@ -38,7 +38,6 @@
 #include <string>
 #include <typeinfo>
 #include <math.h>
-#include <mpi.h>
 
 namespace stk {
 namespace percept {

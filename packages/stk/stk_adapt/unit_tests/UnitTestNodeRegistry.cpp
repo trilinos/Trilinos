@@ -36,7 +36,7 @@
 #include <iostream>
 #include <string>
 #include <typeinfo>
-#include <mpi.h>
+#include <stk_util/parallel/Parallel.hpp>
 #include <math.h>
 
 namespace stk {
