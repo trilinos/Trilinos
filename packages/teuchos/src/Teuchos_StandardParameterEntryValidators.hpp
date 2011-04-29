@@ -50,6 +50,9 @@ namespace Teuchos {
  * types and values, and to be used by the code that reads parameter values.
  * Having a single definition for the types of valids input and outputs for a
  * parameter value makes it easier to write error free validated code.
+ *
+ * Please see <tt>StringToIntegralValidatorXMLConverter</tt> for documenation 
+ * regarding the XML representation of this validator.
  */
 template<class IntegralType>
 class StringToIntegralParameterEntryValidator : public ParameterEntryValidator {
@@ -476,6 +479,9 @@ RCP<StringToIntegralParameterEntryValidator<IntegralType> >
  * types and values, and to be used by the code that reads parameter values.
  * Having a single definition for the types of valids input and outputs for a
  * parameter value makes it easier to write error-free validated code.
+ *
+ * Please see <tt>AnyNumberValidatorXMLConverter</tt> for documenation 
+ * regarding the XML representation of this validator.
  */
 class TEUCHOS_LIB_DLL_EXPORT AnyNumberParameterEntryValidator
  : public ParameterEntryValidator
@@ -1043,6 +1049,9 @@ public:
 
  
 /** \brief Class uesd to validate a particular type of number.
+ *
+ * Please see <tt>EnhancedNumberValidatorXMLConverter</tt> for documenation 
+ * regarding the XML representation of this validator.
  */
 template <class T>
 class EnhancedNumberValidator : public ParameterEntryValidator{
@@ -1326,6 +1335,9 @@ RCP<EnhancedNumberValidator<T> >
  *
  * Simply indicates that the parameter entry with this validator should
  * contain a filename.
+ *
+ * Please see <tt>FileNameValidatorXMLConverter</tt> for documenation 
+ * regarding the XML representation of this validator.
  */
 class FileNameValidator : public ParameterEntryValidator {
 
@@ -1438,6 +1450,9 @@ public:
 /** \brief A simple validator that only allows certain string values to be
  * choosen or simply enforces that a particular parameter have a std::string
  * for a value.
+ *
+ * Please see <tt>StringValidatorXMLConverter</tt> for documenation 
+ * regarding the XML representation of this validator.
  */
 class StringValidator : public ParameterEntryValidator {
 
@@ -1532,6 +1547,9 @@ public:
  * This class is a wrapper, allowing you to apply a normal validator to an
  * array of values.  It is templated on both the validator type and the type
  * of the entries contained within the array.
+ *
+ * Please see <tt>ArrayValidatorXMLConverter</tt> for documenation 
+ * regarding the XML representation of this validator.
  */
 template<class ValidatorType, class EntryType>
 class ArrayValidator : public ParameterEntryValidator {
