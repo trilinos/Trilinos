@@ -427,7 +427,9 @@ namespace stk {
 
         stk::mesh::FieldBase* proc_rank_field_ptr = 0;
         if (proc_rank_field)
-          eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+        {
+          proc_rank_field_ptr = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+        }
 
         eMesh.commit();
 
@@ -468,6 +470,8 @@ namespace stk {
 
             ProgressMeter pm(breaker);
             //pm.setActive(true);
+
+            std::cout << "P[" << p_rank << ", " << p_size << "] input_geometry = " << input_geometry << std::endl; 
 
             if (input_geometry != "")
                 breaker.setGeometryFile(input_geometry);

@@ -9,7 +9,7 @@
 
 #include <stk_adapt/UniformRefiner.hpp>
 
-//#define STK_ADAPT_HAS_GEOMETRY
+#define STK_ADAPT_HAS_GEOMETRY
 #if defined( STK_ADAPT_HAS_GEOMETRY )
 #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
 #include <stk_adapt/geometry/MeshGeometry.hpp>
@@ -988,7 +988,7 @@ namespace stk {
         }
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
-      if (m_geomSnap)
+      if (0 && m_geomSnap)
       {
           GeometryKernelOpenNURBS gk;
           MeshGeometry mesh_geometry(&gk);
@@ -1003,6 +1003,17 @@ namespace stk {
       /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
 
       /**/                                                TRACE_PRINT( "UniformRefiner:doBreak ... done");
+
+#if defined( STK_ADAPT_HAS_GEOMETRY )
+      if (m_geomSnap)
+      {
+          GeometryKernelOpenNURBS gk;
+          MeshGeometry mesh_geometry(&gk);
+          GeometryFactory factory(&gk, &mesh_geometry);
+          factory.read_file(m_geomFile, &m_eMesh);
+          mesh_geometry.snap_points_to_geometry(&m_eMesh);
+      }
+#endif
 
       //std::cout << "tmp m_nodeRegistry.m_gee_cnt= " << m_nodeRegistry->m_gee_cnt << std::endl;
       //std::cout << "tmp m_nodeRegistry.m_gen_cnt= " << m_nodeRegistry->m_gen_cnt << std::endl;
@@ -1166,6 +1177,8 @@ namespace stk {
                   double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
                   //fdata[0] = double(m_eMesh.getRank());
                   fdata[0] = double(element.owner_rank());
+                  if (1 || element.owner_rank() == 3) 
+                    std::cout << "tmp element.owner_rank() = " << element.owner_rank() << std::endl;
                 }
 
 
