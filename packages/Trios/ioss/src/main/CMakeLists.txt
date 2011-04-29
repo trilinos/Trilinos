@@ -22,7 +22,7 @@ ENDIF()
 ADD_EXECUTABLE(cth_pressure_map cth_pressure_map.C)
 ADD_EXECUTABLE(io_shell         io_shell.C)
 ADD_EXECUTABLE(shell_to_hex     shell_to_hex.C)
-ADD_EXECUTABLE(io_info          io_info.C)
+ADD_EXECUTABLE(io_info          io_info.C volume.C)
 
 TARGET_LINK_LIBRARIES(cth_pressure_map Ionit)
 TARGET_LINK_LIBRARIES(io_shell         Ionit)
