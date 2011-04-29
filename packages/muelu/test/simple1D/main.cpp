@@ -39,6 +39,8 @@
 /**********************************************************************************/
 
 int main(int argc, char *argv[]) {
+
+  using Teuchos::RCP;
  
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

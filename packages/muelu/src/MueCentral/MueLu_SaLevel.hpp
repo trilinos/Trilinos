@@ -4,9 +4,9 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "MueLu_Level.hpp"
 
-using Teuchos::RCP;
-
 namespace MueLu {
+  using Teuchos::RCP;
+
   /*! @class SaLevel
     @brief Data associated with one level of a smoothed aggregation method
 

@@ -22,8 +22,6 @@
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
-using Teuchos::RCP;
-
 /*
   This driver simply generates a Cthulhu matrix, prints it to screen, and exits.
 
@@ -32,6 +30,8 @@ using Teuchos::RCP;
 
 int main(int argc, char* argv[]) 
 {
+  using Teuchos::RCP;
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();

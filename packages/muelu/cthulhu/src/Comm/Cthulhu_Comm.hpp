@@ -26,14 +26,17 @@
 #include "Cthulhu_Exceptions.hpp"
 #include "Cthulhu_Debug.hpp"
 
-using Teuchos::RCP;
+namespace Cthulhu {
 
-//! Convert a Teuchos_Comm to an Epetra_Comm.
-const RCP<const Epetra_Comm> Teuchos2Epetra_Comm(const RCP<const Teuchos::Comm<int> > & comm);
-
-//! Convert an Epetra_Comm.to a Teuchos_Comm
-const RCP<const Teuchos::Comm<int> > Epetra2Teuchos_Comm(RCP<const Epetra_Comm> & comm);
-
+  using Teuchos::RCP;
+  
+  //! Convert a Teuchos_Comm to an Epetra_Comm.
+  const RCP<const Epetra_Comm> Teuchos2Epetra_Comm(const RCP<const Teuchos::Comm<int> > & comm);
+  
+  //! Convert an Epetra_Comm.to a Teuchos_Comm
+  const RCP<const Teuchos::Comm<int> > Epetra2Teuchos_Comm(RCP<const Epetra_Comm> & comm);
+  
+}
 #endif // HAVE_CTHULHU_EPETRA
 
 #endif // CTHULHU_EPETRACOMM_HPP

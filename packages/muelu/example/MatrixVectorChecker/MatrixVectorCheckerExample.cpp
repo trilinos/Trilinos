@@ -32,7 +32,8 @@
 
 int main(int argc, char *argv[])
 {
-  
+  using Teuchos::RCP;
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv, &blackhole);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
   /*                                                                                */
   /**********************************************************************************/
 
-  if ( MatrixVectorChecker<SC,LO,GO,NO>(Op) ) {
+  if ( MueLu::MatrixVectorChecker<SC,LO,GO,NO>(Op) ) {
     std::cout << "OK !" << std::endl;
     return EXIT_SUCCESS;
   } else {

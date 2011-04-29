@@ -29,7 +29,8 @@
 void dumpAggregates(Aggregates & aggregates);
 
 int main(int argc, char *argv[]) {
-  
+  using Teuchos::RCP;
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -123,6 +124,8 @@ int main(int argc, char *argv[]) {
 #include <fstream>
 
 void dumpAggregates(Aggregates & aggregates) {
+  using Teuchos::RCP;
+
   int myPid = aggregates.GetMap()->getComm()->getRank();
 
   Teuchos::ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);

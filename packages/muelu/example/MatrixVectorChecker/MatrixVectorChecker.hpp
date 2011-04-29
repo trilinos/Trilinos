@@ -14,6 +14,8 @@
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 
+namespace MueLu {
+
 using Teuchos::RCP;
 
 // Check the matrix-vector product, getrow, and matrix-matrix
@@ -36,8 +38,7 @@ using Teuchos::RCP;
 //      7) print if  abs(y[i] - tCRS[i])/z[i] > 1.e-8
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node, typename LocalMatOps>
 //int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
-int MatrixVectorChecker(const RCP<const Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
-
+int MatrixVectorChecker(const Teuchos::RCP<const Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
 #include "MueLu_UseShortNames.hpp"
 
   // const RCP<const Map> & colMap = mat->getColMap(); // unused
@@ -184,6 +185,7 @@ int MatrixVectorChecker(const RCP<const Cthulhu::Operator<Scalar, LocalOrdinal, 
 
 } // MatrixVectorChecker()
 
+} // namespace MueLu
 
 #endif
 

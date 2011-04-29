@@ -16,8 +16,6 @@
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp> // TODO: rename MueLu Gallery
 
-using Teuchos::RCP;
-
 /*
   This driver simply generates a Tpetra matrix, prints it to screen, and exits.
 
@@ -28,6 +26,8 @@ using Teuchos::RCP;
 
 int main(int argc, char** argv) 
 {
+  using Teuchos::RCP;
+
   typedef int    LO; // LocalOrdinal
   typedef int    GO; // GlobalOrdinal
   typedef double SC; // Scalar
