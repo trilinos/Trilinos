@@ -92,11 +92,12 @@ namespace Stokhos {
     //@{ 
 
     //! Compute recurrence coefficients
-    virtual void 
+    virtual bool
     computeRecurrenceCoefficients(ordinal_type n,
 				  Teuchos::Array<value_type>& alpha,
 				  Teuchos::Array<value_type>& beta,
-				  Teuchos::Array<value_type>& delta) const;
+				  Teuchos::Array<value_type>& delta,
+				  Teuchos::Array<value_type>& gamma) const;
 
     //@}
 

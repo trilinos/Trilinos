@@ -44,9 +44,6 @@ DiscretizedStieltjesBasis(const std::string& label,
     Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(this->p));
   quadBasis->getQuadPoints(200*this->p, quad_points, quad_weights, quad_values);
 
-  // Compute coefficients in 3-term recurrsion
-  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
-
   // Setup rest of recurrence basis
   this->setup();
 }
@@ -80,12 +77,13 @@ Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
 }
 
 template <typename ordinal_type, typename value_type>
-void
+bool
 Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
 computeRecurrenceCoefficients(ordinal_type k,
 			      Teuchos::Array<value_type>& alpha,
 			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta) const
+			      Teuchos::Array<value_type>& delta,
+			      Teuchos::Array<value_type>& gamma) const
 {
   //The Discretized Stieltjes polynomials are defined by a recurrance relation,
   //P_n+1 = \gamma_n+1[(x-\alpha_n) P_n - \beta_n P_n-1].
@@ -112,6 +110,7 @@ computeRecurrenceCoefficients(ordinal_type k,
   //beta[0] := \int_-c^c w(x) dx.
   beta[0] = 1;
   delta[0] = 1;
+  gamma[0] = 1;
   //These formulas are from the above reference.
   for (ordinal_type n = 1; n<k; n++){
     integral2 = expectedValue_J_nsquared(n, alpha, beta);
@@ -119,7 +118,10 @@ computeRecurrenceCoefficients(ordinal_type k,
     beta[n] = integral2/past_integral;
     past_integral = integral2;
     delta[n] = 1.0;
+    gamma[n] = 1.0;
   }
+
+  return false;
 }
 
 template <typename ordinal_type, typename value_type>

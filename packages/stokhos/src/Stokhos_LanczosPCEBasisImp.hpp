@@ -53,31 +53,9 @@ LanczosPCEBasis(
     pce_vals[i] = pce.evaluate(quad_points[i], basis_values[i]);
     h0[i] = value_type(1);
   }
-  
-  // Compute coefficients via Lanczos
-  Teuchos::Array< Teuchos::Array<value_type> > h;
-  Stokhos::Lanczos<ordinal_type,value_type>::computeDiag(
-    nqp, p+1, pce_vals, pce_weights, h0, h, this->alpha, this->beta,
-    this->norms);
-  // lanczos(nqp, p+1, pce_weights, pce_vals, h0, this->alpha, this->beta,
-  // 	  this->norms);
-  for (ordinal_type i=0; i<=p; i++)
-    this->delta[i] = value_type(1.0);
-  
-  // Setup rest of recurrence basis
-  //this->setup();
-  this->gamma[0] = value_type(1);
-  for (ordinal_type k=1; k<=p; k++) {
-    this->gamma[k] = value_type(1);
-  } 
 
-  //If you want normalized polynomials, set gamma and reset the norms to 1.
-  if( normalize ) {
-    for (ordinal_type k=0; k<=p; k++) {
-      this->gamma[k] = value_type(1)/std::sqrt(this->norms[k]);
-      this->norms[k] = value_type(1);
-    }
-  }
+  // Setup rest of basis
+  this->setup();
 }
 
 template <typename ordinal_type, typename value_type>
@@ -136,12 +114,13 @@ cloneWithOrder(ordinal_type p) const
 }
 
 template <typename ordinal_type, typename value_type>
-void
+bool
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
 			      Teuchos::Array<value_type>& alpha,
 			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta) const
+			      Teuchos::Array<value_type>& delta,
+			      Teuchos::Array<value_type>& gamma) const
 {
   ordinal_type nqp = pce_weights.size();
   Teuchos::Array<value_type> nrm(n);
@@ -151,7 +130,10 @@ computeRecurrenceCoefficients(ordinal_type n,
   //lanczos(nqp, n, pce_weights, pce_vals, h0, alpha, beta, nrm);
   for (ordinal_type i=0; i<n; i++) {
     delta[i] = value_type(1.0);
+    gamma[i] = value_type(1.0);
   }
+
+  return false;
 }
 
 template <typename ordinal_type, typename value_type>
@@ -226,4 +208,5 @@ LanczosPCEBasis(ordinal_type p, const LanczosPCEBasis& basis) :
   pce_vals(basis.pce_vals),
   h0(basis.h0)
 {
+  this->setup();
 }

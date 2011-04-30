@@ -37,10 +37,6 @@ JacobiBasis(ordinal_type p,
   alphaIndex_(alphaIndex),
   betaIndex_(betaIndex)
 {
-  // Compute coefficients in 3-term recurrsion
-  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
-
-  // Setup rest of recurrence basis
   this->setup();
 
 #ifdef HAVE_STOKHOS_DAKOTA
@@ -69,12 +65,13 @@ Stokhos::JacobiBasis<ordinal_type, value_type>::
 }
 
 template <typename ordinal_type, typename value_type>
-void
+bool
 Stokhos::JacobiBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
 			      Teuchos::Array<value_type>& alpha,
 			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta) const
+			      Teuchos::Array<value_type>& delta,
+			      Teuchos::Array<value_type>& gamma) const
 {
   value_type a = alphaIndex_;
   value_type b = betaIndex_;
@@ -84,20 +81,24 @@ computeRecurrenceCoefficients(ordinal_type n,
     alpha[0] = 0.0;
     beta[0] = 1.0;
     delta[0] = 1.0;
+    gamma[0] = 1.0;
   }
   else
   {
     alpha[0] = getB(0)/getA(0);
     beta[0] = 1.0;
     delta[0] = getC(0)/getA(0);
+    gamma[0] = 1.0;
   }
   for (ordinal_type i=1; i<n; i++) 
   {
     alpha[i] = getB(i)/getA(i);
     beta[i] = getD(i)/getA(i);
     delta[i] = getC(i)/getA(i);
+    gamma[i] = 1.0;
   }
 
+  return false;
 }
 
 

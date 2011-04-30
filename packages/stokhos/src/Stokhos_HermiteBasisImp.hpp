@@ -33,10 +33,6 @@ Stokhos::HermiteBasis<ordinal_type,value_type>::
 HermiteBasis(ordinal_type p, bool normalize) :
   RecurrenceBasis<ordinal_type,value_type>("Hermite", p, normalize)
 {
-  // Compute coefficients in 3-term recurrsion
-  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
-
-  // Setup rest of recurrence basis
   this->setup();
 
 #ifdef HAVE_STOKHOS_DAKOTA
@@ -63,12 +59,13 @@ Stokhos::HermiteBasis<ordinal_type,value_type>::
 }
 
 template <typename ordinal_type, typename value_type>
-void
+bool
 Stokhos::HermiteBasis<ordinal_type,value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
 			      Teuchos::Array<value_type>& alpha,
 			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta) const
+			      Teuchos::Array<value_type>& delta,
+			      Teuchos::Array<value_type>& gamma) const
 {
   // Hermite 3 term recurrence:
   // He_0(x) = 1
@@ -77,11 +74,15 @@ computeRecurrenceCoefficients(ordinal_type n,
   alpha[0] = 0.0;
   beta[0] = 1.0;
   delta[0] = 1.0;
+  gamma[0] = 1.0;
   for (ordinal_type i=1; i<n; i++) {
     alpha[i] = 0.0;
     beta[i] = value_type(i);
     delta[i] = 1.0;
+    gamma[i] = 1.0;
   }
+
+  return false;
 }
 
 template <typename ordinal_type, typename value_type>

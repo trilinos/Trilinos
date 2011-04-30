@@ -39,22 +39,30 @@ namespace Stokhos {
    * \brief Implementation of OneDOrthogPolyBasis based on the general
    * three-term recurrence relationship:
    * \f[
-   *    \psi_{k+1}(x) = 
-   *       \gamma_{k+1}\big( (\alpha_k - \delta_k x)\psi_k(x) - 
-   *                         \beta_k\psi_{k-1}(x) \big)
+   *    \gamma_{k+1}\psi_{k+1}(x) = 
+   *       (\delta_k x - \alpha_k)\psi_k(x) - \beta_k\psi_{k-1}(x)
    * \f]
-   * for \f$k=0,\dots,P\f$ where \f$\psi_{-1}(x) = 0\f$, \f$\psi_{0}(x) = 1\f$,
-   * and \f$\beta_{0} = 1\f$.  
+   * for \f$k=0,\dots,P\f$ where \f$\psi_{-1}(x) = 0\f$, 
+   * \f$\psi_{0}(x) = 1/\gamma_0\f$,
+   * and \f$\beta_{0} = (1,1) = \int d\lambda\f$.  
    */
   /*!Derived classes implement the recurrence
    * relationship by implementing computeRecurrenceCoefficients().  If
-   * \c normalize = \c true in the constructor, then 
-   * \f$\gamma_k = 1/\sqrt{\langle\psi_k^2\rangle}\f$, otherwise 
-   * \f$\gamma_k = 1\f$.
+   * \c normalize = \c true in the constructor, then the recurrence relationship
+   * becomes:
+   * \f[
+   * \sqrt{\frac{\gamma_{k+1}\beta_{k+1}}{\delta_{k+1}\delta_k}} \psi_{k+1}(x) =
+   *       (x - \alpha_k/\delta_k)\psi_k(x) - 
+   *       \sqrt{\frac{\gamma_k\beta_k}{\delta_k\delta_{k-1}}} \psi_{k-1}(x)
+   * \f]
+   * for \f$k=0,\dots,P\f$ where \f$\psi_{-1}(x) = 0\f$, 
+   * \f$\psi_{0}(x) = 1/sqrt{\beta_0}\f$,
    * Note that a three term recurrence can always be defined with 
-   * \f$\delta_k = 1\f$ in which case the polynomials are monic.  However
-   * typical normalizations of some polynomial families (see 
-   * Stokhos::LegendreBasis) require the extra terms.
+   * \f$\gamma_k = delta_k = 1\f$ in which case the polynomials are monic.  
+   * However typical normalizations of some polynomial families (see 
+   * Stokhos::LegendreBasis) require the extra terms.  Also, the quadrature
+   * rule (points and weights) is the same regardless if the polynomials are
+   * normalized.  However the normalization can affect other algorithms.
    */
   template <typename ordinal_type, typename value_type>
   class RecurrenceBasis : 
@@ -221,16 +229,18 @@ namespace Stokhos {
     /*!
      * Derived classes should implement this method to compute their
      * recurrence coefficients.  \c n is the number of coefficients to compute.
-     * Derived classes should call this method in their constructor, followed
-     * be setup() to fully setup the basis.  The method is also called by
-     * getQuadPoints() if a quadrature order greater than twice the polynomial
-     * order is requested.
+     * Return value indicates whether coefficients correspond to normalized
+     * (i.e., orthonormal) polynomials.
+     *
+     * Note:  Owing to the description above, \c gamma should be an array of 
+     * length n+1.
      */
-    virtual void 
+    virtual bool
     computeRecurrenceCoefficients(ordinal_type n,
 				  Teuchos::Array<value_type>& alpha,
 				  Teuchos::Array<value_type>& beta,
-				  Teuchos::Array<value_type>& delta) const = 0;
+				  Teuchos::Array<value_type>& delta,
+				  Teuchos::Array<value_type>& gamma) const = 0;
 
     //! Setup basis after computing recurrence coefficients
     /*!
@@ -238,6 +248,13 @@ namespace Stokhos {
      * coefficients in their constructor to finish setting up the basis.
      */
     void setup();
+
+    //! Normalize coefficients
+    void normalizeRecurrenceCoefficients(
+      Teuchos::Array<value_type>& alpha,
+      Teuchos::Array<value_type>& beta,
+      Teuchos::Array<value_type>& delta,
+      Teuchos::Array<value_type>& gamma) const;
 
   private:
 

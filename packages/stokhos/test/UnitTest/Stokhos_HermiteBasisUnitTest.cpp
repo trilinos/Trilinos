@@ -87,6 +87,46 @@ namespace HermiteBasisUnitTest {
 				     out);
   }
 
+  TEUCHOS_UNIT_TEST( Stokhos_HermiteBasis, QuadNorm ) {
+    const Teuchos::Array<double>& n1 = setup.basis.norm_squared();
+    Teuchos::Array<double> n2(setup.p+1);
+    Teuchos::Array<double> x, w;
+    Teuchos::Array< Teuchos::Array<double> > v;
+    setup.basis.getQuadPoints(2*setup.p, x, w, v);
+    int nqp = w.size();
+    for (int i=0; i<=setup.p; i++) {
+      n2[i] = 0;
+      for (int j=0; j<nqp; j++)
+	n2[i] += w[j]*v[j][i]*v[j][i];
+    }
+    success = Stokhos::compareArrays(n1, "n1", n2, "n2", setup.rtol, setup.atol,
+				     out);
+  }
+
+  // Tests basis is orthogonal
+  TEUCHOS_UNIT_TEST( Stokhos_HermiteBasis, QuadOrthog ) {
+    const Teuchos::Array<double>& norms = setup.basis.norm_squared();
+    Teuchos::Array<double> x, w;
+    Teuchos::Array< Teuchos::Array<double> > v;
+    setup.basis.getQuadPoints(2*setup.p, x, w, v);
+    int nqp = w.size();
+    Teuchos::SerialDenseMatrix<int,double> mat(setup.p+1, setup.p+1);
+    for (int i=0; i<=setup.p; i++) {
+      for (int j=0; j<=setup.p; j++) {
+	for (int k=0; k<nqp; k++)
+	  mat(i,j) += w[k]*v[k][i]*v[k][j];
+	mat(i,j) /= std::sqrt(norms[i]*norms[j]);
+      }
+      mat(i,i) -= 1.0;
+    }
+    success = mat.normInf() < setup.atol;
+    if (!success) {
+      out << "\n Error, mat.normInf() < atol = " << mat.normInf() 
+	  << " < " << setup.atol << ": failed!\n";
+      out << "mat = " << mat << std::endl;
+    }
+  }
+
   TEUCHOS_UNIT_TEST( Stokhos_HermiteBasis, TripleProduct ) {
     Teuchos::RCP< Stokhos::Dense3Tensor<int, double> > Cijk = 
       setup.basis.computeTripleProductTensor();
@@ -255,6 +295,47 @@ namespace HermiteBasisUnitTest {
       Stokhos::compareArrays(c1, "c1", c2, "c2", setup.rtol, setup.atol, out);
     success = success && 
       Stokhos::compareArrays(d1, "d1", d2, "d2", setup.rtol, setup.atol, out);
+  }
+
+  // Tests alpha coefficients satisfy 
+  // alpha_k = delta_k * (t*psi_k,psi_k)/(psi_k,psi_k)
+  TEUCHOS_UNIT_TEST( Stokhos_HermiteBasis, RecurrenceAlpha ) {
+    Teuchos::Array<double> a1(setup.p+1), b1(setup.p+1), c1(setup.p+1), 
+      d1(setup.p+1);
+    setup.basis.getRecurrenceCoefficients(a1, b1, c1, d1);
+
+    Teuchos::Array<double> a2(setup.p+1);
+    const Teuchos::Array<double>& n1 = setup.basis.norm_squared();
+    Teuchos::Array<double> x, w;
+    Teuchos::Array< Teuchos::Array<double> > v;
+    setup.basis.getQuadPoints(2*setup.p, x, w, v);
+    int nqp = w.size();
+    for (int i=0; i<=setup.p; i++) {
+      a2[i] = 0;
+      for (int j=0; j<nqp; j++)
+	a2[i] += w[j]*x[j]*v[j][i]*v[j][i];
+      a2[i] = a2[i]*c1[i]/n1[i];
+    }
+    success = Stokhos::compareArrays(a1, "a1", a2, "a2", setup.rtol, setup.atol,
+				     out);
+  }
+
+  // Tests beta coefficients satisfy 
+  // beta_k = 
+  //    gamma_k * delta_k/delta_{k-1} * (psi_k,psi_k)/(psi_{k-1},psi_{k-1})
+  TEUCHOS_UNIT_TEST( Stokhos_HermiteBasis, RecurrenceBeta ) {
+    Teuchos::Array<double> a1(setup.p+1), b1(setup.p+1), c1(setup.p+1), 
+      d1(setup.p+1);
+    setup.basis.getRecurrenceCoefficients(a1, b1, c1, d1);
+
+    Teuchos::Array<double> b2(setup.p+1);
+    const Teuchos::Array<double>& n1 = setup.basis.norm_squared();
+    b2[0] = b1[0];
+    for (int i=1; i<=setup.p; i++) {
+      b2[i] = d1[i]*(c1[i]/c1[i-1])*(n1[i]/n1[i-1]);
+    }
+    success = Stokhos::compareArrays(b1, "b1", b2, "b2", setup.rtol, setup.atol,
+				     out);
   }
 
 #ifdef HAVE_STOKHOS_DAKOTA

@@ -65,72 +65,14 @@ LanczosProjPCEBasis(
     }
   }
   
-  // Compute coefficients via Lanczos
-  lanczos_type::compute(sz, p+1, Cijk_matrix, weights, u0, lanczos_vecs,
-			this->alpha, this->beta, this->norms);
-  for (ordinal_type i=0; i<=p; i++)
-    this->delta[i] = value_type(1.0);
-  
-  // Setup rest of recurrence basis
-  //this->setup();
-  this->gamma[0] = value_type(1);
-  for (ordinal_type k=1; k<=p; k++) {
-    this->gamma[k] = value_type(1);
-  } 
-
-  //If you want normalized polynomials, set gamma and reset the norms to 1.
-  if( normalize ) {
-    for (ordinal_type k=0; k<=p; k++) {
-      this->gamma[k] = value_type(1)/std::sqrt(this->norms[k]);
-      this->norms[k] = value_type(1);
-    }
-  }
+  // Setup of rest of recurrence basis
+  this->setup();
 }
 
 template <typename ordinal_type, typename value_type>
 Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
 ~LanczosProjPCEBasis()
 {
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
-getQuadPoints(ordinal_type quad_order,
-	      Teuchos::Array<value_type>& quad_points,
-	      Teuchos::Array<value_type>& quad_weights,
-	      Teuchos::Array< Teuchos::Array<value_type> >& quad_values) const
-{
-#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::LanczosProjPCEBasis -- compute Gauss points");
-#endif
-
-  // Call base class
-  ordinal_type num_points = 
-    static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
-
-  // We can't reliably generate quadrature points of order > 2*p
-  //std::cout << "quad_order = " << quad_order << ", 2*p = " << 2*this->p << std::endl;
-  // if (quad_order > 2*this->p)
-  //   quad_order = 2*this->p;
-  Stokhos::RecurrenceBasis<ordinal_type,value_type>::getQuadPoints(quad_order, 
-								   quad_points, 
-								   quad_weights,
-								   quad_values);
-
-  // Fill in the rest of the points with zero weight
-  if (quad_weights.size() < num_points) {
-    ordinal_type old_size = quad_weights.size();
-    quad_weights.resize(num_points);
-    quad_points.resize(num_points);
-    quad_values.resize(num_points);
-    for (ordinal_type i=old_size; i<num_points; i++) {
-      quad_weights[i] = value_type(0);
-      quad_points[i] = quad_points[0];
-      quad_values[i].resize(this->p+1);
-      evaluateBases(quad_points[i], quad_values[i]);
-    }
-  }
 }
 
 template <typename ordinal_type, typename value_type>
@@ -144,12 +86,13 @@ cloneWithOrder(ordinal_type p) const
 }
 
 template <typename ordinal_type, typename value_type>
-void
+bool
 Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
 			      Teuchos::Array<value_type>& alpha,
 			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta) const
+			      Teuchos::Array<value_type>& delta,
+			      Teuchos::Array<value_type>& gamma) const
 {
   ordinal_type sz = weights.size();
   Teuchos::Array<value_type> nrm(n);
@@ -158,7 +101,10 @@ computeRecurrenceCoefficients(ordinal_type n,
 			alpha, beta, nrm);
   for (ordinal_type i=0; i<n; i++) {
     delta[i] = value_type(1.0);
+    gamma[i] = value_type(1.0);
   }
+
+  return false;
 }
 
 template <typename ordinal_type, typename value_type> 
@@ -169,25 +115,5 @@ LanczosProjPCEBasis(ordinal_type p, const LanczosProjPCEBasis& basis) :
   weights(basis.weights),
   u0(basis.u0)
 {
-  // Compute coefficients via Lanczos
-  ordinal_type sz = weights.size();
-  lanczos_type::compute(sz, p+1, Cijk_matrix, weights, u0, lanczos_vecs,
-			this->alpha, this->beta, this->norms);
-  for (ordinal_type i=0; i<=p; i++)
-    this->delta[i] = value_type(1.0);
-  
-  // Setup rest of recurrence basis
-  //this->setup();
-  this->gamma[0] = value_type(1);
-  for (ordinal_type k=1; k<=p; k++) {
-    this->gamma[k] = value_type(1);
-  } 
-
-  //If you want normalized polynomials, set gamma and reset the norms to 1.
-  if( basis.normalize ) {
-    for (ordinal_type k=0; k<=p; k++) {
-      this->gamma[k] = value_type(1)/std::sqrt(this->norms[k]);
-      this->norms[k] = value_type(1);
-    }
-  }
+  this->setup();
 }

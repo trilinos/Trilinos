@@ -75,21 +75,19 @@ void
 Stokhos::RecurrenceBasis<ordinal_type, value_type>::
 setup()
 {
-  // Compute norms: ||P_n||^2 = beta[0]*beta[1]*...*beta[n]
-  norms[0] = beta[0];
-  gamma[0] = value_type(1);
-  for (ordinal_type k=1; k<=p; k++) {
-    norms[k] = beta[k]*norms[k-1]*delta[k-1]/delta[k];
-    gamma[k] = value_type(1);
-  } 
-
-  //If you want normalized polynomials, set gamma and reset the norms to 1.
-  if( normalize ) {
-    for (ordinal_type k=0; k<=p; k++) {
-      gamma[k] = value_type(1)/std::sqrt(norms[k]);
-      norms[k] = value_type(1);
-    }
+  bool is_normalized = 
+    computeRecurrenceCoefficients(p+1, alpha, beta, delta, gamma);
+  if (normalize && !is_normalized) {
+    normalizeRecurrenceCoefficients(alpha, beta, delta, gamma);
   }
+  
+
+  // Compute norms -- when polynomials are normalized, this should work
+  // out to one (norms[0] == 1, delta[k] == 1, beta[k] == gamma[k]
+  norms[0] = beta[0]/(gamma[0]*gamma[0]);
+  for (ordinal_type k=1; k<=p; k++) {
+    norms[k] = (beta[k]/gamma[k])*(delta[k-1]/delta[k])*norms[k-1];
+  } 
 }
 
 template <typename ordinal_type, typename value_type>
@@ -229,17 +227,16 @@ Stokhos::RecurrenceBasis<ordinal_type,value_type>::
 evaluateBases(const value_type& x, Teuchos::Array<value_type>& basis_pts) const
 {
   // Evaluate basis polynomials P(x) using 3 term recurrence
-  // P_0(x) = 1 P_-1 = 0
-  // P_i(x) = gamma[i]*[(x-alpha[i-1])*P_{i-1}(x) - beta[i-1]*P_{i-2}(x)], 
+  // P_0(x) = 1/gamma[0], P_-1 = 0
+  // P_i(x) = [(delta[i-1]*x-alpha[i-1])*P_{i-1}(x) - 
+  //           beta[i-1]*P_{i-2}(x)]/gamma[i], 
   // i=2,3,...
-  basis_pts[0] = value_type(1.0);
+  basis_pts[0] = value_type(1)/gamma[0];
   if (p >= 1)
-    basis_pts[1] = (delta[0]*x-alpha[0])*basis_pts[0];
+    basis_pts[1] = (delta[0]*x-alpha[0])*basis_pts[0]/gamma[1];
   for (ordinal_type i=2; i<=p; i++)
-    basis_pts[i] = (delta[i-1]*x-alpha[i-1])*basis_pts[i-1] - 
-      beta[i-1]*basis_pts[i-2];
-  for (ordinal_type i = 0; i<=p; i++)
-    basis_pts[i] = gamma[i]*basis_pts[i];
+    basis_pts[i] = ((delta[i-1]*x-alpha[i-1])*basis_pts[i-1] - 
+		    beta[i-1]*basis_pts[i-2])/gamma[i];
 }
 
 template <typename ordinal_type, typename value_type>
@@ -252,10 +249,10 @@ evaluateBasesAndDerivatives(const value_type& x,
   evaluateBases(x, vals);
   derivs[0] = 0.0;
   if (p >= 1)
-    derivs[1] = delta[0];
+    derivs[1] = delta[0]/(gamma[0]*gamma[1]);
   for (ordinal_type i=2; i<=p; i++)
-    derivs[i] = delta[i-1]*vals[i-1] + (delta[i-1]*x-alpha[i-1])*derivs[i-1] -
-      beta[i-1]*derivs[i-2];
+    derivs[i] = (delta[i-1]*vals[i-1] + (delta[i-1]*x-alpha[i-1])*derivs[i-1] -
+		 beta[i-1]*derivs[i-2])/gamma[i];
 }
 
 template <typename ordinal_type, typename value_type>
@@ -264,24 +261,25 @@ Stokhos::RecurrenceBasis<ordinal_type,value_type>::
 evaluate(const value_type& x, ordinal_type k) const
 {
   // Evaluate basis polynomials P(x) using 3 term recurrence
-  // P_0(x) = 1 P_-1 = 0
-  // P_i(x) = gamma[i]*[(x-alpha[i-1])*P_{i-1}(x) - beta[i-1]*P_{i-2}(x)], 
+  // P_0(x) = 1/gamma[0], P_-1 = 0
+  // P_i(x) = [(delta[i-1]*x-alpha[i-1])*P_{i-1}(x) - 
+  //           beta[i-1]*P_{i-2}(x)]/gamma[i], 
   // i=2,3,...
-  if (k == 0)
-    return gamma[0]*value_type(1.0);
-  else if (k == 1)
-    return gamma[1]*(delta[0]*x-alpha[0]);
 
-  value_type v0 = value_type(1.0);
-//  value_type v1 = x-alpha[0]*v0;
-  value_type v1 = (x*delta[0]-alpha[0])*v0;
+  value_type v0 = value_type(1.0)/gamma[0];
+  if (k == 0)
+    return v0;
+
+  value_type v1 = (x*delta[0]-alpha[0])*v0/gamma[1];
+  if (k == 1)
+    return v1;
+
   value_type v2 = value_type(0.0);
   for (ordinal_type i=2; i<=k; i++) {
-    v2 = (delta[i-1]*x-alpha[i-1])*v1 - beta[i-1]*v0;
+    v2 = ((delta[i-1]*x-alpha[i-1])*v1 - beta[i-1]*v0)/gamma[i];
     v0 = v1;
     v1 = v2;
   }
-  v2 *= gamma[k];
 
   return v2;
 }
@@ -345,26 +343,27 @@ getQuadPoints(ordinal_type quad_order,
   Teuchos::Array<value_type> a(num_points,0);
   Teuchos::Array<value_type> b(num_points,0);
   Teuchos::Array<value_type> c(num_points,0);
+  Teuchos::Array<value_type> d(num_points,0);
   
   // If we don't have enough recurrance coefficients, get some more.
   if(num_points > p+1){
-    computeRecurrenceCoefficients(num_points, a, b, c);
+    bool is_normalized = computeRecurrenceCoefficients(num_points, a, b, c, d);
+    if (!is_normalized)
+      normalizeRecurrenceCoefficients(a, b, c, d);
   }
   else {  //else just take the ones we already have.
     for(ordinal_type n = 0; n<num_points; n++){
       a[n] = alpha[n];
       b[n] = beta[n];
       c[n] = delta[n];
+      d[n] = gamma[n];
     }
+    if (!normalize)
+      normalizeRecurrenceCoefficients(a, b, c, d);
   }
   
-  // A is symmetric and tridiagonal with A[i][i] = a[i]/c[i]
-  // and A[i-1][i] = A[i][i-1] = sqrt(b[i]/(c[i]*c[i-1])) 
-  for (ordinal_type i=0; i<num_points; i++ ) 
-    a[i] = a[i]/c[i];
-  for(ordinal_type i=1; i<num_points; i++) 
-    b[i-1] = std::sqrt(b[i]/(c[i]*c[i-1]));
-
+  // With normalized coefficients, A is symmetric and tri-diagonal, with
+  // diagonal = a, and off-diagonal = b, starting at b[1]
   Teuchos::SerialDenseMatrix<ordinal_type,value_type> eig_vectors(num_points,
 								  num_points);
   Teuchos::Array<value_type> workspace(2*num_points);
@@ -372,8 +371,12 @@ getQuadPoints(ordinal_type quad_order,
   Teuchos::LAPACK<ordinal_type,value_type> my_lapack;
   
   // compute the eigenvalues (stored in a) and right eigenvectors.
-  my_lapack.STEQR('I', num_points, &a[0], &b[0], eig_vectors.values(), 
-		  num_points, &workspace[0], &info_flag);
+  if (num_points == 1)
+    my_lapack.STEQR('I', num_points, &a[0], &b[0], eig_vectors.values(), 
+		    num_points, &workspace[0], &info_flag);
+  else
+    my_lapack.STEQR('I', num_points, &a[0], &b[1], eig_vectors.values(), 
+		    num_points, &workspace[0], &info_flag);
   
   // eigenvalues are sorted by STEQR
   quad_points.resize(num_points);
@@ -405,4 +408,26 @@ getRecurrenceCoefficients(Teuchos::Array<value_type>& a,
   b = beta;
   c = delta;
   g = gamma;
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::RecurrenceBasis<ordinal_type,value_type>::
+normalizeRecurrenceCoefficients(
+  Teuchos::Array<value_type>& a,
+  Teuchos::Array<value_type>& b,
+  Teuchos::Array<value_type>& c,
+  Teuchos::Array<value_type>& g) const
+{
+  ordinal_type n = a.size();
+  a[0] = a[0] / c[0];
+  b[0] = std::sqrt(b[0]);
+  g[0] = b[0];
+  for (ordinal_type k=1; k<n; k++) {
+    a[k] = a[k] / c[k];
+    b[k] = std::sqrt((b[k]*g[k])/(c[k]*c[k-1]));
+    g[k] = b[k];
+  }
+  for (ordinal_type k=0; k<n; k++)
+    c[k] = value_type(1);
 }

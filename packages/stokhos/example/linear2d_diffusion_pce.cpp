@@ -58,6 +58,10 @@ int main(int argc, char *argv[]) {
                                      // (e.g., log-normal)
   bool symmetric = false;            // use symmetric formulation
 
+  double g_mean_exp = 0.172988;      // expected response mean
+  double g_std_dev_exp = 0.0380007;  // expected response std. dev.
+  double g_tol = 1e-6;               // tolerance on determining success
+
 // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -82,7 +86,7 @@ int main(int argc, char *argv[]) {
     // Create Stochastic Galerkin basis and expansion
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
     for (int i=0; i<num_KL; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p, true));
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases,
 		     1e-12));
@@ -260,8 +264,19 @@ int main(int argc, char *argv[]) {
     std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 
-    if (norm_f < 1.0e-10 && MyPID == 0)
-      std::cout << "Example Passed!" << std::endl;
+    // Determine if example passed
+    bool passed = false;
+    if (norm_f < 1.0e-10 &&
+	std::abs(g_mean[0]-g_mean_exp) < g_tol &&
+	std::abs(g_std_dev[0]-g_std_dev_exp) < g_tol)
+      passed = true;
+    if (MyPID == 0) {
+      if (passed)
+	std::cout << "Example Passed!" << std::endl;
+      else
+	std::cout << "Example Failed!" << std::endl;
+    }
+
     }
 
     Teuchos::TimeMonitor::summarize(std::cout);

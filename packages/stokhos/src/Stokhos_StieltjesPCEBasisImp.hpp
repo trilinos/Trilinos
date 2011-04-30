@@ -76,11 +76,8 @@ StieltjesPCEBasis(
   if (project_integrals)
     phi_pce_coeffs.resize(basis->size());
   
-  // Compute coefficients via Stieltjes
-  stieltjes(0, p+1, pce_weights, pce_vals, this->alpha, this->beta, this->norms,
-	    phi_vals);
-  for (ordinal_type i=0; i<=p; i++)
-    this->delta[i] = value_type(1.0);
+  // Setup rest of recurrence basis
+  this->setup();
 
   ordinal_type sz = pce->size();
   fromStieltjesMat.putScalar(0.0);
@@ -90,21 +87,6 @@ StieltjesPCEBasis(
 	fromStieltjesMat(i,j) += 
 	  pce_weights[k]*phi_vals[k][i]*basis_values[k][j];
       fromStieltjesMat(i,j) /= basis->norm_squared(j);
-    }
-  }
-
-  // Setup rest of recurrence basis
-  //this->setup();
-  this->gamma[0] = value_type(1);
-  for (ordinal_type k=1; k<=p; k++) {
-    this->gamma[k] = value_type(1);
-  } 
-
-  //If you want normalized polynomials, set gamma and reset the norms to 1.
-  if( normalize ) {
-    for (ordinal_type k=0; k<=p; k++) {
-      this->gamma[k] = value_type(1)/std::sqrt(this->norms[k]);
-      this->norms[k] = value_type(1);
     }
   }
 }
@@ -164,12 +146,13 @@ getQuadPoints(ordinal_type quad_order,
 }
 
 template <typename ordinal_type, typename value_type>
-void
+bool
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
 			      Teuchos::Array<value_type>& alpha,
 			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta) const
+			      Teuchos::Array<value_type>& delta,
+			      Teuchos::Array<value_type>& gamma) const
 {
   ordinal_type nqp = phi_vals.size();
   Teuchos::Array<value_type> nrm(n);
@@ -177,8 +160,16 @@ computeRecurrenceCoefficients(ordinal_type n,
   for (ordinal_type i=0; i<nqp; i++)
     vals[i].resize(n);
   stieltjes(0, n, pce_weights, pce_vals, alpha, beta, nrm, vals);
-  for (ordinal_type i=0; i<n; i++)
+  for (ordinal_type i=0; i<n; i++) {
     delta[i] = value_type(1.0);
+    gamma[i] = value_type(1.0);
+  }
+
+  // Save basis functions at quad point values
+  if (n == this->p+1)
+    phi_vals = vals;
+
+  return false;
 }
 
 template <typename ordinal_type, typename value_type>

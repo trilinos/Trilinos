@@ -66,13 +66,6 @@ namespace Stokhos {
     //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
     //@{
 
-    //! Get Gauss quadrature points, weights, and values of basis at points
-    virtual void 
-    getQuadPoints(ordinal_type quad_order,
-		  Teuchos::Array<value_type>& points,
-		  Teuchos::Array<value_type>& weights,
-		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
-
     /*! 
      * \brief Clone this object with the option of building a higher order
      * basis.
@@ -93,23 +86,14 @@ namespace Stokhos {
     //@{ 
 
     //! Compute recurrence coefficients
-    virtual void 
+    virtual bool
     computeRecurrenceCoefficients(ordinal_type n,
 				  Teuchos::Array<value_type>& alpha,
 				  Teuchos::Array<value_type>& beta,
-				  Teuchos::Array<value_type>& delta) const;
+				  Teuchos::Array<value_type>& delta,
+				  Teuchos::Array<value_type>& gamma) const;
 
     //@}
-
-    //! Compute 3-term recurrence using Lanczos procedure
-    void lanczos(ordinal_type n,
-		 ordinal_type nsteps,
-		 const Teuchos::Array<value_type>& w,
-		 const Teuchos::Array<value_type>& A,
-		 const Teuchos::Array<value_type>& h0,
-		 Teuchos::Array<value_type>& a,
-		 Teuchos::Array<value_type>& b,
-		 Teuchos::Array<value_type>& nrm_sqrd) const;
 
   private:
 

@@ -12,8 +12,24 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  NormalizedLegendreBasisUnitTest
+  SOURCES Stokhos_NormalizedLegendreBasisUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   HermiteBasisUnitTest
   SOURCES Stokhos_HermiteBasisUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  NormalizedHermiteBasisUnitTest
+  SOURCES Stokhos_NormalizedHermiteBasisUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
