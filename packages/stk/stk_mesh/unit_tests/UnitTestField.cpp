@@ -111,14 +111,14 @@ STKUNIT_UNIT_TEST(UnitTestField, testFullTensor)
   const stk::mesh::FullTensor&  fulltensor_tag = stk::mesh::FullTensor::tag();
 
   std::string to_str = fulltensor_tag.to_string(9 /*size*/, 1 /*idx*/);
-  std::string expected_str("yx");
+  std::string expected_str("yy");
   STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true );
 
   //should throw if we supply a size < 9:
   STKUNIT_ASSERT_THROW( fulltensor_tag.to_string(2 /*size*/, 1 /*idx*/),
                         std::runtime_error );
 
-  size_type expected_idx = 1;
+  size_type expected_idx = 6;
   size_type idx = fulltensor_tag.to_index(9 /*size*/, "yx" /*dim*/);
   STKUNIT_ASSERT_EQUAL( idx, expected_idx );
 
@@ -135,7 +135,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testSymmetricTensor)
     stk::mesh::SymmetricTensor::tag();
 
   std::string to_str = symmetrictensor_tag.to_string(9 /*size*/, 1 /*idx*/);
-  std::string expected_str("yx");
+  std::string expected_str("yy");
   STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true);
 
   //should throw if we supply a size < 9:

@@ -221,8 +221,11 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, declare_part_with_rank )
   STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",1));
   STKUNIT_ASSERT_NO_THROW(metadata.declare_part("foo",1));
 
+  // Should throw because we're trying to change rank
   STKUNIT_ASSERT_THROW(metadata.declare_part("foo",2),std::runtime_error);
-  STKUNIT_ASSERT_THROW(metadata.declare_part("foo"),std::runtime_error);
+
+  // Should not throw since we did not provide rank
+  metadata.declare_part("foo");
 }
 
 STKUNIT_UNIT_TEST( UnitTestMetaData, declare_attribute_no_delete )

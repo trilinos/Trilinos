@@ -84,12 +84,15 @@ PartImpl::PartImpl( MetaData          * arg_meta_data ,
 void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
 {
   TraceIfWatching("stk::mesh::impl::PartImpl::set_primary_entity_rank", LOG_PART, m_universe_ordinal);
+  if ( entity_rank == m_entity_rank ) return;
 
   const bool rank_already_set = m_entity_rank != InvalidEntityRank && entity_rank != m_entity_rank;
-  const bool has_subsets = m_subsets.size() > 0;
-
+  
+//const bool has_subsets = m_subsets.size() > 0;
+//ThrowErrorMsgIf( has_subsets, " Error: Part '" << m_name  << "' has subsets");
+  
+  if ( entity_rank == InvalidEntityRank ) return;
   ThrowErrorMsgIf( rank_already_set, " Error: Different entity rank has already been set on Part");
-  ThrowErrorMsgIf( has_subsets, " Error: Part '" << m_name  << "' has subsets");
 
   m_entity_rank = entity_rank;
 }
