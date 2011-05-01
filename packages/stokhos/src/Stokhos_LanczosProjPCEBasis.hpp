@@ -31,6 +31,8 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_BLAS.hpp"
 
 #include "Stokhos_RecurrenceBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
@@ -38,6 +40,31 @@
 #include "Stokhos_Lanczos.hpp"
 
 namespace Stokhos {
+
+
+  template <typename ord_type, typename val_type>
+  class DenseOperator {
+  public:
+    typedef ord_type ordinal_type;
+    typedef val_type value_type;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type, value_type> matrix_type;
+    typedef Teuchos::Array<value_type> vector_type;
+
+    DenseOperator(const matrix_type& A_): A(A_), blas() {}
+    
+    void 
+    apply(const vector_type& u, vector_type& v) const {
+      blas.GEMV(Teuchos::NO_TRANS, A.numRows(), A.numCols(), value_type(1), 
+                &A(0,0), A.stride(), &u[0], ordinal_type(1), value_type(0), 
+                &v[0], ordinal_type(1));
+    }
+
+  protected:
+
+    const matrix_type& A;
+    Teuchos::BLAS<ordinal_type, value_type> blas;
+
+  };
 
   /*! 
    * \brief Generates three-term recurrence using the Lanczos 
@@ -108,21 +135,22 @@ namespace Stokhos {
 
   protected:
 
-    typedef Stokhos::Lanczos<ordinal_type,value_type> lanczos_type;
-    typedef typename lanczos_type::matrix_type matrix_type;
+    typedef Stokhos::Lanczos< WeightedVectorSpace<ordinal_type,value_type>, 
+                              DenseOperator<ordinal_type,value_type> > lanczos_type;
+    typedef typename DenseOperator<ordinal_type,value_type>::matrix_type matrix_type;
     typedef typename lanczos_type::vector_type vector_type;
 
     //! Triple-product matrix used in generating lanczos vectors
     matrix_type Cijk_matrix;
 
     //! Weighting vector used in inner-products
-    Teuchos::Array<value_type> weights;
+    vector_type weights;
 
     //! Initial Lanczos vector
     vector_type u0;
 
     //! Lanczos vectors
-    Teuchos::Array<vector_type> lanczos_vecs;
+    mutable Teuchos::Array<vector_type> lanczos_vecs;
 
   }; // class LanczosProjPCEBasis
 

@@ -96,9 +96,15 @@ computeRecurrenceCoefficients(ordinal_type n,
 {
   ordinal_type sz = weights.size();
   Teuchos::Array<value_type> nrm(n);
-  Teuchos::Array<vector_type> lv;
-  lanczos_type::compute(sz, n, Cijk_matrix, weights, u0, lv,
-			alpha, beta, nrm);
+  WeightedVectorSpace<ordinal_type,value_type> vs(weights);
+  DenseOperator<ordinal_type,value_type> A(Cijk_matrix);
+  ordinal_type lvsz = lanczos_vecs.size();
+  if (n+1 > lvsz) {
+    lanczos_vecs.resize(n+1);
+    for (ordinal_type i=lvsz; i<n+1; i++)
+      lanczos_vecs[i].resize(sz);
+  }
+  lanczos_type::compute(n, vs, A, u0, lanczos_vecs, alpha, beta, nrm);
   for (ordinal_type i=0; i<n; i++) {
     delta[i] = value_type(1.0);
     gamma[i] = value_type(1.0);

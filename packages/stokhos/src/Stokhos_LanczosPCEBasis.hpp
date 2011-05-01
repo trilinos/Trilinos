@@ -35,8 +35,32 @@
 #include "Stokhos_RecurrenceBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_Quadrature.hpp"
+#include "Stokhos_Lanczos.hpp"
 
 namespace Stokhos {
+
+  template <typename ord_type, typename val_type>
+  class DiagonalOperator {
+  public:
+    typedef ord_type ordinal_type;
+    typedef val_type value_type;
+    typedef Teuchos::Array<value_type> vector_type;
+
+    DiagonalOperator(const vector_type& A_): A(A_), n(A.size()) {}
+    
+    void 
+    apply(const vector_type& u, vector_type& v) const {
+      for (ordinal_type j=0; j<n; j++)
+        v[j] = A[j]*u[j];
+    }
+
+  protected:
+
+    const vector_type& A;
+    ordinal_type n;
+
+  };
+
 
   /*! 
    * \brief Generates three-term recurrence using the Lanczos 
@@ -101,16 +125,6 @@ namespace Stokhos {
 
     //@}
 
-    //! Compute 3-term recurrence using Lanczos procedure
-    void lanczos(ordinal_type n,
-		 ordinal_type nsteps,
-		 const Teuchos::Array<value_type>& w,
-		 const Teuchos::Array<value_type>& A,
-		 const Teuchos::Array<value_type>& h0,
-		 Teuchos::Array<value_type>& a,
-		 Teuchos::Array<value_type>& b,
-		 Teuchos::Array<value_type>& nrm_sqrd) const;
-
   private:
 
     // Prohibit copying
@@ -124,6 +138,11 @@ namespace Stokhos {
 
   protected:
 
+    typedef Stokhos::Lanczos< WeightedVectorSpace<ordinal_type,value_type>, 
+                              DiagonalOperator<ordinal_type,value_type> > lanczos_type;
+
+    typedef typename lanczos_type::vector_type vector_type;
+
     //! Quadrature weights
     Teuchos::Array<value_type> pce_weights;
 
@@ -132,6 +151,9 @@ namespace Stokhos {
 
     //! Initial Lanczos vector
     Teuchos::Array<value_type> h0;
+
+    //! Lanczos vectors
+    mutable Teuchos::Array<vector_type> lanczos_vecs;
 
   }; // class LanczosPCEBasis
 

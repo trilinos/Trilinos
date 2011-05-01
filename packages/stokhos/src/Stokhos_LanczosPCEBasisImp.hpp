@@ -29,7 +29,6 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Stokhos_Lanczos.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
@@ -124,80 +123,22 @@ computeRecurrenceCoefficients(ordinal_type n,
 {
   ordinal_type nqp = pce_weights.size();
   Teuchos::Array<value_type> nrm(n);
-  Teuchos::Array< Teuchos::Array<value_type> > h;
-  Stokhos::Lanczos<ordinal_type,value_type>::computeDiag(
-    nqp, n, pce_vals, pce_weights, h0, h, alpha, beta, nrm);
-  //lanczos(nqp, n, pce_weights, pce_vals, h0, alpha, beta, nrm);
+  WeightedVectorSpace<ordinal_type,value_type> vs(pce_weights);
+  DiagonalOperator<ordinal_type,value_type> A(pce_vals);
+  ordinal_type lvsz = lanczos_vecs.size();
+  if (n+1 > lvsz) {
+    lanczos_vecs.resize(n+1);
+    for (ordinal_type i=lvsz; i<n+1; i++)
+      lanczos_vecs[i].resize(nqp);
+  }
+
+  lanczos_type:compute(n, vs, A, h0, lanczos_vecs, alpha, beta, nrm);
   for (ordinal_type i=0; i<n; i++) {
     delta[i] = value_type(1.0);
     gamma[i] = value_type(1.0);
   }
 
   return false;
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
-lanczos(ordinal_type n,
-	ordinal_type nsteps,
-	const Teuchos::Array<value_type>& w,
-	const Teuchos::Array<value_type>& A,
-	const Teuchos::Array<value_type>& h0,
-	Teuchos::Array<value_type>& a,
-	Teuchos::Array<value_type>& b,
-	Teuchos::Array<value_type>& nrm_sqrd) const
-{
-#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::LanczosPCEBasis -- Lanczos Procedure");
-#endif
-
-  Teuchos::Array<value_type> h(n), hm(n), y(n);
-  value_type dp, nrm;
-  for (ordinal_type j=0; j<n; j++) {
-    h[j] = h0[j];
-    hm[j] = value_type(0);
-  }
-
-  b[0] = 1.0;
-  for (ordinal_type i=0; i<nsteps; i++) {
-
-    // compute h^T*h
-    nrm = value_type(0);
-    for (ordinal_type j=0; j<n; j++)
-      nrm += w[j]*h[j]*h[j];
-    nrm_sqrd[i] = nrm;
-
-    // compute y = A*h
-    for (ordinal_type j=0; j<n; j++)
-      y[j] = A[j]*h[j];
-
-    // compute alpha = h^T*y / h^T*h
-    dp = value_type(0);
-    for (ordinal_type j=0; j<n; j++)
-      dp += w[j]*y[j]*h[j];
-    a[i] = dp/nrm_sqrd[i];
-
-    // compute beta = h^T*h / hm^T*hm
-    if (i > 0)
-      b[i] = nrm_sqrd[i] / nrm_sqrd[i-1];
-
-    // compute
-    for (ordinal_type j=0; j<n; j++)
-      y[j] = y[j] - a[i]*h[j] - b[i]*hm[j];
-
-    // shift
-    hm = h;
-    h = y;
-
-    std::cout << "i = " << i << " alpha = " << a[i] << " beta = " << b[i]
-	      << " nrm = " << nrm_sqrd[i] << std::endl;
-    TEST_FOR_EXCEPTION(nrm_sqrd[i] < 0, std::logic_error,
-		       "Stokhos::LanczosPCEBasis::lanczos():  "
-		       << " Polynomial " << i << " out of " << nsteps
-		       << " has norm " << nrm_sqrd[i]
-		       << "!  Try increasing number of quadrature points");
-  }
 }
 
 template <typename ordinal_type, typename value_type> 
