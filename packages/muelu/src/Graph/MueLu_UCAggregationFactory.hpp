@@ -1,17 +1,18 @@
 #ifndef MUELU_UCAGGREGATIONFACTORY_HPP
 #define MUELU_UCAGGREGATIONFACTORY_HPP
 
-#include "MueLu_Aggregates.hpp"
-#include "MueLu_AggregationOptions.hpp"
-#include "MueLu_UCAggregationCommHelper.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
 #include <vector>
 
 #include <iostream>
+
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_AggregationOptions.hpp"
+#include "MueLu_UCAggregationCommHelper.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_LinkedList.hpp"
 
 namespace MueLu {
 
@@ -26,15 +27,6 @@ using Teuchos::ArrayRCP;
 #define maxAll(rcpComm, in, out) \
   Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
 
-
-/* ************************************************************************* */
-/* linked list structures from ML for holding free node information          */
-/* ------------------------------------------------------------------------- */
-typedef struct MueLu_Node_Struct
-{
-  int    nodeId;
-  struct MueLu_Node_Struct *next;
-} MueLu_Node;
 /* ************************************************************************* */
 /* definition of the structure from ML for holding aggregate information     */
 /* ------------------------------------------------------------------------- */
@@ -210,23 +202,21 @@ typedef int my_size_t; //TODO
         /* some general variable declarations */   
         const MueLu::AggOptions::Ordering ordering = aggOptions.GetOrdering();
         Teuchos::ArrayRCP<int> randomVector;
-        MueLu_Node       *nodeHead=NULL, *nodeTail=NULL, *newNode=NULL;
+        RCP<MueLu::LinkedList> nodeList; /* list storing the next node to pick as a root point for ordering == GRAPH */
         MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
         /**/
 
         if ( ordering == RANDOM )       /* random ordering */
         {
+          //TODO: could be stored in a class that respect interface of LinkedList
+
           randomVector = Teuchos::arcp<int>(nRows); //size_t or int ?-> to be propagated
           for (int i = 0; i < nRows; ++i) randomVector[i] = i;
           RandomReorder(randomVector);
         } 
         else if ( ordering == GRAPH )  /* graph ordering */
         {
-          newNode = new MueLu_Node;      
-          newNode->nodeId = 0;
-          nodeHead = newNode;
-          nodeTail = newNode;
-          newNode->next = NULL;
+          nodeList = Teuchos::rcp(new MueLu::LinkedList());
         }
 
         /* main loop */
@@ -246,26 +236,20 @@ typedef int my_size_t; //TODO
               else if ( ordering == RANDOM ) iNode = randomVector[iNode2++];
               else if ( ordering == GRAPH ) 
                 {
-                  if ( nodeHead == NULL ) 
+                  if ( nodeList->IsEmpty() ) 
                     {
                       for ( int jNode = 0; jNode < nRows; ++jNode ) 
                         {
                           if ( aggStat[jNode] == READY )
                             { 
-                              newNode = new MueLu_Node;
-                              newNode->nodeId = jNode;
-                              nodeHead = newNode;
-                              nodeTail = newNode;
-                              newNode->next = NULL;
+                              nodeList->Add(jNode); //TODO optim: not necessary to create a node. Can just set iNode value and skip the end
                               break;
                             }
                         }
                     }
-                  if ( nodeHead == NULL ) break;
-                  newNode = nodeHead;
-                  iNode = newNode->nodeId;
-                  nodeHead = newNode->next;
-                  delete newNode;
+                  if ( nodeList->IsEmpty() ) break; /* end of the while loop */ //TODO: coding style :(
+
+                  iNode = nodeList->Pop();
                 }
 
               /*------------------------------------------------------ */
@@ -337,17 +321,7 @@ typedef int my_size_t; //TODO
                               int index = *it;
                               if  ( index < nRows && aggStat[index] == READY )
                                 { 
-                                  newNode = new MueLu_Node;
-                                  newNode->nodeId = index;
-                                  newNode->next = NULL;
-                                  if ( nodeHead == NULL )
-                                    {
-                                      nodeHead = newNode;
-                                      nodeTail = newNode;
-                                    } else {
-                                    nodeTail->next = newNode;
-                                    nodeTail = newNode;
-                                  }
+                                  nodeList->Add(index);
                                 } 
                             } 
                         } 
@@ -370,17 +344,7 @@ typedef int my_size_t; //TODO
                                   int index = *it;
                                   if ( index < nRows && aggStat[index] == READY )
                                     { 
-                                      newNode = new MueLu_Node;
-                                      newNode->nodeId = index;
-                                      newNode->next = NULL;
-                                      if ( nodeHead == NULL )
-                                        {
-                                          nodeHead = newNode;
-                                          nodeTail = newNode;
-                                        } else {
-                                        nodeTail->next = newNode;
-                                        nodeTail = newNode;
-                                      }
+                                      nodeList->Add(index);
                                     }
                                 } 
                             } 
@@ -407,15 +371,7 @@ typedef int my_size_t; //TODO
 
         } // end of 'main loop'
 
-        if ( ordering == GRAPH ) 
-          {
-            while ( nodeHead != NULL )
-              {
-                newNode = nodeHead;
-                nodeHead = newNode->next;
-                delete newNode;
-              }
-          }
+        nodeList = Teuchos::null; 
 
         /* Update aggregate object */  
         aggregates->SetNumAggregates(nAggregates);
