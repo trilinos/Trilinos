@@ -9,7 +9,8 @@
 
 #include <stk_adapt/UniformRefiner.hpp>
 
-#define STK_ADAPT_HAS_GEOMETRY
+//#define STK_ADAPT_HAS_GEOMETRY
+#undef STK_ADAPT_HAS_GEOMETRY
 #if defined( STK_ADAPT_HAS_GEOMETRY )
 #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
 #include <stk_adapt/geometry/MeshGeometry.hpp>
