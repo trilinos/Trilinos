@@ -14,7 +14,6 @@
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_MapFactory.hpp>
 #include <Cthulhu_CrsOperator.hpp>
-#include <Cthulhu_Example.hpp>
 
 // Gallery
 #define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.
@@ -24,6 +23,7 @@
 // Aggregation
 #include "MueLu_UCAggregationFactory.hpp"
 
+#include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
 void dumpAggregates(Aggregates & aggregates);
