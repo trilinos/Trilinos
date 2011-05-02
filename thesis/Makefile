@@ -1,5 +1,6 @@
 files = KurtisNusbaum.tex KurtisNusbaum.bib ../OptikaThesis.tex basicTramonto/main.cpp ../OptikaFunctions.tex title.tex ../OptikaIntro.tex \
-../OptikaAbstract.tex
+../OptikaAbstract.tex basicXMLTramonto/main.cpp basicXMLTramonto/inputs.xml \
+basicTramonto/main.cpp
 
 
 all: KurtisNusbaum.pdf

@@ -1,14 +1,14 @@
 <ParameterList name="Tramonto">
   <ParameterList name="Dimension Control Parameters">
     <Parameter name="Length_ref" value="-1.0" type="double" 
-      docString="Indicates how length parameters will be entered."/>
+      docString="Indicates how length parameters will be entered"/>
     <Parameter name="Density_ref" value="-1.0" type="double" 
       docString="Indicates how density parameters will be entered"/>
     <Parameter name="Temp" value="-1.0" type="double" 
       docString="Indicates how density paraemters will be entered"/>
     <Parameter name="Dielec_ref" value="-1.0" type="double" 
-      docString="The dielectric constant."/>
+      docString="The dielectric constant"/>
     <Parameter name="VEXT_MAX" value="0" type="double" 
-      docString="Maximum external field where DFT equations will be solved."/>
+      docString="Max external field where DFT equations will be solved"/>
   </ParameterList>
 </ParameterList>
