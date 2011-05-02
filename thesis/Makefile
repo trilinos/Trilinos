@@ -3,7 +3,10 @@ files = KurtisNusbaum.tex KurtisNusbaum.bib ../OptikaThesis.tex basicTramonto/ma
 basicTramonto/main.cpp
 
 
-all: KurtisNusbaum.pdf
+all: split
+
+split: KurtisNusbaum.pdf
+	splitscript
 
 KurtisNusbaum.pdf: $(files)
 	pdflatex KurtisNusbaum
@@ -12,4 +15,4 @@ KurtisNusbaum.pdf: $(files)
 	pdflatex KurtisNusbaum
 
 clean:
-	rm KurtisNusbaum.pdf KurtisNusbaum.bbl KurtisNusbaum.blg KurtisNusbaum.log KurtisNusbaum.aux *toc
+	rm *.pdf KurtisNusbaum.bbl KurtisNusbaum.blg KurtisNusbaum.log KurtisNusbaum.aux *toc
