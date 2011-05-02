@@ -132,7 +132,7 @@ computeRecurrenceCoefficients(ordinal_type n,
       lanczos_vecs[i].resize(nqp);
   }
 
-  lanczos_type:compute(n, vs, A, h0, lanczos_vecs, alpha, beta, nrm);
+  lanczos_type::compute(n, vs, A, h0, lanczos_vecs, alpha, beta, nrm);
   for (ordinal_type i=0; i<n; i++) {
     delta[i] = value_type(1.0);
     gamma[i] = value_type(1.0);
