@@ -43,6 +43,7 @@ APPEND_SET(HEADERS
   stk_interface/Panzer_STK_PeriodicBC_Matcher.hpp
   stk_interface/Panzer_STK_PeriodicBC_MatcherT.hpp
   stk_interface/Panzer_STK_PeriodicBC_Parser.hpp
+  stk_interface/Panzer_STK_PeriodicBC_MatchConditions.hpp
   evaluators/Panzer_STK_GatherFields.hpp
   evaluators/Panzer_STK_GatherFieldsT.hpp
   Panzer_STK_Utilities.hpp

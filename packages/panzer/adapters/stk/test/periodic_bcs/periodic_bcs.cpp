@@ -16,6 +16,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_PeriodicBC_Matcher.hpp"
+#include "Panzer_STK_PeriodicBC_MatchConditions.hpp"
 
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"

@@ -59,6 +59,18 @@ public:
                              std::string & matcher,
                              std::string & bndry1,
                              std::string & bndry2) const;
+
+   /** Parse a string describing the periodic boundary condition
+     * Format: "MatchCondition paramA, paramB, paraC, ... : bndry1;bndry2"
+     *
+     * \returns False if no parameters are found (defaults to old style of
+     *          periodic BC input)
+     */
+   bool buildMatcher_Tokenize_withParams(const std::string & buildStr,
+                                         std::string & matcher,
+                                         std::vector<std::string> & params,
+                                         std::string & bndry1,
+                                         std::string & bndry2) const;
 private:
    //! stored parameter list
    Teuchos::RCP<Teuchos::ParameterList> storedPL_;

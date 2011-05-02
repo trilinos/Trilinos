@@ -1,5 +1,7 @@
 #include "Panzer_STK_PeriodicBC_Parser.hpp"
 
+#include "Panzer_STK_PeriodicBC_MatchConditions.hpp"
+
 #include "Teuchos_ParameterListExceptions.hpp"
 
 namespace panzer_stk {
@@ -132,40 +134,94 @@ void PeriodicBC_Parser::buildMatcher_Tokenize(const std::string & buildStr,
    bndry2 = trim(buildStr.substr(begBndry+1,buildStr.length()));
 }
 
+bool PeriodicBC_Parser::buildMatcher_Tokenize_withParams(const std::string & buildStr,
+                                                         std::string & matcher,
+                                                         std::vector<std::string> & params,
+                                                         std::string & bndry1,
+                                                         std::string & bndry2) const
+{
+   std::string::size_type endMatchAndParams = buildStr.find_first_of(':');
+   std::string::size_type begBndry = buildStr.find_first_of(';');
+
+   // no parameters: default to old style input
+   if(endMatchAndParams==std::string::npos) {
+      buildMatcher_Tokenize(buildStr,matcher,bndry1,bndry2); 
+      return false;
+   }
+
+   bndry1 = trim(buildStr.substr(endMatchAndParams+1,begBndry-(endMatchAndParams+1)));
+   bndry2 = trim(buildStr.substr(begBndry+1,buildStr.length()));
+
+   std::string matchAndParams = trim(buildStr.substr(0,endMatchAndParams));
+   std::string::size_type endMatch = matchAndParams.find_first_of(' ');
+
+   // no parameters included
+   if(endMatch==std::string::npos) {
+      matcher = matchAndParams;
+      return true;
+   }
+
+   // find parameters
+   /////////////////////////////////////////////////////////
+
+   // check matching conditions
+   matcher = trim(matchAndParams.substr(0,endMatch));
+   matchAndParams = matchAndParams.substr(endMatch+1);
+
+   std::string::size_type comma = matchAndParams.find_first_of(',');
+   while(comma!=std::string::npos) {
+      std::string p = trim(matchAndParams.substr(0,comma));
+
+      TEST_FOR_EXCEPTION(p.length()<1,std::logic_error,
+                          "Error parsing periodic boundary condition \"" + buildStr + "\"");
+
+      params.push_back(p);
+      matchAndParams = matchAndParams.substr(comma+1);
+      comma = matchAndParams.find_first_of(',');
+   }
+
+   std::string finalParam = trim(matchAndParams);
+   if(finalParam.length()>0)
+      params.push_back(finalParam);
+
+   return true;
+}
+
 Teuchos::RCP<const PeriodicBC_MatcherBase> 
 PeriodicBC_Parser::buildMatcher(const std::string & buildStr) const
 {
+   std::vector<std::string> params;
    std::string matcher, bndry1, bndry2;
 
-   buildMatcher_Tokenize(buildStr,matcher,bndry1,bndry2);
-   
+   buildMatcher_Tokenize_withParams(buildStr,matcher,params,bndry1,bndry2);
+
    if(matcher=="x-coord") {
-     panzer_stk::CoordMatcher matcher(0);
+     panzer_stk::CoordMatcher matcher(0,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
    if(matcher=="y-coord") {
-     panzer_stk::CoordMatcher matcher(1);
+     panzer_stk::CoordMatcher matcher(1,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
    if(matcher=="z-coord") {
-     panzer_stk::CoordMatcher matcher(2);
+     panzer_stk::CoordMatcher matcher(2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
    if(matcher=="xy-coord" || matcher=="yx-coord") {
-     panzer_stk::PlaneMatcher matcher(0,1);
+     panzer_stk::PlaneMatcher matcher(0,1,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
    if(matcher=="xz-coord" || matcher=="zx-coord") {
-     panzer_stk::PlaneMatcher matcher(0,2);
+     panzer_stk::PlaneMatcher matcher(0,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 
    if(matcher=="yz-coord" || matcher=="zy-coord") {
-     panzer_stk::PlaneMatcher matcher(1,2);
+     panzer_stk::PlaneMatcher matcher(1,2,params);
      return panzer_stk::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);
    }
 

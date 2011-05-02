@@ -15,6 +15,7 @@
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_PeriodicBC_Matcher.hpp"
 #include "Panzer_STK_PeriodicBC_Parser.hpp"
+#include "Panzer_STK_PeriodicBC_MatchConditions.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 

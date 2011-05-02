@@ -78,63 +78,6 @@ namespace periodic_helpers {
 
 } // end periodic_helpers
 
-
-class CoordMatcher {
-   double error_;
-   int index_;
-   char labels_[3];
-
-   void buildLabels()
-   { labels_[0] = 'x'; labels_[1] = 'y'; labels_[2] = 'z'; }
-
-public:
-   CoordMatcher(int index) : error_(1e-8),index_(index) { buildLabels(); }
-   CoordMatcher(int index,double error) : error_(error),index_(index) { buildLabels(); }
-   CoordMatcher(const CoordMatcher & cm) : error_(cm.error_),index_(cm.index_) { buildLabels(); }
-
-   bool operator()(const Teuchos::Tuple<double,3> & a,
-                   const Teuchos::Tuple<double,3> & b) const
-   { return std::fabs(a[index_]-b[index_])<error_; /* I'm being lazy here! */ }
-
-   std::string getString() const 
-   { 
-      std::stringstream ss;
-      ss << labels_[index_] << "-coord";
-      return ss.str();
-   }
-};
-
-class PlaneMatcher {
-   double error_;
-   int index0_, index1_;
-   char labels_[3];
-  
-   void buildLabels()
-   { labels_[0] = 'x'; labels_[1] = 'y'; labels_[2] = 'z'; }
-
-public:
-   PlaneMatcher(int index0,int index1) : error_(1e-8),index0_(index0), index1_(index1) 
-   { TEUCHOS_ASSERT(index0!=index1); buildLabels(); }
-
-   PlaneMatcher(int index0,int index1,double error) : error_(error),index0_(index0), index1_(index1) 
-   { TEUCHOS_ASSERT(index0!=index1); buildLabels(); }
-
-   PlaneMatcher(const PlaneMatcher & cm) : error_(cm.error_),index0_(cm.index0_), index1_(cm.index1_) 
-   { buildLabels(); }
-
-   bool operator()(const Teuchos::Tuple<double,3> & a,
-                   const Teuchos::Tuple<double,3> & b) const
-   { return (std::fabs(a[index0_]-b[index0_])<error_) 
-         && (std::fabs(a[index1_]-b[index1_])<error_) ; /* I'm being lazy here! */ }
-
-   std::string getString() const 
-   { 
-      std::stringstream ss;
-      ss << labels_[index0_] << labels_[index1_] << "-coord";
-      return ss.str();
-   }
-};
-
 /** Simply returns a vector of pairs that match
   * the IDs owned by this processor to their
   * matching IDs on the periodic boundary.
