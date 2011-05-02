@@ -94,7 +94,7 @@ namespace MueLu {
         if (nx == -1 || ny == -1 || nz == -1)
           {
             GlobalOrdinal n = map->getGlobalNumElements();
-            nx = (GlobalOrdinal)pow((Scalar)n, 0.33334);
+            nx = (GlobalOrdinal) Teuchos::ScalarTraits<Scalar>::pow(n, 0.33334);
             ny = nx; nz = nx;
             TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
           } 
@@ -109,7 +109,7 @@ namespace MueLu {
         if (nx == -1 || ny == -1 || nz == -1)
           {
             GlobalOrdinal n = map->getGlobalNumElements();
-            nx = (GlobalOrdinal)pow((Scalar)n, 0.33334);
+            nx = (GlobalOrdinal) Teuchos::ScalarTraits<Scalar>::pow(n, 0.33334);
             ny = nx; nz = nx;
             TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
           } 
