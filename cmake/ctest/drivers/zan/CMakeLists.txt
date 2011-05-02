@@ -29,6 +29,46 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
+  SERIAL_DEBUG_DEV2
+  ctest_linux_nightly_serial_development_debug_gcc_4.6.0_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 240
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_OPT_DEV2 
+  ctest_linux_nightly_mpi_development_opt_gcc_4.6.0_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 240
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_OPT_DEV
+  ctest_linux_nightly_mpi_development_opt_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 240
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  SERIAL_DEBUG_DEV
+  ctest_linux_nightly_serial_development_debug_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 240
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_DEBUG_ICPC
+  ctest_linux_nightly_mpi_debug_icpc_zan.cmake
+  CTEST_INSTALLER_TYPE dev
+  RUN_SERIAL
+  TIMEOUT_MINUTES 240
+)
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG_ICPC
   ctest_linux_nightly_serial_debug_icpc_zan.cmake
   CTEST_INSTALLER_TYPE dev
