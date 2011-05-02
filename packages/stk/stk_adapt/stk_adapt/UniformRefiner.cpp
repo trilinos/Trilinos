@@ -1177,8 +1177,8 @@ namespace stk {
                   double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
                   //fdata[0] = double(m_eMesh.getRank());
                   fdata[0] = double(element.owner_rank());
-                  if (1 || element.owner_rank() == 3) 
-                    std::cout << "tmp element.owner_rank() = " << element.owner_rank() << std::endl;
+                  //if (1 || element.owner_rank() == 3) 
+                  //  std::cout << "tmp element.owner_rank() = " << element.owner_rank() << std::endl;
                 }
 
 
