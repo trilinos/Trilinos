@@ -94,12 +94,12 @@ int main(int argc, char *argv[]) {
   /*                                                                                */
   /**********************************************************************************/
   
-  RCP<Cthulhu::Vector<int> > Final_ = Cthulhu::VectorFactory<int>::Build( aggregates->GetVertex2AggId()->getMap() );
+  RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
 
   {
-    Teuchos::ArrayRCP<int> Final = Final_->getDataNonConst(0);
-    Teuchos::ArrayRCP<const int> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<const int> procWinner   = aggregates->GetProcWinner()->getData(0);
+    Teuchos::ArrayRCP<LO> Final = Final_->getDataNonConst(0);
+    Teuchos::ArrayRCP<const LO> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
+    Teuchos::ArrayRCP<const LO> procWinner   = aggregates->GetProcWinner()->getData(0);
 
     for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++) 
       Final[i] = vertex2AggId[i] + procWinner[i]*1000;
@@ -128,8 +128,8 @@ void dumpAggregates(Aggregates & aggregates) {
 
   int myPid = aggregates.GetMap()->getComm()->getRank();
 
-  Teuchos::ArrayRCP<const int> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
-  Teuchos::ArrayRCP<const int> procWinner   = aggregates.GetProcWinner()->getData(0);
+  Teuchos::ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+  Teuchos::ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
   size_t n = aggregates.GetVertex2AggId()->getMap()->getNodeNumElements();
   RCP<const Map> map = aggregates.GetVertex2AggId()->getMap();
 
