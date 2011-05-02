@@ -3,5 +3,5 @@ ADD_SUBDIRECTORY(stk_adapt)
 
 #IF( TPL_ENABLE_gtest)
   PACKAGE_ADD_TEST_DIRECTORIES(unit_tests)
-  PACKAGE_ADD_TEST_DIRECTORIES(regression_tests)
+#  PACKAGE_ADD_TEST_DIRECTORIES(regression_tests)
 #ENDIF()
