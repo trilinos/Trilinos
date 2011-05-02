@@ -12,6 +12,25 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
 
+  //TODO: should go in the Aggregates class
+  template <class LocalOrdinal, 
+            class GlobalOrdinal,
+            class Node,         
+            class LocalMatOps>
+  void printAggregates(MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& aggregates, Teuchos::FancyOStream& out) {
+#include "MueLu_UseShortNamesOrdinal.hpp"
+    RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates.GetVertex2AggId()->getMap() );
+    
+    ArrayRCP<LO> Final = Final_->getDataNonConst(0);
+    ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
+    ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
+    
+    for (size_t i=0; i<aggregates.GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
+      Final[i] = vertex2AggId[i] + procWinner[i]*1000;
+    
+    out << *Final_ << std::endl;
+  }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL(UCAggregationFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps)
   {
     MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) {
@@ -32,34 +51,59 @@ namespace {
       
       out << "version: " << MueLu::Version() << std::endl;
 
-      MueLu::AggregationOptions aggOptions;
-
-      aggOptions.SetPrintFlag(6);
-      aggOptions.SetMinNodesPerAggregate(2);
-      aggOptions.SetMaxNeighAlreadySelected(5);
-      aggOptions.SetOrdering(MueLu::AggOptions::GRAPH);
-      aggOptions.SetPhase3AggCreation(0.5);
-
-      UCAggregationFactory aggFact(aggOptions);
-
       RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(16);
-
       RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
 
-      RCP<Aggregates> aggregates = aggFact.Build(*graph);
+      {
+        MueLu::AggregationOptions aggOptions;
 
-      RCP<LOVector> Final_;
-      Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
+        //
+        aggOptions.SetPrintFlag(6);
+        aggOptions.SetMinNodesPerAggregate(2);
+        aggOptions.SetMaxNeighAlreadySelected(5);
+        aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
+        aggOptions.SetPhase3AggCreation(0.5);
 
-      ArrayRCP<LO> Final = Final_->getDataNonConst(0);
-      ArrayRCP<const LO> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
-      ArrayRCP<const LO> procWinner   = aggregates->GetProcWinner()->getData(0);
+        UCAggregationFactory aggFact(aggOptions);
+        RCP<Aggregates> aggregates;
 
-      for (size_t i=0; i<aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
-        Final[i] = vertex2AggId[i] + procWinner[i]*1000;
+        aggregates = aggFact.Build(*graph);
+        printAggregates(*aggregates, out);
+      }
 
-      out << *Final_ << std::endl;
-      
+      {
+        MueLu::AggregationOptions aggOptions;
+
+        //
+        aggOptions.SetPrintFlag(6);
+        aggOptions.SetMinNodesPerAggregate(2);
+        aggOptions.SetMaxNeighAlreadySelected(5);
+        aggOptions.SetOrdering(MueLu::AggOptions::RANDOM);
+        aggOptions.SetPhase3AggCreation(0.5);
+
+        UCAggregationFactory aggFact(aggOptions);
+        RCP<Aggregates> aggregates;
+
+        aggregates = aggFact.Build(*graph);
+        printAggregates(*aggregates, out);
+      }
+
+      {
+        MueLu::AggregationOptions aggOptions;
+
+        //
+        aggOptions.SetPrintFlag(6);
+        aggOptions.SetMinNodesPerAggregate(2);
+        aggOptions.SetMaxNeighAlreadySelected(5);
+        aggOptions.SetOrdering(MueLu::AggOptions::GRAPH);
+        aggOptions.SetPhase3AggCreation(0.5);
+
+        UCAggregationFactory aggFact(aggOptions);
+        RCP<Aggregates> aggregates;
+
+        aggregates = aggFact.Build(*graph);
+        printAggregates(*aggregates, out);
+      }
     }
   } // Build
 
