@@ -19,22 +19,11 @@ namespace MueLu {
   class LinkedList {
 
   public:    
-    LinkedList() {
-      MueLu_Node *newNode = new MueLu_Node;      
-      newNode->nodeId = 0;
-      nodeHead = newNode;
-      nodeTail = newNode;
-      newNode->next = NULL;
-    }
+    LinkedList() : nodeHead(NULL), nodeTail(NULL) { }
 
     ~LinkedList() {
-      MueLu_Node *newNode = NULL;
-      while ( nodeHead != NULL )
-        {
-          newNode = nodeHead;
-          nodeHead = newNode->next;
-          delete newNode;
-        }
+      while (nodeHead != NULL)
+        DeleteHead();
     }
 
     bool IsEmpty() {
@@ -45,7 +34,7 @@ namespace MueLu {
       MueLu_Node *newNode = new MueLu_Node;
       newNode->nodeId = iNode;
       newNode->next = NULL;
-      if ( nodeHead == NULL ) {
+      if (nodeHead == NULL) {
           nodeHead = newNode;
           nodeTail = newNode;
         } else {
@@ -57,16 +46,22 @@ namespace MueLu {
     int Pop() { // get head and remove first node
       if (IsEmpty()) throw(1);
 
-      MueLu_Node *newNode = nodeHead;
-      int iNode = newNode->nodeId;
-      nodeHead = newNode->next;
-      delete newNode;
+      int iNode = nodeHead->nodeId;
+      DeleteHead();
       return iNode;
     }
 
   private:
     MueLu_Node *nodeHead;
     MueLu_Node *nodeTail;
+
+    void DeleteHead() {
+      if (IsEmpty()) throw(1);
+      
+      MueLu_Node *newNode = nodeHead;
+      nodeHead = newNode->next;
+      delete newNode;
+    }
 
   };
 

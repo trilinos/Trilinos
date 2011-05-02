@@ -217,6 +217,7 @@ typedef int my_size_t; //TODO
         else if ( ordering == GRAPH )  /* graph ordering */
         {
           nodeList = Teuchos::rcp(new MueLu::LinkedList());
+          nodeList->Add(0);
         }
 
         /* main loop */
@@ -228,12 +229,13 @@ typedef int my_size_t; //TODO
           
           while (iNode2 < nRows)
             {
+
               /*------------------------------------------------------ */
               /* pick the next node to aggregate                       */
               /*------------------------------------------------------ */
 
               if      ( ordering == NATURAL ) iNode = iNode2++;
-              else if ( ordering == RANDOM ) iNode = randomVector[iNode2++];
+              else if ( ordering == RANDOM )  iNode = randomVector[iNode2++];
               else if ( ordering == GRAPH ) 
                 {
                   if ( nodeList->IsEmpty() ) 
@@ -251,6 +253,9 @@ typedef int my_size_t; //TODO
 
                   iNode = nodeList->Pop();
                 }
+              else {
+                throw(1);
+              }
 
               /*------------------------------------------------------ */
               /* consider further only if the node is in READY mode    */
