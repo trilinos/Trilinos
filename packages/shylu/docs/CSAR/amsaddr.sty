@@ -1,0 +1,149 @@
+%%
+%% This is file `amsaddr.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% amsaddr.dtx  (with options: `package')
+%% 
+%% Copyright (C) 2006 by Jérôme Lelong <jerome.lelong@gmail.com>
+%% 
+%% This file may be distributed and/or modified under the conditions of
+%% the LaTeX Project Public License, either version 1.3c of this license
+%% or (at your option) any later version.  The latest version of this
+%% license is in:
+%% 
+%%    http://www.latex-project.org/lppl.txt
+%% 
+  \def\filename{amsaddr}
+  \def\fileversion{v1.0}
+  \def\filedate{2006/12/12}
+  \ifx\protected@edef\@undefined
+     \let\protected@edef\edef
+  \fi
+\newif\if@footaddr
+\DeclareOption{foot}{\@footaddrtrue}
+\ProcessOptions\relax
+\newcounter{g@author}
+\setcounter{g@author}{0}
+\renewcommand{\author}[2][]{%
+  \stepcounter{g@author}
+  \ifx\@empty\authors
+    \gdef\authors{#2}%
+  \else
+    \g@addto@macro\authors{\and#2}%
+  \fi
+  \g@addto@macro\addresses{\author{#2}}%
+  \@ifnotempty{#1}{%
+    \ifx\@empty\shortauthors
+      \gdef\shortauthors{#1}%
+    \else
+      \g@addto@macro\shortauthors{\and#1}%
+    \fi
+  }%
+}
+\let\emails\@empty
+\renewcommand{\email}[2][]{
+  \ifx\@empty\emails
+    \gdef\emails{\mbox{#2}}
+  \else
+    \g@addto@macro\emails{,\space\mbox{#2}}
+  \fi
+}
+\def\@set@authors@addresses{\par
+  \skip@30\p@
+  \centering
+  \begingroup
+  \def\author##1{\par\vskip\skip@\MakeUppercase{##1}}%
+  \def\\{\protect\linebreak}%
+  \centering
+  \def\address##1##2{\par\addvspace\bigskipamount%
+    {\itshape\ignorespaces##2}%
+  }%
+  \def\email##1##2{%
+    \@ifnotempty{##2}{, \ignorespaces{\ttfamily##2}}}%
+  \def\curraddr##1##2{}%
+  \def\urladdr##1##2{}%
+  \addresses
+  \endgroup
+}
+\def\@setfoot@addresses{
+  \def\author##1{}%
+  \def\\{\unskip, \ignorespaces}%
+  \newif\if@firstaddr
+  \@firstaddrtrue
+  \def\address##1##2{%
+    \if@firstaddr\@firstaddrfalse\else\par\fi
+    \@ifnotempty{##1}{(\ignorespaces##1\unskip) }%
+    {\scshape\ignorespaces##2}%
+  }%
+  \def\email##1##2{}%
+  \def\curraddr##1##2{}%
+  \def\urladdr##1##2{}%
+  \addresses
+}
+\def\@setaddresses{\par
+  \nobreak \begingroup
+  \def\author##1{\nobreak\addvspace\bigskipamount}%
+  \def\\{\unskip, \ignorespaces}%
+  \interlinepenalty\@M
+  \def\address##1##2{}%
+  \def\email##1##2{}%
+  \def\curraddr##1##2{\begingroup
+    \@ifnotempty{##2}{\nobreak\indent{\itshape Current address}%
+      \@ifnotempty{##1}{, \ignorespaces##1\unskip}\/:\space
+      ##2\par}\endgroup}%
+  \def\urladdr##1##2{\begingroup
+    \@ifnotempty{##2}{\nobreak\indent{\itshape URL}%
+      \@ifnotempty{##1}{, \ignorespaces##1\unskip}\/:\space
+      \ttfamily##2\par}\endgroup}%
+  \addresses
+  \endgroup
+}
+\def\@setemails{%
+  \ifnum\theg@author > 1
+    \mbox{{\itshape E-mail addresses}:\space}{\ttfamily\emails}.
+  \else
+    \mbox{{\itshape\space E-mail \space address}:\space}{\ttfamily\emails}.
+  \fi%
+}
+\def\@maketitle{%
+  \normalfont\normalsize
+  \let\@makefnmark\relax  \let\@thefnmark\relax
+  \if@footaddr\@footnotetext{\@setfoot@addresses}\fi
+  \ifx\@empty\emails\else \@footnotetext{\@setemails}\fi
+  \ifx\@empty\@date\else \@footnotetext{\@setdate}\fi
+  \ifx\@empty\@subjclass\else \@footnotetext{\@setsubjclass}\fi
+  \ifx\@empty\@keywords\else \@footnotetext{\@setkeywords}\fi
+  \ifx\@empty\thankses\else \@footnotetext{%
+    \def\par{\let\par\@par}\@setthanks}\fi
+  \@mkboth{\@nx\shortauthors}{\@nx\shorttitle}%
+  \global\topskip42\p@\relax % 5.5pc   "   "   "     "     "
+  \@settitle
+  \if@footaddr\ifx\@empty\authors \else \@setauthors \fi
+  \else%
+     \ifx\@empty\authors \else \@set@authors@addresses \fi
+  \fi
+  \ifx\@empty\@dedicatory
+  \else
+    \baselineskip18\p@
+    \vtop{\centering{\footnotesize\itshape\@dedicatory\@@par}%
+      \global\dimen@i\prevdepth}\prevdepth\dimen@i
+  \fi
+  \@setabstract
+  \normalsize
+  \if@titlepage
+    \newpage
+  \else
+    \dimen@34\p@ \advance\dimen@-\baselineskip
+    \vskip\dimen@\relax
+  \fi
+  \let\addresses\relax
+  \let\@setfoot@addresses\relax
+} % end \@maketitle
+\def\enddoc@text{
+  \ifx\@empty\addresses\else \@setaddresses\fi
+}
+\endinput
+%%
+%% End of file `amsaddr.sty'.

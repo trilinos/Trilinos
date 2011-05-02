@@ -1,0 +1,81 @@
+\documentclass[10pt]{amsart}
+
+\usepackage{fullpage}
+%\usepackage{amsmath}
+%\usepackage{amsthm}
+%\usepackage{graphicx}
+%\usepackage{url}
+%\usepackage{subfigure}
+%\usepackage[foot]{amsaddr}
+
+\date{}
+\title{ShyLU: A Scalable Hybrid LU Solver for Sparse Linear Systems}
+
+\pagestyle{empty}
+\setlength{\topmargin}{-0.25in}
+\setlength{\headheight}{0in}
+\setlength{\headsep}{0in}
+%\advance\textwidth by 0.6in 
+%\advance\oddsidemargin by -0.3in
+%\advance\evensidemargin by -0.3in
+
+
+\begin{document}
+
+\maketitle
+
+%\vspace{-8mm}
+\section{Introduction}
+
+As parallelism in a single node increases, NW applications
+have to adapt to a hybrid system where each compute node by itself
+is a shared memory system. 
+In order to address the new challenges and opportunities 
+for robust sparse linear solvers on the node,
+we have developed a hybrid sparse solver ShyLU (initially funded by CSCAPES
+and EASI). ShyLU is hybrid in the
+mathematical sense (direct and iterative methods) making it more
+robust than other preconditioners, while being less expensive
+than a direct factorization.  ShyLU is also hybrid in the parallel
+computing sense (MPI and threads). We envision ShyLU as a scalable
+subdomain solver for large problems and/or as a standalone black-box solver
+for medium sized problems.
+
+ShyLU is based on a general Schur complement framework, with different options
+for partitioning the matrices, block-diagonal solves and Schur complement
+approximations.  Our hybrid implementation scales better than
+a flat MPI implementation as the problem size per subdomain gets smaller, which
+is important for some of the applications discussed below.
+The MPI + Threads implementation helps ShyLU to scale well for up
+to $384$ cores.
+
+%\vspace{-2mm}
+\section{Proposed Work}
+
+\paragraph{\bf{ShyLU package}:}
+ShyLU will be delivered as a package in Trilinos in the first year.
+We have implemented ShyLU using various packages in Trilinos and Trilinos will
+be the ideal delivery vehicle. Our existing implementation is Epetra based,
+as ShyLU uses lots of Trilinos packages.
+TBD : Still needed why research code to production code will take time, tpetra
+version in the long run, required by GDSW, MueLU etc.
+
+\paragraph{\bf{Algorithms}:} ShyLU's robustness and scalability depends on good
+approximations to the Schur complement. Currently, ShyLU uses 
+structure-based probing
+or a values-based dropping method. The dropping approximation, for
+example, was added for circuit simulation problems. However, for problems
+with a nice stucture to the Schur complement, for example Tramanto,
+a probing based method will be more appropriate. We will develop better
+approximation to Schur complement based on the needs of our applications, for
+example we know indefinite matrices require a better approximation than either
+of the two approaches in ShyLU.
+
+\paragraph{\bf{Application Ties}:}
+
+%\section{Application Ties}
+
+\section{Personnel}
+Erik Boman, Heidi Thornquist, Siva Rajamanickam.
+
+\end{document}
