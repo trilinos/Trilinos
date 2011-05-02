@@ -229,10 +229,10 @@ before Optika was built. However, the existing set of validators was sparse. Opt
 were already in place and built on them, resulting in the construction of several new types of validators detailed below.
 These new validators were then placed in the Teuchos package.
 
-Validators are declared in a special section of the XML file. A special $<$Validators$>$ tag is declared as a direct child
-of the root $<$ParameterList$>$ tag. In this $<$Validators$>$ tag all validators are declared. Each validator must specify at
-least its type and an Id using the $<$Validator$>$ tag. This Id can then be used anywhere in the rest of the XML file. 
-To apply the validator to a parameter, simply add the validatorId XML attribute to the $<$Parameter$>$ tag. The same validator 
+Validators are declared in a special section of the XML file. A special <Validators> tag is declared as a direct child
+of the root <ParameterList> tag. In this <Validators> tag all validators are declared. Each validator must specify at
+least its type and an Id using the <Validator> tag. This Id can then be used anywhere in the rest of the XML file. 
+To apply the validator to a parameter, simply add the validatorId XML attribute to the <Parameter> tag. The same validator 
 can be used on multiple parameters.
 
 \subsection{Enhanced Number Validators}
@@ -283,7 +283,7 @@ keystroke can cause big problems. By using a String Validator, an application de
 only selects a string value that is appropriate for a given parameter. 
 String Validators may only be used on parameters of type std::string, otherwise an error will occur.
 
-Figure~\ref{StringValidatorXML} shows how to use a String Validator. Children $<$String$>$ tags with a mandatory ``value'' XML attribute specify which values are 
+Figure~\ref{StringValidatorXML} shows how to use a String Validator. Children <String> tags with a mandatory ``value'' XML attribute specify which values are 
 valid.  In this example, ``Option 1'', ``Option 2'', and ``Option 3'' will be the only values the user can select from in the GUI.
 \begin{figure}
 \centering
@@ -310,8 +310,8 @@ valid.  In this example, ``Option 1'', ``Option 2'', and ``Option 3'' will be th
 \subsection{Filename Validators}
 Filename Validators allow application developers to designate a string parameter as a filename. When applied to a parameter,
 any attempt to edit that parameter will result in the user being presented with a special file selector widget (Figure~\ref{fileSelectorWidget}). If the 
-``fileMustExist'' XML attribute is set to true, the user will only be able select files that already exist. Otherwise, the user will be able
-to select any file he/she wants. Filename Validators can only be applied to parameters of type string. 
+``fileMustExist'' XML attribute is set to true, the user will only be able select files that already exist. Otherwise, any file may be selected by the user.
+Filename Validators can only be applied to parameters of type string. 
 
 Figure~\ref{filenameValidatorXML} shows an example of how to use a Filename Validator. Here we use it to select a file to output the results
 of our program. We set the ``fileMustExist'' XML attribute to false so that the user can select a file that does not already exist.
@@ -424,10 +424,10 @@ All dependencies have at least one dependee and one dependent. When running the 
 	something more appropriate.
 \end{enumerate}
 
-Like validators, dependencies are declared in XML using the $<$Dependencies$>$ tag. This tag must be a direct child
-of the root $<$ParameterList$>$ tag. Inside the $<$Dependencies$>$ tag each dependency is declared using the $<$Dependency$>$ tag. Within the
-$<$Dependency$>$ tag the XML attribute ``type'' is required in order to define the type of the dependency. Each $<$Dependency$>$ must have at least
-one $<$Dependee$>$ child tag and one $<$Dependent$>$ child tag. Each of these tags must have an XML attribute called ``parameterId'' which identifies
+Like validators, dependencies are declared in XML using the <Dependencies> tag. This tag must be a direct child
+of the root <ParameterList> tag. Inside the <Dependencies> tag each dependency is declared using the <Dependency> tag. Within the
+<Dependency> tag the XML attribute ``type'' is required in order to define the type of the dependency. Each <Dependency> must have at least
+one <Dependee> child tag and one <Dependent> child tag. Each of these tags must have an XML attribute called ``parameterId'' which identifies
 their associated parameter. A dependency must have an arbitrary number of dependents.
 
 \subsection{Visual Dependencies}
@@ -436,7 +436,7 @@ when a parameter takes on a particular value, and as a result, another parameter
 application developer can hopefully avoid some confusion on the user's part. If we were to write these dependencies as a sentence, they would say: ``Based on
 the value of the dependee parameter show or hide the dependent parameter(s)''.
 
-Visual Dependencies have an extra boolean XML attribute that can be put in the $<$Dependency$>$ tag called ``showIf''. Which ever dependee is being tested to 
+Visual Dependencies have an extra boolean XML attribute that can be put in the <Dependency> tag called ``showIf''. Which ever dependee is being tested to 
 determine the dependents visibility, showIf can negate it by being set to false. So if a visual dependency is set to only show a dependent when the
 dependee has a particular value, setting showIf to false will cause the dependent to be visible only when the dependee \emph{does not} have a particular
 value. If the showIf attribute is not present, it is assumed to be true. With Visual Dependencies, dependents can also be parameter lists in addition to regular
@@ -546,7 +546,7 @@ parameter it is evaluating (in this case a double). Number Visual Dependencies m
 type specified in the ``type'' XML attribute used in the Number Visual Dependency tag.
 
 Sometimes it is necessary to test a number typed parameter using criteria other than whether or not its current value is greater than or equal to zero.
-This can be accomplished by using a $<$Function$>$ tag. A $<$Function$>$ tag instructs the dependency to run the value of the dependee through a function
+This can be accomplished by using a <Function> tag. A <Function> tag instructs the dependency to run the value of the dependee through a function
 first, and then test the result of that function to see if it is greater than or equal to zero. Consider the example in Figure~\ref{NumberVisXML1}, only this
 time we will specify our temperature is in degrees Fahrenheit. In order to get the proper functionality, we will add a ``subtraction function'' to the dependency that will
 subtract 32 from the value of the temperature parameter before it is tested against zero. Figure~\ref{NumberVisXML2} shows an example of this. We set the operand 
@@ -668,8 +668,8 @@ A Range Validator Dependency must conform to the following constraints:
 Figure~\ref{RangeValiDepXML} shows an example of a Range Validator Dependency. In it, we want to use different validators
 on the ``Fondue Food'' if the ``Fondue Pot Temperature'' is different. If the temperature is greater than or equal to 80 or less than 120,
 we only want the user to be able to select ``Cheese'' or ``Bread''. If it is greater than or equal to 120 but less than 180, we only want the
-user to be able to pick ``Chicken'' or ``Beef''. We associated these ranges with their appropriate values in the $<$RangesAndValidators$>$ tag by
-using $<$Pair$>$ tags for each range and validator. Notice that like Enhanced Number Validators and Number Visual Dependencies, the type of the dependee parameter is 
+user to be able to pick ``Chicken'' or ``Beef''. We associated these ranges with their appropriate values in the <RangesAndValidators> tag by
+using <Pair> tags for each range and validator. Notice that like Enhanced Number Validators and Number Visual Dependencies, the type of the dependee parameter is 
 included in the ``type'' XML attribute of the dependency. In Figure~\ref{RangeValiDepXML} the dependee's type is double so the type of the dependency is 
 ``RangeValidatorDependency(double)''.
 \begin{figure}
@@ -780,7 +780,7 @@ dependent.
 \end{figure}
 
 If we wanted the length of the array to be based on something other then the direct value of the dependee parameter, we could run it through a function. This would 
-be done by adding a $<$Function$>$ tag inside the $<$Dependency$>$ tag, just like we did in Figure~\ref{NumberVisXML2} for the Number Visual Dependency.
+be done by adding a <Function> tag inside the <Dependency> tag, just like we did in Figure~\ref{NumberVisXML2} for the Number Visual Dependency.
 
 \section{Condition Visual Dependencies}
 Up until this point, all Dependencies have had a single dependee. Condition Visual Dependencies are a special type of visual dependencies that allow the application developer to
@@ -799,7 +799,7 @@ condition evaluates to false. As with other number based entities in Optika, a f
 function and then the return value of the function will be compared to zero.
 
 Figure~\ref{simpleNumberCon} shows an example of a number condition used to evaluate a parameter with an Id of 3. Like the other number based entities in Optika, the number 
-type of the parameter to evaluate is specified as part of the type name for the condition, in this case int. We have added a $<$Function$>$ tag to this condition. The result is 
+type of the parameter to evaluate is specified as part of the type name for the condition, in this case int. We have added a <Function> tag to this condition. The result is 
 that if the parameter's value is greater than or equal to -5, the condition evaluates to true. Otherwise, the condition evaluates to false.
 \begin{figure}
 \centering
