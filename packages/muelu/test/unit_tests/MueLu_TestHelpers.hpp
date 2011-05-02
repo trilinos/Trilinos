@@ -74,14 +74,14 @@ namespace MueLu {
       static RCP<CrsOperator> BuildMatrix(Teuchos::ParameterList &matrixList) {
         RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-        GO nx,ny,nz;
+        int nx,ny,nz; //global_size_t
         nx = ny = nz = 5;
         nx = matrixList.get("nx",nx);
         ny = matrixList.get("ny",ny);
         nz = matrixList.get("nz",nz);
 
         std::string matrixType = matrixList.get("matrixType","Laplace1D");
-        GO numGlobalElements;
+        GO numGlobalElements; //global_size_t
         if (matrixType == "Laplace1D")
           numGlobalElements = nx;
         else if (matrixType == "Laplace2D")
@@ -101,7 +101,7 @@ namespace MueLu {
 
       // Create a 1D Poisson matrix with the specified number of rows
       // nx: global number of rows
-      static RCP<CrsOperator> Build1DPoisson(GO nx) {
+      static RCP<CrsOperator> Build1DPoisson(int nx) { //global_size_t
         Teuchos::ParameterList matrixList;
         matrixList.set("nx", nx);
         matrixList.set("matrixType","Laplace1D");
