@@ -15,6 +15,7 @@
 \setlength{\topmargin}{-0.25in}
 \setlength{\headheight}{0in}
 \setlength{\headsep}{0in}
+\advance\textheight by 1.0in 
 %\advance\textwidth by 0.6in 
 %\advance\oddsidemargin by -0.3in
 %\advance\evensidemargin by -0.3in
@@ -54,9 +55,13 @@ to $384$ cores.
 
 \paragraph{\bf{ShyLU package}:}
 ShyLU will be delivered as a package in Trilinos in the first year.
+ShyLU will address the needs of applications that need a robust preconditioner
+and/or a scalable MPI+threads subdomain solver, especially focusing on
+strong scaling on the node.
 We have implemented ShyLU using various packages in Trilinos and Trilinos will
 be the ideal delivery vehicle. Our existing implementation is Epetra based,
 as ShyLU uses lots of Trilinos packages.
+
 TBD : Still needed why research code to production code will take time, tpetra
 version in the long run, required by GDSW, MueLU etc.
 
@@ -65,7 +70,7 @@ approximations to the Schur complement. Currently, ShyLU uses
 structure-based probing
 or a values-based dropping method. The dropping approximation, for
 example, was added for circuit simulation problems. However, for problems
-with a nice stucture to the Schur complement, for example Tramanto,
+with a nice stucture to the Schur complement, from applications like Tramanto,
 a probing based method will be more appropriate. We will develop better
 approximation to Schur complement based on the needs of our applications, for
 example we know indefinite matrices require a better approximation than either
