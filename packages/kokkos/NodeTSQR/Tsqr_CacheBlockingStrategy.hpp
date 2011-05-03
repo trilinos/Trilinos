@@ -482,8 +482,12 @@ namespace TSQR {
 
       // 64 KB is a reasonable guess for the L2 cache size.  If Scalar
       // is huge, min_cache_size above might be bigger, so we account
-      // for that with a max.
-      const size_t default_cache_size = std::max (min_cache_size, 65536);
+      // for that with a max.  The type cast is necessary so that the
+      // compiler can decide which specialization of std::max to use
+      // (the one for size_t, in this case, rather than the one for
+      // int, which is the implicit type of the integer constant).
+      const size_t default_cache_size = 
+	std::max (min_cache_size, static_cast<size_t> (65536));
 
       // If the suggested cache size is less than the minimum, ignore
       // the suggestion and pick the minimum.

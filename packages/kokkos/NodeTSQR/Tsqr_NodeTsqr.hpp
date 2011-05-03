@@ -39,9 +39,6 @@
 
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
 
   /// \class NodeTsqr
@@ -52,29 +49,31 @@ namespace TSQR {
   /// functionality used by all intranode TSQR implementations.
   ///
   /// NodeTsqr has three template parameters:  
-  /// - the (local) ordinal type (how we index into a matrix)
-  /// - the scalar type (the type of elements stored in the matrix)
+  /// - the (local) Ordinal type (how we index into a matrix)
+  /// - the Scalar type (the type of elements stored in the matrix)
   /// - the type returned by factor() (FactorOutputType)
   ///
   /// We template on FactorOutputType for compile-time polymorphism.
-  /// This lets us define the factor method() without constraining
-  /// subclasses to set up a class hierarchy for that type.  All
-  /// NodeTsqr subclasses' factor() methods return some composition of
-  /// std::pair, std::vector, and Scalar.  It would be silly to wrap
-  /// that up in an abstract base class, since we don't intend that
-  /// returned object to be polymorphic. 
+  /// This lets subclasses define the factor method(), without
+  /// constraining them to inherit their particular FactorOutputType
+  /// from a common abstract base class.  FactorOutputType is meant to
+  /// be either just a simple composition of std::pair and
+  /// std::vector, or a simple struct.  Its contents are specific to
+  /// each intranode TSQR implementation.  and are not intended to be
+  /// polymorphic, so it would not make sense for all the different
+  /// FactorOutputType types to inherit from a common base class.  
   ///
   /// Templating on FactorOutputType means that we can't use run-time
   /// polymorphism to swap between NodeTsqr subclasses, since the
   /// latter are really subclasses of different NodeTsqr
-  /// instantiations (i.e., different FactorOutputType types).  The
-  /// point is to share common functionality, not a common interface;
-  /// we only define the interface here as an easy syntactic
-  /// enforcement of compile-time polymorphism (to ensure that
-  /// subclasses implemented the right methods).  Run-time
-  /// polymorphism of different NodeTsqr subclasses would not be
-  /// useful.  This is because ultimately each subclass is bound to a
-  /// Kokkos Node type, and those only use compile-time polymorphism.
+  /// instantiations (i.e., different FactorOutputType types).
+  /// However, inheriting from different specializations of NodeTsqr
+  /// does enforce correct compile-time polymorphism in a syntactic
+  /// way.  It also avoids repeated code for common functionality.
+  /// Full run-time polymorphism of different NodeTsqr subclasses
+  /// would not be useful.  This is because ultimately each subclass
+  /// is bound to a Kokkos Node type, and those only use compile-time
+  /// polymorphism.
   ///
   template<class Ordinal, class Scalar, class FactorOutputType>
   class NodeTsqr : public Teuchos::Describable {
@@ -111,9 +110,11 @@ namespace TSQR {
 
     /// \brief Compute the QR factorization of A.
     ///
-    /// The resulting Q factor is stored implicitly, in part in place
-    /// in A (overwriting the input), and in part in the returned
-    /// factor_output_type object.
+    /// The resulting Q factor is stored implicitly in two parts.  The
+    /// first part is stored in place in the A matrix, and thus
+    /// overwrites the input matrix.  The second part is stored in the
+    /// returned factor_output_type object.  Both parts must be passed
+    /// into \c apply() or \c explicit_Q().
     ///
     /// \param nrows [in] Number of rows in the matrix A to factor.
     /// \param ncols [in] Number of columns in the matrix A to factor.
@@ -122,9 +123,11 @@ namespace TSQR {
     ///   (a.k.a. stride) lda, or with contiguous cache blocks (if
     ///   contiguousCacheBlocks is true) according to the prevailing
     ///   cache blocking strategy.  Use the \c cache_block() method to
-    ///   covert a matrix in column-major order to the latter format.
-    ///   On output: part of the implicit representation of the Q
-    ///   factor.
+    ///   convert a matrix in column-major order to the latter format,
+    ///   and the \c un_cache_block() method to convert it back.  On
+    ///   output: part of the implicit representation of the Q factor.
+    ///   (The returned object is the other part of that
+    ///   representation.)
     /// \param lda [in] Leading dimension (a.k.a. stride) of the
     ///   matrix A to factor.
     /// \param R [out] The ncols x ncols R factor.
@@ -135,6 +138,7 @@ namespace TSQR {
     ///   means, put "false" here.
     ///
     /// \return Part of the implicit representation of the Q factor.
+    ///   The other part is the A matrix on output.
     virtual factor_output_type
     factor (const Ordinal nrows,
 	    const Ordinal ncols, 
@@ -142,32 +146,31 @@ namespace TSQR {
 	    const Ordinal lda,
 	    Scalar R[],
 	    const Ordinal ldr,
-	    const bool contiguousCacheBlocks) = 0;
+	    const bool contiguousCacheBlocks) const = 0;
 
     /// \brief Apply the implicit Q factor from \c factor() to C.
     ///
-    /// \param nrows [in] Number of rows in the matrix A to factor.
-    /// \param ncols [in] Number of columns in the matrix A to factor.
-    /// \param A [in/out] On input: the matrix to factor.  It is
-    ///   stored either in column-major order with leading dimension
-    ///   (a.k.a. stride) lda, or with contiguous cache blocks (if
-    ///   contiguousCacheBlocks is true) according to the prevailing
-    ///   cache blocking strategy.  Use the \c cache_block() method to
-    ///   covert a matrix in column-major order to the latter format.
-    ///   On output: part of the implicit representation of the Q
-    ///   factor.
     /// \param applyType [in] Whether to apply Q, Q^T, or Q^H to C.
-    /// \param nrows [in] Number of rows in Q and in C.
-    /// \param ncols_Q [in] Number of columns in Q.
-    /// \param Q [in] Implicit representation of the Q factor; the
-    ///   matrix A on output from \c factor().
-    /// \param ldq [in] Leading dimension (a.k.a. stride) of the
-    ///   implicit representation of the Q factor.
-    /// \param factorOutput [in] Return value of factor().
-    /// \param ncols_C [in] Number of columns in the matrix C.
+    /// \param nrows [in] Number of rows in Q and C.
+    /// \param ncols [in] Number of columns in in Q.
+    /// \param Q [in] Part of the implicit representation of the Q
+    ///   factor; the A matrix output of \c factor().  See the \c
+    ///   factor() documentation for details.
+    /// \param ldq [in] Leading dimension (a.k.a. stride) of Q, if Q
+    ///   is stored in column-major order (not contiguously cache
+    ///   blocked).
+    /// \param factorOutput [in] Return value of factor(),
+    ///   corresponding to Q.
+    /// \param ncols_C [in] Number of columns in the matrix C.  This
+    ///   may be different than the number of columns in Q.  There is
+    ///   no restriction on this value, but we optimize performance
+    ///   for the case ncols_C == ncols_Q.
     /// \param C [in/out] On input: Matrix to which to apply the Q
-    ///   factor.  On output: Result of applying the Q factor.
-    /// \param ldc [in] leading dimension (a.k.a. stride) of C.
+    ///   factor.  On output: Result of applying the Q factor (or Q^T,
+    ///   or Q^H, depending on applyType) to C.
+    /// \param ldc [in] leading dimension (a.k.a. stride) of C, if C
+    ///   is stored in column-major order (not contiguously cache
+    ///   blocked).
     /// \param contiguousCacheBlocks [in] Whether the cache blocks of
     ///   Q and C are stored contiguously.  If you don't know what
     ///   this means, put "false" here.
@@ -177,17 +180,40 @@ namespace TSQR {
 	   const Ordinal ncols_Q,
 	   const Scalar Q[],
 	   const Ordinal ldq,
-	   const FactorOutput& factorOutput,
+	   const FactorOutputType& factorOutput,
 	   const Ordinal ncols_C,
 	   Scalar C[],
 	   const Ordinal ldc,
-	   const bool contiguousCacheBlocks) = 0;
+	   const bool contiguousCacheBlocks) const = 0;
 
     /// \brief Compute the explicit Q factor from the result of \c factor().
     ///
     /// This is equivalent to calling \c apply() on the first ncols_C
     /// columns of the identity matrix (suitably cache-blocked, if
     /// applicable).
+    ///
+    /// \param nrows [in] Number of rows in Q and C.
+    /// \param ncols [in] Number of columns in in Q.
+    /// \param Q [in] Part of the implicit representation of the Q
+    ///   factor; the A matrix output of \c factor().  See the \c
+    ///   factor() documentation for details.
+    /// \param ldq [in] Leading dimension (a.k.a. stride) of Q, if Q
+    ///   is stored in column-major order (not contiguously cache
+    ///   blocked).
+    /// \param factorOutput [in] Return value of factor(),
+    ///   corresponding to Q.
+    /// \param ncols_C [in] Number of columns in the matrix C.  This
+    ///   may be different than the number of columns in Q, in which
+    ///   case that number of columns of the Q factor will be
+    ///   computed.  There is no restriction on this value, but we
+    ///   optimize performance for the case ncols_C == ncols_Q.
+    /// \param C [out] The first ncols_C columns of the Q factor.
+    /// \param ldc [in] leading dimension (a.k.a. stride) of C, if C
+    ///   is stored in column-major order (not contiguously cache
+    ///   blocked).
+    /// \param contiguousCacheBlocks [in] Whether the cache blocks of
+    ///   Q and C are stored contiguously.  If you don't know what
+    ///   this means, put "false" here.
     virtual void
     explicit_Q (const Ordinal nrows,
 		const Ordinal ncols_Q,
@@ -197,7 +223,7 @@ namespace TSQR {
 		const Ordinal ncols_C,
 		Scalar C[],
 		const Ordinal ldc,
-		const bool contiguousCacheBlocks) = 0;
+		const bool contiguousCacheBlocks) const = 0;
 
     /// \brief Cache block A_in into A_out.
     ///
@@ -303,17 +329,18 @@ namespace TSQR {
     ///
     /// Return a view of the topmost cache block (on this node) of the
     /// given matrix C.  This is not necessarily square, though it
-    /// must have at least as many rows as columns.  For a square
-    /// ncols by ncols block, as needed by Tsqr::apply(), do as 
-    /// follows:
+    /// must have at least as many rows as columns.  For a view of the
+    /// first C.ncols() rows of that block, which methods like
+    /// Tsqr::apply() need, do the following:
     /// \code 
     /// MatrixViewType top = this->top_block (C, contig);
-    /// MatView< Ordinal, Scalar > square (ncols, ncols, top.get(), top.lda());
+    /// MatView<Ordinal, Scalar> square (ncols, ncols, top.get(), top.lda());
     /// \endcode
     ///
-    /// \note MatrixViewType must have member functions nrows(),
-    ///   ncols(), get(), and lda(), and its constructor must take the
-    ///   same four arguments as ConstMatView's constructor.
+    /// Models for MatrixViewType are \c MatView and \c ConstMatView.
+    /// MatrixViewType must have member functions nrows(), ncols(),
+    /// get(), and lda(), and its constructor must take the same four
+    /// arguments as the constructor of \c ConstMatView.
     template<class MatrixViewType>
     MatrixViewType
     top_block (const MatrixViewType& C, 
@@ -327,7 +354,7 @@ namespace TSQR {
       ConstMatView<Ordinal, Scalar> C_view (C.nrows(), C.ncols(), 
 					    C.get(), C.lda());
       ConstMatView<Ordinal, Scalar> C_top = 
-	const_top_block (C, contiguous_cache_blocks);
+	const_top_block (C_view, contiguous_cache_blocks);
       TEST_FOR_EXCEPTION(C_top.nrows() < C_top.ncols(), std::logic_error,
 			 "The subclass of NodeTsqr has a bug in const_top_block"
 			 "(); it returned a block with fewer rows than columns "
@@ -606,4 +633,4 @@ namespace TSQR {
 } // namespace TSQR
 
 
-#endif __TSQR_Tsqr_NodeTsqr_hpp
+#endif // __TSQR_Tsqr_NodeTsqr_hpp

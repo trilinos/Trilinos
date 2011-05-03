@@ -396,7 +396,7 @@ namespace TSQR {
       // result[1] = number of rows in the cache block
       // result[2] = pointer offset (A.get() + result[2])
       // result[3] = leading dimension (a.k.a. stride) of the cache block
-      Tuple<LocalOrdinal, 4> result = 
+      Tuple<Ordinal, 4> result = 
 	strategy_.cache_block_details (cache_block_index, A.nrows(), A.ncols(),
 				       A.lda(), nrows_cache_block(), 
 				       contiguous_cache_blocks);
