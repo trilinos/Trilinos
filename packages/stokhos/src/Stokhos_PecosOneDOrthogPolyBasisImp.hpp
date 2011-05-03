@@ -233,8 +233,8 @@ getQuadPoints(ordinal_type quad_order,
 {
   ordinal_type num_points = 
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
-  const Pecos::RealArray& gp = pecosPoly->gauss_points(num_points);
-  const Pecos::RealArray& gw = pecosPoly->gauss_weights(num_points); 
+  const Pecos::RealArray& gp = pecosPoly->collocation_points(num_points);
+  const Pecos::RealArray& gw = pecosPoly->collocation_weights(num_points); 
   quad_points.resize(num_points);
   quad_weights.resize(num_points);
   for (ordinal_type i=0; i<num_points; i++) {
