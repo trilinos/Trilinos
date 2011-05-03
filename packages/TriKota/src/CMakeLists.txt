@@ -197,6 +197,10 @@ APPEND_SET(SOURCES
 
 IF(TriKota_ENABLE_DakotaCMake)
 
+# Compiling code that includes Dakota headers requires
+# -DHAVE_CONFIG_H and -DDISABLE_DAKOTA_CONFIG_H.
+ADD_DEFINITIONS(-DHAVE_CONFIG_H -DDISABLE_DAKOTA_CONFIG_H)
+
 # The DEPLIBS part is to tell CMake that trikota depends on the specified
 # Dakota libraries.  The IMPORTEDLIBS part is to get the PACKAGE_ADD_LIBRARY
 # macro to put the Dakota libraries TriKota_LIBRARIES when writing
@@ -206,7 +210,7 @@ PACKAGE_ADD_LIBRARY(
   trikota
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS ${Dakota_LIBRARIES}
+  DEPLIBS ${Dakota_EXTRA_LIBRARIES}
   IMPORTEDLIBS ${Dakota_LIBRARIES}
   )
 
