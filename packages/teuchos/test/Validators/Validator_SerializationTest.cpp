@@ -35,6 +35,8 @@
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
 #include "Teuchos_StandardValidatorXMLConverters.hpp"
 
+#include "Teuchos_XMLParameterListTestHelpers.hpp"
+
 
 namespace Teuchos {
 

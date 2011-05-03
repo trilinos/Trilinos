@@ -78,7 +78,8 @@ TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFile(
  * \relates ParameterList
  */
 
-TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFileAndBroadcast(
+TEUCHOS_LIB_DLL_EXPORT
+void updateParametersFromXmlFileAndBroadcast(
   const std::string &xmlFileName,
   ParameterList *paramList,
   const Comm<int> &comm
@@ -92,6 +93,7 @@ TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFileAndBroadcast(
  *
  * \relates ParameterList
  */
+TEUCHOS_LIB_DLL_EXPORT 
 RCP<ParameterList> getParametersFromXmlFile( const std::string &xmlFileName );
 
 /** \brief Reads XML parameters from a file and return them in a new parameter 
@@ -105,6 +107,7 @@ RCP<ParameterList> getParametersFromXmlFile( const std::string &xmlFileName );
  * 
  * \relates ParameterList
  */
+TEUCHOS_LIB_DLL_EXPORT
 RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName,
   RCP<DependencySheet> depSheet);
 
@@ -121,7 +124,8 @@ RCP<ParameterList> getParametersFromXmlFile(const std::string &xmlFileName,
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlString(
+TEUCHOS_LIB_DLL_EXPORT
+void updateParametersFromXmlString(
   const std::string &xmlStr,
   ParameterList *paramList
   );
@@ -134,6 +138,7 @@ TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlString(
  *
  * \relates ParameterList
  */
+TEUCHOS_LIB_DLL_EXPORT
 RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr );
 
 /** \brief Reads XML parameters from a std::string and return them in a new
@@ -145,6 +150,7 @@ RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr );
  * 
  * \relates ParameterList
  */
+TEUCHOS_LIB_DLL_EXPORT
 RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr,
   RCP<DependencySheet> depSheet);
 
@@ -160,7 +166,8 @@ RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr,
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlOStream(
+TEUCHOS_LIB_DLL_EXPORT
+void writeParameterListToXmlOStream(
   const ParameterList &paramList,
   std::ostream &xmlOut,
   RCP<const DependencySheet> depSheet = null
@@ -179,39 +186,14 @@ TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlOStream(
  *
  * \relates ParameterList
  */
-TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlFile(
+TEUCHOS_LIB_DLL_EXPORT
+void writeParameterListToXmlFile(
   const ParameterList &paramList,
   const std::string &xmlFileName,
   RCP<const DependencySheet> depSheet=null
   );
 
 
-/** \brief Write a parameter list to xml and then read that xml back in via
- * a string. The intent of this function is to be used for testing purposes.
- *
- * \param paramList [in] Contains the parameters and sublists that will be
- * written out and then read back in.
- *
- * \return The read in parameter list.
- * \ingroup XML
- */
-  RCP<ParameterList> writeThenReadPL(ParameterList& myList);
-
-/** \brief Write a parameter list to xml and then read that xml back in via
- * a string. The intent of this function is to be used for testing purposes.
- *
- * \param paramList [in] Contains the parameters and sublists that will be
- * written out and then read back in.
- *
- * \param depSheetIn [in] The Dependency Sheet from which Dependencies should be
- * should be written.
- * \param depSheetOut [out] The Dependency Sheet into which Dependencies should 
- * be placed once read.
- * 
- * \return The read in parameter list.
- * \ingroup XML
- */
-  RCP<ParameterList> writeThenReadPL(ParameterList& myList, RCP<DependencySheet> depSheetIn, RCP<DependencySheet> depSheetOut);
 } // namespace Teuchos
 
 

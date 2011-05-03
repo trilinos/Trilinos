@@ -8,15 +8,16 @@ SET(SerializationFiles
   
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-	Conditions_test
-	SOURCES cxx_main.cpp Condition_UnitTests.cpp
+  Conditions_test
+  SOURCES cxx_main.cpp Condition_UnitTests.cpp
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-	Conditions_Serialization_test
-	SOURCES cxx_main.cpp Condition_Serialization_UnitTests.cpp
+  Conditions_Serialization_test
+  SOURCES cxx_main.cpp Condition_Serialization_UnitTests.cpp
+  DEPLIBS teuchos_xml_pl_test_helpers
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
