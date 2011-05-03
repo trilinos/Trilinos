@@ -52,7 +52,7 @@ namespace TSQR {
     explicit_Q_helper (const size_t P_first, 
 		       const size_t P_last,
 		       MatView< LocalOrdinal, Scalar >& Q_out,
-		       const bool contiguous_cache_blocks) 
+		       const bool contiguous_cache_blocks) const
     {
       if (P_first > P_last || Q_out.empty())
 	return;
@@ -110,7 +110,7 @@ namespace TSQR {
 		   typename TbbRecursiveTsqr< LocalOrdinal, Scalar >::ParOutput& par_outputs,
 		   Scalar R[],
 		   const LocalOrdinal ldr,
-		   const bool contiguous_cache_blocks)
+		   const bool contiguous_cache_blocks) const
     {
       mat_view A_top;
       if (P_first > P_last || A.empty())
@@ -242,7 +242,7 @@ namespace TSQR {
 		  MatView< LocalOrdinal, Scalar > C,
 		  typename TbbRecursiveTsqr< LocalOrdinal, Scalar >::array_top_blocks_t& top_blocks, 
 		  const FactorOutput& factor_output,
-		  const bool contiguous_cache_blocks)
+		  const bool contiguous_cache_blocks) const
     {
       typedef std::pair< const_mat_view, mat_view > apply_t;
 #ifdef TBB_DEBUG
@@ -296,7 +296,7 @@ namespace TSQR {
 			    ConstMatView< LocalOrdinal, Scalar > Q,
 			    MatView< LocalOrdinal, Scalar > C,
 			    const typename TbbRecursiveTsqr< LocalOrdinal, Scalar >::FactorOutput& factor_output,
-			    const bool contiguous_cache_blocks)
+			    const bool contiguous_cache_blocks) const
     {
       if (apply_helper_empty (P_first, P_last, Q, C))
 	return std::make_pair (Q, C);
@@ -344,7 +344,7 @@ namespace TSQR {
 		 mat_view& A_top,
 		 mat_view& A_bot,
 		 std::vector< std::vector< Scalar > >& par_outputs,
-		 const bool contiguous_cache_blocks)
+		 const bool contiguous_cache_blocks) const
     {
       if (P_top == P_bot) 
 	{
@@ -375,7 +375,7 @@ namespace TSQR {
 		const std::vector< std::vector< Scalar > >& tau_arrays,
 		MatView< LocalOrdinal, Scalar >& C_top,
 		MatView< LocalOrdinal, Scalar >& C_bot,
-		const bool contiguous_cache_blocks)
+		const bool contiguous_cache_blocks) const
     {
       if (P_top == P_bot) 
 	{
@@ -447,14 +447,11 @@ namespace TSQR {
 	}
     }
 
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-
     template< class LocalOrdinal, class Scalar >
     TbbRecursiveTsqr< LocalOrdinal, Scalar >::
     TbbRecursiveTsqr (const size_t num_cores,
 		      const size_t cache_block_size) 
-      : seq_ (cache_block_size) 
+      : seq_ (cache_block_size), ncores_ (1)
     {
       if (num_cores < 1)
 	ncores_ = 1; // default is no parallelism
@@ -501,7 +498,7 @@ namespace TSQR {
 	    const LocalOrdinal lda,
 	    Scalar R[],
 	    const LocalOrdinal ldr,
-	    const bool contiguous_cache_blocks)
+	    const bool contiguous_cache_blocks) const
     {
       mat_view A_view (nrows, ncols, A, lda);
       std::vector< SeqOutput > seq_outputs (ncores());
@@ -523,7 +520,7 @@ namespace TSQR {
 	   const Scalar Q[],
 	   const LocalOrdinal ldq,
 	   const typename TbbRecursiveTsqr< LocalOrdinal, Scalar >::FactorOutput& factor_output,
-	   const bool contiguous_cache_blocks)
+	   const bool contiguous_cache_blocks) const
     {
       const ApplyType apply_type (op);
       if (apply_type == ApplyType::ConjugateTranspose && 
@@ -558,7 +555,7 @@ namespace TSQR {
 		Scalar Q_out[],
 		const LocalOrdinal ldq_out,
 		const typename TbbRecursiveTsqr< LocalOrdinal, Scalar >::FactorOutput& factor_output,
-		const bool contiguous_cache_blocks)
+		const bool contiguous_cache_blocks) const
     {
       if (ncols_Q_out != ncols_Q_in)
 	throw std::logic_error("FIXME Currently, explicit_Q() only works for ncols_Q_out == ncols_Q_in");

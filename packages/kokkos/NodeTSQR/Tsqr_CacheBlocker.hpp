@@ -33,38 +33,32 @@
 #include <Tsqr_MatView.hpp>
 #include <Tsqr_Util.hpp>
 
-// #include <iostream>
 #include <sstream>
 #include <stdexcept>
-
-// #define CACHE_BLOCKER_DEBUG 1
-// #ifdef CACHE_BLOCKER_DEBUG
-// #  undef CACHE_BLOCKER_DEBUG
-// #endif // CACHE_BLOCKER_DEBUG
-#ifdef CACHE_BLOCKER_DEBUG
-#  include <iostream>
-using std::cerr;
-using std::endl;
-#endif // CACHE_BLOCKER_DEBUG
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
   /// \class CacheBlocker
+  /// \brief Break a tall skinny matrix by rows into cache blocks.
+  /// \author Mark Hoemmen
   /// 
-  /// A CacheBlocker uses a particular cache blocking strategy ("class
-  /// CBS") to know how to separate an nrows by ncols matrix into
-  /// cache blocks, which in this case are row blocks.  We can use
-  /// this strategy to cache block any matrix of nrows rows, using the
-  /// same distribution of rows to blocks, regardless of whether that
-  /// latter matrix has a different number of columns than ncols.
-  template< class Ordinal, class Scalar > // class CBS=CacheBlockingStrategy< Ordinal, Scalar > 
+  /// A CacheBlocker uses a particular cache blocking strategy to
+  /// partition an nrows by ncols matrix by rows into cache blocks.
+  /// The entries in a cache block may be stored contiguously, or as
+  /// non-contiguous partitions of a matrix stored conventionally (in
+  /// column-major order).  
+  ///
+  /// The CacheBlocker blocks any matrix with the same number of rows
+  /// in the same way, regardless of the number of columns (the cache
+  /// blocking strategy's number of columns is set on construction).
+  /// This is useful for TSQR's apply() routine, which requires that
+  /// the output matrix C be blocked in the same way as the input
+  /// matrix Q (in which the Q factor is stored implicitly).
+  template<class Ordinal, class Scalar>
   class CacheBlocker {
   private:
-    typedef MatView< Ordinal, Scalar > mat_view;
-    typedef ConstMatView< Ordinal, Scalar > const_mat_view;
+    typedef MatView<Ordinal, Scalar> mat_view;
+    typedef ConstMatView<Ordinal, Scalar> const_mat_view;
 
     void
     validate () 
@@ -72,76 +66,84 @@ namespace TSQR {
       if (nrows_cache_block_ < ncols_)
 	{
 	  std::ostringstream os;
-	  os << "Cache block is too small: only " << nrows_cache_block_
-	     << " rows fit, but need at least as many rows as columns (= "
-	     << ncols_ << ")";
+	  os << "The typical cache block size is too small.  Only " 
+	     << nrows_cache_block_ << " rows fit, but every cache block needs "
+	    "at least as many rows as the number of columns " << ncols_ 
+	     << " in the matrix.";
 	  throw std::logic_error (os.str());
 	}
     }
 
   public:
-    /// Constructor
+    /// \brief Constructor
     ///
-    /// \param num_rows Number of rows in the matrix corresponding to
-    ///   the cache blocking scheme
-    /// \param num_cols Number of columns in the matrix corresponding
-    ///   to the cache blocking scheme 
-    /// \param strategy Cache blocking strategy object
+    /// \param num_rows Number of rows in the matrix to block.
+    /// \param num_cols Number of columns in the matrix to block.
+    /// \param strategy Cache blocking strategy object (passed by copy).
+    ///
+    /// \note The CacheBlocker's number of columns may differ from the
+    ///   number of columns associated with the cache blocking
+    ///   strategy.  The strategy uses a fixed number of columns for
+    ///   all matrices with the same number of rows, so that it blocks
+    ///   all such matrices in the same way (at the same row indices).
+    ///   This is useful for TSQR's apply() and explicit_Q() methods.
     CacheBlocker (const Ordinal num_rows,
 		  const Ordinal num_cols,
-		  const CacheBlockingStrategy< Ordinal, Scalar >& strategy) :
+		  const CacheBlockingStrategy<Ordinal, Scalar>& strategy) :
       nrows_ (num_rows), 
       ncols_ (num_cols), 
-      strategy_ (strategy)
+      strategy_ (strategy),
+      nrows_cache_block_ (strategy_.cache_block_num_rows (ncols()))
     {
-#ifdef CACHE_BLOCKER_DEBUG
-      cerr << "CacheBlocker:" << endl
-	   << "# rows = " << nrows() << endl
-	   << "# cols = " << ncols() << endl
-	   << "Cache block size (bytes) = " << strategy_.cache_block_size()
-	   << endl << endl;
-#endif
-      const Ordinal temp_nrows_cache_block = 
-	strategy_.cache_block_num_rows (ncols());
-#ifdef CACHE_BLOCKER_DEBUG
-      cerr << "Strategy says: # rows per cache block = "
-	   << temp_nrows_cache_block << endl;
-#endif
-      nrows_cache_block_ = temp_nrows_cache_block;
       validate ();
     }
 
-    /// Copy constructor
+    //! Copy constructor
     CacheBlocker (const CacheBlocker& rhs) :
       nrows_ (rhs.nrows()), 
       ncols_ (rhs.ncols()), 
-      strategy_ (rhs.strategy_)
+      strategy_ (rhs.strategy_),
+      nrows_cache_block_ (rhs.nrows_cache_block_)
     {}
 
-    /// Assignment operator
+    //! Assignment operator
     CacheBlocker& operator= (const CacheBlocker& rhs) {
       nrows_ = rhs.nrows();
       ncols_ = rhs.ncols();
       strategy_ = rhs.strategy_;
+      nrows_cache_block_ = rhs.nrows_cache_block_;
       return *this;
     }
 
-    /// Cache block size in bytes
+    //! Cache block size in bytes.
     size_t cache_block_size () const { return strategy_.cache_block_size(); }
 
-    /// Number of rows in the matrix corresponding to the cache blocking scheme
+    //! Number of rows in the matrix to block.
     Ordinal nrows () const { return nrows_; }
 
-    /// Number of columns in the matrix corresponding to the cache blocking scheme
+    //! Number of columns in the matrix to block.
     Ordinal ncols () const { return ncols_; }
 
-    /// Return the topmost cache block of A, where the number of rows
-    /// in each cache block is chosen according to the number of
-    /// columns with which this CacheBlocker was set up (rather than
-    /// the number of columns in A, which may not be the same).  The
-    /// idea is to have the number and distribution of rows in the
-    /// cache blocks be the same as the original nrows() by ncols()
-    /// matrix with which this CacheBlocker was initialized.
+    /// \brief Split A in place into [A_top; A_rest].
+    ///
+    /// Return the topmost cache block A_top of A, and modify A in
+    /// place to be the "rest" of the matrix A_rest.
+    ///
+    /// \param A [in/out] On input: view of the matrix to split.
+    ///   On output: the "rest" of the matrix.  If there is only
+    ///   one cache block, A_top contains all of the matrix and 
+    ///   A is empty on output.
+    /// \param contiguous_cache_blocks [in] Whether cache blocks in
+    ///   the matrix A are stored contiguously (default is false).
+    ///
+    /// \return View of the topmost cache block A_top.
+    ///
+    /// \note The number of rows in A_top depends on the number of
+    ///   columns with which this CacheBlocker was set up (rather than
+    ///   the number of columns in A, which may not be the same).  The
+    ///   idea is to have the number and distribution of rows in the
+    ///   cache blocks be the same as the original nrows() by ncols()
+    ///   matrix with which this CacheBlocker was initialized.
     template< class MatrixViewType >
     MatrixViewType
     split_top_block (MatrixViewType& A, const bool contiguous_cache_blocks) const
@@ -150,17 +152,26 @@ namespace TSQR {
       const ordinal_type nrows_top = 
 	strategy_.top_block_split_nrows (A.nrows(), ncols(), 
 					 nrows_cache_block());
-      // split_top() modifies A
+      // split_top() sets A to A_rest, and returns A_top.
       return A.split_top (nrows_top, contiguous_cache_blocks);
     }
 
-    /// Return the topmost cache block of A.  A is copied so it won't
-    /// be modified.
+    /// \brief View of the topmost cache block of A.
+    ///
+    /// The matrix view A is copied so the view itself won't be modified.
+    ///
+    /// \param A [in] View of the matrix to block.
+    /// \param contiguous_cache_blocks [in] Whether cache blocks in
+    ///   the matrix A are stored contiguously (default is false).
+    ///
+    /// \return View of the topmost cache block of A.
     template< class MatrixViewType >
     MatrixViewType
     top_block (const MatrixViewType& A, const bool contiguous_cache_blocks) const
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
+      // Ignore the number of columns in A, since we want to block all
+      // matrices using the same cache blocking strategy.
       const ordinal_type nrows_top = 
 	strategy_.top_block_split_nrows (A.nrows(), ncols(), 
 					 nrows_cache_block());
@@ -168,27 +179,48 @@ namespace TSQR {
       return A_copy.split_top (nrows_top, contiguous_cache_blocks);
     }
 
+    /// \brief Split A in place into [A_rest; A_bot].
+    ///
+    /// Return the bottommost cache block A_bot of A, and modify A in
+    /// place to be the "rest" of the matrix A_rest.
+    ///
+    /// \param A [in/out] On input: view of the matrix to split.  On
+    ///   output: the "rest" of the matrix.  If there is only one
+    ///   cache block, A_bot contains all of the matrix and A is empty
+    ///   on output.
+    /// \param contiguous_cache_blocks [in] Whether cache blocks in
+    ///   the matrix A are stored contiguously (default is false).
+    ///
+    /// \return View of the bottommost cache block A_bot.
+    ///
     template< class MatrixViewType >
     MatrixViewType
     split_bottom_block (MatrixViewType& A, const bool contiguous_cache_blocks) const
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
+      // Ignore the number of columns in A, since we want to block all
+      // matrices using the same cache blocking strategy.
       const ordinal_type nrows_bottom = 
 	strategy_.bottom_block_split_nrows (A.nrows(), ncols(), 
 					    nrows_cache_block());
-      // split_bottom() modifies A
+      // split_bottom() sets A to A_rest, and returns A_bot.
       return A.split_bottom (nrows_bottom, contiguous_cache_blocks);
     }
 
-    /// Fill the entries of A with Scalar(0).
+    /// \brief Fill the matrix A with zeros, respecting cache blocks.
     ///
-    /// \note This method only works if MatrixViewType has a method
-    ///   "fill(const Scalar)" or "fill(const Scalar&)".  The
-    ///   intention is that the method be non-const and that it fill
-    ///   in the entries of the matrix with Scalar(0), though
-    ///   syntactically the method could even be const and / or do
-    ///   something else entirely.
-    template< class MatrixViewType >
+    /// A specialization of this method for a particular
+    /// MatrixViewType will only compile if MatrixViewType has a
+    /// method "fill(const Scalar)" or "fill(const Scalar&)".  The
+    /// intention is that the method be non-const and that it fill in
+    /// the entries of the matrix with Scalar(0).
+    ///
+    /// \param A [in/out] View of the matrix to fill with zeros.
+    ///
+    /// \param contiguous_cache_blocks [in] Whether the cache blocks
+    ///   in A are stored contiguously.
+    ///
+    template<class MatrixViewType>
     void
     fill_with_zeros (MatrixViewType A,
 		     const bool contiguous_cache_blocks) const
@@ -199,9 +231,51 @@ namespace TSQR {
       // leading dimension is set correctly by split_top_block().
       while (! A.empty())
 	{
-	  // This call modifies A, but that's OK since we passed the
-	  // input view by copy, not by reference.
+	  // This call modifies the matrix view A, but that's OK since
+	  // we passed the input view by copy, not by reference.
 	  MatrixViewType A_cur = split_top_block (A, contiguous_cache_blocks);
+	  A_cur.fill (Scalar(0));
+	}
+    }
+
+    /// \brief Fill the matrix A with zeros, respecting cache blocks.
+    ///
+    /// This version of the method takes a raw pointer and matrix
+    /// dimensions, rather than a matrix view object.  If
+    /// contiguous_cache_blocks==false, the matrix is stored either in
+    /// column-major order with leading dimension lda; else, the
+    /// matrix is stored in cache blocks, with each cache block's
+    /// entries stored contiguously in column-major order.
+    ///
+    /// \param num_rows [in] Number of rows in the matrix A.
+    /// \param num_cols [in] Number of columns in the matrix A.
+    /// \param A [out] The matrix to fill with zeros.
+    /// \param lda [in] Leading dimension (a.k.a. stride) of the
+    ///   matrix A.
+    /// \param contiguous_cache_blocks [in] Whether the cache blocks
+    ///   in A are stored contiguously.
+    void
+    fill_with_zeros (const Ordinal num_rows,
+		     const Ordinal num_cols,
+		     Scalar A[],
+		     const Ordinal lda, 
+		     const bool contiguous_cache_blocks) const
+    {
+      // We say "A_rest" because it points to the remaining part of
+      // the matrix left to process; at the beginning, the "remaining"
+      // part is the whole matrix, but that will change as the
+      // algorithm progresses.
+      //
+      // Note: if the cache blocks are stored contiguously, lda won't
+      // be the correct leading dimension of A, but it won't matter:
+      // we only ever operate on A_cur here, and A_cur's leading
+      // dimension is set correctly by A_rest.split_top().
+      mat_view A_rest (num_rows, num_cols, A, lda);
+
+      while (! A_rest.empty())
+	{
+	  // This call modifies A_rest.
+	  mat_view A_cur = split_top_block (A_rest, contiguous_cache_blocks);
 	  A_cur.fill (Scalar(0));
 	}
     }
@@ -254,8 +328,7 @@ namespace TSQR {
 	}
     }
 
-    /// "Un"-cache-block the given A_in matrix, writing the results to
-    /// A_out.
+    //! "Un"-cache-block the given A_in matrix into A_out.
     void
     un_cache_block (const Ordinal num_rows,
 		    const Ordinal num_cols,
@@ -288,45 +361,82 @@ namespace TSQR {
 	}
     }
 
-
-    void
-    fill_with_zeros (const Ordinal num_rows,
-		     const Ordinal num_cols,
-		     Scalar A[],
-		     const Ordinal lda, 
-		     const bool contiguous_cache_blocks)
+    /// \brief Return the cache block with index \c cache_block_index.
+    ///
+    /// \param A [in] The original matrix.
+    /// \param cache_block_index [in] Zero-based index of the cache block.
+    ///   If the index is out of bounds, silently return an empty matrix 
+    ///   view.
+    /// \param contiguous_cache_blocks [in] Whether cache blocks are
+    ///   stored contiguously.
+    ///
+    /// \return Cache block of A with the given index, or an empty
+    ///   matrix view if the index is out of bounds.
+    ///
+    /// \note This method is templated on MatrixViewType, so that it
+    ///   works with both MatView and ConstMatView.
+    template<class MatrixViewType>
+    MatrixViewType 
+    get_cache_block (MatrixViewType A,
+		     const typename MatrixViewType::ordinal_type cache_block_index,
+		     const bool contiguous_cache_blocks) const
     {
-      // We say "A_rest" because it points to the remaining part of
-      // the matrix left to process; at the beginning, the "remaining"
-      // part is the whole matrix, but that will change as the
-      // algorithm progresses.
-      //
-      // Note: if the cache blocks are stored contiguously, lda won't
-      // be the correct leading dimension of A, but it won't matter:
-      // we only ever operate on A_cur here, and A_cur's leading
-      // dimension is set correctly by A_rest.split_top().
-      mat_view A_rest (num_rows, num_cols, A, lda);
+      using Teuchos::Tuple;
+      typedef typename MatrixViewType::ordinal_type ordinal_type;
+      typedef typename MatrixViewType::scalar_type scalar_type;
 
-      while (! A_rest.empty())
-	{
-	  // This call modifies A_rest.
-	  mat_view A_cur = split_top_block (A_rest, contiguous_cache_blocks);
-	  A_cur.fill (Scalar(0));
-	}
+      // Total number of cache blocks.
+      const ordinal_type num_cache_blocks = 
+	strategy_.num_cache_blocks (A.nrows(), A.ncols(), nrows_cache_block());
+
+      if (cache_block_index >= num_cache_blocks)
+	return MatrixViewType (0, 0, NULL, 0); // empty
+
+      // result[0] = starting row index of the cache block
+      // result[1] = number of rows in the cache block
+      // result[2] = pointer offset (A.get() + result[2])
+      // result[3] = leading dimension (a.k.a. stride) of the cache block
+      Tuple<LocalOrdinal, 4> result = 
+	strategy_.cache_block_details (cache_block_index, A.nrows(), A.ncols(),
+				       A.lda(), nrows_cache_block(), 
+				       contiguous_cache_blocks);
+      if (result[1] == 0)
+	// For some reason, the cache block is empty.  	
+	return MatrixViewType (0, 0, NULL, 0);
+
+      // We expect that ordinal_type is signed, so adding signed
+      // (ordinal_type) to unsigned (pointer) may raise compiler
+      // warnings.
+      return MatrixViewType (result[1], A.ncols(), 
+			     A.get() + static_cast<size_t>(result[2]), 
+			     result[3]);
     }
 
-
   private:
+    //! Number of rows in the matrix to block.
     Ordinal nrows_;
+
+    //! Number of columns in the matrix to block.
     Ordinal ncols_;
-    CacheBlockingStrategy< Ordinal, Scalar > strategy_;
+    
+    //! Strategy used to break the matrix into cache blocks.
+    CacheBlockingStrategy<Ordinal, Scalar> strategy_;
+
+    /// \brief Number of rows in a "typical" cache block.
+    ///
+    /// We could instead use the strategy object to recompute this
+    /// quantity each time, but we choose to cache the computed value
+    /// here.  For an explanation of "typical," see the documentation
+    /// of \c nrows_cache_block().
     Ordinal nrows_cache_block_;
 
-    /// Number of rows in a typical cache block (not every cache block
-    /// has this many rows -- some may have more (up to but not
-    /// including nrows_cache_block() + ncols()), and some may have
-    /// less (whatever is left over at the bottom of the matrix, but
-    /// no less than ncols() rows).
+    /// \brief Number of rows in a "typical" cache block.
+    ///
+    /// For an explanation of "typical," see the documentation of
+    /// CacheBlockingStrategy.  In brief, some cache blocks may have
+    /// more rows (up to but not including nrows_cache_block() +
+    /// ncols() rows), and some may have less (but no less than
+    /// ncols() rows).
     size_t nrows_cache_block () const { return nrows_cache_block_; }
   };
 

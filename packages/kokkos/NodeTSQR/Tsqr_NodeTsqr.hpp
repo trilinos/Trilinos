@@ -89,6 +89,9 @@ namespace TSQR {
     //! Virtual destructor ensures safe polymorphic destruction.
     virtual ~NodeTsqr() {}
 
+    //! Cache block size in bytes.
+    virtual size_t cache_block_size() const = 0;
+
     /// \brief One-line description of this object.
     ///
     /// This implements Teuchos::Describable::description().
@@ -106,21 +109,69 @@ namespace TSQR {
       return os.str();
     }
 
-    //! Compute QR factorization (implicitly stored Q factor) of A.
-    factor_output_type
+    /// \brief Compute the QR factorization of A.
+    ///
+    /// The resulting Q factor is stored implicitly, in part in place
+    /// in A (overwriting the input), and in part in the returned
+    /// factor_output_type object.
+    ///
+    /// \param nrows [in] Number of rows in the matrix A to factor.
+    /// \param ncols [in] Number of columns in the matrix A to factor.
+    /// \param A [in/out] On input: the matrix to factor.  It is
+    ///   stored either in column-major order with leading dimension
+    ///   (a.k.a. stride) lda, or with contiguous cache blocks (if
+    ///   contiguousCacheBlocks is true) according to the prevailing
+    ///   cache blocking strategy.  Use the \c cache_block() method to
+    ///   covert a matrix in column-major order to the latter format.
+    ///   On output: part of the implicit representation of the Q
+    ///   factor.
+    /// \param lda [in] Leading dimension (a.k.a. stride) of the
+    ///   matrix A to factor.
+    /// \param R [out] The ncols x ncols R factor.
+    /// \param ldr [in] leading dimension (a.k.a. stride) of the R 
+    ///   factor.
+    /// \param contiguousCacheBlocks [in] Whether the cache blocks of
+    ///   A are stored contiguously.  If you don't know what this
+    ///   means, put "false" here.
+    ///
+    /// \return Part of the implicit representation of the Q factor.
+    virtual factor_output_type
     factor (const Ordinal nrows,
 	    const Ordinal ncols, 
 	    Scalar A[],
 	    const Ordinal lda,
 	    Scalar R[],
 	    const Ordinal ldr,
-	    const bool contiguousCacheBlocks=false)
-    {
-      return factorImpl (nrows, ncols, A, lda, R, ldr, contiguousCacheBlocks);
-    }
+	    const bool contiguousCacheBlocks) = 0;
 
-    //! Apply implicit Q factor stored in Q and factorOutput to C.
-    void
+    /// \brief Apply the implicit Q factor from \c factor() to C.
+    ///
+    /// \param nrows [in] Number of rows in the matrix A to factor.
+    /// \param ncols [in] Number of columns in the matrix A to factor.
+    /// \param A [in/out] On input: the matrix to factor.  It is
+    ///   stored either in column-major order with leading dimension
+    ///   (a.k.a. stride) lda, or with contiguous cache blocks (if
+    ///   contiguousCacheBlocks is true) according to the prevailing
+    ///   cache blocking strategy.  Use the \c cache_block() method to
+    ///   covert a matrix in column-major order to the latter format.
+    ///   On output: part of the implicit representation of the Q
+    ///   factor.
+    /// \param applyType [in] Whether to apply Q, Q^T, or Q^H to C.
+    /// \param nrows [in] Number of rows in Q and in C.
+    /// \param ncols_Q [in] Number of columns in Q.
+    /// \param Q [in] Implicit representation of the Q factor; the
+    ///   matrix A on output from \c factor().
+    /// \param ldq [in] Leading dimension (a.k.a. stride) of the
+    ///   implicit representation of the Q factor.
+    /// \param factorOutput [in] Return value of factor().
+    /// \param ncols_C [in] Number of columns in the matrix C.
+    /// \param C [in/out] On input: Matrix to which to apply the Q
+    ///   factor.  On output: Result of applying the Q factor.
+    /// \param ldc [in] leading dimension (a.k.a. stride) of C.
+    /// \param contiguousCacheBlocks [in] Whether the cache blocks of
+    ///   Q and C are stored contiguously.  If you don't know what
+    ///   this means, put "false" here.
+    virtual void
     apply (const ApplyType& applyType,
 	   const Ordinal nrows,
 	   const Ordinal ncols_Q,
@@ -130,14 +181,14 @@ namespace TSQR {
 	   const Ordinal ncols_C,
 	   Scalar C[],
 	   const Ordinal ldc,
-	   const bool contiguousCacheBlocks=false) 
-    {
-      applyImpl (applyType, nrows, ncols_Q, Q, ldq, factorOutput, 
-		 ncols_C, C, ldc, contiguousCacheBlocks);
-    }
+	   const bool contiguousCacheBlocks) = 0;
 
-    //! Compute explicit Q factor from result of factor().
-    void
+    /// \brief Compute the explicit Q factor from the result of \c factor().
+    ///
+    /// This is equivalent to calling \c apply() on the first ncols_C
+    /// columns of the identity matrix (suitably cache-blocked, if
+    /// applicable).
+    virtual void
     explicit_Q (const Ordinal nrows,
 		const Ordinal ncols_Q,
 		const Scalar Q[],
@@ -146,11 +197,7 @@ namespace TSQR {
 		const Ordinal ncols_C,
 		Scalar C[],
 		const Ordinal ldc,
-		const bool contiguousCacheBlocks=false)
-    {
-      explicit_Q_impl (nrows, ncols_Q, Q, ldq, factorOutput, 
-		       ncols_C, C, ldc, contiguousCacheBlocks);
-    }
+		const bool contiguousCacheBlocks) = 0;
 
     /// \brief Cache block A_in into A_out.
     ///
@@ -196,17 +243,14 @@ namespace TSQR {
     ///
     /// Compute matrix-matrix product Q*B, where Q is nrows by ncols
     /// and B is ncols by ncols.  Respect cache blocks of Q.
-    void
+    virtual void
     Q_times_B (const Ordinal nrows,
 	       const Ordinal ncols,
 	       Scalar Q[],
 	       const Ordinal ldq,
 	       const Scalar B[],
 	       const Ordinal ldb,
-	       const bool contiguousCacheBlocks=false) const
-    {
-      Q_times_B_impl (nrows, ncols, Q, ldq, B, ldb, contiguousCacheBlocks);
-    }
+	       const bool contiguousCacheBlocks) const = 0;
 
     /// \brief Fill the nrows by ncols matrix A with zeros.
     /// 
@@ -220,15 +264,14 @@ namespace TSQR {
     /// \param lda [in] Leading dimension of A: lda >= nrows
     /// \param contiguousCacheBlocks [in] Whether the cache blocks
     ///   in A are stored contiguously.
-    void
+    virtual void
     fill_with_zeros (const Ordinal nrows,
 		     const Ordinal ncols,
 		     Scalar A[],
 		     const Ordinal lda, 
-		     const bool contiguousCacheBlocks=false)
-    {
-      return fill_with_zeros_impl (nrows, ncols, A, lda, contiguousCacheBlocks);
-    }
+		     const bool contiguousCacheBlocks) const = 0;
+    
+  protected:
 
     /// \brief Return view of topmost cache block of C
     ///
@@ -246,11 +289,55 @@ namespace TSQR {
     /// MatrixViewType top = this->top_block (C, contig);
     /// MatView< Ordinal, Scalar > square (ncols, ncols, top.get(), top.lda());
     /// \endcode
-    MatView<Ordinal, Scalar>
-    top_block (const MatView<Ordinal, Scalar>& C,
-	       const bool contiguousCacheBlocks=false) const
+    virtual ConstMatView<Ordinal, Scalar>
+    const_top_block (const ConstMatView<Ordinal, Scalar>& C,
+		     const bool contiguousCacheBlocks) const = 0;
+
+  public:
+
+    /// \brief Return view of topmost cache block of C.
+    ///
+    /// \param C [in] View of a matrix C.
+    /// \param contiguousCacheBlocks [in] Whether the cache blocks
+    ///   in C are stored contiguously.
+    ///
+    /// Return a view of the topmost cache block (on this node) of the
+    /// given matrix C.  This is not necessarily square, though it
+    /// must have at least as many rows as columns.  For a square
+    /// ncols by ncols block, as needed by Tsqr::apply(), do as 
+    /// follows:
+    /// \code 
+    /// MatrixViewType top = this->top_block (C, contig);
+    /// MatView< Ordinal, Scalar > square (ncols, ncols, top.get(), top.lda());
+    /// \endcode
+    ///
+    /// \note MatrixViewType must have member functions nrows(),
+    ///   ncols(), get(), and lda(), and its constructor must take the
+    ///   same four arguments as ConstMatView's constructor.
+    template<class MatrixViewType>
+    MatrixViewType
+    top_block (const MatrixViewType& C, 
+	       const bool contiguous_cache_blocks) const 
     {
-      return top_block_impl (C, contiguousCacheBlocks);
+      // The *_top_block() methods don't actually modify the data, so
+      // it's safe to handle the matrix's data as const within this
+      // method.  The only cast from const to nonconst may be in the
+      // return value, but there it's legitimate since we're just
+      // using the same constness as C has.
+      ConstMatView<Ordinal, Scalar> C_view (C.nrows(), C.ncols(), 
+					    C.get(), C.lda());
+      ConstMatView<Ordinal, Scalar> C_top = 
+	const_top_block (C, contiguous_cache_blocks);
+      TEST_FOR_EXCEPTION(C_top.nrows() < C_top.ncols(), std::logic_error,
+			 "The subclass of NodeTsqr has a bug in const_top_block"
+			 "(); it returned a block with fewer rows than columns "
+			 "(" << C_top.nrows() << " rows and " << C_top.ncols() 
+			 << " columns).  Please report this bug to the Kokkos "
+			 "developers.");
+      typedef typename MatrixViewType::pointer_type ptr_type;
+      return MatrixViewType (C_top.nrows(), C_top.ncols(), 
+			     const_cast<ptr_type> (C_top.get()), 
+			     C_top.lda());
     }
 
     /// \brief Does factor() compute R with nonnegative diagonal?
@@ -261,16 +348,32 @@ namespace TSQR {
     /// orthogonalization (orthogonalized vectors Q and their
     /// coefficients R) are the same as would be produced by
     /// Gram-Schmidt orthogonalization.
+    ///
+    /// This distinction is important because LAPACK's QR
+    /// factorization (_GEQRF) may (and does, in practice) compute an
+    /// R factor with negative diagonal entries.
     virtual bool 
     QR_produces_R_factor_with_nonnegative_diagonal () const = 0;
 
     /// \brief Reveal rank of TSQR's R factor.
     ///
-    /// Compute SVD \f$R = U \Sigma V^*\f$, not in place.  Use the
-    /// resulting singular values to compute the numerical rank of R,
-    /// with respect to the relative tolerance tol.  If R is full
-    /// rank, return without modifying R.  If R is not full rank,
-    /// overwrite R with \f$\Sigma \cdot V^*\f$.
+    /// Compute the singular value decomposition (SVD) \f$R = U \Sigma
+    /// V^*\f$.  This is done not in place, so that the original R is
+    /// not affected.  Use the resulting singular values to compute
+    /// the numerical rank of R, with respect to the relative
+    /// tolerance tol.  If R is full rank, return without modifying R.
+    /// If R is not full rank, overwrite R with \f$\Sigma \cdot
+    /// V^*\f$.
+    ///
+    /// \param ncols [in] Number of (rows and) columns in R.
+    /// \param R [in/out] ncols x ncols upper triangular matrix,
+    ///   stored in column-major order with leading dimension ldr.
+    /// \param ldr [in] Leading dimension of the matrix R.
+    /// \param U [out] Left singular vectors of the matrix R; 
+    ///   an ncols x ncols matrix with leading dimension ldu.
+    /// \param ldu [in] Leading dimension of the matrix U.
+    /// \param tol [in] Numerical rank tolerance; relative to 
+    ///   the largest nonzero singular value of R.
     ///
     /// \return Numerical rank of R: 0 <= rank <= ncols.
     Ordinal
@@ -300,87 +403,7 @@ namespace TSQR {
 		 Scalar R[],
 		 const Ordinal ldr,
 		 const typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol,
-		 const bool contiguousCacheBlocks=false) const;
-
-  protected:
-
-    /// \brief Implementation of factor().
-    ///
-    /// Compute QR factorization (implicitly stored Q factor) of A.
-    /// This is a separate method so that factor() can have a default
-    /// parameter value.
-    virtual factor_output_type
-    factorImpl (const Ordinal nrows,
-		const Ordinal ncols, 
-		Scalar A[],
-		const Ordinal lda,
-		Scalar R[],
-		const Ordinal ldr,
-		const bool contiguousCacheBlocks) = 0;
-
-    /// \brief Implementation of apply().
-    ///
-    /// Apply implicit Q factor stored in Q and factorOutput to C.
-    /// This is a separate method so that apply() can have a default
-    /// parameter value.
-    virtual void
-    applyImpl (const ApplyType& applyType,
-	       const Ordinal nrows,
-	       const Ordinal ncols_Q,
-	       const Scalar Q[],
-	       const Ordinal ldq,
-	       const FactorOutput& factorOutput,
-	       const Ordinal ncols_C,
-	       Scalar C[],
-	       const Ordinal ldc,
-	       const bool contiguousCacheBlocks) = 0;
-
-    /// \brief Implementation of explicit_Q().
-    ///
-    /// This is a separate method so that explicit_Q() can have a
-    /// default parameter value.
-    virtual void
-    explicit_Q_impl (const Ordinal nrows,
-		     const Ordinal ncols_Q,
-		     const Scalar Q[],
-		     const Ordinal ldq,
-		     const factor_output_type& factorOutput,
-		     const Ordinal ncols_C,
-		     Scalar C[],
-		     const Ordinal ldc,
-		     const bool contiguousCacheBlocks) = 0;
-
-    /// \brief Implementation of Q_times_B().
-    ///
-    /// This is a separate method so that Q_times_B() can have a
-    /// default parameter value.
-    virtual void
-    Q_times_B_impl (const Ordinal nrows,
-		    const Ordinal ncols,
-		    Scalar Q[],
-		    const Ordinal ldq,
-		    const Scalar B[],
-		    const Ordinal ldb,
-		    const bool contiguousCacheBlocks) const = 0;
-
-    /// \brief Implementation of fill_with_zeros().
-    ///
-    /// This is a separate method so that fill_with_zeros() can have a
-    /// default parameter value.
-    virtual void
-    fill_with_zeros_impl (const Ordinal nrows,
-			  const Ordinal ncols,
-			  Scalar A[],
-			  const Ordinal lda, 
-			  const bool contiguousCacheBlocks) = 0;
-
-    /// \brief Implementation of top_block().
-    ///
-    /// This is a separate method so that top_block() can have a
-    /// default parameter value.
-    virtual MatView<Ordinal, Scalar>
-    top_block_impl (const MatView<Ordinal, Scalar>& C,
-		    const bool contiguousCacheBlocks) const = 0;
+		 const bool contiguousCacheBlocks) const;
   };
 
 

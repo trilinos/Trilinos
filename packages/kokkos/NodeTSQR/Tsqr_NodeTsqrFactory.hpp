@@ -53,7 +53,7 @@
 namespace TSQR {
 
   /// \class NodeTsqrFactory
-  /// \brief Common interface for intranode TSQR
+  /// \brief Common interface for intranode TSQR.
   template<class Node, class Scalar, class LocalOrdinal>
   class NodeTsqrFactory {
   public:
@@ -62,10 +62,7 @@ namespace TSQR {
     // Just a default
     typedef SequentialTsqr<LocalOrdinal, Scalar> node_tsqr_type;
 
-    /// \brief Default parameters
-    ///
-    /// Return default parameters and their values for setting up the
-    /// intranode part of TSQR.  
+    /// \brief Default parameter list for intranode TSQR.
     ///
     /// \note The default implementation returns an empty (not null)
     ///   parameter list.  Each specialization for a specific Node
@@ -129,11 +126,10 @@ namespace TSQR {
       // (InvalidParameterName).  In either case, we just say that the
       // value doesn't exist.  
       //
-      // FIXME (mfh 11 Jan 2011) Would it be better to let
-      // InvalidParameterType propagate upward?  For now we will just
-      // ignore the parameter if the type is wrong.  This is because
-      // we want TSQR "just to work" even if the parameters are wrong;
-      // the parameters are "options" and should be "optional."
+      // For now, we just ignore the parameter if the type is wrong.
+      // This is because we want TSQR "just to work" even if the
+      // parameters are wrong; the parameters are "options" and should
+      // be "optional."
       gotValue = false;
     }
     // Only write to the output argument if we got a value out of the
