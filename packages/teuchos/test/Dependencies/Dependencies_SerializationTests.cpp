@@ -37,6 +37,8 @@
 #include "Teuchos_StandardDependencyXMLConverters.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Teuchos_XMLParameterListTestHelpers.hpp"
+
 
 namespace Teuchos{
 

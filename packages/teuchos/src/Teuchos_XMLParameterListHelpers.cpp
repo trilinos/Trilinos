@@ -26,6 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
+
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_StringInputSource.hpp"
@@ -33,10 +34,8 @@
 #include "Teuchos_XMLParameterListWriter.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
-namespace Teuchos{
 
-
-void updateParametersFromXmlFile(
+void Teuchos::updateParametersFromXmlFile(
   const std::string &xmlFileName,
   ParameterList *paramList
   )
@@ -49,7 +48,7 @@ void updateParametersFromXmlFile(
 }
 
 
-void updateParametersFromXmlFileAndBroadcast(
+void Teuchos::updateParametersFromXmlFileAndBroadcast(
   const std::string &xmlFileName,
   ParameterList *paramList,
   const Comm<int> &comm
@@ -81,16 +80,17 @@ void updateParametersFromXmlFileAndBroadcast(
 }
 
 
-RCP<ParameterList>
-getParametersFromXmlFile( const std::string &xmlFileName )
+Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlFile( const std::string &xmlFileName )
 {
   RCP<ParameterList> pl = parameterList();
   updateParametersFromXmlFile( xmlFileName, &*pl );
   return pl;
 }
 
-RCP<ParameterList>
-getParametersFromXmlFile(
+
+Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlFile(
   const std::string &xmlFileName,
   RCP<DependencySheet> depSheet)
 {
@@ -101,7 +101,7 @@ getParametersFromXmlFile(
 }
 
 
-void updateParametersFromXmlString(
+void Teuchos::updateParametersFromXmlString(
   const std::string &xmlStr,
   ParameterList *paramList
   )
@@ -114,16 +114,17 @@ void updateParametersFromXmlString(
 }
 
 
-RCP<ParameterList>
-getParametersFromXmlString( const std::string &xmlStr )
+Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlString( const std::string &xmlStr )
 {
   RCP<ParameterList> pl = parameterList();
   updateParametersFromXmlString( xmlStr, &*pl );
   return pl;
 }
 
-RCP<ParameterList>
-getParametersFromXmlString( const std::string &xmlStr,
+
+Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlString( const std::string &xmlStr,
   RCP<DependencySheet> depSheet)
 {
   XMLParameterListReader xmlPLReader;
@@ -133,7 +134,7 @@ getParametersFromXmlString( const std::string &xmlStr,
 }
 
 
-void writeParameterListToXmlOStream(
+void Teuchos::writeParameterListToXmlOStream(
   const ParameterList &paramList,
   std::ostream &xmlOut,
   RCP<const DependencySheet> depSheet
@@ -145,7 +146,7 @@ void writeParameterListToXmlOStream(
 }
 
 
-void writeParameterListToXmlFile(
+void Teuchos::writeParameterListToXmlFile(
   const ParameterList &paramList,
   const std::string &xmlFileName,
   RCP<const DependencySheet> depSheet
@@ -154,23 +155,3 @@ void writeParameterListToXmlFile(
   std::ofstream ofs(xmlFileName.c_str());
   writeParameterListToXmlOStream(paramList,ofs, depSheet);
 }
-
-RCP<ParameterList> writeThenReadPL(ParameterList& myList) {
-  std::ostringstream xmlOut;
-  writeParameterListToXmlOStream(myList, xmlOut);
-  return getParametersFromXmlString(xmlOut.str());
-}
-
-RCP<ParameterList> writeThenReadPL(
-  ParameterList& myList, 
-  RCP<DependencySheet> depSheetIn, 
-  RCP<DependencySheet> depSheetOut)
-{
-  std::ostringstream xmlOut;
-  writeParameterListToXmlOStream(myList, xmlOut, depSheetIn);
-  return getParametersFromXmlString(xmlOut.str(), depSheetOut);
-}
-
-
-} //namespace Teuchos
-

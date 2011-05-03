@@ -39,7 +39,10 @@
 #include "Teuchos_StringInputStream.hpp"
 #include "Teuchos_XMLParser.hpp"
 
-namespace Teuchos{
+#include "Teuchos_XMLParameterListTestHelpers.hpp"
+
+
+namespace Teuchos {
 
 
 #define ADD_TYPE_PARAMETER(T,VALUE) \

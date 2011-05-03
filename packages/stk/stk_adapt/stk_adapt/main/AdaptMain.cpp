@@ -22,6 +22,7 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/RunEnvironment.hpp>
+#include <stk_percept/ProgressMeter.hpp>
 
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
@@ -107,8 +108,13 @@ namespace stk {
 
     }
 
-    static void print_simple_usage()
+    static void print_simple_usage(int argc, char **argv)
     {
+      std::cout << "AdaptMain::print_simple_usage number of arguments = " << argc << std::endl;
+      for (int i = 0; i < argc; i++)
+      {
+        std::cout << "AdaptMain::print_simple_usage arg[" << i << "]= " << argv[i] << std::endl;
+      }
       std::cout << "usage: exe_name [convert|enrich|refine] input_file_name [output_file_name] [number_refines]" << std::endl;
     }
 
@@ -143,7 +149,7 @@ namespace stk {
       int argc = argc_in;
       if (argc != 2 + simple_options_index && argc != 3 + simple_options_index && argc != 4 + simple_options_index )
         {
-          print_simple_usage();
+          print_simple_usage(argc_in, argv_in);
           return 1;
         }
 
@@ -159,7 +165,7 @@ namespace stk {
       std::string option          = argv[0+simple_options_index];
       if (option != "refine" && option != "enrich" && option != "convert")
         {
-          print_simple_usage();
+          print_simple_usage(argc_in, argv_in);
           return 1;
         }
       std::string input_mesh = argv[1+simple_options_index];
@@ -421,7 +427,9 @@ namespace stk {
 
         stk::mesh::FieldBase* proc_rank_field_ptr = 0;
         if (proc_rank_field)
-          eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+        {
+          proc_rank_field_ptr = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+        }
 
         eMesh.commit();
 
@@ -453,10 +461,18 @@ namespace stk {
 
         if (doRefineMesh)
           {
+            
             t0 =  stk::wall_time(); 
             cpu0 = stk::cpu_time();
 
+
             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
+
+            ProgressMeter pm(breaker);
+            //pm.setActive(true);
+
+            //std::cout << "P[" << p_rank << ", " << p_size << "] input_geometry = " << input_geometry << std::endl; 
+
             if (input_geometry != "")
                 breaker.setGeometryFile(input_geometry);
             breaker.setRemoveOldElements(remove_original_elements);
@@ -469,6 +485,7 @@ namespace stk {
                   {
                     std::cout << "Refinement pass # " << (iBreak+1) << " start..." << std::endl;
                   }
+                //breaker.setPassNumber(iBreak);
                 breaker.doBreak();
                 if (!eMesh.getRank())
                   {

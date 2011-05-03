@@ -1,6 +1,16 @@
 INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+PACKAGE_ADD_LIBRARY(
+  teuchos_xml_pl_test_helpers
+  HEADERS Teuchos_XMLParameterListTestHelpers.hpp
+  SOURCES Teuchos_XMLParameterListTestHelpers.cpp
+  TESTONLY
+  DEPLIBS teuchos
+  )
+
 SET(SerializationFiles 
     BadRootElement.xml BadParameterListElement.xml
     NoNameAttribute.xml NoTypeAttribute.xml NoValueAttribute.xml 
@@ -35,6 +45,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ParameterList_SerializationTest
   SOURCES ParameterList_SerializationTest.cpp Teuchos_StandardUnitTestMain.cpp
+  DEPLIBS teuchos_xml_pl_test_helpers
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

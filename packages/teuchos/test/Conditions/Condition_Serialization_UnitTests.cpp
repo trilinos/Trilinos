@@ -37,6 +37,8 @@
 #include "Teuchos_StandardConditionXMLConverters.hpp"
 #include "Teuchos_XMLConditionExceptions.hpp"
 
+#include "Teuchos_XMLParameterListTestHelpers.hpp"
+
 
 namespace Teuchos{
 

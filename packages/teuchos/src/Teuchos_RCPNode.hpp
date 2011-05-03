@@ -291,7 +291,7 @@ TEUCHOS_LIB_DLL_EXPORT void throw_null_ptr_error( const std::string &type_name )
  *
  * \ingroup teuchos_mem_mng_grp 
  */
-class RCPNodeTracer {
+class TEUCHOS_LIB_DLL_EXPORT RCPNodeTracer {
 public:
 
   /** \name Public types. */
