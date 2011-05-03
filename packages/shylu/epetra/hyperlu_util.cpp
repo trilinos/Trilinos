@@ -135,8 +135,10 @@ void findLocalColumns(Epetra_CrsMatrix *A, int *gvals, int &SNumGlobalCols)
 }
 
 // This function uses a very simple tie-breaking heuristic to find a
-// narrow separator from a wide separator. The vertices in the proc with
+// "narrow" separator from a wide separator. The vertices in the proc with
 // smaller procID will become part of the separator
+// This is not a true narrow separator, which needs a vertex cover algorithm.
+// This is like a medium separator !
 // TODO : This assumes symmetry I guess, Check
 void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
 {
@@ -204,6 +206,13 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
                     }
                     else
                     {
+                        // There is at least one edge from this vertex to a
+                        // vertex in a proc with PID > myPID, cannot move
+                        // to diagonal. This is too restrictive, but
+                        // important for correctness, until we can use a
+                        // vertex cover algorithm.
+                        movetoBlockDiagonal = false;
+                        break;
                         //cout << "\tNo problem with cgid=" << cgid << "in sep";
                     }
                 /*}
