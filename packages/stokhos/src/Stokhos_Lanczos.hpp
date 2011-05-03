@@ -30,6 +30,9 @@
 #define STOKHOS_LANCZOS_HPP
 
 #include "Teuchos_Array.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseHelpers.hpp"
 
 namespace Stokhos {
 
@@ -38,11 +41,11 @@ namespace Stokhos {
   public:
     typedef ord_type ordinal_type;
     typedef val_type value_type;
-    typedef Teuchos::Array<value_type> vector_type;
+    typedef Teuchos::SerialDenseVector<ordinal_type, value_type> vector_type;
 
     WeightedVectorSpace(const vector_type& weights) :
       w(weights),
-      n(weights.size())
+      n(weights.length())
     {
     }
 
@@ -101,38 +104,46 @@ namespace Stokhos {
    * \f]
    * Here \f$W\f$ is a diagonal weighting matrix.
    */
-  template <typename vectorspace_type, typename matrix_type> 
+  template <typename vectorspace_type, typename operator_type> 
   class Lanczos {
   public:
 
-    typedef typename matrix_type::ordinal_type ordinal_type;
-    typedef typename matrix_type::value_type value_type;
-    typedef typename vectorspace_type::vector_type vector_type;
+    typedef typename operator_type::ordinal_type ordinal_type;
+    typedef typename operator_type::value_type value_type;
+    typedef Teuchos::SerialDenseVector<ordinal_type,value_type> vector_type;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type,value_type> matrix_type;
 
     //! Compute Lanczos basis
     static void compute(ordinal_type k, 
                         const vectorspace_type& vs,
-			const matrix_type& A,
-			const vector_type& u0,
-			Teuchos::Array<vector_type>& u,
+			const operator_type& A,
+			const vector_type& u_init,
+			matrix_type& u,
 			Teuchos::Array<value_type>& alpha,
 			Teuchos::Array<value_type>& beta,
 			Teuchos::Array<value_type>& nrm_sqrd) {
       beta[0] = 1.0;
-      u[0] = u0;
+
+      // u[i-1], u[i], u[i+1]
+      vector_type u0, u1, u2;
+
+      // set starting vector
+      u0 = Teuchos::getCol(Teuchos::View, u, 0);
+      u0.assign(u_init);
+      u1 = u0;
 
       value_type nrm;
       vector_type v = vs.create_vector();
       for (ordinal_type i=0; i<k; i++) {
 
 	// Compute (u_i,u_i)
-	nrm_sqrd[i] = vs.inner_product(u[i], u[i]);
+	nrm_sqrd[i] = vs.inner_product(u1, u1);
 
 	// Compute v = A*u_i
-        A.apply(u[i], v);
+        A.apply(u1, v);
 
 	// Compute (v,u_i)
-	nrm = vs.inner_product(u[i], v);
+	nrm = vs.inner_product(u1, v);
 
 	// Compute alpha = (v,u_i) / (u_i,u_i)
 	alpha[i] = nrm / nrm_sqrd[i];
@@ -142,10 +153,13 @@ namespace Stokhos {
 	  beta[i] = nrm_sqrd[i] / nrm_sqrd[i-1];
 
 	// Compute u_{i+1} = v - alpha_i*u_i - beta_i*u_{i-1}
-	if (i == 0) 
-          vs.add2(value_type(1), v, -alpha[i], u[i], u[i+1]);
-	else
-          vs.add3(value_type(1), v, -alpha[i], u[i], -beta[i], u[i-1], u[i+1]);
+	if (i < k-1) {
+	  u2 = Teuchos::getCol(Teuchos::View, u, i+1);
+	  if (i == 0) 
+	    vs.add2(value_type(1), v, -alpha[i], u1, u2);
+	  else
+	    vs.add3(value_type(1), v, -alpha[i], u1, -beta[i], u0, u2);
+	}
 
 	std::cout << "i = " << i 
 		  << " alpha = " << alpha[i] << " beta = " << beta[i]
@@ -154,6 +168,10 @@ namespace Stokhos {
 	       	           "Stokhos::LanczosProjPCEBasis::lanczos():  "
 		           << " Polynomial " << i << " out of " << k
 		           << " has norm " << nrm_sqrd[i] << "!");
+
+	// Shift -- these are just pointer copies
+	u0 = u1;
+	u1 = u2;		  
 
       }
     }

@@ -31,8 +31,8 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_BLAS.hpp"
 
 #include "Stokhos_RecurrenceBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
@@ -41,28 +41,25 @@
 
 namespace Stokhos {
 
-
   template <typename ord_type, typename val_type>
   class DenseOperator {
   public:
     typedef ord_type ordinal_type;
     typedef val_type value_type;
     typedef Teuchos::SerialDenseMatrix<ordinal_type, value_type> matrix_type;
-    typedef Teuchos::Array<value_type> vector_type;
+    typedef Teuchos::SerialDenseVector<ordinal_type, value_type> vector_type;
 
-    DenseOperator(const matrix_type& A_): A(A_), blas() {}
+    DenseOperator(const matrix_type& A_): A(A_) {}
     
     void 
     apply(const vector_type& u, vector_type& v) const {
-      blas.GEMV(Teuchos::NO_TRANS, A.numRows(), A.numCols(), value_type(1), 
-                &A(0,0), A.stride(), &u[0], ordinal_type(1), value_type(0), 
-                &v[0], ordinal_type(1));
+      v.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, value_type(1), 
+                A, u, value_type(0));
     }
 
   protected:
 
     const matrix_type& A;
-    Teuchos::BLAS<ordinal_type, value_type> blas;
 
   };
 
@@ -107,6 +104,10 @@ namespace Stokhos {
 
     //@}
 
+    //! Map expansion coefficients from this basis to original
+    void transformCoeffsFromLanczos(const value_type *in, 
+				      value_type *out) const;
+
   protected:
 
     //! \name Implementation of Stokhos::RecurrenceBasis methods
@@ -135,10 +136,14 @@ namespace Stokhos {
 
   protected:
 
-    typedef Stokhos::Lanczos< WeightedVectorSpace<ordinal_type,value_type>, 
-                              DenseOperator<ordinal_type,value_type> > lanczos_type;
-    typedef typename DenseOperator<ordinal_type,value_type>::matrix_type matrix_type;
+    typedef WeightedVectorSpace<ordinal_type,value_type> vectorspace_type;
+    typedef DenseOperator<ordinal_type,value_type> operator_type;
+    typedef Stokhos::Lanczos<vectorspace_type, operator_type> lanczos_type;
+    typedef typename lanczos_type::matrix_type matrix_type;
     typedef typename lanczos_type::vector_type vector_type;
+
+    //! Size of PC expansion
+    ordinal_type pce_sz;
 
     //! Triple-product matrix used in generating lanczos vectors
     matrix_type Cijk_matrix;
@@ -150,7 +155,7 @@ namespace Stokhos {
     vector_type u0;
 
     //! Lanczos vectors
-    mutable Teuchos::Array<vector_type> lanczos_vecs;
+    mutable matrix_type lanczos_vecs;
 
   }; // class LanczosProjPCEBasis
 

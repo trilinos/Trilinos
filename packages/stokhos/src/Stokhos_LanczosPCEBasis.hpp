@@ -31,6 +31,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 
 #include "Stokhos_RecurrenceBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
@@ -44,9 +45,9 @@ namespace Stokhos {
   public:
     typedef ord_type ordinal_type;
     typedef val_type value_type;
-    typedef Teuchos::Array<value_type> vector_type;
+    typedef Teuchos::SerialDenseVector<ordinal_type, value_type> vector_type;
 
-    DiagonalOperator(const vector_type& A_): A(A_), n(A.size()) {}
+    DiagonalOperator(const vector_type& A_): A(A_), n(A.length()) {}
     
     void 
     apply(const vector_type& u, vector_type& v) const {
@@ -110,6 +111,10 @@ namespace Stokhos {
 
     //@}
 
+    //! Map expansion coefficients from this basis to original
+    void transformCoeffsFromLanczos(const value_type *in, 
+				      value_type *out) const;
+
   protected:
 
     //! \name Implementation of Stokhos::RecurrenceBasis methods
@@ -138,22 +143,29 @@ namespace Stokhos {
 
   protected:
 
-    typedef Stokhos::Lanczos< WeightedVectorSpace<ordinal_type,value_type>, 
-                              DiagonalOperator<ordinal_type,value_type> > lanczos_type;
-
+    typedef WeightedVectorSpace<ordinal_type,value_type> vectorspace_type;
+    typedef DiagonalOperator<ordinal_type,value_type> operator_type;
+    typedef Stokhos::Lanczos<vectorspace_type, operator_type> lanczos_type;
+    typedef typename lanczos_type::matrix_type matrix_type;
     typedef typename lanczos_type::vector_type vector_type;
 
+    //! Number of quadrature points
+    ordinal_type nqp;
+
     //! Quadrature weights
-    Teuchos::Array<value_type> pce_weights;
+    vector_type pce_weights;
 
     //! Values of PCE at quadrature points
-    Teuchos::Array<value_type> pce_vals;
+    vector_type pce_vals;
 
     //! Initial Lanczos vector
-    Teuchos::Array<value_type> h0;
+    vector_type u0;
 
     //! Lanczos vectors
-    mutable Teuchos::Array<vector_type> lanczos_vecs;
+    mutable matrix_type lanczos_vecs;
+
+    //! Matrix mapping coefficients in Stieltjes basis back to original basis
+    matrix_type fromStieltjesMat;
 
   }; // class LanczosPCEBasis
 
