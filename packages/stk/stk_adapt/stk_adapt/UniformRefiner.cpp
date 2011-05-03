@@ -9,6 +9,8 @@
 
 #include <stk_adapt/UniformRefiner.hpp>
 
+//#define STK_ADAPT_HAS_GEOMETRY
+#undef STK_ADAPT_HAS_GEOMETRY
 #if defined( STK_ADAPT_HAS_GEOMETRY )
 #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
 #include <stk_adapt/geometry/MeshGeometry.hpp>
@@ -33,7 +35,7 @@ namespace stk {
       m_geomFile(""), m_geomSnap(false),
       m_doQueryOnly(false),
       m_progress_meter_frequency(20),
-      m_doProgress(true)
+      m_doProgress(true && (0 == eMesh.getRank()) )
     {
       bp.setSubPatterns(m_breakPattern, eMesh);
     }
@@ -957,12 +959,29 @@ namespace stk {
           m_eMesh.adapt_parent_to_child_relations().clear();
           /***********************/                           TRACE_PRINT("UniformRefiner: fixElementSides1...done ");
 
+          if (m_doProgress)
+          {
+            ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "removeOldElements");
+            notifyObservers(&pd);
+          }
+
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
+              if (m_doProgress)
+              {
+                ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)irank)/((double)ranks.size()), "removeOldElements" );
+                notifyObservers(&pd);
+              }
+
               removeOldElements(ranks[irank], m_breakPattern[irank]);
               renameNewParts(ranks[irank], m_breakPattern[irank]);
               fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
             } 
+          if (m_doProgress)
+          {
+            ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "removeOldElements");
+            notifyObservers(&pd);
+          }
  
           /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start ");
           //bulkData.modification_end();
@@ -970,7 +989,7 @@ namespace stk {
         }
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
-      if (m_geomSnap)
+      if (0 && m_geomSnap)
       {
           GeometryKernelOpenNURBS gk;
           MeshGeometry mesh_geometry(&gk);
@@ -985,6 +1004,17 @@ namespace stk {
       /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
 
       /**/                                                TRACE_PRINT( "UniformRefiner:doBreak ... done");
+
+#if defined( STK_ADAPT_HAS_GEOMETRY )
+      if (m_geomSnap)
+      {
+          GeometryKernelOpenNURBS gk;
+          MeshGeometry mesh_geometry(&gk);
+          GeometryFactory factory(&gk, &mesh_geometry);
+          factory.read_file(m_geomFile, &m_eMesh);
+          mesh_geometry.snap_points_to_geometry(&m_eMesh);
+      }
+#endif
 
       //std::cout << "tmp m_nodeRegistry.m_gee_cnt= " << m_nodeRegistry->m_gee_cnt << std::endl;
       //std::cout << "tmp m_nodeRegistry.m_gen_cnt= " << m_nodeRegistry->m_gen_cnt << std::endl;
@@ -1006,6 +1036,8 @@ namespace stk {
           m_doProgress = false;
           progress_meter_num_total = doForAllElements(rank, function, elementColors, needed_entity_ranks, true, doAllElements);
           m_doProgress = true;
+          ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "NodeRegistry passes");
+          notifyObservers(&pd);
         }
       int progress_meter_when_to_post = progress_meter_num_total / m_progress_meter_frequency;
       if (0 == progress_meter_when_to_post) 
@@ -1043,11 +1075,19 @@ namespace stk {
               if (m_doProgress && progress_meter_when_to_post && (num_elem % progress_meter_when_to_post == 0) )
                 {
                   double progress_meter_percent = 100.0*((double)num_elem)/d_progress_meter_num_total;
+                  ProgressMeterData pd(ProgressMeterData::RUNNING, progress_meter_percent, "NodeRegistry passes");
+                  notifyObservers(&pd);
                   if (0) std::cout << "progress_meter_percent = " << progress_meter_percent << std::endl;
                 }
 
             } // elements in this color
         } // icolor
+
+      if (m_doProgress)
+        {
+          ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "NodeRegistry passes");
+          notifyObservers(&pd);
+        }
 
       return num_elem;
     }
@@ -1086,6 +1126,11 @@ namespace stk {
                     << " printEvery= " << printEvery
                     << std::endl;
         }
+      if (m_doProgress)
+        {
+          ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "createElementsAndNodesAndConnectLocal");
+          notifyObservers(&pd);
+        }
 
       for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
         {
@@ -1119,6 +1164,11 @@ namespace stk {
                   std::cout << "UniformRefiner::createElementsAndNodesAndConnectLocal: element # = " << jele << " [" 
                             << (((double)jele)/((double)nele)*100.0) << " %]" << std::endl;
                 }
+              if (m_doProgress && (jele % printEvery == 0))
+              {
+                ProgressMeterData pd(ProgressMeterData::RUNNING, 100.0*((double)jele)/((double)nele), "createElementsAndNodesAndConnectLocal RUN" );
+                notifyObservers(&pd);
+              }
 
               stk::mesh::Entity& element = * element_p;
 
@@ -1128,6 +1178,8 @@ namespace stk {
                   double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
                   //fdata[0] = double(m_eMesh.getRank());
                   fdata[0] = double(element.owner_rank());
+                  //if (1 || element.owner_rank() == 3) 
+                  //  std::cout << "tmp element.owner_rank() = " << element.owner_rank() << std::endl;
                 }
 
 
@@ -1150,6 +1202,13 @@ namespace stk {
               ++jele;
             }
         }
+
+      if (m_doProgress)
+        {
+          ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "createElementsAndNodesAndConnectLocal");
+          notifyObservers(&pd);
+        }
+
     }
 
 
