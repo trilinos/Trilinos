@@ -12,6 +12,9 @@ Teuchos::RCP<Teuchos::ParameterList> buildAppParams(int num_KL,bool full_expansi
 
 Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > buildBasis(int num_KL,int porder);
 
+Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> >
+buildBasis(int num_KL,const std::vector<int> & order);
+
 Teuchos::RCP<Stokhos::ParallelData> buildParallelData(bool full_expansion,int num_KL,
                                                       const Teuchos::RCP<const Epetra_Comm> & globalComm,
                                                       const Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > & basis);

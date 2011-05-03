@@ -78,6 +78,22 @@ Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > buildBasis(int
    return basis;
 }
 
+Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> >
+buildBasis(int num_KL,const std::vector<int> & order)
+{
+   TEUCHOS_ASSERT(num_KL==int(order.size()));
+
+   Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL);
+   for(int i=0; i<num_KL; i++)
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(order[i]));
+
+   Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis
+         = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+
+   return basis;
+}
+
+
 Teuchos::RCP<Stokhos::ParallelData> buildParallelData(bool full_expansion,int num_KL,
                                                       const Teuchos::RCP<const Epetra_Comm> & globalComm,
                                                       const Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > & basis)

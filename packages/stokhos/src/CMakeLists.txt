@@ -157,6 +157,10 @@ SET(HEADERS ${HEADERS}
   Stokhos_MPInverseModelEvaluator.hpp
   Stokhos_InterlacedOperator.hpp
   Stokhos_SGModelEvaluator_Interlaced.hpp
+  Stokhos_SGModelEvaluator_Adaptive.hpp
+  Stokhos_BasisInteractionGraph.hpp
+  Stokhos_AdaptivityUtils.hpp
+  Stokhos_AdaptivityManager.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -200,6 +204,10 @@ SET(SOURCES ${SOURCES}
   Stokhos_MPInverseModelEvaluator.cpp
   Stokhos_InterlacedOperator.cpp
   Stokhos_SGModelEvaluator_Interlaced.cpp
+  Stokhos_SGModelEvaluator_Adaptive.cpp
+  Stokhos_BasisInteractionGraph.cpp
+  Stokhos_AdaptivityUtils.cpp
+  Stokhos_AdaptivityManager.cpp
   )
 
 # Sacado

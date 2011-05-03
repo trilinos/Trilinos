@@ -115,6 +115,39 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  BasisInteractionGraphUnitTest 
+  SOURCES Stokhos_BasisInteractionGraphUnitTest.cpp
+          Stokhos_InterlacedTestSupport.cpp
+          Stokhos_InterlacedTestSupport.hpp
+          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  AdaptivityToolsUnitTest 
+  SOURCES Stokhos_AdaptivityToolsUnitTest.cpp
+          Stokhos_InterlacedTestSupport.cpp
+          Stokhos_InterlacedTestSupport.hpp
+          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  BuildColBasisUnitTest 
+  SOURCES Stokhos_BuildColBasisUnitTest.cpp
+          Stokhos_InterlacedTestSupport.cpp
+          Stokhos_InterlacedTestSupport.hpp
+          ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 2
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   InterlacedMapUnitTest 
   SOURCES Stokhos_InterlacedMapUnitTest.cpp
           Stokhos_InterlacedTestSupport.cpp
