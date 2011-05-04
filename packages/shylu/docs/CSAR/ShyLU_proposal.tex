@@ -12,7 +12,7 @@
 \title{Robust Parallel Hybrid Solvers for Sparse Linear Systems}
 
 \pagestyle{empty}
-\setlength{\topmargin}{-0.5in}
+\setlength{\topmargin}{-1.0in}
 \setlength{\headheight}{0in}
 \setlength{\headsep}{0in}
 \advance\textheight by 1.0in 
@@ -45,9 +45,10 @@ Office of Science). ShyLU is hybrid in the
 mathematical sense (direct and iterative methods) making it more
 robust than other preconditioners, while being less expensive
 than a direct factorization.  ShyLU is also hybrid in the parallel
-computing sense (MPI and threads). We envision ShyLU as a scalable
-subdomain solver for large problems and/or as a standalone black-box solver
-for medium sized problems.
+computing sense (MPI and threads). We envision ShyLU as both
+a standalone black-box solver for medium sized problems,
+and as a subdomain solver/preconditioner within a larger 
+distributed-memory framework. 
 
 ShyLU is based on a general Schur complement framework, with different options
 for partitioning the matrices, block-diagonal solves and Schur complement
@@ -57,13 +58,14 @@ which is important for strong scaling in applications.
 %The MPI + threads implementation helps ShyLU to scale well for up to $384$ cores.
 Our first target application is circuit simulation (Xyce, POC: H. Thornquist). 
 There is an acute lack of robust iterative methods in this area, so sparse
-direct methods are often used. The most successful iterative methods
+direct methods are often used but they often require a lot of memory.
+The most successful iterative methods
 for circuits are based on Schur complements but no such parallel solver
 is currently available in Trilinos or other DOE solver libraries.
 %
 Other potential applications are structural mechanics, where ShyLU
 may be used as a subdomain solver within FETI (POC: K. Pierson) or
-domain decomposition methods like GDSW (POC: G. Reese, C. Dohrmann). 
+domain decomposition methods such as GDSW (POC: G. Reese, C. Dohrmann). 
 We also anticipate that ShyLU
 will be useful as a smoother within ML/MueLu (POC: J. Hu, C. Siefert).
 %Tramonto?
@@ -72,9 +74,9 @@ will be useful as a smoother within ML/MueLu (POC: J. Hu, C. Siefert).
 ShyLU is currently based on Trilinos, in particular Epetra.
 We will use Trilinos as a development platform and delivery vehicle.
 ShyLU's robustness and scalability depends on good
-approximations to the Schur complement. Currently, ShyLU uses a
-structure-based probing
-or a value-based dropping method. The dropping approximation
+approximations to the Schur complement. Currently, there
+are two algebraic approaches in ShyLU: 
+structure-based probing and value-based dropping. The dropping approximation
 was added for circuit simulation problems. However, for problems
 with nice Schur complement structure, like PDEs where there is decay
 property in the Schur complement as you move away from the diagonal,
@@ -87,7 +89,8 @@ For unsymmetric matrices, ShyLU
 uses the permutation from a hypergraph partitioning as a symmetric
 permutation to find the interface. However, we can improve the robustness of ShyLU by
 using an unsymmetric permutation. We will develop algorithms that can handle
-the unsymmetric case and implement it in ShyLU as part of this project.
+the unsymmetric case and implement it in ShyLU.
+We expect much of our development to be driven by application demands.
 
 \begin{description}
 \item[Year 1] {\bf Release and evaluate Epetra-based implementation}
@@ -117,7 +120,7 @@ David Day (1442): 0.2 FTE\\
 Siva Rajamanickam (1426): 0.4 FTE\\
 Heidi Thornquist (1445): 0.3 FTE\\
 Summer student.\\
-
-Total budget request: \$400K FY12, \$410 FY13, \$420 FY14.
+%
+\textbf{Total budget request:} \$400K FY12, \$410 FY13, \$420 FY14.
 
 \end{document}
