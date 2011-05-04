@@ -105,10 +105,10 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
   Teuchos::ParameterList status;
   status = H.FillHierarchy(PRFact);
   TEUCHOS_TEST_EQUALITY(status.get("fine nnz",(Cthulhu::global_size_t)-1), 295, out, success);
-  TEUCHOS_TEST_EQUALITY(status.get("total nnz",(Cthulhu::global_size_t)-1), 392, out, success);
+  TEUCHOS_TEST_EQUALITY(status.get("total nnz",(Cthulhu::global_size_t)-1), 422, out, success);
   TEUCHOS_TEST_EQUALITY(status.get("start level",-1), 0, out, success);
   TEUCHOS_TEST_EQUALITY(status.get("end level",-1), 1, out, success);
-  TEUCHOS_TEST_FLOATING_EQUALITY(status.get("operator complexity",(SC)-1.0),1.32881,1e-5,out,success);
+  TEUCHOS_TEST_FLOATING_EQUALITY(status.get("operator complexity",(SC)-1.0),1.43051,1e-5,out,success);
 
 } //FillHierarchy_PRFactoryOnly
 
@@ -274,6 +274,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
     }
 } //FullPopulate
 
+#include "MueLu_AggregationOptions.hpp"
+
 TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 {
   MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
@@ -304,7 +306,16 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   Finest->Save("NullSpace",nullSpace);
   H.SetLevel(Finest);
 
-  RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
+  MueLu::AggregationOptions aggOptions;
+  aggOptions.SetMinNodesPerAggregate(3);
+  aggOptions.SetMaxNeighAlreadySelected(0);
+  aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
+  aggOptions.SetPhase3AggCreation(0.5);
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(aggOptions));
+  RCP<CoalesceDropFactory> cdFact;
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
+
+  RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
 

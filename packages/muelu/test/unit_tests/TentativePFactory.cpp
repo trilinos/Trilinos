@@ -2,6 +2,7 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+#include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
@@ -36,7 +37,6 @@ namespace {
   } //SetGetMethods
 
   //TODO test BuildP
-  //TODO test MakeTentative
 
   TEUCHOS_UNIT_TEST(TentativePFactory, MakeTentative)
   {
@@ -61,6 +61,14 @@ namespace {
       fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
       //FIXME is implemented
   
+      MueLu::AggregationOptions aggOptions;
+      aggOptions.SetMinNodesPerAggregate(3);
+      aggOptions.SetMaxNeighAlreadySelected(0);
+      aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
+      aggOptions.SetPhase3AggCreation(0.5);
+      UCAggregationFactory UCAggFact(aggOptions);
+      UCAggFact.Build(fineLevel);
+      fineLevel.Request("Aggregates"); //FIXME putting this in to avoid error until Merge needs business
       TentativePFactory::MakeTentative(fineLevel,coarseLevel);
 
       RCP<Operator> Ptent; 
