@@ -224,6 +224,9 @@ public:
  * The dependee of a StringVisualDependency must be of type string and 
  * can't be an array. The dependent may be any type of
  * parameter or parameter list.
+ *
+ * Please see StringVisualDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 class StringVisualDependency : public VisualDependency{
 
@@ -402,6 +405,9 @@ public:
  * The dependee of a BoolVisualDependency must be of type bool and can't 
  * be an array. The dependent may be any type of parameter
  * or parameter list.
+ *
+ * Please see BoolValidatorDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 class BoolVisualDependency : public VisualDependency{
 
@@ -503,6 +509,9 @@ public:
  * The dependee(s) of a ConditionVisualDependency must be expressed as a 
  * Condition and are subject to the consquential constraints. The 
  * dependent may be any type of parameter or parameter list.
+ *
+ * Please see ConditionVisualDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 class ConditionVisualDependency : public VisualDependency{
 
@@ -632,6 +641,9 @@ public:
  * is first ran through that function. The result of that
  * function is then compared to 0 using the same
  * criteria as above.
+ *
+ * Please see NumberVisualDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 template <class T>
 class NumberVisualDependency : public VisualDependency{
@@ -851,6 +863,9 @@ RCP<NumberVisualDependency<T> >
  *   example: if the dependent is of type Array<int> then the
  *   NumberArrayLengthDependency's dependent template parameter should be set
  *   to int.
+ *
+ * Please see NumberArrayLengthDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  *
  */
 template<class DependeeType, class DependentType>
@@ -1113,6 +1128,9 @@ RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
  *
  * If the dependee takes on a value not in the valuesAndValidators
  * map, then the default validator is assigned to the dependent.
+ *
+ * Please see StringValidatorDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 class StringValidatorDependency : public ValidatorDependency{
 
@@ -1271,6 +1289,8 @@ public:
  *
  *   \li The false and true validators must be the same type.
  *
+ * Please see BoolValidatorDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 class BoolValidatorDependency : public ValidatorDependency{
 
@@ -1408,6 +1428,9 @@ public:
  *   the same type.
  *
  *   \li Ranges must not intersect
+ *
+ * Please see RangeValidatorDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 template<class T>
 class RangeValidatorDependency : public ValidatorDependency{
