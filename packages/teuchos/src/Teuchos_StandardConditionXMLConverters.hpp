@@ -158,7 +158,7 @@ public:
  * The valid XML represntation for an NotCondition is:
  * \code
     <Condition type="NotCondition">
-      ...Conditions to negate...
+      ...Condition to negate...
     </Condition>
  \endcode
  */
@@ -330,7 +330,7 @@ public:
 /** \brief An xml converter for NumberConditions
  * The valid XML represntation for a NumberCondition is:
  * \code
-   <Condition type="NumberCondition(number_type_of_parameter)
+   <Condition type="NumberCondition(number_type_of_parameter)"
       parameterId="id of parameter">
      ...Optional Function Tag...
    </Condition>

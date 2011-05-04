@@ -246,7 +246,7 @@ public:
   //@{
 
   /**
-   * Constructs a StringVisualDependency.
+   * \brief Constructs a StringVisualDependency.
    *
    * @param dependee The dependee paramter.
    * @parame dependent The dependent parameter.
@@ -265,7 +265,7 @@ public:
     bool showIf=true);
 
   /**
-   * Constructs a StringVisualDependency.
+   * \brief Constructs a StringVisualDependency.
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
@@ -284,7 +284,7 @@ public:
     bool showIf=true);
 
   /**
-   * Constructs a StringVisualDependency.
+   * \brief Constructs a StringVisualDependency.
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents
@@ -303,7 +303,7 @@ public:
     bool showIf=true);
 
   /**
-   * Constructs a StringVisualDependency.
+   * \brief Constructs a StringVisualDependency.
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents
@@ -406,7 +406,7 @@ public:
  * be an array. The dependent may be any type of parameter
  * or parameter list.
  *
- * Please see BoolValidatorDependencyXMLConverter for documentation
+ * Please see BoolVisualDependencyXMLConverter for documentation
  * regarding the XML representation of this Dependency.
  */
 class BoolVisualDependency : public VisualDependency{
@@ -632,11 +632,9 @@ public:
  * The dependee of a NumberVisualDependency must 
  * be a number type and can't be an array. The dependent may be 
  * any type of parameter or parameter list.
- *
  * If no function is provided, then the value of the Dependee
  * is simply compared to 0. If it is greater than 0, the
  * dependency evaluates to true. Otherwise it evaluates to false.
- *
  * If a function is provided, then the value of the Dependee
  * is first ran through that function. The result of that
  * function is then compared to 0 using the same

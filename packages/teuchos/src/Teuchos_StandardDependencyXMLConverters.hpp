@@ -199,7 +199,7 @@ public:
         <String value="Second value"/>
         ...Other Values...
       </StringValues>
-     </Dependency>
+    </Dependency>
   \endcode
   The "showIf" XML attribute is optional and if not present will be considered
   true.
@@ -506,7 +506,7 @@ private:
  *
  * The valid XML representation of a BoolValidatorDependency is:
  * \code
-    <Dependency type="BoolValidatorDependency
+    <Dependency type="BoolValidatorDependency"
       trueValidatorId="Id of the true validator"
       falseValidatorId="Id of the false validator"
     />
