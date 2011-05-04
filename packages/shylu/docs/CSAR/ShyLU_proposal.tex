@@ -87,13 +87,11 @@ a probing-based method is more appropriate. We will develop other
 approximations to Schur complement based on the needs of our applications. For
 example, we know indefinite matrices require a better approximation than either
 of the two existing approaches in ShyLU.
-
-For unsymmetric matrices, ShyLU
-uses the permutation from a hypergraph partitioning as a symmetric
-permutation to find the interface. However, we can improve the robustness
-of ShyLU by
-using an unsymmetric permutation. We will develop algorithms that can handle
-the unsymmetric case and implement it in ShyLU.
+For unsymmetric matrices, ShyLU currently uses symmetric
+permutations but we can improve the robustness by
+using an unsymmetric permutation.
+We will develop and implement algorithms that better handle
+the unsymmetric case.
 
 Xyce requires capabilities to efficiently
 reuse components within the ShyLU framework for a sequence of linear systems that
@@ -126,8 +124,9 @@ We expect much of our development to be driven by application demands.
 \paragraph{\bf Personnel and Budget:}
 Erik Boman, PI (1426): 0.3 FTE\\
 David Day (1442): 0.2 FTE\\
-Siva Rajamanickam (1426): 0.4 FTE\\
+Siva Rajamanickam (1426): 0.3 FTE\\
 Heidi Thornquist (1445): 0.3 FTE\\
+1500 consulting (Pierson, Dohrmann): 0.1 FTE\\
 Summer student.\\
 %
 \textbf{Total budget request:} \$400K FY12, \$410 FY13, \$420 FY14.
