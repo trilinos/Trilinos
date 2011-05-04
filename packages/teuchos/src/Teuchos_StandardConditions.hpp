@@ -124,6 +124,9 @@ private:
  * \brief A String Condition is a Parameter Condition that evaluates
  * whether or not a string parameter has taken on a particular
  * value or set of values.
+ *
+ * Please see StringConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
 class StringCondition : public ParameterCondition{
 
@@ -236,6 +239,9 @@ public:
  * based on a given function). 
  * If the parameter is  greater than 0 this is interperted as the condition 
  * being "true". Otherwise the oncidiont is interperted as false.
+ *
+ * Please see NumberConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
 template<class T>
 class NumberCondition : public ParameterCondition{
@@ -348,7 +354,10 @@ RCP<NumberCondition<T> >
 /**
  * \brief A Bool Condition is a Parameter Condition that evaluates
  * whether or not a Boolean parameter is ture.
- * */
+ *
+ * Please see BoolConditionConverter for documenation 
+ * regarding the XML representation of this condition.
+ */
 class BoolCondition : public ParameterCondition{
 
 public:
@@ -510,6 +519,9 @@ private:
 /**
  * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical OR on the conditions.
+ *
+ * Please see OrConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
 class OrCondition : public BoolLogicCondition{
 
@@ -578,6 +590,9 @@ public:
 /**
  * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical AND on the conditions.
+ *
+ * Please see AndConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
 class AndCondition : public BoolLogicCondition{
 
@@ -647,6 +662,9 @@ public:
 /**
  * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical EQUALS on the conditions.
+ *
+ * Please see EqualsConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
 class EqualsCondition : public BoolLogicCondition{
 
@@ -716,6 +734,9 @@ public:
  * \brief A Not condition returns the result of
  * performing a logical NOT on a given
  * condition.
+ *
+ * Please see NotConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
 class NotCondition : public Condition{
 

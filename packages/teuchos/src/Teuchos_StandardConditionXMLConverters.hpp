@@ -81,6 +81,13 @@ public:
 };
 
 /** \brief An xml converter for OrConditions
+ *
+ * The valid XML represntation for an OrCondition is:
+ * \code
+    <Condition type="OrCondition">
+      ...Conditions to "or" together...
+    </Condition>
+ \endcode
  */
 class OrConditionConverter : public BoolLogicConditionConverter{
 
@@ -98,6 +105,13 @@ public:
 };
 
 /** \brief An xml converter for AndConditions
+ *
+ * The valid XML represntation for an AndCondition is:
+ * \code
+    <Condition type="AndCondition">
+      ...Conditions to "and" together...
+    </Condition>
+ \endcode
  */
 class AndConditionConverter : public BoolLogicConditionConverter{
 
@@ -116,6 +130,13 @@ public:
 
 
 /** \brief An xml converter for EqualsConditions
+ *
+ * The valid XML represntation for an EqualsCondition is:
+ * \code
+    <Condition type="EqualsCondition">
+      ...Conditions to "equals" together...
+    </Condition>
+ \endcode
  */
 class EqualsConditionConverter : public BoolLogicConditionConverter{
 
@@ -133,6 +154,13 @@ public:
 };
 
 /** \brief An xml converter for NotConditions
+ *
+ * The valid XML represntation for an NotCondition is:
+ * \code
+    <Condition type="NotCondition">
+      ...Conditions to negate...
+    </Condition>
+ \endcode
  */
 class NotConditionConverter : public ConditionXMLConverter{
 
@@ -221,6 +249,15 @@ private:
 };
 
 /** \brief An xml converter for StringConditions
+ * The valid XML represntation for a StringCondition is:
+ * \code
+    <Condition type="StringCondition" parameterId="Id of parameter">
+      <Values>
+        <String value="First string value"/>
+        ...Additional String Values...
+      </Values>
+    </Condition>
+ \endcode
  */
 class StringConditionConverter : public ParameterConditionConverter{
 
@@ -264,6 +301,11 @@ private:
 };
 
 /** \brief An xml converter for BoolConditions
+ *
+ * The valid XML represntation for a BoolCondition is:
+ * \code
+    <Condition type="BoolCondition" parameterId="Id of parameter"/>
+   \endcode
  */
 class BoolConditionConverter : public ParameterConditionConverter{
 
@@ -286,6 +328,13 @@ public:
 };
 
 /** \brief An xml converter for NumberConditions
+ * The valid XML represntation for a NumberCondition is:
+ * \code
+   <Condition type="NumberCondition(number_type_of_parameter)
+      parameterId="id of parameter">
+     ...Optional Function Tag...
+   </Condition>
+ \endcode
  */
 template<class T>
 class NumberConditionConverter : public ParameterConditionConverter{
