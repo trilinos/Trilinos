@@ -360,12 +360,12 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check for correctness of restrictions:
 
   STKUNIT_ASSERT( f3->restrictions().size() == 3 );
-  STKUNIT_ASSERT( f3->restrictions()[0].key ==
-                  EntityKey( 0 , pA.mesh_meta_data_ordinal() ) );
-  STKUNIT_ASSERT( f3->restrictions()[1].key ==
-                  EntityKey( 1 , pB.mesh_meta_data_ordinal() ) );
-  STKUNIT_ASSERT( f3->restrictions()[2].key ==
-                  EntityKey( 2 , pC.mesh_meta_data_ordinal() ) );
+  STKUNIT_ASSERT( f3->restrictions()[0] ==
+                  FieldRestriction( 0 , pA.mesh_meta_data_ordinal() ) );
+  STKUNIT_ASSERT( f3->restrictions()[1] ==
+                  FieldRestriction( 1 , pB.mesh_meta_data_ordinal() ) );
+  STKUNIT_ASSERT( f3->restrictions()[2] ==
+                  FieldRestriction( 2 , pC.mesh_meta_data_ordinal() ) );
 
   f3->m_impl.insert_restriction( method , 0 , pB , stride + 1 );
 
@@ -428,7 +428,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     const FieldBase::Restriction & rA = f2->restriction( 0 , pA );
     const FieldBase::Restriction & rD = f2->restriction( 0 , pD );
     STKUNIT_ASSERT( & rA == & rD );
-    STKUNIT_ASSERT( entity_id( rA.key ) == pD.mesh_meta_data_ordinal() );
+    STKUNIT_ASSERT( rA.ordinal() == pD.mesh_meta_data_ordinal() );
   }
 
   //------------------------------
@@ -537,7 +537,7 @@ void UnitTestFieldImpl::testFieldRestriction()
 
     for ( ; i != ie ; ++i ) {
       if ( i->ordinal() == entity_id ) {
-	const unsigned len = pA.mesh_meta_data_ordinal() ? i->stride[ pA.mesh_meta_data_ordinal() - 1 ] : 1 ;
+	const unsigned len = pA.mesh_meta_data_ordinal() ? i->stride( pA.mesh_meta_data_ordinal() - 1 ) : 1 ;
         if ( max < len ) { max = len ; }
       }
     }

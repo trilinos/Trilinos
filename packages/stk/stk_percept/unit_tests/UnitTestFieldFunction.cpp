@@ -109,8 +109,8 @@ STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
       {
         const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
         mesh::Part& frpart = metaData.get_part(fr.ordinal());
-        if (printInfo) std::cout << " field restriction " << ifr << " stride[0] = " << fr.stride[0] <<
-                         " type= " << fr.type() << " ord= " << fr.ordinal() <<
+        if (printInfo) std::cout << " field restriction " << ifr << " stride[0] = " << fr.dimension() <<
+                         " type= " << fr.rank() << " ord= " << fr.ordinal() <<
                          " which corresponds to Part= " << frpart.name() << std::endl;
       }
     }

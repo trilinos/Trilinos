@@ -355,10 +355,10 @@ namespace stk {
                 {
                   const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
                   stk::mesh::Part& frpart = metaData.get_part(fr.ordinal());
-                  stride = fr.stride[0];
-                  field_rank = fr.type();
-                  if (printInfo) stream << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr.stride[0] <<
-                    " type= " << fr.type() << " ord= " << fr.ordinal() <<
+                  stride = fr.dimension();
+                  field_rank = fr.rank();
+                  if (printInfo) stream << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr.dimension() <<
+                    " type= " << fr.rank() << " ord= " << fr.ordinal() <<
                     " which corresponds to Part= " << frpart.name() << mendl;
                 }
 
@@ -505,11 +505,11 @@ namespace stk {
                 {
                   const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
                   //std::cout << fr.key.rank();
-                  if (fr.type() == stk::mesh::fem::FEMMetaData::NODE_RANK)
+                  if (fr.rank() == stk::mesh::fem::FEMMetaData::NODE_RANK)
                     {
 
-                      if (printInfo) std::cout << "P[" << p_rank << "] info>   stride = "<< fr.stride[0] << std::endl;
-                      PrintFieldOp pfop(field->name(), *this, 3, fr.stride[0]);
+                      if (printInfo) std::cout << "P[" << p_rank << "] info>   stride = "<< fr.dimension() << std::endl;
+                      PrintFieldOp pfop(field->name(), *this, 3, fr.dimension());
                       nodalOpLoop(pfop, field);
                     }
                 }
@@ -523,7 +523,7 @@ namespace stk {
     {
       // #ifndef NDEBUG
       //       const stk::mesh::FieldBase::Restriction & r = getCoordinatesField()->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, getFEM_meta_data()->universal_part());
-      //       unsigned dataStride = r.stride[0] ;
+      //       unsigned dataStride = r.dimension() ;
       //       VERIFY_OP((int)dataStride, ==, m_spatialDim, "PerceptMesh::getSpatialDim() bad spatial dim");
       // #endif
       return m_spatialDim;
@@ -606,7 +606,7 @@ namespace stk {
 
       if (m_coordinatesField) {
           const stk::mesh::FieldBase::Restriction & r = m_coordinatesField->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, getFEM_meta_data()->universal_part());
-          unsigned dataStride = r.stride[0] ;
+          unsigned dataStride = r.dimension() ;
           m_spatialDim = dataStride;
           if (m_spatialDim != 2 && m_spatialDim != 3)
             {
@@ -868,7 +868,7 @@ namespace stk {
 
       if(stride) {
         const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
-        *stride = r.stride[0] ;
+        *stride = r.dimension() ;
       }
 
       switch(rank)
@@ -906,7 +906,7 @@ namespace stk {
 
       if(stride) {
         const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
-        *stride = r.stride[0] ;
+        *stride = r.dimension() ;
       }
 
       switch(rank)
@@ -992,7 +992,7 @@ namespace stk {
 
       if(stride) {
         const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
-        *stride = r.stride[0] ;
+        *stride = r.dimension() ;
       }
 
       switch(rank)
@@ -1485,7 +1485,7 @@ namespace stk {
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
               stk::mesh::Part& frpart = metaData.get_part(fr.ordinal());
-              std::cout << "PerceptMesh::dump: field restriction " << ifr << " stride[0] = " << fr.stride[0] << " type= " << fr.type() << " ord= " << fr.ordinal() <<
+              std::cout << "PerceptMesh::dump: field restriction " << ifr << " stride[0] = " << fr.dimension() << " type= " << fr.rank() << " ord= " << fr.ordinal() <<
                 " which corresponds to Part= " << frpart.name() << std::endl;
             }
         }
@@ -2410,21 +2410,21 @@ namespace stk {
                   {
                     const stk::mesh::FieldRestriction& fr_1 = field_1->restrictions()[ifr];
                     stk::mesh::Part& frpart_1 = metaData_1.get_part(fr_1.ordinal());
-                    stride_1 = fr_1.stride[0];
-                    field_rank = fr_1.type();
+                    stride_1 = fr_1.dimension();
+                    field_rank = fr_1.rank();
                     const stk::mesh::FieldRestriction& fr_2 = field_2->restrictions()[ifr];
                     stk::mesh::Part& frpart_2 = metaData_2.get_part(fr_2.ordinal());
-                    stride_2 = fr_2.stride[0];
+                    stride_2 = fr_2.dimension();
 
-                    if (stride_1 != stride_2 || fr_1.type() != fr_2.type())
+                    if (stride_1 != stride_2 || fr_1.rank() != fr_2.rank())
                       {
                         if (print)
                           {
-                            std::cout << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr_1.stride[0] <<
-                              " type= " << fr_1.type() << " ord= " << fr_1.ordinal() <<
+                            std::cout << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr_1.dimension() <<
+                              " type= " << fr_1.rank() << " ord= " << fr_1.ordinal() <<
                               " which corresponds to Part= " << frpart_1.name() << std::endl;
-                            std::cout << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr_2.stride[0] <<
-                              " type= " << fr_2.type() << " ord= " << fr_2.ordinal() <<
+                            std::cout << "P[" << p_rank << "] info>    field restriction " << ifr << " stride[0] = " << fr_2.dimension() <<
+                              " type= " << fr_2.rank() << " ord= " << fr_2.ordinal() <<
                               " which corresponds to Part= " << frpart_2.name() << std::endl;
                           }
                         msg += "| field stride or rank diff |\n";

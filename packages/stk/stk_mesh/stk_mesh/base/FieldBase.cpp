@@ -19,31 +19,6 @@ namespace mesh {
 FieldBase::~FieldBase()
 {}
 
-namespace {
-
-void print_restriction( std::ostream & os ,
-                        unsigned type ,
-                        const Part & part ,
-                        unsigned rank ,
-                        const FieldRestriction::size_type * stride )
-{
-  os << "{ entity_rank(" << type << ") part(" << part.name() << ") : " ;
-  os << stride[0] ;
-  for ( unsigned i = 1 ; i < rank ; ++i ) {
-    if ( ! stride[i] ) {
-      os << " , 0 " ;
-    }
-    else if ( stride[i] % stride[i-1] ) {
-      os << " , " << stride[i] << " / " << stride[i-1] ;
-    }
-    else {
-      os << " , " << stride[i] / stride[i-1] ;
-    }
-  }
-  os << " }" ;
-}
-
-}
 
 std::ostream & operator << ( std::ostream & s , const FieldBase & field )
 {
@@ -73,9 +48,7 @@ std::ostream & print( std::ostream & s ,
   for ( std::vector<FieldBase::Restriction>::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
-    print_restriction( s, entity_rank( i->key ),
-                       * all_parts[ entity_id( i->key ) ],
-                       field.rank(), i->stride);
+    i->print( s, i->rank(), * all_parts[ i->ordinal() ], field.rank() );
   }
   s << std::endl << b << "}" ;
   return s ;
