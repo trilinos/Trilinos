@@ -12,6 +12,7 @@
 #include "MueLu_AggregationOptions.hpp"
 #include "MueLu_UCAggregationCommHelper.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_Exceptions.hpp"
 #include "MueLu_LinkedList.hpp"
 
 namespace MueLu {
@@ -255,7 +256,7 @@ typedef int my_size_t; //TODO
                   iNode = nodeList->Pop();
                 }
               else {
-                throw(1);
+                throw(Exceptions::RuntimeError("CoarsenUncoupled: bad aggregation ordering option"));
               }
 
               /*------------------------------------------------------ */
