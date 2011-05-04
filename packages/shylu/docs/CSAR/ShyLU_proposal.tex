@@ -26,12 +26,14 @@
 \maketitle
 
 %\vspace{-8mm}
-\paragraph{\bf Introduction:}
+%\paragraph{\bf Introduction:}
 We propose to develop parallel algorithms and software for robust solvers
 of sparse linear systems. We seek to address two issues that
 are not adequately addressed by current solver packages:
-(i) high performance on manycore and future exascale architechtectures, and
-(ii) robustness for ill-conditioned problems.
+\begin{enumerate}
+\item high performance on manycore and future exascale architectures, and
+\item robustness for ill-conditioned problems.
+\end{enumerate}
 
 As parallelism in a single node increases, NW applications
 have to adapt to a hybrid system where each compute node by itself
@@ -74,34 +76,38 @@ approximations to the Schur complement. Currently, ShyLU uses a
 structure-based probing
 or a value-based dropping method. The dropping approximation
 was added for circuit simulation problems. However, for problems
-with a nice stucture to the Schur complement, like PDEs where there is decay
+with nice Schur complement structure, like PDEs where there is decay
 property in the Schur complement as you move away from the diagonal,
-a probing based method is more appropriate. We will develop other
+a probing-based method is more appropriate. We will develop other
 approximations to Schur complement based on the needs of our applications. For
 example, we know indefinite matrices require a better approximation than either
 of the two existing approaches in ShyLU.
 
-For unsymmetric matrices ShyLU
+For unsymmetric matrices, ShyLU
 uses the permutation from a hypergraph partitioning as a symmetric
-permutation to find the interface. However we can improve robustness of ShyLU by
+permutation to find the interface. However, we can improve the robustness of ShyLU by
 using an unsymmetric permutation. We will develop algorithms that can handle
 the unsymmetric case and implement it in ShyLU as part of this project.
 
 \begin{description}
-\item[Year 1] 
-Release of ShyLU as stable code in Trilinos.
-Make available as smoother for ML.
-Evaluate performance on solid mechanics test problems from 
-1500 collaborators.
-Integrate as (optional) solver within Xyce. 
-\item[Year 2] 
-Improve ShyLU algorithm for structurally nonsymmetric problems.
-Improve robustness for circuit and mechanics problems, including 
-indefinite problems.
-\item[Year 3] 
-Tpetra-based version of ShyLU, compatible with 2nd generation Trilinos.
-Support for complex arithmetic (to help GDSW).
-Make available as smoother for MueLu.
+\item[Year 1] {\bf Release and evaluate Epetra-based implementation}
+  \begin{itemize} 
+  \item Release of ShyLU as stable code in Trilinos.
+  \item Make available as smoother for ML.
+  \item Evaluate performance on solid mechanics test problems from 1500 collaborators.
+  \item Integrate as (optional) solver within Xyce.
+  \end{itemize}
+\item[Year 2] {\bf Improve implementation / algorithms for applications of interest}
+  \begin{itemize}
+  \item Improve ShyLU algorithm for structurally nonsymmetric problems.
+  \item Improve robustness for circuit and mechanics problems, including indefinite problems.
+  \end{itemize}
+\item[Year 3] {\bf Extend ShyLU compatability to 2nd generation Trilinos}
+  \begin{itemize}
+  \item Tpetra-based version of ShyLU, compatible with 2nd generation Trilinos.
+  \item Support for complex arithmetic (to help GDSW).
+  \item Make available as smoother for MueLu.
+  \end{itemize}
 \end{description}
 
 
