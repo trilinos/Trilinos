@@ -20,7 +20,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # Turn off SS packages we don't have TPLs for
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES PyTrilinos TriKota Optika)
   
-  SET_DEFAULT(COMPILER_VERSION "ICPC-11.1.064")
+  SET_DEFAULT(COMPILER_VERSION "ICPC-12.0.2")
   
   IF (COMM_TYPE STREQUAL MPI)
 
@@ -31,11 +31,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
       "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
-      "-DCMAKE_C_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/icc"
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/icpc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/ifort"
-      "-DTPL_BLAS_LIBRARIES:STRING=-L${MKLROOT}/lib/em64t -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
-      "-DTPL_LAPACK_LIBRARIES:STRING=-L${MKLROOT}/lib/em64t -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
+      "-DCMAKE_C_COMPILER:FILEPATH=/opt/intel/Compiler/composerxe-2011.2.137/bin/intel64/icc"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/opt/intel/Compiler/composerxe-2011.2.137/bin/intel64/icpc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/opt/intel/Compiler/composerxe-2011.2.137/bin/intel64/ifort"
+      "-DTPL_BLAS_LIBRARIES:STRING=-L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
+      "-DTPL_LAPACK_LIBRARIES:STRING=-L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
       "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=/opt/tpls_src/boost_1_46_1"
     )
 
