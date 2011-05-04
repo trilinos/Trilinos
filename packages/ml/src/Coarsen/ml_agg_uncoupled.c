@@ -61,7 +61,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm)
 {
    int     mypid, Nrows, nvblocks, *vblock_info = NULL, *vblock_info2 = NULL;
-   int     i, j, k, m, nullspace_dim, *col_ind, aggr_count, nvblockflag;
+   int     i, j, k, m, m2, nullspace_dim, *col_ind, aggr_count, nvblockflag;
    int     nbytes, Ncoarse, *mat_indx=NULL,*aggr_index,nz_cnt, diff_level;
    int     *new_ia = NULL, *new_ja = NULL, maxnnz_per_row=500;
    double  printflag;
@@ -100,6 +100,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    FILE *fp;
    static int level_count = 0;
 #endif
+
    /* ============================================================= */
    /* get the machine information and matrix references             */
    /* ============================================================= */
@@ -182,11 +183,12 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
      printf("Aggregation(UVB) : Total nonzeros = %d (Nrows=%d)\n",m,k);
 
-   if ( ml_ag->operator_complexity == 0.0 )
-     {
-       ml_ag->fine_complexity = 1.0 * m;
-       ml_ag->operator_complexity = 1.0 * m;
-     }
+
+   m2 = ML_Comm_GsumInt( comm, Amatrix->N_nonzeros);
+   if ( ml_ag->operator_complexity == 0.0 ){
+     ml_ag->fine_complexity = 1.0 * m2;
+     ml_ag->operator_complexity = 1.0 * m2;
+   }
    else ml_ag->operator_complexity += 1.0 * m;
 
    /* ------------------------------------------------------------- */
