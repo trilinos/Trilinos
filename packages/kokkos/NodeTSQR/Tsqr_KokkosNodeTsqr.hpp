@@ -417,6 +417,7 @@ namespace TSQR {
 	// among threads.
 	std::vector<Scalar> work (A_.ncols());
 
+#if(0)
 	// We could just pass in &tauArrays_[cbIndices.first] (a raw
 	// pointer) for the output iterator over the TAU arrays.
 	// However, we would like a little bit more safety than that.
@@ -433,6 +434,9 @@ namespace TSQR {
 	  arrayViewFromVector (tauArrays_).view (cbIndices.first, 
 						 cbIndices.second - cbIndices.first);
 	topBlocks_[partitionIndex] = factor (range, tauView.begin(), work);
+#else
+	topBlocks_[partitionIndex] = factor (range, &tauArrays_[cbIndices.first], work);
+#endif // 0
       }
     };
 
