@@ -309,6 +309,10 @@ namespace Tpetra {
 
     typedef Kokkos::MultiVector<Scalar,Node> KMV;
     typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+  
+    inline bool vectorIndexOutOfRange(size_t VectorIndex) const {
+      return (VectorIndex < 1 && VectorIndex != 0) || VectorIndex >= getNumVectors();
+    }
 
     KMV lclMV_;
     Teuchos::Array<size_t> whichVectors_;

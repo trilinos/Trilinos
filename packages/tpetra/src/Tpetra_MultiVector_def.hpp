@@ -100,15 +100,16 @@ namespace Tpetra {
                         const Teuchos::ArrayView<const Scalar> &A, size_t LDA, 
                         size_t NumVectors)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()) {
-    TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
-        "Tpetra::MultiVector::MultiVector(A,LDA): NumVectors must be strictly positive.");
+    const std::string tfecfFuncName("MultiVector(A,LDA)");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
+        ": NumVectors must be strictly positive.");
     const size_t myLen = getLocalLength();
     using Teuchos::ArrayRCP;
-    TEST_FOR_EXCEPTION(LDA < myLen, std::runtime_error,
-        "Tpetra::MultiVector::MultiVector(A,LDA): LDA must be large enough to accomodate the local entries.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::runtime_error,
+        ": LDA must be large enough to accomodate the local entries.");
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(A.size()) < LDA*(NumVectors-1)+myLen, std::runtime_error,
-        "Tpetra::MultiVector::MultiVector(A,LDA): A does not contain enough data to specify the entries in this.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(A.size()) < LDA*(NumVectors-1)+myLen, std::runtime_error,
+        ": A does not contain enough data to specify the entries in this.");
 #endif
     if (myLen > 0) {
       Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
@@ -135,8 +136,9 @@ namespace Tpetra {
                                                                    const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, 
                                                                    size_t NumVectors)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()) {
-    TEST_FOR_EXCEPTION(NumVectors < 1 || NumVectors != Teuchos::as<size_t>(ArrayOfPtrs.size()), std::runtime_error,
-        "Tpetra::MultiVector::MultiVector(ArrayOfPtrs): ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
+    const std::string tfecfFuncName("MultiVector(ArrayOfPtrs)");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1 || NumVectors != Teuchos::as<size_t>(ArrayOfPtrs.size()), std::runtime_error,
+        ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
     const size_t myLen = getLocalLength();
     if (myLen > 0) {
       Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
@@ -146,8 +148,8 @@ namespace Tpetra {
       Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
       for (size_t j = 0; j < NumVectors; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
-        TEST_FOR_EXCEPTION(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(), std::runtime_error,
-          "Tpetra::MultiVector::MultiVector(ArrayOfPtrs): ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() << 
+        TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(), std::runtime_error,
+          ": ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() << 
           ") is not equal to getLocalLength() (== " << getLocalLength());
 #endif
         typename Teuchos::ArrayView<const Scalar>::iterator src = ArrayOfPtrs[j].begin();
@@ -167,13 +169,14 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
               Teuchos::ArrayRCP<Scalar> data, size_t LDA, Teuchos::ArrayView<const size_t> WhichVectors)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()), whichVectors_(WhichVectors) {
+    const std::string tfecfFuncName("MultiVector(data,LDA,WhichVectors)");
     const size_t myLen = getLocalLength();
     size_t maxVector = *std::max_element(WhichVectors.begin(), WhichVectors.end());
-    TEST_FOR_EXCEPTION(LDA < myLen, std::runtime_error,
-        "Tpetra::MultiVector::MultiVector(data,LDA,WhichVectors): LDA must be large enough to accomodate the local entries.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::runtime_error,
+        ": LDA must be large enough to accomodate the local entries.");
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(data.size()) < LDA * maxVector + myLen, std::runtime_error,
-        "Tpetra::MultiVector::MultiVector(data,LDA,WhichVectors): data does not contain enough data to specify the entries in this.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(data.size()) < LDA * maxVector + myLen, std::runtime_error,
+        ": data does not contain enough data to specify the entries in this.");
 #endif
     if (WhichVectors.size() == 1) {
       // shift data so that desired vector is vector 0
@@ -195,12 +198,13 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                 Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()) {
-    TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
-        "Tpetra::MultiVector::MultiVector(data,LDA,NumVector): NumVectors must be strictly positive.");
+    const std::string tfecfFuncName("MultiVector(data,LDA,NumVector)");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
+        ": NumVectors must be strictly positive.");
     const LocalOrdinal myLen = getLocalLength();
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(data.size()) < LDA*(NumVectors-1)+myLen, std::runtime_error,
-        "Tpetra::MultiVector::MultiVector(data,LDA,NumVector): data does not contain enough data to specify the entries in this.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(data.size()) < LDA*(NumVectors-1)+myLen, std::runtime_error,
+        ": data does not contain enough data to specify the entries in this.");
 #endif
     MVT::initializeValues(lclMV_,myLen,NumVectors,data,LDA);
   }
@@ -341,6 +345,7 @@ namespace Tpetra {
                   size_t constantNumPackets,
                   Distributor & /* distor */,
                   CombineMode CM) {
+    const std::string tfecfFuncName("unpackAndCombine()");
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
     /* The layout in the export for MultiVectors is as follows:
@@ -350,18 +355,18 @@ namespace Tpetra {
       this doesn't have the best locality, but is necessary because the data for a Packet
       (all data associated with an LID) is required to be contiguous */
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != getNumVectors()*importLIDs.size(), std::runtime_error,
-        "Tpetra::MultiVector::unpackAndCombine(): sizing of imports buffer should be appropriate for the amount of data to be exported.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(imports.size()) != getNumVectors()*importLIDs.size(), std::runtime_error,
+        ": sizing of imports buffer should be appropriate for the amount of data to be exported.");
 #endif
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(constantNumPackets) == 0u, std::runtime_error,
-        "Tpetra::MultiVector::unpackAndCombine(): 'constantNumPackets' input argument should be nonzero.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(constantNumPackets) == 0u, std::runtime_error,
+        ": 'constantNumPackets' input argument should be nonzero.");
 
     const size_t myStride = MVT::getStride(lclMV_),
                  numVecs  = getNumVectors();
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(numPacketsPerLID.size()) != Teuchos::as<size_t>(importLIDs.size()), std::runtime_error,
-        "Tpetra::MultiVector::unpackAndCombine(): 'numPacketsPerLID' must have same length as importLIDs.");
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(numVecs) != Teuchos::as<size_t>(constantNumPackets), std::runtime_error,
-        "Tpetra::MultiVector::unpackAndCombine(): 'constantNumPackets' must equal numVecs.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(numPacketsPerLID.size()) != Teuchos::as<size_t>(importLIDs.size()), std::runtime_error,
+        ": 'numPacketsPerLID' must have same length as importLIDs.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(numVecs) != Teuchos::as<size_t>(constantNumPackets), std::runtime_error,
+        ": 'constantNumPackets' must equal numVecs.");
 
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     if (numVecs > 0 && importLIDs.size()) {
@@ -401,8 +406,8 @@ namespace Tpetra {
         }
       }
       else {
-        TEST_FOR_EXCEPTION(CM != ADD && CM != REPLACE && CM != INSERT, std::invalid_argument,
-            "Tpetra::MultiVector::unpackAndCombine(): Invalid CombineMode: " << CM);
+        TEST_FOR_EXCEPTION_CLASS_FUNC(CM != ADD && CM != REPLACE && CM != INSERT, std::invalid_argument,
+            ": Invalid CombineMode: " << CM);
       }
     }
   }
@@ -426,23 +431,24 @@ namespace Tpetra {
       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
       const Teuchos::ArrayView<Scalar> &dots) const 
   {
+    const std::string tfecfFuncName("dot()");
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
     const size_t myLen   = getLocalLength(),
                  numVecs = getNumVectors();
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
-        "Tpetra::MultiVector::dot(): MultiVectors do not have compatible Maps:" << std::endl
+    TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
+        ": MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << *this->getMap() 
         << "A.getMap(): " << std::endl << *A.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( getLocalLength() != A.getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::dot(): MultiVectors do not have the same local length.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(A.getNumVectors() != numVecs, std::runtime_error,
-        "Tpetra::MultiVector::dot(): MultiVectors must have the same number of vectors.");
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(dots.size()) != numVecs, std::runtime_error,
-        "Tpetra::MultiVector::dot(): dots.size() must be as large as the number of vectors in *this and A.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != numVecs, std::runtime_error,
+        ": MultiVectors must have the same number of vectors.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(dots.size()) != numVecs, std::runtime_error,
+        ": dots.size() must be as large as the number of vectors in *this and A.");
     if (isConstantStride() && A.isConstantStride()) {
       MVT::Dot(lclMV_,A.lclMV_,dots);
     }
@@ -500,6 +506,7 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted(
           const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights,
           const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
+    const std::string tfecfFuncName("normWeighted()");
     using Teuchos::ScalarTraits;
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
@@ -513,22 +520,22 @@ namespace Tpetra {
       OneW = true;
     }
     else {
-      TEST_FOR_EXCEPTION(weights.getNumVectors() != numVecs, std::runtime_error,
-          "Tpetra::MultiVector::normWeighted(): MultiVector of weights must contain either one vector or the same number of vectors as this.");
+      TEST_FOR_EXCEPTION_CLASS_FUNC(weights.getNumVectors() != numVecs, std::runtime_error,
+          ": MultiVector of weights must contain either one vector or the same number of vectors as this.");
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*weights.getMap()), std::runtime_error,
-        "Tpetra::MultiVector::normWeighted(): MultiVectors do not have compatible Maps:" << std::endl
+    TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*weights.getMap()), std::runtime_error,
+        ": MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << *this->getMap() 
         << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( getLocalLength() != weights.getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::normWeighted(): MultiVectors do not have the same local length.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != weights.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
 #endif
     const size_t myLen = getLocalLength();
     // 
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(norms.size()) != numVecs, std::runtime_error,
-        "Tpetra::MultiVector::normWeighted(): norms.size() must be as large as the number of vectors in *this.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(norms.size()) != numVecs, std::runtime_error,
+        ": norms.size() must be as large as the number of vectors in *this.");
     if (isConstantStride() && weights.isConstantStride()) {
       MVT::WeightedNorm(lclMV_,weights.lclMV_,norms);
     }
@@ -732,21 +739,22 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
+    const std::string tfecfFuncName("scale(alpha,A)");
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
     const size_t numVecs = getNumVectors(),
                  myLen   = getLocalLength();
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
-        "Tpetra::MultiVector::scale(alpha,A): MultiVectors do not have compatible Maps:" << std::endl
+    TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
+        ": MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << *this->getMap() 
         << "A.getMap(): " << std::endl << *A.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( getLocalLength() != A.getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::scale(alpha,A): MultiVectors do not have the same local length.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(A.getNumVectors() != numVecs, std::runtime_error,
-        "Tpetra::MultiVector::scale(alpha,A): MultiVectors must have the same number of vectors.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != numVecs, std::runtime_error,
+        ": MultiVectors must have the same number of vectors.");
     if (isConstantStride() && A.isConstantStride()) {
       // set me == alpha*A
       MVT::Scale(lclMV_,alpha,(const KMV&)A.lclMV_);
@@ -768,19 +776,20 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
+    const std::string tfecfFuncName("reciprocal()");
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
-        "Tpetra::MultiVector::reciprocal(): MultiVectors do not have compatible Maps:" << std::endl
+    TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
+        ": MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << *this->getMap() 
         << "A.getMap(): " << std::endl << *A.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( getLocalLength() != A.getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::reciprocal(): MultiVectors do not have the same local length.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::reciprocal(): MultiVectors must have the same number of vectors.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
+        ": MultiVectors must have the same number of vectors.");
     const size_t numVecs = getNumVectors();
     const size_t myLen = getLocalLength();
     try {
@@ -801,8 +810,8 @@ namespace Tpetra {
       }
     }
     catch (std::runtime_error &e) {
-      TEST_FOR_EXCEPTION(true,std::runtime_error,
-          "Tpetra::MultiVector::reciprocal(): caught exception from Kokkos:" << std::endl
+      TEST_FOR_EXCEPTION_CLASS_FUNC(true,std::runtime_error,
+          ": caught exception from Kokkos:" << std::endl
           << e.what() << std::endl);
     }
   }
@@ -810,19 +819,20 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
+    const std::string tfecfFuncName("abs()");
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
-        "Tpetra::MultiVector::abs(): MultiVectors do not have compatible Maps:" << std::endl
+    TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
+        ": MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << *this->getMap() 
         << "A.getMap(): " << std::endl << *A.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( getLocalLength() != A.getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::abs(): MultiVectors do not have the same local length.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::abs(): MultiVectors must have the same number of vectors.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
+        ": MultiVectors must have the same number of vectors.");
     const size_t myLen = getLocalLength();
     const size_t numVecs = getNumVectors();
     if (isConstantStride() && A.isConstantStride()) {
@@ -847,24 +857,25 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::update(
                       const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
                       const Scalar &beta) {
+    const std::string tfecfFuncName("update()");
     // this = beta*this + alpha*A
     // must support case where &this == &A
     // can't short circuit on alpha==0.0 or beta==0.0, because 0.0*NaN != 0.0
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
-        "Tpetra::MultiVector::update(): MultiVectors do not have compatible Maps:" << std::endl
+    TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
+        ": MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 
         << "A.getMap(): " << std::endl << *A.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( getLocalLength() != A.getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::update(): MultiVectors do not have the same local length.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
 #endif
     const size_t myLen = getLocalLength();
     const size_t numVecs = getNumVectors();
-    TEST_FOR_EXCEPTION(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
+        ": MultiVectors must have the same number of vectors.");
     if (isConstantStride() && A.isConstantStride()) {
       MVT::GESUM(lclMV_,alpha,(const KMV&)A.lclMV_,beta);
     }
@@ -888,24 +899,25 @@ namespace Tpetra {
                       const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
                       const Scalar &beta,  const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, 
                       const Scalar &gamma) {
+    const std::string tfecfFuncName("update()");
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
     // this = alpha*A + beta*B + gamma*this
     // must support case where &this == &A or &this == &B
     // can't short circuit on alpha==0.0 or beta==0.0 or gamma==0.0, because 0.0*NaN != 0.0
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()),
+    TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()),
         std::runtime_error,
-        "Tpetra::MultiVector::update(): MultiVectors do not have compatible Maps:" << std::endl
+        ": MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << *this->getMap() 
         << "A.getMap(): " << std::endl << *A.getMap() << std::endl
         << "B.getMap(): " << std::endl << *B.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( getLocalLength() != A.getLocalLength() || getLocalLength() != B.getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::update(): MultiVectors do not have the same local length.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength() || getLocalLength() != B.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(A.getNumVectors() != this->getNumVectors() || B.getNumVectors() != this->getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != this->getNumVectors() || B.getNumVectors() != this->getNumVectors(), std::runtime_error,
+        ": MultiVectors must have the same number of vectors.");
     const size_t myLen = getLocalLength();
     const size_t numVecs = getNumVectors();
     if (isConstantStride() && A.isConstantStride() && B.isConstantStride()) {
@@ -950,19 +962,20 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) {
+    const std::string tfecfFuncName("operator=()");
     // Check for special case of this=Source, in which case we do nothing
     if (this != &source) {
 #ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*source.getMap()), std::runtime_error,
-          "Tpetra::MultiVector::operator=(): MultiVectors do not have compatible Maps:" << std::endl
+      TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*source.getMap()), std::runtime_error,
+          ": MultiVectors do not have compatible Maps:" << std::endl
           << "this->getMap(): " << std::endl << *this->getMap() 
           << "source.getMap(): " << std::endl << *source.getMap() << std::endl);
 #else
-      TEST_FOR_EXCEPTION( getLocalLength() != source.getLocalLength(), std::runtime_error,
-          "Tpetra::MultiVector::operator=(): MultiVectors do not have the same local length.");
+      TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != source.getLocalLength(), std::runtime_error,
+          ": MultiVectors do not have the same local length.");
 #endif
-      TEST_FOR_EXCEPTION(source.getNumVectors() != getNumVectors(), std::runtime_error,
-          "Tpetra::MultiVector::operator=(): MultiVectors must have the same number of vectors.");
+      TEST_FOR_EXCEPTION_CLASS_FUNC(source.getNumVectors() != getNumVectors(), std::runtime_error,
+          ": MultiVectors must have the same number of vectors.");
       Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
       const size_t numVecs = getNumVectors();
       if (isConstantStride() && source.isConstantStride() && getLocalLength()==getStride() && source.getLocalLength()==source.getStride()) {
@@ -1216,7 +1229,7 @@ namespace Tpetra {
   Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getVector(size_t j) const {
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(j < 0 || j >= this->getNumVectors(), std::runtime_error,
+    TEST_FOR_EXCEPTION( vectorIndexOutOfRange(j), std::runtime_error,
         "Tpetra::MultiVector::getVector(j): index j (== " << j << ") exceeds valid column range for this multivector.");
 #endif
     // this is const, so lclMV_ is const, so we get const buff
@@ -1236,7 +1249,7 @@ namespace Tpetra {
   Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getVectorNonConst(size_t j) {
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(j < 0 || j >= this->getNumVectors(), std::runtime_error,
+    TEST_FOR_EXCEPTION( vectorIndexOutOfRange(j), std::runtime_error,
         "Tpetra::MultiVector::getVectorNonConst(j): index j (== " << j << ") exceeds valid column range for this multivector.");
 #endif
     Teuchos::ArrayRCP<Scalar> ncbuff;
@@ -1250,11 +1263,12 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Teuchos::ArrayView<Scalar> A, size_t LDA) const
   {
+    const std::string tfecfFuncName("get1dCopy(A,LDA)");
     using Teuchos::ArrayRCP;
-    TEST_FOR_EXCEPTION(LDA < getLocalLength(), std::runtime_error,
-      "Tpetra::MultiVector::get1dCopy(A,LDA): specified stride is not large enough for local vector length.");
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(A.size()) < LDA*(getNumVectors()-1)+getLocalLength(), std::runtime_error,
-      "Tpetra::MultiVector::get1dCopy(A,LDA): specified stride/storage is not large enough for the number of vectors.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < getLocalLength(), std::runtime_error,
+      ": specified stride is not large enough for local vector length.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(A.size()) < LDA*(getNumVectors()-1)+getLocalLength(), std::runtime_error,
+      ": specified stride/storage is not large enough for the number of vectors.");
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     const size_t myStride = MVT::getStride(lclMV_),
                   numCols = getNumVectors(),
@@ -1278,8 +1292,9 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const
   {
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(ArrayOfPtrs.size()) != getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::get2dCopy(ArrayOfPtrs): Array of pointers must contain as many pointers as the MultiVector has rows.");
+    const std::string tfecfFuncName("get2dCopy(ArrayOfPtrs)");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs.size()) != getNumVectors(), std::runtime_error,
+        ": Array of pointers must contain as many pointers as the MultiVector has rows.");
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     const size_t numCols = getNumVectors(),
                    myLen = getLocalLength();
@@ -1289,8 +1304,8 @@ namespace Tpetra {
       Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(mybuff.size(), mybuff);
       for (size_t j=0; j<numCols; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
-        TEST_FOR_EXCEPTION(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(), std::runtime_error,
-            "Tpetra::MultiVector::get2dCopy(ArrayOfPtrs): The ArrayView provided in ArrayOfPtrs[" << j << "] was not large enough to contain the local entries.");
+        TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(), std::runtime_error,
+            ": The ArrayView provided in ArrayOfPtrs[" << j << "] was not large enough to contain the local entries.");
 #endif
         Teuchos::ArrayRCP<const Scalar> myviewj = getSubArrayRCP(myview,j);
         std::copy(myviewj,myviewj+myLen,ArrayOfPtrs[j].begin());
@@ -1435,7 +1450,7 @@ namespace Tpetra {
     //
     // Total of 32 case (2^5).
 
-    std::string errPrefix("Tpetra::MultiVector::multiply(transOpA,transOpB,alpha,A,B,beta): ");
+    const std::string errPrefix("Tpetra::MultiVector::multiply(transOpA,transOpB,alpha,A,B,beta): ");
 
     TEST_FOR_EXCEPTION( ScalarTraits<Scalar>::isComplex && (transA == TRANS || transB == TRANS), std::invalid_argument,
         errPrefix << "non-conjugate transpose not supported for complex types.");
@@ -1525,28 +1540,29 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis)
   {
+    const std::string tfecfFuncName("elementWiseMultiply()");
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()), std::runtime_error,
-        "Tpetra::MultiVector::elementWiseMultiply(): MultiVectors do not have compatible Maps:" << std::endl
+    TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()), std::runtime_error,
+        ": MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << *this->getMap() 
         << "A.getMap(): " << std::endl << *A.getMap() << std::endl
         << "B.getMap(): " << std::endl << *B.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( getLocalLength() != A.getLocalLength() || getLocalLength() != B.getLocalLength(), std::runtime_error,
-        "Tpetra::MultiVector::reciprocal(): MultiVectors do not have the same local length.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != A.getLocalLength() || getLocalLength() != B.getLocalLength(), std::runtime_error,
+        ": MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(B.getNumVectors() != this->getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::reciprocal(): MultiVectors 'this' and B must have the same number of vectors.");
-    TEST_FOR_EXCEPTION(A.getNumVectors() != 1, std::runtime_error,
-        "Tpetra::MultiVector::reciprocal(): MultiVectors A must have just 1 vector.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(B.getNumVectors() != this->getNumVectors(), std::runtime_error,
+        ": MultiVectors 'this' and B must have the same number of vectors.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(A.getNumVectors() != 1, std::runtime_error,
+        ": MultiVectors A must have just 1 vector.");
     try {
       MVT::ElemMult(lclMV_,scalarThis,scalarAB,(const KMV &)A.lclMV_,(const KMV &)B.lclMV_);
     }
     catch (std::runtime_error &e) {
-      TEST_FOR_EXCEPTION(true,std::runtime_error,
-          "Tpetra::MultiVector::elementWiseMultiply(): caught exception from Kokkos:" << std::endl
+      TEST_FOR_EXCEPTION_CLASS_FUNC(true,std::runtime_error,
+          ": caught exception from Kokkos:" << std::endl
           << e.what() << std::endl);
     }
   }
@@ -1614,10 +1630,11 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue(LocalOrdinal MyRow, size_t VectorIndex, const Scalar &ScalarValue)
   {
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(MyRow < this->getMap()->getMinLocalIndex() || MyRow > this->getMap()->getMaxLocalIndex(), std::runtime_error,
-        "Tpetra::MultiVector::replaceLocalValue(): row index is invalid.");
-    TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::replaceLocalValue(): vector index is invalid.");
+    const std::string tfecfFuncName("replaceLocalValue()");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow < this->getMap()->getMinLocalIndex() || MyRow > this->getMap()->getMaxLocalIndex(), std::runtime_error,
+        ": row index is invalid.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
+        ": vector index is invalid.");
 #endif
     getDataNonConst(VectorIndex)[MyRow] = ScalarValue;
   }
@@ -1627,10 +1644,11 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(LocalOrdinal MyRow, size_t VectorIndex, const Scalar &ScalarValue)
   {
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(MyRow < this->getMap()->getMinLocalIndex() || MyRow > this->getMap()->getMaxLocalIndex(), std::runtime_error,
-        "Tpetra::MultiVector::sumIntoLocalValue(): row index is invalid.");
-    TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::sumIntoLocalValue(): vector index is invalid.");
+    const std::string tfecfFuncName("sumIntoLocalValue");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow < this->getMap()->getMinLocalIndex() || MyRow > this->getMap()->getMaxLocalIndex(), std::runtime_error,
+        ": row index is invalid.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
+        ": vector index is invalid.");
 #endif
     getDataNonConst(VectorIndex)[MyRow] += ScalarValue;
   }
@@ -1641,10 +1659,11 @@ namespace Tpetra {
   {
     LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
-        "Tpetra::MultiVector::replaceGlobalValue(): row index is not present on this processor.");
-    TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::replaceGlobalValue(): vector index is invalid.");
+    const std::string tfecfFuncName("replaceGlobalValue()");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
+        ": row index is not present on this processor.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
+        ": vector index is invalid.");
 #endif
     getDataNonConst(VectorIndex)[MyRow] = ScalarValue;
   }
@@ -1655,10 +1674,11 @@ namespace Tpetra {
   {
     LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
-        "Tpetra::MultiVector::sumIntoGlobalValue(): row index is not present on this processor.");
-    TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= getNumVectors(), std::runtime_error,
-        "Tpetra::MultiVector::sumIntoGlobalValue(): vector index is invalid.");
+    const std::string tfecfFuncName("sumIntoGlobalValue()");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
+        ": row index is not present on this processor.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( vectorIndexOutOfRange(VectorIndex), std::runtime_error,
+        ": vector index is invalid.");
 #endif
     getDataNonConst(VectorIndex)[MyRow] += ScalarValue;
   }
