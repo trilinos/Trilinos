@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#define TRIVIAL_TEST 1
+//#define TRIVIAL_TEST 1
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_SerialNode.hpp"
@@ -118,7 +118,16 @@ namespace {
   //
   template<class NodeType>
   Teuchos::RCP<const NodeType>
-  getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist) {
+  getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist, 
+	   const bool debug) 
+  {
+    using std::cerr;
+    using std::endl;
+
+    if (debug)
+      cerr << "Instantiating a Kokkos Node of type " 
+	   << Teuchos::TypeNameTraits<NodeType>::name() << endl;
+
     return Teuchos::rcp (new NodeType (*plist));
   }
 
@@ -228,7 +237,7 @@ namespace {
       std::cerr << "Verify stub for type " 
 		<< Teuchos::TypeNameTraits<T>::name() << std::endl;
 #else
-      using TSQR::Test::benchmarkKokkosNodeTsqr;
+      using TSQR::Test::verifyKokkosNodeTsqr;
       verifyKokkosNodeTsqr<int, T> (node,
 				    gen,
 				    params.numRows, 
@@ -538,7 +547,7 @@ main (int argc, char *argv[])
       RCP<ParameterList> nodeParams = getValidNodeParameters<node_type> ();
 
       // We allow the same run to do both benchmark and verify.
-      runTests (getNode<node_type>(nodeParams), params);
+      runTests (getNode<node_type>(nodeParams, params.debug), params);
 
       // The Trilinos test framework expects a message like this.
       // Obviously we haven't tested anything, but eventually we

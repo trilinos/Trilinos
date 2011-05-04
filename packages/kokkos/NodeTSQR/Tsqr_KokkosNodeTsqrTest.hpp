@@ -98,7 +98,7 @@ namespace TSQR {
       typedef TSQR::KokkosNodeTsqr<Ordinal, Scalar, NodeType> node_tsqr_type;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
       typedef Teuchos::ScalarTraits<Scalar> STS;
-      typedef typename STS::magnitude_type magnitude_type;
+      typedef typename STS::magnitudeType magnitude_type;
       typedef Teuchos::Time timer_type;
       typedef Matrix<Ordinal, Scalar> matrix_type;
 
@@ -316,7 +316,7 @@ namespace TSQR {
       typedef TSQR::KokkosNodeTsqr<Ordinal, Scalar, NodeType> node_tsqr_type;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
       typedef Teuchos::ScalarTraits<Scalar> STS;
-      typedef typename STS::magnitude_type magnitude_type;
+      typedef typename STS::magnitudeType magnitude_type;
       typedef Teuchos::Time timer_type;
       typedef Matrix<Ordinal, Scalar> matrix_type;
 
