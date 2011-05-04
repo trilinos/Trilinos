@@ -28,34 +28,100 @@
 
 #define TRIVIAL_TEST 1
 
-#include "Tsqr_Config.hpp"
+#include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_SerialNode.hpp"
+#ifdef HAVE_KOKKOS_TBB
+#include "Kokkos_TBBNode.hpp"
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+#include "Kokkos_TPINode.hpp"
+#endif
 
 #include "Teuchos_ConfigDefs.hpp" // HAVE_MPI
-#include "Teuchos_Tuple.hpp"
 #ifdef HAVE_MPI
 #  include "Teuchos_GlobalMPISession.hpp"
 #  include "Teuchos_oblackholestream.hpp"
 #endif // HAVE_MPI
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_Time.hpp"
 
-#ifdef TRIVIAL_TEST
-#  include <Tsqr_KokkosNodeTsqr.hpp>
-#  include <Tsqr_nodeTestProblem.hpp>
-#  include <Tsqr_verifyTimerConcept.hpp>
-#  include <Tsqr_Random_NormalGenerator.hpp>
-#  include <Tsqr_LocalVerify.hpp>
-#  include <Teuchos_Time.hpp>
-#else
-#  include <Tsqr_KokkosNodeTsqrTest.hpp>
-#endif // TRIVIAL_TEST
+#include <Tsqr_KokkosNodeTsqrTest.hpp>
 
 #ifdef HAVE_TSQR_COMPLEX
 #  include <complex>
 #endif // HAVE_TSQR_COMPLEX
 
 namespace {
+  // 
+  // Return valid parameter list with default values, corresponding to
+  // the given NodeType (Kokkos Node type).
+  //
+  template<class NodeType>
+  Teuchos::RCP<Teuchos::ParameterList> getValidNodeParameters ();
+  //
+  // Specialization for TBBNode: 
+  // - "Num Threads" (int) option, defaults to -1 for late init.
+  //
+  template<>
+  Teuchos::RCP<Teuchos::ParameterList> 
+  getValidNodeParameters<Kokkos::TBBNode> () 
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    RCP<ParameterList> plist = parameterList ("TBBNode");
+    plist->set ("Num Threads", -1);
+    return plist;
+  }
+  //
+  // Specialization for TPINode: 
+  // - "Num Threads" (int) option, defaults to 0.  This number
+  //   seems to be taken more seriously than TBBNode's input.
+  //
+  // - "Verbose" (int) option to print info about number of
+  //   threads; defaults to 0.
+  //
+  template<>
+  Teuchos::RCP<Teuchos::ParameterList> 
+  getValidNodeParameters<Kokkos::TPINode> () 
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    const int numThreads = 8;
+
+    RCP<ParameterList> plist = parameterList ("TPINode");
+    plist->set ("Num Threads", numThreads);
+    plist->set ("Verbose", 1);
+    return plist;
+  }
+  //
+  // Specialization for SerialNode, which takes no parameters.
+  //
+  template<>
+  Teuchos::RCP<Teuchos::ParameterList> 
+  getValidNodeParameters<Kokkos::SerialNode> () 
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    RCP<ParameterList> plist = parameterList ("SerialNode");
+    return plist;
+  }
+
+  //
+  // Instantiate and return a Kokkos Node instance with the given
+  // parameters.
+  //
+  template<class NodeType>
+  Teuchos::RCP<const NodeType>
+  getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist) {
+    return Teuchos::rcp (new NodeType (*plist));
+  }
+
   //
   // The documentation string for this test executable to print out at
   // the command line on request.
@@ -85,14 +151,8 @@ namespace {
       contiguousCacheBlocks (false),
       printFieldNames (true),
       humanReadable (false),
-      debug (false),
-      seed (4)
-    {
-      seed[0] = 0;
-      seed[1] = 0;
-      seed[2] = 0;
-      seed[3] = 1;
-    }
+      debug (false)
+    {}
 
     TestParameters (const std::vector<int> theSeed) :
       verify (false),
@@ -109,8 +169,7 @@ namespace {
       contiguousCacheBlocks (false),
       printFieldNames (true),
       humanReadable (false),
-      debug (false),
-      seed (theSeed)
+      debug (false)
     {}
     
     bool verify, benchmark;
@@ -121,8 +180,6 @@ namespace {
 #endif // HAVE_TSQR_COMPLEX
     size_t cacheSizeHint;
     bool contiguousCacheBlocks, printFieldNames, humanReadable, debug;
-    // Length-4 seed for the pseudorandom number generator.
-    std::vector<int> seed;
   };
 
 
@@ -130,62 +187,63 @@ namespace {
   // Run the test(s) for a particular Scalar type T.
   // Used by Cons, which in turn is used by runTests().
   //
-  template<class T>
+  template<class T, class NodeType>
   class Dispatcher {
   public:
     typedef T dispatch_type;
+    typedef NodeType node_type;
 
-    static void execute (TestParameters& params) {
-      if (params.benchmark)
-	benchmark (params);
-      if (params.verify)
-	verify (params);
-    }
-
-  private:
-    static void benchmark (TestParameters& params) {
-      using Teuchos::TypeNameTraits;
-
+    static void 
+    benchmark (const Teuchos::RCP<const NodeType>& node,
+	       std::vector<int>&,
+	       const TestParameters& params,
+	       bool& printFieldNames)
+    {
 #ifdef TRIVIAL_TEST
-      std::cerr << "Benchmark stub for type " << TypeNameTraits<T>::name() << std::endl;
+      std::cerr << "Benchmark stub for type " 
+		<< Teuchos::TypeNameTraits<T>::name() << std::endl;
 #else
       using TSQR::Test::benchmarkKokkosNodeTsqr;
-      benchmarkKokkosNodeTsqr<int, T> (TypeNameTraits<T>::name(),
+      benchmarkKokkosNodeTsqr<int, T> (node,
 				       params.numTrials, 
 				       params.numRows, 
 				       params.numCols, 
 				       params.numPartitions,
 				       params.cacheSizeHint,
 				       params.contiguousCacheBlocks,
-				       params.printFieldNames,
+				       printFieldNames,
 				       params.humanReadable);
 #endif // TRIVIAL_TEST
-      params.printFieldNames = false;
+      printFieldNames = false;
     }
 
-    static void verify (TestParameters& params) {
-      using Teuchos::TypeNameTraits;
-
-      TSQR::Random::NormalGenerator<int, T> gen (params.seed);
+    static void 
+    verify (const Teuchos::RCP<const NodeType>& node,
+	    std::vector<int>& seed,
+	    const TestParameters& params,
+	    bool& printFieldNames)
+    {
+      TSQR::Random::NormalGenerator<int, T> gen (seed);
 #ifdef TRIVIAL_TEST
-      std::cerr << "Verify stub for type " << TypeNameTraits<T>::name() << std::endl;
+      std::cerr << "Verify stub for type " 
+		<< Teuchos::TypeNameTraits<T>::name() << std::endl;
 #else
       using TSQR::Test::benchmarkKokkosNodeTsqr;
-      verifyKokkosNodeTsqr<int, T> (TypeNameTraits<T>::name(),
+      verifyKokkosNodeTsqr<int, T> (node,
 				    gen,
 				    params.numRows, 
 				    params.numCols, 
 				    params.numPartitions, 
 				    params.cacheSizeHint,
 				    params.contiguousCacheBlocks,
-				    params.printFieldNames,
+				    printFieldNames,
 				    params.humanReadable,
 				    params.debug);
 #endif // TRIVIAL_TEST
-      params.printFieldNames = false;
+      printFieldNames = false;
       // Save the seed for next time, since we can't use the same
       // NormalGenerator for a different Scalar type T.
-      gen.getSeed (params.seed);
+      gen.getSeed (seed);
     }
   };
 
@@ -196,65 +254,107 @@ namespace {
   template<class CarType, class CdrType>
   class Cons {
   public:
-    static void execute (TestParameters& params) {
-      Dispatcher<CarType>::execute (params);
-      CdrType::execute (params);
+    // Ultimately, this depends on NullCons' typedef of node_type.
+    // That is, NullCons gets to define node_type.  We did it this way
+    // so that we don't have to make NodeType a template parameter for
+    // all the Cons elements of the compile-time type list.  That
+    // makes the list long and hard to read, and is also prone to
+    // typos.
+    typedef typename CdrType::node_type node_type;
+
+    static void 
+    verify (const Teuchos::RCP<const node_type>& node,
+	    std::vector<int>& seed,
+	    const TestParameters& params,
+	    bool& printFieldNames)
+    {
+      Dispatcher<CarType, node_type>::verify (node, seed, params, printFieldNames);
+      CdrType::verify (node, seed, params, printFieldNames);
+    }
+
+    static void 
+    benchmark (const Teuchos::RCP<const node_type>& node,
+	       std::vector<int>& seed,
+	       const TestParameters& params,
+	       bool& printFieldNames)
+    {
+      Dispatcher<CarType, node_type>::benchmark (node, seed, params, printFieldNames);
+      CdrType::benchmark (node, seed, params, printFieldNames);
     }
   };
 
   //
-  // Base case for Cons template recursion.
+  // Base case for Cons template recursion.  This class also defines
+  // the NodeType, so that we don't have to write it multiple times in
+  // the compile-time type list.
   //
+  template<class NodeType>
   class NullCons {
   public:
-    static void execute (TestParameters&) {}
+    typedef NodeType node_type;
+
+    static void 
+    verify (const Teuchos::RCP<const NodeType>& node,
+	    std::vector<int>&,
+	    const TestParameters&,
+	    bool& printFieldNames) {}
+
+    static void 
+    benchmark (const Teuchos::RCP<const NodeType>& node,
+	       std::vector<int>&,
+	       const TestParameters&,
+	       bool& printFieldNames) {}
   };
 
   // 
   // Run the tests for all types of interest.
   // This routine will modify TestParameters.
   //
+  template<class NodeType>
   void
-  runTests (TestParameters& params)
+  runTests (const Teuchos::RCP<const NodeType>& node,
+	    const TestParameters& params)
   {
-    typedef Cons<float, Cons<double, NullCons> > real_tests;
+    // This screams for syntactic sugar, but welcome to C++, the land
+    // of verbose obscurity.  NullCons gets to define NodeType for all
+    // the Cons elements "above" it in the recursion.
+    typedef Cons<float, Cons<double, NullCons<NodeType> > > real_tests;
 #ifdef HAVE_TSQR_COMPLEX
-    typedef Cons<std::complex<float>, Cons<std::complex<double>, NullCons> > complex_tests;
+    typedef Cons<std::complex<float>, Cons<std::complex<double>, NullCons<NodeType> > > complex_tests;
 #endif // HAVE_TSQR_COMPLEX
 
-    // This screams for syntactic sugar, but welcome to C++, the land of verbose obscurity.
-    //typedef Cons<float, Cons<double, Cons<std::complex<float>, Cons<std::complex<double>, NullCons> > > > all_tests;
+    // Length-4 seed for the pseudorandom number generator.  The last
+    // entry must be an odd number.  There are other restrictions on
+    // these values; see the LAPACK documentation for details.  (0, 0,
+    // 0, 1) is a typical initial seed if you want reproducible
+    // results, but don't actually care much about randomness.
+    std::vector<int> seed (4);
+    seed[0] = 0;
+    seed[1] = 0;
+    seed[2] = 0;
+    seed[3] = 1;
 
-    const bool doVerify = params.verify;
-    const bool doBenchmark = params.benchmark;
-    const bool doPrintFieldNames = params.printFieldNames;
-
-    // The Boolean trickery ensures that we do all verify tests at
-    // once, and all benchmark tests at once, instead of interleaving
-    // them.
-    if (doBenchmark)
+    bool printFieldNames = params.printFieldNames;
+    if (params.verify)
       {
-	params.verify = false;
 	if (params.testReal)
-	  real_tests::execute (params);
+	  real_tests::verify (node, seed, params, printFieldNames);
 #ifdef HAVE_TSQR_COMPLEX
 	if (params.testComplex)
-	  complex_tests::execute (params);
+	  complex_tests::verify (node, seed, params, printFieldNames);
 #endif // HAVE_TSQR_COMPLEX
-	params.verify = doVerify;
       }
-    if (doVerify)
+    // Reset this, since the first call of verify() sets it to false.
+    printFieldNames = params.printFieldNames;
+    if (params.benchmark)
       {
-	params.benchmark = false;
 	if (params.testReal)
-	  real_tests::execute (params);
+	  real_tests::benchmark (node, seed, params, printFieldNames);
 #ifdef HAVE_TSQR_COMPLEX
 	if (params.testComplex)
-	  complex_tests::execute (params);
+	  complex_tests::benchmark (node, seed, params, printFieldNames);
 #endif // HAVE_TSQR_COMPLEX
-	params.benchmark = doBenchmark;
       }
-    params.printFieldNames = doPrintFieldNames;
   }
 
   // Parse command-line options for this test.
@@ -389,6 +489,7 @@ namespace {
 int 
 main (int argc, char *argv[]) 
 {
+  using Teuchos::ParameterList;
   using Teuchos::RCP;
 
 #ifdef HAVE_MPI
@@ -424,8 +525,20 @@ main (int argc, char *argv[])
     {
       using std::endl;
 
+#ifdef HAVE_KOKKOS_TBB
+      typedef Kokkos::TBBNode node_type;
+#else
+#  ifdef HAVE_KOKKOS_THREADPOOL
+      typedef Kokkos::TPINode node_type;
+#  else
+      typedef Kokkos::SerialNode node_type;
+#  endif // HAVE_KOKKOS_THREADPOOL
+#endif // HAVE_KOKKOS_TBB
+
+      RCP<ParameterList> nodeParams = getValidNodeParameters<node_type> ();
+
       // We allow the same run to do both benchmark and verify.
-      runTests (params);
+      runTests (getNode<node_type>(nodeParams), params);
 
       // The Trilinos test framework expects a message like this.
       // Obviously we haven't tested anything, but eventually we
