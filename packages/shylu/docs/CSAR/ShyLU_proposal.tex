@@ -70,28 +70,35 @@ Tramonto?
 ShyLU is currently based on Trilinos, in particular Epetra.
 We will use Trilinos as a development platform and delivery vehicle.
 ShyLU's robustness and scalability depends on good
-approximations to the Schur complement. Currently, ShyLU uses 
+approximations to the Schur complement. Currently, ShyLU uses a
 structure-based probing
-or a values-based dropping method. The dropping approximation, for
-example, was added for circuit simulation problems. However, for problems
-with a nice stucture to the Schur complement, from applications like Tramanto,
-a probing based method will be more appropriate. We will develop better
-approximation to Schur complement based on the needs of our applications, for
-example we know indefinite matrices require a better approximation than either
-of the two approaches in ShyLU.  
+or a value-based dropping method. The dropping approximation
+was added for circuit simulation problems. However, for problems
+with a nice stucture to the Schur complement, like PDEs where there is decay
+property in the Schur complement as you move away from the diagonal,
+a probing based method is more appropriate. We will develop other
+approximations to Schur complement based on the needs of our applications. For
+example, we know indefinite matrices require a better approximation than either
+of the two existing approaches in ShyLU.
+
+For unsymmetric matrices ShyLU
+uses the permutation from a hypergraph partitioning as a symmetric
+permutation to find the interface. However we can improve robustness of ShyLU by
+using an unsymmetric permutation. We will develop algorithms that can handle
+the unsymmetric case and implement it in ShyLU as part of this project.
 
 \begin{description}
-\item[Year 1:] 
+\item[Year 1] 
 Release of ShyLU as stable code in Trilinos.
 Make available as smoother for ML.
 Evaluate performance on solid mechanics test problems from 
 1500 collaborators.
 Integrate as (optional) solver within Xyce. 
-\item[Year 2:] 
+\item[Year 2] 
 Improve ShyLU algorithm for structurally nonsymmetric problems.
 Improve robustness for circuit and mechanics problems, including 
 indefinite problems.
-\item[Year 3:] 
+\item[Year 3] 
 Tpetra-based version of ShyLU, compatible with 2nd generation Trilinos.
 Support for complex arithmetic (to help GDSW).
 Make available as smoother for MueLu.
