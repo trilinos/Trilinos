@@ -26,7 +26,7 @@
 
 \maketitle
 
-%\vspace{-8mm}
+\vspace{-4mm}
 %\paragraph{\bf Introduction:}
 We propose to develop parallel algorithms and software for robust solvers
 of sparse linear systems. We seek to address two issues that
@@ -42,7 +42,8 @@ is a shared memory system (likely NUMA) with dozens of cores.
 In order to address the new challenges and opportunities 
 for robust sparse linear solvers on the node,
 we have developed a hybrid sparse solver ShyLU (initially funded by 
-Office of Science). ShyLU is hybrid in the
+Office of Science). It is currently experimental and
+has not been released yet. ShyLU is hybrid in the
 mathematical sense (direct and iterative methods) making it more
 robust than other preconditioners, while being less expensive
 than a direct factorization.  ShyLU is also hybrid in the parallel
