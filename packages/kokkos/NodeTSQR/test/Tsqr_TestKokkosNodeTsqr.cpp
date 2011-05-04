@@ -51,13 +51,9 @@
 #  include <Tsqr_KokkosNodeTsqrTest.hpp>
 #endif // TRIVIAL_TEST
 
-
 #ifdef HAVE_TSQR_COMPLEX
 #  include <complex>
 #endif // HAVE_TSQR_COMPLEX
-
-using Teuchos::RCP;
-using Teuchos::Tuple;
 
 namespace {
   //
@@ -69,13 +65,15 @@ namespace {
     "Kokkos Node types.  Accuracy and performance tests are included.";
 
   //
-  // TestParameters encapsulates values of command-line parameters.
+  // TestParameters encapsulates values of command-line parameters, as
+  // well as state that may change from one benchmark / verify
+  // invocation to the next.
   //
   struct TestParameters {
     TestParameters () :
       verify (false),
       benchmark (false),
-      numCores (1),
+      numPartitions (1),
       numRows (1000),
       numCols (10),  
       numTrials (10),
@@ -83,222 +81,180 @@ namespace {
 #ifdef HAVE_TSQR_COMPLEX
       testComplex (false),
 #endif // HAVE_TSQR_COMPLEX
-      cacheBlockSize (0),
+      cacheSizeHint (0),
       contiguousCacheBlocks (false),
       printFieldNames (true),
       humanReadable (false),
-      debug (false)
+      debug (false),
+      seed (4)
+    {
+      seed[0] = 0;
+      seed[1] = 0;
+      seed[2] = 0;
+      seed[3] = 1;
+    }
+
+    TestParameters (const std::vector<int> theSeed) :
+      verify (false),
+      benchmark (false),
+      numPartitions (1),
+      numRows (1000),
+      numCols (10),  
+      numTrials (10),
+      testReal (true),
+#ifdef HAVE_TSQR_COMPLEX
+      testComplex (false),
+#endif // HAVE_TSQR_COMPLEX
+      cacheSizeHint (0),
+      contiguousCacheBlocks (false),
+      printFieldNames (true),
+      humanReadable (false),
+      debug (false),
+      seed (theSeed)
     {}
     
     bool verify, benchmark;
-    int numCores, numRows, numCols, numTrials;
+    int numPartitions, numRows, numCols, numTrials;
     bool testReal;
 #ifdef HAVE_TSQR_COMPLEX
     bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
-    size_t cacheBlockSize;
+    size_t cacheSizeHint;
     bool contiguousCacheBlocks, printFieldNames, humanReadable, debug;
+    // Length-4 seed for the pseudorandom number generator.
+    std::vector<int> seed;
+  };
+
+
+  //
+  // Run the test(s) for a particular Scalar type T.
+  // Used by Cons, which in turn is used by runTests().
+  //
+  template<class T>
+  class Dispatcher {
+  public:
+    typedef T dispatch_type;
+
+    static void execute (TestParameters& params) {
+      if (params.benchmark)
+	benchmark (params);
+      if (params.verify)
+	verify (params);
+    }
+
+  private:
+    static void benchmark (TestParameters& params) {
+      using Teuchos::TypeNameTraits;
+
+#ifdef TRIVIAL_TEST
+      std::cerr << "Benchmark stub for type " << TypeNameTraits<T>::name() << std::endl;
+#else
+      using TSQR::Test::benchmarkKokkosNodeTsqr;
+      benchmarkKokkosNodeTsqr<int, T> (TypeNameTraits<T>::name(),
+				       params.numTrials, 
+				       params.numRows, 
+				       params.numCols, 
+				       params.numPartitions,
+				       params.cacheSizeHint,
+				       params.contiguousCacheBlocks,
+				       params.printFieldNames,
+				       params.humanReadable);
+#endif // TRIVIAL_TEST
+      params.printFieldNames = false;
+    }
+
+    static void verify (TestParameters& params) {
+      using Teuchos::TypeNameTraits;
+
+      TSQR::Random::NormalGenerator<int, T> gen (params.seed);
+#ifdef TRIVIAL_TEST
+      std::cerr << "Verify stub for type " << TypeNameTraits<T>::name() << std::endl;
+#else
+      using TSQR::Test::benchmarkKokkosNodeTsqr;
+      verifyKokkosNodeTsqr<int, T> (TypeNameTraits<T>::name(),
+				    gen,
+				    params.numRows, 
+				    params.numCols, 
+				    params.numPartitions, 
+				    params.cacheSizeHint,
+				    params.contiguousCacheBlocks,
+				    params.printFieldNames,
+				    params.humanReadable,
+				    params.debug);
+#endif // TRIVIAL_TEST
+      params.printFieldNames = false;
+      // Save the seed for next time, since we can't use the same
+      // NormalGenerator for a different Scalar type T.
+      gen.getSeed (params.seed);
+    }
   };
 
   //
-  // Run the performance tests for all enabled types.
+  // Class for executing a template function over a compile-time
+  // fixed-length list of types.  See runTests() for an example.
   //
-  void
-  benchmark (const TestParameters& params)
-  {
-    typedef Teuchos::Time timer_type;
-#ifdef HAVE_TSQR_COMPLEX
-    using std::complex;
-#endif // HAVE_TSQR_COMPLEX
-    
-    // Only print field names (if at all) for the first data type tested.
-    bool printedFieldNames = false;
-    
-    if (params.testReal)
-      {
-	{
-	  std::string scalarTypeName ("float");
-#ifdef TRIVIAL_TEST
-#else
-	  benchmarkKokkosNodeTsqr<int, float> (scalarTypeName,
-					       params.numTrials, 
-					       params.numRows, 
-					       params.numCols, 
-					       params.numCores,
-					       params.cacheBlockSize,
-					       params.contiguousCacheBlocks,
-					       params.printFieldNames && ! printedFieldNames,
-					       params.humanReadable);
-#endif // TRIVIAL_TEST
-	  if (params.printFieldNames && ! printedFieldNames)
-	    printedFieldNames = true;
-	}
-	{
-	  std::string scalarTypeName ("double");
-#ifdef TRIVIAL_TEST
-#else
-	  benchmarkKokkosNodeTsqr<int, double> (scalarTypeName,
-						params.numTrials, 
-						params.numRows, 
-						params.numCols, 
-						params.numCores,
-						params.cacheBlockSize,
-						params.contiguousCacheBlocks,
-						params.printFieldNames && ! printedFieldNames,
-						params.humanReadable);
-#endif // TRIVIAL_TEST
-	  if (params.printFieldNames && ! printedFieldNames)
-	    printedFieldNames = true;
-	}
-      }
-#ifdef HAVE_TSQR_COMPLEX
-    if (params.testComplex)
-      {
-	{
-	  std::string scalarTypeName ("complex<float>");
-#ifdef TRIVIAL_TEST
-#else
-	  benchmarkKokkosNodeTsqr<int, complex<float> > (scalarTypeName,
-							 params.numTrials, 
-							 params.numRows, 
-							 params.numCols, 
-							 params.numCores,
-							 params.cacheBlockSize,
-							 params.contiguousCacheBlocks,
-							 params.printFieldNames && ! printedFieldNames,
-							 params.humanReadable);
-#endif // TRIVIAL_TEST
-	  if (params.printFieldNames && ! printedFieldNames)
-	    printedFieldNames = true;
-	}
-	{
-	  std::string scalarTypeName ("complex<double>");
-#ifdef TRIVIAL_TEST
-#else
-	  benchmarkKokkosNodeTsqr<int, complex<double> > (scalarTypeName,
-							  params.numTrials, 
-							  params.numRows, 
-							  params.numCols, 
-							  params.numCores,
-							  params.cacheBlockSize,
-							  params.contiguousCacheBlocks,
-							  params.printFieldNames && ! printedFieldNames,
-							  params.humanReadable);
-#endif // TRIVIAL_TEST
-	  if (params.printFieldNames && ! printedFieldNames)
-	    printedFieldNames = true;
-	}
-      }
-#endif // HAVE_TSQR_COMPLEX
-  }
+  template<class CarType, class CdrType>
+  class Cons {
+  public:
+    static void execute (TestParameters& params) {
+      Dispatcher<CarType>::execute (params);
+      CdrType::execute (params);
+    }
+  };
 
   //
-  // Run the accuracy tests for all enabled types.
+  // Base case for Cons template recursion.
+  //
+  class NullCons {
+  public:
+    static void execute (TestParameters&) {}
+  };
+
+  // 
+  // Run the tests for all types of interest.
+  // This routine will modify TestParameters.
   //
   void
-  verify (const TestParameters& params)
+  runTests (TestParameters& params)
   {
-#ifndef TRIVIAL_TEST
-    using TSQR::Test::verifyKokkosNodeTsqr;
-#endif // HAVE_TSQR_COMPLEX
+    typedef Cons<float, Cons<double, NullCons> > real_tests;
 #ifdef HAVE_TSQR_COMPLEX
-    using std::complex;
+    typedef Cons<std::complex<float>, Cons<std::complex<double>, NullCons> > complex_tests;
 #endif // HAVE_TSQR_COMPLEX
-    
-    std::vector<int> seed(4);
-    seed[0] = 0;
-    seed[1] = 0;
-    seed[2] = 0;
-    seed[3] = 1;
-    
-    // Only print field names (if at all) for the first data type tested.
-    bool printedFieldNames = false;
-    
-    if (params.testReal)
+
+    // This screams for syntactic sugar, but welcome to C++, the land of verbose obscurity.
+    //typedef Cons<float, Cons<double, Cons<std::complex<float>, Cons<std::complex<double>, NullCons> > > > all_tests;
+
+    const bool doVerify = params.verify;
+    const bool doBenchmark = params.benchmark;
+    const bool doPrintFieldNames = params.printFieldNames;
+
+    // The Boolean trickery ensures that we do all verify tests at
+    // once, and all benchmark tests at once, instead of interleaving
+    // them.
+    if (doBenchmark)
       {
-	{
-	  TSQR::Random::NormalGenerator<int, float> gen (seed);
-	  std::string scalarTypeName ("float");
-#ifdef TRIVIAL_TEST
-#else
-	  verifyKokkosNodeTsqr<int, float> (scalarTypeName,
-					    gen,
-					    params.numRows, 
-					    params.numCols, 
-					    params.numCores, 
-					    params.cacheBlockSize,
-					    params.contiguousCacheBlocks,
-					    params.printFieldNames && ! printedFieldNames,
-					    params.humanReadable,
-					    params.debug);
-#endif // TRIVIAL_TEST
-	  if (params.printFieldNames && ! printedFieldNames)
-	    printedFieldNames = true;
-	  gen.getSeed (seed);
-	}
-	{
-	  TSQR::Random::NormalGenerator<int, double> gen (seed);
-	  std::string scalarTypeName ("double");
-#ifdef TRIVIAL_TEST
-#else
-	  verifyKokkosNodeTsqr<int, double> (scalarTypeName,
-					     gen,
-					     params.numRows, 
-					     params.numCols, 
-					     params.numCores, 
-					     params.cacheBlockSize,
-					     params.contiguousCacheBlocks,
-					     params.printFieldNames && ! printedFieldNames,
-					     params.humanReadable,
-					     params.debug);
-#endif // TRIVIAL_TEST
-	  if (params.printFieldNames && ! printedFieldNames)
-	    printedFieldNames = true;
-	  gen.getSeed (seed);
-	}
-      } // if (params.testReal)
+	params.verify = false;
+	if (params.testReal)
+	  real_tests::execute (params);
 #ifdef HAVE_TSQR_COMPLEX
-    if (params.testComplex)
-      {
-	{
-	  TSQR::Random::NormalGenerator<int, complex<float> > gen (seed);
-	  std::string scalarTypeName ("complex<float>");
-#ifdef TRIVIAL_TEST
-#else
-	  verifyKokkosNodeTsqr<int, complex<float> > (scalarTypeName,
-						      gen, 
-						      params.numRows, 
-						      params.numCols, 
-						      params.numCores, 
-						      params.cacheBlockSize,
-						      params.contiguousCacheBlocks,
-						      params.printFieldNames && ! printedFieldNames,
-						      params.humanReadable,
-						      params.debug);
-	  if (params.printFieldNames && ! printedFieldNames)
-	    printedFieldNames = true;
-	  gen.getSeed (seed);
-	}
-	{
-	  TSQR::Random::NormalGenerator<int, complex<double> > gen (seed);
-	  std::string scalarTypeName ("complex<double>");
-	  verifyKokkosNodeTsqr<int, complex<double> > (scalarTypeName,
-						       gen,
-						       params.numRows, 
-						       params.numCols, 
-						       params.numCores, 
-						       params.cacheBlockSize,
-						       params.contiguousCacheBlocks,
-						       params.printFieldNames && ! printedFieldNames,
-						       params.humanReadable,
-						       params.debug);
-#endif // TRIVIAL_TEST
-	  if (params.printFieldNames && ! printedFieldNames)
-	    printedFieldNames = true;
-	  gen.getSeed (seed);
-	}
+	if (params.testComplex)
+	  complex_tests::execute (params);
+#endif // HAVE_TSQR_COMPLEX
+	params.verify = doVerify;
       }
+    if (doVerify)
+      {
+	params.benchmark = false;
+	if (params.testReal)
+	  real_tests::execute (params);
+#ifdef HAVE_TSQR_COMPLEX
+	if (params.testComplex)
+	  complex_tests::execute (params);
 #endif // HAVE_TSQR_COMPLEX
+	params.benchmark = doBenchmark;
+      }
+    params.printFieldNames = doPrintFieldNames;
   }
 
   // Parse command-line options for this test.
@@ -327,14 +283,14 @@ namespace {
 
     // Command-line parameters, set to their default values.
     TestParameters params;
-    /// We really want the cache block size as a size_t, but
-    /// Teuchos::CommandLineProcessor doesn't offer that option.
-    /// So we read it in as an int, which means negative inputs
-    /// are possible.  We check for those below in the input
-    /// validation phase.
+    /// We really want the cache size hint as a size_t, but
+    /// Teuchos::CommandLineProcessor doesn't offer that option.  So
+    /// we read it in as an int, which means negative inputs are
+    /// possible.  We check for those below in the input validation
+    /// phase.
     //
-    // Fetch default value of cacheBlockSize.
-    int cacheBlockSizeAsInt = static_cast<int> (params.cacheBlockSize);
+    // Fetch default value of cacheSizeHint.
+    int cacheSizeHintAsInt = static_cast<int> (params.cacheSizeHint);
     try {
       using Teuchos::CommandLineProcessor;
 
@@ -349,46 +305,46 @@ namespace {
 			     "nobenchmark",
 			     &params.benchmark,
 			     "Test performance");
-      cmdLineProc.setOption ("nrows", 
+      cmdLineProc.setOption ("numRows", 
 			     &params.numRows, 
 			     "Number of rows in the test matrix");
-      cmdLineProc.setOption ("ncols", 
+      cmdLineProc.setOption ("numCols", 
 			     &params.numCols, 
 			     "Number of columns in the test matrix");
-      cmdLineProc.setOption ("ntrials", 
+      cmdLineProc.setOption ("numTrials", 
 			     &params.numTrials, 
 			     "Number of trials (only used when \"--benchmark\"");
-      cmdLineProc.setOption ("real", 
-			     "noreal",
+      cmdLineProc.setOption ("testReal", 
+			     "noTestReal",
 			     &params.testReal,
 			     "Test real arithmetic");
 #ifdef HAVE_TSQR_COMPLEX
-      cmdLineProc.setOption ("complex", 
-			     "nocomplex",
+      cmdLineProc.setOption ("testComplex", 
+			     "noTestComplex",
 			     &params.testComplex,
 			     "Test complex arithmetic");
 #endif // HAVE_TSQR_COMPLEX
-      cmdLineProc.setOption ("ncores", 
-			     &params.numCores,
-			     "Number of cores to use for Intel TBB");
-      cmdLineProc.setOption ("cache-block-size", 
-			     &cacheBlockSizeAsInt, 
-			     "Cache block size in bytes (0 means pick a reasonable default)");
-      cmdLineProc.setOption ("contiguous-cache-blocks",
-			     "noncontiguous-cache-blocks",
+      cmdLineProc.setOption ("numPartitions", 
+			     &params.numPartitions,
+			     "Number of partitions to use (max available parallelism)");
+      cmdLineProc.setOption ("cacheSizeHint", 
+			     &cacheSizeHintAsInt, 
+			     "Cache size hint in bytes (0 means pick a reasonable default)");
+      cmdLineProc.setOption ("contiguousCacheBlocks",
+			     "noncontiguousCacheBlocks",
 			     &params.contiguousCacheBlocks,
 			     "Whether cache blocks should be stored contiguously");
-      cmdLineProc.setOption ("print-field-names",
-			     "no-print-field-names",
+      cmdLineProc.setOption ("printFieldNames",
+			     "noPrintFieldNames",
 			     &params.printFieldNames,
 			     "Print field names (for machine-readable output only)");
-      cmdLineProc.setOption ("human-readable",
-			     "machine-readable",
+      cmdLineProc.setOption ("humanReadable",
+			     "machineReadable",
 			     &params.humanReadable,
 			     "If set, make output easy to read by humans "
 			     "(but hard to parse)");
       cmdLineProc.setOption ("debug", 
-			     "nodebug", 
+			     "noDebug", 
 			     &params.debug, 
 			     "Print debugging information");
       cmdLineProc.parse (argc, argv);
@@ -413,18 +369,18 @@ namespace {
       throw std::invalid_argument ("Number of rows must be >= number of columns");
     else if (params.benchmark && params.numTrials < 1)
       throw std::invalid_argument ("\"--benchmark\" option requires numTrials >= 1");
-    else if (params.numCores < 1)
-      throw std::invalid_argument ("\"--ncores\" option must be >= 1");
+    else if (params.numPartitions < 1)
+      throw std::invalid_argument ("\"--numPartitions\" option must be >= 1");
     else
       {
-	if (cacheBlockSizeAsInt < 0)
-	  throw std::invalid_argument ("Cache block size must be nonnegative");
+	if (cacheSizeHintAsInt < 0)
+	  throw std::invalid_argument ("Cache size hint must be nonnegative");
 	else 
-	  params.cacheBlockSize = static_cast<size_t> (cacheBlockSizeAsInt);
+	  params.cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
       }
     return params;
   }
-} // namespace
+} // namespace (anonymous)
 
 
 //
@@ -469,10 +425,7 @@ main (int argc, char *argv[])
       using std::endl;
 
       // We allow the same run to do both benchmark and verify.
-      if (params.verify)
-	verify (params);
-      if (params.benchmark)
-	benchmark (params);
+      runTests (params);
 
       // The Trilinos test framework expects a message like this.
       // Obviously we haven't tested anything, but eventually we
