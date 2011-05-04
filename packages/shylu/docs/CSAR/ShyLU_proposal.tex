@@ -15,7 +15,7 @@
 \setlength{\topmargin}{-0.35in}
 \setlength{\headheight}{0in}
 \setlength{\headsep}{0in}
-\advance\textheight by 1.0in 
+\advance\textheight by 1.2in 
 \advance\oddsidemargin by -0.25in
 \advance\textwidth by 0.25in
 %\advance\textwidth by 0.6in 
@@ -88,18 +88,24 @@ of the two existing approaches in ShyLU.
 
 For unsymmetric matrices, ShyLU
 uses the permutation from a hypergraph partitioning as a symmetric
-permutation to find the interface. However, we can improve the robustness of ShyLU by
+permutation to find the interface. However, we can improve the robustness
+of ShyLU by
 using an unsymmetric permutation. We will develop algorithms that can handle
 the unsymmetric case and implement it in ShyLU.
+
+Xyce requires capabilities to efficiently
+reuse components within the ShyLU framework for a sequence of linear systems that
+have a static graph and/or become increasingly difficult to solve. We will
+support these capabilities in our software.
 We expect much of our development to be driven by application demands.
 
 \begin{description}
-\item[Year 1] {\bf Release and evaluate Epetra-based implementation}
+\item[Year 1] {\bf Release Epetra-based implementation and evaluate with NW Applications}
   \begin{itemize} 
-  \item Release of ShyLU as stable code in Trilinos.
-  \item Make available as smoother for ML.
+  \item Release of ShyLU as a stable code in Trilinos.
+  \item Make the solver available as smoother for ML.
   \item Evaluate performance on solid mechanics test problems from 1500 collaborators.
-  \item Integrate as (optional) solver within Xyce.
+  \item Integrate as one of the solvers within Xyce.
   \end{itemize}
 \item[Year 2] {\bf Improve implementation / algorithms for applications of interest}
   \begin{itemize}
@@ -109,8 +115,8 @@ We expect much of our development to be driven by application demands.
 \item[Year 3] {\bf Extend ShyLU compatability to 2nd generation Trilinos}
   \begin{itemize}
   \item Tpetra-based version of ShyLU, compatible with 2nd generation Trilinos.
-  \item Support for complex arithmetic (to help GDSW).
-  \item Make available as smoother for MueLu.
+  \item Support for complex arithmetic (to be useful for other solvers like GDSW).
+  \item Make the solver available as smoother for MueLu.
   \end{itemize}
 \end{description}
 
