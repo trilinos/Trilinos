@@ -31,8 +31,6 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
     //! Factory that creates aggregates from matrix graph
     Teuchos::RCP<UCAggregationFactory> aggregationFact_;
-    //! Factory for creating graph via amalgamation and strength-of-connection dropping
-    Teuchos::RCP<CoalesceDropFactory> coalesceFact_;
     //! use QR decomposition for improving nullspace information per default
     bool QR_;
 
@@ -45,8 +43,13 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
         Default coalesce/drop and aggregation factories are created.
     */
     TentativePFactory() : QR_(false) {
-        coalesceFact_ = rcp(new CoalesceDropFactory());
-        aggregationFact_ = rcp(new UCAggregationFactory(coalesceFact_));
+      MueLu::AggregationOptions aggOptions;
+      aggOptions.SetPrintFlag(6);
+      aggOptions.SetMinNodesPerAggregate(2);
+      aggOptions.SetMaxNeighAlreadySelected(5);
+      aggOptions.SetOrdering(AggOptions::RANDOM);
+      aggOptions.SetPhase3AggCreation(0.5);
+      aggregationFact_ = rcp(new UCAggregationFactory(aggOptions));
     }
 
     /*! @brief Constructor.
@@ -59,10 +62,16 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     TentativePFactory(RCP<CoalesceDropFactory> &CoalesceFact,  RCP<UCAggregationFactory> &AggregationFact)
        : QR_(false)
     {
-        if (CoalesceFact != Teuchos::null) coalesceFact_ = CoalesceFact;
-        else                               coalesceFact_ = rcp(new CoalesceDropFactory());
         if (AggregationFact != Teuchos::null) aggregationFact_ = AggregationFact;
-        else                                  aggregationFact_ = rcp(new UCAggregationFactory(coalesceFact_));
+        else {
+          MueLu::AggregationOptions aggOptions;
+          aggOptions.SetPrintFlag(6);
+          aggOptions.SetMinNodesPerAggregate(2);
+          aggOptions.SetMaxNeighAlreadySelected(5);
+          aggOptions.SetOrdering(AggOptions::RANDOM);
+          aggOptions.SetPhase3AggCreation(0.5);
+          aggregationFact_ = rcp(new UCAggregationFactory(aggOptions,CoalesceFact));
+        }
     }
 
     //! Destructor.
@@ -88,18 +97,9 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
       coarseLevel.Request("Ptent");
       fineLevel.Request("Nullspace");
-      //FIXME what to do about aggregation options?
-      MueLu::AggregationOptions aggOptions;
-      aggOptions.SetPrintFlag(6);
-      aggOptions.SetMinNodesPerAggregate(2);
-      aggOptions.SetMaxNeighAlreadySelected(5);
-      aggOptions.SetOrdering(1);
-      aggOptions.SetPhase3AggCreation(0.5);
-
       fineLevel.Request("Aggregates"); //FIXME until Needs gets fixed
-      aggregationFact_->Build(fineLevel,aggOptions);
+      aggregationFact_->Build(fineLevel);
       MakeTentative(fineLevel,coarseLevel);
-      //coarseLevel.Save("nullspace",cnull);
       RCP<Operator> Ptent;
       coarseLevel.CheckOut("Ptent",Ptent);
       coarseLevel.SetP(Ptent);

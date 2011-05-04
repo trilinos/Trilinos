@@ -130,9 +130,10 @@ typedef int my_size_t; //TODO
       //FIXME there ever be more than one graph?
       currentLevel.Request("Graph");
       if (coalesceDropFact_ != Teuchos::null)
-        coalesceDropFact_.Build(currentLevel);
-      Graph const& graph = currentLevel.CheckOut("Graph");
-      RCP<Aggregates> aggregates = Build(graph);
+        coalesceDropFact_->Build(currentLevel);
+      RCP<Graph> graph;
+      currentLevel.CheckOut("Graph",graph);
+      RCP<Aggregates> aggregates = Build(*graph);
       currentLevel.Save("Aggregates",aggregates);
     }
 
@@ -1175,7 +1176,7 @@ typedef int my_size_t; //TODO
 
          Candidates are vertices not adjacent to already aggregated vertices.
       */
-      void RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, const Graph graph,
+      void RootCandidates(my_size_t nVertices, ArrayView<const LO> & vertex2AggId, Graph const &graph,
                          ArrayRCP<LO> &candidates, my_size_t &nCandidates, global_size_t &nCandidatesGlobal) const
       {
         nCandidates = 0;

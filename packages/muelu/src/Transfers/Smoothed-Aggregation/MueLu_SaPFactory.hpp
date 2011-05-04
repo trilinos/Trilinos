@@ -56,9 +56,8 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
     //! @name Constructors/Destructors.
     //@{
 
-    /*! @brief Constructor.
+    /*! @brief Default constructor.
 
-        - FIXME should allow for user to supply initialPFactory (to make tentative prolongator)
     */
     SaPFactory() : diagonalView_("current"),
                    //AggFact_(Teuchos::null),
@@ -71,6 +70,20 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       PFactory::reUseAggregates_=false;
       //Teuchos::OSTab tab(this->out_);
       //MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Instantiating a new factory" << std::endl;
+    }
+
+    /*! @brief Constructor.
+
+        User can supply a factory for generating the tentative prolongator.
+    */
+    SaPFactory(RCP<PFactory> InitialPFact) : initialPFact_(InitialPFact), diagonalView_("current"),
+                   //AggFact_(Teuchos::null),
+                   doQR_(false), dampingFactor_(4./3), useAFiltered_(false), reUseP_(false),
+                   reUsePtent_(false)
+                   //, PFactory::reUseGraph_(false), PFactory::reUseAggregates_(false)
+    {
+      PFactory::reUseGraph_=false;
+      PFactory::reUseAggregates_=false;
     }
 
     //! Destructor.

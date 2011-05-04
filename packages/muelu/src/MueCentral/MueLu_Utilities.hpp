@@ -292,9 +292,15 @@ namespace MueLu {
       return C;
     } //TwoMatrixAdd()
 
-    static void MatrixPrint(RCP<Operator> Op) {
+    static void MatrixPrint(RCP<Operator> const &Op) {
+      std::string label = "unlabeled operator";
+      MatrixPrint(Op, label);
+    }
+
+    static void MatrixPrint(RCP<Operator> const &Op, std::string const &label) {
 #ifdef HAVE_MUELU_EPETRA 
       RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
+      std::cout << "\n===============\n" << label << "\n==============" << std::endl;
       std::cout << *epOp << std::endl;
 #endif
     }

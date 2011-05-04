@@ -17,6 +17,7 @@
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_AggregationOptions.hpp"
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
@@ -137,7 +138,17 @@ int main(int argc, char *argv[]) {
   Finest->Save("NullSpace",nullSpace);
   H.SetLevel(Finest);
 
-  RCP<SaPFactory>       Pfact = rcp( new SaPFactory() );
+  MueLu::AggregationOptions aggOptions;
+  aggOptions.SetPrintFlag(6);
+  aggOptions.SetMinNodesPerAggregate(3);
+  aggOptions.SetMaxNeighAlreadySelected(0);
+  aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
+  aggOptions.SetPhase3AggCreation(0.5);
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(aggOptions));
+  RCP<CoalesceDropFactory> cdFact;
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
+
+  RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
@@ -179,12 +190,12 @@ int main(int argc, char *argv[]) {
 #endif
   } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
-  Teuchos::ParameterList ifpackList;
-  ifpackList.set("fact: ilut level-of-fill",99); // TODO ??
-  ifpackList.set("fact: drop tolerance", 0);
-  ifpackList.set("fact: absolute threshold", 0);
-  ifpackList.set("fact: relative threshold", 0);
-  coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpackList) );
+  Teuchos::ParameterList ifpack2List;
+  ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
+  ifpack2List.set("fact: drop tolerance", 0);
+  ifpack2List.set("fact: absolute threshold", 0);
+  ifpack2List.set("fact: relative threshold", 0);
+  coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
 #endif
   }
   if (coarseProto == Teuchos::null) {
