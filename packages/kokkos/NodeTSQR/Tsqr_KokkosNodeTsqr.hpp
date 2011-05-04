@@ -31,6 +31,7 @@
 
 #include <Tsqr_CacheBlocker.hpp>
 #include <Tsqr_Combine.hpp>
+#include <Tsqr_NodeTsqr.hpp>
 
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -39,26 +40,32 @@ namespace TSQR {
 
   namespace details {
 
-    /// \brief Half-exclusive range of my cache block indices.
+    /// \brief Half-exclusive range of my partition's cache block indices.
     ///
-    /// FactorFirstPass breaks up the matrix into contiguous
+    /// \c FactorFirstPass (used by the factor() method of \c
+    /// KokkosNodeTsqr) breaks up the matrix into contiguous
     /// partitions of row blocks.  The index argument of Kokkos'
-    /// parallel_for is the (zero-based) partition index.
+    /// parallel_for is the (zero-based) partition index.  This
+    /// function returns the half-exclusive range of the cache block
+    /// indices belonging to the partition partitionIndex.
     ///
-    /// \param partitionIndex [in] Zero-based index of the
-    ///   partition.  This is an int and not a LocalOrdinal, because
-    ///   partition indices are arguments to Kokkos Node API
-    ///   methods.  That is OK because the number of partitions
-    ///   shouldn't be too much more than the amount of available
-    ///   parallelism on this node.  Cache block indices are of
-    ///   LocalOrdinal type, so don't mix them up with partition
-    ///   indices.
-    ///
+    /// \param numRows [in] Number of rows in the matrix.
+    /// \param numCols [in] Number of columns in the matrix.
+    /// \param partitionIndex [in] Zero-based index of the partition.
+    ///   This is specifically an int and not a LocalOrdinal, because
+    ///   partition indices are arguments to Kokkos Node API methods
+    ///   parallel_for and parallel_reduce.  Cache block indices are
+    ///   of LocalOrdinal type and should not be mixed with partition
+    ///   indices, even though in most cases LocalOrdinal == int.
+    /// \param numPartitions [in] Total number of partitions; a
+    ///   positive integer.
+    /// \param strategy [in] The cache blocking strategy to use.
+    ///   
     /// \return (start cache block index, end cache block index).
-    ///   This is a half-exclusive range not including the end
+    ///   This is a half-exclusive range: it does not include the end
     ///   point.  Thus, if the two indices are equal, the range is
     ///   empty.
-    template<class LocalOrdinal, Scalar>
+    template<class LocalOrdinal, class Scalar>
     std::pair<LocalOrdinal, LocalOrdinal>
     cacheBlockIndexRange (const LocalOrdinal numRows,
 			  const LocalOrdinal numCols,
@@ -104,12 +111,12 @@ namespace TSQR {
 	return std::make_pair (LocalOrdinal(0), LocalOrdinal(0));
 
       // Index of my first cache block (inclusive).
-      myFirstCacheBlockIndex = 
+      const LocalOrdinal myFirstCacheBlockIndex = 
 	(partitionIndex < remainder) ? 
 	partitionIndex * (quotient+1) :
 	remainder * (quotient+1) + (partitionIndex - remainder) * quotient;
       // Index of my last cache block (exclusive).
-      myLastCacheBlockIndex = 
+      const LocalOrdinal myLastCacheBlockIndex = 
 	(partitionIndex+1 < remainder) ? 
 	(partitionIndex+1) * (quotient+1) :
 	remainder * (quotient+1) + (partitionIndex+1 - remainder) * quotient;
@@ -168,8 +175,9 @@ namespace TSQR {
 		       const bool reverse,
 		       const bool contiguousCacheBlocks=false) :
 	A_ (A), 
-	curIndex_ (reverse ? (endIndex-1) : startIndex),
+	startIndex_ (startIndex),
 	endIndex_ (endIndex),
+	curIndex_ (reverse ? startIndex : endIndex - 1),
 	blocker_ (A.nrows(), A.ncols(), strategy), 
 	reverse_ (reverse),
 	contiguousCacheBlocks_ (contiguousCacheBlocks)
@@ -219,7 +227,11 @@ namespace TSQR {
 	return *this;
       }
 
-      /// \brief Postfix operator; advance the sequence, if possible.
+      /// \brief Postfix increment operator; advance the sequence, if possible.
+      ///
+      /// C++ uses the unused "int" argument as a signal that this is
+      /// postfix increment, rather than prefix increment (which takes
+      /// no arguments).
       ///
       /// \note The prefix operator++ is likely more efficient, since
       ///   it does not copy any data.
@@ -233,11 +245,14 @@ namespace TSQR {
 
     private:
       MatrixViewType A_;
-      ordinal_type curIndex_, endIndex_;
+      ordinal_type startIndex_, endIndex_, curIndex_;
       CacheBlocker<ordinal_type, scalar_type> blocker_;
       bool reverse_, contiguousCacheBlocks_;
     };
 
+    /// \class FactorFirstPass
+    /// \brief First pass of KokkosNodeTsqr's factorization.
+    /// \author Mark Hoemmen
     template<class LocalOrdinal, class Scalar>
     class FactorFirstPass {
     private:
@@ -285,7 +300,7 @@ namespace TSQR {
       ///
       /// \return A view of the top block of the cache block range.
       template<class TauArraysOuterIterType>
-      MatrixViewType
+      MatView<LocalOrdinal, Scalar>
       factor (CacheBlockRange<MatView<LocalOrdinal, Scalar> >& cbRange,
 	      TauArraysOuterIterType tauIter)
       {
@@ -355,14 +370,16 @@ namespace TSQR {
       ///
       /// Invoked by Kokkos' parallel_for template method.  This
       /// routine parallelizes over contiguous partitions of the
-      /// matrix.  Each partition in turn contains cache blocks;
-      /// partitions do not break up cache blocks.  (This ensures that
-      /// the cache blocking scheme is the same as SequentialTsqr
-      /// uses.  However, the implicit Q factor is not compatible with
-      /// that of SequentialTsqr.)
+      /// matrix.  Each partition in turn contains cache blocks.
+      /// Partitions do not break up cache blocks.  (This ensures that
+      /// the cache blocking scheme is the same as that used by
+      /// SequentialTsqr, as long as the cache blocking strategies are
+      /// the same.  However, the implicit Q factor is not compatible
+      /// with that of SequentialTsqr.)
       ///
       /// This method also saves a view of the top block of the
-      /// partition.  This is useful for the next factorization pass.
+      /// partition in the topBlocks_ array.  This is useful for the
+      /// next factorization pass.
       ///
       /// \param partitionIndex [in] Zero-based index of the
       ///   partition.  If greater than or equal to the number of
@@ -380,7 +397,7 @@ namespace TSQR {
       ///   method is heavyweight enough that an inline declaration is
       ///   unlikely to improve performance.
       void 
-      operator execute (const int partitionIndex) 
+      execute (const int partitionIndex) 
       {
 	using Teuchos::ArrayView;
 	using Teuchos::arrayViewFromVector;
@@ -401,10 +418,11 @@ namespace TSQR {
 	// However, we would like a little bit more safety than that.
 	// Teuchos::ArrayView uses ArrayRCP as the iterator when
 	// HAVE_TEUCHOS_ARRAY_BOUNDSCHECK is defined, and uses a raw
-	// pointer otherwise.  ArrayRCP is not thread safe, but that
-	// is OK here, since the ArrayRCP is not being shared among
-	// threads (we are inside a single thread's "execute"
-	// routine).
+	// pointer otherwise.  
+	//
+	// ArrayRCP is not thread safe, but that is OK here, since the
+	// ArrayRCP is not being shared among threads (we are inside a
+	// single thread's "execute" routine).
 	ArrayView<vector<Scalar> > tauView = 
 	  arrayViewFromVector (tauArrays_).view (cbIndices.first, 
 						 cbIndices.second - cbIndices.first);
@@ -414,8 +432,13 @@ namespace TSQR {
 
 
     /// \class ApplyFirstPass
-    /// \brief "First" (actually last) pass of applying implicit Q factor.
+    /// \brief "First" pass of applying KokkosNodeTsqr's implicit Q factor.
     /// \author Mark Hoemmen
+    ///
+    /// We call this ApplyFirstPass as a reminder that this algorithm
+    /// has the same form as FactorFirstPass and uses the results of
+    /// the latter, even though ApplyFirstPass is really the last pass
+    /// of applying the implicit Q factor.
     template<class LocalOrdinal, class Scalar>
     class ApplyFirstPass {
     private:
@@ -471,13 +494,17 @@ namespace TSQR {
       /// \param tauIter [in] Forward iterator of std::vector<Scalar>;
       ///   the "TAU" arrays corresponding to the cache blocks in
       ///   Q_range.
+      /// \param partitionIndex [in] The argument to \c execute(); the
+      ///   index of the partition which instance of ApplyFirstPass
+      ///   is currently processing.
       template<class TauArraysFwdIterType>
       void
       apply (const ApplyType& applyType,
 	     CacheBlockRange<ConstMatView<LocalOrdinal, Scalar> >& Q_range,
 	     CacheBlockRange<MatView<LocalOrdinal, Scalar> >& C_range,
 	     const MatView<LocalOrdinal, Scalar>& C_top,
-	     TauArraysFwdIterType tauIter)
+	     TauArraysFwdIterType tauIter,
+	     const int partitionIndex)
       {
 	typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
 	typedef MatView<LocalOrdinal, Scalar> view_type;
@@ -602,8 +629,9 @@ namespace TSQR {
       /// SequentialTsqr uses.  (However, the implicit Q factor is not
       /// compatible with that of SequentialTsqr.)
       ///
-      /// \param partitionIndex [in] Zero-based index of the
-      ///   partition.  If greater than or equal to the number of
+      /// \param partitionIndex [in] Zero-based index of the partition
+      ///   which this instance of ApplyFirstPass is currently
+      ///   processing.  If greater than or equal to the number of
       ///   partitions, this routine does nothing.
       ///
       /// \warning This routine almost certainly won't work in CUDA.
@@ -617,7 +645,7 @@ namespace TSQR {
       ///   method is heavyweight enough that an inline declaration is
       ///   unlikely to improve performance.
       void 
-      operator execute (const int partitionIndex) 
+      execute (const int partitionIndex) 
       {
 	// We use the same cache block indices for Q and for C.
 	std::pair<LocalOrdinal, LocalOrdinal> cbIndices = 
@@ -635,14 +663,30 @@ namespace TSQR {
 	range_type C_range (C_, strategy_, 
 			    cbIndices.first, cbIndices.second,
 			    reversed, contiguousCacheBlocks_);
-	apply (applyType, Q_range, C_range, C_top, 
+	CacheBlocker<LocalOrdinal, Scalar> blocker (C_.nrows(), C_.ncols(), 
+						    strategy_);
+	apply (applyType_, Q_range, C_range, 
+	       top_block (C_, contiguousCacheBlocks_),
 	       reversed ? &tauArrays_[cbIndices.second-1] : &tauArrays_[cbIndices.first]);
+      }
+
+    private:
+      MatView<LocalOrdinal, Scalar> 
+      top_block (const MatView<LocalOrdinal, Scalar>& C,
+		 const bool contiguousCacheBlocks) const 
+      {
+	typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
+	typedef MatView<LocalOrdinal, Scalar> view_type;
+
+	blocker_type blocker (C.nrows(), C.ncols(), strategy_);
+	view_type C_tb = blocker.top_block (C, contiguousCacheBlocks);
+	return view_type (C_tb.ncols(), C_tb.ncols(), C_tb.get(), C_tb.lda());
       }
     };
 
 
     /// \class CacheBlockWDP
-    /// \brief Work-data pair (WDP) for (un-)cache-blocking a matrix.
+    /// \brief Kokkos work-data pair (WDP) for KokkosNodeTsqr's (un_)cache_block() methods.
     /// \author Mark Hoemmen
     template<class LocalOrdinal, class Scalar>
     class CacheBlockWDP {
@@ -707,7 +751,7 @@ namespace TSQR {
       ///   of the matrix.  We parallelize over partitions.
       ///   Partitions respect cache blocks.
       void 
-      operator execute (const int partitionIndex) 
+      execute (const int partitionIndex) 
       {
 	typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
 	typedef MatView<LocalOrdinal, Scalar> view_type;
@@ -715,7 +759,7 @@ namespace TSQR {
 	typedef CacheBlockRange<view_type> range_type;
 	
 	std::pair<LocalOrdinal, LocalOrdinal> cbIndices = 
-	  cacheBlockIndexRange (A_.nrows(), A_.ncols(), partitionIndex, 
+	  cacheBlockIndexRange (A_in_.nrows(), A_in_.ncols(), partitionIndex, 
 				numPartitions_, strategy_);
 	if (A_in_.empty() || A_out_.empty() || 
 	    cbIndices.second <= cbIndices.first)
@@ -735,7 +779,7 @@ namespace TSQR {
     };
 
     /// \class MultWDP
-    /// \brief Kokkos work-data pair for \c KokkosNodeTsqr::Q_times_B().
+    /// \brief Kokkos work-data pair (WDP) for \c KokkosNodeTsqr::Q_times_B().
     /// \author Mark Hoemmen
     template<class LocalOrdinal, class Scalar>
     class MultWDP {
@@ -751,14 +795,17 @@ namespace TSQR {
 		 const MatView<LocalOrdinal, Scalar>& Q_cur,
 		 const Matrix<LocalOrdinal, Scalar>& Q_temp)
       {
+	const LocalOrdinal numCols = Q_cur.ncols();
+
 	// GEMM doesn't like aliased arguments, so we use a copy.  We
 	// only copy the current cache block, rather than all of Q;
 	// this saves memory.
-	Q_temp.reshape (Q_cur.nrows(), Q_cur.ncols());
+	Q_temp.reshape (Q_cur.nrows(), numCols);
 	Q_temp.copy (Q_cur);
 
 	// Q_cur := Q_temp * B.
-	blas.GEMM ("N", "N", Q_cur.nrows(), ncols, ncols, Scalar(1),
+	blas.GEMM ("N", "N", Q_cur.nrows(), numCols, numCols, 
+		   Teuchos::ScalarTraits<Scalar>::one(),
 		   Q_temp.get(), Q_temp.lda(), B_.get(), B_.lda(),
 		   Scalar(0), Q_cur.get(), Q_cur.lda());
       }
@@ -815,13 +862,13 @@ namespace TSQR {
       ///   of the matrix.  We parallelize over partitions.
       ///   Partitions respect cache blocks.
       void
-      operator execute (const int partitionIndex) 
+      execute (const int partitionIndex) 
       {
 	typedef MatView<LocalOrdinal, Scalar> view_type;
 	typedef CacheBlockRange<view_type> range_type;
 	
 	std::pair<LocalOrdinal, LocalOrdinal> cbIndices = 
-	  cacheBlockIndexRange (A_.nrows(), A_.ncols(), partitionIndex, 
+	  cacheBlockIndexRange (Q_.nrows(), Q_.ncols(), partitionIndex, 
 				numPartitions_, strategy_);
 	if (Q_.empty() || cbIndices.second <= cbIndices.first)
 	  return;
@@ -915,6 +962,15 @@ namespace TSQR {
     typedef typename NodeTsqr<LocalOrdinal, Scalar, KokkosNodeTsqrFactorOutput<LocalOrdinal, Scalar> >::factor_output_type FactorOutput;
 
   private:
+    //! Implementation of fundamental TSQR kernels.
+    Combine<LocalOrdinal, Scalar> combine_;
+
+    //! Workspace for Combine operations.
+    std::vector<Scalar> work_;
+
+    //! Pointer to the Kokkos Node object.
+    Teuchos::RCP<const node_type> node_;
+
     //! Size in bytes of a cache block.
     size_t cacheBlockSize_;
 
@@ -931,12 +987,24 @@ namespace TSQR {
 
     /// \brief Default number of partitions.
     ///
-    /// \warning Do not expect the returned value to be the same, even
-    ///   at run time on subsequent invocations.  This method may in
-    ///   the future try to "learn" the optimal number of partitions.
+    /// \param node [in] Kokkos Node object to be used for intranode TSQR.
+    ///
+    /// This method takes the Kokkos Node object, so that for specific
+    /// Node types it may ask the Node for information about the
+    /// available computational resources (e.g., the number of CPU
+    /// cores).  The Kokkos Node API doesn't currently offer this
+    /// information, but that may change in the future.
+    ///
+    /// This method may in the future try to "learn" the optimal
+    /// number of partitions.  For now, it's a constant.  Later, we
+    /// may even try to "learn" the best value, perhaps even at
+    /// runtime.  As a result, this method may not necessarily return
+    /// the same value each time it is called.
     int 
     defaultNumPartitions (const Teuchos::RCP<const node_type>& node) const 
     {
+      (void) node;
+
       // Currently the Kokkos Node API does not give us access to the
       // amount of available parallelism, so we return a constant.
       return 8;
@@ -1001,9 +1069,9 @@ namespace TSQR {
       size_t cacheBlockSize, sizeOfScalar;
       int numPartitions;
       try {
-	cacheBlockSize = plist->get<size_t> ("Cache Block Size");
+	cacheBlockSize = plist->get<size_t> ("Cache Size Hint");
 	sizeOfScalar = plist->get<size_t> ("Size of Scalar");
-	numPartitions = plist.get<int> ("Num Partitions");
+	numPartitions = plist->get<int> ("Num Partitions");
       } catch (Teuchos::Exceptions::InvalidParameter& e) {
 	std::ostringstream os;
 	os << "Failed to read default parameters after setting defaults.  Pleas"
@@ -1046,20 +1114,21 @@ namespace TSQR {
       using Teuchos::parameterList;
       using Teuchos::RCP;
 
-      RCP<ParameterList> params = parameterList ("Node TSQR");
-      params->set ("Cache Block Size", 
+      RCP<ParameterList> params = parameterList ("Intranode TSQR");
+      params->set ("Cache Size Hint", 
 		   static_cast<size_t>(0), 
-		   std::string("Size in bytes of the cache blocks used by TSQR."
-			       "  Set to the size of the largest private cache "
-			       "per CPU core, or the fraction of shared cache p"
-			       "er core.  Slight underestimation is OK."));
+		   std::string("Cache size in bytes; a hint for TSQR.  Set to t"
+			       "he size of the largest private cache per CPU co"
+			       "re, or the fraction of shared cache per core.  "
+			       "If zero, we pick a reasonable default."));
       params->set ("Size of Scalar", 
 		   sizeof(Scalar),
-		   std::string ("Size of the Scalar type.  In most cases, the d"
-				"efault sizeof(Scalar) is fine.  Set a non-defa"
-				"ult value only when Scalar is an variable-prec"
-				"ision type whose data is dynamically allocated"
-				"."));
+		   std::string ("Size in bytes of the Scalar type.  In most "
+				"cases, the default sizeof(Scalar) is fine.  "
+				"Set a non-default value only when Scalar's "
+				"data is dynamically allocated (such as for a "
+				"type with precision variable at run time)."));
+
       // The number of partitions is an int rather than a
       // LocalOrdinal, to ensure that it is always stored with the
       // same type, despite the type of LocalOrdinal.  Besides, Kokkos
@@ -1092,14 +1161,14 @@ namespace TSQR {
     //! Apply the Q factor to C (see \c NodeTsqr documentation).
     void
     apply (const ApplyType& applyType,
-	   const Ordinal nrows,
-	   const Ordinal ncols_Q,
+	   const LocalOrdinal nrows,
+	   const LocalOrdinal ncols_Q,
 	   const Scalar Q[],
-	   const Ordinal ldq,
+	   const LocalOrdinal ldq,
 	   const FactorOutput& factorOutput,
-	   const Ordinal ncols_C,
+	   const LocalOrdinal ncols_C,
 	   Scalar C[],
-	   const Ordinal ldc,
+	   const LocalOrdinal ldc,
 	   const bool contiguousCacheBlocks) const
     {
       ConstMatView<LocalOrdinal, Scalar> Q_view (nrows, ncols_Q, Q, ldq);
@@ -1140,84 +1209,90 @@ namespace TSQR {
 
     //! Fill A with zeros (see \c NodeTsqr documentation).
     void
-    fill_with_zeros (const Ordinal nrows,
-		     const Ordinal ncols,
+    fill_with_zeros (const LocalOrdinal nrows,
+		     const LocalOrdinal ncols,
 		     Scalar A[],
-		     const Ordinal lda, 
+		     const LocalOrdinal lda, 
 		     const bool contiguousCacheBlocks) const;
 
     //! Cache block A (see \c NodeTsqr documentation).
     void
-    cache_block (const Ordinal nrows,
-		 const Ordinal ncols, 
+    cache_block (const LocalOrdinal nrows,
+		 const LocalOrdinal ncols, 
 		 Scalar A_out[],
 		 const Scalar A_in[],
-		 const Ordinal lda_in) const
+		 const LocalOrdinal lda_in) const
     {
       typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
       typedef MatView<LocalOrdinal, Scalar> view_type;
+      typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
+      typedef details::CacheBlockWDP<LocalOrdinal, Scalar> cb_wdp_type;
 
       const_view_type A_in_view (nrows, ncols, A_in, lda_in);
-      view_type A_out_view (nrows, ncols, A_out, lda_out);
-      CacheBlockingStrategy<LocalOrdinal, Scalar> strategy (cacheBlockSize_, sizeOfScalar_);
-      CacheBlockWDP cacheBlocker (A_in_view, A_out_view, strategy, numPartitions_, false);
-
-      pNode_->parallel_for (0, numPartitions_, cacheBlocker);
+      // Leading dimension here doesn't matter, since the cache blocks
+      // will be contiguously stored anyway.
+      view_type A_out_view (nrows, ncols, A_out, nrows);
+      strategy_type strategy (cacheBlockSize_, sizeOfScalar_);
+      cb_wdp_type cacheBlocker (A_in_view, A_out_view, strategy, 
+			     numPartitions_, false);
+      node_->parallel_for (0, numPartitions_, cacheBlocker);
     }
 
     //! Un - cache block A (see \c NodeTsqr documentation).
     void
-    un_cache_block (const Ordinal nrows,
-		    const Ordinal ncols,
+    un_cache_block (const LocalOrdinal nrows,
+		    const LocalOrdinal ncols,
 		    Scalar A_out[],
-		    const Ordinal lda_out,		    
+		    const LocalOrdinal lda_out,		    
 		    const Scalar A_in[]) const
     {
       typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
       typedef MatView<LocalOrdinal, Scalar> view_type;
       typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
-      typedef CacheBlockWDP<LocalOrdinal, Scalar> cb_wdp_type;
+      typedef details::CacheBlockWDP<LocalOrdinal, Scalar> cb_wdp_type;
 
-      const_view_type A_in_view (nrows, ncols, A_in, lda_in);
+      // Leading dimension here doesn't matter, since the cache blocks
+      // are contiguously stored anyway.
+      const_view_type A_in_view (nrows, ncols, A_in, nrows);
       view_type A_out_view (nrows, ncols, A_out, lda_out);
       strategy_type strategy (cacheBlockSize_, sizeOfScalar_);
       cb_wdp_type cacheBlocker (A_in_view, A_out_view, strategy, 
 				numPartitions_, true);
-      pNode_->parallel_for (0, numPartitions_, cacheBlocker);
+      node_->parallel_for (0, numPartitions_, cacheBlocker);
     }
 
     //! Compute Q := Q*B in place (see \c NodeTsqr documentation).
     void
-    Q_times_B (const Ordinal nrows,
-	       const Ordinal ncols,
+    Q_times_B (const LocalOrdinal nrows,
+	       const LocalOrdinal ncols,
 	       Scalar Q[],
-	       const Ordinal ldq,
+	       const LocalOrdinal ldq,
 	       const Scalar B[],
-	       const Ordinal ldb,
+	       const LocalOrdinal ldb,
 	       const bool contiguousCacheBlocks) const
     {
       typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
       typedef MatView<LocalOrdinal, Scalar> view_type;
       typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
-      typedef MultWDP<LocalOrdinal, Scalar> mult_type;
+      typedef details::MultWDP<LocalOrdinal, Scalar> mult_wdp_type;
 
       view_type Q_view (nrows, ncols, Q, ldq);
       const_view_type B_view (ncols, ncols, B, ldb);
       strategy_type strategy (cacheBlockSize_, sizeOfScalar_);
-      mult_type mult (Q_view, B_view, strategy, numPartitions_, 
-		      contiguousCacheBlocks);
-      pNode_->parallel_for (0, numPartitions_, mult);
+      mult_wdp_type mult (Q_view, B_view, strategy, numPartitions_, 
+			  contiguousCacheBlocks);
+      node_->parallel_for (0, numPartitions_, mult);
     }
 
     //! Return the topmost cache block of C (see \c NodeTsqr documentation).
-    MatView<Ordinal, Scalar>
-    top_block (const MatView<Ordinal, Scalar>& C,
+    MatView<LocalOrdinal, Scalar>
+    top_block (const MatView<LocalOrdinal, Scalar>& C,
 	       const bool contiguousCacheBlocks) const
     {
-      typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
       typedef MatView<LocalOrdinal, Scalar> view_type;
-      typedef const std::pair<LocalOrdinal, LocalOrdinal> range_type;
+      typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
       typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
+      typedef std::pair<LocalOrdinal, LocalOrdinal> range_type;
 
       strategy_type strategy (cacheBlockSize_, sizeOfScalar_);
       const range_type range = 
@@ -1238,9 +1313,10 @@ namespace TSQR {
 		const MatView<LocalOrdinal, Scalar>& R,
 		const bool contiguousCacheBlocks) const
     {
-      using details::FactorFirstPass;
-      CacheBlockingStrategy<LocalOrdinal, Scalar> strategy (cacheBlockSize_, 
-							    sizeOfScalar_);
+      typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
+      typedef details::FactorFirstPass<LocalOrdinal, Scalar> first_pass_type;
+
+      strategy_type strategy (cacheBlockSize_, sizeOfScalar_);
       const LocalOrdinal numRowsPerCacheBlock = 
 	strategy.cache_block_num_rows (A.ncols());
       const LocalOrdinal numCacheBlocks = 
@@ -1248,12 +1324,12 @@ namespace TSQR {
       //
       // Compute the first factorization pass (over partitions).
       //
-      FactorOutput result (numCacheBlocks, numPartitions);
-      FactorFirstPass firstPass (A, result.firstPassTauArrays, 
+      FactorOutput result (numCacheBlocks, numPartitions_);
+      first_pass_type firstPass (A, result.firstPassTauArrays, 
 				 result.topBlocks, strategy, 
 				 numPartitions_, contiguousCacheBlocks);
       // parallel_for wants an exclusive range.
-      pNode_->parallel_for (0, numPartitions_, firstPass);
+      node_->parallel_for (0, numPartitions_, firstPass);
 
       // Each partition collected a view of its top block, where that
       // partition's R factor is stored.  The second pass reduces
@@ -1289,10 +1365,10 @@ namespace TSQR {
 				 explicitQ, contiguousCacheBlocks);
       std::vector<view_type> topBlocksOfC (factorOutput.numPartitions());
       {
-	typedef const std::pair<LocalOrdinal, LocalOrdinal> range_type;
+	typedef std::pair<LocalOrdinal, LocalOrdinal> range_type;
 	typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
 	const range_type range = 
-	  cacheBlockIndexRange (C.nrows(), C.ncols(), partitionIndex,
+	  cacheBlockIndexRange (C.nrows(), C.ncols(), static_cast<int>(0),
 				numPartitions_, strategy);
 	blocker_type C_blocker (C.nrows(), C.ncols(), strategy);
 	for (int partitionIndex = 0; 
@@ -1313,14 +1389,14 @@ namespace TSQR {
       if (applyType.transposed())
 	{
 	  // parallel_for wants an exclusive range.
-	  pNode_->parallel_for (0, numPartitions_, firstPass);
-	  applySecondPass (applyType, factorOutput, topBlocksOfC, strategy, explicitQ_)
+	  node_->parallel_for (0, numPartitions_, firstPass);
+	  applySecondPass (applyType, factorOutput, topBlocksOfC, strategy, explicitQ);
 	}
       else
 	{
-	  applySecondPass (applyType, factorOutput, topBlocksOfC, strategy, explicitQ_);
+	  applySecondPass (applyType, factorOutput, topBlocksOfC, strategy, explicitQ);
 	  // parallel_for wants an exclusive range.
-	  pNode_->parallel_for (0, numPartitions_, firstPass);
+	  node_->parallel_for (0, numPartitions_, firstPass);
 	}
     }
 
@@ -1343,12 +1419,14 @@ namespace TSQR {
     {
       if (numPartitions <= 1)
 	return; // Done!
-
+      
       const LocalOrdinal numCols = topBlocks[0].ncols();
-      typedef std::vector<MatView<LocalOrdinal, Scalar> >::size_type size_type;
+      work_.resize (numCols);
+
+      typedef typename std::vector<MatView<LocalOrdinal, Scalar> >::size_type size_type;
       for (size_type k = 1; k < numPartitions; ++k)
 	{
-	  tau.resize (numCols);
+	  tauArrays[k].resize (numCols);
 	  factorPair (topBlocks[0], topBlocks[k], tauArrays[k]);
 	}
     }
@@ -1360,7 +1438,7 @@ namespace TSQR {
 	       const MatView<LocalOrdinal, Scalar>& C_top,
 	       const MatView<LocalOrdinal, Scalar>& C_bot) const
     {
-      if (R_top.ncols() > 0 && C_top.ncols() > 0)
+      if (R_bot.ncols() > 0 && C_bot.ncols() > 0)
 	combine_.apply_pair (applyType, C_top.ncols(), R_bot.ncols(), 
 			     R_bot.get(), R_bot.lda(), &tau[0], 
 			     C_top.get(), C_top.lda(),
@@ -1374,11 +1452,13 @@ namespace TSQR {
 		     const CacheBlockingStrategy<LocalOrdinal, Scalar>& strategy,
 		     const bool explicitQ) const
     {
-      if (factorOutput.numPartitions() <= 1)
+      if (factorOutput.numPartitions() <= 1) // == topBlocksOfC.size() == 0
 	return; // Done!
-      const LocalOrdinal numCols = topBlocks[0].ncols();
-      typedef std::vector<MatView<LocalOrdinal, Scalar> >::size_type size_type;
+      const LocalOrdinal numCols = factorOutput.topBlocks[0].ncols();
+      work_.resize (numCols);
+
       typedef MatView<LocalOrdinal, Scalar> view_type;
+      typedef typename std::vector<view_type>::size_type size_type;
 
       // Top blocks of C are the whole cache blocks.  We only want to
       // affect the top ncols x ncols part of each of those blocks in

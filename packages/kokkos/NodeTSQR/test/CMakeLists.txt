@@ -59,3 +59,16 @@ IF (TSQR_ENABLE_Intel_TBB)
     )
 ENDIF()
 
+
+# Performance and accuracy test suite for TSQR::KokkosNodeTsqr
+# ("generic" intranode parallel TSQR).
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TSQR_KokkosNodeTsqr
+  SOURCES Tsqr_TestKokkosNodeTsqr.cpp
+  COMM serial mpi
+  ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-blocks"
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  DEPLIBS kokkos kokkosnodetsqr
+  )
+
