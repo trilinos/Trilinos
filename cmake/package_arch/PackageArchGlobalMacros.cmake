@@ -523,7 +523,7 @@ MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
     MESSAGE("Dumping the HTML dependencies webpage file ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} ..." )
     EXECUTE_PROCESS(
       COMMAND ${PYTHON_EXECUTABLE}
-        ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
+        ${PROJECT_HOME_DIR}/cmake/python/dump-package-dep-table.py
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-html-deps-file=${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} )
   ENDIF()
@@ -537,7 +537,7 @@ MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
     MESSAGE("Dumping the CDash XML dependencies file ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
     EXECUTE_PROCESS(
       COMMAND ${PYTHON_EXECUTABLE}
-        ${TRILINOS_HOME_DIR}/cmake/python/dump-cdash-deps-xml-file.py
+        ${PROJECT_HOME_DIR}/cmake/python/dump-cdash-deps-xml-file.py
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-cdash-deps-xml-file=${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} )
   ENDIF()
@@ -937,7 +937,7 @@ ENDMACRO()
 #  Macro that allows packages to easily make a feature SS for development
 #  builds and PS for release builds
 #.
-#  The OUTPUT_VAre is set to ON or OFF based on the configure state. In
+#  The OUTPUT_VAR is set to ON or OFF based on the configure state. In
 #  development mode it will be set to ON only if SS code is enabled, 
 #  otherwise it is set to OFF. In release mode it is always set to ON.
 #  This allows some sections of PROJECT_NAME to be considered SS for 
@@ -950,6 +950,130 @@ MACRO(PACKAGE_ARCH_SET_SS_FOR_DEV_MODE OUTPUT_VAR)
     SET(${OUTPUT_VAR} ON)
   ENDIF()
 ENDMACRO()
+
+
+#
+# Macro that drives a experimental 'dashboard' target
+#
+
+MACRO(PACKAGE_ARCH_ADD_DASHBOARD_TARGET)
+
+  IF (NOT (WIN32 AND NOT CYGWIN))
+
+    ADVANCED_SET(${PROJECT_NAME}_DASHBOARD_CTEST_ARGS "" CACHE STRING
+      "Extra arguments to pass to CTest when calling 'ctest -S' to run the 'dashboard' make target." )
+  
+    # H.1) Enable all packages that are enabled and have tests enabled
+  
+    SET(${PROJECT_NAME}_ENABLED_PACKAGES_LIST)
+    SET(${PROJECT_NAME}_ENABLED_PACKAGES_CMAKE_ARG_LIST)
+    FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
+      IF (${PROJECT_NAME}_ENABLE_${PACKAGE} AND ${PACKAGE}_ENABLE_TESTS)
+        IF (${PROJECT_NAME}_ENABLED_PACKAGES_LIST)
+          SET(${PROJECT_NAME}_ENABLED_PACKAGES_LIST
+            "${${PROJECT_NAME}_ENABLED_PACKAGES_LIST}\;${PACKAGE}") 
+        ELSE()
+          SET(${PROJECT_NAME}_ENABLED_PACKAGES_LIST "${PACKAGE}") 
+        ENDIF()
+        SET(${PROJECT_NAME}_ENABLED_PACKAGES_CMAKE_ARG_LIST
+          ${${PROJECT_NAME}_ENABLED_PACKAGES_CMAKE_ARG_LIST} -D${PROJECT_NAME}_ENABLE_${PACKAGE}=ON)
+      ENDIF()
+    ENDFOREACH()
+    #PRINT_VAR(${PROJECT_NAME}_ENABLED_PACKAGES_LIST)
+    
+    SET(EXPR_CMND_ARGS)
+    IF (${PROJECT_NAME}_ENABLE_COVERAGE_TESTING)
+      APPEND_SET(EXPR_CMND_ARGS "CTEST_DO_COVERAGE_TESTING=TRUE")
+    ENDIF()
+
+    #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
+    JOIN(${PROJECT_NAME}_EXTRA_REPOSITORIES_JOINED "," FALSE
+      ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+    APPEND_SET(EXPR_CMND_ARGS
+      ${PROJECT_NAME}_EXTRA_REPOSITORIES=${${PROJECT_NAME}_EXTRA_REPOSITORIES_JOINED})
+  
+    # H.2) Add the custom target to enable all the packages with tests enabled
+    
+    ADD_CUSTOM_TARGET(dashboard
+  
+      VERBATIM
+    
+      # WARNING: The echoed command and the actual commands are duplicated!  You have to reproduce them!
+  
+      COMMAND echo
+      COMMAND echo "***************************************************"
+      COMMAND echo "*** Running incremental experimental dashboard ***" 
+      COMMAND echo "***************************************************"
+      COMMAND echo
+      COMMAND echo ${PROJECT_NAME}_ENABLED_PACKAGES_LIST=${${PROJECT_NAME}_ENABLED_PACKAGES_LIST}
+      COMMAND echo
+  
+      COMMAND echo
+      COMMAND echo "***"
+      COMMAND echo "*** A) Clean out the list of packages"
+      COMMAND echo "***"
+      COMMAND echo
+      COMMAND echo Running: ${CMAKE_COMMAND} -D${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+        -D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON -D${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=OFF ${PROJECT_HOME_DIR}
+      COMMAND echo
+      COMMAND ${CMAKE_COMMAND} -D${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+        -D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON -D${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=OFF ${PROJECT_HOME_DIR}
+  
+      # NOTE: Above, if ${PROJECT_NAME}_ENABLE_ALL_PACKAGES was set in CMakeCache.txt, then setting
+      # -D${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=OFF will turn it off in the cache.  Note that it will
+      # never be turned on again which means that the list of packages will be set explicitly below.
+    
+      COMMAND echo
+      COMMAND echo "***"
+      COMMAND echo "*** B) Run the dashboard command setting the list of packages"
+      COMMAND echo "***"
+      COMMAND echo
+      COMMAND echo Running: env ${EXPR_CMND_ARGS}
+        ${PROJECT_NAME}_PACKAGES=${${PROJECT_NAME}_ENABLED_PACKAGES_LIST}
+        ${CMAKE_CTEST_COMMAND} ${${PROJECT_NAME}_DASHBOARD_CTEST_ARGS} -S
+          ${PROJECT_HOME_DIR}/cmake/ctest/experimental_build_test.cmake
+      COMMAND echo
+      COMMAND env ${EXPR_CMND_ARGS}
+        ${PROJECT_NAME}_PACKAGES=${${PROJECT_NAME}_ENABLED_PACKAGES_LIST}
+        ${CMAKE_CTEST_COMMAND} ${${PROJECT_NAME}_DASHBOARD_CTEST_ARGS} -S
+          ${PROJECT_HOME_DIR}/cmake/ctest/experimental_build_test.cmake || echo
+  
+      # 2009/07/05: rabartl: Above, I added the ending '|| echo' to always make
+      # the command pass so that 'make will not stop and avoid this last command
+      # to set back the enabled packages.
+  
+      COMMAND echo
+      COMMAND echo "***"
+      COMMAND echo "*** C) Clean out the list of packages again to clean the cache file"
+      COMMAND echo "***"
+      COMMAND echo
+      COMMAND echo Running: ${CMAKE_COMMAND} -D${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+        -D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON -D${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=OFF ${PROJECT_HOME_DIR}
+      COMMAND echo
+      COMMAND ${CMAKE_COMMAND} -D${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+        -D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON -D${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=OFF ${PROJECT_HOME_DIR}
+    
+      COMMAND echo
+      COMMAND echo "***"
+      COMMAND echo "*** D) Reconfigure with the original package list"
+      COMMAND echo "***"
+      COMMAND echo
+      COMMAND echo Running: ${CMAKE_COMMAND} ${${PROJECT_NAME}_ENABLED_PACKAGES_CMAKE_ARG_LIST}
+        -D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON ${PROJECT_HOME_DIR}
+      COMMAND echo
+      COMMAND ${CMAKE_COMMAND} ${${PROJECT_NAME}_ENABLED_PACKAGES_CMAKE_ARG_LIST}
+        -D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON ${PROJECT_HOME_DIR}
+  
+      COMMAND echo
+      COMMAND echo "See the results at http://${CTEST_DROP_SITE}${CTEST_DROP_LOCATION}&display=project\#Experimental"
+      COMMAND echo
+   
+      )
+  
+  ENDIF()
+
+ENDMACRO()
+
 
 MACRO(PACKAGE_ARCH_EXCLUDE_FILES)
   SET(FILES_TO_EXCLUDE ${ARGN})

@@ -31,6 +31,7 @@ ENDIF()
 PROJECT(Trilinos NONE)
 
 SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
+SET(PROJECT_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
 SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
 # Above, we put these in the cache so we can grep them out
 
@@ -167,14 +168,7 @@ ENDIF()
 
 
 #
-# F) Add the 'dashboard' target
-#
-
-TRILINOS_ADD_DASHBOARD_TARGET()
-
-
-#
-# G) Set up the environment on this computer
+# F) Set up the environment on this computer
 #
 
 MESSAGE("")
@@ -189,7 +183,7 @@ PACKAGE_ARCH_POST_SETUP_ENV()
 
 
 #
-# H) Go get the information for all enabled TPLS
+# G) Go get the information for all enabled TPLS
 #
 
 MESSAGE("")
@@ -206,7 +200,7 @@ OPTION(Trilinos_ENABLE_OpenMP
 
 
 #
-# I) Set up for testing with CTest and Trilinos test harness
+# H) Set up for testing with CTest and Trilinos test harness
 #
 
 MESSAGE("")
@@ -216,6 +210,15 @@ MESSAGE("")
 INCLUDE(CTest)
 
 TRILINOS_SETUP_TESTING_SUPPORT()
+
+
+#
+# I) Add the 'dashboard' target
+#
+# NOTE: Must come after setting up for testing
+#
+
+PACKAGE_ARCH_ADD_DASHBOARD_TARGET()
 
 
 #
