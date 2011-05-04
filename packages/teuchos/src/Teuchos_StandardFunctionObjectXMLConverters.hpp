@@ -121,6 +121,14 @@ void SimpleFunctionXMLConverter<OperandType>::convertFunctionObject(
   getSpecialSimpleFunctionXMLTraits(castedFunction, xmlObj);
 }
 
+/**
+ * \brief Class for converting SubtractionFunction objects to and from XML.
+ *
+ * The valid XML represntation of a SubtractionFunction is:
+ * \code
+   <Function operand="operand value" type="SubtractionFunction(operand_type)"/>
+ \endcode
+ */
 template<class OperandType>
 class SubtractionFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
@@ -145,6 +153,14 @@ SubtractionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
   return rcp(new SubtractionFunction<OperandType>(operand));
 }
 
+/**
+ * \brief Class for converting AdditionFunction objects to and from XML.
+ *
+ * The valid XML represntation of a AdditionFunction is:
+ * \code
+   <Function operand="operand value" type="AdditionFunction(operand_type)"/>
+ \endcode
+ */
 template<class OperandType>
 class AdditionFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
@@ -169,6 +185,14 @@ AdditionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
   return rcp(new AdditionFunction<OperandType>(operand));
 }
 
+/**
+ * \brief Class for converting MultiplicationFunction objects to and from XML.
+ *
+ * The valid XML represntation of a MultiplicationFunction is:
+ * \code
+   <Function operand="operand value" type="MultiplicationFunction(operand_type)"/>
+ \endcode
+ */
 template<class OperandType>
 class MultiplicationFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
@@ -193,6 +217,14 @@ MultiplicationFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
   return rcp(new MultiplicationFunction<OperandType>(operand));
 }
 
+/**
+ * \brief Class for converting DivisionFunction objects to and from XML.
+ *
+ * The valid XML represntation of a DivisionFunction is:
+ * \code
+   <Function operand="operand value" type="DivisionFunction(operand_type)"/>
+ \endcode
+ */
 template<class OperandType>
 class DivisionFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
