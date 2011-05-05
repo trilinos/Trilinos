@@ -61,7 +61,7 @@ namespace stk {
       }
 
 
-      Gear::Gear( stk::mesh::fem::FEMMetaData & S , 
+      Gear::Gear( stk::mesh::fem::FEMMetaData & S ,
                   const std::string & name ,
                   const GearFields & gear_fields ,
                   const double center[] ,
@@ -80,7 +80,7 @@ namespace stk {
           m_surf( S.declare_part(std::string("Surf_").append(name), m_mesh_fem_meta_data->side_rank()) ),
           m_gear_coord( gear_fields.gear_coord ),
           m_model_coord(gear_fields.model_coord )
-      {   
+      {
         typedef shards::Hexahedron<> Hex ;
         typedef shards::Quadrilateral<> Quad ;
         enum { SpatialDimension = GearFields::SpatialDimension };
@@ -90,8 +90,8 @@ namespace stk {
         stk::mesh::fem::CellTopology hex_top (shards::getCellTopologyData<shards::Hexahedron<8> >());
         stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
 
-        stk::mesh::fem::set_cell_topology( S, m_gear, hex_top );
-        stk::mesh::fem::set_cell_topology( S, m_surf, quad_top );
+        stk::mesh::fem::set_cell_topology( m_gear, hex_top );
+        stk::mesh::fem::set_cell_topology( m_surf, quad_top );
 
         // Meshing parameters for this gear:
 
@@ -103,11 +103,11 @@ namespace stk {
 
         m_z_min     = z_min ;
         m_z_max     = z_max ;
-        m_z_inc     = (z_max - z_min) / static_cast<double>(z_num - 1); 
+        m_z_inc     = (z_max - z_min) / static_cast<double>(z_num - 1);
 
         m_rad_min   = rad_min ;
         m_rad_max   = rad_max ;
-        m_rad_inc   = (rad_max - rad_min) / static_cast<double>(rad_num - 1); 
+        m_rad_inc   = (rad_max - rad_min) / static_cast<double>(rad_num - 1);
 
         m_ang_inc   = TWO_PI / static_cast<double>(angle_num) ;
 

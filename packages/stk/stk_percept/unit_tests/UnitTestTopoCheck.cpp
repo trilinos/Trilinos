@@ -464,7 +464,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", mesh_meta_data.element_rank());
 
     /// set cell topology for the part block_1
-    stk::mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( mesh_meta_data, block_hex );
+    stk::mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
 
     //--------------------------------
     // Declare coordinates field on all nodes with 3D:

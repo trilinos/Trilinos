@@ -188,7 +188,7 @@ namespace {
     shards::CellTopology elem_topology = stk::mesh::fem::get_cell_topology(element);
     const shards::CellTopology *elem_top = &elem_topology;
     if (fem_meta && !elem_top->getCellTopologyData()) {
-      elem_topology = stk::mesh::fem::get_cell_topology_new(element);
+      elem_topology = stk::mesh::fem::get_cell_topology(element);
       elem_top = &elem_topology;
     }
 
@@ -226,7 +226,7 @@ namespace {
 
 	  mesh.declare_relation( *elem_neighbor , side , other_side_id );
 	}
-        } else { 
+        } else {
 
 	stk::mesh::Entity & side = fem_meta ? stk::mesh::fem::declare_element_side( mesh, global_side_id, element, i, &side_part) :
                                                                mesh.declare_entity( side_type, side_id , parts );

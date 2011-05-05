@@ -126,7 +126,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
         ++bitr)
     {
       Bucket & b = **bitr;
-      const fem::CellTopology topo = fem::get_cell_topology_new(b);
+      const fem::CellTopology topo = fem::get_cell_topology(b);
 
       ThrowErrorMsgIf( is_degenerate(topo),
           "stk::mesh::create_adjacent_entities(...) does not yet support degenerate topologies (i.e. shells and beams)");
@@ -263,7 +263,7 @@ void internal_create_adjacent_entities( BulkData & mesh, const PartVector & arg_
         ++bitr)
     {
       Bucket & b = **bitr;
-      const fem::CellTopology topo = fem::get_cell_topology_new(b);
+      const fem::CellTopology topo = fem::get_cell_topology(b);
 
       if ( !is_degenerate(topo) ) { // don't loop over shell elements
 
@@ -387,7 +387,7 @@ void complete_connectivity( BulkData & mesh ) {
           ++bitr)
       {
         Bucket & b = **bitr;
-        const fem::CellTopology topo = fem::get_cell_topology_new(b);
+        const fem::CellTopology topo = fem::get_cell_topology(b);
 
         ThrowErrorMsgIf( is_degenerate(topo),
           "stk::mesh::create_adjacent_entities(...) does not yet support degenerate topologies (i.e. shells and beams)");

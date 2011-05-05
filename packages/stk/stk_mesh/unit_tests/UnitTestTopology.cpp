@@ -119,13 +119,13 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_based_on_part)
   PartVector tmp(1);
   tmp[0] = & fix.face_quad_part;
   fix.bulk.change_entity_parts ( elem1 , tmp );
-  STKUNIT_ASSERT_EQUAL( stk::mesh::fem::get_cell_topology_new(elem1).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  STKUNIT_ASSERT_EQUAL( stk::mesh::fem::get_cell_topology(elem1).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
   fix.bulk.change_entity_parts ( elem1 , tmp );
-  STKUNIT_ASSERT_EQUAL( stk::mesh::fem::get_cell_topology_new(elem1).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  STKUNIT_ASSERT_EQUAL( stk::mesh::fem::get_cell_topology(elem1).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
   tmp[0] = & fix.another_generic_face_part;
   fix.bulk.change_entity_parts ( elem1 , tmp );
-  STKUNIT_ASSERT_EQUAL( stk::mesh::fem::get_cell_topology_new(elem1).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
-  STKUNIT_ASSERT_NE( stk::mesh::fem::get_cell_topology_new( elem1).getCellTopologyData() , shards::getCellTopologyData< shards::Wedge<15> >() );
+  STKUNIT_ASSERT_EQUAL( stk::mesh::fem::get_cell_topology(elem1).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  STKUNIT_ASSERT_NE( stk::mesh::fem::get_cell_topology( elem1).getCellTopologyData() , shards::getCellTopologyData< shards::Wedge<15> >() );
 
   fix.bulk.modification_end();
 }
@@ -142,7 +142,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
   add_parts.push_back( &fix.element_wedge_part );
   fix.bulk.change_entity_parts( elem, add_parts );
   fix.bulk.modification_end();
-  STKUNIT_ASSERT_THROW( stk::mesh::fem::get_cell_topology_new( elem ).getCellTopologyData(), std::runtime_error );
+  STKUNIT_ASSERT_THROW( stk::mesh::fem::get_cell_topology( elem ).getCellTopologyData(), std::runtime_error );
 }
 
 // No longer in the public API
@@ -255,7 +255,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
   elem_node[2] = 3;
   elem_node[3] = 4;
   Entity & element  = stk::mesh::fem::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node);
-  const CellTopologyData * const elem_top = stk::mesh::fem::get_cell_topology_new( element ).getCellTopologyData();
+  const CellTopologyData * const elem_top = stk::mesh::fem::get_cell_topology( element ).getCellTopologyData();
   const EntityId nSideCount = elem_top->side_count + 10 ;
   STKUNIT_ASSERT_THROW(
     stk::mesh::fem::declare_element_side( fix.bulk, fix.nextEntityId(), element, nSideCount, &fix.element_tet_part ),
@@ -350,10 +350,10 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
   PartVector part_intersection;
   part_intersection.push_back ( &fix.generic_element_part);
   Entity & element = fix.bulk.declare_entity(fix.element_rank, fix.nextEntityId(), part_intersection);
-  STKUNIT_ASSERT_TRUE( stk::mesh::fem::get_cell_topology_new( element ).getCellTopologyData() == NULL );
+  STKUNIT_ASSERT_TRUE( stk::mesh::fem::get_cell_topology( element ).getCellTopologyData() == NULL );
 
   Entity & element_with_top = stk::mesh::fem::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
-  STKUNIT_ASSERT_TRUE( stk::mesh::fem::get_cell_topology_new( element_with_top ).getCellTopologyData() != NULL );
+  STKUNIT_ASSERT_TRUE( stk::mesh::fem::get_cell_topology( element_with_top ).getCellTopologyData() != NULL );
 
   const EntityId zero_side_count = 0;
   Entity& face_with_top = stk::mesh::fem::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count);
@@ -362,7 +362,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
 
   const int valid_local_side_id = 0;
   // Hits "Element has no defined topology" error condition:
-  STKUNIT_ASSERT_TRUE( stk::mesh::fem::get_cell_topology_new( element ).getCellTopologyData() == NULL );
+  STKUNIT_ASSERT_TRUE( stk::mesh::fem::get_cell_topology( element ).getCellTopologyData() == NULL );
   STKUNIT_ASSERT_THROW(
       stk::mesh::fem::element_side_polarity( element, face_with_top, valid_local_side_id),
       std::runtime_error

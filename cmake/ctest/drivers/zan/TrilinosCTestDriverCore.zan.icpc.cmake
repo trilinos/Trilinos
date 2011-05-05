@@ -30,7 +30,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
       "-DCMAKE_LIBRARY_PATH:PATH=/usr/lib64"
       "-DTPL_LAPACK_LIBRARIES:STRING=-L/opt/intel/Compiler/11.1/064/mkl/lib/em64t -lmkl_lapack"
-      "-DTPL_BLAS_LIBRARIES:STRING=-L/opt/intel/Compiler/11.1/064/mkl/lib/em64t/ -L/opt/intel/Compiler/11.1/064/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5"
+      "-DTPL_BLAS_LIBRARIES:STRING=-L/opt/intel/Compiler/11.1/064/mkl/lib/em64t/ -L/opt/intel/Compiler/11.1/064/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
     )
 
   SET_DEFAULT(COMPILER_VERSION "ICPC-11.1.064")
