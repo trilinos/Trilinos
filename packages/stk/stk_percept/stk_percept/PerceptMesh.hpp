@@ -245,8 +245,8 @@ namespace stk {
       field_data_inlined(const mesh::FieldBase *field, const mesh::Entity& node)
       {
         return field_data(field, node);
-//         return 
-//           field->rank() == 0 ? 
+//         return
+//           field->rank() == 0 ?
 //           stk::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , node )
 //           :
 //           stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , node );
@@ -310,8 +310,8 @@ namespace stk {
       /// here @param thing is a Part, Bucket, Entity, or Field or BulkData
       template<class T>
       static
-      const stk::mesh::fem::FEMMetaData& get_fem_meta_data(const T& thing) 
-      { 
+      const stk::mesh::fem::FEMMetaData& get_fem_meta_data(const T& thing)
+      {
         //const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(thing);
         const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( thing );
         return fem_meta;
@@ -320,14 +320,14 @@ namespace stk {
       /// here @param thing is a Part, Bucket, Entity
       template<class T>
       static
-      const CellTopologyData * get_cell_topology(const T& thing) 
-      { 
-        const CellTopologyData * cell_topo_data = mesh::fem::get_cell_topology_new(thing).getCellTopologyData();
+      const CellTopologyData * get_cell_topology(const T& thing)
+      {
+        const CellTopologyData * cell_topo_data = mesh::fem::get_cell_topology(thing).getCellTopologyData();
         return cell_topo_data;
       }
 
 
-      static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2, 
+      static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
                                   std::string& msg,
                                   bool print=true);
 

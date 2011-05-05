@@ -127,7 +127,7 @@ namespace stk {
       }
 
       template<>
-      void local_internal_part_processing(Ioss::EntityBlock *entity, 
+      void local_internal_part_processing(Ioss::EntityBlock *entity,
                                           stk::mesh::fem::FEMMetaData &meta,
                                           stk::mesh::EntityRank type)
       {
@@ -170,7 +170,7 @@ namespace stk {
                 ctname=cell_topo->name;
               }
             //std::cout << "tmp part = " << part.name() << " ctname= " << ctname << " cellTopo= " << mesh::fem::CellTopology(cell_topology).getName() << std::endl;
-            stk::mesh::fem::set_cell_topology(meta, part,  mesh::fem::CellTopology(cell_topology) );
+            stk::mesh::fem::set_cell_topology(part,  mesh::fem::CellTopology(cell_topology) );
 
 #endif
           } else {

@@ -23,7 +23,7 @@ void verify_declare_element_side(
     const unsigned local_side_id
     )
 {
-  const CellTopologyData * const elem_top = get_cell_topology_new( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
 
   const CellTopologyData * const side_top =
     ( elem_top && local_side_id < elem_top->side_count )
@@ -86,7 +86,7 @@ Entity & declare_element_side(
 
   verify_declare_element_side(mesh, elem, local_side_id);
 
-  const CellTopologyData * const elem_top = get_cell_topology_new( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
 
   ThrowErrorMsgIf( elem_top == NULL,
       "Element[" << elem.identifier() << "] has no defined topology" );
@@ -126,8 +126,8 @@ Entity & declare_element_side(
 {
   verify_declare_element_side(mesh, elem, local_side_id);
 
-  const CellTopologyData * const elem_top = get_cell_topology_new( elem ).getCellTopologyData();
-  
+  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
+
   ThrowErrorMsgIf( elem_top == NULL,
       "Element[" << elem.identifier() << "] has no defined topology");
 
@@ -143,56 +143,6 @@ Entity & declare_element_side(
   return declare_element_side( elem, side, local_side_id, part);
 }
 
-CellTopology get_cell_topology_new( const Bucket & bucket)
-{
-  const BulkData   &  bulk_data = BulkData::get(bucket);
-  const FEMMetaData & fem_meta_data = FEMMetaData::get(bulk_data);
-  const PartVector & all_parts = fem_meta_data.get_parts();
-
-  CellTopology cell_topology;
-
-  const std::pair< const unsigned *, const unsigned * > supersets = bucket.superset_part_ordinals();
-
-  if (supersets.first != supersets.second) {
-    const Part *first_found_part = NULL;
-
-    for ( const unsigned * it = supersets.first ; it != supersets.second ; ++it ) {
-
-      const Part & part = * all_parts[*it] ;
-
-      if ( part.primary_entity_rank() == bucket.entity_rank() ) {
-
-        CellTopology top = fem_meta_data.get_cell_topology( part );
-
-        if ( ! cell_topology.getCellTopologyData() ) {
-          cell_topology = top ;
-
-          if (!first_found_part)
-            first_found_part = &part;
-        }
-        else {
-          ThrowErrorMsgIf( top.getCellTopologyData() && top != cell_topology,
-            "Cell topology is ambiguously defined. It is defined as " << cell_topology.getName() <<
-            " on part " << first_found_part->name() << " and as " << top.getName() << " on its superset part " << part.name() );
-        }
-      }
-    }
-  }
-
-  return cell_topology ;  
-}
-
-CellTopology get_cell_topology_new( const Entity & entity)
-{
-  return get_cell_topology_new(entity.bucket());
-}
-
-void set_cell_topology_new( Part &part, const CellTopologyData * const cell_topology)
-{
-  FEMMetaData& fem_meta = FEMMetaData::get(part);
-
-  set_cell_topology(fem_meta, part, fem::CellTopology(cell_topology));
-}
 
 
 const CellTopologyData * get_subcell_nodes(const Entity & entity ,
@@ -203,7 +153,7 @@ const CellTopologyData * get_subcell_nodes(const Entity & entity ,
   subcell_nodes.clear();
 
   // get cell topology
-  const CellTopologyData* celltopology = get_cell_topology_new(entity).getCellTopologyData();
+  const CellTopologyData* celltopology = get_cell_topology(entity).getCellTopologyData();
 
   //error checking
   {
@@ -259,7 +209,7 @@ int get_entity_subcell_id( const Entity & entity ,
   }
 
   // get topology of elem
-  const CellTopologyData* entity_topology = get_cell_topology_new(entity).getCellTopologyData();
+  const CellTopologyData* entity_topology = get_cell_topology(entity).getCellTopologyData();
   if (entity_topology == NULL) {
     return INVALID_SIDE;
   }
@@ -363,7 +313,7 @@ bool element_side_polarity( const Entity & elem ,
   // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
   FEMMetaData &fem_meta = FEMMetaData::get(elem);
   const bool is_side = side.entity_rank() != fem_meta.edge_rank();
-  const CellTopologyData * const elem_top = get_cell_topology_new( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = get_cell_topology( elem ).getCellTopologyData();
 
   const unsigned side_count = ! elem_top ? 0 : (
                                 is_side ? elem_top->side_count

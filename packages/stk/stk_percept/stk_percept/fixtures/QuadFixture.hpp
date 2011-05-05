@@ -39,7 +39,7 @@ namespace stk {
 
 
       // copied from stk_mesh/fixtures - had to copy because stk_mesh couldn't depend on stk_io, for example, so the changes I required
-      // had to be done on a copy 
+      // had to be done on a copy
 
       // QuadFixture now allows Scalar to be a double (which is required by I/O for example, also named parts are conforming to I/O)
 
@@ -75,7 +75,7 @@ namespace stk {
 
           // Set topology of the element block part
           //stk::mesh::fem::set_cell_topology(meta_data, quad_part,  fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
-          stk::mesh::fem::set_cell_topology<QuadOrTriTopo>(meta_data, quad_part);
+          stk::mesh::fem::set_cell_topology<QuadOrTriTopo>(quad_part);
           stk::io::put_io_part_attribute(quad_part);
 
           //put coord-field on all nodes:
@@ -159,9 +159,9 @@ namespace stk {
                *   | [1]  /  |   Global sides: quad = {0,1,2,3}, triangles = { {[0], 0}, {[0], 1}, {[1], 1}, {[1], 2} }
                *   |     /   |
                *   |    /    |    (PARENT) Linear 4-Node Quadrilateral
-               *   |   /     |             Element Edge Node Map: 
+               *   |   /     |             Element Edge Node Map:
                *   |  /      |       { {0, 1}, {1, 2}, {2, 3} {3, 0} };
-               *   | /   [0] |    
+               *   | /   [0] |
                *   |/        |    Triangle edge node map: { {0, 1}, {1, 2}, {2, 3} }
                *   o---------o
                *  0           1
@@ -174,7 +174,7 @@ namespace stk {
               else
                 {
                   stk::mesh::fem::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
-                  
+
                   elem_node[0] = node_id( ix   , iy );
                   elem_node[1] = node_id( ix+1 , iy+1 );
                   elem_node[2] = node_id( ix , iy+1 );
@@ -264,7 +264,7 @@ namespace stk {
 
               //stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
               //stk::mesh::fem::set_cell_topology(meta_data, *side_parts[i_side], fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
-              stk::mesh::fem::set_cell_topology< shards::Line<2> >(meta_data, *side_parts[i_side]);
+              stk::mesh::fem::set_cell_topology< shards::Line<2> >(*side_parts[i_side]);
               stk::io::put_io_part_attribute(*side_parts[i_side]);
               stk::io::put_io_part_attribute(side_part);
 
