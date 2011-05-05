@@ -145,7 +145,7 @@ if os.path.exists("Trilinos"):
   os.chdir(options.workingDir)
 else:
   print "Repository doesn't exist so cloning."
-  gitCloneCmd = "git clone " + options.repository
+  gitCloneCmd = "git clone " + options.repository + " Trilinos"
   gitError = os.system(gitCloneCmd)
   os.chdir("Trilinos")
   if options.branch != "master":
