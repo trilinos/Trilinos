@@ -61,7 +61,7 @@ a flat MPI implementation as the problem size per subdomain gets smaller.
 %The MPI + threads implementation helps ShyLU to scale well for up to $384$ cores.
 Our first target application is circuit simulation (Xyce, POC: H. Thornquist), 
 where there is an acute need for robust iterative methods to perform full chip 
-simulations for the W88 LEP. These simulations generate linear systems that 
+simulations in support of the W88 Alt LEP. These simulations generate linear systems that 
 are too large for direct methods.
 Iterative methods, based on Schur complements, have proven effective for circuits, but
 are not currently available in Trilinos or any other DOE solver library.
