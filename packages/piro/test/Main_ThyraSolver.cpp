@@ -73,11 +73,17 @@ int main(int argc, char *argv[]) {
 
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
- 
-#ifdef NO_LOCA_YET
-  for (int iTest=0; iTest<3; iTest++) {
+
+#ifdef Piro_ENABLE_Rythmos
+  int numTests=3;
 #else
-  for (int iTest=0; iTest<3; iTest+=2) {
+  int numTests=2;
+#endif
+ 
+#ifdef NO_LOCA_THYRA_YET
+  for (int iTest=0; iTest<numTests; iTest++) {
+#else
+  for (int iTest=0; iTest<numTests; iTest+=2) {
 #endif
 
     if (doAll) {

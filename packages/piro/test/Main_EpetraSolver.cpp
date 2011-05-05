@@ -72,7 +72,12 @@ int main(int argc, char *argv[]) {
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
  
-  for (int iTest=0; iTest<3; iTest++) {
+#ifdef Piro_ENABLE_Rythmos
+  int numTests=3;
+#else
+  int numTests=2;
+#endif
+  for (int iTest=0; iTest<numTests; iTest++) {
 
     if (doAll) {
       switch (iTest) {
@@ -111,8 +116,8 @@ int main(int argc, char *argv[]) {
       if (solver=="NOX")
         piro = rcp(new Piro::Epetra::NOXSolver(piroParams, Model));
       else if (solver=="LOCA") {
-        RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigs/* =
-            rcp(new SaveEigenData_Epetra(piroParams->sublist("LOCA"))) */;
+        RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigs =
+            rcp(new SaveEigenData_Epetra(piroParams->sublist("LOCA")));
         piro = rcp(new Piro::Epetra::LOCASolver(
                        piroParams, Model, Teuchos::null, saveEigs));
       }
