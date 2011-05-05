@@ -128,7 +128,7 @@ namespace stk {
      * specified 'time' and populate the stk data structures with those
      * values.
      */
-    int process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, double time);
+    void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, int time);
 
 
     /**
