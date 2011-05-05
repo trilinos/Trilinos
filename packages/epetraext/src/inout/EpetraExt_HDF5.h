@@ -330,7 +330,7 @@ class HDF5
     //! Creates group \c GroupName.
     void CreateGroup(const string& GroupName)
     {
-      hid_t group_id = H5Gcreate(file_id_, GroupName.c_str(), 0);
+      hid_t group_id = H5Gcreate(file_id_, GroupName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Gclose(group_id);
     }
 
