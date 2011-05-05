@@ -318,7 +318,7 @@ public:
    * NOTE: This will always return <tt>false</tt> when <tt>TEUCHOS_DEBUG</tt> is
    * not defined.
    */
-  static TEUCHOS_LIB_DLL_EXPORT bool isTracingActiveRCPNodes();
+  static bool isTracingActiveRCPNodes();
 
 #if defined(TEUCHOS_DEBUG) && !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
   /** \brief Set if will be tracing active RCP nodes.
@@ -338,31 +338,31 @@ public:
    * not be enbled.  If node tracing is turned on at configure time then there
    * is no sense in trying to turn it on or off.
    */
-  static TEUCHOS_LIB_DLL_EXPORT void setTracingActiveRCPNodes(bool tracingActiveNodes);
+  static void setTracingActiveRCPNodes(bool tracingActiveNodes);
 #endif
 
   /** \brief Print the number of active RCPNode objects currently being
    * tracked.
    */
-  static TEUCHOS_LIB_DLL_EXPORT int numActiveRCPNodes();
+  static int numActiveRCPNodes();
 
   /** \brief Return the statistics on RCPNode allocations. */
-  static TEUCHOS_LIB_DLL_EXPORT RCPNodeStatistics getRCPNodeStatistics() ;
+  static RCPNodeStatistics getRCPNodeStatistics() ;
 
   /** \brief Print the RCPNode allocation statistics. */
-  static TEUCHOS_LIB_DLL_EXPORT void printRCPNodeStatistics(
+  static void printRCPNodeStatistics(
     const RCPNodeStatistics& rcpNodeStatistics, std::ostream &out);
 
   /** \brief Set if RCPNode usage statistics will be printed when the program
    * ends or not.
    */
-  static TEUCHOS_LIB_DLL_EXPORT void setPrintRCPNodeStatisticsOnExit(
+  static void setPrintRCPNodeStatisticsOnExit(
     bool printRCPNodeStatisticsOnExit);
 
   /** \brief Reteurn if RCPNode usage statistics will be printed when the
    * program ends or not.
    */
-  static TEUCHOS_LIB_DLL_EXPORT bool getPrintRCPNodeStatisticsOnExit();
+  static bool getPrintRCPNodeStatisticsOnExit();
 
   /** \brief Print the list of currently active RCP nodes.
    *
@@ -378,7 +378,7 @@ public:
    * may be some circular references that will caused memory leaks.  You memory
    * checking tool such as valgrind or purify should complain about this!
    */
-  static TEUCHOS_LIB_DLL_EXPORT void printActiveRCPNodes(std::ostream &out);
+  static void printActiveRCPNodes(std::ostream &out);
 
   //@}
 
@@ -391,7 +391,7 @@ public:
    *
    * Only gets called when RCPNode tracing has been activated.
    */
-  static TEUCHOS_LIB_DLL_EXPORT void addNewRCPNode(RCPNode* rcp_node,
+  static void addNewRCPNode(RCPNode* rcp_node,
     const std::string &info );
 
   /** \brief Remove an RCPNode from global list.
@@ -399,7 +399,7 @@ public:
    * Always gets called in a debug build (<tt>TEUCHOS_DEBUG</tt> defined) when
    * node tracing is enabled.
    */
-  static TEUCHOS_LIB_DLL_EXPORT void removeRCPNode( RCPNode* rcp_node );
+  static void removeRCPNode( RCPNode* rcp_node );
 
   /** \brief Get a <tt>const void*</tt> address to be used as the lookup key
    * for an RCPNode given its embedded object's typed pointer.
@@ -430,7 +430,7 @@ public:
    * \returns <tt>returnVal != 0</tt> if an owning RCPNode exists, <tt>0</tt>
    * otherwsise.
    */
-  static TEUCHOS_LIB_DLL_EXPORT RCPNode* getExistingRCPNodeGivenLookupKey(
+  static RCPNode* getExistingRCPNodeGivenLookupKey(
     const void* lookupKey);
 
   /** \brief Return a raw pointer to an existing owning RCPNode given the
@@ -446,10 +446,10 @@ public:
     }
 
   /** \brief Header string used in printActiveRCPNodes(). */
-  static TEUCHOS_LIB_DLL_EXPORT std::string getActiveRCPNodeHeaderString();
+  static std::string getActiveRCPNodeHeaderString();
 
   /** \brief Common error message string on how to debug RCPNode problems. */
-  static TEUCHOS_LIB_DLL_EXPORT std::string getCommonDebugNotesString();
+  static std::string getCommonDebugNotesString();
 
   //@}
 
