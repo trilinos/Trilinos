@@ -60,7 +60,7 @@ namespace {
 	else
 	  return stk::mesh::InvalidEntityRank;
       }
-      
+
     case Ioss::SIDEBLOCK:
       {
 	Ioss::SideBlock *sblk = dynamic_cast<Ioss::SideBlock*>(entity);
@@ -420,7 +420,7 @@ namespace stk {
 
     void set_cell_topology(stk::mesh::Part &part, const CellTopologyData * const cell_topology)
     {
-      stk::mesh::fem::set_cell_topology_new(part, cell_topology);
+      stk::mesh::fem::set_cell_topology(part, cell_topology);
     }
 
     const CellTopologyData *get_cell_topology(const stk::mesh::Part &part)
@@ -789,7 +789,7 @@ namespace stk {
           if( fem_meta )
           {
             const stk::mesh::fem::CellTopology cell_topo(cell_topology);
-            stk::mesh::fem::set_cell_topology(*fem_meta, *part, cell_topo);
+            stk::mesh::fem::set_cell_topology(*part, cell_topo);
           }
           stk::io::set_cell_topology(*part, cell_topology);
         } else {

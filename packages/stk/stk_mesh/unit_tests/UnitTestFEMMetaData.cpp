@@ -44,7 +44,7 @@ STKUNIT_UNIT_TEST ( UnitTestFEMMetaData, create )
   STKUNIT_ASSERT_THROW( fem_meta.register_cell_topology( invalid_cell_topology, INVALID_RANK ), std::logic_error );
   STKUNIT_ASSERT_THROW( fem_meta.get_cell_topology_root_part( invalid_cell_topology), std::logic_error );
   STKUNIT_ASSERT_THROW( fem_meta.get_cell_topology( universal_part), std::logic_error );
-  STKUNIT_ASSERT_THROW( set_cell_topology( fem_meta, universal_part, invalid_cell_topology), std::logic_error );
+  STKUNIT_ASSERT_THROW( stk::mesh::fem::set_cell_topology( universal_part, invalid_cell_topology), std::logic_error );
   STKUNIT_EXPECT_EQUAL( fem_meta.get_entity_rank( invalid_cell_topology), INVALID_RANK );
 
 }
@@ -184,23 +184,23 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, cell_topology_subsetting )
   fem_meta.FEM_initialize(spatial_dimension);
   stk::mesh::Part & element_part = fem_meta.declare_part("element part", element_rank );
   stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  set_cell_topology( fem_meta, element_part, hex_top );
+  stk::mesh::fem::set_cell_topology( element_part, hex_top );
 
   stk::mesh::Part & hex_part = fem_meta.get_cell_topology_root_part(hex_top);
 
   const stk::mesh::PartVector & element_part_supersets = element_part.supersets();
   STKUNIT_EXPECT_EQUAL(
-      std::count(element_part_supersets.begin(),element_part_supersets.end(),&hex_part), 1 
+      std::count(element_part_supersets.begin(),element_part_supersets.end(),&hex_part), 1
       );
 }
 
-// 02/16/11:  Cell Topology Induced Membership 
+// 02/16/11:  Cell Topology Induced Membership
 //
 // Invariants:
 // 1.  Root cell topology parts cannot be subsets of parts with cell topologies
 // 2.  Incompatible cell topologies are prohibited.  I.e. parts with
 //     different cell topologies of the same rank (as the part) cannot be subsets
-//     of each other.  
+//     of each other.
 //
 // Decision tree for declare_part_subset(superset,subset):
 // Q:  Does the superset part have a topology?
@@ -266,7 +266,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, cell_topology_test_1 )
   fem_meta.declare_part_subset(A, HR);
   const stk::mesh::PartVector & HR_supersets = HR.supersets();
   STKUNIT_EXPECT_EQUAL(
-      std::count(HR_supersets.begin(),HR_supersets.end(),&A), 1 
+      std::count(HR_supersets.begin(),HR_supersets.end(),&A), 1
       );
 }
 
@@ -326,7 +326,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, cell_topology_test_3a )
 
   const stk::mesh::PartVector & A_supersets = A.supersets();
   STKUNIT_EXPECT_EQUAL(
-      std::count(A_supersets.begin(),A_supersets.end(),&HR), 1 
+      std::count(A_supersets.begin(),A_supersets.end(),&HR), 1
       );
 }
 
@@ -354,7 +354,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, cell_topology_test_3b )
 
   const stk::mesh::PartVector & D_supersets = D.supersets();
   STKUNIT_EXPECT_EQUAL(
-      std::count(D_supersets.begin(),D_supersets.end(),&A), 1 
+      std::count(D_supersets.begin(),D_supersets.end(),&A), 1
       );
 }
 
@@ -384,7 +384,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, cell_topology_test_3c )
 
   const stk::mesh::PartVector & B_supersets = B.supersets();
   STKUNIT_EXPECT_EQUAL(
-      std::count(B_supersets.begin(),B_supersets.end(),&A), 1 
+      std::count(B_supersets.begin(),B_supersets.end(),&A), 1
       );
 }
 
@@ -409,7 +409,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, cell_topology_test_4a )
 
   const stk::mesh::PartVector & B_supersets = B.supersets();
   STKUNIT_EXPECT_EQUAL(
-      std::count(B_supersets.begin(),B_supersets.end(),&A), 1 
+      std::count(B_supersets.begin(),B_supersets.end(),&A), 1
       );
 }
 
@@ -436,7 +436,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, cell_topology_test_4b )
 
   const stk::mesh::PartVector & B_supersets = B.supersets();
   STKUNIT_EXPECT_EQUAL(
-      std::count(B_supersets.begin(),B_supersets.end(),&A), 1 
+      std::count(B_supersets.begin(),B_supersets.end(),&A), 1
       );
 }
 
@@ -522,7 +522,7 @@ STKUNIT_UNIT_TEST( UnitTestFEMMetaData, cell_topology_test_5c )
 
 
 
-STKUNIT_UNIT_TEST( FEMMetaData, register_cell_topology_duplicate ) 
+STKUNIT_UNIT_TEST( FEMMetaData, register_cell_topology_duplicate )
 {
   stk::mesh::fem::FEMMetaData fem_meta;
   const size_t spatial_dimension = 2;
@@ -534,7 +534,7 @@ STKUNIT_UNIT_TEST( FEMMetaData, register_cell_topology_duplicate )
 }
 
 
-STKUNIT_UNIT_TEST( FEMMetaData, register_cell_topology_duplicate_with_different_ranks ) 
+STKUNIT_UNIT_TEST( FEMMetaData, register_cell_topology_duplicate_with_different_ranks )
 {
   stk::mesh::fem::FEMMetaData fem_meta;
   const size_t spatial_dimension = 2;

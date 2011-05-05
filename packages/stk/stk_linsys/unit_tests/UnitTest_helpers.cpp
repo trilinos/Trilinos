@@ -34,7 +34,7 @@ void fill_utest_mesh_meta_data(stk::mesh::fem::FEMMetaData& fem_meta, bool use_t
   stk::mesh::Part& elem_block = fem_meta.declare_part( "block_1" , element_rank );
 
   stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::fem::set_cell_topology( fem_meta, elem_block, hex_top );
+  stk::mesh::fem::set_cell_topology( elem_block, hex_top );
 
   const unsigned number_of_states = 1;
 
