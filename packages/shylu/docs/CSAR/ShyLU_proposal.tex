@@ -60,18 +60,19 @@ applications, as preliminary results show that our hybrid implementation scales 
 a flat MPI implementation as the problem size per subdomain gets smaller.
 %The MPI + threads implementation helps ShyLU to scale well for up to $384$ cores.
 Our first target application is circuit simulation (Xyce, POC: H. Thornquist), 
-where there is an acute need for robust iterative methods to perform full chip simulations
-for the W88 LEP.  These simulations generate linear systems that are too large for
-direct methods.
+where there is an acute need for robust iterative methods to perform full chip 
+simulations for the W88 LEP. These simulations generate linear systems that 
+are too large for direct methods.
 Iterative methods, based on Schur complements, have proven effective for circuits, but
 are not currently available in Trilinos or any other DOE solver library.
 %
-Another potential application is structural mechanics, where ShyLU
+Another potential application is solid mechanics, where ShyLU
 can be used as a subdomain solver within FETI (POC: K. Pierson) or
-domain decomposition methods such as GDSW (POC: G. Reese, C. Dohrmann). 
+domain decomposition methods such as GDSW (POC: C. Dohrmann, G. Reese). 
 We also anticipate that ShyLU will be useful as a smoother within 
-ML/MueLu (POC: J. Hu, C. Siefert) for solid mechanics applications.
+ML/MueLu (POC: J. Hu, C. Siefert) for mechanics applications.
 %Tramonto?
+%
 \paragraph{\bf Proposed Work:}
 Application-focused research will be performed on matrix partitioning and
 Schur complement approximations, using Trilinos as a development platform
@@ -102,7 +103,7 @@ We propose the following research and development tasks:
 \item[Year 1] {\bf Release Epetra-based implementation and evaluate with NW applications}
   \begin{itemize} 
   \item Release of ShyLU as a stable code in Trilinos.
-  \item Make the solver available as a smoother for ML.
+  \item Make ShyLU available as a smoother for ML.
   \item Evaluate performance on test problems from 1500 collaborators.
   \item Integrate as one of the solvers within Xyce.
   \end{itemize}
@@ -115,12 +116,12 @@ We propose the following research and development tasks:
   \begin{itemize}
   \item Tpetra-based version of ShyLU, compatible with 2nd generation Trilinos.
   \item Support for complex arithmetic (to be useful in Helmholtz problems).
-  \item Make the solver available as a smoother for MueLu.
+  \item Make ShyLU available as a smoother for MueLu.
   \end{itemize}
 \end{description}
 
 
-\paragraph{\bf Personnel and Budget:}
+\paragraph{\bf Personnel:}
 Erik Boman, PI (1426): 0.3 FTE\\
 David Day (1442): 0.2 FTE\\
 Siva Rajamanickam (1426): 0.3 FTE\\
