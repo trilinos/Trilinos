@@ -827,6 +827,15 @@ Tpetra::createContigMap(Tpetra::global_size_t numElements, size_t localNumElemen
 }
 
 
+template <class LocalOrdinal, class GlobalOrdinal>
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+Tpetra::createNonContigMap(const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
+                           const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+{
+  return Tpetra::createNonContigMapWithNode<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType>(elementList, comm, Kokkos::DefaultNode::getDefaultNode() );
+}
+
+
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createNonContigMapWithNode(const Teuchos::ArrayView<const GlobalOrdinal> &elementList,

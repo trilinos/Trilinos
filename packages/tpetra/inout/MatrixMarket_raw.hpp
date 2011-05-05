@@ -549,8 +549,7 @@ namespace Tpetra {
 		      if (myRank == 0)
 			std::copy (result.second.begin(), result.second.end(),
 				   errMsg.begin());
-		      Teuchos::broadcast (comm, 0, static_cast<int>(msgSize), 
-					  static_cast<char* const> (&errMsg[0]));
+		      Teuchos::broadcast (comm, 0, static_cast<int>(msgSize), &errMsg[0]);
 		      TEST_FOR_EXCEPTION(! success, std::runtime_error, errMsg);
 		    }
 		  else

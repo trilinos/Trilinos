@@ -262,7 +262,6 @@ namespace {
     }
   }
 
-
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ContigUniformMap, LO, GO )
   {

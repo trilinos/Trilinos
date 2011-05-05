@@ -244,6 +244,7 @@ namespace Tpetra {
             if (computeLIDs) {
               localIDs[j] = as<LocalOrdinal>(*ptr++);
             }
+            if (nodeIDs[j] == -1) res = IDNotPresent;
             break;
           }
         }
@@ -257,7 +258,6 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Directory<LocalOrdinal,GlobalOrdinal,Node>::generateDirectory() {
     using Teuchos::as;
-    const GlobalOrdinal GONE     = Teuchos::OrdinalTraits<GlobalOrdinal>::one();
     const LocalOrdinal  LINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
           
     const GlobalOrdinal minAllGID = map_->getMinAllGlobalIndex();
@@ -265,7 +265,7 @@ namespace Tpetra {
 
     // DirectoryMap will have a range of elements from the minimum to the maximum
     // GID of the user Map, and an indexBase of minAllGID from the user Map
-    global_size_t numGlobalEntries = maxAllGID - minAllGID + GONE;
+    const global_size_t numGlobalEntries = maxAllGID - minAllGID + 1;
 
     // Obviously, we can't afford to store the whole directory on each node
     // Create a uniform linear map to contain the directory to split up the storage among all nodes

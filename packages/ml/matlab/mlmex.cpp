@@ -10,6 +10,7 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   04/26/2011 - Bug fixed for error tolerance for ISINT checks. Removing gratuitous prints.
    07/31/2010 - Code cleanup, adding ability to get out AztecOO iteration counts.
    07/22/2010 - Adding ability to handle nested parameter lists via cell arrays
                 (e.g. for sending in an ifpack list).
@@ -71,9 +72,10 @@ using namespace std;
 extern void _main();
 
 /* Macros */
+#define ABS(x)   ((x)>0?(x):(-(x)))
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define FLOOR(x) ((int)(x))
-#define ISINT(x) ((x)==0?(((x-(int)(x))<1e-15)?true:false):(((x-(int)(x))<1e-15*(x))?true:false))
+#define ISINT(x) ((x)==0?(((x-(int)(x))<1e-15)?true:false):(((x-(int)(x))<1e-15*ABS(x))?true:false))
 #define IS_FALSE 0
 #define IS_TRUE  1
 #define MLMEX_ERROR -1
@@ -878,9 +880,6 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
     /* Free memory */
     mxFree(option_name);   
   }/*end for*/
-
-  cout<<"** ParameterList **"<<endl;
-  cout<<*TPL<<endl;
 
   return TPL;
 }/*end build_teuchos_list*/

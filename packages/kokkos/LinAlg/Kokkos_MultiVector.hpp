@@ -138,10 +138,12 @@ namespace Kokkos {
         */
       ArrayRCP<Scalar>
       getValuesNonConst(size_t i) {
-        TEST_FOR_EXCEPTION((contigValues_ == null) || // No data to return
-                           i < 0 || i >= numCols_, // Out of range
-                           std::runtime_error, 
-                           Teuchos::typeName(*this) << "::getValuesNonConst(): index out of range or data structure not initialized.");
+#ifdef HAVE_KOKKOS_DEBUG
+        TEST_FOR_EXCEPTION( !( (contigValues_ != null) &&  // Data to return
+                               ( (i > 0 || i == 0) && i < numCols_)    // In range
+                             ), std::runtime_error, 
+                             Teuchos::typeName(*this) << "::getValuesNonConst(): index out of range or data structure not initialized.");
+#endif
         return contigValues_.persistingView(stride_*i,numRows_);
       };
 
@@ -156,10 +158,12 @@ namespace Kokkos {
         */
       ArrayRCP<const Scalar>
       getValues(size_t i) const {
-        TEST_FOR_EXCEPTION((contigValues_ == null) || // No data to return
-                           i < 0 || i >= numCols_, // Out of range
-                           std::runtime_error, 
-                           Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
+#ifdef HAVE_KOKKOS_DEBUG
+        TEST_FOR_EXCEPTION( !( (contigValues_ != null) &&  // Data to return
+                               ( (i > 0 || i == 0) && i < numCols_)    // In range
+                             ), std::runtime_error, 
+                             Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
+#endif
         return contigValues_.persistingView(stride_*i,numRows_);
       };
 

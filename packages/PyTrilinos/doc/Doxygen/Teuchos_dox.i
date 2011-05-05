@@ -616,15 +616,7 @@ C++ includes: Teuchos_ParameterList.hpp ";
 
 /*  Public types  */
 
-/*
-
-*/
-
 /*  Constructors/Destructor.  */
-
-/*
-
-*/
 
 %feature("docstring")  Teuchos::ParameterList::ParameterList "Teuchos::ParameterList::ParameterList()
 
@@ -643,10 +635,6 @@ Copy Constructor. ";
 Deconstructor. ";
 
 /*  Set Functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Teuchos::ParameterList::setName "ParameterList
 & Teuchos::ParameterList::setName(const std::string &name)
@@ -734,10 +722,6 @@ This is required to preserve the isDefault value when reading back
 from XML. KL 7 August 2004 ";
 
 /*  Get Functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Teuchos::ParameterList::get "T &
 Teuchos::ParameterList::get(const std::string &name, T def_value)
@@ -855,10 +839,6 @@ exists. ";
 
 /*  Parameter removal functions  */
 
-/*
-
-*/
-
 %feature("docstring")  Teuchos::ParameterList::remove "bool
 Teuchos::ParameterList::remove(std::string const &name, bool
 throwIfNotExists=true)
@@ -879,10 +859,6 @@ throwIfExists==false). ";
 
 /*  Sublist Functions  */
 
-/*
-
-*/
-
 %feature("docstring")  Teuchos::ParameterList::sublist "ParameterList
 & Teuchos::ParameterList::sublist(const std::string &name, bool
 mustAlreadyExist=false, const std::string &docString=\"\")
@@ -900,10 +876,6 @@ not already exist or the name exists but is not a sublist, an
 std::exception is thrown. ";
 
 /*  Attribute Functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Teuchos::ParameterList::name "const
 std::string & Teuchos::ParameterList::name() const
@@ -954,17 +926,13 @@ method. ";
 
 /*  I/O Functions  */
 
-/*
-
-*/
-
 %feature("docstring")  Teuchos::ParameterList::print "void
 Teuchos::ParameterList::print() const
 
 Print function to use in debugging in a debugger.
 
-Prints to *VerboseObjectBasegetDefaultOStream() so it will print well
-in parallel. ";
+Prints to *VerboseObjectBase::getDefaultOStream() so it will print
+well in parallel. ";
 
 %feature("docstring")  Teuchos::ParameterList::print "std::ostream &
 Teuchos::ParameterList::print(std::ostream &os, const PrintOptions
@@ -993,10 +961,6 @@ parameters in this list. ";
 
 /*  Read-only access to the iterator  */
 
-/*
-
-*/
-
 %feature("docstring")  Teuchos::ParameterList::begin "ParameterList::ConstIterator Teuchos::ParameterList::begin() const
 
 An iterator pointing to the first entry. ";
@@ -1008,18 +972,14 @@ An iterator pointing beyond the last entry. ";
 %feature("docstring")  Teuchos::ParameterList::entry "const
 ParameterEntry & Teuchos::ParameterList::entry(ConstIterator i) const
 
-Access to ParameterEntry (i.e., returns i->second). ";
+Access to ParameterEntry (i.e., returns i->second) ";
 
 %feature("docstring")  Teuchos::ParameterList::name "const
 std::string & Teuchos::ParameterList::name(ConstIterator i) const
 
-Access to name (i.e., returns i->first). ";
+Access to name (i.e., returns i->first) ";
 
 /*  Validation Functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Teuchos::ParameterList::validateParameters "void Teuchos::ParameterList::validateParameters(ParameterList const
 &validParamList, int const depth=1000, EValidateUsed const
@@ -1119,10 +1079,6 @@ C++ includes: Teuchos_ParameterListAcceptor.hpp ";
 
 /*  Pure virtual functions that must be overridden in subclasses  */
 
-/*
-
-*/
-
 %feature("docstring")
 Teuchos::ParameterListAcceptor::setParameterList "virtual void
 Teuchos::ParameterListAcceptor::setParameterList(RCP< ParameterList >
@@ -1178,10 +1134,6 @@ Postconditions:  this-> getParameterList(). get() == NULL ";
 
 /*  Virtual functions with default implementation  */
 
-/*
-
-*/
-
 %feature("docstring")
 Teuchos::ParameterListAcceptor::getParameterList "Teuchos::RCP< const
 Teuchos::ParameterList >
@@ -1221,10 +1173,6 @@ C++ includes: Teuchos_ParameterListAcceptorDefaultBase.hpp ";
 
 /*  Overridden from ParameterListAcceptor  */
 
-/*
-
-*/
-
 %feature("docstring")
 Teuchos::ParameterListAcceptorDefaultBase::getNonconstParameterList "RCP< ParameterList >
 Teuchos::ParameterListAcceptorDefaultBase::getNonconstParameterList()
@@ -1242,10 +1190,6 @@ Teuchos::ParameterListAcceptorDefaultBase::getParameterList() const ";
 
 /*  Protected accessors to actual parameter list object.  */
 
-/*
-
-*/
-
 
 // File: classTeuchos_1_1ParameterListNonAcceptor.xml
 %feature("docstring") Teuchos::ParameterListNonAcceptor "
@@ -1259,10 +1203,6 @@ ToDo: Finish documention.
 C++ includes: Teuchos_ParameterListNonAcceptor.hpp ";
 
 /*  Overridden from ParameterListAcceptor  */
-
-/*
-
-*/
 
 %feature("docstring")
 Teuchos::ParameterListNonAcceptor::setParameterList "void
@@ -1568,10 +1508,6 @@ C++ includes: Teuchos_XMLObject.hpp ";
 
 /*  Constructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Teuchos::XMLObject::XMLObject "Teuchos::XMLObject::XMLObject()
 
 Empty constructor. ";
@@ -1589,20 +1525,12 @@ XMLObjectImplem* return value of ExceptionBase::toXML(). ";
 
 /*  Copy methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Teuchos::XMLObject::deepCopy "XMLObject
 Teuchos::XMLObject::deepCopy() const
 
 Make a deep copy of this object. ";
 
 /*  Data Access methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Teuchos::XMLObject::getTag "const std::string
 & Teuchos::XMLObject::getTag() const
@@ -1717,10 +1645,6 @@ Teuchos::XMLObject::checkTag(const std::string &expected) const
 Check that a tag is equal to an expected std::string. ";
 
 /*  Tree-Assembly methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Teuchos::XMLObject::addDouble "void
 Teuchos::XMLObject::addDouble(const std::string &name, double val)
@@ -1865,15 +1789,7 @@ C++ includes: Teuchos_XMLParameterListReader.hpp ";
 
 /*  Public Types  */
 
-/*
-
-*/
-
 /*  Constructors  */
-
-/*
-
-*/
 
 %feature("docstring")
 Teuchos::XMLParameterListReader::XMLParameterListReader "Teuchos::XMLParameterListReader::XMLParameterListReader() ";
@@ -1902,15 +1818,7 @@ C++ includes: Teuchos_XMLParameterListWriter.hpp ";
 
 /*  Public Types  */
 
-/*
-
-*/
-
 /*  Constructors  */
-
-/*
-
-*/
 
 %feature("docstring")
 Teuchos::XMLParameterListWriter::XMLParameterListWriter "Teuchos::XMLParameterListWriter::XMLParameterListWriter()
@@ -1971,84 +1879,6 @@ std::string >(const std::string &name) const ";
 %feature("docstring")  Teuchos::Exceptions::XMLObject::addAttribute<
 const std::string & > " void Teuchos::XMLObject::addAttribute< const
 std::string & >(const std::string &name, const std::string &value) ";
-
-%feature("docstring")
-Teuchos::Exceptions::updateParametersFromXmlFile "void
-Teuchos::updateParametersFromXmlFile(const std::string &xmlFileName,
-ParameterList *paramList) ";
-
-%feature("docstring")
-Teuchos::Exceptions::updateParametersFromXmlFileAndBroadcast "void
-Teuchos::updateParametersFromXmlFileAndBroadcast(const std::string
-&xmlFileName, ParameterList *paramList, const Comm< int > &comm) ";
-
-%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "RCP<ParameterList> Teuchos::getParametersFromXmlFile(const std::string
-&xmlFileName) ";
-
-%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "RCP<ParameterList> Teuchos::getParametersFromXmlFile(const std::string
-&xmlFileName, RCP< DependencySheet > depSheet) ";
-
-%feature("docstring")
-Teuchos::Exceptions::updateParametersFromXmlString "void
-Teuchos::updateParametersFromXmlString(const std::string &xmlStr,
-ParameterList *paramList) ";
-
-%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlString
-"RCP<ParameterList> Teuchos::getParametersFromXmlString(const
-std::string &xmlStr) ";
-
-%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlString
-"RCP<ParameterList> Teuchos::getParametersFromXmlString(const
-std::string &xmlStr, RCP< DependencySheet > depSheet) ";
-
-%feature("docstring")
-Teuchos::Exceptions::writeParameterListToXmlOStream "void
-Teuchos::writeParameterListToXmlOStream(const ParameterList
-&paramList, std::ostream &xmlOut, RCP< const DependencySheet >
-depSheet) ";
-
-%feature("docstring")
-Teuchos::Exceptions::writeParameterListToXmlFile "void
-Teuchos::writeParameterListToXmlFile(const ParameterList &paramList,
-const std::string &xmlFileName, RCP< const DependencySheet > depSheet)
-";
-
-%feature("docstring")  Teuchos::Exceptions::writeThenReadPL "RCP<
-ParameterList > Teuchos::writeThenReadPL(ParameterList &myList)
-
-Write a parameter list to xml and then read that xml back in via a
-string. The intent of this function is to be used for testing
-purposes.
-
-Parameters:
------------
-
-paramList:  [in] Contains the parameters and sublists that will be
-written out and then read back in.
-
-The read in parameter list. ";
-
-%feature("docstring")  Teuchos::Exceptions::writeThenReadPL "RCP<
-ParameterList > Teuchos::writeThenReadPL(ParameterList &myList, RCP<
-DependencySheet > depSheetIn, RCP< DependencySheet > depSheetOut)
-
-Write a parameter list to xml and then read that xml back in via a
-string. The intent of this function is to be used for testing
-purposes.
-
-Parameters:
------------
-
-paramList:  [in] Contains the parameters and sublists that will be
-written out and then read back in.
-
-depSheetIn:  [in] The Dependency Sheet from which Dependencies should
-be should be written.
-
-depSheetOut:  [out] The Dependency Sheet into which Dependencies
-should be placed once read.
-
-The read in parameter list. ";
 
 
 // File: namespaceTeuchos_1_1Exceptions.xml
@@ -2177,5 +2007,5 @@ The read in parameter list. ";
 // File: dir_ccb49250c8a2ae42b75bc28c0fcd3e62.xml
 
 
-// File: ParameterList_2cxx__main.cpp-example.xml
+// File: ParameterList_2cxx_main_8cpp-example.xml
 

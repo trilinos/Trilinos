@@ -245,8 +245,8 @@ extern void ML_compressOutZeros(int currRow, int *cols, double *vals, int *lengt
 int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
                                  ML_Operator **Pmatrix, ML_Comm *comm)
 {
-  unsigned int nbytes, length;
-   int     i, j, jj, k, m, Nrows, exp_Nrows;
+   unsigned int nbytes, length;
+   int     i, j, jj, k, m, m2,Nrows, exp_Nrows;
    int     N_neighbors, *neighbors = NULL, diff_level;
    double  printflag;
    int     *Asqrd_rcvleng= NULL, *Asqrd_sndleng= NULL, *send_list = NULL;
@@ -667,11 +667,12 @@ int agg_offset, vertex_offset;
    if ( mypid == 0 && printflag < ML_Get_PrintLevel())
       printf("Aggregation(MIS) : Total nonzeros = %d (Nrows=%d)\n",total_nz,i);
 
+   m2 = ML_Comm_GsumInt( comm, Amatrix->N_nonzeros);
    if ( ml_ag->operator_complexity == 0.0 ) {
-      ml_ag->fine_complexity = total_nz;
-      ml_ag->operator_complexity = total_nz;
+      ml_ag->fine_complexity = m2;
+      ml_ag->operator_complexity = m2;
    }
-   else ml_ag->operator_complexity += total_nz;
+   else ml_ag->operator_complexity += m2;
 
    /*= decode aggregate numbers */
    for (i = 0; i < exp_Nrows; i++) 

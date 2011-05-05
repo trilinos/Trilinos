@@ -163,8 +163,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
   int localproc = comm->getRank();
   int numlocalrows = 2;
   global_size_t numglobalrows = numprocs*numlocalrows;
-  RCP<Map<int> > rowmap = 
-    rcp(new Map<int>(numglobalrows, 0, comm));
+  RCP<const Map<int> > rowmap = Tpetra::createUniformContigMap<int,int>(numglobalrows,comm);
   CrsMatrix<double, int> matrix(rowmap, numglobalrows);
 
   Array<int> cols(numglobalrows);
@@ -175,8 +174,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
     vals[j] = 1.0;
   }
 
-  RCP<Map<int> > colmap = 
-    rcp(new Map<int>(-1, cols(), 0, comm));
+  RCP<const Map<int> > colmap = Tpetra::createNonContigMap<int,int>(cols(), comm);
 
   for(int i=0; i<numlocalrows; ++i) {
     Array<int> row(1,localproc*numlocalrows+i);

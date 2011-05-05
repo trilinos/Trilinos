@@ -111,7 +111,7 @@ namespace Tpetra {
   private:
     Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_, directoryMap_;
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-    std::vector<GlobalOrdinal> allMinGIDs_; // size comm_->getSize()+1; entry i contains minGID for ith node, except last entry contains maxGID in the directory
+    std::vector<GlobalOrdinal> allMinGIDs_; // size comm_->getSize()+1; entry i contains minGID for ith node; last entry contains maxGID in the directory
     std::vector<int> nodeIDs_;
     std::vector<LocalOrdinal> LIDs_;
 
