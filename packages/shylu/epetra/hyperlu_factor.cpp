@@ -72,7 +72,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     // the block diagonals
     // TODO: This is because of a bug in coloring remove the if once that is
     // fixed
-    if (config->schurApproxMethod == 2)
+    //if (config->schurApproxMethod == 2)
         findNarrowSeparator(A, gvals);
 
     // 3. Assemble diagonal block and the border in convenient form [
@@ -91,22 +91,38 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     // Find #cols in each block
     int Dnc = 0;        // #cols in diagonal block
     int Snc = 0;        // #cols in the col. separator
-    for (int i = 0; i < ncols ; i++)
+    /* Looping on cols will work only for wide separator
+     * as for narrow sep there will be some sep cols with gvals[col] ==1
+     * */
+    /*for (int i = 0; i < ncols ; i++)
     {
         if (gvals[cols[i]] == 1)
             Dnc++;
         else
             Snc++;
     }
-
     // Find #rows in each block 
     Dnr = Dnc;          // #rows in square diagonal block
-    Snr = nrows - Dnr;  // #rows in the row separator
+    Snr = nrows - Dnr;  // #rows in the row separator*/
+
+    // Find #rows in each block
+    Dnr = 0;
+    Snr = 0;
+    for (int i = 0; i < nrows ; i++)
+    {
+        if (gvals[rows[i]] == 1)
+            Dnr++;
+        else
+            Snr++;
+    }
+    Dnc = Dnr;
+    Snc = ncols - Dnc;
+
+    assert(Snc >= 0);
 
     // TODO : The above assignment may not be correct in the unsymetric case
 
-    cout << msg << " #columns in diagonal blk ="<< Dnc << endl;
-    cout << msg << " #rows in diagonal blk ="<< Dnr << endl;
+    cout << msg << " #rows and #cols in diagonal blk ="<< Dnr << endl;
     cout << msg << " #columns in S ="<< Snc << endl;
     cout << msg << " #rows in S ="<< Snr << endl;
 
@@ -117,7 +133,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     // Assemble row ids in two arrays (for D and R blocks)
     if (sym)
     {
-        findBlockElems(nrows, rows, gvals, Dnr, DRowElems, Snr, SRowElems, 
+        findBlockElems(A, nrows, rows, gvals, Dnr, DRowElems, Snr, SRowElems,
                     msg + "D Rows ", msg + "S Rows") ;
     }
     else
@@ -146,7 +162,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     int *DColElems = new int[Dnc]; // Elems in column map of D 
     int *SColElems = new int[Snc]; // Elems in column map of C
     // Assemble column ids in two arrays (for D and C blocks)
-    findBlockElems(ncols, cols, gvals, Dnc, DColElems, Snc, SColElems, 
+    findBlockElems(A, ncols, cols, gvals, Dnc, DColElems, Snc, SColElems,
                     "D Cols ", "S Cols") ;
 
     // Create the local column map 
@@ -184,6 +200,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     if (Snr != 0) assert (Sdiag <= Snr-1);
 
     int dcol, ccol, rcol, scol;
+    int gcid;
     if (sym)
     {
 
@@ -206,11 +223,11 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
             gid = rows[i];
             if (gvals[gid] == 1)
             { // D or C row
-                int gcid;
                 for (int j = 0 ; j < NumEntries ; j++)
                 { // O(nnz) ! Careful what you do inside
                     gcid = A->GCID(Ai[j]);
-                    if (gvals[gcid] == 1)
+                    // Only cols corresponding to local rows belong to D.
+                    if (A->LRID(gcid) != -1 && gvals[gcid] == 1)
                     {
                         dcnt++;
                     }
@@ -226,12 +243,14 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
             }
             else
             { // R or S row
-                int gcid;
                 //cout << "proc/row " << myPID << "/" << gid;
                 //cout << " has Cols = " ;
                 for (int j = 0 ; j < NumEntries ; j++)
                 { // O(nnz) ! Careful what you do inside
                     gcid = A->GCID(Ai[j]); 
+                    //if (A->LRID(gcid) != -1 && gvals[gcid] == 1) // TBD : Need to change here
+                    // No need to check for local rows as above.
+                    // All cols with gvals[cols] == 1 belong to R.
                     if (gvals[gcid] == 1)
                     {
                         rcnt++;
@@ -298,7 +317,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     Cptr = new Epetra_CrsMatrix(Copy, DRowMap, CNumEntriesPerRow, true);
     //cout << " Created C matrix" << endl;
     //Epetra_CrsMatrix R(Copy, SRowMap, DColMap, RNumEntriesPerRow, true);
-    Rptr = new Epetra_CrsMatrix(Copy, SRowMap, DColMap, RNumEntriesPerRow, true);
+    Rptr = new Epetra_CrsMatrix(Copy, SRowMap, RNumEntriesPerRow, true);
     //cout << " Created all the matrices" << endl;
     //Epetra_CrsGraph Sg(Copy, SRowMap, SColMap, SNumEntriesPerRow, true);
     // Leave the column map out, Let Epetra do the work.
@@ -321,16 +340,20 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         int NumEntries;
         err = A->ExtractMyRowView(i, NumEntries, Ax, Ai);
 
-        lcnt = 0, rcnt = 0;
+        lcnt = 0; rcnt = 0;
         // Place the entry in the correct sub matrix, Works only for sym
         gid = rows[i];
         for (int j = 0 ; j < NumEntries ; j++)
         { // O(nnz) ! Careful what you do inside
             // Row permutation does not matter here 
-            if (gvals[A->GCID(Ai[j])] == 1)
+            gcid = A->GCID(Ai[j]);
+            assert(gcid != -1);
+            //Either in D or R 
+            if ((gvals[gid] != 1 && gvals[gcid] == 1)
+               || (gvals[gid] == 1 && A->LRID(gcid) != -1 && gvals[gcid] == 1))
             {
                 assert(lcnt < max(Dmaxnnz, Rmaxnnz));
-                LeftIndex[lcnt] = A->GCID(Ai[j]);
+                LeftIndex[lcnt] = gcid;
                 LeftValues[lcnt++] = Ax[j];
             }
             else
@@ -338,7 +361,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
                 if (rcnt >= max(Cmaxnnz, Smaxnnz)) 
                     cout << "rcnt =" << rcnt << "Smaxnnz =" << Smaxnnz << endl;
                 assert(rcnt < max(Cmaxnnz, Smaxnnz));
-                RightIndex[rcnt] = A->GCID(Ai[j]);
+                RightIndex[rcnt] = gcid;
                 RightValues[rcnt++] = Ax[j];
             }
         }
@@ -439,7 +462,6 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     //cout << msg << "S rows=" << S.NumGlobalRows() << " S cols=" <<
         //S.NumGlobalCols() << "#cols in column map="<<
         //S.ColMap().NumMyElements() << endl;
-
     //cout << msg << "C rows=" << Cptr->NumGlobalRows() << " C cols=" <<
         //Cptr->NumGlobalCols() << "#cols in column map="<<
         //Cptr->ColMap().NumMyElements() << endl;
@@ -451,6 +473,18 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         //Rptr->ColMap().NumMyElements() << endl;
     // ]
 
+
+    /*int temp_ncols = S.ColMap().NumMyElements();
+    int *temp_cols = S.ColMap().MyGlobalElements();
+
+    ostringstream temp_ssmsg1;
+    temp_ssmsg1 << "PID =" << myPID << " ";
+    temp_ssmsg1 << "Column in proc 0's S" ;
+    for (int junk = 0 ; myPID == 0 && junk < temp_ncols ; junk++)
+    {
+        temp_ssmsg1 << temp_cols[junk] << " ";
+    }
+    cout << temp_ssmsg1.str() << endl;*/
     // ======================= Numeric factorization =========================
     //Amesos_BaseSolver *Solver;
     Amesos Factory;

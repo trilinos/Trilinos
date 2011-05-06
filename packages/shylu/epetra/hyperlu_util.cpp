@@ -147,9 +147,9 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
     int *indices;
     int n = A->NumGlobalRows();
 
-    // Get row map
     int myPID = A->Comm().MyPID();
-    int numProcs = A->Comm().NumProc();
+
+    // Get row map
     Epetra_Map rMap = A->RowMap();
     Epetra_Map cMap = A->ColMap();
     int *rows = rMap.MyGlobalElements();
@@ -175,6 +175,8 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
     A->Comm().SumAll(vals, allGIDs, n);
 
     // At this point all procs know who owns what rows
+    for (int i = 0; i < n ; i++) // initialize to zero
+        vals[i] = 0;
 
     int gid, err, cgid;
     for (int i = 0; i < relems; i++)
@@ -244,7 +246,9 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
             if (movetoBlockDiagonal)
             {
                 //cout << "Moving to Diagonal";
-                gvals[gid] = 1;
+                vals[gid] = 1;
+                gvals[gid] = 1; // The smaller PIDs have to know about this
+                                // change. Send the change using gvals.
             }
         }
         else
@@ -254,12 +258,29 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
         }
         //cout << endl;
     }
+
+    // Reuse allGIDs to propagate the result of moving to diagonal
+    for (int i = 0; i < n ; i++) // initialize to zero
+        allGIDs[i] = 0;
+
+    A->Comm().SumAll(vals, allGIDs, n);
+    for (int i = 0; i < n ; i++)
+    {
+        if (allGIDs[i] == 1)
+        {
+            // Some interface columns will have gvals[1] after this
+            // as the separator is narrow now.
+            gvals[i] = 1; // GIDs as indices assumption
+        }
+    }
+
     delete[] vals;
     delete[] allGIDs;
 
 }
 
-void findBlockElems(int nrows, int *rows, int *gvals, int Lnr, int *LeftElems, 
+void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
+        int Lnr, int *LeftElems,
         int Rnr, int *RightElems, string s1, string s2)
 {
  
@@ -275,7 +296,10 @@ void findBlockElems(int nrows, int *rows, int *gvals, int Lnr, int *LeftElems,
     {
         gid = rows[i];
         assert (gvals[gid] >= 1);
-        if (gvals[gid] == 1)
+        // If the row is local & row/column is not shared then row/column
+        // belongs to D (this is not true for R, which can have more columns
+        // than D)
+        if (A->LRID(gid) != -1 && gvals[gid] == 1)
         {
             assert(lcnt < Lnr);
             LeftElems[lcnt++] = gid;
