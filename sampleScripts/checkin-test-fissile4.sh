@@ -6,6 +6,11 @@
 # NOTE: To use this, you must first prepend /opt/trilinos-toolset/bin
 # to your path to find eg and cmake!
 
+# NOTE: This script automatically picks up any CASL VRI related extra
+# repos and adds them to --extra-repos.  If you want to override that,
+# you can just pass in --extra-repos=??? to drop off extra repos or
+# select the set that you want.
+
 EXTRA_ARGS=$@
 
 # The default location for this directory tree is:
@@ -20,6 +25,8 @@ if [ "$TRILINOS_BASE_DIR" == "" ] ; then
 fi
 
 TRILINOS_TOOLSET_BASE=/opt/gcc-4.5.1/trilinos-toolset
+
+EXTRA_REPOS_FULL_LIST="LIMEExt PSSDriversExt"
 
 echo "
 -DTrilinos_EXTRA_LINK_FLAGS:STRING='-Wl,-rpath,$TRILINOS_TOOLSET_BASE/lib64'
@@ -59,11 +66,28 @@ echo "
 -DTeuchos_ENABLE_STACKTRACE:BOOL=ON
 " > INTEL_11064_SERIAL_DEBUG.config
 
+
+#
+# Load up the list of extra repos based on what is present:
+#
+
+EXTRA_REPOS=
+for extra_repo in $EXTRA_REPOS_FULL_LIST; do
+  #echo $extra_repo
+  EXTRA_REPO_PATH=$TRILINOS_BASE_DIR/Trilinos/$extra_repo
+  #echo $EXTRA_REPO_PATH
+  if [ -d $EXTRA_REPO_PATH ]; then
+    EXTRA_REPOS=$EXTRA_REPOS$extra_repo,
+  fi
+done
+#echo "EXTRA_REPOS=$EXTRA_REPOS"
+
 #
 # Invocation
 #
 
 $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
+--extra-repos=$EXTRA_REPOS \
 -j16 \
 --ctest-timeout=180 \
 $EXTRA_ARGS  
