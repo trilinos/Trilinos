@@ -45,7 +45,7 @@ namespace Teuchos {
 
 /** \brief An xml converter for VisualDepenencies
  */
-class VisualDependencyXMLConverter : public DependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT VisualDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 
@@ -124,7 +124,7 @@ private:
 
 /** \brief An xml converter for ValidatorDependencies.
  */
-class ValidatorDependencyXMLConverter : public DependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT ValidatorDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 
@@ -204,7 +204,7 @@ public:
   The "showIf" XML attribute is optional and if not present will be considered
   true.
  */
-class StringVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT StringVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
 
 public:
 
@@ -267,7 +267,7 @@ private:
  *  The "showIf" XML attribute is optional and if not present will be considered
  *  true.
  */
-class BoolVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT BoolVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
 
 public:
 
@@ -309,7 +309,7 @@ public:
  *  true.
  */
 template<class T>
-class NumberVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT NumberVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
 
 public:
 
@@ -393,7 +393,7 @@ NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
  *  The "showIf" XML attribute is optional and if not present will be considered
  *  true.
  */
-class ConditionVisualDependencyXMLConverter : 
+class TEUCHOS_LIB_DLL_EXPORT ConditionVisualDependencyXMLConverter : 
   public VisualDependencyXMLConverter
 {
 
@@ -440,7 +440,7 @@ public:
   \endcode
  * The "defaultValidatorId" XML attribute is optional.
  */
-class StringValidatorDependencyXMLConverter : 
+class TEUCHOS_LIB_DLL_EXPORT StringValidatorDependencyXMLConverter : 
   public ValidatorDependencyXMLConverter{
 
 public:
@@ -518,7 +518,7 @@ private:
  * You don't have to include both a "trueValidatorId" and "falseValidatorId" 
  * XML attribute, but you must include at least one of them.
  */
-class BoolValidatorDependencyXMLConverter : public ValidatorDependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT BoolValidatorDependencyXMLConverter : public ValidatorDependencyXMLConverter{
 
 public:
 
@@ -586,7 +586,7 @@ private:
  * The "defaultValidatorId" XML attribute is optional.
  */
 template<class T>
-class RangeValidatorDependencyXMLConverter : 
+class TEUCHOS_LIB_DLL_EXPORT RangeValidatorDependencyXMLConverter : 
   public ValidatorDependencyXMLConverter{
 
 public:
@@ -774,7 +774,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
  \endcode
  */
 template<class DependeeType, class DependentType>
-class NumberArrayLengthDependencyXMLConverter : public DependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT NumberArrayLengthDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 

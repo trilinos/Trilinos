@@ -48,7 +48,7 @@ namespace Teuchos {
 /** \brief An abstract base class for converting ParameterEntryValidators to
  * and from XML.
  */
-class ValidatorXMLConverter : public Describable {
+class TEUCHOS_LIB_DLL_EXPORT ValidatorXMLConverter : public Describable {
 
 public:
 

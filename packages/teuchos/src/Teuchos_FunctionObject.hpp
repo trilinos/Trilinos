@@ -43,7 +43,7 @@ namespace Teuchos{
 /**
  * \brief A function object represents an arbitrary function.
  */
-class FunctionObject: public Describable {
+class TEUCHOS_LIB_DLL_EXPORT FunctionObject: public Describable {
 
 public:
   

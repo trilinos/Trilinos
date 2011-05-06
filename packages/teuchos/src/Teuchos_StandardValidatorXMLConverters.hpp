@@ -73,7 +73,7 @@ namespace Teuchos {
  * XML attribute, all other "String" tags must do so as well.
  */
 template<class IntegralType>
-class StringToIntegralValidatorXMLConverter : 
+class TEUCHOS_LIB_DLL_EXPORT StringToIntegralValidatorXMLConverter : 
   public ValidatorXMLConverter
 {
 
@@ -244,7 +244,7 @@ void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
   />
   \endcode
  */
-class AnyNumberValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT AnyNumberValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -319,7 +319,7 @@ private:
  * The "min", "max", "step", and "precision" XML attributes are all optional.
  */
 template<class T>
-class EnhancedNumberValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -440,7 +440,7 @@ void EnhancedNumberValidatorXMLConverter<T>::convertValidator(
  *
  * The "fileMustExist" XML attribute is optional.
  */
-class FileNameValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT FileNameValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -496,7 +496,7 @@ private:
   </Validator>
  \endcode
  */
-class StringValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT StringValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -572,7 +572,7 @@ private:
  * \endcode
  */
 template<class ValidatorType, class EntryType>
-class ArrayValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT ArrayValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:

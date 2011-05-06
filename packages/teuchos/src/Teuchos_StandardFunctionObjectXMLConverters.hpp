@@ -43,7 +43,7 @@ namespace Teuchos {
 
 /** \brief An xml converter for SimpleFunctionObjects */
 template<class OperandType>
-class SimpleFunctionXMLConverter : public FunctionObjectXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT SimpleFunctionXMLConverter : public FunctionObjectXMLConverter{
 
 public:
 
@@ -130,7 +130,7 @@ void SimpleFunctionXMLConverter<OperandType>::convertFunctionObject(
  \endcode
  */
 template<class OperandType>
-class SubtractionFunctionXMLConverter :
+class TEUCHOS_LIB_DLL_EXPORT SubtractionFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
 {
 public:
@@ -162,7 +162,7 @@ SubtractionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
  \endcode
  */
 template<class OperandType>
-class AdditionFunctionXMLConverter :
+class TEUCHOS_LIB_DLL_EXPORT AdditionFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
 {
 public:
@@ -194,7 +194,7 @@ AdditionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
  \endcode
  */
 template<class OperandType>
-class MultiplicationFunctionXMLConverter :
+class TEUCHOS_LIB_DLL_EXPORT MultiplicationFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
 {
 public:
@@ -226,7 +226,7 @@ MultiplicationFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
  \endcode
  */
 template<class OperandType>
-class DivisionFunctionXMLConverter :
+class TEUCHOS_LIB_DLL_EXPORT DivisionFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
 {
 public:

@@ -43,7 +43,7 @@ namespace Teuchos {
 
 /** \brief An xml converter for BoolLogicConditions
  */
-class BoolLogicConditionConverter : public ConditionXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT BoolLogicConditionConverter : public ConditionXMLConverter{
 
 public:
 
@@ -89,7 +89,7 @@ public:
     </Condition>
  \endcode
  */
-class OrConditionConverter : public BoolLogicConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT OrConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
@@ -113,7 +113,7 @@ public:
     </Condition>
  \endcode
  */
-class AndConditionConverter : public BoolLogicConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT AndConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
@@ -138,7 +138,7 @@ public:
     </Condition>
  \endcode
  */
-class EqualsConditionConverter : public BoolLogicConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT EqualsConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
@@ -162,7 +162,7 @@ public:
     </Condition>
  \endcode
  */
-class NotConditionConverter : public ConditionXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT NotConditionConverter : public ConditionXMLConverter{
 
 public:
 
@@ -186,7 +186,7 @@ public:
 
 /** \brief An xml converter for ParameterConditions
  */
-class ParameterConditionConverter : public ConditionXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT ParameterConditionConverter : public ConditionXMLConverter{
 
 public:
 
@@ -259,7 +259,7 @@ private:
     </Condition>
  \endcode
  */
-class StringConditionConverter : public ParameterConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT StringConditionConverter : public ParameterConditionConverter{
 
 public:
 
@@ -307,7 +307,7 @@ private:
     <Condition type="BoolCondition" parameterId="Id of parameter"/>
    \endcode
  */
-class BoolConditionConverter : public ParameterConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT BoolConditionConverter : public ParameterConditionConverter{
 
 public:
 
@@ -337,7 +337,7 @@ public:
  \endcode
  */
 template<class T>
-class NumberConditionConverter : public ParameterConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT NumberConditionConverter : public ParameterConditionConverter{
 
 public:
 

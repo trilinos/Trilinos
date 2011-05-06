@@ -48,7 +48,7 @@ class Dependency;
 
 /** \brief Provides ability to lookup DependencyXMLConverterDB
  */
-class DependencyXMLConverterDB {
+class TEUCHOS_LIB_DLL_EXPORT DependencyXMLConverterDB {
 public:
 
   /** \name Modifier Functions */

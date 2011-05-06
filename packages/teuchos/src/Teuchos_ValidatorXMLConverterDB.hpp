@@ -43,7 +43,7 @@ class ParameterEntryValidator;
 
 /** \brief Provides ability to lookup ValidatorXMLConverterDB
  */
-class ValidatorXMLConverterDB {
+class TEUCHOS_LIB_DLL_EXPORT ValidatorXMLConverterDB {
 public:
 
   /** \name Modifier Functions */
