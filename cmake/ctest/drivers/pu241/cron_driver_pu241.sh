@@ -4,8 +4,9 @@ echo
 echo "Starting nightly Trilinos testing on pu241: `date`"
 echo
 
-setenv PATH "${PATH}:/opt/casldev/env"
+export PATH="${PATH}:/opt/casldev/env"
 eval `vera_dev_env.py load casl`
+# eval `vera_dev_env.py load vera` # sets cdash dropsite to casl-dev.ornl.gov
 eval `vera_dev_env.py load intel/12`
 
 BASEDIR=/home/casl-vri-admin/Dashboards
