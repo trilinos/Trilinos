@@ -18,16 +18,19 @@ INCLUDE(ParseVariableArguments)
 #   REQUIRED_HEADERS:  List of header files that are searched for the TPL
 #     using FIND_PATH(...).
 #
-#   MUST_FIND_ALL_HEADERS:  If TRUE, then all of the header files listed in
+#   MUST_FIND_ALL_HEADERS:  If set, then all of the header files listed in
 #     REQUIRED_HEADERS must be found in order for TPL_${TPL_NAME}_INCLUDE_DIRS
 #     to be defined.
 #
 #   REQUIRED_LIBS_NAMES: List of libraries that are searched for when
 #     looked for the TPLs libraries with FIND_LIBRARY(...).
 #
-#   MUST_FIND_ALL_LIBS:  If TRUE, then all of the library files listed in
+#   MUST_FIND_ALL_LIBS:  If set, then all of the library files listed in
 #     REQUIRED_LIBS_NAMES must be found or the TPL is considered not
 #     found!
+#
+#   NO_PRINT_ENABLE_SUCCESS_FAIL: If set, then the final success/fail
+#     will not be printed
 #
 # The input cmake cache variables that this funciton uses (if defined) are:
 #
@@ -67,7 +70,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
      #lists
      "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES"
      #options
-     "MUST_FIND_ALL_LIBS;MUST_FIND_ALL_HEADERS"
+     "MUST_FIND_ALL_LIBS;MUST_FIND_ALL_HEADERS;NO_PRINT_ENABLE_SUCCESS_FAIL"
      ${ARGN}
      )
 
@@ -393,9 +396,13 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   #PRINT_VAR(_${TPL_NAME}_ENABLE_SUCCESS)
   IF (TPL_TENTATIVE_ENABLE_${TPL_NAME})
     IF (_${TPL_NAME}_ENABLE_SUCCESS)
-      MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' passed!")
+      IF (NOT PARSE_NO_PRINT_ENABLE_SUCCESS_FAIL)
+        MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' passed!")
+      ENDIF()
     ELSE()
-      MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' failed!  Setting TPL_ENABLE_${TPL_NAME}=OFF")
+      IF (NOT PARSE_NO_PRINT_ENABLE_SUCCESS_FAIL)
+        MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' failed!  Setting TPL_ENABLE_${TPL_NAME}=OFF")
+      ENDIF()
       SET(TPL_ENABLE_${TPL_NAME} OFF CACHE STRING "autoset" FORCE)
     ENDIF()
   ENDIF()
