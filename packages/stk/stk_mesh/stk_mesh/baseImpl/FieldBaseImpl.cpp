@@ -30,23 +30,13 @@ namespace impl {
 
 namespace {
 
-struct FieldRestrictionLess {
-  bool operator()( const FieldRestriction & lhs ,
-                   const FieldRestriction & rhs ) const
-    { return lhs.key < rhs.key ; }
-
-  bool operator()( const FieldRestriction & lhs ,
-                   const EntityKey & rhs ) const
-    { return lhs.key < rhs ; }
-};
-
 FieldRestrictionVector::const_iterator
-  find( const FieldRestrictionVector & v , const EntityKey & key )
+  find( const FieldRestrictionVector & v , const FieldRestriction & restr )
 {
   FieldRestrictionVector::const_iterator
-    i = std::lower_bound( v.begin() , v.end() , key , FieldRestrictionLess() );
+    i = std::lower_bound( v.begin() , v.end() , restr );
 
-  if ( i != v.end() && i->key != key ) { i = v.end(); }
+  if ( i != v.end() && !(*i == restr) ) { i = v.end(); }
 
   return i ;
 }
@@ -96,42 +86,6 @@ FieldRestrictionVector & FieldBaseImpl::restrictions()
 
 //----------------------------------------------------------------------
 
-namespace {
-
-void print_restriction( std::ostream & os ,
-                        unsigned type ,
-                        const Part & part ,
-                        unsigned rank ,
-                        const FieldRestriction::size_type * stride )
-{
-  os << "{ entity_rank(" << type << ") part(" << part.name() << ") : " ;
-  os << stride[0] ;
-  for ( unsigned i = 1 ; i < rank ; ++i ) {
-    if ( ! stride[i] ) {
-      os << " , 0 " ;
-    }
-    else if ( stride[i] % stride[i-1] ) {
-      os << " , " << stride[i] << " / " << stride[i-1] ;
-    }
-    else {
-      os << " , " << stride[i] / stride[i-1] ;
-    }
-  }
-  os << " }" ;
-}
-
-std::string print_restriction( unsigned type ,
-                               const Part & part ,
-                               unsigned rank ,
-                               const FieldRestriction::size_type * stride )
-{
-  std::ostringstream oss;
-  print_restriction(oss, type, part, rank, stride);
-  return oss.str();
-}
-
-}
-
 // Setting the dimension for one field sets the dimension
 // for the corresponding fields of the FieldState array.
 // If subset exists then replace it.
@@ -145,31 +99,29 @@ void FieldBaseImpl::insert_restriction(
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
 
-  FieldRestriction tmp ;
-
-  tmp.key = EntityKey( arg_entity_rank , arg_part.mesh_meta_data_ordinal() );
+  FieldRestriction tmp( arg_entity_rank , arg_part.mesh_meta_data_ordinal() );
 
   {
     unsigned i = 0 ;
     if ( m_rank ) {
-      for ( i = 0 ; i < m_rank ; ++i ) { tmp.stride[i] = arg_stride[i] ; }
+      for ( i = 0 ; i < m_rank ; ++i ) { tmp.stride_nonconst(i) = arg_stride[i] ; }
     }
     else { // Scalar field is 0 == m_rank
       i = 1 ;
-      tmp.stride[0] = 1 ;
+      tmp.stride_nonconst(0) = 1 ;
     }
     // Remaining dimensions are 1, no change to stride
     for ( ; i < MaximumFieldDimension ; ++i ) {
-      tmp.stride[i] = tmp.stride[i-1] ;
+      tmp.stride_nonconst(i) = tmp.stride(i-1) ;
     }
 
     for ( i = 1 ; i < m_rank ; ++i ) {
-      const bool bad_stride = 0 == tmp.stride[i] ||
-                              0 != tmp.stride[i] % tmp.stride[i-1];
+      const bool bad_stride = 0 == tmp.stride(i) ||
+                              0 != tmp.stride(i) % tmp.stride(i-1);
       ThrowErrorMsgIf( bad_stride,
           arg_method << " FAILED for " << *this <<
           " WITH BAD STRIDE " <<
-          print_restriction( arg_entity_rank, arg_part, m_rank, tmp.stride));;
+          print_restriction( tmp, arg_entity_rank, arg_part, m_rank ));;
     }
   }
 
@@ -178,17 +130,17 @@ void FieldBaseImpl::insert_restriction(
 
     FieldRestrictionVector::iterator i = rMap.begin(), j = rMap.end();
 
-    i = std::lower_bound(i,j,tmp,FieldRestrictionLess());
+    i = std::lower_bound(i,j,tmp);
 
-    if ( i == j || i->key != tmp.key ) {
+    if ( i == j || !(*i == tmp) ) {
       rMap.insert( i , tmp );
     }
     else {
-      ThrowErrorMsgIf( Compare<MaximumFieldDimension>::not_equal(i->stride,tmp.stride),
+      ThrowErrorMsgIf( i->not_equal_stride(tmp),
           arg_method << " FAILED for " << *this << " " <<
-          print_restriction( arg_entity_rank, arg_part, m_rank, i->stride ) <<
+          print_restriction( *i, arg_entity_rank, arg_part, m_rank ) <<
           " WITH INCOMPATIBLE REDECLARATION " <<
-          print_restriction( arg_entity_rank, arg_part, m_rank, tmp.stride ));
+          print_restriction( tmp, arg_entity_rank, arg_part, m_rank ));
     }
   }
 }
@@ -199,38 +151,38 @@ void FieldBaseImpl::verify_and_clean_restrictions(
 {
   TraceIfWatching("stk::mesh::impl::FieldBaseImpl::verify_and_clean_restrictions", LOG_FIELD, m_ordinal);
 
-  const EntityKey invalid_key ;
+  const FieldRestriction invalid_restr ;
   FieldRestrictionVector & rMap = restrictions();
   FieldRestrictionVector::iterator i , j ;
 
   for ( i = rMap.begin() ; i != rMap.end() ; ++i ) {
-    if ( i->key != invalid_key ) {
-      const unsigned typeI = entity_rank( i->key );
-      const Part   & partI = * arg_all_parts[ entity_id( i->key ) ];
-      bool  found_superset = false ;
+    if ( *i != invalid_restr ) {
+      const EntityRank rankI = i->rank();
+      const Part     & partI = * arg_all_parts[ i->ordinal() ];
+      bool    found_superset = false ;
 
       for ( j = i + 1 ; j != rMap.end() && ! found_superset ; ++j ) {
-        if ( j->key != invalid_key ) {
-          const unsigned typeJ = entity_rank( j->key );
-          const Part   & partJ = * arg_all_parts[ entity_id( j->key ) ];
+        if ( *j != invalid_restr ) {
+          const EntityRank rankJ = j->rank();
+          const Part     & partJ = * arg_all_parts[ j->ordinal() ];
 
-          if ( typeI == typeJ ) {
+          if ( rankI == rankJ ) {
             const bool found_subset = contain( partI.subsets() , partJ );
             found_superset = ! found_subset &&
                              contain( partI.supersets() , partJ );
 
             if ( found_subset || found_superset ) {
-              ThrowErrorMsgIf( Compare< MaximumFieldDimension >::not_equal( i->stride , j->stride ),
+              ThrowErrorMsgIf( i->not_equal_stride(*j),
                   arg_method << "[" << *this << "] FAILED: " <<
-                  print_restriction( typeI, partI, m_rank, i->stride ) <<
+                  print_restriction( *i, rankI, partI, m_rank ) <<
                   ( found_subset ? " INCOMPATIBLE SUBSET " : " INCOMPATIBLE SUPERSET ") <<
-                  print_restriction( typeJ, partJ, m_rank, j->stride ));
+                  print_restriction( *j, rankJ, partJ, m_rank ));
             }
 
-            if ( found_subset ) { j->key = invalid_key; }
+            if ( found_subset ) { *j = invalid_restr; }
           }
         }
-        if ( found_superset ) { i->key = invalid_key; }
+        if ( found_superset ) { *i = invalid_restr; }
       }
     }
   }
@@ -240,8 +192,8 @@ void FieldBaseImpl::verify_and_clean_restrictions(
   //       incremented no more than j and j is checked. Keeping check in
   //       silences klocwork and guards against future change...
   for ( j = i = rMap.begin() ; j != rMap.end() && i != rMap.end(); ++j ) {
-    if ( j->key != invalid_key ) {
-      if ( i->key == invalid_key ) {
+    if ( *j != invalid_restr ) {
+      if ( *i == invalid_restr ) {
         *i = *j ;
       }
       ++i ;
@@ -269,11 +221,11 @@ FieldBaseImpl::restriction( unsigned entity_rank , const Part & part ) const
         PartVector::const_iterator ip  = part.supersets().begin() ;
 
   // Start with this part:
-  EntityKey key = EntityKey( entity_rank , part.mesh_meta_data_ordinal() );
+  FieldRestriction restr( entity_rank , part.mesh_meta_data_ordinal() );
 
-  while ( ie == ( i = find( rMap , key ) ) && ipe != ip ) {
+  while ( ie == ( i = find( rMap , restr ) ) && ipe != ip ) {
     // Not found try another superset part:
-    key = EntityKey( entity_rank , (*ip)->mesh_meta_data_ordinal() );
+    restr = FieldRestriction( entity_rank , (*ip)->mesh_meta_data_ordinal() );
     ++ip ;
   }
 
@@ -289,8 +241,8 @@ unsigned FieldBaseImpl::max_size( unsigned entity_rank ) const
         FieldRestrictionVector::const_iterator i = rMap.begin();
 
   for ( ; i != ie ; ++i ) {
-    if ( i->type() == entity_rank ) {
-      const unsigned len = m_rank ? i->stride[ m_rank - 1 ] : 1 ;
+    if ( i->rank() == entity_rank ) {
+      const unsigned len = m_rank ? i->stride( m_rank - 1 ) : 1 ;
       if ( max < len ) { max = len ; }
     }
   }
@@ -339,9 +291,7 @@ std::ostream & print( std::ostream & s ,
   for ( FieldBase::RestrictionVector::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
-    print_restriction( s, entity_rank( i->key ),
-                       * all_parts[ entity_id( i->key ) ],
-	               field.rank(), i->stride);
+    i->print( s, i->rank(), * all_parts[ i->ordinal() ], field.rank() );
     s << std::endl;
   }
   s << std::endl << b << "}" ;

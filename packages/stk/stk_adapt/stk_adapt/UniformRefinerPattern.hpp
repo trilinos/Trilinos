@@ -606,8 +606,8 @@ namespace stk {
           for (unsigned ifr = 0; ifr < nfr; ifr++)
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-              fr_type = fr.type();
-              fieldStride = fr.stride[0] ;
+              fr_type = fr.rank();
+              fieldStride = fr.dimension() ;
               stk::mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
               if (EXTRA_PRINT_URP_IF && nfr != 1 ) std::cout << "tmp P[" << 0 << "] info>    number of field restrictions= " << nfr << " fr_type= " << fr_type
                                             << " fieldStride = " << fieldStride << " frpart= " << frpart.name()
@@ -616,8 +616,8 @@ namespace stk {
           {
             const stk::mesh::FieldBase::Restriction & r =
               field->restriction(fr_type, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
-            fieldStride = r.stride[0];
-            if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.stride[0] << " fieldStride= " << fieldStride
+            fieldStride = r.dimension();
+            if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.dimension() << " fieldStride= " << fieldStride
                                               << " fr_type= " << fr_type << std::endl;
           }
         }

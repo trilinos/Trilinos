@@ -442,7 +442,7 @@ namespace stk {
       if (!dataStrideArg)
         {
           const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
-          dataStride = r.stride[0] ;
+          dataStride = r.dimension() ;
         }
       //std::cout << "bucket dataStride= " << dataStride << std::endl;
 
@@ -483,7 +483,7 @@ namespace stk {
       if (!dataStrideArg)
         {
           const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
-          dataStride = r.stride[0] ;
+          dataStride = r.dimension() ;
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;
       const mesh::PairIterRelation element_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );

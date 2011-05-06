@@ -825,8 +825,8 @@ namespace stk {
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
               //mesh::Part& frpart = metaData.get_part(fr.ordinal());
-              field_rank = fr.type();
-              spatialDim = fr.stride[0] ;
+              field_rank = fr.rank();
+              spatialDim = fr.dimension() ;
             }
         }
 
@@ -982,8 +982,8 @@ namespace stk {
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
               //mesh::Part& frpart = metaData.get_part(fr.ordinal());
-              field_rank = fr.type();
-              spatialDim = fr.stride[0] ;
+              field_rank = fr.rank();
+              spatialDim = fr.dimension() ;
             }
         }
         if (field_rank != stk::mesh::fem::FEMMetaData::NODE_RANK)

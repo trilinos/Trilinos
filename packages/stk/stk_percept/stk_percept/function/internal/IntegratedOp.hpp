@@ -46,7 +46,7 @@ namespace stk
         if (field)
           {
             const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
-            unsigned stride = r.stride[0] ;
+            unsigned stride = r.dimension() ;
             m_nDOFs = stride;
           }
         else
