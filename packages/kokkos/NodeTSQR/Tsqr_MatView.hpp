@@ -53,8 +53,16 @@ namespace TSQR {
     const typename MatrixViewType1::ordinal_type A_nrows = A.nrows();
     const typename MatrixViewType1::ordinal_type A_ncols = A.ncols();
     if (A_nrows != B.nrows() || A_ncols != B.ncols())
-      throw std::invalid_argument("Dimensions of A and B are not compatible");
-
+      {
+	using std::endl;
+	std::ostringstream os;
+	os << "matrixCopy: dimensions of A (output matrix) "
+	  "and B (input matrix) are not compatible." 
+	   << endl
+	   << "A is " << A.nrows() << " x " << A.ncols() 
+	   << ", and B is " << B.nrows() << " x " << B.ncols() << ".";
+	throw std::invalid_argument(os.str());
+      }
     for (typename MatrixViewType1::ordinal_type j = 0; j < A_ncols; ++j)
       {
 	typename MatrixViewType1::scalar_type* const A_j = &A(0,j);

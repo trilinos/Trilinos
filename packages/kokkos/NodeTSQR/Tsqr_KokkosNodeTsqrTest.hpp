@@ -128,6 +128,13 @@ namespace TSQR {
 	  Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
 	  R.fill (std::numeric_limits<Scalar>::quiet_NaN());
 	}
+      else
+	{
+	  A.fill (STS::zero());
+	  A_copy.fill (STS::zero());
+	  Q.fill (STS::zero());
+	  R.fill (STS::zero());
+	}
       const Ordinal lda = numRows;
       const Ordinal ldq = numRows;
       const Ordinal ldr = numCols;
@@ -136,7 +143,17 @@ namespace TSQR {
       nodeTestProblem (gen, numRows, numCols, A.get(), A.lda(), true);
 
       if (debug)
-	cerr << "-- Generated test problem" << endl;
+	{
+	  cerr << "-- Generated test problem" << endl;
+	  // Don't print the matrix if it's too big.
+	  if (A.nrows() <= 30)
+	    {
+	      cerr << "A = " << endl;
+	      print_local_matrix (cerr, A.nrows(), A.ncols(), 
+				  A.get(), A.lda());
+	      cerr << endl << endl;
+	    }
+	}
 
       // Copy A into A_copy, since TSQR overwrites the input.  If
       // specified, rearrange the data in A_copy so that the data in
@@ -145,20 +162,40 @@ namespace TSQR {
 	{
 	  A_copy.copy (A);
 	  if (debug)
-	    cerr << "-- Copied test problem from A into A_copy" << endl;
+	    {
+	      cerr << "-- Copied test problem from A into A_copy" << endl;
+	      // Don't print the matrix if it's too big.
+	      if (A_copy.nrows() <= 30)
+		{
+		  cerr << "A_copy = " << endl;
+		  print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(), 
+				      A_copy.get(), A_copy.lda());
+		  cerr << endl << endl;
+		}
+	    }
 	}
       else
 	{
 	  actor.cache_block (numRows, numCols, A_copy.get(), A.get(), A.lda());
 	  if (debug)
-	    cerr << "-- Reorganized test matrix to have contiguous "
-	      "cache blocks" << endl;
+	    {
+	      cerr << "-- Reorganized test matrix to have contiguous "
+		"cache blocks" << endl;
+	      // Don't print the matrix if it's too big.
+	      if (A_copy.nrows() <= 30)
+		{
+		  cerr << "A_copy = " << endl;
+		  print_local_matrix (cerr, A_copy.nrows(), A_copy.ncols(), 
+				      A_copy.get(), A_copy.lda());
+		  cerr << endl << endl;
+		}
+	    }
 
 	  // Verify cache blocking, when in debug mode.
 	  if (debug)
 	    {
 	      matrix_type A2 (numRows, numCols);
-	      if (std::numeric_limits< Scalar >::has_quiet_NaN)
+	      if (std::numeric_limits<Scalar>::has_quiet_NaN)
 		A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
 
 	      actor.un_cache_block (numRows, numCols, A2.get(), A2.lda(), A_copy.get());
@@ -168,20 +205,46 @@ namespace TSQR {
 		    cerr << "-- Cache blocking test succeeded!" << endl;
 		}
 	      else
-		throw std::logic_error ("Cache blocking failed");
+		{
+		  if (debug)
+		    {
+		      cerr << "*** Cache blocking test failed! A != A2 ***" 
+			   << endl << endl;
+		      // Don't print the matrices if they are too big.
+		      if (A.nrows() <= 30 && A2.nrows() <= 30) 
+			{
+			  cerr << "A = " << endl;
+			  print_local_matrix (cerr, A.nrows(), A.ncols(), 
+					      A.get(), A.lda());
+			  cerr << endl << "A2 = " << endl;
+			  print_local_matrix (cerr, A2.nrows(), A2.ncols(), 
+					      A2.get(), A2.lda());
+			  cerr << endl;
+			}
+		    }
+		  throw std::logic_error ("Cache blocking failed");
+		}
 	    }
 	}
 
-      // Fill R with zeros, since the factorization may not overwrite
-      // the strict lower triangle of R.
+      // Fill R with zeros, since the factorization may not
+      // necessarily overwrite the strict lower triangle of R.
+      if (debug)
+	cerr << "-- Filling R with zeros" << endl;
       R.fill (STS::zero());
+
+      if (debug)
+	cerr << "-- Calling factor()" << endl;
 
       // Factor the matrix and compute the explicit Q factor
       factor_output_type factor_output = 
-	actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(), R.get(), 
-		      R.lda(), contiguousCacheBlocks);
+	actor.factor (numRows, numCols, A_copy.get(), A_copy.lda(), 
+		      R.get(), R.lda(), contiguousCacheBlocks);
       if (debug)
-	cerr << "-- Finished factor()" << endl;
+	{
+	  cerr << "-- Finished factor()" << endl;
+	  cerr << "-- Calling explicit_Q()" << endl;
+	}
       actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(), 
 			factor_output, numCols, Q.get(), Q.lda(), 
 			contiguousCacheBlocks);
