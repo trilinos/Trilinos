@@ -32,11 +32,14 @@ echo "
 -DTrilinos_EXTRA_LINK_FLAGS:STRING='-Wl,-rpath,$TRILINOS_TOOLSET_BASE/lib64'
 -DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3
 -DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3
-" > COMMON.config
-
-echo "
 -DMPI_BASE_DIR:PATH=$TRILINOS_TOOLSET_BASE
 " > MPI_DEBUG.config
+
+echo "
+-DTrilinos_EXTRA_LINK_FLAGS:STRING='-Wl,-rpath,$TRILINOS_TOOLSET_BASE/lib64'
+-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3
+-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3
+" > SERIAL_RELEASE.config
 
 echo "
 -DCMAKE_CXX_COMPILER:PATH=$TRILINOS_TOOLSET_BASE/bin/g++
@@ -51,6 +54,7 @@ echo "
 
 echo "
 -DCMAKE_BUILD_TYPE:STRING=DEBUG
+-DCMAKE_SKIP_BUILD_RPATH:BOOL=ON
 -DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
 -DBUILD_SHARED_LIBS:BOOL=ON
 -DTPL_ENABLE_Boost:BOOL=ON
@@ -59,8 +63,10 @@ echo "
 -DCMAKE_C_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/icc
 -DCMAKE_CXX_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/icpc
 -DCMAKE_Fortran_COMPILER:FILEPATH=/opt/intel/Compiler/11.1/064/bin/intel64/ifort
--DTPL_BLAS_LIBRARIES:STRING='-L${MKLROOT}/lib/em64t -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_core -lmkl_sequential'
--DTPL_LAPACK_LIBRARIES:STRING='-L${MKLROOT}/lib/em64t -lmkl_lapack95_lp64'
+-DBLAS_LIBRARY_NAMES:STRING='mkl_intel_lp64;mkl_blas95_lp64;mkl_core;mkl_sequential'
+-DBLAS_LIBRARY_DIRS:STRING='$MKLROOT/lib/em64t'
+-DLAPACK_LIBRARY_NAMES:STRING='mkl_lapack95_lp64'
+-DLAPACK_LIBRARY_DIRS:STRING='$MKLROOT/lib/em64t'
 -DTrilinos_ENABLE_TESTS:BOOL=ON
 -DDART_TESTING_TIMEOUT:STRING=180.0
 -DTeuchos_ENABLE_STACKTRACE:BOOL=ON
