@@ -3,7 +3,7 @@
 #
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.icpc.cmake")
-INCLUDE(SubmitToTrilinos)
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToTrilinos.cmake")
 
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
