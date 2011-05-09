@@ -4,6 +4,7 @@
 #include "Thyra_ModelEvaluator.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
+#include "Panzer_config.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
@@ -33,6 +34,10 @@
 #include "Piro_ConfigDefs.hpp"
 #include "Piro_NOXSolver.hpp"
 #include "Piro_RythmosSolver.hpp"
+
+#ifdef HAVE_TEKO
+#include "Teko_StratimikosFactory.hpp"
+#endif
 
 namespace panzer_stk {
   
@@ -295,6 +300,9 @@ namespace panzer_stk {
     }
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    #ifdef HAVE_TEKO
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
+    #endif
     linearSolverBuilder.setParameterList(strat_params);
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 

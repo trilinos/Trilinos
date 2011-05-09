@@ -27,6 +27,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
   "Build with IOSS code enabled."
   ON )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Teko
+  HAVE_TEKO
+  "Build with IOSS code enabled."
+  ON )
+
 #ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
 #  ALBANY_IOSS
 #  "Build with Albany's IOSS code enabled."
