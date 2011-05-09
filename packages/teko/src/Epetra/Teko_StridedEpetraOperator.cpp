@@ -71,7 +71,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 
-StridedEpetraOperator::StridedEpetraOperator(int numVars,const Teuchos::RCP<Epetra_Operator> & content,
+StridedEpetraOperator::StridedEpetraOperator(int numVars,const Teuchos::RCP<const Epetra_Operator> & content,
                                              const std::string & label) 
       : Teko::Epetra::EpetraOperatorWrapper(), label_(label)
 {
@@ -83,14 +83,14 @@ StridedEpetraOperator::StridedEpetraOperator(int numVars,const Teuchos::RCP<Epet
    SetContent(vars,content);
 }
 
-StridedEpetraOperator::StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content,
+StridedEpetraOperator::StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<const Epetra_Operator> & content,
                                              const std::string & label) 
       : Teko::Epetra::EpetraOperatorWrapper(), label_(label)
 {
    SetContent(vars,content);
 }
 
-void StridedEpetraOperator::SetContent(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content)
+void StridedEpetraOperator::SetContent(const std::vector<int> & vars,const Teuchos::RCP<const Epetra_Operator> & content)
 { 
    fullContent_ = content;
    stridedMapping_ = rcp(new StridedMappingStrategy(vars,Teuchos::rcpFromRef(fullContent_->OperatorDomainMap()),

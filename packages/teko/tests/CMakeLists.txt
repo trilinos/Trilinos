@@ -147,3 +147,12 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  StratimikosFactory 
+  SOURCES
+    unit_tests/tStratimikosFactory.cpp
+    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )

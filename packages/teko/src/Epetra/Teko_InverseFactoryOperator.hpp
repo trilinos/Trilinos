@@ -47,6 +47,8 @@
 #ifndef __Teko_InverseFactoryOperator_hpp__
 #define __Teko_InverseFactoryOperator_hpp__
 
+#include "Teuchos_ConstNonconstObjectContainer.hpp"
+
 #include "Teko_InverseFactory.hpp"
 #include "Teko_EpetraInverseOpWrapper.hpp"
 
@@ -71,7 +73,7 @@ public:
      * Constructor that takes the InverseFactory that will
      * build the operator.
      */
-   InverseFactoryOperator(const Teuchos::RCP<InverseFactory> & bfp); 
+   InverseFactoryOperator(const Teuchos::RCP<const InverseFactory> & bfp); 
 
    /** \brief Build the underlying data structure for the inverse operator.
      *        
@@ -101,6 +103,20 @@ public:
      */
    virtual void buildInverseOperator(const Teuchos::RCP<const Epetra_Operator> & A,bool clear=true);
 
+   /** \brief Build this inverse operator from an Epetra_Operator 
+     * passed in to this object.
+     *
+     * Build this inverse opeerator from an Epetra_Operator 
+     * passed in to this object. If this Epetra_Operator
+     * is an EpetraOperatorWrapper object then the block Thyra components
+     * are extracted.
+     *
+     * \param[in] A The Epetra source operator.
+     * \param[in] clear If true, than any previous state saved by the operator 
+     *                  is discarded.
+     */
+   virtual void buildInverseOperator(const Teuchos::RCP<Epetra_Operator> & A,bool clear=true);
+
    /** \brief Rebuild this inverse from an Epetra_Operator passed
      * in this to object. 
      *
@@ -115,6 +131,30 @@ public:
      */
    virtual void rebuildInverseOperator(const Teuchos::RCP<const Epetra_Operator> & A);
 
+   /** \brief Rebuild this inverse from an Epetra_Operator passed
+     * in this to object. 
+     *
+     * Rebuild this inverse from an Epetra_Operator passed
+     * in this to object.  If <code>buildInverseOperator</code> has not been called
+     * the inverse operator will be built instead. Otherwise efforts are taken
+     * to only rebuild what is neccessary. Also, that this Epetra_Operator
+     * may be an EpetraOperatorWrapper object, so the block Thyra components
+     * can be extracted.
+     *
+     * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+     */
+   virtual void rebuildInverseOperator(const Teuchos::RCP<Epetra_Operator> & A);
+
+   /** Extract the forward op used by <code>buildInverseOperator</code>
+     * or <code>rebuildInverseOperator</code>.
+     */
+   Teuchos::RCP<const Epetra_Operator> getForwardOp() const { return fwdOp_.getConstObj(); }
+
+   /** Extract the forward op used by <code>buildInverseOperator</code>
+     * or <code>rebuildInverseOperator</code>.
+     */
+   Teuchos::RCP<Epetra_Operator> getNonconstForwardOp() const { return fwdOp_.getNonconstObj(); }
+
 protected:
    Teuchos::RCP<const Thyra::LinearOpBase<double> > extractLinearOp(const Teuchos::RCP<const Epetra_Operator> & A) const;
    Teuchos::RCP<const MappingStrategy> extractMappingStrategy(const Teuchos::RCP<const Epetra_Operator> & A) const;
@@ -122,9 +162,12 @@ protected:
    InverseFactoryOperator(); 
    InverseFactoryOperator(const InverseFactoryOperator &); 
 
-   Teuchos::RCP<Teko::InverseFactory> inverseFactory_;
+   Teuchos::RCP<const Teko::InverseFactory> inverseFactory_;
    Teko::ModifiableLinearOp invOperator_;
    bool firstBuildComplete_;
+
+   Teuchos::ConstNonconstObjectContainer<Epetra_Operator> fwdOp_;
+   bool setConstFwdOp_;
 };
 
 } // end namespace Epetra

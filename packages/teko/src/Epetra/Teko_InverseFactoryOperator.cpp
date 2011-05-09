@@ -66,8 +66,8 @@ namespace Epetra {
   * Constructor that takes the InverseFactory that will
   * build the operator.
   */
-InverseFactoryOperator::InverseFactoryOperator(const Teuchos::RCP<InverseFactory> & ifp)
-   : inverseFactory_(ifp), firstBuildComplete_(false)
+InverseFactoryOperator::InverseFactoryOperator(const Teuchos::RCP<const InverseFactory> & ifp)
+   : inverseFactory_(ifp), firstBuildComplete_(false), setConstFwdOp_(true)
 {
 }
 
@@ -121,10 +121,27 @@ void InverseFactoryOperator::buildInverseOperator(const Teuchos::RCP<const Epetr
 
    firstBuildComplete_ = true;
 
+   if(setConstFwdOp_)
+      fwdOp_ = A;
+
+   setConstFwdOp_ = true;
+
    TEUCHOS_ASSERT(invOperator_!=Teuchos::null);
+   TEUCHOS_ASSERT(getForwardOp()!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
    TEUCHOS_ASSERT(getMapStrategy()!=Teuchos::null);
    TEUCHOS_ASSERT(firstBuildComplete_==true);
+}
+
+void InverseFactoryOperator::buildInverseOperator(const Teuchos::RCP<Epetra_Operator> & A,bool clear)
+{
+   setConstFwdOp_ = false;
+
+   fwdOp_.initialize(A);
+
+   buildInverseOperator(A.getConst());
+
+   TEUCHOS_ASSERT(setConstFwdOp_==true);
 }
 
 /** \brief Rebuild this inverse from an Epetra_Operator passed
@@ -152,11 +169,29 @@ void InverseFactoryOperator::rebuildInverseOperator(const Teuchos::RCP<const Epe
    RCP<const Thyra::LinearOpBase<double> > thyraA = extractLinearOp(A);
    Teko::rebuildInverse(*inverseFactory_,thyraA,invOperator_); 
 
+   if(setConstFwdOp_)
+      fwdOp_.initialize(A);
+
    SetOperator(invOperator_,false);
 
+   setConstFwdOp_ = true;
+
+   TEUCHOS_ASSERT(getForwardOp()!=Teuchos::null);
    TEUCHOS_ASSERT(invOperator_!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
    TEUCHOS_ASSERT(firstBuildComplete_==true);
+}
+
+void InverseFactoryOperator::rebuildInverseOperator(const Teuchos::RCP<Epetra_Operator> & A)
+{
+   setConstFwdOp_ = false;
+
+   fwdOp_.initialize(A);
+ 
+   // build from constant epetra operator
+   rebuildInverseOperator(A.getConst());
+
+   TEUCHOS_ASSERT(setConstFwdOp_==true);
 }
 
 Teuchos::RCP<const Thyra::LinearOpBase<double> > InverseFactoryOperator::extractLinearOp(const Teuchos::RCP<const Epetra_Operator> & A) const
