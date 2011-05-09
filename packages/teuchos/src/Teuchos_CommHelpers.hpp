@@ -1057,14 +1057,14 @@ void Teuchos::reduceAllAndScatter(
 #ifdef TEUCHOS_DEBUG
   Ordinal sumRecvCounts = 0;
   for( Ordinal i = 0; i < size; ++i )
-    sumRecvCounts += recvCounts[static_cast<std::ptrdiff_t>(i)];
+    sumRecvCounts += recvCounts[static_cast<ptrdiff_t>(i)];
   TEST_FOR_EXCEPT(!(sumRecvCounts==sendCount));
 #endif
 
   ConstValueTypeSerializationBuffer<Ordinal,Packet>
     charSendBuffer(sendCount,sendBuffer);
   ValueTypeSerializationBuffer<Ordinal,Packet>
-    charMyGlobalReducts(recvCounts[static_cast<std::ptrdiff_t>(rank)], myGlobalReducts);
+    charMyGlobalReducts(recvCounts[static_cast<ptrdiff_t>(rank)], myGlobalReducts);
   CharToValueTypeReductionOp<Ordinal,Packet>
     charReductOp(rcp(&reductOp,false));
 
@@ -1074,7 +1074,7 @@ void Teuchos::reduceAllAndScatter(
   WorkspaceStore* wss = get_default_workspace_store().get();
   Workspace<Ordinal> charRecvCounts(wss, size);
   for (Ordinal k = 0; k < size; ++k) {
-    charRecvCounts[k] = as<Ordinal>(recvCounts[static_cast<std::ptrdiff_t>(k)] * packetSize);
+    charRecvCounts[k] = as<Ordinal>(recvCounts[static_cast<ptrdiff_t>(k)] * packetSize);
   }
  
   comm.reduceAllAndScatter(
