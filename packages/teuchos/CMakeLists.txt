@@ -66,7 +66,7 @@ ENDIF()
 INCLUDE(CheckBlasFloat)
 CHECK_BLAS_FLOAT(HAVE_TEUCHOS_BLASFLOAT)
 
-SET( ${PACKAGE_NAME}_ORDINAL_TYPE ptrdiff_t
+SET( ${PACKAGE_NAME}_ORDINAL_TYPE std::ptrdiff_t
   CACHE STRING
   "Select the data type for Teuchos_Ordinal (Teuchos::Ordinal)." )
 
