@@ -7,8 +7,8 @@
 Isorropia is a package for combinatorial scientific computing, with focus on partitioning (load balancing), but also supports coloring and ordering. Its main purpose is to assist with redistributing objects such as matrices and matrix-graphs in a parallel execution setting, to allow for more efficient computations. Isorropia produces good maps for Epetra matrices/graphs. Isorropia should be called after the matrix/graph is filled, so the sparsity pattern is known.
 <br>
 
-      Isorropia is primarily an interface to the Zoltan toolkit. Zoltan became a Trilinos package in 9.0 and is now a required dependency.
-If you wish to use third-party libraries (such as ParMetis or PT-Scotch) with Isorropia (via Zoltan), see the configure options for Zoltan.
+      Isorropia is primarily a matrix-based interface to the Zoltan toolkit.
+If you wish to use third-party libraries (such as ParMetis or PT-Scotch) with Isorropia, please see the configure options for Zoltan.
 <br>
 
 \section isorropia_overview Overview of Isorropia.
@@ -44,13 +44,14 @@ you may set a Zoltan parameter. Isorropia will pass any parameter in the Zoltan 
 \section currentDev Current Developers
 <ul>
      <li><a href="http://www.sandia.gov/~egboman/">Erik Boman</a>, Sandia National Laboratories (egboman@sandia.gov)</li>
-     <li>Lee Ann Riesen, Sandia National Laboratories</li>
-     <li><a href="http://www.sandia.gov/~mmwolf/">Michael Wolf</a>, Sandia National Laboratories (mmwolf@sandia.gov)</li>
+     <li>Lee Ann Riesen, Sandia National Laboratories (lriesen@sandia.gov)</li>
+     <li><a href="http://www.sandia.gov/~srajama/">Siva Rajamanickam</a>, Sandia National Laboratories (srajama@sandia.gov)</li>
 </ul>
 
 \section pastDev Past Developers
 <ul>
      <li>Cedric Chevalier</li>
-     <li>Alan Williams, Sandia National Laboratories</li>
+     <li>Alan Williams</li>
+     <li>Michael Wolf</li>
 </ul>
 */
