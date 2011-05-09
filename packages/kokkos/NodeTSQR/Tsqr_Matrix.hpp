@@ -153,6 +153,7 @@ namespace TSQR {
     typedef Ordinal ordinal_type;
     typedef Scalar* pointer_type;
 
+    //! Constructor with dimensions.
     Matrix (const Ordinal num_rows, 
 	    const Ordinal num_cols) :
       nrows_ (num_rows),
@@ -160,6 +161,7 @@ namespace TSQR {
       A_ (verified_alloc_size (num_rows, num_cols))
     {}
 
+    //! Constructor with dimensions and fill datum.
     Matrix (const Ordinal num_rows,
 	    const Ordinal num_cols,
 	    const Scalar& value) :
@@ -168,24 +170,33 @@ namespace TSQR {
       A_ (verified_alloc_size (num_rows, num_cols), value)
     {}
 
-    // We need an explicit copy constructor, because for some reason
-    // the default copy constructor (with shallow copies of pointers,
-    // eeek! double free()s!!!) overrides the generic "copy
-    // constructors" below.
+    /// \brief Copy constructor.
+    ///
+    /// We need an explicit copy constructor, because otherwise the
+    /// default copy constructor would override the generic matrix
+    /// view "copy constructor" below.
     Matrix (const Matrix& in) :
       nrows_ (in.nrows()),
       ncols_ (in.ncols()),
       A_ (verified_alloc_size (in.nrows(), in.ncols()))
     {
-      if (A_.size() > 0)
+      if (! in.empty())
 	copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
     }
 
+    //! Default constructor (constructs an empty matrix).
     Matrix () : nrows_(0), ncols_(0), A_(0) {}
 
+    //! Trivial destructor.
     ~Matrix () {} 
 
-    template< class MatrixViewType >
+    /// \brief "Copy constructor" from a matrix view type.
+    ///
+    /// This constructor allocates a new matrix and copies the
+    /// elements of the input view into the resulting new matrix.
+    /// MatrixViewType must have nrows(), ncols(), get(), and lda()
+    /// methods that match MatView's methods.
+    template<class MatrixViewType>
     Matrix (const MatrixViewType& in) :
       nrows_ (in.nrows()),
       ncols_ (in.ncols()),
@@ -195,11 +206,11 @@ namespace TSQR {
 	copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
     }
 
-    /// *this gets a deep copy of B.
+    /// \brief Copy the matrix B into this matrix.
     ///
-    /// \note Assumes *this and B have the same dimensions (but not
-    ///   necessarily the same strides).
-    template< class MatrixViewType >
+    /// \param B [in] A matrix with the same dimensions (numbers of
+    ///   rows and columns) as this matrix.
+    template<class MatrixViewType>
     void 
     copy (MatrixViewType& B)
     {
@@ -216,29 +227,39 @@ namespace TSQR {
       copy_matrix (nrows(), ncols(), get(), lda(), B.get(), B.lda());
     }
 
+    //! Fill all entries of the matrix with the given value.
     void 
     fill (const Scalar value)
     {
       fill_matrix (nrows(), ncols(), get(), lda(), value);
     }
 
-    /// 2-D Fortran array - style access (column-major order, though
-    /// indexing is zero-based (C style) instead of one-based (Fortran
-    /// style))
+    /// \brief Non-const reference to element (i,j) of the matrix.
+    ///
+    /// \param i [in] Zero-based row index of the matrix.
+    /// \param j [in] Zero-based column index of the matrix.
     Scalar& operator() (const Ordinal i, const Ordinal j) {
       return A_[i + j*lda()];
     }
 
+    /// \brief Const reference to element (i,j) of the matrix.
+    ///
+    /// \param i [in] Zero-based row index of the matrix.
+    /// \param j [in] Zero-based column index of the matrix.
     const Scalar& operator() (const Ordinal i, const Ordinal j) const {
       return A_[i + j*lda()];
     }
 
-    /// 1-D std::vector - style access
+    //! 1-D std::vector - style access.
     Scalar& operator[] (const Ordinal i) {
       return A_[i];
     }
 
-    template< class MatrixViewType >
+    /// \brief Equality test: compares dimensions and entries.
+    ///
+    /// The test is templated so that B may have a different Ordinal
+    /// type or even a different Scalar type than *this.
+    template<class MatrixViewType>
     bool operator== (const MatrixViewType& B) const 
     {
       if (nrows() != B.nrows() || ncols() != B.ncols())
@@ -262,35 +283,48 @@ namespace TSQR {
       return true;
     }
 
+    //! Number of rows in the matrix.
     Ordinal nrows() const { return nrows_; }
+
+    //! Number of columns in the matrix.
     Ordinal ncols() const { return ncols_; }
+
+    //! Leading dimension (a.k.a. stride) of the matrix.
     Ordinal lda() const { return nrows_; }
+
+    //! Whether the matrix is empty (has either zero rows or zero columns).
     bool empty() const { return nrows() == 0 || ncols() == 0; }
 
+    //! A non-const pointer to the matrix data.
     Scalar* 
     get() 
     { 
       if (A_.size() > 0)
 	return &A_[0]; 
       else
-	return static_cast< Scalar* > (NULL);
+	return static_cast<Scalar*> (NULL);
     }
+
+    //! A const pointer to the matrix data.
     const Scalar* 
     get() const
     { 
       if (A_.size() > 0)
 	return &A_[0]; 
       else
-	return static_cast< const Scalar* > (NULL);
+	return static_cast<const Scalar*> (NULL);
     }
 
-    MatView< Ordinal, Scalar > view () {
-      return MatView< Ordinal, Scalar >(nrows(), ncols(), get(), lda());
+    //! A non-const view of the matrix.
+    MatView<Ordinal, Scalar> view () {
+      return MatView<Ordinal, Scalar> (nrows(), ncols(), get(), lda());
     }
 
-    ConstMatView< Ordinal, Scalar > const_view () const {
-      return ConstMatView< Ordinal, Scalar >(nrows(), ncols(), 
-					     (const Scalar*) get(), lda());
+    //! A const view of the matrix.
+    ConstMatView<Ordinal, Scalar> const_view () const {
+      typedef ConstMatView<Ordinal, Scalar> const_view_type;
+      return const_view_type (nrows(), ncols(), 
+			      const_cast<const Scalar*> (get()), lda());
     }
 
     /// Change the dimensions of the matrix.  Reallocate if necessary.
@@ -298,6 +332,11 @@ namespace TSQR {
     ///
     /// \param num_rows [in] New number of rows in the matrix
     /// \param num_cols [in] New number of columns in the matrix
+    ///
+    /// \warning This does <it>not</it> do the same thing as the
+    ///   Matlab function of the same name.  In particular, it does
+    ///   not reinterpret the existing matrix data using different
+    ///   dimensions.
     void
     reshape (const Ordinal num_rows, const Ordinal num_cols)
     {
@@ -311,8 +350,16 @@ namespace TSQR {
     }
 
   private:
-    Ordinal nrows_, ncols_;
-    std::vector< Scalar > A_;
+    //! Number of rows in the matrix.
+    Ordinal nrows_;
+    //! Number of columns in the matrix.
+    Ordinal ncols_;
+    /// \brief Where the entries of the matrix are stored.
+    ///
+    /// The matrix is stored using one-dimensional storage with
+    /// column-major (Fortran-style) indexing.  This makes Matrix
+    /// compatible with the BLAS and LAPACK.
+    std::vector<Scalar> A_;
   };
 
 } // namespace TSQR
