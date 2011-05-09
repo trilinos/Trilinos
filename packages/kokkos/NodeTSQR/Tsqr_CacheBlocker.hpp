@@ -412,6 +412,19 @@ namespace TSQR {
 			     result[3]);
     }
 
+    /// \brief Equality operator.
+    ///
+    /// Two cache blockers are "equal" if they correspond to matrices
+    /// with the same dimensions (number of rows and number of
+    /// columns), and if their cache blocking strategies are equal.
+    bool
+    operator== (const CacheBlockingStrategy<Ordinal, Scalar>& rhs) const
+    {
+      return nrows() == rhs.nrows() && 
+	ncols() == rhs.ncols() &&
+	strategy_ == rhs.strategy_;
+    }
+
   private:
     //! Number of rows in the matrix to block.
     Ordinal nrows_;

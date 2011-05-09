@@ -265,9 +265,17 @@ namespace TSQR {
 	    cerr << "-- Un-cache-blocked output Q factor" << endl;
 	}
 
-      // Print out the R factor
+      // Print out the Q and R factors in debug mode.
       if (debug)
 	{
+	  // Don't print the matrix if it's too big.
+	  if (Q.nrows() <= 30)
+	    {
+	      cerr << endl << "-- Q factor:" << endl;
+	      print_local_matrix (cerr, Q.nrows(), Q.ncols(), 
+				  Q.get(), Q.lda());
+	      cerr << endl << endl;
+	    }
 	  cerr << endl << "-- R factor:" << endl;
 	  print_local_matrix (cerr, numCols, numCols, R.get(), R.lda());
 	  cerr << endl;
