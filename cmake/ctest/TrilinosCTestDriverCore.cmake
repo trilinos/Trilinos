@@ -221,6 +221,7 @@ MACRO(SETUP_TRILINOS_PACKAGES)
   SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
   SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
   SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR "${CTEST_BINARY_DIRECTORY}")
+  SET(PROJECT_HOME_DIR "${TRILINOS_HOME_DIR}")
 
   # Ignore missing extra repos in case someone messed up the git URL or
   # something.  We don't want a sloppy commit to bring down automated testing.
