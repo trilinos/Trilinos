@@ -286,7 +286,7 @@ void StratimikosFactory::setParameterList(
 {
    TEST_FOR_EXCEPT(paramList.get()==NULL);
 
-   paramList->validateParameters(*this->getValidParameters(),0);
+   paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
    paramList_ = paramList;
 
 }
