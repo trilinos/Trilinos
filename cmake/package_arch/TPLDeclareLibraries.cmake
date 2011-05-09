@@ -52,7 +52,7 @@ INCLUDE(ParseVariableArguments)
 #     this function, then no headers are searched for and this variable will
 #     be assumed to have the correct list of header paths.
 #
-#   TPL_${TPL_NAME}_LIBRARY_DIRS:  A list of commons-seprated full library
+#   TPL_${TPL_NAME}_LIBRARIES:  A list of commons-seprated full library
 #     names (output from FIND_LIBRARY(...)) for all of the libraries found
 #     for the TPL.  IF this varible is set before calling this function,
 #     no libraries are searched for and this varaible will be assumed to
@@ -78,6 +78,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     MESSAGE("TPL_DECLARE_LIBRARIES: ${TPL_NAME}")
     PRINT_VAR(PARSE_REQUIRED_HEADERS)
     PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
+    PRINT_VAR(TPL_${TPL_NAME}_INCLUDE_DIRS)
+    PRINT_VAR(TPL_${TPL_NAME}_LIBRARIES)
   ENDIF()
 
   IF (TPL_TENTATIVE_ENABLE_${TPL_NAME})
@@ -105,7 +107,10 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
       " ${TPL_NAME}_LIBRARY_DIRS."
       )
 
-   	ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE PATH ${DOCSTR})
+    ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE PATH ${DOCSTR})
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      PRINT_VAR(${TPL_NAME}_LIBRARY_DIRS)
+    ENDIF()
 
     # Libraries
   
@@ -122,6 +127,11 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     # Let the user override what the names of the libraries which might
     # actually mean that no libraies are searched for.
     SET(PARSE_REQUIRED_LIBS_NAMES ${${TPL_NAME}_LIBRARY_NAMES})
+
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      PRINT_VAR(${TPL_NAME}_LIBRARY_NAMES)
+      PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
+    ENDIF()
 
   ELSE()
 
@@ -391,6 +401,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     PRINT_VAR(TPL_${TPL_NAME}_LIBRARY_DIRS)
   ENDIF()
+  # 2011/05/09: rabartl: ToDo: Remove this above variable from everywhere!
 
   #PRINT_VAR(TPL_TENTATIVE_ENABLE_${TPL_NAME})
   #PRINT_VAR(_${TPL_NAME}_ENABLE_SUCCESS)
