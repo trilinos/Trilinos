@@ -33,6 +33,7 @@
 #include "Thyra_LinearSolverBuilderBase.hpp"
 #include "Teuchos_AbstractFactory.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 // Include these to make all of the helpful decls appear
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -152,15 +153,25 @@ public:
   void setLinearSolveStrategyFactory(
     const RCP<const AbstractFactory<Thyra::LinearOpWithSolveFactoryBase<double> > >
     &solveStrategyFactory,
-    const std::string &solveStrategyName
+    const std::string &solveStrategyName,
+    const bool makeDefault = false
     );
+
+  /** \brief Set the default linear solver factory name. */
+  void setDefaultLinearSolveStrategyFactoryName(
+    const std::string &solveStrategyName);
 
   /** \brief Set a new preconditioner strategy factory object. */
   void setPreconditioningStrategyFactory(
     const RCP<const AbstractFactory<Thyra::PreconditionerFactoryBase<double> > >
     &precStrategyFactory,
-    const std::string &precStrategyName
+    const std::string &precStrategyName,
+    const bool makeDefault = false
     );
+
+  /** \brief Set the default linear solver factory name. */
+  void setDefaultPreconditioningStrategyFactoryName(
+    const std::string &precStrategyName);
 
   /** \brief Setup the command-line processor to read in the needed data to
    * extra the parameters from.
@@ -278,7 +289,6 @@ private:
   // Private data members
   
   RCP<ParameterList> paramList_;
-  mutable RCP<const ParameterList> validParamList_;
   Array<std::string> validLowsfNames_;
   Array<lowsf_fcty_t> lowsfArray_;
   std::string defaultLOWSF_;
@@ -286,11 +296,15 @@ private:
   Array<pf_fcty_t> pfArray_;
   std::string defaultPF_;
   bool enableDelayedSolverConstruction_;
+  mutable RCP<const ParameterList> validParamList_;
+  mutable RCP<const Teuchos::StringToIntegralParameterEntryValidator<int> > lowsfValidator_;
+  mutable RCP<const Teuchos::StringToIntegralParameterEntryValidator<int> > pfValidator_;
 
   // //////////////////////////////////////
   // Private member functions
 
   void initializeDefaults();
+  void justInTimeInitialize() const;
 
 };
 
