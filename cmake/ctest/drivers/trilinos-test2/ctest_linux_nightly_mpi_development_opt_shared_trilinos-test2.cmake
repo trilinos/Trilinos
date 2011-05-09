@@ -33,6 +33,9 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_LAMMPS:BOOL=ON"
   "-DTPL_ENABLE_couple:BOOL=ON"
   "-DTPL_ENABLE_SPPARKS:BOOL=ON"
+  "-DTPL_ENABLE_HDF5:BOOL=ON"
+  "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/include"
+  "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/lib"
   )
 
 #
