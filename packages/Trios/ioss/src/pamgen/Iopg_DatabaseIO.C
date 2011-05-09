@@ -137,6 +137,7 @@ namespace Iopg {
     spatialDimension(3), nodeCount(0),
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
+    commsetNodeCount(0), commsetElemCount(0),
     sequentialNG2L(false), sequentialEG2L(false)
   {
     if (is_input()) {
