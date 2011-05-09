@@ -33,6 +33,7 @@
 #include <Tsqr_MatView.hpp>
 #include <Tsqr_Util.hpp>
 
+#include <iterator>
 #include <sstream>
 #include <stdexcept>
 
@@ -97,6 +98,13 @@ namespace TSQR {
     {
       validate ();
     }
+
+    //! Default constructor, so that CacheBlocker is DefaultConstructible.
+    CacheBlocker () : 
+      nrows_ (0), 
+      ncols_ (0), 
+      nrows_cache_block_ (strategy_.cache_block_num_rows (ncols()))
+    {}
 
     //! Copy constructor
     CacheBlocker (const CacheBlocker& rhs) :
@@ -452,6 +460,232 @@ namespace TSQR {
     /// ncols() rows).
     size_t nrows_cache_block () const { return nrows_cache_block_; }
   };
+
+
+  /// \class CacheBlockRangeIterator
+  /// \brief Bidirectional iterator over a contiguous range of cache blocks.
+  /// \author Mark Hoemmen
+  ///
+  /// "Contiguous range of cache blocks" means that the indices of the
+  /// cache blocks, as interpreted by the CacheBlocker object, are
+  /// contiguous.
+  template<class MatrixViewType>
+  class CacheBlockRangeIterator : 
+    public std::iterator<std::forward_iterator_tag, MatrixViewType> 
+  {
+  public:
+    typedef MatrixViewType view_type;
+    typedef typename MatrixViewType::ordinal_type ordinal_type;
+    typedef typename MatrixViewType::scalar_type scalar_type;
+
+    /// \brief Default constructor.
+    /// 
+    /// \note To implementers: We only implement a default constructor
+    ///   because all iterators (e.g., TrivialIterator) must be
+    ///   DefaultConstructible.
+    CacheBlockRangeIterator () :
+      A_ (0, 0, NULL, 0),
+      curInd_ (0),
+      reverse_ (false),
+      contiguousCacheBlocks_ (false)
+    {}
+
+    /// \brief Standard constructor.
+    ///
+    /// \param A [in] View of the matrix over whose cache block(s) to
+    ///   iterate.
+    /// \param strategy [in] Cache blocking strategy for a matrix with
+    ///   the same number of rows as the matrix A.
+    /// \param currentIndex [in] The iterator's current cache block index.
+    /// \param reverse [in] Whether to iterate over the cache blocks
+    ///   in reverse order of their indices.
+    /// \param contiguousCacheBlocks [in] Whether cache blocks in the
+    ///   matrix A are stored contiguously.
+    CacheBlockRangeIterator (const MatrixViewType& A,
+			     const CacheBlockingStrategy<ordinal_type, scalar_type>& strategy,
+			     const ordinal_type currentIndex,
+			     const bool reverse,
+			     const bool contiguousCacheBlocks) :
+      A_ (A), 
+      blocker_ (A_.nrows(), A_.ncols(), strategy), 
+      curInd_ (currentIndex),
+      reverse_ (reverse),
+      contiguousCacheBlocks_ (contiguousCacheBlocks)
+    {}
+
+    //! Copy constructor.
+    CacheBlockRangeIterator (const CacheBlockRangeIterator& rhs) : 
+      A_ (rhs.A_), 
+      blocker_ (rhs.blocker_), 
+      curInd_ (rhs.curInd_), 
+      reverse_ (rhs.reverse_),
+      contiguousCacheBlocks_ (rhs.contiguousCacheBlocks_)
+    {}
+
+    //! Assignment operator.
+    CacheBlockRangeIterator& operator= (const CacheBlockRangeIterator& rhs)
+    {
+      A_ = rhs.A_;
+      blocker_ = rhs.blocker_;
+      curInd_ = rhs.curInd_;
+      reverse_ = rhs.reverse_;
+      contiguousCacheBlocks_ = rhs.contiguousCacheBlocks_;
+    }
+
+    //! Prefix increment operator.
+    CacheBlockRangeIterator& operator++() {
+      if (reverse_)
+	--curInd_;
+      else
+	++curInd_;
+      return *this;
+    }
+
+    /// \brief Postfix increment operator.
+    ///
+    /// This may be less efficient than prefix operator++, since the
+    /// postfix operator has to make a copy of the iterator before
+    /// modifying it.
+    CacheBlockRangeIterator operator++(int) {
+      CacheBlockRangeIterator retval (*this);
+      operator++();
+      return retval;
+    }
+
+    /// \brief Equality operator.
+    ///
+    /// Equality of cache block range iterators only tests the cache
+    /// block index, not reverse-ness.  This means we can compare a
+    /// reverse-direction iterator with a forward-direction iterator,
+    /// and vice versa.
+    bool operator== (const CacheBlockRangeIterator& rhs) {
+      // Not correct, but fast.  Should return false for different A_
+      // or different blocker_.
+      return curInd_ == rhs.curInd_;
+    }
+
+    //! Inequality operator.
+    bool operator!= (const CacheBlockRangeIterator& rhs) {
+      // Not correct, but fast.  Should return false for different A_
+      // or different blocker_.
+      return curInd_ != rhs.curInd_;
+    }
+
+    /// \brief A view of the current cache block.
+    ///
+    /// If the current cache block index is invalid, this returns an
+    /// empty cache block (that is, calling empty() on the returned
+    /// view returns true).
+    MatrixViewType operator*() const {
+      return blocker_.get_cache_block (A_, curInd_, contiguousCacheBlocks_);
+    }
+
+  private:
+    MatrixViewType A_;
+    CacheBlocker<ordinal_type, scalar_type> blocker_;
+    ordinal_type curInd_;
+    bool reverse_;
+    bool contiguousCacheBlocks_;
+  };
+
+  /// \class CacheBlockRange
+  /// \brief Collection of cache blocks with a contiguous range of indices.
+  /// \author Mark Hoemmen
+  ///
+  /// We mean "collection" in the C++ sense: you can iterate over the
+  /// elements using iterators.  The iterators are valid only when the
+  /// CacheBlockRange is in scope, just like the iterators of
+  /// std::vector.
+  ///
+  /// CacheBlockRange is useful for \c KokkosNodeTsqr, in particular
+  /// for \c FactorFirstPass and \c ApplyFirstPass.  Sequential TSQR's
+  /// factorization is forward iteration over the collection, and
+  /// applying the Q factor or computing the explicit Q factor is
+  /// iteration in the reverse direction (decreasing cache block
+  /// index).
+  ///
+  /// This class is templated so that it works with either a \c
+  /// MatView or a \c ConstMatView.
+  template<class MatrixViewType>
+  class CacheBlockRange {
+  public:
+    typedef MatrixViewType view_type;
+    typedef typename MatrixViewType::ordinal_type ordinal_type;
+    typedef typename MatrixViewType::scalar_type scalar_type;
+
+    /// \typedef iterator
+    /// \brief Type of an iterator over the range of cache blocks.
+    typedef CacheBlockRangeIterator<MatrixViewType> iterator;
+
+    /// \brief Constructor
+    /// 
+    /// \param A [in] View of the matrix to factor.
+    /// \param strategy [in] Cache blocking strategy to use (copied
+    ///   on input).
+    /// \param startIndex [in] Starting index of the cache block
+    ///   sequence.
+    /// \param endIndex [in] Ending index (exclusive) of the cache
+    ///   block sequence.  Precondition: startIndex <= endIndex.  If
+    ///   startIndex == endIndex, the sequence is empty.
+    /// \param contiguousCacheBlocks [in] Whether cache blocks in the
+    ///   matrix A are stored contiguously.
+    CacheBlockRange (MatrixViewType A,
+		     const CacheBlockingStrategy<ordinal_type, scalar_type>& strategy,
+		     const ordinal_type startIndex,
+		     const ordinal_type endIndex,
+		     const bool contiguousCacheBlocks) :
+      A_ (A), 
+      startIndex_ (startIndex),
+      endIndex_ (endIndex),
+      strategy_ (strategy),
+      contiguousCacheBlocks_ (contiguousCacheBlocks)
+    {}
+
+    bool empty() const { 
+      return startIndex_ >= endIndex_;
+    }
+
+    iterator begin() const {
+      return iterator (A_, strategy_, startIndex_, false, contiguousCacheBlocks_);
+    }
+
+    iterator end() const {
+      return iterator (A_, strategy_, endIndex_, false, contiguousCacheBlocks_);
+    }
+
+    iterator rbegin() const {
+      return iterator (A_, strategy_, endIndex_-1, true, contiguousCacheBlocks_);
+    }
+
+    iterator rend() const {
+      // Think about it: rbegin() == rend() means that rbegin() is invalid
+      // and shouldn't be dereferenced.  rend() should never be dereferenced.
+      return iterator (A_, strategy_, startIndex_-1, true, contiguousCacheBlocks_);
+    }
+
+    private:
+      //! View of the matrix.
+      MatrixViewType A_;
+
+      /// \brief Starting index of the range of cache blocks.
+      ///
+      /// We always have startIndex_ <= endIndex_.  Reverse-order
+      /// iteration is indicated by the iterator's reverse_ member
+      /// datum.
+      ordinal_type startIndex_;
+
+      /// \brief Ending index (exclusive) of the range of cache blocks.
+      ///
+      /// See the documentation of startIndex_ for its invariant.
+      ordinal_type endIndex_;
+
+      //! Cache blocking strategy for a matrix with the same number of rows as A_.
+      CacheBlockingStrategy<ordinal_type, scalar_type> strategy_;
+      
+      //! Whether the cache blocks of the matrix A_ are stored contiguously.
+      bool contiguousCacheBlocks_;
+    };
+
 
 } // namespace TSQR
 

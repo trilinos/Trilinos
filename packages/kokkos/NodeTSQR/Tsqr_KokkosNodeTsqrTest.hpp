@@ -245,6 +245,19 @@ namespace TSQR {
 	  cerr << "-- Finished factor()" << endl;
 	  cerr << "-- Calling explicit_Q()" << endl;
 	}
+
+      // KokkosNodeTsqr isn't designed to be used by itself, so we
+      // have to help it along by filling the top ncols x ncols
+      // entries with the first ncols columns of the identity matrix.
+      {
+	typedef MatView<Ordinal, Scalar> view_type;
+	view_type Q_top = actor.top_block (Q.view(), contiguousCacheBlocks);
+	view_type Q_top_square (Q_top.ncols(), Q_top.ncols(), 
+				Q_top.get(), Q_top.lda());
+	Q_top_square.fill (STS::zero());
+	for (Ordinal j = 0; j < Q_top_square.ncols(); ++j)
+	  Q_top_square(j,j) = STS::one();
+      }
       actor.explicit_Q (numRows, numCols, A_copy.get(), A_copy.lda(), 
 			factor_output, numCols, Q.get(), Q.lda(), 
 			contiguousCacheBlocks);

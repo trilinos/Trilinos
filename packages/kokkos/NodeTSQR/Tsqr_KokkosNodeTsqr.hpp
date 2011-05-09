@@ -36,7 +36,7 @@
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#define KNR_DEBUG 1
+//#define KNR_DEBUG 1
 #ifdef KNR_DEBUG
 #  include <iostream>
 #endif // KNR_DEBUG
@@ -81,11 +81,11 @@ namespace TSQR {
 #ifdef KNR_DEBUG
       using std::cerr;
       using std::endl;
-      cerr << "cacheBlockIndexRange(numRows=" << numRows 
-	   << ", numCols=" << numCols
-	   << ", partitionIndex=" << partitionIndex 
-	   << ", numPartitions=" << numPartitions
-	   << ", strategy)" << endl;
+      // cerr << "cacheBlockIndexRange(numRows=" << numRows 
+      // 	   << ", numCols=" << numCols
+      // 	   << ", partitionIndex=" << partitionIndex 
+      // 	   << ", numPartitions=" << numPartitions
+      // 	   << ", strategy)" << endl;
 #endif // KNR_DEBUG
 
       // The input index is a zero-based index of the current
@@ -112,9 +112,9 @@ namespace TSQR {
 	strategy.num_cache_blocks (numRows, numCols, numRowsCacheBlock);
 
 #ifdef KNR_DEBUG
-      cerr << "numRowsCacheBlock=" << numRowsCacheBlock
-	   << ", numCacheBlocks=" << numCacheBlocks
-	   << endl;
+      // cerr << "numRowsCacheBlock=" << numRowsCacheBlock
+      // 	   << ", numCacheBlocks=" << numCacheBlocks
+      // 	   << endl;
 #endif // KNR_DEBUG
 
       // Figure out how many cache blocks my partition contains.  If
@@ -127,9 +127,9 @@ namespace TSQR {
 	(partitionIndex < remainder) ? (quotient + 1) : quotient;
 
 #ifdef KNR_DEBUG
-      cerr << "Partition " << partitionIndex << ": quotient=" << quotient 
-	   << ", remainder=" << remainder << ", myNumCacheBlocks=" 
-	   << myNumCacheBlocks << endl;
+      // cerr << "Partition " << partitionIndex << ": quotient=" << quotient 
+      // 	   << ", remainder=" << remainder << ", myNumCacheBlocks=" 
+      // 	   << myNumCacheBlocks << endl;
 #endif // KNR_DEBUG
 
       // If there are no cache blocks, there is nothing to factor.
@@ -159,228 +159,6 @@ namespace TSQR {
 	}
       return std::make_pair (myFirstCacheBlockIndex, myLastCacheBlockIndex);
     }
-
-    /// \class CacheBlockRange
-    /// \brief "Iterator" over continuous range of cache blocks.
-    /// \author Mark Hoemmen
-    ///
-    /// It's a pain to implement an actual C++ iterator (though Boost
-    /// can help with that a little).  Thus, I've implemented a simple
-    /// "sequence" over a contiguous range of cache blocks.  This is
-    /// useful for \c KokkosNodeTsqr, in particular for \c
-    /// FactorFirstPass.  Sequential TSQR's factorization is forward
-    /// iteration over a sequence cache blocks, and applying the Q
-    /// factor or computing the explicit Q factor is reverse
-    /// iteration.
-    ///
-    /// This class is templated so that it works with a MatView or a
-    /// ConstMatView.
-    ///
-    /// \note To implementers and those interested in refactoring:
-    /// This class unnecessarily conflates the concepts of "Range" and
-    /// "Iterator."  A "Range" should be a pair of iterators (forming
-    /// a half-exclusive range).  An "Iterator" should not know where
-    /// it is in the range; that's the job of the client code that
-    /// works with ranges and iterators.  When I get some time, I'll
-    /// refactor this class into a true Iterator, or more
-    /// specifically, a <a
-    /// href="http://www.sgi.com/tech/stl/ForwardIterator.html">
-    /// ForwardIterator. </a>
-    template<class MatrixViewType>
-    class CacheBlockRange {
-    public:
-      typedef MatrixViewType view_type;
-      typedef typename MatrixViewType::ordinal_type ordinal_type;
-      typedef typename MatrixViewType::scalar_type scalar_type;
-
-      /// \brief Constructor
-      /// 
-      /// \param A [in] View of the matrix to factor.
-      /// \param strategy [in] Cache blocking strategy to use (copied
-      ///   on input).
-      /// \param startIndex [in] Starting index of the cache block
-      ///   sequence.
-      /// \param endIndex [in] Ending index (exclusive) of the cache
-      ///   block sequence.  Precondition: startIndex <= endIndex.  If
-      ///   equal, the sequence is empty.
-      /// \param reverse [in] false for forward iteration, true for
-      ///   reverse iteration.
-      /// \param contiguousCacheBlocks [in] Whether cache blocks in A 
-      ///   are stored contiguously.
-      CacheBlockRange (MatrixViewType A,
-		       const CacheBlockingStrategy<ordinal_type, scalar_type>& strategy,
-		       const ordinal_type startIndex,
-		       const ordinal_type endIndex,
-		       const bool reverse,
-		       const bool contiguousCacheBlocks=false) :
-	A_ (A), 
-	startIndex_ (startIndex),
-	endIndex_ (endIndex),
-	curIndex_ (reverse ? startIndex : endIndex - 1),
-	blocker_ (A.nrows(), A.ncols(), strategy), 
-	reverse_ (reverse),
-	contiguousCacheBlocks_ (contiguousCacheBlocks)
-      {}
-
-      /// \brief Whether we are at the first element in the sequence.
-      ///
-      /// The sequence must be nonempty for this to be true.  The
-      /// meaning of "first" depends on whether we are traversing the
-      /// sequence in reverse order.
-      bool 
-      atFirst() const 
-      {
-	if (startIndex_ >= endIndex_)
-	  return false; // the sequence is empty
-	else 
-	  return (reverse_ && curIndex_ == endIndex_-1) ||
-	    (! reverse_ && curIndex_ == startIndex_);
-      }
-
-      /// \brief Whether we are at the last element in the sequence.
-      ///
-      /// The sequence must be nonempty for this to be true.  The
-      /// meaning of "last" depends on whether we are traversing the
-      /// sequence in reverse order.
-      bool 
-      atLast() const 
-      {
-	if (startIndex_ >= endIndex_)
-	  return false; // the sequence is empty
-	else 
-	  return (reverse_ && curIndex_ == startIndex_) ||
-	    (! reverse_ && curIndex_ == endIndex_-1);
-      }
-
-      /// \brief View of the current cache block in the sequence.
-      ///
-      /// If the sequence is at its end, this returns an empty cache
-      /// block (i.e., calling empty() on the result returns true).
-      MatrixViewType 
-      operator*() const 
-      {
-	if (reverse_)
-	  {
-	    if (curIndex_ < startIndex_)
-	      return MatrixViewType (0, 0, NULL, 0); // empty
-	    else
-	      return blocker_.get_cache_block (A_, curIndex_, contiguousCacheBlocks_);
-	  }
-	else
-	  {
-	    if (curIndex_ >= endIndex_)
-	      return MatrixViewType (0, 0, NULL, 0); // empty
-	    else
-	      return blocker_.get_cache_block (A_, curIndex_, contiguousCacheBlocks_);
-	  }
-      }
-
-      //! Advance the sequence, if possible.  Otherwise do nothing.
-      void
-      advance ()
-      {
-	if (reverse_)
-	  {
-	    if (curIndex_ >= startIndex_)
-	      curIndex_--;
-	  }
-	else
-	  {
-	    if (curIndex_ < endIndex_)
-	      curIndex_++;
-	  }
-      }
-
-      //! Prefix increment; advance the sequence, if possible.
-      CacheBlockRange<MatrixViewType>& 
-      operator++()
-      {
-	advance();
-	return *this;
-      }
-
-      /// \brief Postfix increment; advance the sequence, if possible.
-      ///
-      /// C++ uses the unused "int" argument as a signal that this is
-      /// postfix increment, rather than prefix increment (which takes
-      /// no arguments).
-      ///
-      /// \note The prefix operator++ is likely more efficient, since
-      ///   it does not copy any data.  However, the postfix operator
-      ///   supports the more natural C++ idiom "*iter++" (return the
-      ///   current datum, and advance the sequence, in that order).
-      CacheBlockRange<MatrixViewType>
-      operator++(int)
-      {
-	CacheBlockRange<MatrixViewType> retval = *this;
-	++(*this);
-	return *retval;
-      }
-
-      /// \brief Equality operator.
-      ///
-      /// Two cache block ranges are equal if their matrix views have
-      /// the same dimensions, leading dimension, and pointer, if
-      /// their cache block indices are equal, and if their cache
-      /// blockers are equal.
-      bool
-      operator== (const CacheBlockRange& rhs) const
-      {
-	return A_.nrows() == rhs.A_.nrows() &&
-	  A_.ncols() == rhs.A_.ncols() &&
-	  A_.get() == rhs.A_.get() &&
-	  A_.lda() == rhs.A_.lda() &&
-	  curIndex_ == rhs.curIndex_ &&
-	  blocker_ == rhs.blocker_;
-      }
-
-    private:
-      //! View of the whole matrix.
-      MatrixViewType A_;
-
-      /// \brief Starting index of the range of cache blocks.
-      ///
-      /// We always have startIndex_ <= endIndex_.  Reverse-order
-      /// iteration is indicated by the Boolean reverse_ member datum.
-      ///
-      /// \note One could optimize this iterator by removing the
-      /// startIndex_ and endIndex_ members.  That information could
-      /// be encoded in separate iterators.  This would give behavior
-      /// more like that of an std::vector iterator, where iteration
-      /// safety comes from how you state the loop.  For example:
-      /// <code>
-      /// for (iter = v.begin(); iter != v.end(); ++iter)
-      ///   doStuff (*v);
-      /// </code>
-      /// We have chosen instead to retain the start and end indices
-      /// in the iterator.  This gives an extra measure of safety, and
-      /// also lets us include an "idempotence" feature: that is,
-      /// attempting to advance the iterator beyond the end of its
-      /// range has no effect.
-      ordinal_type startIndex_;
-
-      /// \brief Ending index (exclusive) of the range of cache blocks.
-      ///
-      /// See the documentation of startIndex_ for invariants and
-      /// potential optimizations.
-      ordinal_type endIndex_;
-
-      /// \brief Current index of the range of cache blocks.
-      ///
-      /// Invariant: startIndex_ <= curIndex_ < endIndex_.  This is
-      /// true whether or not we are traversing the sequence in
-      /// reverse order.
-      ordinal_type curIndex_;
-
-      //! Object that knows how to cache block the matrix A_.
-      CacheBlocker<ordinal_type, scalar_type> blocker_;
-      
-      //! Whether to traverse the sequence in reverse order.
-      bool reverse_;
-
-      //! Whether the cache blocks of the matrix A_ are stored contiguously.
-      bool contiguousCacheBlocks_;
-    };
 
 
     /// \class FactorFirstPass
@@ -432,45 +210,79 @@ namespace TSQR {
 	return tau;
       }
 
-      /// \fn factor
-      /// \brief Factor the given cache block range using SequentialTsqr.
+      /// \brief Factor the given cache block range using sequential TSQR.
       ///
-      /// \param cbRange [in/out] Range of cache blocks to factor.
-      /// \param tauIter [out] Output iterator of std::vector<Scalar>.
-      ///   The "TAU" arrays from each cache block factored go here,
-      ///   so this output sequence should be at least as long as the
-      ///   number of cache blocks in the range.
+      /// \param cbIndices [in] Half-exclusive range of cache block indices.
       ///
       /// \return A view of the top block of the cache block range.
-      template<class TauArraysOuterIterType>
       MatView<LocalOrdinal, Scalar>
-      factor (CacheBlockRange<MatView<LocalOrdinal, Scalar> >& cbRange,
-	      TauArraysOuterIterType tauIter,
-	      std::vector<Scalar>& work)
+      factor (const std::pair<LocalOrdinal, LocalOrdinal> cbIndices)
       {
+#ifdef KNR_DEBUG
+	using std::cerr;
+	using std::endl;
+#endif // KNR_DEBUG
+
 	typedef MatView<LocalOrdinal, Scalar> view_type;
-	Combine<LocalOrdinal, Scalar> combine;
+	typedef CacheBlockRange<view_type> range_type;
+
+	// Workspace is created here, because it must not be shared
+	// among threads.
+	std::vector<Scalar> work (A_.ncols());
+
+	// Range of cache blocks to factor.
+	range_type cbRange (A_, strategy_, 
+			    cbIndices.first, 
+			    cbIndices.second, 
+			    contiguousCacheBlocks_);
+	// Iterator in the forward direction over the range of cache
+	// blocks to factor.
+	typedef typename CacheBlockRange<view_type>::iterator range_iter_type;
+	range_iter_type cbIter = cbRange.begin();
 
 	// Remember the top (first) block.
-	view_type A_top = *cbRange;
+	view_type A_top = *cbIter;
 	if (A_top.empty())
 	  return A_top;
+	TEST_FOR_EXCEPTION(cbIndices.first >= cbIndices.second,
+			   std::logic_error,
+			   "FactorFirstPass::factor: A_top is not empty, but "
+			   "the cache block index range " << cbIndices.first 
+			   << "," << cbIndices.second << " is empty.  Please "
+			   "report this bug to the Kokkos developers.");
 
-	// Factor the first block.
-	*tauIter++ = factorFirstCacheBlock (combine, A_top, work);
+	// Current cache block index.
+	LocalOrdinal curTauIdx = cbIndices.first;
 
-	// Factor the remaining cache block(s).  CacheBlockRange's
-	// prefix operator++ is more efficient than its postfix
-	// operator++, since the latter has to make a copy of the
-	// CacheBlockRange.
-	++cbRange;
-	view_type A_cur = *cbRange;
-	while (! A_cur.empty())
+	// Factor the first cache block.
+	Combine<LocalOrdinal, Scalar> combine;
+	tauArrays_[curTauIdx++] = factorFirstCacheBlock (combine, A_top, work);
+
+	// Move past the first cache block.
+	++cbIter;
+
+	// Number of cache block(s) we have factored thus far.
+	LocalOrdinal count = 1;
+
+	// Factor the remaining cache block(s).
+	range_iter_type cbEnd = cbRange.end();
+	while (cbIter != cbEnd)
 	  {
-	    *tauIter++ = factorCacheBlock (combine, A_top, A_cur, work);
-	    ++cbRange;
-	    A_cur = *cbRange;
+	    view_type A_cur = *cbIter;
+	    TEST_FOR_EXCEPTION(static_cast<size_t>(curTauIdx) >= tauArrays_.size(),
+			       std::logic_error,
+			       "FactorFirstPass::factor: curTauIdx (= " 
+			       << curTauIdx << ") >= tauArrays_.size() (= " 
+			       << tauArrays_.size() << ").  Please report this "
+			       "bug to the Kokkos developers.");
+	    tauArrays_[curTauIdx++] = 
+	      factorCacheBlock (combine, A_top, A_cur, work);
+	    ++count;
+	    ++cbIter;
 	  }
+#ifdef KNR_DEBUG
+	cerr << "Factored " << count << " cache blocks" << endl;
+#endif // KNR_DEBUG
 	return A_top;
       }
 
@@ -554,48 +366,32 @@ namespace TSQR {
 #ifdef KNR_DEBUG
 	using std::cerr;
 	using std::endl;
-	cerr << "FactorFirstPass::execute (" << partitionIndex << ")" << endl;
+	// cerr << "FactorFirstPass::execute (" << partitionIndex << ")" << endl;
 #endif // KNR_DEBUG
 
-	if (A_.empty())
+	if (partitionIndex < 0 || partitionIndex >= numPartitions_)
 	  return;
-
-	std::pair<LocalOrdinal, LocalOrdinal> cbIndices = 
-	  cacheBlockIndexRange (A_.nrows(), A_.ncols(), partitionIndex, 
-				numPartitions_, strategy_);
-	if (cbIndices.second <= cbIndices.first)
+	else if (A_.empty())
+	  return;
+	else 
 	  {
+	    const std::pair<LocalOrdinal, LocalOrdinal> cbIndices = 
+	      cacheBlockIndexRange (A_.nrows(), A_.ncols(), partitionIndex, 
+				    numPartitions_, strategy_);
 #ifdef KNR_DEBUG
-	    cerr << "Partition " << partitionIndex << ": A is " << A_.nrows() 
-		 << " by " << A_.ncols() << ", and my cache block range " 
-		 << cbIndices.first << "," << cbIndices.second << " is empty."
+	    cerr << "Partition " << partitionIndex 
+		 << ": Factoring cache block indices ["
+		 << cbIndices.first << ", " << cbIndices.second << ")"
 		 << endl;
 #endif // KNR_DEBUG
-	    return;
+	    // It's legitimate, though suboptimal, for some partitions
+	    // not to get any work to do (in this case, not to get any
+	    // cache blocks to factor).
+	    if (cbIndices.second <= cbIndices.first)
+	      return;
+	    else
+	      topBlocks_[partitionIndex] = factor (cbIndices);
 	  }
-
-	typedef MatView<LocalOrdinal, Scalar> view_type;
-	typedef CacheBlockRange<view_type> range_type;
-	range_type range (A_, strategy_, cbIndices.first, cbIndices.second,
-			  false, contiguousCacheBlocks_);
-	// Workspace is created here, because it must not be shared
-	// among threads.
-	std::vector<Scalar> work (A_.ncols());
-
-	// The address-of tauArrays_ here is a primitive way of
-	// getting an iterator to a contiguous range of entries,
-	// starting with cbIndices.first.  (Pointer to array entry
-	// models RandomAccessIterator.)  I would use a less low-level
-	// approach, except that apply() needs a reverse iterator of a
-	// contiguous ange of tauArrays_ entries.  There isn't an easy
-	// way of getting that, either with std::vector or with
-	// Teuchos::ArrayView.
-	topBlocks_[partitionIndex] = factor (range, &tauArrays_[cbIndices.first], work);
-
-#ifdef KNR_DEBUG
-	view_type& A_top = topBlocks_[partitionIndex];
-	cerr << "Partition " << partitionIndex << ": Top block is " << A_top.nrows() << " x " << A_top.ncols() << "." << endl;
-#endif // KNR_DEBUG
       }
     };
 
@@ -628,6 +424,13 @@ namespace TSQR {
 			    const MatView<LocalOrdinal, Scalar>& C_top,
 			    std::vector<Scalar>& work)
       {
+	TEST_FOR_EXCEPTION(tau.size() < static_cast<size_t> (Q_top.ncols()), 
+			   std::logic_error,
+			   "ApplyFirstPass::applyFirstCacheBlock: tau.size() "
+			   "(= " << tau.size() << ") < number of columns " 
+			   << Q_top.ncols() << " in the Q factor.  Please "
+			   "report this bug to the Kokkos developers.");
+
 	// If we get this far, it's fair to assume that we have
 	// checked whether tau and work have nonzero lengths.
 	combine.apply_first (applyType, C_top.nrows(), C_top.ncols(),
@@ -644,6 +447,13 @@ namespace TSQR {
 		       const MatView<LocalOrdinal, Scalar>& C_cur,
 		       std::vector<Scalar>& work)
       {
+	TEST_FOR_EXCEPTION(tau.size() < static_cast<size_t> (Q_cur.ncols()), 
+			   std::logic_error,
+			   "ApplyFirstPass::applyCacheBlock: tau.size() "
+			   "(= " << tau.size() << ") < number of columns " 
+			   << Q_cur.ncols() << " in the Q factor.  Please "
+			   "report this bug to the Kokkos developers.");
+
 	// If we get this far, it's fair to assume that we have
 	// checked whether tau and work have nonzero lengths.
 	combine.apply_inner (applyType, C_cur.nrows(), C_cur.ncols(), 
@@ -658,34 +468,72 @@ namespace TSQR {
       /// \brief Apply the sequential part of the implicit Q factor to C.
       ///
       /// \param applyType [in] Whether we are applying Q, Q^T, or Q^H.
-      /// \param Q_range [in] Range of cache blocks in Q factor; reverse
-      ///   range if not applyType.transposed(), else forward range.
-      /// \param C_range [in/out] Range of cache blocks in C; reverse
-      ///   range if not applyType.transposed(), else forward range.
-      /// \param Q_top [in] Topmost cache block in the matrix Q.
-      /// \param C_top [in/out] Topmost cache block in the matrix C.
-      /// \param tauIter [in] Forward iterator of std::vector<Scalar>;
-      ///   the "TAU" arrays corresponding to the cache blocks in
-      ///   Q_range.
+      /// \param cbIndices [in] Half-exclusive range of cache block
+      ///   indices.
       /// \param partitionIndex [in] The argument to \c execute(); the
       ///   index of the partition which instance of ApplyFirstPass
       ///   is currently processing.
       void
       apply (const ApplyType& applyType,
-	     CacheBlockRange<ConstMatView<LocalOrdinal, Scalar> >& Q_range,
-	     CacheBlockRange<MatView<LocalOrdinal, Scalar> >& C_range,
-	     ConstMatView<LocalOrdinal, Scalar> Q_top,
-	     MatView<LocalOrdinal, Scalar> C_top,
 	     const std::pair<LocalOrdinal, LocalOrdinal> cbIndices,
-	     std::vector<Scalar>& work,
 	     const int partitionIndex)
       {
+#ifdef KNR_DEBUG
+	using std::cerr;
+	using std::endl;
+#endif // KNR_DEBUG
 	typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
 	typedef MatView<LocalOrdinal, Scalar> view_type;
+	typedef CacheBlockRange<const_view_type> const_range_type;
+	typedef CacheBlockRange<view_type> range_type;
+	typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
+
+	if (cbIndices.first >= cbIndices.second)
+	  return; // My range of cache blocks is empty; nothing to do
+
+	// Q_range: Range of cache blocks in the Q factor.
+	// C_range: Range of cache blocks in the matrix C.
+	const_range_type Q_range (Q_, strategy_, 
+				  cbIndices.first, cbIndices.second,
+				  contiguousCacheBlocks_);
+	range_type C_range (C_, strategy_, 
+			    cbIndices.first, cbIndices.second,
+			    contiguousCacheBlocks_);
+	TEST_FOR_EXCEPTION(Q_range.empty(), std::logic_error,
+			   "Q_range is empty, but the range of cache block "
+			   "indices [" << cbIndices.first << ", " 
+			   << cbIndices.second << ") is not empty.  Please "
+			   "report this bug to the Kokkos developers.");
+	TEST_FOR_EXCEPTION(C_range.empty(), std::logic_error,
+			   "C_range is empty, but the range of cache block "
+			   "indices [" << cbIndices.first << ", " 
+			   << cbIndices.second << ") is not empty.  Please "
+			   "report this bug to the Kokkos developers.");
+
+	// Task-local workspace array of length C_.ncols().  Workspace
+	// must be per task, else there will be race conditions as
+	// different tasks attempt to write to and read from the same
+	// workspace simultaneously.
+	std::vector<Scalar> work (C_.ncols());
 
 	Combine<LocalOrdinal, Scalar> combine;
 	if (applyType.transposed())
 	  {
+	    typename const_range_type::iterator Q_rangeIter = Q_range.begin();
+	    typename range_type::iterator C_rangeIter = C_range.begin();
+	    TEST_FOR_EXCEPTION(Q_rangeIter == Q_range.end(), std::logic_error,
+			       "The Q cache block range claims to be nonempty, "
+			       "but the iterator range is empty.  Please report"
+			       " this bug to the Kokkos developers.");
+	    TEST_FOR_EXCEPTION(C_rangeIter == C_range.end(), std::logic_error,
+			       "The C cache block range claims to be nonempty, "
+			       "but the iterator range is empty.  Please report"
+			       " this bug to the Kokkos developers.");
+
+	    // Q_top: Topmost cache block in the cache block range of Q.
+	    // C_top: Topmost cache block in the cache block range of C.
+	    const_view_type Q_top = *Q_rangeIter;
+	    view_type C_top = *C_rangeIter;
 	    if (explicitQ_)
 	      { 
 		C_top.fill (Teuchos::ScalarTraits<Scalar>::zero());
@@ -697,32 +545,37 @@ namespace TSQR {
 
 	    // Apply the first block.
 	    applyFirstCacheBlock (combine, applyType, Q_top, 
-				  tauArrays_[curTauIndex++], 
-				  C_top, work);
+				  tauArrays_[curTauIndex++], C_top, work);
 
 	    // Apply the rest of the blocks, if any.
-	    ++Q_range;
-	    ++C_range;
-	    const_view_type Q_cur = *Q_range;
-	    view_type C_cur = *C_range;
-	    while (! Q_cur.empty())
+	    ++Q_rangeIter;
+	    ++C_rangeIter;
+	    while (Q_rangeIter != Q_range.end())
 	      {
+		TEST_FOR_EXCEPTION(C_rangeIter == C_range.end(),
+				   std::logic_error,
+				   "When applying Q^T or Q^H to C: The Q cache "
+				   "block iterator is not yet at the end, but "
+				   "the C cache block iterator is.  Please "
+				   "report this bug to the Kokkos developers.");
+		const_view_type Q_cur = *Q_rangeIter;
+		view_type C_cur = *C_rangeIter;
+		++Q_rangeIter;
+		++C_rangeIter;
 		if (explicitQ_)
-		  C_cur.fill (Scalar(0));
+		  C_cur.fill (Teuchos::ScalarTraits<Scalar>::zero());
 		applyCacheBlock (combine, applyType, Q_cur, 
 				 tauArrays_[curTauIndex++], 
 				 C_top, C_cur, work);
-		++Q_range;
-		++C_range;
-		Q_cur = *Q_range;
-		C_cur = *C_range;
 	      }
-	    TEST_FOR_EXCEPTION(! C_cur.empty(), std::logic_error,
-			       "Q_cur is empty, but C_cur is not.  Please "
-			       "report this bug to the Kokkos developers.");
 	  }
 	else
 	  {
+	    // Q_top: Topmost cache block in the cache block range of Q.
+	    // C_top: Topmost cache block in the cache block range of C.
+	    const_view_type Q_top = *(Q_range.begin());
+	    view_type C_top = *(C_range.begin());
+
 	    if (explicitQ_)
 	      {
 		// We've already filled the top ncols x ncols block of
@@ -737,15 +590,38 @@ namespace TSQR {
 	      }
 	    LocalOrdinal curTauIndex = cbIndices.second-1;
 
-	    const_view_type Q_cur = *Q_range;
-	    view_type C_cur = *C_range;
-	    // "Last" in this case is the topmost cache block.  We
-	    // Handle that separately (via applyFirstCacheBlock()).
-	    while (! Q_range.atLast())
+	    // When applying Q (rather than Q^T or Q^H), we apply the
+	    // cache blocks in reverse order.
+	    typename const_range_type::iterator Q_rangeIter = Q_range.rbegin();
+	    typename range_type::iterator C_rangeIter = C_range.rbegin();
+	    TEST_FOR_EXCEPTION(Q_rangeIter == Q_range.rend(), std::logic_error,
+			       "The Q cache block range claims to be nonempty, "
+			       "but the iterator range is empty.  Please report"
+			       " this bug to the Kokkos developers.");
+	    TEST_FOR_EXCEPTION(C_rangeIter == C_range.rend(), std::logic_error,
+			       "The C cache block range claims to be nonempty, "
+			       "but the iterator range is empty.  Please report"
+			       " this bug to the Kokkos developers.");
+
+	    // Equality of cache block range iterators only tests the
+	    // cache block index, not reverse-ness.  This means we can
+	    // compare a reverse-direction iterator (Q_rangeIter) with
+	    // a forward-direction iterator (Q_range.begin()).
+	    //
+	    // We do this because we need to handle the topmost block
+	    // of Q_range separately (applyFirstCacheBlock(), rather
+	    // than applyCacheBlock()).
+	    while (Q_rangeIter != Q_range.begin())
 	      {
+		const_view_type Q_cur = *Q_rangeIter;
+		view_type C_cur = *C_rangeIter;
+
 		if (explicitQ_)
 		  C_cur.fill (Teuchos::ScalarTraits<Scalar>::zero());
-
+#ifdef KNR_DEBUG
+		cerr << "tauArrays_[curTauIndex=" << curTauIndex << "].size() = " 
+		     << tauArrays_[curTauIndex].size() << endl;
+#endif // KNR_DEBUG
 		TEST_FOR_EXCEPTION(curTauIndex < cbIndices.first, std::logic_error,
 				   "curTauIndex=" << curTauIndex << " out of valid "
 				   "range [" << cbIndices.first << "," 
@@ -754,20 +630,18 @@ namespace TSQR {
 		applyCacheBlock (combine, applyType, Q_cur, 
 				 tauArrays_[curTauIndex--], 
 				 C_top, C_cur, work);
-		++Q_range;
-		++C_range;
-		Q_cur = *Q_range;
-		C_cur = *C_range;
+		++Q_rangeIter;
+		++C_rangeIter;
 	      }
-	    TEST_FOR_EXCEPTION(! C_range.atLast(), std::logic_error,
-			       "Q_cur is at the last element in the sequence, "
-			       "but C_cur is not.  Please report this bug to "
-			       "the Kokkos developers.");
 	    TEST_FOR_EXCEPTION(curTauIndex < cbIndices.first, std::logic_error,
 			       "curTauIndex=" << curTauIndex << " out of valid "
 			       "range [" << cbIndices.first << "," 
 			       << cbIndices.second << ").  Please report this "
 			       "bug to the Kokkos developers.");
+#ifdef KNR_DEBUG
+	    cerr << "tauArrays_[curTauIndex=" << curTauIndex << "].size() = " 
+		 << tauArrays_[curTauIndex].size() << endl;
+#endif // KNR_DEBUG
 	    // Apply the first block.
 	    applyFirstCacheBlock (combine, applyType, Q_top, 
 				  tauArrays_[curTauIndex--], C_top, work);
@@ -880,33 +754,8 @@ namespace TSQR {
 			     "f tau arrays " << tauArrays_.size() << ".  Pleas"
 			     "e report this bug to the Kokkos developers.");
 	}
-	typedef CacheBlockRange<ConstMatView<LocalOrdinal, Scalar> > const_range_type;
-	typedef CacheBlockRange<MatView<LocalOrdinal, Scalar> > range_type;
-	const bool reversed = applyType_.transposed() ? false : true;
-	const_range_type Q_range (Q_, strategy_, 
-				  cbIndices.first, cbIndices.second,
-				  reversed, contiguousCacheBlocks_);
-	range_type C_range (C_, strategy_, 
-			    cbIndices.first, cbIndices.second,
-			    reversed, contiguousCacheBlocks_);
 
-	// Workspace must be per task, else there will be race
-	// conditions as different tasks attempt to write to and read
-	// from the same workspace simultaneously.
-	std::vector<Scalar> work (C_.ncols());
-
-	typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
-	typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
-	typedef MatView<LocalOrdinal, Scalar> view_type;
-	const_view_type Q_top = blocker_type(Q_.nrows(), Q_.ncols(), strategy_).top_block (Q_, contiguousCacheBlocks_);
-	view_type C_top = blocker_type(C_.nrows(), C_.ncols(), strategy_).top_block (C_, contiguousCacheBlocks_);
-
-	// It would be nice if we could use ArrayView (via
-	// arrayViewFromVector(tauArrays_).view()) to make an iterator
-	// that is checked in debug mode.  Unfortunately, ArrayView
-	// has no reverse iterators ("rbegin()" etc.).
-	apply (applyType_, Q_range, C_range, Q_top, C_top,
-	       cbIndices, work, partitionIndex);
+	apply (applyType_, cbIndices, partitionIndex);
       }
 
     };
@@ -918,33 +767,40 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar>
     class CacheBlockWDP {
     private:
-      ConstMatView<LocalOrdinal, Scalar> A_in_;
-      MatView<LocalOrdinal, Scalar> A_out_;
+      typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
+      typedef MatView<LocalOrdinal, Scalar> view_type;
+      typedef CacheBlockRange<const_view_type> const_range_type;
+      typedef CacheBlockRange<view_type> range_type;
+      
+      const_view_type A_in_;
+      view_type A_out_;
       CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_;
       int numPartitions_;
       bool unblock_;
 
-      /// \fn copyRange
-      /// \brief Copy one block range into another.
+      /// \brief Copy one range of cache blocks into another.
       ///
       /// \param cbInputRange [in] Range of input cache blocks.
       /// \param cbOutputRange [out] Range of output cache blocks.
       void
-      copyRange (CacheBlockRange<ConstMatView<LocalOrdinal, Scalar> >& cbInputRange,
-		 CacheBlockRange<MatView<LocalOrdinal, Scalar> >& cbOutputRange)
+      copyRange (const_range_type& cbInputRange, range_type& cbOutputRange)
       {
-	typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
-	typedef MatView<LocalOrdinal, Scalar> view_type;
+	typedef typename const_range_type::iterator input_iter_type;
+	typedef typename range_type::iterator output_iter_type;
+	
+	input_iter_type inputIter = cbInputRange.begin();
+	output_iter_type outputIter = cbOutputRange.begin();
 
-	const_view_type A_in_cur = *cbInputRange;
-	view_type A_out_cur = *cbOutputRange;
-	while (! A_in_cur.empty())
+	input_iter_type inputEnd = cbInputRange.end();
+	output_iter_type outputEnd = cbOutputRange.end();
+	
+	while (inputIter != inputEnd)
 	  {
+	    const_view_type A_in_cur = *inputIter;
+	    view_type A_out_cur = *outputIter;
 	    A_out_cur.copy (A_in_cur);
-	    ++cbInputRange;
-	    ++cbOutputRange;
-	    A_in_cur = *cbInputRange;
-	    A_out_cur = *cbOutputRange;
+	    ++inputIter;
+	    ++outputIter;
 	  }
       }
 
@@ -991,38 +847,36 @@ namespace TSQR {
       ///   of the matrix.  We parallelize over partitions.
       ///   Partitions respect cache blocks.
       void 
-      execute (const int partitionIndex) 
+      execute (const int partitionIndex)
       {
-	typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
-	typedef MatView<LocalOrdinal, Scalar> view_type;
-	typedef CacheBlockRange<const_view_type> const_range_type;
-	typedef CacheBlockRange<view_type> range_type;
-	
-	if (partitionIndex < 0 || partitionIndex >= numPartitions_)
+	if (partitionIndex < 0 || partitionIndex >= numPartitions_ || 
+	    A_in_.empty())
 	  return;
-	else if (A_in_.empty())
-	  return;
-	
-	std::pair<LocalOrdinal, LocalOrdinal> cbIndices = 
-	  cacheBlockIndexRange (A_in_.nrows(), A_in_.ncols(), partitionIndex, 
-				numPartitions_, strategy_);
-
-	// It's perfectly legal for a partitioning to assign zero
-	// cache block indices to a particular partition.  In that
-	// case, this task has nothing to do.
-	if (cbIndices.second >= cbIndices.first)
-	  return;
-
-	// If unblock_ is false, then A_in_ is in column-major order,
-	// and we want to cache-block it into A_out_.  If unblock_ is
-	// true, then A_in_ is cache-blocked, and we want to
-	// un-cache-block it into A_out_ (a matrix in column-major
-	// order).
-	const_range_type inputRange (A_in_, strategy_, cbIndices.first, 
-				     cbIndices.second, false, unblock_);
-	range_type outputRange (A_out_, strategy_, cbIndices.first, 
-				cbIndices.second, false, ! unblock_);
-	copyRange (inputRange, outputRange);
+	else
+	  {
+	    typedef std::pair<LocalOrdinal, LocalOrdinal> index_range_type;
+	    const index_range_type cbIndices = 
+	      cacheBlockIndexRange (A_in_.nrows(), A_in_.ncols(), 
+				    partitionIndex, numPartitions_, strategy_);
+	    // It's perfectly legal for a partitioning to assign zero
+	    // cache block indices to a particular partition.  In that
+	    // case, this task has nothing to do.
+	    if (cbIndices.first >= cbIndices.second)
+	      return;
+	    else
+	      {
+		// If unblock_ is false, then A_in_ is in column-major
+		// order, and we want to cache-block it into A_out_.  If
+		// unblock_ is true, then A_in_ is cache-blocked, and we
+		// want to un-cache-block it into A_out_ (a matrix in
+		// column-major order).
+		const_range_type inputRange (A_in_, strategy_, cbIndices.first,
+					     cbIndices.second, unblock_);
+		range_type outputRange (A_out_, strategy_, cbIndices.first, 
+					cbIndices.second, ! unblock_);
+		copyRange (inputRange, outputRange);
+	      }
+	  }
       }
     };
 
@@ -1032,15 +886,19 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar>
     class MultWDP {
     private:
-      MatView<LocalOrdinal, Scalar> Q_;
-      ConstMatView<LocalOrdinal, Scalar> B_;
+      typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
+      typedef MatView<LocalOrdinal, Scalar> view_type;
+      typedef CacheBlockRange<view_type> range_type;
+
+      view_type Q_;
+      const_view_type B_;
       CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_;
       int numPartitions_;
       bool contiguousCacheBlocks_;
 
       void
       multBlock (BLAS<LocalOrdinal, Scalar>& blas,
-		 const MatView<LocalOrdinal, Scalar>& Q_cur,
+		 const view_type& Q_cur,
 		 Matrix<LocalOrdinal, Scalar>& Q_temp)
       {
 	const LocalOrdinal numCols = Q_cur.ncols();
@@ -1062,23 +920,23 @@ namespace TSQR {
       ///
       /// \param cbRange [in/out] Range of cache blocks.
       void
-      multRange (CacheBlockRange<MatView<LocalOrdinal, Scalar> >& cbRange)
+      multRange (range_type& cbRange)
       {
-	typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
-	typedef MatView<LocalOrdinal, Scalar> view_type;
+	typedef typename range_type::iterator iter_type;
+	iter_type iter = cbRange.begin();
+	iter_type end = cbRange.end();
 
-	view_type Q_cur = *cbRange;
-	if (Q_cur.empty())
-	  return;
-	else {
-	  Matrix<LocalOrdinal, Scalar> Q_temp;
-	  BLAS<LocalOrdinal, Scalar> blas;
-	  do {
+	// Temporary storage for the BLAS' matrix-matrix multiply
+	// routine (which forbids aliasing of any input argument and
+	// the output argument).
+	Matrix<LocalOrdinal, Scalar> Q_temp;
+	BLAS<LocalOrdinal, Scalar> blas;
+	while (iter != end)
+	  {
+	    view_type Q_cur = *iter;
 	    multBlock (blas, Q_cur, Q_temp);
-	    ++cbRange;
-	    Q_cur = *cbRange;
-	  } while (! Q_cur.empty());
-	}
+	    ++iter;
+	  }
       }
 
     public:
@@ -1111,21 +969,26 @@ namespace TSQR {
       void
       execute (const int partitionIndex) 
       {
-	typedef MatView<LocalOrdinal, Scalar> view_type;
-	typedef CacheBlockRange<view_type> range_type;
-	
-	std::pair<LocalOrdinal, LocalOrdinal> cbIndices = 
-	  cacheBlockIndexRange (Q_.nrows(), Q_.ncols(), partitionIndex, 
-				numPartitions_, strategy_);
-	if (Q_.empty() || cbIndices.second <= cbIndices.first)
+	if (partitionIndex < 0 || partitionIndex >= numPartitions_ || 
+	    Q_.empty())
 	  return;
-
-	range_type range (Q_, strategy_, cbIndices.first, 
-			  cbIndices.second, false, contiguousCacheBlocks_);
-	multRange (range);
+	else
+	  {
+	    typedef std::pair<LocalOrdinal, LocalOrdinal> index_range_type;
+	    const index_range_type cbIndices = 
+	      cacheBlockIndexRange (Q_.nrows(), Q_.ncols(), partitionIndex, 
+				    numPartitions_, strategy_);
+	    if (cbIndices.first >= cbIndices.second)
+	      return;
+	    else
+	      {
+		range_type range (Q_, strategy_, cbIndices.first, 
+				  cbIndices.second, contiguousCacheBlocks_);
+		multRange (range);
+	      }
+	  }
       }
     };
-
 
 
     /// \class FillWDP
@@ -1134,37 +997,28 @@ namespace TSQR {
     template<class LocalOrdinal, class Scalar>
     class FillWDP {
     private:
-      MatView<LocalOrdinal, Scalar> A_;
+      typedef MatView<LocalOrdinal, Scalar> view_type;
+      typedef CacheBlockRange<view_type> range_type;
+
+      view_type A_;
       CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_;
       const Scalar value_;
       int numPartitions_;
       bool contiguousCacheBlocks_;
 
-      //! Fill the cache block A_cur with value.
-      void
-      fillBlock (MatView<LocalOrdinal, Scalar>& A_cur,
-		 const Scalar value)
-      {
-	A_cur.fill (value);
-      }
-
       //! Fill (in place) each cache block in the range with value.
       void
-      fillRange (CacheBlockRange<MatView<LocalOrdinal, Scalar> >& cbRange,
-		 const Scalar value)
+      fillRange (range_type& cbRange, const Scalar value)
       {
-	typedef MatView<LocalOrdinal, Scalar> view_type;
-
-	view_type A_cur = *cbRange;
-	if (A_cur.empty())
-	  return;
-	else {
-	  do {
-	    fillBlock (A_cur, value);
-	    ++cbRange;
-	    A_cur = *cbRange;
-	  } while (! A_cur.empty());
-	}
+	typedef typename range_type::iterator iter_type;
+	iter_type iter = cbRange.begin();
+	iter_type end = cbRange.end();
+	while (iter != end)
+	  {
+	    view_type A_cur = *iter;
+	    A_cur.fill (value);
+	    ++iter;
+	  }
       }
 
     public:
@@ -1197,18 +1051,24 @@ namespace TSQR {
       void
       execute (const int partitionIndex) 
       {
-	typedef MatView<LocalOrdinal, Scalar> view_type;
-	typedef CacheBlockRange<view_type> range_type;
-	
-	std::pair<LocalOrdinal, LocalOrdinal> cbIndices = 
-	  cacheBlockIndexRange (A_.nrows(), A_.ncols(), partitionIndex, 
-				numPartitions_, strategy_);
-	if (A_.empty() || cbIndices.second <= cbIndices.first)
+	if (partitionIndex < 0 || partitionIndex >= numPartitions_ || 
+	    A_.empty())
 	  return;
-
-	range_type range (A_, strategy_, cbIndices.first, 
-			  cbIndices.second, false, contiguousCacheBlocks_);
-	fillRange (range, value_);
+	else
+	  {
+	    typedef std::pair<LocalOrdinal, LocalOrdinal> index_range_type;
+	    const index_range_type cbIndices = 
+	      cacheBlockIndexRange (A_.nrows(), A_.ncols(), partitionIndex, 
+				    numPartitions_, strategy_);
+	    if (cbIndices.first >= cbIndices.second)
+	      return;
+	    else 
+	      {
+		range_type range (A_, strategy_, cbIndices.first, 
+				  cbIndices.second, contiguousCacheBlocks_);
+		fillRange (range, value_);
+	      }
+	  }
       }
     };
   } // namespace details
@@ -1499,8 +1359,11 @@ namespace TSQR {
 	   const LocalOrdinal ldc,
 	   const bool contiguousCacheBlocks) const
     {
-      ConstMatView<LocalOrdinal, Scalar> Q_view (nrows, ncols_Q, Q, ldq);
-      MatView<LocalOrdinal, Scalar> C_view (nrows, ncols_C, C, ldc);
+      typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
+      typedef MatView<LocalOrdinal, Scalar> view_type;
+
+      const_view_type Q_view (nrows, ncols_Q, Q, ldq);
+      view_type C_view (nrows, ncols_C, C, ldc);
       applyImpl (applyType, Q_view, factorOutput, C_view,
 		 false, contiguousCacheBlocks);
     }
@@ -1519,12 +1382,11 @@ namespace TSQR {
     {
       typedef ConstMatView<LocalOrdinal, Scalar> const_view_type;
       typedef MatView<LocalOrdinal, Scalar> view_type;
-      applyImpl (ApplyType::NoTranspose, 
-		 const_view_type (nrows, ncols_Q, Q, ldq), 
-		 factorOutput,
-		 view_type (nrows, ncols_C, C, ldc), 
-		 true, 
-		 contiguousCacheBlocks);
+
+      const_view_type Q_view (nrows, ncols_Q, Q, ldq);
+      view_type C_view (nrows, ncols_C, C, ldc);
+      applyImpl (ApplyType::NoTranspose, Q_view, factorOutput,
+		 C_view, true, contiguousCacheBlocks);
     }
 
     /// \brief Whether the R factor always has a nonnegative diagonal.
@@ -1640,27 +1502,6 @@ namespace TSQR {
       node_->parallel_for (0, numPartitions_, mult);
     }
 
-    //! Return the topmost cache block of C (see \c NodeTsqr documentation).
-    MatView<LocalOrdinal, Scalar>
-    top_block (const MatView<LocalOrdinal, Scalar>& C,
-	       const bool contiguousCacheBlocks) const
-    {
-      typedef std::pair<LocalOrdinal, LocalOrdinal> range_type;
-      const range_type range = 
-	cacheBlockIndexRange (C.nrows(), C.ncols(), int(0),
-			      numPartitions_, strategy_);
-
-      typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
-      blocker_type C_blocker (C.nrows(), C.ncols(), strategy_);
-
-      typedef MatView<LocalOrdinal, Scalar> view_type;
-      if (range.first == range.second)
-	return view_type (0, 0, NULL, 0); // empty cache block
-      else
-	return C_blocker.get_cache_block (C, range.first, 
-					  contiguousCacheBlocks);
-    }
-
   private:
 
     FactorOutput
@@ -1773,10 +1614,9 @@ namespace TSQR {
 	}
     }
 
-    void
+    std::vector<Scalar>
     factorPair (const MatView<LocalOrdinal, Scalar>& R_top,
-		const MatView<LocalOrdinal, Scalar>& R_bot,
-		std::vector<Scalar>& tau) const
+		const MatView<LocalOrdinal, Scalar>& R_bot) const
     {
       TEST_FOR_EXCEPTION(R_top.empty(), std::logic_error,
 			 "R_top is empty!");
@@ -1790,6 +1630,8 @@ namespace TSQR {
 			 << work_.size() << " < R_top.ncols() = " 
 			 << R_top.ncols() << ".");
 
+      std::vector<Scalar> tau (R_top.ncols());
+
       // Our convention for such helper methods is for the immediate
       // parent to allocate workspace (the work_ array in this case).
       //
@@ -1798,11 +1640,12 @@ namespace TSQR {
       // checked that above.
       combine_.factor_pair (R_top.ncols(), R_top.get(), R_top.lda(),
 			    R_bot.get(), R_bot.lda(), &tau[0], &work_[0]);
+      return tau;
     }
 
     void
     factorSecondPass (std::vector<MatView<LocalOrdinal, Scalar> >& topBlocks,
-		      std::vector<std::vector<Scalar> > tauArrays,
+		      std::vector<std::vector<Scalar> >& tauArrays,
 		      const int numPartitions) const
     {
       if (numPartitions <= 1)
@@ -1813,10 +1656,7 @@ namespace TSQR {
 
       typedef typename std::vector<MatView<LocalOrdinal, Scalar> >::size_type size_type;
       for (int k = 1; k < numPartitions; ++k)
-	{
-	  tauArrays[k].resize (numCols);
-	  factorPair (topBlocks[0], topBlocks[k], tauArrays[k]);
-	}
+	tauArrays[k] = factorPair (topBlocks[0], topBlocks[k]);
     }
 
     void
@@ -1847,8 +1687,7 @@ namespace TSQR {
     {
       if (factorOutput.numPartitions() <= 1) // == topBlocksOfC.size() == 0
 	return; // Done!
-      const LocalOrdinal numCols = factorOutput.topBlocks[0].ncols();
-      work_.resize (static_cast<size_t> (numCols));
+      work_.resize (static_cast<size_t> (topBlocksOfC[0].ncols()));
 
       typedef MatView<LocalOrdinal, Scalar> view_type;
       typedef typename std::vector<view_type>::size_type size_type;
@@ -1881,7 +1720,10 @@ namespace TSQR {
 	  // mode).  Therefore, internode TSQR is responsible for
 	  // filling the top block of this node's part of the C
 	  // matrix.
-	  for (int k = factorOutput.numPartitions() - 1; k >= 0; --k)
+	  //
+	  // Don't include the topmost partition in the iteration;
+	  // that corresponds to C_top.
+	  for (int k = factorOutput.numPartitions() - 1; k > 0; --k)
 	    {
 	      view_type C_cur (topBlocksOfC[k].ncols(), topBlocksOfC[k].ncols(),
 			       topBlocksOfC[k].get(), topBlocksOfC[k].lda());
@@ -1889,7 +1731,7 @@ namespace TSQR {
 	      // blocks; for now, we just fill the top n x n part of
 	      // the top blocks with zeros.
 	      if (explicitQ)
-		C_cur.fill (Scalar(0));
+		C_cur.fill (Teuchos::ScalarTraits<Scalar>::zero());
 	      applyPair (applyType,
 			 factorOutput.topBlocks[k],
 			 factorOutput.secondPassTauArrays[k],
