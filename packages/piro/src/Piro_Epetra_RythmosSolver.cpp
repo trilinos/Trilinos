@@ -103,7 +103,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       t_final = rythmosPL->get("Final Time", 0.1);
       
       const Rythmos::TimeRange<Scalar> fwdTimeRange(t_init, t_final);
-      const Scalar delta_t = t_final / numTimeSteps;
+      const Scalar delta_t = t_final / (double) numTimeSteps;
       *out << "\ndelta_t = " << delta_t;
 
       const string stepperType = rythmosPL->get("Stepper Type", "Backward Euler");
@@ -131,6 +131,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
       if (stepperType == "Explicit RK") {
         if (rythmosPL->get("Invert Mass Matrix", false)) {
           Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
+          bool lump=rythmosPL->get("Lump Mass Matrix", false);
           model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
                    sublist(rythmosPL,"Stratimikos", true), origModel));
         }
@@ -167,12 +168,11 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
 
       fwdStateStepper->setParameterList(sublist(rythmosPL, "Rythmos Stepper", true));
 
-cout << "Trying to dump rythmos valid params\n" << endl;
-cout << *(fwdStateStepper->getValidParameters()) << endl;
       {
         RCP<Teuchos::ParameterList>
           integrationControlPL = sublist(rythmosPL, "Rythmos Integration Control", true);
-        integrationControlPL->set( "Take Variable Steps", false );
+        // set default to false
+        bool var = integrationControlPL->get( "Take Variable Steps", false );
         integrationControlPL->set( "Fixed dt", Teuchos::as<double>(delta_t) );
 
        // RCP<Rythmos::IntegratorBase<Scalar> >
@@ -491,6 +491,7 @@ Piro::Epetra::RythmosSolver::getValidRythmosParameters() const
   validPL->set<double>("Max State Error", 1.0, "");
   validPL->set<std::string>("Name", "", "");
   validPL->set<bool>("Invert Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "");
   validPL->set<std::string>("Stepper Method", "", "");
   return validPL;
 }

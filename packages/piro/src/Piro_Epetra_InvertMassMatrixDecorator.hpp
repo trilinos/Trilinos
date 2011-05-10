@@ -68,7 +68,8 @@ class InvertMassMatrixDecorator
   InvertMassMatrixDecorator( 
                 Teuchos::RCP<Teuchos::ParameterList> stratParams,
                 Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
-                bool massMatrixIsConstant=true
+                bool massMatrixIsConstant=true,
+                bool lumpMassMatrix=false
                 );
 
   //@}
@@ -114,12 +115,14 @@ class InvertMassMatrixDecorator
    Teuchos::RCP<Epetra_CrsMatrix> massMatrix;
    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory;
 
+   bool massMatrixIsConstant; // User Setting
+   bool lumpMassMatrix; // User Setting to rowSum Matrix
+   Teuchos::RCP<Epetra_Vector> invDiag;
+
    // The following get modified in evalModel and so are mutable
    mutable Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > lows;
    mutable bool calcMassMatrix; //Internal flag
-   mutable bool massMatrixIsConstant; // User Setting
    mutable Teuchos::RCP<const Thyra::LinearOpBase<double> > A;
-
 };
 }
 }
