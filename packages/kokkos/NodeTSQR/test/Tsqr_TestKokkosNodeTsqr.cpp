@@ -26,16 +26,9 @@
 // ***********************************************************************
 // @HEADER
 
-//#define TRIVIAL_TEST 1
-
-#include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_SerialNode.hpp"
-#ifdef HAVE_KOKKOS_TBB
-#include "Kokkos_TBBNode.hpp"
-#endif
-#ifdef HAVE_KOKKOS_THREADPOOL
-#include "Kokkos_TPINode.hpp"
-#endif
+// The file below includes Kokkos_ConfigDefs.hpp, so this file doesn't
+// have to.  Avoiding unnecessary includes can save build time.
+#include "Kokkos_DefaultNode.hpp"
 
 #include "Teuchos_ConfigDefs.hpp" // HAVE_MPI
 #ifdef HAVE_MPI
@@ -56,8 +49,14 @@ namespace {
   // Return valid parameter list with default values, corresponding to
   // the given NodeType (Kokkos Node type).
   //
+  // Doxygen won't generate documentation from these comments; this is
+  // on purpose, since users aren't meant to call these functions
+  // (they are for testing only).
+  //
   template<class NodeType>
   Teuchos::RCP<Teuchos::ParameterList> getValidNodeParameters ();
+
+#ifdef HAVE_KOKKOS_TBB
   //
   // Specialization for TBBNode: 
   // - "Num Threads" (int) option, defaults to -1 for late init.
@@ -74,6 +73,9 @@ namespace {
     plist->set ("Num Threads", -1);
     return plist;
   }
+#endif // HAVE_KOKKOS_TBB
+
+#ifdef HAVE_KOKKOS_THREADPOOL
   //
   // Specialization for TPINode: 
   // - "Num Threads" (int) option, defaults to 0.  This number
@@ -97,6 +99,8 @@ namespace {
     plist->set ("Verbose", 1);
     return plist;
   }
+#endif // HAVE_KOKKOS_THREADPOOL
+
   //
   // Specialization for SerialNode, which takes no parameters.
   //
@@ -208,10 +212,6 @@ namespace {
 	       const TestParameters& params,
 	       bool& printFieldNames)
     {
-#ifdef TRIVIAL_TEST
-      std::cerr << "Benchmark stub for type " 
-		<< Teuchos::TypeNameTraits<T>::name() << std::endl;
-#else
       using TSQR::Test::benchmarkKokkosNodeTsqr;
       benchmarkKokkosNodeTsqr<int, T> (node,
 				       params.numTrials, 
@@ -222,7 +222,6 @@ namespace {
 				       params.contiguousCacheBlocks,
 				       printFieldNames,
 				       params.humanReadable);
-#endif // TRIVIAL_TEST
       printFieldNames = false;
     }
 
@@ -233,10 +232,6 @@ namespace {
 	    bool& printFieldNames)
     {
       TSQR::Random::NormalGenerator<int, T> gen (seed);
-#ifdef TRIVIAL_TEST
-      std::cerr << "Verify stub for type " 
-		<< Teuchos::TypeNameTraits<T>::name() << std::endl;
-#else
       using TSQR::Test::verifyKokkosNodeTsqr;
       verifyKokkosNodeTsqr<int, T> (node,
 				    gen,
@@ -248,7 +243,6 @@ namespace {
 				    printFieldNames,
 				    params.humanReadable,
 				    params.debug);
-#endif // TRIVIAL_TEST
       printFieldNames = false;
       // Save the seed for next time, since we can't use the same
       // NormalGenerator for a different Scalar type T.
