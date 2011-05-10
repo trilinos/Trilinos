@@ -82,7 +82,8 @@ namespace Stokhos {
       ordinal_type p,
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
       const Stokhos::Quadrature<ordinal_type, value_type>& quad,
-      bool normalize);
+      bool normalize,
+      bool limit_integration_order);
 
     //! Destructor
     ~LanczosPCEBasis();
@@ -110,6 +111,9 @@ namespace Stokhos {
     virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const;
 
     //@}
+
+    //! Get new coefficients in this new basis
+    value_type getNewCoeffs(ordinal_type i) const;
 
     //! Map expansion coefficients from this basis to original
     void transformCoeffsFromLanczos(const value_type *in, 
@@ -149,6 +153,9 @@ namespace Stokhos {
     typedef typename lanczos_type::matrix_type matrix_type;
     typedef typename lanczos_type::vector_type vector_type;
 
+    //! Flag indicating whether to limit the integration order
+    bool limit_integration_order;
+
     //! Number of quadrature points
     ordinal_type nqp;
 
@@ -166,6 +173,9 @@ namespace Stokhos {
 
     //! Matrix mapping coefficients in Stieltjes basis back to original basis
     matrix_type fromStieltjesMat;
+
+    //! Projection of pce in new basis
+    vector_type new_pce;
 
   }; // class LanczosPCEBasis
 

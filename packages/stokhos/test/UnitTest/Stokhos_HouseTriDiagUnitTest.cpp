@@ -35,8 +35,7 @@
 
 #include "Stokhos.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
-#include "Stokhos_LanczosPCEBasis.hpp"
-#include "Stokhos_LanczosProjPCEBasis.hpp"
+#include "Stokhos_HouseTriDiagPCEBasis.hpp"
 
 // Quadrature functor to be passed into quadrature expansion for mapping
 // from Lanczos basis back to original PCE
@@ -65,14 +64,13 @@ struct Lanczos_PCE_Setup {
   OrdinalType sz, st_sz;
   Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
   Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > exp;
-  Teuchos::RCP<const Stokhos::LanczosProjPCEBasis<OrdinalType,ValueType> > st_1d_proj_basis;
-  Teuchos::RCP<const Stokhos::LanczosPCEBasis<OrdinalType,ValueType> > st_1d_basis;
+  Teuchos::RCP<const Stokhos::HouseTriDiagPCEBasis<OrdinalType,ValueType> > st_1d_proj_basis;
   Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > st_bases;
   Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > st_basis;
   Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > st_quad;
   Stokhos::OrthogPolyApprox<OrdinalType,ValueType> u, v, u_st, v_st;
   
-  Lanczos_PCE_Setup(bool normalize, bool project) : 
+  Lanczos_PCE_Setup(bool normalize) : 
     func()
   {
     rtol = 1e-8;
@@ -84,7 +82,7 @@ struct Lanczos_PCE_Setup {
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > bases(d);
     for (OrdinalType i=0; i<d; i++)
       bases[i] = 
-	Teuchos::rcp(new Stokhos::LegendreBasis<OrdinalType,ValueType>(p));
+	Teuchos::rcp(new Stokhos::LegendreBasis<OrdinalType,ValueType>(p, true));
     basis =
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<OrdinalType,ValueType>(bases));
     
@@ -113,32 +111,18 @@ struct Lanczos_PCE_Setup {
     
     // Compute Lanczos basis
     st_bases.resize(1);
-    if (project) {
-      st_1d_proj_basis = 
-	Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<OrdinalType,ValueType>(
-		       p, u, *Cijk, normalize));
-      st_bases[0] = st_1d_proj_basis;
-    }
-    else {
-      st_1d_basis = 
-	Teuchos::rcp(new Stokhos::LanczosPCEBasis<OrdinalType,ValueType>(
-		       p, u, *quad, normalize, false));
-      st_bases[0] = st_1d_basis;
-    }
+    st_1d_proj_basis = 
+      Teuchos::rcp(new Stokhos::HouseTriDiagPCEBasis<OrdinalType,ValueType>(
+		     p, u, *Cijk));
+    st_bases[0] = st_1d_proj_basis;
     
     st_basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<OrdinalType,ValueType>(st_bases, 1e-15));
     st_sz = st_basis->size();
     u_st.reset(st_basis);
     v_st.reset(st_basis);
-    if (project) {
-      u_st[0] = st_1d_proj_basis->getNewCoeffs(0);
-      u_st[1] = st_1d_proj_basis->getNewCoeffs(1);
-    }
-    else {
-      u_st[0] = st_1d_basis->getNewCoeffs(0);
-      u_st[1] = st_1d_basis->getNewCoeffs(1);
-    }
+    u_st[0] = st_1d_proj_basis->getNewCoeffs(0);
+    u_st[1] = st_1d_proj_basis->getNewCoeffs(1);
     
     // Tensor product quadrature
     st_quad = 
@@ -158,21 +142,16 @@ struct Lanczos_PCE_Setup {
   
 };
 
-#define LANCZOS_UNIT_TESTS(BASENAME, TAG, FUNC, NORMALIZE, PROJECT)	\
+#define LANCZOS_UNIT_TESTS(BASENAME, TAG, FUNC, NORMALIZE)		\
 namespace BASENAME ## TAG {						\
 									\
-  Lanczos_PCE_Setup< FUNC<int,double> > setup(NORMALIZE, PROJECT);	\
+  Lanczos_PCE_Setup< FUNC<int,double> > setup(NORMALIZE);		\
 									\
   TEUCHOS_UNIT_TEST( BASENAME, TAG ## Map ) {				\
    Stokhos::OrthogPolyApprox<int,double> u2(setup.basis);		\
-   if (PROJECT)								\
-     setup.st_1d_proj_basis->transformCoeffsFromLanczos(		\
-       setup.u_st.coeff(),						\
-       u2.coeff());							\
-   else									\
-     setup.st_1d_basis->transformCoeffsFromLanczos(			\
-       setup.u_st.coeff(),						\
-       u2.coeff());							\
+   setup.st_1d_proj_basis->transformCoeffsFromHouse(			\
+     setup.u_st.coeff(),						\
+     u2.coeff());							\
    success = Stokhos::comparePCEs(setup.u, "u", u2, "u2",		\
 				  setup.rtol, setup.atol, out);		\
   }									\
@@ -250,13 +229,7 @@ struct Lanczos_Cos_Func {
   }
 };
 LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis_Proj, Cos, Lanczos_Cos_Func, 
-		   false, true)
-LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis_ProjNorm, Cos, Lanczos_Cos_Func, 
-		   true, true)
-LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis, Cos, Lanczos_Cos_Func, 
-		   false, false)
-LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis_Norm, Cos, Lanczos_Cos_Func, 
-		   true, false)
+		   false)
   
 //
 // Lanczos tests based on expansion of u = sin(x) where x is a U([-1,1])
@@ -275,13 +248,7 @@ struct Lanczos_Sin_Func {
   }
 };
 LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis_Proj, Sin, Lanczos_Sin_Func, 
-		   false, true)
-LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis_ProjNorm, Sin, Lanczos_Sin_Func, 
-		   true, true)
-LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis, Sin, Lanczos_Sin_Func, 
-		   false, false)
-LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis_Norm, Sin, Lanczos_Sin_Func, 
-		   true, false)
+		   false)
 
 //
 // Lanczos tests based on expansion of u = exp(x) where x is a U([-1,1])
@@ -301,13 +268,7 @@ struct Lanczos_Exp_Func {
   }
 };
 LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis_Proj, Exp, Lanczos_Exp_Func, 
-		   false, true)
-LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis_ProjNorm, Exp, Lanczos_Exp_Func, 
-		   true, true)
-LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis, Exp, Lanczos_Exp_Func, 
-		   false, false)
-LANCZOS_UNIT_TESTS(Stokhos_LanczosPCEBasis_Norm, Exp, Lanczos_Exp_Func, 
-		   true, false)
+		   false)
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

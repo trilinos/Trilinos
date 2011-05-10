@@ -31,35 +31,29 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 template <typename ordinal_type, typename value_type>
-Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
-LanczosProjPCEBasis(
+Stokhos::HouseTriDiagPCEBasis<ordinal_type, value_type>::
+HouseTriDiagPCEBasis(
   ordinal_type p,
   const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
   const Stokhos::Sparse3Tensor<ordinal_type, value_type>& Cijk,
-  bool normalize,
   bool limit_integration_order_) :
-  RecurrenceBasis<ordinal_type, value_type>("Lanczos-proj PCE", p, normalize),
+  RecurrenceBasis<ordinal_type, value_type>("Householder Tridiagonalization PCE", p, true),
   limit_integration_order(limit_integration_order_),
   pce_sz(pce.basis()->size()),
-  Cijk_matrix(pce_sz,pce_sz),
-  weights(Teuchos::Copy, 
-	  const_cast<value_type*>(pce.basis()->norm_squared().getRawPtr()), 
-	  pce_sz),
-  u0(pce_sz),
-  lanczos_vecs(pce_sz, p+1),
+  a(pce_sz+1), 
+  b(pce_sz),
+  basis_vecs(pce_sz, p+1),
   new_pce(p+1)
 {
-  u0[0] = value_type(1);
-
   pce_norms = pce.basis()->norm_squared();
-  for (ordinal_type i=0; i<pce_sz; i++) {
-    pce_norms[i] = std::sqrt(pce_norms[i]);
-    weights[i] = value_type(1);
-  }
   
-  // Compute matrix -- For the matrix to be symmetric, the original basis
-  // must be normalized.  However we don't want to require this, so we
-  // rescale the pce coefficients for a normalized basis
+  // Compute matrix -- rescale basis to unit norm
+  matrix_type A(pce_sz+1, pce_sz+1);
+  A(0,0) = 1.0;
+  for (ordinal_type i=0; i<pce_sz; i++) {
+    A(0,i+1) = 1.0/pce_sz;
+    A(i+1,0) = 1.0/pce_sz;
+  }
   typedef Stokhos::Sparse3Tensor<ordinal_type, value_type> Cijk_type;
   for (typename Cijk_type::k_iterator k_it = Cijk.k_begin();
        k_it != Cijk.k_end(); ++k_it) {
@@ -71,35 +65,83 @@ LanczosProjPCEBasis(
       for (typename Cijk_type::kji_iterator i_it = Cijk.i_begin(j_it);
 	   i_it != Cijk.i_end(j_it); ++i_it) {
 	ordinal_type i = index(i_it);
-	value_type c = value(i_it);
-	val += pce[i]*c / (pce_norms[j]*pce_norms[k]);
+	value_type c = value(i_it) / std::sqrt(pce_norms[i]*pce_norms[j]*pce_norms[k]);
+	val += std::sqrt(pce_norms[i])*pce[i]*c;
       }
-      Cijk_matrix(k,j) = val;
+      A(k+1,j+1) = val;
     }
   }
+
+  // Call LAPACK Householder tridiagonalization algorithm
+  // Householder vectors are stored in lower-triangular part
+  ordinal_type ws_size, info;
+  value_type ws_size_query;
+  Teuchos::Array<value_type> tau(pce_sz-1);
+  lapack.SYTRD('L', pce_sz+1, A.values(), A.stride(), &a[0], &b[0], &tau[0], 
+	       &ws_size_query, -1, &info);
+  TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
+		     "SYTRD returned value " << info);
+  ws_size = static_cast<ordinal_type>(ws_size_query);
+  Teuchos::Array<value_type> work(ws_size);
+  lapack.SYTRD('L', pce_sz+1, A.values(), A.stride(), &a[0], &b[0], &tau[0], 
+	       &work[0], ws_size, &info);
+  TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
+		     "SYTRD returned value " << info);
+
+  // Set sub-diagonal terms to zero
+  for (ordinal_type j=0; j<pce_sz; j++)
+    A(j+1,j) = 0.0;
   
+  // Now compute orthogonal matrix
+  lapack.ORGQR(pce_sz+1, pce_sz+1, pce_sz-1, A.values(), A.stride(), &tau[0], 
+	       &ws_size_query, -1, &info);
+  TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
+		     "ORGQR returned value " << info);
+  ws_size = static_cast<ordinal_type>(ws_size_query);
+  work.resize(ws_size);
+  lapack.ORGQR(pce_sz+1, pce_sz+1, pce_sz-1, A.values(), A.stride(), &tau[0], 
+	       &work[0], ws_size, &info);
+  TEST_FOR_EXCEPTION(info != 0, std::logic_error, 
+		     "ORGQR returned value " << info);
+
+  // Get basis vectors
+  for (ordinal_type j=0; j<p+1; j++)
+    for (ordinal_type i=0; i<pce_sz; i++)
+      basis_vecs(i,j) = A(i+1,j+1);
+
   // Setup of rest of recurrence basis
   this->setup();
 
   // Project original PCE into the new basis
   vector_type u(pce_sz);
   for (ordinal_type i=0; i<pce_sz; i++)
-    u[i] = pce[i]*pce_norms[i];
-  new_pce.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, lanczos_vecs, u, 
+    u[i] = pce[i]*std::sqrt(pce_norms[i]);
+  new_pce.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, basis_vecs, u, 
 		   0.0);
   for (ordinal_type i=0; i<=p; i++)
     new_pce[i] /= this->norms[i];
+
+  std::cout << new_pce << std::endl;
+
+  // Test orthogonality of basis vectors
+  matrix_type prod(p+1,p+1);
+  prod.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, basis_vecs, basis_vecs, 
+		0.0);
+  for (ordinal_type j=0; j<p+1; j++)
+    prod(j,j) -= 1.0;
+  std::cout << "orthogonalization error = " << prod.normInf() << std::endl;
+  //std::cout << prod << std::endl;
 }
 
 template <typename ordinal_type, typename value_type>
-Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
-~LanczosProjPCEBasis()
+Stokhos::HouseTriDiagPCEBasis<ordinal_type, value_type>::
+~HouseTriDiagPCEBasis()
 {
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
+Stokhos::HouseTriDiagPCEBasis<ordinal_type, value_type>::
 getQuadPoints(ordinal_type quad_order,
 	      Teuchos::Array<value_type>& quad_points,
 	      Teuchos::Array<value_type>& quad_weights,
@@ -139,17 +181,17 @@ getQuadPoints(ordinal_type quad_order,
 
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
-Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
+Stokhos::HouseTriDiagPCEBasis<ordinal_type, value_type>::
 cloneWithOrder(ordinal_type p) const
 {
    return 
-     Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<ordinal_type,value_type>(
+     Teuchos::rcp(new Stokhos::HouseTriDiagPCEBasis<ordinal_type,value_type>(
 		    p,*this));
 }
 
 template <typename ordinal_type, typename value_type>
 value_type
-Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
+Stokhos::HouseTriDiagPCEBasis<ordinal_type, value_type>::
 getNewCoeffs(ordinal_type i) const
 {
   return new_pce[i];
@@ -157,84 +199,48 @@ getNewCoeffs(ordinal_type i) const
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
-transformCoeffsFromLanczos(const value_type *in, value_type *out) const
+Stokhos::HouseTriDiagPCEBasis<ordinal_type, value_type>::
+transformCoeffsFromHouse(const value_type *in, value_type *out) const
 {
-  // Transform coefficients to normalized basis
-  Teuchos::BLAS<ordinal_type, value_type> blas;
   blas.GEMV(Teuchos::NO_TRANS, pce_sz, this->p+1, 
-	    value_type(1.0), lanczos_vecs.values(), pce_sz, 
+	    value_type(1.0), basis_vecs.values(), pce_sz, 
 	    in, ordinal_type(1), value_type(0.0), out, ordinal_type(1));
-
-  // Transform from normalized to original
   for (ordinal_type i=0; i<pce_sz; i++)
     out[i] /= pce_norms[i];
 }
 
 template <typename ordinal_type, typename value_type>
 bool
-Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
+Stokhos::HouseTriDiagPCEBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
 			      Teuchos::Array<value_type>& alpha,
 			      Teuchos::Array<value_type>& beta,
 			      Teuchos::Array<value_type>& delta,
 			      Teuchos::Array<value_type>& gamma) const
 {
-  Teuchos::Array<value_type> nrm(n);
-  vectorspace_type vs(weights);
-  operator_type A(Cijk_matrix);
-
-  // Create space to store lanczos vectors -- use lanczos_vecs if 
-  // we are requesting p+1 vectors
-  Teuchos::RCP<matrix_type> lv;
-  if (n == this->p+1)
-    lv = Teuchos::rcp(&lanczos_vecs, false);
-  else
-    lv = Teuchos::rcp(new matrix_type(pce_sz,n));
-
-  if (this->normalize)
-    lanczos_type::computeNormalized(n, vs, A, u0, *lv, alpha, beta, nrm);
-  else
-    lanczos_type::compute(n, vs, A, u0, *lv, alpha, beta, nrm);
-
+  // Get recurrence coefficients from the full set we already computed
   for (ordinal_type i=0; i<n; i++) {
+    alpha[i] = a[i];
+    beta[i] = b[i];
     delta[i] = value_type(1.0);
-  }
-  if (this->normalize)
-    gamma = beta;
-  else
-    for (ordinal_type i=0; i<n; i++)
-      gamma[i] = value_type(1.0);
+    gamma[i] = b[i];
 
-  /*
-  matrix_type slv(pce_sz, n);
-  for (ordinal_type j=0; j<n; j++)
-    for (ordinal_type i=0; i<pce_sz; i++)
-      slv(i,j) = (*lv)(i,j) * weights[i];
-  matrix_type prod(n,n);
-  prod.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, *lv, slv, 0.0);
-  for (ordinal_type j=0; j<n; j++) {
-    for (ordinal_type i=0; i<n; i++)
-      prod(i,j) /= std::sqrt(nrm[i]*nrm[j]);
-    prod(j,j) -= 1.0;
+    std::cout << "i = " << i << " alpha = " << alpha[i] << " beta = " << beta[i]
+	      << " gamma = " << gamma[i] << std::endl;
   }
-  std::cout << "orthogonalization error = " << prod.normInf() << std::endl;
-  */
 
-  return this->normalize;
+  return true;
 }
 
 template <typename ordinal_type, typename value_type> 
-Stokhos::LanczosProjPCEBasis<ordinal_type, value_type>::
-LanczosProjPCEBasis(ordinal_type p, const LanczosProjPCEBasis& basis) :
-  RecurrenceBasis<ordinal_type, value_type>("Lanczos-proj PCE", p, false),
+Stokhos::HouseTriDiagPCEBasis<ordinal_type, value_type>::
+HouseTriDiagPCEBasis(ordinal_type p, const HouseTriDiagPCEBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>("Householder Tridiagonalization PCE", p, false),
   limit_integration_order(basis.limit_integration_order),
   pce_sz(basis.pce_sz),
-  pce_norms(basis.pce_norms),
-  Cijk_matrix(basis.Cijk_matrix),
-  weights(basis.weights),
-  u0(basis.u0),
-  lanczos_vecs(basis.lanczos_vecs),
+  a(basis.a),
+  b(basis.b),
+  basis_vecs(basis.basis_vecs),
   new_pce(basis.new_pce)
 {
   this->setup();

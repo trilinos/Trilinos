@@ -96,16 +96,24 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  LanczosProjUnitTest
-  SOURCES Stokhos_LanczosProjUnitTest.cpp
+  LanczosUnitTest
+  SOURCES Stokhos_LanczosUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  LanczosUnitTest
-  SOURCES Stokhos_LanczosUnitTest.cpp
+  HouseTriDiagUnitTest
+  SOURCES Stokhos_HouseTriDiagUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  MonoProjUnitTest
+  SOURCES Stokhos_MonoProjUnitTest.cpp
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1

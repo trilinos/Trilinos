@@ -62,14 +62,8 @@ StieltjesPCEBasis(
   ordinal_type nqp = pce_weights.size();
   pce_vals.resize(nqp);
   phi_vals.resize(nqp);
-  double mean = pce->mean();
-  double std_dev = pce->standard_deviation();
-  std::cout << "mean = " << mean << " std_dev = " << std_dev << std::endl;
   for (ordinal_type i=0; i<nqp; i++) {
-    // pce_vals[i] = 
-    //   (pce->evaluate(quad_points[i], basis_values[i])-mean)/std_dev;
-    pce_vals[i] = 
-      (pce->evaluate(quad_points[i], basis_values[i]));
+    pce_vals[i] = pce->evaluate(quad_points[i], basis_values[i]);
     phi_vals[i].resize(p+1);
   }
 
@@ -122,9 +116,8 @@ getQuadPoints(ordinal_type quad_order,
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
 
   // We can't reliably generate quadrature points of order > 2*p
-  //std::cout << "quad_order = " << quad_order << ", 2*p = " << 2*this->p << std::endl;
-  // if (quad_order > 2*this->p)
-  //   quad_order = 2*this->p;
+  if (!project_integrals && quad_order > 2*this->p)
+    quad_order = 2*this->p;
   Stokhos::RecurrenceBasis<ordinal_type,value_type>::getQuadPoints(quad_order, 
 								   quad_points, 
 								   quad_weights,
@@ -207,7 +200,7 @@ stieltjes(ordinal_type nstart,
       integrateBasisSquared(i, a, b, weights, points, phi_vals, val1, val2);
     // std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
     // 	      << std::endl;
-    TEST_FOR_EXCEPTION(val1 < 0, std::logic_error,
+    TEST_FOR_EXCEPTION(val1 < 0.0, std::logic_error,
 		     "Stokhos::StieltjesPCEBasis::stieltjes():  "
 		       << " Polynomial " << i << " out of " << nfinish 
 		       << " has norm " << val1 
@@ -216,8 +209,8 @@ stieltjes(ordinal_type nstart,
     a[i] = val2/val1;
     b[i] = nrm[i]/nrm[i-1];
 
-    std::cout << "i = " << i << " alpha = " << a[i] << " beta = " << b[i]
-	      << " nrm = " << nrm[i] << std::endl;
+    // std::cout << "i = " << i << " alpha = " << a[i] << " beta = " << b[i]
+    // 	      << " nrm = " << nrm[i] << std::endl;
   }
 }
 

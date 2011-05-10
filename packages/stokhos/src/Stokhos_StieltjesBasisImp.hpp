@@ -92,7 +92,6 @@ getQuadPoints(ordinal_type quad_order,
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
 
   // We can't reliably generate quadrature points of order > 2*p
-  //std::cout << "quad_order = " << quad_order << ", 2*p = " << 2*this->p << std::endl;
   if (quad_order > 2*this->p)
     quad_order = 2*this->p;
   Stokhos::RecurrenceBasis<ordinal_type,value_type>::getQuadPoints(quad_order, 
@@ -169,9 +168,9 @@ stieltjes(ordinal_type nstart,
   }
   for (ordinal_type i=start; i<nfinish; i++) {
     integrateBasisSquared(i, a, b, weights, points, phi_vals, val1, val2);
-    std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
-    	      << std::endl;
-    TEST_FOR_EXCEPTION(val1 < 1.0e-14, std::logic_error,
+    // std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
+    // 	      << std::endl;
+    TEST_FOR_EXCEPTION(val1 < 0.0, std::logic_error,
 		     "Stokhos::StieltjesBasis::stieltjes():  "
 		       << " Polynomial " << i << " out of " << nfinish 
 		       << " has norm " << val1 

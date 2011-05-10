@@ -26,49 +26,28 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_LANCZOSPROJPCEBASIS_HPP
-#define STOKHOS_LANCZOSPROJPCEBASIS_HPP
+#ifndef STOKHOS_HOUSETRIDIAGPCEBASIS_HPP
+#define STOKHOS_HOUSETRIDIAGPCEBASIS_HPP
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 #include "Stokhos_RecurrenceBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
-#include "Stokhos_Lanczos.hpp"
+#include "Stokhos_LanczosProjPCEBasis.hpp"
 
 namespace Stokhos {
-
-  template <typename ord_type, typename val_type>
-  class DenseOperator {
-  public:
-    typedef ord_type ordinal_type;
-    typedef val_type value_type;
-    typedef Teuchos::SerialDenseMatrix<ordinal_type, value_type> matrix_type;
-    typedef Teuchos::SerialDenseVector<ordinal_type, value_type> vector_type;
-
-    DenseOperator(const matrix_type& A_): A(A_) {}
-    
-    void 
-    apply(const vector_type& u, vector_type& v) const {
-      v.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, value_type(1), 
-                A, u, value_type(0));
-    }
-
-  protected:
-
-    const matrix_type& A;
-
-  };
 
   /*! 
    * \brief Generates three-term recurrence using the Lanczos 
    * procedure applied to a polynomial chaos expansion in another basis.
    */
   template <typename ordinal_type, typename value_type>
-  class LanczosProjPCEBasis : 
+  class HouseTriDiagPCEBasis : 
     public RecurrenceBasis<ordinal_type, value_type> {
   public:
 
@@ -78,15 +57,14 @@ namespace Stokhos {
      * \param pce polynomial chaos expansion defining new density function
      * \param quad quadrature data for basis of PC expansion
      */
-    LanczosProjPCEBasis(
+    HouseTriDiagPCEBasis(
       ordinal_type p,
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
       const Stokhos::Sparse3Tensor<ordinal_type, value_type>& Cijk,
-      bool normalize,
       bool limit_integration_order = false);
 
     //! Destructor
-    ~LanczosProjPCEBasis();
+    ~HouseTriDiagPCEBasis();
 
     //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
     //@{
@@ -116,7 +94,7 @@ namespace Stokhos {
     value_type getNewCoeffs(ordinal_type i) const;
 
     //! Map expansion coefficients from this basis to original
-    void transformCoeffsFromLanczos(const value_type *in, 
+    void transformCoeffsFromHouse(const value_type *in, 
 				      value_type *out) const;
 
   protected:
@@ -137,21 +115,24 @@ namespace Stokhos {
   private:
 
     // Prohibit copying
-    LanczosProjPCEBasis(const LanczosProjPCEBasis&);
+    HouseTriDiagPCEBasis(const HouseTriDiagPCEBasis&);
 
     // Prohibit Assignment
-    LanczosProjPCEBasis& operator=(const LanczosProjPCEBasis& b);
+    HouseTriDiagPCEBasis& operator=(const HouseTriDiagPCEBasis& b);
 
     //! Copy constructor with specified order
-    LanczosProjPCEBasis(ordinal_type p, const LanczosProjPCEBasis& basis);
+    HouseTriDiagPCEBasis(ordinal_type p, const HouseTriDiagPCEBasis& basis);
 
   protected:
 
-    typedef WeightedVectorSpace<ordinal_type,value_type> vectorspace_type;
-    typedef DenseOperator<ordinal_type,value_type> operator_type;
-    typedef Stokhos::Lanczos<vectorspace_type, operator_type> lanczos_type;
-    typedef typename lanczos_type::matrix_type matrix_type;
-    typedef typename lanczos_type::vector_type vector_type;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type,value_type> matrix_type;
+    typedef Teuchos::SerialDenseVector<ordinal_type,value_type> vector_type;
+
+    //! LAPACK routines
+    Teuchos::LAPACK<ordinal_type,value_type> lapack;
+
+    //! BLAS routines
+    Teuchos::BLAS<ordinal_type,value_type> blas;
 
     //! Flag indicating whether to limit the integration order
     bool limit_integration_order;
@@ -162,26 +143,23 @@ namespace Stokhos {
     //! Basis norms
     Teuchos::Array<value_type> pce_norms;
 
-    //! Triple-product matrix used in generating lanczos vectors
-    matrix_type Cijk_matrix;
+    //! Stores full set of alpha coefficients
+    Teuchos::Array<value_type> a;
 
-    //! Weighting vector used in inner-products
-    vector_type weights;
+    //! Stores full set of beta coefficients
+    Teuchos::Array<value_type> b;
 
-    //! Initial Lanczos vector
-    vector_type u0;
-
-    //! Lanczos vectors
-    mutable matrix_type lanczos_vecs;
+    //! Basis vectors
+    matrix_type basis_vecs;
 
     //! Projection of pce in new basis
     vector_type new_pce;
 
-  }; // class LanczosProjPCEBasis
+  }; // class HouseTriDiagPCEBasis
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_LanczosProjPCEBasisImp.hpp"
+#include "Stokhos_HouseTriDiagPCEBasisImp.hpp"
 
 #endif

@@ -66,11 +66,12 @@ int main(int argc, char **argv)
 
     const unsigned int d = 2;
     const unsigned int pmin = 1;
-    const unsigned int pmax = 10;
+    const unsigned int pmax = 15;
     const unsigned int np = pmax-pmin+1;
     bool use_pce_quad_points = false;
     bool normalize = false;
-    bool project_integrals = true;
+    bool project_integrals = false;
+    bool lanczos = false;
     bool sparse_grid = true;
 #ifndef HAVE_STOKHOS_DAKOTA
     sparse_grid = false;
@@ -130,26 +131,41 @@ int main(int argc, char **argv)
 	
       // Compute Stieltjes basis
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
-      // st_bases[0] = 
-      // 	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-      // 		       p, Teuchos::rcp(&u,false), quad, use_pce_quad_points,
-      // 		       normalize, project_integrals, Cijk));
-      // st_bases[1] = 
-      // 	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-      // 		       p, Teuchos::rcp(&v,false), quad, use_pce_quad_points,
-      		       // normalize, project_integrals, Cijk));
-      st_bases[0] = 
-      	Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
-      		       p, u, *quad, normalize));
-      st_bases[1] = 
-      	Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
-      		       p, v, *quad, normalize));
-      // st_bases[0] = 
-      // 	Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
-      // 		       p, u, *Cijk, normalize));
-      // st_bases[1] = 
-      // 	Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
-      // 		       p, v, *Cijk, normalize));
+      Teuchos::RCP< Stokhos::LanczosProjPCEBasis<int,double> > stp_basis_u, stp_basis_v;
+      Teuchos::RCP< Stokhos::LanczosPCEBasis<int,double> > st_basis_u, st_basis_v;
+      if (lanczos) {
+        if (project_integrals) {
+	  stp_basis_u = 
+	    Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
+	  		 p, u, *Cijk, normalize, true));
+	  stp_basis_v = 
+	    Teuchos::rcp(new Stokhos::LanczosProjPCEBasis<int,double>(
+			 p, v, *Cijk, normalize, true));
+	  st_bases[0] = stp_basis_u;
+	  st_bases[1] = stp_basis_v;
+        }
+        else {
+  	  st_basis_u = 
+	    Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
+			 p, u, *quad, normalize, true));
+	  st_basis_v = 
+	    Teuchos::rcp(new Stokhos::LanczosPCEBasis<int,double>(
+			 p, v, *quad, normalize, true));
+	  st_bases[0] = st_basis_u;
+	  st_bases[1] = st_basis_v;
+        }
+      }
+      else {
+        st_bases[0] =
+          Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
+                       p, Teuchos::rcp(&u,false), quad, use_pce_quad_points,
+                       normalize, project_integrals, Cijk));
+        st_bases[1] =
+          Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
+                       p, Teuchos::rcp(&v,false), quad, use_pce_quad_points,
+                       normalize, project_integrals, Cijk));
+      }
+      
       Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > 
 	st_basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
@@ -157,11 +173,27 @@ int main(int argc, char **argv)
 
       Stokhos::OrthogPolyApprox<int,double>  u_st(st_basis), v_st(st_basis),
 	w_st(st_basis);
-      u_st.term(0, 0) = u.mean();
-      u_st.term(0, 1) = 1.0;
-      v_st.term(0, 0) = v.mean();
-      v_st.term(1, 1) = 1.0;
-      
+      if (lanczos) {
+        if (project_integrals) {
+	  u_st.term(0, 0) = stp_basis_u->getNewCoeffs(0);
+	  u_st.term(0, 1) = stp_basis_u->getNewCoeffs(1);
+	  v_st.term(0, 0) = stp_basis_v->getNewCoeffs(0);
+	  v_st.term(1, 1) = stp_basis_v->getNewCoeffs(1);
+        }
+        else {
+	  u_st.term(0, 0) = st_basis_u->getNewCoeffs(0);
+	  u_st.term(0, 1) = st_basis_u->getNewCoeffs(1);
+	  v_st.term(0, 0) = st_basis_v->getNewCoeffs(0);
+	  v_st.term(1, 1) = st_basis_v->getNewCoeffs(1);
+        }
+      }
+      else {
+        u_st.term(0, 0) = u.mean();
+        u_st.term(0, 1) = 1.0;
+        v_st.term(0, 0) = v.mean();
+        v_st.term(1, 1) = 1.0;
+      }
+
       // Triple product tensor
       Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > st_Cijk =
 	st_basis->computeTripleProductTensor(st_basis->size());

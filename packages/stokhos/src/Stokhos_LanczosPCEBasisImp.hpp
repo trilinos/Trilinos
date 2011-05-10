@@ -36,8 +36,10 @@ LanczosPCEBasis(
    ordinal_type p,
    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
    const Stokhos::Quadrature<ordinal_type, value_type>& quad,
-   bool normalize) :
+   bool normalize,
+   bool limit_integration_order_) :
   RecurrenceBasis<ordinal_type, value_type>("Lanczos PCE", p, normalize),
+  limit_integration_order(limit_integration_order_),
   nqp(quad.size()),
   pce_weights(Teuchos::Copy, 
 	      const_cast<value_type*>(quad.getQuadWeights().getRawPtr()), 
@@ -45,7 +47,8 @@ LanczosPCEBasis(
   pce_vals(nqp),
   u0(nqp),
   lanczos_vecs(nqp, p+1),
-  fromStieltjesMat(pce.size(), p+1)
+  fromStieltjesMat(pce.size(), p+1),
+  new_pce(p+1)
 {
   // Evaluate PCE at quad points
   const Teuchos::Array< Teuchos::Array<value_type> >& quad_points =
@@ -71,6 +74,15 @@ LanczosPCEBasis(
       fromStieltjesMat(i,j) /= pce.basis()->norm_squared(i);
     }
   }
+
+  // Project original PCE into the new basis
+  vector_type u(sz);
+  for (ordinal_type i=0; i<sz; i++)
+    u[i] = pce[i]*pce.basis()->norm_squared(i);
+  new_pce.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, fromStieltjesMat, u, 
+		   0.0);
+  for (ordinal_type i=0; i<=p; i++)
+    new_pce[i] /= this->norms[i];
 }
 
 template <typename ordinal_type, typename value_type>
@@ -95,10 +107,10 @@ getQuadPoints(ordinal_type quad_order,
   ordinal_type num_points = 
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
 
-  // We can't reliably generate quadrature points of order > 2*p
-  //std::cout << "quad_order = " << quad_order << ", 2*p = " << 2*this->p << std::endl;
-  // if (quad_order > 2*this->p)
-  //   quad_order = 2*this->p;
+  // We can't always reliably generate quadrature points of order > 2*p
+  // when using sparse grids for the underlying quadrature
+  if (limit_integration_order && quad_order > 2*this->p)
+    quad_order = 2*this->p;
   Stokhos::RecurrenceBasis<ordinal_type,value_type>::getQuadPoints(quad_order, 
 								   quad_points, 
 								   quad_weights,
@@ -126,6 +138,14 @@ cloneWithOrder(ordinal_type p) const
 {
    return Teuchos::rcp(new Stokhos::LanczosPCEBasis<ordinal_type,value_type>(
 			 p,*this));
+}
+
+template <typename ordinal_type, typename value_type>
+value_type
+Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
+getNewCoeffs(ordinal_type i) const
+{
+  return new_pce[i];
 }
 
 template <typename ordinal_type, typename value_type>
@@ -161,13 +181,21 @@ computeRecurrenceCoefficients(ordinal_type n,
   else
     lv = Teuchos::rcp(new matrix_type(nqp,n));
 
-  lanczos_type::compute(n, vs, A, u0, *lv, alpha, beta, nrm);
+  if (this->normalize)
+    lanczos_type::computeNormalized(n, vs, A, u0, *lv, alpha, beta, nrm);
+  else
+    lanczos_type::compute(n, vs, A, u0, *lv, alpha, beta, nrm);
+
   for (ordinal_type i=0; i<n; i++) {
     delta[i] = value_type(1.0);
-    gamma[i] = value_type(1.0);
   }
+  if (this->normalize)
+    gamma = beta;
+  else
+    for (ordinal_type i=0; i<n; i++)
+      gamma[i] = value_type(1.0);
 
-  return false;
+  return this->normalize;
 }
 
 template <typename ordinal_type, typename value_type> 

@@ -159,6 +159,7 @@ namespace Stokhos {
 	    vs.add2(value_type(1), v, -alpha[i], u1, u2);
 	  else
 	    vs.add3(value_type(1), v, -alpha[i], u1, -beta[i], u0, u2);
+	  gramSchmidt(i+1, vs, u, u2);
 	}
 
 	std::cout << "i = " << i 
@@ -173,6 +174,76 @@ namespace Stokhos {
 	u0 = u1;
 	u1 = u2;		  
 
+      }
+    }
+
+    //! Compute Lanczos basis
+    static void computeNormalized(ordinal_type k, 
+				  const vectorspace_type& vs,
+				  const operator_type& A,
+				  const vector_type& u_init,
+				  matrix_type& u,
+				  Teuchos::Array<value_type>& alpha,
+				  Teuchos::Array<value_type>& beta,
+				  Teuchos::Array<value_type>& nrm_sqrd) {
+
+      // u[i-1], u[i], u[i+1]
+      vector_type u0, u1, u2;
+
+      // set starting vector
+      u0 = Teuchos::getCol(Teuchos::View, u, 0);
+      u0.assign(u_init);
+      u1 = u0;
+
+      vector_type v = vs.create_vector();
+      for (ordinal_type i=0; i<k; i++) {
+
+	// Compute (u_i,u_i)
+	beta[i] = std::sqrt(vs.inner_product(u1, u1));
+	u1.scale(1.0/beta[i]);
+	nrm_sqrd[i] = value_type(1.0);
+
+	// Compute v = A*u_i
+        A.apply(u1, v);
+
+	// Compute (v,u_i)
+	alpha[i] = vs.inner_product(u1, v);
+
+	// Compute u_{i+1} = v - alpha_i*u_i - beta_i*u_{i-1}
+	if (i < k-1) {
+	  u2 = Teuchos::getCol(Teuchos::View, u, i+1);
+	  if (i == 0) 
+	    vs.add2(value_type(1), v, -alpha[i], u1, u2);
+	  else
+	    vs.add3(value_type(1), v, -alpha[i], u1, -beta[i], u0, u2);
+	  gramSchmidt(i+1, vs, u, u2);
+	}
+
+	std::cout << "i = " << i 
+		  << " alpha = " << alpha[i] << " beta = " << beta[i]
+		  << " nrm = " << nrm_sqrd[i] << std::endl;
+        TEST_FOR_EXCEPTION(nrm_sqrd[i] < 0, std::logic_error,
+	       	           "Stokhos::LanczosProjPCEBasis::lanczos():  "
+		           << " Polynomial " << i << " out of " << k
+		           << " has norm " << nrm_sqrd[i] << "!");
+
+	// Shift -- these are just pointer copies
+	u0 = u1;
+	u1 = u2;		  
+
+      }
+    }
+
+    //! Gram-Schmidt orthogonalization routine
+    static void gramSchmidt(ordinal_type k, const vectorspace_type& vs, 
+			    matrix_type& u, vector_type& u2) {
+      vector_type u0;
+      value_type nrm, dp;
+      for (ordinal_type i=0; i<k; i++) {
+	u0 = Teuchos::getCol(Teuchos::View, u, i);
+	nrm = vs.inner_product(u0, u0);
+	dp = vs.inner_product(u2, u0);
+	vs.add2(value_type(1), u2, -dp/nrm, u0, u2);
       }
     }
 
