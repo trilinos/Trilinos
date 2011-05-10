@@ -476,6 +476,8 @@ BulkData & BulkData::get( const Ghosting & ghost) {
  * \relates BulkData
  * \relates BucketRepository
  */
+// TODO - Does this need to be in the public API? It's only used internally.
+// In what context would a client ever call this?
 void set_field_relations( Entity & e_from ,
                           Entity & e_to ,
                           const unsigned ident );
