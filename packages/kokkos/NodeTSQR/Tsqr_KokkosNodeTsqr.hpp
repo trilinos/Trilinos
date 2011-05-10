@@ -213,10 +213,12 @@ namespace TSQR {
       /// \brief Factor the given cache block range using sequential TSQR.
       ///
       /// \param cbIndices [in] Half-exclusive range of cache block indices.
+      /// \param partitionIndex [in] Zero-based index of my partition.
       ///
       /// \return A view of the top block of the cache block range.
       MatView<LocalOrdinal, Scalar>
-      factor (const std::pair<LocalOrdinal, LocalOrdinal> cbIndices)
+      factor (const std::pair<LocalOrdinal, LocalOrdinal> cbIndices,
+	      const int partitionIndex)
       {
 #ifdef KNR_DEBUG
 	using std::cerr;
@@ -269,6 +271,17 @@ namespace TSQR {
 	while (cbIter != cbEnd)
 	  {
 	    view_type A_cur = *cbIter;
+	    // Iteration over cache blocks of a partition should
+	    // always result in nonempty cache blocks.
+	    TEST_FOR_EXCEPTION(A_cur.empty(), std::logic_error,
+			       "FactorFirstPass::factor: The current cache bloc"
+			       "k (the " << count << "-th to factor in the rang"
+			       "e [" << cbIndices.first << ","
+			       << cbIndices.second << ") of cache block indices"
+			       ") in partition " << (partitionIndex+1) << " (ou"
+			       "t of " << numPartitions_ << " partitions) is em"
+			       "pty.  Please report this bug to the Kokkos deve"
+			       "lopers.");
 	    TEST_FOR_EXCEPTION(static_cast<size_t>(curTauIdx) >= tauArrays_.size(),
 			       std::logic_error,
 			       "FactorFirstPass::factor: curTauIdx (= " 
@@ -390,7 +403,7 @@ namespace TSQR {
 	    if (cbIndices.second <= cbIndices.first)
 	      return;
 	    else
-	      topBlocks_[partitionIndex] = factor (cbIndices);
+	      topBlocks_[partitionIndex] = factor (cbIndices, partitionIndex);
 	  }
       }
     };
@@ -1095,21 +1108,34 @@ namespace TSQR {
     ///   parallel_for.
     KokkosNodeTsqrFactorOutput (const size_t theNumCacheBlocks, 
 				const int theNumPartitions) :
-      firstPassTauArrays (theNumCacheBlocks),
-      secondPassTauArrays (theNumPartitions),
-      topBlocks (static_cast<size_t> (theNumPartitions))
-    {}
+      firstPassTauArrays (theNumCacheBlocks)
+    {
+      // Protect the cast to size_t from a negative number of
+      // partitions.
+      TEST_FOR_EXCEPTION(theNumPartitions < 1, std::invalid_argument,
+			 "TSQR::KokkosNodeTsqrFactorOutput: Invalid number of "
+			 "partitions " << theNumPartitions << "; number of "
+			 "partitions must be a positive integer.");
+      // If there's only one partition, we don't even need a second
+      // pass (it's just sequential TSQR), and we don't need a TAU
+      // array for the top partition.
+      secondPassTauArrays.resize (static_cast<size_t> (theNumPartitions-1));
+      topBlocks.resize (static_cast<size_t> (theNumPartitions));
+    }
 
     //! Total number of cache blocks in the matrix (over all partitions).
     int numCacheBlocks() const { return firstPassTauArrays.size(); }
 
     //! Number of partitions of the matrix; max available parallelism.
-    int numPartitions() const { return secondPassTauArrays.size(); }
+    int numPartitions() const { return topBlocks.size(); }
 
     //! TAU arrays from the first pass; one per cache block.
     std::vector<std::vector<Scalar> > firstPassTauArrays;
 
-    /// \brief TAU arrays from the second pass; one per partition.
+    /// \brief TAU arrays from the second pass.
+    ///
+    /// There is one TAU array per partition, except for the topmost
+    /// partition.
     ///
     /// For now, KokkosNodeTsqr::factor() uses only two passes over
     /// the matrix.  firstPassTauArrays contains the result of the
@@ -1117,10 +1143,13 @@ namespace TSQR {
     /// result of combining the upper triangular R factors from the
     /// first pass.  Later, we may add more passes, in which case we
     /// will likely combine firstPassTauArrays and secondPassTauArrays
-    /// into a single std::vector or Teuchos::Tuple.
+    /// into a single std::vector (variable number of passes) or
+    /// Teuchos::Tuple (fixed number of passes).
     std::vector<std::vector<Scalar> > secondPassTauArrays;
 
-    //! Views of the topmost cache blocks in each partition.
+    /// \brief Views of the topmost cache blocks in each partition.
+    ///
+    /// One entry for each partition.
     std::vector<MatView<LocalOrdinal, Scalar> > topBlocks;
   };
 
@@ -1571,30 +1600,38 @@ namespace TSQR {
       typedef CacheBlockingStrategy<LocalOrdinal, Scalar> strategy_type;
       typedef MatView<LocalOrdinal, Scalar> view_type;
 
+      TEST_FOR_EXCEPTION(numPartitions_ != factorOutput.numPartitions(),
+			 std::invalid_argument,
+			 "applyImpl: KokkosNodeTsqr's number of partitions " 
+			 << numPartitions_ << " does not match the given "
+			 "factorOutput's number of partitions " 
+			 << factorOutput.numPartitions() << ".  This likely "
+			 "means that the given factorOutput object comes from "
+			 "a different instance of KokkosNodeTsqr.  Please "
+			 "report this bug to the Kokkos developers.");
+      const int numParts = numPartitions_;
       first_pass_type firstPass (applyType, Q, factorOutput.firstPassTauArrays,
 				 factorOutput.topBlocks, C, strategy_,
-				 factorOutput.numPartitions(), explicitQ, 
-				 contiguousCacheBlocks);
-      std::vector<view_type> topBlocksOfC (factorOutput.numPartitions());
+				 numParts, explicitQ, contiguousCacheBlocks);
+      // Get a view of each partition's top block of the C matrix.
+      std::vector<view_type> topBlocksOfC (numParts);
       {
-	typedef std::pair<LocalOrdinal, LocalOrdinal> range_type;
+	typedef std::pair<LocalOrdinal, LocalOrdinal> index_range_type;
 	typedef CacheBlocker<LocalOrdinal, Scalar> blocker_type;
-	const range_type range = 
-	  cacheBlockIndexRange (C.nrows(), C.ncols(), static_cast<int>(0),
-				numPartitions_, strategy_);
 	blocker_type C_blocker (C.nrows(), C.ncols(), strategy_);
-	for (int partitionIndex = 0; 
-	     partitionIndex < numPartitions_; 
-	     ++partitionIndex)
+
+	// For each partition, collect its top block of C.
+	for (int partIdx = 0; partIdx < numParts; ++partIdx)
 	  {
-	    if (range.first == range.second)
-	      topBlocksOfC[partitionIndex] = view_type (0, 0, NULL, 0);
+	    const index_range_type cbIndices = 
+	      cacheBlockIndexRange (C.nrows(), C.ncols(), partIdx, 
+				    numParts, strategy_);
+	    if (cbIndices.first >= cbIndices.second)
+	      topBlocksOfC[partIdx] = view_type (0, 0, NULL, 0);
 	    else
-	      {
-		topBlocksOfC[partitionIndex] = 
-		  C_blocker.get_cache_block (C, range.first, 
-					     contiguousCacheBlocks);
-	      }
+	      topBlocksOfC[partIdx] = 
+		C_blocker.get_cache_block (C, cbIndices.first, 
+					   contiguousCacheBlocks);
 	  }
       }
 
@@ -1650,13 +1687,32 @@ namespace TSQR {
     {
       if (numPartitions <= 1)
 	return; // Done!
-      
-      const LocalOrdinal numCols = topBlocks[0].ncols();
-      work_.resize (static_cast<size_t> (numCols));
-
-      typedef typename std::vector<MatView<LocalOrdinal, Scalar> >::size_type size_type;
-      for (int k = 1; k < numPartitions; ++k)
-	tauArrays[k] = factorPair (topBlocks[0], topBlocks[k]);
+      TEST_FOR_EXCEPTION (topBlocks.size() < static_cast<size_t>(numPartitions), 
+			  std::logic_error,
+			  "KokkosNodeTsqr::factorSecondPass: topBlocks.size() "
+			  "(= " << topBlocks.size() << ") < numPartitions (= " 
+			  << numPartitions << ").  Please report this bug to "
+			  "the Kokkos developers.");
+      TEST_FOR_EXCEPTION (tauArrays.size() < static_cast<size_t>(numPartitions-1), 
+			  std::logic_error,
+			  "KokkosNodeTsqr::factorSecondPass: topBlocks.size() "
+			  "(= " << topBlocks.size() << ") < numPartitions-1 (= " 
+			  << (numPartitions-1) << ").  Please report this bug "
+			  "to the Kokkos developers.");
+      // The top partition (partition index zero) should always be
+      // nonempty if we get this far, so its top block should also be
+      // nonempty.
+      TEST_FOR_EXCEPTION(topBlocks[0].empty(), std::logic_error,
+			 "KokkosNodeTsqr::factorSecondPass: topBlocks[0] is "
+			 "empty.  Please report this bug to the Kokkos "
+			 "developers.");
+      // However, other partitions besides the top one might be empty,
+      // in which case their top blocks will be empty.  We skip over
+      // the empty partitions in the loop below.
+      work_.resize (static_cast<size_t> (topBlocks[0].ncols()));
+      for (int partIdx = 1; partIdx < numPartitions; ++partIdx)
+	if (! topBlocks[partIdx].empty())
+	  tauArrays[partIdx-1] = factorPair (topBlocks[0], topBlocks[partIdx]);
     }
 
     void
@@ -1685,9 +1741,24 @@ namespace TSQR {
 		     const CacheBlockingStrategy<LocalOrdinal, Scalar>& strategy,
 		     const bool explicitQ) const
     {
-      if (factorOutput.numPartitions() <= 1) // == topBlocksOfC.size() == 0
+      const int numParts = factorOutput.numPartitions();
+      if (numParts <= 1)
 	return; // Done!
-      work_.resize (static_cast<size_t> (topBlocksOfC[0].ncols()));
+      TEST_FOR_EXCEPTION(topBlocksOfC.size() != static_cast<size_t>(numParts),
+			 std::logic_error,
+			 "KokkosNodeTsqr:applySecondPass: topBlocksOfC.size() ("
+			 "= " << topBlocksOfC.size() << ") != number of partiti"
+			 "ons (= " << numParts << ").  Please report this bug t"
+			 "o the Kokkos developers.");
+      TEST_FOR_EXCEPTION(factorOutput.secondPassTauArrays.size() != static_cast<size_t>(numParts-1),
+			 std::logic_error,
+			 "KokkosNodeTsqr:applySecondPass: factorOutput.secondPassTauArrays.size() ("
+			 "= " << factorOutput.secondPassTauArrays.size() << ") != number of partiti"
+			 "ons minus 1 (= " << (numParts-1) << ").  Please report this bug t"
+			 "o the Kokkos developers.");
+
+      const LocalOrdinal numCols = topBlocksOfC[0].ncols();
+      work_.resize (static_cast<size_t> (numCols));
 
       typedef MatView<LocalOrdinal, Scalar> view_type;
       typedef typename std::vector<view_type>::size_type size_type;
@@ -1695,47 +1766,62 @@ namespace TSQR {
       // Top blocks of C are the whole cache blocks.  We only want to
       // affect the top ncols x ncols part of each of those blocks in
       // this method.
-      view_type C_top (topBlocksOfC[0].ncols(), topBlocksOfC[0].ncols(),
-		       topBlocksOfC[0].get(), topBlocksOfC[0].lda());
+      view_type C_top_square (numCols, numCols, topBlocksOfC[0].get(), 
+			      topBlocksOfC[0].lda());
       if (applyType.transposed())
 	{
-	  for (int k = 1; k < factorOutput.numPartitions(); ++k)
+	  // Don't include the topmost (index 0) partition in the
+	  // iteration; that corresponds to C_top_square.
+	  for (int partIdx = 1; partIdx < numParts; ++partIdx)
 	    {
-	      view_type C_cur (topBlocksOfC[k].ncols(), topBlocksOfC[k].ncols(),
-			       topBlocksOfC[k].get(), topBlocksOfC[k].lda());
-	      // If explicitQ: We've already done the first pass and
-	      // filled the top blocks of C.
-	      applyPair (applyType,
-			 factorOutput.topBlocks[k],
-			 factorOutput.secondPassTauArrays[k],
-			 C_top, C_cur);
+	      // It's legitimate for some partitions not to have any
+	      // cache blocks.  In that case, their top block will be
+	      // empty, and we can skip over them.
+	      const view_type& C_cur = topBlocksOfC[partIdx];
+	      if (! C_cur.empty())
+		{
+		  view_type C_cur_square (numCols, numCols, C_cur.get(), 
+					  C_cur.lda());
+		  // If explicitQ: We've already done the first pass and
+		  // filled the top blocks of C.
+		  applyPair (applyType, factorOutput.topBlocks[partIdx],
+			     factorOutput.secondPassTauArrays[partIdx-1], 
+			     C_top_square, C_cur_square);
+		}
 	    }
 	}
       else
 	{
-	  // In non-transpose mode, when computing the first
+	  // In non-transposed mode, when computing the first
 	  // C.ncols() columns of the explicit Q factor, intranode
 	  // TSQR would run after internode TSQR (i.e., DistTsqr)
-	  // (even if only running on a single node in non-MPI
-	  // mode).  Therefore, internode TSQR is responsible for
-	  // filling the top block of this node's part of the C
-	  // matrix.
+	  // (even if only running on a single node in non-MPI mode).
+	  // Therefore, internode TSQR is responsible for filling the
+	  // top block of this node's part of the C matrix.
 	  //
 	  // Don't include the topmost partition in the iteration;
-	  // that corresponds to C_top.
-	  for (int k = factorOutput.numPartitions() - 1; k > 0; --k)
+	  // that corresponds to C_top_square.
+	  for (int partIdx = numParts - 1; partIdx > 0; --partIdx)
 	    {
-	      view_type C_cur (topBlocksOfC[k].ncols(), topBlocksOfC[k].ncols(),
-			       topBlocksOfC[k].get(), topBlocksOfC[k].lda());
-	      // The first pass will fill the rest of these top
-	      // blocks; for now, we just fill the top n x n part of
-	      // the top blocks with zeros.
-	      if (explicitQ)
-		C_cur.fill (Teuchos::ScalarTraits<Scalar>::zero());
-	      applyPair (applyType,
-			 factorOutput.topBlocks[k],
-			 factorOutput.secondPassTauArrays[k],
-			 C_top, C_cur);
+	      // It's legitimate for some partitions not to have any
+	      // cache blocks.  In that case, their top block will be
+	      // empty, and we can skip over them.
+	      const view_type& C_cur = topBlocksOfC[partIdx];
+	      if (! C_cur.empty())
+		{
+		  view_type C_cur_square (numCols, numCols, 
+					  C_cur.get(), C_cur.lda());
+		  // The "first" pass (actually the last, only named
+		  // "first" by analogy with factorFirstPass()) will
+		  // fill the rest of these top blocks.  For now, we
+		  // just fill the top n x n part of the top blocks
+		  // with zeros.
+		  if (explicitQ)
+		    C_cur_square.fill (Teuchos::ScalarTraits<Scalar>::zero());
+		  applyPair (applyType, factorOutput.topBlocks[partIdx],
+			     factorOutput.secondPassTauArrays[partIdx-1],
+			     C_top_square, C_cur_square);
+		}
 	    }
 	}
     }
@@ -1744,9 +1830,10 @@ namespace TSQR {
 
     /// \brief Return the topmost cache block of the matrix C.
     ///
-    /// NodeTsqr's top_block() method must be implemented using
-    /// subclasses' const_top_block() method, since top_block() is a
-    /// template method and template methods cannot be virtual.
+    /// NodeTsqr's top_block() method must be implemented using its
+    /// subclasses' const_top_block() method.  This is because
+    /// top_block() is a template method, and template methods cannot
+    /// be virtual.
     ///
     /// \param C [in] View of a matrix, with at least as many rows as
     ///   columns.

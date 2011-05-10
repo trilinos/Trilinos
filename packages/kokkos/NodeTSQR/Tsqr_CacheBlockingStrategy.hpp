@@ -29,8 +29,6 @@
 #ifndef __TSQR_CacheBlockingStrategy_hpp
 #define __TSQR_CacheBlockingStrategy_hpp
 
-#include <Teuchos_Tuple.hpp>
-
 #include <algorithm>
 #include <limits>
 #include <sstream>
@@ -318,7 +316,7 @@ namespace TSQR {
     ///   parallelization by calling this method repeatedly for a
     ///   sequence of cache block indices is not expensive.
     ///
-    Teuchos::Tuple<LocalOrdinal, 4>
+    std::vector<LocalOrdinal>
     cache_block_details (const LocalOrdinal index,
 			 const LocalOrdinal nrows,
 			 const LocalOrdinal ncols,
@@ -335,7 +333,13 @@ namespace TSQR {
 	contiguous_cache_blocks ? my_row_start * ncols : my_row_start;
       const LocalOrdinal stride = 
 	contiguous_cache_blocks ? my_nrows : lda;
-      return Teuchos::tuple (my_row_start, my_nrows, offset, stride);
+
+      std::vector<LocalOrdinal> retval (4);
+      retval[0] = my_row_start;
+      retval[1] = my_nrows;
+      retval[2] = offset;
+      retval[3] = stride;
+      return retval;
     }
 
     /// \brief Total number of cache blocks in the matrix.

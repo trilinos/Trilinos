@@ -389,7 +389,6 @@ namespace TSQR {
 		     const typename MatrixViewType::ordinal_type cache_block_index,
 		     const bool contiguous_cache_blocks) const
     {
-      using Teuchos::Tuple;
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       typedef typename MatrixViewType::scalar_type scalar_type;
 
@@ -404,7 +403,7 @@ namespace TSQR {
       // result[1] = number of rows in the cache block
       // result[2] = pointer offset (A.get() + result[2])
       // result[3] = leading dimension (a.k.a. stride) of the cache block
-      Tuple<Ordinal, 4> result = 
+      std::vector<Ordinal> result = 
 	strategy_.cache_block_details (cache_block_index, A.nrows(), A.ncols(),
 				       A.lda(), nrows_cache_block(), 
 				       contiguous_cache_blocks);
