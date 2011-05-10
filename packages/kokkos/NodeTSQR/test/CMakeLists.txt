@@ -61,12 +61,18 @@ ENDIF()
 
 
 # Performance and accuracy test suite for TSQR::KokkosNodeTsqr
-# ("generic" intranode parallel TSQR).
+# ("generic" intranode parallel TSQR).  We pick an odd number of
+# partitions to ensure correct results in that case, not just for
+# powers of two (which everybody tests first).  The number of
+# partitions is the maximum parallelism available in the algorithm,
+# but it's up to the Kokkos Node implementation to decide what
+# hardware resources to use (e.g., how many CPU cores, how many
+# threads, ...).
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TSQR_KokkosNodeTsqr
   SOURCES Tsqr_TestKokkosNodeTsqr.cpp
   COMM serial mpi
-  ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-blocks"
+  ARGS "--verify --numRows=100000 --numCols=10 --numPartitions=7 --cacheSizeHint=50000 --contiguousCacheBlocks"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   DEPLIBS kokkos kokkosnodetsqr
