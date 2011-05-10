@@ -23,7 +23,7 @@
   <SubProject name="RTOp">
     <Dependency name="Teuchos" type="LR"/>
     <EmailAddresses>
-      <Email address="rtop-regression@software.sandia.gov"/>
+      <Email address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Kokkos">

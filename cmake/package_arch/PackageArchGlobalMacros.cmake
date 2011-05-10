@@ -471,13 +471,10 @@ FUNCTION(PACKAGE_ARCH_DUMP_DEPS_XML_FILE)
     PACKAGE_ARCH_WRITE_DEPS_TO_XML_STRING(${PACKAGE} TEST_REQUIRED_DEP_TPLS DEPS_XML)
     PACKAGE_ARCH_WRITE_DEPS_TO_XML_STRING(${PACKAGE} TEST_OPTIONAL_DEP_TPLS DEPS_XML)
 
-    SET(ADDRESS_URL_BASE "software.sandia.gov")
-
-    STRING(TOLOWER "${PACKAGE}" LPACKAGE)
     APPEND_STRING_VAR(DEPS_XML
       "    <EmailAddresses>\n"
-      "      <Checkin address=\"${LPACKAGE}-checkins@${ADDRESS_URL_BASE}\"/>\n"
-      "      <Regression address=\"${LPACKAGE}-regression@${ADDRESS_URL_BASE}\"/>\n"
+      "      <Checkin address=\"${${PACKAGE}_CHECKINS_EMAIL_LIST}\"/>\n"
+      "      <Regression address=\"${${PACKAGE}_REGRESSION_EMAIL_LIST}\"/>\n"
       "    </EmailAddresses>\n"
       )
 

@@ -66,7 +66,7 @@
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Checkin address="rtop-checkins@software.sandia.gov"/>
-      <Regression address="rtop-regression@software.sandia.gov"/>
+      <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="Kokkos" dir="kokkos">
