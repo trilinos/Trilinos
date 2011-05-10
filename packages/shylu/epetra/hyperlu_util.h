@@ -68,6 +68,6 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals);
 
 void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
         int Lnr, int *LeftElems,
-        int Rnr, int *RightElems, string s1, string s2);
+        int Rnr, int *RightElems, string s1, string s2, bool cols);
 
 #endif //HYPERLU_UTIL_H

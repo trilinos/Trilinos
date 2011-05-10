@@ -116,12 +116,18 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
             Snr++;
     }
     Dnc = Dnr;
-    Snc = ncols - Dnc;
+    // TODO: Snc is no longer useful, should remove it
+    for (int i = 0; i < ncols ; i++)
+    {
+        if (gvals[cols[i]] != 1)
+            Snc++;
+    }
 
     assert(Snc >= 0);
 
     // TODO : The above assignment may not be correct in the unsymetric case
 
+    cout << msg << " Mycols="<< ncols << "Myrows ="<< nrows << endl;
     cout << msg << " #rows and #cols in diagonal blk ="<< Dnr << endl;
     cout << msg << " #columns in S ="<< Snc << endl;
     cout << msg << " #rows in S ="<< Snr << endl;
@@ -133,8 +139,9 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     // Assemble row ids in two arrays (for D and R blocks)
     if (sym)
     {
+        cout << "In first BlockElems" << endl;
         findBlockElems(A, nrows, rows, gvals, Dnr, DRowElems, Snr, SRowElems,
-                    msg + "D Rows ", msg + "S Rows") ;
+                    msg + "D Rows ", msg + "S Rows", false) ;
     }
     else
     {
@@ -162,8 +169,9 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     int *DColElems = new int[Dnc]; // Elems in column map of D 
     int *SColElems = new int[Snc]; // Elems in column map of C
     // Assemble column ids in two arrays (for D and C blocks)
+        cout << "In Second BlockElems" << endl;
     findBlockElems(A, ncols, cols, gvals, Dnc, DColElems, Snc, SColElems,
-                    "D Cols ", "S Cols") ;
+                    msg + "D Cols ", msg + "S Cols", true) ;
 
     // Create the local column map 
     Epetra_Map LocalDColMap(-1, Dnc, DColElems, 0, LComm);
@@ -330,7 +338,6 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     double *LeftValues = new double[max(Dmaxnnz, Rmaxnnz)];
     int *RightIndex = new int[max(Cmaxnnz, Smaxnnz)];
     double *RightValues = new double[max(Cmaxnnz, Smaxnnz)];
-
     //cout << "Inserting values in matrices" << endl;
     int err;
     int lcnt, rcnt ;

@@ -281,11 +281,11 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
 
 void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
         int Lnr, int *LeftElems,
-        int Rnr, int *RightElems, string s1, string s2)
+        int Rnr, int *RightElems, string s1, string s2, bool cols)
 {
  
     int gid;
-    int rcnt = 0, lcnt = 0;
+    int rcnt = 0; int lcnt = 0;
     // Assemble ids in two arrays
     ostringstream ssmsg1;
     ostringstream ssmsg2;
@@ -299,8 +299,10 @@ void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
         // If the row is local & row/column is not shared then row/column
         // belongs to D (this is not true for R, which can have more columns
         // than D)
-        if (A->LRID(gid) != -1 && gvals[gid] == 1)
+        //if (A->LRID(gid) != -1 && gvals[gid] == 1)
+        if (gvals[gid] == 1)
         {
+            if (cols && A->LRID(gid) == -1) continue;
             assert(lcnt < Lnr);
             LeftElems[lcnt++] = gid;
             ssmsg1 << gid << " ";
@@ -312,8 +314,8 @@ void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
             ssmsg2 << gid << " ";
         }
     }
-    cout << ssmsg1.str() << endl;
-    cout << ssmsg2.str() << endl; // TODO: Enable it only in debug mode
+    //cout << ssmsg1.str() << endl;
+    //cout << ssmsg2.str() << endl; // TODO: Enable it only in debug mode
     ssmsg1.clear(); ssmsg1.str("");
     ssmsg2.clear(); ssmsg2.str("");
 
