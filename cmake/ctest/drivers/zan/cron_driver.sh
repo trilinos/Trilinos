@@ -8,6 +8,7 @@ echo
 #
 
 export TDD_PARALLEL_LEVEL=1
+export TDD_CTEST_TEST_TYPE=Nightly
 
 # Trilinos settings:
 #
