@@ -254,6 +254,8 @@ ENDIF()
 
 # CUDA/Thrust
 IF (Stokhos_ENABLE_Thrust)
+  # this is a manual include of Teuchos dirs, necessary because CUDA_COMPILE 
+  # doesn't recognize the package architecture system.
   CUDA_INCLUDE_DIRECTORIES( 
     ${Teuchos_INCLUDE_DIRS}
   )
