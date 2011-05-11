@@ -194,6 +194,7 @@ environment such as:
       CTEST_DO_UPDATES=TRUE \
       TDD_DO_SUBMIT=FALSE \
       CTEST_DO_SUBMIT=FALSE  \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
       CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
       ./cron_driver.sh
 
@@ -209,6 +210,7 @@ following additionial environment variables:
       Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
       TDD_FORCE_CMAKE_INSTALL=0 \
       CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
       ./cron_driver.sh
 
 (of course you must use set commands on Windows).
@@ -218,6 +220,8 @@ NOTES:
 (*) Set TDD_FORCE_CMAKE_INSTALL=1 to force a global CMake reinstall.
 (*) Set CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=FALSE if you only
     want to process the exact packages set with Trilinos_PACKAGES
+(*) Set CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE after a first round of builds
+    to speed up subsequent builds.
 
 Work out any kinks you may have in your environment and your scripts
 by running this over and over again.
