@@ -131,8 +131,7 @@ Currently the concrete database types are ExodusII (\code{Ioex}), XDMF
 An \code{Ioss::Region} is an
 \code{Ioss:GroupingEntity} and it contains a vector of
 \code{NodeBlocks}, \code{ElementBlocks},
-\code{FaceSets}, \code{EdgeSets},
-\code{CommSets} defining the current model. These are all
+\code{SideSets}, and \code{CommSets} defining the current model. These are all
 also \code{Ioss::GroupingEntities}. The
 \code{Ioss::GroupingEntity} inheritance structure is shown in Figure~\ref{fig:ge_inherit}.
 \begin{figure}[htp]
@@ -166,15 +165,15 @@ fields and some optional properties and fields.
 
 The \code{Ioss::GroupingEntity}'s define the basic finite
 element model. For example, a model with two element blocks, a nodeset,
-and two sidesets (facesets) is shown in Figure~\ref{fig:block}.
+and two sidesets is shown in Figure~\ref{fig:block}.
 \begin{figure}[htp]
 \centering
 \includegraphics[scale=0.5]{Block_Diagram_Model.png}
 \caption{Block Diagram of Finite Element Model Structure}\label{fig:block}
 \end{figure}
 
-Note that the \code{FaceSets} are further divided into one or more
-\code{FaceBlocks} which contain entities of homogenous topology.
+Note that the \code{SideSets} are further divided into one or more
+\code{SideBlocks} which contain entities of homogenous topology.
 
 Each of these \code{GroupingEntity's} contain both
 \code{Properties} and \code{Field} definitions
@@ -366,12 +365,11 @@ And the fields:
 \end{tabular}
 \end{quote}
 
-The \code{EdgeSet} and \code{FaceSet} classes provides the properties:
+The \code{SideSet} class provides the properties:
 \begin{quote}
 \begin{tabular}{ll}
 \code{block\_count}         &(Integer) \\
-\code{edge\_block\_count} &(Integer) (for EdgeSet) \\
-\code{face\_block\_count} &(Integer) (for FaceSet) \\
+\code{side\_block\_count} &(Integer) \\
 \end{tabular}
 \end{quote}
 And no additional fields.
@@ -420,7 +418,7 @@ individual attribute fields, there will be a single Real field named
 ``attribute'' which contains a field for each element in the element
 block; the field will have \code{attribute\_count} components.
 
-The \code{EdgeBlock} and \code{FaceBlock} classes provides the additional properties:
+The \code{SideBlock} class provides the additional properties:
 \begin{quote}
 \begin{tabular}{ll}
 \code{distribution\_factor\_count}     &(Integer) \\
@@ -443,8 +441,7 @@ the overall structure of the model:
 \code{node\_block\_count}  &(Integer) \\
 \code{node\_block\_count}    &(Integer) \\
 \code{element\_block\_count} &(Integer) \\
-\code{face\_set\_count}      &(Integer) \\
-\code{edge\_set\_count}      &(Integer) \\
+\code{side\_set\_count}      &(Integer) \\
 \code{node\_set\_count}      &(Integer) \\
 \code{comm\_set\_count}      &(Integer) \\
 \code{node\_count}          &(Integer) \\
@@ -562,21 +559,17 @@ class has several field input and output functions; one for each
 int  get\_field (const Region *reg, const Field \&field, void *data, size\_t data\_size)
 int  get\_field (const NodeBlock *nb, const Field \&field, void *data, size\_t data\_size)
 int  get\_field (const ElementBlock *eb, const Field \&field, void *data, size\_t data\_size)
-int  get\_field (const FaceBlock *fb, const Field \&field, void *data, size\_t data\_size)
-int  get\_field (const EdgeBlock *fb, const Field \&field, void *data, size\_t data\_size)
+int  get\_field (const SideBlock *sb, const Field \&field, void *data, size\_t data\_size)
 int  get\_field (const NodeSet *ns, const Field \&field, void *data, size\_t data\_size)
-int  get\_field (const EdgeSet *es, const Field \&field, void *data, size\_t data\_size)
-int  get\_field (const FaceSet *fs, const Field \&field, void *data, size\_t data\_size)
+int  get\_field (const SideSet *ss, const Field \&field, void *data, size\_t data\_size)
 int  get\_field (const CommSet *cs, const Field \&field, void *data, size\_t data\_size)
 
 int  put\_field (const Region *reg, const Field \&field, void *data, size\_t data\_size)
 int  put\_field (const NodeBlock *nb, const Field \&field, void *data, size\_t data\_size)
 int  put\_field (const ElementBlock *eb, const Field \&field, void *data, size\_t data\_size)
-int  put\_field (const FaceBlock *fb, const Field \&field, void *data, size\_t data\_size)
-int  put\_field (const EdgeBlock *fb, const Field \&field, void *data, size\_t data\_size)
+int  put\_field (const SideBlock *sb, const Field \&field, void *data, size\_t data\_size)
 int  put\_field (const NodeSet *ns, const Field \&field, void *data, size\_t data\_size)
-int  put\_field (const EdgeSet *es, const Field \&field, void *data, size\_t data\_size)
-int  put\_field (const FaceSet *fs, const Field \&field, void *data, size\_t data\_size)
+int  put\_field (const SideSet *ss, const Field \&field, void *data, size\_t data\_size)
 int  put\_field (const CommSet *cs, const Field \&field, void *data, size\_t data\_size)
 \end{source}
 The implementation of these functions simply do some optional logging
@@ -640,12 +633,9 @@ database. They are:
 \item [\code{virtual bool  supports\_nodal\_fields()}]--
 true/false depending on whether this database type supports fields
 written on nodes in nodeblocks.
-\item [\code{virtual bool  supports\_edge\_fields()}]--
-true/false depending on whether this database type supports fields
-written on edges in edgesets.
-\item [\code{virtual bool  supports\_face\_fields()}]-- true/false
+\item [\code{virtual bool  supports\_side\_fields()}]-- true/false
 depending on whether this database type supports fields written on
-faces in facesets.
+sides in sidesets.
 \item [\code{virtual bool  supports\_element\_fields()}]--
 true/false depending on whether this database type supports fields
 written on elements in element blocks.

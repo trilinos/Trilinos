@@ -24,6 +24,11 @@
 namespace stk {
 namespace mesh {
 
+/**
+ * This file contains some helper functions that are part of the Field API.
+ * These functions are for making certain parallel operations more convenient.
+ */
+
 /** Communicate field data from domain to range.
  *  The fields array must be identical on all processors.
  *  All fields and mesh entities must belong to the same mesh.

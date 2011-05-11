@@ -19,6 +19,15 @@ namespace mesh {
 
 /** \addtogroup stk_mesh_field_dimension_tags
  *  \{
+ *
+ * ArrayDimTags are required for multidimensional Field types; they specify
+ * the dimensions of the field and the intent of each dimension. Note that
+ * scalar Field types do not involve ArrayDimTags. This file defines a number
+ * of ArrayDimTags that we believe will be widely useful for STK users. Clients
+ * have the freedom to define their own ArrayDimTags as well.
+ *
+ * Example use of Cartesian ArrayDimTag to create a field type:
+ *   stk::mesh::Field<double, stk::mesh::Cartesian>
  */
 
 /**

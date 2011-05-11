@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.               */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -218,6 +218,8 @@ public:
    *
    *  A compatible redeclaration returns the previously declared field.
    *  \exception std::runtime_error  If a redeclaration is incompatible
+   *
+   *  See Field.hpp for a full discussion of Fields.
    */
   template< class field_type >
   field_type & declare_field( const std::string & name ,
@@ -249,13 +251,15 @@ public:
    *  to support fast access to field data on entities
    *  related to the root entity; e.g. field data associated with
    *  the nodes of an element.
+   *
+   *  See FieldRelation.hpp for a full discussion of field relations.
    */
   template< class PointerFieldType , class ReferencedFieldType >
   void declare_field_relation( PointerFieldType & pointer_field ,
                                relation_stencil_ptr stencil ,
                                ReferencedFieldType & referenced_field );
 
-  /** \brief  Get field relations */
+  /** \brief  Get all field relations */
   const std::vector<FieldRelation> & get_field_relations() const
     { return m_field_relations ; }
 
@@ -405,7 +409,7 @@ void verify_parallel_consistency( const MetaData & , ParallelMachine );
 
 /** \brief  Declare a field to exist for a given entity type and Part.
  *
- *
+ * See Field.hpp for a full discussion of field restrictions.
  */
 template< class field_type >
 field_type & put_field( field_type & field ,

@@ -19,11 +19,18 @@
 
 namespace stk {
 namespace mesh {
-  
+
+/**
+ * A field restrictions is one of the three fundamental components of a field specification
+ * (see Field.hpp for a full discusssion); it defines a set of entities that have a field.
+ *
+ * This class encapsulates a minimal set of data for a field restriction. The API for
+ * declaring field restrictions is in MetaData.hpp.
+ */
 class FieldRestriction {
   public:
-  typedef shards::array_traits::int_t size_type ;
 
+  typedef shards::array_traits::int_t size_type ;
 
   FieldRestriction() : m_key() {
     Copy<MaximumFieldDimension>( m_stride , size_type(0) );
@@ -78,7 +85,5 @@ std::string print_restriction(
 
 } // namespace mesh
 } // namespace stk
-
-
 
 #endif // stk_mesh_baseImpl_FieldRestriction_hpp
