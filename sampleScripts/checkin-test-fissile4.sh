@@ -16,9 +16,9 @@ EXTRA_ARGS=$@
 # The default location for this directory tree is:
 #
 #  Trilinos.base
-#    Trilinos
+#    Trilinos    (your Trilinos soruce tree)
 #    BUILDS
-#      CHECKIN
+#      CHECKIN   (where you run this script from)
 #
 if [ "$TRILINOS_BASE_DIR" == "" ] ; then
   TRILINOS_BASE_DIR=../..
@@ -39,8 +39,6 @@ echo "
 #
 # Extra intel builds added with --extra-builds=INTEL_11064_SERIAL_DEBUG,...
 #
-# NOTE: You must do 'source /opt/casldev/env/casl_dev_env.sh' before
-# using the intel builds.
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/intel-11.064-options.cmake

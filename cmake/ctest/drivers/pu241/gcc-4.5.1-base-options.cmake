@@ -1,5 +1,4 @@
-SET(TRILINOS_TOOLSET_BASE /opt/gcc-4.5.1/trilinos-toolset)
+INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-11.064-options.cmake)
 
+SET(TRILINOS_TOOLSET_BASE /opt/gcc-4.5.1/trilinos-toolset)
 SET(Trilinos_EXTRA_LINK_FLAGS "-Wl,-rpath,${TRILINOS_TOOLSET_BASE}/lib64" CACHE STRING "")
-SET(TPL_BLAS_LIBRARIES "/usr/lib64/libblas.so.3" CACHE FILEPATH "")
-SET(TPL_LAPACK_LIBRARIES "/usr/lib64/liblapack.so.3" CACHE FILEPATH "")
