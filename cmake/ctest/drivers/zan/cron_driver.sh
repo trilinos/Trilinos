@@ -7,7 +7,6 @@ echo
 # TrilinosDriver settings:
 #
 
-export TDD_GIT_EXE=/usr/local/bin/eg
 export TDD_PARALLEL_LEVEL=1
 
 # Trilinos settings:
