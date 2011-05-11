@@ -20,11 +20,7 @@ namespace panzer {
 
   void buildBlockIdToPhysicsIdMap(std::map<std::string,std::string>& b_to_p, 
 				  const Teuchos::ParameterList& p);
-  
-  void StringTokenizer(std::vector<std::string>& tokens,
-		       const std::string& str,
-		       const std::string delimiter = ",");
-  
+
 }
 
 #endif

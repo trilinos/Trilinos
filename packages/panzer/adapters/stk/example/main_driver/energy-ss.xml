@@ -80,6 +80,9 @@
             <ParameterList name="HEAT_CAPACITY">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
+            <ParameterList name="Global Statistics">
+                <Parameter name="Value" type="string" value="TEMPERATURE,DENSITY"/>
+            </ParameterList>
 
         </ParameterList>
 

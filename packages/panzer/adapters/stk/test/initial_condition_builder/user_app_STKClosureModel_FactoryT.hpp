@@ -22,7 +22,8 @@ buildClosureModels(const std::string& model_id,
 		   const panzer::InputEquationSet& set,
 		   const Teuchos::ParameterList& models, 
 		   const Teuchos::ParameterList& default_params,
-		   const Teuchos::ParameterList& user_data) const
+		   const Teuchos::ParameterList& user_data,
+		   PHX::FieldManager<panzer::Traits>& fm) const
 {
 
   using std::string;

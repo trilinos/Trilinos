@@ -19,7 +19,8 @@ namespace user_app {
 		       const panzer::InputEquationSet& set,
 		       const Teuchos::ParameterList& models,
 		       const Teuchos::ParameterList& default_params,
-		       const Teuchos::ParameterList& user_data) const;
+		       const Teuchos::ParameterList& user_data,
+		       PHX::FieldManager<panzer::Traits>& fm) const;
 
   };
 

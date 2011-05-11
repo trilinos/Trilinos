@@ -63,6 +63,8 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = 
 	m_field_manager_builder->getVolumeFieldManagers()[block];
 
+    fm->template preEvaluate<EvalT>(NULL);
+
     // Loop over worksets in this element block
     for (std::size_t i = 0; i < w.size(); ++i) {
 	panzer::Workset& workset = w[i];
@@ -76,6 +78,8 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
 	fm->template evaluateFields<EvalT>(workset);
     }
+
+    fm->template postEvaluate<EvalT>(NULL);
   }
 }
 

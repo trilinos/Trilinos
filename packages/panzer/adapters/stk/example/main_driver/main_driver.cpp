@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   try {
     
     Teuchos::RCP<Teuchos::Time> total_time = 
-      Teuchos::TimeMonitor::getNewTimer("Helios: Total Time");
+      Teuchos::TimeMonitor::getNewTimer("User App: Total Time");
     
     Teuchos::TimeMonitor timer(*total_time); 
     
@@ -78,6 +78,9 @@ int main(int argc, char *argv[])
     user_app::MyModelFactory_TemplateBuilder cm_builder;
     (Teuchos::rcp_const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> >(cm_factory))->buildObjects(cm_builder);
     input_params->sublist("Assembly").set("Closure Model Factory", cm_factory);
+
+    // A GlobalStatistics closure model requires the comm to be set in the user data.
+    input_params->sublist("User Data").set("Comm", comm);
 
     // Add in the application specific bc factory
     Teuchos::RCP<const panzer::BCStrategyFactory> bc_factory = 

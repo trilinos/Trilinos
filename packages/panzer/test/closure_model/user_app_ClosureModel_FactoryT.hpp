@@ -3,14 +3,17 @@
 
 #include <iostream>
 #include <sstream>
+#include <typeinfo>
 #include "Panzer_InputEquationSet.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Basis.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
 // User application evaluators for this factory
 #include "user_app_ConstantModel.hpp"
+#include "Panzer_GlobalStatistics.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -21,7 +24,8 @@ buildClosureModels(const std::string& model_id,
 		   const panzer::InputEquationSet& set,
 		   const Teuchos::ParameterList& models, 
 		   const Teuchos::ParameterList& default_params,
-		   const Teuchos::ParameterList& user_data) const
+		   const Teuchos::ParameterList& user_data,
+		   PHX::FieldManager<panzer::Traits>& fm) const
 {
 
   using std::string;
@@ -71,6 +75,29 @@ buildClosureModels(const std::string& model_id,
 	evaluators->push_back(e);
       }
       found = true;
+    }
+
+    if (plist.isType<std::string>("Value")) {
+    
+      const std::string value = plist.get<std::string>("Value");
+
+      if (key == "Global Statistics") {
+	if (typeid(EvalT) == typeid(panzer::Traits::Residual)) {
+	  input.set("Comm", user_data.get<Teuchos::RCP<const Teuchos::Comm<int> > >("Comm"));
+	  input.set("Names", value);
+	  input.set("IR", default_params.get<RCP<panzer::IntegrationRule> >("IR"));
+	  RCP< panzer::GlobalStatistics<EvalT,panzer::Traits> > e = 
+	    rcp(new panzer::GlobalStatistics<EvalT,panzer::Traits>(input));
+	  evaluators->push_back(e);
+	  
+	  // Require certain fields be evaluated
+	  fm.template requireField<EvalT>(e->getRequiredFieldTag());
+	}
+	found = true;
+      }
+
+
+
     }
 
     if (!found) {

@@ -4,6 +4,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Phalanx_Evaluator.hpp"
+#include "Phalanx_FieldManager.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_Base.hpp"
 #include "Panzer_InputEquationSet.hpp"
@@ -26,7 +27,8 @@ namespace panzer {
 				const panzer::InputEquationSet& set,
 				const Teuchos::ParameterList& models,
 				const Teuchos::ParameterList& default_params,
-				const Teuchos::ParameterList& user_data) const = 0;
+				const Teuchos::ParameterList& user_data,
+				PHX::FieldManager<panzer::Traits>& fm) const = 0;
 
   };
   

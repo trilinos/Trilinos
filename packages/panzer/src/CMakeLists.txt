@@ -74,6 +74,7 @@ APPEND_SET(HEADERS
   Panzer_ParameterList_ObjectBuilders.hpp
   Panzer_PauseToAttach.hpp
   Panzer_PhysicsBlock.hpp
+  Panzer_String_Utilities.hpp
   Panzer_Version.hpp
   Panzer_Workset.hpp
   Panzer_Workset_Builder.hpp
@@ -108,6 +109,8 @@ APPEND_SET(HEADERS
   evaluators/Panzer_DOFGradientT.hpp
   evaluators/Panzer_GatherSolution_Epetra.hpp
   evaluators/Panzer_GatherSolution_EpetraT.hpp
+  evaluators/Panzer_GlobalStatistics.hpp
+  evaluators/Panzer_GlobalStatisticsT.hpp
   evaluators/Panzer_Integrator_BasisTimesScalar.hpp
   evaluators/Panzer_Integrator_BasisTimesScalarT.hpp
   evaluators/Panzer_Integrator_GradBasisDotVector.hpp
@@ -141,6 +144,7 @@ APPEND_SET(SOURCES
   Panzer_ModelEvaluator_Epetra.cpp
   Panzer_ParameterList_ObjectBuilders.cpp
   Panzer_PhysicsBlock.cpp
+  Panzer_String_Utilities.cpp
   Panzer_Traits.cpp
   Panzer_Version.cpp
   dofmngr/Panzer_FieldPattern.cpp
