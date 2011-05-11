@@ -9,6 +9,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include <boost/io/ios_state.hpp>
+#include <iomanip>
 
 namespace panzer {
 
@@ -175,9 +176,9 @@ void GlobalStatistics<panzer::Traits::Residual, panzer::Traits>::postprocess(std
     
     for (std::vector<ScalarT>::size_type i = 0; i < field_values.size(); ++i) {
       std::cout << std::setw(name_width) <<  field_values[i].fieldTag().name() 
-		<< " " << setw(value_width) << global_averages[i]
-		<< " " << setw(value_width) << global_maxs[i]
-		<< " " << setw(value_width) << global_mins[i] << std::endl;
+		<< " " << std::setw(value_width) << global_averages[i]
+		<< " " << std::setw(value_width) << global_maxs[i]
+		<< " " << std::setw(value_width) << global_mins[i] << std::endl;
     }
 
   }
