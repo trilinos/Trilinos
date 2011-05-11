@@ -43,17 +43,17 @@ if (RUN_REGULAR_TESTS)
   # platform.
   #
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_DEBUG_ICPC
-    ctest_linux_nightly_serial_debug_icpc_pu241_trilinos.cmake
-    TIMEOUT_MINUTES 240
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_RELEASE_ICPC
-    ctest_linux_nightly_serial_release_icpc_pu241_trilinos.cmake
-    TIMEOUT_MINUTES 240
-    )
+#  TRILINOS_DRIVER_ADD_DASHBOARD(
+#    SERIAL_DEBUG_ICPC
+#    ctest_linux_nightly_serial_debug_icpc_pu241_trilinos.cmake
+#    TIMEOUT_MINUTES 240
+#    )
+#
+#  TRILINOS_DRIVER_ADD_DASHBOARD(
+#    SERIAL_RELEASE_ICPC
+#    ctest_linux_nightly_serial_release_icpc_pu241_trilinos.cmake
+#    TIMEOUT_MINUTES 240
+#    )
 
 endif()
 
