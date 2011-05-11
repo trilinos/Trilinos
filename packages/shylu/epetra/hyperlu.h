@@ -43,6 +43,7 @@ typedef struct
     int inner_maxiters;         // maximum iterations for inner solver
     double inner_tolerance;     // relative residual tolerance for inner solver
     string libName;             // library for the outer solver
+    int sep_type;
 } hyperlu_config;
 
 int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config 
@@ -52,6 +53,11 @@ int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
     const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
+    Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_Map *localDRowMap);
+
+Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);

@@ -10,6 +10,8 @@
         <!-- outer solver as a special case /-->
         <Parameter name="Outer Solver Library" type ="string" value="Belos" />
 
+        <Parameter name="Separator Type" type="string" value="Wide" />
+
         <!--
         Change the method to try different approximation of the Schur complement.
         Method "A22AndBlockDiagonals uses" the parameter "Diagonal Factor"

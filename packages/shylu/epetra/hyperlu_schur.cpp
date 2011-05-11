@@ -181,3 +181,265 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
 
     return Sbar;
 }
+
+/* Computes the approximate Schur complement for the wide separator */
+Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
+    Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_Map *localDRowMap)
+{
+    int i;
+    double relative_thres = config->relative_threshold;
+
+    // Need to create local G (block diagonal portion) , R, C
+
+    // Get row map of G
+    Epetra_Map CrMap = C->RowMap();
+    int *c_rows = CrMap.MyGlobalElements();
+    int *c_cols = (C->ColMap()).MyGlobalElements();
+    //int c_totalElems = CrMap.NumGlobalElements();
+    int c_localElems = CrMap.NumMyElements();
+    int c_localcolElems = (C->ColMap()).NumMyElements();
+
+    Epetra_Map GrMap = G->RowMap();
+    int *g_rows = GrMap.MyGlobalElements();
+    //int g_totalElems = GrMap.NumGlobalElements();
+    int g_localElems = GrMap.NumMyElements();
+
+    Epetra_Map RrMap = R->RowMap();
+    int *r_rows = RrMap.MyGlobalElements();
+    int *r_cols = (R->ColMap()).MyGlobalElements();
+    //int r_totalElems = RrMap.NumGlobalElements();
+    int r_localElems = RrMap.NumMyElements();
+    int r_localcolElems = (R->ColMap()).NumMyElements();
+
+    Epetra_SerialComm LComm;
+    Epetra_Map C_localRMap (-1, c_localElems, c_rows, 0, LComm);
+    Epetra_Map C_localCMap (-1, c_localcolElems, c_cols, 0, LComm);
+    Epetra_Map G_localRMap (-1, g_localElems, g_rows, 0, LComm);
+    Epetra_Map R_localRMap (-1, r_localElems, r_rows, 0, LComm);
+    Epetra_Map R_localCMap (-1, r_localcolElems, r_cols, 0, LComm);
+
+    int nentries1, gid;
+    // maxentries is the maximum of all three possible matrices as the arrays
+    // are reused between the three
+    int maxentries = max(C->MaxNumEntries(), R->MaxNumEntries());
+    maxentries = max(maxentries, G->MaxNumEntries());
+
+    double *values1 = new double[maxentries];
+    double *values2 = new double[maxentries];
+    double *values3 = new double[maxentries];
+    int *indices1 = new int[maxentries];
+    int *indices2 = new int[maxentries];
+    int *indices3 = new int[maxentries];
+
+    //cout << *C << endl;
+    //cout << "Creating local matrices" << endl;
+    int err;
+    Epetra_CrsMatrix localC(Copy, C_localRMap, C->MaxNumEntries(), false);
+    for (i = 0; i < c_localElems ; i++)
+    {
+        gid = c_rows[i];
+        err = C->ExtractGlobalRowCopy(gid, maxentries, nentries1, values1, indices1);
+        assert (err == 0);
+        //if (nentries1 > 0) // TODO: Later
+        //{
+        err = localC.InsertGlobalValues(gid, nentries1, values1, indices1);
+        assert (err == 0);
+        //}
+    }
+    localC.FillComplete(C_localCMap, C_localRMap);
+    //cout << "Created local C matrix" << endl;
+
+    Epetra_CrsMatrix localR(Copy, R_localRMap, R->MaxNumEntries(), false);
+    for (i = 0; i < r_localElems ; i++)
+    {
+        gid = r_rows[i];
+        R->ExtractGlobalRowCopy(gid, maxentries, nentries1, values1, indices1);
+        localR.InsertGlobalValues(gid, nentries1, values1, indices1);
+    }
+    localR.FillComplete(R_localCMap, R_localRMap);
+    //cout << "Created local R matrix" << endl;
+
+    // Sbar - Approximate Schur complement
+    Teuchos::RCP<Epetra_CrsMatrix> Sbar = Teuchos::rcp(new Epetra_CrsMatrix(
+                                            Copy, GrMap, g_localElems));
+
+    // Include only the diagonal elements of G in localG
+    Epetra_CrsMatrix localG(Copy, G_localRMap, G->MaxNumEntries(), false);
+    int cnt, scnt;
+    for (i = 0; i < g_localElems ; i++)
+    {
+        gid = g_rows[i];
+        G->ExtractGlobalRowCopy(gid, maxentries, nentries1, values1, indices1);
+
+        cnt = 0;
+        scnt = 0;
+        for (int j = 0 ; j < nentries1 ; j++)
+        {
+            if (G->LRID(indices1[j]) != -1)
+            {
+                values2[cnt] = values1[j];
+                indices2[cnt++] = indices1[j];
+            }
+            else
+            {
+                // Add it to Sbar immediately
+                values3[scnt] = values1[j];
+                indices3[scnt++] = indices1[j];
+            }
+        }
+
+        localG.InsertGlobalValues(gid, cnt, values2, indices2);
+        Sbar->InsertGlobalValues(gid, scnt, values3, indices3);
+    }
+    localG.FillComplete();
+    cout << "Created local G matrix" << endl;
+
+    HyperLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
+                                        localDRowMap);
+
+    //cout << " totalElems in Schur Complement" << totalElems << endl;
+    //cout << myPID << " localElems" << localElems << endl;
+
+    // **************** Two collectives here *********************
+#ifdef TIMING_OUTPUT
+    Teuchos::Time ftime("setup time");
+    ftime.start();
+#endif
+
+    int nentries;
+    // size > maxentries as there could be fill
+    // TODO: Currently the size of the two arrays can be one, Even if we switch
+    // the loop below the size of the array required is nvectors. Fix it
+    double *values = new double[g_localElems];
+    int *indices = new int[g_localElems];
+    double *vecvalues;
+    int dropped = 0;
+    int nvectors = 4;
+    double *maxvalue = new double[nvectors];
+#ifdef TIMING_OUTPUT
+    ftime.start();
+#endif
+    int findex = g_localElems / nvectors ;
+
+    int cindex;
+    int mypid = C->Comm().MyPID();
+    for (i = 0 ; i < findex*nvectors ; i+=nvectors)
+    {
+        // TODO: Can move the next two decalarations outside the loop
+        Epetra_MultiVector probevec(G_localRMap, nvectors);
+        Epetra_MultiVector Scol(G_localRMap, nvectors);
+
+        probevec.PutScalar(0.0);
+        for (int k = 0; k < nvectors; k++)
+        {
+            cindex = k+i;
+            // TODO: Can do better than this, just need to go to the column map
+            // of C, there might be null columns in C
+            probevec.ReplaceGlobalValue(g_rows[cindex], k, 1.0);
+            //if (mypid == 0)
+            //cout << "Changing row to 1.0 " << g_rows[cindex] << endl;
+        }
+
+        //if (mypid == 0)
+        //cout << probevec << endl;
+
+        probeop.Apply(probevec, Scol);
+        //if (mypid == 0)
+        //cout << Scol << endl;
+
+        Scol.MaxValue(maxvalue);
+        for (int k = 0; k < nvectors; k++) //TODO:Need to switch these loops
+        {
+            cindex = k+i;
+            vecvalues = Scol[k];
+            //cout << "MAX" << maxvalue << endl;
+            for (int j = 0 ; j < g_localElems ; j++)
+            {
+                nentries = 0; // inserting one entry in each row for now
+                if (g_rows[cindex] == g_rows[j]) // diagonal entry
+                {
+                    values[nentries] = vecvalues[j];
+                    indices[nentries] = g_rows[cindex];
+                    nentries++;
+                    Sbar->InsertGlobalValues(g_rows[j], nentries, values, indices);
+                }
+                else if (abs(vecvalues[j]/maxvalue[k]) > relative_thres)
+                {
+                    values[nentries] = vecvalues[j];
+                    indices[nentries] = g_rows[cindex];
+                    nentries++;
+                    Sbar->InsertGlobalValues(g_rows[j], nentries, values, indices);
+                }
+                else
+                {
+                    if (vecvalues[j] != 0.0) dropped++;
+                }
+            }
+        }
+    }
+
+    for ( ; i < g_localElems ; i++)
+    {
+        // TODO: Can move the next two decalarations outside the loop
+        Epetra_MultiVector probevec(G_localRMap, 1);
+        Epetra_MultiVector Scol(G_localRMap, 1);
+
+        probevec.PutScalar(0.0);
+        // TODO: Can do better than this, just need to go to the column map
+        // of C, there might be null columns in C
+        probevec.ReplaceGlobalValue(g_rows[i], 0, 1.0);
+
+        probeop.Apply(probevec, Scol);
+        //cout << Scol << endl;
+
+        vecvalues = Scol[0];
+        Scol.MaxValue(maxvalue);
+        //cout << "MAX" << maxvalue << endl;
+        for (int j = 0 ; j < g_localElems ; j++)
+        {
+            nentries = 0; // inserting one entry in each row for now
+            if (g_rows[i] == g_rows[j]) // diagonal entry
+            {
+                values[nentries] = vecvalues[j];
+                indices[nentries] = g_rows[i];
+                nentries++;
+                Sbar->InsertGlobalValues(g_rows[j], nentries, values, indices);
+            }
+            else if (abs(vecvalues[j]/maxvalue[0]) > relative_thres)
+            {
+                values[nentries] = vecvalues[j];
+                indices[nentries] = g_rows[i];
+                nentries++;
+                Sbar->InsertGlobalValues(g_rows[j], nentries, values, indices);
+            }
+            else
+            {
+                if (vecvalues[j] != 0.0) dropped++;
+            }
+        }
+    }
+
+    // Still need to add the off diagonal entries of G
+    // Should we do dropping here.
+
+#ifdef TIMING_OUTPUT
+    ftime.stop();
+    cout << "Time in finding and dropping entries" << ftime.totalElapsedTime() << endl;
+    ftime.reset();
+#endif
+    Sbar->FillComplete();
+    cout << "#dropped entries" << dropped << endl;
+    delete[] values;
+    delete[] indices;
+    delete[] values1;
+    delete[] indices1;
+    delete[] values2;
+    delete[] indices2;
+    delete[] values3;
+    delete[] indices3;
+    delete[] maxvalue;
+
+    return Sbar;
+}

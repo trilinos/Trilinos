@@ -101,6 +101,14 @@ int Ifpack_HyperLU::Initialize()
                                                 "Inner Solver Tolerance");
     hlu_config_.inner_maxiters =  Teuchos::getParameter<int>(List_,
                                                 "Inner Solver MaxIters");
+    string sep_type = Teuchos::getParameter<string>(List_,
+                                                    "Separator Type");
+
+    if (sep_type == "Wide")
+        hlu_config_.sep_type = 1;
+    else
+        hlu_config_.sep_type = 2;
+
     HyperLU_factor(A_, &hlu_data_, &hlu_config_);
 
     IsInitialized_ = true;

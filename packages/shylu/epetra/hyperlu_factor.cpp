@@ -73,6 +73,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
     // TODO: This is because of a bug in coloring remove the if once that is
     // fixed
     //if (config->schurApproxMethod == 2)
+    if (config->sep_type == 2)
         findNarrowSeparator(A, gvals);
 
     // 3. Assemble diagonal block and the border in convenient form [
@@ -599,8 +600,14 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
 #ifdef TIMING_OUTPUT
         ftime.start();
 #endif
-        Sbar = computeApproxSchur(config, &S, Rptr, LP, Solver, Cptr,
-                                        &LocalDRowMap);
+        if (config->sep_type == 2)
+            Sbar = computeApproxSchur(config, &S, Rptr, LP, Solver, Cptr,
+                                            &LocalDRowMap);
+        else
+            Sbar = computeApproxWideSchur(config, &S, Rptr, LP, Solver, Cptr,
+                                            &LocalDRowMap);
+
+        //cout << *Sbar << endl;
 #ifdef TIMING_OUTPUT
         ftime.stop();
         cout << "Time to Compute Approx Schur Complement" << ftime.totalElapsedTime() << endl;
