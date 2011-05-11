@@ -32,7 +32,7 @@ IF(TPL_ENABLE_BinUtils)
     ${PACKAGE_NAME}_ENABLE_STACKTRACE
     HAVE_TEUCHOS_STACKTRACE
     "Enable Teuchos to show stack track for GCC (or Intel) on segfaults and uncaught exceptions."
-    ${PACKAGE_NAME}_ENABLE_STACKTRACE_DEFAULT
+    ${${PACKAGE_NAME}_ENABLE_STACKTRACE_DEFAULT}
     )
   
   IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
