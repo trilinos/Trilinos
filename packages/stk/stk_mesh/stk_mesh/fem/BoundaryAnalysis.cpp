@@ -152,7 +152,7 @@ void boundary_analysis(const BulkData& bulk_data,
     // some temporaries for clarity
     std::vector<EntitySideComponent > adjacent_entities;
     Entity& curr_entity = **itr;
-    const CellTopologyData* celltopology = fem::get_cell_topology_new(curr_entity).getCellTopologyData();
+    const CellTopologyData* celltopology = fem::get_cell_topology(curr_entity).getCellTopologyData();
     if (celltopology == NULL) {
       continue;
     }

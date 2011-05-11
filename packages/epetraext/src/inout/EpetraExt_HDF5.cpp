@@ -69,7 +69,7 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
       // Sublist
 
       // Create subgroup for sublist.
-      hid_t child_group_id = H5Gcreate(group_id, key.c_str(), 0);
+      hid_t child_group_id = H5Gcreate(group_id, key.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       WriteParameterListRecursive(params.sublist(key), child_group_id);
       H5Gclose(child_group_id);
     } 
@@ -91,7 +91,7 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         std::string value = params.get<std::string>(key);
         hsize_t len = value.size() + 1;
         dataspace_id = H5Screate_simple(1, &len, NULL);
-        dataset_id = H5Dcreate(group_id, key.c_str(), H5T_C_S1, dataspace_id, H5P_DEFAULT);
+        dataset_id = H5Dcreate(group_id, key.c_str(), H5T_C_S1, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         status = H5Dwrite(dataset_id, H5T_C_S1, H5S_ALL, H5S_ALL, 
                           H5P_DEFAULT, value.c_str());
         CHECK_STATUS(status);
@@ -107,7 +107,7 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         // Use H5T_NATIVE_USHORT to store a bool value
         unsigned short value = params.get<bool>(key) ? 1 : 0;
         dataspace_id = H5Screate_simple(1, &one, NULL);
-        dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_USHORT, dataspace_id, H5P_DEFAULT);
+        dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_USHORT, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         status = H5Dwrite(dataset_id, H5T_NATIVE_USHORT, H5S_ALL, H5S_ALL, 
                           H5P_DEFAULT, &value);
         CHECK_STATUS(status);
@@ -122,7 +122,7 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
       {
         int value = params.get<int>(key);
         dataspace_id = H5Screate_simple(1, &one, NULL);
-        dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_INT, dataspace_id, H5P_DEFAULT);
+        dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_INT, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, 
                           H5P_DEFAULT, &value);
         CHECK_STATUS(status);
@@ -137,7 +137,7 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
       {
         double value = params.get<double>(key);
         dataspace_id = H5Screate_simple(1, &one, NULL);
-        dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT);
+        dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, 
                           H5P_DEFAULT, &value);
         CHECK_STATUS(status);
@@ -182,7 +182,7 @@ static herr_t f_operator(hid_t loc_id, const char *name, void *opdata)
     break;
   case H5G_DATASET:
     hsize_t len;
-    dataset_id = H5Dopen(loc_id, name);
+    dataset_id = H5Dopen(loc_id, name, H5P_DEFAULT);
     space_id = H5Dget_space(dataset_id);
     if (H5Sget_simple_extent_ndims(space_id) != 1)
       throw(EpetraExt::Exception(__FILE__, __LINE__, 
@@ -289,7 +289,8 @@ bool EpetraExt::HDF5::IsContained(std::string Name)
   data.name = Name;
   data.found = false;
 
-  int idx_f = H5Giterate(file_id_, "/", NULL, FindDataset, (void*)&data);
+  //int idx_f =
+  H5Giterate(file_id_, "/", NULL, FindDataset, (void*)&data);
 
   return(data.found);
 }
@@ -343,7 +344,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_BlockMap*& Block
   Read(GroupName, "NumMyElements", H5T_NATIVE_INT, Comm_.NumProc(), &NumMyElements_v[0]);
   Read(GroupName, "NumMyPoints", H5T_NATIVE_INT, Comm_.NumProc(), &NumMyPoints_v[0]);
   int NumMyElements = NumMyElements_v[Comm_.MyPID()];
-  int NumMyPoints   = NumMyPoints_v[Comm_.MyPID()];
+//  int NumMyPoints   = NumMyPoints_v[Comm_.MyPID()];
 
   if (NumProc != Comm_.NumProc())
     throw(Exception(__FILE__, __LINE__,
@@ -839,7 +840,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Teuchos::Paramet
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
-  hid_t group_id = H5Gcreate(file_id_, GroupName.c_str(), 0);
+  hid_t group_id = H5Gcreate(file_id_, GroupName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // Iterate through parameter list 
   WriteParameterListRecursive(params, group_id);
@@ -870,7 +871,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Teuchos::ParameterList&
   herr_t      status;
 
   // open group in the root group using absolute name.
-  group_id = H5Gopen(file_id_, GroupName.c_str());
+  group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
   CHECK_HID(group_id);
 
   // Iterate through parameter list 
@@ -928,10 +929,10 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
 
-  group_id = H5Gopen(file_id_, GroupName.c_str());
+  group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
 
   // Create the dataset with default properties and close filespace_id.
-  dset_id = H5Dcreate(group_id, "Values", H5T_NATIVE_DOUBLE, filespace_id, H5P_DEFAULT);
+  dset_id = H5Dcreate(group_id, "Values", H5T_NATIVE_DOUBLE, filespace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // Create property list for collective dataset write.
   plist_id_ = H5Pcreate(H5P_DATASET_XFER);
@@ -1022,10 +1023,10 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  group_id = H5Gopen(file_id_, GroupName.c_str());
+  group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
 
   // Create the dataset with default properties and close filespace_id.
-  hid_t dset_id = H5Dopen(group_id, "Values");
+  hid_t dset_id = H5Dopen(group_id, "Values", H5P_DEFAULT);
 
   // Create property list for collective dataset write.
   plist_id_ = H5Pcreate(H5P_DATASET_XFER);
@@ -1338,9 +1339,9 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
     CreateGroup(GroupName);
 
   hid_t filespace_id = H5Screate(H5S_SCALAR);
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
   hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_INT, 
-                      filespace_id, H5P_DEFAULT);
+                      filespace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   herr_t status = H5Dwrite(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
                            H5P_DEFAULT, &what);
@@ -1360,9 +1361,9 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
     CreateGroup(GroupName);
 
   hid_t filespace_id = H5Screate(H5S_SCALAR);
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
   hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_DOUBLE, 
-                            filespace_id, H5P_DEFAULT);
+                            filespace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   herr_t status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, 
                            filespace_id, H5P_DEFAULT, &what);
@@ -1382,10 +1383,10 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& Data
                     "requested group " + GroupName + " not found"));
 
   // Create group in the root group using absolute name.
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
 
   hid_t filespace_id = H5Screate(H5S_SCALAR);
-  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
+  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str(), H5P_DEFAULT);
 
   herr_t status = H5Dread(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
                     H5P_DEFAULT, &data);
@@ -1404,10 +1405,10 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& Data
                     "requested group " + GroupName + " not found"));
 
   // Create group in the root group using absolute name.
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
 
   hid_t filespace_id = H5Screate(H5S_SCALAR);
-  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
+  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str(), H5P_DEFAULT);
 
   herr_t status = H5Dread(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, filespace_id,
                     H5P_DEFAULT, &data);
@@ -1428,7 +1429,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName,
 
   hsize_t len = 1;
 
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
 
   hid_t dataspace_id = H5Screate_simple(1, &len, NULL);
 
@@ -1436,7 +1437,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName,
   H5Tset_size(atype, data.size() + 1);
 
   hid_t dataset_id = H5Dcreate(group_id, DataSetName.c_str(), atype, 
-                               dataspace_id, H5P_DEFAULT);
+                               dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   CHECK_STATUS(H5Dwrite(dataset_id, atype, H5S_ALL, H5S_ALL, 
                         H5P_DEFAULT, data.c_str()));
 
@@ -1458,12 +1459,12 @@ void EpetraExt::HDF5::Read(const std::string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
 
-  hid_t dataset_id = H5Dopen(group_id, DataSetName.c_str());
+  hid_t dataset_id = H5Dopen(group_id, DataSetName.c_str(), H5P_DEFAULT);
 
   hid_t datatype_id = H5Dget_type(dataset_id);
-  size_t typesize_id = H5Tget_size(datatype_id);
+//  size_t typesize_id = H5Tget_size(datatype_id);
   H5T_class_t typeclass_id = H5Tget_class(datatype_id);
 
   if(typeclass_id != H5T_STRING) 
@@ -1494,10 +1495,10 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
 
   hid_t filespace_id = H5Screate_simple(1, &dimsf, NULL);
 
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
 
   hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type, 
-                            filespace_id, H5P_DEFAULT);
+                            filespace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   herr_t status = H5Dwrite(dset_id, type, H5S_ALL, H5S_ALL,
                            H5P_DEFAULT, data);
@@ -1522,9 +1523,9 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& Data
 
   hid_t filespace_id = H5Screate_simple(1, &dimsf, NULL);
 
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
 
-  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
+  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str(), H5P_DEFAULT);
 
   herr_t status = H5Dread(dset_id, type, H5S_ALL, filespace_id,
                           H5P_DEFAULT, data);
@@ -1558,9 +1559,9 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
 
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
   hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type, filespace_id, 
-                            H5P_DEFAULT);
+                            H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   H5Sclose(filespace_id);
 
@@ -1605,8 +1606,8 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& Data
   Comm_.ScanSum(&MySize, &itmp, 1);
   hsize_t Offset_t = itmp - MySize;
 
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
-  hid_t dataset_id = H5Dopen(group_id, DataSetName.c_str());
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
+  hid_t dataset_id = H5Dopen(group_id, DataSetName.c_str(), H5P_DEFAULT);
   //hid_t space_id = H5Screate_simple(1, &Offset_t, 0);
 
   // Select hyperslab in the file.

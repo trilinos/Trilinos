@@ -24,7 +24,7 @@ void assign_cell_topology(
   part_cell_topology_vector[part_ordinal] = cell_topology;
 
   if (!cell_topology.getCellTopologyData())
-    { 
+    {
       std::cout << "bad topology in FEMMetaData::assign_cell_topology" << std::endl;
     }
 
@@ -34,7 +34,7 @@ void assign_cell_topology(
 } // namespace
 
 FEMMetaData::FEMMetaData()
-: 
+:
     m_fem_initialized(false),
     m_spatial_dimension(0),
     m_side_rank(INVALID_RANK),
@@ -46,7 +46,7 @@ FEMMetaData::FEMMetaData()
 
 FEMMetaData::FEMMetaData(size_t spatial_dimension,
                          const std::vector<std::string>& in_entity_rank_names)
-  : 
+  :
     m_fem_initialized(false),
     m_spatial_dimension(0),
     m_side_rank(INVALID_RANK),
@@ -57,23 +57,6 @@ FEMMetaData::FEMMetaData(size_t spatial_dimension,
 
   FEM_initialize(spatial_dimension, in_entity_rank_names);
 }
-
-#if FEMMETADATA_ADOPT
-FEMMetaData::FEMMetaData(mesh::MetaData& meta,
-                        size_t spatial_dimension,
-                        const std::vector<std::string>& in_entity_rank_names)
-  : m_meta_data(meta),
-    m_fem_initialized(false),
-    m_spatial_dimension(0),
-    m_side_rank(INVALID_RANK),
-    m_element_rank(INVALID_RANK)
-{
-  // Attach FEMMetaData as attribute on MetaData to enable "get accessors" to FEMMetaData
-  m_meta_data.declare_attribute_no_delete<FEMMetaData>(this);
-
-  FEM_initialize(spatial_dimension, in_entity_rank_names);
-}
-#endif
 
 void FEMMetaData::FEM_initialize(size_t spatial_dimension, const std::vector<std::string>& rank_names)
 {
@@ -211,7 +194,7 @@ void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, 
     std::string part_name = std::string("{FEM_ROOT_CELL_TOPOLOGY_PART_") + std::string(cell_topology.getName()) + std::string("}");
 
     ThrowErrorMsgIf(get_part(part_name) != 0, "Cannot register topology with same name as existing part '" << cell_topology.getName() << "'" );
-  
+
     Part &part = declare_part(part_name, entity_rank);
     m_cellTopologyPartEntityRankMap[cell_topology] = CellTopologyPartEntityRankMap::mapped_type(&part, entity_rank);
 
@@ -223,7 +206,7 @@ void FEMMetaData::register_cell_topology(const fem::CellTopology cell_topology, 
 
 fem::CellTopology
 FEMMetaData::get_cell_topology(
-  const std::string &   topology_name) const 
+  const std::string &   topology_name) const
 {
   std::string part_name = std::string("{FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name + std::string("}");
 
@@ -276,7 +259,7 @@ fem::CellTopology FEMMetaData::get_cell_topology( const Part & part) const
     {
       cell_topology = m_partCellTopologyVector[i];
   if (!cell_topology.getCellTopologyData())
-    { 
+    {
       std::cout << "bad topology in FEMMetaData::check_topo_db" << std::endl;
     }
       ThrowRequireMsg(cell_topology.getCellTopologyData(), "bad topology in FEMMetaData::check_topo_db");
@@ -395,11 +378,13 @@ bool is_cell_topology_root_part(const Part & part) {
 /// updates the PartCellTopologyVector in FEMMetaData for fast look-up of the
 /// Cell Topology.
 void set_cell_topology(
-  FEMMetaData &                 fem_meta,
   Part &                        part,
   fem::CellTopology             cell_topology)
 {
+  FEMMetaData& fem_meta = FEMMetaData::get(part);
+
   ThrowRequireMsg(fem_meta.is_FEM_initialized(),"set_cell_topology: FEM_initialize() must be called before this function");
+
   Part &root_part = fem_meta.get_cell_topology_root_part(cell_topology);
   fem_meta.declare_part_subset(root_part, part);
 }

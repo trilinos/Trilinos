@@ -66,7 +66,7 @@
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Checkin address="rtop-checkins@software.sandia.gov"/>
-      <Regression address="rtop-regression@software.sandia.gov"/>
+      <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="Kokkos" dir="kokkos">
@@ -159,7 +159,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI,CUDA,Thrust"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>

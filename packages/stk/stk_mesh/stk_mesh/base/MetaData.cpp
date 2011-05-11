@@ -289,7 +289,7 @@ MetaData::declare_field_base(
 
 void MetaData::declare_field_restriction(
   FieldBase      & arg_field ,
-  EntityRank         arg_entity_rank ,
+  EntityRank       arg_entity_rank ,
   const Part     & arg_part ,
   const unsigned * arg_stride )
 {

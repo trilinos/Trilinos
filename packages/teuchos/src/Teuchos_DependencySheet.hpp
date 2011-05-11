@@ -45,7 +45,7 @@ namespace Teuchos{
  * \brief A Dependency sheet keeps track of dependencies between various
  * ParameterEntries
  */
-class DependencySheet{
+class TEUCHOS_LIB_DLL_EXPORT DependencySheet{
 
 public:
 

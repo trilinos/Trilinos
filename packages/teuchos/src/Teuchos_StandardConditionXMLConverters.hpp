@@ -43,7 +43,7 @@ namespace Teuchos {
 
 /** \brief An xml converter for BoolLogicConditions
  */
-class BoolLogicConditionConverter : public ConditionXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT BoolLogicConditionConverter : public ConditionXMLConverter{
 
 public:
 
@@ -81,8 +81,15 @@ public:
 };
 
 /** \brief An xml converter for OrConditions
+ *
+ * The valid XML represntation for an OrCondition is:
+ * \code
+    <Condition type="OrCondition">
+      ...Conditions to "or" together...
+    </Condition>
+ \endcode
  */
-class OrConditionConverter : public BoolLogicConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT OrConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
@@ -98,8 +105,15 @@ public:
 };
 
 /** \brief An xml converter for AndConditions
+ *
+ * The valid XML represntation for an AndCondition is:
+ * \code
+    <Condition type="AndCondition">
+      ...Conditions to "and" together...
+    </Condition>
+ \endcode
  */
-class AndConditionConverter : public BoolLogicConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT AndConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
@@ -116,8 +130,15 @@ public:
 
 
 /** \brief An xml converter for EqualsConditions
+ *
+ * The valid XML represntation for an EqualsCondition is:
+ * \code
+    <Condition type="EqualsCondition">
+      ...Conditions to "equals" together...
+    </Condition>
+ \endcode
  */
-class EqualsConditionConverter : public BoolLogicConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT EqualsConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
@@ -133,8 +154,15 @@ public:
 };
 
 /** \brief An xml converter for NotConditions
+ *
+ * The valid XML represntation for an NotCondition is:
+ * \code
+    <Condition type="NotCondition">
+      ...Condition to negate...
+    </Condition>
+ \endcode
  */
-class NotConditionConverter : public ConditionXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT NotConditionConverter : public ConditionXMLConverter{
 
 public:
 
@@ -158,7 +186,7 @@ public:
 
 /** \brief An xml converter for ParameterConditions
  */
-class ParameterConditionConverter : public ConditionXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT ParameterConditionConverter : public ConditionXMLConverter{
 
 public:
 
@@ -221,8 +249,17 @@ private:
 };
 
 /** \brief An xml converter for StringConditions
+ * The valid XML represntation for a StringCondition is:
+ * \code
+    <Condition type="StringCondition" parameterId="Id of parameter">
+      <Values>
+        <String value="First string value"/>
+        ...Additional String Values...
+      </Values>
+    </Condition>
+ \endcode
  */
-class StringConditionConverter : public ParameterConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT StringConditionConverter : public ParameterConditionConverter{
 
 public:
 
@@ -264,8 +301,13 @@ private:
 };
 
 /** \brief An xml converter for BoolConditions
+ *
+ * The valid XML represntation for a BoolCondition is:
+ * \code
+    <Condition type="BoolCondition" parameterId="Id of parameter"/>
+   \endcode
  */
-class BoolConditionConverter : public ParameterConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT BoolConditionConverter : public ParameterConditionConverter{
 
 public:
 
@@ -286,9 +328,16 @@ public:
 };
 
 /** \brief An xml converter for NumberConditions
+ * The valid XML represntation for a NumberCondition is:
+ * \code
+   <Condition type="NumberCondition(number_type_of_parameter)"
+      parameterId="id of parameter">
+     ...Optional Function Tag...
+   </Condition>
+ \endcode
  */
 template<class T>
-class NumberConditionConverter : public ParameterConditionConverter{
+class TEUCHOS_LIB_DLL_EXPORT NumberConditionConverter : public ParameterConditionConverter{
 
 public:
 

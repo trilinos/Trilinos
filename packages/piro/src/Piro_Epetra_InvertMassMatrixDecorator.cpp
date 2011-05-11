@@ -43,10 +43,11 @@
 Piro::Epetra::InvertMassMatrixDecorator::InvertMassMatrixDecorator(
                           Teuchos::RCP<Teuchos::ParameterList> stratParams,
                           Teuchos::RCP<EpetraExt::ModelEvaluator>& model_,
-                          bool massMatrixIsConstant_) :
+                          bool massMatrixIsConstant_, bool lumpMassMatrix_) :
   model(model_),
   calcMassMatrix(true),
-  massMatrixIsConstant(massMatrixIsConstant_)
+  massMatrixIsConstant(massMatrixIsConstant_),
+  lumpMassMatrix(lumpMassMatrix_)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -59,6 +60,7 @@ Piro::Epetra::InvertMassMatrixDecorator::InvertMassMatrixDecorator(
 
   // get allocated space for Mass Matrix
   massMatrix = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix> (model->create_W(), true);
+  if (lumpMassMatrix) invDiag = Teuchos::rcp(new Epetra_Vector(*(model->get_x_map())));
 
   Teuchos::RCP<Teuchos::FancyOStream> out
      = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -165,22 +167,31 @@ void Piro::Epetra::InvertMassMatrixDecorator::evalModel( const InArgs& inArgs,
 
     // Invert the mass matrix:   f_exp = M^{-1} f_imp
 
-    // Create a linear solver based on the forward operator A
-    if (calcMassMatrix) {
-      A = Thyra::epetraLinearOp( massMatrix );
+    if (!lumpMassMatrix) {
+      // Create a linear solver based on the forward operator A
+      if (calcMassMatrix) {
+        A = Thyra::epetraLinearOp( massMatrix );
+        lows = Thyra::linearOpWithSolve(*lowsFactory, A);
+      }
 
-      lows = Thyra::linearOpWithSolve(*lowsFactory, A);
+      // Solve the linear system for x, given b 
+      RCP<Thyra::VectorBase<double> >
+        x = Thyra::create_Vector( outArgs.get_f(), A->domain() );
+      RCP<const Thyra::VectorBase<double> >
+        b = Thyra::create_Vector( modelOutArgs.get_f(), A->range() );
+
+      lows->solve(Thyra::NONCONJ_ELE, *b, x.get());
+    }
+    else { // Lump matrix into inverse of diagonal
+      if (calcMassMatrix) {
+        invDiag->PutScalar(1.0);
+        massMatrix->Multiply(false,*invDiag, *invDiag);
+        invDiag->Reciprocal(*invDiag);
+      }
+      outArgs.get_f()->Multiply(1.0, *invDiag, *modelOutArgs.get_f(), 0.0);
     }
 
     // Do not recompute mass matrix in future if it is a constant
     if (massMatrixIsConstant) calcMassMatrix = false;
-
-    // Solve the linear system for x, given b 
-    RCP<Thyra::VectorBase<double> >
-      x = Thyra::create_Vector( outArgs.get_f(), A->domain() );
-    RCP<const Thyra::VectorBase<double> >
-      b = Thyra::create_Vector( modelOutArgs.get_f(), A->range() );
-
-    lows->solve(Thyra::NONCONJ_ELE, *b, x.get());
   }
 }

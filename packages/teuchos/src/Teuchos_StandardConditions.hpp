@@ -52,7 +52,7 @@ namespace Teuchos{
  * parameter and returns a bool based on the condition of
  * that value.
  */
-class ParameterCondition : public Condition{
+class TEUCHOS_LIB_DLL_EXPORT ParameterCondition : public Condition{
 
 public:
 
@@ -124,8 +124,11 @@ private:
  * \brief A String Condition is a Parameter Condition that evaluates
  * whether or not a string parameter has taken on a particular
  * value or set of values.
+ *
+ * Please see StringConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
-class StringCondition : public ParameterCondition{
+class TEUCHOS_LIB_DLL_EXPORT StringCondition : public ParameterCondition{
 
 public:
 
@@ -213,7 +216,7 @@ private:
  * \relates StringCondition
  */
 template<>
-class DummyObjectGetter<StringCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringCondition>{
 
 public:
 
@@ -236,9 +239,12 @@ public:
  * based on a given function). 
  * If the parameter is  greater than 0 this is interperted as the condition 
  * being "true". Otherwise the oncidiont is interperted as false.
+ *
+ * Please see NumberConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
 template<class T>
-class NumberCondition : public ParameterCondition{
+class TEUCHOS_LIB_DLL_EXPORT NumberCondition : public ParameterCondition{
 
 public:
 
@@ -320,7 +326,7 @@ private:
  * \relates NumberCondition
  */
 template<class T>
-class DummyObjectGetter<NumberCondition<T> >{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<NumberCondition<T> >{
 
 public:
 
@@ -348,8 +354,11 @@ RCP<NumberCondition<T> >
 /**
  * \brief A Bool Condition is a Parameter Condition that evaluates
  * whether or not a Boolean parameter is ture.
- * */
-class BoolCondition : public ParameterCondition{
+ *
+ * Please see BoolConditionConverter for documenation 
+ * regarding the XML representation of this condition.
+ */
+class TEUCHOS_LIB_DLL_EXPORT BoolCondition : public ParameterCondition{
 
 public:
 
@@ -392,7 +401,7 @@ public:
  * \relates BoolCondition
  */
 template<>
-class DummyObjectGetter<BoolCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolCondition>{
 
 public:
 
@@ -416,7 +425,7 @@ public:
  * Logical operation on a set of conditions. The set of conditions
  * may be an aribtrary size as long as it is two or greater.
  */
-class BoolLogicCondition : public Condition{
+class TEUCHOS_LIB_DLL_EXPORT BoolLogicCondition : public Condition{
 
 public:
 
@@ -429,8 +438,6 @@ public:
    * \param conditions The conditions to be evaluated.
    */
   BoolLogicCondition(ConstConditionList& conditions);
-
-  //@}
 
   /**
    * \brief Deconstructor for a BoolLogicCondition
@@ -510,8 +517,11 @@ private:
 /**
  * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical OR on the conditions.
+ *
+ * Please see OrConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
-class OrCondition : public BoolLogicCondition{
+class TEUCHOS_LIB_DLL_EXPORT OrCondition : public BoolLogicCondition{
 
 public:
 
@@ -558,7 +568,7 @@ public:
  * \relates OrCondition
  */
 template<>
-class DummyObjectGetter<OrCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<OrCondition>{
 
 public:
 
@@ -578,8 +588,11 @@ public:
 /**
  * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical AND on the conditions.
+ *
+ * Please see AndConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
-class AndCondition : public BoolLogicCondition{
+class TEUCHOS_LIB_DLL_EXPORT AndCondition : public BoolLogicCondition{
 
 public:
 
@@ -627,7 +640,7 @@ public:
  * \relates AndCondition
  */
 template<>
-class DummyObjectGetter<AndCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<AndCondition>{
 
 public:
 
@@ -647,8 +660,11 @@ public:
 /**
  * \brief A Bool Logic Condition that returns the result
  * or perfroming a logical EQUALS on the conditions.
+ *
+ * Please see EqualsConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
-class EqualsCondition : public BoolLogicCondition{
+class TEUCHOS_LIB_DLL_EXPORT EqualsCondition : public BoolLogicCondition{
 
 public:
 
@@ -695,7 +711,7 @@ public:
  * \relates EqualsCondition
  */
 template<>
-class DummyObjectGetter<EqualsCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<EqualsCondition>{
 
 public:
 
@@ -716,8 +732,11 @@ public:
  * \brief A Not condition returns the result of
  * performing a logical NOT on a given
  * condition.
+ *
+ * Please see NotConditionConverter for documenation 
+ * regarding the XML representation of this condition.
  */
-class NotCondition : public Condition{
+class TEUCHOS_LIB_DLL_EXPORT NotCondition : public Condition{
 
 public:
 
@@ -787,7 +806,7 @@ private:
  * \relates NotCondition
  */
 template<>
-class DummyObjectGetter<NotCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<NotCondition>{
 
 public:
 
@@ -797,7 +816,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * NotCondition.
   */
-  static RCP<NotCondition > getDummyObject();
+  static RCP<NotCondition> getDummyObject();
   
   //@}
   

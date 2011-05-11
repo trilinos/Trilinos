@@ -6,6 +6,18 @@ import sys
 import shutil
 import re
 
+#Make reporting errors easier to make consistent between all system calls
+def reportError(errorCode, errorMessage, errorFileName="", verboseError=False):
+  if errorCode != 0:
+    print errorMessage
+    if verboseError and errorFileName != "":
+      errorFile = open(errorFileName)
+      for line in errorFile:
+        print line.strip()
+      errorFile.close()
+    sys.exit(1)
+#end reportError
+
 workingDir = os.getcwd()
 
 parser = OptionParser()
@@ -34,12 +46,14 @@ parser.add_option("--install-dir", dest="installDir", action="store", default=wo
   help="Sets the location of where Trilinos will be installed to. Default=%default")
 parser.add_option("--working-dir", dest="workingDir", action="store", default=workingDir, 
   help="Sets the directory that this script will run from. Default=%default")
-parser.add_option("--branch", dest="branch", action="store", default="", 
-  help="NYI Sets the branch that should be used to build the tarball and installation from. Default=master")
+parser.add_option("--branch", dest="branch", action="store", default="master", 
+  help="Sets the branch that should be used to build the tarball and installation from. Default=%default")
 parser.add_option("--shared", dest="shared", action="store_true", default=False, 
-  help="Build shared libraries instead of static. Default=master")
+  help="Build shared libraries instead of static. Default=%default")
 parser.add_option("--enable-secondary-stable", dest="secondaryStable", action="store_true", default=False, 
   help="Enable secondary stable code. Default=master")
+parser.add_option("--verbose-errors", dest="verboseErrors", action="store_true", default=False, 
+  help="Enable verbose error reporting. This will cause the output of the command that failed to be sent to stdout. Default=master")
 
 (options, args) = parser.parse_args()
 
@@ -118,26 +132,37 @@ except:
 
 print "done trying to remove old install dir"
 
-
+gitBranchError = 0
 #clone repo
 if os.path.exists("Trilinos"):
   print "Repository already exists so updating instead of cloning."
   os.chdir("Trilinos")
+  if options.branch != "master":
+    gitBranchCmd = "git checkout " + options.branch
+    gitBranchError = os.system(gitBranchCmd)
   gitPullCmd = "git pull"
   gitError = os.system(gitPullCmd)
   os.chdir(options.workingDir)
 else:
   print "Repository doesn't exist so cloning."
-  gitCloneCmd = "git clone " + options.repository
+  gitCloneCmd = "git clone " + options.repository + " Trilinos"
   gitError = os.system(gitCloneCmd)
+  os.chdir("Trilinos")
+  if options.branch != "master":
+    gitBranchCmd = "git checkout --track origin/" + options.branch
+    gitBranchError = os.system(gitBranchCmd)
+  os.chdir(options.workingDir)
+  
 
-if gitError != 0:
-  print "Could not retrieve repository " + options.repository
-  sys.exit(1)
+reportError(gitError, "Could not retrieve repository " + options.repository)
+reportError(gitBranchError, "Could not checkout branch " + options.branch)
 
 #configure and create tarball
 print "Configuring to create a tarball."
+print "config dir exists? " + str(os.path.exists(options.configurePath))
+print "cwd is " + os.getcwd()
 if not os.path.exists(options.configurePath):
+  print "Creating configure path in dir " + options.workingDir
   os.mkdir(options.configurePath)
 
 os.chdir(options.configurePath)
@@ -145,18 +170,18 @@ os.chdir(options.configurePath)
 configureCmd = baseConfigureCmd + options.workingDir + "/Trilinos &> configure.out"
 configureError = os.system(configureCmd)
 
-if configureError != 0:
-  print "Failure while configuring for tarball creation see configure.out for details."
-  print configureCmd
-  sys.exit(1)
+configureErrorMessage = "Failure while configuring for tarball creation see configure.out for details." + os.linesep + configureCmd
+reportError(configureError, configureErrorMessage, "configure.out", options.verboseErrors)
+#if configureError != 0:
+#  print "Failure while configuring for tarball creation see configure.out for details."
+#  print configureCmd
+#  sys.exit(1)
 
 print "Creating a tarball."
 makeTarballCmd = "make package_source &> make_tarball.out"
 makeTarballError = os.system(makeTarballCmd)
 
-if makeTarballError != 0:
-  print "Failure while creating tarball, see make_tarball.out for details."
-  sys.exit(1)
+reportError(makeTarballError, "Failure while creating tarball, see make_tarball.out for details.", "make_tarball.out", options.verboseErrors)
 
 #expand tarball
 os.chdir(options.workingDir)
@@ -182,9 +207,7 @@ shutil.copy(options.workingDir + "/" + options.configurePath + "/" + tarballFile
 untarCmd = "tar -xzvf " + tarballFileName + " &> tar.out"
 untarError = os.system(untarCmd)
 
-if untarError != 0:
-  print "Could not expand tarball, see tar.out for details"
-  sys.exit(1)
+reportError(untarError, "Could not expand tarball, see tar.out for details", "tar.out", options.verboseErrors)
 
 #Make install
 print "Building and installing from the tarball."
@@ -196,24 +219,20 @@ tarballConfigureCmd = baseConfigureCmd + "-D Trilinos_ENABLE_DEVELOPMENT_MODE:BO
   options.workingDir + "/" + options.tarballBuildPath + "/" + trilinosDir + " &> tarball_configure.out"
 tarballConfigureError = os.system(tarballConfigureCmd)
 
-if tarballConfigureError != 0:
-  print "Configuring from tarball failed, see tarball_configure.out for details."
-  sys.exit(1)
-
+reportError(tarballConfigureError, "Configuring from tarball failed, see tarball_configure.out for details.",
+            "tarball_configure.out", options.verboseErrors)
 
 tarballMakeInstallCmd = "make install &> tarball_make_install.out"
 tarballMakeInstallError = os.system(tarballMakeInstallCmd)
 
-if tarballMakeInstallError != 0:
-  print "Make install from the tarball failed, see tarball_make_install.out for details."
-  sys.exit(1)
+reportError(tarballMakeInstallError, "Make install from the tarball failed, see tarball_make_install.out for details.",
+            "tarball_make_install.out", options.verboseErrors)
 
 if options.doDashboardBuild:
   makeExperimentalBuildCmd = "make dashboard &> tarball_make_experimental.out"
   makeExperimentalBuildError = os.system(makeExperimentalBuildCmd)
 
-  if makeExperimentalBuildError != 0:
-    print "Make experimental from the tarball failed, see tarball_make_experimental.out for details."
-    sys.exit(1)
+  reportError(makeExperimentalBuildError, "Make experimental from the tarball failed, see tarball_make_experimental.out for details.",
+              "tarball_make_experimental.out", options.verboseErrors)
 
 print "Installation from a tarball completed successfully."

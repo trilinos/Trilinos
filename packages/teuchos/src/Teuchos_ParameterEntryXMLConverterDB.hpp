@@ -44,7 +44,7 @@ namespace Teuchos {
 
 /** \brief Provides ability to lookup ParameterEntryXMLConverters
  */
-class ParameterEntryXMLConverterDB {
+class TEUCHOS_LIB_DLL_EXPORT ParameterEntryXMLConverterDB {
 public:
 
   /** \name Modifier Functions */

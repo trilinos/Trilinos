@@ -31,10 +31,11 @@ MACRO(PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE)
 
 
   SET( ${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE "" CACHE FILEPATH
-    "Name of an optional file that is included first to define any cmake options with SET( ... CACHE ...) calls." )
+    "Name of an optional file that is included first to define any cmake options with SET( ... CACHE ...) calls."
+    )
 
   IF (${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE)
-    #MESSAGE("Reading in configuration options first form ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE} ...")
+    MESSAGE("Reading in configuration options from ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE} ...")
     INCLUDE(${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE})
   ENDIF()
 
@@ -471,13 +472,10 @@ FUNCTION(PACKAGE_ARCH_DUMP_DEPS_XML_FILE)
     PACKAGE_ARCH_WRITE_DEPS_TO_XML_STRING(${PACKAGE} TEST_REQUIRED_DEP_TPLS DEPS_XML)
     PACKAGE_ARCH_WRITE_DEPS_TO_XML_STRING(${PACKAGE} TEST_OPTIONAL_DEP_TPLS DEPS_XML)
 
-    SET(ADDRESS_URL_BASE "software.sandia.gov")
-
-    STRING(TOLOWER "${PACKAGE}" LPACKAGE)
     APPEND_STRING_VAR(DEPS_XML
       "    <EmailAddresses>\n"
-      "      <Checkin address=\"${LPACKAGE}-checkins@${ADDRESS_URL_BASE}\"/>\n"
-      "      <Regression address=\"${LPACKAGE}-regression@${ADDRESS_URL_BASE}\"/>\n"
+      "      <Checkin address=\"${${PACKAGE}_CHECKINS_EMAIL_LIST}\"/>\n"
+      "      <Regression address=\"${${PACKAGE}_REGRESSION_EMAIL_LIST}\"/>\n"
       "    </EmailAddresses>\n"
       )
 

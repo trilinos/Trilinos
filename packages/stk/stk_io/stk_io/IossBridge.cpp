@@ -60,7 +60,7 @@ namespace {
 	else
 	  return stk::mesh::InvalidEntityRank;
       }
-      
+
     case Ioss::SIDEBLOCK:
       {
 	Ioss::SideBlock *sblk = dynamic_cast<Ioss::SideBlock*>(entity);
@@ -420,7 +420,7 @@ namespace stk {
 
     void set_cell_topology(stk::mesh::Part &part, const CellTopologyData * const cell_topology)
     {
-      stk::mesh::fem::set_cell_topology_new(part, cell_topology);
+      stk::mesh::fem::set_cell_topology(part, cell_topology);
     }
 
     const CellTopologyData *get_cell_topology(const stk::mesh::Part &part)
@@ -570,7 +570,7 @@ namespace stk {
       }
 
       const stk::mesh::FieldBase::Restriction &res = field->restriction(part_type, part);
-      if (res.stride[0] > 0) {
+      if (res.dimension() > 0) {
 	// The field exists on the current 'part'.  Now check (for
 	// node types only) whether the 'part' is *either* the
 	// universal_part() *or* the field *doesn't* exist on the
@@ -590,7 +590,7 @@ namespace stk {
 	}
 
 	const stk::mesh::FieldBase::Restriction &res_universe = field->restriction(part_type, universal);
-	if (res_universe.stride[0] <= 0) {
+	if (res_universe.dimension() <= 0) {
 	  // Field exists on current part, but not on the universal
 	  // set (and this part is not the universal part)
 	  return true;
@@ -789,7 +789,7 @@ namespace stk {
           if( fem_meta )
           {
             const stk::mesh::fem::CellTopology cell_topo(cell_topology);
-            stk::mesh::fem::set_cell_topology(*fem_meta, *part, cell_topo);
+            stk::mesh::fem::set_cell_topology(*part, cell_topo);
           }
           stk::io::set_cell_topology(*part, cell_topology);
         } else {
@@ -821,7 +821,7 @@ namespace stk {
 	if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role, add_all)) {
 	  const stk::mesh::FieldBase::Restriction &res = f->restriction(part_type, part);
 	  std::pair<std::string, Ioss::Field::BasicType> field_type;
-	  get_io_field_type(f, res.stride[0], &field_type);
+	  get_io_field_type(f, res.dimension(), &field_type);
 	  if (field_type.second != Ioss::Field::INVALID) {
 	    int entity_size = entity->get_property("entity_count").get_int();
 	    const std::string& name = f->name();
@@ -1053,7 +1053,7 @@ namespace stk {
 	/** \todo REFACTOR  Need a clear way to query dimensions
 	 *                  from the field restriction.
 	 */
-	const int spatial_dim = res.stride[0] ;
+	const int spatial_dim = res.dimension() ;
 	io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
 
 	//--------------------------------
@@ -1381,7 +1381,7 @@ namespace stk {
 	  const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
 	  if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
 	    const mesh::FieldBase::Restriction &res = f->restriction(elem_rank, *part);
-	    if (res.stride[0] > 0) {
+	    if (res.dimension() > 0) {
 	      stk::io::field_data_to_ioss(f, elements, block, f->name(), Ioss::Field::ATTRIBUTE);
 	    }
 	  }

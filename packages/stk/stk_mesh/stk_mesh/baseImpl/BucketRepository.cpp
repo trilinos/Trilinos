@@ -47,12 +47,6 @@ inline unsigned align( size_t nb )
   return nb ;
 }
 
-struct FieldRestrictionLess {
-  bool operator()( const FieldBase::Restriction & lhs ,
-                   const EntityKey & rhs ) const
-    { return lhs.key < rhs ; }
-};
-
 const FieldBase::Restriction & empty_field_restriction()
 {
   static const FieldBase::Restriction empty ;
@@ -72,17 +66,16 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
   const std::vector<FieldBase::Restriction>::const_iterator iend = dim_map.end();
         std::vector<FieldBase::Restriction>::const_iterator ibeg = dim_map.begin();
 
-  for ( unsigned i = 0 ; i < num_part_ord && iend != ibeg ; ++i ) {
+  for ( PartOrdinal i = 0 ; i < num_part_ord && iend != ibeg ; ++i ) {
 
-    const EntityKey key(erank,part_ord[i]);
+    const FieldRestriction restr(erank,part_ord[i]);
 
-    ibeg = std::lower_bound( ibeg , iend , key , FieldRestrictionLess() );
+    ibeg = std::lower_bound( ibeg , iend , restr );
 
-    if ( iend != ibeg && ibeg->key == key ) {
+    if ( (iend != ibeg) && (*ibeg == restr) ) {
       if ( dim == & empty ) { dim = & *ibeg ; }
 
-      if ( Compare< MaximumFieldDimension >::
-             not_equal( ibeg->stride , dim->stride ) ) {
+      if ( ibeg->not_equal_stride(*dim) ) {
 
         Part & p_old = MetaData::get(field).get_part( ibeg->ordinal() );
         Part & p_new = MetaData::get(field).get_part( dim->ordinal() );
@@ -216,12 +209,13 @@ BucketRepository::declare_nil_bucket()
       reinterpret_cast<impl::BucketImpl::DataMap*>(
         local_malloc( sizeof(impl::BucketImpl::DataMap) * ( field_count + 1 )));
 
-    const FieldBase::Restriction & dim = empty_field_restriction();
+    FieldBase::Restriction::size_type empty_stride[ MaximumFieldDimension ];
+    Copy<MaximumFieldDimension>( empty_stride , FieldBase::Restriction::size_type(0) );
 
     for ( unsigned i = 0 ; i < field_count ; ++i ) {
       field_map[ i ].m_base = 0 ;
       field_map[ i ].m_size = 0 ;
-      field_map[ i ].m_stride = dim.stride ;
+      field_map[ i ].m_stride = empty_stride;
     }
     field_map[ field_count ].m_base   = 0 ;
     field_map[ field_count ].m_size   = 0 ;
@@ -399,18 +393,18 @@ BucketRepository::declare_bucket(
       const FieldBase::Restriction & dim =
         dimension( field, arg_entity_rank, part_count, part_ord, method);
 
-      if ( dim.stride[0] ) { // Exists
+      if ( dim.dimension() ) { // Exists
 
         const unsigned type_stride = field.data_traits().stride_of ;
         const unsigned field_rank  = field.rank();
 
         num_bytes_per_entity = type_stride *
-          ( field_rank ? dim.stride[ field_rank - 1 ] : 1 );
+          ( field_rank ? dim.stride( field_rank - 1 ) : 1 );
       }
 
       field_map[i].m_base = value_offset ;
       field_map[i].m_size = num_bytes_per_entity ;
-      field_map[i].m_stride = dim.stride ;
+      field_map[i].m_stride = &dim.stride(0);
 
       value_offset += align( num_bytes_per_entity * m_bucket_capacity );
     }

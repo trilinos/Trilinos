@@ -46,8 +46,7 @@ namespace Teuchos {
  * a particular set of conditions are currently
  * occuring.
  */
-class Condition : public Describable
-{
+class TEUCHOS_LIB_DLL_EXPORT Condition : public Describable{
 public:
 
   /** \name Public types */

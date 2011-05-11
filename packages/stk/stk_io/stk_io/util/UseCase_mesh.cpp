@@ -339,7 +339,7 @@ void create_input_mesh(const std::string &mesh_type,
     stk::mesh::Part &skin_part = fem_meta.declare_part("skin", fem_meta.side_rank());
     stk::io::put_io_part_attribute(skin_part);
     /** \todo REFACTOR Query all parts to determine topology of the skin. */
-    stk::mesh::fem::set_cell_topology(fem_meta, skin_part, shards::getCellTopologyData<shards::Quadrilateral<4> >());
+    stk::mesh::fem::set_cell_topology(skin_part, shards::getCellTopologyData<shards::Quadrilateral<4> >());
   }
 }
 

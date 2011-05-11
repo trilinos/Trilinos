@@ -43,6 +43,7 @@
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
 
+
 /* Other package dependencies */
 #cmakedefine HAVE_KOKKOS_TEUCHOS
 #cmakedefine HAVE_KOKKOS_THREADPOOL

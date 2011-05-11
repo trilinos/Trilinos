@@ -1216,15 +1216,7 @@ C++ includes: EpetraExt_ProductOperator.h ";
 
 /*  Public types  */
 
-/*
-
-*/
-
 /*  Constructors / initializers / accessors  */
-
-/*
-
-*/
 
 %feature("docstring")  EpetraExt::ProductOperator::ProductOperator "EpetraExt::ProductOperator::ProductOperator()
 
@@ -1291,7 +1283,7 @@ T[k] );          else         Op[k]->Apply( T[k-1], T[k] );
 
 The other transposed constituent operators M[k]' and inv(M[k]') are
 defined by simply changing the value of the transpose as
-Op[k]->SetUseTranspose( Op_trans[k]==TeuchosNO_TRANS );. Note, that
+Op[k]->SetUseTranspose( Op_trans[k]==Teuchos::NO_TRANS );. Note, that
 Op[k]->SetUseTranspose(...) is called immediately before
 Op[k]->Apply(...) or Op[k]->ApplyInverse(...) is called to avoid
 tricky problems that could occur with multiple uses of the same
@@ -1363,10 +1355,6 @@ Access the inverse mode of the kth operator (zero-based).
 Preconditions:  0 <= k <= this-> num_Op()-1 ";
 
 /*  Overridden from Epetra_Operator  */
-
-/*
-
-*/
 
 %feature("docstring")  EpetraExt::ProductOperator::SetUseTranspose "int EpetraExt::ProductOperator::SetUseTranspose(bool UseTranspose) ";
 
@@ -1513,15 +1501,7 @@ C++ includes: EpetraExt_Transform.h ";
 
 /*  Typedefs for templated classes  */
 
-/*
-
-*/
-
 /*  Pure Virtual Methods which must be implemented by subclasses  */
-
-/*
-
-*/
 
 %feature("docstring")  EpetraExt::Transform::fwd "virtual bool
 EpetraExt::Transform< T, U >::fwd()=0
@@ -1544,7 +1524,7 @@ Preconditions: ";
 /*  Virtual functions with default implements allowing for optional
 */
 
-/*  implementation by the Transform developer
+/* implementation by the Transform developer
 
 */
 

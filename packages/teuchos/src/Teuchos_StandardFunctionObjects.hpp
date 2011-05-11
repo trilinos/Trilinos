@@ -116,6 +116,9 @@ private:
  * \brief A simple function object that subtracts
  * a specififed value from the given arguement
  * in the runFunction function.
+ *
+ * Please see the SubtractionFunctionXMLConverter for details on the XML
+ * representation of this fucntion object.
  */
 template<class OperandType>
 class SubtractionFunction :
@@ -172,6 +175,9 @@ public:
  * \brief A simple function object that adds
  * a specififed value from the given arguement
  * in the runFunction function.
+ *
+ * Please see the AdditionFunctionXMLConverter for details on the XML
+ * representation of this fucntion object.
  */
 template<class OperandType>
 class AdditionFunction :
@@ -228,6 +234,9 @@ public:
  * \brief A simple function object that multiplys
  * a specififed value from the given arguement
  * in the runFunction function.
+ *
+ * Please see the MultiplicationFunctionXMLConverter for details on the XML
+ * representation of this fucntion object.
  */
 template<class OperandType>
 class MultiplicationFunction :
@@ -285,6 +294,9 @@ public:
  * \brief A simple function object that divides
  * a specififed value from the given arguement
  * in the runFunction function.
+ *
+ * Please see the DivisionFunctionXMLConverter for details on the XML
+ * representation of this fucntion object.
  */
 template<class OperandType>
 class DivisionFunction :

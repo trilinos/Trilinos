@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010, 2011 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.               */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -43,23 +43,23 @@ public:
 
 namespace {
 
-  STKUNIT_UNIT_TEST(UnitTestField, testUnit)
-  {
-    stk::mesh::UnitTestFieldImpl ufield;
-    ufield.testField();
-  }
+STKUNIT_UNIT_TEST(UnitTestField, testUnit)
+{
+  stk::mesh::UnitTestFieldImpl ufield;
+  ufield.testField();
+}
 
-  STKUNIT_UNIT_TEST(UnitTestFieldRestriction, testUnit)
-  {
-    stk::mesh::UnitTestFieldImpl ufield;
-   ufield.testFieldRestriction();
-  }
+STKUNIT_UNIT_TEST(UnitTestFieldRestriction, testUnit)
+{
+  stk::mesh::UnitTestFieldImpl ufield;
+  ufield.testFieldRestriction();
+}
 
-  STKUNIT_UNIT_TEST(UnitTestFieldRelation, testUnit)
-  {
-    stk::mesh::UnitTestFieldImpl ufield;
-    ufield.testFieldRelation();
-  }
+STKUNIT_UNIT_TEST(UnitTestFieldRelation, testUnit)
+{
+  stk::mesh::UnitTestFieldImpl ufield;
+  ufield.testFieldRelation();
+}
 
 }//namespace <anonymous>
 
@@ -121,22 +121,14 @@ void UnitTestFieldImpl::testField()
   // are not allowed as these are automatically appended to
   // the declared variable name for multistate fields.
   {
-    FieldBase * tmp = NULL ;
-    bool caught = false ;
-    try {
-      tmp = field_repo.declare_field( "A_OLD" ,
-                                      data_traits<double>() ,
-                                      0     /* # Ranks */ ,
-                                      NULL  /* dimension tags */ ,
-                                      1     /* # States */ ,
-                                      meta_null );
-    }
-    catch( const std::exception & x ) {
-      std::cout << "Field: Correctly caught " << x.what() << std::endl ;
-      caught = true ;
-    }
-    STKUNIT_ASSERT( caught );
-    STKUNIT_ASSERT( tmp == NULL );
+    STKUNIT_ASSERT_THROW(
+      field_repo.declare_field( "A_STKFS_OLD" ,
+                                data_traits<double>() ,
+                                0     /* # Ranks */ ,
+                                NULL  /* dimension tags */ ,
+                                1     /* # States */ ,
+                                meta_null ),
+      std::runtime_error);
     STKUNIT_ASSERT( allocated_fields.size() == 1 );
   }
 
@@ -163,7 +155,7 @@ void UnitTestFieldImpl::testField()
   STKUNIT_ASSERT( fB->rank() == 0 );
 
   const FieldBase * const fB_old = allocated_fields[2] ;
-  STKUNIT_ASSERT( fB_old->name() == std::string("B_OLD") );
+  STKUNIT_ASSERT( fB_old->name() == std::string("B_STKFS_OLD") );
   STKUNIT_ASSERT( fB_old->type_is<int>() );
   STKUNIT_ASSERT( fB_old->state() == StateOld );
   STKUNIT_ASSERT( fB_old->rank() == 0 );
@@ -230,17 +222,17 @@ void UnitTestFieldImpl::testField()
   STKUNIT_ASSERT( fC_nm1 == fC_nm2->field_state( StateNM1 ) );
   STKUNIT_ASSERT( fC_nm2 == fC_nm2->field_state( StateNM2 ) );
 
-  STKUNIT_ASSERT( fC_n->name() == std::string("C_N") );
+  STKUNIT_ASSERT( fC_n->name() == std::string("C_STKFS_N") );
   STKUNIT_ASSERT( fC_n->type_is<double>() );
   STKUNIT_ASSERT( fC_n->state() == StateN );
   STKUNIT_ASSERT( fC_n->rank() == 3 );
 
-  STKUNIT_ASSERT( fC_nm1->name() == std::string("C_NM1") );
+  STKUNIT_ASSERT( fC_nm1->name() == std::string("C_STKFS_NM1") );
   STKUNIT_ASSERT( fC_nm1->type_is<double>() );
   STKUNIT_ASSERT( fC_nm1->state() == StateNM1 );
   STKUNIT_ASSERT( fC_nm1->rank() == 3 );
 
-  STKUNIT_ASSERT( fC_nm2->name() == std::string("C_NM2") );
+  STKUNIT_ASSERT( fC_nm2->name() == std::string("C_STKFS_NM2") );
   STKUNIT_ASSERT( fC_nm2->type_is<double>() );
   STKUNIT_ASSERT( fC_nm2->state() == StateNM2 );
   STKUNIT_ASSERT( fC_nm2->rank() == 3 );
@@ -261,8 +253,6 @@ void UnitTestFieldImpl::testField()
 
     entity_dimension_tag.name();
   }
-
-  std::cout << std::endl ;
 }
 
 
@@ -360,12 +350,12 @@ void UnitTestFieldImpl::testFieldRestriction()
   // Check for correctness of restrictions:
 
   STKUNIT_ASSERT( f3->restrictions().size() == 3 );
-  STKUNIT_ASSERT( f3->restrictions()[0].key ==
-                  EntityKey( 0 , pA.mesh_meta_data_ordinal() ) );
-  STKUNIT_ASSERT( f3->restrictions()[1].key ==
-                  EntityKey( 1 , pB.mesh_meta_data_ordinal() ) );
-  STKUNIT_ASSERT( f3->restrictions()[2].key ==
-                  EntityKey( 2 , pC.mesh_meta_data_ordinal() ) );
+  STKUNIT_ASSERT( f3->restrictions()[0] ==
+                  FieldRestriction( 0 , pA.mesh_meta_data_ordinal() ) );
+  STKUNIT_ASSERT( f3->restrictions()[1] ==
+                  FieldRestriction( 1 , pB.mesh_meta_data_ordinal() ) );
+  STKUNIT_ASSERT( f3->restrictions()[2] ==
+                  FieldRestriction( 2 , pC.mesh_meta_data_ordinal() ) );
 
   f3->m_impl.insert_restriction( method , 0 , pB , stride + 1 );
 
@@ -374,32 +364,21 @@ void UnitTestFieldImpl::testFieldRestriction()
   //------------------------------
   // Check for error detection of bad stride:
   {
-      bool caught = false ;
-	try {
-         unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
-	 f3->m_impl.insert_restriction( method , 0 , pA , bad_stride );
-     }
-    catch( const std::exception & x ) {
-      caught = true ;
-      std::cout << "Field: Correctly caught: " << x.what() << std::endl ;
-    }
-    STKUNIT_ASSERT( caught );
+    unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
+    STKUNIT_ASSERT_THROW(
+      f3->m_impl.insert_restriction( method , 0 , pA , bad_stride ),
+      std::runtime_error
+    );
     STKUNIT_ASSERT( f3->restrictions().size() == 4 );
-    }
+  }
 
   // Check for error detection in re-declaring an incompatible
   // field restriction.
   {
-    bool caught = false ;
-	try {
-	  f3->m_impl.insert_restriction( method , 0 , pA , stride + 1 );
-
-    }
-    catch( const std::exception & x ) {
-      caught = true ;
-      std::cout << "Field: Correctly caught: " << x.what() << std::endl ;
-    }
-    STKUNIT_ASSERT( caught );
+    STKUNIT_ASSERT_THROW(
+      f3->m_impl.insert_restriction( method , 0 , pA , stride + 1 ),
+      std::runtime_error
+    );
     STKUNIT_ASSERT( f3->restrictions().size() == 4 );
   }
 
@@ -428,7 +407,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     const FieldBase::Restriction & rA = f2->restriction( 0 , pA );
     const FieldBase::Restriction & rD = f2->restriction( 0 , pD );
     STKUNIT_ASSERT( & rA == & rD );
-    STKUNIT_ASSERT( entity_id( rA.key ) == pD.mesh_meta_data_ordinal() );
+    STKUNIT_ASSERT( rA.ordinal() == pD.mesh_meta_data_ordinal() );
   }
 
   //------------------------------
@@ -441,15 +420,10 @@ void UnitTestFieldImpl::testFieldRestriction()
     f2->m_impl.insert_restriction( method , 0 , pB , stride + 1 );
     f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
     partRepo.declare_subset( pD, pB );
-    bool caught = false ;
-    try {
-      f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() );
-    }
-    catch( const std::exception & x ) {
-      caught = true ;
-      std::cout << "Field: Correctly caught: " << x.what() << std::endl ;
-    }
-    STKUNIT_ASSERT( caught );
+    STKUNIT_ASSERT_THROW(
+      f2->m_impl.verify_and_clean_restrictions( method , partRepo.get_all_parts() ),
+      std::runtime_error
+    );
   }
 
   //Test to cover print function in FieldBaseImpl.cpp and FieldBase.cpp
@@ -473,12 +447,10 @@ void UnitTestFieldImpl::testFieldRestriction()
 
     //test stride[i] / stride[i-1] section of else-if
     stk::mesh::print(std::cout, "Field f4", *f4);
-
   }
 
   //Further tests to cover print function in FieldBase.cpp
   {
-
     //test stride[i] % stride[i-1] section of else-if
 
     //Create a new field with MetaData m and two restrictions
@@ -491,20 +463,20 @@ void UnitTestFieldImpl::testFieldRestriction()
                                 2         /* # states */ ,
                                 &m );
 
-  unsigned stride2[8] ;
-  stride2[0] = 10 ;
-  for ( unsigned i = 1 ; i < 3 ; ++i ) {
-    stride2[i] = stride[i-1];
-  }
-  for ( unsigned i = 3 ; i < 8 ; ++i ) {
-    stride2[i] = 0;
-  }
- //  STKUNIT_ASSERT_THROW(
-          f5->m_impl.insert_restriction( method , 0 , pA, stride2 );
-	//  std::runtime_error
-	//  );
+    unsigned stride2[8] ;
+    stride2[0] = 10 ;
+    for ( unsigned i = 1 ; i < 3 ; ++i ) {
+      stride2[i] = stride[i-1];
+    }
+    for ( unsigned i = 3 ; i < 8 ; ++i ) {
+      stride2[i] = 0;
+    }
+    //  STKUNIT_ASSERT_THROW(
+    f5->m_impl.insert_restriction( method , 0 , pA, stride2 );
+    //  std::runtime_error
+    //  );
 
-  // f5->m_impl.insert_restriction( method , 1 , pB ,stride2 );
+    // f5->m_impl.insert_restriction( method , 1 , pB ,stride2 );
 
     stk::mesh::print(std::cout, "Field f5", *f5);
 
@@ -513,40 +485,34 @@ void UnitTestFieldImpl::testFieldRestriction()
   //Coverage for error from print_restriction in FieldBaseImpl.cpp when there is no stride (!stride[i])
   //Call print_restriction from insert_restriction
   {
-      unsigned arg_no_stride[2];
+    unsigned arg_no_stride[2];
 
-      arg_no_stride[0] = 1;
-      arg_no_stride[1] = 0;
+    arg_no_stride[0] = 1;
+    arg_no_stride[1] = 0;
 
-      STKUNIT_ASSERT_THROW(
-	  f2->m_impl.insert_restriction(method, 0, pA, arg_no_stride),
-	  std::runtime_error
-	  );
-
-    }
-
+    STKUNIT_ASSERT_THROW(
+      f2->m_impl.insert_restriction(method, 0, pA, arg_no_stride),
+      std::runtime_error
+    );
+  }
 
   //Coverage of ordinal in FieldRestriction.hpp:
   {
     const FieldRestrictionVector & rMap = f3->restrictions();
     const FieldRestrictionVector::const_iterator ie = rMap.end() ;
-        FieldRestrictionVector::const_iterator i = rMap.begin();
+          FieldRestrictionVector::const_iterator i = rMap.begin();
 
     EntityId entity_id = 0;
     unsigned max = 0 ;
 
     for ( ; i != ie ; ++i ) {
       if ( i->ordinal() == entity_id ) {
-	const unsigned len = pA.mesh_meta_data_ordinal() ? i->stride[ pA.mesh_meta_data_ordinal() - 1 ] : 1 ;
+	const unsigned len = pA.mesh_meta_data_ordinal() ? i->stride( pA.mesh_meta_data_ordinal() - 1 ) : 1 ;
         if ( max < len ) { max = len ; }
       }
     }
   }
-
-  std::cout << std::endl ;
 }
-
-
 
 // Unit test the FieldRelation copy constructor:
 void UnitTestFieldImpl::testFieldRelation()
@@ -558,11 +524,6 @@ void UnitTestFieldImpl::testFieldRelation()
   rA = rB;
 
 }
-
-
-
-
-//----------------------------------------------------------------------
 
 }
 }

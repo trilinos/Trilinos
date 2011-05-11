@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_TbbTsqr_hpp
 #define __TSQR_TbbTsqr_hpp
@@ -98,7 +98,7 @@ namespace TSQR {
       //! Cache block size (in bytes) used for the factorization.
       size_t cache_block_size() const { return impl_.cache_block_size(); }
 
-      /// Constructor; sets up tuning parameters.
+      /// \brief Constructor; sets up tuning parameters.
       ///
       /// \param numCores [in] Maximum number of processing cores to use
       ///   when factoring the matrix.  Fewer cores may be used if the
@@ -173,7 +173,7 @@ namespace TSQR {
 		       const LocalOrdinal ncols,
 		       Scalar C[],
 		       const LocalOrdinal ldc, 
-		       const bool contiguous_cache_blocks = false) const
+		       const bool contiguous_cache_blocks) const
       {
 	impl_.fill_with_zeros (nrows, ncols, C, ldc, contiguous_cache_blocks);
       }
@@ -181,7 +181,7 @@ namespace TSQR {
       template< class MatrixViewType >
       MatrixViewType
       top_block (const MatrixViewType& C, 
-		 const bool contiguous_cache_blocks = false) const
+		 const bool contiguous_cache_blocks) const
       {
 	return impl_.top_block (C, contiguous_cache_blocks);
       }
@@ -228,7 +228,7 @@ namespace TSQR {
 	      const LocalOrdinal lda,
 	      Scalar R[],
 	      const LocalOrdinal ldr,
-	      const bool contiguous_cache_blocks = false)
+	      const bool contiguous_cache_blocks) const
       {
 	factorTimer_.start(true);
 	return impl_.factor (nrows, ncols, A, lda, R, ldr, contiguous_cache_blocks);
@@ -278,7 +278,7 @@ namespace TSQR {
 	     const LocalOrdinal ncols_C,
 	     Scalar C[],
 	     const LocalOrdinal ldc,
-	     const bool contiguous_cache_blocks = false)
+	     const bool contiguous_cache_blocks) const
       {
 	applyTimer_.start(true);
 	impl_.apply (apply_type, nrows, ncols_Q, Q, ldq, factor_output, 
@@ -321,7 +321,7 @@ namespace TSQR {
 		  const LocalOrdinal ncols_Q_out,
 		  Scalar Q_out[],
 		  const LocalOrdinal ldq_out,
-		  const bool contiguous_cache_blocks = false)
+		  const bool contiguous_cache_blocks) const
       {
 	explicitQTimer_.start(true);
 	impl_.explicit_Q (nrows, ncols_Q_in, Q_in, ldq_in, factor_output,
@@ -340,7 +340,7 @@ namespace TSQR {
 		 const LocalOrdinal ldq,
 		 const Scalar B[],
 		 const LocalOrdinal ldb,
-		 const bool contiguous_cache_blocks = false) const
+		 const bool contiguous_cache_blocks) const
       {
 	impl_.Q_times_B (nrows, ncols, Q, ldq, B, ldb, contiguous_cache_blocks);
       }
@@ -382,7 +382,7 @@ namespace TSQR {
 		   Scalar R[],
 		   const LocalOrdinal ldr,
 		   const magnitude_type tol,
-		   const bool contiguous_cache_blocks = false)
+		   const bool contiguous_cache_blocks) const
       {
 	return impl_.reveal_rank (nrows, ncols, Q, ldq, R, ldr, tol, 
 				  contiguous_cache_blocks);

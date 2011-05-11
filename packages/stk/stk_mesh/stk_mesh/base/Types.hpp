@@ -97,6 +97,7 @@ typedef unsigned Ordinal;
 typedef Ordinal PartOrdinal;
 typedef Ordinal FieldOrdinal;
 typedef Ordinal RelationIdentifier;
+typedef Ordinal FieldArrayRank;
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel

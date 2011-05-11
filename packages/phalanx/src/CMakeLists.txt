@@ -89,19 +89,24 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
-SET(Phalanx_GPU_LIBRARY "")
+IF (Phalanx_ENABLE_Thrust)
+  # FINISH: REMOVE THIS IF IT ISN'T NEEDED
+  # INCLUDE_DIRECTORIES(${Kokkos_INCLUDE_DIRS})
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/gpu)
+  PACKAGE_ADD_CUDA_LIBRARY(
+    phalanx_test_cuda 
+    SOURCES gpu/Phalanx_GPU.cu
+  )
+  SET(Phalanx_CUDA_LIBRARY phalanx_test_cuda)
+ELSE()
+  SET(Phalanx_CUDA_LIBRARY "")
+ENDIF()
 
-IF(Phalanx_ENABLE_GPU)
-  include_directories(${Kokkos_INCLUDE_DIRS})
-  INCLUDE_DIRECTORIES(${Phalanx_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/gpu)
-  CUDA_ADD_LIBRARY(phalanx_test_cuda gpu/Phalanx_GPU.cu)
-  APPEND_SET(Phalanx_GPU_LIBRARY "phalanx_test_cuda")
-ENDIF(Phalanx_ENABLE_GPU)
 
 PACKAGE_ADD_LIBRARY(
   phalanx
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS ${Phalanx_GPU_LIBRARY}
+  DEPLIBS ${Phalanx_CUDA_LIBRARY}
   )
 

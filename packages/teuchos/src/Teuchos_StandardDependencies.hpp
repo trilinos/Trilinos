@@ -56,7 +56,7 @@ namespace Teuchos{
  * sure that you program code takes
  * this into account.
  */
-class VisualDependency : public Dependency{
+class TEUCHOS_LIB_DLL_EXPORT VisualDependency : public Dependency{
 
 public:
 
@@ -176,7 +176,7 @@ private:
 /**
  * \brief An abstract base class for all validator dependencies.
  */
-class ValidatorDependency : public Dependency{
+class TEUCHOS_LIB_DLL_EXPORT ValidatorDependency : public Dependency{
 
 public:
 
@@ -224,8 +224,11 @@ public:
  * The dependee of a StringVisualDependency must be of type string and 
  * can't be an array. The dependent may be any type of
  * parameter or parameter list.
+ *
+ * Please see StringVisualDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
-class StringVisualDependency : public VisualDependency{
+class TEUCHOS_LIB_DLL_EXPORT StringVisualDependency : public VisualDependency{
 
 public:
 
@@ -243,7 +246,7 @@ public:
   //@{
 
   /**
-   * Constructs a StringVisualDependency.
+   * \brief Constructs a StringVisualDependency.
    *
    * @param dependee The dependee paramter.
    * @parame dependent The dependent parameter.
@@ -262,7 +265,7 @@ public:
     bool showIf=true);
 
   /**
-   * Constructs a StringVisualDependency.
+   * \brief Constructs a StringVisualDependency.
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
@@ -281,7 +284,7 @@ public:
     bool showIf=true);
 
   /**
-   * Constructs a StringVisualDependency.
+   * \brief Constructs a StringVisualDependency.
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents
@@ -300,7 +303,7 @@ public:
     bool showIf=true);
 
   /**
-   * Constructs a StringVisualDependency.
+   * \brief Constructs a StringVisualDependency.
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependents
@@ -376,7 +379,7 @@ private:
  * \relates StringVisualDependency
  */
 template<>
-class DummyObjectGetter<StringVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringVisualDependency>{
 
 public:
 
@@ -402,8 +405,11 @@ public:
  * The dependee of a BoolVisualDependency must be of type bool and can't 
  * be an array. The dependent may be any type of parameter
  * or parameter list.
+ *
+ * Please see BoolVisualDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
-class BoolVisualDependency : public VisualDependency{
+class TEUCHOS_LIB_DLL_EXPORT BoolVisualDependency : public VisualDependency{
 
 public:
 
@@ -475,7 +481,7 @@ protected:
  * \relates BoolVisualDependency
  */
 template<>
-class DummyObjectGetter<BoolVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolVisualDependency>{
 
 public:
 
@@ -503,8 +509,11 @@ public:
  * The dependee(s) of a ConditionVisualDependency must be expressed as a 
  * Condition and are subject to the consquential constraints. The 
  * dependent may be any type of parameter or parameter list.
+ *
+ * Please see ConditionVisualDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
-class ConditionVisualDependency : public VisualDependency{
+class TEUCHOS_LIB_DLL_EXPORT ConditionVisualDependency : public VisualDependency{
 
 public:
 
@@ -598,7 +607,7 @@ private:
  * \relates ConditionVisualDependency
  */
 template<>
-class DummyObjectGetter<ConditionVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<ConditionVisualDependency>{
 
 public:
 
@@ -623,18 +632,19 @@ public:
  * The dependee of a NumberVisualDependency must 
  * be a number type and can't be an array. The dependent may be 
  * any type of parameter or parameter list.
- *
  * If no function is provided, then the value of the Dependee
  * is simply compared to 0. If it is greater than 0, the
  * dependency evaluates to true. Otherwise it evaluates to false.
- *
  * If a function is provided, then the value of the Dependee
  * is first ran through that function. The result of that
  * function is then compared to 0 using the same
  * criteria as above.
+ *
+ * Please see NumberVisualDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 template <class T>
-class NumberVisualDependency : public VisualDependency{
+class TEUCHOS_LIB_DLL_EXPORT NumberVisualDependency : public VisualDependency{
 
 public:
 
@@ -809,7 +819,7 @@ void NumberVisualDependency<T>::validateDep() const{
  * \relates NumberVisualDependency
  */
 template<class T>
-class DummyObjectGetter<NumberVisualDependency<T> >{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<NumberVisualDependency<T> >{
 
 public:
 
@@ -852,9 +862,12 @@ RCP<NumberVisualDependency<T> >
  *   NumberArrayLengthDependency's dependent template parameter should be set
  *   to int.
  *
+ * Please see NumberArrayLengthDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
+ *
  */
 template<class DependeeType, class DependentType>
-  class NumberArrayLengthDependency : public Dependency{
+  class TEUCHOS_LIB_DLL_EXPORT NumberArrayLengthDependency : public Dependency{
 
 public:
 
@@ -1066,7 +1079,7 @@ NumberArrayLengthDependency<DependeeType, DependentType>::validateDep()
  * \relates NumberArrayLengthDependency
  */
 template<class DependeeType, class DependentType>
-class DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >{
 
 public:
 
@@ -1113,8 +1126,11 @@ RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
  *
  * If the dependee takes on a value not in the valuesAndValidators
  * map, then the default validator is assigned to the dependent.
+ *
+ * Please see StringValidatorDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
-class StringValidatorDependency : public ValidatorDependency{
+class TEUCHOS_LIB_DLL_EXPORT StringValidatorDependency : public ValidatorDependency{
 
 public:
 
@@ -1244,7 +1260,7 @@ private:
  * \relates StringValidatorDependency
  */
 template<>
-class DummyObjectGetter<StringValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringValidatorDependency>{
 
 public:
 
@@ -1271,8 +1287,10 @@ public:
  *
  *   \li The false and true validators must be the same type.
  *
+ * Please see BoolValidatorDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
-class BoolValidatorDependency : public ValidatorDependency{
+class TEUCHOS_LIB_DLL_EXPORT BoolValidatorDependency : public ValidatorDependency{
 
 public:
 
@@ -1369,7 +1387,7 @@ private:
  * \relates BoolValidatorDependency
  */
 template<>
-class DummyObjectGetter<BoolValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolValidatorDependency>{
 
 public:
 
@@ -1408,9 +1426,12 @@ public:
  *   the same type.
  *
  *   \li Ranges must not intersect
+ *
+ * Please see RangeValidatorDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 template<class T>
-class RangeValidatorDependency : public ValidatorDependency{
+class TEUCHOS_LIB_DLL_EXPORT RangeValidatorDependency : public ValidatorDependency{
 
 public:
 
@@ -1655,7 +1676,7 @@ void RangeValidatorDependency<T>::setDependentsToValidator(
  * \relates RangeValidatorDependency
  */
 template<class T>
-class DummyObjectGetter<RangeValidatorDependency<T> >{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<RangeValidatorDependency<T> >{
 
 public:
 

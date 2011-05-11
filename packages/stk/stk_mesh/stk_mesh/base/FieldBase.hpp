@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #ifndef stk_mesh_base_FieldBase_hpp
 #define stk_mesh_base_FieldBase_hpp
 
@@ -27,22 +26,32 @@
 #include <stk_mesh/base/FieldRestriction.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
-
 namespace stk {
 namespace mesh {
 
 class UnitTestFieldImpl;
 
 namespace impl {
-  class FieldRepository;
+
+class FieldRepository;
+
 }
 
-  //----------------------------------------------------------------------
+//----------------------------------------------------------------------
 /** \ingroup stk_stk_mesh_module
  *  \brief  Field base class with an anonymous data type and
  *          anonymous multi-dimension.
+ *
+ * This class is the base class for all Fields. It defines the member-function
+ * API for Field objects. Note that the entire Field API is much broader than
+ * what's defined in this class. See Field.hpp for more.
  */
-class FieldBase {
+// Implementation details:
+//   Simply wraps a FieldBaseImpl object which is kept as a member, all calls are
+//   inlined and passed through to the impl object. This design is analogous
+//   to the "P-impl" pattern.
+class FieldBase
+{
   public:
   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
@@ -117,8 +126,8 @@ class FieldBase {
 
   //----------------------------------------
 
-  FieldBase * field_state( unsigned i) const {
-    return m_impl.field_state(i);
+  FieldBase * field_state( FieldState fstate) const {
+    return m_impl.field_state(fstate);
   }
 
 private:
@@ -134,7 +143,6 @@ private:
 
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;
-
 
   FieldBase(
       MetaData                   * arg_mesh_meta_data ,
@@ -168,7 +176,6 @@ private:
   FieldBase();
   FieldBase( const FieldBase & );
   FieldBase & operator = ( const FieldBase & );
-
 };
 
 /** \brief  Print the field type, text name, and number of states. */
@@ -177,7 +184,6 @@ std::ostream & operator << ( std::ostream & , const FieldBase & );
 /** \brief  Print field and field restrictions on new lines. */
 std::ostream & print( std::ostream & ,
                       const char * const , const FieldBase & );
-
 
 } //namespace mesh
 } //namespace stk

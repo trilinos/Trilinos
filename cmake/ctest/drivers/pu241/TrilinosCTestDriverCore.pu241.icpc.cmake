@@ -12,7 +12,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
   
-  SET( CTEST_BUILD_FLAGS "-j16 -i" )
+  SET( CTEST_BUILD_FLAGS "-j8 -i" )
+  SET( CTEST_PARALLEL_LEVEL 8 )
 
   #SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )
   #SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS )
@@ -34,8 +35,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DCMAKE_C_COMPILER:FILEPATH=/opt/intel/Compiler/composerxe-2011.2.137/bin/intel64/icc"
       "-DCMAKE_CXX_COMPILER:FILEPATH=/opt/intel/Compiler/composerxe-2011.2.137/bin/intel64/icpc"
       "-DCMAKE_Fortran_COMPILER:FILEPATH=/opt/intel/Compiler/composerxe-2011.2.137/bin/intel64/ifort"
-      "-DTPL_BLAS_LIBRARIES:STRING=-L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
-      "-DTPL_LAPACK_LIBRARIES:STRING=-L${MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
+      "-DTPL_BLAS_LIBRARIES:STRING=-L/opt/intel/Compiler/composerxe-2011.2.137/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
+      "-DTPL_LAPACK_LIBRARIES:STRING=-L/opt/intel/Compiler/composerxe-2011.2.137/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_blas95_lp64 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_sequential"
       "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=/opt/tpls_src/boost_1_46_1"
     )
 

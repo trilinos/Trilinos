@@ -123,7 +123,7 @@ namespace stk {
       UniformRefinerPatternBase() : m_appendConvertString("_urpconv"),
                                     m_appendOriginalString(percept::PerceptMesh::s_omit_part+"_1000"),  // _100000
                                     m_oldElementsPartName("urp_oldElements"),
-                                    m_primaryEntityRank(stk::mesh::fem::FEMMetaData::INVALID_RANK)  
+                                    m_primaryEntityRank(stk::mesh::fem::FEMMetaData::INVALID_RANK)
       {
         Elem::StdMeshObjTopologies::bootstrap();
 
@@ -336,7 +336,7 @@ namespace stk {
 
         //bool edge_exists[num_child_nodes][num_child_nodes];
         bool edge_exists[128][128];
-        
+
 
         typedef Elem::StdMeshObjTopologies::RefTopoX RefTopoX;
         RefTopoX& ref_topo_x = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;
@@ -407,7 +407,7 @@ namespace stk {
           for (unsigned i_edge = 0; i_edge < n_edge; i_edge++)
             {
               unsigned nn = cell_topo_data->edge[i_edge].topology->vertex_count;
-              if (showEdgeNodes) 
+              if (showEdgeNodes)
                 nn = cell_topo_data->edge[i_edge].topology->node_count;
               for (unsigned j_node = 0; j_node < nn - 1; j_node++)
                 {
@@ -463,7 +463,7 @@ namespace stk {
                     //unsigned nn = cell_topo_data->edge[i_edge].topology->node_count;
 
                     unsigned nn = cell_topo_data->edge[i_edge].topology->vertex_count;
-                    if (showEdgeNodes) 
+                    if (showEdgeNodes)
                       nn = cell_topo_data->edge[i_edge].topology->node_count;
 
                     for (unsigned j_node = 0; j_node < nn - 1; j_node++)
@@ -537,7 +537,7 @@ namespace stk {
         PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
         basis->getValues(basis_val, input_param_coords, OPERATOR_VALUE);
         if (0)
-          std::cout << "\n tmp input_param_coords= " 
+          std::cout << "\n tmp input_param_coords= "
                     << input_param_coords(0,0) << " "
                     << input_param_coords(0,1) << " "
                     << input_param_coords(0,2) << " " << std::endl;
@@ -606,8 +606,8 @@ namespace stk {
           for (unsigned ifr = 0; ifr < nfr; ifr++)
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-              fr_type = fr.type();
-              fieldStride = fr.stride[0] ;
+              fr_type = fr.rank();
+              fieldStride = fr.dimension() ;
               stk::mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
               if (EXTRA_PRINT_URP_IF && nfr != 1 ) std::cout << "tmp P[" << 0 << "] info>    number of field restrictions= " << nfr << " fr_type= " << fr_type
                                             << " fieldStride = " << fieldStride << " frpart= " << frpart.name()
@@ -616,8 +616,8 @@ namespace stk {
           {
             const stk::mesh::FieldBase::Restriction & r =
               field->restriction(fr_type, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
-            fieldStride = r.stride[0];
-            if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.stride[0] << " fieldStride= " << fieldStride
+            fieldStride = r.dimension();
+            if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.dimension() << " fieldStride= " << fieldStride
                                               << " fr_type= " << fr_type << std::endl;
           }
         }
@@ -671,7 +671,7 @@ namespace stk {
                             std::cout << "tmp i_node= " << i_node << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
                             std::cout << "fabs(output_tmp(ii, 0)-1.0) > 1.e-6),... output_tmp(ii,0)= " << output_tmp(ii,0) << std::endl;
                             std::cout << "ii = " << ii << " i_node= " << i_node << std::endl;
-                            std::cout << "input_param_coords= " 
+                            std::cout << "input_param_coords= "
                                       << input_param_coords << "  " << std::endl;
                             std::cout << "output_tmp= " << output_tmp << std::endl;
                           }
@@ -708,12 +708,12 @@ namespace stk {
                 interpolateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
                 if (0)
                   {
-                    std::cout << "tmp input_param_coords= " 
+                    std::cout << "tmp input_param_coords= "
                               << input_param_coords(0,0) << " "
                               << input_param_coords(0,1) << " "
                               << (topoDim == 3 ? input_param_coords(0,2) : 0.0 ) << " "
                       ;
-                    std::cout << "output_pts= " 
+                    std::cout << "output_pts= "
                               << output_pts(0,0) << " "
                               << output_pts(0,1) << " "
                               << (topoDim == 3 ? output_pts(0,2) : 0.0 ) << " "
@@ -742,7 +742,7 @@ namespace stk {
                 }
             }
           }
-        if ( EXTRA_PRINT_URP_IF) 
+        if ( EXTRA_PRINT_URP_IF)
           {
             std::cout << "tmp newElement: " << std::endl;
             Util::printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
@@ -750,7 +750,7 @@ namespace stk {
       }
 
       /// do interpolation for all fields
-      /// This version uses Intrepid 
+      /// This version uses Intrepid
       void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::Entity& newElement, const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x)
       {
@@ -864,11 +864,11 @@ namespace stk {
                     // FIXME assumes face is quadrilateral
                     shards::CellTopology face_topo = cell_topo.getDimension()==2 ? cell_topo : shards::CellTopology(cell_topo.getCellTopologyData( 2, i_face));
                     if (0)
-                      std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << FACE_N(i_face) << " for i_face = " << i_face 
+                      std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << FACE_N(i_face) << " for i_face = " << i_face
                                 << " face_topo.getNodeCount()= " << face_topo.getNodeCount()
                                 << std::endl;
                     if (face_topo.getNodeCount() == 4 || toTopoKey == topo_key_quad9)
-                      {                      
+                      {
                         unsigned face_ord = 0;
                         if (toTopoKey == topo_key_quad9)
                           {
@@ -880,7 +880,7 @@ namespace stk {
                           }
 
                         unsigned inode = FACE_N(i_face);
-                        
+
                         //std::cout << "tmp P[" << eMesh.getRank() << "] inode = " << inode << " for i_face = " << i_face << " face_ord= " << face_ord << std::endl;
 
                         if (!inode)
@@ -1109,7 +1109,7 @@ namespace stk {
         //if (toTopoKey == topo_key_wedge15)
         //  isLinearElement = true;
         //std::cout << "tmp cell_topo= " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
-        
+
         const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
         int topoDim = cell_topo.getDimension();
@@ -1237,7 +1237,7 @@ namespace stk {
                     std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[m_eMesh.face_rank()].size() << std::endl;
                     if (new_sub_entity_nodes[m_eMesh.face_rank()].size())
                       {
-                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = "
                                   << new_sub_entity_nodes[m_eMesh.face_rank()][ordinal_of_subcell].size() << std::endl;
                       }
 
@@ -1298,24 +1298,24 @@ namespace stk {
                                     std::cout << "tmp ordinal_of_subcell         = " << ordinal_of_subcell <<  std::endl;
                                     std::cout << "tmp ordinal_of_node_on_subcell = " << ordinal_of_node_on_subcell << std::endl;
                                     std::cout << "tmp num_nodes_on_subcell       = " << num_nodes_on_subcell << std::endl;
-                                    
+
                                     for (unsigned ii=0; ii < num_nodes_on_subcell; ii++)
                                       {
                                         std::cout << "tmp pa[ii]= " << perm_array[ii] << std::endl;
                                       }
-                                  
+
                                     std::cout << "tmp new_sub_entity_nodes.size() = " << new_sub_entity_nodes.size() << std::endl;
                                     std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[m_eMesh.face_rank()].size() << std::endl;
                                     if (new_sub_entity_nodes[m_eMesh.face_rank()].size())
                                       {
-                                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = "
                                                   << new_sub_entity_nodes[m_eMesh.face_rank()][ordinal_of_subcell].size() << std::endl;
                                       }
 
-                                    std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell] = \n" 
+                                    std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell] = \n"
                                               << new_sub_entity_nodes[m_eMesh.face_rank()][ordinal_of_subcell] << std::endl;
 
-                                    std::cout << "tmp new_sub_entity_nodes = \n" 
+                                    std::cout << "tmp new_sub_entity_nodes = \n"
                                               << new_sub_entity_nodes << std::endl;
 
                                     std::cout << "tmp  pa = " << (usePerm ? perm_array[ordinal_of_node_on_subcell] : ordinal_of_node_on_subcell) << std::endl;
@@ -1337,7 +1337,7 @@ namespace stk {
                                     std::cout << "tmp new_sub_entity_nodes[Face].size() = " << new_sub_entity_nodes[m_eMesh.face_rank()].size() << std::endl;
                                     if (new_sub_entity_nodes[m_eMesh.face_rank()].size())
                                       {
-                                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = " 
+                                        std::cout << "tmp new_sub_entity_nodes[Face][ordinal_of_subcell].size() = "
                                                   << new_sub_entity_nodes[m_eMesh.face_rank()][ordinal_of_subcell].size() << std::endl;
                                       }
 
@@ -1346,7 +1346,7 @@ namespace stk {
 
                                 inode = NN_Q(m_eMesh.face_rank(), ordinal_of_subcell, ordinal_of_node_on_subcell);
                               }
-                          } 
+                          }
                         else
                           {
                             inode = NN_Q(m_eMesh.face_rank(), ordinal_of_subcell, ordinal_of_node_on_subcell);
@@ -1361,7 +1361,7 @@ namespace stk {
                     throw std::logic_error("UniformRefinerPattern logic error");
                   }
 
-                if (0) std::cout << "tmp 2.1 " << inode << " " << jNode 
+                if (0) std::cout << "tmp 2.1 " << inode << " " << jNode
                                  << " usePerm = " << usePerm
                                  << " childNodeIdx= " << childNodeIdx
                                  << " rank_of_subcell= " << rank_of_subcell
@@ -1630,10 +1630,10 @@ namespace stk {
       static unsigned renumber_quad_face_interior_nodes(unsigned original_node)
       {
         static int face_interior_inverse_map[] = { -1, /* 0 */
-                                                   -1, -2, -3, -4, -5, -6, -7, 
+                                                   -1, -2, -3, -4, -5, -6, -7,
                                                    8,  /* 8 */
                                                    -9, -10,
-                                                   -11, -12, -13, -14, -15, -16, 
+                                                   -11, -12, -13, -14, -15, -16,
                                                    4, 5, 6, 7, // -17, -18, -19, -20
                                                    0, 1, 2, 3 }; //-21, -22, -23, -24};
 
@@ -1655,15 +1655,15 @@ namespace stk {
         if (1) return renumber_quad_face_interior_nodes(original_node);
 
         static int face_interior_inverse_map[] = { -1, /* 0 */
-                                                   -1, -2, -3, -4, -5, -6, -7, 
+                                                   -1, -2, -3, -4, -5, -6, -7,
                                                    4,  /* 8 */
                                                    -9, -10,
-                                                   -11, -12, -13, -14, -15, -16, 
+                                                   -11, -12, -13, -14, -15, -16,
                                                    0, 1, 2, 3 // -17, -18, -19, -20
-        }; 
+        };
 
         /*
-        static int face_interior_map[] = {21, 22, 23, 24, 
+        static int face_interior_map[] = {21, 22, 23, 24,
                                                17, 18, 19, 20,
                                                8 };
         */
@@ -1826,7 +1826,7 @@ namespace stk {
                             //std::cout << "tmp childNodeIdx= " << childNodeIdx << " i_ord= " << i_ord << " i_face_n= " << i_face_n << " fnl= " << fnl <<  std::endl;
                           }
                       }
-                    
+
                     return true;
                   }
                 if (j_e_node < num_child_nodes)
@@ -2117,7 +2117,7 @@ namespace stk {
                         unsigned j_node_end = 0;
 #if 0
                         bool lfnd = false;
-                        for (unsigned j_node = 0; j_node < 9; j_node++) 
+                        for (unsigned j_node = 0; j_node < 9; j_node++)
                           {
                             if (face_nodes[j_node] == END_UINT_ARRAY)
                               {
@@ -2295,7 +2295,7 @@ namespace stk {
 
             stk::mesh::EntityRank switch_fromPart_primary_entity_rank  = fromPart.primary_entity_rank();
 
-              //case 
+              //case
             if(switch_fromPart_primary_entity_rank == eMesh.edge_rank() ||
                switch_fromPart_primary_entity_rank == eMesh.face_rank() )
               {
@@ -2335,14 +2335,14 @@ namespace stk {
               {
                 stk::mesh::Part& subset = *subsets[i_subset];
                 part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(subset);
-                if (part_cell_topo_data) 
+                if (part_cell_topo_data)
                   return part_cell_topo_data;
               }
           }
         return part_cell_topo_data;
       }
 
-      void setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, 
+      void setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks,
                           bool sameTopology=true)
       {
         EXCEPTWATCH;
@@ -2416,7 +2416,7 @@ namespace stk {
                 if (!doThisPart)
                   {
                     // we found one block with a "+", so this means include only the actual specified list of blocks, except for those excluded with "-"
-                    if (found_include_only_block) 
+                    if (found_include_only_block)
                       {
                         doThisPart = false;
                         for (unsigned ib = 0; ib < block_names_include.size(); ib++)
@@ -2465,7 +2465,7 @@ namespace stk {
                   {
                     //const CellTopologyData * const part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*part);
                     const CellTopologyData * part_cell_topo_data = get_effective_topo(*part);
-                    
+
                     if (!part_cell_topo_data)
                       {
                         //std::cout << "cell topo is null for part = " << part->name() << std::endl;
@@ -2480,9 +2480,9 @@ namespace stk {
 
                         if (0)
                           std::cout << "tmp setNeededParts:: "
-                                    << " part name= " << part->name() 
+                                    << " part name= " << part->name()
                                     << " doThisPart= " << doThisPart
-                                    << " part->primary_entity_rank() = " <<  part->primary_entity_rank() 
+                                    << " part->primary_entity_rank() = " <<  part->primary_entity_rank()
                                     << " my_cellTopoKey= " << my_cellTopoKey
                                     << " topo.getKey() = " << topo.getKey()
                                     << " topo.getName() = " << topo.getName()
@@ -2495,7 +2495,7 @@ namespace stk {
                     stk::mesh::EntityRank switch_part_primary_entity_rank  =  part->primary_entity_rank() ;
 
                     if (switch_part_primary_entity_rank == eMesh.edge_rank() ||
-                        switch_part_primary_entity_rank == eMesh.element_rank() || 
+                        switch_part_primary_entity_rank == eMesh.element_rank() ||
                         switch_part_primary_entity_rank == eMesh.face_rank())
                       {
                         stk::mesh::Part *  block_to=0;
@@ -2507,7 +2507,7 @@ namespace stk {
                           {
                             block_to = &eMesh.getFEM_meta_data()->declare_part(part->name() + m_appendConvertString, part->primary_entity_rank());
                             if (0) std::cout << "tmp setNeededParts:: declare_part name= " << (part->name() + m_appendConvertString) << std::endl;
-                            stk::mesh::fem::set_cell_topology_new< ToTopology  >( *block_to );
+                            stk::mesh::fem::set_cell_topology< ToTopology  >( *block_to );
                             stk::io::put_io_part_attribute(*block_to);
                           }
 

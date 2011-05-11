@@ -3,10 +3,7 @@
 #hard coding where the installation dir is for now.
 #Ideally this should be pulled in from the same variable that is used to set the installation
 #dir for the script.
-SET(INSTALLATION_DIR "${CMAKE_CURRENT_BINARY_DIR}/../../MPI_OPT_DEV_INSTALL/installed")
-
-message("INSTALLATION_DIR = ${INSTALLATION_DIR}")
-message("INSTALLATION_WORKING_DIR = ${INSTALLATION_WORKING_DIR}")
+SET(INSTALLATION_DIR "${CMAKE_CURRENT_BINARY_DIR}/../../installation/installed")
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test2.gcc.cmake")
 

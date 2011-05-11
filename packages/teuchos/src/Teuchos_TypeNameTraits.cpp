@@ -41,7 +41,7 @@ std::string Teuchos::demangleName( const std::string &mangledName )
 {
 #if defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)
   int status;
-  char *_demangledName = abi::__cxa_demangle(mangledName.c_str(),0,0,&status);
+  char *_demangledName = abi::__cxa_demangle(mangledName.c_str(), 0, 0, &status);
   if (status != 0 || 0==_demangledName) {
 #ifdef TEUCHOS_DEBUG
     std::string nullstr("NULL");

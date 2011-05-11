@@ -596,6 +596,13 @@ C) Configuring (Makefile Generator)
   That will result in setting TPL_ENABLE_<TPLNAME>=ON internally (but not set
   in the cache) if TPL_ENABLE_<TPLNAME>=OFF is not already set.
 
+  WARNING: Do *not* try to hack the system and set:
+
+    TPL_BLAS_LIBRARIES:PATH="-L/some/dir -llib1 -llib2 ..."
+
+  This is not compatible with proper CMake usage and it not guaranteed
+  to be supported.
+
 
 (*) Disabling tentatively enabled TPLs:
 

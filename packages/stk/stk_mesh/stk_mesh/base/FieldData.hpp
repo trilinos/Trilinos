@@ -23,6 +23,39 @@ namespace mesh {
 
 /** \addtogroup stk_mesh_field_data
  *  \{
+ *
+ * This file contains the portion of the Field API that is related to
+ * retrieving field data. It defines the EntityArray and BucketArray
+ * structs, which represent the interface between shards arrays and
+ * field data. The API for retrieving a raw pointer to the data is
+ * simpler, but the EntityArray/BucketArray system can be nice if the
+ * Field-type is complex because they handle the striding for you.
+ *
+ * Note that getting field-data on a per-entity basis is not efficient
+ * for a large number of entities; use bucket field-data instead.
+ *
+ * Examples:
+ *   - Get raw data for an entity:
+ *     double* data = stk::mesh::field_data(field, entity);
+ *
+ *   - Get raw data for a bucket:
+ *     double* data = stk::mesh::field_data(field, bucket);
+ *
+ *   - Get EntityArray data for an entity, assuming field type: Field<double, Cartesian>:
+ *     EntityArray<Field<double, Cartesian> > data_array(field, entity);
+ *
+ *   - Get BucketArray data for a bucket, assuming field type: Field<double, Cartesian>:
+ *     BucketArray<Field<double, Cartesian> > data_array(field, bucket);
+ *
+ *   - Using (Entity|Bucket)Array, assuming we are dealing with coordinates:
+ *       int num_coords_per_node = data_array.dimension(0);
+ *       int num_nodes_in_bucket = data_array.dimension(1);
+ *       for (int n = 0; n < num_nodes_in_bucket; ++n) {
+ *         for (int c = 0; c < num_coords_per_node; ++c) {
+ *           cout << data_data(c, n) << ", ";
+ *         }
+ *         cout << endl;
+ *       }
  */
 
 /** \class BucketArray

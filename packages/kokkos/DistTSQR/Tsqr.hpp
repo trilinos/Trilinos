@@ -463,7 +463,7 @@ namespace TSQR {
 		const bool contiguousCacheBlocks = false)
     {
       nodeTsqr_->fill_with_zeros (nrows_local, ncols_Q_out, Q_local_out,
-				 ldq_local_out, contiguousCacheBlocks);
+				  ldq_local_out, contiguousCacheBlocks);
       const rank_type myRank = distTsqr_->rank();
       if (myRank == 0)
 	{

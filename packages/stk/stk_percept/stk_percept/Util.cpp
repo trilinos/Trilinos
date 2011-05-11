@@ -436,7 +436,7 @@ get_heap_info(
               {
                 const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
                 //mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
-                fieldStride = fr.stride[0] ;
+                fieldStride = fr.dimension() ;
               }
           }
 

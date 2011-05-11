@@ -43,7 +43,7 @@ namespace Teuchos {
 
 /** \brief An xml converter for SimpleFunctionObjects */
 template<class OperandType>
-class SimpleFunctionXMLConverter : public FunctionObjectXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT SimpleFunctionXMLConverter : public FunctionObjectXMLConverter{
 
 public:
 
@@ -121,8 +121,16 @@ void SimpleFunctionXMLConverter<OperandType>::convertFunctionObject(
   getSpecialSimpleFunctionXMLTraits(castedFunction, xmlObj);
 }
 
+/**
+ * \brief Class for converting SubtractionFunction objects to and from XML.
+ *
+ * The valid XML represntation of a SubtractionFunction is:
+ * \code
+   <Function operand="operand value" type="SubtractionFunction(operand_type)"/>
+ \endcode
+ */
 template<class OperandType>
-class SubtractionFunctionXMLConverter :
+class TEUCHOS_LIB_DLL_EXPORT SubtractionFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
 {
 public:
@@ -145,8 +153,16 @@ SubtractionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
   return rcp(new SubtractionFunction<OperandType>(operand));
 }
 
+/**
+ * \brief Class for converting AdditionFunction objects to and from XML.
+ *
+ * The valid XML represntation of a AdditionFunction is:
+ * \code
+   <Function operand="operand value" type="AdditionFunction(operand_type)"/>
+ \endcode
+ */
 template<class OperandType>
-class AdditionFunctionXMLConverter :
+class TEUCHOS_LIB_DLL_EXPORT AdditionFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
 {
 public:
@@ -169,8 +185,16 @@ AdditionFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
   return rcp(new AdditionFunction<OperandType>(operand));
 }
 
+/**
+ * \brief Class for converting MultiplicationFunction objects to and from XML.
+ *
+ * The valid XML represntation of a MultiplicationFunction is:
+ * \code
+   <Function operand="operand value" type="MultiplicationFunction(operand_type)"/>
+ \endcode
+ */
 template<class OperandType>
-class MultiplicationFunctionXMLConverter :
+class TEUCHOS_LIB_DLL_EXPORT MultiplicationFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
 {
 public:
@@ -193,8 +217,16 @@ MultiplicationFunctionXMLConverter<OperandType>::getSpecificSimpleFunction(
   return rcp(new MultiplicationFunction<OperandType>(operand));
 }
 
+/**
+ * \brief Class for converting DivisionFunction objects to and from XML.
+ *
+ * The valid XML represntation of a DivisionFunction is:
+ * \code
+   <Function operand="operand value" type="DivisionFunction(operand_type)"/>
+ \endcode
+ */
 template<class OperandType>
-class DivisionFunctionXMLConverter :
+class TEUCHOS_LIB_DLL_EXPORT DivisionFunctionXMLConverter :
   public SimpleFunctionXMLConverter<OperandType>
 {
 public:

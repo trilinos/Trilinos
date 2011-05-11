@@ -111,3 +111,4 @@ ENDIF()
 # Check for Doxygen/dot - We can use variables set in this check to
 # enable/disable the grapical dependency graphs in doxygen Doxyfiles.
 INCLUDE(FindDoxygen)
+

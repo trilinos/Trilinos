@@ -28,7 +28,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
   const size_t num_y = 2;
   const size_t num_z = 3;
   const size_t num_surf = 6;
-  std::string config_mesh = Ioss::Utils::to_string(num_x) + "x" + 
+  std::string config_mesh = Ioss::Utils::to_string(num_x) + "x" +
                             Ioss::Utils::to_string(num_y) + "x" +
                             Ioss::Utils::to_string(num_z) + "|sideset:xXyYzZ";
   stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
@@ -63,7 +63,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
 
   const size_t total_node_count = (num_x+1) * (num_y+1) * (num_z+1);
   STKUNIT_ASSERT_EQUAL( total_node_count, fixture.getNodeCount() );
-  
+
   // Needed to test field data
   stk::mesh::Field<double,stk::mesh::Cartesian> * coord_field =
     fixture.getMetaData().get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
@@ -89,7 +89,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
     for ( size_t i = 0 ; i < entities.size() ; ++i ) {
       stk::mesh::Entity & side = *entities[i] ;
 
-      const CellTopologyData * cell_topology = stk::mesh::fem::get_cell_topology_new(side).getCellTopologyData();
+      const CellTopologyData * cell_topology = stk::mesh::fem::get_cell_topology(side).getCellTopologyData();
 
       STKUNIT_ASSERT( cell_topology );
 
@@ -97,7 +97,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
 
       STKUNIT_ASSERT_EQUAL( cell_topology->node_count, rel.size() );
 
-      for ( unsigned j = 0 ; j < cell_topology->node_count ; ++j ) 
+      for ( unsigned j = 0 ; j < cell_topology->node_count ; ++j )
       {
         stk::mesh::Entity & rel_node = *rel[j].entity();
         double * coords = stk::mesh::field_data(*coord_field, rel_node);

@@ -67,12 +67,12 @@ class StridedEpetraOperator : public EpetraOperatorWrapper {
 public:
    enum eNormType { Inf, One, Frobenius};
 
-   StridedEpetraOperator(int numVars,const Teuchos::RCP<Epetra_Operator> & content,
+   StridedEpetraOperator(int numVars,const Teuchos::RCP<const Epetra_Operator> & content,
                          const std::string & label="<ANYM>");
-   StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content,
+   StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<const Epetra_Operator> & content,
                          const std::string & label="<ANYM>");
 
-   virtual void SetContent(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content);
+   virtual void SetContent(const std::vector<int> & vars,const Teuchos::RCP<const Epetra_Operator> & content);
 
    virtual void RebuildOps()
    { BuildBlockedOperator(); }
@@ -80,8 +80,8 @@ public:
    virtual const Teuchos::RCP<const Epetra_Operator> GetContent() const
    { return fullContent_; }
 
-   virtual const Teuchos::RCP<Epetra_Operator> GetContent()
-   { return fullContent_; }
+   // virtual const Teuchos::RCP<Epetra_Operator> GetContent()
+   // { return fullContent_; }
 
    const Teuchos::RCP<const Epetra_Operator> GetBlock(int i,int j) const;
 
@@ -137,7 +137,7 @@ public:
 
 protected:
    // gooey center of this shell
-   Teuchos::RCP<Epetra_Operator> fullContent_;
+   Teuchos::RCP<const Epetra_Operator> fullContent_;
    Teuchos::RCP<StridedMappingStrategy> stridedMapping_;
    Teuchos::RCP<Thyra::LinearOpBase<double> > stridedOperator_;
    Teuchos::RCP<const BlockReorderManager> reorderManager_;

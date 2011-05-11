@@ -1,6 +1,7 @@
 
 INCLUDE(PackageMacros)
 INCLUDE(AddOptionAndDefine)
+INCLUDE(CombinedOption)
 
 #
 # A) Define the package
@@ -16,6 +17,11 @@ ELSE()
   #PACKAGE( Tpetra ENABLE_SHADOWING_WARNINGS CLEANED )
   PACKAGE( Tpetra CLEANED )
 ENDIF()
+
+COMBINED_OPTION( Tpetra_ENABLE_Thrust
+  DEP_OPTIONS_NAMES Kokkos_ENABLE_Thrust
+  DOCSTR "Enables CUDA GPU support in Tpetra.  Requires Kokkos/Thrust"
+  )
 
 PACKAGE_ADD_EXPLICIT_INSTANTIATION_OPTION()
 

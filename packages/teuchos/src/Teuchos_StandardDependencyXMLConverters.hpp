@@ -45,7 +45,7 @@ namespace Teuchos {
 
 /** \brief An xml converter for VisualDepenencies
  */
-class VisualDependencyXMLConverter : public DependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT VisualDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 
@@ -124,7 +124,7 @@ private:
 
 /** \brief An xml converter for ValidatorDependencies.
  */
-class ValidatorDependencyXMLConverter : public DependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT ValidatorDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 
@@ -187,8 +187,24 @@ public:
 };
 
 /** \brief An xml converter for StringVisualDepenencies
+ *
+ * The valid XML representation of a StringVisualDependency is:
+ * \code
+    <Dependency showIf="showIf value" type="StringVisualDependency">
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any addiditional Dependents...
+      <StringValues>
+        <String value="First value"/>
+        <String value="Second value"/>
+        ...Other Values...
+      </StringValues>
+    </Dependency>
+  \endcode
+  The "showIf" XML attribute is optional and if not present will be considered
+  true.
  */
-class StringVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT StringVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
 
 public:
 
@@ -239,8 +255,19 @@ private:
 };
 
 /** \brief An xml converter for BoolVisualDepenencies
+ *
+ * The valid XML representation of a BoolVisualDependency is:
+ * \code
+    <Dependency showIf="showIf value" type="BoolVisualDependency">
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependents...
+    </Dependency>
+  \endcode
+ *  The "showIf" XML attribute is optional and if not present will be considered
+ *  true.
  */
-class BoolVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT BoolVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
 
 public:
 
@@ -266,9 +293,23 @@ public:
 };
 
 /** \brief An xml converter for NumberVisualDependencies
+ *
+ * The valid XML representation of a NumberVisualDependency is:
+ * \code
+   <Dependency showIf="showIf value"
+    type="NumberVisualDependency(number_type_of_dependee)"
+   >
+    <Dependee parameterId="Id of dependee parameter"/>
+    <Dependent parameterId="Id of dependent parameter"/>
+    ...Any additional Dependents...
+    ...Optional function tag...
+  </Dependency>
+  \endcode
+ *  The "showIf" XML attribute is optional and if not present will be considered
+ *  true.
  */
 template<class T>
-class NumberVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT NumberVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
 
 public:
 
@@ -337,8 +378,24 @@ NumberVisualDependencyXMLConverter<T>::convertSpecialVisualAttributes(
 }
 
 /** \brief An xml converter for ConditionVisualDependencies
+ *
+ * The valid XML representation of a ConditionVisualDependency is:
+ * \code
+    <Dependency showIf="showIf value" type="ConditionVisualDependency">
+      <Dependee parameterId="Id of first dependee parameter"/>
+      <Dependee parameterId="id of second dependee parameter"/>
+      ...Any additional dependees...
+      <Dependent parameterId="Id of dependent"/>
+      ...Any additional dependents...
+      ...Condition Tag and it's children...
+    </Dependency>
+  \endcode
+ *  The "showIf" XML attribute is optional and if not present will be considered
+ *  true.
  */
-class ConditionVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT ConditionVisualDependencyXMLConverter : 
+  public VisualDependencyXMLConverter
+{
 
 public:
 
@@ -365,8 +422,25 @@ public:
 
 
 /** \brief An xml converter for StringValidatorDependencies
+ *
+ * The valid XML representation of a StringValidatorDependency is:
+ * \code
+   <Dependency type="StringValidatorDependency"
+    defaultValidatorId="value of default validator"
+   />
+     <Dependee parameterId="Id of dependee parameter"/>
+     <Dependent parameterId="Id of dependent parameter"/>
+     ...Additional Dependents...
+     <ValuesAndValidators>
+       <Pair value="Value 1" validatorId="Id of first mapped validator"/>
+       <Pair value="Value 2" validatorId="Id of second mapped validator"/>
+       ...Other value-to-validator mappings
+     </ValuesAndValidators>
+   </Dependency>
+  \endcode
+ * The "defaultValidatorId" XML attribute is optional.
  */
-class StringValidatorDependencyXMLConverter : 
+class TEUCHOS_LIB_DLL_EXPORT StringValidatorDependencyXMLConverter : 
   public ValidatorDependencyXMLConverter{
 
 public:
@@ -429,8 +503,22 @@ private:
 };
 
 /** \brief An xml converter for BoolValidatorDependencies
+ *
+ * The valid XML representation of a BoolValidatorDependency is:
+ * \code
+    <Dependency type="BoolValidatorDependency"
+      trueValidatorId="Id of the true validator"
+      falseValidatorId="Id of the false validator"
+    />
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependent parameters...
+    </Dependency>
+ \endcode
+ * You don't have to include both a "trueValidatorId" and "falseValidatorId" 
+ * XML attribute, but you must include at least one of them.
  */
-class BoolValidatorDependencyXMLConverter : public ValidatorDependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT BoolValidatorDependencyXMLConverter : public ValidatorDependencyXMLConverter{
 
 public:
 
@@ -476,9 +564,29 @@ private:
 };
 
 /** \brief An xml converter for RangeValidatorDependencies
+ *
+ * The valid XML representation of a RangeValidatorDependency is:
+ * \code
+    <Dependency type="RangeValidatorDependency(number_type_of_dependee)"
+      defaultValidatoId="id of default validator"
+    />
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependent parameters...
+      <RangesAndValidators>
+        <Pair min="min value" max="max value" 
+          validatorId="Id of first mapped validator"/>
+        <Pair min="min value" max="max value" 
+          validatorId="Id of second mapped validator"/>
+        ...Other range-to-validator mappings...
+      </RangesAndValidators>
+      ...Optional function tag...
+    </Dependency>
+  \endcode
+ * The "defaultValidatorId" XML attribute is optional.
  */
 template<class T>
-class RangeValidatorDependencyXMLConverter : 
+class TEUCHOS_LIB_DLL_EXPORT RangeValidatorDependencyXMLConverter : 
   public ValidatorDependencyXMLConverter{
 
 public:
@@ -652,9 +760,21 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
 }
 
 /** \brief An xml converter for NumberArrayLengthDependencies.
+ *
+ * The valid XML representation of a NumberArrayLengthDependency is:
+ * \code
+    <Dependency 
+      type="NumberArrayLengthDependency(dependee_number_type, type_of_array_values)"
+    >
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependent parameters...
+      ...Optional Function tag...
+    </Dependency>
+ \endcode
  */
 template<class DependeeType, class DependentType>
-class NumberArrayLengthDependencyXMLConverter : public DependencyXMLConverter{
+class TEUCHOS_LIB_DLL_EXPORT NumberArrayLengthDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 

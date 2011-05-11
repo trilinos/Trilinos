@@ -18,16 +18,19 @@ INCLUDE(ParseVariableArguments)
 #   REQUIRED_HEADERS:  List of header files that are searched for the TPL
 #     using FIND_PATH(...).
 #
-#   MUST_FIND_ALL_HEADERS:  If TRUE, then all of the header files listed in
+#   MUST_FIND_ALL_HEADERS:  If set, then all of the header files listed in
 #     REQUIRED_HEADERS must be found in order for TPL_${TPL_NAME}_INCLUDE_DIRS
 #     to be defined.
 #
 #   REQUIRED_LIBS_NAMES: List of libraries that are searched for when
 #     looked for the TPLs libraries with FIND_LIBRARY(...).
 #
-#   MUST_FIND_ALL_LIBS:  If TRUE, then all of the library files listed in
+#   MUST_FIND_ALL_LIBS:  If set, then all of the library files listed in
 #     REQUIRED_LIBS_NAMES must be found or the TPL is considered not
 #     found!
+#
+#   NO_PRINT_ENABLE_SUCCESS_FAIL: If set, then the final success/fail
+#     will not be printed
 #
 # The input cmake cache variables that this funciton uses (if defined) are:
 #
@@ -49,7 +52,7 @@ INCLUDE(ParseVariableArguments)
 #     this function, then no headers are searched for and this variable will
 #     be assumed to have the correct list of header paths.
 #
-#   TPL_${TPL_NAME}_LIBRARY_DIRS:  A list of commons-seprated full library
+#   TPL_${TPL_NAME}_LIBRARIES:  A list of commons-seprated full library
 #     names (output from FIND_LIBRARY(...)) for all of the libraries found
 #     for the TPL.  IF this varible is set before calling this function,
 #     no libraries are searched for and this varaible will be assumed to
@@ -67,7 +70,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
      #lists
      "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES"
      #options
-     "MUST_FIND_ALL_LIBS;MUST_FIND_ALL_HEADERS"
+     "MUST_FIND_ALL_LIBS;MUST_FIND_ALL_HEADERS;NO_PRINT_ENABLE_SUCCESS_FAIL"
      ${ARGN}
      )
 
@@ -75,6 +78,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     MESSAGE("TPL_DECLARE_LIBRARIES: ${TPL_NAME}")
     PRINT_VAR(PARSE_REQUIRED_HEADERS)
     PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
+    PRINT_VAR(TPL_${TPL_NAME}_INCLUDE_DIRS)
+    PRINT_VAR(TPL_${TPL_NAME}_LIBRARIES)
   ENDIF()
 
   IF (TPL_TENTATIVE_ENABLE_${TPL_NAME})
@@ -102,7 +107,10 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
       " ${TPL_NAME}_LIBRARY_DIRS."
       )
 
-   	ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE PATH ${DOCSTR})
+    ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE PATH ${DOCSTR})
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      PRINT_VAR(${TPL_NAME}_LIBRARY_DIRS)
+    ENDIF()
 
     # Libraries
   
@@ -119,6 +127,11 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     # Let the user override what the names of the libraries which might
     # actually mean that no libraies are searched for.
     SET(PARSE_REQUIRED_LIBS_NAMES ${${TPL_NAME}_LIBRARY_NAMES})
+
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      PRINT_VAR(${TPL_NAME}_LIBRARY_NAMES)
+      PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
+    ENDIF()
 
   ELSE()
 
@@ -388,14 +401,19 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     PRINT_VAR(TPL_${TPL_NAME}_LIBRARY_DIRS)
   ENDIF()
+  # 2011/05/09: rabartl: ToDo: Remove this above variable from everywhere!
 
   #PRINT_VAR(TPL_TENTATIVE_ENABLE_${TPL_NAME})
   #PRINT_VAR(_${TPL_NAME}_ENABLE_SUCCESS)
   IF (TPL_TENTATIVE_ENABLE_${TPL_NAME})
     IF (_${TPL_NAME}_ENABLE_SUCCESS)
-      MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' passed!")
+      IF (NOT PARSE_NO_PRINT_ENABLE_SUCCESS_FAIL)
+        MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' passed!")
+      ENDIF()
     ELSE()
-      MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' failed!  Setting TPL_ENABLE_${TPL_NAME}=OFF")
+      IF (NOT PARSE_NO_PRINT_ENABLE_SUCCESS_FAIL)
+        MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' failed!  Setting TPL_ENABLE_${TPL_NAME}=OFF")
+      ENDIF()
       SET(TPL_ENABLE_${TPL_NAME} OFF CACHE STRING "autoset" FORCE)
     ENDIF()
   ENDIF()

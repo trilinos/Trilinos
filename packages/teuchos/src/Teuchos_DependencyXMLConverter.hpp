@@ -47,7 +47,7 @@ namespace Teuchos {
 /** \brief An abstract base class for converting Dependencies to
  * and from XML.
  */
-class DependencyXMLConverter : public Describable {
+class TEUCHOS_LIB_DLL_EXPORT DependencyXMLConverter : public Describable {
 
 public:
 

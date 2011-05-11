@@ -45,9 +45,35 @@ namespace Teuchos {
 
 
 /** \brief Converts StringToIntegralParameterEntryValidators to and from XML.
+ *
+ * The XML Representation for a StringToIntegralValidator is:
+ * \code
+  <Validator 
+    type="StringToIntegralValidator(NumberType)"
+    defaultParameterName="Name of default parameter"
+    validatorId="Validator id"
+  >
+    <String 
+      stringValue="Value 1" 
+      integralValue="int value 1" 
+      stringDoc="Documentation for Value 1"
+    />
+    <String 
+      stringValue="Value 2" 
+      integralValue="int value 2" 
+      stringDoc="Documentation for Value 2"
+    />
+    ...More String Values...
+  </Validator>
+ 
+ \endcode
+ *
+ * The "integralValue" and "stringDoc" XML attributes are optional. However,
+ * if one of the "String" tags includes an "integralValue" and/or a "stringDoc"
+ * XML attribute, all other "String" tags must do so as well.
  */
 template<class IntegralType>
-class StringToIntegralValidatorXMLConverter : 
+class TEUCHOS_LIB_DLL_EXPORT StringToIntegralValidatorXMLConverter : 
   public ValidatorXMLConverter
 {
 
@@ -205,10 +231,20 @@ void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
     TypeNameTraits<IntegralType>::name());
 }
 
-/*
+/**
  * \brief Converts AnyNumberParameterEntryValidators to and from XML.
+ *
+ * The valid XML representation for an AnyNumberParameterEntryValidator is:
+ * \code
+  <Validator type="AnyNumberValidator" 
+   allowInt="True or False"
+   allowDouble="True or False"
+   allowString="True or False"
+   prefferedType="Prefered type"
+  />
+  \endcode
  */
-class AnyNumberValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT AnyNumberValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -269,9 +305,21 @@ private:
 
 
 /** \brief Converts EnhancedNumberValidators to and from XML.
+ *
+ * The valid XML representation of an EnhancedNumberValidator is:
+ * \code
+  <Validator type="EnhancedNumberValidator(numbertype)"
+   min="Minimum Value"
+   max="Maximum Value"
+   step="Step Value"
+   precision="Precision Value"
+   validatorId="Validator Id"
+  />
+  \endcode
+ * The "min", "max", "step", and "precision" XML attributes are all optional.
  */
 template<class T>
-class EnhancedNumberValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -378,10 +426,21 @@ void EnhancedNumberValidatorXMLConverter<T>::convertValidator(
 }
 
 
-/*
+/**
  * \brief Converts FileNameValidators to and from XML.
+ *
+ * The valid XML representation of a FileNameValidator is:
+ *
+ * \code
+  <Validator type="FilenameValidator"
+   fileMustExist="Bool Value"
+   validatorId="Validator Id"
+  />
+  \endcode
+ *
+ * The "fileMustExist" XML attribute is optional.
  */
-class FileNameValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT FileNameValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -423,10 +482,21 @@ private:
 };
 
 
-/*
+/**
  * \brief Converts StringValidators to and from XML.
+ *
+ * The valid XML represenation of a StringValidator is:
+ * \code
+  <Validator type="StringValidator"
+   validatorId="Validator id"
+  >
+    <String value="Value 1"/>
+    <String value="Value 2"/>
+    ...Other String Values...
+  </Validator>
+ \endcode
  */
-class StringValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT StringValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -474,11 +544,35 @@ private:
 };
 
 
-/*
+/**
  * \brief Converts ArrayValidators to and from XML.
+ *
+ * ArrayValidators can be represented in XML one of two ways.
+ * The first just creates the prototype validator as a child of
+ * the ArrayValidator. In this case, the prototype validator does
+ * NOT use a validatorId.
+ *\code
+  <Validator 
+   type="ArrayValidator(PrototypeValidatorType,ParameterArrayType)"
+   validatorId="Validator id"
+  >
+     ...Prototype Validator Goes Here...
+  </Validator>
+ \endcode
+ *
+ * The second way to define an ArrayValidator in XML is to just use
+ * the "prototypeId" attribute to specify the prototype validator as
+ * some other validator you've already defined.
+ * \code
+   <Validator 
+     type="ArrayValidator(PrototypeValidatorType,ParameterArrayType)"
+     validatorId="Validator id"
+     prototypeId="Prototype Validator Id"
+   />
+ * \endcode
  */
 template<class ValidatorType, class EntryType>
-class ArrayValidatorXMLConverter : public ValidatorXMLConverter
+class TEUCHOS_LIB_DLL_EXPORT ArrayValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
