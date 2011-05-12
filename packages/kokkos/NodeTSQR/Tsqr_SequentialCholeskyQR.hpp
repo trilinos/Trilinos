@@ -49,6 +49,12 @@ namespace TSQR {
   /// \class SequentialCholeskyQR
   /// \brief Cache-blocked sequential implementation of CholeskyQR.
   ///
+  /// CholeskyQR works like this: given an input matrix A with no
+  /// fewer rows than columns,
+  /// - Compute the Gram matrix of A: \f$H = A^* A\f$
+  /// - Compute the (upper triangular) Cholesky factorization of H:
+  ///   \f$H = R^* R\f$
+  /// - Compute \f$Q = A R^{-1}\f$
   template<class LocalOrdinal, class Scalar>
   class SequentialCholeskyQR {
   private:
@@ -60,17 +66,20 @@ namespace TSQR {
     typedef LocalOrdinal ordinal_type;
 
     /// \typedef FactorOutput
+    /// \brief Return value of \c factor().
     ///
     /// Here, FactorOutput is just a minimal object whose value is
-    /// irrelevant, so that the static interface looks like that of
-    /// SequentialTSQR.
+    /// irrelevant, so that this class' interface looks like that of
+    /// \c SequentialTsqr.
     typedef int FactorOutput;
 
     /// \brief Cache size hint (in bytes).
     ///
     /// This method is deprecated, because the name is misleading.
     /// Please call \c cache_size_hint() instead.
-    size_t cache_block_size () const { return strategy_.cache_size_hint(); }
+    size_t TEUCHOS_DEPRECATED cache_block_size () const { 
+      return strategy_.cache_size_hint(); 
+    }
 
     //! Cache size hint (in bytes).
     size_t cache_size_hint () const { return strategy_.cache_size_hint(); }
@@ -84,13 +93,19 @@ namespace TSQR {
       strategy_ (theCacheSizeHint)
     {}
 
-    /// Whether or not the R factor from the factorization has a
-    /// nonnegative diagonal.  Here of course it does, because it
-    /// comes from Cholesky.
+    /// \brief Whether the R factor has a nonnegative diagonal.
+    /// 
+    /// The \c factor() method computes a QR factorization of the
+    /// input matrix A.  Some, but not all methods for computing a QR
+    /// factorization produce an R factor with a nonnegative diagonal.
+    /// This class' implementation does, because the R factor comes
+    /// from a Cholesky factorization.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
       return true;
     }
 
+    /// \brief Compute the QR factorization of the matrix A.
+    ///
     /// Compute the QR factorization of the nrows by ncols matrix A,
     /// with nrows >= ncols, stored either in column-major order (the
     /// default) or as contiguous column-major cache blocks, with
@@ -183,7 +198,6 @@ namespace TSQR {
 
       return retval;
     }
-
 
     /// \param factor_output [in] Not used; just here to match the
     ///   interface of SequentialTsqr.

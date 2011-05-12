@@ -127,7 +127,9 @@ namespace TSQR {
     /// 
     /// Same as \c cache_size_hint().  This method is deprecated; use
     /// \c cache_size_hint() instead (which returns the same thing.)
-    size_t cache_block_size () const { return cache_size_hint_; }
+    size_t TEUCHOS_DEPRECATED cache_block_size () const { 
+      return cache_size_hint_; 
+    }
 
     /// \brief The cache size hint in bytes.
     /// 

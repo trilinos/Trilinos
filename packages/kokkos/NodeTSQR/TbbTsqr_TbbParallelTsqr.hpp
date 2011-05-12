@@ -169,7 +169,9 @@ namespace TSQR {
       ///
       /// This method is deprecated, because the name is misleading.
       /// Please call \c cache_size_hint() instead.
-      size_t cache_block_size() const { return seq_.cache_size_hint(); }
+      size_t TEUCHOS_DEPRECATED cache_block_size() const { 
+	return seq_.cache_size_hint(); 
+      }
 
       /// \brief Cache size hint (in bytes) used for the factorization.
       ///

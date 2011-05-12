@@ -1434,7 +1434,7 @@ namespace TSQR {
     /// value).
     /// 
     /// See the \c NodeTsqr documentation for details.
-    size_t cache_block_size() const {
+    size_t TEUCHOS_DEPRECATED cache_block_size() const {
       return strategy_.cache_size_hint();
     }
 

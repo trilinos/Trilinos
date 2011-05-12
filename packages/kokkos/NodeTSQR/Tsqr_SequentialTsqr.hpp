@@ -294,7 +294,7 @@ namespace TSQR {
     ///
     /// This method is deprecated, because the name is misleading.
     /// Please call \c cache_size_hint() instead.
-    size_t cache_block_size () const { 
+    size_t TEUCHOS_DEPRECATED cache_block_size () const { 
       return strategy_.cache_size_hint(); 
     }
 

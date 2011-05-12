@@ -146,8 +146,9 @@ namespace TSQR {
 		    const Teuchos::RCP<const Teuchos::ParameterList>& defaultParams)
   {
     // We try to guess among some reasonable names.  The first in the
-    // list is the canonical name.  "cacheBlockSize" is retained only
-    // for backwards compatibility and may be removed at any time.
+    // list is the canonical name.  "cacheBlockSize" and related names
+    // are retained only for backwards compatibility and may be
+    // removed at any time.
     const char* possibleNames[] = {"cacheSizeHint",
 				   "cache_size_hint",
 				   "cacheSize",

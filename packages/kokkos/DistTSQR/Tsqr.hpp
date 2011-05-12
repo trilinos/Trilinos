@@ -129,7 +129,9 @@ namespace TSQR {
     ///
     /// This method is deprecated; please call \c cache_size_hint()
     /// instead.
-    size_t cache_block_size() const { return nodeTsqr_->cache_size_hint(); }
+    size_t TEUCHOS_DEPRECATED cache_block_size() const { 
+      return nodeTsqr_->cache_size_hint(); 
+    }
 
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
