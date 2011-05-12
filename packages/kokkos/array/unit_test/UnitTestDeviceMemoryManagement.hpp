@@ -44,7 +44,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
-#include <macros/Kokkos_Preprocessing_macros.hpp>
+#include <impl/Kokkos_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 

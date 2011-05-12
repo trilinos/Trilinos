@@ -313,24 +313,24 @@ create_mdarray( size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
 // Partial specializations for known devices and default index maps
 
 #if defined( KOKKOS_DEVICE_HOST )
-#include <macros/Kokkos_DeviceHost_macros.hpp>
-#include <macros/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <macros/Kokkos_MDArrayView_macros.hpp>
-#include <macros/Kokkos_DeviceClear_macros.hpp>
+#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
+#include <impl/Kokkos_MDArrayView_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_TPI )
-#include <macros/Kokkos_DeviceTPI_macros.hpp>
-#include <macros/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <macros/Kokkos_MDArrayView_macros.hpp>
-#include <macros/Kokkos_DeviceClear_macros.hpp>
+#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
+#include <impl/Kokkos_MDArrayView_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
-#include <macros/Kokkos_DeviceCuda_macros.hpp>
-#include <macros/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <macros/Kokkos_MDArrayView_macros.hpp>
-#include <macros/Kokkos_DeviceClear_macros.hpp>
+#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
+#include <impl/Kokkos_MDArrayView_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
 #endif
 
 //----------------------------------------------------------------------------

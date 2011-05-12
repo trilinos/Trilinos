@@ -37,21 +37,76 @@
  *************************************************************************
  */
 
-#if ! defined( KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION ) || \
-    ! defined( KOKKOS_MACRO_DEVICE ) || \
-    ! defined( KOKKOS_MACRO_HOST_FUNCTION ) || \
-    ! defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if ! defined(KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOS_MACRO_DEVICE)                  || \
+    ! defined(KOKKOS_MACRO_HOST_FUNCTION)           || \
+    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)
 
-#include <macros/Kokkos_Preprocessing_macros.hpp>
+#include <impl/Kokkos_Preprocessing_macros.hpp>
 
 #error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
 
 #else
 
-#undef KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION
-#undef KOKKOS_MACRO_DEVICE
-#undef KOKKOS_MACRO_HOST_FUNCTION
-#undef KOKKOS_MACRO_DEVICE_FUNCTION
+namespace Kokkos {
+namespace Impl {
+
+template< typename ValueType >
+class MemoryView< ValueType , KOKKOS_MACRO_DEVICE > {
+private:
+
+  MemoryViewTracker m_tracker ;
+  ValueType       * m_ptr_on_device ;
+
+  friend class KOKKOS_MACRO_DEVICE ;
+
+  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  MemoryView( const MemoryView & rhs );
+
+  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  MemoryView & operator = ( const MemoryView & rhs );
+
+public:
+
+  typedef KOKKOS_MACRO_DEVICE device_type ;
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Query value at offset */
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  value_type & operator[]( const iType & i ) const
+  { return m_ptr_on_device[ i ]; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  value_type * ptr_on_device() const
+  { return m_ptr_on_device ; }
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Construct a NULL view */
+  inline
+  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  MemoryView() : m_tracker(), m_ptr_on_device(0) {}
+
+  /**  \brief  Destroy this view of the array.
+   *           If the last view then allocated memory is deallocated.
+   */
+  inline
+  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  ~MemoryView()
+  { device_type::clear_memory_view( *this ); }
+};
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+} // namespace Impl
+} // namespace Kokkos
 
 #endif
 

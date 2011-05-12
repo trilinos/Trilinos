@@ -37,96 +37,21 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_MACRO_DEVICE
-#error "KOKKOS_MACRO_DEVICE undefined"
-#endif
-
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
+#if ! defined( KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION ) || \
+    ! defined( KOKKOS_MACRO_DEVICE ) || \
+    ! defined( KOKKOS_MACRO_HOST_FUNCTION ) || \
+    ! defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
 #include <impl/Kokkos_Preprocessing_macros.hpp>
 
-/*--------------------------------------------------------------------------*/
+#error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
 
-namespace {
+#else
 
-template< class > class UnitTestValueView ;
+#undef KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION
+#undef KOKKOS_MACRO_DEVICE
+#undef KOKKOS_MACRO_HOST_FUNCTION
+#undef KOKKOS_MACRO_DEVICE_FUNCTION
 
-template<>
-class UnitTestValueView< Kokkos :: KOKKOS_MACRO_DEVICE >
-{
-public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
-
-  typedef Kokkos::ValueView< double , device > dView ;
-  typedef Kokkos::ValueView< int ,    device > iView ;
-
-  static std::string name()
-  {
-    std::string tmp ;
-    tmp.append( "UnitTestValueView< Kokkos::" );
-    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
-    tmp.append( " >" );
-    return tmp ;
-  }
-
-  void error( const char * msg ) const
-  {
-    std::string tmp = name();
-    tmp.append( msg );
-    throw std::runtime_error( msg );
-  }
-
-  UnitTestValueView()
-  {
-    std::ostringstream s_empty ;
-    std::ostringstream s_alloc ;
-    std::ostringstream s_assign ;
-    std::ostringstream s_clear1 ;
-  
-    dView dx , dy ;
-    iView ix , iy ;
-
-    dx = Kokkos::create_labeled_value<double,device> ( "dx" );
-    ix = Kokkos::create_labeled_value<int,device> ( "ix" );
-  
-    *dx = 20 ;
-    *ix = 10 ;
-  
-    dView dz = dy = dx ;
-    iView iz = iy = ix ;
-  
-    if ( & *dx != & *dy ||
-         & *dx != & *dz ||
-         & *ix != & *iy ||
-         & *ix != & *iz ) {
-      error("FAILED Assign view");
-    }
-
-    dx = dView();
-    iy = iView();
-  
-    if ( & *dx != 0 ||
-         & *dy != & *dz ||
-         & *ix != & *iz ||
-         & *iy != 0 ||
-         *dy != 20 ||
-         *iz != 10 ) {
-      error("FAILED Clear view");
-    }
-
-    dz = dy = dView();
-    iz = ix = iView();
-
-    if ( & *dx != 0 || & *dy != 0 || & *dz != 0 ||
-         & *ix != 0 || & *iy != 0 || & *iz != 0 ) {
-      error("FAILED Clear all view");
-    }
-  }
-};
-
-}
-
-/*--------------------------------------------------------------------------*/
+#endif
 

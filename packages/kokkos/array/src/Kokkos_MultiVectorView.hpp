@@ -186,21 +186,21 @@ create_multivector( size_t length , size_t count = 1 )
 // Partial specializations for known devices
   
 #if defined( KOKKOS_DEVICE_HOST )
-#include <macros/Kokkos_DeviceHost_macros.hpp>
-#include <macros/Kokkos_MultiVectorView_macros.hpp>
-#include <macros/Kokkos_DeviceClear_macros.hpp>
+#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <impl/Kokkos_MultiVectorView_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
 #endif
   
 #if defined( KOKKOS_DEVICE_TPI )
-#include <macros/Kokkos_DeviceTPI_macros.hpp>
-#include <macros/Kokkos_MultiVectorView_macros.hpp>
-#include <macros/Kokkos_DeviceClear_macros.hpp>
+#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <impl/Kokkos_MultiVectorView_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
-#include <macros/Kokkos_DeviceCuda_macros.hpp>
-#include <macros/Kokkos_MultiVectorView_macros.hpp>
-#include <macros/Kokkos_DeviceClear_macros.hpp>
+#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <impl/Kokkos_MultiVectorView_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
 #endif
 
 #endif /* KOKKOS_MULTIVECTORVIEW_HPP */

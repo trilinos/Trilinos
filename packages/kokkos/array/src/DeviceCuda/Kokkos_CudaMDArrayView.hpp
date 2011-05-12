@@ -60,7 +60,7 @@
 #define KOKKOS_MACRO_IMPL_HOST_CODE 1
 #endif
 
-#include <macros/Kokkos_MDArrayView_macros.hpp>
+#include <impl/Kokkos_MDArrayView_macros.hpp>
 
 #undef KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION
 #undef KOKKOS_MACRO_IMPL_DEVICE
