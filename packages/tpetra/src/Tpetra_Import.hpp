@@ -402,15 +402,25 @@ namespace Tpetra {
     */
   template <class LO, class GO, class Node> 
   RCP< const Import<LO,GO,Node> >
-  makeImport( const RCP<const Map<LO,GO,Node> > & src, 
-              const RCP<const Map<LO,GO,Node> > & tgt )
+  createImport( const RCP<const Map<LO,GO,Node> > & src, 
+                const RCP<const Map<LO,GO,Node> > & tgt )
   {
     if (src == tgt) return null;
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(src == null || tgt == null, std::runtime_error,
-        "Tpetra::makeImport(): neither source nor target map may be null:\nsource: " << src << "\ntarget: " << tgt << "\n");
+        "Tpetra::createImport(): neither source nor target map may be null:\nsource: " << src << "\ntarget: " << tgt << "\n");
 #endif
     return rcp(new Import<LO,GO,Node>(src,tgt));
+  }
+
+  /** \brief Deprecated. Use createImport().
+    */
+  template <class LO, class GO, class Node> 
+  RCP< const Import<LO,GO,Node> >
+  TPETRA_DEPRECATED makeImport( const RCP<const Map<LO,GO,Node> > & src, 
+                                const RCP<const Map<LO,GO,Node> > & tgt )
+  {
+    return createImport<LO,GO,Node>(src,tgt);
   }
 
 } // namespace Tpetra
