@@ -1429,8 +1429,9 @@ namespace TSQR {
     ///
     /// This method is deprecated, because the name is misleading (the
     /// return value is not the size of one cache block, even though
-    /// it is used to pick the "typical" cache block size).  Use \c
-    /// cache_size_hint() instead (which returns the same value).
+    /// it is used to pick the "typical" cache block size).  Please
+    /// use \c cache_size_hint() instead (which returns the same
+    /// value).
     /// 
     /// See the \c NodeTsqr documentation for details.
     size_t cache_block_size() const {
@@ -1443,7 +1444,6 @@ namespace TSQR {
     size_t cache_size_hint() const {
       return strategy_.cache_size_hint();
     }
-
 
     //! Fill A with zeros (see \c NodeTsqr documentation).
     void

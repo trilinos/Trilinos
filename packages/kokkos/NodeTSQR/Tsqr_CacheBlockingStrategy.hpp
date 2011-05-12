@@ -113,13 +113,13 @@ namespace TSQR {
     //! Copy constructor
     CacheBlockingStrategy (const CacheBlockingStrategy& rhs) :
       size_of_scalar_ (rhs.size_of_scalar_),
-      cache_size_hint_ (rhs.cache_block_size())
+      cache_size_hint_ (rhs.cache_size_hint())
     {}
 
     //! Assignment operator
     CacheBlockingStrategy& operator= (const CacheBlockingStrategy& rhs) {
       size_of_scalar_ = rhs.size_of_scalar_;
-      cache_size_hint_ = rhs.cache_block_size();
+      cache_size_hint_ = rhs.cache_size_hint();
       return *this;
     }
 
@@ -156,13 +156,13 @@ namespace TSQR {
 
     //! True if and only if the two strategies are the same.
     bool operator== (const CacheBlockingStrategy& rhs) const {
-      return cache_block_size() == rhs.cache_block_size() && 
+      return cache_size_hint() == rhs.cache_size_hint() && 
 	size_of_scalar() == rhs.size_of_scalar();
     }
 
     //! True if and only if the two strategies are not the same.
     bool operator!= (const CacheBlockingStrategy& rhs) const {
-      return cache_block_size() != rhs.cache_block_size() ||
+      return cache_size_hint() != rhs.cache_size_hint() ||
 	size_of_scalar() != rhs.size_of_scalar();
     }
 

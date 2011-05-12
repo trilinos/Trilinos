@@ -46,7 +46,10 @@
 
 namespace TSQR {
 
-  template< class LocalOrdinal, class Scalar >
+  /// \class SequentialCholeskyQR
+  /// \brief Cache-blocked sequential implementation of CholeskyQR.
+  ///
+  template<class LocalOrdinal, class Scalar>
   class SequentialCholeskyQR {
   private:
     typedef MatView< LocalOrdinal, Scalar > mat_view;
@@ -55,23 +58,30 @@ namespace TSQR {
   public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
-    // Here, FactorOutput is just a minimal object whose value is
-    // irrelevant, so that the static interface looks like that of
-    // SequentialTSQR.
+
+    /// \typedef FactorOutput
+    ///
+    /// Here, FactorOutput is just a minimal object whose value is
+    /// irrelevant, so that the static interface looks like that of
+    /// SequentialTSQR.
     typedef int FactorOutput;
 
-    /// \return Cache block size in bytes
-    size_t
-    cache_block_size () const { return strategy_.cache_block_size(); }
-
-    /// Constructor
+    /// \brief Cache size hint (in bytes).
     ///
-    /// \param cache_block_size [in] Size in bytes of the cache block
-    ///   to use in the factorization.  If 0, the implementation will
-    ///   pick a reasonable size, which may be queried via the
-    ///   cache_block_size() member function.
-    SequentialCholeskyQR (const size_t cache_block_size = 0) :
-      strategy_ (cache_block_size)
+    /// This method is deprecated, because the name is misleading.
+    /// Please call \c cache_size_hint() instead.
+    size_t cache_block_size () const { return strategy_.cache_size_hint(); }
+
+    //! Cache size hint (in bytes).
+    size_t cache_size_hint () const { return strategy_.cache_size_hint(); }
+
+    /// \brief Constructor
+    ///
+    /// \param theCacheSizeHint [in] Cache size hint in bytes.  If 0,
+    ///   the implementation will pick a reasonable size, which may be
+    ///   queried by calling cache_size_hint().
+    SequentialCholeskyQR (const size_t theCacheSizeHint = 0) :
+      strategy_ (theCacheSizeHint)
     {}
 
     /// Whether or not the R factor from the factorization has a

@@ -184,7 +184,7 @@ namespace TSQR {
     /// \param num_cores [in] Number of cores to use per MPI process
     ///   for Intel TBB parallelism within that process
     ///
-    /// \param cache_block_size [in] Cache block size (per core) in
+    /// \param cache_size_hint [in] Cache size hint (per core) in
     ///   bytes.  If zero, a sensible default is used.
     ///
     /// \param contiguousCacheBlocks [in] Whether cache blocks
@@ -208,7 +208,7 @@ namespace TSQR {
 		const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
 		const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 		const int num_cores = 1,
-		const size_t cache_block_size = 0,
+		const size_t cache_size_hint = 0,
 		const bool contiguousCacheBlocks,
 		const bool printFieldNames,
 		const bool human_readable = false,
@@ -268,10 +268,10 @@ namespace TSQR {
       if (std::numeric_limits< Scalar >::has_quiet_NaN)
 	A_copy.fill (std::numeric_limits< Scalar >::quiet_NaN());
 
-      // actual_cache_block_size: "cache_block_size" is just a
-      // suggestion.  TSQR determines the cache block size itself;
+      // actual_cache_size_hint: "cache_size_hint" is just a
+      // suggestion.  TSQR determines the cache size hint itself;
       // this remembers it so we can print it out later.
-      size_t actual_cache_block_size;
+      size_t actual_cache_size_hint;
 
       if (which == "MpiTbbTSQR")
 	{
@@ -281,7 +281,7 @@ namespace TSQR {
 	  typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
 	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
-	  RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (num_cores, cache_block_size));
+	  RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (num_cores, cache_size_hint));
 	  RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
 	  tsqr_type tsqr (node_tsqr, dist_tsqr);
 	  
@@ -290,7 +290,7 @@ namespace TSQR {
 					     Q_local, R, contiguousCacheBlocks, 
 					     b_debug);
 	  // Save the "actual" cache block size
-	  actual_cache_block_size = tsqr.cache_block_size();
+	  actual_cache_size_hint = tsqr.cache_size_hint();
 #else
 	  throw std::logic_error("TSQR not built with Intel TBB support");
 #endif // HAVE_TSQR_INTEL_TBB
@@ -302,7 +302,7 @@ namespace TSQR {
 	  typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
 	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
-	  RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (cache_block_size));
+	  RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (cache_size_hint));
 	  RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
 	  tsqr_type tsqr (node_tsqr, dist_tsqr);
 	  
@@ -311,7 +311,7 @@ namespace TSQR {
 					     Q_local, R, contiguousCacheBlocks, 
 					     b_debug);
 	  // Save the "actual" cache block size
-	  actual_cache_block_size = tsqr.cache_block_size();
+	  actual_cache_size_hint = tsqr.cache_size_hint();
 	}
       else 
 	throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
@@ -367,15 +367,15 @@ namespace TSQR {
 
 	      cout << human_readable_name << ":" << endl
 		   << "Scalar type: " << scalarTypeName << endl
-		   << "# rows = " << nrows_global << endl
-		   << "# columns = " << ncols << endl
-		   << "# MPI processes = " << nprocs << endl;
+		   << "# rows: " << nrows_global << endl
+		   << "# columns: " << ncols << endl
+		   << "# MPI processes: " << nprocs << endl;
 #ifdef HAVE_TSQR_INTEL_TBB
 	      if (which == "MpiTbbTSQR")
 		cout << "# cores per process = " << num_cores << endl;
 #endif // HAVE_TSQR_INTEL_TBB
-	      cout << "cache block # bytes = " << actual_cache_block_size << endl
-		   << "contiguous cache blocks? " << contiguousCacheBlocks << endl
+	      cout << "Cache size hint in bytes: " << actual_cache_size_hint << endl
+		   << "Contiguous cache blocks? " << contiguousCacheBlocks << endl
 		   << "Absolute residual $\\| A - Q R \\|_2: "
 		   << results[0] << endl
 		   << "Absolute orthogonality $\\| I - Q^* Q \\|_2$: " 
@@ -395,7 +395,7 @@ namespace TSQR {
 		       << ",numCols"
 		       << ",numProcs"
 		       << ",numCores"
-		       << ",cacheBlockSize"
+		       << ",cacheSizeHint"
 		       << ",contiguousCacheBlocks"
 		       << ",absFrobResid"
 		       << ",absFrobOrthog"
@@ -415,7 +415,7 @@ namespace TSQR {
 #else
 	      cout << ",1" << endl;
 #endif // HAVE_TSQR_INTEL_TBB
-	      cout << "," << actual_cache_block_size
+	      cout << "," << actual_cache_size_hint
 		   << "," << contiguousCacheBlocks 
 		   << "," << results[0] 
 		   << "," << results[1]
@@ -569,7 +569,7 @@ namespace TSQR {
     /// \param num_cores [in] Number of cores to use per MPI process
     ///   for Intel TBB parallelism within that process
     ///
-    /// \param cache_block_size [in] Cache block size (per core) in
+    /// \param cache_size_hint [in] Cache block size (per core) in
     ///   bytes.  If zero, a sensible default is used.
     ///
     /// \param contiguousCacheBlocks [in] Whether cache blocks
@@ -594,7 +594,7 @@ namespace TSQR {
 		   const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
 		   const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 		   const Ordinal num_cores,
-		   const size_t cache_block_size,
+		   const size_t cache_size_hint,
 		   const bool contiguousCacheBlocks,
 		   const bool printFieldNames,
 		   const bool human_readable,
@@ -655,10 +655,10 @@ namespace TSQR {
       if (std::numeric_limits< Scalar >::has_quiet_NaN)
 	A_copy.fill (std::numeric_limits< Scalar >::quiet_NaN());
 
-      // actual_cache_block_size: "cache_block_size" is just a
+      // actual_cache_size_hint: "cache_size_hint" is just a
       // suggestion.  TSQR determines the cache block size itself;
       // this remembers it so we can print it out later.
-      size_t actual_cache_block_size;
+      size_t actual_cache_size_hint;
       // Run time (in seconds, as a double-precision floating-point
       // value) for TSQR on this MPI node.
       double tsqr_timing;
@@ -671,7 +671,7 @@ namespace TSQR {
 	  typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
 	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
-	  RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (num_cores, cache_block_size));
+	  RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (num_cores, cache_size_hint));
 	  RCP< dist_tsqr_type > distTsqr (new dist_tsqr_type (scalarComm));
 	  tsqr_type tsqr (nodeTsqr, distTsqr);
 
@@ -683,7 +683,7 @@ namespace TSQR {
 						       human_readable, b_debug);
 
 	  // Save the "actual" cache block size
-	  actual_cache_block_size = tsqr.cache_block_size();
+	  actual_cache_size_hint = tsqr.cache_size_hint();
 #else
 	  throw std::logic_error("TSQR not built with Intel TBB support");
 #endif // HAVE_TSQR_INTEL_TBB
@@ -696,7 +696,7 @@ namespace TSQR {
 	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
 	  // Set up TSQR.
-	  RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (cache_block_size));
+	  RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (cache_size_hint));
 	  RCP< dist_tsqr_type > distTsqr (new dist_tsqr_type (scalarComm));
 	  tsqr_type tsqr (nodeTsqr, distTsqr);
 	  
@@ -707,7 +707,7 @@ namespace TSQR {
 						       contiguousCacheBlocks, 
 						       human_readable, b_debug);
 	  // Save the "actual" cache block size
-	  actual_cache_block_size = tsqr.cache_block_size();
+	  actual_cache_size_hint = tsqr.cache_size_hint();
 	}
       else
 	throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
@@ -738,21 +738,21 @@ namespace TSQR {
 
 	      cout << human_readable_name << ":" << endl
 		   << "Scalar type: " << scalarTypeName << endl
-		   << "# rows = " << nrows_global << endl
-		   << "# columns = " << ncols << endl
-		   << "# MPI processes = " << nprocs << endl;
+		   << "# rows: " << nrows_global << endl
+		   << "# columns: " << ncols << endl
+		   << "# MPI processes: " << nprocs << endl;
 
 #ifdef HAVE_TSQR_INTEL_TBB
 	      if (which == "MpiTbbTSQR")
-		cout << "# cores per process = " << num_cores << endl;
+		cout << "# cores per process: " << num_cores << endl;
 #endif // HAVE_TSQR_INTEL_TBB
 
-	      cout << "cache block # bytes = " << actual_cache_block_size << endl
+	      cout << "Cache size hint in bytes: " << actual_cache_size_hint << endl
 		   << "contiguous cache blocks? " << contiguousCacheBlocks << endl
-		   << "# trials = " << ntrials << endl
-		   << "Min total time (s) over all MPI processes = " 
+		   << "# trials: " << ntrials << endl
+		   << "Min total time (s) over all MPI processes: " 
 		   << min_tsqr_timing << endl
-		   << "Max total time (s) over all MPI processes = " 
+		   << "Max total time (s) over all MPI processes: " 
 		   << max_tsqr_timing << endl
 		   << endl;
 	    }
@@ -767,7 +767,7 @@ namespace TSQR {
 		       << ",numCols"
 		       << ",numProcs"
 		       << ",numCores"
-		       << ",cacheBlockSize"
+		       << ",cacheSizeHint"
 		       << ",contiguousCacheBlocks"
 		       << ",numTrials"
 		       << ",minTiming"
@@ -787,7 +787,7 @@ namespace TSQR {
 #else
 	      cout << ",1";
 #endif // HAVE_TSQR_INTEL_TBB
-	      cout << "," << actual_cache_block_size
+	      cout << "," << actual_cache_size_hint
 		   << "," << contiguousCacheBlocks
 		   << "," << ntrials 
 		   << "," << min_tsqr_timing 

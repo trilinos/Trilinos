@@ -328,7 +328,7 @@ namespace TSQR {
 		  << ",scalarType"
 		  << ",numRows"
 		  << ",numCols"
-		  << ",cacheBlockSize"
+		  << ",cacheSizeHint"
 		  << ",contiguousCacheBlocks"
 		  << ",absFrobResid"
 		  << ",absFrobOrthog"
@@ -554,7 +554,7 @@ namespace TSQR {
 		  << ",scalarType"
 		  << ",numRows"
 		  << ",numCols"
-		  << ",cacheBlockSize"
+		  << ",cacheSizeHint"
 		  << ",contiguousCacheBlocks"
 		  << ",absFrobResid"
 		  << ",absFrobOrthog"
@@ -791,7 +791,7 @@ namespace TSQR {
 		     << ",scalarType"
 		     << ",numRows"
 		     << ",numCols"
-		     << ",cacheBlockSize"
+		     << ",cacheSizeHint"
 		     << ",contiguousCacheBlocks"
 		     << ",numTrials"
 		     << ",timing";
@@ -924,13 +924,13 @@ namespace TSQR {
       benchmark (const int numTrials,
 		 const Ordinal numRows,
 		 const Ordinal numCols,
-		 const size_t cacheBlockSize,
+		 const size_t cacheSizeHint,
 		 const bool contiguousCacheBlocks,
 		 const std::string& additionalFieldNames,
 		 const std::string& additionalData,
 		 const bool printFieldNames)
       {
-	SequentialTsqr< Ordinal, Scalar > actor (cacheBlockSize);
+	SequentialTsqr< Ordinal, Scalar > actor (cacheSizeHint);
 
 	Matrix< Ordinal, Scalar > A (numRows, numCols);
 	Matrix< Ordinal, Scalar > A_copy (numRows, numCols);
@@ -1023,7 +1023,7 @@ namespace TSQR {
 		     << ",scalarType"
 		     << ",numRows"
 		     << ",numCols"
-		     << ",cacheBlockSize"
+		     << ",cacheSizeHint"
 		     << ",contiguousCacheBlocks"
 		     << ",numTrials"
 		     << ",timing";
@@ -1052,7 +1052,7 @@ namespace TSQR {
 		      const int numRows,
 		      const int numCols,
 		      const int numTrials,
-		      const size_t cacheBlockSize,
+		      const size_t cacheSizeHint,
 		      const bool contiguousCacheBlocks,
 		      const bool testComplex,
 		      const std::string& additionalFieldNames,
@@ -1073,7 +1073,7 @@ namespace TSQR {
 	    typedef SeqTsqrBenchmarker< int, float, timer_type > benchmark_type;
 	    string scalarTypeName ("float");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+	    widget.benchmark (numTrials, numRows, numCols, cacheSizeHint, 
 			      contiguousCacheBlocks, 
 			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
@@ -1084,7 +1084,7 @@ namespace TSQR {
 	    typedef SeqTsqrBenchmarker< int, double, timer_type > benchmark_type;
 	    string scalarTypeName ("double");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+	    widget.benchmark (numTrials, numRows, numCols, cacheSizeHint, 
 			      contiguousCacheBlocks, 
 			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
@@ -1101,7 +1101,7 @@ namespace TSQR {
 	    typedef SeqTsqrBenchmarker< int, complex<float>, timer_type > benchmark_type;
 	    string scalarTypeName ("complex<float>");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+	    widget.benchmark (numTrials, numRows, numCols, cacheSizeHint, 
 			      contiguousCacheBlocks, 
 			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
@@ -1112,7 +1112,7 @@ namespace TSQR {
 	    typedef SeqTsqrBenchmarker< int, complex<double>, timer_type > benchmark_type;
 	    string scalarTypeName ("complex<double>");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+	    widget.benchmark (numTrials, numRows, numCols, cacheSizeHint, 
 			      contiguousCacheBlocks, 
 			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);

@@ -210,9 +210,15 @@ namespace TSQR {
 
     /// \brief The standard constructor.
     ///
-    /// \param cacheBlockSize [in] Size in bytes of the cache block
-    ///   to use in the sequential TSQR factorization.  If 0, the
-    ///   implementation will pick a reasonable size.
+    /// \param cacheSizeHint [in] Cache size hint in bytes to use in
+    ///   the sequential TSQR factorization.  If 0, the implementation
+    ///   will pick a reasonable size.  Good nondefault choices are
+    ///   the amount of per-CPU highest-level private cache, or the
+    ///   amount of lowest-level shared cache divided by the number of
+    ///   CPU cores sharing it.  We recommend experimenting to find
+    ///   the best value.  Too large a value is worse than too small a
+    ///   value, though an excessively small value will result in
+    ///   extra computation and may also cause a slow down.
     ///
     /// \param sizeOfScalar [in] The number of bytes required to store
     ///   a Scalar value.  This is used to compute the dimensions of
@@ -237,9 +243,9 @@ namespace TSQR {
     ///   representation length can change at runtime, you should
     ///   construct a new SequentialTsqr object whenever the
     ///   representation length changes.
-    SequentialTsqr (const size_t cacheBlockSize = 0,
+    SequentialTsqr (const size_t cacheSizeHint = 0,
 		    const size_t sizeOfScalar = sizeof(Scalar)) :
-      strategy_ (cacheBlockSize, sizeOfScalar)
+      strategy_ (cacheSizeHint, sizeOfScalar)
     {}
 
     /// \brief Alternate constructor for a given cache blocking strategy.
@@ -262,7 +268,7 @@ namespace TSQR {
     std::string description () const {
       std::ostringstream os;
       os << "Intranode Tall Skinny QR (TSQR): sequential cache-blocked "
-	"implementation with cache block size " << this->cache_block_size() 
+	"implementation with cache size hint " << this->cache_size_hint() 
 	 << " bytes.";
       return os.str();
     }
@@ -275,13 +281,21 @@ namespace TSQR {
       return combine_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
-    /// \brief Cache block size in bytes.
+    /// \brief Cache size hint (in bytes) used for the factorization.
     ///
-    /// This may be different than the cache block size argument
+    /// This may be different than the cache size hint argument
     /// specified in the constructor.  SequentialTsqr treats that as a
     /// hint, not a command.
+    size_t cache_size_hint () const { 
+      return strategy_.cache_size_hint(); 
+    }
+
+    /// \brief Cache size hint (in bytes) used for the factorization.
+    ///
+    /// This method is deprecated, because the name is misleading.
+    /// Please call \c cache_size_hint() instead.
     size_t cache_block_size () const { 
-      return strategy_.cache_block_size(); 
+      return strategy_.cache_size_hint(); 
     }
 
     /// \brief Compute QR factorization (implicitly stored Q factor) of A.

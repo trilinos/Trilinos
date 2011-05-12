@@ -45,35 +45,54 @@
 namespace TSQR {
   namespace TBB {
 
+    /// \class TbbRecursiveTsqr
+    /// \brief Non-parallel "functioning stub" implementation of \c TbbTsqr.
+    ///
     template< class LocalOrdinal, class Scalar >
     class TbbRecursiveTsqr {
     public:
-      /// \param num_cores [in] Number of cores to use to solve the
-      /// problem (i.e., number of subproblems into which to divide
-      /// the main problem, to solve it in parallel).
+      /// \brief Constructor.
       ///
-      /// \param cache_block_size [in] Number of bytes in the cache.
-      /// If zero, set to a reasonable default.
+      /// \param num_cores [in] Maximum parallelism to use (i.e.,
+      ///   maximum number of partitions into which to divide the
+      ///   matrix to factor).
+      ///
+      /// \param cache_size_hint [in] Approximate cache size in bytes
+      ///   per CPU core.  A hint, not a command.  If zero, set to a
+      ///   reasonable default.
       TbbRecursiveTsqr (const size_t num_cores = 1,
-			const size_t cache_block_size = 0);
+			const size_t cache_size_hint = 0);
 
       /// Number of cores to use to solve the problem (i.e., number of
       /// subproblems into which to divide the main problem, to solve
       /// it in parallel).
       size_t ncores() const { return ncores_; }
 
-      /// Cache block size (in bytes) used for the factorization
-      size_t cache_block_size() const { return seq_.cache_block_size(); }
+      /// \brief Cache size hint (in bytes) used for the factorization.
+      ///
+      /// This method is deprecated, because the name is misleading.
+      /// Please call \c cache_size_hint() instead.
+      size_t cache_block_size() const { return seq_.cache_size_hint(); }
 
-      /// Results of SequentialTsqr for each core.
-      typedef typename SequentialTsqr< LocalOrdinal, Scalar >::FactorOutput SeqOutput;
-      /// Array of ncores "local tau arrays" from parallel TSQR.
-      /// (Local Q factors are stored in place.)
-      typedef std::vector< std::vector< Scalar > > ParOutput;
+      //! Cache size hint (in bytes) used for the factorization.
+      size_t cache_size_hint() const { return seq_.cache_size_hint(); }
+
+      //! Results of SequentialTsqr for each core.
+      typedef typename SequentialTsqr<LocalOrdinal, Scalar>::FactorOutput SeqOutput;
+
+      /// \typedef ParOutput
+      /// \brief Array of ncores "local tau arrays" from parallel TSQR.
+      ///
+      /// Local Q factors are stored in place.
+      typedef std::vector<std::vector<Scalar> > ParOutput;
+
+      /// \typedef FactorOutput
+      /// \brief Return type of factor().
+      ///
       /// factor() returns a pair: the results of SequentialTsqr for
       /// data on each core, and the results of combining the data on
       /// the cores.
-      typedef typename std::pair< std::vector< SeqOutput >, ParOutput > FactorOutput;
+      typedef typename std::pair<std::vector<SeqOutput>, ParOutput> FactorOutput;
 
       /// Copy the nrows by ncols matrix A_in (with leading dimension
       /// lda_in >= nrows) into A_out, such that cache blocks are
