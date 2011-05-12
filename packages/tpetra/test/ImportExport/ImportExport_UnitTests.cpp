@@ -311,6 +311,7 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
+    if (numImages < 2) return;
     // create a Map
     RCP<const Map<int,int> > smap = Tpetra::createContigMap<int,int>(INVALID,1,comm);
     const int myOnlyGID = smap->getGlobalElement(0);
