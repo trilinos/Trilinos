@@ -20,6 +20,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Turn off SS packages we don't have TPLs for
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES PyTrilinos TriKota Optika)
+
+  # Enable LIME since it is EX currently
+  SET(Trilinos_ADDITIONAL_PACKAGES LIME)
   
   SET_DEFAULT(COMPILER_VERSION "ICPC-12.0.2")
   
