@@ -172,9 +172,10 @@ namespace Tpetra {
 		However, performance may suffer. (The same goes for Insert.)
   */
 	enum CombineMode {
-		ADD,    /*!< Existing values will be summed with new values. */
-		INSERT, /*!< Insert new values that don't currently exist. */
-		REPLACE /*!< Existing values will be replaced with new values. */
+		ADD,     /*!< Existing values will be summed with new values. */
+		INSERT,  /*!< Insert new values that don't currently exist. */
+		REPLACE, /*!< Existing values will be replaced with new values. */
+		ABSMAX   /*!< Replacment is <tt>max( abs(old_value), abs(new_value) )</tt> */
 	};
 
   // import Teuchos memory management classes into Tpetra
