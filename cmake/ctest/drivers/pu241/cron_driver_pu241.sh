@@ -8,6 +8,7 @@ export PATH="${PATH}:/opt/casldev/env"
 eval `vera_dev_env.py load casl`
 # eval `vera_dev_env.py load vera` # sets cdash dropsite to casl-dev.ornl.gov
 eval `vera_dev_env.py load intel/12`
+umask u=rwx,g=rwx,o=
 
 BASEDIR=/home/casl-vri-admin/Dashboards
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/pu241
