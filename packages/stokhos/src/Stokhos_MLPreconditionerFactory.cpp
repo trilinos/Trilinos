@@ -93,6 +93,5 @@ recompute(const Teuchos::RCP<Epetra_Operator>& op,
   TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::MLPreconditionerFactory is available " <<
 		     "only with configured with ML support!");
-  return Teuchos::null;
 #endif // HAVE_STOKHOS_ML
 }

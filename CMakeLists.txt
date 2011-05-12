@@ -152,7 +152,6 @@ ENDIF()
 
 PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
 
-
 #
 # E) Stop if asked
 #
@@ -197,7 +196,6 @@ PACKAGE_ARCH_PROCESS_ENABLED_TPLS()
 
 OPTION(Trilinos_ENABLE_OpenMP
       "Build with OpenMP support." OFF)
-
 
 #
 # H) Set up for testing with CTest and Trilinos test harness

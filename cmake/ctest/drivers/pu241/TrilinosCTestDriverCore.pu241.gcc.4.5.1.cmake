@@ -21,6 +21,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # We don't have TPLs for PyTrilinos, Optika, and TriKota
   # There is some strange problem with TrilinosFramework causing an strange error.
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES TrilinosFramework PyTrilinos TriKota Optika)
+
+  # Enable LIME since it is EX currently
+  SET(Trilinos_ADDITIONAL_PACKAGES LIME)
   
   SET_DEFAULT(COMPILER_VERSION "GCC-4.5.1")
 
@@ -29,7 +32,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   IF (COMM_TYPE STREQUAL MPI)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/gcc-4.5.1-mpi-options.cmake"
+      "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/gcc-4.5.1-mpi-ss-options.cmake"
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
       "-DTPL_ENABLE_MPI:BOOL=ON"
       "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
@@ -38,7 +41,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/gcc-4.5.1-serial-options.cmake"
+      "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/gcc-4.5.1-serial-ss-options.cmake"
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
       "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     )

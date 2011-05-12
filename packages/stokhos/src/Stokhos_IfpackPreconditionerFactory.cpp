@@ -88,6 +88,5 @@ recompute(const Teuchos::RCP<Epetra_Operator>& op,
   TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::IfpackPreconditionerFactory is available " <<
 		     "only with configured with Ifpack support!");
-  return Teuchos::null;
 #endif // HAVE_STOKHOS_IFPACK
 }

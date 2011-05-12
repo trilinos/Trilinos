@@ -1,5 +1,6 @@
 INCLUDE(PackageMacros)
 INCLUDE(AddOptionAndDefine)
+INCLUDE(CombinedOption)
 
 #
 # A) Define the package
