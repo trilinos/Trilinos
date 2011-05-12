@@ -85,7 +85,8 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" \
+	"$(DESTDIR)$(execincludedir)"
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
@@ -308,7 +309,8 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	installcheck-recursive installdirs-recursive pdf-recursive \
 	ps-recursive uninstall-recursive
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS)
+nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
@@ -1167,7 +1169,7 @@ EXTRA_DIST = $(ZOLTAN_H) \
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(includedir)
 #np# replace new_package with the name of the package being autotool'ed here
-#nodist_execinclude_HEADERS = Zoltan_config.h
+nodist_execinclude_HEADERS = include/Zoltan_config.h
 
 # Add the absolute path to src/fort to F90 build line, so F90 can find
 # the files included in fwrap.f90.  
@@ -3722,6 +3724,23 @@ uninstall-includeHEADERS:
 	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
 	done
+install-nodist_execincludeHEADERS: $(nodist_execinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	test -z "$(execincludedir)" || $(MKDIR_P) "$(DESTDIR)$(execincludedir)"
+	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(nodist_execincludeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(execincludedir)/$$f'"; \
+	  $(nodist_execincludeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(execincludedir)/$$f"; \
+	done
+
+uninstall-nodist_execincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(execincludedir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(execincludedir)/$$f"; \
+	done
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
@@ -3902,7 +3921,7 @@ check: check-recursive
 all-am: Makefile $(LIBRARIES) $(HEADERS) all-local
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -3955,7 +3974,8 @@ install-data-am: install-includeHEADERS
 
 install-dvi: install-dvi-recursive
 
-install-exec-am: install-libLIBRARIES
+install-exec-am: install-libLIBRARIES \
+	install-nodist_execincludeHEADERS
 
 install-html: install-html-recursive
 
@@ -3986,7 +4006,8 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
+uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES \
+	uninstall-nodist_execincludeHEADERS
 
 .MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) install-am \
 	install-strip
@@ -3999,13 +4020,14 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
 	install-data install-data-am install-dvi install-dvi-am \
 	install-exec install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man install-pdf install-pdf-am \
+	install-libLIBRARIES install-man \
+	install-nodist_execincludeHEADERS install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs installdirs-am maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-includeHEADERS \
-	uninstall-libLIBRARIES
+	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
 
 all-local:

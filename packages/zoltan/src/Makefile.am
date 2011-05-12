@@ -809,7 +809,7 @@ EXTRA_DIST = $(ZOLTAN_H) \
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(includedir)
 #np# replace new_package with the name of the package being autotool'ed here
-#nodist_execinclude_HEADERS = Zoltan_config.h
+nodist_execinclude_HEADERS = include/Zoltan_config.h
 
 # Add the absolute path to src/fort to F90 build line, so F90 can find
 # the files included in fwrap.f90.  
