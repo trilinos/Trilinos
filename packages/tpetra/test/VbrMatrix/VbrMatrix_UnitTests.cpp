@@ -1115,7 +1115,7 @@ namespace {
       vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
     }
 
-    vbr->fillComplete();
+//    vbr->fillComplete();
 
     Tpetra::Import<LO,GO,Node> importer(convertBlockMapToPointMap(rowmap_src),
                                         convertBlockMapToPointMap(rowmap_dest));
@@ -1273,9 +1273,8 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applyParallel, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applyTransParallel, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applyParallelMV, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, CtorBCrsGraph, LO, GO, SCALAR, NODE )
-
-//      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Import1, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, CtorBCrsGraph, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Import1, LO, GO, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode )
