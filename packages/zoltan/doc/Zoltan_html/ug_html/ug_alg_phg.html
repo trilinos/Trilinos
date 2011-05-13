@@ -122,8 +122,8 @@ weight equals number of hyperedges containing it, i.e., the degree)<br>
       <td style="vertical-align: top;"> Selects the partitioning
 objective, <i>CONNECTIVITY</i> or <i>HYPEREDGES</i>. While hyperedges
 simply counts the number of hyperedges cut, the connectivity metric
-weights each cut edge by the number of participating processors - 1
-(aka the k-1 cut metric). The connectivity metric better represents
+weights each cut edge by the number of participating parts minus one
+(aka the &lambda;-1 cut metric). The connectivity metric better represents
 communication volume for most applications. The hyperedge metric is
 useful for certain applications, e.g., minimizing matrix border size in
 block matrix decompositions. <br>
