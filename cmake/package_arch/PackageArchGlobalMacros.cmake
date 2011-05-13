@@ -177,6 +177,32 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE}
     CACHE BOOL "Enable strong compiler warnings for C++ code for supported compilers." )
 
+  MULTILINE_SET( ENABLE_SHADOW_WARNINGS_DOC
+    "Turn ON or OFF shadowing warnings for all packages where strong warnings have"
+    " not been explicitly disabled.  Setting the empty '' let's each package decide." )
+  SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS ""
+    "${ENABLE_SHADOW_WARNINGS_DOC}" )
+  MARK_AS_ADVANCED(${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS)
+
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_COVERAGE_TESTING OFF
+    CACHE BOOL "Enable support for coverage testing by setting needed compiler/linker options." )
+
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_CHECKED_STL OFF
+    CACHE BOOL "Turn on checked STL checking (e.g. -D_GLIBCXX_DEBUG) or not." )
+
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS OFF
+    CACHE BOOL "Turn on debugging symbols (e.g. -g) or not if not a full debug build." )
+
+  IF (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    SET(${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS_DEFAULT "-Werror")
+  ELSE()
+    SET(${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS_DEFAULT "")
+  ENDIF()
+
+  ADVANCED_SET( ${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS
+    "${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS_DEFAULT}"
+    CACHE STRING "Flags for treating warnings as errors (for all compilers, -Werror by default for GNU).  To turn off warnings as errors set to ''")
+
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF CACHE BOOL
     "If test output complaining about circular references is found, then the test will fail." )
 

@@ -4,6 +4,7 @@ INCLUDE(AdvancedSet)
 INCLUDE(AssertDefined)
 INCLUDE(MultilineSet)
 INCLUDE(DualScopeSet)
+INCLUDE(PrependCmndlineArgs)
 
 
 #
@@ -16,30 +17,26 @@ MACRO(PACKAGE_ARCH_DEFINE_STANDARD_COMPILE_FLAGS_VARS  ENABLE_SHADOWING_WARNINGS
   # Setup and general flags
   #
 
+  SET(GENERAL_BUILD_FLAGS) # Applies to all builds, period
+ 
+  IF (${PROJECT_NAME}_ENABLE_CHECKED_STL)
+    PREPEND_CMNDLINE_ARGS(GENERAL_BUILD_FLAGS "-D_GLIBCXX_DEBUG")
+  ENDIF()
+
   SET(DEBUG_SYMBOLS_FLAGS "-g")
 
   SET(GENERAL_DEBUG_FLAGS "${DEBUG_SYMBOLS_FLAGS} -O0")
-
-  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_CHECKED_STL OFF
-    CACHE BOOL "Turn on checked STL checking (e.g. -D_GLIBCXX_DEBUG) or not." )
- 
-  IF (${PROJECT_NAME}_ENABLE_CHECKED_STL)
-    SET(GENERAL_DEBUG_FLAGS "${GENERAL_DEBUG_FLAGS} -D_GLIBCXX_DEBUG")
-  ENDIF()
-
-  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS OFF
-    CACHE BOOL "Turn on debugging symbols (e.g. -g) or not if not a full debug build." )
  
   SET(GENERAL_RELEASE_FLAGS "-O3")
 
   IF (${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS)
-    SET(GENERAL_RELEASE_FLAGS "${GENERAL_RELEASE_FLAGS} ${DEBUG_SYMBOLS_FLAGS}")
+    PREPEND_CMNDLINE_ARGS(GENERAL_BUILD_FLAGS "${DEBUG_SYMBOLS_FLAGS}")
   ENDIF()
 
   MULTILINE_SET(C_STRONG_COMPILE_WARNING_FLAGS
-    " -ansi" # Check for C89 or C++98 standard code
+    "-ansi" # Check for C89 or C++98 standard code
     " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
-    " -Wall " # Enable a bunch of default warnings
+    " -Wall" # Enable a bunch of default warnings
     " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
     )
   
@@ -47,13 +44,6 @@ MACRO(PACKAGE_ARCH_DEFINE_STANDARD_COMPILE_FLAGS_VARS  ENABLE_SHADOWING_WARNINGS
     ${C_STRONG_COMPILE_WARNING_FLAGS}
     " -Wwrite-strings" # Checks for non-const char * copy of string constants
     )
-
-  MULTILINE_SET( ENABLE_SHADOW_WARNINGS_DOC
-    "Turn ON or OFF shadowing warnings for all packages where strong warnings have"
-    " not been explicitly disabled.  Setting the empty '' let's each package decide." )
-  SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS ""
-    "${ENABLE_SHADOW_WARNINGS_DOC}" )
-  MARK_AS_ADVANCED(${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS)
 
   IF (${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS)
     SET(LOCAL_ENABLE_SHADOWING_WARNINGS ON)
@@ -70,15 +60,5 @@ MACRO(PACKAGE_ARCH_DEFINE_STANDARD_COMPILE_FLAGS_VARS  ENABLE_SHADOWING_WARNINGS
       " -Woverloaded-virtual" # Warn about hiding virtual functions
       )
   ENDIF()
-
-  IF (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    SET(${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS_DEFAULT "-Werror")
-  ELSE()
-    SET(${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS_DEFAULT "")
-  ENDIF()
-
-  ADVANCED_SET( ${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS
-    "${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS_DEFAULT}"
-    CACHE STRING "Flags for treating warnings as errors.  To turn off set to ''")
 
 ENDMACRO()
