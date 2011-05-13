@@ -160,7 +160,7 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     )
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE
-    ON  #NOTE: Change this to 'OFF' in a release branch!
+    ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}
     CACHE BOOL
     "Determines if a variety of development mode checks are turned on by default or not." )
 
