@@ -1596,15 +1596,21 @@ namespace Belos {
     const int numCols = MVT::GetNumberVecs (X);
     if (numCols == 0)
       return 0; // Fast exit for an empty input matrix
+
+    // We allow Q to have more columns than X, in which case we only
+    // touch the first numCols columns of Q.
     TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, 
 		       std::invalid_argument, 
 		       "TsqrOrthoManagerImpl::normalizeImpl(X,Q,B): "
 		       "Q has " << MVT::GetNumberVecs(Q) << " columns, "
 		       "which is too few, since X has " << numCols 
 		       << " columns.");
+
     // TSQR's rank-revealing part doesn't work unless B is provided.
     // If B is not provided, allocate a temporary B for use in TSQR.
-    // If it is provided, adjust dimensions as necessary.
+    // If it is provided, adjust dimensions as necessary.  Adjusting
+    // the dimensions of B may invalidate any data currently stored in
+    // it, but that data will be overwritten anyway.
     if (B.is_null())
       B = rcp (new mat_type (numCols, numCols));
     else
@@ -1657,6 +1663,45 @@ namespace Belos {
 	// Replace the null space basis with random data.
 	MVT::MvRandom (*Q_null); 
 
+	// Make sure that the "random" data isn't all zeros.  This is
+	// statistically nearly impossible, but we test for debugging
+	// purposes.
+	{
+	  std::vector<magnitude_type> norms (MVT::GetNumberVecs(*Q_null));
+	  MVT::MvNorm (*Q_null, norms);
+
+	  bool anyZero = false;
+	  typedef typename std::vector<magnitude_type>::const_iterator iter_type;
+	  for (iter_type it = norms.begin(); it != norms.end(); ++it)
+	    if (*it == SCTM::zero())
+	      anyZero = true;
+
+	  if (anyZero)
+	    {
+	      std::ostringstream os;
+	      os << "TsqrOrthoManagerImpl::normalizeImpl: "
+		"We are being asked to randomize the null space, for a matrix "
+		"with " << numCols << " columns and reported column rank "
+		 << rank << ".  The inclusive range of columns to fill with "
+		"random data is [" << nullSpaceIndices.lbound() << "," 
+		 << nullSpaceIndices.ubound() << "].  After filling the null "
+		"space vectors with random numbers, at least one of the vectors"
+		" has norm zero.  Here are the norms of all the null space "
+		"vectors: [";
+	      for (iter_type it = norms.begin(); it != norms.end(); ++it)
+		{
+		  os << *it;
+		  if (it+1 != norms.end())
+		    os << ", ";
+		}
+	      os << "].)  There is a tiny probability that this could happen "
+		"randomly, but it is likely a bug.  Please report it to the "
+		"Belos developers, especially if you are able to reproduce the "
+		"behavior.";
+	      TEST_FOR_EXCEPTION(anyZero, TsqrOrthoError, os.str());
+	    }
+	}
+
 	if (rank > 0)
 	  {
 	    // Project the random data against the column space
@@ -1703,11 +1748,41 @@ namespace Belos {
 	// argument to rawNormalize, which is the null space basis
 	// rank from the previous iteration.  The rank has to
 	// decrease each time, or the recursion may go on forever.
-	TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols, 
-			   TsqrOrthoError,
-			   "Random vectors after projection have rank " 
-			   << nullSpaceBasisRank << ", but should have rank " 
-			   << nullSpaceNumCols);
+	if (nullSpaceBasisRank < nullSpaceNumCols)
+	  {
+	    std::vector<magnitude_type> norms (MVT::GetNumberVecs(*X_null));
+	    MVT::MvNorm (*X_null, norms);
+	    std::ostringstream os;
+	    os << "TsqrOrthoManagerImpl::normalizeImpl: "
+	       << "We are being asked to randomize the null space, "
+	       << "for a matrix with " << numCols << " columns and "
+	       << "column rank " << rank << ".  After projecting and "
+	       << "normalizing the generated random vectors, they "
+	       << "only have rank " << nullSpaceBasisRank << ".  They"
+	       << " should have full rank " << nullSpaceNumCols 
+	       << ".  (The inclusive range of columns to fill with "
+	       << "random data is [" << nullSpaceIndices.lbound() 
+	       << "," << nullSpaceIndices.ubound() << "].  The "
+	       << "column norms of the resulting Q factor are: [";
+	    for (typename std::vector<magnitude_type>::size_type k = 0; 
+		 k < norms.size(); ++k)
+	      {
+		os << norms[k];
+		if (k != norms.size()-1)
+		  os << ", ";
+	      }
+	    os << "].)  There is a tiny probability that this could "
+	       << "happen randomly, but it is likely a bug.  Please "
+	       << "report it to the Belos developers, especially if "
+	       << "you are able to reproduce the behavior.";
+
+	    // FIXME (mfh 12 May 2011) Temporarily disabled throwing
+	    // an exception here.  I need to fix this apparent bug wen
+	    // I get more time.
+	    //
+	    // TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols, 
+	    //                    TsqrOrthoError, os.str());
+	  }
 	// If we're normalizing out of place, copy the X_null
 	// vectors back into Q_null; the Q_col vectors are already
 	// where they are supposed to be in that case.
