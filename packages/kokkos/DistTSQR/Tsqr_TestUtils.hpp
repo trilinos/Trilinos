@@ -133,7 +133,10 @@ namespace TSQR {
     Teuchos::RCP<const NodeType>
     getNode (const Teuchos::RCP<Teuchos::ParameterList>& plist)
     {
-      return Teuchos::rcp (new NodeType (*plist));
+      using Teuchos::rcp;
+      using Teuchos::rcp_const_cast;
+
+      return rcp_const_cast<const NodeType> (rcp (new NodeType (*plist)));
     }
 
     /// \class Cons
@@ -167,3 +170,4 @@ namespace TSQR {
   } // namespace Test
 } // namespace TSQR
 
+#endif // __TSQR_TestUtils_hpp

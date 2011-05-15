@@ -26,14 +26,12 @@
 // ***********************************************************************
 // @HEADER
 
-#include <Tsqr_Config.hpp>
+#include <Tsqr_FullTsqrTest.hpp>
 
 #ifdef HAVE_MPI
 #  include <Teuchos_GlobalMPISession.hpp>
 #  include <Teuchos_oblackholestream.hpp>
 #endif // HAVE_MPI
-
-#include <Tsqr_FullTsqrTest.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
@@ -41,12 +39,14 @@
 #  include <complex>
 #endif // HAVE_TSQR_COMPLEX
 
+typedef int ordinal_type;
+
 namespace {
   //
   // Documentation string to print out if --help is a command-line argument.
   //
   const char docString[] = "This program tests correctness and accuracy of "
-    "TSQR::Tsqr, which is the full implementation of TSQR."
+    "TSQR::Tsqr, which is the full implementation of TSQR.";
 
   //
   // Encapsulation of all command-line parameters.
@@ -132,40 +132,40 @@ namespace {
 	// CommandLineProcessor takes int arguments, but not size_t
 	// arguments, so we have to read in the argument as an int and
 	// convert back to size_t later.
-	int cacheSizeHintAsInt = params.cacheSizeHint;
+	int cacheSizeHintAsInt = cacheSizeHint;
 	cmdLineProc.setOption ("cacheSizeHint",
 			       &cacheSizeHintAsInt,
-			       defaultParams.getEntry("cacheSizeHint").getDocString());
+			       defaultParams->getEntry("cacheSizeHint").docString().c_str());
 	cmdLineProc.setOption ("numRowsLocal",
 			       &numRowsLocal,
-			       defaultParams.getEntry("numRowsLocal").getDocString());
+			       defaultParams->getEntry("numRowsLocal").docString().c_str());
 	cmdLineProc.setOption ("numCols",
 			       &numCols,
-			       defaultParams.getEntry("numCols").getDocString());
+			       defaultParams->getEntry("numCols").docString().c_str());
 	cmdLineProc.setOption ("contiguousCacheBlocks",
 			       "noContiguousCacheBlocks",
 			       &contiguousCacheBlocks,
-			       defaultParams.getEntry("contiguousCacheBlocks").getDocString());
+			       defaultParams->getEntry("contiguousCacheBlocks").docString().c_str());
 	cmdLineProc.setOption ("testFactorExplicit",
 			       "noTestFactorExplicit",
 			       &testFactorExplicit,
-			       defaultParams.getEntry("testFactorExplicit").getDocString());
+			       defaultParams->getEntry("testFactorExplicit").docString().c_str());
 	cmdLineProc.setOption ("printFieldNames",
 			       "noPrintFieldNames",
 			       &printFieldNames,
-			       defaultParams.getEntry("printFieldNames").getDocString());
+			       defaultParams->getEntry("printFieldNames").docString().c_str());
 	cmdLineProc.setOption ("printResults",
 			       "noPrintResults",
 			       &printResults,
-			       defaultParams.getEntry("printResults").getDocString());
+			       defaultParams->getEntry("printResults").docString().c_str());
 	cmdLineProc.setOption ("failIfInaccurate",
 			       "noFailIfInaccurate",
 			       &failIfInaccurate,
-			       defaultParams.getEntry("failIfInaccurate").getDocString());
+			       defaultParams->getEntry("failIfInaccurate").docString().c_str());
 	cmdLineProc.setOption ("debug", 
 			       "nodebug", 
 			       &debug, 
-			       defaultParams.getEntry("debug").getDocString());
+			       defaultParams->getEntry("debug").docString().c_str());
 	cmdLineProc.parse (argc, argv);
 	cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
       } 
@@ -202,17 +202,17 @@ namespace {
     using Teuchos::RCP;
 
     RCP<ParameterList> testParams = parameterList ("FullTsqrVerifier");
-    testParams->set ("cacheSizeHint", cacheSizeHint);
-    testParams->set ("numRowsLocal", numRowsLocal);
-    testParams->set ("numCols", numCols);
-    testParams->set ("testFactorExplicit", testFactorExplicit);
-    testParams->set ("contiguousCacheBlocks", contiguousCacheBlocks);
-    testParams->set ("printFieldNames", printFieldNames);
-    testParams->set ("printResults", printResults);
-    testParams->set ("failIfInaccurate", failIfInaccurate);
-    testParams->set ("debug", debug);
+    testParams->set ("cacheSizeHint", options.cacheSizeHint);
+    testParams->set ("numRowsLocal", options.numRowsLocal);
+    testParams->set ("numCols", options.numCols);
+    testParams->set ("testFactorExplicit", options.testFactorExplicit);
+    testParams->set ("contiguousCacheBlocks", options.contiguousCacheBlocks);
+    testParams->set ("printFieldNames", options.printFieldNames);
+    testParams->set ("printResults", options.printResults);
+    testParams->set ("failIfInaccurate", options.failIfInaccurate);
+    testParams->set ("debug", options.debug);
 
-    testParams->validateParametersAndSetDefaults (caller.getValidParameterList());
+    testParams->validateParametersAndSetDefaults (*validParams);
     return testParams;
   }
 
@@ -242,14 +242,18 @@ namespace {
     caller_type caller (comm, node, randomSeed);
 
     //
-    // Read command-line options and set up test parameters.
+    // Read command-line options
     //
     RCP<const ParameterList> defaultParams = caller.getValidParameterList();
     CmdLineOptions cmdLineOpts (defaultParams);
-    const bool printedHelp = options.read (argc, argv, defaultParams, allowedToPrint);
+    const bool printedHelp = cmdLineOpts.read (argc, argv, defaultParams, allowedToPrint);
     // Don't run the tests (and do succeed) if help was printed.
     if (printedHelp)
       return true; 
+
+    //
+    // Use read-in command-line options to set up test parameters.
+    //
     RCP<ParameterList> testParams = testParameters (defaultParams, cmdLineOpts);
     defaultParams = null; // save a little space 
 
@@ -269,12 +273,18 @@ namespace {
     // exception in that case.  Otherwise, the tests return nothing,
     // and "succeed" if they don't crash or throw an exception.
     //
-    if (testReal)
+    // The testReal and testComplex options are read in at the command
+    // line, but since they do not apply to all Scalar types, they
+    // don't belong in testParams.
+    //
+    if (cmdLineOpts.testReal)
       caller.run<real_type_list> (testParams);
 #ifdef HAVE_TSQR_COMPLEX
-    if (testComplex)
+    if (cmdLineOpts.testComplex)
       caller.run<complex_type_list> (testParams);
 #endif // HAVE_TSQR_COMPLEX
+
+    return true; // for success
   }
 
 } // namespace (anonymous)
@@ -305,6 +315,8 @@ main (int argc, char* argv[])
   const bool allowedToPrint = (myRank == 0);
   std::ostream& out = allowedToPrint ? std::cout : blackhole;
   std::ostream& err = allowedToPrint ? std::cerr : blackhole;
+  // Make sure that err gets "used"
+  (void) err;
 
 #else // Don't HAVE_MPI: single-node test
 

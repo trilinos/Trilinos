@@ -84,8 +84,8 @@ namespace TSQR {
       typedef DistTsqrType                        dist_tsqr_type;
       typedef Teuchos::RCP< dist_tsqr_type >      dist_tsqr_ptr;
 
-      typedef Tsqr< LO, S, node_tsqr_type, dist_tsqr_type > tsqr_type;
-      typedef Teuchos::RCP< tsqr_type >                     tsqr_ptr;
+      typedef Tsqr< LO, S, node_tsqr_type > tsqr_type;
+      typedef Teuchos::RCP< tsqr_type >     tsqr_ptr;
 
       /// \brief Instantiate and return TSQR implementation
       ///

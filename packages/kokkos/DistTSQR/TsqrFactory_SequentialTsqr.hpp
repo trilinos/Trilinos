@@ -30,8 +30,8 @@
 #define __TSQR_Trilinos_TsqrFactory_SequentialTsqr_hpp
 
 /// \file TsqrFactory_SequentialTsqr.hpp
-///
-/// \warning Anasazi users should _not_ include this file directly.
+/// \brief Declaration and definition of SequentialTsqrFactory.
+/// \author Mark Hoemmen
 
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr.hpp"
