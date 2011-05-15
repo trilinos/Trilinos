@@ -71,7 +71,7 @@ namespace Tpetra {
         This method does not initiate any communication, and therefore can be called safely on a single node.
 
         \param in matrix - The sparse matrix source for the diagonals.
-        \param in bloc_map - A BlockMap describing the blocks
+        \param in block_map - A BlockMap describing the blocks
         \param out out_diags - A reference-counted array, containing the block diagonals in contiguous storage.
         \param out out_offsets - A reference-counted array, indicating the offset to reach each block in \c out_diags.
 
@@ -91,6 +91,34 @@ namespace Tpetra {
                           const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>         &block_map,
                           Teuchos::ArrayRCP<Scalar>       &out_diags,
                           Teuchos::ArrayRCP<LocalOrdinal> &out_offsets);
+
+    /** \brief Extracts block elements from a RowMatrix into contiguous, host storage.
+
+        This method does not initiate any communication, and therefore can be called safely on a single node.
+
+        \param in block_row     - The block row to be extracted
+        \param in block_row_map - A BlockMap describing the row blocks
+        \param in block_col_map - A BlockMap describing the column blocks
+        \param in matrix - The sparse matrix source for the diagonals.
+        \param out block_entries - The block entries
+        \param out block_indices - The indices for the block entries
+
+        \pre - <tt>block_row_map.getPointMap().isCompatible( matrix.getRowMap() )</tt>
+        \pre - <tt>block_row_map.getPointMap().isCompatible( matrix.getRowMap() )</tt>
+        \pre - <tt>block_col_map.getPointMap().isCompatible( matrix.getColMap() )</tt>
+        \pre - <tt>block_col_map.getPointMap().isCompatible( matrix.getColMap() )</tt>
+        \pre - <tt>matrix.isFillComplete() == true</tt>
+
+        \relatesalso Tpetra::CrsMatrix
+      */
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void
+    extractBlockRow(LocalOrdinal localBlockRow,
+                    const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
+                    const BlockMap<LocalOrdinal,GlobalOrdinal,Node> &block_row_map,
+                    const BlockMap<LocalOrdinal,GlobalOrdinal,Node> &block_col_map,
+                    ArrayRCP<ArrayRCP<Scalar> >      &out_block_entries,
+                    ArrayRCP<LocalOrdinal>           &out_block_indices);
 
   }
 }
