@@ -1623,18 +1623,19 @@ namespace Belos {
     else
       B->shape (numCols, numCols);
 
-    {
-      std::vector<magnitude_type> norms (numCols);
-      MVT::MvNorm (X, norms);
-      cerr << "Column norms of X before orthogonalization: ";
-      for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin(); 
-	   iter != norms.end(); ++iter)
-	{
-	  cerr << *iter;
-	  if (iter+1 != norms.end())
-	    cerr << ", ";
-	}
-    }
+    if (false)
+      {
+	std::vector<magnitude_type> norms (numCols);
+	MVT::MvNorm (X, norms);
+	cerr << "Column norms of X before orthogonalization: ";
+	for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin(); 
+	     iter != norms.end(); ++iter)
+	  {
+	    cerr << *iter;
+	    if (iter+1 != norms.end())
+	      cerr << ", ";
+	  }
+      }
 
     // Compute rank-revealing decomposition (in this case, TSQR of X
     // followed by SVD of the R factor and appropriate updating of the
@@ -1646,25 +1647,26 @@ namespace Belos {
     // numerical rank.
     const int rank = rawNormalize (X, *Q_view, *B);
 
-    {
-      std::vector<magnitude_type> norms (numCols);
-      MVT::MvNorm (*Q_view, norms);
-      cerr << "Column norms of Q_view after orthogonalization: ";
-      for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin(); 
-	   iter != norms.end(); ++iter)
-	{
-	  cerr << *iter;
-	  if (iter+1 != norms.end())
-	    cerr << ", ";
-	}
-    }
+    if (false)
+      {
+	std::vector<magnitude_type> norms (numCols);
+	MVT::MvNorm (*Q_view, norms);
+	cerr << "Column norms of Q_view after orthogonalization: ";
+	for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin(); 
+	     iter != norms.end(); ++iter)
+	  {
+	    cerr << *iter;
+	    if (iter+1 != norms.end())
+	      cerr << ", ";
+	  }
+      }
 
     TEST_FOR_EXCEPTION(rank < 0 || rank > numCols, std::logic_error,
 		       "Belos::TsqrOrthoManagerImpl::normalizeImpl: "
 		       "rawNormalize() returned rank = " << rank << " for a "
 		       "matrix X with " << numCols << " columns.  Please report"
 		       " this bug to the Belos developers.");
-    if (rank == 0)
+    if (false && rank == 0)
       {
 	// Sanity check: ensure that the columns of X are sufficiently
 	// small for X to be reported as rank zero.
