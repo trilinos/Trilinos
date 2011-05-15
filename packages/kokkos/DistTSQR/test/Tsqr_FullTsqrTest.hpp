@@ -385,6 +385,9 @@ namespace TSQR {
     /// \brief Invokes FullTsqrVerifier::run() over all Scalar types in a type list.
     /// \author Mark Hoemmen
     ///
+    /// Use this class to test the full TSQR implementation in Tsqr.
+    /// It will test Tsqr over a list of Scalar types that you define,
+    /// using \c Cons and \c NullCons.
     class FullTsqrVerifierCaller {
     public:
       /// \typedef node_type
@@ -407,7 +410,7 @@ namespace TSQR {
       /// Call this once to get a valid parameter list with all the
       /// defaults filled in.  This list is valid for all the Scalar
       /// types which TsqrVerifierCaller::run tests.
-      Teuchos::RCP<Teuchos::ParameterList>
+      Teuchos::RCP<const Teuchos::ParameterList>
       getValidParameterList () const
       {
 	using Teuchos::ParameterList;
