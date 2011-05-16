@@ -45,7 +45,7 @@
 namespace Kokkos {
 
 template< class FunctorType , class DeviceType >
-class ParalleFor {
+class ParallelFor {
 public:
   typedef DeviceType                      device_type ;
   typedef typename device_type::size_type size_type ;
@@ -71,17 +71,13 @@ void parallel_for( size_t work_count , const FunctorType & functor )
 #endif
 
 #if defined( KOKKOS_DEVICE_TPI )
+#include <DeviceTPI/Kokkos_DeviceTPI_ParallelFor.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
 #endif
 
 //----------------------------------------------------------------------------
-
-#endif /* KOKKOS_VALUEVIEW_HPP */
-
-
-
 
 #endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */
 

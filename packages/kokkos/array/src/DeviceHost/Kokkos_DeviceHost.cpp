@@ -78,8 +78,6 @@ DeviceHostImpl::~DeviceHostImpl()
 
 /*--------------------------------------------------------------------------*/
 
-unsigned int DeviceHost::m_launching_kernel = false ;
-
 void * DeviceHost::allocate_memory(
   const std::string    & label ,
   const std::type_info & type ,
@@ -134,6 +132,35 @@ void DeviceHost::print_memory_view( std::ostream & o )
 
   s.m_allocations.print( o );
 }
+
+/*--------------------------------------------------------------------------*/
+
+unsigned int DeviceHost::m_launching_kernel = false ;
+
+void DeviceHost::set_dispatch_functor()
+{
+  if ( m_launching_kernel ) {
+    std::string msg ;
+    msg.append( "Kokkos::DeviceHost::set_dispatch_functor FAILED: " );
+    msg.append( "kernel dispatch is already in progress, " );
+    msg.append( "a recursive call or forgotten 'clear_dispatch_kernel" );
+    throw std::runtime_error( msg );
+  }
+  m_launching_kernel = true ;
+}
+
+void DeviceHost::clear_dispatch_functor()
+{
+  if ( ! m_launching_kernel ) {
+    std::string msg ;
+    msg.append( "Kokkos::DeviceHost::clear_dispatch_functor FAILED: " );
+    msg.append( "no kernel dispatch in progress." );
+    throw std::runtime_error( msg );
+  }
+  m_launching_kernel = false ;
+}
+
+/*--------------------------------------------------------------------------*/
 
 } // namespace Kokkos
 

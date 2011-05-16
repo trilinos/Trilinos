@@ -119,6 +119,11 @@ public:
   static void print_memory_view( std::ostream & );
 
   /*--------------------------------*/
+
+  static void set_dispatch_functor();
+  static void clear_dispatch_functor();
+
+  /*--------------------------------*/
 };
 
 /*--------------------------------------------------------------------------*/

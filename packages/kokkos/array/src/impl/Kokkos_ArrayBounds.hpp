@@ -64,6 +64,21 @@ void mdarray_require_equal_dimension(
   size_t n_rank , const size_t n_dims[] ,
   size_t m_rank , const size_t m_dims[] );
 
+template < class MDArrayType1 , class MDArrayType2 >
+inline
+void mdarray_require_equal_dimension( const MDArrayType1 & array1 ,
+                                      const MDArrayType2 & array2 )
+{
+  const size_t array1_rank = array1.rank();
+  const size_t array2_rank = array2.rank();
+  size_t array1_dims[8] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+  size_t array2_dims[8] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+  array1.dimensions( array1_dims );
+  array2.dimensions( array2_dims );
+  mdarray_require_equal_dimension( array1_rank, array1_dims,
+                                   array2_rank, array2_dims);
+}
+
 } // namespace Impl
 } // namespace Kokkos
 

@@ -73,6 +73,12 @@ public:
   typedef MDArrayIndexMapLeft  default_mdarray_map ;
 
   /*--------------------------------*/
+
+  static void initialize( size_type nthreads );
+
+  static void finalize();
+
+  /*--------------------------------*/
   /** \brief  Clear the memory view setting it to the NULL view.
    *          If this is the last view to this allocated memory
    *          then deallocate this allocated memory.
@@ -117,6 +123,11 @@ public:
 
   /** \brief  Print information about allocate memory */
   static void print_memory_view( std::ostream & );
+
+  /*--------------------------------*/
+
+  static void set_dispatch_functor();
+  static void clear_dispatch_functor();
 
   /*--------------------------------*/
 };

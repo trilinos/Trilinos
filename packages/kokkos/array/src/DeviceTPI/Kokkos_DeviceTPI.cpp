@@ -42,6 +42,7 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <TPI.h>
 #include <Kokkos_DeviceTPI.hpp>
 #include <impl/Kokkos_MemoryInfo.hpp>
 
@@ -78,7 +79,17 @@ DeviceTPI_Impl::~DeviceTPI_Impl()
 
 /*--------------------------------------------------------------------------*/
 
-unsigned int DeviceTPI::m_launching_kernel = false ;
+void DeviceTPI::initialize( size_type nthreads )
+{
+  TPI_Init( nthreads );
+}
+
+void DeviceTPI::finalize()
+{
+  TPI_Finalize();
+}
+
+/*--------------------------------------------------------------------------*/
 
 void * DeviceTPI::allocate_memory(
   const std::string    & label ,
@@ -134,6 +145,34 @@ void DeviceTPI::print_memory_view( std::ostream & o )
 
   s.m_allocations.print( o );
 }
+
+/*--------------------------------------------------------------------------*/
+
+unsigned int DeviceTPI::m_launching_kernel = false ;
+
+void DeviceTPI::set_dispatch_functor()
+{
+  if ( m_launching_kernel ) {
+    std::string msg ;
+    msg.append( "Kokkos::DeviceTPI::set_dispatch_functor FAILED: " );
+    msg.append( "kernel dispatch is already in progress, " );
+    msg.append( "a recursive call or forgotten 'clear_dispatch_kernel" );
+    throw std::runtime_error( msg );
+  }
+  m_launching_kernel = true ;
+}
+
+void DeviceTPI::clear_dispatch_functor()
+{
+  if ( ! m_launching_kernel ) {
+    std::string msg ;
+    msg.append( "Kokkos::DeviceTPI::clear_dispatch_functor FAILED: " );
+    msg.append( "no kernel dispatch in progress." );
+    throw std::runtime_error( msg );
+  }
+  m_launching_kernel = false ;
+}
+
 
 } // namespace Kokkos
 

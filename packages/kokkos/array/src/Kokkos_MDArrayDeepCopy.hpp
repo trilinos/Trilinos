@@ -41,13 +41,66 @@
 #define KOKKOS_MDARRAYDEEPCOPY_HPP
 
 #include <Kokkos_MDArrayView.hpp>
+#include <Kokkos_ParallelFor.hpp>
+
 #include <impl/Kokkos_StaticAssert.hpp>
+#include <impl/Kokkos_ArrayBounds.hpp>
+
 
 namespace Kokkos {
 
 template< typename ValueType ,
+          class DeviceDst , class MapDst , bool ContigDst ,
+          class DeviceSrc , class MapSrc , bool ContigSrc >
+class MDArrayDeepCopy ;
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType ,
           class DeviceDst , class MapDst ,
           class DeviceSrc , class MapSrc >
+inline
+void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
+                const MDArrayView<ValueType,DeviceSrc,MapSrc> & src )
+{
+  typedef MDArrayView<ValueType,DeviceDst,MapDst>  dst_type ;
+  typedef MDArrayView<ValueType,DeviceSrc,MapSrc>  src_type ;
+
+  typedef MDArrayDeepCopy<ValueType,DeviceDst,MapDst,dst_type::Contiguous,
+                                    DeviceSrc,MapSrc,src_type::Contiguous>
+    deep_copy_operator ;
+
+  deep_copy_operator::run( dst , src );
+}
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_DEVICE_HOST )
+#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <impl/Kokkos_MDArrayDeepCopy_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
+#endif
+
+#if defined( KOKKOS_DEVICE_TPI )
+#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <impl/Kokkos_MDArrayDeepCopy_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
+#endif
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+/** \brief  Deep copy between different devices, different maps,
+ *          and no assumption of contiguity.
+ */
+template< typename ValueType ,
+          class DeviceDst , class MapDst , bool ContigDst ,
+          class DeviceSrc , class MapSrc , bool ContigSrc >
 class MDArrayDeepCopy {
 private:
   enum { DifferentDevices = ! Impl::SameType<DeviceDst,DeviceSrc>::value };
@@ -57,45 +110,109 @@ public:
 
   typedef MDArrayView<ValueType,DeviceDst,MapDst> dst_type ;
   typedef MDArrayView<ValueType,DeviceSrc,MapSrc> src_type ;
+  typedef MDArrayView<ValueType,DeviceDst,MapSrc> dst_srcmap_type ;
+
+  typedef MDArrayDeepCopy< ValueType,
+                           DeviceDst,MapSrc,dst_srcmap_type::Contiguous,
+                           DeviceSrc,MapSrc,src_type::Contiguous >
+    relocate_operator ;
+
+  typedef MDArrayDeepCopy< ValueType,
+                           DeviceDst,MapDst, dst_type::Contiguous,
+                           DeviceDst,MapSrc, dst_srcmap_type::Contiguous >
+    remap_operator ;
 
   // Both the devices and the maps are different.
-  // Have to make a temporary copy to bring into alignment.
+  // Copy to a temporary on the destination with the source map
+  // and then remap the temporary to the final array.
   static
   void run( const dst_type & dst , const src_type & src )
   {
-    // Copy to the destination device with the same map:
-    MDArrayView<ValueType,DeviceDst,MapSrc> tmp_src ;
-    
-    MDArrayDeepCopy<ValueType,DeviceDst,MapSrc,
-                              DeviceSrc,MapSrc>
-      ::run( tmp_src , src );
+    enum { MAX_RANK = 8 };
 
-    // Copy with remapping on the destination device:
-    MDArrayDeepCopy<ValueType,DeviceDst,MapDst,
-                              DeviceDst,MapSrc>
-      ::run( dst , tmp_src );
+    size_t dims[ MAX_RANK ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+    Impl::mdarray_require_equal_dimension( dst , src );
+
+    dst.dimensions( dims );
+
+    dst_srcmap_type tmp_dst = create_labeled_mdarray<dst_srcmap_type>(
+                                "temporary" ,
+                                dims[0] , dims[1] , dims[2] , dims[3] ,
+                                dims[4] , dims[5] , dims[6] , dims[7] );
+
+    relocate_operator::run( tmp_dst , src );
+    remap_operator   ::run( dst ,     tmp_dst );
   }
 };
 
-template< typename ValueType ,
-          class DeviceDst , class MapDst ,
-          class DeviceSrc , class MapSrc >
-void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
-                const MDArrayView<ValueType,DeviceSrc,MapSrc> & src )
+//----------------------------------------------------------------------------
+/** \brief  Deep copy with same DeviceType, same Map, and contiguous */
+
+template< typename ValueType , class DeviceType , class MapOpt >
+class MDArrayDeepCopy< ValueType , DeviceType , MapOpt , true ,
+                                   DeviceType , MapOpt , true >
 {
-  MDArrayDeepCopy<ValueType,DeviceDst,MapDst,DeviceSrc,MapSrc>
-    ::run( dst , src );
-}
+public:
+  typedef typename DeviceType::size_type size_type ;
+
+  typedef MDArrayView< ValueType , DeviceType , MapOpt > array_type ;
+
+  typedef Impl::MDArrayDeepCopyFunctor<
+            ValueType , DeviceType , MapOpt , MapOpt , 0 > deepC ;
+
+  static void run( const array_type & dst , const array_type & src )
+  {
+    Impl::mdarray_require_equal_dimension( dst , src );
+
+    parallel_for( dst.size() , deepC( dst , src ) );
+  }
+};
+
+/** \brief  Deep copy with same DeviceType and different Maps */
+
+template< typename ValueType ,
+          class DeviceType , class MapDst , bool ContigDst ,
+                             class MapSrc , bool ContigSrc >
+class MDArrayDeepCopy< ValueType , DeviceType , MapDst , ContigDst ,
+                                   DeviceType , MapSrc , ContigSrc >
+{
+public:
+  typedef typename DeviceType::size_type size_type ;
+
+  typedef MDArrayView< ValueType , DeviceType , MapSrc > src_type ;
+  typedef MDArrayView< ValueType , DeviceType , MapDst > dst_type ;
+
+  typedef Impl::MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 8 > deep8 ;
+  typedef Impl::MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 7 > deep7 ;
+  typedef Impl::MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 6 > deep6 ;
+  typedef Impl::MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 5 > deep5 ;
+  typedef Impl::MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 4 > deep4 ;
+  typedef Impl::MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 3 > deep3 ;
+  typedef Impl::MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 2 > deep2 ;
+  typedef Impl::MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 1 > deep1 ;
+
+  static
+  void run( const dst_type & dst , const src_type & src )
+  {
+    Impl::mdarray_require_equal_dimension( dst , src );
+
+    const size_t n = dst.size();
+
+    switch ( dst.rank() ) {
+    case 8 : parallel_for( n , deep8( dst , src ) ); break ;
+    case 7 : parallel_for( n , deep7( dst , src ) ); break ;
+    case 6 : parallel_for( n , deep6( dst , src ) ); break ;
+    case 5 : parallel_for( n , deep5( dst , src ) ); break ;
+    case 4 : parallel_for( n , deep4( dst , src ) ); break ;
+    case 3 : parallel_for( n , deep3( dst , src ) ); break ;
+    case 2 : parallel_for( n , deep2( dst , src ) ); break ;
+    case 1 : parallel_for( n , deep1( dst , src ) ); break ;
+    }
+  }
+};
 
 } // namespace Kokkos
-
-//----------------------------------------------------------------------------
-
-#if defined( KOKKOS_DEVICE_HOST )
-#include <DeviceHost/Kokkos_HostMDArrayDeepCopy.hpp>
-#endif
-
-//----------------------------------------------------------------------------
 
 #endif /* KOKKOS_MDARRAYDEEPCOPY_HPP */
 

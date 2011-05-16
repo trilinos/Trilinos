@@ -19,11 +19,13 @@
 #include <UnitTestValueView.hpp>
 #include <UnitTestMultiVectorView.hpp>
 #include <UnitTestMDArrayView.hpp>
-// #include <UnitTestMDArrayDeepCopy.hpp>
+#include <UnitTestMDArrayDeepCopy.hpp>
 #undef KOKKOS_MACRO_DEVICE
 
 int main()
 {
+  Kokkos::DeviceTPI::initialize( 4 );
+
   UnitTestDeviceMemoryManagement< Kokkos::DeviceHost >();
   UnitTestDeviceMemoryManagement< Kokkos::DeviceTPI >();
   UnitTestValueView< Kokkos::DeviceHost >();
@@ -33,7 +35,7 @@ int main()
   UnitTestMDArrayView< Kokkos::DeviceHost >();
   UnitTestMDArrayView< Kokkos::DeviceTPI >();
   UnitTestMDArrayDeepCopy< Kokkos::DeviceHost >();
-  // UnitTestMDArrayDeepCopy< Kokkos::DeviceTPI >();
+  UnitTestMDArrayDeepCopy< Kokkos::DeviceTPI >();
 
   return 0 ;
 }
