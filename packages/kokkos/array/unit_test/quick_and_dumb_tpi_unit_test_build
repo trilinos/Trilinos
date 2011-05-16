@@ -1,0 +1,15 @@
+
+# Quick and dirty build for unit testing with Host (serial) and TPI devices.
+# To be replace with CMake integration.
+
+echo "#define HAVE_PTHREAD" > ThreadPool_config.h
+
+g++ -Wall -Werror -g -o unit_test.exe \
+	-I../../../ThreadPool/src ../../../ThreadPool/src/*.c \
+	-I. -I../src \
+	UnitTestMain.cpp \
+	../src/DeviceHost/*.cpp ../src/DeviceTPI/*.cpp ../src/impl/*.cpp \
+	-lpthread
+
+rm ThreadPool_config.h
+
