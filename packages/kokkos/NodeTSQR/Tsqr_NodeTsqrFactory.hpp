@@ -142,30 +142,34 @@ namespace TSQR {
   }
 
   static size_t
-  getCacheBlockSize (const Teuchos::RCP<const Teuchos::ParameterList>& params, 
-		     const Teuchos::RCP<const Teuchos::ParameterList>& defaultParams)
+  getCacheSizeHint (const Teuchos::RCP<const Teuchos::ParameterList>& params, 
+		    const Teuchos::RCP<const Teuchos::ParameterList>& defaultParams)
   {
-    // We try to guess among some reasonable names.
-    // The first in the list is the canonical name.
-    const char* possibleNames[] = {"cacheBlockSize",
-				   "cache_block_size",
+    // We try to guess among some reasonable names.  The first in the
+    // list is the canonical name.  "cacheBlockSize" and related names
+    // are retained only for backwards compatibility and may be
+    // removed at any time.
+    const char* possibleNames[] = {"cacheSizeHint",
+				   "cache_size_hint",
 				   "cacheSize",
-				   "cache_size"};
-    const int numPossibleNames = 4;
-    size_t cacheBlockSize = 0;
-    bool gotCacheBlockSize = false;
+				   "cache_size",
+				   "cacheBlockSize",
+				   "cache_block_size"};
+    const int numPossibleNames = 6;
+    size_t cacheSizeHint = 0;
+    bool gotCacheSizeHint = false;
       
-    for (int trial = 0; trial < numPossibleNames && ! gotCacheBlockSize; ++trial)
+    for (int trial = 0; trial < numPossibleNames && ! gotCacheSizeHint; ++trial)
       getParamValue< size_t > (params, possibleNames[trial], 
-			       cacheBlockSize, gotCacheBlockSize);
-    if (! gotCacheBlockSize)
+			       cacheSizeHint, gotCacheSizeHint);
+    if (! gotCacheSizeHint)
       {
 	// Default parameters had better have the value, so we don't
 	// try to catch any exceptions here.
 	const std::string canonicalName (possibleNames[0]);
-	cacheBlockSize = defaultParams->get< size_t > (canonicalName);
+	cacheSizeHint = defaultParams->get< size_t > (canonicalName);
       }
-    return cacheBlockSize;
+    return cacheSizeHint;
   }
 
 #ifdef HAVE_KOKKOS_TBB
@@ -212,8 +216,8 @@ namespace TSQR {
     /// TSQR.
     ///
     /// Currently, the only parameters that matter for this
-    /// implementation are "cacheBlockSize" (a size_t) and "numCores"
-    /// (an int).  Not setting "cacheBlockSize" or setting it to zero
+    /// implementation are "cacheSizeHint" (a size_t) and "numCores"
+    /// (an int).  Not setting "cacheSizeHint" or setting it to zero
     /// will ask TSQR to pick a reasonable default.  Not setting
     /// "numCores" will ask TSQR to pick a reasonable default, namely,
     /// tbb::task_scheduler_init::default_num_threads().  Mild
@@ -235,9 +239,9 @@ namespace TSQR {
 	  RCP<ParameterList> params = Teuchos::parameterList();
 	  // The TSQR implementation sets a reasonable default value
 	  // if you tell it that the cache block size is zero.
-	  const size_t defaultCacheBlockSize = 0;
-	  params->set ("cacheBlockSize", defaultCacheBlockSize,
-		       "Cache block size in bytes (as a size_t) to use for intr"
+	  const size_t defaultCacheSizeHint = 0;
+	  params->set ("cacheSizeHint", defaultCacheSizeHint,
+		       "Cache size hint in bytes (as a size_t) to use for intr"
 		       "anode TSQR.  If zero, the intranode TSQR implementation"
 		       " will pick a reasonable default.");
 	  // TSQR uses a recursive division of the tall skinny matrix
@@ -266,9 +270,9 @@ namespace TSQR {
     {
       Teuchos::RCP<const Teuchos::ParameterList> defaultParams = 
 	getDefaultParameters ();
-      const size_t cacheBlockSize = getCacheBlockSize (params, defaultParams);
+      const size_t cacheSizeHint = getCacheSizeHint (params, defaultParams);
       const int numCores = getNumCores (params, defaultParams);
-      return Teuchos::rcp (new node_tsqr_type (numCores, cacheBlockSize));
+      return Teuchos::rcp (new node_tsqr_type (numCores, cacheSizeHint));
     }
   };
 #endif // HAVE_KOKKOS_TBB
@@ -286,7 +290,7 @@ namespace TSQR {
     /// sequential implementation of the intranode part of TSQR.
     ///
     /// Currently, the only parameter that matters for this
-    /// implementation is "cacheBlockSize" (a size_t).  Not setting
+    /// implementation is "cacheSizeHint" (a size_t).  Not setting
     /// that parameter or setting it to zero will pick a reasonable
     /// default.
     static Teuchos::RCP< const Teuchos::ParameterList >
@@ -304,12 +308,12 @@ namespace TSQR {
 	{
 	  RCP<ParameterList> params = Teuchos::parameterList();
 	  // The TSQR implementation sets a reasonable default value
-	  // if you tell it that the cache block size is zero.
-	  const size_t defaultCacheBlockSize = 0;
-	  params->set ("cacheBlockSize", defaultCacheBlockSize,
-		       "Cache block size in bytes (as a size_t) to use for intr"
-		       "anode TSQR.  If zero, the intranode TSQR implementation"
-		       " will pick a reasonable default.");
+	  // if you give it a cache size hint of zero.
+	  const size_t defaultCacheSizeHint = 0;
+	  params->set ("cacheSizeHint", defaultCacheSizeHint,
+		       "Cache size hint in bytes (as a size_t) to use for intra"
+		       "node TSQR.  If zero, the intranode TSQR implementation "
+		       "will pick a reasonable default.");
 	  defaultParams_ = params;
 	}
       return defaultParams_;
@@ -320,8 +324,8 @@ namespace TSQR {
     {
       Teuchos::RCP<const Teuchos::ParameterList> defaultParams = 
 	getDefaultParameters ();
-      const size_t cacheBlockSize = getCacheBlockSize (params, defaultParams);
-      return Teuchos::rcp (new node_tsqr_type (cacheBlockSize));
+      const size_t cacheSizeHint = getCacheSizeHint (params, defaultParams);
+      return Teuchos::rcp (new node_tsqr_type (cacheSizeHint));
     }
   };
 

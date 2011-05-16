@@ -64,17 +64,28 @@
 namespace Belos {
 
   /// \class OrthoManagerFactory
-  /// \brief Enumeration of all valid Belos (Mat)OrthoManager classes
+  /// \brief Enumeration of all valid Belos (Mat)OrthoManager classes.
   ///
-  template< class Scalar, class MV, class OP >
+  /// This factory class knows how to initialize any of Belos' \c
+  /// MatOrthoManager subclasses, given a short name of the subclass
+  /// (as would naturally belong in a SolverManager's parameter list).
+  /// As such, it may be used by any of Belos' \c SolverManager
+  /// subclasses that use a (Mat)OrthoManager subclass for
+  /// orthogonalization.
+  ///
+  /// This class' template parameters are the same as those of \c
+  /// MatOrthoManager: Scalar is the scalar type (of entries in the
+  /// multivector), MV is the multivector type, and OP is the operator
+  /// type.  For example: Scalar=double, MV=Epetra_MultiVector, and
+  /// OP=Epetra_Operator.
+  template<class Scalar, class MV, class OP>
   class OrthoManagerFactory {
   private:
-    //! List of valid OrthoManager names
+    //! List of valid OrthoManager names.
     std::vector<std::string> theList_;
 
   public:
-    /// Number of valid command-line parameter values for the OrthoManager
-    /// subclass to test.  (Must be at least one.)
+    /// \brief Number of MatOrthoManager subclasses this factory recognizes.
     static int numOrthoManagers () {
 #ifdef HAVE_BELOS_TSQR
       return 5; 
@@ -83,8 +94,11 @@ namespace Belos {
 #endif // HAVE_BELOS_TSQR
     }
 
-    /// Return true if and only if the given OrthoManager name is that
-    /// of an OrthoManager subclass with rank-revealing capability.
+    /// \brief Is the given MatOrthoManager subclass rank-reealing?
+    ///
+    /// Return true if and only if the given MatOrthoManager name is
+    /// that of a MatOrthoManager subclass with rank-revealing
+    /// capability.
     static bool isRankRevealing (const std::string& name) {
 #ifdef HAVE_BELOS_TSQR
       // Currently only TSQR has a full rank-revealing capability.
@@ -94,46 +108,46 @@ namespace Belos {
 #endif // HAVE_BELOS_TSQR
     }
 
-    //! Constructor
+    //! Default constructor.
     OrthoManagerFactory () : theList_ (numOrthoManagers())
     {
       int index = 0;
+      theList_[index++] = "DGKS";
+      theList_[index++] = "ICGS";
+      theList_[index++] = "IMGS";
 #ifdef HAVE_BELOS_TSQR
       theList_[index++] = "TSQR";
 #endif // HAVE_BELOS_TSQR
-      theList_[index++] = "ICGS";
-      theList_[index++] = "IMGS";
-      theList_[index++] = "DGKS";
       theList_[index++] = "Simple";
     }
 
-    /// Valid names of (Mat)OrthoManagers.  Useful as a list of valid
-    /// command-line parameter values for choosing a (Mat)OrthoManager
-    /// subclass to test.  
+    /// \brief List of MatOrthoManager subclasses this factory recognizes.
+    /// 
+    /// This is useful as a list of valid command-line parameter
+    /// values for choosing a MatOrthoManager subclass to test.
     ///
     /// \note To implementers: Anasazi and Belos currently implement
     ///   different sets of (Mat)OrthoManagers.  This method returns a
-    ///   valid list of Belos (Mat)OrthoManagers.
-    const std::vector< std::string >& 
+    ///   valid list of Belos MatOrthoManager subclasses.
+    const std::vector<std::string>& 
     validNames () const { return theList_; }
 
-    //! Whether 'name' names a valid OrthoManager
+    //! Whether this factory recognizes the MatOrthoManager with the given name.
     bool
     isValidName (const std::string& name) const 
     {
       return (std::find (theList_.begin(), theList_.end(), name) != theList_.end());
     }
 
-    //! Print the list of valid OrthoManager names to the given ostream
+    //! Print all recognized MatOrthoManager names to the given ostream.
     std::ostream&
     printValidNames (std::ostream& out) const
     {
       const int numValid = numOrthoManagers();
-      TEST_FOR_EXCEPTION( numValid <= 0,
-			  std::logic_error,
-			  "Invalid number " 
-			  << numValid 
-			  << " of valid OrthoManager names" );
+      TEST_FOR_EXCEPTION(numValid <= 0, std::logic_error,
+			 "Invalid number " << numValid << " of valid MatOrtho"
+			 "Manager names.  Please report this bug to the Belos "
+			 "developers." );
       if (numValid > 1)
 	{
 	  for (int k = 0; k < numValid - 1; ++k)
@@ -144,8 +158,10 @@ namespace Belos {
       return out;
     }
 
-    /// Return a list (as a string) of valid command-line parameter values
-    /// for the OrthoManager subclass to test.
+    /// \brief List (as a string) of recognized MatOrthoManager names.
+    ///
+    /// This is useful for generating help for command-line arguments,
+    /// when writing a test that uses different orthogonalizations.
     std::string
     validNamesString () const
     {
@@ -154,18 +170,23 @@ namespace Belos {
       return os.str();
     }
 
-    //! Name of the "default" OrthoManager (e.g., for tests).
+    /// \brief Name of the "default" MatOrthoManager subclass.
+    ///
+    /// This is the name of the MatOrthoManager subclass that serves
+    /// as a reasonable default for all Belos solvers that use general
+    /// orthogonalizations.  It may not be the fastest or the most
+    /// accurate, but it should be the most reasonable.
     const std::string& defaultName () const { return theList_[0]; }
 
-    /// Default parameters for the given orthogonalization manager
+    /// \brief Default parameters for the given MatOrthoManager subclass.
     ///
-    /// \param name [in] Orthogonalization manager name.  Must be
-    ///   supported by this factory (i.e., validName(name)==true).
+    /// \param name [in] MatOrthoManager subclass short name, for
+    ///   which isValidName(name) returns true.
     ///
-    /// \return Default parameters for the given orthogonalization
-    ///   manager
-    /// 
-    /// \warning This method may not be reentrant.
+    /// \warning This method may not be thread-safe or reentrant,
+    ///   depending on the MatOrthoManager subclass.  This is because
+    ///   different subclasses may choose to cache the default
+    ///   parameter list as static method data.
     Teuchos::RCP<const Teuchos::ParameterList> 
     getDefaultParameters (const std::string& name)
     {
@@ -200,20 +221,19 @@ namespace Belos {
     }
 
 
-    /// \brief "Fast" parameters for the given (Mat)OrthoManager
+    /// \brief "Fast" parameters for the given MatOrthoManager subclass.
     ///
-    /// "Fast" parameters for the given orthogonalization manager.
-    /// "Fast" usually means that accuracy and/or robustness with
-    /// respect to rank deficiency might be compromised for the sake
-    /// of better performance.
+    /// "Fast" usually means that accuracy and/or robustness (with
+    /// respect to rank deficiency) might be compromised in order to
+    /// improve performance.
     ///
-    /// \param name [in] Orthogonalization manager name.  Must be
-    ///   supported by this factory (i.e., validName(name)==true).
+    /// \param name [in] MatOrthoManager subclass short name, for
+    ///   which isValidName(name) returns true.
     ///
-    /// \return "Fast" parameters for the given orthogonalization
-    ///   manager
-    /// 
-    /// \warning This method may not be reentrant.
+    /// \warning This method may not be thread-safe or reentrant,
+    ///   depending on the MatOrthoManager subclass.  This is because
+    ///   different subclasses may choose to cache the default
+    ///   parameter list as static method data.
     Teuchos::RCP<const Teuchos::ParameterList> 
     getFastParameters (const std::string& name)
     {
@@ -248,24 +268,26 @@ namespace Belos {
     }
 
 
-    /// Create and return the specified MatOrthoManager subclass
+    /// \brief Return an instance of the specified MatOrthoManager subclass.
     ///
-    /// \param ortho [in] Name of MatOrthoManager subclass.  The \c
+    /// \param ortho [in] Name of the MatOrthoManager subclass.  The \c
     ///   validNames() method returns a list of the supported names.
     /// \param M [in] Inner product operator.  If Teuchos::null,
     ///   orthogonalize with respect to the standard Euclidean 
     ///   inner product.
     /// \param outMan [in/out] Output manager, which the OrthoManager
     ///   instance may use (but is not required to use) for various
-    ///   kinds of status output
-    /// \param label [in] Label for timers
+    ///   kinds of status output.
+    /// \param label [in] Label for Belos-specific timers, if Belos
+    ///   timers were enabled at compile time.  Otherwise, this
+    ///   parameter's value doesn't matter.
     /// \param params [in] Optional (null) list of parameters for
     ///   setting up the specific MatOrthoManager subclass.  A default
     ///   parameter list with embedded documentation is available for
     ///   each MatOrthoManager subclass that this factory knows how to
     ///   make.
     ///
-    /// \return (Smart pointer to a) MatOrthoManager instance
+    /// \return (Smart pointer to a) MatOrthoManager instance.
     ///   
     Teuchos::RCP< Belos::MatOrthoManager<Scalar, MV, OP> >
     makeMatOrthoManager (const std::string& ortho, 

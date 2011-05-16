@@ -38,6 +38,7 @@
 
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,34 +48,36 @@ namespace TSQR {
   /// \class Tsqr
   /// \brief Parallel Tall Skinny QR (TSQR) factorization
   /// 
-  /// Parallel Tall Skinny QR (TSQR) factorization of a matrix
-  /// distributed in block rows across one or more MPI processes.  The
-  /// parallel critical path length for TSQR is independent of the
-  /// number of columns in the matrix, unlike ScaLAPACK's comparable
-  /// QR factorization (P_GEQR2), Modified Gram-Schmidt, or Classical
-  /// Gram-Schmidt.
+  /// This class computes the parallel Tall Skinny QR (TSQR)
+  /// factorization of a matrix distributed in block rows across one
+  /// or more MPI processes.  The parallel critical path length for
+  /// TSQR is independent of the number of columns in the matrix,
+  /// unlike ScaLAPACK's comparable QR factorization (P_GEQR2),
+  /// Modified Gram-Schmidt, or Classical Gram-Schmidt.
   ///
-  /// LocalOrdinal: index type that can address all elements of a
-  /// matrix (when treated as a 1-D array, so for A[i + LDA*j], the
-  /// number i + LDA*j must fit in a LocalOrdinal).
-  ///
-  /// Scalar: the type of the matrix entries.
-  ///
-  /// NodeTsqrType: the intranode (single-node) part of Tsqr.
-  /// Defaults to sequential cache-blocked TSQR.  Any class
-  /// implementing the same compile-time interface is valid.  We
-  /// provide NodeTsqr.hpp as an archetype of the "NodeTsqrType"
-  /// concept, but it is not necessary that NodeTsqrType derive from
-  /// that abstract base class.
+  /// Template parameters: 
+  /// - LocalOrdinal: index type that can address all elements of a
+  ///   matrix, when treated as a 1-D array.  That is, for A[i +
+  ///   LDA*j], the index i + LDA*j must fit in a LocalOrdinal.
+  /// - Scalar: the type of the matrix entries.
+  /// - NodeTsqrType: the intranode (single-node) part of TSQR.
+  ///   Defaults to \c SequentialTsqr, which provides a sequential
+  ///   cache-blocked implementation.  Any class implementing the same
+  ///   compile-time interface is valid.  We provide \c NodeTsqr as an
+  ///   archetype of the "NodeTsqrType" concept, but it is not
+  ///   necessary that NodeTsqrType derive from that abstract base
+  ///   class.  Inheriting from \c NodeTsqr is useful, though, because
+  ///   it provides default implementations of some routines that are
+  ///   not performance-critical.
   ///
   /// \note TSQR only needs to know about the local ordinal type (used
   ///   to index matrix entries on a single node), not about the
   ///   global ordinal type (used to index matrix entries globally,
   ///   i.e., over all nodes).
   ///
-  template< class LocalOrdinal, 
-	    class Scalar, 
-	    class NodeTsqrType = SequentialTsqr< LocalOrdinal, Scalar > >
+  template<class LocalOrdinal, 
+	   class Scalar, 
+	   class NodeTsqrType = SequentialTsqr<LocalOrdinal, Scalar> >
   class Tsqr {
   public:
     typedef MatView< LocalOrdinal, Scalar > matview_type;
@@ -83,20 +86,27 @@ namespace TSQR {
 
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
-    typedef Teuchos::ScalarTraits< Scalar > STS;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType magnitude_type;
 
     typedef NodeTsqrType node_tsqr_type;
-    typedef DistTsqr< LocalOrdinal, Scalar > dist_tsqr_type;
-    typedef typename Teuchos::RCP< node_tsqr_type > node_tsqr_ptr;
-    typedef typename Teuchos::RCP< dist_tsqr_type > dist_tsqr_ptr;
+    typedef DistTsqr<LocalOrdinal, Scalar> dist_tsqr_type;
+    typedef typename Teuchos::RCP<node_tsqr_type> node_tsqr_ptr;
+    typedef typename Teuchos::RCP<dist_tsqr_type> dist_tsqr_ptr;
     typedef typename dist_tsqr_type::rank_type rank_type;
 
     typedef typename node_tsqr_type::FactorOutput NodeOutput;
     typedef typename dist_tsqr_type::FactorOutput DistOutput;
-    typedef std::pair< NodeOutput, DistOutput > FactorOutput;
 
-    /// Constructor
+    /// \typedef FactorOutput
+    /// \brief Return value of \c factor().
+    ///
+    /// Part of the implicit representation of the Q factor returned
+    /// by \c factor().  The other part of that representation is
+    /// stored in the A matrix on output.
+    typedef std::pair<NodeOutput, DistOutput> FactorOutput;
+
+    /// \brief Constructor
     ///
     /// \param nodeTsqr [in/out] Previously initialized NodeTsqrType
     ///   object.  This takes care of the intranode part of TSQR.
@@ -109,15 +119,20 @@ namespace TSQR {
       distTsqr_ (distTsqr)
     {}
 
-    /// \brief Cache block size in bytes
+    /// \brief Cache size hint in bytes used by the intranode part of TSQR.
     ///
-    /// Cache block size (in bytes) used by the underlying intranode
-    /// TSQR implementation.  
+    /// This value may differ from the cache size hint given to the
+    /// constructor of the NodeTsqrType object, since that constructor
+    /// input is merely a suggestion.
+    size_t cache_size_hint() const { return nodeTsqr_->cache_size_hint(); }
+
+    /// \brief Cache size hint in bytes used by the intranode part of TSQR.
     ///
-    /// \note This value may differ from the cache block size given to
-    ///   the constructor of the NodeTsqrType object, since that
-    ///   constructor input is merely a suggestion.
-    size_t cache_block_size() const { return nodeTsqr_->cache_block_size(); }
+    /// This method is deprecated; please call \c cache_size_hint()
+    /// instead.
+    size_t TEUCHOS_DEPRECATED cache_block_size() const { 
+      return nodeTsqr_->cache_size_hint(); 
+    }
 
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
@@ -130,14 +145,48 @@ namespace TSQR {
 	distTsqr_->QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
-
-    /// \brief Compute QR factorization [Q,R] = qr(A,0)
+    /// \brief Compute QR factorization with explicit Q factor.
     ///
-    template< class NodeType >
+    /// This method computes the "thin" QR factorization, like
+    /// Matlab's [Q,R] = qr(A,0), of a matrix A with more rows than
+    /// columns.  Like Matlab, it computes the Q factor "explicitly,"
+    /// that is, as a matrix represented in the same format as in the
+    /// input matrix A (rather than the implicit representation
+    /// returned by \c factor()).
+    ///
+    /// Calling this method may be faster than calling \c factor() and
+    /// \c explicit_Q() in sequence, if you know that you only want
+    /// the explicit version of the Q factor.  This method is
+    /// especially intended for orthogonalizing the columns of a \c
+    /// Tpetra::MultiVector.  It can also be used for an \c
+    /// Epetra_MultiVector, if you put each node's data in a
+    /// Kokkos::MultiVector first.  (This does not require copying.)
+    ///
+    /// \param A [in/out] On input: my node's part of the matrix to
+    ///   factor; the matrix is distributed over the participating
+    ///   processors.  If contiguousCacheBlocks is false, my node's
+    ///   part of the matrix is stored in column-major order.
+    ///   Otherwise, it is stored in the contiguously cache-blocked
+    ///   format that would be computed by \c cache_block().  On
+    ///   output: overwritten with garbage (part of the implicit Q
+    ///   factor, which is not useful in this case).
+    ///
+    /// \param Q [out] On output: my node's part of the explicit Q
+    ///   factor, stored in the same format as the input matrix A.
+    ///
+    /// \param R [out] On output: the R factor, which is square with
+    ///   the same number of rows and columns as the number of columns
+    ///   in A.  The R factor is replicated on all nodes.
+    ///
+    /// \param contiguousCacheBlocks [in] Whether cache blocks of A
+    ///   (on input) and Q (on output) are stored contiguously.  If
+    ///   you don't know what this means, set it to false.
+    ///
+    template<class NodeType>
     void
-    factorExplicit (Kokkos::MultiVector< Scalar, NodeType >& A,
-		    Kokkos::MultiVector< Scalar, NodeType >& Q,
-		    Teuchos::SerialDenseMatrix< LocalOrdinal, Scalar >& R,
+    factorExplicit (Kokkos::MultiVector<Scalar, NodeType>& A,
+		    Kokkos::MultiVector<Scalar, NodeType>& Q,
+		    Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
 		    const bool contiguousCacheBlocks)
     {
       typedef Kokkos::MultiVector< Scalar, NodeType > KMV;
@@ -147,12 +196,12 @@ namespace TSQR {
       // conversions here.
       // 
       // FIXME check for overflow!
-      const LocalOrdinal A_numRows = static_cast< LocalOrdinal > (A.getNumRows());
-      const LocalOrdinal A_numCols = static_cast< LocalOrdinal > (A.getNumCols());
-      const LocalOrdinal A_stride = static_cast< LocalOrdinal > (A.getStride());
-      const LocalOrdinal Q_numRows = static_cast< LocalOrdinal > (Q.getNumRows());
-      const LocalOrdinal Q_numCols = static_cast< LocalOrdinal > (Q.getNumCols());
-      const LocalOrdinal Q_stride = static_cast< LocalOrdinal > (Q.getStride());
+      const LocalOrdinal A_numRows = static_cast<LocalOrdinal> (A.getNumRows());
+      const LocalOrdinal A_numCols = static_cast<LocalOrdinal> (A.getNumCols());
+      const LocalOrdinal A_stride = static_cast<LocalOrdinal> (A.getStride());
+      const LocalOrdinal Q_numRows = static_cast<LocalOrdinal> (Q.getNumRows());
+      const LocalOrdinal Q_numCols = static_cast<LocalOrdinal> (Q.getNumCols());
+      const LocalOrdinal Q_stride = static_cast<LocalOrdinal> (Q.getStride());
 
       // Sanity checks for matrix dimensions
       if (A_numRows < A_numCols)
@@ -508,7 +557,10 @@ namespace TSQR {
       // doing mean MPI_Get() things.
     }
 
-    /// Compute SVD \f$R = U \Sigma V^*\f$, not in place.  Use the
+    /// \brief Reveal the rank of the R factor, using the SVD.
+    ///
+    /// Compute the singular value decomposition (SVD) of the R
+    /// factor: \f$R = U \Sigma V^*\f$, not in place.  Use the
     /// resulting singular values to compute the numerical rank of R,
     /// with respect to the relative tolerance tol.  If R is full
     /// rank, return without modifying R.  If R is not full rank,
@@ -568,19 +620,19 @@ namespace TSQR {
     ///
     /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
     ///
-    template< class NodeType >
+    template<class NodeType>
     LocalOrdinal
-    revealRank (Kokkos::MultiVector< Scalar, NodeType >& Q,
-		Teuchos::SerialDenseMatrix< LocalOrdinal, Scalar >& R,
+    revealRank (Kokkos::MultiVector<Scalar, NodeType>& Q,
+		Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& R,
 		const magnitude_type& tol,
 		const bool contiguousCacheBlocks = false) const
     {
-      typedef Kokkos::MultiVector< Scalar, NodeType > KMV;
+      typedef Kokkos::MultiVector<Scalar, NodeType> KMV;
 
       const LocalOrdinal nrows = static_cast< LocalOrdinal > (Q.getNumRows());
       const LocalOrdinal ncols = static_cast< LocalOrdinal > (Q.getNumCols());
       const LocalOrdinal ldq = static_cast< LocalOrdinal > (Q.getStride());
-      Teuchos::ArrayRCP< Scalar > Q_ptr = Q.getValuesNonConst();
+      Teuchos::ArrayRCP<Scalar> Q_ptr = Q.getValuesNonConst();
 
       // Take the easy exit if available.
       if (ncols == 0)
@@ -615,7 +667,7 @@ namespace TSQR {
       return rank;
     }
 
-    /// \brief Cache-block A_in into A_out
+    /// \brief Cache-block A_in into A_out.
     ///
     /// Cache-block the given A_in matrix, writing the results to
     /// A_out.
@@ -631,7 +683,7 @@ namespace TSQR {
 			      A_local_in, lda_local_in);
     }
 
-    /// \brief Un-cache-block A_in into A_out
+    /// \brief Un-cache-block A_in into A_out.
     ///
     /// "Un"-cache-block the given A_in matrix, writing the results to
     /// A_out.

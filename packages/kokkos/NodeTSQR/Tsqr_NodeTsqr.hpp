@@ -88,8 +88,14 @@ namespace TSQR {
     //! Virtual destructor ensures safe polymorphic destruction.
     virtual ~NodeTsqr() {}
 
-    //! Cache block size in bytes.
-    virtual size_t cache_block_size() const = 0;
+    /// \brief Cache size hint (in bytes) used for the factorization.
+    ///
+    /// This method is deprecated, because the name is misleading.
+    /// Please call \c cache_size_hint() instead.
+    virtual size_t TEUCHOS_DEPRECATED cache_block_size() const = 0;
+
+    //! Cache size hint (in bytes) used for the factorization.
+    virtual size_t cache_size_hint() const = 0;
 
     /// \brief One-line description of this object.
     ///
@@ -104,7 +110,8 @@ namespace TSQR {
       std::ostringstream os;
       os << "NodeTsqr<Ordinal=" << TypeNameTraits<Ordinal>::name()
 	 << ", Scalar=" << TypeNameTraits<Scalar>::name()
-	 << ", ...>: Intranode Tall Skinny QR (TSQR)";
+	 << ", ...>: Intranode Tall Skinny QR (TSQR), with cache size hint " 
+	 << cache_size_hint();
       return os.str();
     }
 

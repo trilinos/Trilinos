@@ -15,6 +15,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_DistTsqrHelper.hpp
     Tsqr_DistTsqr.hpp
     Tsqr_DistTsqrRB.hpp
+    Tsqr_FullTsqrTest.hpp
     Tsqr_generateStack.hpp
     Tsqr_GlobalTimeStats.hpp
     Tsqr_GlobalVerify.hpp
@@ -29,6 +30,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_Random_GlobalMatrix.hpp
     Tsqr_RMessenger.hpp
     Tsqr_TestSetup.hpp
+    Tsqr_TestUtils.hpp
     Tsqr_TeuchosMessenger.hpp
     Tsqr_TrivialMessenger.hpp
     Tsqr_TsqrTest.hpp

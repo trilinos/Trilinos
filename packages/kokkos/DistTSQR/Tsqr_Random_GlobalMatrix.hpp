@@ -48,7 +48,7 @@
 namespace TSQR {
   namespace Random {
 
-    template< class MatrixViewType >
+    template<class MatrixViewType>
     static void
     scaleMatrix (MatrixViewType& A, 
 		 const typename MatrixViewType::scalar_type& denom)
@@ -61,18 +61,17 @@ namespace TSQR {
       const ordinal_type lda = A.lda();
 
       if (nrows == lda)
-	{
-	  // This works because storage in A is contiguous.
+	{ // The whole A matrix is stored contiguously.
 	  const ordinal_type nelts = nrows * ncols;
 	  scalar_type* const A_ptr = A.get();
-	  std::transform (A_ptr, A_ptr + nelts, A_ptr, std::bind2nd(std::divides<double>(), denom));
+	  std::transform (A_ptr, A_ptr + nelts, A_ptr, std::bind2nd(std::divides<scalar_type>(), denom));
 	}
       else
-	{
+	{ // Each column of A is stored contiguously.
 	  for (ordinal_type j = 0; j < ncols; ++j)
 	    {
 	      scalar_type* const A_j = &A(0,j);
-	      std::transform (A_j, A_j + nrows, A_j, std::bind2nd(std::divides<double>(), denom));
+	      std::transform (A_j, A_j + nrows, A_j, std::bind2nd(std::divides<scalar_type>(), denom));
 	    }
 	}
     }
@@ -134,8 +133,9 @@ namespace TSQR {
 	  const scalar_type P = static_cast< scalar_type > (nprocs);
 	  // Do overflow check.  If casting P back to scalar_type
 	  // doesn't produce the same value as nprocs, the cast
-	  // overflowed.
-	  if (static_cast< int > (P) != nprocs)
+	  // overflowed.  We take the real part, because scalar_type
+	  // might be complex.
+	  if (nprocs != static_cast<int> (Teuchos::ScalarTraits<scalar_type>::real (P)))
 	    throw std::runtime_error ("Casting nprocs to Scalar failed");
 
 	  scaleMatrix (Q_local, P);
@@ -197,8 +197,9 @@ namespace TSQR {
 	  const scalar_type P = static_cast< scalar_type > (nprocs);
 	  // Do overflow check.  If casting P back to scalar_type
 	  // doesn't produce the same value as nprocs, the cast
-	  // overflowed.
-	  if (static_cast< int > (P) != nprocs)
+	  // overflowed.  We take the real part, because scalar_type
+	  // might be complex.
+	  if (nprocs != static_cast<int> (Teuchos::ScalarTraits<scalar_type>::real (P)))
 	    throw std::runtime_error ("Casting nprocs to Scalar failed");
 	  scaleMatrix (Q_local, P);
 

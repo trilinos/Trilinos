@@ -88,6 +88,7 @@
 #include <typeinfo>
 #include <limits>
 #include <memory>
+#include <cstddef>
 
 /* Avoid duplicating instantiation provided by IBM XL C++ runtime library. */
 #if defined(__IBMCPP__)

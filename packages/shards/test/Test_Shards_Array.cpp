@@ -48,6 +48,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <cstddef>
 #include <Shards_Array.hpp>
 #include <Shards_ArrayVector.hpp>
 

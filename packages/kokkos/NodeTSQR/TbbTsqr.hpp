@@ -95,24 +95,33 @@ namespace TSQR {
       //! (Max) number of cores used for the factorization.
       size_t ncores() const { return impl_.ncores(); }
 
-      //! Cache block size (in bytes) used for the factorization.
-      size_t cache_block_size() const { return impl_.cache_block_size(); }
+      //! Cache size hint (in bytes) used for the factorization.
+      size_t cache_size_hint() const { return impl_.cache_size_hint(); }
+
+      /// \brief Cache size hint (in bytes) used for the factorization.
+      ///
+      /// This method is deprecated, because the name is misleading.
+      /// Please call \c cache_size_hint() instead.
+      size_t TEUCHOS_DEPRECATED cache_block_size() const { 
+	return impl_.cache_size_hint(); 
+      }
 
       /// \brief Constructor; sets up tuning parameters.
       ///
       /// \param numCores [in] Maximum number of processing cores to use
       ///   when factoring the matrix.  Fewer cores may be used if the
       ///   matrix is not big enough to justify their use.
-      /// \param cacheBlockSize [in] Size (in bytes) of cache block to
-      ///   use in the sequential part of TSQR.  If zero or not
-      ///   specified, a reasonable default is used.  If each core has a
-      ///   private cache, that cache's size (minus a little wiggle
-      ///   room) would be the appropriate value for this parameter.
-      ///   Set to zero for the implementation to choose a default,
-      ///   which may or may not give good performance on your platform.
+      ///
+      /// \param cacheSizeHint [in] Cache block size hint (in bytes)
+      ///   to use in the sequential part of TSQR.  If zero or not
+      ///   specified, a reasonable default is used.  If each CPU core
+      ///   has a private cache, that cache's size (minus a little
+      ///   wiggle room) would be the appropriate value for this
+      ///   parameter.  Set to zero for the implementation to choose a
+      ///   reasonable default.
       TbbTsqr (const size_t numCores,
-	       const size_t cacheBlockSize = 0) :
-	impl_ (numCores, cacheBlockSize),
+	       const size_t cacheSizeHint = 0) :
+	impl_ (numCores, cacheSizeHint),
 	factorTimer_ ("TbbTsqr::factor"),
 	applyTimer_ ("TbbTsqr::apply"),
 	explicitQTimer_ ("TbbTsqr::explicit_Q"),
@@ -133,14 +142,17 @@ namespace TSQR {
       /// SequentialTsqr uses the default implementation of
       /// Teuchos::Describable::describe().
       std::string description () const {
+	using std::endl;
+
 	// SequentialTsqr also implements Describable, so if you
 	// decide to implement describe(), you could call
 	// SequentialTsqr's describe() and get a nice hierarchy of
 	// descriptions.
 	std::ostringstream os;
-	os << "Intranode Tall Skinny QR (TSQR): Intel TBB implementation "
-	  "using " << impl_.ncores() << "-way parallelism and cache blocks "
-	  "of " << impl_.cache_block_size() << " bytes each";
+	os << "Intranode Tall Skinny QR (TSQR): "
+	   << "Intel Threading Building Blocks (TBB) implementation"
+	   << ", max " << ncores() << "-way parallelism"
+	   << ", cache size hint of " << cache_size_hint() << " bytes.";
 	return os.str();
       }
 

@@ -182,15 +182,15 @@ namespace TSQR {
 		   mat_view& A_top, // different than A_top_
 		   mat_view& A_bot)
       {
-	const char prefix[] = "TSQR::TBB::Factor::factor_pair: ";
+	const char thePrefix[] = "TSQR::TBB::Factor::factor_pair: ";
 	TEST_FOR_EXCEPTION(P_top == P_bot, std::logic_error,
-			   prefix << "Should never get here! P_top == P_bot (= " 
+			   thePrefix << "Should never get here! P_top == P_bot (= " 
 			   << P_top << "), that is, the indices of the thread "
 			   "partitions are the same.");
 	// We only read and write the upper ncols x ncols triangle of
 	// each block.
 	TEST_FOR_EXCEPTION(A_top.ncols() != A_bot.ncols(), std::logic_error,
-			   prefix << "The top cache block A_top is " 
+			   thePrefix << "The top cache block A_top is " 
 			   << A_top.nrows() << " x " << A_top.ncols() 
 			   << ", and the bottom cache block A_bot is "
 			   << A_bot.nrows() << " x " << A_bot.ncols() 
