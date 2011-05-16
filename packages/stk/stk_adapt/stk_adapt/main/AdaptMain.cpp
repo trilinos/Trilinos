@@ -27,6 +27,8 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 
+#include <stk_adapt/RefinerUtil.hpp>
+
 #include <stk_adapt/UniformRefiner.hpp>
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <boost/shared_ptr.hpp>
@@ -390,18 +392,15 @@ namespace stk {
 
         if (doRefineMesh)
           {
-            //             BlockNamesType block_names = UniformRefiner::getBlockNames(block_name_inc);
-            //             block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
-
             // FIXME move this next block of code to a method on UniformRefiner
             BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
             if (block_name_inc.length())
               {
-                block_names = UniformRefiner::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);
+                block_names = RefinerUtil::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);
                 if (1)
                   {
                     eMesh.commit();
-                    block_names = UniformRefiner::correctBlockNamesForPartPartConsistency(eMesh, block_names);
+                    block_names = RefinerUtil::correctBlockNamesForPartPartConsistency(eMesh, block_names);
                     eMesh.close();
                     eMesh.open(input_mesh);
                   }

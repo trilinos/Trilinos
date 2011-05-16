@@ -2606,6 +2606,13 @@ namespace stk {
     public:
     };
 
+    // FIXME - temporary for testing only
+    template<typename FromTopology,  typename ToTopology, int NumToCreate, class OptionalTag=void>
+    class RefinerPattern : public URP<FromTopology, ToTopology> //, public URP1<FromTopology, ToTopology>
+    {
+    public:
+    };
+
 
   }
 }
@@ -2672,6 +2679,9 @@ namespace stk {
 #include "UniformRefinerPattern_Hex8_Tet4_24.hpp"
 #include "UniformRefinerPattern_Hex8_Tet4_6_12.hpp"
 
+// local refinement - for testing only right now
+#include "RefinerPattern_Tri3_Tri3_2.hpp"
+
 
 namespace stk {
   namespace adapt {
@@ -2726,6 +2736,10 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Tetrahedron<4>,  24 >                        Hex8_Tet4_24;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Tetrahedron<4>,   6 >                        Hex8_Tet4_6_12;
 
+    // local refinement - for testing only right now
+
+    typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      2  >            Local_Tri3_Tri3_2;
+    
   }
 }
 

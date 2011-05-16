@@ -182,7 +182,7 @@ namespace stk
                         {
                           iSubDimOrd = 2u;
                         }
-                      NodeIdsOnSubDimEntityType nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, iSubDimOrd);
+                      NodeIdsOnSubDimEntityType& nodeIds_onSE = *(nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_rank.first, iSubDimOrd));
 
                       //if (!nodeIds_onSE[0])
                       //  throw std::logic_error("nodeRegistry_regr.parallel_2 logic err3");
@@ -357,7 +357,7 @@ namespace stk
                         {
                           iSubDimOrd = 2u;
                         }
-                      NodeIdsOnSubDimEntityType nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd);
+                      NodeIdsOnSubDimEntityType& nodeIds_onSE = *(nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd));
                       if (!nodeIds_onSE[0])
                         throw std::logic_error("nodeRegistry_regr.parallel_2 logic err1");
                       stk::mesh::Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[0]->identifier());
@@ -371,7 +371,7 @@ namespace stk
                     {
                       if (p_rank)
                         {
-                          NodeIdsOnSubDimEntityType nodeIds_onSE_1 = nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[1].first, 0u);
+                          NodeIdsOnSubDimEntityType& nodeIds_onSE_1 = *(nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[1].first, 0u));
                           if (!nodeIds_onSE_1[0])
                             throw std::logic_error("nodeRegistry_regr.parallel_2 logic err2");
 

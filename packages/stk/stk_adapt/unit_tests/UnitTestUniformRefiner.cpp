@@ -22,6 +22,8 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
+#include <unit_tests/UnitTestSupport.hpp>
+
 #include <stk_io/IossBridge.hpp>
 
 #include <boost/lexical_cast.hpp>
@@ -61,19 +63,16 @@ namespace stk {
     namespace unit_tests {
 
 
-      /// CONFIGURATIONS
-      /// 1. you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
-      /// 2. you can choose to use regression testing or not (see always_do_regression_tests)
-
+      /// configuration: you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
       /// The following defines where to put the input and output files created by this set of functions
-#if 0
-      static const std::string input_files_loc="./input_files/";
-      static const std::string output_files_loc="./output_files/";
-#else
-      static const std::string input_files_loc="./input_files_";
-      static const std::string output_files_loc="./output_files_";
-#endif
 
+#if 1
+      const std::string input_files_loc="./input_files_";
+      const std::string output_files_loc="./output_files_";
+#else
+      const std::string input_files_loc="./input_files/";
+      const std::string output_files_loc="./output_files/";
+#endif
 
 #define EXTRA_PRINT 0
 
@@ -81,61 +80,10 @@ namespace stk {
       ///   or, under option 1, checks if the file already exists, and if so, treats that
       ///   file as the "gold" copy and does a regression difference check.
 
-      static bool always_do_regression_tests = true;
       
       static void save_or_diff(PerceptMesh& eMesh, std::string filename, int option = 0)
       {
-        if (always_do_regression_tests || option == 1)
-          {
-            unsigned p_size = eMesh.getParallelSize();
-            unsigned p_rank = eMesh.getParallelRank();
-            std::string par_filename = filename;
-            if (p_size > 1)
-              {
-                par_filename = filename+"."+toString(p_size)+"."+toString(p_rank);
-              }
-            if (Util::file_exists(par_filename))
-              {
-                int spatialDim = eMesh.getSpatialDim();
-
-                PerceptMesh eMesh1(spatialDim);
-                eMesh.saveAs("./tmp.e");
-                eMesh1.openReadOnly("./tmp.e");
-
-                PerceptMesh eMesh_gold(spatialDim);
-                eMesh_gold.openReadOnly(filename);
-                //eMesh_gold.printInfo("gold copy: "+filename, 2);
-                //eMesh1.printInfo("compare to: "+filename, 2);
-                {
-                  std::string diff_msg = "gold file diff report: "+filename+" \n";
-                  bool print_during_diff = false;
-                  bool diff = PerceptMesh::mesh_difference(eMesh1, eMesh_gold, diff_msg, print_during_diff);
-                  if (diff)
-                    {
-                      //std::cout << "tmp writing and reading to cleanup parts" << std::endl;
-
-                      // write out and read back in to cleanup old parts
-                      eMesh1.saveAs("./tmp.e");
-                      PerceptMesh eMesh2(spatialDim);
-                      eMesh2.openReadOnly("./tmp.e");
-                      //std::cout << "tmp done writing and reading to cleanup parts" << std::endl;
-                      bool diff_2 = PerceptMesh::mesh_difference(eMesh2, eMesh_gold, diff_msg, print_during_diff);
-                      //std::cout << "tmp diff_2= " << diff_2 << std::endl;
-                      diff = diff_2;
-                    }
-
-                  STKUNIT_EXPECT_TRUE(!diff);
-                }
-              }
-            else
-              {
-                eMesh.saveAs(filename);
-              }
-          }
-        else
-          {
-            eMesh.saveAs(filename);
-          }
+        return UnitTestSupport::save_or_diff(eMesh, filename, option);
       }
 
       //=============================================================================
@@ -243,6 +191,7 @@ namespace stk {
 
       static void fixture_setup()
       {
+        //std::cout << "tmp fixture_setup" << std::endl;
         static bool is_setup = false;
         if (is_setup) return;
         fixture_setup_0();

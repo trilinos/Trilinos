@@ -75,6 +75,9 @@ namespace stk {
     using std::map;
     using std::set;
 
+    // FIXME
+    static bool s_allow_empty_sub_dims = true; // for uniform refine, this should be false for testing
+
     typedef std::pair<stk::mesh::EntityRank, unsigned> NeededEntityType;
 
     // using tuple here instead of pair to allow for future expansion
@@ -495,6 +498,8 @@ namespace stk {
         m_element_side_map[est] = data;
       }
 
+      bool is_empty( const stk::mesh::Entity& element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd);
+
       /// Register the need for a new node on the sub-dimensional entity @param subDimEntity on element @param element.
       /// If the element is a ghost element, the entity is still registered: the locality/ownership of the new entity
       /// can be determined by the locality of the element (ghost or not).
@@ -776,35 +781,7 @@ namespace stk {
         return get_entity_Ib(bulk, rank, id);
       }
 
-      NodeIdsOnSubDimEntityType& getNewNodesOnSubDimEntity(const stk::mesh::Entity& element,  stk::mesh::EntityRank& needed_entity_rank, unsigned iSubDimOrd)
-      {
-        EXCEPTWATCH;
-        static SubDimCell_SDSEntityType subDimEntity;
-        getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
-        static  SubDimCellData empty_SubDimCellData;
-
-        SubDimCellData* nodeId_elementOwnderId_ptr = getFromMapPtr(subDimEntity);
-        SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
-        bool is_empty = nodeId_elementOwnderId_ptr == 0;
-
-        if (is_empty)
-          {
-            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-            CellTopology cell_topo(cell_topo_data);
-
-            std::cout << "NodeRegistry::getNewNodesOnSubDimEntity: no node found, cell_topo = " << cell_topo.getName()
-                      << "\n subDimEntity= " << subDimEntity 
-                      << "\n element= " << element 
-                      << "\n element.entity_rank() = " << element.entity_rank()
-                      << "\n needed_entity_rank= " << needed_entity_rank
-                      << "\n iSubDimOrd= " << iSubDimOrd << std::endl;
-            throw std::runtime_error("NodeRegistry::getNewNodesOnSubDimEntity: no node found");
-
-            //return 0;
-          }
-        NodeIdsOnSubDimEntityType& nodeId = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-        return nodeId;
-      }
+    NodeIdsOnSubDimEntityType* getNewNodesOnSubDimEntity(const stk::mesh::Entity& element,  stk::mesh::EntityRank& needed_entity_rank, unsigned iSubDimOrd);
 
       /// makes coordinates of this new node be the centroid of its sub entity
       void makeCentroidCoords(const stk::mesh::Entity& element,  stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
@@ -845,6 +822,10 @@ namespace stk {
         SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
         bool is_empty = nodeId_elementOwnderId_ptr == 0;
 
+        if (s_allow_empty_sub_dims && is_empty)
+          {
+            return;
+          }
         if (is_empty)
           {
             const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
@@ -1002,6 +983,11 @@ namespace stk {
             static const SubDimCellData empty_SubDimCellData;
 
             bool is_empty = (nodeId_elementOwnderId == empty_SubDimCellData);
+
+            if (s_allow_empty_sub_dims && is_empty)
+              {
+                return;
+              }
 
             if (is_empty)
               {
@@ -1188,6 +1174,11 @@ namespace stk {
         SubDimCellData* nodeId_elementOwnderId_ptr = getFromMapPtr(subDimEntity);
         SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
         bool is_empty = nodeId_elementOwnderId_ptr == 0;
+
+        if (s_allow_empty_sub_dims && is_empty)
+          {
+            return;
+          }
 
         if (is_empty)
           {
