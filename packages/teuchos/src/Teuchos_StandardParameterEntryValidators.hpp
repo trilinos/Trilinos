@@ -55,7 +55,7 @@ namespace Teuchos {
  * regarding the XML representation of this validator.
  */
 template<class IntegralType>
-class TEUCHOS_LIB_DLL_EXPORT StringToIntegralParameterEntryValidator : public ParameterEntryValidator {
+class StringToIntegralParameterEntryValidator : public ParameterEntryValidator {
 public:
   /** \name Constructors */
   //@{
@@ -443,7 +443,7 @@ verbosityLevelParameterEntryValidator(std::string const& defaultParameterName);
  * \relates StringToIntegralParameterEntryValidator
  */
 template<class IntegralType>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringToIntegralParameterEntryValidator<IntegralType> >{
+class DummyObjectGetter<StringToIntegralParameterEntryValidator<IntegralType> >{
 
 public:
 
@@ -918,7 +918,7 @@ struct UndefinedEnhancedNumberTraits{
  * specializations of this class will produce valid code.
  */
 template <class T>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits{
+class EnhancedNumberTraits{
 public:
 
   /** \brief Gets the minimum possible value the number type can take on. */
@@ -943,7 +943,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<short int>{
+class EnhancedNumberTraits<short int>{
 public:
   static inline short int min() { return std::numeric_limits<short int>::min(); }
   static inline short int max() { return std::numeric_limits<short int>::max(); }
@@ -953,7 +953,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<short unsigned int>{
+class EnhancedNumberTraits<short unsigned int>{
 public:
   static inline short unsigned int min() { return std::numeric_limits<short unsigned int>::min(); }
   static inline short unsigned int max() { return std::numeric_limits<short unsigned int>::max(); }
@@ -963,7 +963,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<int>{
+class EnhancedNumberTraits<int>{
 public:
   static inline int min() { return std::numeric_limits<int>::min(); }
   static inline int max() { return std::numeric_limits<int>::max(); }
@@ -973,7 +973,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<unsigned int>{
+class EnhancedNumberTraits<unsigned int>{
 public:
   static inline unsigned int min() { return std::numeric_limits<unsigned int>::min(); }
   static inline unsigned int max() { return std::numeric_limits<unsigned int>::max(); }
@@ -983,7 +983,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<long int>{
+class EnhancedNumberTraits<long int>{
 public:
   static inline long int min() { return std::numeric_limits<long int>::min(); }
   static inline long int max() { return std::numeric_limits<long int>::max(); }
@@ -993,7 +993,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<long unsigned int>{
+class EnhancedNumberTraits<long unsigned int>{
 public:
   static inline long unsigned int min() { return std::numeric_limits<long unsigned int>::min(); }
   static inline long unsigned int max() { return std::numeric_limits<long unsigned int>::max(); }
@@ -1006,7 +1006,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<long long int>{
+class EnhancedNumberTraits<long long int>{
 public:
   static inline long long int min() { return std::numeric_limits<long long int>::min(); }
   static inline long long int max() { return std::numeric_limits<long long int>::max(); }
@@ -1016,7 +1016,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<long long unsigned int>{
+class EnhancedNumberTraits<long long unsigned int>{
 public:
   static inline long long unsigned int min() { return std::numeric_limits<long long unsigned int>::min(); }
   static inline long long unsigned int max() { return std::numeric_limits<long long unsigned int>::max(); }
@@ -1029,7 +1029,7 @@ public:
 
   
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<double>{
+class EnhancedNumberTraits<double>{
 public:
   static inline double min() { return -std::numeric_limits<double>::max(); }
   static inline double max() { return std::numeric_limits<double>::max(); }
@@ -1039,7 +1039,7 @@ public:
 
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberTraits<float>{
+class EnhancedNumberTraits<float>{
 public:
   static inline float min() { return -std::numeric_limits<float>::max(); }
   static inline float max() { return std::numeric_limits<float>::max(); }
@@ -1054,7 +1054,7 @@ public:
  * regarding the XML representation of this validator.
  */
 template <class T>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberValidator : public ParameterEntryValidator{
+class EnhancedNumberValidator : public ParameterEntryValidator{
 
 public:
 
@@ -1309,7 +1309,7 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
  * \relates EnhancedNumberValidator<T>
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<EnhancedNumberValidator<T> >{
+class DummyObjectGetter<EnhancedNumberValidator<T> >{
 
 public:
 
@@ -1431,7 +1431,7 @@ private:
  * \relates FileNameValidator
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<FileNameValidator>{
+class DummyObjectGetter<FileNameValidator>{
 
 public:
 
@@ -1525,7 +1525,7 @@ private:
  * \relates StringValidator
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringValidator>{
+class DummyObjectGetter<StringValidator>{
 
 public:
 
@@ -1552,7 +1552,7 @@ public:
  * regarding the XML representation of this validator.
  */
 template<class ValidatorType, class EntryType>
-class TEUCHOS_LIB_DLL_EXPORT ArrayValidator : public ParameterEntryValidator {
+class ArrayValidator : public ParameterEntryValidator {
 
 public:
 
@@ -1673,7 +1673,7 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
  * \relates ArrayValidator
  */
 template<class ValidatorType, class EntryType>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >{
+class DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >{
 
 public:
 
@@ -1755,7 +1755,7 @@ public:
  * however the current c++ compilers do not support templated typedefs
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT ArrayNumberValidator : public ArrayValidator<EnhancedNumberValidator<T>, T>{
+class ArrayNumberValidator : public ArrayValidator<EnhancedNumberValidator<T>, T>{
 public:
   /** \name Constructors/Destructor */
   //@{
