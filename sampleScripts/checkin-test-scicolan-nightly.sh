@@ -24,7 +24,7 @@ echo "
 -D gtest_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/gtest/include
 -D gtest_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/gtest/1.5.0/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared/
 -D TPL_ENABLE_Netcdf:BOOL=ON
--D TPL_Netcdf_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/netcdf/src/libsrc
+-D TPL_Netcdf_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/netcdf/src/include
 -D Netcdf_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/netcdf/4.0-snl3/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared
 -D Trios_ENABLE_XDMF:BOOL=OFF
 -D TPL_ENABLE_XMDF:BOOL=OFF
