@@ -37,35 +37,51 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_ARRAYBOUNDS_HPP
-#define KOKKOS_ARRAYBOUNDS_HPP
+#ifndef KOKKOS_PARALLELFOR_HPP
+#define KOKKOS_PARALLELFOR_HPP
 
 #include <cstddef>
 
-#define KOKKOS_MACRO_CHECK( expr )  expr
-
 namespace Kokkos {
-namespace Impl {
 
-size_t mdarray_deduce_rank( size_t , size_t , size_t , size_t ,
-                            size_t , size_t , size_t , size_t );
+template< class FunctorType , class DeviceType >
+class ParalleFor {
+public:
+  typedef DeviceType                      device_type ;
+  typedef typename device_type::size_type size_type ;
 
-void require_less( size_t , size_t );
+  static void run( const size_type      work_count ,
+                   const FunctorType &  functor );
+};
 
-void mdarray_require_dimension(
-  size_t n_rank ,
-  size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-  size_t n4 , size_t n5 , size_t n6 , size_t n7 ,
-  size_t i_rank ,
-  size_t i0 , size_t i1 , size_t i2 , size_t i3 ,
-  size_t i4 , size_t i5 , size_t i6 , size_t i7 );
+template< class FunctorType >
+void parallel_for( size_t work_count , const FunctorType & functor )
+{
+  ParallelFor< FunctorType , typename FunctorType::device_type >
+    ::run( work_count , functor );
+}
 
-void mdarray_require_equal_dimension(
-  size_t n_rank , const size_t n_dims[] ,
-  size_t m_rank , const size_t m_dims[] );
-
-} // namespace Impl
 } // namespace Kokkos
 
-#endif /* KOKKOS_ARRAYBOUNDS_HPP */
+//----------------------------------------------------------------------------
+// Partial specializations for known devices
+
+#if defined( KOKKOS_DEVICE_HOST )
+#include <DeviceHost/Kokkos_DeviceHost_ParallelFor.hpp>
+#endif
+
+#if defined( KOKKOS_DEVICE_TPI )
+#endif
+
+#if defined( KOKKOS_DEVICE_CUDA )
+#endif
+
+//----------------------------------------------------------------------------
+
+#endif /* KOKKOS_VALUEVIEW_HPP */
+
+
+
+
+#endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */
 

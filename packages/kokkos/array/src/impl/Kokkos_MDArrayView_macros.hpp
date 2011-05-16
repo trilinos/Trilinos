@@ -62,6 +62,8 @@ public:
   typedef typename device_type::size_type size_type ;
 
   /*------------------------------------------------------------------*/
+  enum { Contiguous = true };
+
   /** \brief  Query rank of the array */
   inline
   KOKKOS_MACRO_HOST_FUNCTION
@@ -75,6 +77,25 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   size_type dimension( const iType & rank_ordinate ) const
   { return m_map.dimension( rank_ordinate ); }
+
+  template < typename iType >
+  inline
+  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void dimensions( iType * const dims ) const
+  { m_map.dimensions( dims ); }
+
+  /** \brief  Query rank of the array */
+  inline
+  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  size_type size() const { return m_map.size(); }
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Because memory is contiguous this is exposed */
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  value_type * ptr_on_device() const { return m_memory.ptr_on_device(); }
 
   /*------------------------------------------------------------------*/
   /** \brief  Query value of a rank 8 array */

@@ -40,7 +40,8 @@
 #ifndef KOKKOS_MDARRAYDEEPCOPY_HPP
 #define KOKKOS_MDARRAYDEEPCOPY_HPP
 
-#include <Kokkos_MDArray.hpp>
+#include <Kokkos_MDArrayView.hpp>
+#include <impl/Kokkos_StaticAssert.hpp>
 
 namespace Kokkos {
 
@@ -48,7 +49,12 @@ template< typename ValueType ,
           class DeviceDst , class MapDst ,
           class DeviceSrc , class MapSrc >
 class MDArrayDeepCopy {
+private:
+  enum { DifferentDevices = ! Impl::SameType<DeviceDst,DeviceSrc>::value };
+  enum { DifferentMaps    = ! Impl::SameType<MapDst,MapSrc>::value };
+  enum { OK = Impl::StaticAssert< DifferentDevices && DifferentMaps >::OK };
 public:
+
   typedef MDArrayView<ValueType,DeviceDst,MapDst> dst_type ;
   typedef MDArrayView<ValueType,DeviceSrc,MapSrc> src_type ;
 
@@ -74,11 +80,22 @@ public:
 template< typename ValueType ,
           class DeviceDst , class MapDst ,
           class DeviceSrc , class MapSrc >
-void deep_copy( const MDArray<ValueType,DeviceDst,MapDst> & dst ,
-                const MDArray<ValueType,DeviceSrc,MapSrc> & src )
-{ MDArrayDeepCopy<ValueType,DeviceDst,MapDst,DeviceSrc,MapSrc>::run( dst , src ); }
+void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
+                const MDArrayView<ValueType,DeviceSrc,MapSrc> & src )
+{
+  MDArrayDeepCopy<ValueType,DeviceDst,MapDst,DeviceSrc,MapSrc>
+    ::run( dst , src );
+}
 
 } // namespace Kokkos
+
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_DEVICE_HOST )
+#include <DeviceHost/Kokkos_HostMDArrayDeepCopy.hpp>
+#endif
+
+//----------------------------------------------------------------------------
 
 #endif /* KOKKOS_MDARRAYDEEPCOPY_HPP */
 

@@ -47,11 +47,12 @@
 namespace Kokkos {
 namespace Impl {
 
+enum { MAX_RANK = 8 };
+
+
 size_t mdarray_deduce_rank( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
                             size_t n4 , size_t n5 , size_t n6 , size_t n7 )
 {
-  enum { MAX_RANK = 8 };
-
   const size_t dim[ MAX_RANK ] = { n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7 };
 
   size_t rank = 0 , r = 0 ;
@@ -90,8 +91,6 @@ void mdarray_require_dimension(
   size_t i0 , size_t i1 , size_t i2 , size_t i3 ,
   size_t i4 , size_t i5 , size_t i6 , size_t i7 )
 {
-  enum { MAX_RANK = 8 };
-
   const size_t dim[ MAX_RANK ] = { n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7 };
   const size_t ind[ MAX_RANK ] = { i0 , i1 , i2 , i3 , i4 , i5 , i6 , i7 };
 
@@ -103,7 +102,7 @@ void mdarray_require_dimension(
 
   if ( ! ok ) {
     std::ostringstream msg ;
-    msg << "Kokkos::Impl::require_dimension( dimension( " ;
+    msg << "Kokkos::Impl::mdarray_require_dimension( dimension( " ;
     for ( size_t r = 0 ; r < MAX_RANK && r < n_rank ; ++r ) {
       if ( r ) msg << " , " ;
       msg << dim[r] ;
@@ -118,6 +117,35 @@ void mdarray_require_dimension(
     throw std::runtime_error( msg.str() );
   }
 }
+
+void mdarray_require_equal_dimension(
+  size_t n_rank , const size_t n_dims[] ,
+  size_t m_rank , const size_t m_dims[] )
+{
+  bool ok = n_rank == m_rank && n_rank <= MAX_RANK ;
+
+  for ( size_t r = 0 ; ok && r < n_rank ; ++r ) {
+    ok = n_dims[r] == m_dims[r] ;
+  }
+
+  if ( ! ok ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::Impl::mdarray_require_equal_dimension FAILED : {" ;
+    for ( size_t r = 0 ; r < MAX_RANK && r < n_rank ; ++r ) {
+      if ( r ) msg << " , " ;
+      msg << n_dims[r] ;
+    }
+    msg << " } != { " ;
+    for ( size_t r = 0 ; r < MAX_RANK && r < m_rank ; ++r ) {
+      if ( r ) msg << " , " ;
+      msg << m_dims[r] ;
+    }
+    msg << " }" ;
+
+    throw std::runtime_error( msg.str() );
+  }
+}
+
 
 } // namespace Impl
 } // namespace Kokkos

@@ -41,6 +41,11 @@
 #define KOKKOS_HOSTMDARRAYDEEPCOPY_HPP
 
 #include <Kokkos_MDArrayDeepCopy.hpp>
+#include <impl/Kokkos_ArrayBounds.hpp>
+
+#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <impl/Kokkos_MDArrayDeepCopy_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
 
 namespace Kokkos {
 
@@ -54,113 +59,83 @@ public:
   static
   void run( const mdarray_type & dst , const mdarray_type & src )
   {
-    if ( MapType::contiguous ) {
-      Impl::require_equal_dimension( dst , src );
-      const ValueType * src = src.ptr_on_device();
-            ValueType * dst = dst.ptr_on_device();
-            ValueType * const dst_end = dst + dst.size();
-      while ( dst < dst_end ) { *dst++ = *src++ ; }
+    if ( mdarray_type::Contiguous ) {
+      size_t dst_dims[8] ;
+      size_t src_dims[8] ;
+      dst.dimensions( dst_dims );
+      src.dimensions( src_dims );
+
+      Impl::mdarray_require_equal_dimension(
+        dst.rank() , dst_dims , src.rank() , src_dims );
+
+      const ValueType * src_ptr = src.ptr_on_device();
+            ValueType * dst_ptr = dst.ptr_on_device();
+            ValueType * const dst_end = dst_ptr + dst.size();
+      while ( dst_ptr < dst_end ) { *dst_ptr++ = *src_ptr++ ; }
+    }
+    else {
+
     }
   }
 };
 
-template< typename ValueType , class MapTypeDst , class MapTypeSrc >
-class MDArrayDeepCopy< ValueType , DeviceHost , MapTypeDst ,
-                                   DeviceHost , MapTypeSrc >
+template< typename ValueType , class MapDst , class MapSrc >
+class MDArrayDeepCopy< ValueType , DeviceHost , MapDst ,
+                                   DeviceHost , MapSrc >
 {
 public:
-  typedef MDArrayView< ValueType , DeviceHost , MapTypeSrc > src_type ;
-  typedef MDArrayView< ValueType , DeviceHost , MapTypeDst > dst_type ;
+  typedef DeviceHost::size_type size_type ;
+
+  typedef MDArrayView< ValueType , DeviceHost , MapSrc > src_type ;
+  typedef MDArrayView< ValueType , DeviceHost , MapDst > dst_type ;
+
+  Impl::MDArrayDeepCopyMember<ValueType,DeviceHost, MapDst, MapSrc, 8 > deep8 ;
+  Impl::MDArrayDeepCopyMember<ValueType,DeviceHost, MapDst, MapSrc, 7 > deep7 ;
+  Impl::MDArrayDeepCopyMember<ValueType,DeviceHost, MapDst, MapSrc, 6 > deep6 ;
+  Impl::MDArrayDeepCopyMember<ValueType,DeviceHost, MapDst, MapSrc, 5 > deep5 ;
+  Impl::MDArrayDeepCopyMember<ValueType,DeviceHost, MapDst, MapSrc, 4 > deep4 ;
+  Impl::MDArrayDeepCopyMember<ValueType,DeviceHost, MapDst, MapSrc, 3 > deep3 ;
+  Impl::MDArrayDeepCopyMember<ValueType,DeviceHost, MapDst, MapSrc, 2 > deep2 ;
+  Impl::MDArrayDeepCopyMember<ValueType,DeviceHost, MapDst, MapSrc, 1 > deep1 ;
 
   static
-  void run( const mdarray_type & dst , const mdarray_type & src )
+  void run( const dst_type & dst , const src_type & src )
   {
-    if ( MapType::composition ) {
-      Impl::require_equal_dimension( dst , src );
+    size_t dst_dims[8] ;
+    size_t src_dims[8] ;
+    dst.dimensions( dst_dims );
+    src.dimensions( src_dims );
+    Impl::mdarray_require_equal_dimension(
+      dst.rank() , dst_dims , src.rank() , src_dims );
 
-      const DeviceHost::size_type n = dst.size();
-      DeviceHost::size_type indices[ dst_type::MAX_RANK ];
 
-      ValueType * const dst = dst.ptr_on_device();
+    const size_type n = dst.size();
 
-      switch( dst.rank() ) {
-      case 8 :
-        for ( DeviceHost::size_type i = 0 ; i < n ; ++i ) {
-          dst.inverse_map( i , indices );
-
-          dst( indices[0] , indices[1] , indices[2] , indices[3] ,
-               indices[4] , indices[5] , indices[6] , indices[7] ) =
-          src( indices[0] , indices[1] , indices[2] , indices[3] ,
-               indices[4] , indices[5] , indices[6] , indices[7] );
-        }
-        break ;
-
-      case 7 :
-        for ( DeviceHost::size_type i = 0 ; i < n ; ++i ) {
-          dst.inverse_map( i , indices );
-
-          dst( indices[0] , indices[1] , indices[2] , indices[3] ,
-               indices[4] , indices[5] , indices[6] ) =
-          src( indices[0] , indices[1] , indices[2] , indices[3] ,
-               indices[4] , indices[5] , indices[6] );
-        }
-        break ;
-
-      case 6 :
-        for ( DeviceHost::size_type i = 0 ; i < n ; ++i ) {
-          dst.inverse_map( i , indices );
-
-          dst( indices[0] , indices[1] , indices[2] , indices[3] ,
-               indices[4] , indices[5] ) =
-          src( indices[0] , indices[1] , indices[2] , indices[3] ,
-               indices[4] , indices[5] );
-        }
-        break ;
-
-      case 5 :
-        for ( DeviceHost::size_type i = 0 ; i < n ; ++i ) {
-          dst.inverse_map( i , indices );
-
-          dst( indices[0] , indices[1] , indices[2] , indices[3] ,
-               indices[4] ) =
-          src( indices[0] , indices[1] , indices[2] , indices[3] ,
-               indices[4] );
-        }
-        break ;
-
-      case 4 :
-        for ( DeviceHost::size_type i = 0 ; i < n ; ++i ) {
-          dst.inverse_map( i , indices );
-
-          dst( indices[0] , indices[1] , indices[2] , indices[3] ) =
-          src( indices[0] , indices[1] , indices[2] , indices[3] );
-        }
-        break ;
-
-      case 3 :
-        for ( DeviceHost::size_type i = 0 ; i < n ; ++i ) {
-          dst.inverse_map( i , indices );
-
-          dst( indices[0] , indices[1] , indices[2] ) =
-          src( indices[0] , indices[1] , indices[2] );
-        }
-        break ;
-
-      case 2 :
-        for ( DeviceHost::size_type i = 0 ; i < n ; ++i ) {
-          dst.inverse_map( i , indices );
-
-          dst( indices[0] , indices[1] ) =
-          src( indices[0] , indices[1] );
-        }
-        break ;
-
-      case 1 :
-        for ( DeviceHost::size_type i = 0 ; i < n ; ++i ) {
-          src.inverse_map( i , indices );
-          dst( indices[0] ) = src( indices[0] );
-        }
-        break ;
+    switch ( dst.rank() ) {
+    case 8 :
+      for ( size_type i = 0 ; i < n ; ++i ) { deep8:copy( i , dst , src ); }
+      break ;
+    case 7 :
+      for ( size_type i = 0 ; i < n ; ++i ) { deep7:copy( i , dst , src ); }
+      break ;
+    case 6 :
+      for ( size_type i = 0 ; i < n ; ++i ) { deep6:copy( i , dst , src ); }
+      break ;
+    case 5 :
+      for ( size_type i = 0 ; i < n ; ++i ) { deep5:copy( i , dst , src ); }
+      break ;
+    case 4 :
+      for ( size_type i = 0 ; i < n ; ++i ) { deep4:copy( i , dst , src ); }
+      break ;
+    case 3 :
+      for ( size_type i = 0 ; i < n ; ++i ) { deep3:copy( i , dst , src ); }
+      break ;
+    case 2 :
+      for ( size_type i = 0 ; i < n ; ++i ) { deep2:copy( i , dst , src ); }
+      break ;
+    case 1 :
+      for ( size_type i = 0 ; i < n ; ++i ) { deep1:copy( i , dst , src ); }
+      break ;
     }
   }
 };

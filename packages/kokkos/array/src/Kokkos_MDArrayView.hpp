@@ -84,9 +84,9 @@ namespace Kokkos {
  *  The "labeled" group creates MDArray's with string labels that
  *  will appear in error messages.
  *
- *  create_labeled_mdarray< ValueType , DeviceType , MapOption >( nP , ... , label );
- *  create_labeled_mdarray< ValueType , DeviceType >( nP , ... , label );
- *  create_labeled_mdarray< MDArrayView<...> >( nP , ... , label );
+ *  create_labeled_mdarray< ValueType , DeviceType , MapOption >( label , nP , ... );
+ *  create_labeled_mdarray< ValueType , DeviceType >( label , nP , ... );
+ *  create_labeled_mdarray< MDArrayView<...> >( label , nP , ... );
  *
  *  The "unlabeled" group creates MDArray's with NULL string labels.
  *
@@ -104,12 +104,24 @@ public:
   typedef typename DeviceType::size_type  size_type ;
 
   /*------------------------------------------------------------------*/
+  /** \brief  True if the array type has contigous memory
+   *          If contigous then can get a pointer to the memory.
+   */
+  enum { Contiguous = false };
+
   /** \brief  Query rank of the array */
   size_type rank() const ;
 
   /** \brief  Query dimension of the given ordinate of the array */
   template < typename iType >
   size_type dimension( const iType & rank_ordinate ) const ;
+
+  /** \brief  Query all dimensions */
+  template< typename iType >
+  void dimensions( iType * const dims ) const ;
+
+  /** \brief  Query total number of members */
+  size_type size() const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query value of a rank 8 array */

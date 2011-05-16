@@ -87,6 +87,17 @@ public:
     return m_dims[ordinal];
   }
 
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void dimensions( iType * const dims ) const
+  {
+    for ( size_type i = 0 ; i < m_rank ; ++i ) {
+      dims[i] = m_dims[i] ;
+    }
+  }
+
   //------------------------------------
 
   template < typename iType0 , typename iType1 ,

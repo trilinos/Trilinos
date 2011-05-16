@@ -37,35 +37,25 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_ARRAYBOUNDS_HPP
-#define KOKKOS_ARRAYBOUNDS_HPP
-
-#include <cstddef>
-
-#define KOKKOS_MACRO_CHECK( expr )  expr
+#ifndef KOKKOS_STATICASSERT_HPP
+#define KOKKOS_STATICASSERT_HPP
 
 namespace Kokkos {
 namespace Impl {
 
-size_t mdarray_deduce_rank( size_t , size_t , size_t , size_t ,
-                            size_t , size_t , size_t , size_t );
+template < bool > struct StaticAssert ;
 
-void require_less( size_t , size_t );
+template<> struct StaticAssert< true > { enum { value = true }; };
 
-void mdarray_require_dimension(
-  size_t n_rank ,
-  size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-  size_t n4 , size_t n5 , size_t n6 , size_t n7 ,
-  size_t i_rank ,
-  size_t i0 , size_t i1 , size_t i2 , size_t i3 ,
-  size_t i4 , size_t i5 , size_t i6 , size_t i7 );
+template< typename TypeFirst , typename TypeSecond >
+struct SameType { enum { value = false }; };
 
-void mdarray_require_equal_dimension(
-  size_t n_rank , const size_t n_dims[] ,
-  size_t m_rank , const size_t m_dims[] );
+template< typename Type >
+struct SameType<Type,Type> { enum { value = true }; };
 
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* KOKKOS_ARRAYBOUNDS_HPP */
+#endif /* KOKKOS_STATICASSERT_HPP */
+
 

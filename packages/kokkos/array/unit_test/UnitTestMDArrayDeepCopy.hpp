@@ -37,35 +37,75 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_ARRAYBOUNDS_HPP
-#define KOKKOS_ARRAYBOUNDS_HPP
+#ifndef KOKKOS_MACRO_DEVICE
+#error "KOKKOS_MACRO_DEVICE undefined"
+#endif
 
-#include <cstddef>
+#include <stdexcept>
+#include <sstream>
+#include <iostream>
 
-#define KOKKOS_MACRO_CHECK( expr )  expr
+#include <impl/Kokkos_Preprocessing_macros.hpp>
 
-namespace Kokkos {
-namespace Impl {
+/*--------------------------------------------------------------------------*/
 
-size_t mdarray_deduce_rank( size_t , size_t , size_t , size_t ,
-                            size_t , size_t , size_t , size_t );
+namespace {
 
-void require_less( size_t , size_t );
+template< class > class UnitTestMDArrayDeepCopy ;
 
-void mdarray_require_dimension(
-  size_t n_rank ,
-  size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-  size_t n4 , size_t n5 , size_t n6 , size_t n7 ,
-  size_t i_rank ,
-  size_t i0 , size_t i1 , size_t i2 , size_t i3 ,
-  size_t i4 , size_t i5 , size_t i6 , size_t i7 );
+template<>
+class UnitTestMDArrayDeepCopy< Kokkos :: KOKKOS_MACRO_DEVICE >
+{
+public:
+  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
 
-void mdarray_require_equal_dimension(
-  size_t n_rank , const size_t n_dims[] ,
-  size_t m_rank , const size_t m_dims[] );
+  typedef Kokkos::MDArrayView< double , device > dView ;
+  typedef Kokkos::MDArrayView< int ,    device > iView ;
 
-} // namespace Impl
-} // namespace Kokkos
+  static std::string name()
+  {
+    std::string tmp ;
+    tmp.append( "UnitTestMDArrayView< Kokkos::" );
+    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
+    tmp.append( " >" );
+    return tmp ;
+  }
 
-#endif /* KOKKOS_ARRAYBOUNDS_HPP */
+  void error( const char * msg ) const
+  {
+    std::string tmp = name();
+    tmp.append( msg );
+    throw std::runtime_error( msg );
+  }
+
+  UnitTestMDArrayDeepCopy()
+  {
+    enum { dN = 1000 , iN = 2000 };
+
+    dView dx , dy ;
+    iView ix , iy ;
+
+    dx = Kokkos::create_labeled_mdarray< dView > ( "dx" , dN );
+    dy = Kokkos::create_labeled_mdarray< dView > ( "dy" , dN );
+    ix = Kokkos::create_labeled_mdarray< iView > ( "ix" , iN );
+    iy = Kokkos::create_labeled_mdarray< iView > ( "iy" , iN );
+
+    for ( size_t i = 0 ; i < dN ; ++i ) { dx(i) = i ; }
+    for ( size_t i = 0 ; i < iN ; ++i ) { ix(i) = iN - i ; }
+
+    Kokkos::deep_copy( dy , dx );
+    Kokkos::deep_copy( iy , ix );
+  
+    for ( size_t i = 0 ; i < dN ; ++i ) {
+      if ( dx(i) != dy(i) ) error( " FAILED double copy" );
+    }
+    for ( size_t i = 0 ; i < iN ; ++i ) {
+      if ( ix(i) != iy(i) ) error( " FAILED int copy" );
+    }
+  }
+};
+
+}
+
+/*--------------------------------------------------------------------------*/
 

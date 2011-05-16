@@ -37,35 +37,43 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_ARRAYBOUNDS_HPP
-#define KOKKOS_ARRAYBOUNDS_HPP
-
-#include <cstddef>
-
-#define KOKKOS_MACRO_CHECK( expr )  expr
+#ifndef KOKKOS_DEVICEHOST_PARALLELFOR_HPP
+#define KOKKOS_DEVICEHOST_PARALLELFOR_HPP
 
 namespace Kokkos {
-namespace Impl {
 
-size_t mdarray_deduce_rank( size_t , size_t , size_t , size_t ,
-                            size_t , size_t , size_t , size_t );
+template< class FunctorType >
+class ParalleFor< FunctorType , DeviceHost > {
+public:
+  typedef DeviceHost             device_type ;
+  typedef device_type::size_type size_type ;
 
-void require_less( size_t , size_t );
+  const FunctorType m_functor ;
+  const size_type   m_work_count ;
 
-void mdarray_require_dimension(
-  size_t n_rank ,
-  size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-  size_t n4 , size_t n5 , size_t n6 , size_t n7 ,
-  size_t i_rank ,
-  size_t i0 , size_t i1 , size_t i2 , size_t i3 ,
-  size_t i4 , size_t i5 , size_t i6 , size_t i7 );
+  ParalleFor( const size_type work_count , const FunctorType & functor )
+    : m_functor( functor )
+    , m_work_count( work_count )
+    {}
 
-void mdarray_require_equal_dimension(
-  size_t n_rank , const size_t n_dims[] ,
-  size_t m_rank , const size_t m_dims[] );
+  static void run( const DeviceHost::size_type work_count ,
+                   const FunctorType &         functor )
+  {
+    // Make a copy just like other devices will have to.
 
-} // namespace Impl
+    device_type::set_dispatch_functor();
+
+    const ParallelFor tmp( work_count , functor );
+
+    device_type::clear_dispatch_functor();
+
+    for ( size_type iwork = 0 ; iwork < tmp.m_work_count ; ++iwork ) {
+      tmp.m_functor(iwork);
+    }
+  }
+};
+
 } // namespace Kokkos
 
-#endif /* KOKKOS_ARRAYBOUNDS_HPP */
+#endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */
 
