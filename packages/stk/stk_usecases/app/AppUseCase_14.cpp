@@ -180,27 +180,27 @@ bool use_case_14_driver(MPI_Comm comm,
     stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
     {
       stk::mesh::Part & block_hex        = meta_data.declare_part("block_1", meta_data.element_rank());
-      stk::mesh::fem::set_cell_topology( meta_data, block_hex, hex_top );
+      stk::mesh::fem::set_cell_topology( block_hex, hex_top );
     }
     {
       stk::mesh::Part & block_hex        = meta_data.declare_part("block_2", meta_data.element_rank());
-      stk::mesh::fem::set_cell_topology( meta_data, block_hex, hex_top );
+      stk::mesh::fem::set_cell_topology( block_hex, hex_top );
     }
     {
       stk::mesh::Part & block_hex        = meta_data.declare_part("block_10", meta_data.element_rank());
-      stk::mesh::fem::set_cell_topology( meta_data, block_hex, hex_top );
+      stk::mesh::fem::set_cell_topology( block_hex, hex_top );
     }
     {
       stk::mesh::Part & block_hex        = meta_data.declare_part("block_20", meta_data.element_rank());
-      stk::mesh::fem::set_cell_topology( meta_data, block_hex, hex_top );
+      stk::mesh::fem::set_cell_topology( block_hex, hex_top );
     }
     {
       stk::mesh::Part & block_hex        = meta_data.declare_part("block_30", meta_data.element_rank());
-      stk::mesh::fem::set_cell_topology( meta_data, block_hex, hex_top );
+      stk::mesh::fem::set_cell_topology( block_hex, hex_top );
     }
     {
       stk::mesh::Part & block_hex        = meta_data.declare_part("block_40", meta_data.element_rank());
-      stk::mesh::fem::set_cell_topology( meta_data, block_hex, hex_top );
+      stk::mesh::fem::set_cell_topology( block_hex, hex_top );
     }
 
     // Add property to each hex element block...

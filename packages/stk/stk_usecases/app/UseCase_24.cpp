@@ -116,7 +116,7 @@ bool use_case_24_driver(
   mesh::Part & hex_io1 = fem_meta.declare_part("block_1", element_rank);
 
   stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
-  stk::mesh::fem::set_cell_topology( fem_meta, hex_io1, hex_top );
+  stk::mesh::fem::set_cell_topology( hex_io1, hex_top );
 
     //--------------------------------
     // Surface-block declarations
@@ -236,7 +236,7 @@ bool use_case_24_driver(
 
   const std::string dbtype("exodusii");
   stk::io::MeshData mesh_data;
-  stk::mesh::MetaData & meta_data = 
+  stk::mesh::MetaData & meta_data =
         stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   std::string filename = working_directory + meshName;
   stk::io::create_input_mesh(dbtype, filename, comm, fem_meta, mesh_data);
@@ -423,7 +423,7 @@ void use_case_24_boundary_algorithm(
 
         const mesh::PairIterRelation elem_nodes = elem.relations( mesh::fem::FEMMetaData::NODE_RANK);
 	const int localFaceNumber = face_elem[0].identifier();
-        const CellTopologyData *topo = mesh::fem::get_cell_topology_new(elem).getCellTopologyData();
+        const CellTopologyData *topo = mesh::fem::get_cell_topology(elem).getCellTopologyData();
 	std::vector<int> skipNode(elem_nodes.size(),0);
 
 	for ( int j = 0; j < numBoundaryIps; ++j )

@@ -36,7 +36,7 @@ size_t is_in_element(VectorField *domain_coordinates,
     stk::mesh::Entity* range_entity  = entity_map[i].second;
     assert(range_entity->entity_rank() == stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-    const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology_new(*domain_entity).getCellTopologyData();
+    const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology(*domain_entity).getCellTopologyData();
     const int nodes_per_entity = cell_topo->node_count;
 
     const stk::mesh::PairIterRelation entity_nodes = domain_entity->relations(stk::mesh::fem::FEMMetaData::NODE_RANK);

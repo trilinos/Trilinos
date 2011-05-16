@@ -116,7 +116,7 @@ void use_case_13_driver( MPI_Comm comm )
     mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", element_rank);
 
     stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-    mesh::fem::set_cell_topology(mesh_meta_data, block_hex, hex_top );
+    mesh::fem::set_cell_topology(block_hex, hex_top );
 
     //--------------------------------
     // Declare coordinates field on all nodes with 3D:
@@ -236,7 +236,7 @@ bool outward_orientation( const mesh::Entity & elem ,
                           const mesh::Entity & side ,
                           const unsigned side_ord )
 {
-  const CellTopologyData * const elem_top = mesh::fem::get_cell_topology_new( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = mesh::fem::get_cell_topology( elem ).getCellTopologyData();
 
   const mesh::PairIterRelation elem_nodes = elem.relations( mesh::fem::FEMMetaData::NODE_RANK );
   const mesh::PairIterRelation side_nodes = side.relations( mesh::fem::FEMMetaData::NODE_RANK );
@@ -409,7 +409,7 @@ mesh::Entity * get_side_neighbor(
 
 unsigned determine_local_side_id( const mesh::Entity & elem , mesh::Entity & side )
 {
-  const CellTopologyData * const elem_top = mesh::fem::get_cell_topology_new( elem ).getCellTopologyData();
+  const CellTopologyData * const elem_top = mesh::fem::get_cell_topology( elem ).getCellTopologyData();
 
   const mesh::PairIterRelation elem_nodes = elem.relations( mesh::fem::FEMMetaData::NODE_RANK );
   const mesh::PairIterRelation side_nodes = side.relations( mesh::fem::FEMMetaData::NODE_RANK );
@@ -496,7 +496,7 @@ void use_case_13_generate_sides(
       //mesh::Entity & element = const_cast<mesh::Entity&>( bucket[j] );
       mesh::Entity & element = bucket[j];
 
-      const CellTopologyData * const elem_top = mesh::fem::get_cell_topology_new( element ).getCellTopologyData();
+      const CellTopologyData * const elem_top = mesh::fem::get_cell_topology( element ).getCellTopologyData();
 
       if ( NULL == elem_top ) {
         throw std::runtime_error( std::string("Element has no topology" ) );

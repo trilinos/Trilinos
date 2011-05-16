@@ -107,8 +107,8 @@ bool use_case_4_driver( MPI_Comm comm ,
 
     stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
     stk::mesh::fem::CellTopology qshell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<> >());
-    stk::mesh::fem::set_cell_topology( fem_meta, block_hex, hex_top );
-    stk::mesh::fem::set_cell_topology( fem_meta, block_quad_shell, qshell_top );
+    stk::mesh::fem::set_cell_topology( block_hex, hex_top );
+    stk::mesh::fem::set_cell_topology( block_quad_shell, qshell_top );
 
     //--------------------------------
     // Declaring fields of specified types on all nodes:
@@ -200,8 +200,8 @@ bool use_case_4_driver( MPI_Comm comm ,
     //------------------------------------------------------------------
 
     int numProcs=1, myProc=0;
-    myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
-    numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+    MPI_Comm_size(comm, &numProcs);
+    MPI_Comm_rank(comm, &myProc);
 
     fei::SharedPtr<fei::Factory> feifactory(new Factory_Trilinos(comm));
     stk::linsys::LinearSystem ls(comm, feifactory);
