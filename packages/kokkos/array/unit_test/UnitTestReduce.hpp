@@ -45,27 +45,81 @@
 #include <sstream>
 #include <iostream>
 
+#include <Kokkos_ValueDeepCopy.hpp>
+// #include <Kokkos_ParallelReduce.hpp>
+
 #include <impl/Kokkos_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
 namespace {
 
-template< class > class UnitTestMultiVectorView ;
+template< typename ScalarType , class DeviceType >
+class UnitTestReduce ;
 
-template<>
-class UnitTestMultiVectorView< Kokkos :: KOKKOS_MACRO_DEVICE >
+template< typename ScalarType , class DeviceType >
+class UnitTestReduceFunctor ;
+
+template< typename ScalarType >
+class UnitTestReduceFunctor< ScalarType , Kokkos :: KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef Kokkos :: KOKKOS_MACRO_DEVICE device_type ;
+  typedef device_type :: size_type      size_type ;
 
-  typedef Kokkos::MultiVectorView< double , device > dView ;
-  typedef Kokkos::MultiVectorView< int ,    device > iView ;
+  struct value_type {
+    ScalarType value[3] ;
+  };
+
+  const size_type nwork ;
+
+  UnitTestReduceFunctor( const size_type & arg_nwork ) : nwork( arg_nwork ) {}
+
+  UnitTestReduceFunctor( const UnitTestReduceFunctor & rhs ) : nwork( rhs.nwork ) {}
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & dst )
+  {
+    dst.value[0] = 0 ;
+    dst.value[1] = 0 ;
+    dst.value[2] = 0 ;
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & dst , const volatile value_type & src )
+  {
+    dst.value[0] += src.value[0] ;
+    dst.value[1] += src.value[1] ;
+    dst.value[2] += src.value[2] ;
+  }
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( device_type :: size_type iwork , value_type & dst ) const
+  {
+    dst.value[0] += 1 ;
+    dst.value[1] += iwork + 1 ;
+    dst.value[2] += nwork - iwork ;
+  } 
+};
+
+
+template< typename ScalarType >
+class UnitTestReduce< ScalarType , Kokkos :: KOKKOS_MACRO_DEVICE >
+{
+public:
+  typedef Kokkos :: KOKKOS_MACRO_DEVICE device_type ;
+  typedef device_type :: size_type      size_type ;
+
+  typedef UnitTestReduceFunctor< ScalarType , device_type > functor_type ;
+
+  typedef typename functor_type::value_type value_type ;
+
+  //------------------------------------
 
   static std::string name()
   {
     std::string tmp ;
-    tmp.append( "UnitTestMultiVectorView< Kokkos::" );
+    tmp.append( "UnitTestReduce< Kokkos::" );
     tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
     tmp.append( " >" );
     return tmp ;
@@ -78,53 +132,27 @@ public:
     throw std::runtime_error( tmp );
   }
 
-  UnitTestMultiVectorView()
+  //------------------------------------
+
+  UnitTestReduce( const size_type & nwork )
   {
-    dView dx , dy ;
-    iView ix , iy ;
+    value_type result ;
+    Kokkos::ValueView< value_type , device_type > device_result ;
 
-    if ( & dx(0) != 0 ||
-         & dy(0) != 0 ||
-         & ix(0) != 0 ||
-         & iy(0) != 0 ) {
-      error("FAILED Initialize view");
-    }
+    device_result = Kokkos::create_value< value_type , device_type >();
 
+    Kokkos::parallel_reduce( nwork , functor_type( nwork ) , device_result );
 
-    dx = Kokkos::create_labeled_multivector<double,device> ( "dx" , 1000 );
-    ix = Kokkos::create_labeled_multivector<int,device> ( "ix" , 2000 );
-  
-    dx(0) = 20 ;
-    ix(0) = 10 ;
-  
-    dView dz = dy = dx ;
-    iView iz = iy = ix ;
-  
-    if ( & dx(0) != & dy(0) ||
-         & dx(0) != & dz(0) ||
-         & ix(0) != & iy(0) ||
-         & ix(0) != & iz(0) ) {
-      error("FAILED Assign view");
-    }
+    Kokkos::deep_copy( result , device_result );
 
-    dx = dView();
-    iy = iView();
-  
-    if ( & dx(0) != 0 ||
-         & dy(0) != & dz(0) ||
-         & ix(0) != & iz(0) ||
-         & iy(0) != 0 ||
-         dy(0) != 20 ||
-         iz(0) != 10 ) {
-      error("FAILED Clear view");
-    }
+    const unsigned long nw   = nwork ;
+    const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )
+                                      : (nw/2) * ( nw + 1 );
 
-    dz = dy = dView();
-    iz = ix = iView();
-
-    if ( & dx(0) != 0 || & dy(0) != 0 || & dz(0) != 0 ||
-         & ix(0) != 0 || & iy(0) != 0 || & iz(0) != 0 ) {
-      error("FAILED Clear all view");
+    if ( result.value[0] != (ScalarType) nw ||
+         result.value[1] != (ScalarType) nsum ||
+         result.value[2] != (ScalarType) nsum ) {
+      error( "FAILED" );
     }
   }
 };

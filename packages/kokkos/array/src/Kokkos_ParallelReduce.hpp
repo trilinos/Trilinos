@@ -37,75 +37,69 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_MACRO_DEVICE
-#error "KOKKOS_MACRO_DEVICE undefined"
-#endif
+#ifndef KOKKOS_PARALLELREDUCE_HPP
+#define KOKKOS_PARALLELREDUCE_HPP
 
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
+#include <cstddef>
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <Kokkos_ValueView.hpp>
 
-/*--------------------------------------------------------------------------*/
+namespace Kokkos {
 
-namespace {
-
-template< class > class UnitTestMDArrayDeepCopy ;
-
-template<>
-class UnitTestMDArrayDeepCopy< Kokkos :: KOKKOS_MACRO_DEVICE >
-{
+template< class FunctorType , class FinalizeType , class DeviceType >
+class ParallelReduce {
 public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef FunctorType                     functor_type ;
+  typedef FinalizeType                    finalize_type ;
+  typedef DeviceType                      device_type ;
+  typedef typename device_type::size_type size_type ;
 
-  typedef Kokkos::MDArrayView< double , device > dView ;
-  typedef Kokkos::MDArrayView< int ,    device > iView ;
-
-  static std::string name()
-  {
-    std::string tmp ;
-    tmp.append( "UnitTestMDArrayView< Kokkos::" );
-    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
-    tmp.append( " >" );
-    return tmp ;
-  }
-
-  void error( const char * msg ) const
-  {
-    std::string tmp = name();
-    tmp.append( msg );
-    throw std::runtime_error( tmp );
-  }
-
-  UnitTestMDArrayDeepCopy()
-  {
-    enum { dN = 1000 , iN = 2000 };
-
-    dView dx , dy ;
-    iView ix , iy ;
-
-    dx = Kokkos::create_labeled_mdarray< dView > ( "dx" , dN );
-    dy = Kokkos::create_labeled_mdarray< dView > ( "dy" , dN );
-    ix = Kokkos::create_labeled_mdarray< iView > ( "ix" , iN );
-    iy = Kokkos::create_labeled_mdarray< iView > ( "iy" , iN );
-
-    for ( size_t i = 0 ; i < dN ; ++i ) { dx(i) = i ; }
-    for ( size_t i = 0 ; i < iN ; ++i ) { ix(i) = iN - i ; }
-
-    Kokkos::deep_copy( dy , dx );
-    Kokkos::deep_copy( iy , ix );
-  
-    for ( size_t i = 0 ; i < dN ; ++i ) {
-      if ( dx(i) != dy(i) ) error( " FAILED double copy" );
-    }
-    for ( size_t i = 0 ; i < iN ; ++i ) {
-      if ( ix(i) != iy(i) ) error( " FAILED int copy" );
-    }
-  }
+  static void run( const size_type      work_count ,
+                   const FunctorType &  functor ,
+                   const FinalizeType & finalize );
 };
 
+template< class FunctorType >
+typename FunctorType::value_type
+parallel_reduce( const size_t work_count ,
+                 const FunctorType & functor )
+{
+  typedef typename FunctorType::device_type device_type ;
+
+  typedef ParallelReduce< FunctorType , void , device_type > op_type ;
+
+  return op_type::run( work_count , functor );
 }
 
-/*--------------------------------------------------------------------------*/
+template< class FunctorType , class FinalizeType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      const FinalizeType & finalize )
+{
+  typedef typename FunctorType::device_type device_type ;
+
+  typedef ParallelReduce< FunctorType , FinalizeType , device_type > op_type ;
+
+  op_type::run( work_count , functor , finalize );
+}
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+// Partial specializations for known devices
+
+#if defined( KOKKOS_DEVICE_HOST )
+#include <DeviceHost/Kokkos_DeviceHost_ParallelReduce.hpp>
+#endif
+
+#if defined( KOKKOS_DEVICE_TPI )
+#include <DeviceTPI/Kokkos_DeviceTPI_ParallelReduce.hpp>
+#endif
+
+#if defined( KOKKOS_DEVICE_CUDA )
+#endif
+
+//----------------------------------------------------------------------------
+
+#endif /* KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP */
 

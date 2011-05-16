@@ -37,64 +37,95 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICETPI_PARALLELFOR_HPP
-#define KOKKOS_DEVICETPI_PARALLELFOR_HPP
-
-#include <algorithm>
-#include <TPI.h>
+#ifndef KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP
+#define KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP
 
 namespace Kokkos {
 
 template< class FunctorType >
-class ParallelFor< FunctorType , DeviceTPI > {
+class ParallelReduce< FunctorType , void , DeviceHost > {
 public:
-  typedef DeviceTPI              device_type ;
+  typedef DeviceHost             device_type ;
   typedef device_type::size_type size_type ;
+  typedef typename FunctorType::value_type value_type ;
 
-  const FunctorType m_work_functor ;
-  const size_type   m_work_count ;
+  const FunctorType  m_functor ;
+  const size_type    m_work_count ;
 
-  ParallelFor( const size_type work_count , const FunctorType & functor )
-    : m_work_functor( functor )
+  ParallelReduce( const size_type work_count ,
+                  const FunctorType & functor )
+    : m_functor( functor )
     , m_work_count( work_count )
     {}
 
-private:
-
-  // self.m_work_count == total work count
-  // work->count       == number of threads
-
-  static void run_on_tpi( TPI_Work * work )
+  static value_type run( const DeviceHost::size_type work_count ,
+                         const FunctorType &         functor )
   {
-    const ParallelFor & self = *((const ParallelFor *) work->info );
+    value_type result ;
 
-    const size_type work_inc   = (self.m_work_count + work->count - 1) / work->count ;
-    const size_type work_begin = work_inc * work->rank ;
-    const size_type work_end   = std::min( work_begin + work_inc , self.m_work_count );
+    FunctorType::init( result );
 
-    for ( size_type iwork = work_begin ; iwork < work_end ; ++iwork ) {
-      self.m_work_functor( iwork );
-    }
-  }
-
-public:
-
-  static void run( const size_type     work_count ,
-                   const FunctorType & work_functor )
-  {
     // Make a copy just like other devices will have to.
 
     device_type::set_dispatch_functor();
 
-    const ParallelFor tmp( work_count , work_functor );
+    const ParallelReduce tmp( work_count , functor );
 
     device_type::clear_dispatch_functor();
 
-    TPI_Run_threads( & run_on_tpi , & tmp , 0 );
+    for ( size_type iwork = 0 ; iwork < tmp.m_work_count ; ++iwork ) {
+      tmp.m_functor(iwork,result);
+    }
+
+    return result ;
+  }
+};
+
+template< class FunctorType , class FinalizeType >
+class ParallelReduce< FunctorType , FinalizeType , DeviceHost > {
+public:
+  typedef DeviceHost             device_type ;
+  typedef device_type::size_type size_type ;
+
+  const FunctorType  m_functor ;
+  const FinalizeType m_finalize ;
+  const size_type    m_work_count ;
+
+  ParallelReduce( const size_type work_count ,
+                  const FunctorType & functor ,
+                  const FinalizeType & finalize )
+    : m_functor( functor )
+    , m_finalize( finalize )
+    , m_work_count( work_count )
+    {}
+
+  static void run( const DeviceHost::size_type work_count ,
+                   const FunctorType &         functor ,
+                   const FinalizeType &        finalize )
+  {
+    typedef typename FunctorType::value_type value_type ;
+
+    value_type result ;
+
+    FunctorType::init( result );
+
+    // Make a copy just like other devices will have to.
+
+    device_type::set_dispatch_functor();
+
+    const ParallelReduce tmp( work_count , functor , finalize );
+
+    device_type::clear_dispatch_functor();
+
+    for ( size_type iwork = 0 ; iwork < tmp.m_work_count ; ++iwork ) {
+      tmp.m_functor(iwork,result);
+    }
+
+    tmp.m_finalize( result );
   }
 };
 
 } // namespace Kokkos
 
-#endif /* KOKKOS_DEVICETPI_PARALLELFOR_HPP */
+#endif /* KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP */
 

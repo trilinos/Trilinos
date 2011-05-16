@@ -74,7 +74,7 @@ public:
   {
     std::string tmp = name();
     tmp.append( msg );
-    throw std::runtime_error( msg );
+    throw std::runtime_error( tmp );
   }
 
   UnitTestDeviceMemoryManagement()

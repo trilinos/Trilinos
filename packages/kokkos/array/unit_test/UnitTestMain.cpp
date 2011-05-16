@@ -5,22 +5,36 @@
 #include <Kokkos_MultiVectorView.hpp>
 #include <Kokkos_MDArrayView.hpp>
 #include <Kokkos_MDArrayDeepCopy.hpp>
+#include <Kokkos_ParallelFor.hpp>
+#include <Kokkos_ParallelReduce.hpp>
 
-#define KOKKOS_MACRO_DEVICE DeviceHost
+//----------------------------------------------------------------------------
+
+#include <impl/Kokkos_DeviceHost_macros.hpp>
+
 #include <UnitTestDeviceMemoryManagement.hpp>
 #include <UnitTestValueView.hpp>
 #include <UnitTestMultiVectorView.hpp>
 #include <UnitTestMDArrayView.hpp>
 #include <UnitTestMDArrayDeepCopy.hpp>
-#undef KOKKOS_MACRO_DEVICE
+#include <UnitTestReduce.hpp>
 
-#define KOKKOS_MACRO_DEVICE DeviceTPI
+#include <impl/Kokkos_DeviceClear_macros.hpp>
+
+//----------------------------------------------------------------------------
+
+#include <impl/Kokkos_DeviceTPI_macros.hpp>
+
 #include <UnitTestDeviceMemoryManagement.hpp>
 #include <UnitTestValueView.hpp>
 #include <UnitTestMultiVectorView.hpp>
 #include <UnitTestMDArrayView.hpp>
 #include <UnitTestMDArrayDeepCopy.hpp>
-#undef KOKKOS_MACRO_DEVICE
+#include <UnitTestReduce.hpp>
+
+#include <impl/Kokkos_DeviceClear_macros.hpp>
+
+//----------------------------------------------------------------------------
 
 int main()
 {
@@ -36,6 +50,11 @@ int main()
   UnitTestMDArrayView< Kokkos::DeviceTPI >();
   UnitTestMDArrayDeepCopy< Kokkos::DeviceHost >();
   UnitTestMDArrayDeepCopy< Kokkos::DeviceTPI >();
+
+  UnitTestReduce< long , Kokkos::DeviceHost >( 1000000 );
+  UnitTestReduce< double , Kokkos::DeviceHost >( 1000000 );
+  UnitTestReduce< long , Kokkos::DeviceTPI >( 1000000 );
+  UnitTestReduce< double , Kokkos::DeviceTPI >( 1000000 );
 
   return 0 ;
 }

@@ -37,75 +37,26 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_MACRO_DEVICE
-#error "KOKKOS_MACRO_DEVICE undefined"
-#endif
+#ifndef KOKKOS_DEVICETPI_MDARRAYDEEPCOPY_HPP
+#define KOKKOS_DEVICETPI_MDARRAYDEEPCOPY_HPP
 
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
+namespace Kokkos {
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
-
-/*--------------------------------------------------------------------------*/
-
-namespace {
-
-template< class > class UnitTestMDArrayDeepCopy ;
-
-template<>
-class UnitTestMDArrayDeepCopy< Kokkos :: KOKKOS_MACRO_DEVICE >
-{
+template< typename ValueType , class DeviceTPI >
+class ValueDeepCopy {
 public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
 
-  typedef Kokkos::MDArrayView< double , device > dView ;
-  typedef Kokkos::MDArrayView< int ,    device > iView ;
+  static void run( const ValueView< ValueType , DeviceTPI > & dst ,
+                   const ValueType & src )
+  { *dst = src ; }
 
-  static std::string name()
-  {
-    std::string tmp ;
-    tmp.append( "UnitTestMDArrayView< Kokkos::" );
-    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
-    tmp.append( " >" );
-    return tmp ;
-  }
-
-  void error( const char * msg ) const
-  {
-    std::string tmp = name();
-    tmp.append( msg );
-    throw std::runtime_error( tmp );
-  }
-
-  UnitTestMDArrayDeepCopy()
-  {
-    enum { dN = 1000 , iN = 2000 };
-
-    dView dx , dy ;
-    iView ix , iy ;
-
-    dx = Kokkos::create_labeled_mdarray< dView > ( "dx" , dN );
-    dy = Kokkos::create_labeled_mdarray< dView > ( "dy" , dN );
-    ix = Kokkos::create_labeled_mdarray< iView > ( "ix" , iN );
-    iy = Kokkos::create_labeled_mdarray< iView > ( "iy" , iN );
-
-    for ( size_t i = 0 ; i < dN ; ++i ) { dx(i) = i ; }
-    for ( size_t i = 0 ; i < iN ; ++i ) { ix(i) = iN - i ; }
-
-    Kokkos::deep_copy( dy , dx );
-    Kokkos::deep_copy( iy , ix );
-  
-    for ( size_t i = 0 ; i < dN ; ++i ) {
-      if ( dx(i) != dy(i) ) error( " FAILED double copy" );
-    }
-    for ( size_t i = 0 ; i < iN ; ++i ) {
-      if ( ix(i) != iy(i) ) error( " FAILED int copy" );
-    }
-  }
+  static void run( ValueType & dst ,
+                   const ValueView< ValueType , DeviceTPI >  & src )
+  { dst = *src ; }
 };
 
-}
+} // namespace Kokkos
 
-/*--------------------------------------------------------------------------*/
+#endif /* KOKKOS_DEVICETPI_MDARRAYDEEPCOPY_HPP */
+
 
