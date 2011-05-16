@@ -74,16 +74,28 @@ void PCDStrategy::buildTimers()
       opsTimer_ = TimeMonitor::getNewTimer("PCDStrategy::initializePrec buildOps");
 }
 
-PCDStrategy::PCDStrategy() : massInverseType_(Diagonal)
+PCDStrategy::PCDStrategy() : massInverseType_(Diagonal), schurCompOrdering_(false)
 { 
+   pcdParams_ = Teuchos::rcp(new Teuchos::ParameterList);
+   lapParams_ = Teuchos::rcp(new Teuchos::ParameterList);
+
+   lapParams_->set("Name",getPressureLaplaceString());
+   pcdParams_->set("Name",getPCDString());
+
    buildTimers();
 }
 
 //! Constructor to set the inverse factories.
 PCDStrategy::PCDStrategy(const Teuchos::RCP<InverseFactory> & invFA,
                                              const Teuchos::RCP<InverseFactory> & invS)
-   : invFactoryF_(invFA), invFactoryS_(invS), massInverseType_(Diagonal)
+   : invFactoryF_(invFA), invFactoryS_(invS), massInverseType_(Diagonal), schurCompOrdering_(false)
 {
+   pcdParams_ = Teuchos::rcp(new Teuchos::ParameterList);
+   lapParams_ = Teuchos::rcp(new Teuchos::ParameterList);
+
+   lapParams_->set("Name",getPressureLaplaceString());
+   pcdParams_->set("Name",getPCDString());
+
    buildTimers();
 }
 
@@ -163,7 +175,8 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
    {
       Teuchos::TimeMonitor timer(*invSTimer_,true);
 
-      LinearOp laplace = getRequestHandler()->request<Teko::LinearOp>(presLapStr);
+      // LinearOp laplace = getRequestHandler()->request<Teko::LinearOp>(presLapStr);
+      LinearOp laplace = getRequestHandler()->request<Teko::LinearOp>(RequestMesg(lapParams_));
       TEUCHOS_ASSERT(laplace!=Teuchos::null);
       if(invLaplace==Teuchos::null)
          invLaplace = buildInverse(*invFactoryS_,laplace);
@@ -178,10 +191,16 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
       Teuchos::TimeMonitor timer(*opsTimer_,true);
 
       // build Schur-complement
-      LinearOp pcd = getRequestHandler()->request<Teko::LinearOp>(pcdStr);
+      // LinearOp pcd = getRequestHandler()->request<Teko::LinearOp>(pcdStr);
+      LinearOp pcd = getRequestHandler()->request<Teko::LinearOp>(RequestMesg(pcdParams_));
       TEUCHOS_ASSERT(pcd!=Teuchos::null);
       LinearOp invL = invLaplace;
-      LinearOp invS = multiply(iQp,pcd,invL);
+ 
+      LinearOp invS;
+      if(schurCompOrdering_==false)
+         invS = multiply(iQp,pcd,invL);
+      else
+         invS = multiply(invL,pcd,iQp);
 
       state.addLinearOp("invS",invS);
    }
@@ -215,7 +234,7 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
   * \note The default implementation does nothing.
   */
 void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
-                                                        const InverseLibrary & invLib)
+                                              const InverseLibrary & invLib)
 {
    Teko_DEBUG_SCOPE("PCDStrategy::initializeFromParameterList",10);
 
@@ -235,10 +254,34 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
       // build inverse types
       massInverseType_ = getDiagonalType(massInverseStr);
    }
+   if(pl.isParameter("Flip Schur Complement Ordering"))
+      schurCompOrdering_ = pl.get<bool>("Flip Schur Complement Ordering");
 
    // set defaults as needed
    if(invFStr=="") invFStr = invStr;
    if(invSStr=="") invSStr = invStr;
+
+   // read pressure laplace parameters
+   if(pl.isSublist("Pressure Laplace Parameters"))
+      lapParams_ = Teuchos::rcp(new Teuchos::ParameterList(pl.sublist("Pressure Laplace Parameters")));
+   else
+      lapParams_ = Teuchos::rcp(new Teuchos::ParameterList);
+
+   // read pcd operator parameters
+   if(pl.isSublist("Pressure Convection Diffusion Parameters"))
+      pcdParams_ = Teuchos::rcp(new Teuchos::ParameterList(pl.sublist("Pressure Convection Diffusion Parameters")));
+   else
+      pcdParams_ = Teuchos::rcp(new Teuchos::ParameterList);
+
+   // The user should not have already added this parameters
+   TEST_FOR_EXCEPTION(lapParams_->isParameter("Name"),std::logic_error,
+                   "Teko: Parameter \"Name\" is not allowed in the sublist \""+lapParams_->name()+"\"");
+   TEST_FOR_EXCEPTION(lapParams_->isParameter("Tag"),std::logic_error,
+                   "Teko: Parameter \"Tag\" is not allowed in the sublist \""+lapParams_->name()+"\"");
+   TEST_FOR_EXCEPTION(pcdParams_->isParameter("Name"),std::logic_error,
+                   "Teko: Parameter \"Name\" is not allowed in the sublist \""+pcdParams_->name()+"\"");
+   TEST_FOR_EXCEPTION(pcdParams_->isParameter("Tag"),std::logic_error,
+                   "Teko: Parameter \"Tag\" is not allowed in the sublist \""+pcdParams_->name()+"\"");
 
    Teko_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "PCD Strategy Parameters: " << std::endl;
@@ -258,48 +301,31 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
    else
       invFactoryS_ = invLib.getInverseFactory(invSStr);
 
+   lapParams_->set("Name",getPressureLaplaceString());
+   pcdParams_->set("Name",getPCDString());
+
    // setup a request for required operators
    getRequestHandler()->preRequest<Teko::LinearOp>(getPressureMassString());
-   getRequestHandler()->preRequest<Teko::LinearOp>(getPCDString());
-   getRequestHandler()->preRequest<Teko::LinearOp>(getPressureLaplaceString());
+   // getRequestHandler()->preRequest<Teko::LinearOp>(getPCDString());
+   // getRequestHandler()->preRequest<Teko::LinearOp>(getPressureLaplaceString());
+   getRequestHandler()->preRequest<Teko::LinearOp>(Teko::RequestMesg(lapParams_));
+   getRequestHandler()->preRequest<Teko::LinearOp>(Teko::RequestMesg(pcdParams_));
 }
 
 //! For assiting in construction of the preconditioner
 Teuchos::RCP<Teuchos::ParameterList> PCDStrategy::getRequestedParameters() const 
 {
-   Teko_DEBUG_SCOPE("PCDStrategy::getRequestedParameters",10);
-   Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
+   TEUCHOS_ASSERT(false);
 
-   // grab parameters from F solver
-   RCP<Teuchos::ParameterList> fList = invFactoryF_->getRequestedParameters();
-   if(fList!=Teuchos::null) {
-      Teuchos::ParameterList::ConstIterator itr;
-      for(itr=fList->begin();itr!=fList->end();++itr)
-         pl->setEntry(itr->first,itr->second);
-   }
-
-   // grab parameters from S solver
-   RCP<Teuchos::ParameterList> sList = invFactoryS_->getRequestedParameters();
-   if(sList!=Teuchos::null) {
-      Teuchos::ParameterList::ConstIterator itr;
-      for(itr=sList->begin();itr!=sList->end();++itr)
-         pl->setEntry(itr->first,itr->second);
-   }
-
-   return pl;
+   return Teuchos::null;
 }
 
 //! For assiting in construction of the preconditioner
 bool PCDStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl) 
 {
-   Teko_DEBUG_SCOPE("PCDStrategy::updateRequestedParameters",10);
-   bool result = true;
- 
-   // update requested parameters in solvers
-   result &= invFactoryF_->updateRequestedParameters(pl);
-   result &= invFactoryS_->updateRequestedParameters(pl);
+   TEUCHOS_ASSERT(false);
 
-   return result;
+   return true;
 }
 
 } // end namespace NS
