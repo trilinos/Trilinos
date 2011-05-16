@@ -1,6 +1,8 @@
 
 #include <Kokkos_DeviceHost.hpp>
 #include <Kokkos_DeviceTPI.hpp>
+#include <Kokkos_DeviceCuda.hpp>
+
 #include <Kokkos_ValueView.hpp>
 #include <Kokkos_MultiVectorView.hpp>
 #include <Kokkos_MDArrayView.hpp>

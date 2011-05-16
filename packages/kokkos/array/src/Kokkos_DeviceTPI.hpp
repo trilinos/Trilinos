@@ -62,8 +62,6 @@ private:
 
   static void deallocate_memory( void * );
 
-  static bool launching_kernel();
-
   static unsigned m_launching_kernel ;
 
 public:

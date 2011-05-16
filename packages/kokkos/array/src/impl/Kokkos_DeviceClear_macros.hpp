@@ -42,9 +42,7 @@
     ! defined( KOKKOS_MACRO_HOST_FUNCTION ) || \
     ! defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
-
-#error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
+#error "Including <impl/Kokkos_DeviceClear_Macros.hp> without macros defined"
 
 #else
 

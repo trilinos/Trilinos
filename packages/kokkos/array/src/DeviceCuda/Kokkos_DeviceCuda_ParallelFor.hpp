@@ -37,61 +37,81 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_VALUEDEEPCOPY_HPP
-#define KOKKOS_VALUEDEEPCOPY_HPP
-
-#include <Kokkos_ValueView.hpp>
+#ifndef KOKKOS_DEVICECUDA_PARALLELFOR_HPP
+#define KOKKOS_DEVICECUDA_PARALLELFOR_HPP
 
 namespace Kokkos {
+namespace {
 
-template< typename ValueType , class DeviceType >
-class ValueDeepCopy ;
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
-inline
-void deep_copy( const ValueView<ValueType,DeviceType> & dst ,
-                const ValueType & src )
+template< class ParallelForDriver >
+__global__
+void cuda_parallel_for_driver()
 {
-  ValueDeepCopy<ValueType,DeviceType>::run( dst , src );
+  ParallelForDriver::run_on_device();
 }
 
-template< typename ValueType , class DeviceType >
-inline
-void deep_copy( ValueType & dst ,
-                const ValueView<ValueType,DeviceType> & src )
-{
-  ValueDeepCopy<ValueType,DeviceType>::run( dst , src );
-}
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-template< typename ValueType >
-class ValueDeepCopy< ValueType , DeviceHost > {
-public:
-  static void run( const ValueView< ValueType , DeviceHost > & dst ,
-                   const ValueType & src )
-  { *dst = src ; }
-
-  static void run( ValueType & dst ,
-                   const ValueView< ValueType , DeviceHost > & src )
-  { dst = *src ; }
 };
 
-}
+template< class FunctorType >
+class ParallelFor< FunctorType , DeviceCuda > {
+public:
+  typedef DeviceCuda             device_type ;
+  typedef device_type::size_type size_type ;
+  typedef ParallelFor< FunctorTYpe , DeviceCuda > self_type ;
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+  const FunctorType m_work_functor ;
+  const size_type   m_work_count ;
 
-#if defined( KOKKOS_DEVICE_TPI )
-#include <DeviceTPI/Kokkos_DeviceTPI_ValueDeepCopy.hpp>
-#endif
+  ParallelFor( const size_type work_count , const FunctorType & functor )
+    : m_work_functor( functor )
+    , m_work_count( work_count )
+    {}
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+  __device__
+  void run_on_device()
+  {
+    const self_type * const self = functor();
+    const size_type work_stride = blockDim.x * blockDim.y * gridDim.x ;
 
-#endif /* KOKKOS_VALUEDEEPCOPY_HPP */
+    size_type iwork = threadIdx.x + blockDim.x * (
+                      threadIdx.y + blockDim.y * blockIdx.x );
 
+    for ( ; iwork < self->m_work_count ; iwork += work_stride ) {
+      self->m_functor( iwork );
+    }
+  }
+
+
+  static void run( const size_type     work_count ,
+                   const FunctorType & work_functor )
+  {
+    // Make a copy just like other devices will have to.
+
+    device_type::set_dispatch_functor();
+
+    const self_type tmp( work_count , work_functor );
+
+    device_type::clear_dispatch_functor();
+
+    dim3 block( DeviceCuda::Traits::WarpSize , 
+                device_type::parallel_for_warp_count() , 1 );
+
+    dim3 grid( device_type::maximum_grid_count() , 1 , 1 );
+
+    // Reduce grid count until just enough blocks for the work.
+
+    while ( work_count <= block.x * block.y * ( grid.x >> 1 ) ) {
+      grid.x >>= 1 ; }
+    }
+
+    CudaDevice::load_constant_buffer( this , sizeof(self_type) );
+
+    cuda_parallel_for_driver< self_type > <<< grid , block >>>();
+  }
+};
+
+} // namespace Kokkos
+
+#endif /* KOKKOS_DEVICECUDA_PARALLELFOR_HPP */
 

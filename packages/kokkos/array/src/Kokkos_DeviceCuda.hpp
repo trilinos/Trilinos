@@ -40,11 +40,28 @@
 #ifndef KOKKOS_DEVICECUDA_HPP
 #define KOKKOS_DEVICECUDA_HPP
 
+#if ! defined( __CUDACC__ )
+
+/* Compiled with a non-Cuda compiler */
+
+namespace Kokkos {
+
+class DeviceCuda ;
+
+}
+
+#else
+
+/* Compiled with a Cuda compiler */
+
 #include <iosfwd>
 #include <typeinfo>
 #include <Kokkos_MemoryView.hpp>
 
+
 #define KOKKOS_DEVICE_CUDA  Kokkos::DeviceCuda
+
+#include <impl/Kokkos_DeviceCuda_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -58,9 +75,6 @@ private:
 
   static void deallocate_memory( void * );
 
-  static bool launching_kernel();
-
-  __host__
   static unsigned m_launching_kernel ;
 
 public:
@@ -76,7 +90,8 @@ public:
    */
   template< typename ValueType >
   static
-  __host__ __device__
+  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_FUNCTION
   void clear_memory_view( MemoryView< ValueType , DeviceCuda > & lhs )
     {
 #ifndef __CUDA_ARCH__
@@ -92,7 +107,8 @@ public:
    */
   template< typename ValueType >
   static
-  __host__ __device__
+  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_FUNCTION
   void assign_memory_view(       MemoryView< ValueType , DeviceCuda > & lhs ,
                            const MemoryView< ValueType , DeviceCuda > & rhs )
     {
@@ -143,6 +159,7 @@ public:
   typedef DeviceCuda device_type ;
 
   inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
   __device__
   value_type * ptr_on_device() const { return m_ptr_on_device ; }
 
@@ -163,5 +180,8 @@ public:
 
 } // namespace Kokkos
 
-#endif /* #define KOKKOS_DEVICECUDA_HPP */
+#include <impl/Kokkos_DeviceClear_macros.hpp>
+
+#endif /* defined( __CUDACC__ ) */
+#endif /* #ifndef KOKKOS_DEVICECUDA_HPP */
 

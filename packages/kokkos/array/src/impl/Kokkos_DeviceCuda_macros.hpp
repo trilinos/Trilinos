@@ -37,20 +37,20 @@
  *************************************************************************
  */
 
-#if ! defined( KOKKOS_DEVICE_HOST ) || \
+#if ! defined( KOKKOS_DEVICE_CUDA ) || \
     defined( KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION ) || \
     defined( KOKKOS_MACRO_DEVICE ) || \
     defined( KOKKOS_MACRO_HOST_FUNCTION ) || \
     defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
-#error "Including <impl/Kokkos_DeviceHost_macros.hpp> with macros already defined"
+#error "Including <impl/Kokkos_DeviceCuda_macros.hpp> with macros already defined"
 
 #else
 
 #define KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION /* */
-#define KOKKOS_MACRO_DEVICE           DeviceHost
-#define KOKKOS_MACRO_HOST_FUNCTION    /* */
-#define KOKKOS_MACRO_DEVICE_FUNCTION  /* */
+#define KOKKOS_MACRO_DEVICE           DeviceCuda
+#define KOKKOS_MACRO_HOST_FUNCTION    __host__
+#define KOKKOS_MACRO_DEVICE_FUNCTION  __device__
 
 #endif
 

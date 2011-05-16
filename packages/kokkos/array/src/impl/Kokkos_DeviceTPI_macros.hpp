@@ -43,7 +43,7 @@
     defined( KOKKOS_MACRO_HOST_FUNCTION ) || \
     defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
-#error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
+#error "Including <impl/Kokkos_DeviceTPI.hpp> with macros already defined"
 
 #else
 
