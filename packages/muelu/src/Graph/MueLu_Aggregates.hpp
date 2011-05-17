@@ -99,8 +99,10 @@ namespace MueLu {
        int size = procWinner.size();
        for (int k = 0; k < size; ++k ) {
          LO myAgg = vertex2AggId[k];
-         if (procWinner[k] == myPid) aggToRowMap[ myAgg ][ numDofs[myAgg] ] = k;
-         ++(numDofs[myAgg]);
+         if (procWinner[k] == myPid) {
+           aggToRowMap[ myAgg ][ numDofs[myAgg] ] = k;
+           ++(numDofs[myAgg]);
+         }
        }
 
      } //AggregateToRowMap
