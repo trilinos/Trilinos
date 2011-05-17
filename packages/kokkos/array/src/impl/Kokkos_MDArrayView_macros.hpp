@@ -37,12 +37,10 @@
  *************************************************************************
  */
 
-#if ! defined(KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION) || \
+#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_HOST_FUNCTION)           || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)
-
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)         || \
+    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
 
@@ -66,32 +64,31 @@ public:
 
   /** \brief  Query rank of the array */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type rank() const { return m_map.rank(); }
 
   /** \brief  Query dimension of the given ordinate of the array */
   template < typename iType >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension( const iType & rank_ordinate ) const
   { return m_map.dimension( rank_ordinate ); }
 
   template < typename iType >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   void dimensions( iType * const dims ) const
   { m_map.dimensions( dims ); }
 
   /** \brief  Query rank of the array */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type size() const { return m_map.size(); }
 
   /*------------------------------------------------------------------*/
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
   /** \brief  Because memory is contiguous this is exposed */
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -178,17 +175,17 @@ public:
   value_type & operator()( const iTypeP & iP ) const
   { return m_memory.ptr_on_device()[ m_map.offset(iP) ]; }
 
+#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MDArrayView() : m_memory(), m_map() {}
 
   /** \brief  Construct a view of the array */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MDArrayView( const MDArrayView & rhs )
     : m_memory(), m_map( rhs.m_map )
     { device_type::assign_memory_view( m_memory , rhs.m_memory); }
@@ -198,8 +195,7 @@ public:
    *          then allocated memory is deallocated.
    */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MDArrayView & operator = ( const MDArrayView & rhs )
     {
       device_type::assign_memory_view( m_memory , rhs.m_memory );
@@ -211,8 +207,7 @@ public:
    *           If the last view then allocated memory is deallocated.
    */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ~MDArrayView() {}
 
   /*------------------------------------------------------------------*/

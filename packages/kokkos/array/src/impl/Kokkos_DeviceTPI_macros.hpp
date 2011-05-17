@@ -38,19 +38,19 @@
  */
 
 #if ! defined( KOKKOS_DEVICE_TPI ) || \
-    defined( KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION ) || \
+    defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
     defined( KOKKOS_MACRO_DEVICE ) || \
-    defined( KOKKOS_MACRO_HOST_FUNCTION ) || \
-    defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+    defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
+    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
 
 #error "Including <impl/Kokkos_DeviceTPI.hpp> with macros already defined"
 
 #else
 
-#define KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION /* */
-#define KOKKOS_MACRO_DEVICE           DeviceTPI
-#define KOKKOS_MACRO_HOST_FUNCTION    /* */
-#define KOKKOS_MACRO_DEVICE_FUNCTION  /* */
+#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
+#define KOKKOS_MACRO_DEVICE                       DeviceTPI
+#define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
+#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
 
 #endif
 

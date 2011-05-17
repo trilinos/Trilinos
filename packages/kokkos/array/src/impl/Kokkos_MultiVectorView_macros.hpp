@@ -37,14 +37,12 @@
  *************************************************************************
  */
 
-#if ! defined(KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION) || \
+#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_HOST_FUNCTION)           || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)         || \
+    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
-
-#error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
+#error "Including <Kokkos_MultiVectorView_macros.hpp> without macros defined"
 
 #else
 
@@ -63,14 +61,12 @@ public:
   /*------------------------------------------------------------------*/
   /** \brief  Query length of vectors */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type length() const { return m_length ; }
   
   /** \brief  Query count of vectors */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type count()  const { return m_count ; }
   
   /*------------------------------------------------------------------*/
@@ -88,15 +84,13 @@ public:
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVectorView()
     : m_memory(), m_ptr_on_device(0), m_length(0), m_count(0) {}
 
   /** \brief  Construct a view of the array */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVectorView( const MultiVectorView & rhs )
     : m_memory()
     , m_ptr_on_device( rhs.m_ptr_on_device)
@@ -109,8 +103,7 @@ public:
    *          then allocated memory is deallocated.
    */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVectorView & operator = ( const MultiVectorView & rhs )
     {
       device_type::assign_memory_view( m_memory , rhs.m_memory );
@@ -124,8 +117,7 @@ public:
    *           If the last view then allocated memory is deallocated.
    */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ~MultiVectorView()
     {
       device_type::clear_memory_view( m_memory );
@@ -137,8 +129,7 @@ public:
   /*------------------------------------------------------------------*/
   /* \brief  Construct a view to a range of vectors */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVectorView( const MultiVectorView & rhs , size_type iBeg ,
                                                  size_type iEnd )
     : m_memory()
@@ -156,8 +147,7 @@ public:
     }
 
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVectorView( const MultiVectorView & rhs , size_type iBeg )
     : m_memory()
     , m_ptr_on_device( iBeg < rhs.m_count

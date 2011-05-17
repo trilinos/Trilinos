@@ -37,14 +37,12 @@
  *************************************************************************
  */
 
-#if ! defined(KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION) || \
+#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_HOST_FUNCTION)           || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)         || \
+    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
-
-#error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
+#error "Including <Kokkos_ValueView_macros.hpp> without macros defined"
 
 #else
 
@@ -69,14 +67,12 @@ public:
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ValueView() : m_memory() {}
 
   /** \brief  Construct a view of the array */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ValueView( const ValueView & rhs )
     : m_memory()
     { device_type::assign_memory_view( m_memory , rhs.m_memory ); }
@@ -86,8 +82,7 @@ public:
    *          then allocated memory is deallocated.
    */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ValueView & operator = ( const ValueView & rhs )
     { device_type::assign_memory_view( m_memory , rhs.m_memory ); return *this ; }
   

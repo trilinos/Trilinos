@@ -37,12 +37,10 @@
  *************************************************************************
  */
 
-#if ! defined(KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION) || \
+#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_HOST_FUNCTION)           || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)
-
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)         || \
+    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including impl/Kokkos_MDArrayDeepCopy_macros.hpp without macros defined"
 
