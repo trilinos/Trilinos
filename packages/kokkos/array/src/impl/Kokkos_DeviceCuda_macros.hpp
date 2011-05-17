@@ -41,16 +41,32 @@
     defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
     defined( KOKKOS_MACRO_DEVICE ) || \
     defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
-    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION ) || \
+    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
 
 #error "Including <impl/Kokkos_DeviceCuda_macros.hpp> with macros already defined"
 
-#else
+#elif defined( __CUDACC__ )
+
+/*  If compiling with Cuda compiler
+ *  then must clarify what functions are only available on the device
+ *  versus available on both the device and host.
+ */
 
 #define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
 #define KOKKOS_MACRO_DEVICE                      DeviceCuda
 #define KOKKOS_MACRO_DEVICE_FUNCTION             __device__
 #define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION    __device__ __host_
+
+#else
+
+/*  If not compiling with Cuda compiler
+ *  then pure-device functions are not available
+ */
+
+#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
+#define KOKKOS_MACRO_DEVICE                      DeviceCuda
+/* #define KOKKOS_MACRO_DEVICE_FUNCTION */
+#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION      /* */
 
 #endif
 

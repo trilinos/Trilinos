@@ -39,7 +39,6 @@
 
 #if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)         || \
     ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <Kokkos_MultiVectorView_macros.hpp> without macros defined"
@@ -70,6 +69,9 @@ public:
   size_type count()  const { return m_count ; }
   
   /*------------------------------------------------------------------*/
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+
   /** \brief  Query value */
   template< typename iTypeP , typename iTypeV >
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -80,6 +82,8 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator()( const iTypeP & iP ) const
     { return m_ptr_on_device[ iP ]; }
+
+#endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */

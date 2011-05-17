@@ -39,7 +39,6 @@
 
 #if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)         || \
     ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <Kokkos_ValueView_macros.hpp> without macros defined"
@@ -58,11 +57,16 @@ public:
   typedef KOKKOS_MACRO_DEVICE device_type ;
 
   /*------------------------------------------------------------------*/
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+
   /** \brief  Access value */
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator* () const 
   { return * m_memory.ptr_on_device(); }
+
+#endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
@@ -93,6 +97,9 @@ public:
     { device_type::clear_memory_view( m_memory ); }
 
   /*------------------------------------------------------------------*/
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+
   /** \brief  Allow the ValueView to be a parallel reduce
    *          'finalize functor' that assigns the reduced value
    *          on the device.
@@ -101,6 +108,8 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( const value_type & rhs ) const
     { * m_memory.ptr_on_device() = rhs ; }
+
+#endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
 
 private:
 

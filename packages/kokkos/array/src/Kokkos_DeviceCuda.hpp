@@ -40,24 +40,11 @@
 #ifndef KOKKOS_DEVICECUDA_HPP
 #define KOKKOS_DEVICECUDA_HPP
 
-#if ! defined( __CUDACC__ )
-
-/* Compiled with a non-Cuda compiler */
-
-namespace Kokkos {
-
-class DeviceCuda ;
-
-}
-
-#else
-
-/* Compiled with a Cuda compiler */
-
 #include <iosfwd>
 #include <typeinfo>
 #include <Kokkos_MemoryView.hpp>
-
+#include <Kokkos_MDArrayIndexMaps.hpp>
+#include <impl/Kokkos_ViewTracker.hpp>
 
 #define KOKKOS_DEVICE_CUDA  Kokkos::DeviceCuda
 
@@ -80,8 +67,8 @@ private:
 public:
 
   /** \brief  On the cuda device use unsigned int for indexing */
-  typedef unsigned int  size_type ;
-  typedef IndexMapLeft  default_mdarray_map ;
+  typedef unsigned int         size_type ;
+  typedef MDArrayIndexMapLeft  default_mdarray_map ;
 
   /*--------------------------------*/
   /** \brief  Clear the memory view setting it to the NULL view.
@@ -90,8 +77,7 @@ public:
    */
   template< typename ValueType >
   static
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   void clear_memory_view( MemoryView< ValueType , DeviceCuda > & lhs )
     {
 #ifndef __CUDA_ARCH__
@@ -107,8 +93,7 @@ public:
    */
   template< typename ValueType >
   static
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   void assign_memory_view(       MemoryView< ValueType , DeviceCuda > & lhs ,
                            const MemoryView< ValueType , DeviceCuda > & rhs )
     {
@@ -125,7 +110,6 @@ public:
   /** \brief  Allocate memory to be viewed by 'lhs' */
   template< typename ValueType >
   static
-  __host__
   void allocate_memory_view( MemoryView< ValueType , DeviceCuda > & lhs ,
                              size_t count , const std::string & label )
     {
@@ -140,48 +124,12 @@ public:
   /*--------------------------------*/
 };
 
-/*--------------------------------------------------------------------------*/
-
-template< typename ValueType >
-class MemoryView< ValueType , DeviceCuda > {
-private:
-
-  friend class DeviceCuda ;
-
-  Impl::MemoryViewTracker m_tracker ;
-  ValueType             * m_ptr_on_device ;
-
-  MemoryView( const MemoryView & rhs );
-  MemoryView & operator = ( const MemoryView & rhs );
-
-public:
-
-  typedef DeviceCuda device_type ;
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  __device__
-  value_type * ptr_on_device() const { return m_ptr_on_device ; }
-
-  /** \brief  Construct a NULL view */
-  inline
-  __host__ __device__
-  MemoryView() : m_tracker(), m_ptr_on_device(0) {}
-
-  /**  \brief  Destroy this view of the array.
-   *           If the last view then allocated memory is deallocated.
-   */
-  inline
-  __host__ __device__
-  ~MemoryView() { device_type::clear_memory_view( *this ); }
-};
-
-/*--------------------------------------------------------------------------*/
-
 } // namespace Kokkos
 
+/*--------------------------------------------------------------------------*/
+
+#include <impl/Kokkos_MemoryView_macros.hpp>
 #include <impl/Kokkos_DeviceClear_macros.hpp>
 
-#endif /* defined( __CUDACC__ ) */
 #endif /* #ifndef KOKKOS_DEVICECUDA_HPP */
 

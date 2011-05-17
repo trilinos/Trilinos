@@ -38,25 +38,40 @@
 
 //----------------------------------------------------------------------------
 
-int main()
+namespace {
+
+void test_device_host()
+{
+  UnitTestDeviceMemoryManagement< Kokkos::DeviceHost >();
+  UnitTestValueView<       Kokkos::DeviceHost >();
+  UnitTestMultiVectorView< Kokkos::DeviceHost >();
+  UnitTestMDArrayView<     Kokkos::DeviceHost >();
+  UnitTestMDArrayDeepCopy< Kokkos::DeviceHost >();
+
+  UnitTestReduce< long ,   Kokkos::DeviceHost >( 1000000 );
+  UnitTestReduce< double , Kokkos::DeviceHost >( 1000000 );
+}
+
+void test_device_tpi()
 {
   Kokkos::DeviceTPI::initialize( 4 );
 
-  UnitTestDeviceMemoryManagement< Kokkos::DeviceHost >();
   UnitTestDeviceMemoryManagement< Kokkos::DeviceTPI >();
-  UnitTestValueView< Kokkos::DeviceHost >();
-  UnitTestValueView< Kokkos::DeviceTPI >();
-  UnitTestMultiVectorView< Kokkos::DeviceHost >();
+  UnitTestValueView<       Kokkos::DeviceTPI >();
   UnitTestMultiVectorView< Kokkos::DeviceTPI >();
-  UnitTestMDArrayView< Kokkos::DeviceHost >();
-  UnitTestMDArrayView< Kokkos::DeviceTPI >();
-  UnitTestMDArrayDeepCopy< Kokkos::DeviceHost >();
+  UnitTestMDArrayView<     Kokkos::DeviceTPI >();
   UnitTestMDArrayDeepCopy< Kokkos::DeviceTPI >();
 
-  UnitTestReduce< long , Kokkos::DeviceHost >( 1000000 );
-  UnitTestReduce< double , Kokkos::DeviceHost >( 1000000 );
-  UnitTestReduce< long , Kokkos::DeviceTPI >( 1000000 );
+  UnitTestReduce< long ,   Kokkos::DeviceTPI >( 1000000 );
   UnitTestReduce< double , Kokkos::DeviceTPI >( 1000000 );
+}
+
+}
+
+int main()
+{
+  test_device_host();
+  test_device_tpi();
 
   return 0 ;
 }

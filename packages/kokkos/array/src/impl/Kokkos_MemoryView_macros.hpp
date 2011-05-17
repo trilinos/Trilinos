@@ -39,7 +39,6 @@
 
 #if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)         || \
     ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
 #error "Including <impl/Kokkos_MemoryView_macros.hpp> without macros defined"
@@ -47,13 +46,12 @@
 #else
 
 namespace Kokkos {
-namespace Impl {
 
 template< typename ValueType >
 class MemoryView< ValueType , KOKKOS_MACRO_DEVICE > {
 private:
 
-  MemoryViewTracker m_tracker ;
+  Impl::ViewTracker m_tracker ;
   ValueType       * m_ptr_on_device ;
 
   friend class KOKKOS_MACRO_DEVICE ;
@@ -66,6 +64,7 @@ private:
 
 public:
 
+  typedef ValueType           value_type ;
   typedef KOKKOS_MACRO_DEVICE device_type ;
 
   /*------------------------------------------------------------------*/
@@ -99,12 +98,18 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ~MemoryView()
   { device_type::clear_memory_view( *this ); }
+
+  /*------------------------------------------------------------------*/
+  /** \brief  On the host for testing purposes only
+   *          can get a count of number of views on the host.
+   */
+  size_t test_support_view_count() const
+    { return m_tracker.test_support_view_count(); }
 };
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
-} // namespace Impl
 } // namespace Kokkos
 
 #endif
