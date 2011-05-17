@@ -46,6 +46,12 @@ echo "
 -DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
 " > INTEL_11064_SERIAL_DEBUG.config
 
+echo "
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/intel-12.191-options.cmake
+-DCMAKE_BUILD_TYPE:STRING=DEBUG
+-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
+" > INTEL_12191_SERIAL_DEBUG.config
+
 
 #
 # Load up the list of extra repos based on what is present:
