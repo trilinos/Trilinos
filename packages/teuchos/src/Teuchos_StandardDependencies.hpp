@@ -379,7 +379,7 @@ private:
  * \relates StringVisualDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringVisualDependency>{
+class DummyObjectGetter<StringVisualDependency>{
 
 public:
 
@@ -481,7 +481,7 @@ protected:
  * \relates BoolVisualDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolVisualDependency>{
+class DummyObjectGetter<BoolVisualDependency>{
 
 public:
 
@@ -607,7 +607,7 @@ private:
  * \relates ConditionVisualDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<ConditionVisualDependency>{
+class DummyObjectGetter<ConditionVisualDependency>{
 
 public:
 
@@ -644,7 +644,7 @@ public:
  * regarding the XML representation of this Dependency.
  */
 template <class T>
-class TEUCHOS_LIB_DLL_EXPORT NumberVisualDependency : public VisualDependency{
+class NumberVisualDependency : public VisualDependency{
 
 public:
 
@@ -819,7 +819,7 @@ void NumberVisualDependency<T>::validateDep() const{
  * \relates NumberVisualDependency
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<NumberVisualDependency<T> >{
+class DummyObjectGetter<NumberVisualDependency<T> >{
 
 public:
 
@@ -867,7 +867,7 @@ RCP<NumberVisualDependency<T> >
  *
  */
 template<class DependeeType, class DependentType>
-  class TEUCHOS_LIB_DLL_EXPORT NumberArrayLengthDependency : public Dependency{
+class NumberArrayLengthDependency : public Dependency{
 
 public:
 
@@ -1079,7 +1079,7 @@ NumberArrayLengthDependency<DependeeType, DependentType>::validateDep()
  * \relates NumberArrayLengthDependency
  */
 template<class DependeeType, class DependentType>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >{
+class DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >{
 
 public:
 
@@ -1260,7 +1260,7 @@ private:
  * \relates StringValidatorDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringValidatorDependency>{
+class DummyObjectGetter<StringValidatorDependency>{
 
 public:
 
@@ -1387,7 +1387,7 @@ private:
  * \relates BoolValidatorDependency
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolValidatorDependency>{
+class DummyObjectGetter<BoolValidatorDependency>{
 
 public:
 
@@ -1431,7 +1431,7 @@ public:
  * regarding the XML representation of this Dependency.
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT RangeValidatorDependency : public ValidatorDependency{
+class RangeValidatorDependency : public ValidatorDependency{
 
 public:
 
@@ -1676,7 +1676,7 @@ void RangeValidatorDependency<T>::setDependentsToValidator(
  * \relates RangeValidatorDependency
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<RangeValidatorDependency<T> >{
+class DummyObjectGetter<RangeValidatorDependency<T> >{
 
 public:
 
