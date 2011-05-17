@@ -260,8 +260,10 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     CACHE STRING
     "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
 
-  SET(${PROJECT_NAME}_EXTRAREPOS_FILE
-    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+  ADVANCED_SET(${PROJECT_NAME}_EXTRAREPOS_FILE
+    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}"
+    CACHE FILENAME
+    "File contining the list of extra repositories contining add-on packages to process")
 
   ADVANCED_SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES
     FALSE CACHE BOOL

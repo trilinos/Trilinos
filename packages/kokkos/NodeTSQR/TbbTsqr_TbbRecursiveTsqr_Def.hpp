@@ -450,8 +450,8 @@ namespace TSQR {
     template< class LocalOrdinal, class Scalar >
     TbbRecursiveTsqr< LocalOrdinal, Scalar >::
     TbbRecursiveTsqr (const size_t num_cores,
-		      const size_t cache_block_size) 
-      : seq_ (cache_block_size), ncores_ (1)
+		      const size_t cache_size_hint)
+      : seq_ (cache_size_hint), ncores_ (1)
     {
       if (num_cores < 1)
 	ncores_ = 1; // default is no parallelism

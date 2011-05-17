@@ -58,15 +58,14 @@
 namespace TSQR {
   namespace Test {
 
-
-    template< class Ordinal, class Scalar >
+    template<class Ordinal, class Scalar>
     static Ordinal
-    lworkQueryLapackQr (LAPACK< Ordinal, Scalar >& lapack,
+    lworkQueryLapackQr (LAPACK<Ordinal, Scalar>& lapack,
 			const Ordinal nrows,
 			const Ordinal ncols,
 			const Ordinal lda)
     {
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
       using std::ostringstream;
       using std::endl;
 
@@ -105,27 +104,27 @@ namespace TSQR {
       // just to be "bulletproof" and also to show how to do the
       // checks for later reference.
       const magnitude_type lwork_geqrf_test = 
-	static_cast< magnitude_type > (static_cast< Ordinal > (ScalarTraits< Scalar >::abs (d_lwork_geqrf)));
-      if (lwork_geqrf_test != ScalarTraits< Scalar >::abs (d_lwork_geqrf))
+	static_cast< magnitude_type > (static_cast<Ordinal> (ScalarTraits<Scalar>::abs (d_lwork_geqrf)));
+      if (lwork_geqrf_test != ScalarTraits<Scalar>::abs (d_lwork_geqrf))
 	{
 	  ostringstream os;
 	  os << "LAPACK _GEQRF workspace query returned a result, " 
 	     << d_lwork_geqrf << ", bigger than the max Ordinal value, " 
-	     << std::numeric_limits< Ordinal >::max();
+	     << std::numeric_limits<Ordinal>::max();
 	  throw std::range_error (os.str());
 	}
       const Scalar lwork_orgqr_test = 
-	static_cast< magnitude_type > (static_cast< Ordinal > (ScalarTraits< Scalar >::abs ((d_lwork_orgqr))));
-      if (lwork_orgqr_test != ScalarTraits< Scalar >::abs (d_lwork_orgqr))
+	static_cast< magnitude_type > (static_cast<Ordinal> (ScalarTraits<Scalar>::abs ((d_lwork_orgqr))));
+      if (lwork_orgqr_test != ScalarTraits<Scalar>::abs (d_lwork_orgqr))
 	{
 	  ostringstream os;
 	  os << "LAPACK _ORGQR workspace query returned a result, " 
 	     << d_lwork_orgqr << ", bigger than the max Ordinal value, " 
-	     << std::numeric_limits< Ordinal >::max();
+	     << std::numeric_limits<Ordinal>::max();
 	  throw std::range_error (os.str());
 	}
-      return std::max (static_cast< Ordinal > (ScalarTraits< Scalar >::abs (d_lwork_geqrf)),
-		       static_cast< Ordinal > (ScalarTraits< Scalar >::abs (d_lwork_orgqr)));
+      return std::max (static_cast<Ordinal> (ScalarTraits<Scalar>::abs (d_lwork_geqrf)),
+		       static_cast<Ordinal> (ScalarTraits<Scalar>::abs (d_lwork_orgqr)));
     }
 
     /// Test the accuracy of sequential TSQR on an nrows by ncols
@@ -139,7 +138,7 @@ namespace TSQR {
 			   const std::string& shortDatatype,
 			   const Ordinal nrows, 
 			   const Ordinal ncols, 
-			   const size_t cache_block_size,
+			   const size_t cache_size_hint,
 			   const bool contiguous_cache_blocks,
 			   const bool save_matrices,
 			   const std::string& additionalFieldNames,
@@ -148,21 +147,21 @@ namespace TSQR {
 			   const bool human_readable,
 			   const bool b_debug)
     {
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
       using std::cerr;
       using std::endl;
       using std::pair;
       using std::string;
       using std::vector;
 
-      SequentialTsqr< Ordinal, Scalar > actor (cache_block_size);
+      SequentialTsqr< Ordinal, Scalar > actor (cache_size_hint);
       Ordinal numCacheBlocks;
 
       if (b_debug)
 	{
 	  cerr << "Sequential TSQR test problem:" << endl
 	       << "* " << nrows << " x " << ncols << endl
-	       << "* Cache block of " << actor.cache_block_size() << " bytes" << endl;
+	       << "* Cache size hint of " << actor.cache_size_hint() << " bytes" << endl;
 	  if (contiguous_cache_blocks)
 	    cerr << "* Contiguous cache blocks" << endl;
 	}
@@ -171,12 +170,12 @@ namespace TSQR {
       Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
       Matrix< Ordinal, Scalar > Q (nrows, ncols);
       Matrix< Ordinal, Scalar > R (ncols, ncols);
-      if (std::numeric_limits< Scalar >::has_quiet_NaN)
+      if (std::numeric_limits<Scalar>::has_quiet_NaN)
 	{
 	  A.fill (std::numeric_limits< Scalar>::quiet_NaN());
-	  A_copy.fill (std::numeric_limits< Scalar >::quiet_NaN());
-	  Q.fill (std::numeric_limits< Scalar >::quiet_NaN());
-	  R.fill (std::numeric_limits< Scalar >::quiet_NaN());
+	  A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
+	  Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
+	  R.fill (std::numeric_limits<Scalar>::quiet_NaN());
 	}
       const Ordinal lda = nrows;
       const Ordinal ldq = nrows;
@@ -218,8 +217,8 @@ namespace TSQR {
 	  if (b_debug)
 	    {
 	      Matrix< Ordinal, Scalar > A2 (nrows, ncols);
-	      if (std::numeric_limits< Scalar >::has_quiet_NaN)
-		A2.fill (std::numeric_limits< Scalar >::quiet_NaN());
+	      if (std::numeric_limits<Scalar>::has_quiet_NaN)
+		A2.fill (std::numeric_limits<Scalar>::quiet_NaN());
 
 	      actor.un_cache_block (nrows, ncols, A2.get(), A2.lda(), A_copy.get());
 	      if (A == A2)
@@ -311,7 +310,7 @@ namespace TSQR {
 	out << "Sequential cache-blocked TSQR:" << endl
 	    << "Scalar type: " << datatype << endl
 	    << "Matrix dimensions: " << nrows << " by " << ncols << endl
-	    << "Cache block size: " << actor.cache_block_size() << endl
+	    << "Cache size hint in bytes: " << actor.cache_size_hint() << endl
 	    << "Number of cache blocks: " << numCacheBlocks << endl
 	    << "Contiguous cache blocks? " << contiguous_cache_blocks << endl
 	    << "Absolute residual $\\| A - QR \\|_F$: " << results[0] << endl
@@ -328,7 +327,7 @@ namespace TSQR {
 		  << ",scalarType"
 		  << ",numRows"
 		  << ",numCols"
-		  << ",cacheBlockSize"
+		  << ",cacheSizeHint"
 		  << ",contiguousCacheBlocks"
 		  << ",absFrobResid"
 		  << ",absFrobOrthog"
@@ -341,7 +340,7 @@ namespace TSQR {
 	      << "," << datatype
 	      << "," << nrows
 	      << "," << ncols
-	      << "," << actor.cache_block_size()
+	      << "," << actor.cache_size_hint()
 	      << "," << contiguous_cache_blocks 
 	      << "," << results[0]
 	      << "," << results[1]
@@ -357,7 +356,7 @@ namespace TSQR {
     verifySeqTsqr (std::ostream& out,
 		   const int nrows, 
 		   const int ncols, 
-		   const size_t cache_block_size,
+		   const size_t cache_size_hint,
 		   const bool test_complex_arithmetic,
 		   const bool save_matrices,
 		   const bool contiguous_cache_blocks,
@@ -395,7 +394,7 @@ namespace TSQR {
       datatype = "float";
       shortDatatype = "S";
       verifySeqTsqrTemplate (out, normgenS, datatype, shortDatatype, nrows, ncols, 
-			     cache_block_size, contiguous_cache_blocks, 
+			     cache_size_hint, contiguous_cache_blocks, 
 			     save_matrices, additionalFieldNames, additionalData,
 			     printFieldNames, human_readable, b_debug);
       // Fetch the pseudorandom seed from the previous test.
@@ -405,7 +404,7 @@ namespace TSQR {
       datatype = "double";
       shortDatatype = "D";
       verifySeqTsqrTemplate (out, normgenD, datatype, shortDatatype, nrows, ncols, 
-			     cache_block_size, contiguous_cache_blocks, 
+			     cache_size_hint, contiguous_cache_blocks, 
 			     save_matrices, additionalFieldNames, additionalData,
 			     printFieldNames, human_readable, b_debug);
 #ifdef HAVE_TSQR_COMPLEX
@@ -416,7 +415,7 @@ namespace TSQR {
 	  datatype = "complex<float>";
 	  shortDatatype = "C";
 	  verifySeqTsqrTemplate (out, normgenC, datatype, shortDatatype, nrows, ncols, 
-				 cache_block_size, contiguous_cache_blocks, 
+				 cache_size_hint, contiguous_cache_blocks, 
 				 save_matrices, additionalFieldNames, additionalData,
 				 printFieldNames, human_readable, b_debug);
 	  normgenC.getSeed (iseed);
@@ -424,7 +423,7 @@ namespace TSQR {
 	  datatype = "complex<double>";
 	  shortDatatype = "Z";
 	  verifySeqTsqrTemplate (out, normgenZ, datatype, shortDatatype, nrows, ncols, 
-				 cache_block_size, contiguous_cache_blocks, 
+				 cache_size_hint, contiguous_cache_blocks, 
 				 save_matrices, additionalFieldNames, additionalData,
 				 printFieldNames, human_readable, b_debug);
 	}
@@ -450,7 +449,7 @@ namespace TSQR {
 			  const bool human_readable,
 			  const bool b_debug)
     {
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
       using std::ostringstream;
       using std::cerr;
       using std::endl;
@@ -466,12 +465,12 @@ namespace TSQR {
       Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
       Matrix< Ordinal, Scalar > Q (nrows, ncols);
       Matrix< Ordinal, Scalar > R (ncols, ncols);
-      if (std::numeric_limits< Scalar >::has_quiet_NaN)
+      if (std::numeric_limits<Scalar>::has_quiet_NaN)
 	{
 	  A.fill (std::numeric_limits< Scalar>::quiet_NaN());
-	  A_copy.fill (std::numeric_limits< Scalar >::quiet_NaN());
-	  Q.fill (std::numeric_limits< Scalar >::quiet_NaN());
-	  R.fill (std::numeric_limits< Scalar >::quiet_NaN());
+	  A_copy.fill (std::numeric_limits<Scalar>::quiet_NaN());
+	  Q.fill (std::numeric_limits<Scalar>::quiet_NaN());
+	  R.fill (std::numeric_limits<Scalar>::quiet_NaN());
 	}
       const Ordinal lda = nrows;
       const Ordinal ldq = nrows;
@@ -490,8 +489,8 @@ namespace TSQR {
 
       // Now determine the required workspace for the factorization.
       const Ordinal lwork = lworkQueryLapackQr (lapack, nrows, ncols, A_copy.lda());
-      std::vector< Scalar > work (lwork);
-      std::vector< Scalar > tau (ncols);
+      std::vector<Scalar> work (lwork);
+      std::vector<Scalar> tau (ncols);
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
@@ -554,7 +553,7 @@ namespace TSQR {
 		  << ",scalarType"
 		  << ",numRows"
 		  << ",numCols"
-		  << ",cacheBlockSize"
+		  << ",cacheSizeHint"
 		  << ",contiguousCacheBlocks"
 		  << ",absFrobResid"
 		  << ",absFrobOrthog"
@@ -567,7 +566,7 @@ namespace TSQR {
 	      << "," << datatype
 	      << "," << nrows
 	      << "," << ncols
-	      << "," << size_t(0) // cache_block_size
+	      << "," << size_t(0) // cache_size_hint
 	      << "," << false     // contiguous_cache_blocks 
 	      << "," << results[0]
 	      << "," << results[1]
@@ -660,8 +659,14 @@ namespace TSQR {
 
       /// \brief Constructor
       ///
+      /// \param scalarTypeName [in] Human-readable name of the Scalar
+      ///   type.
       /// \param out [out] Reference to the output stream (e.g.,
       ///   std::cout) to which to write benchmark results.
+      /// \param humanReadable [in] Whether to print results to out in
+      ///   a verbose human-readable way, or in a way that is easy to
+      ///   parse with a script.  In either case, the results will be
+      ///   printed in ASCII format.
       LapackBenchmarker (const std::string& scalarTypeName,
 			 std::ostream& out = std::cout,
 			 const bool humanReadable = false) :
@@ -699,8 +704,8 @@ namespace TSQR {
 
 	// Determine the required workspace for the factorization
 	const Ordinal lwork = lworkQueryLapackQr (lapack_, numRows, numCols, lda);
-	std::vector< Scalar > work (lwork);
-	std::vector< Scalar > tau (numCols);
+	std::vector<Scalar> work (lwork);
+	std::vector<Scalar> tau (numCols);
 
 	// Benchmark LAPACK's QR factorization for numTrials trials.
 	//
@@ -741,28 +746,27 @@ namespace TSQR {
 
 
     private:
-      /// Wrapper around LAPACK routines.
-      ///
+      //! Wrapper around LAPACK routines.
       TSQR::LAPACK< Ordinal, Scalar > lapack_;
       
-      /// Pseudorandom normal(0,1) generator.  Default seed is OK,
-      /// because this is a benchmark, not an accuracy test.
+      /// \brief Pseudorandom normal(0,1) generator.  
+      ///
+      /// Default seed is OK, because this is a benchmark, not an
+      /// accuracy test.
       TSQR::Random::NormalGenerator< ordinal_type, scalar_type > gen_;
       
-      /// Human-readable string representation of the Scalar type 
-      ///
+      //! Human-readable string representation of the Scalar type.
       std::string scalarTypeName_;
 
-      /// Output stream to which to print benchmark results.
-      ///
+      //! Output stream to which to print benchmark results.
       std::ostream& out_;
 
-      /// Whether results should be printed in a human-readable way
-      /// (vs. a way easily parsed by a script).
+      /// \brief Whether results should be printed in a human-readable way,
+      /// 
+      /// rather than a way easily parsed by a script.
       bool humanReadable_;
 
       /// \brief Report benchmark results to out_
-      ///
       void 
       reportResults (const int numTrials,
 		     const Ordinal numRows,
@@ -791,7 +795,7 @@ namespace TSQR {
 		     << ",scalarType"
 		     << ",numRows"
 		     << ",numCols"
-		     << ",cacheBlockSize"
+		     << ",cacheSizeHint"
 		     << ",contiguousCacheBlocks"
 		     << ",numTrials"
 		     << ",timing";
@@ -799,11 +803,13 @@ namespace TSQR {
 		  out_ << "," << additionalFieldNames;
 		out_ << endl;
 	      }
-	    // "0" refers to the cache block size, which is not
-	    // applicable in this case.  "false" (that follows 0)
-	    // refers to whether or not contiguous cache blocks were
-	    // used (see TSQR::SequentialTsqr); this is also not
-	    // applicable in this case.
+	    // "0" refers to the cache size hint, which is not
+	    // applicable in this case; we retain it for easy
+	    // comparison of results with SequentialTsqr (so that the
+	    // number of fields is the same in both cases).  "false"
+	    // (that follows 0) refers to whether or not contiguous
+	    // cache blocks were used (see TSQR::SequentialTsqr); this
+	    // is also not applicable in this case.
 	    out_ << "LAPACK" 
 		 << "," << scalarTypeName_
 		 << "," << numRows
@@ -877,7 +883,7 @@ namespace TSQR {
 	      printedFieldNames = true;
 	  }
 	  { // Scalar=complex<double>
-	    typedef LapackBenchmarker< int, complex<double>, timer_type > benchmark_type;
+	    typedef LapackBenchmarker<int, complex<double>, timer_type> benchmark_type;
 	    string scalarTypeName ("complex<double>");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
 	    widget.benchmark (numTrials, numRows, numCols,
@@ -896,11 +902,11 @@ namespace TSQR {
 
 
     /// \class SeqTsqrBenchmarker
-    /// \brief Template version of SequentialTsqr benchmark
+    /// \brief Template version of SequentialTsqr benchmark.
     ///
     /// SequentialTsqr benchmark, templated on Ordinal, Scalar, and
     /// TimerType.
-    template< class Ordinal, class Scalar, class TimerType >
+    template<class Ordinal, class Scalar, class TimerType>
     class SeqTsqrBenchmarker {
     public:
       typedef Ordinal ordinal_type;
@@ -908,8 +914,14 @@ namespace TSQR {
 
       /// \brief Constructor
       ///
+      /// \param scalarTypeName [in] Human-readable name of the Scalar
+      ///   type.
       /// \param out [out] Reference to the output stream (e.g.,
       ///   std::cout) to which to write benchmark results.
+      /// \param humanReadable [in] Whether to print results to out in
+      ///   a verbose human-readable way, or in a way that is easy to
+      ///   parse with a script.  In either case, the results will be
+      ///   printed in ASCII format.
       SeqTsqrBenchmarker (const std::string& scalarTypeName,
 			  std::ostream& out = std::cout,
 			  const bool humanReadable = false) : 
@@ -917,25 +929,26 @@ namespace TSQR {
 	out_ (out), 
 	humanReadable_ (humanReadable)
       {
-	TSQR::Test::verifyTimerConcept< TimerType >();
+	// Make sure that TimerType satisfies the required interface.
+	TSQR::Test::verifyTimerConcept<TimerType>();
       }
 
       void 
       benchmark (const int numTrials,
 		 const Ordinal numRows,
 		 const Ordinal numCols,
-		 const size_t cacheBlockSize,
+		 const size_t cacheSizeHint,
 		 const bool contiguousCacheBlocks,
 		 const std::string& additionalFieldNames,
 		 const std::string& additionalData,
 		 const bool printFieldNames)
       {
-	SequentialTsqr< Ordinal, Scalar > actor (cacheBlockSize);
+	SequentialTsqr<Ordinal, Scalar> actor (cacheSizeHint);
 
-	Matrix< Ordinal, Scalar > A (numRows, numCols);
-	Matrix< Ordinal, Scalar > A_copy (numRows, numCols);
-	Matrix< Ordinal, Scalar > Q (numRows, numCols);
-	Matrix< Ordinal, Scalar > R (numCols, numCols);
+	Matrix<Ordinal, Scalar> A (numRows, numCols);
+	Matrix<Ordinal, Scalar> A_copy (numRows, numCols);
+	Matrix<Ordinal, Scalar> Q (numRows, numCols);
+	Matrix<Ordinal, Scalar> R (numCols, numCols);
 	const Ordinal lda = numRows;
 	const Ordinal ldq = numRows;
 
@@ -953,7 +966,7 @@ namespace TSQR {
 	for (int trialNum = 0; trialNum < numTrials; ++trialNum)
 	  {
 	    // Factor the matrix and extract the resulting R factor
-	    typedef typename SequentialTsqr< Ordinal, Scalar >::FactorOutput 
+	    typedef typename SequentialTsqr<Ordinal, Scalar>::FactorOutput 
 	      factor_output_type;
 	    factor_output_type factorOutput = 
 	      actor.factor (numRows, numCols, A_copy.get(), lda, 
@@ -966,36 +979,36 @@ namespace TSQR {
 			      numCols, Q.get(), ldq, contiguousCacheBlocks);
 	  }
 	const double seqTsqrTiming = timer.stop();
-	reportResults (numTrials, numRows, numCols, actor.cache_block_size(),
+	reportResults (numTrials, numRows, numCols, actor.cache_size_hint(),
 		       contiguousCacheBlocks, seqTsqrTiming, 
 		       additionalFieldNames, additionalData, printFieldNames);
       }
 
 
     private:
-      /// Pseudorandom normal(0,1) generator.  Default seed is OK,
-      /// because this is a benchmark, not an accuracy test.
-      TSQR::Random::NormalGenerator< ordinal_type, scalar_type > gen_;
-      
-      /// Human-readable string representation of the Scalar type 
+      /// \brief Pseudorandom normal(0,1) generator.  
       ///
+      /// Default seed is OK, because this is a benchmark, not an
+      /// accuracy test.
+      TSQR::Random::NormalGenerator<ordinal_type, scalar_type> gen_;
+      
+      //! Human-readable string representation of the Scalar type.
       std::string scalarTypeName_;
 
-      /// Output stream to which to print benchmark results.
-      ///
+      //! Output stream to which to print benchmark results.
       std::ostream& out_;
 
-      /// Whether results should be printed in a human-readable way
-      /// (vs. a way easily parsed by a script).
+      /// \brief Whether results should be printed in a human-readable way,
+      ///
+      /// as opposed to a way easily parsed by a script.
       bool humanReadable_;
 
-      /// \brief Report benchmark results to out_
-      ///
+      //! Report benchmark results to out_
       void 
       reportResults (const int numTrials,
 		     const Ordinal numRows,
 		     const Ordinal numCols,
-		     const size_t actualCacheBlockSize,
+		     const size_t actualCacheSizeHint,
 		     const bool contiguousCacheBlocks,
 		     const double seqTsqrTiming,
 		     const std::string& additionalFieldNames,
@@ -1008,7 +1021,7 @@ namespace TSQR {
 	       << "Scalar type = " << scalarTypeName_ << endl
 	       << "# rows = " << numRows << endl
 	       << "# columns = " << numCols << endl
-	       << "cache block # bytes = " << actualCacheBlockSize << endl
+	       << "cache size hint in bytes = " << actualCacheSizeHint << endl
 	       << "contiguous cache blocks? " << contiguousCacheBlocks << endl
 	       << "# trials = " << numTrials << endl
 	       << "Total time (s) = " << seqTsqrTiming << endl 
@@ -1023,7 +1036,7 @@ namespace TSQR {
 		     << ",scalarType"
 		     << ",numRows"
 		     << ",numCols"
-		     << ",cacheBlockSize"
+		     << ",cacheSizeHint"
 		     << ",contiguousCacheBlocks"
 		     << ",numTrials"
 		     << ",timing";
@@ -1035,7 +1048,7 @@ namespace TSQR {
 		 << "," << scalarTypeName_
 		 << "," << numRows
 		 << "," << numCols
-		 << "," << actualCacheBlockSize
+		 << "," << actualCacheSizeHint
 		 << "," << contiguousCacheBlocks
 		 << "," << numTrials 
 		 << "," << seqTsqrTiming;
@@ -1052,7 +1065,7 @@ namespace TSQR {
 		      const int numRows,
 		      const int numCols,
 		      const int numTrials,
-		      const size_t cacheBlockSize,
+		      const size_t cacheSizeHint,
 		      const bool contiguousCacheBlocks,
 		      const bool testComplex,
 		      const std::string& additionalFieldNames,
@@ -1070,10 +1083,10 @@ namespace TSQR {
       if (testReal)
 	{
 	  { // Scalar=float
-	    typedef SeqTsqrBenchmarker< int, float, timer_type > benchmark_type;
+	    typedef SeqTsqrBenchmarker<int, float, timer_type> benchmark_type;
 	    string scalarTypeName ("float");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+	    widget.benchmark (numTrials, numRows, numCols, cacheSizeHint, 
 			      contiguousCacheBlocks, 
 			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
@@ -1084,7 +1097,7 @@ namespace TSQR {
 	    typedef SeqTsqrBenchmarker< int, double, timer_type > benchmark_type;
 	    string scalarTypeName ("double");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+	    widget.benchmark (numTrials, numRows, numCols, cacheSizeHint, 
 			      contiguousCacheBlocks, 
 			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
@@ -1101,7 +1114,7 @@ namespace TSQR {
 	    typedef SeqTsqrBenchmarker< int, complex<float>, timer_type > benchmark_type;
 	    string scalarTypeName ("complex<float>");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+	    widget.benchmark (numTrials, numRows, numCols, cacheSizeHint, 
 			      contiguousCacheBlocks, 
 			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
@@ -1112,7 +1125,7 @@ namespace TSQR {
 	    typedef SeqTsqrBenchmarker< int, complex<double>, timer_type > benchmark_type;
 	    string scalarTypeName ("complex<double>");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+	    widget.benchmark (numTrials, numRows, numCols, cacheSizeHint, 
 			      contiguousCacheBlocks, 
 			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);

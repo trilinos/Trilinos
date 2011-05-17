@@ -305,10 +305,10 @@ namespace TSQR {
       if (humanReadable)
 	cout << "KokkosNodeTsqr:" << endl
 	     << "Scalar type: " << scalarTypeName << endl
-	     << "# rows = " << numRows << endl
-	     << "# columns = " << numCols << endl
+	     << "# rows: " << numRows << endl
+	     << "# columns: " << numCols << endl
 	     << "# partitions: " << numPartitions << endl
-	     << "cache size hint (revised) = " << actor.cache_block_size() << endl
+	     << "cache size hint (revised) in bytes: " << actor.cache_size_hint() << endl
 	     << "contiguous cache blocks? " << contiguousCacheBlocks << endl
 	     << "Absolute residual $\\|A - Q*R\\|_2$: "
 	     << results[0] << endl
@@ -340,7 +340,7 @@ namespace TSQR {
 	       << "," << numRows
 	       << "," << numCols
 	       << "," << numPartitions
-	       << "," << actor.cache_block_size()
+	       << "," << actor.cache_size_hint()
 	       << "," << contiguousCacheBlocks 
 	       << "," << results[0]
 	       << "," << results[1]
@@ -486,7 +486,7 @@ namespace TSQR {
 	       << "# rows = " << numRows << endl
 	       << "# columns = " << numCols << endl
 	       << "# partitions: " << numPartitions << endl
-	       << "Cache size hint (in bytes) = " << actor.cache_block_size() << endl
+	       << "Cache size hint (in bytes) = " << actor.cache_size_hint() << endl
 	       << "Contiguous cache blocks? " << contiguousCacheBlocks << endl
 	       << "# trials = " << numTrials << endl
 	       << "Total time (s) = " << timing << endl;
@@ -518,7 +518,7 @@ namespace TSQR {
 	       << "," << numRows
 	       << "," << numCols
 	       << "," << numPartitions
-	       << "," << actor.cache_block_size()
+	       << "," << actor.cache_size_hint()
 	       << "," << contiguousCacheBlocks 
 	       << "," << numTrials
 	       << "," << timing

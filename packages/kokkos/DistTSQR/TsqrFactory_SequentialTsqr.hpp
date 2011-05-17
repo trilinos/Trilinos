@@ -30,8 +30,8 @@
 #define __TSQR_Trilinos_TsqrFactory_SequentialTsqr_hpp
 
 /// \file TsqrFactory_SequentialTsqr.hpp
-///
-/// \warning Anasazi users should _not_ include this file directly.
+/// \brief Declaration and definition of SequentialTsqrFactory.
+/// \author Mark Hoemmen
 
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr.hpp"
@@ -70,7 +70,7 @@ namespace TSQR {
 
     private:
       /// \param [in] plist Parameter list with the following key:
-      ///   \li "cacheBlockSize": Cache size in bytes.  Default is
+      ///   \li "cacheSizeHint": Cache size hint in bytes.  Default is
       ///       zero, which means that TSQR will guess a reasonable
       ///       cache size.  The size should correspond to that of the
       ///       largest cache that is private to each CPU core, if
@@ -81,19 +81,19 @@ namespace TSQR {
       makeNodeTsqr (const Teuchos::ParameterList& plist) const
       {
 	using Teuchos::Exceptions::InvalidParameter;
-	size_t cacheBlockSize = 0;
+	size_t cacheBlockHint = 0;
 
 	// All this try/catch stuff is because the C++ compiler can't
 	// deduce the right two-argument get() function (second argument
 	// would be the default).
 	try {
-	  const std::string cacheBlockSizeParamName ("cacheBlockSize");
-	  cacheBlockSize = plist.get< size_t > (cacheBlockSizeParamName);
+	  const std::string cacheBlockHintParamName ("cacheBlockHint");
+	  cacheBlockHint = plist.get< size_t > (cacheBlockHintParamName);
 	} catch (InvalidParameter&) {
-	  cacheBlockSize = 0;
+	  cacheBlockHint = 0;
 	}
 	
-	node_tsqr_ptr node_tsqr (new node_tsqr_type (cacheBlockSize));
+	node_tsqr_ptr node_tsqr (new node_tsqr_type (cacheBlockHint));
 	return node_tsqr;
       }
 

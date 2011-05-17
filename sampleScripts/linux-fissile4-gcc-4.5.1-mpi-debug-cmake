@@ -1,0 +1,36 @@
+#!/bin/bash
+#
+# For building MPI_DEBUG build with GCC 4.5.1 on CASL fissile 4 machines
+#
+# Pass in extra arguments on the command-line to this script with:
+#
+#   -DTrilinos_ENABLE_LIME=ON \
+#   -DTrilinos_EXTRA_REPOSITORIES=LIMEExt \
+#
+# NOTE: To set extra repos pass in:
+#    -DTrilinos_EXTRA_REPOSITORIES=LIMEExt,PSSDriversExt,...
+#
+# NOTE: Copy this file for your own use if you want to be able to
+# hard-code Trilinos_EXTRA_REPOSITORIES or change anything else.
+#
+# NOTE: The default source location is for the peer directory
+#   BUILDS/GCC_4.5.1/<SOME_BUILD_NAME>
+# which you can change in your copy.
+#
+EXTRA_ARGS=$@
+
+TRILINOS_DIR=../../../Trilinos  # Change for the location of your Trilinos source
+
+TRILINOS_DIR_ABS=$(readlink -f $TRILINOS_DIR)
+echo "TRILINOS_DIR_ABS = $TRILINOS_DIR_ABS"
+
+cmake \
+-D Trilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=$TRILINOS_DIR_ABS/cmake/ctest/drivers/pu241/gcc-4.5.1-mpi-options.cmake \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D DART_TESTING_TIMEOUT:STRING=180.0 \
+$EXTRA_ARGS \
+${TRILINOS_DIR_ABS}
+

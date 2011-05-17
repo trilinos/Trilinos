@@ -77,7 +77,7 @@ namespace TSQR {
 #ifdef HAVE_TSQR_COMPLEX
 	  testComplex (false),
 #endif // HAVE_TSQR_COMPLEX
-	  cacheBlockSize (0),
+	  cacheSizeHint (0),
 	  contiguousCacheBlocks (false),
 	  printFieldNames (true),
 	  humanReadable (false),
@@ -90,7 +90,7 @@ namespace TSQR {
 #ifdef HAVE_TSQR_COMPLEX
 	bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
-	size_t cacheBlockSize;
+	size_t cacheSizeHint;
 	bool contiguousCacheBlocks, printFieldNames, humanReadable, debug;
       };
 
@@ -115,7 +115,7 @@ namespace TSQR {
 					      params.numRows, 
 					      params.numCols, 
 					      params.numCores,
-					      params.cacheBlockSize,
+					      params.cacheSizeHint,
 					      params.contiguousCacheBlocks,
 					      params.printFieldNames && ! printedFieldNames,
 					      params.humanReadable);
@@ -129,7 +129,7 @@ namespace TSQR {
 					       params.numRows, 
 					       params.numCols, 
 					       params.numCores,
-					       params.cacheBlockSize,
+					       params.cacheSizeHint,
 					       params.contiguousCacheBlocks,
 					       params.printFieldNames && ! printedFieldNames,
 					       params.humanReadable);
@@ -147,7 +147,7 @@ namespace TSQR {
 						       params.numRows, 
 						       params.numCols, 
 						       params.numCores,
-						       params.cacheBlockSize,
+						       params.cacheSizeHint,
 						       params.contiguousCacheBlocks,
 						       params.printFieldNames && ! printedFieldNames,
 						       params.humanReadable);
@@ -161,7 +161,7 @@ namespace TSQR {
 							params.numRows, 
 							params.numCols, 
 							params.numCores,
-							params.cacheBlockSize,
+							params.cacheSizeHint,
 							params.contiguousCacheBlocks,
 							params.printFieldNames && ! printedFieldNames,
 							params.humanReadable);
@@ -200,7 +200,7 @@ namespace TSQR {
 					   params.numRows, 
 					   params.numCols, 
 					   params.numCores, 
-					   params.cacheBlockSize,
+					   params.cacheSizeHint,
 					   params.contiguousCacheBlocks,
 					   params.printFieldNames && ! printedFieldNames,
 					   params.humanReadable,
@@ -217,7 +217,7 @@ namespace TSQR {
 					    params.numRows, 
 					    params.numCols, 
 					    params.numCores, 
-					    params.cacheBlockSize,
+					    params.cacheSizeHint,
 					    params.contiguousCacheBlocks,
 					    params.printFieldNames && ! printedFieldNames,
 					    params.humanReadable,
@@ -238,7 +238,7 @@ namespace TSQR {
 						    params.numRows, 
 						    params.numCols, 
 						    params.numCores, 
-						    params.cacheBlockSize,
+						    params.cacheSizeHint,
 						    params.contiguousCacheBlocks,
 						    params.printFieldNames && ! printedFieldNames,
 						    params.humanReadable,
@@ -255,7 +255,7 @@ namespace TSQR {
 						     params.numRows, 
 						     params.numCols, 
 						     params.numCores, 
-						     params.cacheBlockSize,
+						     params.cacheSizeHint,
 						     params.contiguousCacheBlocks,
 						     params.printFieldNames && ! printedFieldNames,
 						     params.humanReadable,
@@ -297,8 +297,8 @@ namespace TSQR {
 	/// are possible.  We check for those below in the input
 	/// validation phase.
 	//
-	// Fetch default value of cacheBlockSize.
-	int cacheBlockSizeAsInt = static_cast<int> (params.cacheBlockSize);
+	// Fetch default value of cacheSizeHint.
+	int cacheSizeHintAsInt = static_cast<int> (params.cacheSizeHint);
 	try {
 	  using Teuchos::CommandLineProcessor;
 
@@ -336,8 +336,8 @@ namespace TSQR {
 				 &params.numCores,
 				 "Number of cores to use for Intel TBB");
 	  cmdLineProc.setOption ("cache-block-size", 
-				 &cacheBlockSizeAsInt, 
-				 "Cache block size in bytes (0 means pick a reasonable default)");
+				 &cacheSizeHintAsInt, 
+				 "Cache size hint in bytes (0 means pick a reasonable default)");
 	  cmdLineProc.setOption ("contiguous-cache-blocks",
 				 "noncontiguous-cache-blocks",
 				 &params.contiguousCacheBlocks,
@@ -381,10 +381,10 @@ namespace TSQR {
 	  throw std::invalid_argument ("\"--ncores\" option must be >= 1");
 	else
 	  {
-	    if (cacheBlockSizeAsInt < 0)
-	      throw std::invalid_argument ("Cache block size must be nonnegative");
+	    if (cacheSizeHintAsInt < 0)
+	      throw std::invalid_argument ("Cache size hint must be nonnegative");
 	    else 
-	      params.cacheBlockSize = static_cast< size_t > (cacheBlockSizeAsInt);
+	      params.cacheSizeHint = static_cast<size_t> (cacheSizeHintAsInt);
 	  }
 	return params;
       }

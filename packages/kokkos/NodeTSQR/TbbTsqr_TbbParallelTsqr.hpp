@@ -143,11 +143,11 @@ namespace TSQR {
       /// \param numCores [in] Number of parallel cores to use in the
       ///   factorization.  This should be <= the number of cores with 
       ///   which Intel TBB was initialized.
-      /// \param cacheBlockSize [in] Cache block size in bytes.  Zero 
+      /// \param cacheSizeHint [in] Cache size hint in bytes.  Zero 
       ///   means that TSQR will pick a reasonable nonzero default.
       TbbParallelTsqr (const size_t numCores = 1,
-		       const size_t cacheBlockSize = 0) :
-	seq_ (cacheBlockSize),
+		       const size_t cacheSizeHint = 0) :
+	seq_ (cacheSizeHint),
 	min_seq_factor_timing_ (std::numeric_limits<double>::max()),
 	max_seq_factor_timing_ (std::numeric_limits<double>::min()),
 	min_seq_apply_timing_ (std::numeric_limits<double>::max()),
@@ -165,12 +165,20 @@ namespace TSQR {
       /// main problem, to solve it in parallel.
       size_t ncores() const { return ncores_; }
 
-      /// \brief Cache block size (in bytes) used for the factorization.
+      /// \brief Cache size hint (in bytes) used for the factorization.
       ///
-      /// This may be different from the cacheBlockSize constructor
+      /// This method is deprecated, because the name is misleading.
+      /// Please call \c cache_size_hint() instead.
+      size_t TEUCHOS_DEPRECATED cache_block_size() const { 
+	return seq_.cache_size_hint(); 
+      }
+
+      /// \brief Cache size hint (in bytes) used for the factorization.
+      ///
+      /// This may be different from the corresponding constructor
       /// argument, because TSQR may revise unreasonable suggestions
       /// into reasonable values.
-      size_t cache_block_size() const { return seq_.cache_block_size(); }
+      size_t cache_size_hint() const { return seq_.cache_size_hint(); }
 
       //! Fastest time over all tasks of the last SequentialTsqr::factor() call.
       double

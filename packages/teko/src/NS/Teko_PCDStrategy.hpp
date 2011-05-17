@@ -165,6 +165,14 @@ protected:
 
    DiagonalType massInverseType_;
 
+   //! Passed to application for construction of laplace operator
+   Teuchos::RCP<Teuchos::ParameterList> lapParams_; 
+
+   //! Passed to application for construction of PCD operator
+   Teuchos::RCP<Teuchos::ParameterList> pcdParams_; 
+
+   bool schurCompOrdering_;
+
    static Teuchos::RCP<Teuchos::Time> initTimer_;
    static Teuchos::RCP<Teuchos::Time> invSTimer_;
    static Teuchos::RCP<Teuchos::Time> invFTimer_;

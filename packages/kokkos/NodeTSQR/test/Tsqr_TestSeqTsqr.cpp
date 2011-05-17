@@ -74,7 +74,7 @@ namespace TSQR {
 #ifdef HAVE_TSQR_COMPLEX
 	  testComplex (true),
 #endif // HAVE_TSQR_COMPLEX
-	  cacheBlockSize (0), // choose a reasonable default
+	  cacheSizeHint (0), // choose a reasonable default
 	  contiguousCacheBlocks (false),
 	  printFieldNames (true),
 	  printTrilinosTestStuff (true),
@@ -87,7 +87,7 @@ namespace TSQR {
 #ifdef HAVE_TSQR_COMPLEX
 	bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
-	size_t cacheBlockSize;
+	size_t cacheSizeHint;
 	bool contiguousCacheBlocks;
 	std::string additionalFieldNames, additionalData;
 	bool printFieldNames, printTrilinosTestStuff, humanReadable, debug;
@@ -108,7 +108,7 @@ namespace TSQR {
 			  params.numRows,
 			  params.numCols, 
 			  params.numTrials, 
-			  params.cacheBlockSize,
+			  params.cacheSizeHint,
 			  params.contiguousCacheBlocks,
 			  testComplex, 
 			  params.additionalFieldNames,
@@ -132,7 +132,7 @@ namespace TSQR {
 	verifySeqTsqr (out, 
 		       params.numRows, 
 		       params.numCols, 
-		       params.cacheBlockSize, 
+		       params.cacheSizeHint, 
 		       testComplex,
 		       saveMatrices, 
 		       params.contiguousCacheBlocks,
@@ -172,8 +172,8 @@ namespace TSQR {
 	/// are possible.  We check for those below in the input
 	/// validation phase.
 	//
-	// Fetch default value of cacheBlockSize.
-	int cacheBlockSizeAsInt = static_cast<int> (params.cacheBlockSize);
+	// Fetch default value of cacheSizeHint.
+	int cacheSizeHintAsInt = static_cast<int> (params.cacheSizeHint);
 	try {
 	  using Teuchos::CommandLineProcessor;
 
@@ -204,8 +204,8 @@ namespace TSQR {
 				 "Test complex arithmetic, as well as real");
 #endif // HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("cache-block-size", 
-				 &cacheBlockSizeAsInt, 
-				 "Cache block size in bytes (0 means pick a reasonable default)");
+				 &cacheSizeHintAsInt, 
+				 "Cache size hint in bytes (0 means pick a reasonable default)");
 	  cmdLineProc.setOption ("contiguous-cache-blocks",
 				 "noncontiguous-cache-blocks",
 				 &params.contiguousCacheBlocks,
@@ -266,10 +266,10 @@ namespace TSQR {
 	  throw std::invalid_argument ("\"--benchmark\" option requires numTrials >= 1");
 	else
 	  {
-	    if (cacheBlockSizeAsInt < 0)
-	      throw std::invalid_argument ("Cache block size must be nonnegative");
+	    if (cacheSizeHintAsInt < 0)
+	      throw std::invalid_argument ("Cache size hint must be nonnegative");
 	    else 
-	      params.cacheBlockSize = static_cast< size_t > (cacheBlockSizeAsInt);
+	      params.cacheSizeHint = static_cast< size_t > (cacheSizeHintAsInt);
 	  }
 	return params;
       }

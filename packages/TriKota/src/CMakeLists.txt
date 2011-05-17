@@ -155,9 +155,6 @@ SET(DAKOTA_LIBS
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib
                  ${Boost_LIBRARY_DIRS})
 
-# Compiling code that includes Dakota headers requires
-# -DHAVE_CONFIG_H.
-ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 
 ENDIF() # IF(NOT TriKota_ENABLE_DakotaCMake)
 
@@ -195,11 +192,28 @@ APPEND_SET(SOURCES
     TriKota_Version.cpp
   )
 
-IF(TriKota_ENABLE_DakotaCMake)
 
-# Compiling code that includes Dakota headers requires
-# -DHAVE_CONFIG_H and -DDISABLE_DAKOTA_CONFIG_H.
-ADD_DEFINITIONS(-DHAVE_CONFIG_H -DDISABLE_DAKOTA_CONFIG_H)
+# Create a cache variable to store definitions needed when including Dakota
+# headers
+IF(TriKota_ENABLE_DakotaCMake)
+  GET_PROPERTY(DAKOTA_DEFINITIONS_TMP DIRECTORY ../Dakota/src PROPERTY
+  COMPILE_DEFINITIONS)
+  FOREACH(DAKOTA_DEF IN LISTS DAKOTA_DEFINITIONS_TMP)
+    LIST(APPEND DAKOTA_DEFINITIONS "-D${DAKOTA_DEF}")
+  ENDFOREACH()
+  IF(TPL_ENABLE_MPI)
+    LIST(APPEND DAKOTA_DEFINITIONS "-DDAKOTA_HAVE_MPI")
+  ENDIF()
+ELSE()
+  SET(DAKOTA_DEFINITIONS -DHAVE_CONFIG_H)
+ENDIF()
+SET(TRIKOTA_DAKOTA_DEFINITIONS ${DAKOTA_DEFINITIONS} CACHE INTERNAL 
+"Variable used to communicate the ever-changing list of compiler definitions 
+required when including Dakota headers")
+ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
+message(STATUS "Dakota definitions = ${TRIKOTA_DAKOTA_DEFINITIONS}")
+
+IF(TriKota_ENABLE_DakotaCMake)
 
 # The DEPLIBS part is to tell CMake that trikota depends on the specified
 # Dakota libraries.  The IMPORTEDLIBS part is to get the PACKAGE_ADD_LIBRARY

@@ -41,14 +41,17 @@
 namespace TSQR {
   namespace Test {
 
-    /// Test the accuracy of sequential TSQR on an nrows by ncols
-    /// matrix (using the given cache block size (in bytes)), and
-    /// print the results to stdout.
+    /// \brief Test accuracy of SequentialTsqr.
+    ///
+    /// Test the accuracy of our sequential TSQR implementation
+    /// (SequentialTsqr), on an nrows by ncols matrix, using the given
+    /// cache size hint (in bytes).  Print the results to the given
+    /// output stream out.
     void
     verifySeqTsqr (std::ostream& out,
 		   const int nrows, 
 		   const int ncols, 
-		   const size_t cache_block_size,
+		   const size_t cache_size_hint,
 		   const bool test_complex_arithmetic,
 		   const bool save_matrices,
 		   const bool contiguous_cache_blocks,
@@ -58,8 +61,11 @@ namespace TSQR {
 		   const bool human_readable = false,
 		   const bool b_debug = false);
 
-    /// Test the accuracy of LAPACK's QR factorization on an nrows by
-    /// ncols matrix, and print the results to stdout.
+    /// \brief Test accuracy of LAPACK's QR factorization.
+    ///
+    /// Test the accuracy of LAPACK's QR factorization (_GEQRF +
+    /// _ORGQR) on an nrows by ncols matrix, and print the results to
+    /// the given output stream out.
     void
     verifyLapack (std::ostream& out,
 		  const int nrows, 
@@ -70,21 +76,23 @@ namespace TSQR {
 		  const bool printFieldNames,
 		  const bool human_readable,
 		  const bool b_debug = false);
-        
-    /// Test the runtime (over ntrials trials) of sequential TSQR, on
+
+    /// \brief Test performance of SequentialTsqr.
+    ///
+    /// Test the run time over ntrials trials of sequential TSQR, on
     /// an nrows by ncols matrix (using the given cache block size (in
-    /// bytes)), and print the results to stdout.
+    /// bytes)), and print the results to the given output stream out.
     ///
     /// \param human_readable [in] If true, print the benchmark
-    /// results to stdout in human-readable format.  Otherwise, print
-    /// them as two rows of comma-delimited ASCII, in an abbreviated
-    /// format suitable for automatic processing.
+    ///   results to stdout in human-readable format.  Otherwise,
+    ///   print them as two rows of comma-delimited ASCII, in an
+    ///   abbreviated format suitable for automatic processing.
     void
     benchmarkSeqTsqr (std::ostream& out,
 		      const int numRows,
 		      const int numCols,
 		      const int numTrials,
-		      const size_t cacheBlockSize,
+		      const size_t cacheSizeHint,
 		      const bool contiguousCacheBlocks,
 		      const bool testComplex,
 		      const std::string& additionalFieldNames,
@@ -92,9 +100,11 @@ namespace TSQR {
 		      const bool printFieldNames,
 		      const bool humanReadable);
 
-    /// Test the runtime (over numTrials trials) of LAPACK QR (_GEQRF
-    /// + _ORGQR), on a numRows by numCols matrix, and print the
-    /// results to out.
+    /// \brief Test performance of LAPACK's QR factorization.
+    ///
+    /// Test the run time over numTrials trials of LAPACK QR (_GEQRF +
+    /// _ORGQR), on a numRows by numCols matrix, and print the results
+    /// to the given output stream out.
     ///
     /// \param humanReadable [in] If true, print the benchmark results
     ///   to out in human-readable format.  Otherwise, print them as
