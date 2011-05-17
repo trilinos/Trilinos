@@ -40,5 +40,5 @@
 
 SET( Trilinos_EXTRAREPOS_DIR_GITREPOURL_CATEGORY
   LIMEExt  software.sandia.gov:/space/git/LIMEExt  Continuous
-  PSSDriversExt  nstdsrv.ornl.gov/gitroot/casl_pssdrivers  Continuous
+  PSSDriversExt  nstdsrv.ornl.gov:/gitroot/casl_pssdrivers  Continuous
   )
