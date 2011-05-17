@@ -25,16 +25,24 @@ if (RUN_REGULAR_TESTS)
   #
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    MPI_DEBUG_GCC
+    MPI_DEBUG_GCC_TRILINOS
     ctest_linux_nightly_mpi_debug_gcc_4.5.1_trilinos.cmake
     TIMEOUT_MINUTES 240
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_RELEASE_GCC
+    SERIAL_RELEASE_GCC_TRILINOS
     ctest_linux_nightly_serial_release_gcc_4.5.1_trilinos.cmake
     TIMEOUT_MINUTES 240
     )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_RELEASE_GCC_CASLDEV
+    ctest_linux_nightly_mpi_debug_gcc_4.5.1_casl_dev.cmake
+    TIMEOUT_MINUTES 240
+    )
+
+  # ToDo: Add and test a serial release CASLDEV build ...
 
   #
   # Run builds of just Trilinos packages with the Intel ???
