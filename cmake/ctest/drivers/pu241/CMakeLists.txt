@@ -36,13 +36,25 @@ if (RUN_REGULAR_TESTS)
     TIMEOUT_MINUTES 240
     )
 
+  #
+  # Run the builds of CASL-specific add-on packages with GCC 4.5.1 and
+  # send results to the CASL CDash server on casl-dev.  Upstream
+  # Trilinos packages will still be processed so that errors in
+  # upstream Trilinos package library build do not show up in
+  # CASL-specific add-on packages.
+  #
+
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_RELEASE_GCC_CASLDEV
+    MPI_DEBUG_GCC_CASLDEV
     ctest_linux_nightly_mpi_debug_gcc_4.5.1_casl_dev.cmake
     TIMEOUT_MINUTES 240
     )
 
-  # ToDo: Add and test a serial release CASLDEV build ...
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_RELEASE_GCC_CASLDEV
+    ctest_linux_nightly_serial_release_gcc_4.5.1_casl_dev.cmake
+    TIMEOUT_MINUTES 240
+    )
 
   #
   # Run builds of just Trilinos packages with the Intel ???
