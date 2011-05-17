@@ -38,8 +38,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DMesquite_ENABLE_TESTS:BOOL=ON"
     "-DCPPUNIT_LIBRARY:FILEPATH=${TPLBASEDIR}/cppunit-1.12.1/lib/libcppunit.a"
     "-DCPPUNIT_INCLUDES:FILEPATH=${TPLBASEDIR}/cppunit-1.12.1/include"
-    #"-DExpat_INCLUDE_DIRS:FILEPATH=/home/rppawlo/LIME_TPLs/TPLs_src/expat/lib"
-    #"-DExpat_LIBRARY_DIRS:FILEPATH=/home/rppawlo/LIME_TPLs/TPLs_src/expat/lib"
     "-DLAMMPS_INCLUDE_DIRS:FILEPATH=${TPLBASEDIR}"
     "-DTPL_LAMMPS_LIBRARIES:STIRNG=${TPLBASEDIR}/lammps/src/liblmp_wsblade.a"
     "-Dcouple_INCLUDE_DIRS:FILEPATH=${TPLBASEDIR}/couple"
