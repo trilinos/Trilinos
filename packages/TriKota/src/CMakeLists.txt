@@ -155,6 +155,10 @@ SET(DAKOTA_LIBS
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib
                  ${Boost_LIBRARY_DIRS})
 
+# Create a cache variable to store definitions needed when including Dakota
+# headers
+SET(TRIKOTA_DAKOTA_DEFINITIONS "-DHAVE_CONFIG_H" CACHE INTERNAL "")
+ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
 
 ENDIF() # IF(NOT TriKota_ENABLE_DakotaCMake)
 
@@ -191,24 +195,6 @@ APPEND_SET(SOURCES
     TriKota_Driver.cpp
     TriKota_Version.cpp
   )
-
-
-# Create a cache variable to store definitions needed when including Dakota
-# headers
-IF(TriKota_ENABLE_DakotaCMake)
-  GET_PROPERTY(DAKOTA_DEFINITIONS_TMP DIRECTORY ../Dakota/src PROPERTY
-  COMPILE_DEFINITIONS)
-  # CMake apparently removes all of the -D's
-  FOREACH(DAKOTA_DEF IN LISTS DAKOTA_DEFINITIONS_TMP)
-    LIST(APPEND DAKOTA_DEFINITIONS "-D${DAKOTA_DEF}")
-  ENDFOREACH()
-ELSE()
-  SET(DAKOTA_DEFINITIONS -DHAVE_CONFIG_H)
-ENDIF()
-SET(TRIKOTA_DAKOTA_DEFINITIONS ${DAKOTA_DEFINITIONS} CACHE INTERNAL 
-"Variable used to communicate the ever-changing list of compiler definitions 
-required when including Dakota headers")
-ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
 
 IF(TriKota_ENABLE_DakotaCMake)
 

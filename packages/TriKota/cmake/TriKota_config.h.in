@@ -35,3 +35,6 @@
 
 /* Define to the version of this package. */
 #cmakedefine PACKAGE_VERSION
+
+/* All of Dakota's configured defines */
+@DAKOTA_DEFINES@
