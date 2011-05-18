@@ -500,10 +500,12 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
   try:
 
     # B) Create the command to run the checkin-test.py script
+
     
     cmnd = scriptsDir + "/../../checkin-test.py" \
      +" --no-eg-git-version-check" \
      +" --trilinos-src-dir="+scriptsDir+"/../DependencyUnitTests/MockTrilinos" \
+     +" --send-email-to=bogous@somwhere.com" \
      + " " + optionsStr
     # NOTE: Above, we want to turn off the eg/git version tests since we want
     # these unit tests to run on machines that do not have the official
