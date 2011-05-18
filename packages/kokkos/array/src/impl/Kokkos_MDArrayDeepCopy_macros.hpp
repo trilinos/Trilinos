@@ -55,17 +55,19 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< class ValueType , class DeviceType ,
+template< typename ValueType , class DeviceType ,
           class MapDst , class MapSrc , unsigned Rank >
 class MDArrayDeepCopyMember ;
 
-template< class ValueType , class DeviceType ,
+template< typename ValueType , class DeviceType ,
           class MapDst , class MapSrc , unsigned Rank >
 class MDArrayDeepCopyFunctor ;
 
 //----------------------------------------------------------------------------
 
-template< class ValueType , class MapDst , class MapSrc >
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
+template< typename ValueType , class MapDst , class MapSrc >
 class MDArrayDeepCopyMember<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,8>
 {
 public:
@@ -94,7 +96,7 @@ public:
   }
 };
 
-template< class ValueType , class MapDst , class MapSrc >
+template< typename ValueType , class MapDst , class MapSrc >
 class MDArrayDeepCopyMember<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,7>
 {
 public:
@@ -121,7 +123,7 @@ public:
   }
 };
 
-template< class ValueType , class MapDst , class MapSrc >
+template< typename ValueType , class MapDst , class MapSrc >
 class MDArrayDeepCopyMember<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,6>
 {
 public:
@@ -148,7 +150,7 @@ public:
   }
 };
 
-template< class ValueType , class MapDst , class MapSrc >
+template< typename ValueType , class MapDst , class MapSrc >
 class MDArrayDeepCopyMember<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,5>
 {
 public:
@@ -172,7 +174,7 @@ public:
 };
 
 
-template< class ValueType , class MapDst , class MapSrc >
+template< typename ValueType , class MapDst , class MapSrc >
 class MDArrayDeepCopyMember<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,4>
 {
 public:
@@ -195,7 +197,7 @@ public:
   }
 };
 
-template< class ValueType , class MapDst , class MapSrc >
+template< typename ValueType , class MapDst , class MapSrc >
 class MDArrayDeepCopyMember<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,3>
 {
 public:
@@ -218,7 +220,7 @@ public:
   }
 };
 
-template< class ValueType , class MapDst , class MapSrc >
+template< typename ValueType , class MapDst , class MapSrc >
 class MDArrayDeepCopyMember<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,2>
 {
 public:
@@ -242,7 +244,7 @@ public:
 };
 
 
-template< class ValueType , class MapDst , class MapSrc >
+template< typename ValueType , class MapDst , class MapSrc >
 class MDArrayDeepCopyMember<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,1>
 {
 public:
@@ -262,7 +264,7 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class ValueType , class MapDst , class MapSrc , unsigned Rank >
+template< typename ValueType , class MapDst , class MapSrc , unsigned Rank >
 class MDArrayDeepCopyFunctor< ValueType , KOKKOS_MACRO_DEVICE , MapDst , MapSrc , Rank >
 {
 private:
@@ -287,21 +289,22 @@ public :
 
 //----------------------------------------------------------------------------
 
+template< typename ValueType , class DeviceType >
+class CopyFunctor ;
+
 /** \brief  Same map and contiguous memory */
-template< class ValueType , class MapOption >
-class MDArrayDeepCopyFunctor< ValueType , KOKKOS_MACRO_DEVICE ,
-                              MapOption , MapOption , 0 > {
+template< typename ValueType >
+class CopyFunctor< ValueType , KOKKOS_MACRO_DEVICE > {
 public:
 
-  typedef KOKKOS_MACRO_DEVICE                      device_type ;
+  typedef KOKKOS_MACRO_DEVICE             device_type ;
   typedef typename device_type::size_type size_type ;
 
         ValueType * const dst_ptr ;
   const ValueType * const src_ptr ;
 
-  MDArrayDeepCopyFunctor( MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapOption > arg_dst ,
-                          MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapOption > arg_src )
-    : dst_ptr( arg_dst.ptr_on_device() ), src_ptr( arg_src.ptr_on_device() ) {}
+  CopyFunctor( ValueType * arg_dst , const ValueType * arg_src )
+    : dst_ptr( arg_dst ), src_ptr( arg_src ) {}
 
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -310,6 +313,7 @@ public:
 };
 
 //----------------------------------------------------------------------------
+#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 
 } // namespace Impl
 } // namespace Kokkos

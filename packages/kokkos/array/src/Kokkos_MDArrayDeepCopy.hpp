@@ -40,6 +40,7 @@
 #ifndef KOKKOS_MDARRAYDEEPCOPY_HPP
 #define KOKKOS_MDARRAYDEEPCOPY_HPP
 
+#include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <Kokkos_MDArrayView.hpp>
 #include <Kokkos_ParallelFor.hpp>
 
@@ -48,11 +49,6 @@
 
 
 namespace Kokkos {
-
-template< typename ValueType ,
-          class DeviceDst , class MapDst , bool ContigDst ,
-          class DeviceSrc , class MapSrc , bool ContigSrc >
-class MDArrayDeepCopy ;
 
 //----------------------------------------------------------------------------
 
@@ -85,10 +81,19 @@ void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
 #endif
 
 #if defined( KOKKOS_DEVICE_TPI )
+#include <DeviceTPI/Kokkos_DeviceTPI_DeepCopy.hpp>
 #include <impl/Kokkos_DeviceTPI_macros.hpp>
 #include <impl/Kokkos_MDArrayDeepCopy_macros.hpp>
 #include <impl/Kokkos_DeviceClear_macros.hpp>
 #endif
+
+#if defined( KOKKOS_DEVICE_CUDA )
+#include <DeviceCuda/Kokkos_DeviceCuda_DeepCopy.hpp>
+#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <impl/Kokkos_MDArrayDeepCopy_macros.hpp>
+#include <impl/Kokkos_DeviceClear_macros.hpp>
+#endif
+
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -158,14 +163,16 @@ public:
 
   typedef MDArrayView< ValueType , DeviceType , MapOpt > array_type ;
 
-  typedef Impl::MDArrayDeepCopyFunctor<
-            ValueType , DeviceType , MapOpt , MapOpt , 0 > deepC ;
+  typedef Impl::CopyFunctor< ValueType , DeviceType > functor_type ;
 
   static void run( const array_type & dst , const array_type & src )
   {
     Impl::mdarray_require_equal_dimension( dst , src );
 
-    parallel_for( dst.size() , deepC( dst , src ) );
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+
   }
 };
 

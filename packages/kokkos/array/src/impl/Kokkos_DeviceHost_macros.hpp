@@ -51,6 +51,8 @@
 #define KOKKOS_MACRO_DEVICE                       DeviceHost
 #define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
 #define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
+#define KOKKOS_MACRO_CAN_THROW( expr )  expr
+#define KOKKOS_MACRO_CHECK( expr )  expr
 
 #endif
 

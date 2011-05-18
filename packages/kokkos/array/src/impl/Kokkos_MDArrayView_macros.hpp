@@ -210,6 +210,22 @@ public:
   ~MDArrayView() {}
 
   /*------------------------------------------------------------------*/
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  operator bool () const
+  { return m_memory.operator bool(); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator == ( const MDArrayView & rhs ) const
+  { return m_memory.operator == ( rhs.m_memory ); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator != ( const MDArrayView & rhs ) const
+  { return m_memory.operator != ( rhs.m_memory ); }
+
+  /*------------------------------------------------------------------*/
 
 private:
 
@@ -230,6 +246,11 @@ private:
   create_labeled_mdarray( const std::string & label ,
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
+
+  template< typename V , class DeviceDst , class MapDst , bool ,
+                         class DeviceSrc , class MapSrc , bool >
+  friend
+  class MDArrayDeepCopy ;
 };
 
 //----------------------------------------------------------------------------

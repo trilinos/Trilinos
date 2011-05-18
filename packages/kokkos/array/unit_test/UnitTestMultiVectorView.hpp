@@ -57,6 +57,7 @@ template<>
 class UnitTestMultiVectorView< Kokkos :: KOKKOS_MACRO_DEVICE >
 {
 public:
+  typedef Kokkos:: DeviceHost          host ;
   typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
 
   typedef Kokkos::MultiVectorView< double , device > dView ;
@@ -83,47 +84,35 @@ public:
     dView dx , dy ;
     iView ix , iy ;
 
-    if ( & dx(0) != 0 ||
-         & dy(0) != 0 ||
-         & ix(0) != 0 ||
-         & iy(0) != 0 ) {
+    if ( dx || dy || ix || iy ) {
       error("FAILED Initialize view");
     }
 
-
     dx = Kokkos::create_labeled_multivector<double,device> ( "dx" , 1000 );
     ix = Kokkos::create_labeled_multivector<int,device> ( "ix" , 2000 );
-  
-    dx(0) = 20 ;
-    ix(0) = 10 ;
-  
+
     dView dz = dy = dx ;
     iView iz = iy = ix ;
   
-    if ( & dx(0) != & dy(0) ||
-         & dx(0) != & dz(0) ||
-         & ix(0) != & iy(0) ||
-         & ix(0) != & iz(0) ) {
+    if ( dx != dy || dx != dz || ix != iy || ix != iz ) {
       error("FAILED Assign view");
     }
 
     dx = dView();
     iy = iView();
   
-    if ( & dx(0) != 0 ||
-         & dy(0) != & dz(0) ||
-         & ix(0) != & iz(0) ||
-         & iy(0) != 0 ||
-         dy(0) != 20 ||
-         iz(0) != 10 ) {
+    if ( dx ||
+         dy != dz ||
+         ix != iz ||
+         iy ) {
       error("FAILED Clear view");
     }
 
     dz = dy = dView();
     iz = ix = iView();
 
-    if ( & dx(0) != 0 || & dy(0) != 0 || & dz(0) != 0 ||
-         & ix(0) != 0 || & iy(0) != 0 || & iz(0) != 0 ) {
+    if ( dx || dy || dz ||
+         ix || iy || iz ) {
       error("FAILED Clear all view");
     }
   }

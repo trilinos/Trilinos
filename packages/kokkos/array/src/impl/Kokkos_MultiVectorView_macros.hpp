@@ -68,6 +68,25 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type count()  const { return m_count ; }
   
+  /** \brief  Query if NULL view */
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  operator bool ()  const { return 0 != m_ptr_on_device ; }
+  
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator == ( const MultiVectorView & rhs ) const
+  {
+    return m_ptr_on_device == rhs.m_ptr_on_device && m_length == rhs.m_length ;
+  }
+  
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator != ( const MultiVectorView & rhs ) const
+  {
+    return m_ptr_on_device != rhs.m_ptr_on_device || m_length != rhs.m_length ;
+  }
+  
   /*------------------------------------------------------------------*/
 
 #if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
@@ -143,10 +162,10 @@ public:
     , m_count(  m_ptr_on_device ? iEnd - iBeg : 0 )
     {
       if ( m_ptr_on_device ) {
-        device_type::assign_memory_view( rhs.m_memory_view );
+        device_type::assign_memory_view( rhs.m_memory );
       }
       else if ( rhs.m_ptr_on_device ) {
-        KOKKOS_MACRO_CAN_THROW( multivectorview_range_error( iBeg , iEnd , rhs.m_count ) );
+        KOKKOS_MACRO_CAN_THROW( Impl::multivectorview_range_error( iBeg , iEnd , rhs.m_count ) );
       }
     }
 
@@ -160,10 +179,10 @@ public:
     , m_count(  m_ptr_on_device ? 1 : 0 )
     {
       if ( m_ptr_on_device ) {
-        device_type::assign_memory_view( rhs.m_memory_view );
+        device_type::assign_memory_view( rhs.m_memory );
       }
       else if ( rhs.m_ptr_on_device ) {
-        KOKKOS_MACRO_CAN_THROW( multivectorview_range_error( iBeg , iBeg + 1 , rhs.m_count ) );
+        KOKKOS_MACRO_CAN_THROW( Impl::multivectorview_range_error( iBeg , iBeg + 1 , rhs.m_count ) );
       }
     }
 
@@ -192,6 +211,10 @@ private:
   MultiVectorView< V , M >
   create_labeled_multivector( const std::string & label ,
                               size_t length , size_t count );
+
+  template < typename V , class DeviceDst , class DeviceSrc >
+  friend
+  class MultiVectorDeepCopy ;
 };
 
 //----------------------------------------------------------------------------

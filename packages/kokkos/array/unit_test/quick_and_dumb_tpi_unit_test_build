@@ -1,4 +1,5 @@
 
+#-----------------------------------------------------------------------------
 # Quick and dirty build for unit testing with Host (serial) and TPI devices.
 # To be replace with CMake integration.
 
@@ -12,4 +13,16 @@ g++ -Wall -Werror -g -o unit_test.exe \
 	-lpthread
 
 rm ThreadPool_config.h
+
+#-----------------------------------------------------------------------------
+
+# g++ -c -I. -I../src \
+#	../src/DeviceHost/*.cpp ../src/impl/*.cpp
+#
+#/usr/local/cuda/bin/nvcc -o unit_test.exe \
+#	-I. -I../src \
+#	UnitTestMain.cu \
+#	../src/DeviceCuda/*.cu *.o
+
+#-----------------------------------------------------------------------------
 

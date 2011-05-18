@@ -87,12 +87,12 @@ public:
     dView dx , dy , dz ;
     iView ix , iy , iz ;
   
-    if ( dx.ptr_on_device() || dx.test_support_view_count() ||
-         dy.ptr_on_device() || dy.test_support_view_count() ||
-         dz.ptr_on_device() || dz.test_support_view_count() ||
-         ix.ptr_on_device() || ix.test_support_view_count() ||
-         iy.ptr_on_device() || iy.test_support_view_count() ||
-         iz.ptr_on_device() || iz.test_support_view_count() ) {
+    if ( dx || dx.test_support_view_count() ||
+         dy || dy.test_support_view_count() ||
+         dz || dz.test_support_view_count() ||
+         ix || ix.test_support_view_count() ||
+         iy || iy.test_support_view_count() ||
+         iz || iz.test_support_view_count() ) {
       error("FAILED Initialization");
     }
   
@@ -102,12 +102,12 @@ public:
     device::assign_memory_view( iy , iz );
     device::print_memory_view( s_empty );
   
-    if ( dx.ptr_on_device() || dx.test_support_view_count() ||
-         dy.ptr_on_device() || dy.test_support_view_count() ||
-         dz.ptr_on_device() || dz.test_support_view_count() ||
-         ix.ptr_on_device() || ix.test_support_view_count() ||
-         iy.ptr_on_device() || iy.test_support_view_count() ||
-         iz.ptr_on_device() || iz.test_support_view_count() ||
+    if ( dx || dx.test_support_view_count() ||
+         dy || dy.test_support_view_count() ||
+         dz || dz.test_support_view_count() ||
+         ix || ix.test_support_view_count() ||
+         iy || iy.test_support_view_count() ||
+         iz || iz.test_support_view_count() ||
          s_empty.str().length() ) {
       error("FAILED No-op");
     }
@@ -116,8 +116,8 @@ public:
     device::allocate_memory_view( ix , 20 , "ix" );
     device::print_memory_view( s_alloc );
   
-    if ( ! dx.ptr_on_device() || 1 != dx.test_support_view_count() ||
-         ! ix.ptr_on_device() || 1 != ix.test_support_view_count() ||
+    if ( ! dx || 1 != dx.test_support_view_count() ||
+         ! ix || 1 != ix.test_support_view_count() ||
          ! s_alloc.str().length() ) {
       error("FAILED Allocation");
     }
@@ -127,14 +127,14 @@ public:
     device::assign_memory_view( iz , iy );
     device::print_memory_view( s_assign );
   
-    if ( ! dx.ptr_on_device() || 2 != dx.test_support_view_count() ||
-         ! dy.ptr_on_device() || 2 != dy.test_support_view_count() ||
-         ! ix.ptr_on_device() || 3 != ix.test_support_view_count() ||
-         ! iy.ptr_on_device() || 3 != iy.test_support_view_count() ||
-         ! iz.ptr_on_device() || 3 != iz.test_support_view_count() ||
-         dx.ptr_on_device() != dy.ptr_on_device() ||
-         ix.ptr_on_device() != iy.ptr_on_device() ||
-         ix.ptr_on_device() != iz.ptr_on_device() ||
+    if ( ! dx || 2 != dx.test_support_view_count() ||
+         ! dy || 2 != dy.test_support_view_count() ||
+         ! ix || 3 != ix.test_support_view_count() ||
+         ! iy || 3 != iy.test_support_view_count() ||
+         ! iz || 3 != iz.test_support_view_count() ||
+         dx != dy ||
+         ix != iy ||
+         ix != iz ||
          s_assign.str() != s_alloc.str() ) {
       error("FAILED Assign view");
     }
@@ -143,12 +143,12 @@ public:
     device::clear_memory_view( ix );
     device::print_memory_view( s_clear1 );
     
-    if ( dx.ptr_on_device() || dx.test_support_view_count() ||
-         ix.ptr_on_device() || ix.test_support_view_count() ||
-         ! dy.ptr_on_device() || 1 != dy.test_support_view_count() ||
-         ! iy.ptr_on_device() || 2 != iy.test_support_view_count() ||
-         ! iz.ptr_on_device() || 2 != iz.test_support_view_count() ||
-         iy.ptr_on_device() != iz.ptr_on_device() ||
+    if ( dx || dx.test_support_view_count() ||
+         ix || ix.test_support_view_count() ||
+         ! dy || 1 != dy.test_support_view_count() ||
+         ! iy || 2 != iy.test_support_view_count() ||
+         ! iz || 2 != iz.test_support_view_count() ||
+         iy != iz ||
          s_clear1.str() != s_alloc.str() ) {
       error("FAILED Clear view #1");
     }
@@ -156,24 +156,24 @@ public:
     device::clear_memory_view( dy );
     device::clear_memory_view( iy );
   
-    if ( dx.ptr_on_device() || dx.test_support_view_count() ||
-         dy.ptr_on_device() || dy.test_support_view_count() ||
-         dz.ptr_on_device() || dz.test_support_view_count() ||
-         ix.ptr_on_device() || ix.test_support_view_count() ||
-         iy.ptr_on_device() || iy.test_support_view_count() ||
-         ! iz.ptr_on_device() || 1 != iz.test_support_view_count() ) {
+    if ( dx || dx.test_support_view_count() ||
+         dy || dy.test_support_view_count() ||
+         dz || dz.test_support_view_count() ||
+         ix || ix.test_support_view_count() ||
+         iy || iy.test_support_view_count() ||
+         ! iz || 1 != iz.test_support_view_count() ) {
       error("FAILED Clear view #2");
     }
   
     device::clear_memory_view( iz );
     device::print_memory_view( s_empty );
   
-    if ( dx.ptr_on_device() || dx.test_support_view_count() ||
-         dy.ptr_on_device() || dy.test_support_view_count() ||
-         dz.ptr_on_device() || dz.test_support_view_count() ||
-         ix.ptr_on_device() || ix.test_support_view_count() ||
-         iy.ptr_on_device() || iy.test_support_view_count() ||
-         iz.ptr_on_device() || iz.test_support_view_count() ||
+    if ( dx || dx.test_support_view_count() ||
+         dy || dy.test_support_view_count() ||
+         dz || dz.test_support_view_count() ||
+         ix || ix.test_support_view_count() ||
+         iy || iy.test_support_view_count() ||
+         iz || iz.test_support_view_count() ||
          s_empty.str().length() ) {
       error("FAILED Clear view #3");
     }

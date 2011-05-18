@@ -42,8 +42,9 @@
 
 #include <iosfwd>
 #include <typeinfo>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
+
 #include <Kokkos_MemoryView.hpp>
-#include <Kokkos_MDArrayIndexMaps.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
 
 #define KOKKOS_DEVICE_TPI  Kokkos::DeviceTPI

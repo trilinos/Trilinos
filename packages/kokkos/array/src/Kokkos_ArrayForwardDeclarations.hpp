@@ -37,15 +37,61 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_MDARRAYINDEXMAPS_HPP
-#define KOKKOS_MDARRAYINDEXMAPS_HPP
+#ifndef KOKKOS_ARRAYFORWARDDECLARATIONS_HPP
+#define KOKKOS_ARRAYFORWARDDECLARATIONS_HPP
 
 namespace Kokkos {
+
+//----------------------------------------------------------------------------
+// Simple value
+
+template< typename ValueType , class DeviceType >
+class ValueView ;
+
+template< typename ValueType , class DeviceType >
+class ValueDeepCopy ;
+
+//----------------------------------------------------------------------------
+// Multivector
+
+template< typename ValueType , class DeviceType >
+class MultiVectorView ;
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+class MultiVectorDeepCopy ;
+
+//----------------------------------------------------------------------------
+// Multidimensional array and mapping options
+
+template< typename ValueType ,
+          class DeviceType ,
+          class MapOption = typename DeviceType::default_mdarray_map >
+class MDArrayView ;
+
+template< typename ValueType ,
+          class DeviceDst , class MapDst , bool ContigDst ,
+          class DeviceSrc , class MapSrc , bool ContigSrc >
+class MDArrayDeepCopy ;
 
 class MDArrayIndexMapLeft ;
 class MDArrayIndexMapRight ;
 
+//----------------------------------------------------------------------------
+// Devices
+
+class DeviceHost ;
+class DeviceTPI ;
+class DeviceCuda ;
+
+// View to device memory
+
+template< typename ValueType , class DeviceType >
+class MemoryView ;
+
+//----------------------------------------------------------------------------
+
 } // namespace Kokkos
 
-#endif /* KOKKOS_MDARRAYINDEXMAPS_HPP */
+#endif /* #ifndef KOKKOS_ARRAYFORWARDDECLARATIONS_HPP */
+
 

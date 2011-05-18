@@ -42,8 +42,10 @@
 
 #include <iosfwd>
 #include <typeinfo>
+
+#include <Kokkos_ArrayForwardDeclarations.hpp>
+
 #include <Kokkos_MemoryView.hpp>
-#include <Kokkos_MDArrayIndexMaps.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
 
 #define KOKKOS_DEVICE_CUDA  Kokkos::DeviceCuda
@@ -57,8 +59,10 @@ namespace Kokkos {
 class DeviceCuda {
 private:
 
-  static void * allocate_memory( size_t bytes , const std::string & label ,
-                                 const std::type_info & type );
+  static void * allocate_memory( const std::string & label ,
+                                 const std::type_info & type ,
+                                 const size_t member_size ,
+                                 const size_t member_count );
 
   static void deallocate_memory( void * );
 
@@ -71,13 +75,14 @@ public:
   typedef MDArrayIndexMapLeft  default_mdarray_map ;
 
   /*--------------------------------*/
+
   /** \brief  Clear the memory view setting it to the NULL view.
    *          If this is the last view to this allocated memory
    *          then deallocate this allocated memory.
    */
   template< typename ValueType >
-  static
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  static
   void clear_memory_view( MemoryView< ValueType , DeviceCuda > & lhs )
     {
 #if ! defined( KOKKOS_MACRO_DEVICE_FUNCTION )
@@ -94,8 +99,8 @@ public:
    *          Clear the 'lhs' view before the assignment.
    */
   template< typename ValueType >
-  static
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  static
   void assign_memory_view(       MemoryView< ValueType , DeviceCuda > & lhs ,
                            const MemoryView< ValueType , DeviceCuda > & rhs )
     {
@@ -118,12 +123,30 @@ public:
                              size_t count , const std::string & label )
     {
       clear_memory_view( lhs );  
-      lhs.m_ptr_on_device = allocate_memory( sizeof(ValueType) * count , label , typeid(ValueType) );
-      lhs.m_tracker.insert( lhs );
+      lhs.m_ptr_on_device = (ValueType *)
+        allocate_memory( label, typeid(ValueType), sizeof(ValueType), count );
+      lhs.m_tracker.insert( lhs.m_tracker );
     }
 
   /** \brief  Print information about allocate memory */
-  void print_memory_view( std::ostream & ) const ;
+  static void print_memory_view( std::ostream & );
+
+  /*--------------------------------*/
+
+  static void set_dispatch_functor();
+  static void clear_dispatch_functor();
+
+  /*--------------------------------*/
+
+  /** \brief  Initialize the selected cuda device */
+  static void initialize( int cuda_device_id = 0 );
+
+  struct Traits {
+    typedef unsigned int WordType ;
+  };
+
+  static Traits::WordType * reduce_multiblock_scratch_space();
+  static Traits::WordType * reduce_multiblock_scratch_flag();
 
   /*--------------------------------*/
 };

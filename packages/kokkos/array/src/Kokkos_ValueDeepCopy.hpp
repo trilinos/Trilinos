@@ -40,12 +40,10 @@
 #ifndef KOKKOS_VALUEDEEPCOPY_HPP
 #define KOKKOS_VALUEDEEPCOPY_HPP
 
+#include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <Kokkos_ValueView.hpp>
 
 namespace Kokkos {
-
-template< typename ValueType , class DeviceType >
-class ValueDeepCopy ;
 
 //----------------------------------------------------------------------------
 
@@ -87,6 +85,10 @@ public:
 
 #if defined( KOKKOS_DEVICE_TPI )
 #include <DeviceTPI/Kokkos_DeviceTPI_ValueDeepCopy.hpp>
+#endif
+
+#if defined( KOKKOS_DEVICE_CUDA )
+#include <DeviceCuda/Kokkos_DeviceCuda_DeepCopy.hpp>
 #endif
 
 //----------------------------------------------------------------------------

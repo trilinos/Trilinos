@@ -42,10 +42,22 @@
 
 #include <cstddef>
 
-#define KOKKOS_MACRO_CHECK( expr )  expr
-
 namespace Kokkos {
 namespace Impl {
+
+void multivector_require_equal_dimension(
+  size_t length_x , size_t count_x ,
+  size_t length_y , size_t count_y );
+
+template< class MultiVectorX , class MultiVectorY >
+void multivector_require_equal_dimension( const MultiVectorX & x ,
+                                          const MultiVectorY & y )
+{
+  multivector_require_equal_dimension( x.length() , x.count() ,
+                                       y.length() , y.count() );
+}
+
+void multivectorview_range_error( size_t , size_t , size_t );
 
 size_t mdarray_deduce_rank( size_t , size_t , size_t , size_t ,
                             size_t , size_t , size_t , size_t );

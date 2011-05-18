@@ -41,6 +41,7 @@
 #define KOKKOS_PARALLELFOR_HPP
 
 #include <cstddef>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
 
 namespace Kokkos {
 

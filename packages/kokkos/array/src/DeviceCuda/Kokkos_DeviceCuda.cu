@@ -69,13 +69,21 @@ public:
   Impl::MemoryInfoSet            m_allocations ;
   struct cudaDeviceProp          m_cudaProp ;
   int                            m_cudaDev ;
-  CudaDevice::Traits::WordType * m_reduceScratchSpace ;
-  CudaDevice::Traits::WordType * m_reduceScratchFlag ;
+  DeviceCuda::Traits::WordType * m_reduceScratchSpace ;
+  DeviceCuda::Traits::WordType * m_reduceScratchFlag ;
 
   explicit DeviceCuda_Impl( int cuda_device_id );
   ~DeviceCuda_Impl();
 
   static DeviceCuda_Impl & singleton( int cuda_device_id = 0 );
+
+  void * allocate_memory(
+    const std::string    & label ,
+    const std::type_info & type ,
+    const size_t member_size ,
+    const size_t member_count );
+
+  void deallocate_memory( void * ptr );
 
 private:
   DeviceCuda_Impl();
@@ -89,7 +97,7 @@ DeviceCuda_Impl & DeviceCuda_Impl::singleton( int cuda_device_id )
   return self ;
 }
 
-DeviceCuda_Impl::DeviceCuda_Impl( cuda_device_id )
+DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   : m_allocations()
   , m_cudaProp()
   , m_cudaDev( cuda_device_id )
@@ -118,7 +126,7 @@ DeviceCuda_Impl::DeviceCuda_Impl( cuda_device_id )
   const size_t sharedWord =
    ( m_cudaProp.sharedMemPerBlock + n - 1 ) / n ;
 
-  m_reduceScratchSpace =
+  m_reduceScratchSpace = (DeviceCuda::Traits::WordType *)
     allocate_memory( std::string("MultiblockReduceScratchSpace") ,
                      typeid( DeviceCuda::Traits::WordType ),
                      sizeof( DeviceCuda::Traits::WordType ),
@@ -143,11 +151,56 @@ DeviceCuda_Impl::~DeviceCuda_Impl()
   }
 }
 
+void * DeviceCuda_Impl::allocate_memory(
+  const std::string    & label ,
+  const std::type_info & type ,
+  const size_t member_size ,
+  const size_t member_count )
+{
+  Impl::MemoryInfo tmp ;
+
+  tmp.m_type  = & type ;
+  tmp.m_label = label ;
+  tmp.m_size  = member_size ;
+  tmp.m_count = member_count ;
+
+  CUDA_SAFE_CALL( cudaMalloc( & tmp.m_ptr , member_size * member_count ) );
+
+  const bool ok_alloc  = 0 != tmp.m_ptr ;
+  const bool ok_insert = ok_alloc && m_allocations.insert( tmp );
+
+  if ( ! ok_alloc || ! ok_insert ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::DeviceCuda::allocate_memory( " << label
+        << " , " << type.name()
+        << " , " << member_size
+        << " , " << member_count
+        << " ) FAILED " ;
+    if ( ok_alloc ) { msg << "memory allocation" ; }
+    else            { msg << "with internal error" ; }
+    throw std::runtime_error( msg.str() );
+  }
+
+  return tmp.m_ptr ;
+}
+
+void DeviceCuda_Impl::deallocate_memory( void * ptr )
+{
+  if ( ! m_allocations.erase( ptr ) ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::DeviceCuda::deallocate_memory( " << ptr
+        << " ) FAILED memory allocated by this device" ;
+    throw std::runtime_error( msg.str() );
+  }
+
+  CUDA_SAFE_CALL( cudaFree( ptr ) );
+}
+
 }
 
 /*--------------------------------------------------------------------------*/
 
-DeviceCuda::initialize( int cuda_device_id )
+void DeviceCuda::initialize( int cuda_device_id )
 {
   DeviceCuda_Impl::singleton( cuda_device_id );
 }
@@ -176,44 +229,14 @@ void * DeviceCuda::allocate_memory(
 {
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
 
-  Impl::MemoryInfo tmp ;
-
-  tmp.m_type  = & type ;
-  tmp.m_label = label ;
-  tmp.m_size  = member_size ;
-  tmp.m_count = member_count ;
-  tmp.m_ptr   = calloc( member_size , member_count );
-
-  const bool ok_alloc  = 0 != tmp.m_ptr ;
-  const bool ok_insert = ok_alloc && s.m_allocations.insert( tmp );
-
-  if ( ! ok_alloc || ! ok_insert ) {
-    std::ostringstream msg ;
-    msg << "Kokkos::DeviceCuda::allocate_memory( " << label
-        << " , " << type.name()
-        << " , " << member_size
-        << " , " << member_count
-        << " ) FAILED " ;
-    if ( ok_alloc ) { msg << "memory allocation" ; }
-    else            { msg << "with internal error" ; }
-    throw std::runtime_error( msg.str() );
-  }
-
-  return tmp.m_ptr ;
+  return s.allocate_memory( label ,type , member_size , member_count );
 }
 
 void DeviceCuda::deallocate_memory( void * ptr )
 {
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
 
-  if ( ! s.m_allocations.erase( ptr ) ) {
-    std::ostringstream msg ;
-    msg << "Kokkos::DeviceCuda::deallocate_memory( " << ptr
-        << " ) FAILED memory allocated by this device" ;
-    throw std::runtime_error( msg.str() );
-  }
-
-  free( ptr );
+  s.deallocate_memory( ptr );
 }
 
 void DeviceCuda::print_memory_view( std::ostream & o )

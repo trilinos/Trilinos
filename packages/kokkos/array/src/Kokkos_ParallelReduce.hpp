@@ -42,6 +42,7 @@
 
 #include <cstddef>
 
+#include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <Kokkos_ValueView.hpp>
 
 namespace Kokkos {

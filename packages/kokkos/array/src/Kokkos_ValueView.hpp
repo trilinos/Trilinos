@@ -42,12 +42,11 @@
 
 #include <cstddef>
 #include <string>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType > class ValueView ;
 
 template< typename ValueType , class DeviceType >
 ValueView< ValueType , DeviceType >

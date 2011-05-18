@@ -68,6 +68,21 @@ public:
 
 #endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
 
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  operator bool() const
+  { return m_memory.operator bool(); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator == ( const ValueView & rhs ) const
+  { return m_memory.operator==( rhs.m_memory ); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator != ( const ValueView & rhs ) const
+  { return m_memory.operator!=( rhs.m_memory ); }
+
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   inline
@@ -124,6 +139,10 @@ private:
   friend
   ValueView< V , D >
   create_labeled_value( const std::string & label );
+
+  template< typename , class >
+  friend
+  class ValueDeepCopy ;
 };
 
 //----------------------------------------------------------------------------

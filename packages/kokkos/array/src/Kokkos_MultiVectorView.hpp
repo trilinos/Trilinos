@@ -42,12 +42,12 @@
 
 #include <cstddef>
 #include <string>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
+#include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType > class MultiVectorView ;
 
 template< typename ValueType , class DeviceType >
 MultiVectorView< ValueType , DeviceType >
@@ -116,7 +116,14 @@ public:
   MultiVectorView( const MultiVectorView & rhs , size_type iVbeg , size_type iVend );
 
   /*------------------------------------------------------------------*/
+  /** \brief  Query if NULL view */
+  operator bool () const ;
 
+  /** \brief  Query if view to same memory */
+  bool operator == ( const MultiVectorView & ) const ;
+
+  /** \brief  Query if not view to same memory */
+  bool operator != ( const MultiVectorView & ) const ;
 private:
 
   MultiVectorView( const std::string & label ,

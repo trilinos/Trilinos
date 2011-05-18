@@ -42,15 +42,11 @@
 
 #include <cstddef>
 #include <string>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
-
-template< typename ValueType ,
-          class DeviceType ,
-          class MapOption = typename DeviceType::default_mdarray_map >
-class MDArrayView ;
 
 template< typename ValueType , class DeviceType , class MapOption >
 MDArrayView< ValueType , DeviceType , MapOption >
@@ -201,6 +197,14 @@ public:
    */
   inline
   ~MDArrayView();
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Query if non-NULL view */
+  operator bool () const ;
+
+  bool operator == ( const MDArrayView & ) const ;
+
+  bool operator != ( const MDArrayView & ) const ;
 
 private:
 
