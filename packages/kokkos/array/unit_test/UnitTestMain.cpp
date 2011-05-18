@@ -23,21 +23,6 @@
 
 #include <impl/Kokkos_DeviceClear_macros.hpp>
 
-//----------------------------------------------------------------------------
-
-#include <impl/Kokkos_DeviceTPI_macros.hpp>
-
-#include <UnitTestDeviceMemoryManagement.hpp>
-#include <UnitTestValueView.hpp>
-#include <UnitTestMultiVectorView.hpp>
-#include <UnitTestMDArrayView.hpp>
-#include <UnitTestMDArrayDeepCopy.hpp>
-#include <UnitTestReduce.hpp>
-
-#include <impl/Kokkos_DeviceClear_macros.hpp>
-
-//----------------------------------------------------------------------------
-
 namespace {
 
 void test_device_host()
@@ -51,6 +36,23 @@ void test_device_host()
   UnitTestReduce< long ,   Kokkos::DeviceHost >( 1000000 );
   UnitTestReduce< double , Kokkos::DeviceHost >( 1000000 );
 }
+
+}
+
+//----------------------------------------------------------------------------
+
+#include <impl/Kokkos_DeviceTPI_macros.hpp>
+
+#include <UnitTestDeviceMemoryManagement.hpp>
+#include <UnitTestValueView.hpp>
+#include <UnitTestMultiVectorView.hpp>
+#include <UnitTestMDArrayView.hpp>
+#include <UnitTestMDArrayDeepCopy.hpp>
+#include <UnitTestReduce.hpp>
+
+#include <impl/Kokkos_DeviceClear_macros.hpp>
+
+namespace {
 
 void test_device_tpi()
 {
@@ -68,10 +70,54 @@ void test_device_tpi()
 
 }
 
+//----------------------------------------------------------------------------
+
+#include <impl/Kokkos_DeviceCuda_macros.hpp>
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
+#include <UnitTestDeviceMemoryManagement.hpp>
+#include <UnitTestValueView.hpp>
+#include <UnitTestMultiVectorView.hpp>
+#include <UnitTestMDArrayView.hpp>
+#include <UnitTestMDArrayDeepCopy.hpp>
+#include <UnitTestReduce.hpp>
+
+namespace {
+
+void test_device_cuda()
+{
+  Kokkos::DeviceCuda::initialize();
+
+  UnitTestDeviceMemoryManagement< Kokkos::DeviceCuda >();
+  UnitTestValueView<       Kokkos::DeviceCuda >();
+  UnitTestMultiVectorView< Kokkos::DeviceCuda >();
+  UnitTestMDArrayView<     Kokkos::DeviceCuda >();
+  UnitTestMDArrayDeepCopy< Kokkos::DeviceCuda >();
+
+  UnitTestReduce< long ,   Kokkos::DeviceCuda >( 1000000 );
+  UnitTestReduce< double , Kokkos::DeviceCuda >( 1000000 );
+}
+
+}
+
+#else
+
+namespace {
+void test_device_cuda() {}
+}
+
+#endif
+
+#include <impl/Kokkos_DeviceClear_macros.hpp>
+
+//----------------------------------------------------------------------------
+
 int main()
 {
   test_device_host();
   test_device_tpi();
+  test_device_cuda();
 
   return 0 ;
 }

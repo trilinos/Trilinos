@@ -80,7 +80,9 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   void clear_memory_view( MemoryView< ValueType , DeviceCuda > & lhs )
     {
-#ifndef __CUDA_ARCH__
+#if ! defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+      // Memory management only available on the host side.
+      // If compiling for the device then omit memory management.
       if ( lhs.m_tracker.remove_and_query_is_last() ) {
         deallocate_memory( lhs.m_ptr_on_device );
       }
@@ -98,7 +100,9 @@ public:
                            const MemoryView< ValueType , DeviceCuda > & rhs )
     {
       clear_memory_view( lhs );
-#ifndef __CUDA_ARCH__
+#if ! defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+      // Memory management only available on the host side.
+      // If compiling for the device then omit memory management.
       // If launching a kernel then the view is untracked.
       if ( ! m_launching_kernel ) {
         lhs.m_tracker.insert( rhs.m_tracker );
