@@ -22,7 +22,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # 
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES
      PyTrilinos TriKota Optika  # We don't have TPLs for these
-     Sundace Stokhos STK  # Currently have failures and nor currently needed by CASL
+     Sundance Stokhos STK  # Currently have failures and nor currently needed by CASL
      )
   
   SET_DEFAULT(COMPILER_VERSION "GCC-4.5.1")
