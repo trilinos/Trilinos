@@ -37,63 +37,58 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_VALUEDEEPCOPY_HPP
-#define KOKKOS_VALUEDEEPCOPY_HPP
-
-#include <Kokkos_ArrayForwardDeclarations.hpp>
-#include <Kokkos_ValueView.hpp>
+#ifndef KOKKOS_DEVICEHOST_MDARRAYVIEW_HPP
+#define KOKKOS_DEVICEHOST_MDARRAYVIEW_HPP
 
 namespace Kokkos {
 
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
-inline
-void deep_copy( const ValueView<ValueType,DeviceType> & dst ,
-                const ValueType & src )
-{
-  ValueDeepCopy<ValueType,DeviceType>::run( dst , src );
-}
-
-template< typename ValueType , class DeviceType >
-inline
-void deep_copy( ValueType & dst ,
-                const ValueView<ValueType,DeviceType> & src )
-{
-  ValueDeepCopy<ValueType,DeviceType>::run( dst , src );
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+/*------------------------------------------------------------------------*/
 
 template< typename ValueType >
-class ValueDeepCopy< ValueType , DeviceHost > {
+class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceHost >
+{
 public:
-  static void run( const ValueView< ValueType , DeviceHost > & dst ,
-                   const ValueType & src )
-  { *dst = src ; }
+  typedef Impl::CopyFunctor< ValueType , DeviceHost > functor_type ;
 
-  static void run( ValueType & dst ,
-                   const ValueView< ValueType , DeviceHost > & src )
-  { dst = *src ; }
+  static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
+                   const MultiVectorView< ValueType , DeviceHost > & src )
+  {
+    Impl::multivector_require_equal_dimension( dst , src );
+
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_ptr_on_device ,
+                                src.m_ptr_on_device ) );
+  }
 };
 
-}
+/*------------------------------------------------------------------------*/
+/** \brief  Copy Host to Host specialization */
+template< typename ValueType , class MapOpt >
+class MDArrayDeepCopy< ValueType ,
+                       DeviceHost , MapOpt , true ,
+                       DeviceHost , MapOpt , true >
+{
+public:
+  typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
+  typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+  typedef Impl::CopyFunctor< ValueType , DeviceHost > functor_type ;
 
-#if defined( KOKKOS_DEVICE_TPI )
-#include <DeviceTPI/Kokkos_DeviceTPI_ValueDeepCopy.hpp>
-#endif
+  static void run( const dst_type & dst , const src_type & src )
+  {
+    Impl::mdarray_require_equal_dimension( dst , src );
 
-#if defined( KOKKOS_DEVICE_CUDA )
-#include <DeviceCuda/Kokkos_DeviceCuda_DeepCopy.hpp>
-#endif
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+  }
+};
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+/*------------------------------------------------------------------------*/
 
-#endif /* KOKKOS_VALUEDEEPCOPY_HPP */
+} // namespace Kokkos
+
+
+#endif /* #ifndef KOKKOS_DEVICEHOST_MDARRAYVIEW_HPP */
 
 

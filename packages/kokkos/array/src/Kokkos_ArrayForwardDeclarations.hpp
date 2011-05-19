@@ -43,13 +43,29 @@
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
+// Devices
+
+class DeviceHost ;
+class DeviceTPI ;
+class DeviceCuda ;
+
+//----------------------------------------------------------------------------
 // Simple value
 
 template< typename ValueType , class DeviceType >
 class ValueView ;
 
 template< typename ValueType , class DeviceType >
-class ValueDeepCopy ;
+void deep_copy( const ValueView< ValueType , DeviceType > & dst ,
+                const ValueType & src );
+
+template< typename ValueType , class DeviceType >
+void deep_copy( ValueType & dst ,
+                const ValueView< ValueType , DeviceType > & src );
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+void deep_copy( const ValueView< ValueType , DeviceDst > & dst ,
+                const ValueView< ValueType , DeviceSrc > & src );
 
 //----------------------------------------------------------------------------
 // Multivector
@@ -58,31 +74,28 @@ template< typename ValueType , class DeviceType >
 class MultiVectorView ;
 
 template< typename ValueType , class DeviceDst , class DeviceSrc >
-class MultiVectorDeepCopy ;
+void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
+                const MultiVectorView< ValueType , DeviceSrc > & src );
 
 //----------------------------------------------------------------------------
 // Multidimensional array and mapping options
+
+enum { MDArrayMaxRank = 8 };
 
 template< typename ValueType ,
           class DeviceType ,
           class MapOption = typename DeviceType::default_mdarray_map >
 class MDArrayView ;
 
-template< typename ValueType ,
-          class DeviceDst , class MapDst , bool ContigDst ,
-          class DeviceSrc , class MapSrc , bool ContigSrc >
-class MDArrayDeepCopy ;
+template< typename ValueType , class DeviceDst , class MapDst ,
+                               class DeviceSrc , class MapSrc >
+void deep_copy( const MDArrayView< ValueType , DeviceDst , MapDst > & dst ,
+                const MDArrayView< ValueType , DeviceSrc , MapSrc > & src );
 
 class MDArrayIndexMapLeft ;
 class MDArrayIndexMapRight ;
 
 //----------------------------------------------------------------------------
-// Devices
-
-class DeviceHost ;
-class DeviceTPI ;
-class DeviceCuda ;
-
 // View to device memory
 
 template< typename ValueType , class DeviceType >

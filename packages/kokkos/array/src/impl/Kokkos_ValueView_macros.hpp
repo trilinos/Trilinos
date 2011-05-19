@@ -140,15 +140,24 @@ private:
   ValueView< V , D >
   create_labeled_value( const std::string & label );
 
-  template< typename , class >
+  template< typename , class , class >
   friend
   class ValueDeepCopy ;
 };
 
-//----------------------------------------------------------------------------
-
 } // namespace Kokkos
 
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
 #endif /* KOKKOS_VALUEVIEW_HPP */
 
 

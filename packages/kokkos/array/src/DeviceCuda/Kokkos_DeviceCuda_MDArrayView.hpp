@@ -37,108 +37,112 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICE_TPI_DEEP_COPY_HPP
-#define KOKKOS_DEVICE_TPI_DEEP_COPY_HPP
+#ifndef KOKKOS_DEVICE_CUDA_DEEP_COPY_HPP
+#define KOKKOS_DEVICE_CUDA_DEEP_COPY_HPP
 
 #include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 #include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
+namespace Impl {
+
+void copy_to_cuda_from_host( void * dst , const void * src ,
+                             size_t member_size , size_t member_count );
+
+void copy_to_host_from_cuda( void * dst , const void * src ,
+                             size_t member_size , size_t member_count );
+}
 
 /*------------------------------------------------------------------------*/
 
 template< typename ValueType >
-class ValueDeepCopy< ValueType , DeviceTPI >
+class ValueDeepCopy< ValueType , DeviceCuda >
 {
 public:
-  static void run( const ValueView< ValueType , DeviceTPI > & dst ,
+  static void run( const ValueView< ValueType , DeviceCuda > & dst ,
                    const ValueType & src )
-  { *dst = src ; }
+  {
+    ValueType * const d = dst.m_memory.ptr_on_device();
+    Impl::copy_to_cuda_from_host( d , & src, sizeof(ValueType), 1 );
+  }
 
   static void run( ValueType & dst ,
-                   const ValueView< ValueType , DeviceTPI > & src )
-  { dst = *src ; }
+                   const ValueView< ValueType , DeviceCuda > & src )
+  {
+    ValueType * const s = src.m_memory.ptr_on_device();
+    Impl::copy_to_host_from_cuda( & dst , s, sizeof(ValueType), 1 );
+  }
 };
-
 /*------------------------------------------------------------------------*/
 
 template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceTPI , DeviceHost >
+class MultiVectorDeepCopy< ValueType , DeviceCuda , DeviceHost >
 {
 public:
-  typedef Impl::CopyFunctor< ValueType , DeviceTPI > functor_type ;
-
-  static void run( const MultiVectorView< ValueType , DeviceTPI > & dst ,
+  static void run( const MultiVectorView< ValueType , DeviceCuda > & dst ,
                    const MultiVectorView< ValueType , DeviceHost > & src )
   {
-    Impl::multivector_require_equal_dimension( dst , src );
-
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_ptr_on_device ,
-                                src.m_ptr_on_device ) );
+    Impl::copy_to_cuda_from_host( dst.m_ptr_on_device ,
+                                  src.m_ptr_on_device,
+                                  sizeof(ValueType),
+                                  dst.size() );
   }
 };
 
 template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceTPI >
+class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceCuda >
 {
-  typedef Impl::CopyFunctor< ValueType , DeviceTPI > functor_type ;
-
+public:
   static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
-                   const MultiVectorView< ValueType , DeviceTPI > & src )
+                   const MultiVectorView< ValueType , DeviceCuda > & src )
   {
-    Impl::multivector_require_equal_dimension( dst , src );
-
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_ptr_on_device ,
-                                src.m_ptr_on_device ) );
+    Impl::copy_to_host_from_cuda( dst.m_ptr_on_device ,
+                                  src.m_ptr_on_device,
+                                  sizeof(ValueType),
+                                  dst.size() );
   }
 };
 
 /*------------------------------------------------------------------------*/
-/** \brief  Copy Host to TPI specialization */
+/** \brief  Copy Host to Cuda specialization */
 template< typename ValueType , class MapOpt >
 class MDArrayDeepCopy< ValueType ,
-                       DeviceTPI , MapOpt , true ,
+                       DeviceCuda , MapOpt , true ,
                        DeviceHost , MapOpt , true >
 {
 public:
-  typedef MDArrayView< ValueType , DeviceTPI , MapOpt > dst_type ;
+  typedef MDArrayView< ValueType , DeviceCuda , MapOpt > dst_type ;
   typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
-
-  typedef Impl::CopyFunctor< ValueType , DeviceTPI > functor_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
     Impl::mdarray_require_equal_dimension( dst , src );
 
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
+    Impl::copy_to_cuda_from_host( dst.m_memory.ptr_on_device() ,
+                                  src.m_memory.ptr_on_device() ,
+                                  sizeof(ValueType) , dst.size() );
   }
 };
 
 
-/** \brief  Copy TPI to Host specialization */
+/** \brief  Copy Cuda to Host specialization */
 template< typename ValueType , class MapOpt >
 class MDArrayDeepCopy< ValueType ,
                        DeviceHost , MapOpt , true ,
-                       DeviceTPI , MapOpt , true >
+                       DeviceCuda , MapOpt , true >
 {
 public:
   typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceTPI , MapOpt > src_type ;
-
-  typedef Impl::CopyFunctor< ValueType , DeviceTPI > functor_type ;
+  typedef MDArrayView< ValueType , DeviceCuda , MapOpt > src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
     Impl::mdarray_require_equal_dimension( dst , src );
 
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
+    Impl::copy_to_host_from_cuda( dst.m_memory.ptr_on_device() ,
+                                  src.m_memory.ptr_on_device() ,
+                                  sizeof(ValueType) , dst.size() );
   }
 };
 
@@ -147,6 +151,6 @@ public:
 } // namespace Kokkos
 
 
-#endif /* #ifndef KOKKOS_DEVICE_TPI_DEEP_COPY_HPP */
+#endif /* #ifndef KOKKOS_DEVICE_CUDA_DEEP_COPY_HPP */
 
 

@@ -37,26 +37,58 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICETPI_MDARRAYDEEPCOPY_HPP
-#define KOKKOS_DEVICETPI_MDARRAYDEEPCOPY_HPP
+#ifndef KOKKOS_DEVICEHOST_MULTIVECTORVIEW_HPP
+#define KOKKOS_DEVICEHOST_MULTIVECTORVIEW_HPP
 
 namespace Kokkos {
 
-template< typename ValueType , class DeviceTPI >
-class ValueDeepCopy {
+/*------------------------------------------------------------------------*/
+
+template< typename ValueType >
+class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceHost >
+{
 public:
+  typedef Impl::CopyFunctor< ValueType , DeviceHost > functor_type ;
 
-  static void run( const ValueView< ValueType , DeviceTPI > & dst ,
-                   const ValueType & src )
-  { *dst = src ; }
+  static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
+                   const MultiVectorView< ValueType , DeviceHost > & src )
+  {
+    Impl::multivector_require_equal_dimension( dst , src );
 
-  static void run( ValueType & dst ,
-                   const ValueView< ValueType , DeviceTPI >  & src )
-  { dst = *src ; }
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_ptr_on_device ,
+                                src.m_ptr_on_device ) );
+  }
 };
+
+/*------------------------------------------------------------------------*/
+/** \brief  Copy Host to Host specialization */
+template< typename ValueType , class MapOpt >
+class MDArrayDeepCopy< ValueType ,
+                       DeviceHost , MapOpt , true ,
+                       DeviceHost , MapOpt , true >
+{
+public:
+  typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
+  typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
+
+  typedef Impl::CopyFunctor< ValueType , DeviceHost > functor_type ;
+
+  static void run( const dst_type & dst , const src_type & src )
+  {
+    Impl::mdarray_require_equal_dimension( dst , src );
+
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+  }
+};
+
+/*------------------------------------------------------------------------*/
 
 } // namespace Kokkos
 
-#endif /* KOKKOS_DEVICETPI_MDARRAYDEEPCOPY_HPP */
+
+#endif /* #ifndef KOKKOS_DEVICEHOST_MULTIVECTORVIEW_HPP */
 
 

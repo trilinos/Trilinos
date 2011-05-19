@@ -37,23 +37,41 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICECUDA_DEEPCOPY_HPP
-#define KOKKOS_DEVICECUDA_DEEPCOPY_HPP
-
-#include <cstddef>
+#ifndef KOKKOS_DEVICETPI_MDARRAYDEEPCOPY_HPP
+#define KOKKOS_DEVICETPI_MDARRAYDEEPCOPY_HPP
 
 namespace Kokkos {
 namespace Impl {
 
-void copy_to_cuda_from_host( void * dst , const void * src ,
-                             size_t member_size , size_t member_count );
+template< typename ValueType >
+class ValueDeepCopy< ValueType , DeviceTPI , DeviceHost > {
+public:
 
-void copy_to_host_from_cuda( void * dst , const void * src ,
-                             size_t member_size , size_t member_count );
+  static void run( const ValueView< ValueType , DeviceTPI > & dst ,
+                   const ValueType & src )
+  { *dst = src ; }
+
+  static void run( const ValueView< ValueType , DeviceTPI >  & dst ,
+                   const ValueView< ValueType , DeviceHost > & src )
+  { *dst = *src ; }
+};
+
+template< typename ValueType >
+class ValueDeepCopy< ValueType , DeviceHost , DeviceTPI > {
+public:
+
+  static void run( ValueType & dst ,
+                   const ValueView< ValueType , DeviceTPI >  & src )
+  { dst = *src ; }
+
+  static void run( const ValueView< ValueType , DeviceHost > & dst ,
+                   const ValueView< ValueType , DeviceTPI >  & src )
+  { *dst = *src ; }
+};
+
 } // namespace Impl
 } // namespace Kokkos
 
-
-#endif /* #ifndef KOKKOS_DEVICECUDA_DEEPCOPY_HPP */
+#endif /* KOKKOS_DEVICETPI_MDARRAYDEEPCOPY_HPP */
 
 

@@ -6,7 +6,7 @@
 #include <Kokkos_ValueView.hpp>
 #include <Kokkos_MultiVectorView.hpp>
 #include <Kokkos_MDArrayView.hpp>
-#include <Kokkos_MDArrayDeepCopy.hpp>
+
 #include <Kokkos_ParallelFor.hpp>
 #include <Kokkos_ParallelReduce.hpp>
 

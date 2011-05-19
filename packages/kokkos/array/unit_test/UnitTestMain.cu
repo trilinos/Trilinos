@@ -3,9 +3,13 @@
 #include <Kokkos_DeviceCuda.hpp>
 
 #include <Kokkos_ValueView.hpp>
+#include <Kokkos_ValueDeepCopy.hpp>
+
 #include <Kokkos_MultiVectorView.hpp>
+
 #include <Kokkos_MDArrayView.hpp>
 #include <Kokkos_MDArrayDeepCopy.hpp>
+
 #include <Kokkos_ParallelFor.hpp>
 #include <Kokkos_ParallelReduce.hpp>
 
@@ -44,8 +48,6 @@ void test_device_host()
 
 #include <impl/Kokkos_DeviceCuda_macros.hpp>
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
-
 #include <UnitTestDeviceMemoryManagement.hpp>
 #include <UnitTestValueView.hpp>
 #include <UnitTestMultiVectorView.hpp>
@@ -72,14 +74,6 @@ void test_device_cuda()
 }
 
 }
-
-#else
-
-namespace {
-void test_device_cuda() {}
-}
-
-#endif
 
 #include <impl/Kokkos_DeviceClear_macros.hpp>
 

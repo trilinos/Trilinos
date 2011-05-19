@@ -51,7 +51,7 @@ namespace Impl {
 template< class DeviceType , class MapOption > class MDArrayIndexMap ;
 
 template<>
-class MDArrayIndexMap< KOKKOS_MACRO_DEVICE , Kokkos::MDArrayIndexMapLeft > {
+class MDArrayIndexMap< KOKKOS_MACRO_DEVICE , MDArrayIndexMapLeft > {
 public:
 
   typedef KOKKOS_MACRO_DEVICE     device_type;

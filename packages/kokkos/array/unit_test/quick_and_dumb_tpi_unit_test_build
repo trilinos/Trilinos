@@ -16,7 +16,7 @@ rm ThreadPool_config.h
 
 #-----------------------------------------------------------------------------
 
-# g++ -c -I. -I../src \
+#g++ -c -I. -I../src \
 #	../src/DeviceHost/*.cpp ../src/impl/*.cpp
 #
 #/usr/local/cuda/bin/nvcc -o unit_test.exe \

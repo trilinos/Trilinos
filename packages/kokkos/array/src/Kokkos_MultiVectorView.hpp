@@ -173,8 +173,6 @@ create_multivector( size_t length , size_t count = 1 )
     ( std::string() , length , count );
 }
 
-//----------------------------------------------------------------------------
-
 template< class MultiVectorType >
 inline
 MultiVectorView< typename MultiVectorType::value_type ,
@@ -185,6 +183,17 @@ create_multivector( size_t length , size_t count = 1 )
                                      typename MultiVectorType::device_type >
          ( std::string() , length , count );
 }
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+class MultiVectorDeepCopy ;
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+inline
+void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
+                const MultiVectorView< ValueType , DeviceSrc > & src )
+{ MultiVectorDeepCopy<ValueType,DeviceDst,DeviceSrc>::run( dst , src ); }
 
 } // namespace Kokkos
 
@@ -208,6 +217,7 @@ create_multivector( size_t length , size_t count = 1 )
 #include <impl/Kokkos_DeviceCuda_macros.hpp>
 #include <impl/Kokkos_MultiVectorView_macros.hpp>
 #include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <DeviceCuda/Kokkos_DeviceCuda_MultiVectorView.hpp>
 #endif
 
 #endif /* KOKKOS_MULTIVECTORVIEW_HPP */

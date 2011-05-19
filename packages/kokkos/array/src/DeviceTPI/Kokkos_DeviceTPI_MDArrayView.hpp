@@ -37,91 +37,63 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_MACRO_DEVICE
-#error "KOKKOS_MACRO_DEVICE undefined"
-#endif
+#ifndef KOKKOS_DEVICETPI_MDARRAYVIEW_HPP
+#define KOKKOS_DEVICETPI_MDARRAYVIEW_HPP
 
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
+namespace Kokkos {
+namespace Impl {
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+/*------------------------------------------------------------------------*/
+/** \brief  Copy Host to TPI specialization with same map and contiguous */
 
-/*--------------------------------------------------------------------------*/
-
-namespace {
-
-template< class > class UnitTestValueView ;
-
-template<>
-class UnitTestValueView< Kokkos :: KOKKOS_MACRO_DEVICE >
+template< typename ValueType , class MapOpt >
+class MDArrayDeepCopy< ValueType ,
+                       DeviceTPI ,  MapOpt , true ,
+                       DeviceHost , MapOpt , true >
 {
 public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef MDArrayView< ValueType , DeviceTPI ,  MapOpt > dst_type ;
+  typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
 
-  typedef Kokkos::ValueView< double , device > dView ;
-  typedef Kokkos::ValueView< int ,    device > iView ;
+  typedef MDArrayDeepCopyFunctor< ValueType , DeviceTPI , void , void , 0 > functor_type ;
 
-  static std::string name()
+  static void run( const dst_type & dst , const src_type & src )
   {
-    std::string tmp ;
-    tmp.append( "UnitTestValueView< Kokkos::" );
-    tmp.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
-    tmp.append( " >" );
-    return tmp ;
-  }
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
 
-  void error( const char * msg ) const
-  {
-    std::string tmp = name();
-    tmp.append( msg );
-    throw std::runtime_error( tmp );
-  }
-
-  UnitTestValueView()
-  {
-    double host_dx = 20 , host_dy = 0 ;
-    int    host_ix = 10 , host_iy = 0 ;
-
-    dView dx , dy ;
-    iView ix , iy ;
-
-    dx = Kokkos::create_labeled_value<double,device> ( "dx" );
-    ix = Kokkos::create_labeled_value<int,device> ( "ix" );
-  
-    Kokkos::deep_copy( dx , host_dx );
-    Kokkos::deep_copy( ix , host_ix );
-    Kokkos::deep_copy( host_dy , dx );
-    Kokkos::deep_copy( host_iy , ix );
-  
-    if ( host_dy != host_dx || host_iy != host_ix ) {
-      error("FAILED copy view value");
-    }
-
-    dView dz = dy = dx ;
-    iView iz = iy = ix ;
-  
-    if ( dx != dy || dx != dz || ix != iy || ix != iz ) {
-      error("FAILED Assign view");
-    }
-
-    dx = dView();
-    iy = iView();
-  
-    if ( dx || dy != dz || ix != iz || iy ) {
-      error("FAILED Clear view");
-    }
-
-    dz = dy = dView();
-    iz = ix = iView();
-
-    if ( dx || dy || dz || ix || iy || iz ) {
-      error("FAILED Clear all view");
-    }
   }
 };
 
-}
 
-/*--------------------------------------------------------------------------*/
+/** \brief  Copy TPI to Host specialization with same map and contiguou */
+template< typename ValueType , class MapOpt >
+class MDArrayDeepCopy< ValueType ,
+                       DeviceHost , MapOpt , true ,
+                       DeviceTPI ,  MapOpt , true >
+{
+public:
+  typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
+  typedef MDArrayView< ValueType , DeviceTPI , MapOpt > src_type ;
+
+  typedef MDArrayDeepCopyFunctor< ValueType , DeviceTPI , void , void , 0 > functor_type ;
+
+  static void run( const dst_type & dst , const src_type & src )
+  {
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+
+  }
+};
+
+/*------------------------------------------------------------------------*/
+
+} // namespace Impl
+} // namespace Kokkos
+
+
+#endif /* #ifndef KOKKOS_DEVICETPI_MDARRAYVIEW_HPP */
+
 

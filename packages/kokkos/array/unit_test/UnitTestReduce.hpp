@@ -45,8 +45,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_ValueDeepCopy.hpp>
-// #include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_ParallelReduce.hpp>
 
 #include <impl/Kokkos_Preprocessing_macros.hpp>
 
@@ -75,8 +74,12 @@ public:
 
   UnitTestReduceFunctor( const size_type & arg_nwork ) : nwork( arg_nwork ) {}
 
-  UnitTestReduceFunctor( const UnitTestReduceFunctor & rhs ) : nwork( rhs.nwork ) {}
+  UnitTestReduceFunctor( const UnitTestReduceFunctor & rhs )
+    : nwork( rhs.nwork ) {}
 
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
+  inline
   KOKKOS_MACRO_DEVICE_FUNCTION
   static void init( value_type & dst )
   {
@@ -85,8 +88,10 @@ public:
     dst.value[2] = 0 ;
   }
 
+  inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  static void join( volatile value_type & dst , const volatile value_type & src )
+  static void join( volatile value_type & dst ,
+                    const volatile value_type & src )
   {
     dst.value[0] += src.value[0] ;
     dst.value[1] += src.value[1] ;
@@ -100,6 +105,9 @@ public:
     dst.value[1] += iwork + 1 ;
     dst.value[2] += nwork - iwork ;
   } 
+
+#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+
 };
 
 
