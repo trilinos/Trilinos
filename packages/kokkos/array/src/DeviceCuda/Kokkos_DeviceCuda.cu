@@ -43,6 +43,7 @@
 #include <sstream>
 
 #include <Kokkos_DeviceCuda.hpp>
+#include <DeviceCuda/Kokkos_DeviceCuda_ParallelDriver.hpp>
 #include <DeviceCuda/Kokkos_DeviceCuda_DeepCopy.hpp>
 #include <impl/Kokkos_MemoryInfo.hpp>
 
@@ -67,12 +68,12 @@ void cuda_safe_call( cudaError e , const char * name )
 
 class DeviceCuda_Impl {
 public:
-  Impl::MemoryInfoSet            m_allocations ;
-  struct cudaDeviceProp          m_cudaProp ;
-  int                            m_cudaDev ;
-  unsigned                       m_maxWarp ;
-  DeviceCuda::Traits::WordType * m_reduceScratchSpace ;
-  DeviceCuda::Traits::WordType * m_reduceScratchFlag ;
+  Impl::MemoryInfoSet     m_allocations ;
+  struct cudaDeviceProp   m_cudaProp ;
+  int                     m_cudaDev ;
+  unsigned                m_maxWarp ;
+  DeviceCuda::size_type * m_reduceScratchSpace ;
+  DeviceCuda::size_type * m_reduceScratchFlag ;
 
   explicit DeviceCuda_Impl( int cuda_device_id );
   ~DeviceCuda_Impl();
@@ -115,9 +116,9 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   // cudaDeviceProp::sharedMemPerBlock   : capacity of shared memory per block
   // cudaDeviceProp::totalGlobalMem      : capacity of global memory
 
-  enum { n = sizeof(DeviceCuda::Traits::WordType) };
+  enum { n = sizeof(DeviceCuda::size_type) };
 
-  const DeviceCuda::Traits::WordType zero = 0 ;
+  const DeviceCuda::size_type zero = 0 ;
 
   // Device query
 
@@ -127,9 +128,9 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   // Maximum number of warps,
   // at most one warp per thread in a warp for reduction.
 
-  m_maxWarp = DeviceCuda::Traits::WarpSize ;
+  m_maxWarp = Impl::DeviceCudaTraits::WarpSize ;
   while ( m_cudaProp.maxThreadsPerBlock <
-          DeviceCuda::Traits::WarpSize * m_maxWarp ) {
+          Impl::DeviceCudaTraits::WarpSize * m_maxWarp ) {
     m_maxWarp >>= 1 ;
   }
 
@@ -138,10 +139,10 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   const size_t sharedWord =
    ( m_cudaProp.sharedMemPerBlock + n - 1 ) / n ;
 
-  m_reduceScratchSpace = (DeviceCuda::Traits::WordType *)
+  m_reduceScratchSpace = (DeviceCuda::size_type *)
     allocate_memory( std::string("MultiblockReduceScratchSpace") ,
-                     typeid( DeviceCuda::Traits::WordType ),
-                     sizeof( DeviceCuda::Traits::WordType ),
+                     typeid( DeviceCuda::size_type ),
+                     sizeof( DeviceCuda::size_type ),
                      sharedWord + 1 );
 
   m_reduceScratchFlag = m_reduceScratchSpace + sharedWord ;
@@ -217,14 +218,14 @@ void DeviceCuda::initialize( int cuda_device_id )
   DeviceCuda_Impl::singleton( cuda_device_id );
 }
 
-DeviceCuda::Traits::WordType *
+DeviceCuda::size_type *
 DeviceCuda::reduce_multiblock_scratch_space()
 {
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
   return s.m_reduceScratchSpace ;
 }
 
-DeviceCuda::Traits::WordType *
+DeviceCuda::size_type *
 DeviceCuda::reduce_multiblock_scratch_flag()
 {
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();

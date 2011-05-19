@@ -98,6 +98,7 @@ void parallel_reduce( const size_t work_count ,
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
+#include <DeviceCuda/Kokkos_DeviceCuda_ParallelReduce.hpp>
 #endif
 
 //----------------------------------------------------------------------------
