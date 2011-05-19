@@ -359,6 +359,21 @@ namespace TSQR {
 				   "reports that it has rank " << rank << ".  "
 				   "Please report this bug to the Kokkos "
 				   "developers.");
+		if (debug)
+		  {
+		    Teuchos::barrier (*comm);
+		    if (myRank == 0)
+		      cerr << "-- Tested rank-revealing capability" << endl;
+		  }
+	      }
+	    else
+	      {
+		if (debug)
+		  {
+		    Teuchos::barrier (*comm);
+		    if (myRank == 0)
+		      cerr << "-- Not testing rank-revealing capability; too many columns" << endl;
+		  }
 	      }
 	  }
 	// "Un"-cache-block the output, if contiguous cache blocks
