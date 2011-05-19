@@ -3,12 +3,8 @@
 #include <Kokkos_DeviceCuda.hpp>
 
 #include <Kokkos_ValueView.hpp>
-#include <Kokkos_ValueDeepCopy.hpp>
-
 #include <Kokkos_MultiVectorView.hpp>
-
 #include <Kokkos_MDArrayView.hpp>
-#include <Kokkos_MDArrayDeepCopy.hpp>
 
 #include <Kokkos_ParallelFor.hpp>
 #include <Kokkos_ParallelReduce.hpp>
@@ -53,7 +49,7 @@ void test_device_host()
 #include <UnitTestMultiVectorView.hpp>
 #include <UnitTestMDArrayView.hpp>
 #include <UnitTestMDArrayDeepCopy.hpp>
-#include <UnitTestReduce.hpp>
+// #include <UnitTestReduce.hpp>
 
 namespace {
 
@@ -69,8 +65,8 @@ void test_device_cuda()
   UnitTestMDArrayView<     Kokkos::DeviceCuda >();
   UnitTestMDArrayDeepCopy< Kokkos::DeviceCuda >();
 
-  UnitTestReduce< long ,   Kokkos::DeviceCuda >( 1000000 );
-  UnitTestReduce< double , Kokkos::DeviceCuda >( 1000000 );
+  // UnitTestReduce< long ,   Kokkos::DeviceCuda >( 1000000 );
+  // UnitTestReduce< double , Kokkos::DeviceCuda >( 1000000 );
 }
 
 }

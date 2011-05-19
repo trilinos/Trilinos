@@ -40,25 +40,24 @@
 #ifndef KOKKOS_DEVICECUDA_PARALLELFOR_HPP
 #define KOKKOS_DEVICECUDA_PARALLELFOR_HPP
 
-namespace Kokkos {
-namespace {
+#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
 template< class ParallelForDriver >
 __global__
-void cuda_parallel_for_driver()
+void kokkos_device_cuda_parallel_for_driver()
 {
   ParallelForDriver::run_on_device();
 }
 
-
-};
+namespace Kokkos {
 
 template< class FunctorType >
 class ParallelFor< FunctorType , DeviceCuda > {
 public:
   typedef DeviceCuda             device_type ;
   typedef device_type::size_type size_type ;
-  typedef ParallelFor< FunctorTYpe , DeviceCuda > self_type ;
+  typedef ParallelFor< FunctorType , DeviceCuda > self_type ;
 
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
@@ -68,17 +67,18 @@ public:
     , m_work_count( work_count )
     {}
 
+  static
   __device__
   void run_on_device()
   {
-    const self_type * const self = functor();
+    const self_type & self = kokkos_device_cuda_get_parallel_functor< self_type >();
     const size_type work_stride = blockDim.x * blockDim.y * gridDim.x ;
 
     size_type iwork = threadIdx.x + blockDim.x * (
                       threadIdx.y + blockDim.y * blockIdx.x );
 
-    for ( ; iwork < self->m_work_count ; iwork += work_stride ) {
-      self->m_functor( iwork );
+    for ( ; iwork < self.m_work_count ; iwork += work_stride ) {
+      self.m_work_functor( iwork );
     }
   }
 
@@ -95,23 +95,25 @@ public:
     device_type::clear_dispatch_functor();
 
     dim3 block( DeviceCuda::Traits::WarpSize , 
-                device_type::parallel_for_warp_count() , 1 );
+                device_type::maximum_warp_count() , 1 );
 
     dim3 grid( device_type::maximum_grid_count() , 1 , 1 );
 
     // Reduce grid count until just enough blocks for the work.
 
     while ( work_count <= block.x * block.y * ( grid.x >> 1 ) ) {
-      grid.x >>= 1 ; }
+      grid.x >>= 1 ;
     }
 
-    CudaDevice::load_constant_buffer( this , sizeof(self_type) );
+    kokkos_device_cuda_load_parallel_functor( tmp );
 
-    cuda_parallel_for_driver< self_type > <<< grid , block >>>();
+    kokkos_device_cuda_parallel_for_driver< self_type > <<< grid , block >>>();
   }
 };
 
 } // namespace Kokkos
 
+#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+#include <impl/Kokkos_DeviceClear_macros.hpp>
 #endif /* KOKKOS_DEVICECUDA_PARALLELFOR_HPP */
 

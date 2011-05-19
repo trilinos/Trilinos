@@ -68,10 +68,10 @@
 #define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
 #define KOKKOS_MACRO_DEVICE                      DeviceCuda
 #define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION    __device__ __host__
+#define KOKKOS_MACRO_DEVICE_FUNCTION             __device__
 
 /* Device-only functions are not compiled unless compiling for the device. */
 #if defined( __CUDA_ARCH__ )
-#define KOKKOS_MACRO_DEVICE_FUNCTION             __device__
 #define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  /* */
 #define KOKKOS_MACRO_CHECK( expr )             /* */
 #else

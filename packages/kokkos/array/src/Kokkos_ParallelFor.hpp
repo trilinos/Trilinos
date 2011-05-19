@@ -76,6 +76,7 @@ void parallel_for( size_t work_count , const FunctorType & functor )
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
+#include <DeviceCuda/Kokkos_DeviceCuda_ParallelFor.hpp>
 #endif
 
 //----------------------------------------------------------------------------

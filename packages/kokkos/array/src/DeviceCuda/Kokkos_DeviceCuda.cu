@@ -43,6 +43,7 @@
 #include <sstream>
 
 #include <Kokkos_DeviceCuda.hpp>
+#include <DeviceCuda/Kokkos_DeviceCuda_DeepCopy.hpp>
 #include <impl/Kokkos_MemoryInfo.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -69,6 +70,7 @@ public:
   Impl::MemoryInfoSet            m_allocations ;
   struct cudaDeviceProp          m_cudaProp ;
   int                            m_cudaDev ;
+  unsigned                       m_maxWarp ;
   DeviceCuda::Traits::WordType * m_reduceScratchSpace ;
   DeviceCuda::Traits::WordType * m_reduceScratchFlag ;
 
@@ -101,6 +103,7 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   : m_allocations()
   , m_cudaProp()
   , m_cudaDev( cuda_device_id )
+  , m_maxWarp( 0 )
   , m_reduceScratchSpace( 0 )
   , m_reduceScratchFlag( 0 )
 {
@@ -120,6 +123,15 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
 
   CUDA_SAFE_CALL( cudaGetDevice( & m_cudaDev ) );
   CUDA_SAFE_CALL( cudaGetDeviceProperties( & m_cudaProp , m_cudaDev ) );
+
+  // Maximum number of warps,
+  // at most one warp per thread in a warp for reduction.
+
+  m_maxWarp = DeviceCuda::Traits::WarpSize ;
+  while ( m_cudaProp.maxThreadsPerBlock <
+          DeviceCuda::Traits::WarpSize * m_maxWarp ) {
+    m_maxWarp >>= 1 ;
+  }
 
   // Allocate shared memory image for multiblock reduction scratch space
 
@@ -219,6 +231,20 @@ DeviceCuda::reduce_multiblock_scratch_flag()
   return s.m_reduceScratchFlag ;
 }
 
+DeviceCuda::size_type
+DeviceCuda::maximum_warp_count()
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+  return s.m_maxWarp ;
+}
+
+DeviceCuda::size_type
+DeviceCuda::maximum_grid_count()
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+  return s.m_cudaProp.maxGridSize[0];
+}
+
 /*--------------------------------------------------------------------------*/
 
 void * DeviceCuda::allocate_memory(
@@ -273,6 +299,29 @@ void DeviceCuda::clear_dispatch_functor()
   m_launching_kernel = false ;
 }
 
-
 } // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+void copy_to_cuda_from_host( void * dst , const void * src ,
+                             size_t member_size , size_t member_count )
+{
+  CUDA_SAFE_CALL(
+    cudaMemcpy( dst , src , member_size * member_count , cudaMemcpyHostToDevice ) );
+
+}
+
+void copy_to_host_from_cuda( void * dst , const void * src ,
+                             size_t member_size , size_t member_count )
+{
+  CUDA_SAFE_CALL(
+    cudaMemcpy( dst , src , member_size * member_count , cudaMemcpyDeviceToHost ) );
+}
+
+}
+}
 

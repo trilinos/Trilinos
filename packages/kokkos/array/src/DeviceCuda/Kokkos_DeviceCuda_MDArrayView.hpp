@@ -37,74 +37,20 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICE_CUDA_DEEP_COPY_HPP
-#define KOKKOS_DEVICE_CUDA_DEEP_COPY_HPP
+#ifndef KOKKOS_DEVICECUDA_MDARRAYVIEW_HPP
+#define KOKKOS_DEVICECUDA_MDARRAYVIEW_HPP
 
-#include <Kokkos_ArrayForwardDeclarations.hpp>
-#include <impl/Kokkos_StaticAssert.hpp>
-#include <impl/Kokkos_ArrayBounds.hpp>
+#if ! defined( KOKKOS_MDARRAYVIEW_HPP ) || \
+    ! defined( KOKKOS_DEVICE_CUDA )
+#error "#include <DeviceCuda/Kokkos_DeviceCuda_MDArrayView.hpp> restricted to Kokkos_MDArrayView.hpp>"
+#endif
+
+#include <DeviceCuda/Kokkos_DeviceCuda_DeepCopy.hpp>
+
 
 namespace Kokkos {
 namespace Impl {
 
-void copy_to_cuda_from_host( void * dst , const void * src ,
-                             size_t member_size , size_t member_count );
-
-void copy_to_host_from_cuda( void * dst , const void * src ,
-                             size_t member_size , size_t member_count );
-}
-
-/*------------------------------------------------------------------------*/
-
-template< typename ValueType >
-class ValueDeepCopy< ValueType , DeviceCuda >
-{
-public:
-  static void run( const ValueView< ValueType , DeviceCuda > & dst ,
-                   const ValueType & src )
-  {
-    ValueType * const d = dst.m_memory.ptr_on_device();
-    Impl::copy_to_cuda_from_host( d , & src, sizeof(ValueType), 1 );
-  }
-
-  static void run( ValueType & dst ,
-                   const ValueView< ValueType , DeviceCuda > & src )
-  {
-    ValueType * const s = src.m_memory.ptr_on_device();
-    Impl::copy_to_host_from_cuda( & dst , s, sizeof(ValueType), 1 );
-  }
-};
-/*------------------------------------------------------------------------*/
-
-template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceCuda , DeviceHost >
-{
-public:
-  static void run( const MultiVectorView< ValueType , DeviceCuda > & dst ,
-                   const MultiVectorView< ValueType , DeviceHost > & src )
-  {
-    Impl::copy_to_cuda_from_host( dst.m_ptr_on_device ,
-                                  src.m_ptr_on_device,
-                                  sizeof(ValueType),
-                                  dst.size() );
-  }
-};
-
-template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceCuda >
-{
-public:
-  static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
-                   const MultiVectorView< ValueType , DeviceCuda > & src )
-  {
-    Impl::copy_to_host_from_cuda( dst.m_ptr_on_device ,
-                                  src.m_ptr_on_device,
-                                  sizeof(ValueType),
-                                  dst.size() );
-  }
-};
-
-/*------------------------------------------------------------------------*/
 /** \brief  Copy Host to Cuda specialization */
 template< typename ValueType , class MapOpt >
 class MDArrayDeepCopy< ValueType ,
@@ -148,9 +94,10 @@ public:
 
 /*------------------------------------------------------------------------*/
 
+} // namespace Impl
 } // namespace Kokkos
 
 
-#endif /* #ifndef KOKKOS_DEVICE_CUDA_DEEP_COPY_HPP */
+#endif /* #ifndef KOKKOS_DEVICECUDA_MDARRAYVIEW_HPP */
 
 

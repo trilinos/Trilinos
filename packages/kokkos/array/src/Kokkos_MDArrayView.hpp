@@ -375,6 +375,7 @@ void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
 #include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
 #include <impl/Kokkos_MDArrayView_macros.hpp>
 #include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <DeviceCuda/Kokkos_DeviceCuda_MDArrayView.hpp>
 #endif
 
 //----------------------------------------------------------------------------
@@ -429,69 +430,6 @@ public:
 };
 
 //----------------------------------------------------------------------------
-/** \brief  Deep copy with same DeviceType, same Map, and contiguous */
-
-template< typename ValueType , class DeviceType , class MapOpt >
-class MDArrayDeepCopy< ValueType , DeviceType , MapOpt , true ,
-                                   DeviceType , MapOpt , true >
-{
-public:
-  typedef typename DeviceType::size_type size_type ;
-
-  typedef MDArrayView< ValueType , DeviceType , MapOpt > array_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceType , void , void , 0 > functor_type ;
-
-  static void run( const array_type & dst , const array_type & src )
-  {
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
-
-  }
-};
-
-//----------------------------------------------------------------------------
-/** \brief  Deep copy with same DeviceType and different Maps */
-
-template< typename ValueType ,
-          class DeviceType , class MapDst , bool ContigDst ,
-                             class MapSrc , bool ContigSrc >
-class MDArrayDeepCopy< ValueType , DeviceType , MapDst , ContigDst ,
-                                   DeviceType , MapSrc , ContigSrc >
-{
-public:
-  typedef typename DeviceType::size_type size_type ;
-
-  typedef MDArrayView< ValueType , DeviceType , MapSrc > src_type ;
-  typedef MDArrayView< ValueType , DeviceType , MapDst > dst_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 8 > deep8 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 7 > deep7 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 6 > deep6 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 5 > deep5 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 4 > deep4 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 3 > deep3 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 2 > deep2 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceType , MapDst , MapSrc , 1 > deep1 ;
-
-  static
-  void run( const dst_type & dst , const src_type & src )
-  {
-    const size_t n = dst.size();
-
-    switch ( dst.rank() ) {
-    case 8 : parallel_for( n , deep8( dst , src ) ); break ;
-    case 7 : parallel_for( n , deep7( dst , src ) ); break ;
-    case 6 : parallel_for( n , deep6( dst , src ) ); break ;
-    case 5 : parallel_for( n , deep5( dst , src ) ); break ;
-    case 4 : parallel_for( n , deep4( dst , src ) ); break ;
-    case 3 : parallel_for( n , deep3( dst , src ) ); break ;
-    case 2 : parallel_for( n , deep2( dst , src ) ); break ;
-    case 1 : parallel_for( n , deep1( dst , src ) ); break ;
-    }
-  }
-};
 
 } // namespace Impl
 } // namespace Kokkos

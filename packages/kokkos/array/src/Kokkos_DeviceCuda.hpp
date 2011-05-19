@@ -59,6 +59,10 @@ namespace Kokkos {
 class DeviceCuda {
 private:
 
+  static void load_parallel_functor( const void * , size_t );
+
+  static const void * get_parallel_functor();
+
   static void * allocate_memory( const std::string & label ,
                                  const std::type_info & type ,
                                  const size_t member_size ,
@@ -85,7 +89,7 @@ public:
   static
   void clear_memory_view( MemoryView< ValueType , DeviceCuda > & lhs )
     {
-#if ! defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if ! defined( __CUDA_ARCH__ )
       // Memory management only available on the host side.
       // If compiling for the device then omit memory management.
       if ( lhs.m_tracker.remove_and_query_is_last() ) {
@@ -105,7 +109,7 @@ public:
                            const MemoryView< ValueType , DeviceCuda > & rhs )
     {
       clear_memory_view( lhs );
-#if ! defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+#if ! defined( __CUDA_ARCH__ )
       // Memory management only available on the host side.
       // If compiling for the device then omit memory management.
       // If launching a kernel then the view is untracked.
@@ -142,8 +146,18 @@ public:
   static void initialize( int cuda_device_id = 0 );
 
   struct Traits {
+    enum { WarpSize = 32 };
+    enum { ConstantMemoryCapacity = 0x010000 /* 64k bytes */ };
+    enum { ConstantMemoryCache    = 0x002000 /*  8k bytes */ };
+
+    typedef unsigned long
+      ConstantGlobalBufferType[ ConstantMemoryCapacity / sizeof(unsigned long) ];
+
     typedef unsigned int WordType ;
   };
+
+  static size_type maximum_warp_count();
+  static size_type maximum_grid_count();
 
   static Traits::WordType * reduce_multiblock_scratch_space();
   static Traits::WordType * reduce_multiblock_scratch_flag();
@@ -152,6 +166,27 @@ public:
 };
 
 } // namespace Kokkos
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
+__device__ __constant__
+Kokkos::DeviceCuda::Traits::ConstantGlobalBufferType
+kokkos_device_cuda_constant_memory_buffer ;
+
+template< class FunctorType >
+void kokkos_device_cuda_load_parallel_functor( const FunctorType & functor )
+{
+  cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & functor , sizeof(FunctorType) );
+}
+
+template< class FunctorType >
+__device__
+const FunctorType & kokkos_device_cuda_get_parallel_functor()
+{
+  return *((const FunctorType *) kokkos_device_cuda_constant_memory_buffer );
+}
+
+#endif
 
 /*--------------------------------------------------------------------------*/
 

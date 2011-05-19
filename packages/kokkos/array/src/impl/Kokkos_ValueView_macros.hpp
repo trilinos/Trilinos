@@ -142,7 +142,7 @@ private:
 
   template< typename , class , class >
   friend
-  class ValueDeepCopy ;
+  class Impl::ValueDeepCopy ;
 };
 
 } // namespace Kokkos

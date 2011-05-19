@@ -79,11 +79,15 @@ public:
 
   UnitTestDeviceMemoryManagement()
   {
-    std::ostringstream s_empty ;
+    std::ostringstream s_init ;
+    std::ostringstream s_noop ;
     std::ostringstream s_alloc ;
     std::ostringstream s_assign ;
     std::ostringstream s_clear1 ;
+    std::ostringstream s_clear3 ;
   
+    device::print_memory_view( s_init );
+
     dView dx , dy , dz ;
     iView ix , iy , iz ;
   
@@ -100,7 +104,7 @@ public:
     device::clear_memory_view( ix );
     device::assign_memory_view( dy , dz );
     device::assign_memory_view( iy , iz );
-    device::print_memory_view( s_empty );
+    device::print_memory_view( s_noop );
   
     if ( dx || dx.test_support_view_count() ||
          dy || dy.test_support_view_count() ||
@@ -108,7 +112,7 @@ public:
          ix || ix.test_support_view_count() ||
          iy || iy.test_support_view_count() ||
          iz || iz.test_support_view_count() ||
-         s_empty.str().length() ) {
+         s_init.str() != s_noop.str() ) {
       error("FAILED No-op");
     }
   
@@ -118,7 +122,7 @@ public:
   
     if ( ! dx || 1 != dx.test_support_view_count() ||
          ! ix || 1 != ix.test_support_view_count() ||
-         ! s_alloc.str().length() ) {
+         s_alloc.str().length() <= s_init.str().length() ) {
       error("FAILED Allocation");
     }
   
@@ -166,7 +170,7 @@ public:
     }
   
     device::clear_memory_view( iz );
-    device::print_memory_view( s_empty );
+    device::print_memory_view( s_clear3 );
   
     if ( dx || dx.test_support_view_count() ||
          dy || dy.test_support_view_count() ||
@@ -174,7 +178,7 @@ public:
          ix || ix.test_support_view_count() ||
          iy || iy.test_support_view_count() ||
          iz || iz.test_support_view_count() ||
-         s_empty.str().length() ) {
+         s_init.str() != s_clear3.str() ) {
       error("FAILED Clear view #3");
     }
   

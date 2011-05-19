@@ -552,6 +552,74 @@ public:
 };
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+/** \brief  Deep copy with same DeviceType, same Map, and contiguous */
+
+template< typename ValueType , class MapOpt >
+class MDArrayDeepCopy< ValueType , KOKKOS_MACRO_DEVICE , MapOpt , true ,
+                                   KOKKOS_MACRO_DEVICE , MapOpt , true >
+{
+public:
+  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef device_type::size_type size_type ;
+
+  typedef MDArrayView< ValueType , device_type , MapOpt > array_type ;
+
+  typedef MDArrayDeepCopyFunctor< ValueType , device_type , void , void , 0 > functor_type ;
+
+  static void run( const array_type & dst , const array_type & src )
+  {
+    parallel_for( dst.size() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+
+  }
+};
+
+/** \brief  Deep copy with same DeviceType and different Maps */
+
+template< typename ValueType , 
+          class MapDst , bool ContigDst ,
+          class MapSrc , bool ContigSrc >
+class MDArrayDeepCopy< ValueType ,
+                       KOKKOS_MACRO_DEVICE , MapDst , ContigDst ,
+                       KOKKOS_MACRO_DEVICE , MapSrc , ContigSrc >
+{ 
+public:
+  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef device_type::size_type size_type ;
+  
+  typedef MDArrayView< ValueType , device_type , MapSrc > src_type ;
+  typedef MDArrayView< ValueType , device_type , MapDst > dst_type ;
+
+  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 8 > deep8 ;
+  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 7 > deep7 ;
+  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 6 > deep6 ;
+  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 5 > deep5 ;
+  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 4 > deep4 ;
+  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 3 > deep3 ;
+  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 2 > deep2 ;
+  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 1 > deep1 ;
+
+  static
+  void run( const dst_type & dst , const src_type & src )
+  {
+    const size_t n = dst.size();
+
+    switch ( dst.rank() ) {
+    case 8 : parallel_for( n , deep8( dst , src ) ); break ;
+    case 7 : parallel_for( n , deep7( dst , src ) ); break ;
+    case 6 : parallel_for( n , deep6( dst , src ) ); break ;
+    case 5 : parallel_for( n , deep5( dst , src ) ); break ;
+    case 4 : parallel_for( n , deep4( dst , src ) ); break ;
+    case 3 : parallel_for( n , deep3( dst , src ) ); break ;
+    case 2 : parallel_for( n , deep2( dst , src ) ); break ;
+    case 1 : parallel_for( n , deep1( dst , src ) ); break ;
+    }
+  }
+};
+
+//----------------------------------------------------------------------------
 
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 
