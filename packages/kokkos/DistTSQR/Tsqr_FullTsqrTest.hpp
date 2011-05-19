@@ -173,6 +173,7 @@ namespace TSQR {
 	const int numCores = testParams->get<int> ("numCores");
 	const bool contiguousCacheBlocks = testParams->get<bool> ("contiguousCacheBlocks");
 	const bool testFactorExplicit = testParams->get<bool> ("testFactorExplicit");
+	const bool testRankRevealing = testParams->get<bool> ("testRankRevealing");
 	const bool debug = testParams->get<bool> ("debug");
 
 	// Space for each node's local part of the test problem.
@@ -264,9 +265,9 @@ namespace TSQR {
 	// "factorExplicit" is an alternate, hopefully faster way of
 	// factoring the matrix, when only the explicit Q factor is
 	// wanted.
+	typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 	if (testFactorExplicit)
 	  {
-	    typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 	    // Kokkos::MultiVector wants a non-const Node, for some reason.
 	    KMV A_copy_view (rcp_const_cast<node_type> (node));
 	    A_copy_view.initializeValues (static_cast<size_t> (A_copy.nrows()), 
@@ -315,6 +316,51 @@ namespace TSQR {
 	      }
 	  }
 
+	// Optionally, test rank-revealing capability.  We do this
+	// before un-cache-blocking the explicit Q factor, since
+	// revealRank can work with contiguous cache blocks, and
+	// modifies the Q factor if the matrix doesn't have full
+	// column rank.
+	if (testRankRevealing)
+	  {
+	    // Kokkos::MultiVector wants a non-const Node, for some reason.
+	    KMV Q_view (rcp_const_cast<node_type> (node));
+	    Q_view.initializeValues (static_cast<size_t> (Q_local.nrows()), 
+				     static_cast<size_t> (Q_local.ncols()),
+				     arcp (Q_local.get(), 0, Q_local.nrows()*Q_local.ncols(), false), // non-owning ArrayRCP
+				     static_cast<size_t> (Q_local.lda()));
+	    Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> 
+	      R_view (Teuchos::View, R.get(), R.lda(), R.nrows(), R.ncols());
+	    // If 2^{# columns} > machine precision, then our choice
+	    // of singular values will make the smallest singular
+	    // value < machine precision.  In that case, the SVD can't
+	    // promise it will distinguish between tiny and zero.  If
+	    // the number of columns is less than that, we can use a
+	    // tolerance of zero to test the purported rank with the
+	    // actual numerical rank.
+	    const magnitude_type tol = STM::zero();
+	    const ordinal_type rank = 
+	      tsqr->revealRank (Q_view, R_view, tol, contiguousCacheBlocks);
+
+	    magnitude_type two_to_the_numCols = STM::one();
+	    for (int k = 0; k < numCols; ++k)
+	      {
+		const magnitude_type two = STM::one() + STM::one();
+		two_to_the_numCols *= two;
+	      }
+	    // Throw in a factor of 10, just for more tolerance of
+	    // rounding error (so the test only fails if something is
+	    // really broken).
+	    if (two_to_the_numCols > magnitude_type(10) * STM::eps())
+	      {
+		TEST_FOR_EXCEPTION(rank != numCols, std::logic_error,
+				   "The matrix of " << numCols << " columns "
+				   "should have full numerical rank, but Tsqr "
+				   "reports that it has rank " << rank << ".  "
+				   "Please report this bug to the Kokkos "
+				   "developers.");
+	      }
+	  }
 	// "Un"-cache-block the output, if contiguous cache blocks
 	// were used.  This is only necessary because global_verify()
 	// doesn't currently support contiguous cache blocks.
@@ -552,6 +598,7 @@ namespace TSQR {
 	const ordinal_type numCols = 10;
 	const bool contiguousCacheBlocks = false;
 	const bool testFactorExplicit = true;
+	const bool testRankRevealing = true;
 	const bool printFieldNames = true;
 	const bool printResults = true;
 	const bool failIfInaccurate = true;
@@ -578,6 +625,8 @@ namespace TSQR {
 		    "Whether to test TSQR's factorExplicit() (a hopefully "
 		    "faster path than calling factor() and explicit_Q() in "
 		    "sequence).");
+	plist->set ("testRankRevealing", testRankRevealing, 
+		    "Whether to test TSQR's rank-revealing capability.");
 	plist->set ("printFieldNames", printFieldNames, 
 		    "Whether to print field names (this is only done once, "
 		    "for all Scalar types tested).");

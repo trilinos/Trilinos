@@ -93,6 +93,8 @@ namespace TSQR {
     typedef DistTsqr<LocalOrdinal, Scalar> dist_tsqr_type;
     typedef typename Teuchos::RCP<node_tsqr_type> node_tsqr_ptr;
     typedef typename Teuchos::RCP<dist_tsqr_type> dist_tsqr_ptr;
+    /// \typedef rank_type
+    /// \brief "Rank" here means MPI rank, not linear algebra rank.
     typedef typename dist_tsqr_type::rank_type rank_type;
 
     typedef typename node_tsqr_type::FactorOutput NodeOutput;
@@ -513,6 +515,7 @@ namespace TSQR {
     {
       nodeTsqr_->fill_with_zeros (nrows_local, ncols_Q_out, Q_local_out,
 				  ldq_local_out, contiguousCacheBlocks);
+      // "Rank" here means MPI rank, not linear algebra rank.
       const rank_type myRank = distTsqr_->rank();
       if (myRank == 0)
 	{
@@ -629,9 +632,9 @@ namespace TSQR {
     {
       typedef Kokkos::MultiVector<Scalar, NodeType> KMV;
 
-      const LocalOrdinal nrows = static_cast< LocalOrdinal > (Q.getNumRows());
-      const LocalOrdinal ncols = static_cast< LocalOrdinal > (Q.getNumCols());
-      const LocalOrdinal ldq = static_cast< LocalOrdinal > (Q.getStride());
+      const LocalOrdinal nrows = static_cast<LocalOrdinal> (Q.getNumRows());
+      const LocalOrdinal ncols = static_cast<LocalOrdinal> (Q.getNumCols());
+      const LocalOrdinal ldq = static_cast<LocalOrdinal> (Q.getStride());
       Teuchos::ArrayRCP<Scalar> Q_ptr = Q.getValuesNonConst();
 
       // Take the easy exit if available.
@@ -646,7 +649,7 @@ namespace TSQR {
       // redundantly, and hope that all the returned rank values are
       // the same.
       //
-      matrix_type U (ncols, ncols, Scalar(0));
+      matrix_type U (ncols, ncols, STS::zero());
       const ordinal_type rank = 
 	reveal_R_rank (ncols, R.values(), R.stride(), 
 		       U.get(), U.lda(), tol);
