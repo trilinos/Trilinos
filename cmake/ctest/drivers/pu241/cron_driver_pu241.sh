@@ -15,7 +15,7 @@ DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/pu241
 TRILINOS_REPOSITORY_LOCATION="cgbaker@software.sandia.gov:/space/git/Trilinos"
 
 export TDD_PARALLEL_LEVEL=4
-export TDD_CTEST_TEST_TYPE=Experimental
+#export TDD_CTEST_TEST_TYPE=Experimental
 
 # Submit the outer TDD tests to casl-dev always since these are CASL machines
 export TDD_CTEST_DROP_SITE=casl-dev.ornl.gov
