@@ -35,6 +35,7 @@
 #ifdef HAVE_STOKHOS_DAKOTA
 
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
+#include "TriKota_ConfigDefs.hpp"
 #include "OrthogonalPolynomial.hpp"
 
 namespace Stokhos {
