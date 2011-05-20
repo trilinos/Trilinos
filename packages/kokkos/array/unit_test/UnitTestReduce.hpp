@@ -51,16 +51,13 @@
 
 /*--------------------------------------------------------------------------*/
 
-namespace {
+namespace UnitTest {
 
 template< typename ScalarType , class DeviceType >
-class UnitTestReduce ;
-
-template< typename ScalarType , class DeviceType >
-class UnitTestReduceFunctor ;
+class ReduceFunctor ;
 
 template< typename ScalarType >
-class UnitTestReduceFunctor< ScalarType , Kokkos :: KOKKOS_MACRO_DEVICE >
+class ReduceFunctor< ScalarType , Kokkos :: KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef Kokkos :: KOKKOS_MACRO_DEVICE device_type ;
@@ -72,9 +69,9 @@ public:
 
   const size_type nwork ;
 
-  UnitTestReduceFunctor( const size_type & arg_nwork ) : nwork( arg_nwork ) {}
+  ReduceFunctor( const size_type & arg_nwork ) : nwork( arg_nwork ) {}
 
-  UnitTestReduceFunctor( const UnitTestReduceFunctor & rhs )
+  ReduceFunctor( const ReduceFunctor & rhs )
     : nwork( rhs.nwork ) {}
 
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
@@ -110,6 +107,12 @@ public:
 
 };
 
+} // namespace UnitTest
+
+namespace {
+
+template< typename ScalarType , class DeviceType >
+class UnitTestReduce ;
 
 template< typename ScalarType >
 class UnitTestReduce< ScalarType , Kokkos :: KOKKOS_MACRO_DEVICE >
@@ -118,7 +121,7 @@ public:
   typedef Kokkos :: KOKKOS_MACRO_DEVICE device_type ;
   typedef device_type :: size_type      size_type ;
 
-  typedef UnitTestReduceFunctor< ScalarType , device_type > functor_type ;
+  typedef UnitTest::ReduceFunctor< ScalarType , device_type > functor_type ;
 
   typedef typename functor_type::value_type value_type ;
 
@@ -160,6 +163,13 @@ public:
     if ( result.value[0] != (ScalarType) nw ||
          result.value[1] != (ScalarType) nsum ||
          result.value[2] != (ScalarType) nsum ) {
+      std::cout << " { " << result.value[0]
+                << " , " << result.value[1]
+                << " , " << result.value[2]
+                << " } != { " << nw
+                << " , " << nsum
+                << " , " << nsum
+                << " }" << std::endl ;
       error( "FAILED" );
     }
   }

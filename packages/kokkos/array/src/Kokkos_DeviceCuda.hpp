@@ -147,8 +147,7 @@ public:
 
   static size_type maximum_warp_count();
   static size_type maximum_grid_count();
-
-  static size_type reduce_maximum_warp_count( size_type value_size );
+  static size_type maximum_shared_words();
 
   static size_type * reduce_multiblock_scratch_space();
   static size_type * reduce_multiblock_scratch_flag();

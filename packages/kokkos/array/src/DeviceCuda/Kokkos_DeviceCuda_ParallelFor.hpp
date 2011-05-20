@@ -59,17 +59,17 @@ public:
 
   //--------------------------------------------------------------------------
 
-  inline
+  static inline
   __device__
-  void run_on_device() const
+  void run_on_device( const ParallelFor * driver )
   {
     const size_type work_stride = blockDim.x * blockDim.y * gridDim.x ;
 
     size_type iwork = threadIdx.x + blockDim.x * (
                       threadIdx.y + blockDim.y * blockIdx.x );
 
-    for ( ; iwork < m_work_count ; iwork += work_stride ) {
-      m_work_functor( iwork );
+    for ( ; iwork < driver->m_work_count ; iwork += work_stride ) {
+      driver->m_work_functor( iwork );
     }
   }
 
@@ -102,7 +102,7 @@ public:
       grid.x >>= 1 ;
     }
 
-    Impl::device_cuda_run( tmp , block , grid );
+    Impl::device_cuda_run( tmp , grid , block );
   }
 };
 

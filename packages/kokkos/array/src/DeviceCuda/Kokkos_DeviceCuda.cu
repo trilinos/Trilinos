@@ -233,6 +233,14 @@ DeviceCuda::reduce_multiblock_scratch_flag()
 }
 
 DeviceCuda::size_type
+DeviceCuda::maximum_shared_words()
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+  
+ return s.m_cudaProp.sharedMemPerBlock / sizeof(size_type);
+}
+
+DeviceCuda::size_type
 DeviceCuda::maximum_warp_count()
 {
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();

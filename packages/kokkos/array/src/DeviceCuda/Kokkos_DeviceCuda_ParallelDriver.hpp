@@ -77,7 +77,9 @@ template< class ParallelDriver >
 __global__
 void kokkos_device_cuda_parallel_driver()
 {
-  ((const ParallelDriver *) kokkos_device_cuda_constant_memory_buffer )->run_on_device();
+  const ParallelDriver * const driver =
+    (const ParallelDriver *) kokkos_device_cuda_constant_memory_buffer ;
+  ParallelDriver::run_on_device( driver );
 }
 
 namespace Kokkos {
@@ -85,13 +87,13 @@ namespace Impl {
 
 template< class ParallelDriver >
 void device_cuda_run( const ParallelDriver & driver ,
-                      const dim3           & block ,
                       const dim3           & grid ,
+                      const dim3           & block ,
                       const DeviceCuda::size_type shmem = 0 )
 {
   cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(ParallelDriver) );
 
-  kokkos_device_cuda_parallel_driver< ParallelDriver ><<< block , grid , shmem >>>();
+  kokkos_device_cuda_parallel_driver< ParallelDriver ><<< grid , block , shmem >>>();
 }
 
 }

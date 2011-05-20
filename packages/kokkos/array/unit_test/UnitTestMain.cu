@@ -1,4 +1,6 @@
 
+#include <iostream>
+
 #include <Kokkos_DeviceHost.hpp>
 #include <Kokkos_DeviceCuda.hpp>
 
@@ -49,7 +51,7 @@ void test_device_host()
 #include <UnitTestMultiVectorView.hpp>
 #include <UnitTestMDArrayView.hpp>
 #include <UnitTestMDArrayDeepCopy.hpp>
-// #include <UnitTestReduce.hpp>
+#include <UnitTestReduce.hpp>
 
 namespace {
 
@@ -65,7 +67,7 @@ void test_device_cuda()
   UnitTestMDArrayView<     Kokkos::DeviceCuda >();
   UnitTestMDArrayDeepCopy< Kokkos::DeviceCuda >();
 
-  // UnitTestReduce< long ,   Kokkos::DeviceCuda >( 1000000 );
+  UnitTestReduce< long ,   Kokkos::DeviceCuda >( 1 );
   // UnitTestReduce< double , Kokkos::DeviceCuda >( 1000000 );
 }
 
