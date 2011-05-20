@@ -10,11 +10,16 @@ doxygen_objdb_*.tmp
 /CHECKIN
 /flat_headers/
 /TAGS
+
+# Trilinos extra repos
 /preCopyrightTrilinos/
 /Panzer/
 /LIMEExt/
-/PSSDriversExt/
 /TerminalApplication/
+
+# CASL-related extra repos
+/PSSDriversExt/
+/StarCCMClient/
 
 # Ignore gtags generated files
 /GPATH
