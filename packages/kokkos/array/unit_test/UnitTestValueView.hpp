@@ -54,10 +54,10 @@ namespace {
 template< class > class UnitTestValueView ;
 
 template<>
-class UnitTestValueView< Kokkos :: KOKKOS_MACRO_DEVICE >
+class UnitTestValueView< KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef KOKKOS_MACRO_DEVICE device ;
 
   typedef Kokkos::ValueView< double , device > dView ;
   typedef Kokkos::ValueView< int ,    device > iView ;

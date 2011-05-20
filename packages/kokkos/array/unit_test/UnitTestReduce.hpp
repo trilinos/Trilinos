@@ -57,11 +57,11 @@ template< typename ScalarType , class DeviceType >
 class ReduceFunctor ;
 
 template< typename ScalarType >
-class ReduceFunctor< ScalarType , Kokkos :: KOKKOS_MACRO_DEVICE >
+class ReduceFunctor< ScalarType , KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos :: KOKKOS_MACRO_DEVICE device_type ;
-  typedef device_type :: size_type      size_type ;
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
 
   struct value_type {
     ScalarType value[3] ;
@@ -115,11 +115,11 @@ template< typename ScalarType , class DeviceType >
 class UnitTestReduce ;
 
 template< typename ScalarType >
-class UnitTestReduce< ScalarType , Kokkos :: KOKKOS_MACRO_DEVICE >
+class UnitTestReduce< ScalarType , KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos :: KOKKOS_MACRO_DEVICE device_type ;
-  typedef device_type :: size_type      size_type ;
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
 
   typedef UnitTest::ReduceFunctor< ScalarType , device_type > functor_type ;
 

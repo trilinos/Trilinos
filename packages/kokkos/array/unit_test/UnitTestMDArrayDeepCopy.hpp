@@ -54,11 +54,11 @@ namespace {
 template< class > class UnitTestMDArrayDeepCopy ;
 
 template<>
-class UnitTestMDArrayDeepCopy< Kokkos :: KOKKOS_MACRO_DEVICE >
+class UnitTestMDArrayDeepCopy< KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos::DeviceHost           host ;
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef KOKKOS_MACRO_DEVICE device ;
+  typedef Kokkos::DeviceHost  host ;
 
   typedef Kokkos::MDArrayView< double , host > host_dView ;
   typedef Kokkos::MDArrayView< int ,    host > host_iView ;

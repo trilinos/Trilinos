@@ -53,10 +53,10 @@ namespace {
 template< class > class UnitTestDeviceMemoryManagement ;
 
 template<>
-class UnitTestDeviceMemoryManagement< Kokkos :: KOKKOS_MACRO_DEVICE >
+class UnitTestDeviceMemoryManagement< KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef KOKKOS_MACRO_DEVICE device ;
 
   typedef Kokkos::MemoryView< double , device > dView ;
   typedef Kokkos::MemoryView< int ,    device > iView ;

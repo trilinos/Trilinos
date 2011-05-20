@@ -54,11 +54,11 @@ namespace {
 template< class > class UnitTestMultiVectorView ;
 
 template<>
-class UnitTestMultiVectorView< Kokkos :: KOKKOS_MACRO_DEVICE >
+class UnitTestMultiVectorView< KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos:: DeviceHost          host ;
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef KOKKOS_MACRO_DEVICE device ;
+  typedef Kokkos:: DeviceHost host ;
 
   typedef Kokkos::MultiVectorView< double , device > dView ;
   typedef Kokkos::MultiVectorView< int ,    device > iView ;

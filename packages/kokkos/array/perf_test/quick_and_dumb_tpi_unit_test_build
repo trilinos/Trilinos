@@ -1,0 +1,33 @@
+
+#-----------------------------------------------------------------------------
+# Quick and dirty build for unit testing with Host (serial) and TPI devices.
+# To be replace with CMake integration.
+
+echo "#define HAVE_PTHREAD" > ThreadPool_config.h
+
+g++ -Wall -Werror -g -o perf_test.exe \
+	-I../../../ThreadPool/src ../../../ThreadPool/src/*.c \
+	-I. -I../src \
+	PerfTestMain.cpp \
+	../src/DeviceHost/*.cpp ../src/DeviceTPI/*.cpp ../src/impl/*.cpp \
+	-lpthread
+
+rm ThreadPool_config.h
+
+#-----------------------------------------------------------------------------
+
+#g++ -c -I. -I../src \
+#	../src/DeviceHost/*.cpp ../src/impl/*.cpp
+#
+#
+## /usr/local/cuda/bin/nvcc -arch=sm_20 --keep \
+# /usr/local/cuda/bin/nvcc -arch=sm_20 \
+#        -o unit_test.exe \
+#        -I. -I../src \
+#        UnitTestMain.cu \
+#        ../src/DeviceCuda/*.cu *.o
+#
+#rm *.o
+
+#-----------------------------------------------------------------------------
+

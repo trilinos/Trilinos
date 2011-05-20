@@ -48,7 +48,7 @@
 #else
 
 #define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
-#define KOKKOS_MACRO_DEVICE                       DeviceTPI
+#define KOKKOS_MACRO_DEVICE                       Kokkos::DeviceTPI
 #define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
 #define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
 #define KOKKOS_MACRO_CAN_THROW( expr )  expr
