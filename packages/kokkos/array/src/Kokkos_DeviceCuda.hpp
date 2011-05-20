@@ -50,7 +50,7 @@
 
 #define KOKKOS_DEVICE_CUDA  Kokkos::DeviceCuda
 
-#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -160,7 +160,8 @@ public:
 /*--------------------------------------------------------------------------*/
 
 #include <impl/Kokkos_MemoryView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+
+#include <Kokkos_DeviceClear_macros.hpp>
 
 #endif /* #ifndef KOKKOS_DEVICECUDA_HPP */
 

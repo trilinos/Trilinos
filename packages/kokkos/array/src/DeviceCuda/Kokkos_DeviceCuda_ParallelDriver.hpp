@@ -65,7 +65,7 @@ struct DeviceCudaTraits {
 
 //----------------------------------------------------------------------------
 
-#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
 
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
@@ -101,7 +101,7 @@ void device_cuda_run( const ParallelDriver & driver ,
 
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 #endif /* KOKKOS_DEVICECUDA_PARALLELDRIVER_HPP */
 

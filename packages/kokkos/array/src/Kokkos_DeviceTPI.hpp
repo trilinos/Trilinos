@@ -135,9 +135,9 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
-#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <Kokkos_DeviceTPI_macros.hpp>
 #include <impl/Kokkos_MemoryView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 #endif /* #define KOKKOS_DEVICETPI_HPP */
 

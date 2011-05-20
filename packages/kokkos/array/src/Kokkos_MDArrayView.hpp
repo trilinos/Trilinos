@@ -356,25 +356,25 @@ void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
 // Partial specializations for known devices and default index maps
 
 #if defined( KOKKOS_DEVICE_HOST )
-#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 #include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
 #include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_TPI )
-#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <Kokkos_DeviceTPI_macros.hpp>
 #include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
 #include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 #include <DeviceTPI/Kokkos_DeviceTPI_MDArrayView.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
-#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
 #include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
 #include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 #include <DeviceCuda/Kokkos_DeviceCuda_MDArrayView.hpp>
 #endif
 

@@ -197,22 +197,22 @@ public:
 // Partial specializations for known devices
 
 #if defined( KOKKOS_DEVICE_HOST )
-#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 #include <impl/Kokkos_ValueView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_TPI )
-#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <Kokkos_DeviceTPI_macros.hpp>
 #include <impl/Kokkos_ValueView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 #include <DeviceTPI/Kokkos_DeviceTPI_ValueView.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
-#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
 #include <impl/Kokkos_ValueView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 #include <DeviceCuda/Kokkos_DeviceCuda_ValueView.hpp>
 #endif
 

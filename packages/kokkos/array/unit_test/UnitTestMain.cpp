@@ -12,7 +12,7 @@
 
 //----------------------------------------------------------------------------
 
-#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 
 #include <UnitTestDeviceMemoryManagement.hpp>
 #include <UnitTestValueView.hpp>
@@ -21,7 +21,7 @@
 #include <UnitTestMDArrayDeepCopy.hpp>
 #include <UnitTestReduce.hpp>
 
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 namespace {
 
@@ -41,7 +41,7 @@ void test_device_host()
 
 //----------------------------------------------------------------------------
 
-#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <Kokkos_DeviceTPI_macros.hpp>
 
 #include <UnitTestDeviceMemoryManagement.hpp>
 #include <UnitTestValueView.hpp>
@@ -50,7 +50,7 @@ void test_device_host()
 #include <UnitTestMDArrayDeepCopy.hpp>
 #include <UnitTestReduce.hpp>
 
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 namespace {
 
@@ -72,7 +72,7 @@ void test_device_tpi()
 
 //----------------------------------------------------------------------------
 
-#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
 
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
@@ -109,7 +109,7 @@ void test_device_cuda() {}
 
 #endif
 
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 //----------------------------------------------------------------------------
 

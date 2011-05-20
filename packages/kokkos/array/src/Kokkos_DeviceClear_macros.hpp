@@ -37,22 +37,21 @@
  *************************************************************************
  */
 
-#if ! defined( KOKKOS_DEVICE_TPI ) || \
-    defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
-    defined( KOKKOS_MACRO_DEVICE ) || \
-    defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
-    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
+#if ! defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
+    ! defined( KOKKOS_MACRO_DEVICE ) || \
+    ! defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
 
-#error "Including <impl/Kokkos_DeviceTPI.hpp> with macros already defined"
+#error "Including <Kokkos_DeviceClear_Macros.hp> without macros defined"
 
 #else
 
-#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
-#define KOKKOS_MACRO_DEVICE                       DeviceTPI
-#define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
-#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
-#define KOKKOS_MACRO_CAN_THROW( expr )  expr
-#define KOKKOS_MACRO_CHECK( expr )  expr
+#undef KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION
+#undef KOKKOS_MACRO_DEVICE
+#undef KOKKOS_MACRO_DEVICE_FUNCTION
+#undef KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+
+#undef KOKKOS_MACRO_DEVICE_CAN_THROW
+#undef KOKKOS_MACRO_CHECK
 
 #endif
 

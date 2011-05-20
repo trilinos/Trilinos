@@ -42,7 +42,8 @@
 
 #include <DeviceCuda/Kokkos_DeviceCuda_ParallelDriver.hpp>
 
-#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
+
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
 namespace Kokkos {
@@ -109,6 +110,7 @@ public:
 } // namespace Kokkos
 
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+
+#include <Kokkos_DeviceClear_macros.hpp>
 #endif /* KOKKOS_DEVICECUDA_PARALLELFOR_HPP */
 

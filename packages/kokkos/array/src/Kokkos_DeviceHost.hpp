@@ -129,9 +129,9 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
-#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 #include <impl/Kokkos_MemoryView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 #endif /* #define KOKKOS_DEVICEHOST_HPP */
 
