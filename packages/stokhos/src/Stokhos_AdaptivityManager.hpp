@@ -144,11 +144,19 @@ namespace Stokhos {
         */
       Teuchos::RCP<const Stokhos::ProductBasis<int,double> > getRowStochasticBasis(int determLid) const
       { return sg_basis_row_dof_[determLid]; } 
+
+      /** Get the vector of row stochastic basis functions.
+        */
+      const std::vector<Teuchos::RCP<const Stokhos::ProductBasis<int,double> > > & getRowStochasticBasis() const
+      { return sg_basis_row_dof_; } 
   
       /** Get stochastic basis associated with a particular deterministic column local id.
         */
       Teuchos::RCP<const Stokhos::ProductBasis<int,double> > getColStochasticBasis(int determLid) const
       { return sg_basis_col_dof_[determLid]; } 
+
+      bool isScaled() 
+      { return scaleOp_; }
 
    private:
 

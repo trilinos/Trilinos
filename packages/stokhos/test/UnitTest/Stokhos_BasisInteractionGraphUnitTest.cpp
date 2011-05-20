@@ -29,7 +29,6 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_square)
 
    int num_KL = 3;
    int porder = 3;
-   bool full_expansion = false;
 
    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = buildBasis(num_KL,porder);
    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(basis->size());
@@ -60,8 +59,8 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_square)
    // check the graph for correctness
    Teuchos::RCP<const Epetra_CrsGraph> graph = epetraCijk->getStochasticGraph();
    TEST_EQUALITY(graph->NumMyRows(),graph->NumGlobalRows());
-   TEST_EQUALITY(big.rowCount(),graph->NumMyRows());
-   TEST_EQUALITY(big.colCount(),graph->NumMyCols());
+   TEST_EQUALITY(int(big.rowCount()),graph->NumMyRows());
+   TEST_EQUALITY(int(big.colCount()),graph->NumMyCols());
 
    for(int i=0;i<graph->NumGlobalRows();i++) {
       bool rowPassed = true;
@@ -90,11 +89,8 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_isotropic_rect)
       Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_SerialComm);
    #endif
 
-   int numProc = comm->NumProc();
-
    int num_KL = 2;
    int porder = 3;
-   bool full_expansion = false;
 
    Teuchos::RCP<const Stokhos::ProductBasis<int,double> > masterBasis = buildBasis(num_KL,porder);
    Teuchos::RCP<const Stokhos::ProductBasis<int,double> > rowBasis = buildBasis(num_KL,2);
