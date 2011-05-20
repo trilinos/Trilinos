@@ -18,6 +18,7 @@ doxygen_objdb_*.tmp
 /TerminalApplication/
 
 # CASL-related extra repos
+/CASLDeCART/
 /PSSDriversExt/
 /StarCCMClient/
 
