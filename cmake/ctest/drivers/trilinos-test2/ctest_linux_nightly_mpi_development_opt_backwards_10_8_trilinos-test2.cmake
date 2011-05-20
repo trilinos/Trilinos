@@ -17,6 +17,11 @@ SET(BUILD_DIR_NAME MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_10.8)
 #SET(CTEST_TEST_TIMEOUT 900)
 SET(CTEST_TEST_TYPE EXPERIMENTAL)
 
+#setting this temporarily while this is an experimental test
+#the default repository for experimental is /space/git/Trilinos
+#but the branch in question only exists on /space/git/nightly/Trilinos
+SET(Trilinos_REPOSITORY_LOCATION "software.sandia.gov:/space/git/nightly/Trilinos")
+
 SET(Trilinos_BRANCH "trilinos-release-10-8-branch-dummy")
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
