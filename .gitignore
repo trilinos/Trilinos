@@ -15,6 +15,9 @@ doxygen_objdb_*.tmp
 /preCopyrightTrilinos/
 /Panzer/
 /LIMEExt/
+/PSSDriversExt/
+/CASLBOA/
+/CASLRAVE/
 /TerminalApplication/
 
 # CASL-related extra repos

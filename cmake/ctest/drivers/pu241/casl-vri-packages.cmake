@@ -9,15 +9,12 @@
 # show up in CASL-specific package CDash results.
 
 #
-# NOTE: You must the following in order to use this:
-#
 #    source /opt/casldev/env/casl_dev_env.sh
-#    source /opt/casldev/env/wec_dev_env.sh
-#    source /opt/casldev/env/boa_dev_env.sh
 #
 
 SET(Trilinos_EXTRAREPOS_FILE "${CTEST_SCRIPT_DIRECTORY}/ExtraExternalRepositories.casl_vri.cmake")
-SET(Trilinos_PACKAGES LIME VRIPSS)
+SET(Trilinos_PACKAGES CASLBOA LIME VRIPSS)
+# CASLRAVE 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_JDK:BOOL=ON"
   "-DJDK_LIBRARY_DIRS='/usr/lib/jvm/java/jre/lib/amd64/server'"
@@ -35,9 +32,3 @@ SET(EXTRA_CONFIGURE_OPTIONS
 #  "-DPVM_LIBRARY_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/lib'"
 #  "-DPVM_INCLUDE_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/include'"
 
-# Even after sourcing the WEC and BOA dev env scripts above these don't work
-#  "-DTPL_ENABLE_WEC:BOOL=ON"
-#  "-DWEC_LIBRARY_DIRS='$ENV{WECLIBS}'"
-#  "-DWEC_INCLUDE_DIRS='$ENV{WECINCS}'"
-#  "-DTPL_ENABLE_BOA:BOOL=ON"
-#  "-DBOA_LIBRARY_DIRS='$ENV{BOALIBS}'"
