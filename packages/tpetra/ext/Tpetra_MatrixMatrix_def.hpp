@@ -45,7 +45,7 @@
   //#include "Tpetra_MMMultiply_decl.hpp"
 #endif
 
-/*! \file Tpetra_MMMultiply_def.hpp 
+/*! \file Tpetra_MatrixMatrix_def.hpp 
 
     The implementations for the members of class Tpetra::MatrixMatrixMultiply and related non-member constructors.
  */

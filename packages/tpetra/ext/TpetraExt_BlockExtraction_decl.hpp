@@ -33,6 +33,11 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_BlockMap.hpp"
 
+/*! \file TpetraExt_BlockExtraction_decl.hpp 
+
+    Methods for block extraction of data from Tpetra objects.
+ */
+
 namespace Tpetra {
   namespace Ext {
 
@@ -51,6 +56,8 @@ namespace Tpetra {
 
         \post - <tt>out_offsets.size() == block_sizes.size()</tt>
         \post - the non-trivial <tt>b</tt>-th block is stored contiguously (column-major) in <tt>out_diags( out_offsets[b], block_size_b )</tt>, where \f$block\_size\_b = ( first\_points\[b+1\] - first\_points\[b\] )^2 \f$.
+
+        \relatesalso Tpetra::CrsMatrix
       */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void
@@ -76,6 +83,7 @@ namespace Tpetra {
       
         Calls extractBlockDiagonals().
 
+        \relatesalso Tpetra::CrsMatrix
       */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void

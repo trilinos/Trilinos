@@ -664,7 +664,7 @@ namespace Tpetra {
 
       Returns a dynamical profile matrix with suggested allocation of zero entries per row.
 
-      \relates CrsMatrix
+      \relatesalso CrsMatrix
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >

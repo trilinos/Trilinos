@@ -109,7 +109,7 @@ namespace Tpetra {
 
   /*! \brief Non-member function to create CrsMatrixMultiplyOp
 
-      \relates CrsMatrixMultiplyOp
+      \relatesalso CrsMatrixMultiplyOp
    */
   template <class Scalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::RCP< CrsMatrixMultiplyOp<Scalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >

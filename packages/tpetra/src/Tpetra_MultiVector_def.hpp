@@ -1851,13 +1851,6 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createMultiVector(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t numVectors) {
-  const bool DO_INIT_TO_ZERO = true;
-  return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,numVectors,DO_INIT_TO_ZERO) );
-}
-
 //
 // Explicit instantiation macro
 //
@@ -1867,9 +1860,6 @@ Tpetra::createMultiVector(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,Glo
 #define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class MultiVector< SCALAR , LO , GO , NODE >; \
-  \
-  template Teuchos::RCP< MultiVector<SCALAR,LO,GO,NODE> > \
-  createMultiVector<SCALAR,LO,GO,NODE>(const Teuchos::RCP<const Map<LO,GO,NODE> > &map, size_t numVectors); 
 
 
 #endif // TPETRA_MULTIVECTOR_DEF_HPP
