@@ -173,7 +173,7 @@ namespace TSQR {
 	const bool debug = false;
 
 	using TSQR::Test::verifyCombine;
-	verifyCombine (numRows, numCols, testReal, testComplex, 
+	verifyCombine (numRows, numCols, params.testReal, testComplex, 
 		       printFieldNames, simulateSequentialTsqr, debug);
       }
 
