@@ -10,7 +10,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TSQR_Combine
   SOURCES Tsqr_TestCombine.cpp
   COMM serial mpi
-  ARGS "--verify --nrows=100 --ncols=5"
+  ARGS "--verify --nrows=100 --ncols=5 --nocomplex"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   DEPLIBS kokkos kokkosnodetsqr
