@@ -176,6 +176,7 @@ namespace TSQR {
 					const int numRows,
 					const int numCols,
 					const int numTrials,
+					const bool testReal,
 					const bool testComplex,
 					const std::string& additionalData)
     {
@@ -183,37 +184,40 @@ namespace TSQR {
       using std::string;
       string dataTypeName;
 
-      dataTypeName = "float";
-      benchmarkAllCombineTypes< float, TimerType > (out, iseed, 
-						    dataTypeName, 
-						    numRows, 
-						    numCols, 
-						    numTrials, 
-						    additionalData);
-      dataTypeName = "double";
-      benchmarkAllCombineTypes< double, TimerType > (out, iseed, 
-						     dataTypeName, 
-						     numRows, 
-						     numCols, 
-						     numTrials, 
-						     additionalData);
+      if (testReal)
+	{
+	  dataTypeName = "float";
+	  benchmarkAllCombineTypes<float, TimerType> (out, iseed, 
+						      dataTypeName, 
+						      numRows, 
+						      numCols, 
+						      numTrials, 
+						      additionalData);
+	  dataTypeName = "double";
+	  benchmarkAllCombineTypes<double, TimerType> (out, iseed, 
+						       dataTypeName, 
+						       numRows, 
+						       numCols, 
+						       numTrials, 
+						       additionalData);
+	}
       if (testComplex)
 	{
 #ifdef HAVE_TSQR_COMPLEX
 	  dataTypeName = "complex<float>";
-	  benchmarkAllCombineTypes< complex<float>, TimerType > (out, iseed, 
-								 dataTypeName, 
-								 numRows, 
-								 numCols, 
-								 numTrials, 
-								 additionalData);
+	  benchmarkAllCombineTypes<complex<float>, TimerType> (out, iseed, 
+							       dataTypeName, 
+							       numRows, 
+							       numCols, 
+							       numTrials, 
+							       additionalData);
 	  dataTypeName = "complex<double>";
-	  benchmarkAllCombineTypes< complex<double>, TimerType > (out, iseed, 
-								  dataTypeName, 
-								  numRows, 
-								  numCols, 
-								  numTrials,
-								  additionalData);
+	  benchmarkAllCombineTypes<complex<double>, TimerType> (out, iseed, 
+								dataTypeName, 
+								numRows, 
+								numCols, 
+								numTrials,
+								additionalData);
 #else // Don't HAVE_TSQR_COMPLEX
 	  throw std::logic_error("TSQR not built with complex arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
@@ -221,7 +225,7 @@ namespace TSQR {
     }					
 
 
-    template< class TimerType >
+    template<class TimerType>
     void
     benchmarkCombine (std::ostream& out,
 		      const int numRows,
@@ -229,6 +233,7 @@ namespace TSQR {
 		      const int numTrials,
 		      std::vector<int>& seed,
 		      const bool useSeedValues,
+		      const bool testReal,
 		      const bool testComplex, 
 		      const std::string& additionalFieldNames,
 		      const std::string& additionalData,
@@ -236,7 +241,9 @@ namespace TSQR {
     {
       if (! useSeedValues)
 	{
-	  seed.resize (4);
+	  // Default seed values.
+	  if (seed.size() < 4)
+	    seed.resize (4);
 	  seed[0] = 0;
 	  seed[1] = 0;
 	  seed[2] = 0;
@@ -260,12 +267,13 @@ namespace TSQR {
 	    out << "," << additionalFieldNames;
 	  out << std::endl;
 	}
-      benchmarkAllCombineTypesAndScalars< TimerType > (out, seed, 
-						       numRows, 
-						       numCols, 
-						       numTrials, 
-						       testComplex, 
-						       additionalData);
+      benchmarkAllCombineTypesAndScalars<TimerType> (out, seed, 
+						     numRows, 
+						     numCols, 
+						     numTrials, 
+						     testReal,
+						     testComplex, 
+						     additionalData);
     }
 
   } // namespace Test

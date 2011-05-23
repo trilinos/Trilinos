@@ -76,6 +76,7 @@ namespace TSQR {
 	  numRows (1000),     // Number of rows in the test matrix
 	  numCols (10),       // Number of columns in the test matrix
 	  numTrials (10),     // Number of trials (action==Benchmark only)
+	  testReal (true),    // Whether to test real-arithmetic routines
 #ifdef HAVE_TSQR_COMPLEX
 	  testComplex (true), // Whether to test complex-arithmetic routines
 #endif // HAVE_TSQR_COMPLEX
@@ -87,6 +88,7 @@ namespace TSQR {
 
 	bool verify, benchmark;
 	int numRows, numCols, numTrials;
+	bool testReal;
 #ifdef HAVE_TSQR_COMPLEX
 	// We don't even let this exist unless TSQR was built with
 	// complex arithmetic support.
@@ -103,8 +105,8 @@ namespace TSQR {
       ///   It will only be used on rank 0.
       ///
       /// \param params [in] test parameter struct.  This method reads
-      ///   the following field: numRows, numCols, numTrials,
-      ///   testComplex.
+      ///   the following fields: numRows, numCols, numTrials,
+      ///   testReal, testComplex.
       ///
       /// \warning Call only on (MPI) rank 0.  Otherwise, you'll run
       ///   the benchmark on every MPI rank simultaneously, but only
@@ -127,12 +129,17 @@ namespace TSQR {
 
 	std::vector<int> seed(4);
 	const bool useSeedValues = false;
-	TSQR::Test::benchmarkCombine< timer_type > (out, numRows, numCols, 
-						    numTrials, seed,
-						    useSeedValues, testComplex,
-						    params.additionalFieldNames,
-						    params.additionalData,
-						    params.printFieldNames);
+	TSQR::Test::benchmarkCombine<timer_type> (out, 
+						  numRows, 
+						  numCols, 
+						  numTrials, 
+						  seed,
+						  useSeedValues, 
+						  params.testReal,
+						  testComplex,
+						  params.additionalFieldNames,
+						  params.additionalData,
+						  params.printFieldNames);
       }
 
       /// \brief Verify TSQR::Combine
@@ -141,8 +148,8 @@ namespace TSQR {
       ///   It will only be used on rank 0.
       ///
       /// \param params [in] test parameter struct.  This method reads
-      ///   the following field: numRows, numCols, numTrials,
-      ///   testComplex.
+      ///   the following fields: numRows, numCols, numTrials,
+      ///   testReal, testComplex.
       ///
       /// \warning Call only on (MPI) rank 0.  Otherwise, you'll run
       ///   the verification routine on every MPI rank simultaneously,
@@ -166,8 +173,8 @@ namespace TSQR {
 	const bool debug = false;
 
 	using TSQR::Test::verifyCombine;
-	verifyCombine (numRows, numCols, testComplex, printFieldNames, 
-		       simulateSequentialTsqr, debug);
+	verifyCombine (numRows, numCols, testReal, testComplex, 
+		       printFieldNames, simulateSequentialTsqr, debug);
       }
 
       /// \brief Parse command-line options for this test
@@ -220,11 +227,15 @@ namespace TSQR {
 	  cmdLineProc.setOption ("ntrials", 
 				 &params.numTrials, 
 				 "Number of trials (only used when \"--benchmark\"");
+	  cmdLineProc.setOption ("testReal",
+				 "noTestReal",
+				 &params.testReal,
+				 "Test real-arithmetic routines");
 #ifdef HAVE_TSQR_COMPLEX
-	  cmdLineProc.setOption ("complex", 
-				 "nocomplex",
+	  cmdLineProc.setOption ("testComplex", 
+				 "noTestComplex",
 				 &params.testComplex,
-				 "Test complex arithmetic, as well as real");
+				 "Test complex-arithmetic routines");
 #endif // HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("field-names", 
 				 &params.additionalFieldNames,
