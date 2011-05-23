@@ -49,14 +49,12 @@ STK_Interface::STK_Interface()
    : dimension_(0), initialized_(false), currentLocalId_(0)
 {
    metaData_ = rcp(new stk::mesh::fem::FEMMetaData());
-   // femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_));
 }
 
 STK_Interface::STK_Interface(unsigned dim)
    : dimension_(dim), initialized_(false), currentLocalId_(0)
 {
    metaData_ = rcp(new stk::mesh::fem::FEMMetaData(dimension_));
-   // femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dimension_));
 
    initializeFromMetaData();
 }
@@ -155,15 +153,23 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 #endif
 
    metaData_->commit();
-   bulkData_ = rcp(new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::get_meta_data(*metaData_),parallelMach));
+   if(bulkData_==Teuchos::null)
+      instantiateBulkData(parallelMach);
 
    initialized_ = true;
+}
+
+void STK_Interface::instantiateBulkData(stk::ParallelMachine parallelMach)
+{
+   TEUCHOS_ASSERT(bulkData_==Teuchos::null);
+
+   bulkData_ = rcp(new stk::mesh::BulkData(stk::mesh::fem::FEMMetaData::get_meta_data(*metaData_),parallelMach));
 }
 
 void STK_Interface::beginModification()
 {
    TEST_FOR_EXCEPTION(bulkData_==Teuchos::null,std::logic_error,
-                      "STK_Interface: Must call \"initialized\" before \"beginModification\"");
+                      "STK_Interface: Must call \"initialized\" or \"instantiateBulkData\" before \"beginModification\"");
 
    bulkData_->modification_begin();
 }
@@ -171,7 +177,7 @@ void STK_Interface::beginModification()
 void STK_Interface::endModification()
 {
    TEST_FOR_EXCEPTION(bulkData_==Teuchos::null,std::logic_error,
-                      "STK_Interface: Must call \"initialized\" before \"endModification\"");
+                      "STK_Interface: Must call \"initialized\" or \"instantiateBulkData\" before \"endModification\"");
 
    bulkData_->modification_end();
 
@@ -579,31 +585,6 @@ Teuchos::RCP<const std::vector<stk::mesh::Entity*> > STK_Interface::getElementsO
    if(orderedElementVector_==Teuchos::null) { 
       // safe because essentially this is a call to modify a mutable object
       const_cast<STK_Interface*>(this)->buildLocalElementIDs();
-/*
-      RCP<std::vector<stk::mesh::Entity*> > elements
-         = Teuchos::rcp(new std::vector<stk::mesh::Entity*>);
-
-      // defines ordering of blocks
-      std::vector<std::string> blockIds;
-      this->getElementBlockNames(blockIds);
-
-      std::vector<std::string>::const_iterator idItr;
-      for(idItr=blockIds.begin();idItr!=blockIds.end();++idItr) {
-         std::string blockId = *idItr;
-
-         // grab elements on this block
-         std::vector<stk::mesh::Entity*> blockElmts;
-         this->getMyElements(blockId,blockElmts); 
-
-         // concatenate them into element LID lookup table
-         elements->insert(elements->end(),blockElmts.begin(),blockElmts.end());
-      }
-
-      // this expensive operation gurantees ordering of local IDs
-      std::sort(elements->begin(),elements->end(),LocalIdCompare(this));
-
-      orderedElementVector_ = elements;
-*/
    }
 
    return orderedElementVector_.getConst();
@@ -635,6 +616,8 @@ void STK_Interface::initializeFromMetaData()
    coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
    processorIdField_ = &metaData_->declare_field<ProcIdFieldType>("PROC_ID");
    localIdField_     = &metaData_->declare_field<LocalIdFieldType>("LOCAL_ID");
+
+   // stk::mesh::put_field( *coordinatesField_ , getNodeRank() , metaData_->universal_part() );
 
    nodesPart_        = &metaData_->declare_part(nodesString,getNodeRank());
    nodesPartVec_.push_back(nodesPart_);

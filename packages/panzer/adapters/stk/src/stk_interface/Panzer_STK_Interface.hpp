@@ -89,6 +89,10 @@ public:
      */
    void initialize(stk::ParallelMachine parallelMach,bool setupIO=true);
 
+   /** Build a bulk data object but don't do anything with it.
+     */
+   void instantiateBulkData(stk::ParallelMachine parallelMach);
+
    // functions to manage and manipulate bulk data
    //////////////////////////////////////////
   
