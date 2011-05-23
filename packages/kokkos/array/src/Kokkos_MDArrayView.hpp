@@ -105,8 +105,8 @@ public:
   typedef typename DeviceType::size_type  size_type ;
 
   /*------------------------------------------------------------------*/
-  /** \brief  True if the array type has contigous memory
-   *          If contigous then can get a pointer to the memory.
+  /** \brief  True if the array type has contiguous memory
+   *          If contiguous then can get a pointer to the memory.
    */
   enum { Contiguous = false };
 
