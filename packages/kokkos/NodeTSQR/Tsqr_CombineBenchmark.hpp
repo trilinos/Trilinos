@@ -52,7 +52,7 @@
 namespace TSQR {
   namespace Test {
 
-    template< class CombineType, class TimerType >
+    template<class CombineType, class TimerType>
     static void
     benchmarkCombineType (std::ostream& out,
 			  std::vector<int>& iseed,
@@ -60,30 +60,37 @@ namespace TSQR {
 			  const std::string& combineTypeName,
 			  const typename CombineType::ordinal_type numRows,
 			  const typename CombineType::ordinal_type numCols,
-			  const int numTrials,
+			  const int cacheBlockNumTrials,
+			  const int pairNumTrials,
 			  const std::string& additionalData)
     {
-      using TSQR::Random::NormalGenerator;
-      using std::complex;
       using std::endl;
-      using std::pair;
-      using std::string;
-      using std::vector;
 
       typedef typename CombineType::ordinal_type ordinal_type;
       typedef typename CombineType::scalar_type scalar_type;
       typedef typename CombineType::magnitude_type magnitude_type;
-      typedef CombineBenchmarker< ordinal_type, scalar_type, CombineType, TimerType > 
+      typedef CombineBenchmarkCalibrater<ordinal_type, scalar_type, CombineType, TimerType> 
 	benchmarker_type;
-      typedef pair< double, double > results_type;
 
-      // FIXME These two should have different seeds!!!
-      NormalGenerator< ordinal_type, scalar_type > normGen (iseed);
-      NormalGenerator< ordinal_type, magnitude_type > normMagGen (iseed);
+      TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1, std::invalid_argument,
+			 "The test matrix must have a positive number of rows "
+			 "and columns, but you specified numRows = " << numRows 
+			 << " and numCols = " << numCols << ".");
+      TEST_FOR_EXCEPTION(cacheBlockNumTrials < 1, std::invalid_argument,
+			 "The number of trials for the cache block benchmark "
+			 "must be positive, but you specified cacheBlockNum"
+			 "Trials = " << cacheBlockNumTrials << ".");
+      TEST_FOR_EXCEPTION(pairNumTrials < 1, std::invalid_argument,
+			 "The number of trials for the pair benchmark must be "
+			 "positive, but you specified pairNumTrials = "
+			 << pairNumTrials << ".");
 
-      benchmarker_type benchmarker (normGen, normMagGen, numTrials);
-      results_type results (benchmarker.R1R2_benchmark (numCols),
-			    benchmarker.RA_benchmark (numRows, numCols));
+      benchmarker_type b (iseed);
+      std::pair<double, double> results;
+      results.first = 
+	b.benchmarkPair (numCols, pairNumTrials);
+      results.second = 
+	b.benchmarkCacheBlock (numRows, numCols, cacheBlockNumTrials);
 
       // Whether or not we should print the "additional data"
       // (originally supplied at command-line invocation of this
@@ -102,7 +109,7 @@ namespace TSQR {
 	  << "," << dataTypeName
 	  << "," << (2*numCols)
 	  << "," << numCols
-	  << "," << numTrials
+	  << "," << pairNumTrials
 	  << "," << results.first;
       if (printAdditionalData)
 	out << "," << additionalData;
@@ -112,7 +119,7 @@ namespace TSQR {
 	  << "," << dataTypeName
 	  << "," << numRows
 	  << "," << numCols
-	  << "," << numTrials
+	  << "," << cacheBlockNumTrials
 	  << "," << results.second;
       if (printAdditionalData)
 	out << "," << additionalData;
@@ -127,44 +134,110 @@ namespace TSQR {
 			      const int numRows,
 			      const int numCols,
 			      const int numTrials,
-			      const std::string& additionalData)
+			      const bool calibrate,
+			      const double timerResolution,
+			      const std::string& additionalData,
+			      const bool debug)
     {
-      using std::string;
+      using std::cerr;
+      using std::endl;
+
+      TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1, std::invalid_argument,
+			 "The test matrix must have a positive number of rows "
+			 "and columns, but you specified numRows = " << numRows 
+			 << " and numCols = " << numCols << ".");
+      TEST_FOR_EXCEPTION(! calibrate && numTrials < 1, std::invalid_argument,
+			 "The number of trials must be positive, but you "
+			 "specified numTrials = " << numTrials << ".");
+      TEST_FOR_EXCEPTION(timerResolution <= static_cast<double>(0), 
+			 std::invalid_argument,
+			 "The timer resolution must be a positive number, "
+			 "but you specified timerResolution = " 
+			 << timerResolution << ".");
+
+      // If no calibration is performed, then the number of trials is
+      // the same for both the cache block [R; A] benchmark and the
+      // pair [R1; R2] benchmark.  Otherwise, we calibrate the number
+      // of trials for each separately.  This is because we expect the
+      // [R1; R2] benchmark to take much less time than the [R; A]
+      // benchmark, so [R1; R2] should have more trials, in order to
+      // get comparable timing accuracy without requiring too many [R;
+      // A] trials.
+      int pairNumTrials = numTrials;
+      int cacheBlockNumTrials = numTrials;
+      if (calibrate)
+	{ // We calibrate the number of trials using the default
+	  // Combine implementation.  We don't expect CombineNative or
+	  // CombineFortran to be much faster than that.  
+	  if (debug)
+	    cerr << "Calibrating..." << endl;
+
+	  // Calibrater gets the timer resolution.
+	  typedef CombineDefault<int, Scalar> combine_type;
+	  typedef CombineBenchmarkCalibrater<int, Scalar, combine_type, TimerType> 
+	    calibrater_type;
+	  calibrater_type c (timerResolution);
+
+	  // Accuracy factor of 1000 gives us 3 digits of timer accuracy.
+	  const double accuracyFactor = static_cast<double> (1000);
+
+	  // Number of trials for factor_pair() and apply_pair().
+	  std::pair<int, double> result;
+	  result = c.calibratePair (numCols, accuracyFactor);
+	  if (debug)
+	    {
+	      cerr << "- Pair number of trials: " << result.first << endl;
+	      cerr << "- Pair calibration time: " << result.second << endl;
+	    }
+	  pairNumTrials = result.first;
+
+	  // Number of trials for factor_inner() and apply_inner().
+	  result = c.calibrateCacheBlock (numRows, numCols, accuracyFactor);
+	  if (debug)
+	    {
+	      cerr << "- Cache block number of trials: " << result.first << endl;
+	      cerr << "- Cache block calibration time: " << result.second << endl;
+	    }
+	  cacheBlockNumTrials = result.first;
+	}
 
       {
-	typedef CombineNative< int, Scalar > combine_type;
-	string combineTypeName ("Native");
-	benchmarkCombineType< combine_type, TimerType > (out, iseed, 
-							 dataTypeName, 
-							 combineTypeName, 
-							 numRows, 
-							 numCols, 
-							 numTrials,
-							 additionalData);
+	typedef CombineNative<int, Scalar> combine_type;
+	std::string combineTypeName ("Native");
+	benchmarkCombineType<combine_type, TimerType> (out, iseed, 
+						       dataTypeName, 
+						       combineTypeName, 
+						       numRows, 
+						       numCols, 
+						       cacheBlockNumTrials,
+						       pairNumTrials,
+						       additionalData);
       }
 #ifdef HAVE_TSQR_FORTRAN
       {
-	typedef CombineFortran< Scalar > combine_type;
-	string combineTypeName ("Fortran");
-	benchmarkCombineType< combine_type, TimerType > (out, iseed, 
-							 dataTypeName, 
-							 combineTypeName, 
-							 numRows, 
-							 numCols, 
-							 numTrials,
-							 additionalData);
+	typedef CombineFortran<Scalar> combine_type;
+	std::string combineTypeName ("Fortran");
+	benchmarkCombineType<combine_type, TimerType> (out, iseed, 
+						       dataTypeName, 
+						       combineTypeName, 
+						       numRows, 
+						       numCols, 
+						       cacheBlockNumTrials,
+						       pairNumTrials,
+						       additionalData);
       }
 #endif // HAVE_TSQR_FORTRAN
       {
 	typedef CombineDefault< int, Scalar > combine_type;
-	string combineTypeName ("Default");
-	benchmarkCombineType< combine_type, TimerType > (out, iseed, 
-							 dataTypeName, 
-							 combineTypeName, 
-							 numRows, 
-							 numCols, 
-							 numTrials,
-							 additionalData);
+	std::string combineTypeName ("Default");
+	benchmarkCombineType<combine_type, TimerType> (out, iseed, 
+						       dataTypeName, 
+						       combineTypeName, 
+						       numRows, 
+						       numCols, 
+						       cacheBlockNumTrials,
+						       pairNumTrials,
+						       additionalData);
       }
     }
 
@@ -178,11 +251,27 @@ namespace TSQR {
 					const int numTrials,
 					const bool testReal,
 					const bool testComplex,
-					const std::string& additionalData)
+					const bool calibrate,
+					const std::string& additionalData,
+					const bool debug)
     {
-      using std::complex;
+      using std::cerr;
+      using std::endl;
       using std::string;
       string dataTypeName;
+
+      TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1, std::invalid_argument,
+			 "The test matrix must have a positive number of rows "
+			 "and columns, but you specified numRows = " << numRows 
+			 << " and numCols = " << numCols << ".");
+      TEST_FOR_EXCEPTION(! calibrate && numTrials < 1, std::invalid_argument,
+			 "The number of trials must be positive, but you "
+			 "specified numTrials = " << numTrials << ".");
+
+      // Compute timer resolution.
+      const double timerResolution = computeTimerResolution<TimerType> ();
+      if (debug)
+	cerr << "Timer resolution: " << timerResolution << " seconds" << endl;
 
       if (testReal)
 	{
@@ -192,32 +281,46 @@ namespace TSQR {
 						      numRows, 
 						      numCols, 
 						      numTrials, 
-						      additionalData);
+						      calibrate,
+						      timerResolution,
+						      additionalData, 
+						      debug);
 	  dataTypeName = "double";
 	  benchmarkAllCombineTypes<double, TimerType> (out, iseed, 
 						       dataTypeName, 
 						       numRows, 
 						       numCols, 
 						       numTrials, 
-						       additionalData);
+						       calibrate,
+						       timerResolution,
+						       additionalData,
+						       debug);
 	}
       if (testComplex)
 	{
 #ifdef HAVE_TSQR_COMPLEX
+	  using std::complex;
+
 	  dataTypeName = "complex<float>";
 	  benchmarkAllCombineTypes<complex<float>, TimerType> (out, iseed, 
 							       dataTypeName, 
 							       numRows, 
 							       numCols, 
 							       numTrials, 
-							       additionalData);
+							       calibrate,
+							       timerResolution,
+							       additionalData,
+							       debug);
 	  dataTypeName = "complex<double>";
 	  benchmarkAllCombineTypes<complex<double>, TimerType> (out, iseed, 
 								dataTypeName, 
 								numRows, 
 								numCols, 
 								numTrials,
-								additionalData);
+								calibrate,
+								timerResolution,
+								additionalData,
+								debug);
 #else // Don't HAVE_TSQR_COMPLEX
 	  throw std::logic_error("TSQR not built with complex arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
@@ -230,15 +333,25 @@ namespace TSQR {
     benchmarkCombine (std::ostream& out,
 		      const int numRows,
 		      const int numCols,
-		      const int numTrials,
-		      std::vector<int>& seed,
-		      const bool useSeedValues,
 		      const bool testReal,
 		      const bool testComplex, 
+		      const int numTrials,
+		      const bool calibrate,
+		      std::vector<int>& seed,
+		      const bool useSeedValues,
 		      const std::string& additionalFieldNames,
 		      const std::string& additionalData,
-		      const bool printFieldNames)
+		      const bool printFieldNames,
+		      const bool debug)
     {
+      TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1, std::invalid_argument,
+			 "The test matrix must have a positive number of rows "
+			 "and columns, but you specified numRows = " << numRows 
+			 << " and numCols = " << numCols << ".");
+      TEST_FOR_EXCEPTION(! calibrate && numTrials < 1, std::invalid_argument,
+			 "The number of trials must be positive, but you "
+			 "specified numTrials = " << numTrials << ".");
+
       if (! useSeedValues)
 	{
 	  // Default seed values.
@@ -273,7 +386,9 @@ namespace TSQR {
 						     numTrials, 
 						     testReal,
 						     testComplex, 
-						     additionalData);
+						     calibrate,
+						     additionalData,
+						     debug);
     }
 
   } // namespace Test

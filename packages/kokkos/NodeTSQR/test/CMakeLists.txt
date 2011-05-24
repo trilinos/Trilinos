@@ -1,8 +1,10 @@
 INCLUDE(PackageAddExecutableAndTest)
 
-# We do build MPI versions of the Combine, SequentialTsqr, LAPACK,
-# and TbbTsqr tests.  However, they just quiet all processes but
-# Rank 0 and do the tests there.
+# It's not necessary to run these tests in an MPI build ("COMM mpi"),
+# since none of them need to run on more than one MPI process.
+# However, it's useful to have the tests around in an MPI build, so we
+# also build the tests there.  In an MPI build, only Rank 0 runs the
+# tests; the other ranks are quieted.
 
 # Performance and accuracy test suite for TSQR::Combine (which
 # factors cache blocks and combines triangular factors).
@@ -10,7 +12,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TSQR_Combine
   SOURCES Tsqr_TestCombine.cpp
   COMM serial mpi
-  ARGS "--verify --nrows=100 --ncols=5 --testReal"
+  ARGS "--verify --testReal"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
   DEPLIBS kokkos kokkosnodetsqr
