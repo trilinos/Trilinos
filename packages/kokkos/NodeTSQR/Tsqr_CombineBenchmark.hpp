@@ -62,6 +62,7 @@ namespace TSQR {
 			  const typename CombineType::ordinal_type numCols,
 			  const int cacheBlockNumTrials,
 			  const int pairNumTrials,
+			  const bool averageTimings,
 			  const std::string& additionalData)
     {
       using std::endl;
@@ -110,7 +111,7 @@ namespace TSQR {
 	  << "," << (2*numCols)
 	  << "," << numCols
 	  << "," << pairNumTrials
-	  << "," << results.first;
+	  << "," << (averageTimings ? results.first / static_cast<double>(pairNumTrials) : results.first);
       if (printAdditionalData)
 	out << "," << additionalData;
       out << endl;
@@ -120,7 +121,7 @@ namespace TSQR {
 	  << "," << numRows
 	  << "," << numCols
 	  << "," << cacheBlockNumTrials
-	  << "," << results.second;
+	  << "," << (averageTimings ? results.second / static_cast<double>(cacheBlockNumTrials) : results.second);
       if (printAdditionalData)
 	out << "," << additionalData;
       out << endl;
@@ -135,6 +136,7 @@ namespace TSQR {
 			      const int numCols,
 			      const int numTrials,
 			      const bool calibrate,
+			      const bool averageTimings,
 			      const double timerResolution,
 			      const std::string& additionalData,
 			      const bool debug)
@@ -211,6 +213,7 @@ namespace TSQR {
 						       numCols, 
 						       cacheBlockNumTrials,
 						       pairNumTrials,
+						       averageTimings,
 						       additionalData);
       }
 #ifdef HAVE_TSQR_FORTRAN
@@ -224,6 +227,7 @@ namespace TSQR {
 						       numCols, 
 						       cacheBlockNumTrials,
 						       pairNumTrials,
+						       averageTimings,
 						       additionalData);
       }
 #endif // HAVE_TSQR_FORTRAN
@@ -237,6 +241,7 @@ namespace TSQR {
 						       numCols, 
 						       cacheBlockNumTrials,
 						       pairNumTrials,
+						       averageTimings,
 						       additionalData);
       }
     }
@@ -252,6 +257,7 @@ namespace TSQR {
 					const bool testReal,
 					const bool testComplex,
 					const bool calibrate,
+					const bool averageTimings,
 					const std::string& additionalData,
 					const bool debug)
     {
@@ -282,6 +288,7 @@ namespace TSQR {
 						      numCols, 
 						      numTrials, 
 						      calibrate,
+						      averageTimings,
 						      timerResolution,
 						      additionalData, 
 						      debug);
@@ -292,6 +299,7 @@ namespace TSQR {
 						       numCols, 
 						       numTrials, 
 						       calibrate,
+						       averageTimings,
 						       timerResolution,
 						       additionalData,
 						       debug);
@@ -308,6 +316,7 @@ namespace TSQR {
 							       numCols, 
 							       numTrials, 
 							       calibrate,
+							       averageTimings,
 							       timerResolution,
 							       additionalData,
 							       debug);
@@ -318,6 +327,7 @@ namespace TSQR {
 								numCols, 
 								numTrials,
 								calibrate,
+								averageTimings,
 								timerResolution,
 								additionalData,
 								debug);
@@ -337,6 +347,7 @@ namespace TSQR {
 		      const bool testComplex, 
 		      const int numTrials,
 		      const bool calibrate,
+		      const bool averageTimings,
 		      std::vector<int>& seed,
 		      const bool useSeedValues,
 		      const std::string& additionalFieldNames,
@@ -387,6 +398,7 @@ namespace TSQR {
 						     testReal,
 						     testComplex, 
 						     calibrate,
+						     averageTimings,
 						     additionalData,
 						     debug);
     }

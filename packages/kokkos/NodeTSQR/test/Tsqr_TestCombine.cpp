@@ -75,6 +75,7 @@ namespace {
       numCols (5),
       numTrials (3),
       calibrate (false),
+      averageTimings (true),
       testReal (true),
 #ifdef HAVE_TSQR_COMPLEX
       testComplex (true),
@@ -98,6 +99,8 @@ namespace {
     // Whether to pick the number of trials automatically, using an
     // iterative calibration process (benchmark only).
     bool calibrate;
+    // Whether to print averaged timings over all trials (true), or the cumulative timing over all trials (false).
+    bool averageTimings;
     // Whether to test real-arithmetic routines.
     bool testReal;
 #ifdef HAVE_TSQR_COMPLEX
@@ -151,7 +154,8 @@ namespace {
     typedef Teuchos::Time timer_type;
     benchmarkCombine<timer_type> (out, numRows, numCols, 
 				  params.testReal, testComplex,
-				  params.numTrials, params.calibrate,
+				  params.numTrials, params.calibrate, 
+				  params.averageTimings,
 				  seed, useSeedValues, 
 				  params.additionalFieldNames,
 				  params.additionalData,
@@ -251,6 +255,12 @@ namespace {
 			     "For benchmarks: ignore numTrials, and calibrate "
 			     "the number of trials based on timer resolution "
 			     "and matrix dimensions");
+      cmdLineProc.setOption ("averageTimings",
+			     "cumulativeTimings",
+			     &params.averageTimings,
+			     "For benchmarks: whether timings should be "
+			     "averaged (true) or cumulative (false) over all "
+			     "trials");
       cmdLineProc.setOption ("testReal",
 			     "noTestReal",
 			     &params.testReal,
