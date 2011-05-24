@@ -96,10 +96,9 @@ private:
 public:
 
   static value_type run( const size_type      work_count ,
-                         const FunctorType  & work_functor )
+                         const FunctorType  & work_functor ,
+                               value_type   & result )
   {
-    value_type result ;
-
     FunctorType::init( result );
 
     // Make a copy just like other devices will have to.
@@ -115,8 +114,6 @@ public:
                             & run_init_on_tpi ,
                             sizeof(value_type) ,
                             & result );
-
-    return result ;
   }
 };
 

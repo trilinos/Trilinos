@@ -59,10 +59,9 @@ public:
     {}
 
   static value_type run( const DeviceHost::size_type work_count ,
-                         const FunctorType &         functor )
+                         const FunctorType &         functor ,
+                               value_type &          result )
   {
-    value_type result ;
-
     FunctorType::init( result );
 
     // Make a copy just like other devices will have to.
@@ -76,8 +75,6 @@ public:
     for ( size_type iwork = 0 ; iwork < tmp.m_work_count ; ++iwork ) {
       tmp.m_functor(iwork,result);
     }
-
-    return result ;
   }
 };
 

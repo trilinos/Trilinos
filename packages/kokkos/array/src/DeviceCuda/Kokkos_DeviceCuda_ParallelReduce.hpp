@@ -72,7 +72,6 @@ public:
   enum { WarpIndexMask  = Impl::DeviceCudaTraits::WarpIndexMask };
   enum { WarpIndexShift = Impl::DeviceCudaTraits::WarpIndexShift };
 
-
   enum { SharedMemoryBanks = Impl::DeviceCudaTraits::SharedMemoryBanks_13 };
 
   enum { ValueWordCount = ( sizeof(value_type) + sizeof(size_type) - 1 )
@@ -363,11 +362,13 @@ public:
 
       grid.x = ( work_count + threads_per_block - 1 ) / threads_per_block ;
 
+      // At most one block per thread so that the final reduction
+      // operation can process one reduction value per thread.
       if ( grid.x > threads_per_block ) { grid.x = threads_per_block ; }
     }
 
     const size_type shmem_size =
-      sizeof(size_type) * ( ValueWordStride * ( WarpStride * block.y - 1 ) + 1 );
+      sizeof(size_type) * ( ValueWordStride * (WarpStride * block.y - 1) + 1 );
 
     device_type::set_dispatch_functor();
 
@@ -378,6 +379,36 @@ public:
     Impl::device_cuda_run<self_type>( tmp , grid , block , shmem_size );
   }
 };
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+template< class FunctorType >
+class ParallelReduce< FunctorType , void , DeviceCuda > {
+public:
+  typedef          DeviceCuda ::size_type size_type ;
+  typedef typename FunctorType::value_type value_type ;
+
+  static void run( const size_type     work_count ,
+                   const FunctorType & work_functor ,
+                         value_type  & result )
+  {
+    // Consider allocating page locked memory for 'tmp' and
+    // copying to that memory through a finalize functor.
+
+    typedef ValueView< value_type , DeviceCuda > value_view ;
+
+    value_view tmp = create_value< value_type , DeviceCuda >();
+
+    ParallelReduce< FunctorType , value_view , DeviceCuda >
+      ::run( work_count , work_functor , tmp );
+
+    deep_copy( result , tmp );
+  }
+};
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 } // namespace Kokkos
 

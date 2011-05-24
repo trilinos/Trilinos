@@ -84,14 +84,6 @@ public:
   static void run( const size_type     work_count ,
                    const FunctorType & work_functor )
   {
-    // Make a copy just like other devices will have to.
-
-    device_type::set_dispatch_functor();
-
-    const self_type tmp( work_count , work_functor );
-
-    device_type::clear_dispatch_functor();
-
     dim3 block( Impl::DeviceCudaTraits::WarpSize , 
                 device_type::maximum_warp_count() , 1 );
 
@@ -103,6 +95,12 @@ public:
       grid.x >>= 1 ;
     }
 
+    device_type::set_dispatch_functor();
+
+    const self_type tmp( work_count , work_functor );
+
+    device_type::clear_dispatch_functor();
+
     Impl::device_cuda_run( tmp , grid , block );
   }
 };
@@ -112,5 +110,6 @@ public:
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 
 #include <Kokkos_DeviceClear_macros.hpp>
+
 #endif /* KOKKOS_DEVICECUDA_PARALLELFOR_HPP */
 

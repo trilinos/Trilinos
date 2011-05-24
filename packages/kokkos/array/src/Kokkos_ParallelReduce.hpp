@@ -66,10 +66,15 @@ parallel_reduce( const size_t work_count ,
                  const FunctorType & functor )
 {
   typedef typename FunctorType::device_type device_type ;
+  typedef typename FunctorType::value_type  value_type ;
 
   typedef ParallelReduce< FunctorType , void , device_type > op_type ;
 
-  return op_type::run( work_count , functor );
+  value_type result ;
+
+  op_type::run( work_count , functor , result );
+
+  return result ;
 }
 
 template< class FunctorType , class FinalizeType >

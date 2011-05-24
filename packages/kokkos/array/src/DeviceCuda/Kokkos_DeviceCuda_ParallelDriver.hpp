@@ -77,8 +77,11 @@ template< class ParallelDriver >
 __global__
 void kokkos_device_cuda_parallel_driver()
 {
+  // The driver functor has been copied to constant memory
   const ParallelDriver * const driver =
     (const ParallelDriver *) kokkos_device_cuda_constant_memory_buffer ;
+
+  // Run the driver functor residing in constant memory
   ParallelDriver::run_on_device( driver );
 }
 
@@ -91,8 +94,10 @@ void device_cuda_run( const ParallelDriver & driver ,
                       const dim3           & block ,
                       const DeviceCuda::size_type shmem = 0 )
 {
+  // Copy functor to constant memory on the device
   cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(ParallelDriver) );
 
+  // Invoke the driver function on the device
   kokkos_device_cuda_parallel_driver< ParallelDriver ><<< grid , block , shmem >>>();
 }
 
