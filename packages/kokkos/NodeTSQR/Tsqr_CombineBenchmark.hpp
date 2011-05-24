@@ -31,7 +31,6 @@
 
 #include <Tsqr_Config.hpp>
 #include <Tsqr_CombineBenchmarker.hpp>
-
 #include <Tsqr_CombineDefault.hpp>
 #include <Tsqr_CombineNative.hpp>
 #ifdef HAVE_TSQR_FORTRAN
@@ -46,8 +45,6 @@
 #include <utility>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Test {
@@ -70,7 +67,7 @@ namespace TSQR {
       typedef typename CombineType::ordinal_type ordinal_type;
       typedef typename CombineType::scalar_type scalar_type;
       typedef typename CombineType::magnitude_type magnitude_type;
-      typedef CombineBenchmarkCalibrater<ordinal_type, scalar_type, CombineType, TimerType> 
+      typedef CombineBenchmarker<ordinal_type, scalar_type, CombineType, TimerType> 
 	benchmarker_type;
 
       TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1, std::invalid_argument,
@@ -127,7 +124,7 @@ namespace TSQR {
       out << endl;
     }
 
-    template< class Scalar, class TimerType >
+    template<class Scalar, class TimerType>
     static void
     benchmarkAllCombineTypes (std::ostream& out,
 			      std::vector<int>& iseed,
@@ -176,7 +173,7 @@ namespace TSQR {
 
 	  // Calibrater gets the timer resolution.
 	  typedef CombineDefault<int, Scalar> combine_type;
-	  typedef CombineBenchmarkCalibrater<int, Scalar, combine_type, TimerType> 
+	  typedef CombineBenchmarker<int, Scalar, combine_type, TimerType> 
 	    calibrater_type;
 	  calibrater_type c (timerResolution);
 
@@ -247,7 +244,7 @@ namespace TSQR {
     }
 
 
-    template< class TimerType >
+    template<class TimerType>
     static void
     benchmarkAllCombineTypesAndScalars (std::ostream& out,
 					std::vector<int>& iseed,
@@ -337,7 +334,42 @@ namespace TSQR {
 	}
     }					
 
-
+    /// \fn benchmarkCombine
+    /// \brief Benchmark TSQR::Combine, using a timer of type TimerType.
+    /// \author Mark Hoemmen
+    ///
+    /// Benchmarks test cache block and pair operations for all
+    /// Combine implementations, over all Scalar types (modulated by
+    /// testReal and testComplex).
+    ///
+    /// \param out [out] Output stream to which to write results.
+    /// \param numRows [in] Number of rows in the cache block A.
+    /// \param numCols [in] Number of columns in the cache block A,
+    ///   and number of rows and columns in the upper triangular
+    ///   matrices R, R1, and R2.
+    /// \param testReal [in] Whether to test real-arithmetic routines.
+    /// \param testComplex [in] Whether to test complex-arithmetic
+    ///   routines.
+    /// \param numTrials [in] If calibrate is false: the number of
+    ///   trials to run each of the benchmarks.  Ignored if calibrate
+    ///   is true.
+    /// \param calibrate [in] Whether to calibrate the number of
+    ///   trials according to the computed timer resolution.
+    /// \param averageTimings [in] Whether to print average (true)
+    ///   or cumulative (false) timings over all trials.
+    /// \param seed [in] If useSeedValues is false, ignored; else, the
+    ///   four-integer seed for the random number generator.  See the
+    ///   documentation of LAPACK's _LARNV routines for requirements.
+    /// \param useSeedValues [in] Whether seed (see above) is read.
+    /// \param additionalFieldNames [in] Field names for additional
+    ///   data to print after each row.
+    /// \param additionalData [in] Additional data to print after each
+    ///   row.  Same number of entries as additionalFieldNames.
+    /// \param printFieldNames [in] Whether to print a "%" - commented
+    ///   row of comma-delimited field names before the first row of
+    ///   data.
+    /// \param debug [in] Whether to print copious debugging output
+    ///   to stderr.
     template<class TimerType>
     void
     benchmarkCombine (std::ostream& out,
