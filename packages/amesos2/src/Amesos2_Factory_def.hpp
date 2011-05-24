@@ -60,250 +60,292 @@ using Teuchos::RCP;
 
 namespace Amesos {
 
-
-template <class Matrix,
-          class Vector >
-RCP<SolverBase>
-Factory<Matrix,Vector>::create(Matrix* A, Vector* X, Vector* B)
-{
-  std::string solver = "Klu2";
-  // Pass non-owning RCP objects to other factory method
-  return( create(solver, rcp(A,false), rcp(X,false), rcp(B,false)) );
-}
-
-
-template <class Matrix,
-          class Vector >
-RCP<SolverBase>
-Factory<Matrix,Vector>::create(RCP<Matrix> A, RCP<Vector> X, RCP<Vector> B)
-{
-  std::string solver = "Klu2";
-  return( create(solver, A, X, B) );
-}
+  std::string tolower(const std::string& s)
+  {
+    std::string rtn = s;
+    for (unsigned int i=0; i<rtn.length(); i++)
+      {
+	rtn[i] = tolower(rtn[i]);
+      }
+    return rtn;
+  }
 
 
-template <class Matrix,
-          class Vector >
-RCP<SolverBase>
-Factory<Matrix,Vector>::create(const char* solverName, Matrix* A, Vector* X, Vector* B)
-{
-  std::string solver = solverName;
-  // Pass non-owning RCP objects to other factory method
-  return( create(solver, rcp(A,false), rcp(X,false), rcp(B,false)) );
-}
+  template <class Matrix,
+	    class Vector >
+  RCP<SolverBase>
+  Factory<Matrix,Vector>::create(Matrix* A, Vector* X, Vector* B)
+  {
+    std::string solver = "Klu2";
+    // Pass non-owning RCP objects to other factory method
+    return( create(solver, rcp(A,false), rcp(X,false), rcp(B,false)) );
+  }
 
 
-template <class Matrix,
-          class Vector >
-RCP<SolverBase>
-Factory<Matrix,Vector>::create(
-  const char* solverName,
-  const RCP<Matrix> A,
-  const RCP<Vector> X,
-  const RCP<Vector> B)
-{
-  std::string solver = solverName;
-  return( create(solver, A, X, B) );
-}
+  template <class Matrix,
+	    class Vector >
+  RCP<SolverBase>
+  Factory<Matrix,Vector>::create(RCP<Matrix> A, RCP<Vector> X, RCP<Vector> B)
+  {
+    std::string solver = "Klu2";
+    return( create(solver, A, X, B) );
+  }
 
 
-template <class Matrix,
-          class Vector >
-RCP<SolverBase>
-Factory<Matrix,Vector>::create(const std::string solverName, Matrix* A, Vector* X, Vector* B)
-{
-  // Pass non-owning RCP objects to other factory method
-  return( create(solverName, rcp(A,false), rcp(X,false), rcp(B,false)) );
-}
+  template <class Matrix,
+	    class Vector >
+  RCP<SolverBase>
+  Factory<Matrix,Vector>::create(const char* solverName, Matrix* A, Vector* X, Vector* B)
+  {
+    std::string solver = solverName;
+    // Pass non-owning RCP objects to other factory method
+    return( create(solver, rcp(A,false), rcp(X,false), rcp(B,false)) );
+  }
 
 
-template <class Matrix,
-          class Vector >
-RCP<SolverBase>
-Factory<Matrix,Vector>::create(
-  const std::string solverName,
-  const RCP<Matrix> A,
-  const RCP<Vector> X,
-  const RCP<Vector> B)
-{
-  // Check for our native solver first.
-  // 
-  // Remove compiler guards once interface is finalized, since we will always include it.
+  template <class Matrix,
+	    class Vector >
+  RCP<SolverBase>
+  Factory<Matrix,Vector>::create(
+				 const char* solverName,
+				 const RCP<Matrix> A,
+				 const RCP<Vector> X,
+				 const RCP<Vector> B)
+  {
+    std::string solver = solverName;
+    return( create(solver, A, X, B) );
+  }
+
+
+  template <class Matrix,
+	    class Vector >
+  RCP<SolverBase>
+  Factory<Matrix,Vector>::create(const std::string solverName, Matrix* A, Vector* X, Vector* B)
+  {
+    // Pass non-owning RCP objects to other factory method
+    return( create(solverName, rcp(A,false), rcp(X,false), rcp(B,false)) );
+  }
+
+
+  template <class Matrix,
+	    class Vector >
+  RCP<SolverBase>
+  Factory<Matrix,Vector>::create(
+				 const std::string solverName,
+				 const RCP<Matrix> A,
+				 const RCP<Vector> X,
+				 const RCP<Vector> B)
+  {
+    solverName = tolower(solverName); // for easy string checking
+    // Check for our native solver first.
+    // 
+    // Remove compiler guards once interface is finalized, since we will always include it.
 #ifdef HAVE_AMESOS2_KLU2
-  if((solverName == "Amesos2_Klu2") || (solverName == "Klu2") || (solverName == "KLU2")){
-    return( rcp(new Klu2<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_klu2") || (solverName == "klu2")){
+      return( rcp(new Klu2<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_KLU
-  if((solverName == "Amesos2_Klu") || (solverName == "Klu")){
-    return( rcp(new Klu<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_klu") || (solverName == "klu")){
+      return( rcp(new Klu<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_LAPACK
-  if((solverName == "Amesos2_Lapack") || (solverName == "Lapack")){
-    return( rcp(new Lapack<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_lapack") || (solverName == "lapack")){
+      return( rcp(new Lapack<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_MUMPS
-  if((solverName == "Amesos2_Mumps") || (solverName == "Mumps")){
-    return( rcp(new Mumps<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_mumps") || (solverName == "mumps")){
+      return( rcp(new Mumps<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_SCALAPACK
-  if((solverName == "Amesos2_Scalapack") || (solverName == "Scalapack")){
-    return( rcp(new Scalapack<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_scalapack") || (solverName == "scalapack")){
+      return( rcp(new Scalapack<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_UMFPACK
-  if((solverName == "Amesos2_Umfpack") || (solverName == "Umfpack")){
-    return( rcp(new Umfpack<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_umfpack") || (solverName == "umfpack")){
+      return( rcp(new Umfpack<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLUDIST
-  if((solverName == "Amesos2_Superludist") || (solverName == "Superludist")){
-    return( rcp(new Superludist<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_superludist") ||
+       (solverName == "superludist") ||
+       (solverName == "amesos2_superlu_dist") ||
+       (solverName == "superlu_dist")){
+      return( rcp(new Superludist<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
-/* This check is no longer required as SuperLU is a required dependency.
-  cmake build infrastructure never turns this flag on for required
-  dependencies. Uncomment here if SuperLU changes to an optional dependency.
-  */
-/*#ifdef HAVE_AMESOS2_SUPERLU*/
-  if((solverName == "Amesos2_Superlu") || (solverName == "Superlu")){
-    return( rcp(new Superlu<Matrix,Vector>(A, X, B)) );
-  }
-/*#endif*/
+#ifdef HAVE_AMESOS2_SUPERLUMT
+    if((solverName == "amesos2_superlumt") ||
+       (solverName == "superlumt") ||
+       (solverName == "Amesos2_Superlu_mt") ||
+       (solverName == "superlu_mt")){
+      return( rcp(new Superlumt<Matrix,Vector>(A, X, B)) );
+    }
+#endif
+
+    /* This check is no longer required as SuperLU is a required dependency.
+       cmake build infrastructure never turns this flag on for required
+       dependencies. Uncomment here if SuperLU changes to an optional dependency.
+    */
+    /*#ifdef HAVE_AMESOS2_SUPERLU*/
+    if((solverName == "amesos2_superlu") ||
+       (solverName == "superlu")){
+      return( rcp(new Superlu<Matrix,Vector>(A, X, B)) );
+    }
+    /*#endif*/
 
 #ifdef HAVE_AMESOS2_DSCPACK
-  if((solverName == "Amesos2_Dscpack") || (solverName == "Dscpack")){
-    return( rcp(new Dscpack<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_dscpack") || (solverName == "dscpack")){
+      return( rcp(new Dscpack<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_PARDISO
-  if((solverName == "Amesos2_Pardiso") || (solverName == "Pardiso")){
-    return( rcp(new Pardiso<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_pardiso") || (solverName == "pardiso")){
+      return( rcp(new Pardiso<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_TAUCS
-  if((solverName == "Amesos2_Taucs") || (solverName == "Taucs")){
-    return( rcp(new Taucs<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_taucs") || (solverName == "taucs")){
+      return( rcp(new Taucs<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_PARAKLETE
-  if((solverName == "Amesos2_Paraklete") || (solverName == "Paraklete")){
-    return( rcp(new Paraklete<Matrix,Vector>(A, X, B)) );
-  }
+    if((solverName == "amesos2_paraklete") || (solverName == "paraklete")){
+      return( rcp(new Paraklete<Matrix,Vector>(A, X, B)) );
+    }
 #endif
 
-  /* If none of the above conditionals are satisfied, then the solver
-   * requested is not yet supported.  We throw a runtime exception stating
-   * this, and return null.
-   */
-  std::string err_msg = solverName + " is not implemented";
-  TEST_FOR_EXCEPTION(true, std::invalid_argument, err_msg);
-  return( Teuchos::null );
-}
+    /* If none of the above conditionals are satisfied, then the solver
+     * requested is not yet supported.  We throw a runtime exception stating
+     * this, and return null.
+     */
+    std::string err_msg = solverName + " is not implemented";
+    TEST_FOR_EXCEPTION(true, std::invalid_argument, err_msg);
+    return( Teuchos::null );
+  }
 
 
-template <class Matrix,
-          class Vector >
-bool Factory<Matrix,Vector>::query(const char* solverName){
-  std::string solver = solverName;
-  return( query(solver) );
-}
+  template <class Matrix,
+	    class Vector >
+  bool Factory<Matrix,Vector>::query(const char* solverName){
+    std::string solver = solverName;
+    return( query(solver) );
+  }
 
 
-template <class Matrix,
-          class Vector >
-bool Factory<Matrix,Vector>::query(const std::string solverName){
+  template <class Matrix,
+	    class Vector >
+  bool Factory<Matrix,Vector>::query(const std::string solverName){
+    // Default built-in solver is always present
+    if((solverName == "amesos2_klu2") || (solverName == "klu2")){
+      return( true );
+    }
+
 #ifdef HAVE_AMESOS2_KLU
-  if((solverName == "Amesos2_Klu") || (solverName == "Klu")){
-    return( true );
-  }
+    if((solverName == "amesos2_klu") || (solverName == "klu")){
+      return( true );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_LAPACK
-  if((solverName == "Amesos2_Lapack") || (solverName == "Lapack")){
-    return( true );
-  }
+    if((solverName == "amesos2_lapack") || (solverName == "lapack")){
+      return( true );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_MUMPS
-  if((solverName == "Amesos2_Mumps") || (solverName == "Mumps")){
-    return( true );
-  }
+    if((solverName == "amesos2_mumps") || (solverName == "mumps")){
+      return( true );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_SCALAPACK
-  if((solverName == "Amesos2_Scalapack") || (solverName == "Scalapack")){
-    return( true );
-  }
+    if((solverName == "amesos2_scalapack") || (solverName == "scalapack")){
+      return( true );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_UMFPACK
-  if((solverName == "Amesos2_Umfpack") || (solverName == "Umfpack")){
-    return( true );
-  }
+    if((solverName == "amesos2_umfpack") || (solverName == "umfpack")){
+      return( true );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLUDIST
-  if((solverName == "Amesos2_Superludist") || (solverName == "Superludist")){
-    return( true );
-  }
+    if((solverName == "amesos2_superludist") ||
+       (solverName == "superludist") ||
+       (solverName == "amesos2_superlu_dist") ||
+       (solverName == "superlu_dist")){
+      return( true );
+    }
 #endif
 
-/* This check is no longer required as SuperLU is a required dependency.
-  cmake build infrastructure never turns this flag on for required
-  dependencies. Uncomment here if SuperLU changes to an optional dependency.
-  */
-/*#ifdef HAVE_AMESOS2_SUPERLU*/
-  if((solverName == "Amesos2_Superlu") || (solverName == "Superlu")){
-    return( true );
-  }
-/*#endif*/
+#ifdef HAVE_AMESOS2_SUPERLUMT
+    if((solverName == "amesos2_superlumt") ||
+       (solverName == "superlumt") ||
+       (solverName == "Amesos2_Superlu_mt") ||
+       (solverName == "superlu_mt")){
+      return( true );
+    }
+#endif
+
+    /* This check is no longer required as SuperLU is a required dependency.
+       cmake build infrastructure never turns this flag on for required
+       dependencies. Uncomment here if SuperLU changes to an optional dependency.
+    */
+    /*#ifdef HAVE_AMESOS2_SUPERLU*/
+    if((solverName == "amesos2_superlu") ||
+       (solverName == "superlu")){
+      return( true );
+    }
+    /*#endif*/
 
 #ifdef HAVE_AMESOS2_DSCPACK
-  if((solverName == "Amesos2_Dscpack") || (solverName == "Dscpack")){
-    return( true );
-  }
+    if((solverName == "amesos2_dscpack") || (solverName == "dscpack")){
+      return( true );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_PARDISO
-  if((solverName == "Amesos2_Pardiso") || (solverName == "Pardiso")){
-    return( true );
-  }
+    if((solverName == "amesos2_pardiso") || (solverName == "pardiso")){
+      return( true );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_TAUCS
-  if((solverName == "Amesos2_Taucs") || (solverName == "Taucs")){
-    return( true );
-  }
+    if((solverName == "amesos2_taucs") || (solverName == "taucs")){
+      return( true );
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_PARAKLETE
-  if((solverName == "Amesos2_Paraklete") || (solverName == "Paraklete")){
-    return( true );
-  }
+    if((solverName == "amesos2_paraklete") || (solverName == "paraklete")){
+      return( true );
+    }
 #endif
 
-  // Otherwise, the solver is not available
-  return( false );
-}
+    // Otherwise, the solver is not available
+    return( false );
+  }
 
-// TODO: Here in Amesos.cpp there is a function defined
-// getValidParameters.  I wonder if it would be more appropriate
-// to define this function in the base Solver and concrete Solver
-// classes instead.
+  // Here in Amesos.cpp there is a function defined getValidParameters.
+  // We decided it would be best to have such functionality be part of
+  // the Solver class, with some functionality being delegated to the
+  // solver implementations
 
 
 } // end namespace Amesos
