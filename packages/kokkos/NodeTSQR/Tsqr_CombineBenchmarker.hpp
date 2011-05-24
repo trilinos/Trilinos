@@ -193,7 +193,7 @@ namespace TSQR {
       ///   routines) for requirements on the seed values.
       ///
       CombineBenchmarker (const double timerRes,
-				  const std::vector<int>& iseed) : 
+			  const std::vector<int>& iseed) : 
 	normGenS_ (iseed), 
 	normGenM_ (iseed),
 	timerResolution_ (timerRes)
