@@ -219,9 +219,12 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
   if ( this->status_.root_ ) { // Do factorization
     Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 
-    // std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
-    // std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-    // std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+#ifdef HAVE_AMESOS2_DEBUG
+    std::cout << "Superlu:: Before numeric factorization" << std::endl;
+    std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
+    std::cout << "rowind_ : " << rowind_.toString() << std::endl;
+    std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+#endif
 
     FunctionMap<Amesos::Superlu,scalar_type>::gstrf(&(data_.options), &(data_.A),
       data_.relax, data_.panel_size, data_.etree.getRawPtr(), NULL, 0,
@@ -295,11 +298,14 @@ Superlu<Matrix,Vector>::solve_impl()
   if ( this->status_.root_ ) {
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 
-    // std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
-    // std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-    // std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-    // std::cout << "B : " << bValues().toString() << std::endl;
-    // std::cout << "X : " << xValues().toString() << std::endl;
+#ifdef HAVE_AMESOS2_DEBUG
+    std::cout << "Superlu:: Before solve" << std::endl;
+    std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
+    std::cout << "rowind_ : " << rowind_.toString() << std::endl;
+    std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+    std::cout << "B : " << bValues().toString() << std::endl;
+    std::cout << "X : " << xValues().toString() << std::endl;
+#endif
 
     FunctionMap<Amesos::Superlu,scalar_type>::gssvx(&(data_.options), &(data_.A),
       data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(), data_.etree.getRawPtr(),
@@ -308,8 +314,11 @@ Superlu<Matrix,Vector>::solve_impl()
       data_.ferr.getRawPtr(), data_.berr.getRawPtr(), &(data_.mem_usage),
       &(data_.stat), &ierr);
 
-    // std::cout << "B : " << bValues().toString() << std::endl;
-    // std::cout << "X : " << xValues().toString() << std::endl;
+#ifdef HAVE_AMESOS2_DEBUG
+    std::cout << "Superlu:: After solve" << std::endl;
+    std::cout << "B : " << bValues().toString() << std::endl;
+    std::cout << "X : " << xValues().toString() << std::endl;
+#endif
   } // end block for solve time
 
   /* Update X's global values */
@@ -357,6 +366,11 @@ Superlu<Matrix,Vector>::setParameters_impl(
       data_.options.Trans = SLU::NOTRANS;
     } else if ( fact == "CONJ" ) {
       data_.options.Trans = SLU::CONJ;
+
+      // TODO: Fix this!
+      TEST_FOR_EXCEPTION( fact == "CONJ" && Teuchos::ScalarTraits<scalar_type>::isComplex,
+			  std::invalid_argument,
+			  "Amesos::Superlu does not currently support solution of complex systems with conjugate transpose");
     }
   } else {                      // default to no transpose if no parameter given
     data_.options.Trans = SLU::NOTRANS;
