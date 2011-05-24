@@ -4,35 +4,36 @@ ShyLU
 
  2.  What is the purpose for the package?   
 
-ShyLU is a algebraic preconditioner for general sparse linear
-systems on the node. ShyLU can also be used as a solver for medium sized
-problems.
+ShyLU is a algebraic preconditioner package for general sparse linear
+systems on the node. ShyLU can also be used as a solver. It is designed
+for medium sized problems that can be solved on a single node
+although it will also work across nodes.
+ 
 The default preconditioner in ShyLU is based on block partitioning and
 Schur complements and is typically used as a hybrid direct-iterative method
 (though it can also be used as a purely direct or iterative method).
-It is designed to be a preconditioner or solver on the compute node.
-It uses a two-level hybrid parallel programming model (MPI + Threads) to 
+ShyLU uses a two-level hybrid parallel programming model (MPI + Threads) to 
 effectively use current multicore and emerging manycore systems.
 
 ShyLU is intended both as a subdomain solver or smoother for production use,
 and as a research platform for algorithmic research in hybrid solvers,
-Schur complement preconditioners and general on the node parallel algebraic
-preconditioners.
+Schur complement preconditioners and possibly other parallel algebraic
+preconditioners on the node.
 
  3.  Why should this functionality not just be included in an existing 
 Trilinos package?  
 
-ShyLU could be part of Ifpack as it is a preconditioner. However, we believe it
-should be a separate package for several reasons:
+ShyLU could be part of Ifpack as it is an algebraic preconditioner. However, 
+we believe it should be a separate package for several reasons:
 
 (a) We envision the scope of ShyLU is different from the scope of
-Ifpack/Ifpack2. Ifpack/Ifpack2 can be "on-the-core" preconditioners while
+Ifpack/Ifpack2. Ifpack/Ifpack2 is typically "on-the-core" preconditioners while
 ShyLU's scope is a manycore node. On the other end of this spectrum we see
-ML/MueLU. As an example, ShyLU uses Ifpack preconditioners within itself and
+ML/MueLU. As an example, ShyLU can use Ifpack preconditioners within itself and
 ShyLU can be used within ML as a smoother.
 While it can be argued, the domain decomposition + ILU in Ifpack
-can be used for the node, Ifpack ignores all the remote entries and works on
-local entries even in that case. ShyLU will be a true node level
+can be used for the node, this ignores all the remote entries and works on
+just the local entries even in that case. ShyLU will be a true node level
 preconditioner.
 (b) ShyLU has more dependencies than Ifpack. It will create circular 
 dependencies in Ifpack/Ifpack2 and within the solvers. (see below)
@@ -43,14 +44,15 @@ dependencies in Ifpack/Ifpack2 and within the solvers. (see below)
  4.  What required and optional internal Trilinos packages dependencies will 
 this code have? 
 
-Required dependencies: Epetra, EpetraExt, Isorropia, Zoltan, Teuchos, Amesos,
-    AztecOO.
-Optional dependencies: Belos.
-Future optional dependencies: Tpetra, Kokkos.
+ShyLU depends on: Epetra, EpetraExt, Isorropia, Zoltan, Teuchos, Amesos.
+ShyLU can use:    AztecOO, Belos.
+Future "can use": Tpetra, Kokkos, Ifpack(2).
+Packages that can use ShyLU: ML, Ifpack, and any package that uses Ifpack
 
  5. What required and optional external TPL dependencies will this code have?  
 
-Just MPI.
+Required TPL: None.
+Optional TPL: MPI, solver TPLs in Amesos.
 
  6.  Will this be immediately considered Stable code or Experimental Code?  
 
@@ -75,6 +77,6 @@ It will be released externally as soon as copyright has been granted.
     *   If the package is released outside of Sandia, who is going to maintain 
 it long term?  
 
-During the research phase, the developers will maintain it. Longer term,
-maintainance should be provided by Trilinos SEMS staff.
+During the research phase, the current developers will maintain it. 
+Longer term, maintainance should be provided by Trilinos SEMS staff.
 
