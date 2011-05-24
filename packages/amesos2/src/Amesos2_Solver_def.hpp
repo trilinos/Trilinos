@@ -78,9 +78,9 @@ Solver<ConcreteSolver,Matrix,Vector>::Solver(
     "Matrix shape inappropriate for the underlying solver");
 
   TEST_FOR_EXCEPTION(
-    multiVecX_->getGlobalLength() != matrixA_->getGlobalNumRows(),
+    multiVecX_->getGlobalLength() != matrixA_->getGlobalNumCols(),
     std::invalid_argument,
-    "LHS MultiVector must have length equal to the number of global rows in A");
+    "LHS MultiVector must have length equal to the number of global columns in A");
 
   TEST_FOR_EXCEPTION(
     multiVecB_->getGlobalLength() != matrixA_->getGlobalNumRows(),
@@ -90,7 +90,7 @@ Solver<ConcreteSolver,Matrix,Vector>::Solver(
   TEST_FOR_EXCEPTION(
     multiVecX_->getGlobalNumVectors() != multiVecB_->getGlobalNumVectors(),
     std::invalid_argument,
-    "LHS and RHS MultiVectors must be of the same length");
+    "LHS and RHS MultiVectors must have the same number of vectors");
 }
 
 
