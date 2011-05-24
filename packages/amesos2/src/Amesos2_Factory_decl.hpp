@@ -74,8 +74,11 @@
 #ifdef HAVE_AMESOS2_UMFPACK
 #include "Amesos2_Umfpack.hpp"
 #endif
-#ifdef HAVE_AMESOS2_SUPERLUDIST
+#ifdef HAVE_AMESOS2_SUPERLUDIST	// Distributed-memory SuperLU
 #include "Amesos2_Superludist.hpp"
+#endif
+#ifdef HAVE_AMESOS2_SUPERLUMT	// Multi-threaded SuperLU
+#include "Amesos2_Superlumt.hpp"
 #endif
 /* This check is no longer required as SuperLU is a required dependency.
   cmake build infrastructure never turns this flag on for required
