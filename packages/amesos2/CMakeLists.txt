@@ -1,12 +1,12 @@
-
 INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
 
 #
 # A) Define the package
 #
 
 PACKAGE(Amesos2)
+
+SET(${PACKAGE_NAME}_VERSION "0.1d")
 
 #
 # B) Set up package-specific options
@@ -17,20 +17,24 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_EXPERIMENTAL
   "Enable experimental features"
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_BTF
-  HAVE_BTF
-  "Enable BTF functionality"
-  OFF )
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KLU2
+  HAVE_AMESOS2_KLU2
+  "Enable KLU2 functionality."
+  ON )
 
-ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_PyTrilinos
-  HAVE_PYTRILINOS
-  "Enable certain python-compatible code only if PyTrilinos is enabled."
-  OFF )
-
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Superlu
-  HAVE_AMESOS_SUPERLU
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLU
+  HAVE_AMESOS2_SUPERLU
   "Enable Superlu functionality."
   ON )
+
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLUMT
+  HAVE_AMESOS2_SUPERLUMT
+  "Enable SuperLU_MT functionality."
+  OFF )
+
+PACKAGE_ADD_DEBUG_OPTION()
+
+PACKAGE_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 #
 # C) Add the libraries, tests, and examples
