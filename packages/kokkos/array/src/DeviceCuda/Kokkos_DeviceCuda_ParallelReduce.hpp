@@ -126,6 +126,7 @@ public:
   void reduce_shared( const size_type used_warp_count )
   {
     typedef volatile value_type * vvp ;
+    typedef volatile const value_type * cvvp ;
 
     enum { HalfWarpSize = WarpSize >> 1 };
 
@@ -149,11 +150,11 @@ public:
 
       size_type * const data = shared_data + shared_data_offset();
   
-      functor_type::join( *((vvp) data), *((vvp)( data + n16 )) );
-      functor_type::join( *((vvp) data), *((vvp)( data +  n8 )) );
-      functor_type::join( *((vvp) data), *((vvp)( data +  n4 )) );
-      functor_type::join( *((vvp) data), *((vvp)( data +  n2 )) );
-      functor_type::join( *((vvp) data), *((vvp)( data +  n1 )) );
+      functor_type::join( *((vvp) data), *((cvvp)( data + n16 )) );
+      functor_type::join( *((vvp) data), *((cvvp)( data +  n8 )) );
+      functor_type::join( *((vvp) data), *((cvvp)( data +  n4 )) );
+      functor_type::join( *((vvp) data), *((cvvp)( data +  n2 )) );
+      functor_type::join( *((vvp) data), *((cvvp)( data +  n1 )) );
     }
 
     // Phase B: Use a single warp to reduce results from each warp.
@@ -175,15 +176,15 @@ public:
         if ( threadIdx.x + 4 < used_warp_count ) {
           if ( threadIdx.x + 8 < used_warp_count ) {
             if ( threadIdx.x + 16 < used_warp_count ) {
-              functor_type::join( *((vvp) data) , *((vvp)( data + n16 )) );
+              functor_type::join( *((vvp) data) , *((cvvp)( data + n16 )) );
             }
-            functor_type::join( *((vvp) data) , *((vvp)( data + n8 )) );
+            functor_type::join( *((vvp) data) , *((cvvp)( data + n8 )) );
           }
-          functor_type::join( *((vvp) data) , *((vvp)( data + n4 )) );
+          functor_type::join( *((vvp) data) , *((cvvp)( data + n4 )) );
         }
-        functor_type::join( *((vvp) data) , *((vvp)( data + n2 )) );
+        functor_type::join( *((vvp) data) , *((cvvp)( data + n2 )) );
       }
-      functor_type::join( *((vvp) data) , *((vvp)( data + n1 )) );
+      functor_type::join( *((vvp) data) , *((cvvp)( data + n1 )) );
     }
   }
 
