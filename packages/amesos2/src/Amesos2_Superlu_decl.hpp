@@ -220,8 +220,8 @@ private:
     SLU::mem_usage_t mem_usage;
     SLU::SuperLUStat_t stat;
 
-    Teuchos::Array<magnitude_type> berr; ///<  forward error bounds
-    Teuchos::Array<magnitude_type> ferr; ///< backward error bounds
+    Teuchos::Array<magnitude_type> berr; ///< backward error bounds
+    Teuchos::Array<magnitude_type> ferr; ///<  forward error bounds
     Teuchos::Array<int> perm_r;
     Teuchos::Array<int> perm_c;
     Teuchos::Array<int> etree;
