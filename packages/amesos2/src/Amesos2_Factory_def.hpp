@@ -329,7 +329,7 @@ namespace Amesos {
   }
 
 
-  std::string tolower(const std::string& s);
+  std::string tolower(const std::string& s)
   {
     std::locale loc;
     std::string rtn = s;
