@@ -81,9 +81,9 @@ namespace TSQR {
 		   const int numCols, 
 		   const bool testReal,
 		   const bool testComplex,
-		   const bool printFieldNames = true,
-		   const bool simulateSequentialTsqr = false,
-		   const bool debug = false);
+		   const bool printFieldNames,
+		   const bool simulateSequentialTsqr,
+		   const bool debug);
 
   } // namespace Test
 } // namespace TSQR

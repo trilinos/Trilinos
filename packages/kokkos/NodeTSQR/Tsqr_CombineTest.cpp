@@ -26,8 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Tsqr_Config.hpp"
 #include "Tsqr_CombineTest.hpp"
 
+#include <Teuchos_TestForException.hpp>
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_Random_MatrixGenerator.hpp>
 
@@ -44,8 +46,6 @@
 #include <stdexcept>
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
   namespace Test {
@@ -608,69 +608,65 @@ namespace TSQR {
 	{
 	  if (testReal)
 	    {
-	      NormalGenerator<int, float> normgenS (iseed);
-	      const vector<float> resultsS = 
-		verifyCombineTemplate (normgenS, normgenS, numRows, 
-				       numCols, debug);
-	      // Only print field names (if at all) once per run, for
-	      // the first data type.
-	      printResults (string("float"), numRows, numCols, 
-			    resultsS, doPrintFieldNames);
-	      // Print field names at most once.
-	      doPrintFieldNames = false; 
-	      // Fetch the pseudorandom seed from the previous test.
-	      normgenS.getSeed (iseed);
+	      {
+		NormalGenerator<int, float> normgenS (iseed);
+		const vector<float> resultsS = 
+		  verifyCombineTemplate (normgenS, normgenS, numRows, 
+					 numCols, debug);
+		// Only print field names (if at all) once per run, for
+		// the first data type.
+		printResults (string("float"), numRows, numCols, 
+			      resultsS, doPrintFieldNames);
+		// Print field names at most once.
+		doPrintFieldNames = false; 
+		// Fetch the pseudorandom seed from the previous test.
+		normgenS.getSeed (iseed);
+	      }
+	      {
+		NormalGenerator<int, double> normgenD (iseed);
+		const vector<double> resultsD = 
+		  verifyCombineTemplate (normgenD, normgenD, numRows, 
+					 numCols, debug);
+		printResults (string("double"), numRows, numCols, 
+			      resultsD, doPrintFieldNames);
+		doPrintFieldNames = false; 
+		normgenD.getSeed (iseed);
+	      }
 	    }
 
 	  if (testComplex)
 	    {
 #ifdef HAVE_TSQR_COMPLEX
-	      NormalGenerator<int, complex<float> > normgenC (iseed);
-	      NormalGenerator<int, float> normgenS (iseed);
-	      const vector<float> resultsC = 
-		verifyCombineTemplate (normgenC, normgenS, numRows, 
-				       numCols, debug);
-	      printResults (string("complex<float>"), numRows, numCols, 
-			    resultsC, doPrintFieldNames);
-	      doPrintFieldNames = false; 
-	      // Even though normgenC and normgenS each updated the
-	      // random seed independently, for now we just fetch the
-	      // updated seed from normgenC.  This should still
-	      // produce reproducible results.
-	      normgenC.getSeed (iseed);
-#else // HAVE_TSQR_COMPLEX
-	      throw std::logic_error ("Trilinos was not built with "
-				      "complex arithmetic support");
-#endif // HAVE_TSQR_COMPLEX
-	    }
-
-	  if (testReal)
-	    {
-	      NormalGenerator<int, double> normgenD (iseed);
-	      const vector<double> resultsD = 
-		verifyCombineTemplate (normgenD, normgenD, numRows, 
-				       numCols, debug);
-	      printResults (string("double"), numRows, numCols, 
-			    resultsD, doPrintFieldNames);
-	      doPrintFieldNames = false; 
-	      normgenD.getSeed (iseed);
-	    }
-
-	  if (testComplex)
-	    {
-#ifdef HAVE_TSQR_COMPLEX
-	      NormalGenerator<int, complex<double> > normgenZ (iseed);
-	      NormalGenerator<int, double> normgenD (iseed);
-	      const vector<double> resultsZ = 
-		verifyCombineTemplate (normgenZ, normgenD, numRows, 
-				       numCols, debug);
-	      printResults (string("complex<double>"), numRows, numCols,
-			    resultsZ, doPrintFieldNames);
-	      doPrintFieldNames = false;
-	      normgenZ.getSeed (iseed);
-#else // HAVE_TSQR_COMPLEX
-	      throw std::logic_error ("Trilinos was not built with "
-				      "complex arithmetic support");
+	      {
+		NormalGenerator<int, complex<float> > normgenC (iseed);
+		NormalGenerator<int, float> normgenS (iseed);
+		const vector<float> resultsC = 
+		  verifyCombineTemplate (normgenC, normgenS, numRows, 
+					 numCols, debug);
+		printResults (string("complex<float>"), numRows, numCols, 
+			      resultsC, doPrintFieldNames);
+		doPrintFieldNames = false; 
+		// Even though normgenC and normgenS each updated the
+		// random seed independently, for now we just fetch the
+		// updated seed from normgenC.  This should still
+		// produce reproducible results.
+		normgenC.getSeed (iseed);
+	      }
+	      {
+		NormalGenerator<int, complex<double> > normgenZ (iseed);
+		NormalGenerator<int, double> normgenD (iseed);
+		const vector<double> resultsZ = 
+		  verifyCombineTemplate (normgenZ, normgenD, numRows, 
+					 numCols, debug);
+		printResults (string("complex<double>"), numRows, numCols,
+			      resultsZ, doPrintFieldNames);
+		doPrintFieldNames = false;
+		normgenZ.getSeed (iseed);
+	      }
+#else // NOT HAVE_TSQR_COMPLEX
+	      TEST_FOR_EXCEPTION(true, std::logic_error,
+				 "Trilinos was not built with "
+				 "complex arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
 	    }
 	}
@@ -678,67 +674,61 @@ namespace TSQR {
 	{
 	  if (testReal)
 	    {
-	      NormalGenerator<int, float> normgenS (iseed);
-	      const vector<float> resultsS = 
-		verifyCombineSeqTemplate (normgenS, normgenS, numRows, 
-					  numCols, debug);
-	      printSimSeqTsqrResults (string("float"), numRows, numCols, 
-				      resultsS, doPrintFieldNames);
-	      doPrintFieldNames = false;
-	      normgenS.getSeed (iseed);
+	      {
+		NormalGenerator<int, float> normgenS (iseed);
+		const vector<float> resultsS = 
+		  verifyCombineSeqTemplate (normgenS, normgenS, numRows, 
+					    numCols, debug);
+		printSimSeqTsqrResults (string("float"), numRows, numCols, 
+					resultsS, doPrintFieldNames);
+		doPrintFieldNames = false;
+		normgenS.getSeed (iseed);
+	      }
+	      {
+		NormalGenerator<int, double> normgenD (iseed);
+		const vector<double> resultsD = 
+		  verifyCombineSeqTemplate (normgenD, normgenD, numRows, 
+					    numCols, debug);
+		printSimSeqTsqrResults (string("double"), numRows, numCols, 
+					resultsD, doPrintFieldNames);
+		doPrintFieldNames = false;
+		normgenD.getSeed (iseed);
+	      }
 	    }
 
 	  if (testComplex)
 	    {
 #ifdef HAVE_TSQR_COMPLEX
-	      NormalGenerator<int, complex<float> > normgenC (iseed);
-	      NormalGenerator<int, float> normgenS (iseed);
-	      const vector<float> resultsC = 
-		verifyCombineSeqTemplate (normgenC, normgenS, numRows, 
-					  numCols, debug);
-	      printSimSeqTsqrResults (string("complex<float>"), numRows, numCols, 
-				      resultsC, doPrintFieldNames);
-	      doPrintFieldNames = false;
-	      normgenC.getSeed (iseed);
-#else // HAVE_TSQR_COMPLEX
-	      throw std::logic_error ("Trilinos was not built with "
-				      "complex arithmetic support");
-#endif // HAVE_TSQR_COMPLEX
-	    }
-
-	  if (testReal)
-	    {
-	      NormalGenerator<int, double> normgenD (iseed);
-	      const vector<double> resultsD = 
-		verifyCombineSeqTemplate (normgenD, normgenD, numRows, 
-					  numCols, debug);
-	      printSimSeqTsqrResults (string("double"), numRows, numCols, 
-				      resultsD, doPrintFieldNames);
-	      doPrintFieldNames = false;
-	      normgenD.getSeed (iseed);
-	    }
-
-	  if (testComplex)
-	    {
-#ifdef HAVE_TSQR_COMPLEX
-	      // Next test.
-	      NormalGenerator<int, complex<double> > normgenZ (iseed);
-	      NormalGenerator<int, double> normgenD (iseed);
-	      const vector<double> resultsZ = 
-		verifyCombineSeqTemplate (normgenZ, normgenD, numRows, 
-					  numCols, debug);
-	      printSimSeqTsqrResults (string("complex<double>"), numRows, 
-				      numCols, resultsZ, doPrintFieldNames);
-	      doPrintFieldNames = false;
-	      normgenZ.getSeed (iseed);
-#else // HAVE_TSQR_COMPLEX
-	      throw std::logic_error ("Trilinos was not built with "
-				      "complex arithmetic support");
+	      {
+		NormalGenerator<int, complex<float> > normgenC (iseed);
+		NormalGenerator<int, float> normgenS (iseed);
+		const vector<float> resultsC = 
+		  verifyCombineSeqTemplate (normgenC, normgenS, numRows, 
+					    numCols, debug);
+		printSimSeqTsqrResults (string("complex<float>"), numRows, numCols, 
+					resultsC, doPrintFieldNames);
+		doPrintFieldNames = false;
+		normgenC.getSeed (iseed);
+	      }
+	      {
+		NormalGenerator<int, complex<double> > normgenZ (iseed);
+		NormalGenerator<int, double> normgenD (iseed);
+		const vector<double> resultsZ = 
+		  verifyCombineSeqTemplate (normgenZ, normgenD, numRows, 
+					    numCols, debug);
+		printSimSeqTsqrResults (string("complex<double>"), numRows, 
+					numCols, resultsZ, doPrintFieldNames);
+		doPrintFieldNames = false;
+		normgenZ.getSeed (iseed);
+	      }
+#else // NOT HAVE_TSQR_COMPLEX
+	      TEST_FOR_EXCEPTION(true, std::logic_error,
+				 "Trilinos was not built with "
+				 "complex arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
 	    }
 	}
     }
-
   } // namespace Test
 } // namespace TSQR
 

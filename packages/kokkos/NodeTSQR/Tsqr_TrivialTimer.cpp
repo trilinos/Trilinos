@@ -1,9 +1,6 @@
 #include <Tsqr_TrivialTimer.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 namespace TSQR {
 
   TrivialTimer::TrivialTimer (const std::string& theName, bool doStart) :
@@ -16,7 +13,7 @@ namespace TSQR {
   void 
   TrivialTimer::verifyConcept()
   {
-    TSQR::Test::verifyTimerConcept< TrivialTimer >();
+    TSQR::Test::verifyTimerConcept<TrivialTimer> ();
   }
 
   void
@@ -29,7 +26,8 @@ namespace TSQR {
   TrivialTimer::stop () 
   { 
     isRunning_ = false;
-    return double(0); 
+    ++counter_;
+    return static_cast<double> (counter_);
   }
 
 } // namespace TSQR
