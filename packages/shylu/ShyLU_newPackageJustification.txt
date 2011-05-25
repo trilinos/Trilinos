@@ -32,9 +32,9 @@ ShyLU's scope is a manycore node. On the other end of this spectrum we see
 ML/MueLU. As an example, ShyLU can use Ifpack preconditioners within itself and
 ShyLU can be used within ML as a smoother.
 While it can be argued, the domain decomposition + ILU in Ifpack
-can be used for the node, this ignores all the remote entries and works on
-just the local entries even in that case. ShyLU will be a true node level
-preconditioner.
+can be used for the node (by running one MPI task per core), this
+ignores all the remote entries and works on just the local entries 
+for each core. ShyLU will be a true node level preconditioner.
 (b) ShyLU has more dependencies than Ifpack. It will create circular 
 dependencies in Ifpack/Ifpack2 and within the solvers. (see below)
 (c) ShyLU can be used as both preconditioner and as a direct solver; thus
