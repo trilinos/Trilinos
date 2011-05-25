@@ -77,13 +77,11 @@ public:
   //--------------------------------------------------------------------------
 
   ParallelFor( const size_type work_count , const FunctorType & functor )
-    : m_work_functor( functor )
+    : m_work_functor( ( device_type::set_dispatch_functor() , functor ) )
     , m_work_count( work_count )
-    {}
-
-  static void run( const size_type     work_count ,
-                   const FunctorType & work_functor )
   {
+    device_type::clear_dispatch_functor();
+
     dim3 block( Impl::DeviceCudaTraits::WarpSize , 
                 device_type::maximum_warp_count() , 1 );
 
@@ -95,13 +93,7 @@ public:
       grid.x >>= 1 ;
     }
 
-    device_type::set_dispatch_functor();
-
-    const self_type tmp( work_count , work_functor );
-
-    device_type::clear_dispatch_functor();
-
-    Impl::device_cuda_run( tmp , grid , block );
+    Impl::device_cuda_run( *this , grid , block );
   }
 };
 

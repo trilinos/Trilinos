@@ -54,11 +54,6 @@ public:
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
 
-  ParallelFor( const size_type work_count , const FunctorType & functor )
-    : m_work_functor( functor )
-    , m_work_count( work_count )
-    {}
-
 private:
 
   // self.m_work_count == total work count
@@ -79,18 +74,13 @@ private:
 
 public:
 
-  static void run( const size_type     work_count ,
-                   const FunctorType & work_functor )
+  ParallelFor( const size_type work_count , const FunctorType & functor )
+    : m_work_functor( ( device_type::set_dispatch_functor() , functor ) )
+    , m_work_count( work_count )
   {
-    // Make a copy just like other devices will have to.
-
-    device_type::set_dispatch_functor();
-
-    const ParallelFor tmp( work_count , work_functor );
-
     device_type::clear_dispatch_functor();
 
-    TPI_Run_threads( & run_on_tpi , & tmp , 0 );
+    TPI_Run_threads( & run_on_tpi , this , 0 );
   }
 };
 

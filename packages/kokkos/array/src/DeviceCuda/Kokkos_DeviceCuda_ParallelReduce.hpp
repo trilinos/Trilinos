@@ -318,27 +318,20 @@ public:
   }
 
   //----------------------------------------------------------------------
+  // Create and run the driver:
 
-  ParallelReduce( const FunctorType  & functor ,
-                  const FinalizeType & finalize ,
-                  const size_type      work_count ,
-                  const size_type      grid_size )
-    : m_work_functor(  functor )
+  ParallelReduce( const size_type      work_count ,
+                  const FunctorType  & functor ,
+                  const FinalizeType & finalize )
+    : m_work_functor(  ( device_type::set_dispatch_functor() , functor ) )
     , m_work_finalize( finalize )
     , m_work_count(    work_count )
     , m_scratch_space( device_type::reduce_multiblock_scratch_space() )
     , m_scratch_flag(  device_type::reduce_multiblock_scratch_flag() )
-    , m_scratch_warp(  ( grid_size >> WarpIndexShift ) +
-                       ( grid_size &  WarpIndexMask ? 1 : 0 ) )
-    , m_scratch_upper( ValueWordStride * ( grid_size + m_scratch_warp - 1 ) )
-    {}
-
-  //----------------------------------------------------------------------
-
-  static void run( const size_type      work_count ,
-                   const FunctorType  & work_functor ,
-                   const FinalizeType & work_finalize )
+    , m_scratch_warp(  0 )
+    , m_scratch_upper( 0 )
   {
+    device_type::clear_dispatch_functor();
 
     const size_type maximum_shared_words = device_type::maximum_shared_words();
 
@@ -367,43 +360,45 @@ public:
       if ( grid.x > threads_per_block ) { grid.x = threads_per_block ; }
     }
 
+    m_scratch_warp  =  ( grid.x >> WarpIndexShift ) +
+                       ( grid.x &  WarpIndexMask ? 1 : 0 );
+
+    m_scratch_upper = ValueWordStride * ( grid.x + m_scratch_warp - 1 );
+
     const size_type shmem_size =
       sizeof(size_type) * ( ValueWordStride * (WarpStride * block.y - 1) + 1 );
 
-    device_type::set_dispatch_functor();
-
-    const self_type tmp( work_functor, work_finalize, work_count , grid.x );
-
-    device_type::clear_dispatch_functor();
-
-    Impl::device_cuda_run<self_type>( tmp , grid , block , shmem_size );
+    Impl::device_cuda_run<self_type>( *this , grid , block , shmem_size );
   }
+
+  //----------------------------------------------------------------------
 };
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 template< class FunctorType >
-class ParallelReduce< FunctorType , void , DeviceCuda > {
+class ParallelReduce< FunctorType , void , DeviceCuda >
+  : public ParallelReduce<
+      FunctorType ,
+      ValueView< typename FunctorType::ValueType , DeviceCuda > ,
+      DeviceCuda >
+{
 public:
-  typedef          DeviceCuda ::size_type size_type ;
-  typedef typename FunctorType::value_type value_type ;
+  typedef          DeviceCuda ::size_type      size_type ;
+  typedef typename FunctorType::value_type     value_type ;
+  typedef ValueView< value_type , DeviceCuda > view_type ;
+  typedef ParallelReduce< FunctorType , view_type , DeviceCuda > base_type ;
 
-  static void run( const size_type     work_count ,
-                   const FunctorType & work_functor ,
-                         value_type  & result )
+  ParallelReduce( const size_type     work_count ,
+                  const FunctorType & work_functor ,
+                        value_type  & result )
+    : base_type( work_count , work_functor ,
+                 create_labeled_value< value_type , DeviceCuda >(
+                   std::string("parallel_reduce_temporary_result") )
+               )
   {
-    // Consider allocating page locked memory for 'tmp' and
-    // copying to that memory through a finalize functor.
-
-    typedef ValueView< value_type , DeviceCuda > value_view ;
-
-    value_view tmp = create_value< value_type , DeviceCuda >();
-
-    ParallelReduce< FunctorType , value_view , DeviceCuda >
-      ::run( work_count , work_functor , tmp );
-
-    deep_copy( result , tmp );
+    deep_copy( result , base_type::m_work_finalize );
   }
 };
 

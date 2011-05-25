@@ -55,9 +55,10 @@ public:
   typedef DeviceType                      device_type ;
   typedef typename device_type::size_type size_type ;
 
-  static void run( const size_type      work_count ,
-                   const FunctorType &  functor ,
-                   const FinalizeType & finalize );
+  // Create and run the driver
+  ParallelReduce( const size_type      work_count ,
+                  const FunctorType &  functor ,
+                  const FinalizeType & finalize );
 };
 
 template< class FunctorType >
@@ -68,13 +69,25 @@ parallel_reduce( const size_t work_count ,
   typedef typename FunctorType::device_type device_type ;
   typedef typename FunctorType::value_type  value_type ;
 
-  typedef ParallelReduce< FunctorType , void , device_type > op_type ;
+  typedef ParallelReduce< FunctorType , void , device_type > driver_type ;
 
   value_type result ;
 
-  op_type::run( work_count , functor , result );
+  const driver_type driver( work_count , functor , result );
 
   return result ;
+}
+
+template< class FunctorType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      typename FunctorType::value_type & result )
+{
+  typedef typename FunctorType::device_type device_type ;
+
+  typedef ParallelReduce< FunctorType , void , device_type > driver_type ;
+
+  const driver_type driver( work_count , functor , result );
 }
 
 template< class FunctorType , class FinalizeType >
@@ -84,9 +97,9 @@ void parallel_reduce( const size_t work_count ,
 {
   typedef typename FunctorType::device_type device_type ;
 
-  typedef ParallelReduce< FunctorType , FinalizeType , device_type > op_type ;
+  typedef ParallelReduce< FunctorType, FinalizeType, device_type > driver_type ;
 
-  op_type::run( work_count , functor , finalize );
+  const driver_type driver( work_count , functor , finalize );
 }
 
 } // namespace Kokkos

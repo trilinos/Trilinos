@@ -52,23 +52,13 @@ public:
   const size_type   m_work_count ;
 
   ParallelFor( const size_type work_count , const FunctorType & functor )
-    : m_functor( functor )
+    : m_functor( ( device_type::set_dispatch_functor() , functor ) )
     , m_work_count( work_count )
-    {}
-
-  static void run( const DeviceHost::size_type work_count ,
-                   const FunctorType &         functor )
   {
-    // Make a copy just like other devices will have to.
-
-    device_type::set_dispatch_functor();
-
-    const ParallelFor tmp( work_count , functor );
-
     device_type::clear_dispatch_functor();
 
-    for ( size_type iwork = 0 ; iwork < tmp.m_work_count ; ++iwork ) {
-      tmp.m_functor(iwork);
+    for ( size_type iwork = 0 ; iwork < m_work_count ; ++iwork ) {
+      m_functor(iwork);
     }
   }
 };

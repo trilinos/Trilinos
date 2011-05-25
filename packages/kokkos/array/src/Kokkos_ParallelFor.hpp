@@ -51,15 +51,18 @@ public:
   typedef DeviceType                      device_type ;
   typedef typename device_type::size_type size_type ;
 
-  static void run( const size_type      work_count ,
-                   const FunctorType &  functor );
+  // Create and execute the parallel for driver:
+  ParallelFor( const size_type      work_count ,
+               const FunctorType &  functor );
 };
 
 template< class FunctorType >
 void parallel_for( size_t work_count , const FunctorType & functor )
 {
-  ParallelFor< FunctorType , typename FunctorType::device_type >
-    ::run( work_count , functor );
+  typedef typename FunctorType::device_type        device_type ;
+  typedef ParallelFor< FunctorType , device_type > driver_type ;
+
+  const driver_type driver( work_count , functor );
 }
 
 } // namespace Kokkos
