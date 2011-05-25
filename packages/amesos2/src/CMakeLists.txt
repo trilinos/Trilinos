@@ -63,9 +63,9 @@ ASSERT_DEFINED(PROJECT_SOURCE_DIR)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 
-#APPEND_SET(HEADERS
-#${PROJECT_SOURCE_DIR}/Trilinos_version.h
-#)
+APPEND_SET(HEADERS
+  ${PROJECT_SOURCE_DIR}/Trilinos_version.h
+  )
 
 # Set headers (for IDEs and installing)
 
@@ -75,7 +75,7 @@ APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 
-# NOTE: Above, we add the XXX_config.h file so tht MS Visual Studio
+# NOTE: Above, we add the XXX_config.h file so that MS Visual Studio
 # will know to include this file in the dependency analysis
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -135,7 +135,21 @@ APPEND_SET(SOURCES
   )
 
 # Set addition headers and source based on package-specific
-# configuration options
+# configuration options.  In Amesos2, each solver interface should be
+# added only if that solver has been enabled by the user.
+
+IF (${PACKAGE_NAME}_ENABLE_SUPERLUMT)
+  APPEND_SET(HEADERS
+    Amesos2_Superlumt.hpp
+    Amesos2_Superlumt_FunctionMap.hpp
+    Amesos2_Superlumt_decl.hpp
+    Amesos2_Superlumt_def.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_Superlumt.cpp
+    )
+ENDIF()
 
 
 #
