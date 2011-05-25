@@ -64,7 +64,6 @@
 namespace SLU {
 extern "C" {
 typedef int int_t;
-#include "slu_Cnames.h"
 #include "supermatrix.h"
 #include "slu_util.h"
 

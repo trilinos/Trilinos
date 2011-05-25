@@ -66,9 +66,9 @@ typedef int int_t;
 
 extern "C" {
 
-#include "slu_Cnames.h"
-#include "supermatrix.h"
-#include "slu_util.h"
+  //#include "slu_Cnames.h"
+#include "supermatrix.h"	// for Dtype_t declaration
+  //#include "slu_util.h"
 
 namespace C {
 #include "slu_scomplex.h"     // single-precision complex data type definitions
