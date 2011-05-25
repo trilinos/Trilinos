@@ -53,22 +53,17 @@
 #ifndef AMESOS2_FACTORY_DEF_HPP
 #define AMESOS2_FACTORY_DEF_HPP
 
-
 #include <Teuchos_RCP.hpp>
+
 using Teuchos::rcp;
 using Teuchos::RCP;
 
 namespace Amesos {
 
-  std::string tolower(const std::string& s)
-  {
-    std::string rtn = s;
-    for (unsigned int i=0; i<rtn.length(); i++)
-      {
-	rtn[i] = tolower(rtn[i]);
-      }
-    return rtn;
-  }
+  /*
+   * Utility function to transform a string into all lowercase
+   */
+  std::string tolower(const std::string& s);
 
 
   template <class Matrix,
@@ -106,8 +101,7 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   RCP<SolverBase>
-  Factory<Matrix,Vector>::create(
-				 const char* solverName,
+  Factory<Matrix,Vector>::create(const char* solverName,
 				 const RCP<Matrix> A,
 				 const RCP<Vector> X,
 				 const RCP<Vector> B)
@@ -130,16 +124,15 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   RCP<SolverBase>
-  Factory<Matrix,Vector>::create(
-				 const std::string solverName,
+  Factory<Matrix,Vector>::create(const std::string solver_name,
 				 const RCP<Matrix> A,
 				 const RCP<Vector> X,
 				 const RCP<Vector> B)
   {
-    solverName = tolower(solverName); // for easy string checking
+    std::string solverName = tolower(solver_name); // for easy string checking
     // Check for our native solver first.
     // 
-    // Remove compiler guards once interface is finalized, since we will always include it.
+    // Remove compiler guards once interface is finalized, since we will always include it?
 #ifdef HAVE_AMESOS2_KLU2
     if((solverName == "amesos2_klu2") || (solverName == "klu2")){
       return( rcp(new Klu2<Matrix,Vector>(A, X, B)) );
@@ -188,22 +181,18 @@ namespace Amesos {
 #ifdef HAVE_AMESOS2_SUPERLUMT
     if((solverName == "amesos2_superlumt") ||
        (solverName == "superlumt") ||
-       (solverName == "Amesos2_Superlu_mt") ||
+       (solverName == "amesos2_superlu_mt") ||
        (solverName == "superlu_mt")){
       return( rcp(new Superlumt<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
-    /* This check is no longer required as SuperLU is a required dependency.
-       cmake build infrastructure never turns this flag on for required
-       dependencies. Uncomment here if SuperLU changes to an optional dependency.
-    */
-    /*#ifdef HAVE_AMESOS2_SUPERLU*/
+#ifdef HAVE_AMESOS2_SUPERLU
     if((solverName == "amesos2_superlu") ||
        (solverName == "superlu")){
       return( rcp(new Superlu<Matrix,Vector>(A, X, B)) );
     }
-    /*#endif*/
+#endif
 
 #ifdef HAVE_AMESOS2_DSCPACK
     if((solverName == "amesos2_dscpack") || (solverName == "dscpack")){
@@ -250,10 +239,11 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   bool Factory<Matrix,Vector>::query(const std::string solverName){
-    // Default built-in solver is always present
+#ifdef HAVE_AMESOS2_KLU2
     if((solverName == "amesos2_klu2") || (solverName == "klu2")){
       return( true );
     }
+#endif
 
 #ifdef HAVE_AMESOS2_KLU
     if((solverName == "amesos2_klu") || (solverName == "klu")){
@@ -297,22 +287,18 @@ namespace Amesos {
 #ifdef HAVE_AMESOS2_SUPERLUMT
     if((solverName == "amesos2_superlumt") ||
        (solverName == "superlumt") ||
-       (solverName == "Amesos2_Superlu_mt") ||
+       (solverName == "amesos2_superlu_mt") ||
        (solverName == "superlu_mt")){
       return( true );
     }
 #endif
 
-    /* This check is no longer required as SuperLU is a required dependency.
-       cmake build infrastructure never turns this flag on for required
-       dependencies. Uncomment here if SuperLU changes to an optional dependency.
-    */
-    /*#ifdef HAVE_AMESOS2_SUPERLU*/
+#ifdef HAVE_AMESOS2_SUPERLU
     if((solverName == "amesos2_superlu") ||
        (solverName == "superlu")){
       return( true );
     }
-    /*#endif*/
+#endif
 
 #ifdef HAVE_AMESOS2_DSCPACK
     if((solverName == "amesos2_dscpack") || (solverName == "dscpack")){
@@ -341,6 +327,19 @@ namespace Amesos {
     // Otherwise, the solver is not available
     return( false );
   }
+
+
+  std::string tolower(const std::string& s);
+  {
+    std::locale loc;
+    std::string rtn = s;
+    for (size_t i=0; i<rtn.length(); ++i)
+      {
+	rtn[i] = tolower(rtn[i],loc);
+      }
+    return rtn;
+  }
+
 
   // Here in Amesos.cpp there is a function defined getValidParameters.
   // We decided it would be best to have such functionality be part of

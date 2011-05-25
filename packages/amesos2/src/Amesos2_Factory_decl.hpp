@@ -57,10 +57,9 @@
 #include "Amesos2_config.h"
 
 #include "Amesos2_SolverBase.hpp"
-// include here klu2 headers
 
-#ifdef HAVE_AMESOS2_KLU
-#include "Amesos2_Klu.hpp"
+#ifdef HAVE_AMESOS2_KLU2
+#include "Amesos2_Klu2.hpp"
 #endif
 #ifdef HAVE_AMESOS2_LAPACK
 #include "Amesos2_Lapack.hpp"
@@ -84,9 +83,9 @@
   cmake build infrastructure never turns this flag on for required
   dependencies. Uncomment here if SuperLU changes to an optional dependency.
   */
-/*#ifdef HAVE_AMESOS2_SUPERLU*/
+#ifdef HAVE_AMESOS2_SUPERLU
 #include "Amesos2_Superlu.hpp"
-/*#endif*/
+#endif
 #ifdef HAVE_AMESOS2_DSCPACK
 #include "Amesos2_Dscpack.hpp"
 #endif
