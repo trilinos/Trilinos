@@ -575,9 +575,9 @@
   </Package>
   <Package name="TrilinosCouplings" dir="trilinoscouplings">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Isorropia,Amesos,AztecOO,Belos,Ifpack,ML,NOX,Zoltan"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Isorropia,Amesos,AztecOO,Belos,Ifpack,ML,NOX,Zoltan,STK"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Intrepid,Pamgen,AztecOO,ML,Zoltan"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Intrepid,Pamgen,AztecOO,ML,Zoltan,STK"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
