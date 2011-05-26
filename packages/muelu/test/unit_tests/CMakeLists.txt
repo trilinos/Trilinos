@@ -28,6 +28,7 @@ APPEND_SET(SOURCES
   GenericPRFactory.cpp
   Amesos.cpp
   TentativePFactory.cpp
+  Aggregates.cpp
   UCAggregationFactory.cpp
   CoalesceDropFactory.cpp
 )
