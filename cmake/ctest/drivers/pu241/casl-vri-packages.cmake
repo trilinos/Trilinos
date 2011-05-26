@@ -24,10 +24,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Zlib:BOOL=ON"
   "-DTPL_ENABLE_TCL:BOOL=ON"
   "-DTCL_LIBRARY_NAMES='tcl8.5'"
+  "-DPVM_LIBRARY_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/lib/LINUX64'"
+  "-DPVM_INCLUDE_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/include'"
   )
-
-# I can't get PVM to configure with these
-#  "-DTPL_ENABLE_PVM:BOOL=ON"
-#  "-DPVM_LIBRARY_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/lib'"
-#  "-DPVM_INCLUDE_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/include'"
 
