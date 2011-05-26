@@ -14,7 +14,6 @@
 
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "Kokkos_BufferMacros.hpp"
-#include "Kokkos_CUDA_util_inline_runtime.h"
 #include "Kokkos_CUDANodeMemoryModel.hpp" // in case someone directly included this implementation file
 #include "Kokkos_CUDANodeUtils.hpp"
 
@@ -27,7 +26,11 @@ namespace Kokkos {
     T * devptr = NULL;
     const size_t sizeInBytes = sizeof(T)*size;
     if (size > 0) {
-      cutilSafeCallNoSync( cudaMalloc( (void**)&devptr, sizeInBytes ) );
+      cudaError_t err = cudaMalloc( (void**)&devptr, sizeInBytes );
+      TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+          "Kokkos::CUDANodeMemoryModel::allocBuffer(): cudaMalloc() returned error: "
+          << cudaGetErrorString(err) 
+          );
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
       allocSize_ += sizeInBytes;
 #endif
@@ -43,7 +46,7 @@ namespace Kokkos {
   void CUDANodeMemoryModel::copyFromBuffer(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayView<T> &hostDest) {
     CHECK_COMPUTE_BUFFER(buffSrc);
     TEST_FOR_EXCEPTION( (size_t)buffSrc.size() < size || (size_t)hostDest.size() < size, std::runtime_error,
-        "CUDANode::copyFromBuffer: invalid copy.");
+        "CUDANodeMemoryModel::copyFromBuffer: invalid copy.");
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     ++numCopiesD2H_;
     bytesCopiedD2H_ += size*sizeof(T);
@@ -51,14 +54,18 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
     std::cerr << "copyFromBuffer<" << Teuchos::TypeNameTraits<T>::name() << "> of size " << sizeof(T) * size << std::endl;
 #endif
-    cutilSafeCallNoSync( cudaMemcpy( hostDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToHost) );
+    cudaError_t err = cudaMemcpy( hostDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToHost);
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+        "Kokkos::CUDANodeMemoryModel::copyFromBuffer(): cudaMemcpy() returned error: "
+        << cudaGetErrorString(err) 
+        );
   }
 
   template <class T> inline
   void CUDANodeMemoryModel::copyToBuffer(size_t size, const ArrayView<const T> &hostSrc, const ArrayRCP<T> &buffDest) {
     CHECK_COMPUTE_BUFFER(buffDest);
-    TEST_FOR_EXCEPTION( hostSrc.size() < size, std::runtime_error, "CUDANode::copyFromBuffer: invalid copy.");
-    TEST_FOR_EXCEPTION( buffDest.size() < size, std::runtime_error, "CUDANode::copyFromBuffer: invalid copy.");
+    TEST_FOR_EXCEPTION( hostSrc.size() < size, std::runtime_error, "CUDANodeMemoryModel::copyToBuffer: invalid copy.");
+    TEST_FOR_EXCEPTION( buffDest.size() < size, std::runtime_error, "CUDANodeMemoryModel::copyToBuffer: invalid copy.");
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     ++numCopiesH2D_;
     bytesCopiedH2D_ += size*sizeof(T);
@@ -66,7 +73,11 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
     std::cerr << "copyToBuffer<" << Teuchos::TypeNameTraits<T>::name() << "> of size " << sizeof(T) * size << std::endl;
 #endif
-    cutilSafeCallNoSync( cudaMemcpy( buffDest.getRawPtr(), hostSrc.getRawPtr(), size*sizeof(T), cudaMemcpyHostToDevice) );
+    cudaError_t err = cudaMemcpy( buffDest.getRawPtr(), hostSrc.getRawPtr(), size*sizeof(T), cudaMemcpyHostToDevice);
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+        "Kokkos::CUDANodeMemoryModel::copyToBuffer(): cudaMemcpy() returned error: "
+        << cudaGetErrorString(err) 
+        );
   }
 
   template <class T> inline
@@ -74,7 +85,7 @@ namespace Kokkos {
     CHECK_COMPUTE_BUFFER(buffSrc);
     CHECK_COMPUTE_BUFFER(buffDest);
     TEST_FOR_EXCEPTION( buffSrc.size() < size || buffDest.size() < size, std::runtime_error,
-        "CUDANode::copyFromBuffer: invalid copy.");
+        "CUDANodeMemoryModel::copyBuffers: invalid copy.");
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     ++numCopiesD2D_;
     bytesCopiedD2D_ += size*sizeof(T);
@@ -82,7 +93,11 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
     std::cerr << "copyBuffers<" << Teuchos::TypeNameTraits<T>::name() << "> of size " << sizeof(T) * size << std::endl;
 #endif
-    cutilSafeCallNoSync( cudaMemcpy( buffDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToDevice) );
+    cudaError_t err = cudaMemcpy( buffDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToDevice);
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+        "Kokkos::CUDANodeMemoryModel::copyBuffers(): cudaMemcpy() returned error: "
+        << cudaGetErrorString(err) 
+        );
   }
 
   template <class T> inline

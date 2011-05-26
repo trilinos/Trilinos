@@ -1,8 +1,6 @@
 #ifndef KOKKOS_THRUSTGPUNODE_CUH_
 #define KOKKOS_THRUSTGPUNODE_CUH_
 
-#include "Kokkos_CUDA_util_inline_runtime.h"
-
 #include <thrust/for_each.h>
 #include <thrust/transform_reduce.h>
 #include <thrust/iterator/counting_iterator.h>
@@ -53,14 +51,24 @@ namespace Kokkos {
 
   template <class WDP>
   void ThrustGPUNode::parallel_for(int begin, int end, WDP wd) {
+#ifdef HAVE_KOKKOS_DEBUG
+    cudaError_t err = cudaGetLastError();
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+        "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
+        << "cudaGetLastError() returned error before function call:\n"
+        << cudaGetErrorString(err) );
+#endif
     // wrap in Thrust and hand to thrust::for_each
     ThrustExecuteWrapper<WDP> body(wd);  
     thrust::counting_iterator<int,thrust::device_space_tag> bit(begin),
                                                             eit(end);
     thrust::for_each( bit, eit, body );
 #ifdef HAVE_KOKKOS_DEBUG
-
-    cutilCheckMsg(__FUNCTION__);
+    err = cudaThreadSynchronize();
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+        "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
+        << "cudaThreadSynchronize() returned error after function call:\n"
+        << cudaGetErrorString(err) );
 #endif
   };
 
@@ -68,6 +76,13 @@ namespace Kokkos {
   typename WDP::ReductionType
   ThrustGPUNode::parallel_reduce(int begin, int end, WDP wd) 
   {
+#ifdef HAVE_KOKKOS_DEBUG
+    cudaError_t err = cudaGetLastError();
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+        "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
+        << "cudaGetLastError() returned error before function call:\n"
+        << cudaGetErrorString(err) );
+#endif
     // wrap in Thrust and hand to thrust::transform_reduce
     thrust::counting_iterator<int,thrust::device_space_tag> bit(begin),
                                                             eit(end);
@@ -76,7 +91,11 @@ namespace Kokkos {
     typename WDP::ReductionType init = wd.identity(), ret;
     ret = thrust::transform_reduce( bit, eit, TOp, init, ROp );
 #ifdef HAVE_KOKKOS_DEBUG
-    cutilCheckMsg(__FUNCTION__);
+    err = cudaThreadSynchronize();
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+        "Kokkos::ThrustGPUNode::" << __FUNCTION__ << ": " 
+        << "cudaThreadSynchronize() returned error after function call:\n"
+        << cudaGetErrorString(err) );
 #endif
     return ret;
   }

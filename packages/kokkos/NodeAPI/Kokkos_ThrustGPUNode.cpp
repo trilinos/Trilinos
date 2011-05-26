@@ -1,7 +1,7 @@
 #include "Kokkos_ThrustGPUNode.hpp"
 #include <Teuchos_TestForException.hpp>
 #include <iostream>
-#include "Kokkos_CUDA_util_inline_runtime.h"
+#include <cuda_runtime.h>
 
 namespace Kokkos {
 
@@ -49,7 +49,9 @@ namespace Kokkos {
   ThrustGPUNode::~ThrustGPUNode() {}
 
   void ThrustGPUNode::sync() const {
-    cutilSafeThreadSync();
+    cudaError err = cudaThreadSynchronize();
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+        "Kokkos::ThrustGPUNode::sync(): cudaThreadSynchronize() returned error " << err );
   }
 
 }

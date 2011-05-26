@@ -42,7 +42,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         thrust_float_init(buff);
       }
-      Kokkos::cutilSafeThreadSync();
+      thrustNode_->sync();
     }
     float sum;
     {
@@ -50,7 +50,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         sum = thrust_float_sum(buff);
       }
-      Kokkos::cutilSafeThreadSync();
+      thrustNode_->sync();
     }
     result = sum;
     ret.first  = iTime.totalElapsedTime();
@@ -69,7 +69,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         thrust_int_init(buff);
       }
-      Kokkos::cutilSafeThreadSync();
+      thrustNode_->sync();
     }
     int sum;
     {
@@ -77,7 +77,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         sum = thrust_int_sum(buff);
       }
-      Kokkos::cutilSafeThreadSync();
+      thrustNode_->sync();
     }
     result = sum;
     ret.first  = iTime.totalElapsedTime();
