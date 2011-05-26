@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
-   // int size; MPI_Comm_size(MPI_COMM_WORLD, &size); if(size!=6) return;
+   int size; MPI_Comm_size(MPI_COMM_WORLD, &size); 
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",2);
@@ -198,7 +198,14 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
    
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
-   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+   RCP<STK_Interface> mesh;
+   if(size!=8) {
+      TEST_THROW(factory.buildMesh(MPI_COMM_WORLD),std::logic_error);
+      return; 
+   }
+   else {
+      mesh = factory.buildMesh(MPI_COMM_WORLD);
+   }
    TEST_ASSERT(mesh!=Teuchos::null);
  
    if(mesh->isWritable());

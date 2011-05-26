@@ -1,5 +1,4 @@
 #include <Panzer_STK_CubeHexMeshFactory.hpp>
-#include <Panzer_STK_SingleBlockCubeHexMeshFactory.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -45,7 +44,7 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::Paralle
       zProcs_ = 1;
    }
    TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_*zProcs_,std::logic_error,
-                      "Cannot build SingleBlockCubeHexMeshFactory, the product of \"X Procs\", \"Y Procs\", and \"Z Procs\""
+                      "Cannot build CubeHexMeshFactory, the product of \"X Procs\", \"Y Procs\", and \"Z Procs\""
                       " must equal the number of processors.");
    procTuple_ = procRankToProcTuple(machRank_);
 
