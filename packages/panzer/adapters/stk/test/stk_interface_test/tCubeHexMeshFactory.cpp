@@ -178,4 +178,42 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, two_block)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),11*11*6);
 }
 
+TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcpFromRef;
+   // int size; MPI_Comm_size(MPI_COMM_WORLD, &size); if(size!=6) return;
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",2);
+   pl->set("Y Blocks",1);
+   pl->set("Z Blocks",1);
+   pl->set("X Procs",2);
+   pl->set("Y Procs",2);
+   pl->set("Z Procs",2);
+   pl->set("X Elements",5);
+   pl->set("Y Elements",10);
+   pl->set("Z Elements",5);
+   
+   CubeHexMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+   TEST_ASSERT(mesh!=Teuchos::null);
+ 
+   if(mesh->isWritable());
+      mesh->writeToExodus("Cube_sub_2block.exo");
+
+   // minimal requirements
+   TEST_ASSERT(not mesh->isModifiable());
+
+   TEST_EQUALITY(mesh->getDimension(),3);
+   TEST_EQUALITY(mesh->getNumElementBlocks(),2);
+   TEST_EQUALITY(mesh->getNumSidesets(),6);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),2*5*10*5);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),10*10*6+10*5*11+10*5*11);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),10*11*6+10*6*11+11*5*11);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),11*11*6);
+}
+
 }

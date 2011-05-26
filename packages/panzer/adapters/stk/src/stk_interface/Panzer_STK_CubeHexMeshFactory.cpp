@@ -1,4 +1,5 @@
 #include <Panzer_STK_CubeHexMeshFactory.hpp>
+#include <Panzer_STK_SingleBlockCubeHexMeshFactory.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -36,6 +37,17 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::Paralle
 
    machRank_ = stk::parallel_machine_rank(parallelMach);
    machSize_ = stk::parallel_machine_size(parallelMach);
+
+   if(xProcs_==-1) {
+      // default x only decomposition
+      xProcs_ = machSize_; 
+      yProcs_ = 1;
+      zProcs_ = 1;
+   }
+   TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_*zProcs_,std::logic_error,
+                      "Cannot build SingleBlockCubeHexMeshFactory, the product of \"X Procs\", \"Y Procs\", and \"Z Procs\""
+                      " must equal the number of processors.");
+   procTuple_ = procRankToProcTuple(machRank_);
 
    // build meta information: blocks and side set setups
    buildMetaData(parallelMach,*mesh);
@@ -80,6 +92,10 @@ void CubeHexMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterL
    yBlocks_ = paramList->get<int>("Y Blocks");
    zBlocks_ = paramList->get<int>("Z Blocks");
 
+   xProcs_ = paramList->get<int>("X Procs");
+   yProcs_ = paramList->get<int>("Y Procs");
+   zProcs_ = paramList->get<int>("Z Procs");
+
    nXElems_ = paramList->get<int>("X Elements");
    nYElems_ = paramList->get<int>("Y Elements");
    nZElems_ = paramList->get<int>("Z Elements");
@@ -108,6 +124,10 @@ Teuchos::RCP<const Teuchos::ParameterList> CubeHexMeshFactory::getValidParameter
       defaultParams->set<int>("X Blocks",1);
       defaultParams->set<int>("Y Blocks",1);
       defaultParams->set<int>("Z Blocks",1);
+
+      defaultParams->set<int>("X Procs",-1);
+      defaultParams->set<int>("Y Procs",1);
+      defaultParams->set<int>("Z Procs",1);
 
       defaultParams->set<int>("X Elements",5);
       defaultParams->set<int>("Y Elements",5);
@@ -176,9 +196,9 @@ void CubeHexMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Int
 void CubeHexMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,int zBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
-   std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,machSize_,machRank_);
-   std::pair<int,int> sizeAndStartY = determineYElemSizeAndStart(yBlock,machSize_,machRank_);
-   std::pair<int,int> sizeAndStartZ = determineZElemSizeAndStart(zBlock,machSize_,machRank_);
+   std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
+   std::pair<int,int> sizeAndStartY = determineYElemSizeAndStart(yBlock,yProcs_,machRank_);
+   std::pair<int,int> sizeAndStartZ = determineZElemSizeAndStart(zBlock,zProcs_,machRank_);
 
    int myXElems_start = sizeAndStartX.first;
    int myXElems_end  = myXElems_start+sizeAndStartX.second;
@@ -238,6 +258,7 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock
 
 std::pair<int,int> CubeHexMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
 {
+   std::size_t xProcLoc = procTuple_[0];
    unsigned int minElements = nXElems_/size;
    unsigned int extra = nXElems_ - minElements*size;
 
@@ -246,13 +267,13 @@ std::pair<int,int> CubeHexMeshFactory::determineXElemSizeAndStart(int xBlock,uns
    // first "extra" elements get an extra column of elements
    // this determines the starting X index and number of elements
    int nume=0, start=0;
-   if(rank<extra) {
+   if(xProcLoc<extra) {
       nume  = minElements+1;
-      start = rank*(minElements+1);
+      start = xProcLoc*(minElements+1);
    }
    else {
       nume  = minElements;
-      start = extra*(minElements+1)+(rank-extra)*minElements;
+      start = extra*(minElements+1)+(xProcLoc-extra)*minElements;
    }
 
    return std::make_pair(start+nXElems_*xBlock,nume);
@@ -260,16 +281,53 @@ std::pair<int,int> CubeHexMeshFactory::determineXElemSizeAndStart(int xBlock,uns
 
 std::pair<int,int> CubeHexMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
 {
-   int start = yBlock*nYElems_;
+   // int start = yBlock*nYElems_;
+   // return std::make_pair(start,nYElems_);
 
-   return std::make_pair(start,nYElems_);
+   std::size_t yProcLoc = procTuple_[1];
+   unsigned int minElements = nYElems_/size;
+   unsigned int extra = nYElems_ - minElements*size;
+
+   TEUCHOS_ASSERT(minElements>0);
+
+   // first "extra" elements get an extra column of elements
+   // this determines the starting X index and number of elements
+   int nume=0, start=0;
+   if(yProcLoc<extra) {
+      nume  = minElements+1;
+      start = yProcLoc*(minElements+1);
+   }
+   else {
+      nume  = minElements;
+      start = extra*(minElements+1)+(yProcLoc-extra)*minElements;
+   }
+
+   return std::make_pair(start+nYElems_*yBlock,nume);
 }
 
 std::pair<int,int> CubeHexMeshFactory::determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const
 {
-   int start = zBlock*nZElems_;
+   // int start = zBlock*nZElems_;
+   // return std::make_pair(start,nZElems_);
+   std::size_t zProcLoc = procTuple_[2];
+   unsigned int minElements = nZElems_/size;
+   unsigned int extra = nZElems_ - minElements*size;
 
-   return std::make_pair(start,nZElems_);
+   TEUCHOS_ASSERT(minElements>0);
+
+   // first "extra" elements get an extra column of elements
+   // this determines the starting X index and number of elements
+   int nume=0, start=0;
+   if(zProcLoc<extra) {
+      nume  = minElements+1;
+      start = zProcLoc*(minElements+1);
+   }
+   else {
+      nume  = minElements;
+      start = extra*(minElements+1)+(zProcLoc-extra)*minElements;
+   }
+
+   return std::make_pair(start+nZElems_*zBlock,nume);
 }
 
 // for use with addSideSets
@@ -363,6 +421,18 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
    }
 
    mesh.endModification();
+}
+
+//! Convert processor rank to a tuple
+Teuchos::Tuple<std::size_t,3> CubeHexMeshFactory::procRankToProcTuple(std::size_t procRank) const
+{
+   std::size_t i=0,j=0,k=0;
+
+   k = procRank/(xProcs_*yProcs_); procRank = procRank % (xProcs_*yProcs_);
+   j = procRank/xProcs_;           procRank = procRank % xProcs_;
+   i = procRank;
+
+   return Teuchos::tuple(i,j,k);
 }
 
 } // end panzer_stk
