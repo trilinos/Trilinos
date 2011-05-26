@@ -123,6 +123,7 @@ typedef int my_size_t; //TODO
     /*! @brief Build aggregates.
 
       - TODO reuse of aggregates
+      - TODO check if called twice (bug TEUCHOS_TEST_EQUALITY)
     */
     void Build(Level &currentLevel) const
     {

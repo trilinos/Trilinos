@@ -52,6 +52,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST(GenericPRFactory, TooCoarse_DoNotBuild)
   {
+    bool r;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test that Build returns early if the coarsest matrix is smaller than specified MaxCoarseSize" << std::endl;
@@ -62,13 +63,14 @@ namespace {
 
     GenericPRFactory genericPR = GenericPRFactory();
     genericPR.SetMaxCoarseSize(500);
-    TEUCHOS_TEST_EQUALITY( genericPR.Build(levelOne,levelTwo), false, out, success);
+    r = genericPR.Build(levelOne,levelTwo);
+    TEUCHOS_TEST_EQUALITY( r , false, out, success);
 
     out << "Test that Build completes if the coarsest matrix is larger than specified MaxCoarseSize" << std::endl;
     genericPR.SetMaxCoarseSize(239);
-    TEUCHOS_TEST_EQUALITY( genericPR.Build(levelOne,levelTwo), true, out, success);
+    r = genericPR.Build(levelOne,levelTwo);
+    TEUCHOS_TEST_EQUALITY( r , true, out, success);
   } //TooCoarse_DoNotBuild
-
 
 }//namespace <anonymous>
 
