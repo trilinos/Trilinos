@@ -45,11 +45,11 @@ namespace Impl {
 
 bool ViewTracker::insert( const ViewTracker & rhs )
 {
-  const bool ok = NULL == next ;
+  const bool ok = 0 == next ;
 
   if ( ok ) { // 'this' is not in a ring.
 
-    if ( NULL != rhs.next ) { // 'rhs' is in a ring.
+    if ( 0 != rhs.next ) { // 'rhs' is in a ring.
 
       // Insert in the ring.
       next = rhs.next->next ; 
@@ -67,7 +67,7 @@ bool ViewTracker::remove_and_query_is_last()
 {
   bool is_last = false ;
 
-  if ( NULL != next ) { // This is in a ring.
+  if ( 0 != next ) { // This is in a ring.
 
     is_last = this == next ; // Is the last member in the ring.
 
@@ -79,17 +79,17 @@ bool ViewTracker::remove_and_query_is_last()
       tmp->next = next ;
     }
 
-    next = NULL ;
+    next = 0 ;
   }
 
   return is_last ;
 }
 
-size_t ViewTracker::test_support_view_count() const
+unsigned ViewTracker::test_support_view_count() const
 {
-  size_t count = 0 ;
+  unsigned count = 0 ;
 
-  if ( NULL != next ) {
+  if ( 0 != next ) {
     count = 1 ;
 
     for ( ViewTracker * tmp = next ;

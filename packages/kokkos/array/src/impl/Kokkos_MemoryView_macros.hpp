@@ -51,8 +51,8 @@ template< typename ValueType >
 class MemoryView< ValueType , KOKKOS_MACRO_DEVICE > {
 private:
 
-  Impl::ViewTracker m_tracker ;
   ValueType       * m_ptr_on_device ;
+  Impl::ViewTracker m_tracker ;
 
   friend class KOKKOS_MACRO_DEVICE ;
 
@@ -104,7 +104,7 @@ public:
   /** \brief  Construct a NULL view */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  MemoryView() : m_tracker(), m_ptr_on_device(0) {}
+  MemoryView() : m_ptr_on_device(0) { m_tracker.next = 0 ; }
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
