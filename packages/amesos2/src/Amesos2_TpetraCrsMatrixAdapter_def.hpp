@@ -62,30 +62,30 @@ using Tpetra::CrsMatrix;
 namespace Amesos {
 
 
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::MatrixAdapter()
+  template< typename Scalar,
+	    typename LocalOrdinal,
+	    typename GlobalOrdinal,
+	    class    Node,
+	    class    LocalMatOps >
+  MatrixAdapter<
+    CrsMatrix<
+      Scalar,
+      LocalOrdinal,
+      GlobalOrdinal,
+      Node,
+      LocalMatOps
+      >
+    >::MatrixAdapter()
       : mat_(Teuchos::null)
     { }
 
 
 /// Copy constructor
 template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
+	  typename LocalOrdinal,
+	  typename GlobalOrdinal,
+	  class    Node,
+	  class    LocalMatOps >
 MatrixAdapter<
   CrsMatrix<
     Scalar,
@@ -95,35 +95,35 @@ MatrixAdapter<
     LocalMatOps
     >
   >::MatrixAdapter(
-    const MatrixAdapter<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& adapter)
+		   const MatrixAdapter<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& adapter)
     : mat_(adapter.mat_)
-  { }
+{ }
+
+
+  template< typename Scalar,
+	    typename LocalOrdinal,
+	    typename GlobalOrdinal,
+	    class    Node,
+	    class    LocalMatOps >
+  MatrixAdapter<
+    CrsMatrix<
+      Scalar,
+      LocalOrdinal,
+      GlobalOrdinal,
+      Node,
+      LocalMatOps
+      >
+    >::MatrixAdapter(
+		     const Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& m)
+      : mat_(m)
+    { }
 
 
 template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::MatrixAdapter(
-    const Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& m)
-    : mat_(m)
-  { }
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
+	  typename LocalOrdinal,
+	  typename GlobalOrdinal,
+	  class    Node,
+	  class    LocalMatOps >
 void
 MatrixAdapter<
   CrsMatrix<
@@ -134,196 +134,223 @@ MatrixAdapter<
     LocalMatOps
     >
   >::getCrs(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> colind,
-    const Teuchos::ArrayView<global_size_type> rowptr,
-    size_t& nnz,
-    bool local)
+	    const Teuchos::ArrayView<Scalar> nzval,
+	    const Teuchos::ArrayView<GlobalOrdinal> colind,
+	    const Teuchos::ArrayView<global_size_type> rowptr,
+	    global_size_type& nnz,
+	    bool local)
 {
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
+  using Teuchos::as;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+  using Teuchos::OrdinalTraits;
+
+  RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
   const int root = 0;
 
+  const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rmap = mat_->getRowMap();
   // Could we have numrows be LocalOrdinal or GlobalOrdinal depending on $local
-  GlobalOrdinal numrows = 0;
+  GlobalOrdinal numrows = OrdinalTraits<GlobalOrdinal>::zero();
   if ( local ){
-    numrows = mat_->getNodeNumRows();
-    nnz = mat_->getNodeNumEntries();
+    numrows = this->getLocalNumRows();
+    nnz = this->getLocalNNZ();
   } else {
-    numrows = mat_->getGlobalNumRows();
-    nnz = mat_->getGlobalNumEntries();
+    numrows = this->getGlobalNumRows();
+    nnz = this->getGlobalNNZ();
   }
   TEST_FOR_EXCEPTION( ((rank == root)
-      && (Teuchos::as<size_t>(nzval.size()) < nnz)) ||
-    (local && (Teuchos::as<size_t>(nzval.size()) < nnz)),
-    std::length_error,
-    "nzval not large enough to hold nonzero values");
+		       && (as<size_t>(nzval.size()) < nnz)) ||
+		      (local && (as<size_t>(nzval.size()) < nnz)),
+		      std::length_error,
+		      "nzval not large enough to hold nonzero values");
   TEST_FOR_EXCEPTION( ((rank == root)
-      && (Teuchos::as<size_t>(colind.size()) < nnz)) ||
-    (local && (Teuchos::as<size_t>(colind.size()) < nnz)),
-    std::length_error,
-    "colind not large enough to hold index values");
+		       && (as<size_t>(colind.size()) < nnz)) ||
+		      (local && (as<size_t>(colind.size()) < nnz)),
+		      std::length_error,
+		      "colind not large enough to hold index values");
   TEST_FOR_EXCEPTION( ((rank == root)
-      && (Teuchos::as<GlobalOrdinal>(rowptr.size()) < numrows + 1)) ||
-    (local && (Teuchos::as<GlobalOrdinal>(rowptr.size()) < numrows + 1)),
-    std::length_error,
-    "rowptr not large enough to hold row index values");
-  // TODO: Is there possibly a better way to test locality?
-  if ( !mat_->getRowMap()->isDistributed() || local ){ // This matrix is *not*
-    // distributed
-    global_size_type rowInd = 0;
-    for( GlobalOrdinal row = 0; row < numrows; ++row ){
-      rowptr[row] = rowInd;
-      GlobalOrdinal myRow = mat_->getRowMap()->getGlobalElement(row);
-      size_t rowNNZ = mat_->getNumEntriesInLocalRow(myRow);
-      size_t nnzRet = 0;
-      mat_->getGlobalRowCopy(myRow,
-        colind.view(rowInd,rowNNZ),
-        nzval.view(rowInd,rowNNZ),
-        nnzRet);
-      TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
-        std::runtime_error,
-        "Number of values returned different from \
+		       && (as<GlobalOrdinal>(rowptr.size()) < numrows + 1)) ||
+		      (local && (as<GlobalOrdinal>(rowptr.size()) < numrows + 1)),
+		      std::length_error,
+		      "rowptr not large enough to hold row index values");
+  // This matrix is not distributed, so the root can get a CRS
+  // representation on its own.
+  if ( !mat_->isDistributed() ){
+    if ( rank == root ){
+      global_size_type rowInd = as<global_size_type>(rmap->getMinGlobalIndex());
+      GlobalOrdinal maxRow = rmap->getMaxGlobalIndex();
+      for( GlobalOrdinal row = rowInd; row <= maxRow; ++row ){
+	rowptr[row] = as<global_size_type>(rowInd);
+	size_t rowNNZ = mat_->getNumEntriesInLocalRow(row);
+	size_t nnzRet = 0;
+	mat_->getGlobalRowCopy(row,
+			       colind.view(rowInd,rowNNZ),
+			       nzval.view(rowInd,rowNNZ),
+			       nnzRet);
+	TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
+			    std::runtime_error,
+			    "Number of values returned different from \
                           number of values reported");
-      rowInd += rowNNZ;
+	rowInd += rowNNZ;
+      }
+      rowptr[maxRow+1] = as<global_size_type>(nnz);
     }
-    rowptr[numrows] = nnz;
   } else {                      // This matrix is distributed
-    using Teuchos::Array;
-    // using Teuchos::Ptr;
-    using Teuchos::OrdinalTraits;
 
-    /* Each processor has an array the length of globalNumRows, each index
-     * initialized to the max ordinal.  For each global index that the
-     * processor owns, they write their rank in that spot, however the
-     * processor that has rank == root write a -1.  We do a global array MIN
-     * reduction on those arrays.  The root writes -1 because we want to
-     * assure that we do local operations as much as we can.  It may be
-     * possible that two nodes have a copy of the same row, but we want to
-     * prefer the root's copy in all cases.
-     * 
-     * Now the processor with rank == root goes through the globally reduced
-     * array: For indices that have -1, then it does a local row copy, for
-     * others it gets the row copy from that processor indicated.  Meanwhile,
-     * other processors are sending the rows they've been assigned (the global
-     * rows corresponding to the indices in the reduced array that == their
-     * rank) to the root.
+    /* If the 'local' parameter is true, then we want each node to get
+     *  a CRS representation of only it's portion of the Matrix.
      */
+    if( local ){
+      // TODO: Make sure what is produced here is in line with what
+      // most solvers expect for distributed matrices.
+    } else {
 
-    Array<int> minOwner(numrows); // Will hold global reduction
-    Array<int> myRows(numrows,OrdinalTraits<int>::max());
-    for( GlobalOrdinal row = 0; row < numrows; ++row ){
-      // if global index is found on this node
-      if( mat_->getRowMap()->isNodeGlobalElement(row) ){
-        myRows[row] = (rank == root) ? -1 : rank;
-      }
-    }
-    // now perform global reduce of these arrays
-    Teuchos::MinValueReductionOp<int,int> op;
-    Teuchos::reduceAll(*comm, op, (int)myRows.size(),
-      myRows.getRawPtr(), minOwner.getRawPtr());
+      /* Each processor has an array the length of globalNumRows, each index
+       * initialized to the max ordinal.  For each global index that the
+       * processor owns, they write their rank in that spot, however the
+       * processor that has rank == root write a -1.  We do a global array MIN
+       * reduction on those arrays.  The root writes -1 because we want to
+       * assure that we do local operations as much as we can.  It may be
+       * possible that two nodes have a copy of the same row, but we want to
+       * prefer the root's copy in all cases.
+       * 
+       * Now the processor with rank == root goes through the globally reduced
+       * array: For indices that have -1, then it does a local row copy, for
+       * others it gets the row copy from that processor indicated.  Meanwhile,
+       * other processors are sending the rows they've been assigned (the global
+       * rows corresponding to the indices in the reduced array that == their
+       * rank) to the root.
+       */
 
-    if( rank == root ){
-      global_size_type rowInd = 0;
-      size_t rowNNZ, nnzRet;
-      for( GlobalOrdinal row = 0; row < numrows; ++row ){
-        int from = minOwner[row];
-        if( from == -1 ){       // Copy from myself
-          rowptr[row] = rowInd;
-          rowNNZ = mat_->getNumEntriesInGlobalRow(row);
-          nnzRet = 0;
-          mat_->getGlobalRowCopy(row,
-            colind.view(rowInd,rowNNZ),
-            nzval.view(rowInd,rowNNZ),
-            nnzRet);
-          TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
-            std::runtime_error,
-            "Number of values returned different from number of values reported");
-          rowInd += rowNNZ;
-        } else {
-          rowptr[row] = rowInd;
-          Teuchos::receive(*comm, from, &rowNNZ);
-          Teuchos::receive(*comm, from, (int)rowNNZ,
-            colind.view(rowInd, rowNNZ).getRawPtr());
-          Teuchos::receive(*comm, from, (int)rowNNZ,
-            nzval.view(rowInd, rowNNZ).getRawPtr());
-          rowInd += rowNNZ;
-        }
-        rowptr[numrows] = nnz;
+      Array<int> minOwner(numrows); // Will hold global reduction
+      Array<int> myRows(numrows,OrdinalTraits<int>::max());
+      GlobalOrdinal minRow = rmap->getMinAllGlobalIndex();
+      GlobalOrdinal maxRow = rmap->getMaxAllGlobalIndex();
+      for( GlobalOrdinal row = minRow; row <= maxRow; ++row ){
+	// if global index is found on this node
+	if( rmap->isNodeGlobalElement(row) ){
+	  myRows[row] = (rank == root) ? -1 : rank;
+	}
       }
-    } else {                  // I am not the root
-      size_t localNNZ = mat_->getNodeNumEntries();
-      Teuchos::Array<GlobalOrdinal> colind_l(colind);
-      Teuchos::Array<Scalar> nzval_l(nzval);
-      colind_l.resize(localNNZ);
-      nzval_l.resize(localNNZ);
-      GlobalOrdinal rowInd = 0;
-      size_t rowNNZ, nnzRet;
-      for( GlobalOrdinal row = 0; row < numrows; ++row ){
-        int from = minOwner[row];
-        if( from == rank ){   // I am responsible for this row
-          rowNNZ = mat_->getNumEntriesInGlobalRow(row);
-          nnzRet = 0;
-          mat_->getGlobalRowCopy(row,
-            colind_l.view(rowInd, rowNNZ),
-            nzval_l.view(rowInd, rowNNZ),
-            nnzRet);
-          TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
-            std::runtime_error,
-            "Number of values returned different from number of values reported");
-          // Send values, column indices, and row pointers to root
-          Teuchos::send(*comm, rowNNZ, root);
-          Teuchos::send(*comm, (int)rowNNZ,
-            colind_l.view(rowInd,rowNNZ).getRawPtr(), root);
-          Teuchos::send(*comm, (int)rowNNZ,
-            nzval_l.view(rowInd,rowNNZ).getRawPtr(), root);
-          rowInd += rowNNZ;   // This is purely local to this node
-        }
+      // now perform global reduce of these arrays
+      Teuchos::MinValueReductionOp<int,int> op;
+      Teuchos::reduceAll(*comm, op, (int)myRows.size(),
+			 myRows.getRawPtr(), minOwner.getRawPtr());
+
+#ifdef HAVE_AMESOS2_DEBUG
+      std::cout << "min rank owner of each row: "
+		<< minOwner.toString() << std::endl;
+#endif
+      
+      if( rank == root ){
+	global_size_type rowInd = minRow;
+	size_t rowNNZ, nnzRet;
+	for( GlobalOrdinal row = minRow; row <= maxRow; ++row ){
+	  int from = minOwner[row];
+	  if( from == -1 ){       // Copy from myself, 'row' is one of my indices
+	    rowptr[row] = as<global_size_type>(rowInd);
+	    rowNNZ = mat_->getNumEntriesInGlobalRow(row);
+	    nnzRet = OrdinalTraits<size_t>::zero();
+	    TEST_FOR_EXCEPTION( !rmap->isNodeGlobalElement(row),
+				std::runtime_error,
+				"" << row << " is not owned by " << root );
+	    mat_->getGlobalRowCopy(row,
+				   colind.view(rowInd,rowNNZ),
+				   nzval.view(rowInd,rowNNZ),
+				   nnzRet);
+	    TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
+				std::runtime_error,
+				"Number of values returned different from number of values reported");
+	    rowInd += rowNNZ;
+	  } else {
+	    rowptr[row] = as<global_size_type>(rowInd);
+	    Teuchos::receive<int,size_t>(*comm, from, &rowNNZ);
+	    Teuchos::receive<int,GlobalOrdinal>(*comm, from, as<int>(rowNNZ),
+						colind.view(rowInd, rowNNZ).getRawPtr());
+	    Teuchos::receive<int,Scalar>(*comm, from, as<int>(rowNNZ),
+					 nzval.view(rowInd, rowNNZ).getRawPtr());
+	    rowInd += rowNNZ;
+	  }
+	}
+	rowptr[maxRow+1] = as<global_size_type>(nnz);
+      } else {                  // I am not the root
+	size_t localNNZ = this->getLocalNNZ();
+	Teuchos::Array<GlobalOrdinal> colind_l(colind);
+	Teuchos::Array<Scalar> nzval_l(nzval);
+	colind_l.resize(localNNZ);
+	nzval_l.resize(localNNZ);
+	GlobalOrdinal rowInd = minRow;
+	size_t rowNNZ, nnzRet;
+	for( GlobalOrdinal row = minRow; row <= maxRow; ++row ){
+	  int from = minOwner[row];
+	  if( from == rank ){   // I am responsible for this row
+	    rowNNZ = mat_->getNumEntriesInGlobalRow(row);
+	    nnzRet = OrdinalTraits<size_t>::zero();
+	    TEST_FOR_EXCEPTION( !rmap->isNodeGlobalElement(row),
+				std::runtime_error,
+				"" << row << " is not owned by " << root );
+	    mat_->getGlobalRowCopy(row,
+				   colind_l.view(rowInd, rowNNZ),
+				   nzval_l.view(rowInd, rowNNZ),
+				   nnzRet);
+	    TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
+				std::runtime_error,
+				"Number of values returned different from number of values reported");
+	    // Send values, column indices, and row pointers to root
+	    Teuchos::send<int,size_t>(*comm, rowNNZ, root);
+	    Teuchos::send<int,GlobalOrdinal>(*comm, as<int>(rowNNZ),
+					     colind_l.view(rowInd,rowNNZ).getRawPtr(), root);
+	    Teuchos::send<int,Scalar>(*comm, as<int>(rowNNZ),
+				      nzval_l.view(rowInd,rowNNZ).getRawPtr(), root);
+	    rowInd += rowNNZ;   // This is purely local to this node
+	  }
+	}
       }
     }
   }
 }
 
 
-/* We left in the root parameter just for advanced use.  It may in some cases
- * affect the runtime speed of the getCrs method depending on the distribution
- * of the matrix across node.
- */
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-void
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getCrsAll(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> colind,
-    const Teuchos::ArrayView<global_size_type> rowptr,
-    size_t& nnz)
-{
-  using Teuchos::ArrayView;
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
-  const int rank = comm->getRank();
-  const int root = 0;
+  /* We left in the root parameter just for advanced use.  It may in some cases
+   * affect the runtime speed of the getCrs method depending on the distribution
+   * of the matrix across node.
+   */
+  template< typename Scalar,
+	    typename LocalOrdinal,
+	    typename GlobalOrdinal,
+	    class    Node,
+	    class    LocalMatOps >
+  void
+  MatrixAdapter<
+    CrsMatrix<
+      Scalar,
+      LocalOrdinal,
+      GlobalOrdinal,
+      Node,
+      LocalMatOps
+      >
+    >::getCrsAll(
+		 const Teuchos::ArrayView<Scalar> nzval,
+		 const Teuchos::ArrayView<GlobalOrdinal> colind,
+		 const Teuchos::ArrayView<global_size_type> rowptr,
+		 global_size_type& nnz)
+    {
+      using Teuchos::ArrayView;
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
+      const int rank = comm->getRank();
+      const int root = 0;
   
-  // Root gather data
-  if ( rank == root ){
-    getCrs(nzval, colind, rowptr, nnz);
-  }
-  // Then we broadcast to all
-  Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)nzval);
-  Teuchos::broadcast(*comm, root, (ArrayView<GlobalOrdinal>)colind);
-  Teuchos::broadcast(*comm, root, (ArrayView<global_size_type>)rowptr);
-  Teuchos::broadcast(*comm, root, Teuchos::ptrFromRef(nnz));
-}
+      // Root gather data
+      if ( rank == root ){
+	getCrs(nzval, colind, rowptr, nnz);
+      }
+      // Then we broadcast to all
+      Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)nzval);
+      Teuchos::broadcast(*comm, root, (ArrayView<GlobalOrdinal>)colind);
+      Teuchos::broadcast(*comm, root, (ArrayView<global_size_type>)rowptr);
+      Teuchos::broadcast(*comm, root, Teuchos::ptrFromRef(nnz));
+    }
 
 
 /* We left in the root parameter just for advanced use.  It may in some cases
@@ -331,10 +358,10 @@ MatrixAdapter<
  * of the matrix across node.
  */
 template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
+	  typename LocalOrdinal,
+	  typename GlobalOrdinal,
+	  class    Node,
+	  class    LocalMatOps >
 void
 MatrixAdapter<
   CrsMatrix<
@@ -345,10 +372,10 @@ MatrixAdapter<
     LocalMatOps
     >
   >::getCcsAll(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> rowind,
-    const Teuchos::ArrayView<global_size_type> colptr,
-    size_t& nnz)
+	       const Teuchos::ArrayView<Scalar> nzval,
+	       const Teuchos::ArrayView<GlobalOrdinal> rowind,
+	       const Teuchos::ArrayView<global_size_type> colptr,
+	       global_size_type& nnz)
 {
   using Teuchos::ArrayView;
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
@@ -368,10 +395,10 @@ MatrixAdapter<
 
 
 template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
+	  typename LocalOrdinal,
+	  typename GlobalOrdinal,
+	  class    Node,
+	  class    LocalMatOps >
 void
 MatrixAdapter<
   CrsMatrix<
@@ -382,11 +409,11 @@ MatrixAdapter<
     LocalMatOps
     >
   >::getCcs(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> rowind,
-    const Teuchos::ArrayView<global_size_type> colptr,
-    size_t& nnz,
-    bool local)
+	    const Teuchos::ArrayView<Scalar> nzval,
+	    const Teuchos::ArrayView<GlobalOrdinal> rowind,
+	    const Teuchos::ArrayView<global_size_type> colptr,
+	    global_size_type& nnz,
+	    bool local)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -399,11 +426,11 @@ MatrixAdapter<
   global_size_type numRows = 0;
   
   if ( local ){
-    numCols = mat_->getNodeNumCols();
-    numRows = mat_->getNodeNumRows();
+    numCols = this->getLocalNumCols();
+    numRows = this->getLocalNumRows();
   } else {
-    numCols = mat_->getGlobalNumCols();
-    numRows = mat_->getGlobalNumRows();
+    numCols = this->getGlobalNumCols();
+    numRows = this->getGlobalNumRows();
   }
   
   Array<scalar_type> nzval_tmp(nzval.size());
@@ -450,10 +477,10 @@ MatrixAdapter<
       GlobalOrdinal u = rowptr[row];
       GlobalOrdinal v = rowptr[row + 1];
       for( GlobalOrdinal j = u; j < v; ++j ){
-        GlobalOrdinal i = count[colind[j]];
-        nzval[i] = nzval_tmp[j];
-        rowind[i] = row;
-        ++(count[colind[j]]);
+	GlobalOrdinal i = count[colind[j]];
+	nzval[i] = nzval_tmp[j];
+	rowind[i] = row;
+	++(count[colind[j]]);
       }
     }
   }
@@ -461,10 +488,10 @@ MatrixAdapter<
 
 
 template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
+	  typename LocalOrdinal,
+	  typename GlobalOrdinal,
+	  class    Node,
+	  class    LocalMatOps >
 void
 MatrixAdapter<
   CrsMatrix<
@@ -475,19 +502,19 @@ MatrixAdapter<
     LocalMatOps
     >
   >::updateValuesCrs(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> colind,
-    const Teuchos::ArrayView<global_size_type> rowptr)
+		     const Teuchos::ArrayView<Scalar> nzval,
+		     const Teuchos::ArrayView<GlobalOrdinal> colind,
+		     const Teuchos::ArrayView<global_size_type> rowptr)
 {
   // TODO: implement!
 }
   
 
 template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
+	  typename LocalOrdinal,
+	  typename GlobalOrdinal,
+	  class    Node,
+	  class    LocalMatOps >
 void
 MatrixAdapter<
   CrsMatrix<
@@ -498,9 +525,9 @@ MatrixAdapter<
     LocalMatOps
     >
   >::updateValuesCcs(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> rowind,
-    const Teuchos::ArrayView<global_size_type> colptr)
+		     const Teuchos::ArrayView<Scalar> nzval,
+		     const Teuchos::ArrayView<GlobalOrdinal> rowind,
+		     const Teuchos::ArrayView<global_size_type> colptr)
 {
   // TODO: implement!
 }
@@ -509,10 +536,10 @@ MatrixAdapter<
 
 /// Get a short description of this adapter class
 template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
+	  typename LocalOrdinal,
+	  typename GlobalOrdinal,
+	  class    Node,
+	  class    LocalMatOps >
 std::string
 MatrixAdapter<
   CrsMatrix<
@@ -533,10 +560,10 @@ MatrixAdapter<
 
 /// Print a description of this adapter to the Fancy Output Stream.
 template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
+	  typename LocalOrdinal,
+	  typename GlobalOrdinal,
+	  class    Node,
+	  class    LocalMatOps >
 void
 MatrixAdapter<
   CrsMatrix<
@@ -547,16 +574,16 @@ MatrixAdapter<
     LocalMatOps
     >
   >::describe(
-    Teuchos::FancyOStream& os,
-    const Teuchos::EVerbosityLevel verbLevel) const
+	      Teuchos::FancyOStream& os,
+	      const Teuchos::EVerbosityLevel verbLevel) const
 {}
 
 
 template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
+	  typename LocalOrdinal,
+	  typename GlobalOrdinal,
+	  class    Node,
+	  class    LocalMatOps >
 const char* MatrixAdapter<
   CrsMatrix<
     Scalar,

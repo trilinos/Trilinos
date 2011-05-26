@@ -145,7 +145,7 @@ public:
     }
 
 
-  /// Get the number of global matrix rows
+  /// Get the number of rows in the matrix
   inline global_size_type getGlobalNumRows() const
     {
       // return mat_->getGlobalNumRows();
@@ -153,7 +153,7 @@ public:
     }
 
 
-  /// Get the number of global matrix columns
+  /// Get the number of columns in the matrix
   inline global_size_type getGlobalNumCols() const
     {
       // return mat_->getGlobalNumCols();
@@ -222,10 +222,10 @@ public:
    *              row \c j of \c this.  <tt>rowptr[nrow] = nnz</tt>, where \c
    *              nrow is the number of rows in this matrix.
    * \param [out] nnz is the number of nonzero entries in this matrix.
-   * \param [in]  local If \c false, the processor with ID \c root will contain
+   * \param [in]  local If \c false, the processor with ID \c root=0 will have
    *              a representation of the global matrix.  If \c true, then each
    *              processor will end up with a CRS representation of the matrix
-   *              rows that it owns.
+   *              portion that it owns.
    *
    * \exception std::length_error Thrown if \c nzval or \c colind is not
    * large enough to hold the global number of nonzero values.
@@ -240,7 +240,7 @@ public:
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
-    size_t& nnz,
+    global_size_type& nnz,
     bool local = false);
 
 
@@ -275,7 +275,7 @@ public:
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
-    size_t& nnz,
+    global_size_type& nnz,
     bool local = false);
 
 
@@ -292,7 +292,7 @@ public:
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
-    size_t& nnz);
+    global_size_type& nnz);
 
 
   /**
@@ -308,7 +308,7 @@ public:
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
-    size_t& nnz);
+    global_size_type& nnz);
 
 
   /**
