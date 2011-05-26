@@ -308,6 +308,11 @@ void DeviceCuda::clear_dispatch_functor()
   m_launching_kernel = false ;
 }
 
+void DeviceCuda::wait_functor_completion()
+{
+  cudaThreadSynchronize();
+}
+
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/

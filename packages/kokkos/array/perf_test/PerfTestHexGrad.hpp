@@ -222,7 +222,7 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
 
   //--------------------------------------------------------------------------
 
-  static void test( int count )
+  static double test( int count )
   {
     array_type coord = Kokkos::create_mdarray< array_type >( count , 3 , 8 );
     array_type grad  = Kokkos::create_mdarray< array_type >( count , 3 , 8 );
@@ -230,7 +230,12 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
     // Execute the parallel kernels on the arrays:
 
     Kokkos::parallel_for( count , HexSimpleFill<Scalar,device_type>( coord ) );
-    Kokkos::parallel_for( count , HexGrad<Scalar,device_type>( coord , grad ) );
+
+    double seconds ;
+
+    Kokkos::parallel_for( count , HexGrad<Scalar,device_type>( coord , grad ) , seconds );
+
+    return seconds ;
   }
 };
 

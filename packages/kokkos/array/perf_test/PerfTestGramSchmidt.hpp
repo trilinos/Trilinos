@@ -239,15 +239,19 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
 
   MultiVector Q ;
   MultiVector R ;
+  double seconds ;
 
-  ModifiedGramSchmidt( const Kokkos::MultiVectorView<Scalar,Kokkos::DeviceHost> & A )
-    : Q( Kokkos::create_multivector<Scalar,device_type>( A.length() , A.count() ) )
-    , R( Kokkos::create_multivector<Scalar,device_type>( A.count() , A.count() ) )
+  ModifiedGramSchmidt(
+    const Kokkos::MultiVectorView<Scalar,Kokkos::DeviceHost> & A )
+  : Q( Kokkos::create_multivector<Scalar,device_type>( A.length(), A.count()) )
+  , R( Kokkos::create_multivector<Scalar,device_type>( A.count() , A.count()) )
   {
     const size_type N = A.length();
     Value tmp = Kokkos::create_value<Scalar,device_type>();
 
     Kokkos::deep_copy( Q , A );
+
+    Kokkos::Impl::Timer timer ;
 
     for ( size_type j = 0 ; j < Q.count() ; ++j ) {
       // Reduction   : tmp = dot( Q(:,j) , Q(:,j) );
@@ -268,12 +272,14 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
         Kokkos::parallel_for( N , YPAX( MultiVector( Q , k ) , tmp , MultiVector( Q , j ) ) );
       }
     }
+
+    seconds = timer.seconds();
   }
 
   //--------------------------------------------------------------------------
 
-  static void test( const size_t length ,
-                    const size_t count )
+  static double test( const size_t length ,
+                      const size_t count )
   {
     typedef Kokkos::MultiVectorView<Scalar,Kokkos::DeviceHost> HostMultiVector ;
 
@@ -286,13 +292,18 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
     MultiVector Q ;
     MultiVector R ;
 
+    double seconds ;
     {
       ModifiedGramSchmidt factorization( A );
 
       Q = factorization.Q ; // Save a view
       R = factorization.R ; // Save a view
+
+      seconds = factorization.seconds ;
     }
     // A = Q * R
+
+    return seconds ;
   }
 
 };

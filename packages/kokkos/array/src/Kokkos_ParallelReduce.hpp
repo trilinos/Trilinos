@@ -44,6 +44,7 @@
 
 #include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <Kokkos_ValueView.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
 namespace Kokkos {
 
@@ -100,6 +101,44 @@ void parallel_reduce( const size_t work_count ,
   typedef ParallelReduce< FunctorType, FinalizeType, device_type > driver_type ;
 
   const driver_type driver( work_count , functor , finalize );
+}
+
+template< class FunctorType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      typename FunctorType::value_type & result ,
+                      double & seconds )
+{
+  typedef typename FunctorType::device_type device_type ;
+
+  typedef ParallelReduce< FunctorType , void , device_type > driver_type ;
+
+  const Impl::Timer timer ;
+
+  const driver_type driver( work_count , functor , result );
+
+  device_type::wait_functor_completion();
+
+  seconds = timer.seconds ;
+}
+
+template< class FunctorType , class FinalizeType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      const FinalizeType & finalize ,
+                      double & seconds )
+{
+  typedef typename FunctorType::device_type device_type ;
+
+  typedef ParallelReduce< FunctorType, FinalizeType, device_type > driver_type ;
+
+  const Impl::Timer timer ;
+
+  const driver_type driver( work_count , functor , finalize );
+
+  device_type::wait_functor_completion();
+
+  seconds = timer.seconds ;
 }
 
 } // namespace Kokkos

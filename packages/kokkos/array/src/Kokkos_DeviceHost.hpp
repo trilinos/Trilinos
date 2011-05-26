@@ -121,6 +121,7 @@ public:
 
   static void set_dispatch_functor();
   static void clear_dispatch_functor();
+  static void wait_functor_completion() {}
 
   /*--------------------------------*/
 };

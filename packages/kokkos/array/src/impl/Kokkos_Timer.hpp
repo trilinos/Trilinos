@@ -37,69 +37,52 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_PARALLELFOR_HPP
-#define KOKKOS_PARALLELFOR_HPP
+#ifndef KOKKOS_IMPLWALLTIME_HPP
+#define KOKKOS_IMPLWALLTIME_HPP
 
-#include <cstddef>
-#include <Kokkos_ArrayForwardDeclarations.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <stddef.h>
+
+#ifdef _MSC_VER
+#include <gettimeofday.c>
+#else
+#include <sys/time.h>
+#endif
 
 namespace Kokkos {
+namespace Impl {
 
-template< class FunctorType , class DeviceType >
-class ParallelFor {
+/** \brief  Time since construction */
+
+class Timer {
+private:
+  struct timeval m_old ;
+  Timer( const Timer & );
+  Timer & operator = ( const Timer & );
 public:
-  typedef DeviceType                      device_type ;
-  typedef typename device_type::size_type size_type ;
 
-  // Create and execute the parallel for driver:
-  ParallelFor( const size_type      work_count ,
-               const FunctorType &  functor );
+  inline
+  void reset() { gettimeofday( & m_old , ((struct timezone *) NULL ) ); }
+
+  inline
+  ~Timer() {}
+
+  inline
+  Timer() { reset(); }
+
+  inline
+  double seconds() const
+  {
+    struct timeval m_new ;
+
+    ::gettimeofday( & m_new , ((struct timezone *) NULL ) );
+
+    return ( (double) ( m_new.tv_sec  - m_old.tv_sec ) ) +
+           ( (double) ( m_new.tv_usec - m_old.tv_usec ) * 1.0e-6 );
+  }
 };
 
-template< class FunctorType >
-void parallel_for( size_t work_count , const FunctorType & functor )
-{
-  typedef typename FunctorType::device_type        device_type ;
-  typedef ParallelFor< FunctorType , device_type > driver_type ;
-
-  const driver_type driver( work_count , functor );
-}
-
-template< class FunctorType >
-void parallel_for( size_t work_count , const FunctorType & functor , double & seconds )
-{
-  typedef typename FunctorType::device_type        device_type ;
-  typedef ParallelFor< FunctorType , device_type > driver_type ;
-
-  Impl::Timer timer ;
-
-  const driver_type driver( work_count , functor );
-
-  device_type::wait_functor_completion();
-
-  seconds = timer.seconds();
-
-}
-
+} // namespace Impl
 } // namespace Kokkos
 
-//----------------------------------------------------------------------------
-// Partial specializations for known devices
-
-#if defined( KOKKOS_DEVICE_HOST )
-#include <DeviceHost/Kokkos_DeviceHost_ParallelFor.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_TPI )
-#include <DeviceTPI/Kokkos_DeviceTPI_ParallelFor.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_CUDA )
-#include <DeviceCuda/Kokkos_DeviceCuda_ParallelFor.hpp>
-#endif
-
-//----------------------------------------------------------------------------
-
-#endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */
+#endif /* #ifndef KOKKOS_IMPLWALLTIME_HPP */
 

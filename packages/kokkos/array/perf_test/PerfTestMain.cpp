@@ -22,9 +22,15 @@ namespace Test {
     try {
       for (int i = 1; i < exp; ++i) {
 
-      const int parallel_work_length = 1<<i;
+        const int parallel_work_length = 1<<i;
 
-	HexGrad< float , Kokkos::DeviceHost >::test(parallel_work_length) ;
+	double seconds = HexGrad< float , Kokkos::DeviceHost >::test(parallel_work_length) ;
+
+        std::cout << "\"Host HexGrad\" , "
+                  << parallel_work_length
+                  << " , "
+                  << seconds
+                  << std::endl ;
       }
       std::cout << "PASSED : PerfTestHost" << std::endl ;
     }
@@ -42,7 +48,7 @@ namespace Test {
 
 int main( int argc , char ** argv )
 {
-  const int exp = 7 ;
+  const int exp = 20 ;
 
   Test::run_test_host(exp);
   Test::run_test_tpi(exp);
