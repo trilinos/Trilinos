@@ -3,29 +3,37 @@ INCLUDE(PackageAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINRARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-SET(CUDA_SOURCES "")
 
-APPEND_SET(CUDA_SOURCES
-  UnitTestMain.cu
-  ${CMAKE_CURRENT_SOURCE_DIR}/../src/impl/Kokkos_ArrayBounds.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/../src/impl/Kokkos_ViewTracker.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/../src/impl/Kokkos_MemoryInfo.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/../src/DeviceCuda/Kokkos_DeviceCuda.cu
-  ${CMAKE_CURRENT_SOURCE_DIR}/../src/DeviceHost/Kokkos_DeviceHost.cpp
-  )
 IF(Kokkos_ENABLE_CUDA)
-  CUDA_COMPILE(UnitTestMain.cu)
-  CUDA_ADD_EXECUTABLE(
+  CUDA_ADD_LIBRARY(
     unit_cuda
-    ${CUDA_SOURCES}
+    SOURCES UnitTestCuda.cu
+    DEPLIBS kokkosdevicecuda
     )
+ELSE()
+  PACKAGE_ADD_LIBRARY(
+    unit_cuda
+    SOURCES UnitTestCudaStub.cpp
+    )
+ENDIF()
+IF(Kokkos_ENABLE_TPI)
+  PACKAGE_ADD_LIBRARY(
+    unit_tpi
+    SOURCES UnitTestTPI.cpp
+    DEPLIBS kokkosdevicetpi
+  )
+ELSE()
+    PACKAGE_ADD_LIBRARY(
+    unit_tpi
+    SOURCES UnitTestTPIStub.cpp
+  )
 ENDIF()
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   UnitTest
   SOURCES UnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkosdevicetpi 
+  STANDARD_PASS OUTPUT
+  DEPLIBS unit_cuda unit_tpi kokkos kokkosdevicehost kokkosimpl 
   )
   

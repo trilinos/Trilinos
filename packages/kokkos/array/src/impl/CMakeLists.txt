@@ -36,7 +36,7 @@ APPEND_SET(SOURCES
   )
 
 PACKAGE_ADD_LIBRARY(
-    kokkkosimpl
+    kokkosimpl
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     DEPLIBS kokkos
