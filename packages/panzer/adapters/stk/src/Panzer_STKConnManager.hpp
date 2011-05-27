@@ -11,6 +11,9 @@
 
 #include "Panzer_STK_Interface.hpp"
 
+namespace panzer { class IntrepidFieldPattern; }
+namespace panzer { class template <typename ScalarT> Intrepid::FieldContainer; }
+
 namespace panzer_stk {
 
 class STKConnManager : public panzer::ConnManager<int,int> {
@@ -80,6 +83,12 @@ public:
      */
    virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockId) const
    { return *(elementBlocks_.find(blockId)->second); }
+
+   /** Get the coordinates for a specified element block and field pattern.
+     */
+   virtual void getDofCoords(const std::string & blockId,
+                             const panzer::IntrepidFieldPattern & coordProvider,
+                             Intrepid::FieldContainer<double> & points) const;
 
 protected:
    /** Apply periodic boundary conditions associated with the mesh object.

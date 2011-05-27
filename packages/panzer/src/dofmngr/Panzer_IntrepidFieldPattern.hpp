@@ -66,6 +66,21 @@ public:
    static void getSubcellNodes(const shards::CellTopology & cellTopo,unsigned dim,unsigned subCell,
                                std::vector<unsigned> & nodes);
 
+   /** Get the local coordinates for this field. This is independent of element
+     * locations.
+     *
+     * \param[in,out] coords   Coordinates associated with this field type.
+     */
+   void getInterpolatoryCoordinates(Intrepid::FieldContainer<double> & coords) const;
+
+   /** Get the local coordinates for this field.
+     *
+     * \param[in] cellVertices   Coordinates associated with this field type.
+     * \param[in,out] coords   Coordinates associated with this field type.
+     */
+   void getInterpolatoryCoordinates(const Intrepid::FieldContainer<double> & cellVertices,
+                                    Intrepid::FieldContainer<double> & coords) const;
+
 protected:
    Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > >
       intrepidBasis_;

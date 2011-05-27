@@ -144,4 +144,47 @@ void IntrepidFieldPattern::buildSubcellClosure(const shards::CellTopology & cell
 #endif
 }
 
+/** Get the local coordinates for this field. This is independent of element
+  * locations.
+  *
+  * \param[in,out] coords   Coordinates associated with this field type.
+  */
+void IntrepidFieldPattern::getInterpolatoryCoordinates(Intrepid::FieldContainer<double> & coords) const
+{
+   typedef Intrepid::DofCoordsInterface<Intrepid::FieldContainer<double> > CoordsInterface;
+
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   bool throwOnFail = true;
+
+   // cast basis object to DofCoordsInterface: throw on failure
+   RCP<CoordsInterface> coordsInterface
+         = rcp_dynamic_cast<CoordsInterface>(intrepidBasis_,throwOnFail);
+
+   // resize coordinates
+   coords.resize(intrepidBasis_->getCardinality(),getDimension());
+   coordsInterface->getDofCoords(coords);
+}
+
+/** Get the local coordinates for this field. This is independent of element
+  * locations.
+  *
+  * \param[in,out] coords   Coordinates associated with this field type.
+  */
+void IntrepidFieldPattern::getInterpolatoryCoordinates(const Intrepid::FieldContainer<double> & cellVertices,
+                                                       Intrepid::FieldContainer<double> & coords) const
+{
+   // grab the local coordinates
+   Intrepid::FieldContainer<double> localCoords;
+   getInterpolatoryCoordinates(localCoords);
+
+   // resize the coordinates field container
+   coords.resize(cellVertices.dimension(0),localCoords.dimension(0),getDimension());
+
+   // map to phsyical coordinates
+   Intrepid::CellTools<double> cellTools;
+   cellTools.mapToPhysicalFrame(coords,localCoords,cellVertices,intrepidBasis_->getBaseCellTopology());
+}
+
 }

@@ -252,4 +252,22 @@ void STKConnManager::applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOr
    }
 }
 
+/** Get the coordinates for a specified element block and field pattern.
+  */
+virtual void STKConnManager::getDofCoords(const std::string & blockId,
+                                          const panzer::IntrepidFieldPattern & coordProvider,
+                                          Intrepid::FieldContainer<double> & points) const
+{
+   int dim = coordProvider.getDimension();
+   int numIds = coordProvider.numberIds();
+   int numVerts = coordProvider.getSubcellCount(0); 
+
+   std::vector<stk::mesh::Entity *> elements;
+   stkMeshDB_->getMyElements(blockId,elements);
+
+   Intrepid::FieldContainer<double> vertices;
+   vertices.resize(elements.size(),numVerts,dim);
+
+}
+
 }
