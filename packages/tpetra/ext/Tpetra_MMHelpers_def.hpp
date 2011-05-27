@@ -68,8 +68,8 @@ int dumpCrsMatrixStruct(const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdina
 {
   std::cout << "proc " << M.rowMap->Comm().MyPID()<<std::endl;
   std::cout << "numRows: " << M.numRows<<std::endl;
-  for(int i=0; i<M.numRows; ++i) {
-    for(int j=0; j<M.numEntriesPerRow[i]; ++j) {
+  for(LocalOrdinal i=0; i<M.numRows; ++i) {
+    for(LocalOrdinal j=0; j<M.numEntriesPerRow[i]; ++j) {
       if (M.remote[i]) {
         std::cout << "  *"<<M.rowMap->GID(i)<<"   "
              <<M.importColMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<std::endl;
@@ -133,7 +133,7 @@ CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CrsWrapper_G
   Teuchos::ArrayView<const GlobalOrdinal> rows= map->getNodeElementList();
 
   for(int i=0; i<rows.size(); ++i) {
-    graph_[rows[i]] = new std::set<int>;
+    graph_[rows[i]] = new std::set<GlobalOrdinal>;
   }
 }
 
