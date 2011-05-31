@@ -456,6 +456,14 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 
       // Computation of prec (e.g. ilu) happens here:
       precFactory->initializePrec(losb, precObj.get());
+
+      // // Get underlying Epetra operator
+      // Teuchos::RCP<Thyra::LinearOpBase<double> > pop;
+      // pop = precObj->getNonconstRightPrecOp();
+      // if (pop == Teuchos::null)
+      // 	pop = precObj->getNonconstUnspecifiedPrecOp();
+      // precPtr = 
+      // 	Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
     }
     else // no preconditioner
       precObj = Teuchos::null;
@@ -482,6 +490,14 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 
       // Computation of prec (e.g. ilu) happens here:
       precFactory->initializePrec(losb, precObj.get());
+
+      // // Get underlying Epetra operator
+      // Teuchos::RCP<Thyra::LinearOpBase<double> > pop;
+      // pop = precObj->getNonconstRightPrecOp();
+      // if (pop == Teuchos::null)
+      // 	pop = precObj->getNonconstUnspecifiedPrecOp();
+      // precPtr = 
+      // 	Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
     }
     else // no preconditioner
       precObj = Teuchos::null;
@@ -624,7 +640,7 @@ NOX::Epetra::LinearSystemStratimikos::getPrecInterface() const
 bool
 NOX::Epetra::LinearSystemStratimikos::hasPreconditioner() const
 {
-  return true;
+  return precObj != Teuchos::null;
 }
 
 //***********************************************************************
