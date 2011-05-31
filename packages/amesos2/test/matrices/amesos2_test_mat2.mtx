@@ -2,7 +2,7 @@
 %-------------------------------------------------------------------------------
 % author: Eric T Bavier
 %
-% bref: A random, square complex matrx for Amesos2 testng
+% brief: A random, square complex matrix for Amesos2 testing
 %-------------------------------------------------------------------------------
 13 13 72
 1 1 0.00000 0.47366
