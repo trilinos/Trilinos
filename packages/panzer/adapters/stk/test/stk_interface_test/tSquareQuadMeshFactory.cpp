@@ -604,4 +604,189 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, check_ss)
       TEUCHOS_ASSERT(false);
 }
 
+void test1(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm);
+void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm);
+void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm);
+
+using Teuchos::RCP;
+
+void entityVecToGIDVec(const std::vector<stk::mesh::Entity*> & eVec,
+                             std::vector<stk::mesh::EntityId> & gidVec)
+{
+   gidVec.resize(eVec.size());
+   for(std::size_t i=0;i<eVec.size();i++)
+      gidVec[i] = eVec[i]->identifier();
+
+   std::sort(gidVec.begin(),gidVec.end());
+}
+
+TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, element_counts)
+{
+   int colors[] = 
+      { 1,
+        2,2,
+        4,4,4,4 };
+   int myrank=0, mycolor=0;
+
+   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+   mycolor = colors[myrank];
+
+   MPI_Comm commUT; // comm under test
+   MPI_Comm_split(MPI_COMM_WORLD,colors[myrank],0,&commUT);
+
+   int utSize = 0;
+   MPI_Comm_size(commUT, &utSize);
+
+   if(utSize!=mycolor) {
+      out << "Processor " << myrank << " quiting because there is nothing to test." << std::endl;
+      return;
+   }
+
+   switch(mycolor) {
+   case 1:
+      test1(out,success,commUT);
+      break;
+   case 2:
+      test2(out,success,commUT);
+      break;
+   case 4:
+      test4(out,success,commUT);
+      break;
+   };
+}
+
+void test1(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm)
+{
+   int size; MPI_Comm_size(comm, &size); TEST_EQUALITY(size,1);
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Procs",1);
+   pl->set("Y Procs",1);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",4);
+   
+   SquareQuadMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(comm);
+   TEST_ASSERT(mesh!=Teuchos::null);
+
+   // minimal requirements
+   TEST_ASSERT(not mesh->isModifiable());
+
+   TEST_EQUALITY(mesh->getDimension(),2);
+   TEST_EQUALITY(mesh->getNumElementBlocks(),1);
+   TEST_EQUALITY(mesh->getNumSidesets(),4);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),4*2);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),2*5+4*3);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*5+4*3);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1));
+}
+
+void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
+{
+   int size; MPI_Comm_size(comm, &size); TEST_EQUALITY(size,2);
+   int rank; MPI_Comm_rank(comm, &rank); 
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Procs",1);
+   pl->set("Y Procs",2);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",4);
+   
+   SquareQuadMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(comm);
+   TEST_ASSERT(mesh!=Teuchos::null);
+
+   // minimal requirements
+   TEST_ASSERT(not mesh->isModifiable());
+
+   TEST_EQUALITY(mesh->getDimension(),2);
+   TEST_EQUALITY(mesh->getNumElementBlocks(),1);
+   TEST_EQUALITY(mesh->getNumSidesets(),4);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),4*2);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),2*5+4*3);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*5+4*3);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1));
+
+   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::EntityId> myGids;
+   mesh->getMyElements(myElements);
+   entityVecToGIDVec(myElements,myGids);
+
+   if(rank==0) {
+      TEST_EQUALITY(myGids.size(),4);
+      for(std::size_t i=0;i<2;i++) {
+         TEST_EQUALITY(myGids[2*i]  ,2*i+1);
+         TEST_EQUALITY(myGids[2*i+1],2*i+2);
+      }
+   }
+   else if(rank==1) {
+      TEST_EQUALITY(myGids.size(),4);
+      for(std::size_t i=0;i<2;i++) {
+         TEST_EQUALITY(myGids[2*i]  ,2*i+5);
+         TEST_EQUALITY(myGids[2*i+1],2*i+6);
+      }
+   }
+   else TEST_ASSERT(false);
+}
+
+void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
+{
+   int size; MPI_Comm_size(comm, &size); TEST_EQUALITY(size,4);
+   int rank; MPI_Comm_rank(comm, &rank); 
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Procs",2);
+   pl->set("Y Procs",2);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",4);
+   
+   SquareQuadMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(comm);
+   TEST_ASSERT(mesh!=Teuchos::null);
+
+   // minimal requirements
+   TEST_ASSERT(not mesh->isModifiable());
+
+   TEST_EQUALITY(mesh->getDimension(),2);
+   TEST_EQUALITY(mesh->getNumElementBlocks(),1);
+   TEST_EQUALITY(mesh->getNumSidesets(),4);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),4*2);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),2*5+4*3);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*5+4*3);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1));
+
+   // if(mesh->isWritable());
+   //    mesh->writeToExodus("test.exo");
+
+   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::EntityId> myGids;
+   mesh->getMyElements(myElements);
+   entityVecToGIDVec(myElements,myGids);
+
+   if(rank==0) {
+      TEST_EQUALITY(myGids.size(),2);
+      TEST_EQUALITY(myGids[0],1);
+      TEST_EQUALITY(myGids[1],3);
+   }
+   else if(rank==1) {
+      TEST_EQUALITY(myGids.size(),2);
+      TEST_EQUALITY(myGids[0],2);
+      TEST_EQUALITY(myGids[1],4);
+   }
+   else if(rank==2) {
+      TEST_EQUALITY(myGids.size(),2);
+      TEST_EQUALITY(myGids[0],5);
+      TEST_EQUALITY(myGids[1],7);
+   }
+   else if(rank==3) {
+      TEST_EQUALITY(myGids.size(),2);
+      TEST_EQUALITY(myGids[0],6);
+      TEST_EQUALITY(myGids[1],8);
+   }
+   else TEST_ASSERT(false);
+}
+
 }

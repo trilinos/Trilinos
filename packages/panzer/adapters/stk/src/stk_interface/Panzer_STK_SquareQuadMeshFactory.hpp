@@ -39,6 +39,9 @@ public:
    //! From ParameterListAcceptor
    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
+   //! what is the 2D tuple describe this processor distribution
+   Teuchos::Tuple<std::size_t,2> procRankToProcTuple(std::size_t procRank) const;
+
 protected: 
    void initializeWithDefaults();
 
@@ -60,8 +63,10 @@ protected:
    int xBlocks_, yBlocks_;
 
    int nXElems_, nYElems_;
+   mutable int xProcs_, yProcs_;
 
    mutable unsigned int machRank_, machSize_;
+   mutable Teuchos::Tuple<std::size_t,2> procTuple_;
 };
 
 }

@@ -37,6 +37,16 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
    machRank_ = stk::parallel_machine_rank(parallelMach);
    machSize_ = stk::parallel_machine_size(parallelMach);
 
+   if(xProcs_==-1) {
+      // default x only decomposition
+      xProcs_ = machSize_; 
+      yProcs_ = 1;
+   }
+   TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_,std::logic_error,
+                      "Cannot build SquareQuadMeshFactory, the product of \"X Procs\" and \"Y Procs\""
+                      " must equal the number of processors.");
+   procTuple_ = procRankToProcTuple(machRank_);
+
    // build meta information: blocks and side set setups
    buildMetaData(parallelMach,*mesh);
 
@@ -80,6 +90,9 @@ void SquareQuadMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::Paramet
    nXElems_ = paramList->get<int>("X Elements");
    nYElems_ = paramList->get<int>("Y Elements");
 
+   xProcs_ = paramList->get<int>("X Procs");
+   yProcs_ = paramList->get<int>("Y Procs");
+
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
 }
@@ -101,6 +114,9 @@ Teuchos::RCP<const Teuchos::ParameterList> SquareQuadMeshFactory::getValidParame
 
       defaultParams->set<int>("X Blocks",1);
       defaultParams->set<int>("Y Blocks",1);
+
+      defaultParams->set<int>("X Procs",-1);
+      defaultParams->set<int>("Y Procs",1);
 
       defaultParams->set<int>("X Elements",5);
       defaultParams->set<int>("Y Elements",5);
@@ -166,8 +182,8 @@ void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_
 void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
-   std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,machSize_,machRank_);
-   std::pair<int,int> sizeAndStartY = determineYElemSizeAndStart(yBlock,machSize_,machRank_);
+   std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
+   std::pair<int,int> sizeAndStartY = determineYElemSizeAndStart(yBlock,yProcs_,machRank_);
 
    int myXElems_start = sizeAndStartX.first;
    int myXElems_end  = myXElems_start+sizeAndStartX.second;
@@ -213,6 +229,7 @@ void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBl
 
 std::pair<int,int> SquareQuadMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
 {
+   std::size_t xProcLoc = procTuple_[0];
    unsigned int minElements = nXElems_/size;
    unsigned int extra = nXElems_ - minElements*size;
 
@@ -221,13 +238,13 @@ std::pair<int,int> SquareQuadMeshFactory::determineXElemSizeAndStart(int xBlock,
    // first "extra" elements get an extra column of elements
    // this determines the starting X index and number of elements
    int nume=0, start=0;
-   if(rank<extra) {
+   if(xProcLoc<extra) {
       nume  = minElements+1;
-      start = rank*(minElements+1);
+      start = xProcLoc*(minElements+1);
    }
    else {
       nume  = minElements;
-      start = extra*(minElements+1)+(rank-extra)*minElements;
+      start = extra*(minElements+1)+(xProcLoc-extra)*minElements;
    }
 
    return std::make_pair(start+nXElems_*xBlock,nume);
@@ -235,9 +252,25 @@ std::pair<int,int> SquareQuadMeshFactory::determineXElemSizeAndStart(int xBlock,
 
 std::pair<int,int> SquareQuadMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
 {
-   int start = yBlock*nYElems_;
+   std::size_t yProcLoc = procTuple_[1];
+   unsigned int minElements = nYElems_/size;
+   unsigned int extra = nYElems_ - minElements*size;
 
-   return std::make_pair(start,nYElems_);
+   TEUCHOS_ASSERT(minElements>0);
+
+   // first "extra" elements get an extra column of elements
+   // this determines the starting X index and number of elements
+   int nume=0, start=0;
+   if(yProcLoc<extra) {
+      nume  = minElements+1;
+      start = yProcLoc*(minElements+1);
+   }
+   else {
+      nume  = minElements;
+      start = extra*(minElements+1)+(yProcLoc-extra)*minElements;
+   }
+
+   return std::make_pair(start+nYElems_*yBlock,nume);
 }
 
 const stk::mesh::Relation * SquareQuadMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
@@ -316,6 +349,18 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
    }
 
    mesh.endModification();
+}
+
+//! Convert processor rank to a tuple
+Teuchos::Tuple<std::size_t,2> SquareQuadMeshFactory::procRankToProcTuple(std::size_t procRank) const
+{
+   std::size_t i=0,j=0;
+
+   j = procRank/xProcs_; 
+   procRank = procRank % xProcs_;
+   i = procRank;
+
+   return Teuchos::tuple(i,j);
 }
 
 } // end panzer_stk

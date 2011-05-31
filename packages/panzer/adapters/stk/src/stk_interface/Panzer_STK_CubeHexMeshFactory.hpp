@@ -33,7 +33,7 @@ public:
    //! From ParameterListAcceptor
    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-   // what is the 3D tuple describe this processor distribution
+   //! what is the 3D tuple describe this processor distribution
    Teuchos::Tuple<std::size_t,3> procRankToProcTuple(std::size_t procRank) const;
 
 protected: 
