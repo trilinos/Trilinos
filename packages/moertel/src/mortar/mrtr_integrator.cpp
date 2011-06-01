@@ -1163,8 +1163,8 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
   //========================================================================
   //========================================================================
   // use exact values at gaussian points
-  else
-  {
+  //
+  else { // if(exactvalues)
     // compute local coordinates of actseg's nodes in slave element
     double psxi[3][2];
     for (int i=0; i<np; ++i)
@@ -1243,19 +1243,20 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
 
       //-------------------------------------------------------------------
       // loop over all slave nodes (lm loop)
-      for (int lm=0; lm<sseg.Nnode(); ++lm)
-      {
+	  //
+      for (int lm=0; lm<sseg.Nnode(); ++lm) {
+
         // loop over all nodes (dof loop master)
-        for (int dof=0; dof<mseg.Nnode(); ++dof){
+        for (int dof=0; dof<mseg.Nnode(); ++dof)
           (**Mdense)(lm,dof) += (weight * val_sfunc1[lm] * val_mfunc0[dof]);
         
         // loop over all nodes (dof loop slave)
-        for (int dof=0; dof<sseg.Nnode(); ++dof){
+        for (int dof=0; dof<sseg.Nnode(); ++dof)
 
           (**Ddense)(lm,dof) += (weight * val_sfunc1[lm] * val_sfunc0[dof]); 
+	  }
 
-      }
-    } // for (int gp=0; gp<Ngp(); ++gp)
+	} // for (int gp=0; gp<Ngp(); ++gp)
     
     // tidy up
     gpnode = Teuchos::null;
@@ -1272,9 +1273,10 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
  |  assemble contributions Ddense into slave nodes (public)  mwgee 11/05|
  |  the scalar integrated functions are assembled here                  |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& sseg,
-                                   Epetra_SerialDenseMatrix& Ddense)
-{
+
+bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter, MOERTEL::Segment& sseg,
+                                   Epetra_SerialDenseMatrix& Ddense) {
+
   // get nodes
   const int nnode       = sseg.Nnode();
   MOERTEL::Node** snode = sseg.Nodes();
@@ -1296,17 +1298,17 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
 
 #if 1
   // set a row of Ddense in each snode
-  for (int row=0; row<nnode; ++row)
-  {
+  for (int row=0; row<nnode; ++row) {
+
     // assemble only to my own nodes
     if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID())
       continue;
     
     // row node is internal node
-    if (!snode[row]->IsOnBoundary())
-    {
-      for (int col=0; col<nnode; ++col)
-      { 
+    if (!snode[row]->IsOnBoundary()) {
+
+      for (int col=0; col<nnode; ++col) { 
+
         // row/col are both internal
         if (!snode[col]->IsOnBoundary())
           snode[row]->AddDValue(Ddense(row,col),snode[col]->Id());
@@ -1318,8 +1320,8 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
       }
     }
     // row node is a boundary node
-    else
-    {
+    else {
+
 	  std::map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
       double w = 1./(double)(snode[row]->NSupportSet());
 	  std::map<int,MOERTEL::Node*>::iterator curr;
@@ -1343,11 +1345,12 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
 /*----------------------------------------------------------------------*
  |  assemble contributions Mdense into slave nodes (public)  mwgee 11/05|
  *----------------------------------------------------------------------*/
+
 bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
                                    MOERTEL::Segment& sseg,
                                    MOERTEL::Segment& mseg,
-                                   Epetra_SerialDenseMatrix& Mdense)
-{
+                                   Epetra_SerialDenseMatrix& Mdense) {
+
   // get nodes
   const int nsnode    = sseg.Nnode();
   const int nmnode    = mseg.Nnode();
@@ -1371,19 +1374,20 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
 
 #if 1 // the orig version
   // set a row of Mdense in each snode
-  for (int row=0; row<nsnode; ++row)
-  {
+  for (int row=0; row<nsnode; ++row) {
+
     // assemble only to my own nodes
     if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID()) 
       continue;
       
     // standard assembly for internal nodes
-    if (!snode[row]->IsOnBoundary())
+    if (!snode[row]->IsOnBoundary()){
       for (int col=0; col<nmnode; ++col)
         // note the sign change here!!!!
         snode[row]->AddMValue((-Mdense(row,col)),mnode[col]->Id());
-    else
-    {
+	}
+    else {
+
 	  std::map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
       // note the sign change here!!!!
       double w = -1./(double)(snode[row]->NSupportSet());

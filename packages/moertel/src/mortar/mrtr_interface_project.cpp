@@ -70,13 +70,16 @@ bool MOERTEL::Interface::BuildNormals()
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
       }
+	}
     
   //-------------------------------------------------------------------
   // build nodal normals on both sides
   std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator ncurr;
+
   for (int side=0; side<2; ++side)
-    for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr)
-    {
+
+    for (ncurr=rnode_[side].begin(); ncurr!=rnode_[side].end(); ++ncurr) {
+
 #if 0
       cout << "side " << side << ": " << *(ncurr->second);
 #endif
@@ -84,7 +87,8 @@ bool MOERTEL::Interface::BuildNormals()
 #if 0
       cout << "side " << side << ": " << *(ncurr->second);
 #endif
-    }
+
+    } // for(ncurr ...)
 
   return true;
 }
