@@ -123,4 +123,9 @@ namespace Tpetra {
   }
 }
 
+/** 
+  \example CrsMatrix_BlockExtraction.cpp
+  An example for using the block extraction methods Tpetra::Ext::extractBlockDiagonals() and Tpetra::Ext::extractBlockRow().
+ */
+
 #endif // TPETRAEXT_BLOCKEXTRACTION_DECL_HPP

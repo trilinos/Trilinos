@@ -1,7 +1,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
-#include "Tpetra_DefaultPlatform.hpp"
-#include "TpetraExt_BlockExtraction.hpp"
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include "TpetraExt_BlockExtraction.hpp"
 #include <numeric>
 #include <algorithm>
 
