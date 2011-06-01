@@ -125,7 +125,8 @@ int MOERTEL::Mortar_ML_Preconditioner::ApplyInverse(
 #if 0
   Epetra_MultiVector Ytmp(B_->DomainMap(),1,true);
   B_->Multiply(true,Y,Ytmp);
-  cout << Ytmp; exit(0);
+  std::stringstream oss;
+  oss << Ytmp; throw ReportError(oss);
 #endif
   return 0;
 }
@@ -644,7 +645,8 @@ int MOERTEL::Mortar_ML_Preconditioner::ApplyInverse(
 #if 0
   Epetra_MultiVector Ytmp(B_->DomainMap(),1,true);
   B_->Multiply(true,Y,Ytmp);
-  cout << Ytmp; exit(0);
+  std::stringstream oss;
+  oss << Ytmp; throw ReportError(oss);
 #endif
   
   return 0;

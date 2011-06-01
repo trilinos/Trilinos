@@ -899,6 +899,10 @@ private:
   // Assemble values from integration this interface (3D problem)
   bool Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
 
+  // Check and see if the master seg and slave seg are even close to each other
+  bool QuickOverlapTest_2D(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg);
+
+
 
 
 private:

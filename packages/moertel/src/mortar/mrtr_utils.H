@@ -47,7 +47,7 @@
 
 // external package headers
 #include "Teuchos_RefCountPtr.hpp"
-#include <Epetra_Comm.h>
+#include <Epetra_Comm.h>   // Epetra_Comm.h defines std:: as a global namespace
 #ifdef EPETRA_MPI
 #include <Epetra_MpiComm.h>
 #else
@@ -369,6 +369,9 @@ Index base can either be 0 or 1.
 \param ibase : Index base, should be either 1 or 0 
 */
 bool Print_Vector(string name, Epetra_Vector& v, int ibase);
+
+//! Error reporting method
+int ReportError(const std::stringstream &Message);
 
 } // namespace MOERTEL
 #endif // MOERTEL_UTILS_H

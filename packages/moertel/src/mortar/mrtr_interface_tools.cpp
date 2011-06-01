@@ -676,10 +676,11 @@ Teuchos::RCP<MOERTEL::Node> MOERTEL::Interface::GetNodeView(int nid)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetNodeView:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Interface::GetNodeView:\n"
          << "***ERR*** Interface " << Id() << ": Complete() not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   if (!lComm()) return Teuchos::null;
   
@@ -754,10 +755,11 @@ Teuchos::RCP<MOERTEL::Segment>  MOERTEL::Interface::GetSegmentView(int sid)
 { 
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::GetSegmentView:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Interface::GetSegmentView:\n"
          << "***ERR*** Interface " << Id() << ": Complete() not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   if (!lComm()) return Teuchos::null;
   
@@ -1501,16 +1503,18 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_2D()
           segs[i]->SetFunction(1,tmp1);
         break;
         case MOERTEL::Function::func_none:
-          cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
+			std::stringstream oss;
+          oss << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
                << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is func_none\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-          exit(EXIT_FAILURE);     
+			throw ReportError(oss);
         break;
         default:
-          cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
+		  std::stringstream oss;
+          oss << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
                << "***ERR*** interface " << Id() << " function type of function 1 on segment " << segs[0]->Id() << " is unknown\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-          exit(EXIT_FAILURE);     
+			throw ReportError(oss);
         break;
       } // switch (type)
       if (tmp1) delete tmp1; tmp1 = NULL;
@@ -1734,18 +1738,20 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
   if (!lComm()) return true;
   if (!IsComplete())
   {
-    cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
          << "***ERR*** interface " << Id() << " : Complete() was not called\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	throw ReportError(oss);
   }
   if (dual_==MOERTEL::Function::func_none)
   {
-    cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
          << "***ERR*** interface " << Id() << " : no dual function type set\n"
          << "***ERR*** use SetFunctionTypes(..) to set function types\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	throw ReportError(oss);
   }
   
 #if 0
@@ -1772,18 +1778,24 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
       delete func1; func1 = NULL;
     break;
     case MOERTEL::Function::func_DualLinear1D:
-      cout << "MOERTEL: ***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+	{
+	  std::stringstream oss;
+      oss << "MOERTEL: ***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "MOERTEL: ***ERR*** interface " << Id() << " : setting discontious dual shape functions as\n"
            << "MOERTEL: ***ERR*** primal isoparametric trace space function is probably a bad idea...\n"
            << "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);     
+		throw ReportError(oss);
+	}
     break;
     case MOERTEL::Function::func_Constant1D:
-      cout << "MOERTEL: ***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+	{
+	  std::stringstream oss;
+      oss << "MOERTEL: ***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "MOERTEL: ***ERR*** interface " << Id() << " : setting constant shape functions as\n"
            << "MOERTEL: ***ERR*** primal isoparametric trace space function is probably a bad idea...\n"
            << "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);     
+		throw ReportError(oss);
+	}
     break;
     case MOERTEL::Function::func_LinearTri:
       func4 = new MOERTEL::Function_LinearTri(OutLevel());
@@ -1798,28 +1810,35 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
       delete func7; func7 = NULL;
     break;
     case MOERTEL::Function::func_none:
-      cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+	{
+	  std::stringstream oss;
+      oss << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "***ERR*** interface " << Id() << " : no primal function type set\n"
            << "***ERR*** use SetFunctionTypes(..) to set function types\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);     
+		throw ReportError(oss);
+	}
     break;
     default:
-      cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+	{
+	  std::stringstream oss;
+      oss << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "***ERR*** interface " << Id() << " : Unknown function type: " << primal_ << endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);     
+		throw ReportError(oss);
+	}
     break;
   }
   
   int side = MortarSide();
   if (side != 1 && side != 0)
   {
-    cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
          << "***ERR*** interface " << Id() << " : Mortar Side not set set\n"
          << "***ERR*** use SetMortarSide(int side) to choose mortar side first\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+		throw ReportError(oss);
   }
   side = OtherSide(side); // we want the slave side here
 
@@ -1866,17 +1885,23 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
       delete func8; func8 = NULL;
     break;
     case MOERTEL::Function::func_none:
-      cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+	{
+	  std::stringstream oss;
+      oss << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "***ERR*** interface " << Id() << " : no dual function type set\n"
            << "***ERR*** use SetFunctionTypes(..) to set function types\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);     
+		throw ReportError(oss);
+	}
     break;
     default:
-      cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
+	{
+	  std::stringstream oss;
+      oss << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
            << "***ERR*** interface " << Id() << " : Unknown function type: " << dual_ << endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);     
+		throw ReportError(oss);
+	}
     break;
   }
 

@@ -31,8 +31,9 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#include "mrtr_segment_bilinearquad.H"
+#include "mrtr_segment_bilineartri.H"
 #include "mrtr_interface.H"
+#include "mrtr_utils.H"
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 10/05|
@@ -51,10 +52,10 @@
  |                                  important to compute the direction  |
  |                                  of the outward normal of the segment|
  *----------------------------------------------------------------------*/
-MOERTEL::Segment_BiLinearQuad::Segment_BiLinearQuad(int id, int nnode, int* nodeId, int out) :
+MOERTEL::Segment_BiLinearTri::Segment_BiLinearTri(int id, int nnode, int* nodeId, int out) :
 MOERTEL::Segment(id,nnode,nodeId,out)
 {
-  stype_ = MOERTEL::Segment::seg_BiLinearQuad;
+  stype_ = MOERTEL::Segment::seg_BiLinearTri;
 }
 
 /*----------------------------------------------------------------------*
@@ -62,7 +63,7 @@ MOERTEL::Segment(id,nnode,nodeId,out)
  |  This constructor should not be used by the user, it is used         |
  |  internally together with Pack/Unpack for communication              |
  *----------------------------------------------------------------------*/
-MOERTEL::Segment_BiLinearQuad::Segment_BiLinearQuad(int out) :
+MOERTEL::Segment_BiLinearTri::Segment_BiLinearTri(int out) :
 MOERTEL::Segment(out)
 {
 }
@@ -70,7 +71,7 @@ MOERTEL::Segment(out)
 /*----------------------------------------------------------------------*
  |  copy-ctor (public)                                       mwgee 10/05|
  *----------------------------------------------------------------------*/
-MOERTEL::Segment_BiLinearQuad::Segment_BiLinearQuad(MOERTEL::Segment_BiLinearQuad& old) :
+MOERTEL::Segment_BiLinearTri::Segment_BiLinearTri(MOERTEL::Segment_BiLinearTri& old) :
 MOERTEL::Segment(old)
 {
   // all date lives in the base class and is copied in MOERTEL::Segment(old)
@@ -79,14 +80,14 @@ MOERTEL::Segment(old)
 /*----------------------------------------------------------------------*
  | pack all data in this segment into a vector               mwgee 10/05|
  *----------------------------------------------------------------------*/
-int* MOERTEL::Segment_BiLinearQuad::Pack(int* size)
+int* MOERTEL::Segment_BiLinearTri::Pack(int* size)
 { 
   // note: first there has to be the size and second there has to be the type
   // *size = *size  + stype_ + Id_ + nodeId_.size() + nnode*sizeof(int) + Nfunctions() + 2*Nfunctions()*sizeof(int)
      *size =  1     +	1    +  1  +   1            +	nodeId_.size()  +      1       +      2*Nfunctions();
-  
   int* pack = new int[*size];
-  int count = 0;
+  
+  int count=0;
   
   pack[count++] = *size;
   pack[count++] = (int)stype_;
@@ -95,6 +96,7 @@ int* MOERTEL::Segment_BiLinearQuad::Pack(int* size)
   for (int i=0; i<(int)nodeId_.size(); ++i) 
     pack[count++] = nodeId_[i];
   pack[count++] = Nfunctions();
+  
   std::map<int,Teuchos::RCP<MOERTEL::Function> >::iterator curr;
   for (curr = functions_.begin(); curr != functions_.end(); ++curr)
   {
@@ -104,10 +106,11 @@ int* MOERTEL::Segment_BiLinearQuad::Pack(int* size)
   
   if (count != *size)
   {
-    cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::Pack:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Segment_BiLinearTri::Pack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	throw ReportError(oss);
   }
   
   return pack;
@@ -116,7 +119,7 @@ int* MOERTEL::Segment_BiLinearQuad::Pack(int* size)
 /*----------------------------------------------------------------------*
  | unpack all data from a vector into this class             mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Segment_BiLinearQuad::UnPack(int* pack)
+bool MOERTEL::Segment_BiLinearTri::UnPack(int* pack)
 { 
   // note: first there has to be the size and second there has to be the type
   int count = 0;
@@ -126,7 +129,9 @@ bool MOERTEL::Segment_BiLinearQuad::UnPack(int* pack)
   nodeId_.resize(pack[count++]);
   for (int i=0; i<(int)nodeId_.size(); ++i)
     nodeId_[i] = pack[count++];
+  
   int nfunc = pack[count++];
+  
   for (int i=0; i<nfunc; ++i)
   {
     int id   = pack[count++];
@@ -138,10 +143,11 @@ bool MOERTEL::Segment_BiLinearQuad::UnPack(int* pack)
   
   if (count != size)
   {
-    cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::UnPack:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Segment_BiLinearTri::UnPack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	throw ReportError(oss);
   }
   
   return true;
@@ -150,7 +156,7 @@ bool MOERTEL::Segment_BiLinearQuad::UnPack(int* pack)
 /*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
-MOERTEL::Segment_BiLinearQuad::~Segment_BiLinearQuad()
+MOERTEL::Segment_BiLinearTri::~Segment_BiLinearTri()
 { 
   // data held in base class is destroyed by base class destructor
 }
@@ -158,16 +164,16 @@ MOERTEL::Segment_BiLinearQuad::~Segment_BiLinearQuad()
 /*----------------------------------------------------------------------*
  |  clone this segment (public)                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-MOERTEL::Segment* MOERTEL::Segment_BiLinearQuad::Clone()
+MOERTEL::Segment* MOERTEL::Segment_BiLinearTri::Clone()
 { 
-  MOERTEL::Segment_BiLinearQuad* newseg = new MOERTEL::Segment_BiLinearQuad(*this);
+  MOERTEL::Segment_BiLinearTri* newseg = new MOERTEL::Segment_BiLinearTri(*this);
   return (newseg);
 }
 
 /*----------------------------------------------------------------------*
  |  << operator                                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearQuad& seg)
+ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearTri& seg)
 {
   seg.Print(); 
   return os;
@@ -176,111 +182,87 @@ ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearQuad& seg)
 /*----------------------------------------------------------------------*
  | build an outward normal at a node adjacent to this        mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Segment_BiLinearQuad::LocalCoordinatesOfNode(int lid, double* xi)
+bool MOERTEL::Segment_BiLinearTri::LocalCoordinatesOfNode(int lid, double* xi)
 { 
   if (lid==0)
   {
-    xi[0] = -1.;
-    xi[1] = -1.;
+    xi[0] = 0.0;
+    xi[1] = 0.0;
   }
   else if (lid==1)
   {
-    xi[0] =  1.;
-    xi[1] = -1.;
+    xi[0] = 1.0;
+    xi[1] = 0.0;
   }
   else if (lid==2)
   {
-    xi[0] =  1.;
-    xi[1] =  1.;
-  }
-  else if (lid==3)
-  {
-    xi[0] = -1.;
-    xi[1] =  1.;
+    xi[0] = 0.0;
+    xi[1] = 1.0;
   }
   else
   {
-    cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::LocalCoordinatesOfNode:\n"
-         << "***ERR*** local node number " << lid << " out of range (0..3)\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Segment_BiLinearTri::LocalCoordinatesOfNode:\n"
+         << "***ERR*** local node number " << lid << " out of range (0..2)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	throw ReportError(oss);
   }
   return true;
+}
+
+/*----------------------------------------------------------------------*
+ | build basis vectors and metric at given point xi          mwgee 10/05|
+ *----------------------------------------------------------------------*/
+double MOERTEL::Segment_BiLinearTri::Metric(double* xi, double g[], double G[][3])
+{ 
+	  std::stringstream oss;
+  oss << "***ERR*** MOERTEL::Segment_BiLinearTri::Metric:\n"
+       << "***ERR*** not impl.\n"
+       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+	throw ReportError(oss);
+  return 0.0;
 }
 
 /*----------------------------------------------------------------------*
  | build an outward normal at a node adjacent to this        mwgee 10/05|
  | returns allocated vector of length 3 with outward normal             |
  *----------------------------------------------------------------------*/
-double* MOERTEL::Segment_BiLinearQuad::BuildNormal(double* xi)
+double* MOERTEL::Segment_BiLinearTri::BuildNormal(double* xi)
 { 
-  // A bilinear quad in 3D can be warped, so it does matter where
-  // to build the normal
-  double G[3][3];
-  Metric(xi,NULL,G);
+  // linear triangles are planar, so we don't care were exactly to build the normal
+
+  // build base vectors
+  double g1[3];
+  double g2[3];
+  for (int i=0; i<3; ++i)
+  {
+    g1[i] = Nodes()[1]->X()[i] - Nodes()[0]->X()[i];  
+    g2[i] = Nodes()[2]->X()[i] - Nodes()[0]->X()[i]; 
+  }
   
-  // the normal is G[2]
+  // build normal as their cross product
   double* n = new double[3];
   
-  for (int i=0; i<3; ++i)
-    n[i] = G[2][i];
-  
-  return n;
-}
+  MOERTEL::cross(n,g1,g2);
 
-/*----------------------------------------------------------------------*
- | build basis vectors and metric at given point xi          mwgee 10/05|
- *----------------------------------------------------------------------*/
-double MOERTEL::Segment_BiLinearQuad::Metric(double* xi, double g[], double G[][3])
-{ 
-  // get nodal coords;
-  const double* x[4];
-  for (int i=0; i<4; ++i) x[i] = nodeptr_[i]->X();
-  
-  // get shape functions and derivatives at xi
-  double val[4];
-  double deriv[8];
-  EvaluateFunction(0,xi,val,4,deriv);
-  
-  // Build kovariant metric G1 and G2 = partial x / partial theta sup i
-  for (int i=0; i<2; ++i)
-    for (int dim=0; dim<3; ++dim)
-    {
-      G[i][dim] = 0.0;
-      for (int node=0; node<4; ++node)
-        G[i][dim] += deriv[node*2+i] * x[node][dim];
-    }
-  
-  // build G3 as cross product of G1 x G2
-  MOERTEL::cross(G[2],G[0],G[1]);
-  
-  // dA at this point is length of G[3] or |G1 x G2|
-  double dA = MOERTEL::length(G[2],3);  
-  return dA;
+  return n;
 }
 
 /*----------------------------------------------------------------------*
  | compute the length (Area) of this segment                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MOERTEL::Segment_BiLinearQuad::Area()
+double MOERTEL::Segment_BiLinearTri::Area()
 { 
-  double coord[4][2];
-  double sqrtthreeinv = 1./(sqrt(3.));
-  coord[0][0] = -sqrtthreeinv;
-  coord[0][1] = -sqrtthreeinv;
-  coord[1][0] =  sqrtthreeinv;
-  coord[1][1] = -sqrtthreeinv;
-  coord[2][0] =  sqrtthreeinv;
-  coord[2][1] =  sqrtthreeinv;
-  coord[3][0] = -sqrtthreeinv;
-  coord[3][1] =  sqrtthreeinv;
-  double A = 0.0;
+  double xi[2];
+  xi[0] = xi[1] = 0.0;
+  
+  double* n = BuildNormal(xi);
 
-  // create an integrator to get the gaussian points
-  for (int gp=0; gp<4; ++gp)
-  {
-    double G[3][3];
-    A += Metric(coord[gp],NULL,G);
-  }
-  return A;
+  double a = 0.0;
+  for (int i=0; i<3; ++i)
+    a+= n[i]*n[i];
+  
+  delete [] n;
+
+  return (sqrt(a)/2.0);
 }

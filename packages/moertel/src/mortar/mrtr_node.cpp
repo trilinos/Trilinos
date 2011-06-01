@@ -34,6 +34,7 @@
 #include "mrtr_node.H"
 #include "mrtr_interface.H"
 #include "mrtr_pnode.H"
+#include "mrtr_utils.H"
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 06/05|
@@ -190,10 +191,11 @@ double* MOERTEL::Node::Pack(int* size)
 
   if (count != *size)
   {
-	std::cout << "***ERR*** MOERTEL::Node::Pack:\n"
+	  std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Node::Pack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+		throw ReportError(oss);
   }
   
   return pack;
@@ -223,10 +225,11 @@ bool MOERTEL::Node::UnPack(double* pack)
     
   if (count != size)
   {
-	std::cout << "***ERR*** MOERTEL::Node::UnPack:\n"
+	  std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Node::UnPack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+		throw ReportError(oss);
   }
   
   return true;
@@ -379,10 +382,11 @@ bool MOERTEL::Node::GetPtrstoSegments(MOERTEL::Interface& interface)
     segptr_[i] = interface.GetSegmentView(seg_[i]).get();
     if (!segptr_[i])
     {
-	  std::cout << "***ERR*** MOERTEL::Node::GetPtrstoSegments:\n"
+	  std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Node::GetPtrstoSegments:\n"
            << "***ERR*** Interface " << interface.Id() << ": GetSegmentView failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+		throw ReportError(oss);
     }
   }
   return true;
@@ -410,14 +414,16 @@ bool MOERTEL::Node::BuildAveragedNormal()
 
 #if 0
 	std::cout << "Now averaging from Segment\n" << *seg;
+	std::cout << "Finished writing segment data." << std::endl;
 #endif    
 
     if (!seg)
     {
-	  std::cout << "***ERR*** MOERTEL::Node::BuildAveragedNormal:\n"
+	  std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Node::BuildAveragedNormal:\n"
            << "***ERR*** Node " << Id() << ": Segment " << sid[i] << " not found -> fatal\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+		throw ReportError(oss);
     }
     double* n   = seg->BuildNormalAtNode(Id());
     double  wgt = seg->Area(); 
@@ -436,8 +442,8 @@ bool MOERTEL::Node::BuildAveragedNormal()
 
 #if 0
   std::cout << "Node " << Id() << ":"
-       << " normal is " << setw(15) << n_[0] 
-       << "   "<< setw(15) << n_[1] << "   " << setw(15) << n_[2] << endl;
+       << " normal is " << std::setw(15) << n_[0] 
+       << "   "<< std::setw(15) << n_[1] << "   " << std::setw(15) << n_[2] << std::endl;
 #endif
 
   return true;

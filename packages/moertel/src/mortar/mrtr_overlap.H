@@ -181,10 +181,18 @@ private:
 
   //-------------------------------------------- perform clipping algorithm
   bool Clipelements();
+  // Clip using the Sutherland-Hodgman algorithm (1974)
+  bool ClipelementsSH();
+  // Support function for the above, that builds the SH polygons
+  bool buildPoly(std::vector<double>& source_xi, std::vector<double>& source_eta,
+	std::vector<double>& target_xi, std::vector<double>& target_eta, double *PE, double *N);
   // test whether a point is inside or outside of a clip edge
   bool Clip_TestPoint(const double* N, const double* PE, const double* P, double eps);
   // find intersection of clipping edge with line
   bool Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi);
+  // find intersection of clipping edge with line when one knows that P0 and P1 are on opposite sides
+  // of the clipping plane
+  bool Guarded_Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi);
   // find parameterization alpha for point on line
   double Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P);
 
@@ -216,7 +224,8 @@ protected:
 
   // add a point to the polygon
   bool AddPointtoPolygon(const int id, const double* P);
-  bool AddPointtoPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p, const int id, const double* P);
+  bool AddPointtoPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p, const int id, 
+			const double* P);
   // remove a point from the polygon
   bool RemovePointfromPolygon(const int id,const double* P);
   // get the size of the nodal polygon

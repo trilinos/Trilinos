@@ -24,8 +24,6 @@
  */
 //@HEADER
 
-#if defined(HAVE_TRIOS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
-
 #ifndef MORTEL_MESH_H
 #define MORTEL_MESH_H
 
@@ -42,10 +40,6 @@ public:
 
 #ifdef HAVE_MOERTEL_NEMESIS  // Use NEMESIS for parallel IO
     Mesh(const int proc_id, const int nprocs, const bool v = false);
-    Mesh() {
-        fprintf(stderr, "Must specify processor ID and number of processors");
-        exit(-10);
-    }
 #else
     Mesh(const int proc_id = 0, const bool v = false);
 #endif
@@ -74,6 +68,9 @@ public:
 
     int add_nodal_data(std::string name, std::vector<double> &data);
     int add_nodal_data(std::string name, double *data);
+
+    int add_elem_data(std::string name, std::vector<double> &data);
+    int add_elem_data(std::string name, double *data);
 
     void set_verbose(const bool v = true);
 
@@ -114,6 +111,9 @@ public:
     int get_num_nodes_per_elem_in_blk(int blk) {
         return num_node_per_elem_in_blk[blk];
     }
+	std::string get_elem_type_in_blk(int blk) {
+        return blk_elem_type[blk];
+    }
     int *get_elem_nodes(int blk, int elem) {
         return &connect[blk][elem * num_node_per_elem_in_blk[blk]];
     }
@@ -153,13 +153,13 @@ public:
         return &z;
     }
 
-    std::vector<int> get_nodal_adj(int i) {
+    std::vector<int>& get_nodal_adj(int i) {
         return nodal_adj[i];
     }
-    std::vector<int> get_node_set(int i) {
+    std::vector<int>& get_node_set(int i) {
         return ns_node_list[i];
     }
-    std::vector<int> get_side_set(int i) {
+    std::vector<int>& get_side_set(int i) {
         return ss_node_list[i];
     }
     int get_node_set_entry(int i, int j) {
@@ -180,7 +180,7 @@ public:
     int get_side_set_node_value(int i) {
         return side_set_node_map[i];
     }
-    std::map<int,int> get_vertex_map() {
+    std::map<int,int>& get_vertex_map() {
         return vertex_map;
     }
     void set_vertex_map();
@@ -234,12 +234,16 @@ private:
     std::vector<std::string> nodal_field_names;
     std::vector<std::vector<double> > nodal_fields;
 
+    std::vector<std::string> elem_field_names;
+    std::vector<std::vector<double> > elem_fields;
+
     std::map<int,int> vertex_map;
 
     int create_exodus(const char * filename);
     int write_nodal_coordinates_exodus(int ex_id);
     int write_element_blocks_exodus(int ex_id);
     int write_nodal_data_exodus(int ex_id);
+    int write_elem_data_exodus(int ex_id);
     int close_exodus(int ex_id);
     void check_exodus_error(const int ex_err,const std::string msg);
 
@@ -250,12 +254,16 @@ private:
     std::vector<int> side_set_node_map;
     std::vector<int> my_node_num_map;
 
+	// Error functions
+	
+	int ReportError(const std::stringstream &Message);
+
     // Variables for staged output of exodus files
 
     int staged_ex_id;
     int ts;
     double time;
-    int names_written;
+    int nodal_names_written, elem_names_written;
 
 
 #ifdef HAVE_MOERTEL_NEMESIS
@@ -285,5 +293,4 @@ private:
 };
 
 }
-#endif
 #endif

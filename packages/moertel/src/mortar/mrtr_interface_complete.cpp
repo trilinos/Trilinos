@@ -190,10 +190,11 @@ bool MOERTEL::Interface::Complete()
     Epetra_MpiComm* epetrampicomm = dynamic_cast<Epetra_MpiComm*>(&gcomm_);
     if (!epetrampicomm)
     {
-      cout << "***ERR*** MOERTEL::Interface::Complete:\n"
+	  std::stringstream oss;
+			oss << "***ERR*** MOERTEL::Interface::Complete:\n"
            << "***ERR*** Interface " << Id() << ": Epetra_Comm is not an Epetra_MpiComm\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+      throw ReportError(oss);
     }
 
     // split the communicator into participating and none-participating procs
@@ -251,10 +252,11 @@ bool MOERTEL::Interface::Complete()
     Epetra_SerialComm* serialcomm = dynamic_cast<Epetra_SerialComm*>(&gcomm_);
     if (!serialcomm)
     {
-      cout << "***ERR*** MOERTEL::Interface::Complete:\n"
+	  std::stringstream oss;
+			oss << "***ERR*** MOERTEL::Interface::Complete:\n"
            << "***ERR*** Interface " << Id() << ": Epetra_Comm is not an Epetra_SerialComm\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+      throw ReportError(oss);
     }
     lcomm_ = Teuchos::rcp(new Epetra_SerialComm(*serialcomm));
 #endif // end of #ifdef PARALLEL    
@@ -380,11 +382,12 @@ bool MOERTEL::Interface::Complete()
 			Teuchos::RCP<MOERTEL::Node> node = GetNodeViewLocal(nid);
             if (node == Teuchos::null)
             {
-              cout << "***ERR*** MOERTEL::Interface::Complete:\n"
-                   << "***ERR*** cannot find node " << nid << endl
+				std::stringstream oss;
+					oss << "***ERR*** MOERTEL::Interface::Complete:\n"
+						<< "***ERR*** cannot find node " << nid << "\n"
                    << "***ERR*** in map of all nodes on this proc\n"
                    << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-              exit(EXIT_FAILURE);
+				throw ReportError(oss);
             }
             node->AddSegment(segid);
           }
@@ -408,10 +411,11 @@ bool MOERTEL::Interface::Complete()
     ok += RedundantNodes(1);
     if (ok != 4)
     {
-      cout << "***ERR*** MOERTEL::Interface::Complete:\n"
+		std::stringstream oss;
+			oss << "***ERR*** MOERTEL::Interface::Complete:\n"
            << "***ERR*** building of redundant information failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+		throw ReportError(oss);
     }
   }
 

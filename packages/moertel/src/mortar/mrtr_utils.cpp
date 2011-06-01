@@ -31,6 +31,10 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+
+#include <sstream>
+#include <string>
+
 #include "mrtr_utils.H"
 #include "mrtr_segment.H"
 #include "mrtr_segment_linear1D.H"
@@ -69,16 +73,22 @@ MOERTEL::Segment* MOERTEL::AllocateSegment(int type, int out)
       }
     break;
     case MOERTEL::Segment::seg_none:
-      cout << "***ERR*** MOERTEL::AllocateSegment:\n"
+	{
+		std::stringstream oss;
+      oss << "***ERR*** MOERTEL::AllocateSegment:\n"
            << "***ERR*** type is func_none, cannot allocate.\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+	  throw ReportError(oss);
+	}
     break;
     default:
-      cout << "***ERR*** MOERTEL::AllocateSegment:\n"
+	{
+		std::stringstream oss;
+      oss << "***ERR*** MOERTEL::AllocateSegment:\n"
            << "***ERR*** type is unknown, cannot allocate new Segment\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+	  throw ReportError(oss);
+	}
     break;
   }
 
@@ -124,16 +134,22 @@ MOERTEL::Function* MOERTEL::AllocateFunction(MOERTEL::Function::FunctionType typ
       }
     break;
     case MOERTEL::Function::func_none:
-      cout << "***ERR*** MOERTEL::AllocateFunction:\n"
+	{
+		std::stringstream oss;
+      oss << "***ERR*** MOERTEL::AllocateFunction:\n"
            << "***ERR*** type is func_none, cannot allocate.\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+	  throw ReportError(oss);
+	}
     break;
     default:
-      cout << "***ERR*** MOERTEL::AllocateFunction:\n"
+	{
+		std::stringstream oss;
+      oss << "***ERR*** MOERTEL::AllocateFunction:\n"
            << "***ERR*** type is unknown, cannot allocate new Function\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+	  throw ReportError(oss);
+	}
     break;
   }
 
@@ -179,10 +195,11 @@ bool MOERTEL::solve22(const double A[][2], double* x, const double* b)
   double det = A[0][0]*A[1][1]-A[0][1]*A[1][0];
   if (abs(det)<1.0e-10)
   {
-    cout << "***ERR*** MOERTEL::solve22:\n"
+	std::stringstream oss;
+    oss << "***ERR*** MOERTEL::solve22:\n"
          << "***ERR*** Determinant is zero\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	  throw ReportError(oss);
   }
   det = 1/det;
   x[0] = det*A[1][1]*b[0]-det*A[0][1]*b[1];
@@ -212,13 +229,14 @@ bool MOERTEL::solve33(const double A[][3], double* x, const double* b)
   int err = solver.Solve();
   if (err)
   {
-    cout << AA;
-    cout << BB;
-    cout << XX;
-    cout << "***WRN*** MOERTEL::solve33:\n"
+		std::stringstream oss;
+    oss << AA;
+    oss << BB;
+    oss << XX;
+    oss << "***WRN*** MOERTEL::solve33:\n"
          << "***WRN*** Epetra_SerialDenseSolver::Solve returned " << err << "\n"
          << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	  throw ReportError(oss);
   }
   for (int i=0; i<3; ++i)
     x[i] = XX(i,0);
@@ -372,17 +390,19 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
 
   if (!A.Filled())
   {
-     cout << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
+		std::stringstream oss;
+     oss << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
           << "***ERR*** FillComplete was not called on A\n"
           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-     exit(EXIT_FAILURE);
+	  throw ReportError(oss);
   }
   if (B.Filled())
   {
-     cout << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
+		std::stringstream oss;
+     oss << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
           << "***ERR*** FillComplete was called on B\n"
           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-     exit(EXIT_FAILURE);
+	  throw ReportError(oss);
   }
   
   //explicit tranpose A formed as necessary
@@ -422,11 +442,12 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
           err = B.InsertGlobalValues(Row,1,&Values[j],&Indices[j]);
         if (err < 0)
         {
-          cout << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
+			std::stringstream oss;
+          oss << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
                << "***ERR*** InsertGlobalValues returned " << err << "\n"
                << "Row " << Row << " Col " << Indices[j] << endl
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-          exit(EXIT_FAILURE);
+			throw ReportError(oss);
         }
       }
     }
@@ -662,7 +683,11 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
     {
       int lcol = lindices[j];  
       int gcol = A.GCID(lcol); 
-      if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
+      if (gcol<0) { 
+			std::stringstream oss;
+		  oss << "ERROR: gcol<0 \n"; 
+		throw ReportError(oss);
+	  }
       if (abs(values[j])<eps)
         continue;
       int err = out->InsertGlobalValues(grow,1,&values[j],&gcol);
@@ -726,7 +751,11 @@ bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase)
     {
       int lcol = lindices[j];  
       int gcol = A.GCID(lcol); 
-      if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
+      if (gcol<0) { 
+			std::stringstream oss;
+		  oss << "ERROR: gcol<0 \n"; 
+		throw ReportError(oss);
+	  }
       fprintf(out," %d   %d   %20.10e\n",grow+ibase,gcol+ibase,values[j]);
     }
   }
@@ -822,7 +851,11 @@ bool MOERTEL::Print_Graph(string name, Epetra_CrsGraph& A, int ibase)
     {
       int lcol = lindices[j];  
       int gcol = A.GCID(lcol); 
-      if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
+      if (gcol<0) { 
+			std::stringstream oss;
+		  oss << "ERROR: gcol<0 \n"; 
+		throw ReportError(oss);
+	  }
       fprintf(out," %d   %d   %20.10e\n",grow+ibase,gcol+ibase,1.0);
     }
   }
@@ -846,10 +879,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
 {
   if (A==Teuchos::null)
   {
-    cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+	std::stringstream oss;
+    oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
          << "***ERR*** A == null on entry\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   if (A11rowmap==Teuchos::null && A22rowmap != Teuchos::null)
     A11rowmap = Teuchos::rcp(MOERTEL::SplitMap(A->RowMap(),*A22rowmap));
@@ -858,10 +892,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
     A22rowmap = Teuchos::rcp(MOERTEL::SplitMap(A->RowMap(),*A11rowmap));
   else
   {
-    cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+	std::stringstream oss;
+    oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
          << "***ERR*** Either A11rowmap OR A22rowmap or both have to be not null"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
 
   const Epetra_Comm& Comm   = A->Comm();
@@ -890,10 +925,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
     }
     if (count != A22map.NumGlobalElements())
     {
-      cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+		std::stringstream oss;
+      oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
            << "***ERR*** mismatch in dimensions\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+		throw ReportError(oss);
     }
     // create the map
     for (int i=0; i<count; ++i)
@@ -918,10 +954,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       int err = A->ExtractMyRowView(i,numentries,values,cindices);
       if (err)
       {
-        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+		std::stringstream oss;
+        oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
              << "***ERR*** A->ExtractMyRowView returned " << err << endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
       }
       if (numentries>(int)a22gcindices.size())
       {
@@ -945,10 +982,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       err = A22->InsertGlobalValues(grid,count,&a22values[0],&a22gcindices[0]);
       if (err<0)
       {
-        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+		std::stringstream oss;
+        oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
              << "***ERR*** A22->InsertGlobalValues returned " << err << endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
       }
     } //for (int i=0; i<A->NumMyRows(); ++i)
     a22gcindices.clear();
@@ -972,10 +1010,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       int err = A->ExtractMyRowView(i,numentries,values,cindices);
       if (err)
       {
-        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+		std::stringstream oss;
+        oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
              << "***ERR*** A->ExtractMyRowView returned " << err << endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
       }
       if (numentries>(int)a11gcindices.size())
       {
@@ -996,10 +1035,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       err = A11->InsertGlobalValues(grid,count,&a11values[0],&a11gcindices[0]);
       if (err<0)
       {
-        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+		std::stringstream oss;
+        oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
              << "***ERR*** A11->InsertGlobalValues returned " << err << endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
       }
     } // for (int i=0; i<A->NumMyRows(); ++i)
     a11gcindices.clear();
@@ -1023,10 +1063,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       int err = A->ExtractMyRowView(i,numentries,values,cindices);
       if (err)
       {
-        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+		std::stringstream oss;
+        oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
              << "***ERR*** A->ExtractMyRowView returned " << err << endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
       }
       if (numentries>(int)a12gcindices.size())
       {
@@ -1047,10 +1088,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       err = A12->InsertGlobalValues(grid,count,&a12values[0],&a12gcindices[0]);
       if (err<0)
       {
-        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+		std::stringstream oss;
+        oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
              << "***ERR*** A12->InsertGlobalValues returned " << err << endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
       }
     } // for (int i=0; i<A->NumMyRows(); ++i)
     a12values.clear();
@@ -1074,10 +1116,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       int err = A->ExtractMyRowView(i,numentries,values,cindices);
       if (err)
       {
-        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+		std::stringstream oss;
+        oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
              << "***ERR*** A->ExtractMyRowView returned " << err << endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
       }
       if (numentries>(int)a21gcindices.size())
       {
@@ -1098,10 +1141,11 @@ bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
       err = A21->InsertGlobalValues(grid,count,&a21values[0],&a21gcindices[0]);
       if (err<0)
       {
-        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+		std::stringstream oss;
+        oss << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
              << "***ERR*** A12->InsertGlobalValues returned " << err << endl
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
       }
     } // for (int i=0; i<A->NumMyRows(); ++i)
     a21values.clear();
@@ -1161,19 +1205,21 @@ bool MOERTEL::SplitVector(const Epetra_Vector& x,
   int err = x1->Export(x,exporter_x1,Insert);
   if (err)
   {
-    cout << "***ERR*** MOERTEL::SplitVector:\n"
+	std::stringstream oss;
+    oss << "***ERR*** MOERTEL::SplitVector:\n"
          << "***ERR*** Export returned " << err << endl
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   err = x2->Export(x,exporter_x2,Insert);
   if (err)
   {
-    cout << "***ERR*** MOERTEL::SplitVector:\n"
+	std::stringstream oss;
+    oss << "***ERR*** MOERTEL::SplitVector:\n"
          << "***ERR*** Export returned " << err << endl
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   return true;
@@ -1193,20 +1239,31 @@ bool MOERTEL::MergeVector(const Epetra_Vector& x1,
   int err = xresult.Export(x1,exporter_x1,Insert);
   if (err)
   {
-    cout << "***ERR*** MOERTEL::SplitVector:\n"
+	std::stringstream oss;
+    oss << "***ERR*** MOERTEL::SplitVector:\n"
          << "***ERR*** Export returned " << err << endl
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
 
   err = xresult.Export(x2,exporter_x2,Insert); 
   if (err)
   {
-    cout << "***ERR*** MOERTEL::SplitVector:\n"
+	std::stringstream oss;
+    oss << "***ERR*** MOERTEL::SplitVector:\n"
          << "***ERR*** Export returned " << err << endl
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
 
   return true;
 }                                          
+
+/*----------------------------------------------------------------------*
+ | Report errors to std::cerr											|
+ *----------------------------------------------------------------------*/
+
+int MOERTEL::ReportError(const std::stringstream &Message) {
+	std::cerr << std::endl << Message.str() << std::endl;
+	return(-1);
+}

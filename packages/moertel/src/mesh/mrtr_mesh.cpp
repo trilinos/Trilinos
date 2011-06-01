@@ -1,9 +1,8 @@
 #include "mrtr_mesh.H"
 #include <iostream>
 #include <algorithm>
-#include "string.h"
-
-#if defined(HAVE_TRIOS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
+#include <sstream>
+#include <string>
 
 
 #ifdef HAVE_MOERTEL_NEMESIS
@@ -18,13 +17,27 @@ Public interface to the Mesh class
 MOERTEL::Mesh::Mesh( const int pid, const int np, const bool v ):
     proc_id(pid), nprocs(np), verbose(v) {
 
-    names_written = 0;
+    nodal_names_written = 0;
+    elem_names_written = 0;
 }
+// Invalid constructor when running in parallel
+//
+MOERTEL::Mesh::Mesh(){
+
+	std::stringstream outp;
+			outp << "Must specify processor ID and number of processors in MOERTEL::Mesh constructor" 
+				 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+	throw ReportError(outp);
+
+}
+
 #else
+
 MOERTEL::Mesh::Mesh( const int pid, const bool v ):
     verbose(v) {
 
-    names_written = 0;
+    nodal_names_written = 0;
+    elem_names_written = 0;
 }
 #endif
 
@@ -44,8 +57,10 @@ int MOERTEL::Mesh::read_exodus(const char * filename) {
 
     if(ex_id < 0) {
 
-        std::cerr << "Error: cannot open file " << filename << std::endl;
-        exit(1);
+		std::stringstream outp;
+			outp << "Cannot open file" << filename
+				 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+		throw ReportError(outp);
 
     }
 
@@ -111,8 +126,10 @@ int MOERTEL::Mesh::read_exodus(const char * filename) {
 
     if(num_proc != nprocs) {
 
-        fprintf(stderr, "ERROR in file read: number of processors does not match number of input files\n");
-        exit(-10);
+		std::stringstream outp;
+			outp << "ERROR in file read: number of processors does not match number of input files"
+				 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+		throw ReportError(outp);
 
     }
 
@@ -656,20 +673,25 @@ void MOERTEL::Mesh::set_time_step(int its, double itime) {
 
 int MOERTEL::Mesh::update_file() {
 
-    int ex_err;
+    int ex_err = 0;
     char **var_names;
 
-    if(verbose)
+    if(verbose){
 
         std::cout<<"=== Write Nodal Data Exodus ==="<<std::endl
                  <<" num_nodal_fields "<<nodal_fields.size()<<std::endl;
 
-    if(nodal_fields.size() == 0) return 0;
+        std::cout<<"=== Write Element Data Exodus ==="<<std::endl
+                 <<" num_elem_fields "<<elem_fields.size()<<std::endl;
+
+	}
+
+    if(nodal_fields.size() == 0 && elem_fields.size() == 0) return 0;  // Bail if there is nothing to write
 
     ex_err = ex_put_time (staged_ex_id, ts + 1, &time);
 
 
-    if(names_written == 0) {
+	if(nodal_names_written == 0) {
 
         ex_err = ex_put_var_param (staged_ex_id, "N", nodal_fields.size());
 
@@ -681,7 +703,7 @@ int MOERTEL::Mesh::update_file() {
 
             if(verbose)
 
-                std::cout<<" name  "<<var_names[i]<<std::endl<<std::endl;
+				std::cout<<" nodal var name  "<<var_names[i]<<std::endl<<std::endl;
 
         }
 
@@ -689,19 +711,60 @@ int MOERTEL::Mesh::update_file() {
 
         delete [] var_names;
 
-        names_written = 1;
+		nodal_names_written = 1;
 
     }
 
-    for(unsigned int i = 0; i < nodal_fields.size(); i++)
+	if(elem_names_written == 0) {
+
+		ex_err = ex_put_var_param (staged_ex_id, "E", elem_fields.size());
+
+		var_names = new char*[elem_fields.size()];
+
+		for(unsigned int i = 0; i < elem_fields.size(); i++) {
+
+			var_names[i] = (char *)&elem_field_names[i][0];
+
+			if(verbose)
+
+				std::cout<<" elem var name  "<<var_names[i]<<std::endl<<std::endl;
+
+		}
+
+		ex_err = ex_put_var_names (staged_ex_id, "E", elem_fields.size(), var_names);
+
+		delete [] var_names;
+
+		elem_names_written = 1;
+
+	}
+
+	for(unsigned int i = 0; i < nodal_fields.size(); i++){
 
         ex_err = ex_put_nodal_var (staged_ex_id, ts + 1, i + 1, num_nodes, &nodal_fields[i][0]);
+
+	}
+
+	int cnt = 0;
+
+	for(unsigned int i = 0; i < elem_fields.size(); i++){
+		for(int j = 0; j < num_elem_blk; j++){
+
+			ex_err = ex_put_elem_var (staged_ex_id, ts + 1, i + 1, blk_ids[j], num_elem_in_blk[j], 
+					&elem_fields[i][cnt]);
+
+			cnt += num_elem_in_blk[j];
+		}
+
+	}
 
 
     ex_err = ex_update(staged_ex_id);
 
     nodal_fields.clear();
     nodal_field_names.clear();
+	elem_fields.clear();
+	elem_field_names.clear();
 
     return ex_err;
 
@@ -860,7 +923,7 @@ int MOERTEL::Mesh::write_nodal_coordinates_exodus(int ex_id) {
 
 int MOERTEL::Mesh::write_element_blocks_exodus(int ex_id) {
 
-    int ex_err;
+    int ex_err = 0;
 
     for(int i = 0; i < num_elem_blk; i++) {
 
@@ -930,13 +993,63 @@ int MOERTEL::Mesh::write_nodal_data_exodus(int ex_id) {
 
 }
 
+int MOERTEL::Mesh::write_elem_data_exodus(int ex_id) {
+
+    int ex_err;
+    char **var_names;
+
+
+    if(verbose)
+
+        std::cout<<"=== Write Elem Data Exodus ==="<<std::endl
+                 <<" num_elem_fields "<<elem_fields.size()<<std::endl;
+
+    if(elem_fields.size() == 0) return 0;
+
+    ex_err = ex_put_var_param (ex_id, "E", elem_fields.size());
+
+    var_names = new char*[elem_fields.size()];
+
+    for(unsigned int i = 0; i < elem_fields.size(); i++) {
+
+        var_names[i] = (char *)&elem_field_names[i][0];
+
+        if(verbose)
+
+            std::cout<<" elem field name  "<<var_names[i]<<std::endl<<std::endl;
+
+    }
+
+    ex_err = ex_put_var_names (ex_id, "E", elem_fields.size(), var_names);
+
+	int cnt = 0;
+
+	for(unsigned int i = 0; i < elem_fields.size(); i++){
+		for(int j = 0; j < num_elem_blk; j++){
+
+			ex_err = ex_put_elem_var (staged_ex_id, 1, i + 1, blk_ids[j], num_elem_in_blk[j], 
+					&elem_fields[i][cnt]);
+
+			cnt += num_elem_in_blk[j];
+		}
+
+	}
+
+
+    delete [] var_names;
+
+    return ex_err;
+
+}
+
 /*
 int Mesh::add_nodal_data(std::string &name, std::vector<double> &data){
 
    if(num_nodes != data.size()){
 
-      std::cout<<"ERROR in add_node_data: node data field differs in length from the mesh"<<std::endl;
-      exit(0);
+		std::stringstream oss;
+      oss	<<"ERROR in add_node_data: node data field differs in length from the mesh";
+	  throw ReportError(oss);
 
    }
 
@@ -981,6 +1094,42 @@ int MOERTEL::Mesh::add_nodal_data(std::string name, double *data) {
                  <<" num_nodal_fields "<<nodal_fields.size()<<std::endl
                  <<" sizeof nodal_field_names "<<nodal_field_names.size()<<std::endl
                  <<" sizeof nodal_fields "<<nodal_fields.size()<<std::endl<<std::endl;
+
+    return 1;
+
+}
+
+int MOERTEL::Mesh::add_elem_data(std::string name, std::vector<double> &data) {
+
+
+    elem_field_names.push_back(name);
+    elem_fields.push_back(data);
+
+    if(verbose)
+
+        std::cout<<"=== Add elem fields ==="<<std::endl
+                 <<" num_elem_fields "<<elem_fields.size()<<std::endl
+                 <<" sizeof elem_field_names "<<elem_field_names.size()<<std::endl
+                 <<" sizeof elem_fields "<<elem_fields.size()<<std::endl<<std::endl;
+
+    return 1;
+
+}
+
+int MOERTEL::Mesh::add_elem_data(std::string name, double *data) {
+
+
+    std::vector<double> a(data, data + num_nodes);;
+
+    elem_field_names.push_back(name);
+    elem_fields.push_back(a);
+
+    if(verbose)
+
+        std::cout<<"=== Add elem fields ==="<<std::endl
+                 <<" num_elem_fields "<<elem_fields.size()<<std::endl
+                 <<" sizeof elem_field_names "<<elem_field_names.size()<<std::endl
+                 <<" sizeof elem_fields "<<elem_fields.size()<<std::endl<<std::endl;
 
     return 1;
 
@@ -1066,4 +1215,11 @@ void MOERTEL::Mesh::set_vertex_map() {
 
 }
 
-#endif
+/*----------------------------------------------------------------------*
+ | Report errors to std::cerr											|
+ *----------------------------------------------------------------------*/
+
+int MOERTEL::Mesh::ReportError(const std::stringstream &Message) {
+	std::cerr << std::endl << Message.str() << std::endl;
+	return(-1);
+}

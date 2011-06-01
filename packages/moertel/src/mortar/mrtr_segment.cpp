@@ -92,10 +92,11 @@ MOERTEL::Segment::Segment(MOERTEL::Segment& old)
   {
     if (curr->second == Teuchos::null)
     {
-	  std::cout << "***ERR*** MOERTEL::Segment::BaseClone(MOERTEL::Segment& old):\n"
+		std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Segment::BaseClone(MOERTEL::Segment& old):\n"
            << "***ERR*** function id " << curr->first << " is null\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);     
+	  throw ReportError(oss);
     }
 	Teuchos::RCP<MOERTEL::Function> newfunc = curr->second;
     functions_.insert(std::pair< int,Teuchos::RCP<MOERTEL::Function> >(curr->first,newfunc));
@@ -224,10 +225,11 @@ bool MOERTEL::Segment::EvaluateFunction(int id, const double* xi, double* val,
   std::map<int,Teuchos::RCP<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr == functions_.end())
   {
-	std::cout << "***ERR*** MOERTEL::Segment::EvaluateFunction:\n"
+	std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Segment::EvaluateFunction:\n"
          << "***ERR*** function id " << id << " does not exist on this segment\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	  throw ReportError(oss);
   }
   curr->second->EvaluateFunction(*this,xi,val,valdim,deriv);
   
@@ -258,10 +260,11 @@ int MOERTEL::Segment::GetLocalNodeId(int nid)
     }
   if (lid<0)
   {
-	std::cout << "***ERR*** MOERTEL::Segment::GetLocalNodeId:\n"
+	std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Segment::GetLocalNodeId:\n"
          << "***ERR*** cannot find node " << nid << " in segment " << this->Id() << " list of nodes\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	  throw ReportError(oss);
   }
   return lid;
 }
@@ -301,10 +304,11 @@ bool MOERTEL::Segment::GetPtrstoNodes(MOERTEL::Interface& interface)
     nodeptr_[i] = interface.GetNodeView(nodeId_[i]).get();
     if (!nodeptr_[i])
     {
-	  std::cout << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
+		std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
            << "***ERR*** interface " << interface.Id() << " GetNodeView failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);     
+	  throw ReportError(oss);
     }
   }
   return true;
@@ -334,10 +338,11 @@ bool MOERTEL::Segment::GetPtrstoNodes(std::vector<MOERTEL::Node*>& nodes)
       }
     if (!foundit)
     {
-	  std::cout << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
+		std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
            << "***ERR*** cannot find node " << nodeId_[i] << " in vector\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);     
+	  throw ReportError(oss);
     }
   }
   return true;

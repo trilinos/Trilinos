@@ -421,10 +421,11 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   // if one of the segments is quadratic, we have to do something here
   if (sseg.Type()!=MOERTEL::Segment::seg_Linear1D || mseg.Type()!=MOERTEL::Segment::seg_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+	std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
          << "***ERR*** Integration of other than linear segments not yet implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    throw ReportError(oss);
   }
 
 #if 0
@@ -438,6 +439,15 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   // handle all of them, including the ones that they don't overlap 
   // at all
   
+  // Do a coarse check to see if the segments are even close to each other.
+
+  bool overlap = false;
+
+  overlap = QuickOverlapTest_2D(mseg, sseg);
+
+  if (!overlap)
+    return true;
+
   // get slave and master's projections of the end points
   MOERTEL::Node** snodes = sseg.Nodes();
   MOERTEL::Node** mnodes = mseg.Nodes();
@@ -499,7 +509,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   //cout << mnode0 << "  " << mnode1 << "  " << snode0 << "  " << snode1 << endl;
   
   // Make decision upon overlap
-  bool overlap = false;
+  overlap = false;
   Teuchos::RCP<MOERTEL::ProjectedNode> nstart = Teuchos::null;
   Teuchos::RCP<MOERTEL::ProjectedNode> nend   = Teuchos::null;
   double sxia=999.0,sxib=999.0;
@@ -575,10 +585,12 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   }
   else
   {
-    cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+	
+	std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
          << "***ERR*** Unknown overlap case found\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    throw ReportError(oss);
   }
   if (!overlap)
     return true;
@@ -726,7 +738,72 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   return true;
 }
 
+bool MOERTEL::Interface::QuickOverlapTest_2D(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg)
+{
 
+  MOERTEL::Node** snode = sseg.Nodes();
+  MOERTEL::Node** mnode = mseg.Nodes();
+  const int nsnode = sseg.Nnode();
+  const int nmnode = mseg.Nnode();
+
+  double mcen[3], scen[3], mrad[3], srad[3], vec[3], mdiam, sdiam, length;
+
+  mcen[0] = mcen[1] = mcen[2] = 0;
+  scen[0] = scen[1] = scen[2] = 0;
+  mdiam = sdiam = 0;
+
+  for (int i=0; i<nmnode; ++i){
+	mcen[0] += mnode[i]->X()[0];
+	mcen[1] += mnode[i]->X()[1];
+	mcen[2] += mnode[i]->X()[2];
+  }
+  mcen[0] /= (double)nmnode;
+  mcen[1] /= (double)nmnode;
+  mcen[2] /= (double)nmnode;
+
+  for (int i=0; i<nsnode; ++i){
+	scen[0] += snode[i]->X()[0];
+	scen[1] += snode[i]->X()[1];
+	scen[2] += snode[i]->X()[2];
+  }
+  scen[0] /= (double)nsnode;
+  scen[1] /= (double)nsnode;
+  scen[2] /= (double)nsnode;
+
+  for (int i=0; i<nmnode; ++i){
+	mrad[0] = mnode[i]->X()[0] - mcen[0];
+	mrad[1] = mnode[i]->X()[1] - mcen[1];
+	mrad[2] = mnode[i]->X()[2] - mcen[2];
+	length = MOERTEL::length(mrad,3);
+	if (mdiam < length) mdiam = length;
+  }
+
+  for (int i=0; i<nsnode; ++i){
+	srad[0] = snode[i]->X()[0] - scen[0];
+	srad[1] = snode[i]->X()[1] - scen[1];
+	srad[2] = snode[i]->X()[2] - scen[2];
+	length = MOERTEL::length(srad,3);
+	if (sdiam < length) sdiam = length;
+  }
+
+  vec[0] = mcen[0] - scen[0];
+  vec[1] = mcen[1] - scen[1];
+  vec[2] = mcen[2] - scen[2];
+  length = MOERTEL::length(vec,3);
+
+  // GAH EPSILON - max distance between mseg and sseg for contact purposes
+  
+  double maxdia = 2.5;
+
+  if (length > maxdia * (sdiam + mdiam)){
+
+    // std::cerr << " test NOT passed\n";
+    return false;
+  }
+  
+  return true;
+
+}
 
 #if 0 // old version
 /*----------------------------------------------------------------------*
@@ -741,10 +818,11 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   // if one of the segments is quadratic, we have to do something here
   if (sseg.Type()!=MOERTEL::Segment::seg_Linear1D || mseg.Type()!=MOERTEL::Segment::seg_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+	std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
          << "***ERR*** Integration of other then linear segments not yet implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+    throw ReportError(oss);
   }
 
 #if 0
@@ -1057,19 +1135,16 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
 
   if (foundcase != 1)
   {
-    cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+
+	std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
          << "***ERR*** # cases that apply here: " << foundcase << "\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    cout << "Slave :" << sseg;
-    MOERTEL::Node** nodes = sseg.Nodes();
-    cout << *nodes[0];
-    cout << *nodes[1];
-    cout << "Master:" << mseg;
-    nodes = mseg.Nodes();
-    cout << *nodes[0];
-    cout << *nodes[1];
-    cout << "snode0: " << snode0 << " snode1: " << snode1 << " mnode0: " << mnode0 << " mnode1: " << mnode1 << endl;
-    exit(EXIT_FAILURE);
+			<< "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n"
+			<< "Slave :" << sseg << "\n " << *ssnodes[0] << "   " << *ssnodes[1] << "\n"
+			<< "Master:" << mseg << "\n" << *mmnodes[0] << "   " << *mmnodes[1] << "\n"
+			<< "snode0: " << snode0 << " snode1: " << snode1 <<
+		" mnode0: " << mnode0 << " mnode1: " << mnode1 << "\n";
+    throw ReportError(oss);
   }
   
   // there might be no overlap

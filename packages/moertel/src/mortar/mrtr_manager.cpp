@@ -1308,10 +1308,11 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
                      }
                      else
                      {
-                       cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+						 std::stringstream oss;
+                       oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
                             << "***ERR*** weird\n"
                             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                       exit(EXIT_FAILURE);
+					   throw ReportError(oss);
                      }
                    }
                    break;
@@ -1369,10 +1370,11 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
          }
          else
          {
-           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+			 std::stringstream oss;
+           oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
                 << "***ERR*** unknown type of coloring flag: " << flags[k] << "\n"
                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-           exit(EXIT_FAILURE);
+		   throw ReportError(oss);
          }
        }
        // Obviously we don't need to care what side inter[i] is going to have
@@ -1389,10 +1391,11 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
          {
            if (inter[k]->MortarSide()!=-2)
            {
-             cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+			 std::stringstream oss;
+             oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
                   << "***ERR*** weird, this interface is not supposed to already have a mortar side assigned\n"
                   << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-             exit(EXIT_FAILURE);
+				throw ReportError(oss);
            }
            
            // loop through cornernodes of inter[i]
@@ -1432,10 +1435,11 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
                        if (mortarside_s != -1)
                          if (mortarside_s != inter[k]->OtherSide(nodeside_k))
                          {
-                           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+							std::stringstream oss;
+                           oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
                                 << "***ERR*** interface has a conflict that can not be resolved\n"
                                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                           exit(EXIT_FAILURE);
+							throw ReportError(oss);
                          }
                        mortarside_s = inter[k]->OtherSide(nodeside_k);
                      }
@@ -1446,10 +1450,11 @@ bool MOERTEL::Manager::ChooseMortarSide_2D(std::vector<Teuchos::RCP<MOERTEL::Int
                        if (mortarside_s != -1)
                          if (mortarside_s != nodeside_k)
                          {
-                           cout << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
+							std::stringstream oss;
+                           oss << "***ERR*** MOERTEL::Manager::ChooseMortarSide:\n"
                                 << "***ERR*** interface has a conflict that can not be resolved\n"
                                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                           exit(EXIT_FAILURE);
+							throw ReportError(oss);
                          }
                        mortarside_s = nodeside_k;
                      }

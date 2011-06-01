@@ -37,6 +37,10 @@
 #include "mrtr_interface.H"
 #include "mrtr_utils.H"
 
+#include <iostream>
+#include <fstream>
+
+
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 07/05|
  *----------------------------------------------------------------------*/
@@ -162,11 +166,14 @@ outputlevel_(outlevel)
         weights_[9] = 0.06667134; 
       break;
       default:
-        cout << "***ERR*** MOERTEL::Integrator::Integrator:\n"
+
+	    std::stringstream oss;
+			oss << "***ERR*** MOERTEL::Integrator::Integrator:\n"
              << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
              << "***ERR*** use 1, 2, 3, 4, 5, 6, 7, 8, 10 instead\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
+
       break;
     }
   } // if (oneD)
@@ -496,11 +503,14 @@ outputlevel_(outlevel)
       break;                             
 
       default:
-        cout << "***ERR*** MOERTEL::Integrator::Integrator:\n"
+
+	    std::stringstream oss;
+			oss << "***ERR*** MOERTEL::Integrator::Integrator:\n"
              << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
              << "***ERR*** use 3 6 12 13 16 19 27 instead\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
+
       break;
     }
   }
@@ -627,14 +637,17 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
       int mndof = mnodes[master]->Ndof();
       const int* mdof = mnodes[master]->Dof();
       
-      if (mndof != snlmdof)
-      {
-        cout << "***ERR*** MOERTEL::Integrator::Assemble:\n"
-             << "***ERR*** mismatch in number of lagrange multipliers and primal degrees of freedom:\n"
-             << "***ERR*** slave node " << snodes[slave]->Id() << " master node " << mnodes[master]->Id() << "\n"
-             << "***ERR*** # lagrange multipliers " << snlmdof << " # dofs " << mndof << "\n"
+      if (mndof != snlmdof) {
+
+	    std::stringstream oss;
+			oss << "***ERR*** MOERTEL::Integrator::Assemble:\n"
+				<< "***ERR*** mismatch in number of Lagrange multipliers and primal degrees of freedom:\n"
+				<< "***ERR*** slave node " << snodes[slave]->Id()
+				<< " master node " << mnodes[master]->Id() << "\n"
+				<< "***ERR*** # Lagrange multipliers " << snlmdof << " # dofs " << mndof << "\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
+
       }
       
       // loop dofs on slave node and insert a value for each master dof
@@ -643,14 +656,19 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
         int row = slmdof[i];
         int col = mdof[i];
         int err = M.SumIntoGlobalValues(row,1,&val,&col);
+
         if (err)
+
           err = M.InsertGlobalValues(row,1,&val,&col);
-        if (err<0)
-        {
-          cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+
+        if (err<0) {
+
+			std::stringstream oss;
+				oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
                << "***ERR*** Epetra_CrsMatrix::InsertGlobalValues returned an error\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-          exit(EXIT_FAILURE);
+			throw ReportError(oss);
+
         }
       } // for (int i=0; i<snlmdof; ++i)
     } // for (int master=0; master<mseg.Nnode(); ++master)
@@ -692,14 +710,16 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
       int ndof = snodes[colnode]->Ndof();
       const int* dof = snodes[colnode]->Dof();
       
-      if (nlmdof != ndof)
-      {
-        cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
-             << "***ERR*** mismatch in number of lagrange multipliers and primal degrees of freedom:\n"
-             << "***ERR*** slave node " << snodes[rownode]->Id() << "\n"
-             << "***ERR*** # lagrange multipliers " << nlmdof << " # dofs " << ndof << "\n"
+      if (nlmdof != ndof) {
+
+		std::stringstream oss;
+			oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+				<< "***ERR*** mismatch in number of Lagrange multipliers and primal degrees of freedom:\n"
+				<< "***ERR*** slave node " << snodes[rownode]->Id()
+				<< "***ERR*** # Lagrange multipliers " << nlmdof << " # dofs " << ndof << "\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+		throw ReportError(oss);
+
       }
       
       // loop lm dofs and insert a value for each dof
@@ -708,14 +728,19 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
         int row = lmdof[i];
         int col = dof[i];
         int err = D.SumIntoGlobalValues(row,1,&val,&col);
+
         if (err)
+
           err = D.InsertGlobalValues(row,1,&val,&col);
-        if (err<0)
-        {
-          cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+
+        if (err<0) {
+
+			std::stringstream oss;
+				oss << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
                << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-          exit(EXIT_FAILURE);
+			throw ReportError(oss);
+
         }
       } // for (int i=0; i<nlmdof; ++i)
     } // for (int colnode=0; colnode<sseg.Nnode(); ++colnode)
@@ -898,12 +923,14 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
           int err = M.SumIntoGlobalValues(row,1,&val,&col);
           if (err)
             err = M.InsertGlobalValues(row,1,&val,&col);
-          if (err<0)
-          {
-            cout << "***ERR*** MOERTEL::Interface::Assemble_2D_Mod:\n"
-                 << "***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n"
-                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-            exit(EXIT_FAILURE);
+
+          if (err<0) {
+
+			throw ReportError(
+				string("***ERR*** MOERTEL::Interface::Assemble_2D_Mod:\n") +
+				string("***ERR*** Epetra_CrsMatrix::SumIntoGlobalValues returned an error\n") +
+				string("***ERR*** file/line: ") + string(__FILE__) + "/" + toString(__LINE__) + "\n");
+
           } // if (err)
         } // for (int mdof=0; mdof<mndof; ++mdof)
       } // for (int master=0; master<mseg.Nnode(); ++master)
@@ -1003,12 +1030,15 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
                                     MOERTEL::Overlap& overlap, double eps,
                                     bool exactvalues)
 {
-  if (oneD_) 
-  {
-    cout << "***ERR*** MOERTEL::Integrator::Integrate:\n"
+//	static int cnt = 0;
+
+  if (oneD_) {
+
+	std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Integrator::Integrate:\n"
          << "***ERR*** Integrator was not constructed for 2D integration\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   // we integrate the scalar function here
@@ -1026,8 +1056,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
   if (area<0.0)
   {
     if (OutLevel()>3)
-    cout << "MOERTEL: ***ERR***  MOERTEL::Integrator::Integrate:\n"
-         << "MOERTEL: ***ERR***  overlap segment area is negative: " << area << endl
+    cout << "MOERTEL: ***ERR***  MOERTEL::Integrator::Integrate:\n" << "MOERTEL: ***ERR***  overlap segment area is negative: " << area << endl
          << "MOERTEL: ***ERR***  skipping....\n"
          << "MOERTEL: ***ERR***  file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
@@ -1201,7 +1230,8 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
       // if we have problems projecting here, we better skip this gauss point
       if (!ok)
       { 
-        cout << "MOERTEL: ***WRN***------------------projection failed in integration\n";fflush(stdout);
+        cout << "MOERTEL: ***WRN***------------------projection failed in integration\n";
+		fflush(stdout);
         continue;
       }
       //cout << "mxi = " << mxi[0] << " / " << mxi[1] << endl;
@@ -1216,11 +1246,12 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
       for (int lm=0; lm<sseg.Nnode(); ++lm)
       {
         // loop over all nodes (dof loop master)
-        for (int dof=0; dof<mseg.Nnode(); ++dof)
+        for (int dof=0; dof<mseg.Nnode(); ++dof){
           (**Mdense)(lm,dof) += (weight * val_sfunc1[lm] * val_mfunc0[dof]);
         
         // loop over all nodes (dof loop slave)
-        for (int dof=0; dof<sseg.Nnode(); ++dof)
+        for (int dof=0; dof<sseg.Nnode(); ++dof){
+
           (**Ddense)(lm,dof) += (weight * val_sfunc1[lm] * val_sfunc0[dof]); 
 
       }
@@ -1230,6 +1261,7 @@ bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
     gpnode = Teuchos::null;
     
   } // if (exactvalues)
+
 
 
   return true;

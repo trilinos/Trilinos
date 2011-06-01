@@ -58,32 +58,100 @@ bool MOERTEL::Overlap::CopyPointPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point
 /*----------------------------------------------------------------------*
  |  find intersection (private)                              mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::Clip_Intersect(const double* N,const double* PE,const double* P0,const double* P1,double* xi)
-{
+
+bool MOERTEL::Overlap::Clip_Intersect(const double* N, const double* PE,
+	const double* P0, const double* P1, double* xi){
+
+/*
+	This function intersects two lines, the line orthogonal to N passing through point PE,
+	and the line P1P2  (going through pts P1 and P2). If there is an intersection, xi[0] returns
+	the \xi coordinate of the intersection and xi[1] the \eta coordinate. Note that this function
+	assumes that it is relative to the parametric coordinates of a segment.
+*/
+
   double P1P0[2];
   P1P0[0] = P1[0] - P0[0];
   P1P0[1] = P1[1] - P0[1];
 
-  // determine the denominator first
+  // determine the denominator - N \cdot P1P0 
+
   double denom = -(N[0]*P1P0[0] + N[1]*P1P0[1]);
   
   // if the denom is zero, then lines are parallel, no intersection
+
+  // GAH - EPSILON test here
+  // Failing here probably should be fatal
+
   if (fabs(denom)<1.0e-10)
+
     return false;
     
   double alpha = (N[0]*(P0[0]-PE[0]) + N[1]*(P0[1]-PE[1]))/denom;
   
-  // alpha is the line parameter of the line P0 - p1
-  // if it's outside 0 <= alpha <= 1 there is no intersection
+  // alpha is the line parameter of the line P0 - P1
+  // if alpha is outside 0 <= alpha <= 1 there is no intersection of the
+  // clip edge defined by point PE and normal N with line P1P0 in the master polygon
   // cout << "OVERLAP Clip_Intersect: alpha " << alpha << endl;
   
+  // GAH - Should this always be fatal? In practice this test fails occasionally with alpha
+  // outside this range, but very close to zero or 1. If this is guarded by a point in/out test
+  // at P0 and P1 it is likely best to use the version below
+  
+  if (alpha < 0.0 || 1.0 < alpha)
+
+    return false;
+    
   // Compute the coord xi of the intersecting point
+
   xi[0] = P0[0] + alpha*P1P0[0];
   xi[1] = P0[1] + alpha*P1P0[1];
 
-  if (alpha<0.0 || 1.0<alpha)
+  // cout << "OVERLAP Clip_Intersect: found intersection xi " << xi[0] << "/" << xi[1] << endl;
+  return true;
+}
+
+bool MOERTEL::Overlap::Guarded_Clip_Intersect(const double* N, const double* PE,
+	const double* P0, const double* P1, double* xi){
+
+/*
+	This function intersects two lines, the line orthogonal to N passing through point PE,
+	and the line P1P2  (going through pts P1 and P2). If there is an intersection, xi[0] returns
+	the \xi coordinate of the intersection and xi[1] the \eta coordinate. Note that this function
+	assumes that it is relative to the parametric coordinates of a segment.
+
+	Note that this should only be used if one knows that P0 and P1 are on opposite sides of a
+	clipping plane.
+*/
+
+  double P1P0[2];
+  P1P0[0] = P1[0] - P0[0];
+  P1P0[1] = P1[1] - P0[1];
+
+  // determine the denominator - N \cdot P1P0 
+
+  double denom = -(N[0]*P1P0[0] + N[1]*P1P0[1]);
+  
+  // if the denom is zero, then lines are parallel, no intersection
+
+  // GAH - EPSILON test here
+  // Failing here probably should be fatal
+
+  if (fabs(denom)<1.0e-10)
+
     return false;
     
+  double alpha = (N[0]*(P0[0]-PE[0]) + N[1]*(P0[1]-PE[1]))/denom;
+  
+  // alpha is the line parameter of the line P0 - P1
+  // if alpha is outside 0 <= alpha <= 1 there is no intersection of the
+  // clip edge defined by point PE and normal N with line P1P0 in the master polygon
+  // cout << "OVERLAP Clip_Intersect: alpha " << alpha << endl;
+  
+  // Compute the coord xi of the intersecting point
+
+  xi[0] = P0[0] + alpha*P1P0[0];
+  xi[1] = P0[1] + alpha*P1P0[1];
+
   // cout << "OVERLAP Clip_Intersect: found intersection xi " << xi[0] << "/" << xi[1] << endl;
   return true;
 }
@@ -98,13 +166,23 @@ bool MOERTEL::Overlap::Clip_TestPoint(const double* N, const double* PE,
   PPE[0] = P[0] - PE[0];
   PPE[1] = P[1] - PE[1];
 
+/* 
+   dotproduct gives a measure of the angle between N with tail at PE, and P with tail at PE
+   If there is a component of P in the direction of N (greater than eps), return false.
+*/
+
   double dotproduct = PPE[0]*N[0]+PPE[1]*N[1];
   // cout << "OVERLAP Clip_TestPoint: dotproduct " << dotproduct << endl;
 
-  if (dotproduct>eps)
+  if (dotproduct > eps){
+
     return false;
-  else
+  }
+  else {
+
     return true;
+
+}
 }
 
 /*----------------------------------------------------------------------*
@@ -116,10 +194,11 @@ double MOERTEL::Overlap::Clip_ParameterPointOnLine(const double* P0,const double
   double dist2 = sqrt( (P1[0]-P0[0])*(P1[0]-P0[0])+(P1[1]-P0[1])*(P1[1]-P0[1]) );
   if (dist2<1.0e-10) 
   {
-    cout << "***ERR*** MOERTEL::Overlap::Clip_ParameterPointOnLine:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Overlap::Clip_ParameterPointOnLine:\n"
          << "***ERR*** edge length too small, division by near zero\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   return (dist1/dist2);
 }
@@ -142,25 +221,34 @@ bool MOERTEL::Overlap::AddPointtoPolygon(const int id,const double* P)
   // check whether this point is already in there
   std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = p_.find(id);
   // it's there
-  if (curr != p_.end())
+  if (curr != p_.end()){
+
     curr->second->SetXi(P);
-  else
-  {
-    //cout << "OVERLAP Clip_AddPointtoPolygon: added point " << id 
-    //     << " xi=" << P[0] << "/" << P[1] << endl;
+
+  }
+  else {
+
+//	std::cout << "OVERLAP Clip_AddPointtoPolygon: added point " << id 
+//         << " xi=" << P[0] << "/" << P[1] << std::endl;
+
 	Teuchos::RCP<MOERTEL::Point> p = Teuchos::rcp(new MOERTEL::Point(id,P,OutLevel()));
     p_.insert(std::pair<int,Teuchos::RCP<MOERTEL::Point> >(id,p));
+
   }
+
   return true;
+
 }
 
 /*----------------------------------------------------------------------*
  |  add point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::AddPointtoPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,const int id,const double* P)
-{
+bool MOERTEL::Overlap::AddPointtoPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
+			const int id,const double* P) {
+
   Teuchos::RCP<MOERTEL::Point> point = Teuchos::rcp(new MOERTEL::Point(id,P,OutLevel()));
   p.insert(std::pair<int,Teuchos::RCP<MOERTEL::Point> >(id,point));
+
   return true;
 }
 
@@ -203,10 +291,11 @@ void MOERTEL::Overlap::PointView(std::vector<Teuchos::RCP<MOERTEL::Point> >& poi
   }
   if (count != SizePointPolygon())
   {
-    cout << "***ERR*** MOERTEL::Overlap::PointView:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Overlap::PointView:\n"
          << "***ERR*** number of point wrong\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   return;
 }
@@ -229,10 +318,11 @@ void MOERTEL::Overlap::SegmentView(std::vector<Teuchos::RCP<MOERTEL::Segment> >&
   }
   if (count != Nseg())
   {
-    cout << "***ERR*** MOERTEL::Overlap::SegmentView:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Overlap::SegmentView:\n"
          << "***ERR*** number of segments wrong\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   return;
 }
@@ -257,10 +347,11 @@ void MOERTEL::Overlap::PointView(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
   }
   if (count != np)
   {
-    cout << "***ERR*** MOERTEL::Overlap::PointView:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Overlap::PointView:\n"
          << "***ERR*** number of point wrong\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   return;
 }
@@ -277,10 +368,11 @@ void MOERTEL::Overlap::PointView(std::vector<MOERTEL::Point*>& p,const int* node
 	std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator pcurr = p_.find(nodeids[i]);
     if (pcurr==p_.end())
     {
-      cout << "***ERR*** MOERTEL::Overlap::PointView:\n"
+	  std::stringstream oss;
+      oss << "***ERR*** MOERTEL::Overlap::PointView:\n"
            << "***ERR*** cannot find point " << nodeids[i] << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+		throw ReportError(oss);
     }
     p[i] = pcurr->second.get();
   }
@@ -290,6 +382,19 @@ void MOERTEL::Overlap::PointView(std::vector<MOERTEL::Point*>& p,const int* node
 /*----------------------------------------------------------------------*
  |  perform a quick search (private)                         mwgee 10/05|
  *----------------------------------------------------------------------*/
+
+/*
+	Note that this algorithm is based on selecting a minimal bounding sphere for the master seg, of
+	diameter mdiam, and slave seg diameter sdiam. It then calculates the minimum distance between any
+	two nodes between the slave and master segments, minlength. It returns false if minlength is greater
+	than 1.5 times (mdiam + sdiam); false if the segments cannot overlap.
+
+	If there is a gap that one is integrating across, this algorithm may not be so good as one really 
+	wants to know if the master and slave segs can "see" each other. 
+
+	GAH
+*/
+
 bool MOERTEL::Overlap::QuickOverlapTest()
 {
   MOERTEL::Node** snode = sseg_.Nodes();
@@ -389,15 +494,20 @@ bool MOERTEL::Overlap::QuickOverlapTest()
     else                  sdiam = length3;    
   }
   
-  //cout << "minlength " << minlength << " sdiam " << sdiam << " mdiam " << mdiam;
-  if (minlength>1.5*(sdiam+mdiam)) 
+// std::cerr << "minlength " << minlength << " sdiam " << sdiam << " mdiam " << mdiam;
+
+   // GAH EPSILON - max distance between mseg and sseg for contact purposes
+  
+   double maxdia = 2.5;
+
+  if (minlength > maxdia * (sdiam + mdiam)) 
   {
-    //cout << " test NOT passed\n";
+    // std::cerr << " test NOT passed\n";
     return false;
   }
   else                       
   {
-    //cout << " test passed\n";
+    // std::cerr << " test passed\n";
     return true;
   }
   
@@ -475,6 +585,12 @@ bool MOERTEL::Overlap::Centroid(
   const double* xi_i   = points[np-1]->Xi();
   const double* xi_ip1 = points[0]->Xi();
   A     += xi_ip1[0]*xi_i[1] - xi_i[0]*xi_ip1[1];
+
+// GAH - EPSILON check for zero area
+
+  if(fabs(A) < 1.0e-10) // bail - we do not have a polygon
+	  return false;
+
   xi[0] += (xi_i[0]+xi_ip1[0])*(xi_ip1[0]*xi_i[1]-xi_i[0]*xi_ip1[1]);
   xi[1] += (xi_i[1]+xi_ip1[1])*(xi_ip1[0]*xi_i[1]-xi_i[0]*xi_ip1[1]);
   xi[0] /= (3.0*A);

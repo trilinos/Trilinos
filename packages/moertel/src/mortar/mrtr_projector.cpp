@@ -174,10 +174,11 @@ double MOERTEL::Projector::evaluate_F_2D_NodalNormal(MOERTEL::Node& node,
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
   if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_NodalNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_2D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   // evaluate the first function set on segment at eta
@@ -191,10 +192,11 @@ double MOERTEL::Projector::evaluate_F_2D_NodalNormal(MOERTEL::Node& node,
   MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_NodalNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_2D_NodalNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
 
   // Here, Nx[0] and Nx[1] are the coordinates of the guess at the root
@@ -251,10 +253,11 @@ double MOERTEL::Projector::evaluate_gradF_2D_NodalNormal(MOERTEL::Node& node,
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
   if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_NodalNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   // evaluate derivatives of the first function set on segment at eta
@@ -268,10 +271,11 @@ double MOERTEL::Projector::evaluate_gradF_2D_NodalNormal(MOERTEL::Node& node,
   MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_NodalNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_2D_NodalNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   for (int i=0; i<nmnode; ++i)
   {
@@ -301,6 +305,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
 #if 0
   cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
 #endif
+
   // 2D case
   if (IsTwoDimensional())
   {
@@ -345,43 +350,57 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
 #endif
     // we do a newton iteration for the projection coordinates xi
     // set starting value to the middle of the segment
+
     double eta[2]; 
+
     if (seg.Nnode()==3)         // use center point if triangle as initial guess
       eta[0] = eta[1] = 1./3.;
     else                        // use center point of quad as initial guess
       eta[0] = eta[1] = 0.0;
+
     double alpha = 0.01;
     int    i=0;
     double F[3], dF[3][3], deta[3];
     double eps;
-    for (i=0; i<30; ++i)
-    {
+
+    for (i=0; i<30; ++i) {
+
       evaluate_FgradF_3D_SegmentNormal(F,dF,node,seg,eta,alpha,gap);
       eps = MOERTEL::dot(F,F,3);
+
       if (eps < 1.0e-10) break;
       //cout << eps << endl;
+
       MOERTEL::solve33(dF,deta,F);
+
       eta[0] -= deta[0];
       eta[1] -= deta[1];
       alpha  -= deta[2];      
+
     }    
-    if (eps>1.0e-10)
-    {
+
+    if (eps>1.0e-10) {
+
       if (OutLevel()>3)
       cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal:\n"
       	   << "MOERTEL: ***WRN*** 3D Newton iteration failed to converge\n"
       	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
       	   << "MOERTEL: ***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
            << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+
     }
 #if 0
     if (i>10)
       cout << "#iterations = " << i << " eps = " << eps << " eta = " << eta[0] << "/" << eta[1] << endl;
 #endif
+
     xi[0] = eta[0];
     xi[1] = eta[1];
+
     return true;
+
   }
+
   return false;
 }
 
@@ -405,10 +424,11 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(MOERTEL::Node& node,
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
   if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   // evaluate the first function set on segment at eta
@@ -424,10 +444,11 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(MOERTEL::Node& node,
   MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   for (int i=0; i<nsnode; ++i)
   {
@@ -479,10 +500,11 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(MOERTEL::Node& node,
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
   if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   // evaluate function and derivatives of the first function set on segment at eta
@@ -505,10 +527,11 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(MOERTEL::Node& node,
   MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   for (int i=0; i<nsnode; ++i)
   {
@@ -576,10 +599,11 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& n
   }
   else
   {
-    cout << "***ERR*** MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal:\n"
     	 << "***ERR*** 3D projection not yet impl.\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   return true;
 }
@@ -604,10 +628,11 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node,
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
   if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   // evaluate the first function set on segment at eta
@@ -621,10 +646,11 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node,
   MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   for (int i=0; i<nsnode; ++i)
   {
@@ -646,7 +672,7 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node,
   double F = Nx[0]*g[0] + Nx[1]*g[1];
 
   gap = (Nx[0] * g[0] + Nx[1] * g[1]);
-		  //
+		  
 //  gap = ((Nx[0] - X[0]) * g[0] + (Nx[1] - X[1]) * g[1])
 //		  / sqrt(g[0] * g[0] + g[1] * g[1]);  // ||gap|| cos theta
 
@@ -673,10 +699,11 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal(
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
   if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   // evaluate function and derivatives of the first function set on segment at eta
@@ -692,10 +719,11 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal(
   MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   for (int i=0; i<nsnode; ++i)
   {
@@ -730,10 +758,11 @@ bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
     int lid = sseg.GetLocalNodeId(snode.Id());
     if (lid<0)
     {
-      cout << "***ERR*** MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
+	  std::stringstream oss;
+      oss << "***ERR*** MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
     	   << "***ERR*** local node id could not be found\n"
       	   << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+		throw ReportError(oss);
     }
     // get coordinate of local node lid
     double lidxi;
@@ -773,10 +802,11 @@ bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
   }
   else
   {
-    cout << "***ERR*** MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave:\n"
     	 << "***ERR*** 3D projection not impl.\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   return true;
 }
@@ -802,10 +832,11 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(MOERTEL::Node& n
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
   if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   // evaluate the first function set on segment at eta
@@ -819,10 +850,11 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(MOERTEL::Node& n
   MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   for (int i=0; i<nsnode; ++i)
   {
@@ -868,10 +900,11 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
   if (type != MOERTEL::Function::func_Linear1D)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   
   // evaluate function and derivatives of the first function set on segment at eta
@@ -887,10 +920,11 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
   MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
   for (int i=0; i<nmnode; ++i)
   {

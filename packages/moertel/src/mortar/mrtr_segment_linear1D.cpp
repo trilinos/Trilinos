@@ -105,10 +105,11 @@ int* MOERTEL::Segment_Linear1D::Pack(int* size)
   
   if (count != *size)
   {
-    cout << "***ERR*** MOERTEL::Segment_Linear1D::Pack:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Segment_Linear1D::Pack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	throw ReportError(oss);
   }
   
   return pack;
@@ -141,10 +142,11 @@ bool MOERTEL::Segment_Linear1D::UnPack(int* pack)
   
   if (count != size)
   {
-    cout << "***ERR*** MOERTEL::Segment_Linear1D::UnPack:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Segment_Linear1D::UnPack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	throw ReportError(oss);
   }
   
   return true;
@@ -185,10 +187,11 @@ bool MOERTEL::Segment_Linear1D::LocalCoordinatesOfNode(int lid, double* xi)
   else if (lid==1) xi[0] = 1.0;
   else 
   {
-    cout << "***ERR*** MOERTEL::Segment_Linear1D::LocalCoordinatesOfNode:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Segment_Linear1D::LocalCoordinatesOfNode:\n"
   	 << "***ERR*** Segment " << Id() << ": node number " << lid << " out of range\n"
   	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);     
+	throw ReportError(oss);
   }
   return true;
 }

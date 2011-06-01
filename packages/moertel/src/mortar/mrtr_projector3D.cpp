@@ -58,10 +58,11 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
   if (type != MOERTEL::Function::func_LinearTri &&
       type != MOERTEL::Function::func_BiLinearQuad)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
 
   // evaluate the first function set on segment at eta
@@ -74,10 +75,11 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
   MOERTEL::Node** mnodes = seg.Nodes();
   if (!mnodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
 
   // interpolate Ni(eta)*xi
@@ -148,10 +150,11 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(
   if (type != MOERTEL::Function::func_LinearTri &&
       type != MOERTEL::Function::func_BiLinearQuad)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_F_3D_NodalNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_F_3D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
 
   // evaluate the first function set on segment at eta
@@ -164,10 +167,11 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(
   MOERTEL::Node** snodes = seg.Nodes();
   if (!snodes)
   {
-    cout << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal:\n"
+	  std::stringstream oss;
+    oss << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal:\n"
     	 << "***ERR*** segment " << seg.Id() << " ptr to it's nodes is zero\n"
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	throw ReportError(oss);
   }
 
   // interpolate Ni(eta)*xi

@@ -62,13 +62,15 @@ exactvalues_(exactvalues)
        (mseg.Type()!=MOERTEL::Segment::seg_BiLinearTri && 
         mseg.Type()!=MOERTEL::Segment::seg_BiLinearQuad    )  )
   {
-	std::cout << "***ERR*** MOERTEL::Overlap::Overlap:\n"
+			std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Overlap::Overlap:\n"
          << "***ERR*** Overlap of other then bilinear triangles/quads not yet implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+		throw ReportError(oss);
   }
   p_.clear();
   s_.clear();
+
 }
 
 /*----------------------------------------------------------------------*
@@ -80,6 +82,7 @@ MOERTEL::Overlap::~Overlap()
   p_.clear();
   // destroy the segment map
   s_.clear();
+
 }
 
 /*----------------------------------------------------------------------*
@@ -95,20 +98,23 @@ bool MOERTEL::Overlap::build_lines_s()
     return false;
   }
 
-  if (sseg_.Nnode()==3)
-  {
+  if (sseg_.Nnode()==3) {
+
     // slave segment, line 0
     sseg_.LocalCoordinatesOfNode(0,&sline_[0][0]);
     sseg_.LocalCoordinatesOfNode(1,&sline_[0][2]);
+
     // slave segment, line 1
     sseg_.LocalCoordinatesOfNode(1,&sline_[1][0]);
     sseg_.LocalCoordinatesOfNode(2,&sline_[1][2]);
+
     // slave segment, line 2
     sseg_.LocalCoordinatesOfNode(2,&sline_[2][0]);
     sseg_.LocalCoordinatesOfNode(0,&sline_[2][2]);
+
   }
-  else if (sseg_.Nnode()==4)
-  {
+  else if (sseg_.Nnode()==4) {
+
     // slave segment, line 0
     sseg_.LocalCoordinatesOfNode(0,&sline_[0][0]);
     sseg_.LocalCoordinatesOfNode(1,&sline_[0][2]);
@@ -122,25 +128,40 @@ bool MOERTEL::Overlap::build_lines_s()
     sseg_.LocalCoordinatesOfNode(3,&sline_[3][0]);
     sseg_.LocalCoordinatesOfNode(0,&sline_[3][2]);
   }
-  else
-  {
-	std::cout << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
-         << "***ERR*** # slave node " << sseg_.Nnode() << " not supported\n"
+  else {
+
+			std::stringstream oss;
+				oss << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
+					<< "***ERR*** # slave node " << sseg_.Nnode()
+					<< " not supported\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+			throw ReportError(oss);
   }
-  if (mseg_.Nnode()==3)
-  {
+
+/*
+	mxi_[i][j] - the i index is the ith corner node of the master segment. The j index selects either the
+	\xi (j = 0) or the \eta (j = 1) coordinate of the projection of the node into sseg.
+
+	mline_[i][j] - the i index selects the outside edge of the master segment. There are
+	3 edges for triangular segments, and 4 for quads. j = 0 is the \xi coord in sseg of the beginning of the edge,
+	j = 1 is the \eta coord, j = 2 is the \xi coord in sseg of the end point of the edge,
+	and j = 3 is the \eta coord of the end point of the edge.
+*/
+
+  if (mseg_.Nnode()==3) {
+
     // master segment, line 0
     mline_[0][0] = mxi_[0][0];
     mline_[0][1] = mxi_[0][1];
     mline_[0][2] = mxi_[1][0];
     mline_[0][3] = mxi_[1][1];
+
     // master segment, line 1
     mline_[1][0] = mxi_[1][0];
     mline_[1][1] = mxi_[1][1];
     mline_[1][2] = mxi_[2][0];
     mline_[1][3] = mxi_[2][1];
+
     // master segment, line 2
     mline_[2][0] = mxi_[2][0];
     mline_[2][1] = mxi_[2][1];
@@ -154,32 +175,39 @@ bool MOERTEL::Overlap::build_lines_s()
     mline_[0][1] = mxi_[0][1];
     mline_[0][2] = mxi_[1][0];
     mline_[0][3] = mxi_[1][1];
+
     // master segment, line 1
     mline_[1][0] = mxi_[1][0];
     mline_[1][1] = mxi_[1][1];
     mline_[1][2] = mxi_[2][0];
     mline_[1][3] = mxi_[2][1];
+
     // master segment, line 2
     mline_[2][0] = mxi_[2][0];
     mline_[2][1] = mxi_[2][1];
     mline_[2][2] = mxi_[3][0];
     mline_[2][3] = mxi_[3][1];
+
     // master segment, line 3
     mline_[3][0] = mxi_[3][0];
     mline_[3][1] = mxi_[3][1];
     mline_[3][2] = mxi_[0][0];
     mline_[3][3] = mxi_[0][1];
+
   }
-  else
-  {
-	std::cout << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
-         << "***ERR*** # master node " << mseg_.Nnode() << " not supported\n"
+  else {
+
+			std::stringstream oss;
+				oss << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
+					<< "***ERR*** # master node " << mseg_.Nnode()
+					<< " not supported\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+			throw ReportError(oss);
+
   }
   
-
   return true;
+
 }
 
 /*----------------------------------------------------------------------*
@@ -222,15 +250,18 @@ bool MOERTEL::Overlap::build_lines_m()
     mseg_.LocalCoordinatesOfNode(3,&mlinem_[3][0]);
     mseg_.LocalCoordinatesOfNode(0,&mlinem_[3][2]);
   }
-  else
-  {
-	std::cout << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
-         << "***ERR*** # master node " << sseg_.Nnode() << " not supported\n"
+  else {
+
+			std::stringstream oss;
+				oss << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
+					<< "***ERR*** # master node " << sseg_.Nnode()
+					<< " not supported\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+			throw ReportError(oss);
   }
-  if (sseg_.Nnode()==3)
-  {
+
+  if (sseg_.Nnode()==3) {
+
     // slave segment, line 0
     slinem_[0][0] = sxim_[0][0];
     slinem_[0][1] = sxim_[0][1];
@@ -270,13 +301,16 @@ bool MOERTEL::Overlap::build_lines_m()
     slinem_[3][2] = sxim_[0][0];
     slinem_[3][3] = sxim_[0][1];
   }
-  else
-  {
-	std::cout << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
-         << "***ERR*** # slave node " << mseg_.Nnode() << " not supported\n"
+  else {
+
+			std::stringstream oss;
+				oss << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
+					<< "***ERR*** # slave node " << mseg_.Nnode()
+					<< " not supported\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+			throw ReportError(oss);
   }
+  
   
   return true;
 }
@@ -293,7 +327,14 @@ bool MOERTEL::Overlap::build_mxi()
   for (int i=0; i<mseg_.Nnode(); ++i)
   {
     // project node i onto sseg
+
     projector.ProjectNodetoSegment_SegmentNormal(*mnode[i],sseg_,mxi_[i],gap);
+
+/*
+	mxi_[i] output. mxi_[i][0] is the \xi coordinate of the projection in sseg_, and
+	mxi_[i][1] is the \eta coordinate of the projection in sseg_.
+*/
+
 #if 0
     // check whether i is inside sseg
     if (mxi_[i][0]<=1. && mxi_[i][1]<=abs(1.-mxi_[i][0]) && mxi_[i][0]>=0. && mxi_[i][1]>=0.)
@@ -301,6 +342,7 @@ bool MOERTEL::Overlap::build_mxi()
 	  std::cout << "OVERLAP: master node in: " << mnode[i]->Id() << endl;
     }
 #endif    
+
   }
   havemxi_ = true;
   return true;
@@ -360,10 +402,11 @@ bool MOERTEL::Overlap::build_sxi()
   }
   else
   {
-	std::cout << "***ERR*** MOERTEL::Overlap::build_sxi:\n"
+			std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Overlap::build_sxi:\n"
          << "***ERR*** # slave node " << sseg_.Nnode() << " not supported\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+		throw ReportError(oss);
   }
 
   havesxi_ = true;
@@ -397,10 +440,11 @@ bool MOERTEL::Overlap::build_normal()
   }
   else
   {
-	std::cout << "***ERR*** MOERTEL::Overlap::build_normal:\n"
+			std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Overlap::build_normal:\n"
          << "***ERR*** # slave node " << sseg_.Nnode() << " not supported\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+		throw ReportError(oss);
   }
   if (mseg_.Nnode()==3)
   {
@@ -424,10 +468,11 @@ bool MOERTEL::Overlap::build_normal()
   }
   else
   {
-	std::cout << "***ERR*** MOERTEL::Overlap::build_normal:\n"
+			std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Overlap::build_normal:\n"
          << "***ERR*** # master node " << sseg_.Nnode() << " not supported\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+		throw ReportError(oss);
   }
   
   return true;
@@ -436,44 +481,62 @@ bool MOERTEL::Overlap::build_normal()
 /*----------------------------------------------------------------------*
  |  compute the overlap (public)                             mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::ComputeOverlap()
-{
+bool MOERTEL::Overlap::ComputeOverlap() {
+
+  // Returning false means there is no overlap between mseg and sseg
+
   bool ok = false;
 
+  // If we pass the quick overlap test, that means that the master and slave segments are close
+  // enough to each other that they could interact. 
+
   ok = QuickOverlapTest();
+
   if (!ok)
   {
-    //if (foundit) std::cout << "QuickOverlapTest NOT passed\n";
-    return false;
+    return false; // cannot interact
   }
 
   // project master nodes onto slave segment if not already done
+  // The master nodes that define the master segment are projected into the slave
+  // segment using:
+  //  ProjectNodetoSegment_SegmentNormal(*mnode[i],sseg_,mxi_[i],gap);
+
   if (!havemxi_)
     havemxi_ = build_mxi();
-  // perform a quick test
-
 
   // build array of local sxi coords of nodes
+  // These do not need to be projected as they are the coords of the slave nodes in the
+  // slave segment
+
   havesxi_ = build_sxi();
 
   // project slave nodes onto master segment
+  // These nodal coordinates are projected from the slave segment into the master, using
+  //  ProjectNodetoSegment_NodalNormal(*snode[i],mseg_,sxim_[i],gap);
+
   havesxim_ = build_sxim();
   
   // build outward normal of edges of sseg (in local coords)
   build_normal();
   
-  // compute information about the edges of the slave/master triangle
-  // in slave triangle coord system
+  // compute information about the edges of the slave/master polygons
+  // in slave polygon coord system
+
   if (!havelines_)
     havelines_ = build_lines_s();
 
-  // compute information about the edges of the slave/master triangle
-  // in master triangle coord system
+  // compute information about the edges of the slave/master polygons
+  // in master polygon coord system
   if (!havelinem_)
     havelinem_ = build_lines_m();
 
   // perform clipping algorithm
-  ok = Clipelements();
+  // If this returns false, it means that there is no effective overlap between the master and slave
+  // segments
+  
+//  ok = Clipelements();
+  ok = ClipelementsSH(); // Use Sutherland-Hodgman algorithm
   
   if (!ok)
     return false;
@@ -489,42 +552,54 @@ bool MOERTEL::Overlap::ComputeOverlap()
 /*----------------------------------------------------------------------*
  |  perform clipping algorithm (private)                     mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::Clipelements()
-{
-  if (!havemxi_ || !havesxi_ || !havelines_ || !havesxim_ || !havelinem_)
-  {
-	std::cout << "***ERR*** MOERTEL::Overlap::Clipelements:\n"
+bool MOERTEL::Overlap::Clipelements() {
+
+  if (!havemxi_ || !havesxi_ || !havelines_ || !havesxim_ || !havelinem_){
+
+			std::stringstream oss;
+				oss << "***ERR*** MOERTEL::Overlap::Clipelements:\n"
          << "***ERR*** initialization of Overlap class missing\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+			throw ReportError(oss);
+
   }
   
   const int nmnode = mseg_.Nnode();
   const int nsnode = sseg_.Nnode();
   
   // put all mseg nodes in polygon
+  // These coordinates are the corners of the master segment projected into the slave segment's
+  // coordinate system
+
+
+
   for (int i=0; i<nmnode; ++i)
     AddPointtoPolygon(100+i,&mline_[i][0]);
   
-  //for (int i=0; i<nmnode; ++i)
-  //  std::cout << "mline_[" << i << "][0] " << mline_[i][0] << " mline_[" << i << "][1] " << mline_[i][1] 
-  //       << " mline_[" << i << "][2] " << mline_[i][2] << " mline_[" << i << "][3] " << mline_[i][3] << endl;
   //===========================================================================
 
   // loop edges of slave segment and clip the master edges
   // add all intersection points that can be found
-  for (int clipedge=0; clipedge<nsnode; ++clipedge)
-  {
-    // point on that clip edge (dim 2)
+
+  for (int clipedge=0; clipedge<nsnode; ++clipedge) {
+
+    // point on that clip edge (dim 2). These are the edges of sseg in its \xi \eta space. Note
+    // that if sseg is a quad, we are clipping against its parametric space which is a square
+    // -1 <= \xi <= 1 and -1 <= \eta <= 1
+
     double* PE = &sline_[clipedge][0];
+
     // the outward normal to the clip edge (dim 2)
+
     double* N = &sn_[clipedge][0];
 
     // loop edges of master segment and clip them against the clip edge
     // add all intersections
-    for (int medge=0; medge<nmnode; ++medge)
-    {
+
+    for (int medge=0; medge<nmnode; ++medge) {
+
       bool ok;
+
       // start point of medge with id 100+medge
       double* P0 = &mline_[medge][0];
       //int id0 = 100+medge;
@@ -535,11 +610,14 @@ bool MOERTEL::Overlap::Clipelements()
       // find intersection between medge and clipedge
       // if there's an intersection, put it in the polygon
       // the id is 10*clipedge+medge
+
       double xi[2];
       ok = Clip_Intersect(N,PE,P0,P1,xi);
-      if (ok)
-      {
+
+      if (ok) {
+	  
         //std::cout << "OVERLAP Clipelements: adding intersection point " << 10*clipedge+medge << endl;
+// GAH - ASSUME less than 10 medges and 10*clipedge+medge < 100
         AddPointtoPolygon(10*clipedge+medge,xi);
       }
     } // for (int medge=0; medge<3; ++medge)
@@ -550,45 +628,56 @@ bool MOERTEL::Overlap::Clipelements()
   // loop all clipedges and clip all points incl intersections 
   // that are in the polygon
   // throw away all points that are not inside
+
+  // Again, these are the edges of sseg in its \xi \eta space. Note
+  // that if sseg is a quad, we are clipping against its parametric space which is a square
+  // -1 <= \xi <= 1 and -1 <= \eta <= 1
+
   {
     int np = SizePointPolygon();
     
 	std::vector<Teuchos::RCP<MOERTEL::Point> > point;
     PointView(point);
     int p;
-    for (p=0; p<np; ++p)
-    {
+
+    for (p=0; p<np; ++p) {
+
       bool ok = true;
       //std::cout << "OVERLAP Clipelements: now clipping point " << point[p]->Id() << endl;
       const double* P = point[p]->Xi();
-      for (int clipedge=0; clipedge<nsnode; ++clipedge)
-      {
+
+      for (int clipedge=0; clipedge<nsnode; ++clipedge) {
+
         // point on that clip edge (dim 2)
         double* PE = &sline_[clipedge][0];
         // the outward normal to the clip edge (dim 2)
         double* N = &sn_[clipedge][0];
         
         // clip point P against this edge
+// GAH - EPSILON P must be epsilon (in a cos(theta) sense) in front of the clip edge (on the normal side)
+//					to be removed from the polygon.
+
         ok = Clip_TestPoint(N,PE,P,1.0e-10);
-        // leave point in
-        if (ok) continue;
-        // remove this point
-        else
-        {
-          ok = false;
-          break;
+
+        if (ok) {
+
+			continue; // leave point in
+
         }
-      } // for (int clipedge=0; clipedge<3; ++clipedge)
+        else {		// remove this point
       
-      // if not found inside, remove point
-      if (!ok)
-      {
         //std::cout << "OVERLAP Clipelements: removing point " << point[p]->Id() << endl;
         RemovePointfromPolygon(point[p]->Id(),P);
+          break;
+
       }
             
+      } // for (int clipedge=0; clipedge<3; ++clipedge)
+      
     } // for (int p=0; p<np; ++p)
+
     point.clear();
+
   }
 
   //===========================================================================
@@ -597,11 +686,13 @@ bool MOERTEL::Overlap::Clipelements()
   // Note that this works in master segment coords and the node that is put in
   // is put in with slave segment coords as the polygon is completely in
   // slave segment coords
+
   // master point have ids 100,101,102
   // slave points have ids 1000,1001,1002
   // edge intersections have ids sedge*10+medge
   
   // try only to put slave points in if the polygon is not empty
+
   int np = SizePointPolygon();
   if (np)
   {
@@ -619,6 +710,8 @@ bool MOERTEL::Overlap::Clipelements()
         double* N = &mn_[clipedge][0];
         
         // clip point P against this edge
+// GAH - EPSILON clip test point
+// GAH - EPSILON P must be epsilon (in a cos(theta) sense) in front of the clip edge (on the normal side)
         ok = Clip_TestPoint(N,PE,P,1.0e-5);
         // put point in
         if (ok) continue;
@@ -651,13 +744,14 @@ bool MOERTEL::Overlap::Clipelements()
 	std::vector<Teuchos::RCP<MOERTEL::Point> > point; PointView(point);
     for (int p=0; p<np; ++p)
     {
-	  std::cout << "OVERLAP Clipelements: point " << setw(3) << point[p]->Id() 
+      std::cout << "OVERLAP Clipelements: point " << std::setw(3) << point[p]->Id()
            << " xi " << point[p]->Xi()[0] 
-           << "/" << point[p]->Xi()[1] << endl;
+           << "/" << point[p]->Xi()[1] << std::endl;
     }
     point.clear();
   }
 #endif
+
 
   //===========================================================================
   // count how many corner nodes of mseg are in and how many
@@ -683,6 +777,7 @@ bool MOERTEL::Overlap::Clipelements()
         double* N = &mn_[clipedge][0];
         
         // clip point P against this edge
+// GAH - EPSILON P must be epsilon (in a cos(theta) sense) in front of the clip edge (on the normal side)
         ok = Clip_TestPoint(N,PE,P,1.0e-5);
         // put point in
         if (ok) continue;
@@ -734,9 +829,9 @@ bool MOERTEL::Overlap::Clipelements()
 	std::vector<Teuchos::RCP<MOERTEL::Point> > point; PointView(point);
     for (int p=0; p<np; ++p)
     {
-	  std::cout << "OVERLAP Clipelements: point " << setw(3) << point[p]->Id() 
+      std::cout << "OVERLAP Clipelements: point " << std::setw(3) << point[p]->Id()
            << " xi " << point[p]->Xi()[0] 
-           << "/" << point[p]->Xi()[1] << endl;
+           << "/" << point[p]->Xi()[1] << std::endl;
     }
     point.clear();
   }
@@ -760,7 +855,463 @@ bool MOERTEL::Overlap::Clipelements()
   // finish the polygon
   ConvexHull(p_);  
   
+#if 0
+  // make printout of the polygon so far
+  {
+    int np    = SizePointPolygon();
+    std::vector<Teuchos::RCP<MOERTEL::Point> > point; PointView(point);
+    for (int p=0; p<np; ++p)
+    {
+      std::cout << "OVERLAP Clipelements: point " << std::setw(3) << point[p]->Id()
+           << " xi " << point[p]->Xi()[0]
+           << "/" << point[p]->Xi()[1] << std::endl;
+    }
+    point.clear();
+  }
+#endif
+  
   return true;
+}
+
+/*---------------------------------------------------------------------------------*
+ |  Clipping elements using Sutherland-Hodgman algorithm (1974) (private)  gah 10/10|
+ *---------------------------------------------------------------------------------*/
+
+bool MOERTEL::Overlap::buildPoly(std::vector<double>& source_xi, std::vector<double>& source_eta,
+	std::vector<double>& target_xi, std::vector<double>& target_eta, double *PE, double *N) {
+
+	bool s_in, p_in;
+	double point_s[2], point_p[2];
+	double eps = 1.0e-10; // GAH EPSILON
+	int index = -1;
+	bool ok;
+
+	// Make sure they are empty
+	
+	target_xi.clear();
+	target_eta.clear();
+
+	// Find the first s inside the polygon
+
+	for(unsigned int i = 0; i < source_xi.size(); i++){
+        
+		// clip point s against this edge (PE = point on edge, N is outward normal of edge)
+
+		point_s[0] = source_xi[i];
+		point_s[1] = source_eta[i];
+
+		s_in = Clip_TestPoint(N, PE, point_s, eps); // true if point is inside edge
+
+		if(s_in){ // if point s is inside the clipedge
+
+			index = i; // placeholder
+			break;
+
+		}
+	}
+
+	if(index < 0){ // There were no points found inside the clipedge
+
+		return false;
+
+	}
+
+	// Note that we are at index i and s_in is true
+
+	// Go to the end of the input poly data
+
+	for(unsigned int i = static_cast<unsigned int>(index); i < source_xi.size(); i++){
+
+		if(i + 1 >= source_xi.size() - 1){ // p is at the beginning of the list
+
+			point_p[0] = source_xi[0];
+			point_p[1] = source_eta[0];
+
+		}
+		else {
+
+			point_p[0] = source_xi[i + 1];
+			point_p[1] = source_eta[i + 1];
+
+		}
+
+		p_in = Clip_TestPoint(N, PE, point_p, eps); // true if point is inside edge
+
+		if(s_in && p_in){  // both s and p are in polygon
+
+			// Store p in new polygon
+
+			target_xi.push_back(point_p[0]);
+			target_eta.push_back(point_p[1]);
+
+		}
+		else if(s_in && !p_in){  // s is in, and p is out
+
+			double xi[2];
+			ok = Guarded_Clip_Intersect(N, PE, point_s, point_p, xi);
+
+			if(!ok){ // Cannot find the intersection between edge and clip edge
+
+				std::stringstream oss;
+					oss << "***ERR*** MOERTEL::Overlap::buildPoly:\n"
+						<< "***ERR*** Cannot find the intersection between edge and clip edge\n"
+						<< "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+				throw ReportError(oss);
+			}
+			
+			// Store i in new polygon
+
+			target_xi.push_back(xi[0]);
+			target_eta.push_back(xi[1]);
+
+		}
+		else if(!s_in && p_in){ // s is out, p is in
+
+			double xi[2];
+			ok = Guarded_Clip_Intersect(N, PE, point_s, point_p, xi);
+
+			if(!ok){ // Cannot find the intersection between edge and clip edge
+				std::stringstream oss;
+					oss << "***ERR*** MOERTEL::Overlap::buildPoly:\n"
+						<< "***ERR*** Cannot find the intersection between edge and clip edge\n"
+						<< "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+				throw ReportError(oss);
+			}
+			
+			// Store i in new polygon
+
+			target_xi.push_back(xi[0]);
+			target_eta.push_back(xi[1]);
+			
+			// Store p in new polygon
+
+			target_xi.push_back(point_p[0]);
+			target_eta.push_back(point_p[1]);
+
+		}
+
+		// Do nothing if neither s nor p are inside clip edge
+		
+		// Advance s
+
+		s_in = p_in;
+		point_s[0] = point_p[0];
+		point_s[1] = point_p[1];
+
+	}
+
+	// Note that here s_in, and point_s are set to the 0th point in the source data
+	// We now need to march back up to index
+	
+	for(int i = 0; i < index; i++){
+
+		point_p[0] = source_xi[i + 1];
+		point_p[1] = source_eta[i + 1];
+
+		p_in = Clip_TestPoint(N, PE, point_p, eps); // true if point is inside edge
+
+		if(s_in && p_in){  // both s and p are in polygon
+
+			// Store p in new polygon
+
+			target_xi.push_back(point_p[0]);
+			target_eta.push_back(point_p[1]);
+
+		}
+		else if(s_in && !p_in){  // s is in, and p is out
+
+			double xi[2];
+			ok = Guarded_Clip_Intersect(N, PE, point_s, point_p, xi);
+
+			if(!ok){ // Cannot find the intersection between edge and clip edge
+				std::stringstream oss;
+					oss << "***ERR*** MOERTEL::Overlap::buildPoly:\n"
+						<< "***ERR*** Cannot find the intersection between edge and clip edge\n"
+						<< "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+				throw ReportError(oss);
+			}
+			
+			// Store i in new polygon
+
+			target_xi.push_back(xi[0]);
+			target_eta.push_back(xi[1]);
+
+		}
+		else if(!s_in && p_in){ // s is out, p is in
+
+			double xi[2];
+			ok = Guarded_Clip_Intersect(N, PE, point_s, point_p, xi);
+
+			if(!ok){ // Cannot find the intersection between edge and clip edge
+				std::stringstream oss;
+					oss << "***ERR*** MOERTEL::Overlap::buildPoly:\n"
+						<< "***ERR*** Cannot find the intersection between edge and clip edge\n"
+						<< "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+				throw ReportError(oss);
+			}
+			
+			// Store i in new polygon
+
+			target_xi.push_back(xi[0]);
+			target_eta.push_back(xi[1]);
+			
+			// Store p in new polygon
+
+			target_xi.push_back(point_p[0]);
+			target_eta.push_back(point_p[1]);
+
+		}
+
+		// Do nothing if neither s nor p are inside clip edge
+		
+		// Advance s
+
+		s_in = p_in;
+		point_s[0] = point_p[0];
+		point_s[1] = point_p[1];
+
+	}
+
+	return true;  // If we have not thrown an error or returned false, return the polygon
+
+}
+
+bool MOERTEL::Overlap::ClipelementsSH() {
+
+  if (!havemxi_ || !havesxi_ || !havelines_ || !havesxim_ || !havelinem_){
+
+			std::stringstream oss;
+				oss << "***ERR*** MOERTEL::Overlap::Clipelements:\n"
+					<< "***ERR*** initialization of Overlap class missing\n"
+					<< "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+			throw ReportError(oss);
+
+  }
+  
+  const int nmnode = mseg_.Nnode();
+  const int nsnode = sseg_.Nnode();
+  bool ok = true;
+  double eps = 1.0e-10; // GAH EPSILON
+
+
+  // I am reading http://cs.fit.edu/~wds/classes/graphics/Clip/clip/clip.html and 
+  // http://en.wikipedia.org/wiki/Sutherland–Hodgman_algorithm as I write this code.
+
+  // I assume that the master segment is convex. It should be if this is a mesh. Secondly, the
+  // slave segment is a square in its parametric space -1 <= \xi <= 1 and -1 <= \eta <= 1. It need
+  // only be convex.
+
+  // For the Sutherland-Hodgman algorithm, the slave segment is used for the clip polygon.
+
+  // Start with an input list of polygon vertices, in the slave coordinate system. Note that these points
+  // are ordered around the polygon, as i is the line number of the boundaries of the master seg.
+
+  std::vector<double> s_poly_xi, s_poly_eta, t_poly_xi, t_poly_eta;
+
+  // Put all the corners of the master segment into the polygon
+
+  for (int i=0; i<nmnode; ++i) { // loop over the corners of the master seg
+
+	s_poly_xi.push_back(mline_[i][0]); 
+	s_poly_eta.push_back(mline_[i][1]);
+
+  }
+
+  // Clip that poly against the slave poly one edge at a time
+
+  for (int clipedge = 0; clipedge < nsnode; ++clipedge) {
+
+	// point on that clip edge (dim 2)
+	double* PE = &sline_[clipedge][0];
+
+	// the outward normal to the clip edge (dim 2)
+	double* N = &sn_[clipedge][0];
+
+	ok = buildPoly(s_poly_xi, s_poly_eta, t_poly_xi, t_poly_eta, PE, N);
+
+	if(!ok){
+
+		// there is no intersection between polys. However, it is possible that the
+		// slave poly is completely contained within the master
+		
+		break;
+
+	}
+
+	// The target vectors now become the source vectors
+	
+	s_poly_xi = t_poly_xi;
+	s_poly_eta = t_poly_eta;
+
+  } // for (int clipedge=0; clipedge<3; ++clipedge)
+
+  if(ok){ // We have a target polygon
+
+		double xi[2];
+
+		// Compress the polygon by removing adjacent points less than epsilon apart
+
+		for(unsigned int p = t_poly_xi.size() - 1; p >= 1; p--){
+
+			xi[0] = t_poly_xi[p] - t_poly_xi[p - 1];
+			xi[1] = t_poly_eta[p] - t_poly_eta[p - 1];
+
+			double dist = MOERTEL::length(xi, 2);
+
+			if(dist <= eps){ // remove the point p
+
+				t_poly_xi.erase(t_poly_xi.begin() + p);
+				t_poly_eta.erase(t_poly_eta.begin() + p);
+
+			}
+		}
+
+		// Check the last point too
+
+		if(t_poly_xi.size() >= 2){
+		
+			xi[0] = t_poly_xi[t_poly_xi.size() - 1] - t_poly_xi[0];
+			xi[1] = t_poly_eta[t_poly_xi.size() - 1] - t_poly_eta[0];
+
+			double dist = MOERTEL::length(xi, 2);
+
+			if(dist <= eps){ // remove the point p
+
+				t_poly_xi.erase(t_poly_xi.end() - 1);
+				t_poly_eta.erase(t_poly_eta.end() - 1);
+
+			}
+		}
+
+		// Do we still have a polygon? If not, just move on
+
+		if(t_poly_xi.size() < 3){
+
+			return false;
+
+		}
+
+		// Store it in the polygon
+
+		for (unsigned int p = 0; p < t_poly_xi.size(); ++p) {
+
+			xi[0] = t_poly_xi[p];
+			xi[1] = t_poly_eta[p];
+
+			AddPointtoPolygon(p, xi);
+
+		}
+
+#if 0
+		// make printout of the polygon so far
+		{
+		int np    = SizePointPolygon();
+		std::vector<Teuchos::RCP<MOERTEL::Point> > point; PointView(point);
+
+		std::cout << "Master is in slave" << std::endl;
+
+		for (int p=0; p<np; ++p) {
+
+			std::cout << "OVERLAP Clipelements: point " << std::setw(3) << point[p]->Id()
+						<< " xi " << point[p]->Xi()[0]
+						<< "/" << point[p]->Xi()[1] << std::endl;
+		}
+		point.clear();
+		}
+#endif
+  
+		return true;
+
+  }
+
+  //===========================================================================
+
+  // We come down here if there is no polygon from the above. This could mean that the slave segment is
+  // completely inside the master segment.
+  
+	std::vector<int> s_node_id;
+
+	for (int i=0; i<nsnode; ++i) {
+
+		bool ok = true;
+
+		// get the slave point in master coords
+		double* P = sxim_[i];
+
+		// loop master clip edges
+		for (int clipedge=0; clipedge<nmnode; ++clipedge) {
+
+			// point on master clipedge
+			double* PE = &mlinem_[clipedge][0];
+
+			// the outward normal to the clip edge (dim 2)
+			double* N = &mn_[clipedge][0];
+        
+			// clip point P against this edge
+			// GAH - EPSILON clip test point
+			ok = Clip_TestPoint(N,PE,P,1.0e-5);
+
+			// put point in
+			if (ok) 
+				continue;
+			else {
+				ok = false;
+				break;
+			}
+		} // for (int clipedge=0; clipedge<3; ++clipedge)
+
+		// We will be here, with ok == true only if the point is inside ALL clip edges
+
+		// don't put point in
+		if (!ok)
+			continue;
+		else { // Point is inside ALL clip edges
+
+			s_node_id.push_back(i);
+		}
+	} // for (int i=0; i<3; ++i)
+
+	if(s_node_id.size() < static_cast<unsigned int>(nsnode)){ // Slave poly does not lie within master either. 
+															// There is no overlap. Move on.
+
+/* The reasoning here is that zero of the master polygon was found in the slave (no nodes). If the slave is completely
+ * within the master, then all 4 nodes need to cleanly show up inside the master. If they do not, chances are only
+ * a corner or edge of the master is touched.
+ */
+
+		return false;
+
+	}
+
+	// Slave is completely in master. Put the slave in the polygon
+	
+	for(unsigned int i = 0; i < s_node_id.size(); i++){
+
+		//std::cout << "OVERLAP Clipelements: inserting slave point " << 1000+i << " xi="
+		//     << sxi_[i][0] << "/" << sxi_[i][1] << endl;
+		AddPointtoPolygon(i,sxi_[i]);
+
+	}
+
+#if 0
+		// make printout of the polygon so far
+		{
+		int np    = SizePointPolygon();
+		std::vector<Teuchos::RCP<MOERTEL::Point> > point; PointView(point);
+
+		std::cout << "Slave is in master" << std::endl;
+
+		for (int p=0; p<np; ++p) {
+
+			std::cout << "OVERLAP Clipelements: point " << std::setw(3) << point[p]->Id()
+						<< " xi " << point[p]->Xi()[0]
+						<< "/" << point[p]->Xi()[1] << std::endl;
+		}
+		point.clear();
+		}
+#endif
+
+	return true;
 }
 
 
@@ -770,16 +1321,19 @@ bool MOERTEL::Overlap::Clipelements()
  *----------------------------------------------------------------------*/
 bool MOERTEL::Overlap::Triangulation()
 {
+  bool ok = false;
   // we have a polygon that is in clockwise order at this moment
 
   // if more than 3 points, find a center point
   int np = SizePointPolygon();
   if (np<3)
   {
-	std::cout << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
+		std::stringstream oss;
+			oss << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
          << "***ERR*** # point in polygon < 3 ... very strange!!!\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+		throw ReportError(oss);
+
   }
   if (np>3) // we have to add a center point
   {
@@ -787,7 +1341,10 @@ bool MOERTEL::Overlap::Triangulation()
 	std::vector<Teuchos::RCP<MOERTEL::Point> > points; PointView(points);
 
 #if 1 // compute center point xi as centroid
-    Centroid(xi,points,np);    
+    ok = Centroid(xi,points,np);    
+
+	if(!ok) return false; // Area of polygon is zero
+
     //std::cout << "Centroid xi : " << xi[0] << " / " << xi[1] << endl; fflush(stdout);
 #endif
     
@@ -876,10 +1433,11 @@ bool MOERTEL::Overlap::Triangulation()
       }
       else
       {
-		std::cout << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
+			std::stringstream oss;
+			oss << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
              << "***ERR*** # nodes " << mseg_.Nnode() << " of master segment is unknown\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-        exit(EXIT_FAILURE);
+			throw ReportError(oss);
       }
 	  std::cout << "-------------------------------------------------------\n";
 #endif
@@ -920,10 +1478,11 @@ bool MOERTEL::Overlap::Triangulation()
     // id = -1
     if (points[0]->Id() != -1)
     {
-	  std::cout << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
+			std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
            << "***ERR*** points[0]->Id() is not -1\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      exit(EXIT_FAILURE);
+			throw ReportError(oss);
     }
     int nodeid[3];
     MOERTEL::Segment_BiLinearTri* tmp;
@@ -973,10 +1532,11 @@ bool MOERTEL::Overlap::Triangulation()
   }
   else
   {
-	std::cout << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
+			std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Overlap::Triangulization:\n"
          << "***ERR*** # point in polygon < 3 ... very strange!!!\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+			throw ReportError(oss);
   }
   
   // create ptr topology between triangle and nodes in points

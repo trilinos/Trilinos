@@ -45,12 +45,17 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_Time.h"
 
+#include "Epetra_Map.h"
+#include "Epetra_CrsMatrix.h"
+
+
+const double CONSTRAINT_MATRIX_ZERO = 1.0e-11;
+
 /*----------------------------------------------------------------------*
  |  make mortar integration of this interface (2D/3D problem)           |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::Mortar_Integrate(
-                            Teuchos::RCP<Teuchos::ParameterList> intparams)
-{ 
+    Teuchos::RCP<Teuchos::ParameterList> intparams) {
   bool ok = false;
   intparams_ = intparams;
   
@@ -60,23 +65,23 @@ bool MOERTEL::Interface::Mortar_Integrate(
   time.ResetStartTime();
 
   //-------------------------------------------------------------------
-  if (IsOneDimensional())
-  {
+	if(IsOneDimensional()) {
     if (gcomm_.MyPID()==0)
       cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** This is not a 3D problem, we're in the wrong method here!!!\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+
     return false;
   }
 
   //-------------------------------------------------------------------
   // interface needs to be complete
-  if (!IsComplete())
-  {
+	if(!IsComplete()) {
     if (gcomm_.MyPID()==0)
       cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+
     return false;
   }
   
@@ -86,12 +91,12 @@ bool MOERTEL::Interface::Mortar_Integrate(
 
   //-------------------------------------------------------------------
   // interface needs to have a mortar side assigned
-  if (MortarSide()==-1)
-  {
+	if(MortarSide() == -1) {
     if (gcomm_.MyPID()==0)
       cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+
     return false;
   }
   
@@ -101,18 +106,18 @@ bool MOERTEL::Interface::Mortar_Integrate(
   int mside = MortarSide();
   int sside = OtherSide(mside);
   std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator scurr;
+
   for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
-    if (scurr->second->Nfunctions() < 1)
-    {
+		if(scurr->second->Nfunctions() < 1) {
       cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** interface " << Id_ << ", mortar side\n"
            << "***ERR*** segment " << scurr->second->Id() << " needs at least 1 function set\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
+
   for (scurr=seg_[sside].begin(); scurr!=seg_[sside].end(); ++scurr)
-    if (scurr->second->Nfunctions() < 2)
-    {
+		if(scurr->second->Nfunctions() < 2) {
       cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
            << "***ERR*** interface " << Id_ << ", slave side\n"
            << "***ERR*** segment " << scurr->second->Id() << " needs at least 2 function set\n"
@@ -123,6 +128,7 @@ bool MOERTEL::Interface::Mortar_Integrate(
   //-------------------------------------------------------------------
   // do the integration of the master and slave side
   ok = Integrate_3D();
+
   if (!ok) return false;
 
   //-------------------------------------------------------------------
@@ -131,10 +137,10 @@ bool MOERTEL::Interface::Mortar_Integrate(
   
   //-------------------------------------------------------------------
   // time this process
-  if (OutLevel()>5)
-  {
+	if(OutLevel() > 5) {
     cout << "MOERTEL::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
-         << " finished in " << time.ElapsedTime() << " sec\n"; fflush(stdout);
+		     << " finished in " << time.ElapsedTime() << " sec\n";
+		fflush(stdout);
   }
 
   //-------------------------------------------------------------------
@@ -144,16 +150,17 @@ bool MOERTEL::Interface::Mortar_Integrate(
 /*----------------------------------------------------------------------*
  |  make mortar integration of master/slave side in 3D (2D interface)   |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Integrate_3D()
-{ 
-  if (!IsComplete())
-  {
+bool MOERTEL::Interface::Integrate_3D() {
+
+	if(!IsComplete()) {
     if (gcomm_.MyPID()==0)
       cout << "***ERR*** MOERTEL::Interface::Integrate_3D:\n"
            << "***ERR*** Complete() not called on interface " << Id_ << "\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+
     return false;
   }
+
   if (!lComm()) return true;
 
   // get the sides
@@ -163,8 +170,8 @@ bool MOERTEL::Interface::Integrate_3D()
   
   // loop over all segments of slave side
   std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator scurr;
-  for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
-  {
+
+	for(scurr = rseg_[sside].begin(); scurr != rseg_[sside].end(); ++scurr) {
     // the segment to be integrated
 	Teuchos::RCP<MOERTEL::Segment> actsseg = scurr->second;
 
@@ -176,12 +183,13 @@ bool MOERTEL::Interface::Integrate_3D()
     const int nnode = actsseg->Nnode();
     MOERTEL::Node** nodes = actsseg->Nodes();
     bool foundone = false;
+
     for (int i=0; i<nnode; ++i)
-      if (NodePID(nodes[i]->Id()) == lComm()->MyPID())
-      {
+			if(NodePID(nodes[i]->Id()) == lComm()->MyPID()) {
         foundone = true;
         break;
       }
+
     // if none of the nodes belongs to me, do nothing on this segment
     if (!foundone) continue;
     
@@ -191,8 +199,9 @@ bool MOERTEL::Interface::Integrate_3D()
 
     // loop over all segments on the master side
 	std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator mcurr;
-    for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
-    {
+
+
+		for(mcurr = rseg_[mside].begin(); mcurr != rseg_[mside].end(); ++mcurr) {
 	  Teuchos::RCP<MOERTEL::Segment> actmseg = mcurr->second;
 #if 0
       cout << "Active mseg id " << actmseg->Id() << endl;
@@ -204,6 +213,7 @@ bool MOERTEL::Interface::Integrate_3D()
       Integrate_3D_Section(*actsseg,*actmseg);
       
     } // for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)  
+
 
     //cout << "time for this slave segment: " << time.ElapsedTime() << endl;
 
@@ -217,17 +227,17 @@ bool MOERTEL::Interface::Integrate_3D()
  | of 2 segments (3D version) IF there is an overlap                    |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg, 
-                                           MOERTEL::Segment& mseg)
-{ 
+                                           MOERTEL::Segment& mseg){ 
+
   if ( (sseg.Type()!=MOERTEL::Segment::seg_BiLinearTri &&
         sseg.Type()!=MOERTEL::Segment::seg_BiLinearQuad    )  || 
        (mseg.Type()!=MOERTEL::Segment::seg_BiLinearTri && 
-        mseg.Type()!=MOERTEL::Segment::seg_BiLinearQuad    )  )
-  {
-    cout << "***ERR*** MOERTEL::Interface::Integrate_3D_Section:\n"
+	         mseg.Type() != MOERTEL::Segment::seg_BiLinearQuad)) {
+		std::stringstream oss;
+		oss << "***ERR*** MOERTEL::Interface::Integrate_3D_Section:\n"
          << "***ERR*** Integration of other then bilinear triangles/quads not implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+		throw ReportError(oss);
   }
   
   // find whether we want exact values at gaussian points
@@ -240,6 +250,7 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
 
   // determine the overlap triangulation if any
   bool ok = overlap.ComputeOverlap();
+
   if (!ok) return true; // There's no overlap
 
   // # new segments the overlap polygon was discretized with
@@ -253,8 +264,7 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
   MOERTEL::Integrator integrator(ngp,IsOneDimensional(),OutLevel());
   
   // loop segments and integrate them
-  for (int s=0; s<nseg; ++s)
-  {    
+	for(int s = 0; s < nseg; ++s) {
 	Teuchos::RCP<MOERTEL::Segment> actseg = segs[s];
 
     // integrate master and slave part of this segment
@@ -270,6 +280,7 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
     integrator.Assemble(*this,sseg,mseg,*Mdense);    
     
     if (Ddense) delete Ddense;
+
     if (Mdense) delete Mdense;
           
   } // for (int s=0; s<nseg; ++s)
@@ -283,16 +294,15 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
 /*----------------------------------------------------------------------*
  |  assemble integration of master/slave side in 3D (2D interface)      |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
-{ 
+bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M) {
 
-  if (!IsComplete())
-  {
+	if(!IsComplete()) {
     cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
          << "***ERR*** Complete() not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
+
   if (!lComm()) return true;
 
   // get the sides
@@ -302,8 +312,8 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
   //-------------------------------------------------------------------
   // loop over all slave nodes
   std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr;
-  for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
-  {
+
+	for(curr = rnode_[sside].begin(); curr != rnode_[sside].end(); ++curr) {
     // loop only my own nodes
     if (NodePID(curr->second->Id()) != lComm()->MyPID())
       continue;
@@ -312,6 +322,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
 	Teuchos::RCP<std::map<int,double> >          Drow = curr->second->GetD();
 	Teuchos::RCP<std::map<int,double> >          Mrow = curr->second->GetM();
 	Teuchos::RCP<std::vector<std::map<int,double> > > Mmod = curr->second->GetMmod();
+
     // if there's no D or M there's nothing to do
     if (Drow==Teuchos::null && Mrow==Teuchos::null)
       continue;
@@ -326,21 +337,20 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
   //-------------------------------------------------------------------
   //-------------------------------------------------------------------
     // assemble the Drow
-    if (Drow != Teuchos::null)
-    {
-      for (rowcurr=Drow->begin(); rowcurr!=Drow->end(); ++rowcurr)
-      {
+		if(Drow != Teuchos::null) {
+			for(rowcurr = Drow->begin(); rowcurr != Drow->end(); ++rowcurr) {
         int colnode = rowcurr->first;
         double val  = rowcurr->second;
-        if (abs(val)<1.0e-11)
+
+				if(abs(val) < CONSTRAINT_MATRIX_ZERO)
           continue;
           
         //cout << "Current col snode: " << colnode << endl;
         
         // get the colsnode
 		Teuchos::RCP<MOERTEL::Node> colsnode = GetNodeView(colnode);
-        if (colsnode==Teuchos::null)
-        {
+
+				if(colsnode == Teuchos::null) {
           cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                << "***ERR*** interface " << Id_ << ": cannot get view of node " << colnode << "\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -350,31 +360,31 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
         // get the primal dofs
         int sndof = colsnode->Ndof();
         const int* sdof = colsnode->Dof();
-        if (snlmdof != sndof)
-        {
+
+				if(snlmdof != sndof) {
           cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                << "***ERR*** interface " << Id_ << ": mismatch in # lagrange multipliers and primal variables\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           return false;
         }
         
-        for (int i=0; i<snlmdof; ++i)
-        {
+				for(int i = 0; i < snlmdof; ++i) {
           int row = slmdof[i];
           int col = sdof[i];
            //cout << "Inserting D row/col:" << row << "/" << col << " val " << val << endl;
           int err = D.SumIntoGlobalValues(row,1,&val,&col);
+
           if (err)
             err = D.InsertGlobalValues(row,1,&val,&col);
-          if (err<0)
-          {
+
+					if(err < 0) {
             cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                  << "***ERR*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
             return false;
           }
-          if (err && OutLevel()>0)
-          {
+
+					if(err && OutLevel() > 0) {
             cout << "MOERTEL: ***WRN*** MOERTEL::Interface::Assemble_3D:\n"
                  << "MOERTEL: ***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                  << "MOERTEL: ***WRN*** indicating that initial guess for memory of D too small\n"
@@ -387,21 +397,20 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
   //-------------------------------------------------------------------
   //-------------------------------------------------------------------
     // assemble the Mrow
-    if (Mrow != Teuchos::null)
-    {
-      for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
-      {
+		if(Mrow != Teuchos::null) {
+			for(rowcurr = Mrow->begin(); rowcurr != Mrow->end(); ++rowcurr) {
         int colnode = rowcurr->first;
         double val  = rowcurr->second;
-        if (abs(val)<1.0e-11)
+
+				if(abs(val) < CONSTRAINT_MATRIX_ZERO)
           continue;
           
         // cout << "Current colmnode: " << colnode << endl;
         
         // get the colmnode
 		Teuchos::RCP<MOERTEL::Node> colmnode = GetNodeView(colnode);
-        if (colmnode==Teuchos::null)
-        {
+
+				if(colmnode == Teuchos::null) {
           cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                << "***ERR*** interface " << Id_ << ": cannot get view of node " << colnode << "\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -411,31 +420,31 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
         // get the primal dofs
         int mndof = colmnode->Ndof();
         const int* mdof = colmnode->Dof();
-        if (snlmdof != mndof)
-        {
+
+				if(snlmdof != mndof) {
           cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                << "***ERR*** interface " << Id_ << ": mismatch in # lagrange multipliers and primal variables\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           return false;
         }
         
-        for (int i=0; i<snlmdof; ++i)
-        {
+				for(int i = 0; i < snlmdof; ++i) {
           int row = slmdof[i];
           int col = mdof[i];
           // cout << "Inserting M row/col:" << row << "/" << col << " val " << val << endl;
           int err = M.SumIntoGlobalValues(row,1,&val,&col);
+
           if (err)
             err = M.InsertGlobalValues(row,1,&val,&col);
-          if (err<0)
-          {
+
+					if(err < 0) {
             cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                  << "***ERR*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
             return false;
           }
-          if (err && OutLevel()>0)
-          {
+
+					if(err && OutLevel() > 0) {
             cout << "MOERTEL: ***WRN*** MOERTEL::Interface::Assemble_3D:\n"
                  << "MOERTEL: ***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                  << "MOERTEL: ***WRN*** indicating that initial guess for memory of M too small\n"
@@ -447,36 +456,35 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
     
     
     // assemble the Mmod block if there is any
-    if (Mmod != Teuchos::null)
-    {
+		if(Mmod != Teuchos::null) {
       // loop over he rows of the Mmod block
-      for (int lrow=0; lrow<(int)Mmod->size(); ++lrow)
-      {
+			for(int lrow = 0; lrow < (int)Mmod->size(); ++lrow) {
 //        std::map<int,double>& Mmodrow = (*Mmod)[lrow];
         int row = slmdof[lrow];
         
         // loop over the columns in that row
         // FIXMEL: should this be Mmodrow (above)?
-        for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
-        {
+				for(rowcurr = Mrow->begin(); rowcurr != Mrow->end(); ++rowcurr) {
           int col = rowcurr->first;
           double val = rowcurr->second;
-          if (abs(val)<1.0e-11)
+
+					if(abs(val) < CONSTRAINT_MATRIX_ZERO)
             continue;
           
           //cout << "Inserting M row/col:" << row << "/" << col << " val " << val << endl;
           int err = M.SumIntoGlobalValues(row,1,&val,&col);
+
           if (err)
             err = M.InsertGlobalValues(row,1,&val,&col);
-          if (err<0)
-          {
+
+					if(err < 0) {
             cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                  << "***ERR*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                  << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
             return false;
           }
-          if (err && OutLevel()>0)
-          {
+
+					if(err && OutLevel() > 0) {
             cout << "MOERTEL: ***WRN*** MOERTEL::Interface::Assemble_3D:\n"
                  << "MOERTEL: ***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                  << "MOERTEL: ***WRN*** indicating that initial guess for memory of M too small\n"
@@ -498,8 +506,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
   // close inner-interface nodes). If these inner-interface nodes belong
   // to a different proc values were not assembled.
   // Loop snodes again an check and communicate these entries
-  if (lComm()->NumProc()!=1)
-  {
+	if(lComm()->NumProc() != 1) {
       // note that we miss the communication of Mmod yet
       
       // allocate a sendbuffer for D and M
@@ -509,8 +516,8 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
 	  std::vector<double> valD_s(countD);
 	  std::vector<int> colM_s(countM);
 	  std::vector<double> valM_s(countM);
-      for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
-      {
+
+		for(curr = rnode_[sside].begin(); curr != rnode_[sside].end(); ++curr) {
         // we've done all my own nodes already
         if (NodePID(curr->second->Id()) == lComm()->MyPID())
           continue;
@@ -527,8 +534,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
         //cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id() << " unassembled\n"; 
         
         // fill the D sendbuffer
-        if (Drow != Teuchos::null)
-        {
+			if(Drow != Teuchos::null) {
           // resize the sendbuffers
           colD_s.resize(colD_s.size()+Drow->size()+2);
           valD_s.resize(valD_s.size()+Drow->size()+2);
@@ -540,18 +546,18 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
           countD += 2;
           // loop D
 		  std::map<int,double>::iterator rowcurr;
-          for (rowcurr=Drow->begin(); rowcurr!=Drow->end(); ++rowcurr)
-          {
+
+				for(rowcurr = Drow->begin(); rowcurr != Drow->end(); ++rowcurr) {
             colD_s[countD] = rowcurr->first;
             valD_s[countD] = rowcurr->second;
             ++countD;
           }
         }
+
         //cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id() << " countD " << countD << endl;
         
         // fill the M sendbuffer
-        if (Mrow != Teuchos::null)
-        {
+			if(Mrow != Teuchos::null) {
           // resize the sendbuffers
           colM_s.resize(colM_s.size()+Mrow->size()+2);
           valM_s.resize(valM_s.size()+Mrow->size()+2);
@@ -563,8 +569,8 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
           countM += 2;
           // loop M
 		  std::map<int,double>::iterator rowcurr;
-          for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
-          {
+
+				for(rowcurr = Mrow->begin(); rowcurr != Mrow->end(); ++rowcurr) {
             colM_s[countM] = rowcurr->first;
             valM_s[countM] = rowcurr->second;
             ++countM;
@@ -576,8 +582,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
       
       
       // loop all processes in lComm and communicate and assemble
-      for (int proc=0; proc<lComm()->NumProc(); ++proc)
-      {
+		for(int proc = 0; proc < lComm()->NumProc(); ++proc) {
         // send sizes
         int countDr = countD;
         int countMr = countM;
@@ -588,16 +593,15 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
 		std::vector<double> valD_r(countDr);
 		std::vector<int>    colM_r(countMr);
 		std::vector<double> valM_r(countMr);
+
         // send data
-        if (proc==lComm()->MyPID())
-        {
-          for (int i=0; i<countDr; ++i)
-          {
+			if(proc == lComm()->MyPID()) {
+				for(int i = 0; i < countDr; ++i) {
             colD_r[i] = colD_s[i];
             valD_r[i] = valD_s[i];
           }
-          for (int i=0; i<countMr; ++i)
-          {
+
+				for(int i = 0; i < countMr; ++i) {
             colM_r[i] = colM_s[i];
             valM_r[i] = valM_s[i];
           }
@@ -615,25 +619,24 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
 		}
         
         // Assemble (remote procs only)
-        if (proc!=lComm()->MyPID())
-        {
+			if(proc != lComm()->MyPID()) {
           // --------------------------------------------------- Assemble D
-          for (int i=0; i<countDr;)
-          {
+				for(int i = 0; i < countDr;) {
             int nodeid = colD_r[i];
             int size   = colD_r[i+1];
             i += 2;
+
             // find whether I am owner of this node
-            if (NodePID(nodeid) == lComm()->MyPID())
-            {
+					if(NodePID(nodeid) == lComm()->MyPID()) {
               // get the node
 			  Teuchos::RCP<MOERTEL::Node> snode = GetNodeView(nodeid);
-              if (snode == Teuchos::null)
-              {
-                cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+						if(snode == Teuchos::null) {
+							std::stringstream oss;
+							oss << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                      << "***ERR*** Cannot find view of node " << nodeid << endl
                      << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                exit(EXIT_FAILURE);
+							throw ReportError(oss);
               }
               
               // get lagrange multipliers
@@ -641,49 +644,53 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
               const int* slmdof = snode->LMDof();
               
               // loop colD_r/valD_r and assemble
-              for (int j=0; j<size; ++j)
-              {
+						for(int j = 0; j < size; ++j) {
                 int colsnode = colD_r[i+j];
                 double val   = valD_r[i+j];
-                if (abs(val)<1.0e-11) 
+
+							if(abs(val) < CONSTRAINT_MATRIX_ZERO)
                   continue;
                 
                 // get view of column node and primal dofs
 				Teuchos::RCP<MOERTEL::Node> colnode = GetNodeView(colsnode);
-                if (colnode==Teuchos::null)
-                {
-                  cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+							if(colnode == Teuchos::null) {
+								std::stringstream oss;
+								oss << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                        << "***ERR*** Cannot find view of node " << colsnode << endl
                        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                  exit(EXIT_FAILURE);
+								throw ReportError(oss);
                 }
+
                 int       nsdof = colnode->Ndof();
                 const int* sdof = colnode->Dof();
-                if (nsdof != nslmdof)
-                {
-                  cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+							if(nsdof != nslmdof) {
+								std::stringstream oss;
+								oss << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                        << "***ERR*** Mismatch in # primal dofs and lagrange mutlipliers\n"
                        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                  exit(EXIT_FAILURE);
+								throw ReportError(oss);
                 }
                 
-                for (int k=0; k<nslmdof; ++k)
-                {
+							for(int k = 0; k < nslmdof; ++k) {
                   int row = slmdof[k];
                   int col = sdof[k];
                   //cout << "Proc " << lComm()->MyPID() << " inserting D row/col:" << row << "/" << col << " val " << val << endl;
                   int err = D.SumIntoGlobalValues(row,1,&val,&col);
+
                   if (err)
                     err = D.InsertGlobalValues(row,1,&val,&col);
-                  if (err<0)
-                  {
-                    cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+								if(err < 0) {
+									std::stringstream oss;
+									oss << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                          << "***ERR*** Serious error=" << err << " in assembly\n"
                          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                    exit(EXIT_FAILURE);
+									throw ReportError(oss);
                   }
-                  if (err && OutLevel()>0)
-                  {
+
+								if(err && OutLevel() > 0) {
                     cout << "MOERTEL: ***WRN*** MOERTEL::Interface::Assemble_3D:\n"
                          << "MOERTEL: ***WRN*** interface " << Id() << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                          << "MOERTEL: ***WRN*** indicating that initial guess for memory of D too small\n"
@@ -691,29 +698,31 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
                   }
                 } // for (int k=0; k<nslmdof; ++k)
               } // for (int j=0; j<size; ++j)
+
               i += size;
             }
+
             else // I am not owner of this node, skip it
               i += size;
           } // for (int i=0; i<countDr;)
           
           // --------------------------------------------------- Assemble M
-          for (int i=0; i<countMr;)
-          {
+				for(int i = 0; i < countMr;) {
             int nodeid = colM_r[i];
             int size   = colM_r[i+1];
             i += 2;
+
             // find whether I am owner of this node
-            if (NodePID(nodeid) == lComm()->MyPID())
-            {
+					if(NodePID(nodeid) == lComm()->MyPID()) {
               // get the node
 			  Teuchos::RCP<MOERTEL::Node> snode = GetNodeView(nodeid);
-              if (snode == Teuchos::null)
-              {
-                cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+						if(snode == Teuchos::null) {
+							std::stringstream oss;
+							oss << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                      << "***ERR*** Cannot find view of node " << nodeid << endl
                      << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                exit(EXIT_FAILURE);
+							throw ReportError(oss);
               }
               
               // get the lagrange multipliers
@@ -721,49 +730,53 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
               const int* slmdof = snode->LMDof();
               
               // loop colM_r/valM_r and assemble
-              for (int j=0; j<size; ++j)
-              {
+						for(int j = 0; j < size; ++j) {
                 int colmnode = colM_r[i+j];
                 double val   = valM_r[i+j];
-                if (abs(val)<1.0e-11) 
+
+							if(abs(val) < CONSTRAINT_MATRIX_ZERO)
                   continue;
                 
                 // get view of column node and primal dofs
 				Teuchos::RCP<MOERTEL::Node> colnode = GetNodeView(colmnode);
-                if (colnode==Teuchos::null)
-                {
-                  cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+							if(colnode == Teuchos::null) {
+								std::stringstream oss;
+								oss << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                        << "***ERR*** Cannot find view of node " << colmnode << endl
                        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                  exit(EXIT_FAILURE);
+								throw ReportError(oss);
                 }
+
                 int nmdof = colnode->Ndof();
                 const int* mdof = colnode->Dof();
-                if (nmdof != nslmdof)
-                {
-                  cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+							if(nmdof != nslmdof) {
+								std::stringstream oss;
+								oss << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                        << "***ERR*** Mismatch in # primal dofs and lagrange mutlipliers\n"
                        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                  exit(EXIT_FAILURE);
+								throw ReportError(oss);
                 }
                 
-                for (int k=0; k<nslmdof; ++k)
-                {
+							for(int k = 0; k < nslmdof; ++k) {
                   int row = slmdof[k];
                   int col = mdof[k];
                   //cout << "Proc " << lComm()->MyPID() << " inserting M row/col:" << row << "/" << col << " val " << val << endl;
                   int err = M.SumIntoGlobalValues(row,1,&val,&col);
+
                   if (err)
                     err = M.InsertGlobalValues(row,1,&val,&col);
-                  if (err<0)
-                  {
-                    cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+								if(err < 0) {
+									std::stringstream oss;
+									oss << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
                          << "***ERR*** Serious error=" << err << " in assembly\n"
                          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                    exit(EXIT_FAILURE);
+									throw ReportError(oss);
                   }
-                  if (err && OutLevel()>0)
-                  {
+
+								if(err && OutLevel() > 0) {
                     cout << "MOERTEL: ***WRN*** MOERTEL::Interface::Assemble_3D:\n"
                          << "MOERTEL: ***WRN*** interface " << Id() << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
                          << "MOERTEL: ***WRN*** indicating that initial guess for memory of M too small\n"
@@ -771,8 +784,10 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
                   }
                 } // for (int k=0; k<nslmdof; ++k)
               } // for (int j=0; j<size; ++j)
+
               i += size;
             }
+
             else // I am not owner of this node, skip it
               i += size;
           } // for (int i=0; i<countMr;)
@@ -796,17 +811,21 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
 
 /*----------------------------------------------------------------------*
  |  assemble integration of master/slave side into the residual vector (JFNK)
+ | 
+ |
+ | Here, each global node (rnode_) is visited on the slave interface side.
+ | Each node stores a local D, M, and Mmod.
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
-{ 
+//#define PDANDM
+bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel) {
 
-  if (!IsComplete())
-  {
-    cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+	if(!IsComplete()) {
+		cout << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
          << "***ERR*** Complete() not called on interface " << Id_ << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
+
   if (!lComm()) return true;
 
   // get the sides
@@ -816,8 +835,24 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
   //-------------------------------------------------------------------
   // loop over all slave nodes
   std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr;
+
+#ifdef PDANDM  // Save and print the D and M for debugging
+	int size = rnode_[sside].size();
+	int cnt = 0;
+	std::vector<int> dtable(size);
+
   for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
-  {
+
+		dtable[cnt++] = curr->second->Id();
+
+	Epetra_Map Dmap(-1, size, &dtable[0], 0, *lComm());
+	Epetra_CrsMatrix Dmat(Copy, Dmap, 4);
+	Epetra_CrsMatrix Mmat(Copy, Dmap, 4);
+
+#endif
+
+	for(curr = rnode_[sside].begin(); curr != rnode_[sside].end(); ++curr) {
+
     // loop only my own nodes
     if (NodePID(curr->second->Id()) != lComm()->MyPID())
       continue;
@@ -828,6 +863,7 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
 	Teuchos::RCP<std::map<int,double> >          Drow = curr->second->GetD();
 	Teuchos::RCP<std::map<int,double> >          Mrow = curr->second->GetM();
 	Teuchos::RCP<std::vector<std::map<int,double> > > Mmod = curr->second->GetMmod();
+
     // if there's no D or M there's nothing to do
     if (Drow==Teuchos::null && Mrow==Teuchos::null)
       continue;
@@ -842,22 +878,24 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
   //-------------------------------------------------------------------
   //-------------------------------------------------------------------
     // assemble the Drow
-    if (Drow != Teuchos::null)
-    {
-      for (rowcurr=Drow->begin(); rowcurr!=Drow->end(); ++rowcurr)
-      {
+		if(Drow != Teuchos::null) {
+			for(rowcurr = Drow->begin(); rowcurr != Drow->end(); ++rowcurr) {
         int colnode = rowcurr->first;
         double val  = rowcurr->second;
-        if (abs(val)<1.0e-11)  // this entry of D is effectively zero
+
+				if(abs(val) < CONSTRAINT_MATRIX_ZERO)   // this entry of D is effectively zero
           continue;
+#ifdef PDANDM  // Save the row, col, and value
+	Dmat.InsertGlobalValues(curr->second->Id(), 1, &val, &colnode);
+#endif
           
         //cout << "Current col snode: " << colnode << endl;
         
         // get the colsnode
 		Teuchos::RCP<MOERTEL::Node> colsnode = GetNodeView(colnode);
-        if (colsnode==Teuchos::null)
-        {
-          cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+				if(colsnode == Teuchos::null) {
+					cout << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                << "***ERR*** interface " << Id_ << ": cannot get view of node " << colnode << "\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           return false;
@@ -866,18 +904,17 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
         // get the primal dofs
         int sndof = colsnode->Ndof();
         const int* sdof = colsnode->Dof();
-        if (snlmdof != sndof)
-        {
-          cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+				if(snlmdof != sndof) {
+					cout << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                << "***ERR*** interface " << Id_ << ": mismatch in # lagrange multipliers and primal variables\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           return false;
         }
         
-        for (int i=0; i<snlmdof; ++i)
-        {
+				for(int i = 0; i < snlmdof; ++i) {
 
-          if(!sel->EvaluateLM(rowsnode, i)) // true if this LM is active
+					if(!sel->EvaluateLM(rowsnode, i)) // Continue if this LM is not active
 				  continue;
 
           int row = slmdof[i];
@@ -903,22 +940,25 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
   //-------------------------------------------------------------------
   //-------------------------------------------------------------------
     // assemble the Mrow
-    if (Mrow != Teuchos::null)
-    {
-      for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
-      {
+		if(Mrow != Teuchos::null) {
+			for(rowcurr = Mrow->begin(); rowcurr != Mrow->end(); ++rowcurr) {
         int colnode = rowcurr->first;
         double val  = rowcurr->second;
-        if (abs(val)<1.0e-11)
+
+				if(abs(val) < CONSTRAINT_MATRIX_ZERO)
           continue;
           
         // cout << "Current colmnode: " << colnode << endl;
+				//
+#ifdef PDANDM  // Save the row, col, and value
+	Mmat.InsertGlobalValues(curr->second->Id(), 1, &val, &colnode);
+#endif
         
         // get the colmnode
 		Teuchos::RCP<MOERTEL::Node> colmnode = GetNodeView(colnode);
-        if (colmnode==Teuchos::null)
-        {
-          cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+				if(colmnode == Teuchos::null) {
+					cout << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                << "***ERR*** interface " << Id_ << ": cannot get view of node " << colnode << "\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           return false;
@@ -927,16 +967,15 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
         // get the primal dofs
         int mndof = colmnode->Ndof();
         const int* mdof = colmnode->Dof();
-        if (snlmdof != mndof)
-        {
-          cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+				if(snlmdof != mndof) {
+					cout << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                << "***ERR*** interface " << Id_ << ": mismatch in # lagrange multipliers and primal variables\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
           return false;
         }
         
-        for (int i=0; i<snlmdof; ++i)
-        {
+				for(int i = 0; i < snlmdof; ++i) {
 
           if(!sel->EvaluateLM(rowsnode, i)) // true if this LM is active
 				  continue;
@@ -963,25 +1002,31 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
     
     
     // assemble the Mmod block if there is any
-    if (Mmod != Teuchos::null)
-    {
+		if(Mmod != Teuchos::null) {
       // loop over the rows of the Mmod block
-      for (int lrow=0; lrow<(int)Mmod->size(); ++lrow)
-      {
+
+			std::stringstream oss;
+			oss << "Mmod has entries in it" << endl;
+			throw ReportError(oss);
+
+			for(int lrow = 0; lrow < (int)Mmod->size(); ++lrow) {
+
 //        std::map<int,double>& Mmodrow = (*Mmod)[lrow];
+//
         int row = slmdof[lrow];
         
         // loop over the columns in that row
         // FIXMEL: should this be Mmodrow (above)?
-        for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
-        {
+
+				for(rowcurr = Mrow->begin(); rowcurr != Mrow->end(); ++rowcurr) {
 
           if(!sel->EvaluateLM(rowsnode, lrow)) // true if this LM is active
 				  continue;
 
           int col = rowcurr->first;
           double val = rowcurr->second;
-          if (abs(val)<1.0e-11)
+
+					if(abs(val) < CONSTRAINT_MATRIX_ZERO)
             continue;
 
 		  // Assemble D times soln
@@ -1001,12 +1046,13 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
       } // for (int lrow=0; lrow<(int)Mmod->size(); ++lrow)
     }
 
-    sel->AccumulateSRHS(rowsnode);
+		sel->AccumulateRHS(rowsnode);
 
   } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
 
-  // Master side
+	// Master side - Is this even needed??? GAH
 
+	/*
   for (curr=rnode_[mside].begin(); curr!=rnode_[mside].end(); ++curr){
 
 	Teuchos::RCP<MOERTEL::Node> rowsnode = curr->second;
@@ -1014,6 +1060,7 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
     sel->AccumulateMRHS(rowsnode);
 
   }
+	*/
 
   //-------------------------------------------------------------------
   //-------------------------------------------------------------------
@@ -1022,8 +1069,9 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
   // close inner-interface nodes). If these inner-interface nodes belong
   // to a different proc values were not assembled.
   // Loop snodes again an check and communicate these entries
-  if (lComm()->NumProc()!=1)
-  {
+	
+	if(lComm()->NumProc() != 1) {
+
       // note that we miss the communication of Mmod yet
       
       // allocate a sendbuffer for D and M
@@ -1033,8 +1081,8 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
 	  std::vector<double> valD_s(countD);
 	  std::vector<int> colM_s(countM);
 	  std::vector<double> valM_s(countM);
-      for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
-      {
+
+		for(curr = rnode_[sside].begin(); curr != rnode_[sside].end(); ++curr) {
         // we've done all my own nodes already
         if (NodePID(curr->second->Id()) == lComm()->MyPID())
           continue;
@@ -1051,8 +1099,7 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
         //cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id() << " unassembled\n"; 
         
         // fill the D sendbuffer
-        if (Drow != Teuchos::null)
-        {
+			if(Drow != Teuchos::null) {
           // resize the sendbuffers
           colD_s.resize(colD_s.size()+Drow->size()+2);
           valD_s.resize(valD_s.size()+Drow->size()+2);
@@ -1064,18 +1111,18 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
           countD += 2;
           // loop D
 		  std::map<int,double>::iterator rowcurr;
-          for (rowcurr=Drow->begin(); rowcurr!=Drow->end(); ++rowcurr)
-          {
+
+				for(rowcurr = Drow->begin(); rowcurr != Drow->end(); ++rowcurr) {
             colD_s[countD] = rowcurr->first;
             valD_s[countD] = rowcurr->second;
             ++countD;
           }
         }
+
         //cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id() << " countD " << countD << endl;
         
         // fill the M sendbuffer
-        if (Mrow != Teuchos::null)
-        {
+			if(Mrow != Teuchos::null) {
           // resize the sendbuffers
           colM_s.resize(colM_s.size()+Mrow->size()+2);
           valM_s.resize(valM_s.size()+Mrow->size()+2);
@@ -1087,8 +1134,8 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
           countM += 2;
           // loop M
 		  std::map<int,double>::iterator rowcurr;
-          for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
-          {
+
+				for(rowcurr = Mrow->begin(); rowcurr != Mrow->end(); ++rowcurr) {
             colM_s[countM] = rowcurr->first;
             valM_s[countM] = rowcurr->second;
             ++countM;
@@ -1100,8 +1147,7 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
       
       
       // loop all processes in lComm and communicate and assemble
-      for (int proc=0; proc<lComm()->NumProc(); ++proc)
-      {
+		for(int proc = 0; proc < lComm()->NumProc(); ++proc) {
         // send sizes
         int countDr = countD;
         int countMr = countM;
@@ -1112,45 +1158,44 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
 		std::vector<double> valD_r(countDr);
 		std::vector<int>    colM_r(countMr);
 		std::vector<double> valM_r(countMr);
+
         // send data
-        if (proc==lComm()->MyPID())
-        {
-          for (int i=0; i<countDr; ++i)
-          {
+			if(proc == lComm()->MyPID()) {
+				for(int i = 0; i < countDr; ++i) {
             colD_r[i] = colD_s[i];
             valD_r[i] = valD_s[i];
           }
-          for (int i=0; i<countMr; ++i)
-          {
+
+				for(int i = 0; i < countMr; ++i) {
             colM_r[i] = colM_s[i];
             valM_r[i] = valM_s[i];
           }
         }
+
         lComm()->Broadcast(&colD_r[0],countDr,proc);
         lComm()->Broadcast(&valD_r[0],countDr,proc);
         lComm()->Broadcast(&colM_r[0],countMr,proc);
         lComm()->Broadcast(&valM_r[0],countMr,proc);
         
         // Assemble (remote procs only)
-        if (proc!=lComm()->MyPID())
-        {
+			if(proc != lComm()->MyPID()) {
           // --------------------------------------------------- Assemble D
-          for (int i=0; i<countDr;)
-          {
+				for(int i = 0; i < countDr;) {
             int nodeid = colD_r[i];
             int size   = colD_r[i+1];
             i += 2;
+
             // find whether I am owner of this node
-            if (NodePID(nodeid) == lComm()->MyPID())
-            {
+					if(NodePID(nodeid) == lComm()->MyPID()) {
               // get the node
 			  Teuchos::RCP<MOERTEL::Node> snode = GetNodeView(nodeid);
-              if (snode == Teuchos::null)
-              {
-                cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+						if(snode == Teuchos::null) {
+							std::stringstream oss;
+							oss << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                      << "***ERR*** Cannot find view of node " << nodeid << endl
                      << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                exit(EXIT_FAILURE);
+							throw ReportError(oss);
               }
               
               // get lagrange multipliers
@@ -1158,34 +1203,36 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
               const int* slmdof = snode->LMDof();
               
               // loop colD_r/valD_r and assemble
-              for (int j=0; j<size; ++j)
-              {
+						for(int j = 0; j < size; ++j) {
                 int colsnode = colD_r[i+j];
                 double val   = valD_r[i+j];
-                if (abs(val)<1.0e-11) 
+
+							if(abs(val) < CONSTRAINT_MATRIX_ZERO)
                   continue;
                 
                 // get view of column node and primal dofs
 				Teuchos::RCP<MOERTEL::Node> colnode = GetNodeView(colsnode);
-                if (colnode==Teuchos::null)
-                {
-                  cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+							if(colnode == Teuchos::null) {
+								std::stringstream oss;
+								oss << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                        << "***ERR*** Cannot find view of node " << colsnode << endl
                        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                  exit(EXIT_FAILURE);
+								throw ReportError(oss);
                 }
+
                 int       nsdof = colnode->Ndof();
                 const int* sdof = colnode->Dof();
-                if (nsdof != nslmdof)
-                {
-                  cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+							if(nsdof != nslmdof) {
+								std::stringstream oss;
+								oss << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                        << "***ERR*** Mismatch in # primal dofs and lagrange mutlipliers\n"
                        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                  exit(EXIT_FAILURE);
+								throw ReportError(oss);
                 }
                 
-                for (int k=0; k<nslmdof; ++k)
-                {
+							for(int k = 0; k < nslmdof; ++k) {
 
                   if(!sel->EvaluateLM(snode, k)) // true if this LM is active
 						continue;
@@ -1209,29 +1256,31 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
 
                 } // for (int k=0; k<nslmdof; ++k)
               } // for (int j=0; j<size; ++j)
+
               i += size;
             }
+
             else // I am not owner of this node, skip it
               i += size;
           } // for (int i=0; i<countDr;)
           
           // --------------------------------------------------- Assemble M
-          for (int i=0; i<countMr;)
-          {
+				for(int i = 0; i < countMr;) {
             int nodeid = colM_r[i];
             int size   = colM_r[i+1];
             i += 2;
+
             // find whether I am owner of this node
-            if (NodePID(nodeid) == lComm()->MyPID())
-            {
+					if(NodePID(nodeid) == lComm()->MyPID()) {
               // get the node
 			  Teuchos::RCP<MOERTEL::Node> snode = GetNodeView(nodeid);
-              if (snode == Teuchos::null)
-              {
-                cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+						if(snode == Teuchos::null) {
+							std::stringstream oss;
+							oss << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                      << "***ERR*** Cannot find view of node " << nodeid << endl
                      << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                exit(EXIT_FAILURE);
+							throw ReportError(oss);
               }
               
               // get the lagrange multipliers
@@ -1239,34 +1288,36 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
               const int* slmdof = snode->LMDof();
               
               // loop colM_r/valM_r and assemble
-              for (int j=0; j<size; ++j)
-              {
+						for(int j = 0; j < size; ++j) {
                 int colmnode = colM_r[i+j];
                 double val   = valM_r[i+j];
-                if (abs(val)<1.0e-11) 
+
+							if(abs(val) < CONSTRAINT_MATRIX_ZERO)
                   continue;
                 
                 // get view of column node and primal dofs
 				Teuchos::RCP<MOERTEL::Node> colnode = GetNodeView(colmnode);
-                if (colnode==Teuchos::null)
-                {
-                  cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+							if(colnode == Teuchos::null) {
+								std::stringstream oss;
+								oss << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                        << "***ERR*** Cannot find view of node " << colmnode << endl
                        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                  exit(EXIT_FAILURE);
+								throw ReportError(oss);
                 }
+
                 int nmdof = colnode->Ndof();
                 const int* mdof = colnode->Dof();
-                if (nmdof != nslmdof)
-                {
-                  cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+
+							if(nmdof != nslmdof) {
+								std::stringstream oss;
+								oss << "***ERR*** MOERTEL::Interface::AssembleJFNKVec:\n"
                        << "***ERR*** Mismatch in # primal dofs and lagrange mutlipliers\n"
                        << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-                  exit(EXIT_FAILURE);
+								throw ReportError(oss);
                 }
                 
-                for (int k=0; k<nslmdof; ++k)
-                {
+							for(int k = 0; k < nslmdof; ++k) {
                   int row = slmdof[k];
                   int col = mdof[k];
                   //cout << "Proc " << lComm()->MyPID() << " inserting M row/col:" << row << "/" << col << " val " << val << endl;
@@ -1285,8 +1336,10 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
 
                 } // for (int k=0; k<nslmdof; ++k)
               } // for (int j=0; j<size; ++j)
+
               i += size;
             }
+
             else // I am not owner of this node, skip it
               i += size;
           } // for (int i=0; i<countMr;)
@@ -1304,5 +1357,11 @@ bool MOERTEL::Interface::AssembleJFNKVec(Lmselector *sel)
     valM_s.clear();
   } // if (lComm()->NumProc()!=1)
   
+#ifdef PDANDM
+	Dmat.Print(std::cout);
+	Mmat.Print(std::cout);
+	throw "Done";
+#endif
+
   return true;
 }

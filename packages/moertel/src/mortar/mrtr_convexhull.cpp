@@ -216,13 +216,16 @@ bool MOERTEL::Overlap::MakeRightTurnUpper(int i,std::map<int,Teuchos::RCP<MOERTE
   // the points i-1 and i-2 do not necessary have ids i-1 and i-2, they 
   // are just the 2 point BEFORE i (could have any id < i)
   std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = hull.find(i);
-  if (curr==hull.end())
-  {
-    cout << "MOERTEL: ***ERR*** MOERTEL::Overlap::MakeRightTurn:\n"
+
+  if (curr==hull.end()) {
+
+	  std::stringstream oss;
+			oss << "MOERTEL: ***ERR*** MOERTEL::Overlap::MakeRightTurn:\n"
          << "MOERTEL: ***ERR*** cannot find point " << i << " in convex hull\n"
          << "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+	  throw ReportError(oss);
   }
+
   Teuchos::RCP<MOERTEL::Point> point = curr->second; //cout << *point;
   curr--;
   Teuchos::RCP<MOERTEL::Point> pointm1 = curr->second; //cout << *pointm1;
@@ -258,13 +261,17 @@ bool MOERTEL::Overlap::MakeRightTurnLower(int i,std::map<int,Teuchos::RCP<MOERTE
   // the points i-1 and i-2 do not necessary have ids i-1 and i-2, they 
   // are just the 2 point BEFORE i (could have any id < i)
   std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = hull.find(i);
-  if (curr==hull.end())
-  {
-    cout << "***ERR*** MOERTEL::Overlap::MakeRightTurn:\n"
-         << "***ERR*** cannot find point " << i << " in convex hull\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+
+  if (curr==hull.end()) {
+
+	  std::stringstream oss;
+			oss << "MOERTEL: ***ERR*** MOERTEL::Overlap::MakeRightTurn:\n"
+				<< "MOERTEL: ***ERR*** cannot find point " << i << " in convex hull\n"
+				<< "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+	  throw ReportError(oss);
+
   }
+
   Teuchos::RCP<MOERTEL::Point> point = curr->second; //cout << *point;
   curr++;
   Teuchos::RCP<MOERTEL::Point> pointm1 = curr->second; //cout << *pointm1;
@@ -299,13 +306,16 @@ void MOERTEL::Overlap::RemovePointBefore(int i,std::map<int,Teuchos::RCP<MOERTEL
   // point i for sure exists as it was added as last point
   // the points i-1 does not necessary have id i-1  
   std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = hull.find(i);
-  if (curr==hull.end())
-  {
-    cout << "***ERR*** MOERTEL::Overlap::RemovePointBefore:\n"
-         << "***ERR*** cannot find point " << i << " in convex hull\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+
+  if (curr==hull.end()) {
+
+	  std::stringstream oss;
+			oss << "MOERTEL: ***ERR*** MOERTEL::Overlap::RemovePointBefore:\n"
+				<< "MOERTEL: ***ERR*** cannot find point " << i << " in convex hull\n"
+				<< "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+	  throw ReportError(oss);
   }
+
   curr--;
   //cout << "Erasing point " << curr->first << " from hull\n";
   hull.erase(curr->first);
@@ -321,13 +331,16 @@ void MOERTEL::Overlap::RemovePointAfter(int i,std::map<int,Teuchos::RCP<MOERTEL:
   // point i for sure exists as it was added as last point
   // the points i-1 does not necessary have id i-1  
   std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = hull.find(i);
-  if (curr==hull.end())
-  {
-    cout << "***ERR*** MOERTEL::Overlap::RemovePointBefore:\n"
-         << "***ERR*** cannot find point " << i << " in convex hull\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
+
+  if (curr==hull.end()) {
+
+	  std::stringstream oss;
+			oss << "MOERTEL: ***ERR*** MOERTEL::Overlap::RemovePointBefore:\n"
+				<< "MOERTEL: ***ERR*** cannot find point " << i << " in convex hull\n"
+				<< "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+	  throw ReportError(oss);
   }
+
   curr++;
   //cout << "Erasing point " << curr->first << " from hull\n";
   hull.erase(curr->first);
@@ -419,14 +432,14 @@ bool MOERTEL::Overlap::CollapsePoints(std::map<int,Teuchos::RCP<MOERTEL::Point> 
   // sum is computed on the polygon.  If the area is 0, this generates NaNs.
   // By commenting out this if block, the check for degeneracy will work as
   // claimed in the comments.
-  /*
+  /* */
   if (pnew.size() < 3)
   {
     pnew.clear();
     collapse.clear();
     return true;
   }
-  */
+  /* */
 
   p.clear();
   CopyPointPolygon(pnew,p);

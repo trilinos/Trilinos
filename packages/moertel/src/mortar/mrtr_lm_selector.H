@@ -122,18 +122,15 @@ public:
   /*!
   \brief Functions that accumulate values into the RHS depending on the state of the contact problem
   
-  \param node (in) : the slave or master node of interest
+  \param node (in) : the slave node of interest
   \param rhs (out) : the JFNK residual vector
   \param soln (in) : the current state vector
 
-  Note that this class can (and should) be used to accumulate particular values of the LM into rhs using soln. Further,
-  there are two functions, one for the slave interface nodes (that host the LMs) and one for the master interface
-  nodes.
+  Note that this class can (and should) be used to accumulate particular values of the LM into rhs using soln.
+  This function is called for the slave interface nodes (that host the LMs).
   */
 
-  virtual void AccumulateSRHS(Teuchos::RCP<MOERTEL::Node> node) = 0;
-
-  virtual void AccumulateMRHS(Teuchos::RCP<MOERTEL::Node> node) = 0;
+  virtual void AccumulateRHS(Teuchos::RCP<MOERTEL::Node> node) = 0;
 
   /*!
   \brief Functions that accumulate values into the RHS depending on the state of the contact problem
