@@ -10,9 +10,7 @@
 #include "Panzer_ConnManager.hpp"
 
 #include "Panzer_STK_Interface.hpp"
-
-namespace panzer { class IntrepidFieldPattern; }
-namespace panzer { class template <typename ScalarT> Intrepid::FieldContainer; }
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 namespace panzer_stk {
 
@@ -84,11 +82,23 @@ public:
    virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockId) const
    { return *(elementBlocks_.find(blockId)->second); }
 
-   /** Get the coordinates for a specified element block and field pattern.
+   /** Get the coordinates (with local cell ids) for a specified element block and field pattern.
+     * 
+     * \param[in] blockId Block containing the cells
+     * \param[in] coordProvider Field pattern that builds the coordinates
+     * \param[out] localCellIds Local cell Ids (indices)
+     * \param[out] Resizable field container that contains the coordinates 
+     *             of the points on exit.
      */
    virtual void getDofCoords(const std::string & blockId,
                              const panzer::IntrepidFieldPattern & coordProvider,
+                             std::vector<std::size_t> & localCellIds,
                              Intrepid::FieldContainer<double> & points) const;
+
+    /** Get STK interface that this connection manager is built on.
+      */
+    Teuchos::RCP<STK_Interface> getSTKInterface() const
+    { return stkMeshDB_; }
 
 protected:
    /** Apply periodic boundary conditions associated with the mesh object.

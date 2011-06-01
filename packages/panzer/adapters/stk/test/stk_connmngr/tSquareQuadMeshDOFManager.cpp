@@ -26,6 +26,7 @@ typedef Intrepid::FieldContainer<double> FieldContainer;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
+using Teuchos::rcp_dynamic_cast;
 
 namespace panzer_stk {
 
@@ -45,11 +46,11 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
 }
 
 template <typename IntrepidType>
-RCP<const panzer::FieldPattern> buildFieldPattern()
+RCP<const panzer::IntrepidFieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
    RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new IntrepidType);
-   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::IntrepidFieldPattern(basis));
+   RCP<const panzer::IntrepidFieldPattern> pattern = rcp(new panzer::IntrepidFieldPattern(basis));
    return pattern;
 }
 
@@ -387,6 +388,62 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
    }
    else
       TEUCHOS_ASSERT(false);
+}
+
+TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+   #else
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+   #endif
+
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
+
+   TEUCHOS_ASSERT(numProcs==2);
+   // build DOF manager
+   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,2,1);
+   RCP<const panzer_stk::STKConnManager> stkManager = rcp_dynamic_cast<panzer_stk::STKConnManager>(connManager);
+   RCP<panzer_stk::STK_Interface> meshDB = stkManager->getSTKInterface();
+   meshDB->print(out);
+
+   // grab elements from mesh
+   std::vector<stk::mesh::Entity*> block00, block01;
+   meshDB->getMyElements("eblock-0_0",block00);
+   meshDB->getMyElements("eblock-1_0",block01);
+  
+   std::vector<std::size_t> localIds_00, localIds_01;
+   FieldContainer coords00, coords01;
+   RCP<const panzer::IntrepidFieldPattern> patternC1_00
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+   RCP<const panzer::IntrepidFieldPattern> patternC1_01
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+
+   // get coordinates
+   stkManager->getDofCoords("eblock-0_0",*patternC1_00,localIds_00,coords00); 
+   stkManager->getDofCoords("eblock-1_0",*patternC1_01,localIds_01,coords01); 
+
+   TEST_EQUALITY(localIds_00.size(),block00.size());
+   TEST_EQUALITY(localIds_01.size(),block01.size());
+
+   TEST_EQUALITY(coords00.dimension(0),int(localIds_00.size()));
+   TEST_EQUALITY(coords01.dimension(0),int(localIds_01.size()));
+
+   TEST_EQUALITY(coords00.dimension(1),4); TEST_EQUALITY(coords00.dimension(2),2);
+   TEST_EQUALITY(coords01.dimension(1),9); TEST_EQUALITY(coords01.dimension(2),2);
+
+   for(std::size_t i=0;i<block00.size();i++) 
+      TEST_EQUALITY(localIds_00[i],meshDB->elementLocalId(block00[i]));
+   for(std::size_t i=0;i<block01.size();i++) 
+      TEST_EQUALITY(localIds_01[i],meshDB->elementLocalId(block01[i]));
+
+   // for(std::size_t c=0;c<block00.size();c++) {
+   //    stk::mesh::Entity * element = block00[c];
+   //    for(int i=0;i<4;i++) {
+   //    }
+   // }
 }
 
 }

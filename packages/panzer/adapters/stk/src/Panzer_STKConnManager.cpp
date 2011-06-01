@@ -5,12 +5,12 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_STK_PeriodicBC_Matcher.hpp"
+#include "Panzer_STK_SetupUtilities.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -254,20 +254,21 @@ void STKConnManager::applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOr
 
 /** Get the coordinates for a specified element block and field pattern.
   */
-virtual void STKConnManager::getDofCoords(const std::string & blockId,
-                                          const panzer::IntrepidFieldPattern & coordProvider,
-                                          Intrepid::FieldContainer<double> & points) const
+void STKConnManager::getDofCoords(const std::string & blockId,
+                                  const panzer::IntrepidFieldPattern & coordProvider,
+                                  std::vector<std::size_t> & localCellIds,
+                                  Intrepid::FieldContainer<double> & points) const
 {
    int dim = coordProvider.getDimension();
    int numIds = coordProvider.numberIds();
-   int numVerts = coordProvider.getSubcellCount(0); 
 
-   std::vector<stk::mesh::Entity *> elements;
-   stkMeshDB_->getMyElements(blockId,elements);
-
+   // grab element vertices
    Intrepid::FieldContainer<double> vertices;
-   vertices.resize(elements.size(),numVerts,dim);
+   workset_utils::getIdsAndVertices(*stkMeshDB_,blockId,localCellIds,vertices);
 
+   // setup output array
+   points.resize(localCellIds.size(),numIds,dim);
+   coordProvider.getInterpolatoryCoordinates(vertices,points);
 }
 
 }
