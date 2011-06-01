@@ -3,7 +3,6 @@
 #ifdef HAVE_KOKKOS_THRUST
 
 #include "NodeTest.hpp"
-#include "Kokkos_CUDA_util_inline_runtime.h"
 #include <thrust/device_vector.h>
 
 void thrust_float_alloc(int N, thrust::device_vector<float> &buff);
