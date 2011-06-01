@@ -407,7 +407,7 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
   int NumMyRows = Aprime->NumMyRows();
   int Row, err;
 
-  if( scalarA )
+  if( scalarA && (MaxNumEntries > 0))
   {
     for( int i = 0; i < NumMyRows; ++i )
     {

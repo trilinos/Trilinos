@@ -286,7 +286,16 @@ Teuchos::RCP<Epetra_Map> MOERTEL::Manager::LagrangeMultiplierDofs()
   // create the rowmap for the constraints
   // Note that this map contains the global communicator from the MOERTEL::Manager
   // NOT any interface local one
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(gsize,lsize,&(mylmids[0]),0,comm_));
+
+  Teuchos::RCP<Epetra_Map> map;
+
+  if(lsize == 0) // this PE contributes nothing to the global map
+
+	map = Teuchos::rcp(new Epetra_Map(gsize,0,NULL,0,comm_));
+
+  else
+
+	map = Teuchos::rcp(new Epetra_Map(gsize,lsize,&(mylmids[0]),0,comm_));
 
   // tidy up
   mylmids.clear();

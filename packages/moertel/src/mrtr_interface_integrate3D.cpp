@@ -602,10 +602,17 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
             valM_r[i] = valM_s[i];
           }
         }
-        lComm()->Broadcast(&colD_r[0],countDr,proc);
-        lComm()->Broadcast(&valD_r[0],countDr,proc);
-        lComm()->Broadcast(&colM_r[0],countMr,proc);
-        lComm()->Broadcast(&valM_r[0],countMr,proc);
+		if(countDr > 0){
+
+			lComm()->Broadcast(&colD_r[0],countDr,proc);
+			lComm()->Broadcast(&valD_r[0],countDr,proc);
+		}
+
+		if(countMr > 0){
+
+			lComm()->Broadcast(&colM_r[0],countMr,proc);
+			lComm()->Broadcast(&valM_r[0],countMr,proc);
+		}
         
         // Assemble (remote procs only)
         if (proc!=lComm()->MyPID())

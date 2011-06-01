@@ -963,26 +963,34 @@ bool MOERTEL::Interface::RedundantSegments(int side)
     }
     
     // broadcast proc's segments
-    lcomm_->Broadcast(&bsize,1,proc);
+	
+    lcomm_->Broadcast(&bsize,1,proc); // Communicate the size of data needed to store the segments
+
     if (lcomm_->MyPID() != proc)
       bcast.resize(bsize);
-    lcomm_->Broadcast(&bcast[0],bsize,proc);
+
+	if(bsize > 0){ // Only send the segment(s) if there are one or more
+
+		lcomm_->Broadcast(&bcast[0],bsize,proc);
     
-    // Unpack proc's segments
-    if (lcomm_->MyPID() != proc)
-    {
-      int count=0;
-      for (int i=0; i<nseg; ++i)
-      {
-        // the type of segment is stored second in the pack
-	MOERTEL::Segment* tmp = AllocateSegment(bcast[count+1],OutLevel());
-        tmp->UnPack(&(bcast[count]));
-		Teuchos::RCP<MOERTEL::Segment> tmp2 = Teuchos::rcp(tmp);
-        count += bcast[count];
-        rmap->insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(tmp2->Id(),tmp2));
-      }
-    }
+		// Unpack proc's segments
+		if (lcomm_->MyPID() != proc) {
+
+			int count=0;
+			for (int i=0; i<nseg; ++i) {
+
+				// the type of segment is stored second in the pack
+				MOERTEL::Segment* tmp = AllocateSegment(bcast[count+1],OutLevel());
+				tmp->UnPack(&(bcast[count]));
+				Teuchos::RCP<MOERTEL::Segment> tmp2 = Teuchos::rcp(tmp);
+				count += bcast[count];
+				rmap->insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(tmp2->Id(),tmp2));
+			}
+		}
+	}
+
     bcast.clear();
+
   } // for (int proc=0; proc<lcomm_->NumProc(); ++proc)
   return true;
 }
@@ -1065,23 +1073,30 @@ bool MOERTEL::Interface::RedundantNodes(int side)
     }
     
     // bcast proc's nodes
+	
     lcomm_->Broadcast(&bsize,1,proc);
+
     if (lcomm_->MyPID() != proc)
       bcast.resize(bsize);
-    lcomm_->Broadcast(&bcast[0],bsize,proc);
+
+	if(bsize > 0){ // Only send the segment(s) if there are one or more
+
+		lcomm_->Broadcast(&bcast[0],bsize,proc);
     
-    // Unpack proc's nodes
-    if (lcomm_->MyPID() != proc)
-    {
-      int count=0;
-      for (int i=0; i<nnode; ++i)
-      {
-		Teuchos::RCP<MOERTEL::Node> tmp = Teuchos::rcp(new MOERTEL::Node(OutLevel()));
-        tmp->UnPack(&(bcast[count]));
-        count += (int)bcast[count];
-        rmap->insert(std::pair<int,Teuchos::RCP<MOERTEL::Node> >(tmp->Id(),tmp));
-      }
-    }    
+		// Unpack proc's nodes
+		if (lcomm_->MyPID() != proc) {
+
+			int count=0;
+			for (int i=0; i<nnode; ++i) {
+
+				Teuchos::RCP<MOERTEL::Node> tmp = Teuchos::rcp(new MOERTEL::Node(OutLevel()));
+				tmp->UnPack(&(bcast[count]));
+				count += (int)bcast[count];
+				rmap->insert(std::pair<int,Teuchos::RCP<MOERTEL::Node> >(tmp->Id(),tmp));
+			}
+		}    
+	}
+
     bcast.clear();
   } // for (int proc=0; proc<lcomm_->NumProc(); ++proc)
   return true;
