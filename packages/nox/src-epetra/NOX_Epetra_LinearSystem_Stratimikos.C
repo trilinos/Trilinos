@@ -457,13 +457,13 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
       // Computation of prec (e.g. ilu) happens here:
       precFactory->initializePrec(losb, precObj.get());
 
-      // // Get underlying Epetra operator
-      // Teuchos::RCP<Thyra::LinearOpBase<double> > pop;
-      // pop = precObj->getNonconstRightPrecOp();
-      // if (pop == Teuchos::null)
-      // 	pop = precObj->getNonconstUnspecifiedPrecOp();
-      // precPtr = 
-      // 	Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
+      // Get underlying Epetra operator
+      Teuchos::RCP<Thyra::LinearOpBase<double> > pop;
+      pop = precObj->getNonconstRightPrecOp();
+      if (pop == Teuchos::null)
+      	pop = precObj->getNonconstUnspecifiedPrecOp();
+      solvePrecOpPtr = 
+      	Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
     }
     else // no preconditioner
       precObj = Teuchos::null;
@@ -491,13 +491,13 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
       // Computation of prec (e.g. ilu) happens here:
       precFactory->initializePrec(losb, precObj.get());
 
-      // // Get underlying Epetra operator
-      // Teuchos::RCP<Thyra::LinearOpBase<double> > pop;
-      // pop = precObj->getNonconstRightPrecOp();
-      // if (pop == Teuchos::null)
-      // 	pop = precObj->getNonconstUnspecifiedPrecOp();
-      // precPtr = 
-      // 	Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
+      // Get underlying Epetra operator
+      Teuchos::RCP<Thyra::LinearOpBase<double> > pop;
+      pop = precObj->getNonconstRightPrecOp();
+      if (pop == Teuchos::null)
+      	pop = precObj->getNonconstUnspecifiedPrecOp();
+      solvePrecOpPtr = 
+      	Teuchos::rcp_dynamic_cast<Thyra::EpetraLinearOp>(pop,true)->epetra_op();
     }
     else // no preconditioner
       precObj = Teuchos::null;
@@ -518,6 +518,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
        rcp(new Thyra::DefaultPreconditioner<double>);
     precObjDef->initializeRight(precOp);
     precObj = precObjDef;
+    solvePrecOpPtr = precPtr;
   }
 
   isPrecConstructed = true; 
@@ -668,21 +669,21 @@ NOX::Epetra::LinearSystemStratimikos::getJacobianOperator()
 Teuchos::RCP<const Epetra_Operator>
 NOX::Epetra::LinearSystemStratimikos::getPrecOperator() const
 {
-  return precPtr;
+  return solvePrecOpPtr;
 }
 
 //***********************************************************************
 Teuchos::RCP<const Epetra_Operator> 
 NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator() const
 {
-  return precPtr;
+  return solvePrecOpPtr;
 }
 
 //***********************************************************************
 Teuchos::RCP<Epetra_Operator>
 NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator()
 {
-  return precPtr;
+  return solvePrecOpPtr;
 }
 
 //***********************************************************************
@@ -781,15 +782,11 @@ void
 NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve(
 	       const Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
 {
-  TEST_FOR_EXCEPTION(precMatrixSource != UserDefined_, std::logic_error,
-     "NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve\n"
-     << " only implemented for user-defined preconditioners!");
-
-  precPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
+  solvePrecOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
 
   // Wrap the preconditioner so that apply() calls ApplyInverse()
   Teuchos::RCP<const Thyra::LinearOpBase<double> > precOp =
-    Thyra::epetraLinearOp(precPtr, 
+    Thyra::epetraLinearOp(solvePrecOpPtr, 
 			  Thyra::NOTRANS, 
 			  Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
 
