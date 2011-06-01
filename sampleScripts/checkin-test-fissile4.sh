@@ -40,11 +40,14 @@ echo "
 # Extra intel builds added with --extra-builds=INTEL_RELEASE,...
 #
 
+# note: the pvm dirs below can be removed when configure_options_files supports multiple fragments
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/intel-12.191-options.cmake
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
 -DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
--DTPL_ENABLE_PVM:BOOL=OFF
+-DTPL_ENABLE_PVM:BOOL=ON
+-DPVM_LIBRARY_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/lib/LINUX64'
+-DPVM_INCLUDE_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/include'
 -DVERA_COUPLED_BOA:BOOL=OFF
 -DVERA_COUPLED_RAVE:BOOL=OFF
 -DDART_TESTING_TIMEOUT:STRING=660
@@ -54,7 +57,9 @@ echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/intel-12.191-options.cmake
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
 -DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
--DTPL_ENABLE_PVM:BOOL=OFF
+-DTPL_ENABLE_PVM:BOOL=ON
+-DPVM_LIBRARY_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/lib/LINUX64'
+-DPVM_INCLUDE_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/include'
 -DVERA_COUPLED_BOA:BOOL=ON
 -DVERA_COUPLED_RAVE:BOOL=ON
 -DDART_TESTING_TIMEOUT:STRING=660
