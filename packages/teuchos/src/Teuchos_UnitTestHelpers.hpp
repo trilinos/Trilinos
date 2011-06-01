@@ -40,7 +40,10 @@
 #include "Teuchos_StaticSetupMacro.hpp"
 
 
-/** \brief Basic unit test creation macro for non-templated code. */
+/** \brief Basic unit test creation macro for non-templated code.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST(TEST_GROUP, TEST_NAME) \
   class TEST_GROUP##_##TEST_NAME##_UnitTest : public Teuchos::UnitTestBase \
 	{ \
@@ -60,7 +63,11 @@
     Teuchos::FancyOStream &out, bool &success ) const \
 
 
-/** \brief Basic unit test creation macro for templated code on one template parameter. */
+/** \brief Basic unit test creation macro for templated code on one template
+ * parameter.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(TEST_GROUP, TEST_NAME, TYPE) \
   template<class TYPE> \
   class TEST_GROUP##_##TEST_NAME##_UnitTest : public Teuchos::UnitTestBase \
@@ -78,7 +85,11 @@
 	void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE>::runUnitTestImpl( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
-/** \brief Template instantiation for a single templated type. */
+
+/** \brief Template instantiation for a single templated type.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(TEST_GROUP, TEST_NAME, TYPE) \
   \
   template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE>; \
@@ -115,13 +126,18 @@
 
 /** \brief Instantiate a whole group of tests for supported real Scalar
  * types.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
  */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(TEST_GROUP, TEST_NAME)\
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_FLOAT(TEST_GROUP, TEST_NAME) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_DOUBLE(TEST_GROUP, TEST_NAME)
 
 
-/** \brief Instantiate a whole group of tests for supported Scalar types. */
+/** \brief Instantiate a whole group of tests for supported Scalar types.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(TEST_GROUP, TEST_NAME)\
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_FLOAT(TEST_GROUP, TEST_NAME) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_DOUBLE(TEST_GROUP, TEST_NAME) \
@@ -129,7 +145,11 @@
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_DOUBLE(TEST_GROUP, TEST_NAME)
 
 
-/** \brief Basic unit test creation macro for templated code on two template parameters. */
+/** \brief Basic unit test creation macro for templated code on two template
+ * parameters.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2) \
   template<class TYPE1, class TYPE2> \
   class TEST_GROUP##_##TEST_NAME##_UnitTest : public Teuchos::UnitTestBase \
@@ -151,14 +171,22 @@
 	void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2>::runUnitTestImpl( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
-/** \brief Template instantiation for two templated types. */
+/** \brief Template instantiation for two templated types.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(TEST_GROUP, TEST_NAME, TYPE1, TYPE2) \
   \
   template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2 >; \
   TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2 > \
   instance_##TEST_GROUP##_##TYPE1##_##TYPE2##_##TEST_NAME##_UnitTest(#TYPE1,#TYPE2);
 
-/** \brief Basic unit test creation macro for templated code on three template parameters. */
+
+/** \brief Basic unit test creation macro for templated code on three template
+ * parameters.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3) \
   template<class TYPE1, class TYPE2, class TYPE3> \
   class TEST_GROUP##_##TEST_NAME##_UnitTest : public Teuchos::UnitTestBase \
@@ -181,14 +209,23 @@
 	void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2,TYPE3>::runUnitTestImpl( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
-/** \brief Template instantiation for three templated types. */
+
+/** \brief Template instantiation for three templated types.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3) \
   \
   template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3 >; \
   TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3 > \
   instance_##TEST_GROUP##_##TYPE1##_##TYPE2##_##TYPE3##_##TEST_NAME##_UnitTest(#TYPE1,#TYPE2,#TYPE3);
 
-/** \brief Basic unit test creation macro for templated code on four template parameters. */
+
+/** \brief Basic unit test creation macro for templated code on four template
+ * parameters.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4) \
   template<class TYPE1, class TYPE2, class TYPE3, class TYPE4> \
   class TEST_GROUP##_##TEST_NAME##_UnitTest : public Teuchos::UnitTestBase \
@@ -212,7 +249,11 @@
 	void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2,TYPE3,TYPE4>::runUnitTestImpl( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
-/** \brief Template instantiation for four templated types. */
+
+/** \brief Template instantiation for four templated types.
+ *
+ * \ingroup Teuchos_UnitTestDefinitionMacros_grp
+ */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4) \
   \
   template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3, TYPE4 >; \

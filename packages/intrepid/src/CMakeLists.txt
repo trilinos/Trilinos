@@ -75,6 +75,8 @@ APPEND_SET(HEADERS
   Discretization/Integration/Intrepid_CubatureDirectTetDefault.hpp
   Discretization/Integration/Intrepid_CubatureDirectTriDefaultDef.hpp
   Discretization/Integration/Intrepid_CubatureDirectTriDefault.hpp
+  Discretization/Integration/Intrepid_CubatureCompositeTetDef.hpp
+  Discretization/Integration/Intrepid_CubatureCompositeTet.hpp
   Discretization/Integration/Intrepid_CubatureGenSparseDef.hpp
   Discretization/Integration/Intrepid_CubatureGenSparse.hpp
   Discretization/Integration/Intrepid_CubatureSparseDef.hpp

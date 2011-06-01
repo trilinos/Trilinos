@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Test_TbbTest_hpp
 #define __TSQR_Test_TbbTest_hpp
@@ -75,7 +75,7 @@ namespace TSQR {
 		   const Ordinal nrows, 
 		   const Ordinal ncols, 
 		   const int num_cores,
-		   const size_t cache_block_size,
+		   const size_t cache_size_hint,
 		   const bool contiguous_cache_blocks,
 		   const bool printFieldNames,
 		   const bool human_readable,
@@ -89,14 +89,14 @@ namespace TSQR {
       using std::cout;
       using std::endl;
 
-      node_tsqr_type actor (num_cores, cache_block_size);
+      node_tsqr_type actor (num_cores, cache_size_hint);
 
       if (b_debug)
 	{
 	  cerr << "Intel TBB TSQR test problem:" << endl
 	       << "* " << nrows << " x " << ncols << endl
 	       << "* # cores: " << num_cores << endl
-	       << "* Cache block of " << actor.cache_block_size() << " bytes" << endl;
+	       << "* Cache size hint in bytes: " << actor.cache_size_hint() << endl;
 	  if (contiguous_cache_blocks)
 	    cerr << "* Contiguous cache blocks" << endl;
 	}
@@ -202,11 +202,11 @@ namespace TSQR {
       if (human_readable)
 	cout << "Parallel (via Intel\'s Threading Building Blocks) / cache-blocked) TSQR:" << endl
 	     << "Scalar type: " << scalarTypeName << endl
-	     << "# rows = " << nrows << endl
-	     << "# columns = " << ncols << endl
+	     << "# rows: " << nrows << endl
+	     << "# columns: " << ncols << endl
 	     << "# cores: " << num_cores << endl
-	     << "cache block # bytes = " << actor.cache_block_size() << endl
-	     << "contiguous cache blocks? " << contiguous_cache_blocks << endl
+	     << "Cache size hint in bytes: " << actor.cache_size_hint() << endl
+	     << "Contiguous cache blocks? " << contiguous_cache_blocks << endl
 	     << "Absolute residual $\\|A - Q*R\\|_2$: "
 	     << results[0] << endl
 	     << "Absolute orthogonality $\\|I - Q^T*Q\\|_2$: " 
@@ -225,7 +225,7 @@ namespace TSQR {
 		   << ",numRows"
 		   << ",numCols"
 		   << ",numThreads"
-		   << ",cacheBlockSize"
+		   << ",cacheSizeHint"
 		   << ",contiguousCacheBlocks"
 		   << ",absFrobResid"
 		   << ",absFrobOrthog"
@@ -237,7 +237,7 @@ namespace TSQR {
 	       << "," << nrows
 	       << "," << ncols
 	       << "," << num_cores
-	       << "," << actor.cache_block_size()
+	       << "," << actor.cache_size_hint()
 	       << "," << contiguous_cache_blocks 
 	       << "," << results[0]
 	       << "," << results[1]
@@ -260,7 +260,7 @@ namespace TSQR {
 		      const Ordinal nrows, 
 		      const Ordinal ncols, 
 		      const int num_cores,
-		      const size_t cache_block_size,
+		      const size_t cache_size_hint,
 		      const bool contiguous_cache_blocks,
 		      const bool printFieldNames,
 		      const bool human_readable)
@@ -282,7 +282,7 @@ namespace TSQR {
       TSQR::Random::NormalGenerator< ordinal_type, scalar_type > generator;
 
       // Set up TSQR implementation.
-      node_tsqr_type actor (num_cores, cache_block_size);
+      node_tsqr_type actor (num_cores, cache_size_hint);
 
       matrix_type A (nrows, ncols);
       matrix_type A_copy (nrows, ncols);
@@ -352,12 +352,12 @@ namespace TSQR {
 	{
 	  cout << "(Intel TBB / cache-blocked) TSQR cumulative timings:" << endl
 	       << "Scalar type: " << scalarTypeName << endl
-	       << "# rows = " << nrows << endl
-	       << "# columns = " << ncols << endl
+	       << "# rows: " << nrows << endl
+	       << "# columns: " << ncols << endl
 	       << "# cores: " << num_cores << endl
-	       << "cache block # bytes = " << actor.cache_block_size() << endl
-	       << "contiguous cache blocks? " << contiguous_cache_blocks << endl
-	       << "# trials = " << ntrials << endl
+	       << "Cache size hint in bytes: " << actor.cache_size_hint() << endl
+	       << "Contiguous cache blocks? " << contiguous_cache_blocks << endl
+	       << "# trials: " << ntrials << endl
 	       << "Total time (s) = " << tbb_tsqr_timing << endl
 	       << "Total time (s) in factor() (min over all tasks): " 
 	       << (ntrials * actor.min_seq_factor_timing()) << endl
@@ -370,13 +370,13 @@ namespace TSQR {
 	       << endl << endl;
 	  cout << "(Intel TBB / cache-blocked) TSQR per-invocation timings:" << endl;
 	  
-	  std::vector< TimeStats > stats;
+	  std::vector<TimeStats> stats;
 	  actor.getStats (stats);
-	  std::vector< std::string > labels;
+	  std::vector<std::string> labels;
 	  actor.getStatsLabels (labels);
 
 	  const std::string labelLabel ("label");
-	  for (std::vector< std::string >::size_type k = 0; k < labels.size(); ++k)
+	  for (std::vector<std::string>::size_type k = 0; k < labels.size(); ++k)
 	    {
 	      const bool printHeaders = (k == 0);
 	      if (stats[k].count() > 0)
@@ -394,7 +394,7 @@ namespace TSQR {
 		   << ",numRows"
 		   << ",numCols"
 		   << ",numThreads"
-		   << ",cacheBlockSize"
+		   << ",cacheSizeHint"
 		   << ",contiguousCacheBlocks"
 		   << ",numTrials"
 		   << ",timing"
@@ -410,7 +410,7 @@ namespace TSQR {
 	       << "," << nrows
 	       << "," << ncols
 	       << "," << num_cores
-	       << "," << actor.cache_block_size()
+	       << "," << actor.cache_size_hint()
 	       << "," << contiguous_cache_blocks 
 	       << "," << ntrials
 	       << "," << tbb_tsqr_timing 

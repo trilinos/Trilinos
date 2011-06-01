@@ -155,9 +155,10 @@ SET(DAKOTA_LIBS
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib
                  ${Boost_LIBRARY_DIRS})
 
-# Compiling code that includes Dakota headers requires
-# -DHAVE_CONFIG_H.
-ADD_DEFINITIONS(-DHAVE_CONFIG_H)
+# Create a cache variable to store definitions needed when including Dakota
+# headers
+SET(TRIKOTA_DAKOTA_DEFINITIONS "-DHAVE_CONFIG_H" CACHE INTERNAL "")
+ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
 
 ENDIF() # IF(NOT TriKota_ENABLE_DakotaCMake)
 
@@ -196,10 +197,6 @@ APPEND_SET(SOURCES
   )
 
 IF(TriKota_ENABLE_DakotaCMake)
-
-# Compiling code that includes Dakota headers requires
-# -DHAVE_CONFIG_H and -DDISABLE_DAKOTA_CONFIG_H.
-ADD_DEFINITIONS(-DHAVE_CONFIG_H -DDISABLE_DAKOTA_CONFIG_H)
 
 # The DEPLIBS part is to tell CMake that trikota depends on the specified
 # Dakota libraries.  The IMPORTEDLIBS part is to get the PACKAGE_ADD_LIBRARY

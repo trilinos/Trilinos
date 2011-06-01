@@ -18,6 +18,15 @@
 namespace stk {
 namespace mesh {
 
+/**
+ * FieldTraits provide an API for making queries about field types.
+ * Examples:
+ *   - Get the scalar data type contained by a field
+ *     stk::mesh::FieldTraits< field_type >::data_type
+ *   - Get the dimensional rank (number of dimensions) in a field type
+ *     stk::mesh::FieldTraits< field_type >::Rank
+ */
+
 template<>
 struct FieldTraits<FieldBase>
 {

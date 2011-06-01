@@ -47,11 +47,13 @@
 #endif
 
 struct Point : public shards::ArrayDimTag {
+  Point(){};
   const char * name() const ;
   static const Point& tag();
 };
 
 struct Dim : public shards::ArrayDimTag {
+  Dim(){};
   const char * name() const ;
   static const Dim& tag();
 };

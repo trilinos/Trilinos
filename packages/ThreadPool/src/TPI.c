@@ -571,8 +571,9 @@ int TPI_Finalize()
       int i = 0 ;
       for ( ; i < thread_pool.m_thread_count ; ++i ) {
         if ( thread_pool.m_thread[i].m_barrier_wait_count ) {
-          long mean = ( thread_pool.m_thread[i].m_barrier_wait_total + 0.5 ) /
-                        thread_pool.m_thread[i].m_barrier_wait_count ;
+          const long mean =
+            (long) ( ( thread_pool.m_thread[i].m_barrier_wait_total + 0.5 ) /
+                       thread_pool.m_thread[i].m_barrier_wait_count );
           fprintf(stdout,"Thread[%d] barrier_wait( max %ld , mean %ld )\n", i ,
                    thread_pool.m_thread[i].m_barrier_wait_max , mean );
         }

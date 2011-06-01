@@ -249,6 +249,9 @@ C) Configuring (Makefile Generator)
 
 (*) Selecting compiler and linker options:
 
+  NOTE: The Trilinos CMake build system will set up default compile options
+  for GCC ('GNU') in development mode on order to help produce portable code.
+
   a) Configuring to build with default debug or release compiler flags:
   
     To build a debug version, pass into 'cmake':
@@ -265,24 +268,49 @@ C) Configuring (Makefile Generator)
   
   b) Adding arbitrary compiler flags but keeping other default flags:
 
-    To append arbitrary compiler flags, configure with:
+    To append arbitrary compiler flags that apply to all build types,
+    configure with:
 
-      -DCMAKE_<COMPILER>_FLAGS:STRING="<EXTRA_COMPILER_OPTIONS>"
+      -DCMAKE_<LANG>_FLAGS:STRING="<EXTRA_COMPILER_OPTIONS>"
 
-    where <COMPILER> = C, CXX, Fortran and <EXTRA_COMPILER_OPTIONS> are your
-    extra compiler options like "-DSOME_MACRO_TO_DEFINE -funroll-loops".
+    where <LANG> = C, CXX, Fortran and <EXTRA_COMPILER_OPTIONS> are your extra
+    compiler options like "-DSOME_MACRO_TO_DEFINE -funroll-loops".  These
+    options will get appened to other internally defined compiler option and
+    therefore override them.
 
-    NOTE: Compiler options set with CMAKE_<COMPILER>_FLAGS will *not* override
-    the set debug or release options which come after on the compile line.
-    Therefore, this approach should only be used for options that will not get
-    overridden by the internally-set debug or release compiler options.
-    However, setting CMAKE_<COMPILER>_FLAGS will work well for adding extra
-    compiler defines for example.
+    NOTES:
+ 
+    1) Setting CMAKE_<LANG>_FLAGS with override but will not repalce any other
+    internally set flags in CMAKE_<LANG>_FLAGS defined by the Trilinos CMake
+    system.  To get rid of these default flags, see below.
 
-    NOTE: Any options that you set through the cache varible
-    CMAKE_<COMPILER>_FLAGS_<BUILD_TYPE> (where <BUILD_TYPE> = DEBUG or
-    RELEASE) will get overridden in the code so don't try to manually set
-    CMAKE_<COMPILER>_FLAGS_<BUILD_TYPE>.
+    2) For each compiler type (e.g. C, C++ (CXX), Fortran), CMake passes
+    compiler options to the compiler in the order:
+
+      CMAKE_<LANG>_FLAGS   CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>
+
+    where <LANG> = C, CXX, or Fortran and <CMAKE_BUILD_TYPE> = DEBUG or
+    RELEASE.  THEREFORE: The options in CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>
+    come after and override those in CMAKE_<LANG>_FLAGS!.
+
+    3) CMake defines default CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE> values that
+    are overridden by the Trilinos CMake build system for GCC ("GNU")
+    compilers in development mode (e.g. Trilinos_ENABLE_DEVELOPMENT_MODE=ON).
+    This is mostly to provide greater control over the Trilinos development
+    environment.  This means that users setting the CMAKE_<LANG>_FLAGS will
+    *not* override the internally set debug or release flags in
+    CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE> which come after on the compile
+    line.  Therefore, setting CMAKE_<LANG>_FLAGS should only be used for
+    options that will not get overridden by the internally-set debug or
+    release compiler flags in CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>.  However,
+    setting CMAKE_<LANG>_FLAGS will work well for adding extra compiler
+    defines (e.g. -DSOMETHING) for example.
+
+    WARNING: Any options that you set through the cache varible
+    CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE> (where <CMAKE_BUILD_TYPE> = DEBUG or
+    RELEASE) will get overridden in the Trilinos CMake system for GNU
+    compilers in development mode so don't try to manually set
+    CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>!
   
   c) Overriding debug/release compiler options:
   
@@ -293,12 +321,15 @@ C) Configuring (Makefile Generator)
       -D CMAKE_C_FLAGS:STRING="-04 -funroll-loops" \
       -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions"
   
-    where LANGUAGE = C, CXX, Fortran, etc.
+    NOTES:
 
-    NOTE: Using CMAKE_BUILD_TYPE:STRING=NONE allows you to take complete
-    control over what debug or release compiler optimizations or related
-    options are passed to the compiler.
-  
+    1) Using CMAKE_BUILD_TYPE:STRING=NONE allows you to take complete control
+    over what debug or release compiler optimizations or related flags that
+    are passed to the compiler.
+
+    2) Setting CMAKE_BUILD_TYPE:STRING=NONE will not remove internally set
+    flags in CMAKE_<LANG>_FLAGS.  To do that, see below.
+ 
   d) Appending arbitrary link flags to every executable:
   
     In order to append any set of arbitrary link flags to your executables use:
@@ -321,11 +352,19 @@ C) Configuring (Makefile Generator)
     To override all compiler options, including both strong warning options
     and debug/release options, configure with:
   
+      -D CMAKE_C_FLAGS:STRING="-04 -funroll-loops" \
+      -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
       -D CMAKE_BUILD_TYPE:STRING=NONE \
       -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
       -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=OFF \
-      -D CMAKE_C_FLAGS:STRING="-04 -funroll-loops" \
-      -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
+      -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF \
+      -D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=OFF \
+      -D Trilinos_ENABLE_CHECKED_STL:BOOL=OFF \
+
+    NOTE: Options like Trilinos_ENABLE_SHADOW_WARNINGS,
+    Trilinos_ENABLE_COVERAGE_TESTING, and Trilinos_ENABLE_CHECKED_STL do not
+    need to be turned off by default but they are shown above to make it clear
+    what other CMake cache variables can add compiler and link arguments.
 
   f) Enable and disable shadowing warnings for all Trilinos packages:
   

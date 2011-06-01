@@ -497,12 +497,12 @@
   <SubProject name="TrilinosCouplings">
     <Dependency name="Teuchos" type="ILO"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="Sacado" type="ITO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="LO"/>
-    <Dependency name="Shards" type="ITO"/>
+    <Dependency name="Shards" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
@@ -512,12 +512,15 @@
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="Pamgen" type="TO"/>
+    <Dependency name="Trios" type="ILO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
     <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="FEI" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Intrepid" type="TO"/>
+    <Dependency name="STK" type="LO"/>
     <Dependency name="NOX" type="LO"/>
     <EmailAddresses>
       <Email address="trilinoscouplings-regression@software.sandia.gov"/>

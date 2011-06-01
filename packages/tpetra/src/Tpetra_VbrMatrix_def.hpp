@@ -583,20 +583,239 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::copyAndPermute(
    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
 {
+  typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;
+
+  const VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>& src_mat = dynamic_cast<const VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>&>(source);
+
+  Teuchos::Array<LocalOrdinal> src_ptColsPerBlkCol;
+  LocalOrdinal numPtRows;
+
+  LocalOrdinal numSame = numSameIDs;
+  for(LocalOrdinal i=0; i<numSame; ++i) {
+    if (isFillComplete()) {
+      Teuchos::ArrayRCP<const Scalar> src_blkEntries;
+      Teuchos::ArrayView<const LocalOrdinal> src_blkCols;
+
+      src_mat.getLocalBlockRowView(i, numPtRows, src_blkCols, src_ptColsPerBlkCol, src_blkEntries);
+      unsigned offset = 0;
+      for(Tsize_t j=0; j<src_blkCols.size(); ++j) {
+        LocalOrdinal numPtCols = src_ptColsPerBlkCol[j];
+        setLocalBlockEntry(i, src_blkCols[j], numPtRows, numPtCols, numPtCols,
+                           src_blkEntries.view(offset, numPtRows*numPtCols));
+        offset += numPtRows*numPtCols;
+      }
+    }
+    else {
+      GlobalOrdinal gRow = getBlockRowMap()->getGlobalBlockID(i);
+      Teuchos::Array<Teuchos::ArrayRCP<const Scalar> > src_blkEntries;
+      Teuchos::ArrayView<const GlobalOrdinal> src_blkCols;
+
+      src_mat.getGlobalBlockRowView(gRow, numPtRows, src_blkCols, src_ptColsPerBlkCol, src_blkEntries);
+      for(Tsize_t j=0; j<src_blkCols.size(); ++j) {
+        LocalOrdinal numPtCols = src_ptColsPerBlkCol[j];
+        setGlobalBlockEntry(gRow, src_blkCols[j], numPtRows, numPtCols, numPtRows, src_blkEntries[j].view(0, numPtRows*numPtCols));
+      }
+    }
+  }
+
+  for(Tsize_t i=0; i<permuteToLIDs.size(); ++i) {
+
+    if (isFillComplete()) {
+      Teuchos::ArrayRCP<const Scalar> src_blkEntries;
+      Teuchos::ArrayView<const LocalOrdinal> src_blkCols;
+
+      src_mat.getLocalBlockRowView(permuteFromLIDs[i], numPtRows, src_blkCols, src_ptColsPerBlkCol, src_blkEntries);
+      unsigned offset = 0;
+      for(Tsize_t j=0; j<src_blkCols.size(); ++j) {
+        LocalOrdinal numPtCols = src_ptColsPerBlkCol[j];
+        setLocalBlockEntry(permuteToLIDs[i], src_blkCols[j], numPtRows, numPtCols, numPtCols,
+                           src_blkEntries.view(offset, numPtRows*numPtCols));
+        offset += numPtRows*numPtCols;
+      }
+    }
+    else {
+      GlobalOrdinal gRow = getBlockRowMap()->getGlobalBlockID(permuteToLIDs[i]);
+      Teuchos::Array<Teuchos::ArrayRCP<const Scalar> > src_blkEntries;
+      Teuchos::ArrayView<const GlobalOrdinal> src_blkCols;
+
+      src_mat.getGlobalBlockRowView(gRow, numPtRows, src_blkCols, src_ptColsPerBlkCol, src_blkEntries);
+      for(Tsize_t j=0; j<src_blkCols.size(); ++j) {
+        LocalOrdinal numPtCols = src_ptColsPerBlkCol[j];
+        setGlobalBlockEntry(gRow, src_blkCols[j], numPtRows, numPtCols, numPtRows, src_blkEntries[j].view(0, numPtRows*numPtCols));
+      }
+    }
+  }
 }
 
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::packAndPrepare(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source, const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs, Teuchos::Array<char>& exports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t& constantNumPackets, Distributor& distor)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::packAndPrepare(
+   const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source,
+   const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+   Teuchos::Array<char>& exports,
+   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+   size_t& constantNumPackets,
+   Distributor& distor)
 {
+  const VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>& src_mat = dynamic_cast<const VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>&>(source);
+  typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;
+
+  //We will pack each row's data into the exports buffer as follows:
+  //[num-block-cols,numPtRows,{list-of-blk-cols},{list-of-ptColsPerBlkCol},{all vals}]
+  //so the length of the char exports buffer for a row is:
+  //sizeof(LocalOrdinal)*(2+2*(num-block-cols)) + sizeof(Scalar)*numPtRows*sum(numPtCols_i)
+
+  //For each row corresponding to exportLIDs, accumulate the size that it will
+  //occupy in the exports buffer:
+  size_t total_exports_size = 0;
+  for(Tsize_t i=0; i<exportLIDs.size(); ++i) {
+    Teuchos::Array<LocalOrdinal> src_ptColsPerBlkCol;
+    LocalOrdinal numPtRows;
+
+    LocalOrdinal numBlkCols = 0;
+    LocalOrdinal numScalars = 0;
+
+    if (src_mat.isFillComplete()) {
+      Teuchos::ArrayRCP<const Scalar> src_blkEntries;
+      Teuchos::ArrayView<const LocalOrdinal> src_blkCols;
+      src_mat.getLocalBlockRowView(exportLIDs[i], numPtRows,
+                            src_blkCols, src_ptColsPerBlkCol, src_blkEntries);
+      numBlkCols = src_blkCols.size();
+      numScalars = src_blkEntries.size();
+    }
+    else {//src_mat.isFillComplete()==false
+      Teuchos::Array<Teuchos::ArrayRCP<const Scalar> > src_blkEntries;
+      GlobalOrdinal gRow = src_mat.getBlockRowMap()->getGlobalBlockID(exportLIDs[i]);
+      Teuchos::ArrayView<const GlobalOrdinal> src_blkCols;
+      src_mat.getGlobalBlockRowView(gRow, numPtRows, src_blkCols, src_ptColsPerBlkCol, src_blkEntries);
+      numBlkCols = src_blkCols.size();
+      for(Tsize_t j=0; j<src_blkEntries.size(); ++j) {
+        numScalars += src_blkEntries[j].size();
+      }
+    }
+
+    size_t size_for_this_row = sizeof(LocalOrdinal)*(2+2*numBlkCols)
+                         + sizeof(Scalar)*numScalars;
+    numPacketsPerLID[i] = size_for_this_row;
+    total_exports_size += size_for_this_row;
+  }
+
+  exports.resize(total_exports_size);
+
+  ArrayView<char> avIndsC, avValsC;
+  ArrayView<Scalar>        avVals;
+
+  size_t offset = 0;
+
+  for(Tsize_t i=0; i<exportLIDs.size(); ++i) {
+    Teuchos::Array<LocalOrdinal> src_ptColsPerBlkCol;
+    LocalOrdinal numPtRows;
+
+    LocalOrdinal numBlkCols = 0;
+    LocalOrdinal numScalars = 0;
+
+    if (src_mat.isFillComplete()) {
+      Teuchos::ArrayRCP<const Scalar> src_blkEntries;
+      Teuchos::ArrayView<const LocalOrdinal> src_blkCols;
+      src_mat.getLocalBlockRowView(exportLIDs[i], numPtRows, src_blkCols, src_ptColsPerBlkCol, src_blkEntries);
+      numBlkCols = src_blkCols.size();
+      numScalars = src_blkEntries.size();
+
+      LocalOrdinal num_chars_for_ordinals = (2*numBlkCols+2)*sizeof(LocalOrdinal);
+      //get export views
+      avIndsC = exports(offset, num_chars_for_ordinals);
+      avValsC = exports(offset+ num_chars_for_ordinals, numScalars*sizeof(Scalar));
+      ArrayView<GlobalOrdinal> avInds = av_reinterpret_cast<GlobalOrdinal>(avIndsC);
+      typename ArrayView<GlobalOrdinal>::iterator ind_it = avInds.begin();
+
+      const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& col_map = src_mat.getBlockColMap();
+
+      //put row info into the buffer views:
+      *ind_it++ = numBlkCols;
+      *ind_it++ = numPtRows;
+      for(Tsize_t j=0; j<src_blkCols.size(); ++j) {
+        *ind_it++ = col_map->getGlobalBlockID(src_blkCols[j]);
+      }
+      std::copy(src_ptColsPerBlkCol.begin(), src_ptColsPerBlkCol.end(), ind_it);
+      avVals = av_reinterpret_cast<Scalar>(avValsC);
+      std::copy(src_blkEntries.begin(), src_blkEntries.end(), avVals.begin());
+    }
+    else {//src_mat.isFillComplete()==false
+      Teuchos::Array<Teuchos::ArrayRCP<const Scalar> > src_blkEntries;
+      GlobalOrdinal gRow = src_mat.getBlockRowMap()->getGlobalBlockID(exportLIDs[i]);
+      Teuchos::ArrayView<const GlobalOrdinal> src_blkCols;
+      src_mat.getGlobalBlockRowView(gRow, numPtRows, src_blkCols, src_ptColsPerBlkCol, src_blkEntries);
+      numBlkCols = src_blkCols.size();
+      numScalars = 0;
+      for(Tsize_t j=0; j<src_blkEntries.size(); ++j) {
+        numScalars += numPtRows*src_ptColsPerBlkCol[j];
+      }
+
+      LocalOrdinal num_chars_for_ordinals = (2*numBlkCols+2)*sizeof(GlobalOrdinal);
+      //get export views
+      avIndsC = exports(offset, num_chars_for_ordinals);
+      avValsC = exports(offset+ num_chars_for_ordinals, numScalars*sizeof(Scalar));
+      ArrayView<GlobalOrdinal> avInds = av_reinterpret_cast<GlobalOrdinal>(avIndsC);
+      typename ArrayView<GlobalOrdinal>::iterator ind_it = avInds.begin();
+
+      //put row info into the buffer views:
+      *ind_it++ = numBlkCols;
+      *ind_it++ = numPtRows;
+      std::copy(src_blkCols.begin(), src_blkCols.end(), ind_it);
+      ind_it += src_blkCols.size();
+      std::copy(src_ptColsPerBlkCol.begin(), src_ptColsPerBlkCol.end(), ind_it);
+      avVals = av_reinterpret_cast<Scalar>(avValsC);
+      typename ArrayView<Scalar>::iterator val_it = avVals.begin();
+      for(Tsize_t j=0; j<src_blkEntries.size(); ++j) {
+        std::copy(src_blkEntries[j].begin(), src_blkEntries[j].end(), val_it);
+        val_it += src_blkEntries[j].size();
+      }
+    }
+
+    size_t size_for_this_row = sizeof(GlobalOrdinal)*(2+2*numBlkCols)
+                         + sizeof(Scalar)*numScalars;
+    offset += size_for_this_row;
+  }
+
+  constantNumPackets = 0;
 }
 
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal>& importLIDs, const Teuchos::ArrayView<const char>& imports, const Teuchos::ArrayView<size_t>& numPacketsPerLID, size_t constantNumPackets, Distributor& distor, CombineMode CM)
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::unpackAndCombine(
+    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+    const Teuchos::ArrayView<const char>& imports,
+    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+    size_t constantNumPackets,
+    Distributor& distor,
+    CombineMode CM)
 {
+  typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;
+ 
+  size_t offset = 0;
+  for(Tsize_t i=0; i<importLIDs.size(); ++i) {
+    ArrayView<const char> avC = imports.view(offset, numPacketsPerLID[i]);
+    ArrayView<const GlobalOrdinal> avOrds = av_reinterpret_cast<const GlobalOrdinal>(avC);
+    GlobalOrdinal gRow = this->getBlockRowMap()->getGlobalBlockID(importLIDs[i]);
+    size_t avOrdsOffset = 0;
+    LocalOrdinal numBlkCols = avOrds[avOrdsOffset++];
+    LocalOrdinal numPtRows = avOrds[avOrdsOffset++];
+    LocalOrdinal num_chars_for_ordinals = (2*numBlkCols+2)*sizeof(GlobalOrdinal);
+    ArrayView<const char> avValsC = imports.view(offset+num_chars_for_ordinals, numPacketsPerLID[i]-num_chars_for_ordinals);
+    ArrayView<const Scalar> avVals = av_reinterpret_cast<const Scalar>(avValsC);
+
+    size_t avValsOffset = 0;
+    for(Tsize_t j=0; j<numBlkCols; ++j) {
+      GlobalOrdinal blkCol = avOrds[avOrdsOffset+j];
+      LocalOrdinal numPtCols = avOrds[avOrdsOffset+numBlkCols+j];
+      LocalOrdinal LDA = numPtRows;
+      setGlobalBlockEntry(gRow, blkCol, numPtRows, numPtCols, LDA,
+                         avVals.view(avValsOffset, numPtRows*numPtCols));
+      avValsOffset += numPtRows*numPtCols;
+    }
+  }
 }
 
 //-------------------------------------------------------------------

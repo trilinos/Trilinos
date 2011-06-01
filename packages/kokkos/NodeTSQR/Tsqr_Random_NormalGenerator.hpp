@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Random_NormalGenerator_hpp
 #define __TSQR_Random_NormalGenerator_hpp
@@ -39,52 +39,58 @@
 namespace TSQR {
   namespace Random {
 
+    /// \class NormalGenerator
+    /// \brief (Pseudo)random normal(0,1) floating-point number generator.
+    ///
+    /// Implemented using LAPACK's _LARNV routines.
+    ///
     template< class Ordinal, class Scalar >
     class NormalGenerator {
     private:
-      static const int defaultBufferLength = 100;
+      //! Default buffer length.
+      static int defaultBufferLength() { return 100; }
 
     public:
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
 
-      /// (Pseudo)random norma(0,1) number generator, using LAPACK's
-      /// _LARNV routine, wrapped in a generator interface.
-      ///
-      /// \param buffer_length [in] How many entries we keep buffered at
-      ///   one time.  If you know how many outputs you want, set this
-      ///   accordingly, so that all the expense of generation happens
-      ///   at construction.
+      /// \brief Constructor with custom seed.
       ///
       /// \param iseed [in] Array of four integers, representing the
-      ///   seed.  See documentation of _LARNV.  In particular, the
-      ///   array elements must be in [0,4095], and the last element
-      ///   (iseed[3]) must be odd.
+      ///   seed.  See documentation of LAPACK's _LARNV routines for
+      ///   requirements.  In particular, the array elements must be
+      ///   in [0,4095], and the last element (iseed[3]) must be odd.
+      ///
+      /// \param bufferLength [in] How many entries we keep buffered
+      ///   at one time.  If you know how many outputs you want, set
+      ///   this accordingly, so that all the expense of generation
+      ///   happens at construction.
+      ///
       NormalGenerator (const std::vector<int>& iseed,
-		       const int buffer_length = defaultBufferLength) :
+		       const int bufferLength = defaultBufferLength()) :
 	iseed_ (4),
-	buffer_ (buffer_length),
-	buffer_length_ (buffer_length),
+	buffer_ (bufferLength),
+	buffer_length_ (bufferLength),
 	cur_pos_ (0)
       {
 	std::copy (iseed.begin(), iseed.end(), iseed_.begin());
 	fill_buffer ();
       }
 
-
-      /// (Pseudo)random normal(0,1) number generator, using LAPACK's
-      /// _LARNV routine, wrapped in a generator interface.  The
-      /// four-integer seed is set to [0, 0, 0, 1], which is a valid
-      /// seed and which ensures a reproducible sequence.
+      /// \brief Constructor with default seed.
       ///
-      /// \param buffer_length [in] How many entries we keep buffered at
+      /// The four-integer seed is set to [0, 0, 0, 1], which is a
+      /// valid seed and which ensures a reproducible sequence.
+      ///
+      /// \param bufferLength [in] How many entries we keep buffered at
       ///   one time.  If you know how many outputs you want, set this
       ///   accordingly, so that all the expense of generation happens
       ///   at construction.
-      NormalGenerator (const int buffer_length = defaultBufferLength) :
+      ///
+      NormalGenerator (const int bufferLength = defaultBufferLength()) :
 	iseed_ (4),
-	buffer_ (buffer_length),
-	buffer_length_ (buffer_length),
+	buffer_ (bufferLength),
+	buffer_length_ (bufferLength),
 	cur_pos_ (0)
       {
 	iseed_[0] = 0;
@@ -94,28 +100,42 @@ namespace TSQR {
 	fill_buffer ();
       }
       
-      /// Get the next value from the buffer, generating new values if
-      /// necessary.  Depending on the buffer length, the generation
-      /// phase may take a while.
+      /// \brief Get the next pseudorandom number.
+      ///
+      /// If the buffer length is > 0, the buffer is first filled with
+      /// newly generated values if it's empty, and then the value is
+      /// fetched from the buffer.  Depending on the buffer length,
+      /// filling it may take a while, which means that calling this
+      /// function may on occasion take longer than you expect.  If
+      /// you don't like this behavior, use a buffer length of 1.
       Scalar operator() () { return next(); }
 
-      /// Get the current seed.  This ca be used to restart the
-      /// generator, but only if you account for the buffered values.
+      /// \brief Get the current seed.  
+      ///
+      /// The seed consists of four integers, according to the
+      /// requirements of LAPACK's _LARNV routines.  This can be used
+      /// to restart the generator, but only if you account for the
+      /// buffered values.
+      ///
+      /// \param iseed [out] Vector of length exactly four.  Resized
+      ///   if necessary.
       void 
       getSeed (std::vector<int>& iseed) const
       {
+	if (iseed.size() != iseed_.size())
+	  iseed.resize (iseed_.size());
 	std::copy (iseed_.begin(), iseed_.end(), iseed.begin());
       }
 
     private:
-      std::vector< int > iseed_;
-      std::vector< Scalar > buffer_;
+      std::vector<int> iseed_;
+      std::vector<Scalar> buffer_;
       int buffer_length_, cur_pos_;
 
       void
       fill_buffer () 
       {
-	LAPACK< int, Scalar > lapack;
+	LAPACK<Ordinal, Scalar> lapack;
 
 	// LAPACK's _LARNV routine defines this "enum" (just an
 	// integer, because it's Fortran) that lets users choose from
@@ -132,7 +152,8 @@ namespace TSQR {
       Scalar 
       next () 
       { 
-	// Greater-than impossible, but we check for robustness' sake.
+	// It's impossible to take the greater-than branch, but we
+	// check for robustness' sake.
 	if (cur_pos_ >= buffer_length_) 
 	  {
 	    fill_buffer ();

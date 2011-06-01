@@ -73,8 +73,11 @@ public:
      *
      * \param[in] pl Parameter list describing the request
      */
-   explicit RequestMesg(const Teuchos::RCP<Teuchos::ParameterList> & pl)
-      : name_("Parameter List"), tag_(0), paramList_(pl) {}
+   explicit RequestMesg(const Teuchos::RCP<const Teuchos::ParameterList> & pl)
+      : paramList_(pl) 
+   {
+      fromParameterList(*paramList_);
+   }
 
    //! Simple base class destructor
    virtual ~RequestMesg() {}
@@ -92,9 +95,20 @@ public:
    { return paramList_.getConst(); }
    
 protected:
+
+   void fromParameterList(const Teuchos::ParameterList & pl)
+   {
+      name_ = "Parameter List";
+      tag_ = 0;
+      if(pl.isParameter("Name"))
+         name_ = pl.get<std::string>("Name");
+      if(pl.isParameter("Tag"))
+         tag_ = pl.get<unsigned int>("Tag");
+   }
+
    std::string name_;
    unsigned int tag_;
-   Teuchos::RCP<Teuchos::ParameterList> paramList_;
+   Teuchos::RCP<const Teuchos::ParameterList> paramList_;
 };
 
 // simple stream interface for RequestMesg

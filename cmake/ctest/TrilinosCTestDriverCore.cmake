@@ -174,19 +174,6 @@ ENDMACRO()
 
 MACRO(SETUP_TRILINOS_EXTRAREPOS)
 
-  # Here, we have no choice but to point into the master Trilinos source treee
-  # because the local Trilinos sources have not even been checked out yet!
-  # Unless, of course, we are unit testing in which case we will use whatever
-  # has been passed in.
-
-  IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
-    SET(${PROJECT_NAME}_EXTRAREPOS_FILE
-      "${TRILINOS_CMAKE_DIR}/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
-  ELSE()
-    SET(${PROJECT_NAME}_EXTRAREPOS_FILE
-      "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
-  ENDIF()
-
   MESSAGE("Reading the list of extra repos from ${${PROJECT_NAME}_EXTRAREPOS_FILE} ...")
   INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
   PACKAGE_ARCH_PROCESS_EXTRAREPOS_LISTS() # Sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
@@ -200,7 +187,7 @@ ENDMACRO()
 #
 # Select the list of packages
 #
-# OUTPUT: Sets Trilnos_DEFAULT_PACKAGES
+# OUTPUT: Sets Trilinos_DEFAULT_PACKAGES
 #
 # NOTE: This macro is used to cean up the main TRILINOS_CTEST_DRIVER()
 # macro.
@@ -221,6 +208,7 @@ MACRO(SETUP_TRILINOS_PACKAGES)
   SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
   SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
   SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR "${CTEST_BINARY_DIRECTORY}")
+  SET(PROJECT_HOME_DIR "${TRILINOS_HOME_DIR}")
 
   # Ignore missing extra repos in case someone messed up the git URL or
   # something.  We don't want a sloppy commit to bring down automated testing.
@@ -643,6 +631,27 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Trilinos_PACKAGES always be the full set of packages as defined by
   # the basic readin process
 
+  # Override the location of the base directory where the package dependency
+  # related files will be read relative to.  If left "", then this will be reset
+  # to CTEST_SORUCE_DIRECTORY.
+  SET_DEFAULT_AND_FROM_ENV(Trilinos_DEPS_HOME_DIR "")
+
+  # Set the file that the extra repos will be read from
+  #
+  # NOTE: Here, we have no choice but to point into the master
+  # Trilinos source treee because the local Trilinos sources have not
+  # even been checked out yet!  Unless, of course, we are unit testing
+  # in which case we will use whatever has been passed in.
+
+  IF (NOT Trilinos_DEPS_HOME_DIR)
+    SET(Trilinos_EXTRAREPOS_FILE_DEFAULT
+      "${TRILINOS_CMAKE_DIR}/${Trilinos_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+  ELSE()
+    SET(Trilinos_EXTRAREPOS_FILE_DEFAULT
+      "${Trilinos_DEPS_HOME_DIR}/cmake/${Trilinos_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+  ENDIF()
+  SET_DEFAULT_AND_FROM_ENV(Trilinos_EXTRAREPOS_FILE ${Trilinos_EXTRAREPOS_FILE_DEFAULT})
+
   # Select the set of extra external repos to add in packages.
   # These are the same types as CTEST_TEST_TYPE (e.g. 'Continuous' and
   # 'Nightly').  This is set by default to ${CTEST_TEST_TYPE} can be
@@ -667,11 +676,6 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     "\n***"
     "\n*** Setting unit testing input options to default and reading from env ..."
     "\n***\n")
-
-  # Override the location of the base directory where the package dependency
-  # related files will be read relative to.  If left "", then this will be reset
-  # to CTEST_SORUCE_DIRECTORY.
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_DEPS_HOME_DIR "")
 
   SET_DEFAULT_AND_FROM_ENV( CTEST_DEPENDENCY_HANDLING_UNIT_TESTING FALSE )
 
@@ -798,8 +802,8 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     MESSAGE("CTEST_UPDATE(...) returned '${UPDATE_RETURN_VAL}'")
 
     SET(EXTRAREPO_IDX 0)
-    FOREACH(EXTRAREPO_DIRNAME ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
-      LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_GITURLS ${EXTRAREPO_IDX}
+    FOREACH(EXTRAREPO_DIRNAME ${Trilinos_EXTRA_REPOSITORIES})
+      LIST(GET Trilinos_EXTRA_REPOSITORIES_GITURLS ${EXTRAREPO_IDX}
         EXTRAREPO_GITURL )
       CLONE_OR_UPDATE_EXTRAREPO(${EXTRAREPO_DIRNAME} ${EXTRAREPO_GITURL})
       MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
@@ -832,6 +836,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
 
       IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
         MESSAGE("Switch to branch ${Trilinos_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
+        QUEUE_ERROR("Switch to branch ${Trilinos_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
       ENDIF()
       #Apparently the successful branch switch is also written to stderr.
       MESSAGE("${BRANCH_ERROR}")
@@ -864,7 +869,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SETUP_TRILINOS_PACKAGES()
 
   SET(CDASH_SUBPROJECT_XML_FILE
-    "${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}")
+    "${CTEST_BINARY_DIRECTORY}/${Trilinos_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}")
   PRINT_VAR(CDASH_SUBPROJECT_XML_FILE)
 
   DISABLE_EXCLUDED_PACKAGES()
@@ -895,7 +900,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SET(Trilinos_ENABLE_EXAMPLES ON)
   SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES ON)
   SET(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
-  PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
+  PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets Trilinos_NUM_ENABLED_PACKAGES
 
   
   MESSAGE(
@@ -919,13 +924,13 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       "  Running in regular mode, processing all enabled packages!\n")
   ENDIF()
 
-  IF (${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0)
+  IF (Trilinos_NUM_ENABLED_PACKAGES GREATER 0)
     MESSAGE(
-      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
+      "\nTrilinos_NUM_ENABLED_PACKAGES=${Trilinos_NUM_ENABLED_PACKAGES}:"
       "  Configuring packages!\n")
   ELSE()
     MESSAGE(
-      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
+      "\nTrilinos_NUM_ENABLED_PACKAGES=${Trilinos_NUM_ENABLED_PACKAGES}:"
       "  Exiting the script!\n")
     REPORT_QUEUED_ERRORS()
     RETURN()
@@ -1016,10 +1021,8 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
         LIST(APPEND CONFIGURE_OPTIONS
           "-DTrilinos_ENABLE_COVERAGE_TESTING:BOOL=ON")
       ENDIF()
-      IF (BUILD_TYPE STREQUAL DEBUG)
-        LIST(APPEND CONFIGURE_OPTIONS
-          "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON")
-      ENDIF()
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-DTrilinos_EXTRAREPOS_FILE:STRING=${Trilinos_EXTRAREPOS_FILE}")
       LIST(APPEND CONFIGURE_OPTIONS
         "-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=${Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE}")
       IF (DEFINED Trilinos_LAST_CONFIGURED_PACKAGE)

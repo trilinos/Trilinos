@@ -31,10 +31,11 @@ MACRO(PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE)
 
 
   SET( ${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE "" CACHE FILEPATH
-    "Name of an optional file that is included first to define any cmake options with SET( ... CACHE ...) calls." )
+    "Name of an optional file that is included first to define any cmake options with SET( ... CACHE ...) calls."
+    )
 
   IF (${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE)
-    #MESSAGE("Reading in configuration options first form ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE} ...")
+    MESSAGE("Reading in configuration options from ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE} ...")
     INCLUDE(${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE})
   ENDIF()
 
@@ -159,7 +160,7 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     )
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE
-    ON  #NOTE: Change this to 'OFF' in a release branch!
+    ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT}
     CACHE BOOL
     "Determines if a variety of development mode checks are turned on by default or not." )
 
@@ -175,6 +176,32 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_STRONG_CXX_COMPILE_WARNINGS
     ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE}
     CACHE BOOL "Enable strong compiler warnings for C++ code for supported compilers." )
+
+  MULTILINE_SET( ENABLE_SHADOW_WARNINGS_DOC
+    "Turn ON or OFF shadowing warnings for all packages where strong warnings have"
+    " not been explicitly disabled.  Setting the empty '' let's each package decide." )
+  SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS ""
+    "${ENABLE_SHADOW_WARNINGS_DOC}" )
+  MARK_AS_ADVANCED(${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS)
+
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_COVERAGE_TESTING OFF
+    CACHE BOOL "Enable support for coverage testing by setting needed compiler/linker options." )
+
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_CHECKED_STL OFF
+    CACHE BOOL "Turn on checked STL checking (e.g. -D_GLIBCXX_DEBUG) or not." )
+
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS OFF
+    CACHE BOOL "Turn on debugging symbols (e.g. -g) or not if not a full debug build." )
+
+  IF (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    SET(${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS_DEFAULT "-Werror")
+  ELSE()
+    SET(${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS_DEFAULT "")
+  ENDIF()
+
+  ADVANCED_SET( ${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS
+    "${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS_DEFAULT}"
+    CACHE STRING "Flags for treating warnings as errors (for all compilers, -Werror by default for GNU).  To turn off warnings as errors set to ''")
 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF CACHE BOOL
     "If test output complaining about circular references is found, then the test will fail." )
@@ -233,8 +260,10 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     CACHE STRING
     "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
 
-  SET(${PROJECT_NAME}_EXTRAREPOS_FILE
-    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+  ADVANCED_SET(${PROJECT_NAME}_EXTRAREPOS_FILE
+    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}"
+    CACHE FILENAME
+    "File contining the list of extra repositories contining add-on packages to process")
 
   ADVANCED_SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES
     FALSE CACHE BOOL

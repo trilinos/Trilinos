@@ -44,26 +44,31 @@ typedef PHX::MDField<double>::size_type size_type;
 
 // Dimension tags for this problem
 struct Dim : public shards::ArrayDimTag {
+  Dim(){};
   const char * name() const ;
   static const Dim& tag();
 };
 
 struct Quadrature : public shards::ArrayDimTag {
+  Quadrature(){};
   const char * name() const ;
   static const Quadrature& tag();
 };
 
 struct Node : public shards::ArrayDimTag {
+  Node(){};
   const char * name() const ;
   static const Node& tag();
 };
 
 struct Cell : public shards::ArrayDimTag {
+  Cell(){};
   const char * name() const ;
   static const Cell& tag();
 };
 
 struct Point : public shards::ArrayDimTag {
+  Point(){};
   const char * name() const ;
   static const Point& tag();
 };

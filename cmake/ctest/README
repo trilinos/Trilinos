@@ -135,11 +135,13 @@ for example as:
   $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
      CTEST_TEST_TYPE=Experimental \
      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
+     CTEST_DO_UPDATES=TRUE  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+     CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
      ctest -VV -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 Running the above will clone Trilinos into MOCK_MPI_OPT/Trilinos and
 will create the build directory in MOCK_MPI_OPT/BUILD.  After the
-initial clone performed above, you can speed up subsequent testing by
+initial clone is performed above, you can speed up subsequent testing by
 additionally setting CTEST_DO_UPDATES=FALSE and
 CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE on the environment.  You
 can keep running this 'env ... ctest -S ...' command until you get
@@ -153,8 +155,8 @@ submit works, you can run a final trial build with:
   $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
      CTEST_TEST_TYPE=Experimental CTEST_DO_UPDATES=FASLE \
      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
-     CTEST_DO_SUBMIT=ON \
-     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+     CTEST_DO_SUBMIT=ON CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+     CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
      ctest -VV -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 If this submits to the 'Experimental' CDash dashbaord, you should be
@@ -187,9 +189,14 @@ environment such as:
 
   $ cd ~
   $ cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
-  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE  \
-      TDD_DO_SUBMIT=FALSE TDD_IN_TESTING_MODE=ON \
+  $ env  Trilinos_PACKAGES=Teuchos \
+      TDD_IN_TESTING_MODE=ON \
       CTEST_TEST_TYPE=Experimental \
+      CTEST_DO_UPDATES=TRUE \
+      TDD_DO_SUBMIT=FALSE \
+      CTEST_DO_SUBMIT=FALSE  \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
       ./cron_driver.sh
 
 Once you are done with the initial run, you can test it out
@@ -202,6 +209,8 @@ following additionial environment variables:
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
       CTEST_TEST_TYPE=Experimental \
       TDD_FORCE_CMAKE_INSTALL=0 \
+      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
       ./cron_driver.sh
 
 (of course you must use set commands on Windows).
@@ -211,6 +220,8 @@ NOTES:
 (*) Set TDD_FORCE_CMAKE_INSTALL=1 to force a global CMake reinstall.
 (*) Set CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=FALSE if you only
     want to process the exact packages set with Trilinos_PACKAGES
+(*) Set CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE after a first round of builds
+    to speed up subsequent builds.
 
 Work out any kinks you may have in your environment and your scripts
 by running this over and over again.

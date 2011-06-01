@@ -40,7 +40,7 @@ int Zoltan_Divide_Machine(
    int *num_parts,     /* on input, # of partitions to be divided
                           on exit, # of parts in the set that proc is in */
    double *fractionlo  /* actual division of machine: % of work to be assigned
-                          to first set (array if obj_wgt_dim>1) */
+                          to first set (length obj_wgt_dim) */
 )
 {
 int i, j, k;

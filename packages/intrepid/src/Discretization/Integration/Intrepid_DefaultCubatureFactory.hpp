@@ -45,6 +45,7 @@
 #include "Intrepid_CubatureDirectLineGauss.hpp"
 #include "Intrepid_CubatureDirectTriDefault.hpp"
 #include "Intrepid_CubatureDirectTetDefault.hpp"
+#include "Intrepid_CubatureCompositeTet.hpp"
 #include "Intrepid_CubatureTensor.hpp"
 
 ///// end of list of default cubature includes /////

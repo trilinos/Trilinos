@@ -7,6 +7,7 @@ cmake \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \
 -D BUILD_SHARED_LIBS:BOOL=ON \
 -D TPL_ENABLE_Boost:BOOL=ON \
+-D Boost_INCLUDE_DIRS:PATH=/home/rabartl/install/boost_1_46_1 \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/serial/dbg \

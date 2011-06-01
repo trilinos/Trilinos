@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_TBB_TbbParallelTsqr_hpp
 #define __TSQR_TBB_TbbParallelTsqr_hpp
@@ -50,22 +50,34 @@
 namespace TSQR {
   namespace TBB {
     
-    template< class LocalOrdinal, class Scalar, class TimerType >
+    /// \class TbbParallelTsqr
+    /// \brief Parallel implementation of \c TbbTsqr.
+    /// \author Mark Hoemmen
+    ///
+    /// This class implements the functionality of \c TbbTsqr.
+    /// It is not meant to be seen by users of \c TbbTsqr.
+    /// 
+    /// The third template parameter, TimerType, allows different
+    /// timer implementations.  TbbParallelTsqr times each task's
+    /// invocations of \c SequentialTsqr::factor() and \c
+    /// SequentialTsqr::apply().  \c TrivialTimer is a "timer" that
+    /// does nothing, in case you don't want to invoke timers.
+    template<class LocalOrdinal, class Scalar, class TimerType>
     class TbbParallelTsqr {
     private:
-      typedef MatView< LocalOrdinal, Scalar > mat_view;
-      typedef ConstMatView< LocalOrdinal, Scalar > const_mat_view;
-      typedef std::pair< mat_view, mat_view > split_t;
-      typedef std::pair< const_mat_view, const_mat_view > const_split_t;
-      typedef std::pair< const_mat_view, mat_view > top_blocks_t;
-      typedef std::vector< top_blocks_t > array_top_blocks_t;
+      typedef MatView<LocalOrdinal, Scalar> mat_view;
+      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view;
+      typedef std::pair<mat_view, mat_view> split_t;
+      typedef std::pair<const_mat_view, const_mat_view> const_split_t;
+      typedef std::pair<const_mat_view, mat_view> top_blocks_t;
+      typedef std::vector<top_blocks_t> array_top_blocks_t;
 
-      template< class MatrixViewType >
+      template<class MatrixViewType>
       MatrixViewType
       top_block_helper (const size_t P_first,
 			const size_t P_last,
 			const MatrixViewType& C, 
-			const bool contiguous_cache_blocks = false) const
+			const bool contiguous_cache_blocks) const
       {
 	if (P_first > P_last)
 	  throw std::logic_error ("P_first > P_last");
@@ -99,38 +111,43 @@ namespace TSQR {
       typedef Scalar scalar_type;
       typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
       typedef LocalOrdinal ordinal_type;
-      
+
       /// Whether or not this QR factorization produces an R factor
       /// with all nonnegative diagonal entries.
       static bool QR_produces_R_factor_with_nonnegative_diagonal() {
-	typedef Combine< LocalOrdinal, Scalar > combine_type;
-	typedef LAPACK< LocalOrdinal, Scalar > lapack_type;
+	typedef Combine<LocalOrdinal, Scalar> combine_type;
+	typedef LAPACK<LocalOrdinal, Scalar> lapack_type;
       
 	return combine_type::QR_produces_R_factor_with_nonnegative_diagonal() &&
 	  lapack_type::QR_produces_R_factor_with_nonnegative_diagonal();
       }
-
-      /// Results of SequentialTsqr for each core.
+      
+      /// \typedef SeqOutput
+      /// \brief Results of SequentialTsqr for each core.
+      typedef typename SequentialTsqr<LocalOrdinal, Scalar>::FactorOutput SeqOutput;
+      /// \typedef ParOutput
+      /// \brief Array of ncores "local tau arrays" from parallel TSQR.
       ///
-      typedef typename SequentialTsqr< LocalOrdinal, Scalar >::FactorOutput SeqOutput;
-      /// Array of ncores "local tau arrays" from parallel TSQR.
       /// (Local Q factors are stored in place.)
-      typedef std::vector< std::vector< Scalar > > ParOutput;
-      /// factor() returns a pair: the results of SequentialTsqr for
-      /// data on each core, and the results of combining the data on
-      /// the cores.
-      typedef typename std::pair< std::vector< SeqOutput >, ParOutput > FactorOutput;
+      typedef std::vector<std::vector<Scalar> > ParOutput;
+      /// \typedef FactorOutput
+      /// \brief Partial representation of the Q factor.
+      ///
+      /// The \c factor() method returns a pair: the results of
+      /// SequentialTsqr for data on each core, and the results of
+      /// combining the data on the cores.
+      typedef typename std::pair<std::vector<SeqOutput>, ParOutput> FactorOutput;
 
-      /// Constructor
+      /// \brief Constructor
       /// 
       /// \param numCores [in] Number of parallel cores to use in the
       ///   factorization.  This should be <= the number of cores with 
       ///   which Intel TBB was initialized.
-      /// \param cacheBlockSize [in] Cache block size in bytes.  Zero 
+      /// \param cacheSizeHint [in] Cache size hint in bytes.  Zero 
       ///   means that TSQR will pick a reasonable nonzero default.
       TbbParallelTsqr (const size_t numCores = 1,
-		       const size_t cacheBlockSize = 0) :
-	seq_ (cacheBlockSize),
+		       const size_t cacheSizeHint = 0) :
+	seq_ (cacheSizeHint),
 	min_seq_factor_timing_ (std::numeric_limits<double>::max()),
 	max_seq_factor_timing_ (std::numeric_limits<double>::min()),
 	min_seq_apply_timing_ (std::numeric_limits<double>::max()),
@@ -142,24 +159,37 @@ namespace TSQR {
 	  ncores_ = numCores;
       }
       
-      /// Number of cores that TSQR will use to solve the problem
-      /// (i.e., number of subproblems into which to divide the main
-      /// problem, to solve it in parallel).
+      /// \brief Number of cores that TSQR will use to solve the problem.
+      /// 
+      /// That is, the number of subproblems into which to divide the
+      /// main problem, to solve it in parallel.
       size_t ncores() const { return ncores_; }
 
-      /// Cache block size (in bytes) used for the factorization.
-      /// This may be different from the cacheBlockSize constructor
+      /// \brief Cache size hint (in bytes) used for the factorization.
+      ///
+      /// This method is deprecated, because the name is misleading.
+      /// Please call \c cache_size_hint() instead.
+      size_t TEUCHOS_DEPRECATED cache_block_size() const { 
+	return seq_.cache_size_hint(); 
+      }
+
+      /// \brief Cache size hint (in bytes) used for the factorization.
+      ///
+      /// This may be different from the corresponding constructor
       /// argument, because TSQR may revise unreasonable suggestions
       /// into reasonable values.
-      size_t cache_block_size() const { return seq_.cache_block_size(); }
+      size_t cache_size_hint() const { return seq_.cache_size_hint(); }
 
-
+      //! Fastest time over all tasks of the last SequentialTsqr::factor() call.
       double
       min_seq_factor_timing () const { return min_seq_factor_timing_; }
+      //! Slowest time over all tasks of the last SequentialTsqr::factor() call.
       double
       max_seq_factor_timing () const { return max_seq_factor_timing_; }
+      //! Fastest time over all tasks of the last SequentialTsqr::apply() call.
       double
       min_seq_apply_timing () const { return min_seq_apply_timing_; }
+      //! Slowest time over all tasks of the last SequentialTsqr::apply() call.
       double
       max_seq_apply_timing () const { return max_seq_apply_timing_; }
 
@@ -170,7 +200,7 @@ namespace TSQR {
 	      const LocalOrdinal lda,
 	      Scalar R[],
 	      const LocalOrdinal ldr,
-	      const bool contiguous_cache_blocks = false)
+	      const bool contiguous_cache_blocks) const
       {
 	using tbb::task;
 
@@ -180,8 +210,8 @@ namespace TSQR {
 	// factor after finishing the factorization.
 	mat_view A_top;
 
-	std::vector< SeqOutput > seq_output (ncores());
-	ParOutput par_output (ncores(), std::vector< Scalar >(ncols));
+	std::vector<SeqOutput> seq_output (ncores());
+	ParOutput par_output (ncores(), std::vector<Scalar>(ncols));
 	if (ncores() < 1)
 	  {
 	    if (! A_view.empty())
@@ -194,7 +224,7 @@ namespace TSQR {
 	double min_seq_timing = double(0);
 	double max_seq_timing = double(0);
 	try {
-	  typedef FactorTask< LocalOrdinal, Scalar, TimerType > factor_task_t;
+	  typedef FactorTask<LocalOrdinal, Scalar, TimerType> factor_task_t;
 
 	  // When the root task completes, A_top will be set to the
 	  // topmost partition of A.  We can then extract the R factor
@@ -243,7 +273,7 @@ namespace TSQR {
 	     const LocalOrdinal ncols_C,
 	     Scalar C[],
 	     const LocalOrdinal ldc,
-	     const bool contiguous_cache_blocks = false)
+	     const bool contiguous_cache_blocks) const
       {
 	using tbb::task;
 
@@ -261,7 +291,7 @@ namespace TSQR {
 	    double min_seq_timing = 0.0;
 	    double max_seq_timing = 0.0;
 	    try {
-	      typedef ApplyTask< LocalOrdinal, Scalar, TimerType > apply_task_t;
+	      typedef ApplyTask<LocalOrdinal, Scalar, TimerType> apply_task_t;
 	      apply_task_t& root_task = 
 		*new( task::allocate_root() )
 		apply_task_t (0, ncores()-1, Q_view, C_view, top_blocks,
@@ -297,7 +327,7 @@ namespace TSQR {
 		  const LocalOrdinal ncols_Q_out,
 		  Scalar Q_out[],
 		  const LocalOrdinal ldq_out,
-		  const bool contiguous_cache_blocks = false)
+		  const bool contiguous_cache_blocks) const
       {
 	using tbb::task;
 
@@ -335,14 +365,14 @@ namespace TSQR {
 		 const LocalOrdinal ldq,
 		 const Scalar B[],
 		 const LocalOrdinal ldb,
-		 const bool contiguous_cache_blocks = false) const
+		 const bool contiguous_cache_blocks) const
       {
 	// Compute Q := Q*B in parallel.  This works much like
 	// cache_block() (which see), in that each thread's instance
 	// does not need to communicate with the others.
 	try {
 	  using tbb::task;
-	  typedef RevealRankTask< LocalOrdinal, Scalar > rrtask_type;
+	  typedef RevealRankTask<LocalOrdinal, Scalar> rrtask_type;
 
 	  mat_view Q_view (nrows, ncols, Q, ldq);
 	  const_mat_view B_view (ncols, ncols, B, ldb);
@@ -405,7 +435,7 @@ namespace TSQR {
 	if (ncols == 0)
 	  return 0;
 
-	Matrix< LocalOrdinal, Scalar > U (ncols, ncols, Scalar(0));
+	Matrix<LocalOrdinal, Scalar> U (ncols, ncols, Scalar(0));
 	const LocalOrdinal rank = 
 	  reveal_R_rank (ncols, R, ldr, U.get(), U.ldu(), tol);
       
@@ -492,7 +522,7 @@ namespace TSQR {
 		       const LocalOrdinal ncols,
 		       Scalar C[],
 		       const LocalOrdinal ldc, 
-		       const bool contiguous_cache_blocks = false) const
+		       const bool contiguous_cache_blocks) const
       {
 	using tbb::task;
 	mat_view C_view (nrows, ncols, C, ldc);
@@ -518,10 +548,10 @@ namespace TSQR {
       TSQR::Combine<LocalOrdinal, Scalar> combine_;
       Partitioner<LocalOrdinal, Scalar> partitioner_;
 
-      double min_seq_factor_timing_;
-      double max_seq_factor_timing_;
-      double min_seq_apply_timing_;
-      double max_seq_apply_timing_;
+      mutable double min_seq_factor_timing_;
+      mutable double max_seq_factor_timing_;
+      mutable double min_seq_apply_timing_;
+      mutable double max_seq_apply_timing_;
 
       void
       build_partition_array (const size_t P_first,

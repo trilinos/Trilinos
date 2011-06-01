@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_TbbRecursiveTsqr_hpp
 #define __TSQR_TbbRecursiveTsqr_hpp
@@ -45,35 +45,56 @@
 namespace TSQR {
   namespace TBB {
 
+    /// \class TbbRecursiveTsqr
+    /// \brief Non-parallel "functioning stub" implementation of \c TbbTsqr.
+    ///
     template< class LocalOrdinal, class Scalar >
     class TbbRecursiveTsqr {
     public:
-      /// \param num_cores [in] Number of cores to use to solve the
-      /// problem (i.e., number of subproblems into which to divide
-      /// the main problem, to solve it in parallel).
+      /// \brief Constructor.
       ///
-      /// \param cache_block_size [in] Number of bytes in the cache.
-      /// If zero, set to a reasonable default.
+      /// \param num_cores [in] Maximum parallelism to use (i.e.,
+      ///   maximum number of partitions into which to divide the
+      ///   matrix to factor).
+      ///
+      /// \param cache_size_hint [in] Approximate cache size in bytes
+      ///   per CPU core.  A hint, not a command.  If zero, set to a
+      ///   reasonable default.
       TbbRecursiveTsqr (const size_t num_cores = 1,
-			const size_t cache_block_size = 0);
+			const size_t cache_size_hint = 0);
 
       /// Number of cores to use to solve the problem (i.e., number of
       /// subproblems into which to divide the main problem, to solve
       /// it in parallel).
       size_t ncores() const { return ncores_; }
 
-      /// Cache block size (in bytes) used for the factorization
-      size_t cache_block_size() const { return seq_.cache_block_size(); }
+      /// \brief Cache size hint (in bytes) used for the factorization.
+      ///
+      /// This method is deprecated, because the name is misleading.
+      /// Please call \c cache_size_hint() instead.
+      size_t TEUCHOS_DEPRECATED cache_block_size() const { 
+	return seq_.cache_size_hint(); 
+      }
 
-      /// Results of SequentialTsqr for each core.
-      typedef typename SequentialTsqr< LocalOrdinal, Scalar >::FactorOutput SeqOutput;
-      /// Array of ncores "local tau arrays" from parallel TSQR.
-      /// (Local Q factors are stored in place.)
-      typedef std::vector< std::vector< Scalar > > ParOutput;
+      //! Cache size hint (in bytes) used for the factorization.
+      size_t cache_size_hint() const { return seq_.cache_size_hint(); }
+
+      //! Results of SequentialTsqr for each core.
+      typedef typename SequentialTsqr<LocalOrdinal, Scalar>::FactorOutput SeqOutput;
+
+      /// \typedef ParOutput
+      /// \brief Array of ncores "local tau arrays" from parallel TSQR.
+      ///
+      /// Local Q factors are stored in place.
+      typedef std::vector<std::vector<Scalar> > ParOutput;
+
+      /// \typedef FactorOutput
+      /// \brief Return type of factor().
+      ///
       /// factor() returns a pair: the results of SequentialTsqr for
       /// data on each core, and the results of combining the data on
       /// the cores.
-      typedef typename std::pair< std::vector< SeqOutput >, ParOutput > FactorOutput;
+      typedef typename std::pair<std::vector<SeqOutput>, ParOutput> FactorOutput;
 
       /// Copy the nrows by ncols matrix A_in (with leading dimension
       /// lda_in >= nrows) into A_out, such that cache blocks are
@@ -109,7 +130,7 @@ namespace TSQR {
 	      const LocalOrdinal lda,
 	      Scalar R[],
 	      const LocalOrdinal ldr,
-	      const bool contiguous_cache_blocks = false);
+	      const bool contiguous_cache_blocks) const;
 
       /// Apply the Q factor computed by factor() (which see) to the
       /// nrows by ncols_C matrix C, with leading dimension ldc >=
@@ -124,7 +145,7 @@ namespace TSQR {
 	     const Scalar Q[],
 	     const LocalOrdinal ldq,
 	     const FactorOutput& factor_output,
-	     const bool contiguous_cache_blocks = false);
+	     const bool contiguous_cache_blocks) const;
 
       /// Compute the explicit representation of the Q factor computed
       /// by factor().
@@ -137,29 +158,29 @@ namespace TSQR {
 		  Scalar Q_out[],
 		  const LocalOrdinal ldq_out,
 		  const FactorOutput& factor_output,
-		  const bool contiguous_cache_blocks = false);
+		  const bool contiguous_cache_blocks) const;
 
     private:
       size_t ncores_;
-      TSQR::SequentialTsqr< LocalOrdinal, Scalar > seq_;
-      Partitioner< LocalOrdinal, Scalar > partitioner_;
+      TSQR::SequentialTsqr<LocalOrdinal, Scalar> seq_;
+      Partitioner<LocalOrdinal, Scalar> partitioner_;
 
-      typedef MatView< LocalOrdinal, Scalar > mat_view;
-      typedef ConstMatView< LocalOrdinal, Scalar > const_mat_view;
-      typedef std::pair< const_mat_view, const_mat_view > const_split_t;
-      typedef std::pair< mat_view, mat_view > split_t;
-      typedef std::pair< const_mat_view, mat_view > top_blocks_t;
-      typedef std::vector< top_blocks_t > array_top_blocks_t;
+      typedef MatView<LocalOrdinal, Scalar> mat_view;
+      typedef ConstMatView<LocalOrdinal, Scalar> const_mat_view;
+      typedef std::pair<const_mat_view, const_mat_view> const_split_t;
+      typedef std::pair<mat_view, mat_view> split_t;
+      typedef std::pair<const_mat_view, mat_view> top_blocks_t;
+      typedef std::vector<top_blocks_t> array_top_blocks_t;
 
       void
       explicit_Q_helper (const size_t P_first, 
 			 const size_t P_last,
 			 MatView< LocalOrdinal, Scalar >& Q_out,
-			 const bool contiguous_cache_blocks);
+			 const bool contiguous_cache_blocks) const;
 
       /// \return MatView of the topmost block (good for combining the
       ///   R factors and extracting the final R factor result).
-      MatView< LocalOrdinal, Scalar >
+      MatView<LocalOrdinal, Scalar>
       factor_helper (const size_t P_first, 
 		     const size_t P_last,
 		     const size_t depth,
@@ -168,7 +189,7 @@ namespace TSQR {
 		     ParOutput& par_outputs,
 		     Scalar R[],
 		     const LocalOrdinal ldr,
-		     const bool contiguous_cache_blocks);
+		     const bool contiguous_cache_blocks) const;
 
       bool
       apply_helper_empty (const size_t P_first,
@@ -196,7 +217,7 @@ namespace TSQR {
 		    mat_view C,
 		    array_top_blocks_t& top_blocks, 
 		    const FactorOutput& factor_output,
-		    const bool contiguous_cache_blocks);
+		    const bool contiguous_cache_blocks) const;
 
       /// Apply Q^T or Q^H to C.
       ///
@@ -208,7 +229,7 @@ namespace TSQR {
 			      const_mat_view Q,
 			      mat_view C,
 			      const FactorOutput& factor_output,
-			      const bool contiguous_cache_blocks);
+			      const bool contiguous_cache_blocks) const;
 
       void 
       factor_pair (const size_t P_top,
@@ -216,7 +237,7 @@ namespace TSQR {
 		   mat_view& A_top,
 		   mat_view& A_bot,
 		   std::vector< std::vector< Scalar > >& par_outputs,
-		   const bool contiguous_cache_blocks);
+		   const bool contiguous_cache_blocks) const;
 
       void
       apply_pair (const std::string& trans,
@@ -226,7 +247,7 @@ namespace TSQR {
 		  const std::vector< std::vector< Scalar > >& tau_arrays,
 		  mat_view& C_top,
 		  mat_view& C_bot,
-		  const bool contiguous_cache_blocks);
+		  const bool contiguous_cache_blocks) const;
 
       void 
       cache_block_helper (MatView< LocalOrdinal, Scalar >& A_out,

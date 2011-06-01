@@ -1,30 +1,30 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2010) Sandia Corporation
-//
+//@HEADER
+// ************************************************************************
+// 
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
+// 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-//
+// 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//
+//  
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 #ifndef __TSQR_Combine_hpp
 #define __TSQR_Combine_hpp
@@ -40,33 +40,53 @@ namespace TSQR {
 
   /// \class Combine
   /// \brief TSQR's six computational kernels
+  /// \author Mark Hoemmen
   ///
-  /// This class encapsulates six computational primitives for TSQR
-  /// (in which R, R_1, and R_2 each represent an n x n upper
-  /// triangular matrix, A represents an m x n cache block, and C_1
-  /// and C_2 represent cache blocks with some number of columns p):
+  /// This class provides the six computational primitives required by
+  /// TSQR.  The primitives are as follows, in which R, R_1, and R_2
+  /// each represent an n x n upper triangular matrix, A represents an
+  /// m x n cache block, and C_1 and C_2 represent cache blocks with
+  /// some number of columns p:
+  /// - Factor A (factor_first)
+  /// - Apply Q factor of A to C (apply_first)
+  /// - Factor [R; A] (factor_inner)
+  /// - Factor [R_1; R_2] (factor_pair)
+  /// - Apply Q factor of [R; A] to [C_1; C_2] (apply_inner)
+  /// - Apply Q factor of [R_1; R_2] to [C_1; C_2] (apply_pair)
   ///
-  /// \li Factor A (factor_first)
-  /// \li Apply Q factor of A to C (apply_first)
-  /// \li Factor [R; A] (factor_inner)
-  /// \li Factor [R_1; R_2] (factor_pair)
-  /// \li Apply Q factor of [R; A] to [C_1; C_2] (apply_inner)
-  /// \li Apply Q factor of [R_1; R_2] to [C_1; C_2] (apply_pair)
+  /// Template parameters:
+  /// - Ordinal: Type of indices into matrices.
+  /// - Scalar: Type of entries of matrices.
+  /// - CombineImpl: Type of a particular implementation of Combine.
+  ///   Its public interface must contain this class' interface.
+  /// 
+  /// Combine is completely implemented using CombineImpl.  Possible
+  /// implementations include \c CombineDefault (which uses LAPACK and
+  /// copies in and out of scratch space that it owns), \c
+  /// CombineNative (a C++ in-place (no scratch space) generic
+  /// implementation), and \c CombineFortran (a Fortran 9x in-place
+  /// implementation for LAPACK's four data types S, D, C, Z).  
   ///
-  /// CombineImpl is a particular implementation.  Its interface
-  /// includes the same six public methods as does Combine's
-  /// interface.  Combine itself just uses CombineImpl's
-  /// implementations of these six methods.
+  /// The default CombineImpl is \c CombineNative, since that should
+  /// work for any Ordinal and Scalar types for which LAPACK<Ordinal,
+  /// Scalar> and BLAS<Ordinal, Scalar> are implemented.
   ///
   template< class Ordinal, 
 	    class Scalar, 
 	    class CombineImpl = CombineNative< Ordinal, Scalar, Teuchos::ScalarTraits< Scalar >::isComplex > >
   class Combine {
   public:
+    /// \typedef scalar_type
+    /// \brief Type of matrix entries.
     typedef Scalar scalar_type;
+    /// \typedef ordinal_type
+    /// \brief Type of (intranode) matrix indices.
     typedef Ordinal ordinal_type;
+    /// \typedef combine_impl_type
+    /// \brief Type of the implementation of Combine.
     typedef CombineImpl combine_impl_type;
 
+    //! Constructor.
     Combine () {}
 
     /// Whether or not the QR factorizations computed by methods of
@@ -76,6 +96,8 @@ namespace TSQR {
       return combine_impl_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
+    /// \brief Factor the first cache block.
+    ///
     /// Compute the QR factorization of the nrows by ncols matrix A
     /// (with leading dimension lda).  Overwrite the upper triangle of
     /// A with the resulting R factor, and the lower trapezoid of A
@@ -103,6 +125,8 @@ namespace TSQR {
       return impl_.factor_first (nrows, ncols, A, lda, tau, work);
     }
 
+    /// \brief Apply the result of \c factor_first().
+    ///
     /// Apply the Q factor, as computed by factor_first() and stored
     /// implicitly in A and tau, to the matrix C.
     void
@@ -121,6 +145,8 @@ namespace TSQR {
 				A, lda, tau, C, ldc, work);
     }
 
+    /// Apply the result of \c factor_inner().
+    ///
     /// Apply the Q factor stored in [R; A] to [C_top; C_bot].  The C
     /// blocks are allowed, but not required, to have different leading
     /// dimensions (ldc_top resp. ldc_bottom).  R is upper triangular, so
@@ -166,6 +192,8 @@ namespace TSQR {
 			 C_top, ldc_top, C_bot, ldc_bot, work);
     }
 
+    /// \brief Factor [R; A] for square upper triangular R and cache block A.
+    ///
     /// Perform one "inner" QR factorization step of sequential / parallel
     /// TSQR.  (In either case, only one processor calls this routine.)
     ///
@@ -216,8 +244,10 @@ namespace TSQR {
       impl_.factor_inner (m, n, R, ldr, A, lda, tau, work);
     }
 
-    /// Compute QR factorization of [R_top; R_bot].  Store resulting R
-    /// factor in R_top and Householder reflectors in R_bot.
+    /// \brief Factor the pair of square upper triangular matrices [R_top; R_bot].  
+    ///
+    /// Store the resulting R factor in R_top, and the resulting
+    /// Householder reflectors implicitly in R_bot and tau.
     ///
     /// \param n [in]         Number of rows and columns of each of R_top and R_bot
     /// \param R_top [inout]  n by n upper triangular matrix 
@@ -238,7 +268,9 @@ namespace TSQR {
     {
       impl_.factor_pair (n, R_top, ldr_top, R_bot, ldr_bot, tau, work);      
     }
-    
+
+    /// \brief Apply the result of \c factor_pair().
+    ///
     /// Apply Q factor (or Q^T or Q^H) of the 2*ncols_Q by ncols_Q
     /// matrix [R_top; R_bot] (stored in R_bot and tau) to the
     /// 2*ncols_Q by ncols_C matrix [C_top; C_bot].  The two blocks
@@ -266,6 +298,7 @@ namespace TSQR {
     }
 
   private:
+    //! The implementation of Combine.
     combine_impl_type impl_;
   };
 

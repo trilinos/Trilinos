@@ -69,7 +69,7 @@ namespace TSQR {
 
     private:
       /// \param [in] plist Parameter list with the following keys:
-      ///   \li "cacheBlockSize": Cache size in bytes.  Default is
+      ///   \li "cacheSizeHint": Cache size hint in bytes.  Default is
       ///       zero, which means that TSQR will guess a reasonable
       ///       cache size.  The size should correspond to that of the
       ///       largest cache that is private to each CPU core, if
@@ -87,7 +87,7 @@ namespace TSQR {
       {
 	using Teuchos::Exceptions::InvalidParameter;
 	int numCores = 1;
-	size_t cacheBlockSize = 0;
+	size_t cacheSizeHint = 0;
 
 	try {
 	  const std::string numCoresParamName ("numCores");
@@ -97,15 +97,15 @@ namespace TSQR {
 	}
 
 	try {
-	  const std::string cacheBlockSizeParamName ("cacheBlockSize");
-	  cacheBlockSize = plist.get<size_t>(cacheBlockSizeParamName);
+	  const std::string cacheSizeHintParamName ("cacheSizeHint");
+	  cacheSizeHint = plist.get<size_t>(cacheSizeHintParamName);
 	} catch (InvalidParameter&) {
-	  // Intranode TSQR interprets cacheBlockSize==0 as "set cache
+	  // Intranode TSQR interprets cacheSizeHint==0 as "set cache
 	  // block size to a reasonable positive default value."
-	  cacheBlockSize = 0;
+	  cacheSizeHint = 0;
 	}
 
-	node_tsqr_ptr nodeTsqr (new node_tsqr_type (numCores, cacheBlockSize));
+	node_tsqr_ptr nodeTsqr (new node_tsqr_type (numCores, cacheSizeHint));
 	return nodeTsqr;
       }
 

@@ -35,7 +35,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MMHelpers.hpp"
 
-/*! \file Tpetra_MMMultiply_decl.hpp 
+/*! \file Tpetra_MatrixMatrix_decl.hpp 
 
     The declarations for the class Tpetra::MMMultiMultiply and related non-member constructors.
  */

@@ -33,6 +33,11 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_BlockMap.hpp"
 
+/*! \file TpetraExt_BlockExtraction_decl.hpp 
+
+    Methods for block extraction of data from Tpetra objects.
+ */
+
 namespace Tpetra {
   namespace Ext {
 
@@ -51,6 +56,8 @@ namespace Tpetra {
 
         \post - <tt>out_offsets.size() == block_sizes.size()</tt>
         \post - the non-trivial <tt>b</tt>-th block is stored contiguously (column-major) in <tt>out_diags( out_offsets[b], block_size_b )</tt>, where \f$block\_size\_b = ( first\_points\[b+1\] - first\_points\[b\] )^2 \f$.
+
+        \relatesalso Tpetra::CrsMatrix
       */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void
@@ -64,7 +71,7 @@ namespace Tpetra {
         This method does not initiate any communication, and therefore can be called safely on a single node.
 
         \param in matrix - The sparse matrix source for the diagonals.
-        \param in bloc_map - A BlockMap describing the blocks
+        \param in block_map - A BlockMap describing the blocks
         \param out out_diags - A reference-counted array, containing the block diagonals in contiguous storage.
         \param out out_offsets - A reference-counted array, indicating the offset to reach each block in \c out_diags.
 
@@ -76,6 +83,7 @@ namespace Tpetra {
       
         Calls extractBlockDiagonals().
 
+        \relatesalso Tpetra::CrsMatrix
       */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void
@@ -84,7 +92,40 @@ namespace Tpetra {
                           Teuchos::ArrayRCP<Scalar>       &out_diags,
                           Teuchos::ArrayRCP<LocalOrdinal> &out_offsets);
 
+    /** \brief Extracts block elements from a RowMatrix into contiguous, host storage.
+
+        This method does not initiate any communication, and therefore can be called safely on a single node.
+
+        \param in block_row     - The block row to be extracted
+        \param in block_row_map - A BlockMap describing the row blocks
+        \param in block_col_map - A BlockMap describing the column blocks
+        \param in matrix - The sparse matrix source for the diagonals.
+        \param out block_entries - The block entries
+        \param out block_indices - The indices for the block entries
+
+        \pre - <tt>block_row_map.getPointMap().isCompatible( matrix.getRowMap() )</tt>
+        \pre - <tt>block_row_map.getPointMap().isCompatible( matrix.getRowMap() )</tt>
+        \pre - <tt>block_col_map.getPointMap().isCompatible( matrix.getColMap() )</tt>
+        \pre - <tt>block_col_map.getPointMap().isCompatible( matrix.getColMap() )</tt>
+        \pre - <tt>matrix.isFillComplete() == true</tt>
+
+        \relatesalso Tpetra::CrsMatrix
+      */
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void
+    extractBlockRow(LocalOrdinal localBlockRow,
+                    const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &matrix, 
+                    const BlockMap<LocalOrdinal,GlobalOrdinal,Node> &block_row_map,
+                    const BlockMap<LocalOrdinal,GlobalOrdinal,Node> &block_col_map,
+                    ArrayRCP<ArrayRCP<Scalar> >      &out_block_entries,
+                    ArrayRCP<LocalOrdinal>           &out_block_indices);
+
   }
 }
+
+/** 
+  \example CrsMatrix_BlockExtraction.cpp
+  An example for using the block extraction methods Tpetra::Ext::extractBlockDiagonals() and Tpetra::Ext::extractBlockRow().
+ */
 
 #endif // TPETRAEXT_BLOCKEXTRACTION_DECL_HPP

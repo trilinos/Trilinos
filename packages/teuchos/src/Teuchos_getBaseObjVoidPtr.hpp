@@ -33,7 +33,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 
-#ifdef HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
+#if defined(HAVE_TEUCHOS_BOOST) && defined(HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
 
 
 // Internal Trilinos code should check if the macro is defined to see if
@@ -97,7 +97,7 @@ const void* getBaseObjVoidPtr(T *p)
 }	// end namespace Teuchos
 
 
-#endif // HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
+#endif // defined(HAVE_TEUCHOS_BOOST) && defined(HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
 
 
 #endif // TEUCHOS_GET_BASE_OBJ_VOID_PTR

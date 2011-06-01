@@ -8,6 +8,7 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
 
 namespace {
 
@@ -74,11 +75,11 @@ namespace {
     RCP<const Map<Ordinal,Ordinal,Node> > source = createContigMap<Ordinal,Ordinal>(INVALID,10,comm),
                                           target = createContigMap<Ordinal,Ordinal>(INVALID, 5,comm);
     // create Import object
-    Import<Ordinal> importer(source, target);
+    RCP<const Import<Ordinal> > importer = Tpetra::createImport<Ordinal>(source, target);
     
-    Ordinal same = importer.getNumSameIDs();
-    Ordinal permute = importer.getNumPermuteIDs();
-    Ordinal remote = importer.getNumRemoteIDs();
+    Ordinal same = importer->getNumSameIDs();
+    Ordinal permute = importer->getNumPermuteIDs();
+    Ordinal remote = importer->getNumRemoteIDs();
     Ordinal sum = same + permute + remote;
     Ordinal expectedSum = target->getNodeNumElements();
     TEST_EQUALITY( sum, expectedSum );
@@ -130,26 +131,26 @@ namespace {
         mvMine->replaceLocalValue(0,j,static_cast<Scalar>(myImageID + j*numImages));
       }
       // create Import from smap to tmap, Export from tmap to smap, test them
-      Import<Ordinal> importer(smap,tmap);
-      Export<Ordinal> exporter(tmap,smap);
+      RCP<const Import<Ordinal> > importer = Tpetra::createImport<Ordinal>(smap,tmap);
+      RCP<const Export<Ordinal> > exporter = Tpetra::createExport<Ordinal>(tmap,smap);
       bool local_success = true;
       // importer testing
-      TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
-      TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
-      TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-      TEST_EQUALITY( importer.getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
-      TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
-      TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      TEST_EQUALITY_CONST( importer->getSourceMap() == smap, true );
+      TEST_EQUALITY_CONST( importer->getTargetMap() == tmap, true );
+      TEST_EQUALITY( importer->getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+      TEST_EQUALITY( importer->getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( importer->getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      TEST_EQUALITY( importer->getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
       // exporter testing
-      TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
-      TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
-      TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-      TEST_EQUALITY( exporter.getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY_CONST( exporter->getSourceMap() == tmap, true );
+      TEST_EQUALITY_CONST( exporter->getTargetMap() == smap, true );
+      TEST_EQUALITY( importer->getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+      TEST_EQUALITY( exporter->getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
       // import neighbors, test their proper arrival
       //                   [ 0    n     2n    3n    4n ]
       // mvWithNeighbors = [...  ....  ....  ....  ....]
       //                   [n-1  2n-1  3n-1  4n-1  5n-1]
-      mvWithNeighbors->doImport(*mvMine,importer,REPLACE);
+      mvWithNeighbors->doImport(*mvMine,*importer,REPLACE);
       if (myImageID == 0) {
         for (size_t j=0; j<numVectors; ++j) {
           TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,static_cast<Scalar>(myImageID+j*numImages)); // me
@@ -171,7 +172,7 @@ namespace {
       }
       // export values, test 
       mvMine->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-      mvMine->doExport(*mvWithNeighbors,exporter,ADD);
+      mvMine->doExport(*mvWithNeighbors,*exporter,ADD);
       if (myImageID == 0 || myImageID == numImages-1) {
         for (size_t j=0; j<numVectors; ++j) {
           // contribution from me and one neighbor: double original value
@@ -237,26 +238,26 @@ namespace {
         mvMine->replaceLocalValue(0,j,static_cast<Scalar>(myImageID + j*numImages));
       }
       // create Import from smap to tmap, Export from tmap to smap, test them
-      Import<Ordinal> importer(smap,tmap);
-      Export<Ordinal> exporter(tmap,smap);
+      RCP<const Import<Ordinal> > importer = Tpetra::createImport<Ordinal>(smap,tmap);
+      RCP<const Export<Ordinal> > exporter = Tpetra::createExport<Ordinal>(tmap,smap);
       bool local_success = true;
-      // importer testing: FINISH
-      TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
-      TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
-      TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-      TEST_EQUALITY( importer.getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
-      TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
-      TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
-      // exporter testing: FINISH
-      TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
-      TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
-      TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-      TEST_EQUALITY( exporter.getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
+      // importer testing
+      TEST_EQUALITY_CONST( importer->getSourceMap() == smap, true );
+      TEST_EQUALITY_CONST( importer->getTargetMap() == tmap, true );
+      TEST_EQUALITY( importer->getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+      TEST_EQUALITY( importer->getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( importer->getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      TEST_EQUALITY( importer->getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      // exporter testing
+      TEST_EQUALITY_CONST( exporter->getSourceMap() == tmap, true );
+      TEST_EQUALITY_CONST( exporter->getTargetMap() == smap, true );
+      TEST_EQUALITY( importer->getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+      TEST_EQUALITY( exporter->getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
       // import neighbors, test their proper arrival
       //                   [ 0    n     2n    3n    4n ]
       // mvWithNeighbors = [...  ....  ....  ....  ....]
       //                   [n-1  2n-1  3n-1  4n-1  5n-1]
-      mvWithNeighbors->doImport(*mvMine,exporter,REPLACE);
+      mvWithNeighbors->doImport(*mvMine,*exporter,REPLACE);
       if (myImageID == 0) {
         for (size_t j=0; j<numVectors; ++j) {
           TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,static_cast<Scalar>(myImageID+j*numImages)); // me
@@ -278,7 +279,7 @@ namespace {
       }
       // export values, test 
       mvMine->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-      mvMine->doExport(*mvWithNeighbors,importer,ADD);
+      mvMine->doExport(*mvWithNeighbors,*importer,ADD);
       if (myImageID == 0 || myImageID == numImages-1) {
         for (size_t j=0; j<numVectors; ++j) {
           // contribution from me and one neighbor: double original value
@@ -300,6 +301,37 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+
+  ////
+  TEUCHOS_UNIT_TEST( ImportExport, AbsMax )
+  {
+    // test ABSMAX CombineMode
+    // test with local and remote entries, as copyAndPermute() and unpackAndCombine() both need to be tested
+    typedef Tpetra::Vector<double,int> Vec;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    if (numImages < 2) return;
+    // create a Map
+    RCP<const Map<int,int> > smap = Tpetra::createContigMap<int,int>(INVALID,1,comm);
+    const int myOnlyGID = smap->getGlobalElement(0);
+    RCP<const Map<int,int> > dmap = Tpetra::createNonContigMap<int,int>(tuple<int>(myOnlyGID, (myOnlyGID+1)%numImages), comm);
+    RCP<Vec> srcVec = Tpetra::createVector<double>(smap);
+    srcVec->putScalar(-1.0);
+    RCP<Vec> dstVec = Tpetra::createVector<double>(dmap);
+    dstVec->putScalar(-3.0);
+    // first item of dstVec is local (w.r.t. srcVec), while the second is remote
+    // ergo, during the import:
+    // - the first will be over-written (by 1.0) from the source, while
+    // - the second will be "combined", i.e., abs(max(1.0,3.0)) = 3.0 from the dest
+    RCP<const Tpetra::Import<int> > importer = Tpetra::createImport<int>(smap,dmap);
+    dstVec->doImport(*srcVec,*importer,Tpetra::ABSMAX);
+    TEST_COMPARE_ARRAYS( tuple<double>(-1.0,3.0), dstVec->get1dView() )
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
 
   //
   // INSTANTIATIONS

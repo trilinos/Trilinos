@@ -1,5 +1,6 @@
 INCLUDE(PackageMacros)
 INCLUDE(AddOptionAndDefine)
+INCLUDE(CombinedOption)
 
 #
 # A) Define the package
@@ -28,7 +29,12 @@ ADD_OPTION_AND_DEFINE(
   "Enable Kokkos local linear algebra."
   ON
   )
-
+ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_Array
+  HAVE_KOKKOS_ARRAY
+  "Enable Kokkos arrays."
+  OFF
+  )
 ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_MDArray
   HAVE_KOKKOS_MDARRAY
@@ -151,6 +157,9 @@ if (Kokkos_ENABLE_LinAlg AND Kokkos_ENABLE_NodeAPI)
   ADD_SUBDIRECTORY(LinAlg)
 ENDIF()
 
+IF (Kokkos_ENABLE_Array)
+  ADD_SUBDIRECTORY(array)
+ENDIF()
 IF (Kokkos_ENABLE_MDArray)
   ADD_SUBDIRECTORY(MDArray)
 ENDIF()

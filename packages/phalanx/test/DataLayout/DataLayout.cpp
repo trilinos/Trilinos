@@ -45,21 +45,25 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 struct Spatial : public shards::ArrayDimTag {
+  Spatial(){};
   const char * name() const ;
   static const Spatial & tag();
 };
 
 struct Quadrature : public shards::ArrayDimTag {
+  Quadrature(){};
   const char * name() const ;
   static const Quadrature & tag();
 };
 
 struct Node : public shards::ArrayDimTag {
+  Node(){};
   const char * name() const ;
   static const Node & tag();
 };
 
 struct Cell : public shards::ArrayDimTag {
+  Cell(){};
   const char * name() const ;
   static const Cell & tag();
 };

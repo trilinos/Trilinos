@@ -28,6 +28,8 @@ namespace mesh {
  *   - The remaining field states <b>StateNM1</b>, <b>StateNM2</b>,
  *     <b>StateNM3</b>, <b>StateNM4</b> refer to prior states
  *     N-1, N-2, N-3, and N-4 accordingly.
+ *
+ * See Field.hpp for more.
  */
 enum FieldState {
   StateNone = 0,  ///< \brief State of a field with one state
@@ -45,9 +47,6 @@ enum FieldState {
  *         can have.
  */
 enum { MaximumFieldStates = 6 };
-
-/** \brief  Return the string name of a field state. */
-const char * field_state_name( FieldState );
 
 /** \} */
 

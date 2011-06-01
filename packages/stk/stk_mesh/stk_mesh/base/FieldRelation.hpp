@@ -46,6 +46,30 @@ class FieldBase;
  *
  *    field_data(*m_root,e1)[index] == field_data(*m_target,e2)
  *  </PRE>
+ *
+ * A common use case is, given an element, process a certain field that is
+ * on its nodes. This can be done by iterating over the element's node relations
+ * and getting the field data off the nodes directly, but it can be cleaner and
+ * faster to set up a field relation instead. A field relation formally defines
+ * a relationship between a field on the element and a field on it's nodes
+ * (or some other lower-than-element entity rank). The API for setting up a
+ * field relation is in MetaData.hpp. See Field.hpp for a full discussion of Fields.
+ * - Example:
+ *   // Declare nodal field
+ *   typedef Field<double,Cartesian> VectorFieldType; // Cartesian ArrayDimTag comes from CoordinateSystems.hpp
+ *   VectorFieldType& coord_field = meta.declare_field<VectorFieldType>("coordinates");
+ *
+ *   // Declare element field, ElementNodePointerField is a typedef from TopologyDimensions.hpp
+ *   ElementNodePointerField elem_node_coord_field = meta.declare_field<ElementNodePointerField>("elem_node_coord_field");
+ *
+ *   // Add field restriction for nodal field
+ *   put_field( coord_field, <node_rank>, <part> );
+ *
+ *   // Declare field relation! Stencil defines order in which nodal fields are accessed
+ *   meta.declare_field_relation(elem_node_coord_field, fem::get_element_node_stencil(3), coord_field);
+ *
+ *   // Add field restriction for element field
+ *   put_field( elem_node_coord_field, <elem_rank>, <part>);
  */
 struct FieldRelation {
   /** \brief  relation domain part */
@@ -79,6 +103,5 @@ struct FieldRelation {
 
 } // namespace mesh
 } // namespace stk
-
 
 #endif //stk_mesh_FieldRelation_hpp

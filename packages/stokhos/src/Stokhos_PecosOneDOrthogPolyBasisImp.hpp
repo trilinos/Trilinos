@@ -179,7 +179,7 @@ Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>::
 evaluateBases(const value_type& x, Teuchos::Array<value_type>& basis_pts) const
 {
   for (ordinal_type i=0; i<=p; i++)
-    basis_pts[i] = pecosPoly->get_value(x, i);
+    basis_pts[i] = pecosPoly->type1_value(x, i);
 }
 
 template <typename ordinal_type, typename value_type>
@@ -190,8 +190,8 @@ evaluateBasesAndDerivatives(const value_type& x,
 			    Teuchos::Array<value_type>& derivs) const
 {
   for (ordinal_type i=0; i<=p; i++) {
-    vals[i] = pecosPoly->get_value(x, i);
-    derivs[i] = pecosPoly->get_gradient(x, i);
+    vals[i] = pecosPoly->type1_value(x, i);
+    derivs[i] = pecosPoly->type1_gradient(x, i);
   }
 }
 
@@ -200,7 +200,7 @@ value_type
 Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>::
 evaluate(const value_type& x, ordinal_type k) const
 {
-  return pecosPoly->get_value(x, k);
+  return pecosPoly->type1_value(x, k);
 }
 
 template <typename ordinal_type, typename value_type>
@@ -234,7 +234,7 @@ getQuadPoints(ordinal_type quad_order,
   ordinal_type num_points = 
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
   const Pecos::RealArray& gp = pecosPoly->collocation_points(num_points);
-  const Pecos::RealArray& gw = pecosPoly->collocation_weights(num_points); 
+  const Pecos::RealArray& gw = pecosPoly->type1_collocation_weights(num_points); 
   quad_points.resize(num_points);
   quad_weights.resize(num_points);
   for (ordinal_type i=0; i<num_points; i++) {

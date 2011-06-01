@@ -68,9 +68,9 @@ int Zoltan_RB_find_median(
                            each dot is on:
                                 0 - dot is < valuehalf
                                 1 - dot is > valuehalf                       */
-  int dotnum,           /* number of dots (length of three previous arrays   */
+  int dotnum,           /* number of dots (length of three previous arrays)  */
   int proc,             /* this proc number (rank)                           */
-  double fractionlo,    /* fraction of weight that should be in bottom half  */
+  double *fractionlo,   /* fraction of weight that should be in bottom half  */
   MPI_Comm local_comm,  /* MPI communicator on which to find median          */
   double *valuehalf,    /* on entry - first guess at median (if first_guess set)
                            on exit - the median value                        */
@@ -100,6 +100,7 @@ int Zoltan_RB_find_median(
   double  weightlo, weighthi;        /* wt in lower/upper half of non-active */
   double  tmp_half = 0.0;
   double  tmp_wgt;
+  double *w;
 
   int     i, j, k, numlist;
   int     first_iteration;
@@ -150,11 +151,13 @@ int Zoltan_RB_find_median(
    */
   wtmax = 0.0;
   numlist = dotnum;
+  w = wgts;                     /* we use 1st weight only */
   for (i = 0; i < dotnum;i++) {
     dotlist[i] = i;
-
-    if (wgtflag)
-      if (wgts[i] > wtmax) wtmax = wgts[i];
+    if (wgtflag){
+      if (*w > wtmax) wtmax = *w;
+      w += wgtflag;
+    }
   }
 
   if (Tflops_Special) {
@@ -183,7 +186,7 @@ int Zoltan_RB_find_median(
                be in balance with the target weight.  A tolerance less than
                half of the largest weight would allow infinite looping as a
                node of largest weight was passed back and forth. */
-  targetlo = fractionlo * weight;
+  targetlo = fractionlo[0] * weight;
   targethi = weight - targetlo;
 
   /* weightlo/hi = total weight in non-active parts of partition */
@@ -242,31 +245,32 @@ int Zoltan_RB_find_median(
 
       for (j = 0; j < numlist; j++) {
         i = dotlist[j];
+        tmp_wgt = (wgts ? wgts[i*wgtflag] : uniformWeight);
         if (dots[i] <= tmp_half) {            /* in lower part */
-          medme.totallo += (wgts ? wgts[i] : uniformWeight);
+          medme.totallo += tmp_wgt;
           dotmark[i] = 0;
           if (dots[i] > medme.valuelo) {       /* my closest dot */
             medme.valuelo = dots[i];
-            medme.wtlo = (wgts ? wgts[i] : uniformWeight);
+            medme.wtlo = tmp_wgt;
             medme.countlo = 1;
             indexlo = i;
           }                                            /* tied for closest */
           else if (dots[i] == medme.valuelo) {
-            medme.wtlo += (wgts ? wgts[i] : uniformWeight);
+            medme.wtlo += tmp_wgt;
             medme.countlo++;
           }
         }
         else {                                         /* in upper part */
-          medme.totalhi += (wgts ? wgts[i] : uniformWeight);
+          medme.totalhi += tmp_wgt;
           dotmark[i] = 1;
           if (dots[i] < medme.valuehi) {       /* my closest dot */
             medme.valuehi = dots[i];
-            medme.wthi = (wgts ? wgts[i] : uniformWeight);
+            medme.wthi = tmp_wgt;
             medme.counthi = 1;
             indexhi = i;
           }                                            /* tied for closest */
           else if (dots[i] == medme.valuehi) {
-            medme.wthi += (wgts ? wgts[i] : uniformWeight);
+            medme.wthi += tmp_wgt;
             medme.counthi++;
           }
         }
@@ -335,7 +339,7 @@ int Zoltan_RB_find_median(
           for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++) {
             i = dotlist[j];
             if (dots[i] == med.valuehi) { /* only move if better */
-              tmp_wgt = (wgts ? wgts[i] : uniformWeight);
+              tmp_wgt = (wgts ? wgts[i*wgtflag] : uniformWeight);
               if (wtsum + tmp_wgt - wtok < wtok - wtsum) {
                 dotmark[i] = 0;
                 wtsum += tmp_wgt;  /* KDD Moved sum inside if test 1/2002 */
@@ -407,7 +411,7 @@ int Zoltan_RB_find_median(
           for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++) {
             i = dotlist[j];
             if (dots[i] == med.valuelo) { /* only move if better */
-              tmp_wgt = (wgts ? wgts[i] : uniformWeight);
+              tmp_wgt = (wgts ? wgts[i*wgtflag] : uniformWeight);
               if (wtsum + tmp_wgt - wtok < wtok - wtsum) {
                 dotmark[i] = 1;
                 wtsum += tmp_wgt; /* KDD Moved sum inside if test 1/2002 */

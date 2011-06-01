@@ -402,6 +402,28 @@ namespace Tpetra {
     }
   }
 
+  /** \brief Non-member constructor for Export objects.
+
+      Creates a Export object from the given source and target maps.
+      \pre <tt>src != null</tt>
+      \pre <tt>tgt != null</tt>
+      \return Returns the Export object. If <tt>src == tgt</tt>, returns \c null. (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.) 
+
+      \relatesalso Export
+    */
+  template <class LO, class GO, class Node> 
+  RCP< const Export<LO,GO,Node> >
+  createExport( const RCP<const Map<LO,GO,Node> > & src, 
+                const RCP<const Map<LO,GO,Node> > & tgt )
+  {
+    if (src == tgt) return null;
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(src == null || tgt == null, std::runtime_error,
+        "Tpetra::createExport(): neither source nor target map may be null:\nsource: " << src << "\ntarget: " << tgt << "\n");
+#endif
+    return rcp(new Export<LO,GO,Node>(src,tgt));
+  }
+
 } // namespace Tpetra
 
 #endif // TPETRA_EXPORT_HPP

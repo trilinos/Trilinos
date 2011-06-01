@@ -32,11 +32,6 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_COMPILETIME_ARRAY_CHECK
   "Enables compile time checking of the rank accessors in the MDArray. This adds safety of checking the rank accessors at compile time.  This can be very inefficient in runtime mode so checking is only done for debug builds if this flag is disabled.  The default is to disable compile time checking.  NOTE: Compile time checking must be OFF for MDFields to be interoperable with Intrepid!"
   OFF )
 
-COMBINED_OPTION( Phalanx_ENABLE_GPU
-  DEP_OPTIONS_NAMES Trilinos_ENABLE_Kokkos Phalanx_ENABLE_Thrust Phalanx_ENABLE_CUDA
-  DOCSTR "Enables GPU support in Phalanx.  Requires Trilinos/Kokkos, TPL/Thrust, and TPL/Cuda"
-  )
-
 #
 # C) Add the libraries, tests, and examples
 #

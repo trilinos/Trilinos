@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <utility>
 #include <vector>
+#include <cstddef>
 #include <stk_util/parallel/Parallel.hpp>
 
 class UnitTestSTKParallelDistributedIndex ;

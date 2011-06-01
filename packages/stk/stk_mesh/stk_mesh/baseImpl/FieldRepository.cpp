@@ -116,8 +116,14 @@ FieldBase * FieldRepository::declare_field(
 {
   TraceIf("stk::mesh::impl::FieldRepository::declare_field", LOG_FIELD);
 
-  static const char reserved_state_suffix[6][8] = {
-    "_OLD" , "_N" , "_NM1" , "_NM2" , "_NM3" , "_NM4" };
+  static const char* reserved_state_suffix[6] = {
+    "_STKFS_OLD",
+    "_STKFS_N",
+    "_STKFS_NM1",
+    "_STKFS_NM2",
+    "_STKFS_NM3",
+    "_STKFS_NM4"
+  };
 
   // Check that the name does not have a reserved suffix
 

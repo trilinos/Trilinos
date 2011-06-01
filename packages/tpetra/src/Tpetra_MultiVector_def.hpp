@@ -346,6 +346,7 @@ namespace Tpetra {
                   Distributor & /* distor */,
                   CombineMode CM) {
     const std::string tfecfFuncName("unpackAndCombine()");
+    typedef ScalarTraits<Scalar> SCT;
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
     /* The layout in the export for MultiVectors is as follows:
@@ -405,8 +406,28 @@ namespace Tpetra {
           }
         }
       }
+      else if (CM == ABSMAX) {
+        if (isConstantStride()) {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              Scalar &curval       = ncview_[myStride*j + *idptr];
+              const Scalar &newval = *impptr++;
+              curval = std::max( SCT::magnitude(curval), SCT::magnitude(newval) );
+            }
+          }
+        } 
+        else {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              Scalar &curval       = ncview_[myStride*whichVectors_[j] + *idptr];
+              const Scalar &newval = *impptr++;
+              curval = std::max( SCT::magnitude(curval), SCT::magnitude(newval) );
+            }
+          }
+        }
+      }
       else {
-        TEST_FOR_EXCEPTION_CLASS_FUNC(CM != ADD && CM != REPLACE && CM != INSERT, std::invalid_argument,
+        TEST_FOR_EXCEPTION_CLASS_FUNC(CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX, std::invalid_argument,
             ": Invalid CombineMode: " << CM);
       }
     }
@@ -1830,13 +1851,6 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createMultiVector(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t numVectors) {
-  const bool DO_INIT_TO_ZERO = true;
-  return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,numVectors,DO_INIT_TO_ZERO) );
-}
-
 //
 // Explicit instantiation macro
 //
@@ -1846,9 +1860,6 @@ Tpetra::createMultiVector(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,Glo
 #define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class MultiVector< SCALAR , LO , GO , NODE >; \
-  \
-  template Teuchos::RCP< MultiVector<SCALAR,LO,GO,NODE> > \
-  createMultiVector<SCALAR,LO,GO,NODE>(const Teuchos::RCP<const Map<LO,GO,NODE> > &map, size_t numVectors); 
 
 
 #endif // TPETRA_MULTIVECTOR_DEF_HPP

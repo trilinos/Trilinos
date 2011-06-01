@@ -274,11 +274,10 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   </ul>
 
-<li> <b> Testing Support </b>
+<li> <b> Testing Unit Support </b>
 
-  Teuchos contains some utilities that make it easier to write tests
-
-  See \ref teuchos_testing_grp
+  Teuchos contains some utilities that make it easier to write unit tests.
+  See the native \ref Teuchos_UnitTest_grp "Unit Testing Support Code".
 
 </ul>
 
@@ -333,4 +332,186 @@ href="../../browser/doc/html/files.html">locate files</a>, etc.
 
 */
 
-/** \defgroup Teuchos_Depreicated_grp Deprecated Teuchos Code */
+
+/** \defgroup Teuchos_Depreicated_grp Deprecated Teuchos Code
+
+All of the code that shows up here is depricated and should not be used by
+clients (because it will be removed at some point).
+
+*/
+
+
+/** \defgroup Teuchos_UnitTest_grp Unit Testing Support
+
+Teuchos contains a simple but very effective native unit testing support code.
+
+Unit tests can be defined in separate files which can be as simple as:
+
+\code
+
+// Int_UnitTests.cpp
+
+#include "Teuchos_UnitTestHarness.hpp"
+
+namespace {
+
+TEUCHOS_UNIT_TEST( Int, Basic )
+{
+  int i1 = 5;
+  TEST_EQUALITY_CONST( i1, 5 );
+}
+
+TEUCHOS_UNIT_TEST( Int, Assignment )
+{
+  int i1 = 4;
+  int i2 = i1;
+  TEST_EQUALITY( i2, i1 );
+}
+
+} // namespace
+
+\endcode
+
+and then compiled along with other unit testing definition files into
+executables along with a simple main function like:
+
+\code
+
+// UnitTestMain.cpp
+
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+
+int main( int argc, char* argv[] )
+{
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+}
+
+\endcode
+
+using CMake code like:
+
+\code
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  MyUnitTests
+  SOURCES
+    UnitTestMain.cpp
+    Int_UnitTests.cpp
+    ... other unit test files ...
+  STANDARD_PASS_OUTPUT
+  )
+
+\endcode
+
+Once the Unit test exectuable is built, it will run with CTest automatically and
+produce output and pass/fail.  It is just run as:
+
+\verbatim
+  ./MyPackage_MyUnitTest.exe
+\endverbatim
+
+One of the most useful properties of this simple unit testing support code
+is that the unit testing exectuable (created by the above CMake code)
+accepts command-line arguments for showing more or less output, runing only
+particular sets of tests, etc.  Just pass in the <tt>--help</tt> flag to see all
+of the options as:
+
+\verbatim
+  ./MyPackage_MyUnitTest.exe --help
+\endverbatim
+
+Now learn about unit tests, for example, at:
+
+  http://www.oreillynet.com/pub/a/oreilly/oracle/utplsql/news/fulldoc.html
+
+References for Teuchos Unit Testing Support:
+
+<ul>
+
+<li> \ref Teuchos_UnitTestDefinitionMacros_grp "Unit Testing Definition
+Macros": Macros used to define individual unit test blocks line TEUCHOS_UNIT_TEST().
+
+<li> \ref Teuchos_UnitTestAssertMacros_grp "Unit Testing Assert Macros": Used
+within a given unit test to individual statement-level checks like
+TEST_EQUALITY().
+
+</ul>
+
+Suggestions for unit testing:
+
+<ul>
+
+<li> Put all unit tests for a given class <tt>MyClass</tt> into a single
+file with the name <tt>MyClass_UnitTests.cpp</tt>.  This makes the unit
+tests for a class easy to find and maintain.
+
+<li> Aggregate unit tests for related classes and functionality into single
+executables.  Putting lots of related unit tests in the same exectuable
+ensures the process startup and shutdown for a given exectuable run by CTest
+does not overwelm the cost of the the actual unit tests.  If well defined,
+you can run thousands of unit tests in a single exectuable in a fraction of
+a second.
+
+<li> Don't bother writing you own simple UnitTestMain.cpp like above, just include the standard
+one <tt>teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp</tt> in your
+PACKAGE_ADD_EXECUTABLE_AND_TEST(...) CMake macro.
+
+<li> When doing TDD, write a single unit test at a time (fail, pass,
+refactor) and constantly be rebuilding and rerunning the unit test
+exectuable.
+
+<li> Get an idea of all the different ways you can write unit tests by
+searching for unit test examples in Trilinos by doing:
+
+\verbatim
+$ find . -name "*" -exec grep -l 'TEUCHOS_UNIT_TEST' {} \;
+\endverbatim
+
+Just open a bunch of those files and see how people use these unit testing tools.
+
+Search packages like Teuchos and Tpetra first since these are the most numerous
+and mature unit testing examples you will find in Trilinos.
+
+</ul>
+
+*/
+
+
+/** \defgroup Teuchos_UnitTestDefinitionMacros_grp Unit Testing Definition Macros
+
+\ingroup Teuchos_UnitTest_grp
+
+There macros are used to define individual unit test code blocks.  For example:
+
+\code
+TEUCHOS_UNIT_TEST(SomeTestGroup, SomeTestName)
+{
+  int i = 1;
+  TEST_EQUALITY_CONST(i, 1);
+  int j = 2;
+  TEST_EQUALITY_CONST(j, 2);
+  TEST_INEQUALITY_CONST(i, j);
+  ...
+}
+\endcode
+
+*/
+
+
+/** \defgroup Teuchos_UnitTestAssertMacros_grp Unit Testing Assert Macros
+
+\ingroup Teuchos_UnitTest_grp
+
+These are macros used to define individual checks within an single unit test
+(e.g. defined by TEUCHOS_UNIT_TEST()).
+
+NOTE: When a single check fails, the unit test is not aborted but instead will
+just print the failure to the local stream 'out' with the line number and
+continue on.
+
+NOTE: The local unit test stream object 'out' will be written to and the
+variable 'success' will be set to 'false' if a test fails.
+
+*/

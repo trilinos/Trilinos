@@ -14,6 +14,10 @@
 /* Define if we have MPI */
 #cmakedefine HAVE_TPETRA_MPI
 
+/* Determine if we have CUDA, Thrust */
+#cmakedefine HAVE_TPETRA_CUDA
+#cmakedefine HAVE_TPETRA_THRUST
+
 /* Define if want to build tpetra-throw_warnings */
 #cmakedefine HAVE_TPETRA_THROW_WARNINGS
 

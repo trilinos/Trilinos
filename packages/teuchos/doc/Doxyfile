@@ -63,7 +63,10 @@ EXAMPLE_PATH           =  ../example/BLAS/cxx_main.cpp \
                           ../example/DenseMatrix/cxx_main.cpp \
                           ../example/DenseMatrix/cxx_main_sym.cpp \
                           ../example/TimeMonitor/cxx_main.cpp \
-                          ../test/FancyOutputting/FancyOutputting_test.cpp
+                          ../test/FancyOutputting/FancyOutputting_test.cpp \
+                          ../test/UnitTest/Int_UnitTests.cpp \
+                          ../test/UnitTest/TemplateFunc_UnitTests.cpp \
+                          ../test/UnitTest/vector_UnitTests.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 

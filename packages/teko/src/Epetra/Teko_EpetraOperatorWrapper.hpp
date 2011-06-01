@@ -255,6 +255,9 @@ namespace Epetra {
     //! Get the number of block columns in this operator
     virtual int GetBlockColCount();
 
+    //! Grab the i,j block
+    Teuchos::RCP<const Epetra_Operator> GetBlock(int i,int j) const;
+
   protected:
     /** */
     EpetraOperatorWrapper();

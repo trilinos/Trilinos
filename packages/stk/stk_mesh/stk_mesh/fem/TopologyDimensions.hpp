@@ -24,6 +24,11 @@
 namespace stk {
 namespace mesh {
 
+/**
+ * The file contains Field typed and ArrayDimTags that are useful for
+ * setting up various types of field relations.
+ */
+
 //----------------------------------------------------------------------
 /** \ingroup stk_mesh_field_dimension_tags
  *  \brief  Define an array dimension of the number of nodes per element.

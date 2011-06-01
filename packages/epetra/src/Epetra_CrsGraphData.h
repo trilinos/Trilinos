@@ -60,7 +60,7 @@ class Epetra_Export;
     It derives from Epetra_Data, and inherits reference-counting from it.
 */
 
-class Epetra_CrsGraphData : public Epetra_Data {
+class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   friend class Epetra_CrsGraph;
   friend class Epetra_FECrsGraph;
 

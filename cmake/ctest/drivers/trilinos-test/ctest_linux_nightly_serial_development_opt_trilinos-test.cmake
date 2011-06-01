@@ -23,6 +23,9 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNemesis_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/nemesis_3.09/include"
   "-DNemesis_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/nemesis_3.09/lib"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
+  "-DTPL_ENABLE_HDF5:BOOL=ON"
+  "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/include"
+  "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/lib"
   )
 
 #
