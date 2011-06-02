@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -152,12 +152,12 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
       Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 
       MatrixHelper<Amesos::Superlu>::createCRSMatrix(
-        this->matrixA_.ptr(),
-        (Teuchos::ArrayView<slu_type>)nzvals_,
-        (Teuchos::ArrayView<int>)rowind_,
-        (Teuchos::ArrayView<int>)colptr_,
-        Teuchos::ptrFromRef(data_.A),
-        this->timers_.mtxRedistTime_);
+	this->matrixA_.ptr(),
+	(Teuchos::ArrayView<slu_type>)nzvals_,
+	(Teuchos::ArrayView<int>)rowind_,
+	(Teuchos::ArrayView<int>)colptr_,
+	Teuchos::ptrFromRef(data_.A),
+	this->timers_.mtxRedistTime_);
     } // end matrix conversion block
   } else {                      // Factorization has been performed already
     // Cleanup old SuperMatrix A's Store, will be allocated again when
@@ -185,12 +185,12 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
       Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 
       MatrixHelper<Amesos::Superlu>::createCRSMatrix(
-        this->matrixA_.ptr(),
-        (Teuchos::ArrayView<slu_type>)nzvals_,
-        (Teuchos::ArrayView<int>)rowind_,
-        (Teuchos::ArrayView<int>)colptr_,
-        Teuchos::ptrFromRef(data_.A),
-        this->timers_.mtxRedistTime_);
+	this->matrixA_.ptr(),
+	(Teuchos::ArrayView<slu_type>)nzvals_,
+	(Teuchos::ArrayView<int>)rowind_,
+	(Teuchos::ArrayView<int>)colptr_,
+	Teuchos::ptrFromRef(data_.A),
+	this->timers_.mtxRedistTime_);
     }
     // Test whether the structure of the matrix has changed
     bool samePattern = (rowind_tmp == rowind_) && (colptr_tmp == colptr_);
@@ -210,8 +210,8 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
       // Cleanup old L and U, Stores and other data will be allocated in gstrf.
       // Only rank 0 has valid pointers
       if ( this->status_.root_ ){
-        SLU::Destroy_SuperNode_Matrix( &(data_.L) );
-        SLU::Destroy_CompCol_Matrix( &(data_.U) );
+	SLU::Destroy_SuperNode_Matrix( &(data_.L) );
+	SLU::Destroy_CompCol_Matrix( &(data_.U) );
       }
     }
   }
@@ -245,7 +245,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
   data_.options.Fact = SLU::FACTORED;
 
   /* All processes should return the same error code */
-  Teuchos::broadcast(*(this->matrixA_->getComm()),0,&info);
+  Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
   return(info);
 }
 
@@ -264,13 +264,15 @@ Superlu<Matrix,Vector>::solve_impl()
   typedef typename MatrixAdapter<Matrix>::scalar_type scalar_type;
   typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
 
+  global_size_type len_rhs = this->multiVecX_->getGlobalLength();
   size_t nrhs = this->multiVecX_->getGlobalNumVectors();
 
   data_.ferr.resize(nrhs);
   data_.berr.resize(nrhs);
 
-  Teuchos::ArrayRCP<slu_type> xValues;
-  Teuchos::ArrayRCP<slu_type> bValues;
+  size_t val_store_size = Teuchos::as<size_t>(len_rhs * nrhs);
+  Teuchos::Array<slu_type> xValues(val_store_size);
+  Teuchos::Array<slu_type> bValues(val_store_size);
   // We assume the global length of the two vector has already been
   // checked for compatibility
 
@@ -283,12 +285,19 @@ Superlu<Matrix,Vector>::solve_impl()
   {                 // Convert: Get a SuperMatrix for the B and X multi-vectors
     Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
 
-    xValues = MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
-      this->multiVecX_.ptr(), Teuchos::ptrFromRef(data_.X),
+    size_t ldx, ldb;
+    MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
+      this->multiVecX_.ptr(),
+      xValues(),                // pass as ArrayView
+      ldx,
+      Teuchos::ptrFromRef(data_.X),
       this->timers_.vecRedistTime_);
 
-    bValues = MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
-      this->multiVecB_.ptr(), Teuchos::ptrFromRef(data_.B),
+    MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
+      this->multiVecB_.ptr(),
+      bValues(),                // pass as ArrayView
+      ldb,
+      Teuchos::ptrFromRef(data_.B),
       this->timers_.vecRedistTime_);
   }         // end block for conversion time
   int ierr = 0; // returned error code
@@ -380,16 +389,16 @@ Superlu<Matrix,Vector>::setParameters_impl(
     if ( parameterList->template isType<bool>("Equil") ){
       bool equil = parameterList->template get<bool>("Equil");
       if( equil ){
-        data_.options.Equil = SLU::YES;
+	data_.options.Equil = SLU::YES;
       } else {
-        data_.options.Equil = SLU::NO;
+	data_.options.Equil = SLU::NO;
       }
     } else if ( parameterList->template isType<std::string>("Equil") ) {
       std::string equil = parameterList->template get<std::string>("Equil");
       if ( equil == "YES" || equil == "yes" ){
-        data_.options.Equil = SLU::YES;
+	data_.options.Equil = SLU::YES;
       } else if ( equil == "NO" || equil == "no" ) {
-        data_.options.Equil = SLU::NO;
+	data_.options.Equil = SLU::NO;
       }
     }
   }
@@ -406,9 +415,9 @@ Superlu<Matrix,Vector>::setParameters_impl(
       data_.options.IterRefine = SLU::EXTRA;
     } else {
       TEST_FOR_EXCEPTION(
-        true,
-        std::invalid_argument,
-        "Unrecognized value for 'IterRefine' key.");
+	true,
+	std::invalid_argument,
+	"Unrecognized value for 'IterRefine' key.");
     }
   }
 
@@ -416,16 +425,16 @@ Superlu<Matrix,Vector>::setParameters_impl(
     if ( parameterList->template isType<bool>("SymmetricMode") ){
       bool sym = parameterList->template get<bool>("SymmetricMode");
       if( sym ){
-        data_.options.SymmetricMode = SLU::YES;
+	data_.options.SymmetricMode = SLU::YES;
       } else {
-        data_.options.SymmetricMode = SLU::NO;
+	data_.options.SymmetricMode = SLU::NO;
       }
     } else if ( parameterList->template isType<std::string>("SymmetricMode") ) {
       std::string sym = parameterList->template get<std::string>("SymmetricMode");
       if ( sym == "YES" || sym == "yes" ){
-        data_.options.SymmetricMode = SLU::YES;
+	data_.options.SymmetricMode = SLU::YES;
       } else if ( sym == "NO" || sym == "no" ) {
-        data_.options.SymmetricMode = SLU::NO;
+	data_.options.SymmetricMode = SLU::NO;
       }
     }
   }
@@ -450,21 +459,21 @@ Superlu<Matrix,Vector>::setParameters_impl(
       // Now we also expect to find a parameter in parameterList called
       // "perm_c"
       TEST_FOR_EXCEPTION(
-        !parameterList->isParameter("perm_c"),
-        std::invalid_argument,
-        "MY_PERMC option specified without accompanying 'perm_c' parameter.");
+	!parameterList->isParameter("perm_c"),
+	std::invalid_argument,
+	"MY_PERMC option specified without accompanying 'perm_c' parameter.");
 
       data_.perm_c = parameterList->template get<Teuchos::Array<int> >("perm_c");
 
       TEST_FOR_EXCEPTION(
-        Teuchos::as<global_size_type>(data_.perm_c.size()) == this->globalNumCols_,
-        std::length_error,
-        "'perm_c' parameter not of correct length.");
+	Teuchos::as<global_size_type>(data_.perm_c.size()) == this->globalNumCols_,
+	std::length_error,
+	"'perm_c' parameter not of correct length.");
     } else {
       TEST_FOR_EXCEPTION(
-        true,
-        std::invalid_argument,
-        "Unrecognized value for 'ColPerm' key.");
+	true,
+	std::invalid_argument,
+	"Unrecognized value for 'ColPerm' key.");
     }
   }
 
@@ -506,4 +515,4 @@ const char* Superlu<Matrix,Vector>::name = "Amesos2::SuperLU";
 
 } // end namespace Amesos
 
-#endif	// AMESOS2_SUPERLU_DEF_HPP
+#endif  // AMESOS2_SUPERLU_DEF_HPP
