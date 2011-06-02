@@ -403,6 +403,30 @@ namespace Cthulhu {
       TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO getComm Epetra MultiVector not implemented");
     }
     
+    inline void doImport(const MultiVector<double, int, int> &source, 
+                         const Import<int, int> &importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      RCP<Epetra_MultiVector> v = tSource.getEpetra_MultiVector();
+      int err = this->getEpetra_MultiVector()->Import(*v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM));
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    }
+
+    void doExport(const MultiVector<double, int, int> &dest,
+                  const Import<int, int>& importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      RCP<Epetra_MultiVector> v = tDest.getEpetra_MultiVector();
+      int err = this->getEpetra_MultiVector()->Export(*v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    }
+
   private:
     RCP< Epetra_MultiVector > vec_;
 

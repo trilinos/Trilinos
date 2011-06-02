@@ -14,6 +14,9 @@
 //#include "Cthulhu_MultiVector.hpp"
 #include "Cthulhu_Map.hpp"
 
+#include "Cthulhu_Import.hpp"
+#include "Cthulhu_CombineMode.hpp"
+
 #include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
@@ -313,6 +316,29 @@ namespace Cthulhu {
 
     virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const =0;
     //virtual const RCP<const Comm<int> > getComm() const = 0; // not implemented in Tpetra ??
+
+    // Implements DistObjectInterface
+    // TODO: create a real Cthulhu::DistObject ?
+    
+    //! @name Import/Export Methods
+    //@{ 
+    
+    //! Import
+    //     virtual void doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
+    //                           const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
+
+    virtual void doImport(const MultiVector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
+                          const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
+    
+    //     //! Export (using an Importer)
+    //     virtual void doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest,
+    //                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
+    
+    //! Export (using an Importer)
+    virtual void doExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
+                  const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
+
+    //@}
 
   }; // class MultiVector
 

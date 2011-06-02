@@ -520,6 +520,19 @@ namespace Cthulhu {
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
+    inline void doImport(const MultiVector<int, int, int> &source, 
+                         const Import<int, int> &importer, CombineMode CM) {
+
+      TEST_FOR_EXCEPTION(1, std::runtime_error, "NOT IMPLEMENTED");
+    }
+
+    void doExport(const MultiVector<int, int, int> &dest,
+                  const Import<int, int>& importer, CombineMode CM) {
+ 
+      TEST_FOR_EXCEPTION(1, std::runtime_error, "NOT IMPLEMENTED");
+    }
+
+
   private:
     RCP< Epetra_IntVector > vec_;
     
