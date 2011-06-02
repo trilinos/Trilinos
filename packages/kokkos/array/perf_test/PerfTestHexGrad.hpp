@@ -74,6 +74,8 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
 
+  enum { N_Space = 3 , N_Node = 8 };
+
   // 3D array : ( ParallelWork , Space , Node )
   typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
 
@@ -91,8 +93,11 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
     // Repeated re-use of nodal coordinates,
     // copy them into local storage.
 
-    Scalar x[8],y[8],z[8];
+    Scalar x[ N_Node ];
+    Scalar y[ N_Node ];
+    Scalar z[ N_Node ];
 
+#if 1
     x[0] = coords(ielem,0,0);
     x[1] = coords(ielem,0,1);
     x[2] = coords(ielem,0,2);
@@ -120,6 +125,40 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
     z[5] = coords(ielem,2,5);
     z[6] = coords(ielem,2,6);
     z[7] = coords(ielem,2,7);
+
+#else
+
+    const size_type NP = coords.dimension(0);
+    Scalar * const ptr = coords.ptr_on_device();
+
+    x[0] = ptr[ ielem + NP * ( 0 + N_Space * 0 ) ];
+    x[1] = ptr[ ielem + NP * ( 0 + N_Space * 1 ) ];
+    x[2] = ptr[ ielem + NP * ( 0 + N_Space * 2 ) ];
+    x[3] = ptr[ ielem + NP * ( 0 + N_Space * 3 ) ];
+    x[4] = ptr[ ielem + NP * ( 0 + N_Space * 4 ) ];
+    x[5] = ptr[ ielem + NP * ( 0 + N_Space * 5 ) ];
+    x[6] = ptr[ ielem + NP * ( 0 + N_Space * 6 ) ];
+    x[7] = ptr[ ielem + NP * ( 0 + N_Space * 7 ) ];
+
+    y[0] = ptr[ ielem + NP * ( 1 + N_Space * 0 ) ];
+    y[1] = ptr[ ielem + NP * ( 1 + N_Space * 1 ) ];
+    y[2] = ptr[ ielem + NP * ( 1 + N_Space * 2 ) ];
+    y[3] = ptr[ ielem + NP * ( 1 + N_Space * 3 ) ];
+    y[4] = ptr[ ielem + NP * ( 1 + N_Space * 4 ) ];
+    y[5] = ptr[ ielem + NP * ( 1 + N_Space * 5 ) ];
+    y[6] = ptr[ ielem + NP * ( 1 + N_Space * 6 ) ];
+    y[7] = ptr[ ielem + NP * ( 1 + N_Space * 7 ) ];
+
+    z[0] = ptr[ ielem + NP * ( 2 + N_Space * 0 ) ];
+    z[1] = ptr[ ielem + NP * ( 2 + N_Space * 1 ) ];
+    z[2] = ptr[ ielem + NP * ( 2 + N_Space * 2 ) ];
+    z[3] = ptr[ ielem + NP * ( 2 + N_Space * 3 ) ];
+    z[4] = ptr[ ielem + NP * ( 2 + N_Space * 4 ) ];
+    z[5] = ptr[ ielem + NP * ( 2 + N_Space * 5 ) ];
+    z[6] = ptr[ ielem + NP * ( 2 + N_Space * 6 ) ];
+    z[7] = ptr[ ielem + NP * ( 2 + N_Space * 7 ) ];
+
+#endif
 
     // z difference vectors
     Scalar R42=(z[3] - z[1]);
