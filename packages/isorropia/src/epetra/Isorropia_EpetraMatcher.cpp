@@ -95,6 +95,7 @@ void matcher::process_mtx_compressed(char *fname)
 	  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 	  const Epetra_MpiComm Comm(MPI_COMM_WORLD);
 	  const Epetra_MpiComm Comm;*/
+	  
 	//#else
 	  const Epetra_SerialComm Comm;
 	//#endif
