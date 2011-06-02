@@ -561,9 +561,9 @@
   </Package>
   <Package name="Moertel" dir="moertel">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Amesos,AztecOO,ML"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Trios"/>
     <TEST_REQUIRED_DEP_PACKAGES value="Galeri"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Trios"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="ExodusII,Nemesis"/>
     <TEST_REQUIRED_DEP_TPLS/>

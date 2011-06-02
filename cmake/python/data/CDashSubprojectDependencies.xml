@@ -488,6 +488,8 @@
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="TR"/>
     <Dependency name="Amesos" type="LR"/>
+    <Dependency name="Pamgen" type="ILO"/>
+    <Dependency name="Trios" type="LO"/>
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="LR"/>
     <EmailAddresses>
