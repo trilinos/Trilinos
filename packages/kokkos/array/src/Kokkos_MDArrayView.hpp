@@ -373,11 +373,6 @@ void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
-#include <Kokkos_DeviceCuda_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
-#include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
 #include <DeviceCuda/Kokkos_DeviceCuda_MDArrayView.hpp>
 #endif
 

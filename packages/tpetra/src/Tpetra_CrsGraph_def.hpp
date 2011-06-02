@@ -985,12 +985,12 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   // in the future, perhaps this could use std::sort with a boost::zip_iterator
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <class Iter>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sortRowIndicesAndValues(RowInfo rowinfo, Iter rowValueIters)
+  template <class Scalar>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sortRowIndicesAndValues(RowInfo rowinfo, ArrayView<Scalar> values)
   {
     if (rowinfo.numEntries > 0) {
       ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
-      sort2(inds_view.begin(), inds_view.begin() + rowinfo.numEntries, rowValueIters);
+      sort2Shell(inds_view(), rowinfo.numEntries, values); 
     }
   }
 

@@ -68,6 +68,54 @@ struct Cell : public shards::ArrayDimTag {
   static const Cell & tag();
 };
 
+struct Ordinal1 : public shards::ArrayDimTag {
+  Ordinal1(){};
+  const char * name() const ;
+  static const Ordinal1 & tag();
+};
+
+struct Ordinal2 : public shards::ArrayDimTag {
+  Ordinal2(){};
+  const char * name() const ;
+  static const Ordinal2 & tag();
+};
+
+struct Ordinal3 : public shards::ArrayDimTag {
+  Ordinal3(){};
+  const char * name() const ;
+  static const Ordinal3 & tag();
+};
+
+struct Ordinal4 : public shards::ArrayDimTag {
+  Ordinal4(){};
+  const char * name() const ;
+  static const Ordinal4 & tag();
+};
+
+struct Ordinal5 : public shards::ArrayDimTag {
+  Ordinal5(){};
+  const char * name() const ;
+  static const Ordinal5 & tag();
+};
+
+struct Ordinal6 : public shards::ArrayDimTag {
+  Ordinal6(){};
+  const char * name() const ;
+  static const Ordinal6 & tag();
+};
+
+struct Ordinal7 : public shards::ArrayDimTag {
+  Ordinal7(){};
+  const char * name() const ;
+  static const Ordinal7 & tag();
+};
+
+struct Ordinal8 : public shards::ArrayDimTag {
+  Ordinal8(){};
+  const char * name() const ;
+  static const Ordinal8 & tag();
+};
+
 const char * Spatial::name() const 
 { static const char n[] = "Spatial" ; return n ; }
 const Spatial & Spatial::tag() 
@@ -87,6 +135,46 @@ const char * Cell::name() const
 { static const char n[] = "Cell" ; return n ; }
 const Cell & Cell::tag() 
 { static const Cell myself ; return myself ; }
+
+const char * Ordinal1::name() const 
+{ static const char n[] = "Ordinal1" ; return n ; }
+const Ordinal1 & Ordinal1::tag() 
+{ static const Ordinal1 myself ; return myself ; }
+
+const char * Ordinal2::name() const 
+{ static const char n[] = "Ordinal2" ; return n ; }
+const Ordinal2 & Ordinal2::tag() 
+{ static const Ordinal2 myself ; return myself ; }
+
+const char * Ordinal3::name() const 
+{ static const char n[] = "Ordinal3" ; return n ; }
+const Ordinal3 & Ordinal3::tag() 
+{ static const Ordinal3 myself ; return myself ; }
+
+const char * Ordinal4::name() const 
+{ static const char n[] = "Ordinal4" ; return n ; }
+const Ordinal4 & Ordinal4::tag() 
+{ static const Ordinal4 myself ; return myself ; }
+
+const char * Ordinal5::name() const 
+{ static const char n[] = "Ordinal5" ; return n ; }
+const Ordinal5 & Ordinal5::tag() 
+{ static const Ordinal5 myself ; return myself ; }
+
+const char * Ordinal6::name() const 
+{ static const char n[] = "Ordinal6" ; return n ; }
+const Ordinal6 & Ordinal6::tag() 
+{ static const Ordinal6 myself ; return myself ; }
+
+const char * Ordinal7::name() const 
+{ static const char n[] = "Ordinal7" ; return n ; }
+const Ordinal7 & Ordinal7::tag() 
+{ static const Ordinal7 myself ; return myself ; }
+
+const char * Ordinal8::name() const 
+{ static const char n[] = "Ordinal8" ; return n ; }
+const Ordinal8 & Ordinal8::tag() 
+{ static const Ordinal8 myself ; return myself ; }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -114,15 +202,14 @@ int main(int argc, char *argv[])
       // ctor
       cout << "\nTesting constructor...";
       
-      MDALayout<Cell,Cell,Cell,Cell,Cell,Cell,Cell,Cell> 
-	rank8(1,2,3,4,5,6,7,8);
-      MDALayout<Cell,Cell,Cell,Cell,Cell,Cell,Cell> rank7(1,2,3,4,5,6,7);
-      MDALayout<Cell,Cell,Cell,Cell,Cell,Cell> rank6(1,2,3,4,5,6);
-      MDALayout<Cell,Cell,Cell,Cell,Cell> rank5(1,2,3,4,5);
-      MDALayout<Cell,Cell,Cell,Cell> rank4(1,2,3,4);
-      MDALayout<Cell,Cell,Cell> rank3(1,2,3);
-      MDALayout<Cell,Cell> rank2(1,2);
-      MDALayout<Cell> rank1(1);
+      MDALayout<Ordinal1,Ordinal2,Ordinal3,Ordinal4,Ordinal5,Ordinal6,Ordinal7,Ordinal8> rank8(1,2,3,4,5,6,7,8);
+      MDALayout<Ordinal1,Ordinal2,Ordinal3,Ordinal4,Ordinal5,Ordinal6,Ordinal7> rank7(1,2,3,4,5,6,7);
+      MDALayout<Ordinal1,Ordinal2,Ordinal3,Ordinal4,Ordinal5,Ordinal6> rank6(1,2,3,4,5,6);
+      MDALayout<Ordinal1,Ordinal2,Ordinal3,Ordinal4,Ordinal5> rank5(1,2,3,4,5);
+      MDALayout<Ordinal1,Ordinal2,Ordinal3,Ordinal4> rank4(1,2,3,4);
+      MDALayout<Ordinal1,Ordinal2,Ordinal3> rank3(1,2,3);
+      MDALayout<Ordinal1,Ordinal2> rank2(1,2);
+      MDALayout<Ordinal1> rank1(1);
       MDALayout<Cell,Node,Spatial,Spatial> n_mat(100,4,2,2);
       cout << "passed!" << endl;
 
@@ -163,6 +250,27 @@ int main(int argc, char *argv[])
 			   std::logic_error,
 			   "dimensions() accessor failed!");
 	TEST_FOR_EXCEPTION(dims[3] != 2, 
+			   std::logic_error,
+			   "dimensions() accessor failed!");
+	cout << "passed!" << endl;
+      }
+      
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // names()
+      {
+	cout << "Testing names() accessor...";
+	std::vector<std::string> names;
+	n_mat.names(names);
+	TEST_FOR_EXCEPTION(names[0] != "Cell", 
+			   std::logic_error,
+			   "dimensions() accessor failed!");
+	TEST_FOR_EXCEPTION(names[1] != "Node", 
+			   std::logic_error,
+			   "dimensions() accessor failed!");
+	TEST_FOR_EXCEPTION(names[2] != "Spatial", 
+			   std::logic_error,
+			   "dimensions() accessor failed!");
+	TEST_FOR_EXCEPTION(names[3] != "Spatial", 
 			   std::logic_error,
 			   "dimensions() accessor failed!");
 	cout << "passed!" << endl;
@@ -295,6 +403,99 @@ int main(int argc, char *argv[])
 			   "dimension() failed to return correct dimension!");
 	TEST_FOR_EXCEPTION(rank8.dimension(7) != 8, std::logic_error,
 			   "dimension() failed to return correct dimension!");
+
+	cout << "passed!" << endl;
+      }
+
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // name() 
+      {
+	cout << "Testing name()...";
+
+
+	cout << "\n" << rank1.name(0) << std::endl;
+
+
+
+	TEST_FOR_EXCEPTION(rank1.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+
+	TEST_FOR_EXCEPTION(rank2.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank2.name(1) != "Ordinal2", std::logic_error,
+			   "name() failed to return correct name!");
+
+	TEST_FOR_EXCEPTION(rank3.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank3.name(1) != "Ordinal2", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank3.name(2) != "Ordinal3", std::logic_error,
+			   "name() failed to return correct name!");
+
+	TEST_FOR_EXCEPTION(rank4.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank4.name(1) != "Ordinal2", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank4.name(2) != "Ordinal3", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank4.name(3) != "Ordinal4", std::logic_error,
+			   "name() failed to return correct name!");
+			   
+	TEST_FOR_EXCEPTION(rank5.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank5.name(1) != "Ordinal2", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank5.name(2) != "Ordinal3", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank5.name(3) != "Ordinal4", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank5.name(4) != "Ordinal5", std::logic_error,
+			   "name() failed to return correct name!");
+
+	TEST_FOR_EXCEPTION(rank6.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank6.name(1) != "Ordinal2", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank6.name(2) != "Ordinal3", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank6.name(3) != "Ordinal4", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank6.name(4) != "Ordinal5", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank6.name(5) != "Ordinal6", std::logic_error,
+			   "name() failed to return correct name!");
+
+	TEST_FOR_EXCEPTION(rank7.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank7.name(1) != "Ordinal2", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank7.name(2) != "Ordinal3", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank7.name(3) != "Ordinal4", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank7.name(4) != "Ordinal5", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank7.name(5) != "Ordinal6", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank7.name(6) != "Ordinal7", std::logic_error,
+			   "name() failed to return correct name!");
+
+	TEST_FOR_EXCEPTION(rank8.name(0) != "Ordinal1", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank8.name(1) != "Ordinal2", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank8.name(2) != "Ordinal3", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank8.name(3) != "Ordinal4", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank8.name(4) != "Ordinal5", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank8.name(5) != "Ordinal6", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank8.name(6) != "Ordinal7", std::logic_error,
+			   "name() failed to return correct name!");
+	TEST_FOR_EXCEPTION(rank8.name(7) != "Ordinal8", std::logic_error,
+			   "name() failed to return correct name!");
 
 	cout << "passed!" << endl;
       }

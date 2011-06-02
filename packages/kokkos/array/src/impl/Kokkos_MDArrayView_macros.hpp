@@ -41,7 +41,7 @@
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
     ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
+#error "Including <impl/Kokkos_MDArrayView_macros.hpp> without macros defined"
 
 #else
 

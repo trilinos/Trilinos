@@ -338,7 +338,9 @@ int Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector& X,
   }
 
   ++NumApplyInverse_;
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += X.NumVectors() * 2 * GlobalNonzeros_;
+#endif
   ApplyInverseTime_ += Time_.ElapsedTime();
 
   return(0);

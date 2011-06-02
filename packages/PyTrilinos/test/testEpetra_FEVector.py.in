@@ -71,25 +71,28 @@ class EpetraFEVectorTestCase(unittest.TestCase):
     def testConstructor01(self):
         "Test Epetra.FEVector (BlockMap,bool) constructor"
         ev = Epetra.FEVector(self.map,1,True)
-        self.assertEquals(ev.NumVectors(),1)
-        self.assertEquals(ev.MyLength(), self.length)
+        self.assertEquals(ev.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(ev.NumVectors(),   1                         )
+        self.assertEquals(ev.MyLength(),     self.length               )
         self.assertEquals(ev.GlobalLength(), self.length*comm.NumProc())
-        self.assertEquals((ev == 0.0).all(), True)
+        self.assertEquals((ev == 0.0).all(), True                      )
 
     def testConstructor02(self):
         "Test Epetra.FEVector (BlockMap) constructor"
         ev = Epetra.FEVector(self.map,1)
-        self.assertEquals(ev.NumVectors(),1)
-        self.assertEquals(ev.MyLength(), self.length)
+        self.assertEquals(ev.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(ev.NumVectors(),   1                         )
+        self.assertEquals(ev.MyLength(),     self.length               )
         self.assertEquals(ev.GlobalLength(), self.length*comm.NumProc())
 
     def testConstructor03(self):
         "Test Epetra.FEVector copy constructor"
         ev1 = Epetra.FEVector(self.map,1)
         ev2 = Epetra.FEVector(ev1)
-        self.assertEquals(ev2.NumVectors(),   ev1.NumVectors()  )
-        self.assertEquals(ev2.MyLength(),     ev1.MyLength()    )
-        self.assertEquals(ev2.GlobalLength(), ev1.GlobalLength())
+        self.assertEquals(ev2.Label(),        "Epetra::MultiVector")
+        self.assertEquals(ev2.NumVectors(),   ev1.NumVectors()     )
+        self.assertEquals(ev2.MyLength(),     ev1.MyLength()       )
+        self.assertEquals(ev2.GlobalLength(), ev1.GlobalLength()   )
         for i in range(len(ev1)):
             self.assertEquals(ev1[0,i], ev2[0,i])
 
@@ -453,7 +456,12 @@ if __name__ == "__main__":
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
-    # Exit with a code that indicates the total number of errors and failures
+    # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)

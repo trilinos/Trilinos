@@ -122,5 +122,5 @@ PACKAGE_ADD_ADVANCED_TEST(
 )
 ELSE()
   MESSAGE(STATUS
-      "WARNING: ${PACKAGE_NAME}: Exodus units tests will not be run due to failure finding ncdump executable.")
+      "WARNING: ${PACKAGE_NAME}: Exodus unit tests will not be run due to failure finding ncdump executable.")
 ENDIF()

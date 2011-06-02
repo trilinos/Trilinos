@@ -946,9 +946,4 @@ typedef ParameterList::PrintOptions PrintOptions;
 ////////////////////////////////////////////
 // Teuchos::ParameterListAcceptor support //
 ////////////////////////////////////////////
-%ignore Teuchos::ParameterListAcceptor::setParameterList(RCP<Teuchos::ParameterList > const &);
-%ignore Teuchos::ParameterListAcceptor::getParameterList();
-%ignore Teuchos::ParameterListAcceptor::unsetParameterList();
-%ignore Teuchos::ParameterListAcceptor::getParameterList() const;
-%ignore Teuchos::ParameterListAcceptor::getValidParameters() const;
 %include "Teuchos_ParameterListAcceptor.hpp"

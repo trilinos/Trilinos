@@ -994,7 +994,9 @@ namespace stk {
             }
         }
     }
+#endif
 
+#if defined( STK_ADAPT_HAS_GEOMETRY )
     void Refiner::smoothGeometry(MeshGeometry& mesh_geometry)
     {
       /**

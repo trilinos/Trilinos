@@ -103,6 +103,7 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testConstructor01(self):
         "Test Epetra.BlockMap uniform constructor"
+        self.assertEqual(self.map1.Label(),             "Epetra::BlockMap"   )
         self.assertEqual(self.map1.NumGlobalElements(), self.numGlobalElConst)
         self.assertEqual(self.map1.ElementSize(),       self.elSizeConst     )
         self.assertEqual(self.map1.IndexBase(),         self.indexBase       )
@@ -121,10 +122,11 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testConstructor04(self):
         "Test Epetra.BlockMap nonuniform constructor"
-        self.assertEqual(self.map2.NumGlobalElements(), self.numGlobalEl)
-        self.assertEqual(self.map2.NumMyElements(),     self.numMyEl    )
-        self.assertEqual(self.map2.ElementSize(),       self.elSizeConst)
-        self.assertEqual(self.map2.IndexBase(),         self.indexBase  )
+        self.assertEqual(self.map2.Label(),             "Epetra::BlockMap")
+        self.assertEqual(self.map2.NumGlobalElements(), self.numGlobalEl  )
+        self.assertEqual(self.map2.NumMyElements(),     self.numMyEl      )
+        self.assertEqual(self.map2.ElementSize(),       self.elSizeConst  )
+        self.assertEqual(self.map2.IndexBase(),         self.indexBase    )
 
     def testConstructor05(self):
         "Test Epetra.BlockMap nonuniform constructor, negative global size"
@@ -144,10 +146,11 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testConstructor08(self):
         "Test Epetra.BlockMap nonuniform, arbitrary, same-size element constructor"
-        self.assertEqual(self.map3.NumGlobalElements(), self.numGlobalEl)
-        self.assertEqual(self.map3.NumMyElements(),     self.numMyEl    )
-        self.assertEqual(self.map3.ElementSize(),       self.elSizeConst)
-        self.assertEqual(self.map3.IndexBase(),         self.indexBase  )
+        self.assertEqual(self.map3.Label(),             "Epetra::BlockMap")
+        self.assertEqual(self.map3.NumGlobalElements(), self.numGlobalEl  )
+        self.assertEqual(self.map3.NumMyElements(),     self.numMyEl      )
+        self.assertEqual(self.map3.ElementSize(),       self.elSizeConst  )
+        self.assertEqual(self.map3.IndexBase(),         self.indexBase    )
 
     def testConstructor09(self):
         "Test Epetra.BlockMap nonuniform, arbitrary constructor, bad list"
@@ -178,6 +181,7 @@ class EpetraBlockMapTestCase(unittest.TestCase):
 
     def testConstructor13(self):
         "Test Epetra.BlockMap nonuniform, arbitrary, variable-size element constructor"
+        self.assertEqual(self.map4.Label(),               "Epetra::BlockMap"  )
         self.assertEqual(self.map4.NumGlobalElements(),   self.numGlobalEl    )
         self.assertEqual(self.map4.NumMyElements(),       self.numMyEl        )
         self.assertEqual(self.map4.ConstantElementSize(), False               )
@@ -575,7 +579,12 @@ if __name__ == "__main__":
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
-    # Exit with a code that indicates the total number of errors and failures
+    # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)

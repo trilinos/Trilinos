@@ -161,6 +161,7 @@ APPEND_SET(HEADERS
   Teuchos_Tuple.hpp
   Teuchos_TypeNameTraits.hpp
   Teuchos_TypeTraits.hpp
+  Teuchos_TwoDArray.hpp
   Teuchos_UnitTestBase.hpp
   Teuchos_UnitTestHarness.hpp
   Teuchos_UnitTestHelpers.hpp
@@ -186,6 +187,7 @@ APPEND_SET(HEADERS
   Teuchos_oblackholestream.hpp
   Teuchos_stacktrace.hpp
   Teuchos_toString.hpp
+  Teuchos_iostream_helpers.hpp
   )
 
 # Set sources

@@ -101,6 +101,10 @@ exAmesos_Factory.py.
 #include "Epetra_LinearProblem.h"
 #include "Epetra_DataAccess.h"
 #include "Epetra_FEVbrMatrix.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_SerialDistributor.h"
 #endif
 
 // Teuchos includes
@@ -209,9 +213,9 @@ exAmesos_Factory.py.
   }
 }
 
-/////////////////////////
-// Amesos core support //
-/////////////////////////
+//////////////////////////
+// Amesos configuration //
+//////////////////////////
 #undef  PACKAGE_BUGREPORT
 %ignore PACKAGE_BUGREPORT;
 #undef  PACKAGE_NAME
@@ -224,23 +228,19 @@ exAmesos_Factory.py.
 %ignore PACKAGE_VERSION;
 %include "Amesos_config.h"
 %include "Amesos_ConfigDefs.h"
+
+//////////////////////////////
+// Amesos (Factory) support //
+//////////////////////////////
 %rename(Factory) Amesos;
+%newobject Amesos::Create;
 %include "Amesos.h"
+
+///////////////////////////////
+// Amesos BaseSolver support //
+///////////////////////////////
 %rename(BaseSolver) Amesos_BaseSolver;
 %include "Amesos_BaseSolver.h"
-%extend Amesos_BaseSolver 
-{
-  std::string __str__()
-  {
-    std::stringstream os;
-    os << "*** Amesos_BaseSolver ***";
-    return os.str();
-  }
-  void __del__()
-  {
-    delete self;
-  }
-}
 
 ///////////////////////////
 // Amesos LAPACK support //

@@ -16,6 +16,8 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixSolveOp.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
+#include "Tpetra_MatrixMatrix.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
@@ -105,6 +107,8 @@ namespace {
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createCrsMatrixSolveOp;
   using Tpetra::createCrsMatrixMultiplyOp;
+  using Tpetra::createVector;
+  using Tpetra::createCrsMatrix;
   using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
@@ -256,30 +260,61 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef typename ST::magnitudeType Mag;
+    typedef RCP<const Map<LO,GO,Node> > RCPMap;
     typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    MV mv1(map,1), mv2(map,2), mv3(map,3);
     // create the zero matrix
-    RCP<RowMatrix<Scalar,LO,GO,Node> > zero;
+    RCP<CrsMatrix<Scalar,LO,GO,Node> > zero;
     {
-      RCP<MAT> zero_crs = rcp( new MAT(map,0,DynamicProfile) );
-      TEST_THROW(zero_crs->apply(mv1,mv1), std::runtime_error);
+      RCPMap map  = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+      MV mv(map,1);
+      zero = rcp( new MAT(map,0,DynamicProfile) );
+      TEST_THROW(zero->apply(mv,mv), std::runtime_error);
 #   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS)
       // throw exception because we required increased allocation
-      TEST_THROW(zero_crs->insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error);
+      TEST_THROW(zero->insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error);
 #   endif
-      TEST_EQUALITY_CONST( zero_crs->getProfileType() == DynamicProfile, true );
-      zero_crs->fillComplete();
-      zero = zero_crs;
+      TEST_EQUALITY_CONST( zero->getProfileType() == DynamicProfile, true );
+      zero->fillComplete();
     }
     STD_TESTS((*zero));
-    TEST_THROW(zero->apply(mv2,mv1), std::runtime_error); // MVs have different number of vectors
-    TEST_THROW(zero->apply(mv2,mv3), std::runtime_error); // MVs have different number of vectors
+    TEST_EQUALITY_CONST( zero->getRangeMap() == zero->getDomainMap(), true );
+    const RCPMap drmap = zero->getDomainMap();
+    {
+      MV mv1(drmap,1), mv2(drmap,2), mv3(drmap,3);
+      TEST_THROW(zero->apply(mv2,mv1), std::runtime_error); // MVs have different number of vectors
+      TEST_THROW(zero->apply(mv2,mv3), std::runtime_error); // MVs have different number of vectors
+    }
+    // test that our assumptions on the maps are correct: 
+    // that is, that badmap is not equal to the range, domain, row or colum map of the matrix
+    const RCPMap badmap = createContigMapWithNode<LO,GO>(INVALID,1,comm,node);
+    TEST_EQUALITY_CONST( badmap != zero->getRowMap(), true );
+    TEST_EQUALITY_CONST( badmap != zero->getColMap(), true );
+    TEST_EQUALITY_CONST( badmap != zero->getDomainMap(), true );
+    TEST_EQUALITY_CONST( badmap != zero->getRangeMap(),  true );
+    TEST_EQUALITY_CONST( *badmap != *zero->getRowMap(), true );
+    TEST_EQUALITY_CONST( *badmap != *zero->getColMap(), true );
+    TEST_EQUALITY_CONST( *badmap != *zero->getDomainMap(), true );
+    TEST_EQUALITY_CONST( *badmap != *zero->getRangeMap(),  true );
+    // now test the multivector against the matrix operators
+    // Bugzilla bug #5247
+    {
+      MV mvbad(badmap,1);
+#ifdef HAVE_TPETRA_DEBUG
+      const Scalar ONE = ST::one(), ZERO = ST::zero();
+      // tests in solve() and multiply() are only done in a debug build
+      MV mvcol(zero->getColMap(),1);
+      MV mvrow(zero->getRowMap(),1);
+      TEST_THROW(zero->template multiply<Scalar>(mvcol,mvbad,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad output map
+      TEST_THROW(zero->template multiply<Scalar>(mvbad,mvrow,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad input map
+      TEST_THROW(zero->template multiply<Scalar>(mvbad,mvcol,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad output map
+      TEST_THROW(zero->template multiply<Scalar>(mvrow,mvbad,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad input map
+#endif
+    }
   }
 
 
@@ -1828,6 +1863,102 @@ namespace {
     }
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node > Scalar 
+    getNorm(RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > matrix)
+  {
+    Scalar mySum = ScalarTraits<Scalar>::zero();
+    Array<LocalOrdinal> inds(matrix->getNodeMaxNumRowEntries());
+    Array<Scalar> vals(matrix->getNodeMaxNumRowEntries());
+    for(LocalOrdinal i =0; ((size_t)i)<matrix->getNodeNumRows(); ++i){
+      size_t numRowEnts = matrix->getNumEntriesInLocalRow(i);
+      ArrayView<const LocalOrdinal> indsView = inds();
+      ArrayView<const Scalar> valsView = vals();
+      matrix->getLocalRowView(i, indsView, valsView);
+      for(size_t j=0; ((size_t)j)<numRowEnts; ++j){
+        mySum += valsView[j]*valsView[j];
+      }
+    }
+    Scalar totalSum = 0;
+    Teuchos::reduceAll(*(matrix->getComm()), Teuchos::REDUCE_SUM, 1, &mySum, &totalSum);
+    return ScalarTraits<Scalar>::squareroot(totalSum);
+
+  }
+
+  //Constructs to Tridiagonal Matricies and scales them by a vector.
+  //One on the left and one on the right. Then compares the result to the known
+  //correct matrix
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, LeftRightScale, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef OrdinalTraits<LO> LOT;
+    typedef Vector<Scalar,LO,GO,Node> VEC;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    int numProcs = comm->getSize();
+    int myRank = comm->getRank();
+
+    global_size_t numGlobal = 4*numProcs;
+    RCP<const Map<LO,GO,Node> > map = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,node);
+    RCP<VEC> vector = createVector<Scalar, LO, GO, Node>(map);
+    vector->putScalar(2);
+   
+    RCP<MAT> matrix = createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
+    RCP<MAT> matrix2= createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
+    RCP<MAT> answerMatrix = createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
+
+    Array<Scalar> vals = tuple<Scalar>(1,2,3);
+    Array<Scalar> answerVals = tuple<Scalar>(2,4,6);
+    Array<GO> cols(3,0);
+    for(
+      GO i = Teuchos::as<GO>(myRank)*4; 
+      i<(Teuchos::as<GO>(myRank)*4)+4; 
+      ++i)
+    {
+      if(i==0){
+        cols = tuple<GO>(0,1);
+        matrix->insertGlobalValues(i, cols(), vals(1,2));
+        matrix2->insertGlobalValues(i, cols(), vals(1,2));
+        answerMatrix->insertGlobalValues(i, cols(), answerVals(1,2));
+      }
+      else if(i==(Teuchos::as<GO>(numProcs-1)*4)+3){
+        cols = tuple<GO>(numGlobal-2, numGlobal-1);
+        matrix->insertGlobalValues(i, cols(), vals(0,2));
+        matrix2->insertGlobalValues(i, cols(), vals(0,2));
+        answerMatrix->insertGlobalValues(i, cols(), answerVals(0,2));
+      }
+      else{
+        cols = tuple<GO>(i-1,i,i+1);
+        matrix->insertGlobalValues(i, cols(), vals());
+        matrix2->insertGlobalValues(i, cols(), vals());
+        answerMatrix->insertGlobalValues(i, cols(), answerVals());
+      }
+    }
+
+    matrix->fillComplete();
+    matrix2->fillComplete();
+    answerMatrix->fillComplete();
+    matrix->leftScale(*vector);
+    matrix2->rightScale(*vector);
+
+    RCP<MAT> diffMat1 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
+    RCP<MAT> diffMat2 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
+    Scalar sOne = ScalarTraits<Scalar>::one();
+    Tpetra::MatrixMatrix::Add(*matrix, false, -sOne, *answerMatrix, false, sOne, diffMat1);
+    diffMat1->fillComplete();
+    Tpetra::MatrixMatrix::Add(*matrix2, false, -sOne, *answerMatrix, false, sOne, diffMat2);
+    diffMat2->fillComplete();
+    Scalar epsilon1 = getNorm(diffMat1)/getNorm(answerMatrix);
+    Scalar epsilon2 = getNorm(diffMat2)/getNorm(answerMatrix);
+    TEST_COMPARE(ScalarTraits<Scalar>::real(epsilon1), <, 1e-10)
+    TEST_COMPARE(ScalarTraits<Scalar>::imag(epsilon1), <, 1e-10)
+    TEST_COMPARE(ScalarTraits<Scalar>::real(epsilon2), <, 1e-10)
+    TEST_COMPARE(ScalarTraits<Scalar>::imag(epsilon2), <, 1e-10)
+  }
+
+
+
 
 // 
 // INSTANTIATIONS
@@ -1861,7 +1992,8 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultiplyOp, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ActiveFill, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, LeftRightScale,      LO, GO, SCALAR, NODE ) 
 
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \

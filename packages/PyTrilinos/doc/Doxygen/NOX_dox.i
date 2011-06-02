@@ -170,7 +170,7 @@ NOX::Direction::Broyden::compute(NOX::Abstract::Vector &dir,
 NOX::Abstract::Group &grp, const NOX::Solver::LineSearchBased &solver)
 
 Same as compute( NOX::Abstract::Vector&, NOX::Abstract::Group&, const
-NOX::Solver::Generic&).
+NOX::Solver::Generic&)
 
 Enables direct support for line search based solvers for the purpose
 of efficiency since the LineSearchBased object has a getStep()
@@ -218,29 +218,29 @@ Does nothing. ";
 
 Reset the memory.
 
-Sets mMax to the value of m. Sets the size of the memory vector to be
-at least mMax. Sets the capacity of the index vector to be at least
-mMax. Sets the size of the index vector to be zero. ";
+Sets #mMax to the value of m. Sets the size of the #memory vector to
+be at least mMax. Sets the capacity of the #index vector to be at
+least mMax. Sets the size of the #index vector to be zero. ";
 
 %feature("docstring")  NOX::Direction::Broyden::BroydenMemory::reset "void NOX::Direction::Broyden::BroydenMemory::reset()
 
 Reset the memory.
 
-Sets the size of the index vector to be zero. ";
+Sets the size of the #index vector to be zero. ";
 
 %feature("docstring")  NOX::Direction::Broyden::BroydenMemory::push "void NOX::Direction::Broyden::BroydenMemory::push(const
 NOX::Abstract::Vector &d)
 
 Add new information to the memory.
 
-We need to calculate where the new udpate should be stored in memory
-and update the information in index.
+We need to calculate where the new udpate should be stored in #memory
+and update the information in #index.
 
 Let k denote the index of where the new update should be stored. If
 there are current m items stored in memory and m < mMax, then we set k
 = m. Otherwise, we set k equal to the location of the oldest update.
 The oldest update is deleted to make room for the new update. In both
-cases, index must be updated appropriately so that the first (zero)
+cases, #index must be updated appropriately so that the first (zero)
 entry points to the oldest update and the last entry points to the
 newest update. ";
 
@@ -262,11 +262,11 @@ Stores an $s$-vector and associated information for the limited-memory
 Broyden update.
 
 Throughout the docuementation of this class, we make the following
-associations. sptr stores the vector $s$
+associations. #sptr stores the vector $s$
 
-lambda stores the value of $\\\\lambda$
+#lambda stores the value of $\\\\lambda$
 
-snormsqr stores the values of $\\\\|s\\\\|_2^2$
+#snormsqr stores the values of $\\\\|s\\\\|_2^2$
 
 C++ includes: NOX_Direction_Broyden.H ";
 
@@ -275,14 +275,14 @@ NOX::Direction::Broyden::BroydenMemoryUnit::BroydenMemoryUnit "NOX::Direction::B
 
 Constructor.
 
-Sets sptr to NULL, and lambda and snormsqr to zero. ";
+Sets #sptr to NULL, and #lambda and #snormsqr to zero. ";
 
 %feature("docstring")
 NOX::Direction::Broyden::BroydenMemoryUnit::~BroydenMemoryUnit "NOX::Direction::Broyden::BroydenMemoryUnit::~BroydenMemoryUnit()
 
 Destuctor.
 
-Deletes sptr. ";
+Deletes #sptr. ";
 
 %feature("docstring")
 NOX::Direction::Broyden::BroydenMemoryUnit::reset "void
@@ -294,7 +294,7 @@ Reset this memory unit with a new update vector.
 Let the vector $d$ represent the input argument. Then we set $s=d$.
 Also recalculates $\\\\|s\\\\|_2^2$ and sets $\\\\lambda = 0$.
 
-If sptr is NULL, space is allocated by cloning the input vector (see
+If #sptr is NULL, space is allocated by cloning the input vector (see
 NOX::Abstract::Vector::clone). ";
 
 %feature("docstring")
@@ -372,15 +372,9 @@ the Broyden matrix, e.g. a block diagonal matrix.
 
 C++ includes: NOX_Epetra_BroydenOperator.H ";
 
-/*  IsValid flags  */
-
-/*  True if objects are current with respect to the currect stepVec.
-
-*/
-
 /*  "Is" functions  */
 
-/*  Checks to see if various objects have been computed. Returns true
+/* Checks to see if various objects have been computed. Returns true
 if the corresponding \"compute\" function has been called since the
 last update to the solution vector (via instantiation or computeX).
 
@@ -394,6 +388,12 @@ BroydenOperator::isYield() const ";
 
 %feature("docstring")  NOX::Epetra::BroydenOperator::isBroyden "bool
 BroydenOperator::isBroyden() const ";
+
+/*  IsValid flags  */
+
+/* True if objects are current with respect to the currect stepVec.
+
+*/
 
 %feature("docstring")  NOX::Epetra::BroydenOperator::BroydenOperator "BroydenOperator::BroydenOperator(Teuchos::ParameterList &nlParams,
 const Teuchos::RCP< NOX::Utils > &utils, Epetra_Vector &solnVec, const
@@ -736,20 +736,7 @@ inner iterations $ k $ performed by this object.
 
 C++ includes: NOX_LineSearch_Utils_Counters.H ";
 
-/*  Common Line Search Data Members  */
-
-/*  All line searches in general should report the following
-information. We save a pointer to the parameter list associated with
-the line search and set an output sublist with each of the following
-parameters.
-
-*/
-
 /*  Increment Methods  */
-
-/*
-
-*/
 
 %feature("docstring")
 NOX::LineSearch::Utils::Counters::incrementNumLineSearches "void
@@ -783,7 +770,7 @@ iterations by n. ";
 
 /*  Accessor Methods  */
 
-/*  Returns the current counter value
+/* Returns the current counter value
 
 */
 
@@ -813,6 +800,15 @@ NOX::LineSearch::Utils::Counters::getNumIterations() const
 
 Return the counter for the total number of line search inner
 iterations. ";
+
+/*  Common Line Search Data Members  */
+
+/* All line searches in general should report the following
+information. We save a pointer to the parameter list associated with
+the line search and set an output sublist with each of the following
+parameters.
+
+*/
 
 %feature("docstring")  NOX::LineSearch::Utils::Counters::Counters "NOX::LineSearch::Utils::Counters::Counters()
 
@@ -1625,7 +1621,7 @@ successful. ";
 NOX::Epetra::FiniteDifference::setDifferenceMethod "void
 FiniteDifference::setDifferenceMethod(DifferenceType type)
 
-Set the type of perturbation method used (default is Forward). ";
+Set the type of perturbation method used (default is Forward) ";
 
 %feature("docstring")
 NOX::Epetra::FiniteDifference::getUnderlyingMatrix "Epetra_CrsMatrix
@@ -1719,7 +1715,7 @@ a ghosted or overlapped state. The application should then not perform
 this step but rather simply use the vector provided with the possible
 exception of requiring a local index reordering to bring the column-
 space based vector in sync with a potentially different ghosted index
-ordering. See the Brusselator and 1Dfem_nonlinearColoring example
+ordering. See the Brusselator and %1Dfem_nonlinearColoring example
 problems for details.
 
 Special Case for Approximate Jacobian Construction
@@ -1960,7 +1956,7 @@ Return Values: 0 = Finite Number
 // File: classNOX_1_1Multiphysics_1_1Solver_1_1FixedPointBased.xml
 %feature("docstring") NOX::Multiphysics::Solver::FixedPointBased "
 
-Nonlinear solver based on a line search (i.e., damping).
+Nonlinear solver based on a line search (i.e., damping)
 
 Solves $F(x)=0$ using an iterative line-search-based method.
 
@@ -2252,7 +2248,7 @@ NOX::Direction::Generic::compute(NOX::Abstract::Vector &dir,
 NOX::Abstract::Group &grp, const NOX::Solver::LineSearchBased &solver)
 
 Same as compute( NOX::Abstract::Vector&, NOX::Abstract::Group&, const
-NOX::Solver::Generic&).
+NOX::Solver::Generic&)
 
 Enables direct support for line search based solvers for the purpose
 of efficiency since the LineSearchBased object has a getStep()
@@ -2285,11 +2281,11 @@ C++ includes: NOX_Multiphysics_Solver_Generic.H ";
 
 %feature("docstring")  NOX::Multiphysics::Solver::Generic::Generic "NOX::Multiphysics::Solver::Generic::Generic()
 
-Constructor (does nothing). ";
+Constructor (does nothing) ";
 
 %feature("docstring")  NOX::Multiphysics::Solver::Generic::~Generic "virtual NOX::Multiphysics::Solver::Generic::~Generic()
 
-Destructor (does nothing). ";
+Destructor (does nothing) ";
 
 %feature("docstring")  NOX::Multiphysics::Solver::Generic::reset "virtual bool NOX::Multiphysics::Solver::Generic::reset(const
 Teuchos::RCP< vector< Teuchos::RCP< NOX::Solver::Generic > > >
@@ -2372,12 +2368,12 @@ Return a RCP to the solver parameters. ";
 
 %feature("docstring")  NOX::Solver::Generic::Generic "NOX::Solver::Generic::Generic()
 
-Constructor (does nothing). ";
+Constructor (does nothing) ";
 
 %feature("docstring")  NOX::Solver::Generic::~Generic "virtual
 NOX::Solver::Generic::~Generic()
 
-Destructor (does nothing). ";
+Destructor (does nothing) ";
 
 %feature("docstring")  NOX::Solver::Generic::reset "virtual void
 NOX::Solver::Generic::reset(const NOX::Abstract::Vector
@@ -2700,30 +2696,7 @@ solver.
 
 C++ includes: NOX_Epetra_Group.H ";
 
-/*  Vectors  */
-
-/*
-
-*/
-
-/*  IsValid flags  */
-
-/*  True if the current solution is up-to-date with respect to the
-currect xVector.
-
-*/
-
-/*  Shared Operators  */
-
-/*
-
-*/
-
 /*  "Compute" functions.  */
-
-/*
-
-*/
 
 %feature("docstring")  NOX::Epetra::Group::setX "void
 Group::setX(const NOX::Epetra::Vector &y) ";
@@ -2848,7 +2821,7 @@ NOX::Abstract::Group::Ok - Otherwise ";
 
 /*  Jacobian operations.  */
 
-/*  Operations using the Jacobian matrix. These may not be defined in
+/* Operations using the Jacobian matrix. These may not be defined in
 matrix-free scenarios.
 
 */
@@ -3001,7 +2974,7 @@ The parameters are from the \"Linear %Solver\" sublist of the
 
 /*  "Is" functions  */
 
-/*  Checks to see if various objects have been computed. Returns true
+/* Checks to see if various objects have been computed. Returns true
 if the corresponding \"compute\" function has been called since the
 last update to the solution vector (via instantiation or computeX).
 
@@ -3053,7 +3026,7 @@ Returns true if the condition number has been computed. ";
 
 /*  "Get" functions  */
 
-/*  Note that these function do not check whether or not the vectors
+/* Note that these function do not check whether or not the vectors
 are valid. Must use the \"Is\" functions for that purpose.
 
 */
@@ -3066,7 +3039,7 @@ Return solution vector. ";
 %feature("docstring")  NOX::Epetra::Group::getF "const
 Abstract::Vector & Group::getF() const
 
-Return F(x). ";
+Return F(x) ";
 
 %feature("docstring")  NOX::Epetra::Group::getNormF "double
 Group::getNormF() const
@@ -3095,7 +3068,7 @@ Return RCP to solution vector. ";
 Teuchos::RCP< const NOX::Abstract::Vector >
 NOX::Epetra::Group::getFPtr() const
 
-Return RCP to F(x). ";
+Return RCP to F(x) ";
 
 %feature("docstring")  NOX::Epetra::Group::getGradientPtr "virtual
 Teuchos::RCP< const NOX::Abstract::Vector >
@@ -3117,6 +3090,17 @@ const
 Returns the 2-norm of the residual of the linear model used in the
 Newton solve computation, ||Js+f||. This does not account for line
 search adjustments to the step length! ";
+
+/*  Vectors  */
+
+/*  IsValid flags  */
+
+/* True if the current solution is up-to-date with respect to the
+currect xVector.
+
+*/
+
+/*  Shared Operators  */
 
 %feature("docstring")  NOX::Epetra::Group::Group "Group::Group(Teuchos::ParameterList &printingParams, const
 Teuchos::RCP< NOX::Epetra::Interface::Required > &i, const
@@ -3216,13 +3200,6 @@ be treated for the operator=() and clone() functions.
 
 C++ includes: NOX_Multiphysics_Group.H ";
 
-/*  IsValid flags  */
-
-/*  True if the current solution is up-to-date with respect to the
-currect xVector.
-
-*/
-
 %feature("docstring")  NOX::Multiphysics::Group::setX "void
 NOX::Multiphysics::Group::setX(const NOX::Abstract::Vector &y)
 
@@ -3265,7 +3242,7 @@ NOX::Abstract::Group::Ok - Otherwise ";
 
 /*  "Is" functions.  */
 
-/*  Checks to see if various objects have been computed. Returns true
+/* Checks to see if various objects have been computed. Returns true
 if the corresponding \"compute\" function has been called since the
 last change to the solution vector.
 
@@ -3278,7 +3255,7 @@ Return true if F is valid. ";
 
 /*  "Get" functions.  */
 
-/*  Note that these function do not check whether or not the vectors
+/* Note that these function do not check whether or not the vectors
 are valid. Must use the \"Is\" functions for that purpose.
 
 */
@@ -3291,7 +3268,7 @@ Return solution vector. ";
 %feature("docstring")  NOX::Multiphysics::Group::getF "const
 NOX::Abstract::Vector & NOX::Multiphysics::Group::getF() const
 
-Return F(x). ";
+Return F(x) ";
 
 %feature("docstring")  NOX::Multiphysics::Group::getNormF "double
 NOX::Multiphysics::Group::getNormF() const
@@ -3318,7 +3295,7 @@ Return RCP to solution vector. ";
 %feature("docstring")  NOX::Multiphysics::Group::getFPtr "Teuchos::RCP< const NOX::Abstract::Vector >
 NOX::Multiphysics::Group::getFPtr() const
 
-Return RCP to F(x). ";
+Return RCP to F(x) ";
 
 %feature("docstring")  NOX::Multiphysics::Group::getGradientPtr "Teuchos::RCP< const NOX::Abstract::Vector >
 NOX::Multiphysics::Group::getGradientPtr() const
@@ -3345,6 +3322,13 @@ not supported.
 
 Any shared data should have its ownership transfered to this group
 from the source for a NOX::DeepCopy. ";
+
+/*  IsValid flags  */
+
+/* True if the current solution is up-to-date with respect to the
+currect xVector.
+
+*/
 
 %feature("docstring")  NOX::Multiphysics::Group::Group "NOX::Multiphysics::Group::Group(const Teuchos::RCP< vector<
 Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const Teuchos::RCP<
@@ -3506,7 +3490,7 @@ NOX::Abstract::Group::Ok - Otherwise ";
 
 /*  Jacobian operations.  */
 
-/*  Operations using the Jacobian matrix.
+/* Operations using the Jacobian matrix.
 
 */
 
@@ -3617,7 +3601,7 @@ The parameters are from the \"Linear %Solver\" sublist of the
 
 /*  Block Jacobian operations.  */
 
-/*  Operations using the Jacobian matrix.
+/* Operations using the Jacobian matrix.
 
 */
 
@@ -3672,7 +3656,7 @@ method is available. ";
 
 /*  "Is" functions.  */
 
-/*  Checks to see if various objects have been computed. Returns true
+/* Checks to see if various objects have been computed. Returns true
 if the corresponding \"compute\" function has been called since the
 last change to the solution vector.
 
@@ -3706,7 +3690,7 @@ Default implementation in NOX::Abstract::Group returns false. ";
 
 /*  "Get" functions.  */
 
-/*  Note that these function do not check whether or not the vectors
+/* Note that these function do not check whether or not the vectors
 are valid. Must use the \"Is\" functions for that purpose.
 
 */
@@ -3719,7 +3703,7 @@ Return solution vector. ";
 %feature("docstring")  NOX::Abstract::Group::getF "virtual const
 NOX::Abstract::Vector& NOX::Abstract::Group::getF() const =0
 
-Return F(x). ";
+Return F(x) ";
 
 %feature("docstring")  NOX::Abstract::Group::getNormF "virtual double
 NOX::Abstract::Group::getNormF() const =0
@@ -3749,7 +3733,7 @@ Return RCP to solution vector. ";
 Teuchos::RCP< const NOX::Abstract::Vector >
 NOX::Abstract::Group::getFPtr() const
 
-Return RCP to F(x). ";
+Return RCP to F(x) ";
 
 %feature("docstring")  NOX::Abstract::Group::getGradientPtr "virtual
 Teuchos::RCP< const NOX::Abstract::Vector >
@@ -5117,7 +5101,7 @@ Note: This should only be called if hasPreconditioner() returns true.
 // File: classNOX_1_1Solver_1_1LineSearchBased.xml
 %feature("docstring") NOX::Solver::LineSearchBased "
 
-Nonlinear solver based on a line search (i.e., damping).
+Nonlinear solver based on a line search (i.e., damping)
 
 Solves $F(x)=0$ using an iterative line-search-based method.
 
@@ -5516,7 +5500,7 @@ computation was successful. ";
 
 %feature("docstring")  NOX::Epetra::MatrixFree::setDifferenceMethod "void MatrixFree::setDifferenceMethod(DifferenceType type)
 
-Set the type of perturbation method used (default is Forward). ";
+Set the type of perturbation method used (default is Forward) ";
 
 %feature("docstring")  NOX::Epetra::MatrixFree::setLambda "void
 MatrixFree::setLambda(double lambda_)
@@ -5573,7 +5557,7 @@ returns NOX::StatusTest::Unconverged.
 
 If checkStatus is called with the type set to NOX::StatusTest::None,
 it then the status is set to to NOX::Status::Unevaluated and returned.
-(Also niters is set to -1.)
+(Also #niters is set to -1.)
 
 C++ includes: NOX_StatusTest_MaxIters.H ";
 
@@ -6449,7 +6433,7 @@ NOX::Direction::Newton::compute(NOX::Abstract::Vector &dir,
 NOX::Abstract::Group &grp, const NOX::Solver::LineSearchBased &solver)
 
 Same as compute( NOX::Abstract::Vector&, NOX::Abstract::Group&, const
-NOX::Solver::Generic&).
+NOX::Solver::Generic&)
 
 Enables direct support for line search based solvers for the purpose
 of efficiency since the LineSearchBased object has a getStep()
@@ -6703,7 +6687,7 @@ NonlinearCG::compute(NOX::Abstract::Vector &dir, NOX::Abstract::Group
 &grp, const NOX::Solver::LineSearchBased &solver)
 
 Same as compute( NOX::Abstract::Vector&, NOX::Abstract::Group&, const
-NOX::Solver::Generic&).
+NOX::Solver::Generic&)
 
 Enables direct support for line search based solvers for the purpose
 of efficiency since the LineSearchBased object has a getStep()
@@ -6723,12 +6707,12 @@ Use the constructor to define the test based on the type of scaling
 
 If checkStatus is called with the type set to NOX::StatusTest::None,
 then the status is set to NOX::StatusTest::Unevaluated and returned.
-(Also normF is set to 0.0.)
+(Also #normF is set to 0.0.)
 
 If checkStatus is called on a problem where the solution group does
 not have F evaluated (i.e., problem.getSolutionGroup().isF() is
 false), then the status is set to NOX::StatusTest::Unconverged and
-returned. (Also normF is set to -1.0.)
+returned. (Also #normF is set to -1.0.)
 
 Finally, we return NOX::StatusTest::Converged if $\\\\alpha <
 \\\\beta$, and NOX::StatusTest::Unconverged otherwise. Here
@@ -6813,14 +6797,14 @@ NormType. ";
 double tolerance, NOX::Abstract::Vector::NormType ntype, ScaleType
 stype=Scaled, const NOX::Utils *u=NULL)
 
-Constructor with initial guess (for relative norms).
+Constructor with initial guess (for relative norms)
 
 This constructor defaults to the Relative tolerance type. ";
 
 %feature("docstring")  NOX::StatusTest::NormF::NormF "NOX::StatusTest::NormF::NormF(NOX::Abstract::Group &initialGuess,
 double tolerance, ScaleType stype=Scaled, const NOX::Utils *u=NULL)
 
-Constructor with initial guess (for relative norms).
+Constructor with initial guess (for relative norms)
 
 This constructor defaults to the Relative ToleranceType and TWO
 NormType. ";
@@ -6856,17 +6840,17 @@ solution vector, $ x $, between outer iterations.
 
 If checkStatusEfficiently is called with the type set to
 NOX::StatusTest::None, then the status is set to
-NOX::StatusTest::Unevaluated and returned. (Also normUpdate is set to
+NOX::StatusTest::Unevaluated and returned. (Also #normUpdate is set to
 -1.0.)
 
 If checkStatusEfficiently is called on the first iteration, then the
 status is set to NOX::StatusTest::Unconverged and returned. (Also
-normUpdate is set to -1.0.)
+#normUpdate is set to -1.0.)
 
 If checkStatusEfficiently is called on a problem where the solution
 group does not have F evaluated (i.e.,
 problem.getSolutionGroup().isF() is false), then the status is set to
-NOX::StatusTest::Unconverged and returned. (Also normUpdate is set to
+NOX::StatusTest::Unconverged and returned. (Also #normUpdate is set to
 -1.0.)
 
 Finally, we return NOX::StatusTest::Converged if $\\\\alpha <
@@ -6957,7 +6941,7 @@ Convergence test based on the weighted root mean square norm fo the
 solution update between iterations.
 
 ` If the number of iterations is zero, then the status is set to
-NOX::StatusTest::Unconverged and returned. (Also, value is set to
+NOX::StatusTest::Unconverged and returned. (Also, #value is set to
 1.0e+12.)
 
 Otherwise, returns NOX::StatusTest::Converged if the three criteria
@@ -7522,7 +7506,7 @@ Abstract Vector constructor (does nothing) ";
 "NOX::Abstract::PrePostOperator::PrePostOperator(const
 NOX::Abstract::PrePostOperator &source)
 
-Copy constructor (doesnothing). ";
+Copy constructor (doesnothing) ";
 
 %feature("docstring")
 NOX::Abstract::PrePostOperator::~PrePostOperator "virtual
@@ -8036,7 +8020,7 @@ NOX::Direction::SteepestDescent::compute(NOX::Abstract::Vector &dir,
 NOX::Abstract::Group &grp, const NOX::Solver::LineSearchBased &solver)
 
 Same as compute( NOX::Abstract::Vector&, NOX::Abstract::Group&, const
-NOX::Solver::Generic&).
+NOX::Solver::Generic&)
 
 Enables direct support for line search based solvers for the purpose
 of efficiency since the LineSearchBased object has a getStep()
@@ -10022,7 +10006,7 @@ follow the link for this object for more information. ";
 // File: NOX__Version_8H.xml
 
 
-// File: nox__user__information.xml
+// File: nox_user_information.xml
 
 
 // File: step1.xml
@@ -10037,13 +10021,13 @@ follow the link for this object for more information. ";
 // File: step4.xml
 
 
-// File: nox__developer__information.xml
+// File: nox_developer_information.xml
 
 
-// File: nox__release__information.xml
+// File: nox_release_information.xml
 
 
-// File: nox__configuration__options.xml
+// File: nox_configuration_options.xml
 
 
 // File: prerelease.xml
@@ -10055,25 +10039,25 @@ follow the link for this object for more information. ";
 // File: coding.xml
 
 
-// File: nox__class__overview.xml
+// File: nox_class_overview.xml
 
 
 // File: parameters.xml
 
 
-// File: epetra__interface.xml
+// File: epetra_interface.xml
 
 
-// File: thyra__interface.xml
+// File: thyra_interface.xml
 
 
-// File: petsc__interface.xml
+// File: petsc_interface.xml
 
 
-// File: nox__epetra__tutorial.xml
+// File: nox_epetra_tutorial.xml
 
 
-// File: portability__issues.xml
+// File: portability_issues.xml
 
 
 // File: deprecated.xml

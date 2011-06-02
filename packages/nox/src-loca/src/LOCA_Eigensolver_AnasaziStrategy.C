@@ -66,8 +66,7 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
   solverParams(),
   blksz(1),
   nev(4),
-  isSymmetric(false),
-  locaSort()
+  isSymmetric(false)
 {
   // Copy the base linear solve list and change the tolerance if requested
   solverParams = Teuchos::rcp(new Teuchos::ParameterList);
@@ -91,19 +90,10 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
 		     Anasazi::Errors + 
 		     Anasazi::Warnings +
 		     Anasazi::FinalSummary);
-		   
-  // Create a sorting manager to handle the sorting of eigenvalues 
-  Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> sortingStrategy
-    = globalData->locaFactory->createEigenvalueSortStrategy(topParams,
-							    eigenParams);
-  locaSort =
-    Teuchos::rcp(new Anasazi::LOCASort(globalData, sortingStrategy));
-  eigenParams->set( "Sort Manager", locaSort );
 }
 
 LOCA::Eigensolver::AnasaziStrategy::~AnasaziStrategy() 
 {
-  eigenParams->set( "Sort Manager", Teuchos::null );
 }
 
 NOX::Abstract::Group::ReturnType
@@ -120,6 +110,15 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
       "\nAnasazi Eigensolver starting with block size " << blksz << 
       "\n" << std::endl;
   }
+		   
+  // Create a sorting manager to handle the sorting of eigenvalues 
+  // Redo every time so it can be changed 
+  Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> sortingStrategy
+    = globalData->locaFactory->createEigenvalueSortStrategy(topParams,
+							    eigenParams);
+  Teuchos::RCP< Anasazi::SortManager<double> > locaSort =
+    Teuchos::rcp(new Anasazi::LOCASort(globalData, sortingStrategy));
+  eigenParams->set( "Sort Manager", locaSort );
 
   // Get reference to solution vector to clone
   const NOX::Abstract::Vector& xVector = group.getX();
@@ -275,6 +274,9 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
       "\nAnasazi Eigensolver finished.\n" << 
       globalData->locaUtils->fill(64,'=') << "\n" << std::endl;
   }
+
+  // This removes circular reference
+  eigenParams->set( "Sort Manager", Teuchos::null );
 
   if (returnCode == Anasazi::Converged)
     return NOX::Abstract::Group::Ok;

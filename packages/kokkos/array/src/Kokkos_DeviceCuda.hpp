@@ -42,6 +42,7 @@
 
 #include <iosfwd>
 #include <typeinfo>
+#include <vector>
 
 #include <Kokkos_ArrayForwardDeclarations.hpp>
 
@@ -58,10 +59,6 @@ namespace Kokkos {
 
 class DeviceCuda {
 private:
-
-  static void load_parallel_functor( const void * , size_t );
-
-  static const void * get_parallel_functor();
 
   static void * allocate_memory( const std::string & label ,
                                  const std::type_info & type ,
@@ -152,6 +149,10 @@ public:
 
   static size_type * reduce_multiblock_scratch_space();
   static size_type * reduce_multiblock_scratch_flag();
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+  static const std::vector<cudaStream_t> & streams();
+#endif
 
   /*--------------------------------*/
 };

@@ -128,6 +128,13 @@ void Prober::color()
 }
 ////////////////////////////////////////////////////////////////////////////////
 
+int Prober::getNumOrthogonalVectors()
+{
+    if (has_colored)
+        return colorer_->numColors();
+    else
+        return -1;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -150,7 +157,8 @@ int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix)
   /* Grab the color data */
   Epetra_MapColoring * col;
   Teuchos::RCP<Epetra_MapColoring> col_=colorer_->generateRowMapColoring();
-  if(out_matrix.Comm().NumProc() == 1)
+  if(out_matrix.Comm().NumProc() == 1 ||
+    input_graph_->Importer() == 0 )
     col=&(*col_);
   else {
     col= new Epetra_MapColoring(input_graph_->ColMap());
@@ -173,7 +181,7 @@ int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix)
   }  
 
   /* Cleanup */
-  if(out_matrix.Comm().NumProc() != 1)
+  if(out_matrix.Comm().NumProc() != 1 && input_graph_->Importer() != 0)
     delete col;
       
   return 0;

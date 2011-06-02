@@ -372,7 +372,9 @@ int Ifpack_CrsRiluk::Factor() {
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal
 
+#ifdef IFPACK_FLOPCOUNTERS
   int current_madds = 0; // We will count multiply-add as they happen
+#endif
 
   // Now start the factorization.
 
@@ -417,7 +419,9 @@ int Ifpack_CrsRiluk::Factor() {
 	  int kk = colflag[UUI[k]];
 	  if (kk>-1) {
 	    InV[kk] -= multiplier*UUV[k];
+#ifdef IFPACK_FLOPCOUNTERS
 	    current_madds++;
+#endif
 	  }
 	}
       }
@@ -426,7 +430,9 @@ int Ifpack_CrsRiluk::Factor() {
 	  int kk = colflag[UUI[k]];
 	  if (kk>-1) InV[kk] -= multiplier*UUV[k];
 	  else diagmod -= multiplier*UUV[k];
+#ifdef IFPACK_FLOPCOUNTERS
 	  current_madds++;
+#endif
 	}
       }
      }
@@ -465,6 +471,7 @@ int Ifpack_CrsRiluk::Factor() {
   if( !U_->UpperTriangular() ) 
     EPETRA_CHK_ERR(-3);
   
+#ifdef IFPACK_FLOPCOUNTERS
   // Add up flops
  
   double current_flops = 2 * current_madds;
@@ -478,6 +485,7 @@ int Ifpack_CrsRiluk::Factor() {
   if (RelaxValue_!=0.0) total_flops += 2 * (double)D_->GlobalLength(); // Accounts for relax update of diag
 
   UpdateFlops(total_flops); // Update flop count
+#endif
 
   SetFactored(true);
 
@@ -501,12 +509,14 @@ int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X,
   bool Lower = false;
   bool UnitDiagonal = true;
 
+#ifdef IFPACK_FLOPCOUNTERS
   Epetra_Flops * counter = this->GetFlopCounter();
   if (counter!=0) {
     L_->SetFlopCounter(*counter);
     Y1->SetFlopCounter(*counter);
     U_->SetFlopCounter(*counter);
   }
+#endif
 
   if (!Trans) {
 
@@ -536,12 +546,14 @@ int Ifpack_CrsRiluk::Multiply(bool Trans, const Epetra_MultiVector& X,
   Teuchos::RefCountPtr<Epetra_MultiVector> Y1;
   EPETRA_CHK_ERR(GenerateXY(Trans, X, Y, &X1, &Y1));
 
+#ifdef IFPACK_FLOPCOUNTERS
   Epetra_Flops * counter = this->GetFlopCounter();
   if (counter!=0) {
     L_->SetFlopCounter(*counter);
     Y1->SetFlopCounter(*counter);
     U_->SetFlopCounter(*counter);
   }
+#endif
 
   if (!Trans) {
     EPETRA_CHK_ERR(U_->Multiply(Trans, *X1, *Y1)); // 

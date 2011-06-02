@@ -83,9 +83,10 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     def testConstructor00(self):
         "Test Epetra.SerialDenseMatrix default constructor"
         sdm = Epetra.SerialDenseMatrix()
-        self.assertEqual(sdm.CV(), Epetra.Copy)
-        self.assertEqual(sdm.M() , 0          )
-        self.assertEqual(sdm.N() , 0          )
+        self.assertEqual(sdm.Label(), "Epetra::SerialDenseMatrix")
+        self.assertEqual(sdm.CV(),    Epetra.Copy                )
+        self.assertEqual(sdm.M(),     0                          )
+        self.assertEqual(sdm.N(),     0                          )
 
     def testConstructor01(self):
         "Test Epetra.SerialDenseMatrix bool constructor"
@@ -563,8 +564,9 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
     def testConstructor0(self):
         "Test Epetra.SerialDenseVector default constructor"
         sdv = Epetra.SerialDenseVector()
-        self.assertEqual(sdv.CV(), Epetra.Copy)
-        self.assertEqual(sdv.Length(), 0)
+        self.assertEqual(sdv.Label(),  "Epetra::SerialDenseVector")
+        self.assertEqual(sdv.CV(),     Epetra.Copy                )
+        self.assertEqual(sdv.Length(), 0                          )
 
     def testConstructor1(self):
         "Test Epetra.SerialDenseVector sized constructor"
@@ -809,15 +811,16 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
     def testConstructor(self):
         "Test Epetra.SerialDenseSolver constructor"
         sds = Epetra.SerialDenseSolver()
-        self.assertEqual(sds.Transpose()                   ,False)
-        self.assertEqual(sds.Factored()                    ,False)
-        self.assertEqual(sds.A_Equilibrated()              ,False)
-        self.assertEqual(sds.B_Equilibrated()              ,False)
-        self.assertEqual(sds.SolutionErrorsEstimated()     ,False)
-        self.assertEqual(sds.Inverted()                    ,False)
-        self.assertEqual(sds.ReciprocalConditionEstimated(),False)
-        self.assertEqual(sds.Solved()                      ,False)
-        self.assertEqual(sds.SolutionRefined()             ,False)
+        self.assertEqual(sds.Label(),                        "Epetra::Object")
+        self.assertEqual(sds.Transpose(),                    False)
+        self.assertEqual(sds.Factored(),                     False)
+        self.assertEqual(sds.A_Equilibrated(),               False)
+        self.assertEqual(sds.B_Equilibrated(),               False)
+        self.assertEqual(sds.SolutionErrorsEstimated(),      False)
+        self.assertEqual(sds.Inverted(),                     False)
+        self.assertEqual(sds.ReciprocalConditionEstimated(), False)
+        self.assertEqual(sds.Solved(),                       False)
+        self.assertEqual(sds.SolutionRefined(),              False)
 
     def testSetMatrix(self):
         "Test Epetra.SerialDenseSolver SetMatrix method"
@@ -1274,7 +1277,12 @@ if __name__ == "__main__":
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
-    # Exit with a code that indicates the total number of errors and failures
+    # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)

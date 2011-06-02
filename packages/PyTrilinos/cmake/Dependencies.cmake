@@ -32,6 +32,7 @@ SET(LIB_OPTIONAL_DEP_PACKAGES
   Epetra
   Triutils
   EpetraExt
+  Isorropia
   AztecOO
   Galeri
   Amesos

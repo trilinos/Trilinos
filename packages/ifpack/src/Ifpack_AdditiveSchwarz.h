@@ -704,6 +704,7 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   ++NumInitialize_;
   InitializeTime_ += Time_->ElapsedTime();
 
+#ifdef IFPACK_FLOPCOUNTERS
   // count flops by summing up all the InitializeFlops() in each
   // Inverse. Each Inverse() can only give its flops -- it acts on one
   // process only
@@ -711,6 +712,7 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   double total;
   Comm().SumAll(&partial, &total, 1);
   InitializeFlops_ += total;
+#endif
 
   return(0);
 }
@@ -733,11 +735,13 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
   ++NumCompute_;
   ComputeTime_ += Time_->ElapsedTime();
 
+#ifdef IFPACK_FLOPCOUNTERS
   // sum up flops
   double partial = Inverse_->ComputeFlops();
    double total;
   Comm().SumAll(&partial, &total, 1);
   ComputeFlops_ += total;
+#endif
 
   // reset the Label
   string R = "";
@@ -849,9 +853,11 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Teuchos::RefCountPtr<Epetra_MultiVector> Xtmp;
 
   // for flop count, see bottom of this function
+#ifdef IFPACK_FLOPCOUNTERS
   double pre_partial = Inverse_->ApplyInverseFlops();
   double pre_total;
   Comm().SumAll(&pre_partial, &pre_total, 1);
+#endif
 
   // process overlap, may need to create vectors and import data
   if (IsOverlapping()) {
@@ -927,12 +933,14 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 							 CombineMode_));
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   // add flops. Note the we only have to add the newly counted
   // flops -- and each Inverse returns the cumulative sum
   double partial = Inverse_->ApplyInverseFlops();
   double total;
   Comm().SumAll(&partial, &total, 1);
   ApplyInverseFlops_ += total - pre_total;
+#endif
 
   // FIXME: right now I am skipping the overlap and singletons
   ++NumApplyInverse_;
@@ -947,6 +955,7 @@ template<typename T>
 std::ostream& Ifpack_AdditiveSchwarz<T>::
 Print(std::ostream& os) const
 {
+#ifdef IFPACK_FLOPCOUNTERS
   double IF = InitializeFlops();
   double CF = ComputeFlops();
   double AF = ApplyInverseFlops();
@@ -958,6 +967,7 @@ Print(std::ostream& os) const
     CFT = CF / ComputeTime();
   if (ApplyInverseTime() != 0.0)
     AFT = AF / ApplyInverseTime();
+#endif
 
   if (Matrix().Comm().MyPID())
     return(os);
@@ -984,16 +994,25 @@ Print(std::ostream& os) const
   os << "-----           -------   --------------       ------------     --------" << endl;
   os << "Initialize()    "   << std::setw(5) << NumInitialize()
      << "  " << std::setw(15) << InitializeTime() 
+#ifdef IFPACK_FLOPCOUNTERS
      << "  " << std::setw(15) << 1.0e-6 * IF 
-     << "  " << std::setw(15) << 1.0e-6 * IFT << endl;
+     << "  " << std::setw(15) << 1.0e-6 * IFT
+#endif
+     << endl;
   os << "Compute()       "   << std::setw(5) << NumCompute() 
      << "  " << std::setw(15) << ComputeTime()
+#ifdef IFPACK_FLOPCOUNTERS
      << "  " << std::setw(15) << 1.0e-6 * CF
-     << "  " << std::setw(15) << 1.0e-6 * CFT << endl;
+     << "  " << std::setw(15) << 1.0e-6 * CFT
+#endif
+     << endl;
   os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
      << "  " << std::setw(15) << ApplyInverseTime()
+#ifdef IFPACK_FLOPCOUNTERS
      << "  " << std::setw(15) << 1.0e-6 * AF
-     << "  " << std::setw(15) << 1.0e-6 * AFT << endl;
+     << "  " << std::setw(15) << 1.0e-6 * AFT
+#endif
+     << endl;
   os << "================================================================================" << endl;
   os << endl;
 

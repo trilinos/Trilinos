@@ -49,14 +49,7 @@ namespace Tpetra {
 // class CrsMatrix;
 // #endif
 
-  /** Collection of matrix-matrix operations. This class basically
-      functions as a namespace, containing only static methods.
-      See the program epetraext/test/MatrixMatrix/cxx_main.cpp for
-      a usage example.
-   */
-  
 namespace MatrixMatrix {
-
 
     /** Given CrsMatrix objects A, B and C, form the product C = A*B.
   In a parallel setting, A and B need not have matching distributions,
@@ -152,6 +145,19 @@ void Add(
 
 namespace MMdetails{
 
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
+void
+getGlobalRowFromLocalIndex(
+  LocalOrdinal localRow,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview, 
+  Array<GlobalOrdinal>& indices,
+  ArrayView<Scalar>& values,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colMap);
+
 template<class Scalar, 
          class LocalOrdinal, 
          class GlobalOrdinal, 
@@ -243,12 +249,12 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > form_map_union(
    * sparsely-populated 'vectors'.
    * Important assumption: assumes the indices in u_ind and v_ind are sorted.
    */
-  template <class Scalar, class LocalOrdinal>
+  template <class Scalar, class GlobalOrdinal>
   Scalar sparsedot(
-    const Teuchos::ArrayView<Scalar> &u, 
-    const Teuchos::ArrayView<LocalOrdinal> &u_ind, 
-    const Teuchos::ArrayView<Scalar> &v, 
-    const Teuchos::ArrayView<LocalOrdinal> &v_ind);
+    const Teuchos::Array<Scalar> &u, 
+    const Teuchos::Array<GlobalOrdinal> &u_ind, 
+    const Teuchos::Array<Scalar> &v, 
+    const Teuchos::Array<GlobalOrdinal> &v_ind);
   
 }//end namespace MMdetails
 

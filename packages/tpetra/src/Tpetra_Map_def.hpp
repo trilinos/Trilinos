@@ -56,7 +56,7 @@
 // Data explicitly checks    : isDistributed
 
 namespace Tpetra {
-
+  
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::Map(
                         global_size_t numGlobalElements_in, 
@@ -330,7 +330,7 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::Map (global_size_t numGlobalElements_in, const Teuchos::ArrayView<const GlobalOrdinal> &entryList, GlobalOrdinal indexBase_in, 
                                              const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
                                              const Teuchos::RCP<Node> &node_in)
-  : comm_(comm_in),
+    : comm_(comm_in),
     node_(node_in) {
     using Teuchos::as;
     using Teuchos::outArg;
@@ -425,16 +425,16 @@ namespace Tpetra {
     // create the GID to LID map; do not assume GID in entryList are distinct.
     // in the case that a GID is duplicated, keep the previous LID
     // this is necessary so that LIDs are in [0,numLocal)
+
     size_t numUniqueGIDs = 0;
     if (numLocalElements_ > L0) {
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
       for (size_t i=0; i < numLocalElements_; i++) {
-        if (glMap_.find(entryList[i]) == glMap_.end()) {
-          lgMap_[numUniqueGIDs] = entryList[i];   // lgMap_:  LID to GID
-          glMap_[entryList[i]] = numUniqueGIDs;   // glMap_: GID to LID
-          numUniqueGIDs++;
-        }
+	lgMap_[numUniqueGIDs] = entryList[i];   // lgMap_:  LID to GID
+	glMap_[entryList[i]] = numUniqueGIDs;   // glMap_: GID to LID
+	numUniqueGIDs++;
       }
+
       // shrink lgMap appropriately
       if (numLocalElements_ != numUniqueGIDs) {
         numLocalElements_ = numUniqueGIDs;
@@ -453,6 +453,10 @@ namespace Tpetra {
         errPrefix << "minimum GID (== " << minAllGID_ << ") is less than indexBase (== " << indexBase_ << ")");
     setupDirectory();
   }
+
+
+
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::~Map () 

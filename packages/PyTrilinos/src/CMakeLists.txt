@@ -198,6 +198,7 @@ GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
   ${CMAKE_CURRENT_SOURCE_DIR}/../doc/Doxygen ABSOLUTE
   )
 APPEND_SET(CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
+APPEND_SET(CMAKE_SWIG_FLAGS -noproxydel)
 
 #
 # Determine the install directory
@@ -216,6 +217,10 @@ MESSAGE(STATUS "PyTrilinos installation path: ${PyTrilinos_INSTALL_DIR}")
 # directory.  This needs to be done before the following loop over the
 # PyTrilinos modules, because of the call to GET_DIRECTORY_PROPERTY().
 ADD_SUBDIRECTORY(PyTrilinos)
+
+#
+# Add the script subdirectory
+ADD_SUBDIRECTORY(scripts)
 
 #
 # Initialize the list of additional clean files
@@ -291,6 +296,21 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA)
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/${MODULE_NAME}.pyc")
+  #
+  # PyTrilinos.Isorropia
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/Isorropia")
+    SET(TRILINOS_LIBS ${ISORROPIA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/Isorropia/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling Isorropia/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Isorropia/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Isorropia/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/Isorropia)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/Isorropia)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/Isorropia/${MODULE_NAME}.pyc")
   #
   # PyTrilinos
   ELSE("${MODULE_OUTDIR}")

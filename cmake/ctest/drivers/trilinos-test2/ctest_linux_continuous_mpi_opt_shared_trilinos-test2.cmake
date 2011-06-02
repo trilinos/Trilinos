@@ -31,6 +31,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_LAMMPS:BOOL=ON"
   "-DTPL_ENABLE_couple:BOOL=ON"
   "-DTPL_ENABLE_SPPARKS:BOOL=ON"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
   )
 
 # 2009/11/26: rabartl: Do we really want to be pointing to Trilinos_DATA_DIR?

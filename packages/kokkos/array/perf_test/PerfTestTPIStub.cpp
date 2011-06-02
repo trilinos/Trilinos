@@ -1,13 +1,8 @@
 
-#include <iostream>
-
 namespace Test {
 
-void run_test_tpi(int exp)
-{
-  std::cout << "PASSED : PerfTestTPI SKIPPED : NO DEVICE TPI" << std::endl ;
-}
+void run_test_tpi_hexgrad( int , int ) { }
+void run_test_tpi_gramschmidt( int , int ) { }
 
 }
 
-//----------------------------------------------------------------------------

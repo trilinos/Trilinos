@@ -45,6 +45,7 @@
 /////////////////////////
 // Epetra_Comm support //
 /////////////////////////
+%teuchos_rcp(Epetra_Comm)
 %feature("autodoc",
 "Broadcast(self, numpy.ndarray myObj, int root)
 
@@ -280,18 +281,21 @@ PyObject* methodName(PyObject* partialObj)
 ///////////////////////////////
 // Epetra_SerialComm support //
 ///////////////////////////////
+%teuchos_rcp(Epetra_SerialComm)
 %rename(SerialComm) Epetra_SerialComm;
 %include "Epetra_SerialComm.h"
 
 ////////////////////////////////
 // Epetra_Distributor support //
 ////////////////////////////////
+%teuchos_rcp(Epetra_Distributor)
 %rename(Distributor) Epetra_Distributor;
 %include "Epetra_Distributor.h"
 
 //////////////////////////////////////
 // Epetra_SerialDistributor support //
 //////////////////////////////////////
+%teuchos_rcp(Epetra_SerialDistributor)
 %rename(SerialDistributor) Epetra_Distributor;
 %include "Epetra_SerialDistributor.h"
 
@@ -396,13 +400,15 @@ if calledMpiInit:
 ////////////////////////////
 // Epetra_MpiComm support //
 ////////////////////////////
+%teuchos_rcp(Epetra_MpiComm)
 %rename(MpiComm) Epetra_MpiComm;
 %include "Epetra_MpiComm.h"
 
 ///////////////////////////////////
 // Epetra_MpiDistributor support //
 ///////////////////////////////////
-%rename(MpiDistributor) Epetra_Distributor;
+%teuchos_rcp(Epetra_MpiDistributor)
+%rename(MpiDistributor) Epetra_MpiDistributor;
 %include "Epetra_MpiDistributor.h"
 
 /////////////////////////////////////

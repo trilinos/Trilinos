@@ -6,6 +6,7 @@
 #
 
 SET( Trilinos_EXTRAREPOS_DIR_GITREPOURL_CATEGORY
+  # DenovoExt angmar.ornl.gov:/data/git/denovoExt.git Continuous
   StarCCMExt  casl-dev.ornl.gov:/git-root/StarCCMClient  Continuous
   DeCARTExt  nstdsrv.ornl.gov:/gitroot/casldecart  Continuous
   CASLBOA  nstdsrv.ornl.gov:/gitroot/casl_boa  Continuous

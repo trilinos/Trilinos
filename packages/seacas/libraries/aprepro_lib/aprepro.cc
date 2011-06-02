@@ -4,6 +4,7 @@
 #include <sstream>
 #include <climits>
 #include <iostream>
+#include <ctime>
 
 #include "aprepro.h"
 #include "aprepro_parser.h"
@@ -38,7 +39,7 @@ namespace SEAMS {
     aprepro = this;
 
     // See the random number generator...
-    time_t time_val = time ((time_t*)NULL);
+    time_t time_val = std::time ((time_t*)NULL);
     srand((unsigned)time_val);
   }
 

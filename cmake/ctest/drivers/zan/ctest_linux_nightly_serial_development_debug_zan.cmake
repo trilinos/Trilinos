@@ -8,13 +8,10 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.zan.gcc.cmake")
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV)
-SET(CTEST_TEST_TYPE EXPERIMENTAL)
+#SET(CTEST_TEST_TYPE EXPERIMENTAL)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-#Stokhos is explicitly disabled below to prevent the package from being
-#implicitly enabled.  Sundance depends on Stokhos.
-#SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance)
 SET(EXTRA_EXCLUDE_PACKAGES TriKota)
 
 SET( EXTRA_CONFIGURE_OPTIONS

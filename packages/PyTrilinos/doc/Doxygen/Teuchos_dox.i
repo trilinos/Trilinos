@@ -1154,6 +1154,16 @@ this->setParameterList(...) will accept.
 
 The default implementation returns Teuchos::null. ";
 
+%feature("docstring")  Teuchos::ParameterListAcceptor::getDependencies
+"RCP< const DependencySheet >
+Teuchos::ParameterListAcceptor::getDependencies() const
+
+Rreturn a const Dependency Sheet of all the dependencies that should
+be applied to the parameter list return by this->
+getValidParameters().
+
+The default implementation returns Teuchos::null. ";
+
 %feature("docstring")
 Teuchos::ParameterListAcceptor::~ParameterListAcceptor "Teuchos::ParameterListAcceptor::~ParameterListAcceptor() ";
 

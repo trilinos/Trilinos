@@ -243,7 +243,9 @@ int Ifpack_ILUT::Compute()
   // start factorization //
   // =================== //
   
+#ifdef IFPACK_FLOPCOUNTERS
   double this_proc_flops = 0.0;
+#endif
 
   for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) 
   {
@@ -302,7 +304,9 @@ int Ifpack_ILUT::Compute()
     for (int i = 0 ; i < RowNnzU ; ++i)
       start_col = EPETRA_MIN(start_col, RowIndicesU[i]);
 
+#ifdef IFPACK_FLOPCOUNTERS
     int flops = 0;
+#endif
   
     for (int col_k = start_col ; col_k < row_i ; ++col_k) {
 
@@ -332,7 +336,9 @@ int Ifpack_ILUT::Compute()
 
           double yyy = xxx / DiagonalValueK ;
           SingleRowL.set(col_k, yyy);
+#ifdef IFPACK_FLOPCOUNTERS
           ++flops;
+#endif
 
           for (int j = 0 ; yyy != 0.0 && j < ColNnzK ; ++j)
           {
@@ -341,12 +347,16 @@ int Ifpack_ILUT::Compute()
             if (col_j < col_k) continue;
 
             SingleRowU.set(col_j, -yyy * ColValuesK[j], true);
+#ifdef IFPACK_FLOPCOUNTERS
             flops += 2;
+#endif
           }
       }
     }
 
+#ifdef IFPACK_FLOPCOUNTERS
     this_proc_flops += 1.0 * flops;
+#endif
 
     double cutoff = DropTolerance();
     double DiscardedElements = 0.0;
@@ -432,9 +442,11 @@ int Ifpack_ILUT::Compute()
     }
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   double tf;
   Comm().SumAll(&this_proc_flops, &tf, 1);
   ComputeFlops_ += tf;
+#endif
 
   IFPACK_CHK_ERR(L_->FillComplete());
   IFPACK_CHK_ERR(U_->FillComplete());
@@ -510,7 +522,9 @@ int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X,
   }
 
   ++NumApplyInverse_;
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += X.NumVectors() * 2 * GlobalNonzeros_;
+#endif
   ApplyInverseTime_ += Time_.ElapsedTime();
 
   return(0);

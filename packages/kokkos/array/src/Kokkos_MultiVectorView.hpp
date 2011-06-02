@@ -212,7 +212,7 @@ void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
 
   Impl::MultiVectorDeepCopy<ValueType,
                             DeviceDst,dst_type::Contiguous,
-                            DeviceSrc,dst_type::Contiguous>::run( dst , src );
+                            DeviceSrc,src_type::Contiguous>::run( dst , src );
 }
 
 } // namespace Kokkos
@@ -235,9 +235,6 @@ void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
-#include <Kokkos_DeviceCuda_macros.hpp>
-#include <impl/Kokkos_MultiVectorView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
 #include <DeviceCuda/Kokkos_DeviceCuda_MultiVectorView.hpp>
 #endif
 

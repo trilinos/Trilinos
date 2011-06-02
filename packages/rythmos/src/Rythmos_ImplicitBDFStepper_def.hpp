@@ -373,8 +373,8 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     //
     // Solve the implicit nonlinear system to a tolerance of ???
     // 
-    if(solver_->getModel().get()!=&neModel_) {
-      solver_->setModel( Teuchos::rcp(&neModel_,false) );
+    if (solver_->getModel().get() != &neModel_) {
+      solver_->setModel( Teuchos::rcpFromRef(neModel_) );
     }
     /* // Rythmos::TimeStepNonlinearSolver uses a built in solveCriteria, so you can't pass one in.
     // I believe this is the correct solveCriteria for IDA though.

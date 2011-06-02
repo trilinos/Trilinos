@@ -19,6 +19,7 @@ extern "C" {
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <memory.h>
 #include "zz_const.h"
 #include "zz_rand.h"
@@ -147,4 +148,28 @@ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
+
+int Zoltan_Random_Set_Param(
+char *name,                     /* name of variable */
+char *val)                      /* value of variable */
+{
+  int status, index;
+  PARAM_UTYPE result;
+  double f;
+
+  status = Zoltan_Check_Param(name, val, Random_params, &result, &index);
+
+  if (status == 0){
+    /* OK so far, do sanity check of parameter values */
+
+    if (strcmp(name, "RANDOM_MOVE_FRACTION") == 0){
+      f = atof(val);
+      if ((f < 0.0) || (f > 1.0))
+        status = 2;
+    }
+  }
+
+  return(status);
+}
+
 

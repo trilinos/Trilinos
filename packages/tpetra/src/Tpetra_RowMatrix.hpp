@@ -206,6 +206,33 @@ namespace Tpetra {
       virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const = 0;
 
       //@}
+      
+      //! \name Mathematical Methods
+      //@{
+
+      /**
+       * \brief Scales the RowMatrix on the left with the Vector x.
+       *
+       * This matrix will be scaled such that A(i,j) = x(i)*A(i,j) 
+       * where i denoes the global row number of A and 
+       * j denotes the global column number of A.
+       *
+       * \param x A vector to left scale this matrix.
+       */
+      virtual void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) =0;
+
+      /**
+       * \brief Scales the RowMatrix on the right with the Vector x.
+       *
+       * This matrix will be scaled such that A(i,j) = x(j)*A(i,j) 
+       * where i denoes the global row number of A and 
+       * j denotes the global column number of A.
+       *
+       * \param x A vector to right scale this matrix.
+       */
+      virtual void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) =0;
+
+      //@}
 
       //! \name Deprecated routines to be removed at some point in the future.
       //@{

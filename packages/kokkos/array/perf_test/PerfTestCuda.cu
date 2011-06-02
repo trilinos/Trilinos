@@ -14,57 +14,23 @@
 #include <Kokkos_DeviceCuda_macros.hpp>
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestGramSchmidt.hpp>
+#include <PerfTestDriver.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
-
-//------------------------------------------------------------------------
 namespace Test {
-void run_test_cuda(int exp)
+
+void run_test_cuda_hexgrad( int beg , int end )
 {
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
-  try {
-    for (int i = 1; i < exp; ++i) {
+  Kokkos::DeviceCuda::initialize();
+  Test::run_test_hexgrad< Kokkos::DeviceCuda>( beg , end );
+};
 
-      const int parallel_work_length = 1<<i;
+void run_test_cuda_gramschmidt( int beg , int end )
+{
+  Kokkos::DeviceCuda::initialize();
+  Test::run_test_gramschmidt< Kokkos::DeviceCuda>( beg , end );
+};
 
-      double seconds = HexGrad< float , Kokkos::DeviceCuda >::test(parallel_work_length) ;
-
-      std::cout << "\"Cuda HexGrad\" , "
-                << parallel_work_length
-                << " , "
-                << seconds
-                << std::endl ;
-    }
-    std::cout << "PASSED : PerfTestCuda HexGrad" << std::endl ;
-  }
-  catch( const std::exception & x ) {
-    std::cout << "FAILED : PerfTestCuda HexGrad : " << x.what() << std::endl ;
-  }
-
-  try {
-    for (int i = 1; i < exp; ++i) {
-
-      const int parallel_work_length = 1<<i;
-
-      const double seconds = ModifiedGramSchmidt< float , Kokkos::DeviceCuda >::test(parallel_work_length, 32 ) ;
-
-      std::cout << "\"GramSchmidt(32)\" , "
-                << parallel_work_length
-                << " , "
-                << seconds
-                << " , "
-                << seconds / parallel_work_length
-                << std::endl ;
-   }
-
-   std::cout << "PASSED : PerfTestCuda GramSchmidt" << std::endl ;
-  }
-  catch( const std::exception & x ) {
-    std::cout << "FAILED : PerfTestCuda GramSchmidt : " << x.what() << std::endl ;
-  }
-#else 
-  std::cout << "PASSED : SKIPPED PerfTestCuda - NO DEVICE CUDA" << std::endl ;
-#endif
-}
 }
 
 

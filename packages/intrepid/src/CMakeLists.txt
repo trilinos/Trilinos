@@ -171,7 +171,6 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_OrthogonalBases.hpp
   Discretization/Basis/Intrepid_OrthogonalBasesDef.hpp
   Discretization/Basis/Intrepid_ProductTopology.hpp
-  Discretization/Basis/Intrepid_ProductTopologyDef.hpp
   )
 
 #

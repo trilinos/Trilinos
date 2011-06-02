@@ -36,3 +36,6 @@
 /* Define if we want Teuchos Time Monitors enabled */
 #cmakedefine IFPACK_TEUCHOS_TIME_MONITOR
 
+/* Define if we want Ifpack Internal FlopCounters enabled */
+#cmakedefine IFPACK_FLOPCOUNTERS
+

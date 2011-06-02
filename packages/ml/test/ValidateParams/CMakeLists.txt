@@ -4,7 +4,8 @@ INCLUDE(PackageAddAdvancedTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(ML_ENABLE_AztecOO)
-IF(ML_ENABLE_AztecOO)
+ASSERT_DEFINED(ML_ENABLE_Amesos)
+IF(ML_ENABLE_AztecOO AND ML_ENABLE_Amesos)
   PACKAGE_ADD_EXECUTABLE(
     ml_Validate
     SOURCES cxx_main.cpp

@@ -341,13 +341,14 @@ using namespace NOX::Epetra;
 // functionality I need without causing whatever confusion is at risk
 // here.
 %include "Epetra_Base.i"
-%teuchos_rcp_epetra_numpy(MultiVector)
-%teuchos_rcp_epetra_numpy(Vector)
 %teuchos_rcp_epetra_numpy(IntSerialDenseVector)
 %teuchos_rcp_epetra_numpy(SerialDenseVector)
 %teuchos_rcp_epetra_numpy(SerialDenseMatrix)
+%include "Epetra_Comm.i"
 %include "Epetra_Maps.i"
 %include "Epetra_Dist.i"
+%teuchos_rcp_epetra_numpy(MultiVector)
+%teuchos_rcp_epetra_numpy(Vector)
 %include "Epetra_Graphs.i"
 %include "Epetra_Operators.i"
 

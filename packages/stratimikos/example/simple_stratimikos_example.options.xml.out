@@ -1,255 +1,526 @@
-<ParameterList>
-  <Parameter name="Enable Delayed Solver Construction" type="bool" value="false"/>
-  <Parameter name="Linear Solver Type" type="string" value="Amesos"/>
-  <ParameterList name="Linear Solver Types">
-    <ParameterList name="Amesos">
-      <ParameterList name="Amesos Settings">
-        <Parameter name="AddToDiag" type="double" value="0"/>
-        <Parameter name="AddZeroToDiag" type="bool" value="false"/>
-        <Parameter name="ComputeTrueResidual" type="bool" value="false"/>
-        <Parameter name="ComputeVectorNorms" type="bool" value="false"/>
-        <Parameter name="DebugLevel" type="int" value="0"/>
-        <ParameterList name="Lapack">
-          <Parameter name="Equilibrate" type="bool" value="true"/>
+Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name brain.sandia.gov and rank 0!
+<ParameterList name="ANONYMOUS">
+  <Parameter docString="When this option is set to true, the linear solver factory will be wrapped
+in a delayed evaluation Decorator factory object.  This results in a delay
+in the creation of a linear solver (and the associated preconditioner) until
+the first solve is actually performed.  This helps in cases where it is not
+known a-priori if a linear solve will be needed on a given linear operator and
+therefore can significantly improve performance for some types of algorithms
+such as NOX and LOCA." id="0" isDefault="false" isUsed="true" name="Enable Delayed Solver Construction" type="bool" value="false"/>
+  <Parameter docString='Determines the type of linear solver that will be used.
+The parameters for each solver type are specified in the sublist "Linear Solver Types"' id="1" isDefault="false" isUsed="true" name="Linear Solver Type" type="string" validatorId="0" value="Amesos"/>
+  <ParameterList id="205" name="Linear Solver Types">
+    <ParameterList id="57" name="Amesos">
+      <ParameterList id="50" name="Amesos Settings">
+        <Parameter docString="" id="2" isDefault="false" isUsed="true" name="AddToDiag" type="double" value="0"/>
+        <Parameter docString="" id="3" isDefault="false" isUsed="true" name="AddZeroToDiag" type="bool" value="false"/>
+        <Parameter docString="" id="4" isDefault="false" isUsed="true" name="ComputeTrueResidual" type="bool" value="false"/>
+        <Parameter docString="" id="5" isDefault="false" isUsed="true" name="ComputeVectorNorms" type="bool" value="false"/>
+        <Parameter docString="" id="6" isDefault="false" isUsed="true" name="DebugLevel" type="int" value="0"/>
+        <ParameterList id="8" name="Lapack">
+          <Parameter docString="" id="7" isDefault="false" isUsed="true" name="Equilibrate" type="bool" value="true"/>
         </ParameterList>
-        <Parameter name="MatrixProperty" type="string" value="general"/>
-        <Parameter name="MaxProcs" type="int" value="-1"/>
-        <ParameterList name="Mumps">
-          <Parameter name="ColScaling" type="any" value="0   [unused]"/>
-          <Parameter name="Equilibrate" type="bool" value="true"/>
-          <Parameter name="RowScaling" type="any" value="0   [unused]"/>
+        <Parameter docString="" id="9" isDefault="false" isUsed="true" name="MatrixProperty" type="string" value="general"/>
+        <Parameter docString="" id="10" isDefault="false" isUsed="true" name="MaxProcs" type="int" value="-1"/>
+        <ParameterList id="14" name="Mumps">
+          <Parameter docString="" id="11" isDefault="false" isUsed="true" name="ColScaling" type="any" value="0"/>
+          <Parameter docString="" id="12" isDefault="false" isUsed="true" name="Equilibrate" type="bool" value="true"/>
+          <Parameter docString="" id="13" isDefault="false" isUsed="true" name="RowScaling" type="any" value="0"/>
         </ParameterList>
-        <Parameter name="NoDestroy" type="bool" value="false"/>
-        <Parameter name="OutputLevel" type="int" value="1"/>
-        <ParameterList name="Pardiso">
-          <Parameter name="IPARM(1)" type="int" value="0"/>
-          <Parameter name="IPARM(10)" type="int" value="0"/>
-          <Parameter name="IPARM(11)" type="int" value="0"/>
-          <Parameter name="IPARM(18)" type="int" value="0"/>
-          <Parameter name="IPARM(19)" type="int" value="0"/>
-          <Parameter name="IPARM(2)" type="int" value="0"/>
-          <Parameter name="IPARM(21)" type="int" value="0"/>
-          <Parameter name="IPARM(3)" type="int" value="0"/>
-          <Parameter name="IPARM(4)" type="int" value="0"/>
-          <Parameter name="IPARM(8)" type="int" value="0"/>
-          <Parameter name="MSGLVL" type="int" value="0"/>
+        <Parameter docString="" id="15" isDefault="false" isUsed="true" name="NoDestroy" type="bool" value="false"/>
+        <Parameter docString="" id="16" isDefault="false" isUsed="true" name="OutputLevel" type="int" value="1"/>
+        <ParameterList id="28" name="Pardiso">
+          <Parameter docString="" id="17" isDefault="false" isUsed="true" name="IPARM(1)" type="int" value="0"/>
+          <Parameter docString="" id="18" isDefault="false" isUsed="true" name="IPARM(10)" type="int" value="0"/>
+          <Parameter docString="" id="19" isDefault="false" isUsed="true" name="IPARM(11)" type="int" value="0"/>
+          <Parameter docString="" id="20" isDefault="false" isUsed="true" name="IPARM(18)" type="int" value="0"/>
+          <Parameter docString="" id="21" isDefault="false" isUsed="true" name="IPARM(19)" type="int" value="0"/>
+          <Parameter docString="" id="22" isDefault="false" isUsed="true" name="IPARM(2)" type="int" value="0"/>
+          <Parameter docString="" id="23" isDefault="false" isUsed="true" name="IPARM(21)" type="int" value="0"/>
+          <Parameter docString="" id="24" isDefault="false" isUsed="true" name="IPARM(3)" type="int" value="0"/>
+          <Parameter docString="" id="25" isDefault="false" isUsed="true" name="IPARM(4)" type="int" value="0"/>
+          <Parameter docString="" id="26" isDefault="false" isUsed="true" name="IPARM(8)" type="int" value="0"/>
+          <Parameter docString="" id="27" isDefault="false" isUsed="true" name="MSGLVL" type="int" value="0"/>
         </ParameterList>
-        <Parameter name="PrintTiming" type="bool" value="false"/>
-        <Parameter name="RcondThreshold" type="double" value="1e-12"/>
-        <Parameter name="Redistribute" type="bool" value="false"/>
-        <Parameter name="Refactorize" type="bool" value="false"/>
-        <Parameter name="Reindex" type="bool" value="false"/>
-        <ParameterList name="Scalapack">
-          <Parameter name="2D distribution" type="bool" value="true"/>
-          <Parameter name="grid_nb" type="int" value="32"/>
+        <Parameter docString="" id="29" isDefault="false" isUsed="true" name="PrintTiming" type="bool" value="false"/>
+        <Parameter docString="" id="30" isDefault="false" isUsed="true" name="RcondThreshold" type="double" value="1e-12"/>
+        <Parameter docString="" id="31" isDefault="false" isUsed="true" name="Redistribute" type="bool" value="false"/>
+        <Parameter docString="" id="32" isDefault="false" isUsed="true" name="Refactorize" type="bool" value="false"/>
+        <Parameter docString="" id="33" isDefault="false" isUsed="true" name="Reindex" type="bool" value="false"/>
+        <ParameterList id="36" name="Scalapack">
+          <Parameter docString="" id="34" isDefault="false" isUsed="true" name="2D distribution" type="bool" value="true"/>
+          <Parameter docString="" id="35" isDefault="false" isUsed="true" name="grid_nb" type="int" value="32"/>
         </ParameterList>
-        <Parameter name="ScaleMethod" type="int" value="0"/>
-        <ParameterList name="Superludist">
-          <Parameter name="ColPerm" type="string" value="NOT SET"/>
-          <Parameter name="Equil" type="bool" value="false"/>
-          <Parameter name="Fact" type="string" value="SamePattern"/>
-          <Parameter name="IterRefine" type="string" value="NOT SET"/>
-          <Parameter name="PrintNonzeros" type="bool" value="false"/>
-          <Parameter name="ReplaceTinyPivot" type="bool" value="true"/>
-          <Parameter name="ReuseSymbolic" type="bool" value="false"/>
-          <Parameter name="RowPerm" type="string" value="NOT SET"/>
-          <Parameter name="perm_c" type="any" value="0   [unused]"/>
-          <Parameter name="perm_r" type="any" value="0   [unused]"/>
+        <Parameter docString="" id="37" isDefault="false" isUsed="true" name="ScaleMethod" type="int" value="0"/>
+        <ParameterList id="48" name="Superludist">
+          <Parameter docString="" id="38" isDefault="false" isUsed="true" name="ColPerm" type="string" value="NOT SET"/>
+          <Parameter docString="" id="39" isDefault="false" isUsed="true" name="Equil" type="bool" value="false"/>
+          <Parameter docString="" id="40" isDefault="false" isUsed="true" name="Fact" type="string" value="SamePattern"/>
+          <Parameter docString="" id="41" isDefault="false" isUsed="true" name="IterRefine" type="string" value="NOT SET"/>
+          <Parameter docString="" id="42" isDefault="false" isUsed="true" name="PrintNonzeros" type="bool" value="false"/>
+          <Parameter docString="" id="43" isDefault="false" isUsed="true" name="ReplaceTinyPivot" type="bool" value="true"/>
+          <Parameter docString="" id="44" isDefault="false" isUsed="true" name="ReuseSymbolic" type="bool" value="false"/>
+          <Parameter docString="" id="45" isDefault="false" isUsed="true" name="RowPerm" type="string" value="NOT SET"/>
+          <Parameter docString="" id="46" isDefault="false" isUsed="true" name="perm_c" type="any" value="0"/>
+          <Parameter docString="" id="47" isDefault="false" isUsed="true" name="perm_r" type="any" value="0"/>
         </ParameterList>
-        <Parameter name="TrustMe" type="bool" value="false"/>
+        <Parameter docString="" id="49" isDefault="false" isUsed="true" name="TrustMe" type="bool" value="false"/>
       </ParameterList>
-      <Parameter name="Refactorization Policy" type="string" value="RepivotOnRefactorization"/>
-      <Parameter name="Solver Type" type="string" value="Klu"/>
-      <Parameter name="Throw on Preconditioner Input" type="bool" value="true"/>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Output File" type="string" value="none"/>
-        <Parameter name="Verbosity Level" type="string" value="default"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="AztecOO">
-      <ParameterList name="Adjoint Solve">
-        <ParameterList name="AztecOO Settings">
-          <Parameter name="Aztec Preconditioner" type="string" value="ilu"/>
-          <Parameter name="Aztec Solver" type="string" value="GMRES"/>
-          <Parameter name="Convergence Test" type="string" value="r0"/>
-          <Parameter name="Drop Tolerance" type="double" value="0"/>
-          <Parameter name="Fill Factor" type="double" value="1"/>
-          <Parameter name="Graph Fill" type="int" value="0"/>
-          <Parameter name="Ill-Conditioning Threshold" type="double" value="1e+11"/>
-          <Parameter name="Orthogonalization" type="string" value="Classical"/>
-          <Parameter name="Output Frequency" type="int" value="0"/>
-          <Parameter name="Overlap" type="int" value="0"/>
-          <Parameter name="Polynomial Order" type="int" value="3"/>
-          <Parameter name="RCM Reordering" type="string" value="Disabled"/>
-          <Parameter name="Size of Krylov Subspace" type="int" value="300"/>
-          <Parameter name="Steps" type="int" value="3"/>
-        </ParameterList>
-        <Parameter name="Max Iterations" type="int" value="400"/>
-        <Parameter name="Tolerance" type="double" value="1e-06"/>
-      </ParameterList>
-      <ParameterList name="Forward Solve">
-        <ParameterList name="AztecOO Settings">
-          <Parameter name="Aztec Preconditioner" type="string" value="ilu"/>
-          <Parameter name="Aztec Solver" type="string" value="GMRES"/>
-          <Parameter name="Convergence Test" type="string" value="r0"/>
-          <Parameter name="Drop Tolerance" type="double" value="0"/>
-          <Parameter name="Fill Factor" type="double" value="1"/>
-          <Parameter name="Graph Fill" type="int" value="0"/>
-          <Parameter name="Ill-Conditioning Threshold" type="double" value="1e+11"/>
-          <Parameter name="Orthogonalization" type="string" value="Classical"/>
-          <Parameter name="Output Frequency" type="int" value="0"/>
-          <Parameter name="Overlap" type="int" value="0"/>
-          <Parameter name="Polynomial Order" type="int" value="3"/>
-          <Parameter name="RCM Reordering" type="string" value="Disabled"/>
-          <Parameter name="Size of Krylov Subspace" type="int" value="300"/>
-          <Parameter name="Steps" type="int" value="3"/>
-        </ParameterList>
-        <Parameter name="Max Iterations" type="int" value="400"/>
-        <Parameter name="Tolerance" type="double" value="1e-06"/>
-      </ParameterList>
-      <Parameter name="Output Every RHS" type="bool" value="false"/>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Output File" type="string" value="none"/>
-        <Parameter name="Verbosity Level" type="string" value="default"/>
+      <Parameter docString="" id="51" isDefault="false" isUsed="true" name="Refactorization Policy" type="string" value="RepivotOnRefactorization"/>
+      <Parameter docString="" id="52" isDefault="false" isUsed="true" name="Solver Type" type="string" value="Klu"/>
+      <Parameter docString="" id="53" isDefault="false" isUsed="true" name="Throw on Preconditioner Input" type="bool" value="true"/>
+      <ParameterList id="56" name="VerboseObject">
+        <Parameter docString='The file to send output to.  If the value "none" is used, then
+whatever is set in code will be used.  However, any other std::string value
+will be used to create an std::ofstream object to a file with the given name.
+Therefore, any valid file name is a valid std::string value for this parameter.' id="54" isDefault="false" isUsed="true" name="Output File" type="string" value="none"/>
+        <Parameter docString='The verbosity level to use to override whatever is set in code.
+The value of "default" will allow the level set in code to be used.' id="55" isDefault="false" isUsed="true" name="Verbosity Level" type="string" validatorId="1" value="default"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Belos">
-      <Parameter name="Solver Type" type="string" value="Block GMRES"/>
-      <ParameterList name="Solver Types">
-        <ParameterList name="Block CG">
-          <Parameter name="Adaptive Block Size" type="bool" value="true"/>
-          <Parameter name="Block Size" type="int" value="1"/>
-          <Parameter name="Convergence Tolerance" type="double" value="1e-08"/>
-          <Parameter name="Maximum Iterations" type="int" value="1000"/>
-          <Parameter name="Orthogonalization" type="string" value="DGKS"/>
-          <Parameter name="Orthogonalization Constant" type="double" value="-1"/>
-          <Parameter name="Output Frequency" type="int" value="-1"/>
-          <Parameter name="Output Style" type="int" value="0"/>
-          <Parameter name="Output Stream" type="any" value="Teuchos::RCP&lt;std::ostream>{ptr=0x53b820,node=0x544990,count=4}   [unused]"/>
-          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="false"/>
-          <Parameter name="Timer Label" type="string" value="Belos"/>
-          <Parameter name="Verbosity" type="int" value="0"/>
+    <ParameterList id="98" name="AztecOO">
+      <ParameterList id="75" name="Adjoint Solve">
+        <ParameterList id="72" name="AztecOO Settings">
+          <Parameter docString="Type of internal preconditioner to use.
+Note! this preconditioner will only be used if the input operator
+supports the Epetra_RowMatrix interface and the client does not pass
+in an external preconditioner!" id="58" isDefault="false" isUsed="true" name="Aztec Preconditioner" type="string" validatorId="2" value="ilu"/>
+          <Parameter docString="Type of linear solver algorithm to use." id="59" isDefault="false" isUsed="true" name="Aztec Solver" type="string" validatorId="3" value="GMRES"/>
+          <Parameter docString="The convergence test to use for terminating the iterative solver." id="60" isDefault="false" isUsed="true" name="Convergence Test" type="string" validatorId="4" value="r0"/>
+          <Parameter docString='The tolerance below which an entry from the factors of an internal "ilut"
+preconditioner will be dropped.' id="61" isDefault="false" isUsed="true" name="Drop Tolerance" type="double" validatorId="5" value="0"/>
+          <Parameter docString='The amount of fill allowed for an internal "ilut" preconditioner.' id="62" isDefault="false" isUsed="true" name="Fill Factor" type="double" validatorId="6" value="1"/>
+          <Parameter docString='The amount of fill allowed for the internal "ilu" preconditioner.' id="63" isDefault="false" isUsed="true" name="Graph Fill" type="int" validatorId="7" value="0"/>
+          <Parameter docString="The threshold tolerance above which a system is considered
+ill conditioned." id="64" isDefault="false" isUsed="true" name="Ill-Conditioning Threshold" type="double" validatorId="8" value="1e+11"/>
+          <Parameter docString='The type of orthogonalization to use with the "GMRES" solver.' id="65" isDefault="false" isUsed="true" name="Orthogonalization" type="string" validatorId="9" value="Classical"/>
+          <Parameter docString="The number of iterations between each output of the solver's progress." id="66" isDefault="false" isUsed="true" name="Output Frequency" type="int" validatorId="10" value="0"/>
+          <Parameter docString='The amount of overlap used for the internal "ilu" and "ilut" preconditioners.' id="67" isDefault="false" isUsed="true" name="Overlap" type="int" validatorId="11" value="0"/>
+          <Parameter docString='The order for of the polynomials used for the "Polynomial" and
+"Least-squares Polynomial" internal preconditioners.' id="68" isDefault="false" isUsed="true" name="Polynomial Order" type="int" validatorId="12" value="3"/>
+          <Parameter docString='Determines if RCM reordering is used with the internal
+"ilu" or "ilut" preconditioners.' id="69" isDefault="false" isUsed="true" name="RCM Reordering" type="string" validatorId="13" value="Disabled"/>
+          <Parameter docString='The maximum size of the Krylov subspace used with "GMRES" before
+a restart is performed.' id="70" isDefault="false" isUsed="true" name="Size of Krylov Subspace" type="int" validatorId="14" value="300"/>
+          <Parameter docString='Number of steps taken for the "Jacobi" or the "Symmetric Gauss-Seidel"
+internal preconditioners for each preconditioner application.' id="71" isDefault="false" isUsed="true" name="Steps" type="int" validatorId="15" value="3"/>
         </ParameterList>
-        <ParameterList name="Block GMRES">
-          <Parameter name="Adaptive Block Size" type="bool" value="true"/>
-          <Parameter name="Block Size" type="int" value="1"/>
-          <Parameter name="Convergence Tolerance" type="double" value="1e-08"/>
-          <Parameter name="Explicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
-          <Parameter name="Explicit Residual Test" type="bool" value="false"/>
-          <Parameter name="Flexible Gmres" type="bool" value="false"/>
-          <Parameter name="Implicit Residual Scaling" type="string" value="Norm of Preconditioned Initial Residual"/>
-          <Parameter name="Maximum Iterations" type="int" value="1000"/>
-          <Parameter name="Maximum Restarts" type="int" value="20"/>
-          <Parameter name="Num Blocks" type="int" value="300"/>
-          <Parameter name="Orthogonalization" type="string" value="DGKS"/>
-          <Parameter name="Orthogonalization Constant" type="double" value="-1"/>
-          <Parameter name="Output Frequency" type="int" value="-1"/>
-          <Parameter name="Output Style" type="int" value="0"/>
-          <Parameter name="Output Stream" type="any" value="Teuchos::RCP&lt;std::ostream>{ptr=0x53b820,node=0x544730,count=4}   [unused]"/>
-          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="false"/>
-          <Parameter name="Timer Label" type="string" value="Belos"/>
-          <Parameter name="Verbosity" type="int" value="0"/>
+        <Parameter docString="The maximum number of iterations the AztecOO solver is allowed to perform." id="73" isDefault="false" isUsed="true" name="Max Iterations" type="int" value="400"/>
+        <Parameter docString='The tolerence used in the convergence check (see the convergence test
+in the sublist "AztecOO Settings")' id="74" isDefault="false" isUsed="true" name="Tolerance" type="double" value="1e-06"/>
+      </ParameterList>
+      <ParameterList id="93" name="Forward Solve">
+        <ParameterList id="90" name="AztecOO Settings">
+          <Parameter docString="Type of internal preconditioner to use.
+Note! this preconditioner will only be used if the input operator
+supports the Epetra_RowMatrix interface and the client does not pass
+in an external preconditioner!" id="76" isDefault="false" isUsed="true" name="Aztec Preconditioner" type="string" validatorId="2" value="ilu"/>
+          <Parameter docString="Type of linear solver algorithm to use." id="77" isDefault="false" isUsed="true" name="Aztec Solver" type="string" validatorId="3" value="GMRES"/>
+          <Parameter docString="The convergence test to use for terminating the iterative solver." id="78" isDefault="false" isUsed="true" name="Convergence Test" type="string" validatorId="4" value="r0"/>
+          <Parameter docString='The tolerance below which an entry from the factors of an internal "ilut"
+preconditioner will be dropped.' id="79" isDefault="false" isUsed="true" name="Drop Tolerance" type="double" validatorId="5" value="0"/>
+          <Parameter docString='The amount of fill allowed for an internal "ilut" preconditioner.' id="80" isDefault="false" isUsed="true" name="Fill Factor" type="double" validatorId="6" value="1"/>
+          <Parameter docString='The amount of fill allowed for the internal "ilu" preconditioner.' id="81" isDefault="false" isUsed="true" name="Graph Fill" type="int" validatorId="7" value="0"/>
+          <Parameter docString="The threshold tolerance above which a system is considered
+ill conditioned." id="82" isDefault="false" isUsed="true" name="Ill-Conditioning Threshold" type="double" validatorId="8" value="1e+11"/>
+          <Parameter docString='The type of orthogonalization to use with the "GMRES" solver.' id="83" isDefault="false" isUsed="true" name="Orthogonalization" type="string" validatorId="9" value="Classical"/>
+          <Parameter docString="The number of iterations between each output of the solver's progress." id="84" isDefault="false" isUsed="true" name="Output Frequency" type="int" validatorId="10" value="0"/>
+          <Parameter docString='The amount of overlap used for the internal "ilu" and "ilut" preconditioners.' id="85" isDefault="false" isUsed="true" name="Overlap" type="int" validatorId="11" value="0"/>
+          <Parameter docString='The order for of the polynomials used for the "Polynomial" and
+"Least-squares Polynomial" internal preconditioners.' id="86" isDefault="false" isUsed="true" name="Polynomial Order" type="int" validatorId="12" value="3"/>
+          <Parameter docString='Determines if RCM reordering is used with the internal
+"ilu" or "ilut" preconditioners.' id="87" isDefault="false" isUsed="true" name="RCM Reordering" type="string" validatorId="13" value="Disabled"/>
+          <Parameter docString='The maximum size of the Krylov subspace used with "GMRES" before
+a restart is performed.' id="88" isDefault="false" isUsed="true" name="Size of Krylov Subspace" type="int" validatorId="14" value="300"/>
+          <Parameter docString='Number of steps taken for the "Jacobi" or the "Symmetric Gauss-Seidel"
+internal preconditioners for each preconditioner application.' id="89" isDefault="false" isUsed="true" name="Steps" type="int" validatorId="15" value="3"/>
         </ParameterList>
-        <ParameterList name="Pseudo Block GMRES">
-          <Parameter name="Adaptive Block Size" type="bool" value="true"/>
-          <Parameter name="Block Size" type="int" value="1"/>
-          <Parameter name="Convergence Tolerance" type="double" value="1e-08"/>
-          <Parameter name="Deflation Quorum" type="int" value="1"/>
-          <Parameter name="Explicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
-          <Parameter name="Implicit Residual Scaling" type="string" value="Norm of Preconditioned Initial Residual"/>
-          <Parameter name="Maximum Iterations" type="int" value="1000"/>
-          <Parameter name="Maximum Restarts" type="int" value="20"/>
-          <Parameter name="Num Blocks" type="int" value="300"/>
-          <Parameter name="Orthogonalization" type="string" value="DGKS"/>
-          <Parameter name="Orthogonalization Constant" type="double" value="-1"/>
-          <Parameter name="Output Frequency" type="int" value="-1"/>
-          <Parameter name="Output Style" type="int" value="0"/>
-          <Parameter name="Output Stream" type="any" value="Teuchos::RCP&lt;std::ostream>{ptr=0x53b820,node=0x544860,count=4}   [unused]"/>
-          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="false"/>
-          <Parameter name="Timer Label" type="string" value="Belos"/>
-          <Parameter name="Verbosity" type="int" value="0"/>
+        <Parameter docString="The maximum number of iterations the AztecOO solver is allowed to perform." id="91" isDefault="false" isUsed="true" name="Max Iterations" type="int" value="400"/>
+        <Parameter docString='The tolerence used in the convergence check (see the convergence test
+in the sublist "AztecOO Settings")' id="92" isDefault="false" isUsed="true" name="Tolerance" type="double" value="1e-06"/>
+      </ParameterList>
+      <Parameter docString="Determines if output is created for each individual RHS (true or 1) or if output
+is just created for an entire set of RHSs (false or 0)." id="94" isDefault="false" isUsed="true" name="Output Every RHS" type="bool" value="false"/>
+      <ParameterList id="97" name="VerboseObject">
+        <Parameter docString='The file to send output to.  If the value "none" is used, then
+whatever is set in code will be used.  However, any other std::string value
+will be used to create an std::ofstream object to a file with the given name.
+Therefore, any valid file name is a valid std::string value for this parameter.' id="95" isDefault="false" isUsed="true" name="Output File" type="string" value="none"/>
+        <Parameter docString='The verbosity level to use to override whatever is set in code.
+The value of "default" will allow the level set in code to be used.' id="96" isDefault="false" isUsed="true" name="Verbosity Level" type="string" validatorId="1" value="default"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList id="204" name="Belos">
+      <Parameter docString="Number of linear solver iterations to skip between applying user-defined convergence test." id="99" isDefault="false" isUsed="true" name="Convergence Test Frequency" type="int" value="1"/>
+      <Parameter docString="Type of linear solver algorithm to use." id="100" isDefault="false" isUsed="true" name="Solver Type" type="string" validatorId="16" value="Pseudo Block GMRES"/>
+      <ParameterList id="200" name="Solver Types">
+        <ParameterList id="113" name="Block CG">
+          <Parameter docString="Whether the solver manager should adapt to the block size
+based on the number of RHS to solve." id="101" isDefault="false" isUsed="true" name="Adaptive Block Size" type="bool" value="true"/>
+          <Parameter docString="The number of vectors in each block." id="102" isDefault="false" isUsed="true" name="Block Size" type="int" value="1"/>
+          <Parameter docString="The relative residual tolerance that needs to be achieved by the
+iterative solver in order for the linear system to be declared converged." id="103" isDefault="false" isUsed="true" name="Convergence Tolerance" type="double" value="1e-08"/>
+          <Parameter docString="The maximum number of block iterations allowed for each
+set of RHS solved." id="104" isDefault="false" isUsed="true" name="Maximum Iterations" type="int" value="1000"/>
+          <Parameter docString="The type of orthogonalization to use: DGKS, ICGS, or IMGS." id="105" isDefault="false" isUsed="true" name="Orthogonalization" type="string" value="DGKS"/>
+          <Parameter docString="The constant used by DGKS orthogonalization to determine
+whether another step of classical Gram-Schmidt is necessary." id="106" isDefault="false" isUsed="true" name="Orthogonalization Constant" type="double" value="-1"/>
+          <Parameter docString="How often convergence information should be outputted
+to the output stream." id="107" isDefault="false" isUsed="true" name="Output Frequency" type="int" value="-1"/>
+          <Parameter docString="A reference-counted pointer to the output stream where all
+solver output is sent." id="108" isDefault="false" isUsed="true" name="Output Stream" type="any" value="N7Teuchos3RCPISoEE{ptr=0x6561e0,node=0xc9f7620,count=4}"/>
+          <Parameter docString="What style is used for the solver information outputted
+to the output stream." id="109" isDefault="false" isUsed="true" name="Output Style" type="int" value="0"/>
+          <Parameter docString="When convergence information is printed, only show the maximum
+relative residual norm when the block size is greater than one." id="110" isDefault="false" isUsed="true" name="Show Maximum Residual Norm Only" type="bool" value="false"/>
+          <Parameter docString="The string to use as a prefix for the timer labels." id="111" isDefault="false" isUsed="true" name="Timer Label" type="string" value="Belos"/>
+          <Parameter docString="What type(s) of solver information should be outputted
+to the output stream." id="112" isDefault="false" isUsed="true" name="Verbosity" type="int" value="0"/>
+        </ParameterList>
+        <ParameterList id="132" name="Block GMRES">
+          <Parameter docString="Whether the solver manager should adapt the block size
+based on the number of RHS to solve." id="114" isDefault="false" isUsed="true" name="Adaptive Block Size" type="bool" value="true"/>
+          <Parameter docString="The number of vectors in each block.  This number times the
+number of blocks is the total Krylov subspace dimension." id="115" isDefault="false" isUsed="true" name="Block Size" type="int" value="1"/>
+          <Parameter docString="The relative residual tolerance that needs to be achieved by the
+iterative solver in order for the linear system to be declared converged." id="116" isDefault="false" isUsed="true" name="Convergence Tolerance" type="double" value="1e-08"/>
+          <Parameter docString="The type of scaling used in the explicit residual convergence test." id="117" isDefault="false" isUsed="true" name="Explicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
+          <Parameter docString="Whether the explicitly computed residual should be used in the convergence test." id="118" isDefault="false" isUsed="true" name="Explicit Residual Test" type="bool" value="false"/>
+          <Parameter docString="Whether the solver manager should use the flexible variant
+of GMRES." id="119" isDefault="false" isUsed="true" name="Flexible Gmres" type="bool" value="false"/>
+          <Parameter docString="The type of scaling used in the implicit residual convergence test." id="120" isDefault="false" isUsed="true" name="Implicit Residual Scaling" type="string" value="Norm of Preconditioned Initial Residual"/>
+          <Parameter docString="The maximum number of block iterations allowed for each
+set of RHS solved." id="121" isDefault="false" isUsed="true" name="Maximum Iterations" type="int" value="1000"/>
+          <Parameter docString="The maximum number of restarts allowed for each
+set of RHS solved." id="122" isDefault="false" isUsed="true" name="Maximum Restarts" type="int" value="20"/>
+          <Parameter docString="The maximum number of blocks allowed in the Krylov subspace
+for each set of RHS solved." id="123" isDefault="false" isUsed="true" name="Num Blocks" type="int" value="300"/>
+          <Parameter docString="The type of orthogonalization to use: DGKS, ICGS, or IMGS." id="124" isDefault="false" isUsed="true" name="Orthogonalization" type="string" value="DGKS"/>
+          <Parameter docString="The constant used by DGKS orthogonalization to determine
+whether another step of classical Gram-Schmidt is necessary." id="125" isDefault="false" isUsed="true" name="Orthogonalization Constant" type="double" value="-1"/>
+          <Parameter docString="How often convergence information should be outputted
+to the output stream." id="126" isDefault="false" isUsed="true" name="Output Frequency" type="int" value="-1"/>
+          <Parameter docString="A reference-counted pointer to the output stream where all
+solver output is sent." id="127" isDefault="false" isUsed="true" name="Output Stream" type="any" value="N7Teuchos3RCPISoEE{ptr=0x6561e0,node=0xc9f7260,count=4}"/>
+          <Parameter docString="What style is used for the solver information outputted
+to the output stream." id="128" isDefault="false" isUsed="true" name="Output Style" type="int" value="0"/>
+          <Parameter docString="When convergence information is printed, only show the maximum
+relative residual norm when the block size is greater than one." id="129" isDefault="false" isUsed="true" name="Show Maximum Residual Norm Only" type="bool" value="false"/>
+          <Parameter docString="The string to use as a prefix for the timer labels." id="130" isDefault="false" isUsed="true" name="Timer Label" type="string" value="Belos"/>
+          <Parameter docString="What type(s) of solver information should be outputted
+to the output stream." id="131" isDefault="false" isUsed="true" name="Verbosity" type="int" value="0"/>
+        </ParameterList>
+        <ParameterList id="149" name="GCRODR">
+          <Parameter docString="Block Size Parameter -- currently must be 1 for GCRODR" id="133" isDefault="false" isUsed="true" name="Block Size" type="int" value="1"/>
+          <Parameter docString="The relative residual tolerance that needs to be achieved by the
+iterative solver in order for the linear system to be declared converged." id="134" isDefault="false" isUsed="true" name="Convergence Tolerance" type="double" value="1e-08"/>
+          <Parameter docString="The type of scaling used in the explicit residual convergence test." id="135" isDefault="false" isUsed="true" name="Explicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
+          <Parameter docString="The type of scaling used in the implicit residual convergence test." id="136" isDefault="false" isUsed="true" name="Implicit Residual Scaling" type="string" value="Norm of Preconditioned Initial Residual"/>
+          <Parameter docString="The maximum number of iterations allowed for each
+set of RHS solved." id="137" isDefault="false" isUsed="true" name="Maximum Iterations" type="int" value="5000"/>
+          <Parameter docString="The maximum number of cycles allowed for each
+set of RHS solved." id="138" isDefault="false" isUsed="true" name="Maximum Restarts" type="int" value="100"/>
+          <Parameter docString="The maximum number of vectors allowed in the Krylov subspace
+for each set of RHS solved." id="139" isDefault="false" isUsed="true" name="Num Blocks" type="int" value="50"/>
+          <Parameter docString="The maximum number of vectors in the recycled subspace." id="140" isDefault="false" isUsed="true" name="Num Recycled Blocks" type="int" value="5"/>
+          <Parameter docString='The type of orthogonalization to use.  Valid options: "DGKS", "ICGS", "IMGS", or "Simple"' id="141" isDefault="false" isUsed="true" name="Orthogonalization" type="string" value="DGKS"/>
+          <Parameter docString='When using DGKS orthogonalization: the "depTol" constant, used to determine whether another step of classical Gram-Schmidt is necessary.  Otherwise ignored.' id="142" isDefault="false" isUsed="true" name="Orthogonalization Constant" type="double" value="0"/>
+          <Parameter docString="Parameters specific to the type of orthogonalization used." id="143" isDefault="false" isUsed="true" name="Orthogonalization Parameters" type="any" value="N7Teuchos3RCPIKNS_13ParameterListEEE{ptr=0,node=0,count=0}"/>
+          <Parameter docString="How often convergence information should be outputted
+to the output stream." id="144" isDefault="false" isUsed="true" name="Output Frequency" type="int" value="-1"/>
+          <Parameter docString="A reference-counted pointer to the output stream where all
+solver output is sent." id="145" isDefault="false" isUsed="true" name="Output Stream" type="any" value="N7Teuchos3RCPISoEE{ptr=0x6561e0,node=0xc9f7860,count=4}"/>
+          <Parameter docString="What style is used for the solver information outputted
+to the output stream." id="146" isDefault="false" isUsed="true" name="Output Style" type="int" value="0"/>
+          <Parameter docString="The string to use as a prefix for the timer labels." id="147" isDefault="false" isUsed="true" name="Timer Label" type="string" value="Belos"/>
+          <Parameter docString="What type(s) of solver information should be outputted
+to the output stream." id="148" isDefault="false" isUsed="true" name="Verbosity" type="int" value="0"/>
+        </ParameterList>
+        <ParameterList id="158" name="MINRES">
+          <Parameter docString="Number of vectors in each block.  WARNING: The current implementation of MINRES only accepts a block size of 1, since it can only solve for 1 right-hand side at a time." id="150" isDefault="false" isUsed="true" name="Block Size" type="int" validatorId="17" value="1"/>
+          <Parameter docString="Relative residual tolerance that needs to be achieved by the iterative solver, in order for the linear system to be declared converged." id="151" isDefault="false" isUsed="true" name="Convergence Tolerance" type="double" validatorId="18" value="1e-08"/>
+          <Parameter docString="Maximum number of iterations allowed for each right-hand side solved." id="152" isDefault="false" isUsed="true" name="Maximum Iterations" type="int" validatorId="19" value="1000"/>
+          <Parameter docString="How often (in terms of number of iterations) intermediate convergence information should be written to the output stream.  -1 means never." id="153" isDefault="false" isUsed="true" name="Output Frequency" type="int" value="-1"/>
+          <Parameter docString="A reference-counted pointer to the output stream where all solver output is sent.  The output stream defaults to stdout." id="154" isDefault="false" isUsed="true" name="Output Stream" type="any" value="N7Teuchos3RCPISoEE{ptr=0x6561e0,node=0xcc101f0,count=3}"/>
+          <Parameter docString="What style is used for the solver information written to the output stream." id="155" isDefault="false" isUsed="true" name="Output Style" type="int" value="0"/>
+          <Parameter docString="The string to use as a prefix for the timer labels." id="156" isDefault="false" isUsed="true" name="Timer Label" type="string" value="Belos"/>
+          <Parameter docString="The type(s) of solver information that should be written to the output stream." id="157" isDefault="false" isUsed="true" name="Verbosity" type="int" value="0"/>
+        </ParameterList>
+        <ParameterList id="170" name="Pseudo Block CG">
+          <Parameter docString="Whether or not to assert that the linear operator
+and the preconditioner are indeed positive definite." id="159" isDefault="false" isUsed="true" name="Assert Positive Definiteness" type="bool" value="true"/>
+          <Parameter docString="The relative residual tolerance that needs to be achieved by the
+iterative solver in order for the linera system to be declared converged." id="160" isDefault="false" isUsed="true" name="Convergence Tolerance" type="double" value="1e-08"/>
+          <Parameter docString="The number of linear systems that need to converge before
+they are deflated.  This number should be &lt;= block size." id="161" isDefault="false" isUsed="true" name="Deflation Quorum" type="int" value="1"/>
+          <Parameter docString="The maximum number of block iterations allowed for each
+set of RHS solved." id="162" isDefault="false" isUsed="true" name="Maximum Iterations" type="int" value="1000"/>
+          <Parameter docString="How often convergence information should be outputted
+to the output stream." id="163" isDefault="false" isUsed="true" name="Output Frequency" type="int" value="-1"/>
+          <Parameter docString="A reference-counted pointer to the output stream where all
+solver output is sent." id="164" isDefault="false" isUsed="true" name="Output Stream" type="any" value="N7Teuchos3RCPISoEE{ptr=0x6561e0,node=0xc9f76d0,count=4}"/>
+          <Parameter docString="What style is used for the solver information outputted
+to the output stream." id="165" isDefault="false" isUsed="true" name="Output Style" type="int" value="0"/>
+          <Parameter docString="The type of scaling used in the residual convergence test." id="166" isDefault="false" isUsed="true" name="Residual Scaling" type="string" value="Norm of Initial Residual"/>
+          <Parameter docString="When convergence information is printed, only show the maximum
+relative residual norm when the block size is greater than one." id="167" isDefault="false" isUsed="true" name="Show Maximum Residual Norm Only" type="bool" value="false"/>
+          <Parameter docString="The string to use as a prefix for the timer labels." id="168" isDefault="false" isUsed="true" name="Timer Label" type="string" value="Belos"/>
+          <Parameter docString="What type(s) of solver information should be outputted
+to the output stream." id="169" isDefault="false" isUsed="true" name="Verbosity" type="int" value="0"/>
+        </ParameterList>
+        <ParameterList id="187" name="Pseudo Block GMRES">
+          <Parameter docString="The number of RHS solved simultaneously." id="171" isDefault="false" isUsed="true" name="Block Size" type="int" value="1"/>
+          <Parameter docString="The relative residual tolerance that needs to be achieved by the
+iterative solver in order for the linear system to be declared converged." id="172" isDefault="false" isUsed="true" name="Convergence Tolerance" type="double" value="1e-08"/>
+          <Parameter docString="The number of linear systems that need to converge before
+they are deflated.  This number should be &lt;= block size." id="173" isDefault="false" isUsed="true" name="Deflation Quorum" type="int" value="1"/>
+          <Parameter docString="The type of scaling used in the explicit residual convergence test." id="174" isDefault="false" isUsed="true" name="Explicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
+          <Parameter docString="The type of scaling used in the implicit residual convergence test." id="175" isDefault="false" isUsed="true" name="Implicit Residual Scaling" type="string" value="Norm of Preconditioned Initial Residual"/>
+          <Parameter docString="The maximum number of block iterations allowed for each
+set of RHS solved." id="176" isDefault="false" isUsed="true" name="Maximum Iterations" type="int" value="1000"/>
+          <Parameter docString="The maximum number of restarts allowed for each
+set of RHS solved." id="177" isDefault="false" isUsed="true" name="Maximum Restarts" type="int" value="20"/>
+          <Parameter docString="The maximum number of vectors allowed in the Krylov subspace
+for each set of RHS solved." id="178" isDefault="false" isUsed="true" name="Num Blocks" type="int" value="300"/>
+          <Parameter docString="The type of orthogonalization to use: DGKS, ICGS, IMGS." id="179" isDefault="false" isUsed="true" name="Orthogonalization" type="string" value="DGKS"/>
+          <Parameter docString="The constant used by DGKS orthogonalization to determine
+whether another step of classical Gram-Schmidt is necessary." id="180" isDefault="false" isUsed="true" name="Orthogonalization Constant" type="double" value="-1"/>
+          <Parameter docString="How often convergence information should be outputted
+to the output stream." id="181" isDefault="false" isUsed="true" name="Output Frequency" type="int" value="-1"/>
+          <Parameter docString="A reference-counted pointer to the output stream where all
+solver output is sent." id="182" isDefault="false" isUsed="true" name="Output Stream" type="any" value="N7Teuchos3RCPISoEE{ptr=0x6561e0,node=0xc9f73a0,count=4}"/>
+          <Parameter docString="What style is used for the solver information outputted
+to the output stream." id="183" isDefault="false" isUsed="true" name="Output Style" type="int" value="0"/>
+          <Parameter docString="When convergence information is printed, only show the maximum
+relative residual norm when the block size is greater than one." id="184" isDefault="false" isUsed="true" name="Show Maximum Residual Norm Only" type="bool" value="false"/>
+          <Parameter docString="The string to use as a prefix for the timer labels." id="185" isDefault="false" isUsed="true" name="Timer Label" type="string" value="Belos"/>
+          <Parameter docString="What type(s) of solver information should be outputted
+to the output stream." id="186" isDefault="false" isUsed="true" name="Verbosity" type="int" value="0"/>
+        </ParameterList>
+        <ParameterList id="199" name="RCG">
+          <Parameter docString="Block Size Parameter -- currently must be 1 for RCG" id="188" isDefault="false" isUsed="true" name="Block Size" type="int" value="1"/>
+          <Parameter docString="The relative residual tolerance that needs to be achieved by the
+iterative solver in order for the linear system to be declared converged." id="189" isDefault="false" isUsed="true" name="Convergence Tolerance" type="double" value="1e-08"/>
+          <Parameter docString="The maximum number of block iterations allowed for each
+set of RHS solved." id="190" isDefault="false" isUsed="true" name="Maximum Iterations" type="int" value="1000"/>
+          <Parameter docString="The length of a cycle (and this max number of search vectors kept)
+" id="191" isDefault="false" isUsed="true" name="Num Blocks" type="int" value="25"/>
+          <Parameter docString="The number of vectors in the recycle subspace." id="192" isDefault="false" isUsed="true" name="Num Recycled Blocks" type="int" value="3"/>
+          <Parameter docString="How often convergence information should be outputted
+to the output stream." id="193" isDefault="false" isUsed="true" name="Output Frequency" type="int" value="-1"/>
+          <Parameter docString="A reference-counted pointer to the output stream where all
+solver output is sent." id="194" isDefault="false" isUsed="true" name="Output Stream" type="any" value="N7Teuchos3RCPISoEE{ptr=0x6561e0,node=0xc9f7a30,count=4}"/>
+          <Parameter docString="What style is used for the solver information outputted
+to the output stream." id="195" isDefault="false" isUsed="true" name="Output Style" type="int" value="0"/>
+          <Parameter docString="When convergence information is printed, only show the maximum
+relative residual norm when the block size is greater than one." id="196" isDefault="false" isUsed="true" name="Show Maximum Residual Norm Only" type="bool" value="false"/>
+          <Parameter docString="The string to use as a prefix for the timer labels." id="197" isDefault="false" isUsed="true" name="Timer Label" type="string" value="Belos"/>
+          <Parameter docString="What type(s) of solver information should be outputted
+to the output stream." id="198" isDefault="false" isUsed="true" name="Verbosity" type="int" value="0"/>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Output File" type="string" value="none"/>
-        <Parameter name="Verbosity Level" type="string" value="default"/>
+      <ParameterList id="203" name="VerboseObject">
+        <Parameter docString='The file to send output to.  If the value "none" is used, then
+whatever is set in code will be used.  However, any other std::string value
+will be used to create an std::ofstream object to a file with the given name.
+Therefore, any valid file name is a valid std::string value for this parameter.' id="201" isDefault="false" isUsed="true" name="Output File" type="string" value="none"/>
+        <Parameter docString='The verbosity level to use to override whatever is set in code.
+The value of "default" will allow the level set in code to be used.' id="202" isDefault="false" isUsed="true" name="Verbosity Level" type="string" validatorId="1" value="default"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
-  <ParameterList name="Preconditioner Types">
-    <ParameterList name="Ifpack">
-      <ParameterList name="Ifpack Settings">
-        <Parameter name="amesos: solver type" type="string" value="Amesos_Klu"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0"/>
-        <Parameter name="fact: drop tolerance" type="double" value="0"/>
-        <Parameter name="fact: ict level-of-fill" type="double" value="1"/>
-        <Parameter name="fact: ilut level-of-fill" type="double" value="1"/>
-        <Parameter name="fact: level-of-fill" type="int" value="0"/>
-        <Parameter name="fact: relative threshold" type="double" value="1"/>
-        <Parameter name="fact: relax value" type="double" value="0"/>
-        <Parameter name="fact: sparskit: alph" type="double" value="0"/>
-        <Parameter name="fact: sparskit: droptol" type="double" value="0"/>
-        <Parameter name="fact: sparskit: lfil" type="int" value="0"/>
-        <Parameter name="fact: sparskit: mbloc" type="int" value="-1"/>
-        <Parameter name="fact: sparskit: permtol" type="double" value="0.1"/>
-        <Parameter name="fact: sparskit: tol" type="double" value="0"/>
-        <Parameter name="fact: sparskit: type" type="string" value="ILUT"/>
-        <Parameter name="partitioner: local parts" type="int" value="1"/>
-        <Parameter name="partitioner: overlap" type="int" value="0"/>
-        <Parameter name="partitioner: print level" type="int" value="0"/>
-        <Parameter name="partitioner: type" type="string" value="greedy"/>
-        <Parameter name="partitioner: use symmetric graph" type="bool" value="true"/>
-        <Parameter name="relaxation: damping factor" type="double" value="1"/>
-        <Parameter name="relaxation: min diagonal value" type="double" value="1"/>
-        <Parameter name="relaxation: sweeps" type="int" value="1"/>
-        <Parameter name="relaxation: type" type="string" value="Jacobi"/>
-        <Parameter name="relaxation: zero starting solution" type="bool" value="true"/>
-        <Parameter name="schwarz: combine mode" type="string" value="Zero"/>
-        <Parameter name="schwarz: compute condest" type="bool" value="true"/>
-        <Parameter name="schwarz: filter singletons" type="bool" value="false"/>
-        <Parameter name="schwarz: reordering type" type="string" value="none"/>
+  <Parameter docString='Determines the type of preconditioner that will be used.
+This option is only meaningful for linear solvers that accept preconditioner factory objects!
+The parameters for each preconditioner are specified in the sublist "Preconditioner Types"' id="206" isDefault="false" isUsed="true" name="Preconditioner Type" type="string" validatorId="20" value="Ifpack"/>
+  <ParameterList id="274" name="Preconditioner Types">
+    <ParameterList id="242" name="Ifpack">
+      <ParameterList id="236" name="Ifpack Settings">
+        <Parameter docString="" id="207" isDefault="false" isUsed="true" name="amesos: solver type" type="string" value="Amesos_Klu"/>
+        <Parameter docString="" id="208" isDefault="false" isUsed="true" name="fact: absolute threshold" type="double" value="0"/>
+        <Parameter docString="" id="209" isDefault="false" isUsed="true" name="fact: drop tolerance" type="double" value="0"/>
+        <Parameter docString="" id="210" isDefault="false" isUsed="true" name="fact: ict level-of-fill" type="double" value="1"/>
+        <Parameter docString="" id="211" isDefault="false" isUsed="true" name="fact: ilut level-of-fill" type="double" value="1"/>
+        <Parameter docString="" id="212" isDefault="false" isUsed="true" name="fact: level-of-fill" type="int" value="0"/>
+        <Parameter docString="" id="213" isDefault="false" isUsed="true" name="fact: relative threshold" type="double" value="1"/>
+        <Parameter docString="" id="214" isDefault="false" isUsed="true" name="fact: relax value" type="double" value="0"/>
+        <Parameter docString="" id="215" isDefault="false" isUsed="true" name="fact: sparskit: alph" type="double" value="0"/>
+        <Parameter docString="" id="216" isDefault="false" isUsed="true" name="fact: sparskit: droptol" type="double" value="0"/>
+        <Parameter docString="" id="217" isDefault="false" isUsed="true" name="fact: sparskit: lfil" type="int" value="0"/>
+        <Parameter docString="" id="218" isDefault="false" isUsed="true" name="fact: sparskit: mbloc" type="int" value="-1"/>
+        <Parameter docString="" id="219" isDefault="false" isUsed="true" name="fact: sparskit: permtol" type="double" value="0.1"/>
+        <Parameter docString="" id="220" isDefault="false" isUsed="true" name="fact: sparskit: tol" type="double" value="0"/>
+        <Parameter docString="" id="221" isDefault="false" isUsed="true" name="fact: sparskit: type" type="string" value="ILUT"/>
+        <Parameter docString="" id="222" isDefault="false" isUsed="true" name="partitioner: local parts" type="int" value="1"/>
+        <Parameter docString="" id="223" isDefault="false" isUsed="true" name="partitioner: overlap" type="int" value="0"/>
+        <Parameter docString="" id="224" isDefault="false" isUsed="true" name="partitioner: print level" type="int" value="0"/>
+        <Parameter docString="" id="225" isDefault="false" isUsed="true" name="partitioner: type" type="string" value="greedy"/>
+        <Parameter docString="" id="226" isDefault="false" isUsed="true" name="partitioner: use symmetric graph" type="bool" value="true"/>
+        <Parameter docString="" id="227" isDefault="false" isUsed="true" name="relaxation: damping factor" type="double" value="1"/>
+        <Parameter docString="" id="228" isDefault="false" isUsed="true" name="relaxation: min diagonal value" type="double" value="1"/>
+        <Parameter docString="" id="229" isDefault="false" isUsed="true" name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter docString="" id="230" isDefault="false" isUsed="true" name="relaxation: type" type="string" value="Jacobi"/>
+        <Parameter docString="" id="231" isDefault="false" isUsed="true" name="relaxation: zero starting solution" type="bool" value="true"/>
+        <Parameter docString="" id="232" isDefault="false" isUsed="true" name="schwarz: combine mode" type="string" value="Zero"/>
+        <Parameter docString="" id="233" isDefault="false" isUsed="true" name="schwarz: compute condest" type="bool" value="true"/>
+        <Parameter docString="" id="234" isDefault="false" isUsed="true" name="schwarz: filter singletons" type="bool" value="false"/>
+        <Parameter docString="" id="235" isDefault="false" isUsed="true" name="schwarz: reordering type" type="string" value="none"/>
       </ParameterList>
-      <Parameter name="Overlap" type="int" value="0"/>
-      <Parameter name="Prec Type" type="string" value="ILU"/>
-      <ParameterList name="VerboseObject">
-        <Parameter name="Output File" type="string" value="none"/>
-        <Parameter name="Verbosity Level" type="string" value="default"/>
+      <Parameter docString="Number of rows/columns overlapped between subdomains in different
+processes in the additive Schwarz-type domain-decomposition preconditioners." id="237" isDefault="false" isUsed="true" name="Overlap" type="int" value="0"/>
+      <Parameter docString="Type of Ifpack preconditioner to use." id="238" isDefault="false" isUsed="true" name="Prec Type" type="string" validatorId="21" value="ILU"/>
+      <ParameterList id="241" name="VerboseObject">
+        <Parameter docString='The file to send output to.  If the value "none" is used, then
+whatever is set in code will be used.  However, any other std::string value
+will be used to create an std::ofstream object to a file with the given name.
+Therefore, any valid file name is a valid std::string value for this parameter.' id="239" isDefault="false" isUsed="true" name="Output File" type="string" value="none"/>
+        <Parameter docString='The verbosity level to use to override whatever is set in code.
+The value of "default" will allow the level set in code to be used.' id="240" isDefault="false" isUsed="true" name="Verbosity Level" type="string" validatorId="1" value="default"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="ML">
-      <Parameter name="Base Method Defaults" type="string" value="DD"/>
-      <ParameterList name="ML Settings">
-        <Parameter name="aggregation: damping factor" type="double" value="1.333"/>
-        <Parameter name="aggregation: edge prolongator drop threshold" type="double" value="0"/>
-        <Parameter name="aggregation: local aggregates" type="int" value="1"/>
-        <Parameter name="aggregation: next-level aggregates per process" type="int" value="128"/>
-        <Parameter name="aggregation: nodes per aggregate" type="int" value="512"/>
-        <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
-        <Parameter name="coarse: max size" type="int" value="128"/>
-        <Parameter name="coarse: pre or post" type="string" value="post"/>
-        <Parameter name="coarse: sweeps" type="int" value="1"/>
-        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-        <Parameter name="default values" type="string" value="maxwell"/>
-        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
-        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
-        <Parameter name="increasing or decreasing" type="string" value="decreasing"/>
-        <Parameter name="max levels" type="int" value="10"/>
-        <Parameter name="prec type" type="string" value="MGV"/>
-        <Parameter name="smoother: Aztec as solver" type="bool" value="false"/>
-        <Parameter name="smoother: Aztec options" type="any" value="Teuchos::RCP&lt;__gnu_debug_def::vector&lt;int, std::allocator&lt;int> > >{ptr=0x55de40,node=0x55df40,count=2}   [unused]"/>
-        <Parameter name="smoother: Aztec params" type="any" value="Teuchos::RCP&lt;__gnu_debug_def::vector&lt;double, std::allocator&lt;double> > >{ptr=0x55e140,node=0x55e920,count=2}   [unused]"/>
-        <Parameter name="smoother: Hiptmair efficient symmetric" type="bool" value="true"/>
-        <Parameter name="smoother: damping factor" type="double" value="1"/>
-        <Parameter name="smoother: pre or post" type="string" value="both"/>
-        <Parameter name="smoother: sweeps" type="int" value="1"/>
-        <Parameter name="smoother: type" type="string" value="Hiptmair"/>
-        <Parameter name="subsmoother: Chebyshev alpha" type="double" value="20"/>
-        <Parameter name="subsmoother: edge sweeps" type="int" value="4"/>
-        <Parameter name="subsmoother: node sweeps" type="int" value="4"/>
-        <Parameter name="subsmoother: type" type="string" value="Chebyshev"/>
+    <ParameterList id="273" name="ML">
+      <Parameter docString='Select the default method type which also sets parameter defaults
+in the sublist "ML Settings"!' id="243" isDefault="false" isUsed="true" name="Base Method Defaults" type="string" validatorId="22" value="DD"/>
+      <ParameterList id="272" name="ML Settings">
+        <Parameter docString="" id="244" isDefault="false" isUsed="true" name="aggregation: damping factor" type="double" value="1.333"/>
+        <Parameter docString="" id="245" isDefault="false" isUsed="true" name="aggregation: edge prolongator drop threshold" type="double" value="0"/>
+        <Parameter docString="" id="246" isDefault="false" isUsed="true" name="aggregation: local aggregates" type="int" value="1"/>
+        <Parameter docString="" id="247" isDefault="false" isUsed="true" name="aggregation: next-level aggregates per process" type="int" value="128"/>
+        <Parameter docString="" id="248" isDefault="false" isUsed="true" name="aggregation: nodes per aggregate" type="int" value="512"/>
+        <Parameter docString="" id="249" isDefault="false" isUsed="true" name="aggregation: type" type="string" value="Uncoupled-MIS"/>
+        <Parameter docString="" id="250" isDefault="false" isUsed="true" name="coarse: max size" type="int" value="128"/>
+        <Parameter docString="" id="251" isDefault="false" isUsed="true" name="coarse: pre or post" type="string" value="post"/>
+        <Parameter docString="" id="252" isDefault="false" isUsed="true" name="coarse: sweeps" type="int" value="1"/>
+        <Parameter docString="" id="253" isDefault="false" isUsed="true" name="coarse: type" type="string" value="Amesos-KLU"/>
+        <Parameter docString="" id="254" isDefault="false" isUsed="true" name="default values" type="string" value="maxwell"/>
+        <Parameter docString="" id="255" isDefault="false" isUsed="true" name="eigen-analysis: iterations" type="int" value="10"/>
+        <Parameter docString="" id="256" isDefault="false" isUsed="true" name="eigen-analysis: type" type="string" value="cg"/>
+        <Parameter docString="" id="257" isDefault="false" isUsed="true" name="increasing or decreasing" type="string" value="decreasing"/>
+        <Parameter docString="" id="258" isDefault="false" isUsed="true" name="max levels" type="int" value="10"/>
+        <Parameter docString="" id="259" isDefault="false" isUsed="true" name="prec type" type="string" value="MGV"/>
+        <Parameter docString="" id="260" isDefault="false" isUsed="true" name="smoother: Aztec as solver" type="bool" value="false"/>
+        <Parameter docString="" id="261" isDefault="false" isUsed="true" name="smoother: Aztec options" type="any" value="N7Teuchos3RCPIN15__gnu_debug_def6vectorIiSaIiEEEEE{ptr=0xcc25bc0,node=0xcc22890,count=2}"/>
+        <Parameter docString="" id="262" isDefault="false" isUsed="true" name="smoother: Aztec params" type="any" value="N7Teuchos3RCPIN15__gnu_debug_def6vectorIdSaIdEEEEE{ptr=0xcc265e0,node=0xcc25860,count=2}"/>
+        <Parameter docString="" id="263" isDefault="false" isUsed="true" name="smoother: Hiptmair efficient symmetric" type="bool" value="true"/>
+        <Parameter docString="" id="264" isDefault="false" isUsed="true" name="smoother: damping factor" type="double" value="1"/>
+        <Parameter docString="" id="265" isDefault="false" isUsed="true" name="smoother: pre or post" type="string" value="both"/>
+        <Parameter docString="" id="266" isDefault="false" isUsed="true" name="smoother: sweeps" type="int" value="1"/>
+        <Parameter docString="" id="267" isDefault="false" isUsed="true" name="smoother: type" type="string" value="Hiptmair"/>
+        <Parameter docString="" id="268" isDefault="false" isUsed="true" name="subsmoother: Chebyshev alpha" type="double" value="20"/>
+        <Parameter docString="" id="269" isDefault="false" isUsed="true" name="subsmoother: edge sweeps" type="int" value="4"/>
+        <Parameter docString="" id="270" isDefault="false" isUsed="true" name="subsmoother: node sweeps" type="int" value="4"/>
+        <Parameter docString="" id="271" isDefault="false" isUsed="true" name="subsmoother: type" type="string" value="Chebyshev"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
+  <Validators>
+    <Validator defaultParameterName="Linear Solver Type" integralValue="int" type="StringIntegralValidator(int)" validatorId="0">
+      <String integralValue="0" stringValue="Belos"/>
+      <String integralValue="1" stringValue="Amesos"/>
+      <String integralValue="2" stringValue="AztecOO"/>
+    </Validator>
+    <Validator defaultParameterName="Solver Type" integralValue="N5Thyra16EBelosSolverTypeE" type="StringIntegralValidator(N5Thyra16EBelosSolverTypeE)" validatorId="16">
+      <String integralValue="0" stringDoc='Performs block and single single-RHS GMRES as well as
+flexible GMRES by setting options in the "Block GMRES" sublist.' stringValue="Block GMRES"/>
+      <String integralValue="1" stringDoc="GMRES solver that performs single-RHS GMRES on multiple RHSs taking
+advantage of operator multi-vector multiplication and the amortization
+of global communication.  Individual linear systems are deflated out as
+they are solved." stringValue="Pseudo Block GMRES"/>
+      <String integralValue="2" stringDoc="CG solver that performs block and single-RHS CG." stringValue="Block CG"/>
+      <String integralValue="3" stringDoc="CG solver that performs single-RHS CG on multiple RHSs taking
+advantage of operator multi-vector multiplication and the amortization
+of global communication.  Individual linear systems are deflated out as
+they are solved." stringValue="Pseudo Block CG"/>
+      <String integralValue="4" stringDoc="GMRES solver that performs subspace recycling between RHS and linear systems." stringValue="GCRODR"/>
+      <String integralValue="5" stringDoc="CG solver that performs subspace recycling between RHS and linear systems." stringValue="RCG"/>
+      <String integralValue="6" stringDoc="MINRES solver that performs single-RHS MINRES on multiple RHSs sequentially." stringValue="MINRES"/>
+    </Validator>
+    <Validator max="1.79769e+308" min="0" precision="2" step="1" type="EnhancedNumberValidator(double)" validatorId="18"/>
+    <Validator max="2147483647" min="0" precision="0" step="1" type="EnhancedNumberValidator(int)" validatorId="19"/>
+    <Validator max="1" min="1" precision="0" step="1" type="EnhancedNumberValidator(int)" validatorId="17"/>
+    <Validator defaultParameterName="Verbosity Level" integralValue="N7Teuchos15EVerbosityLevelE" type="StringIntegralValidator(N7Teuchos15EVerbosityLevelE)" validatorId="1">
+      <String integralValue="-1" stringDoc="Use level set in code" stringValue="default"/>
+      <String integralValue="0" stringDoc="Produce no output" stringValue="none"/>
+      <String integralValue="1" stringDoc="Produce minimal output" stringValue="low"/>
+      <String integralValue="2" stringDoc="Produce a little more output" stringValue="medium"/>
+      <String integralValue="3" stringDoc="Produce a higher level of output" stringValue="high"/>
+      <String integralValue="4" stringDoc="Produce the highest level of output" stringValue="extreme"/>
+    </Validator>
+    <Validator defaultParameterName="Aztec Solver" integralValue="int" type="StringIntegralValidator(int)" validatorId="3">
+      <String integralValue="0" stringValue="CG"/>
+      <String integralValue="1" stringValue="GMRES"/>
+      <String integralValue="2" stringValue="CGS"/>
+      <String integralValue="3" stringValue="TFQMR"/>
+      <String integralValue="4" stringValue="BiCGStab"/>
+      <String integralValue="10" stringValue="LU"/>
+      <String integralValue="7" stringValue="GMRESR"/>
+    </Validator>
+    <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="int" type="anynumberValidator" validatorId="11"/>
+    <Validator defaultParameterName="Aztec Preconditioner" integralValue="N141_GLOBAL__N__home_rabartl_PROJECTS_Trilinos.base_Trilinos_packages_stratimikos_adapters_aztecoo_src_AztecOOParameterList.cpp_00000000_F7B7D86920EAztecPreconditionerE" type="StringIntegralValidator(N141_GLOBAL__N__home_rabartl_PROJECTS_Trilinos.base_Trilinos_packages_stratimikos_adapters_aztecoo_src_AztecOOParameterList.cpp_00000000_F7B7D86920EAztecPreconditionerE)" validatorId="2">
+      <String integralValue="0" stringValue="none"/>
+      <String integralValue="1" stringValue="ilu"/>
+      <String integralValue="2" stringValue="ilut"/>
+      <String integralValue="3" stringValue="Jacobi"/>
+      <String integralValue="4" stringValue="Symmetric Gauss-Seidel"/>
+      <String integralValue="5" stringValue="Polynomial"/>
+      <String integralValue="6" stringValue="Least-squares Polynomial"/>
+    </Validator>
+    <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="int" type="anynumberValidator" validatorId="7"/>
+    <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="double" type="anynumberValidator" validatorId="5"/>
+    <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="double" type="anynumberValidator" validatorId="6"/>
+    <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="int" type="anynumberValidator" validatorId="15"/>
+    <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="int" type="anynumberValidator" validatorId="12"/>
+    <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="int" type="anynumberValidator" validatorId="14"/>
+    <Validator defaultParameterName="RCM Reordering" integralValue="int" type="StringIntegralValidator(int)" validatorId="13">
+      <String integralValue="1" stringValue="Enabled"/>
+      <String integralValue="0" stringValue="Disabled"/>
+    </Validator>
+    <Validator defaultParameterName="Orthogonalization" integralValue="int" type="StringIntegralValidator(int)" validatorId="9">
+      <String integralValue="0" stringValue="Classical"/>
+      <String integralValue="1" stringValue="Modified"/>
+    </Validator>
+    <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="double" type="anynumberValidator" validatorId="8"/>
+    <Validator defaultParameterName="Convergence Test" integralValue="int" type="StringIntegralValidator(int)" validatorId="4">
+      <String integralValue="0" stringValue="r0"/>
+      <String integralValue="1" stringValue="rhs"/>
+      <String integralValue="2" stringValue="Anorm"/>
+      <String integralValue="6" stringValue="no scaling"/>
+      <String integralValue="3" stringValue="sol"/>
+    </Validator>
+    <Validator allowDouble="true" allowInt="true" allowString="true" prefferedType="int" type="anynumberValidator" validatorId="10"/>
+    <Validator defaultParameterName="Base Method Defaults" integralValue="N145_GLOBAL__N__home_rabartl_PROJECTS_Trilinos.base_Trilinos_packages_stratimikos_adapters_ml_src_Thyra_MLPreconditionerFactory.cpp_00000000_2C35747714EMLProblemTypeE" type="StringIntegralValidator(N145_GLOBAL__N__home_rabartl_PROJECTS_Trilinos.base_Trilinos_packages_stratimikos_adapters_ml_src_Thyra_MLPreconditionerFactory.cpp_00000000_2C35747714EMLProblemTypeE)" validatorId="22">
+      <String integralValue="0" stringDoc="Do not set any default parameters" stringValue="none"/>
+      <String integralValue="1" stringDoc="Set default parameters for a smoothed aggregation method" stringValue="SA"/>
+      <String integralValue="2" stringDoc="Set default parameters for a domain decomposition method" stringValue="DD"/>
+      <String integralValue="3" stringDoc="Set default parameters for a domain decomposition method special to ML" stringValue="DD-ML"/>
+      <String integralValue="4" stringDoc="Set default parameters for a Maxwell-type of linear operator" stringValue="maxwell"/>
+    </Validator>
+    <Validator defaultParameterName="Preconditioner Type" integralValue="int" type="StringIntegralValidator(int)" validatorId="20">
+      <String integralValue="0" stringValue="None"/>
+      <String integralValue="1" stringValue="ML"/>
+      <String integralValue="2" stringValue="Ifpack"/>
+    </Validator>
+    <Validator defaultParameterName="Prec Type" integralValue="N6Ifpack9EPrecTypeE" type="StringIntegralValidator(N6Ifpack9EPrecTypeE)" validatorId="21">
+      <String integralValue="0" stringValue="point relaxation"/>
+      <String integralValue="1" stringValue="point relaxation stand-alone"/>
+      <String integralValue="2" stringValue="block relaxation"/>
+      <String integralValue="3" stringValue="block relaxation stand-alone"/>
+      <String integralValue="4" stringValue="block relaxation stand-alone (ILU)"/>
+      <String integralValue="5" stringValue="block relaxation stand-alone (Amesos)"/>
+      <String integralValue="6" stringValue="block relaxation (Amesos)"/>
+      <String integralValue="7" stringValue="Amesos"/>
+      <String integralValue="8" stringValue="Amesos stand-alone"/>
+      <String integralValue="9" stringValue="IC"/>
+      <String integralValue="10" stringValue="IC stand-alone"/>
+      <String integralValue="11" stringValue="ICT"/>
+      <String integralValue="12" stringValue="ICT stand-alone"/>
+      <String integralValue="13" stringValue="ILU"/>
+      <String integralValue="14" stringValue="ILU stand-alone"/>
+      <String integralValue="15" stringValue="ILUT"/>
+      <String integralValue="16" stringValue="ILUT stand-alone"/>
+      <String integralValue="17" stringValue="Chebyshev"/>
+      <String integralValue="18" stringValue="IHSS"/>
+      <String integralValue="19" stringValue="SORa"/>
+    </Validator>
+  </Validators>
 </ParameterList>
 

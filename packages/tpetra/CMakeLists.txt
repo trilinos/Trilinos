@@ -57,13 +57,6 @@ ADD_OPTION_AND_DEFINE(
   )
 
 ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_BUILD_CXX0X
-  HAVE_TPETRA_CXX0X
-  "Enable Tpetra components requiring support for draft C++-0x"
-  NO
-  )
-
-ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_FLOAT
   HAVE_TPETRA_INST_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field float."

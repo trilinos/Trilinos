@@ -166,9 +166,7 @@ bool use_case_2_driver( MPI_Comm comm ,
 
     //------------------------------------------------------------------
 
-    int numProcs=1, myProc=0;
-    MPI_Comm_size(comm, &numProcs);
-    MPI_Comm_rank(comm, &myProc);
+    const unsigned myProc = mesh_bulk_data.parallel_rank();
 
     stk::linsys::DofMapper dof_mapper(comm);
 

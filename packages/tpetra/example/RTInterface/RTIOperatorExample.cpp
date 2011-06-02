@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
   else {
     colmap = map;
   }
-  auto importer = makeImport(map,colmap);
+  auto importer = createImport(map,colmap);
   // Finite-difference kernel = tridiag(-1, 2, -1)
   FDStencil<double> kern(myImageID, numImages, map->getNodeNumElements(), -1.0, 2.0, -1.0);
   auto FDStencilOp = Tpetra::RTI::kernelOp<double>( kern, map, map, importer );

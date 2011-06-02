@@ -73,30 +73,35 @@ class EpetraMapColoringTestCase(unittest.TestCase):
     def testConstructor0(self):
         "Test Epetra.MapColoring BlockMap constructor"
         mc = Epetra.MapColoring(self.map)
-        self.assertEqual(isinstance(mc,Epetra.MapColoring), True)
+        self.assertEqual(mc.Label(),                        "Epetra::MapColoring")
+        self.assertEqual(isinstance(mc,Epetra.MapColoring), True                 )
 
     def testConstructor1(self):
         "Test Epetra.MapColoring (BlockMap,int) constructor"
         mc = Epetra.MapColoring(self.map,8)
-        self.assertEqual(isinstance(mc,Epetra.MapColoring), True)
+        self.assertEqual(mc.Label(),                        "Epetra::MapColoring")
+        self.assertEqual(isinstance(mc,Epetra.MapColoring), True                 )
 
     def testConstructor2(self):
         "Test Epetra.MapColoring (BlockMap,array) constructor"
         colors = range(self.map.NumMyElements())
-        mc = Epetra.MapColoring(self.map,colors)
-        self.assertEqual(isinstance(mc,Epetra.MapColoring), True)
+        mc = Epetra.MapColoring(self.map, colors)
+        self.assertEqual(mc.Label(),                        "Epetra::MapColoring")
+        self.assertEqual(isinstance(mc,Epetra.MapColoring), True                 )
 
     def testConstructor3(self):
         "Test Epetra.MapColoring (BlockMap,array,int) constructor"
         colors = range(self.map.NumMyElements())
-        mc = Epetra.MapColoring(self.map,colors,31)
-        self.assertEqual(isinstance(mc,Epetra.MapColoring), True)
+        mc = Epetra.MapColoring(self.map,colors, 31)
+        self.assertEqual(mc.Label(),                        "Epetra::MapColoring")
+        self.assertEqual(isinstance(mc,Epetra.MapColoring), True                 )
 
     def testConstructor4(self):
         "Test Epetra.MapColoring copy constructor"
         mc1 = Epetra.MapColoring(self.map)
         mc2 = Epetra.MapColoring(mc1)
-        self.assertEqual(isinstance(mc2,Epetra.MapColoring), True)
+        self.assertEqual(mc2.Label(),                        mc1.Label())
+        self.assertEqual(isinstance(mc2,Epetra.MapColoring), True       )
 
     def testSetGet(self):
         "Test Epetra.MapColoring set/get methods"
@@ -207,7 +212,12 @@ if __name__ == "__main__":
     verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
-    # Exit with a code that indicates the total number of errors and failures
+    # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)

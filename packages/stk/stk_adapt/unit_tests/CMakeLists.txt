@@ -9,6 +9,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     adapt_UnitTest
     SOURCES ${SOURCES}
     COMM serial mpi
-    NUM_MPI_PROCS 1-3
+    NUM_MPI_PROCS 1-2
     STANDARD_PASS_OUTPUT
     )

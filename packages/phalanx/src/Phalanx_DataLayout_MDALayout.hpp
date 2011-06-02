@@ -103,6 +103,10 @@ namespace PHX {
 
     virtual void dimensions(std::vector<size_type>& dim) const; 
 
+    virtual std::string name(size_type ordinal) const;
+
+    virtual void names(std::vector<std::string>& names) const; 
+
     virtual size_type size() const;
 
     virtual std::string identifier() const;

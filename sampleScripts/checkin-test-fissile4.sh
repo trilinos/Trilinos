@@ -26,7 +26,11 @@ fi
 
 TRILINOS_BASE_DIR_ABS=$(readlink -f $TRILINOS_BASE_DIR)
 
-EXTRA_REPOS_FULL_LIST="CASLBOA CASLRAVE LIMEExt PSSDriversExt"
+# Must be in the correct order (see ExtraExternalRepositories.casl_vri.cmake)
+EXTRA_REPOS_FULL_LIST="StartCCMExt DeCARTExt CASLBOA CASLRAVE LIMEExt PSSDriversExt"
+
+# Pakage in Trilinos to disable (mostly for auotmated CI server)
+DISABLE_PACKAGES=PyTrilinos,TriKota,Optika,Sundance,Stokhos,STK
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/gcc-4.5.1-mpi-options.cmake
@@ -86,10 +90,15 @@ done
 
 $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --extra-repos=$EXTRA_REPOS \
--j16 \
+-j8 \
 --ctest-timeout=180 \
+--disable-packages=$DISABLE_PACKAGES \
+--ctest-options="-E '(Ifpack_BlockCheby_MPI_4)'" \
 $EXTRA_ARGS  
 
-# NOTE: By default we use 16 processes which is 1/2 of the 32
-# processes on this machine.  This way two people can build and test
+# NOTE: By default we use 8 processes which is 1/4 of the 32 processes
+# on a fissile 4 machine.  This way four people can build and test
 # Trilinos without taxing the machine too much.
+
+# The above the test Ifpack_BlockCheby_MPI_4 is disabled becuses they
+# have checked STL errors (see bugs 5203 and 5204).

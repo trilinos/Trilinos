@@ -99,6 +99,11 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_JadMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVbrMatrix.h"
+#include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDenseSolver.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
 
 // Epetra python includes
 #define NO_IMPORT_ARRAY
@@ -236,10 +241,10 @@ __version__ = Version().split()[3]
     os << *self;
     return os.str();
   }
-  void __del__()
-  {
-    delete self;
-  }
+  //void __del__()
+  //{
+  //  delete self;
+  //}
 }
 
 ///////////////////////

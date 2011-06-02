@@ -328,7 +328,9 @@ int Ifpack_ILU::Compute()
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal
 
+#ifdef IFPACK_FLOPCOUNTERS
   int current_madds = 0; // We will count multiply-add as they happen
+#endif
 
   // =========================== //
   // Now start the factorization //
@@ -375,7 +377,9 @@ int Ifpack_ILU::Compute()
 	  int kk = colflag[UUI[k]];
 	  if (kk>-1) {
 	    InV[kk] -= multiplier*UUV[k];
+#ifdef IFPACK_FLOPCOUNTERS
 	    current_madds++;
+#endif
 	  }
 	}
       }
@@ -384,7 +388,9 @@ int Ifpack_ILU::Compute()
 	  int kk = colflag[UUI[k]];
 	  if (kk>-1) InV[kk] -= multiplier*UUV[k];
 	  else diagmod -= multiplier*UUV[k];
+#ifdef IFPACK_FLOPCOUNTERS
 	  current_madds++;
+#endif
 	}
       }
      }
@@ -423,6 +429,7 @@ int Ifpack_ILU::Compute()
   if (!U_->UpperTriangular()) 
     IFPACK_CHK_ERR(-4);
   
+#ifdef IFPACK_FLOPCOUNTERS
   // Add up flops
  
   double current_flops = 2 * current_madds;
@@ -437,6 +444,7 @@ int Ifpack_ILU::Compute()
 
   // add to this object's counter
   ComputeFlops_ += total_flops;
+#endif
   
   IsComputed_ = true;
   NumCompute_++;
@@ -550,8 +558,10 @@ int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
   IFPACK_CHK_ERR(Solve(Ifpack_ILU::UseTranspose(), *Xcopy, Y));
 
   // approx is the number of nonzeros in L and U
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += X.NumVectors() * 4 * 
     (L_->NumGlobalNonzeros() + U_->NumGlobalNonzeros());
+#endif
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_.ElapsedTime();

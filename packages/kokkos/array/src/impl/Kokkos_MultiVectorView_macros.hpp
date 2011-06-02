@@ -79,14 +79,14 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator == ( const MultiVectorView & rhs ) const
   {
-    return m_ptr_on_device == rhs.m_ptr_on_device && m_length == rhs.m_length ;
+    return m_ptr_on_device == rhs.m_ptr_on_device && m_count == rhs.m_count ;
   }
   
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   bool operator != ( const MultiVectorView & rhs ) const
   {
-    return m_ptr_on_device != rhs.m_ptr_on_device || m_length != rhs.m_length ;
+    return m_ptr_on_device != rhs.m_ptr_on_device || m_count != rhs.m_count ;
   }
   
   /*------------------------------------------------------------------*/

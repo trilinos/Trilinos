@@ -375,8 +375,10 @@ void Relaxation<MatrixType>::compute()
   // from Y2 (to save some time).
   //
   if (IsParallel_ && ((PrecType_ == Ifpack2::GS) || (PrecType_ == Ifpack2::SGS))) {
-    Importer_ = Teuchos::rcp( new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(A_->getColMap(),
-                                  A_->getRowMap()) );
+    Importer_ = Teuchos::rcp( new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(A_->getDomainMap(),
+										  A_->getColMap()) );
+
+
     TEST_FOR_EXCEPTION(Importer_ == Teuchos::null, std::runtime_error,
       "Ifpack2::Relaxation::compute ERROR failed to create Importer_");
   }
@@ -717,10 +719,11 @@ void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
   Teuchos::ArrayRCP<const Scalar> d_ptr = Diagonal_->get1dView();
   
   for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
-    
+
     // only one data exchange per sweep
     if (IsParallel_)
       Y2->doImport(Y,*Importer_,Tpetra::INSERT);
+
 
     for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
 

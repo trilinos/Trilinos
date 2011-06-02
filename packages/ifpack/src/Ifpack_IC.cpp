@@ -261,6 +261,7 @@ int Ifpack_IC::Compute() {
   U_->FillComplete(A_->OperatorDomainMap(), A_->OperatorRangeMap());
   D_->Reciprocal(*D_); // Put reciprocal of diagonal in this vector
   
+#ifdef IFPACK_FLOPCOUNTERS
   double current_flops = 2 * nz; // Just an estimate
   double total_flops = 0;
   
@@ -270,6 +271,7 @@ int Ifpack_IC::Compute() {
   // Now count the rest. NOTE: those flops are *global*
   ComputeFlops_ += (double) U_->NumGlobalNonzeros(); // Accounts for multiplier above
   ComputeFlops_ += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
+#endif
   
   IsComputed_ = true;
   
@@ -305,8 +307,10 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
   U_->Solve(Upper, false, UnitDiagonal, Y, Y); // Solve Uy = y
   
     ++NumApplyInverse_;
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += 4.0 * U_->NumGlobalNonzeros();
   ApplyInverseFlops_ += D_->GlobalLength();
+#endif
   return(0);
 
 }

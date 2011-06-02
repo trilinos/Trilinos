@@ -30,17 +30,17 @@
 # @HEADER
 
 """
-Usage is: ./exSolvers.py <options> <solver-type>
+Usage is: ./exAmesos_Solvers.py <options> <solver-type>
     where <options> can be
         -t, --testharness    Force testing of local build modules
     where <solver-type> can be:
-        Amesos_Lapack (DEFAULT)
-        Amesos_Klu
-        Amesos_Umfpack
-        Amesos_Superlu
-        Amesos_Superludist
-        Amesos_Dscpack
-        Amesos_Mumps
+        Lapack (DEFAULT)
+        Klu
+        Umfpack
+        Superlu
+        Superludist
+        Dscpack
+        Mumps
 """
 
 #
@@ -69,85 +69,95 @@ Amesos = fromPyTrilinosImport('Amesos', options.testharness)
 ######################################################################
 
 def main():
-    Comm = Epetra.PyComm()
-    numProc = Comm.NumProc()
-    iAmRoot = Comm.MyPID() == 0
+    comm = Epetra.PyComm()
+    numProc = comm.NumProc()
+    iAmRoot = comm.MyPID() == 0
 
-    #args = sys.argv[1:]
     if len(args) == 0:
-        Type = "Amesos_Lapack"
+        type = "Lapack"
     else:
-        Type = args[0]
+        type = args[0]
 
-    NumGlobalRows = 10
-    Map           = Epetra.Map(NumGlobalRows, 0, Comm)
-    LHS_exact     = Epetra.MultiVector(Map, 1)
-    LHS           = Epetra.MultiVector(Map, 1)
-    RHS           = Epetra.MultiVector(Map, 1)
-    Matrix        = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
-    NumLocalRows  = Map.NumMyElements()
+    numGlobalRows = 10
+    map           = Epetra.Map(numGlobalRows, 0, comm)
+    LHS_exact     = Epetra.MultiVector(map, 1)
+    LHS           = Epetra.MultiVector(map, 1)
+    RHS           = Epetra.MultiVector(map, 1)
+    matrix        = Epetra.CrsMatrix(Epetra.Copy, map, 0)
+    numLocalRows  = map.NumMyElements()
 
     # Builds the matrix (1D Laplacian)
-    for ii in range(0, NumLocalRows):
-        i = Map.GID(ii)
-        Indices = [ i ]
-        Values  = [2.0]
+    for ii in range(0, numLocalRows):
+        i = map.GID(ii)
+        indices = [ i ]
+        values  = [2.0]
         if i > 0:
-          Indices.append(i-1)
-          Values.append(-1)
-        elif i < NumGlobalRows - 1:
-          Indices.append(i+1)
-          Values.append(-1)
-        Matrix.InsertGlobalValues(i, Values, Indices)
-    ierr = Matrix.FillComplete()
+          indices.append(i-1)
+          values.append(-1)
+        elif i < numGlobalRows - 1:
+          indices.append(i+1)
+          values.append(-1)
+        matrix.InsertGlobalValues(i, values, indices)
+    matrix.FillComplete()
 
     LHS_exact.Random()
-    Matrix.Multiply(False, LHS_exact, RHS)
+    matrix.Multiply(False, LHS_exact, RHS)
     LHS.PutScalar(1.0)
 
-    Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
+    problem = Epetra.LinearProblem(matrix, LHS, RHS)
 
-    if Type == "Amesos_Lapack":
-        Solver = Amesos.Lapack(Problem)
-    elif Type == "Amesos_Klu":
-        Solver = Amesos.Klu(Problem)
-    elif Type == "Amesos_Umfpack":
-        Solver = Amesos.Umfpack(Problem)
-    elif Type == "Amesos_Superlu":
-        Solver = Amesos.Superlu(Problem)
-    elif Type == "Amesos_Superludist":
-        Solver = Amesos.Superludist(Problem)
-    elif Type == "Amesos_Dscpack":
-        Solver = Amesos.Dscpack(Problem)
-    elif Type == "Amesos_Mumps":
-        Solver = Amesos.Mumps(Problem)
+    if type == "Lapack":
+        solver = Amesos.Lapack(problem)
+    elif type == "Klu":
+        solver = Amesos.Klu(problem)
+    elif type == "Umfpack":
+        solver = Amesos.Umfpack(problem)
+    elif type == "Superlu":
+        solver = Amesos.Superlu(problem)
+    elif type == "Superludist":
+        solver = Amesos.Superludist(problem)
+    elif type == "Dscpack":
+        solver = Amesos.Dscpack(problem)
+    elif type == "Mumps":
+        solver = Amesos.Mumps(problem)
     else:
-        print 'Selected solver (%s) not available' % Type
+        print 'Selected solver (%s) not available' % type
         print __doc__
         sys.exit(-2)
 
-    AmesosList = {"PrintStatus": True,
-                  "PrintTiming": True
-                  }
-    Solver.SetParameters(AmesosList)
-    if Comm.MyPID() == 0:
-        print "1) Performing symbolic factorizations..."
-    Solver.SymbolicFactorization()
-    if Comm.MyPID() == 0:
-        print "2) Performing numeric factorizations..."
-    Solver.NumericFactorization()
-    if Comm.MyPID() == 0:
-        print "3) Solving the linear system..."
-    ierr = Solver.Solve()
-    if Comm.MyPID() == 0:
-        print "   Solver.Solve() return code = ", ierr
+    print solver
 
-    del Solver
+    # Set the solver parameters
+    #amesosList = {"PrintStatus": True,
+    #              "PrintTiming": True
+    #              }
+    #solver.SetParameters(amesosList)
+
+    # Perform the symbolic factorizations
+    if iAmRoot:
+        print "1) Performing symbolic factorizations..."
+    solver.SymbolicFactorization()
+
+    # Perform the numeric factorizations
+    if iAmRoot:
+        print "2) Performing numeric factorizations..."
+    solver.NumericFactorization()
+
+    # Solve the linear system
+    if iAmRoot:
+        print "3) Solving the linear system..."
+    ierr = solver.Solve()
+
+    # Output the return code
+    if iAmRoot:
+        print "   solver.Solve() return code = ", ierr
+
+    #del solver
 
     # Exit with a code that indicates the total number of successes
-    successes = Comm.SumAll(1)
-    if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
-    sys.exit(numProc-successes)
+    failures = comm.SumAll(ierr)
+    if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(failures)
 
 if __name__ == "__main__":
     main()

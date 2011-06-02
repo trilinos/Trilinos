@@ -7,20 +7,33 @@
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
 //
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // ***********************************************************************
@@ -1541,6 +1554,50 @@ public:
   
 };
 
+template<class ValidatorType, class EntryType>
+class AbstractArrayValidator : public ParameterEntryValidator {
+
+public:
+
+  AbstractArrayValidator(RCP<const ValidatorType> prototypeValidator):
+    ParameterEntryValidator(),
+    prototypeValidator_(prototypeValidator){}
+
+  /** \name Getter Functions */
+  //@{
+
+  /** \brief Returns the prototype validator for this Array Validator */
+  RCP<const ValidatorType> getPrototype() const{
+    return prototypeValidator_;
+  }
+
+  //@}
+
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
+
+  /** \brief . */
+  ValidStringsList validStringValues() const {
+    return prototypeValidator_->validStringValues();
+  }
+
+  //@}
+
+private:
+
+  /** \name Private Members */
+  //@{
+
+  /** \brief The prototype validator to be applied to each entry in the Array.
+   */
+  RCP<const ValidatorType> prototypeValidator_;
+
+  /** \brief Hidden default constructor. */
+  AbstractArrayValidator<ValidatorType, EntryType>();
+  
+  //@}
+
+};
 
 /** \brief Takes a validator, wraps it, and applies it to an array.
  *
@@ -1552,7 +1609,7 @@ public:
  * regarding the XML representation of this validator.
  */
 template<class ValidatorType, class EntryType>
-class ArrayValidator : public ParameterEntryValidator {
+class ArrayValidator : public AbstractArrayValidator<ValidatorType, EntryType>{
 
 public:
 
@@ -1565,28 +1622,12 @@ public:
    * entry in the array.
    */
   ArrayValidator(RCP<const ValidatorType> prototypeValidator):
-    ParameterEntryValidator(),
-      prototypeValidator_(prototypeValidator){}
-  
-  //@}
-
-  /** \name Getter Functions */
-  //@{
-
-  /** \brief Returns the protorype validator for this Array Validator */
-  RCP<const ValidatorType> getPrototype() const{
-    return prototypeValidator_;
-  }
+    AbstractArrayValidator<ValidatorType, EntryType>(prototypeValidator){}
   
   //@}
 
   /** \name Overridden from ParameterEntryValidator */
   //@{
-
-  /** \brief . */
-  ValidStringsList validStringValues() const {
-    return prototypeValidator_->validStringValues();
-  }
 
   /** \brief . */
   virtual void validate(ParameterEntry const &entry, std::string const &paramName,
@@ -1595,7 +1636,7 @@ public:
   /** \brief . */
   const std::string getXMLTypeName() const{
     return "ArrayValidator(" + 
-      prototypeValidator_->getXMLTypeName() + ", " +
+      this->getPrototype()->getXMLTypeName() + ", " +
       TypeNameTraits<EntryType>::name() + ")";
   }
 
@@ -1606,22 +1647,8 @@ public:
     std::string toPrint;
     toPrint += "ArrayValidator:\n";
     toPrint += "Prototype Validator:\n";
-    prototypeValidator_->printDoc(toPrint, out);
+    this->getPrototype()->printDoc(toPrint, out);
   }
-  
-  //@}
-
-private:
-
-  /** \name Private Members */
-  //@{
-  
-  /** \brief The prototype validator to be applied to each entry in the Array.
-   */
-  RCP<const ValidatorType> prototypeValidator_;
-
-  /** \brief Hidden default constructor. */
-  ArrayValidator<ValidatorType, EntryType>();
   
   //@}
 
@@ -1651,11 +1678,12 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
 
   Array<EntryType> extracted = 
     getValue<Teuchos::Array<EntryType> >(entry);
+  RCP<const ParameterEntryValidator> prototype = this->getPrototype();
   for(int i = 0; i<extracted.size(); ++i){
     ParameterEntry dummyParameter;
     dummyParameter.setValue(extracted[i]);
     try{
-      prototypeValidator_->validate(
+      prototype->validate(
         dummyParameter, paramName, sublistName);
     }
     catch(Exceptions::InvalidParameterValue& e){
@@ -1768,6 +1796,7 @@ public:
   //@}
   
 };
+
 
 
 // ///////////////////////////

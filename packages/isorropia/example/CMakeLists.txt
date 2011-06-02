@@ -41,3 +41,15 @@ PACKAGE_ADD_EXECUTABLE(
   DEPLIBS isorropia_test_utils
   COMM serial mpi
   )
+PACKAGE_ADD_EXECUTABLE(
+  parallel_matching
+  SOURCES parallel_matching.cpp
+  DEPLIBS isorropia_test_utils
+  COMM serial mpi
+  )
+PACKAGE_ADD_EXECUTABLE(
+  probe_tridiag
+  SOURCES probe_tridiag.cpp
+  DEPLIBS isorropia_test_utils
+  COMM mpi
+  )

@@ -790,11 +790,16 @@ namespace Belos {
     
     // Print final summary of the solution process
     sTest_->print( printer_->stream(FinalSummary) );
- 
+
+    // Print timing information, if the corresponding compile-time and
+    // run-time options are enabled.
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    // Print timing information
-    Teuchos::TimeMonitor::summarize (printer_->stream (TimingDetails));
-#endif
+    // Calling summarize() can be expensive, so don't call unless the
+    // user wants to print out timing details.  summarize() will do all
+    // the work even if it's passed a "black hole" output stream.
+    if (verbosity_ & TimingDetails)
+      Teuchos::TimeMonitor::summarize (printer_->stream (TimingDetails));
+#endif // BELOS_TEUCHOS_TIME_MONITOR
  
     if (notConverged.size() > 0)
       return Unconverged;

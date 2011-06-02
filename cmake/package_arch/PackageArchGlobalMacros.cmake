@@ -34,10 +34,10 @@ MACRO(PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE)
     "Name of an optional file that is included first to define any cmake options with SET( ... CACHE ...) calls."
     )
 
-  IF (${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE)
-    MESSAGE("Reading in configuration options from ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE} ...")
-    INCLUDE(${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE})
-  ENDIF()
+  FOREACH (CONFIG_OPTS_FILE ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE})
+    MESSAGE("Reading in configuration options from ${CONFIG_OPTS_FILE} ...")
+    INCLUDE(${CONFIG_OPTS_FILE})
+  ENDFOREACH()
 
 
 ENDMACRO()
@@ -119,6 +119,15 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     )
   
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
+  
+  ADVANCED_SET(TPL_FIND_SHARED_LIBS ON CACHE BOOL
+    "If ON, then the TPL system will find shared libs if the exist, otherwise will only find static libs." )
+
+  IF ("${CMAKE_VERSION}" VERSION_GREATER "2.8.4")
+    #MESSAGE("This is CMake 2.8.5!")
+    ADVANCED_SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC OFF CACHE BOOL
+      "If on, then the properter LINK_SEARCH_START_STATIC will be added to all executables." )
+  ENDIF()
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
     CACHE PATH
@@ -636,49 +645,66 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   # by the unit test driver code
   SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
+  SET(EXTRAREPO_IDX 0)
   FOREACH(EXTRA_REPO ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
 
     #PRINT_VAR(EXTRA_REPO)
 
-    # Read in the add-on packages from the extra repo
+    LIST(GET Trilinos_EXTRA_REPOSITORIES_PACKSTATS ${EXTRAREPO_IDX}
+      EXTRAREPO_PACKSTAT )
 
-    SET(EXTRAREPO_PACKAGES_FILE
-      "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
 
-    MESSAGE("")
-    MESSAGE("Reading a list of extra packages from ${EXTRAREPO_PACKAGES_FILE} ... ")
-    MESSAGE("")
-
-    IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
-      MESSAGE(
-        "\n***"
-        "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_PACKAGES_FILE}' on request!"
-        "\n***\n")
+    IF (EXTRAREPO_PACKSTAT STREQUAL NOPACKAGES)
+        
+      MESSAGE("")
+      MESSAGE("Skipping reading packages and TPLs for extra repo ${EXTRA_REPO} because marked NOPACKAGES ... ")
+      MESSAGE("")
+  
     ELSE()
-      INCLUDE("${EXTRAREPO_PACKAGES_FILE}")  # Writes the variable ???
-      SET(APPEND_TO_PACKAGES_LIST TRUE)
-      PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()  # Reads the variable ???
+
+      # Read in the add-on packages from the extra repo
+  
+      SET(EXTRAREPO_PACKAGES_FILE
+        "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
+  
+      MESSAGE("")
+      MESSAGE("Reading a list of extra packages from ${EXTRAREPO_PACKAGES_FILE} ... ")
+      MESSAGE("")
+  
+      IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+        MESSAGE(
+          "\n***"
+          "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_PACKAGES_FILE}' on request!"
+          "\n***\n")
+      ELSE()
+        INCLUDE("${EXTRAREPO_PACKAGES_FILE}")  # Writes the variable ???
+        SET(APPEND_TO_PACKAGES_LIST TRUE)
+        PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()  # Reads the variable ???
+      ENDIF()
+  
+      # Read in the add-on TPLs from the extra repo
+  
+      SET(EXTRAREPO_TPLS_FILE
+        "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
+  
+      MESSAGE("")
+      MESSAGE("Reading a list of extra TPLs from ${EXTRAREPO_TPLS_FILE} ... ")
+      MESSAGE("")
+  
+      IF (NOT EXISTS "${EXTRAREPO_TPLS_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+        MESSAGE(
+          "\n***"
+          "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_TPLS_FILE}' on request!"
+          "\n***\n")
+      ELSE()
+        INCLUDE("${EXTRAREPO_TPLS_FILE}")  # Writes the varaible ???
+        SET(APPEND_TO_TPLS_LIST TRUE)
+        PACKAGE_ARCH_PROCESS_TPLS_LISTS()  # Reads the variable ???
+      ENDIF()
+
     ENDIF()
-
-    # Read in the add-on TPLs from the extra repo
-
-    SET(EXTRAREPO_TPLS_FILE
-      "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
-
-    MESSAGE("")
-    MESSAGE("Reading a list of extra TPLs from ${EXTRAREPO_TPLS_FILE} ... ")
-    MESSAGE("")
-
-    IF (NOT EXISTS "${EXTRAREPO_TPLS_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
-      MESSAGE(
-        "\n***"
-        "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_TPLS_FILE}' on request!"
-        "\n***\n")
-    ELSE()
-      INCLUDE("${EXTRAREPO_TPLS_FILE}")  # Writes the varaible ???
-      SET(APPEND_TO_TPLS_LIST TRUE)
-      PACKAGE_ARCH_PROCESS_TPLS_LISTS()  # Reads the variable ???
-    ENDIF()
+  
+    MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
 
   ENDFOREACH()
 
@@ -988,6 +1014,12 @@ MACRO(PACKAGE_ARCH_ADD_DASHBOARD_TARGET)
 
     ADVANCED_SET(${PROJECT_NAME}_DASHBOARD_CTEST_ARGS "" CACHE STRING
       "Extra arguments to pass to CTest when calling 'ctest -S' to run the 'dashboard' make target." )
+
+    ADVANCED_SET(CTEST_BUILD_FLAGS "" CACHE STRING
+      "Sets CTEST_BUILD_FLAGS on the env before invoking 'ctest -S'." )
+
+    ADVANCED_SET(CTEST_PARALLEL_LEVEL "" CACHE STRING
+      "Sets CTEST_PARALLEL_LEVEL on the env before invoking 'ctest -S'." )
   
     # H.1) Enable all packages that are enabled and have tests enabled
   
@@ -1010,6 +1042,18 @@ MACRO(PACKAGE_ARCH_ADD_DASHBOARD_TARGET)
     SET(EXPR_CMND_ARGS)
     IF (${PROJECT_NAME}_ENABLE_COVERAGE_TESTING)
       APPEND_SET(EXPR_CMND_ARGS "CTEST_DO_COVERAGE_TESTING=TRUE")
+    ENDIF()
+    IF (CTEST_BUILD_FLAGS)
+      APPEND_SET(EXPR_CMND_ARGS "CTEST_BUILD_FLAGS='${CTEST_BUILD_FLAGS}'")
+    ENDIF()
+    IF (CTEST_PARALLEL_LEVEL)
+      APPEND_SET(EXPR_CMND_ARGS "CTEST_PARALLEL_LEVEL='${CTEST_PARALLEL_LEVEL}'")
+    ENDIF()
+    IF (CTEST_DROP_SITE)
+      APPEND_SET(EXPR_CMND_ARGS "CTEST_DROP_SITE=${CTEST_DROP_SITE}")
+    ENDIF()
+    IF (CTEST_DROP_LOCATION)
+      APPEND_SET(EXPR_CMND_ARGS "CTEST_DROP_LOCATION=${CTEST_DROP_LOCATION}")
     ENDIF()
 
     #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)

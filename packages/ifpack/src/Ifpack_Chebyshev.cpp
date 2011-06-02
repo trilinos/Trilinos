@@ -330,8 +330,9 @@ int Ifpack_Chebyshev::Compute()
     }
   }
   // otherwise the inverse of the diagonal has been given by the user
-
+#ifdef IFPACK_FLOPCOUNTERS
   ComputeFlops_ += NumMyRows_;
+#endif
 
   ++NumCompute_;
   ComputeTime_ += Time_->ElapsedTime();

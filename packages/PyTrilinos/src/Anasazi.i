@@ -137,6 +137,10 @@ package:
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_JadMatrix.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_Time.h"
 
 // Epetra NumPy includes
 #include "Epetra_PyUtil.h"
@@ -256,7 +260,7 @@ package:
 %teuchos_rcp(Anasazi::OutputManager< double >)
 %teuchos_rcp(Anasazi::BasicOutputManager< double >)
 #ifdef HAVE_EPETRA
-%teuchos_rcp_epetra(Anasazi::EpetraMultiVec)
+%teuchos_rcp(Anasazi::EpetraMultiVec)
 %teuchos_rcp(Anasazi::EpetraGenOp)
 %teuchos_rcp(Anasazi::EpetraSymOp)
 %teuchos_rcp(Anasazi::StatusTest< double, Epetra_MultiVector, Epetra_Operator >)

@@ -734,7 +734,7 @@
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Thyra" type="ILO"/>
-    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="Isorropia" type="LO"/>
     <Dependency name="Pliris" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="LO"/>

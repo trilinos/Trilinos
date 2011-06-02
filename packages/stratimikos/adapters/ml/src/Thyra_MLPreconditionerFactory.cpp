@@ -40,6 +40,10 @@
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_implicit_cast.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_StaticSetupMacro.hpp"
+#include "Teuchos_iostream_helpers.hpp"
+
 
 namespace {
 
@@ -60,6 +64,15 @@ const Teuchos::Array<std::string> BaseMethodDefaults_valueNames
   "DD-ML",
   "maxwell"
   );
+
+
+TEUCHOS_ENUM_INPUT_STREAM_OPERATOR(EMLProblemType)
+
+
+TEUCHOS_STATIC_SETUP()
+{
+  TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(EMLProblemType);
+}
 
 const std::string BaseMethodDefaults_name = "Base Method Defaults";
 const std::string BaseMethodDefaults_default = "DD";

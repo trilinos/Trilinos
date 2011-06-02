@@ -155,7 +155,7 @@ namespace {
     TEST_EQUALITY_CONST( mapImportIn   == mapIn,  false );
     TEST_EQUALITY_CONST( mapImportOut  == mapOut, false );
     // create import, vectors from these maps
-    RCP<const Import<LO,GO> > import = Tpetra::makeImport(mapImportIn, mapImportOut);
+    RCP<const Import<LO,GO> > import = Tpetra::createImport(mapImportIn, mapImportOut);
     RCP<Vector<double,LO,GO> > vecIn = Tpetra::createVector<double>(mapIn);
     RCP<Vector<double,LO,GO> > vecOut = Tpetra::createVector<double>(mapOut);
     // do the import; under the bug, this should throw an exception

@@ -535,6 +535,29 @@ void mult_A_B(
 
 }
 
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
+void
+getGlobalRowFromLocalIndex(
+  LocalOrdinal localRow,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview, 
+  Array<GlobalOrdinal>& indices,
+  Array<Scalar>& values,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colMap)
+{
+  ArrayView<const LocalOrdinal> localIndices = Mview.indices[localRow];
+  ArrayView<const Scalar> constValues = Mview.values[localRow];
+  values = Array<Scalar>(constValues);
+  for(typename Array<GlobalOrdinal>::size_type i = 0; i<localIndices.size(); ++i){
+    indices.push_back(Mview.colMap->getGlobalElement(localIndices[i]));
+  }
+  //sort2(indices.begin(), indices.end(), values.begin());
+  sort2Shell(indices(), indices.size(), values());
+}
+
 //kernel method for computing the local portion of C = A*B^T
 template<class Scalar,
          class LocalOrdinal, 
@@ -546,7 +569,40 @@ void mult_A_Btrans(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
-  size_t maxlen = 0;
+  //Nieve implementation
+  for(GlobalOrdinal i=0; (global_size_t)i<Aview.rowMap->getGlobalNumElements(); ++i){
+    if(Aview.remote[i]){
+      continue;
+    }
+    if(Aview.indices[i].size() == 0){
+      continue;
+    }
+    LocalOrdinal localARow = Aview.rowMap->getLocalElement(i);
+    Array<GlobalOrdinal> cIndices;
+    Array<Scalar> cValues;
+    Array<GlobalOrdinal> aIndices;
+    Array<Scalar> aValues;
+    getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
+    for(GlobalOrdinal j=0; (global_size_t)j<Bview.rowMap->getGlobalNumElements(); ++j){
+      if(Bview.remote[j]){
+        continue;
+      }
+      if(Bview.indices[i].size() == 0){
+        continue;
+      }
+      LocalOrdinal localBRow = Bview.rowMap->getLocalElement(j); 
+      Array<GlobalOrdinal> bIndices;
+      Array<Scalar> bValues;
+      getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
+      Scalar product = 
+        sparsedot(aValues, aIndices, bValues, bIndices);
+      cIndices.push_back(j);
+      cValues.push_back(product);
+    }
+    C.insertGlobalValues(i, cIndices(), cValues());
+  }
+  //Real optimized version, not working.
+  /*size_t maxlen = 0;
   for (size_t i=0; i<Aview.numRows; ++i) {
     if (Aview.numEntriesPerRow[i] > maxlen) maxlen = Aview.numEntriesPerRow[i];
   }
@@ -701,7 +757,7 @@ void mult_A_Btrans(
       }
 
     }
-  }
+  }*/
 }
 
 
@@ -1007,6 +1063,8 @@ void import_and_extract_views(
   Mview.indices.resize(         Mview.numRows);
   Mview.values.resize(          Mview.numRows);
   Mview.remote.resize(          Mview.numRows);
+
+
   Mview.origRowMap = M.getRowMap();
   Mview.rowMap = targetMap;
   Mview.colMap = M.getColMap();
@@ -1239,6 +1297,36 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
   const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap)
 {
+/*
+  std::map<LocalOrdinal, Array<int> > rowsToSendToNodes;
+  ArrayView<const GlobalOrdinal> myGlobalRows = 
+    M->getRowMap()->getNodeElementList();
+
+  Array<GlobalOrdinal> currentRow(
+    M->getCrsGraph()->getNodeMaxNumEntries());;
+  size_t numEntriesInCurrentRow;
+  ArrayView<int> currentNodes;
+  for(ArrayView<const GlobalOrdinal>::iterator it = myGlobalRows.begin();
+    it != myGlobalRows.end();
+    ++it)
+  {
+    M->getCrsGraph()->getGlobalRowCopy(i, currentRow(), numEntriesInCurrentRow);
+
+  }
+  for(LocalOrdinal i = M->getRowMap()->getMinLocalIndex();
+    i < M->getRowMap->getMaxLocalIndex();
+    ++i)
+  {
+    M->getCrsGraph()->getGlobalRowCopy(i, currentRow, numEntriesInCurrentRow);
+    colmap->getRemoteIndexList(
+      currentRow(0,numEntriesInCurrentRow), currentNodes);
+    if(currentNodes.size() > 0){
+      rowsToSendToNodes[i] = Array(currentNodes);
+    }
+  }
+*/
+
+
   //The goal of this function is to find all rows in the matrix M that contain
   //column-indices which are in 'colmap'. A map containing those rows is
   //returned.
@@ -1340,10 +1428,10 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
 }
 
 
-template<class Scalar, class LocalOrdinal>
+template<class Scalar, class GlobalOrdinal>
 Scalar sparsedot(
-  const ArrayView<Scalar>& u, const ArrayView<LocalOrdinal>& u_ind,
-  const ArrayView<Scalar>& v, const ArrayView<LocalOrdinal>& v_ind)
+  const Array<Scalar>& u, const Array<GlobalOrdinal>& u_ind,
+  const Array<Scalar>& v, const Array<GlobalOrdinal>& v_ind)
 {
   const size_t usize = (size_t)u.size();
   const size_t vsize = (size_t)v.size();
@@ -1351,8 +1439,8 @@ Scalar sparsedot(
   size_t v_idx = 0;
   size_t u_idx = 0;
   while(v_idx < vsize && u_idx < usize) {
-    LocalOrdinal ui = u_ind[u_idx];
-    LocalOrdinal vi = v_ind[v_idx];
+    GlobalOrdinal ui = u_ind[u_idx];
+    GlobalOrdinal vi = v_ind[v_idx];
     if (ui < vi) {
       ++u_idx;
     }

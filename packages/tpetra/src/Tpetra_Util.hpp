@@ -204,6 +204,37 @@ namespace Tpetra {
     }
   }
 
+  template<class T1, class T2>
+  void sort2Shell(
+    ArrayView<T1> array1, 
+    typename ArrayView<T1>::size_type a1size,
+    ArrayView<T2> array2)
+  {
+    typedef typename ArrayView<T1>::size_type st;
+    st ST0 = Teuchos::OrdinalTraits<st>::zero();
+    for(st i = ST0; i < a1size; ++i){
+      st n = a1size;
+      st m = n/2;
+      while(m > ST0){
+        st max = n - m;
+        for(st j = ST0; j < max; ++j){
+          for(st k = j; k >= ST0; k-=m){
+            if(array1[k+m] >= array1[k]){
+              break;
+            }
+            T2 twoTemp = array2[k+m];
+            array2[k+m] = array2[k];
+            array2[k] = twoTemp;
+            T1 oneTemp = array1[k+m];
+            array1[k+m] = array1[k];
+            array1[k] = oneTemp;
+          }
+        }
+        m = m/2;
+      }
+    }
+  }
+
   template<class IT1, class T>
   IT1 binary_serach(IT1 first, IT1 last, const T& value){
 	first = std::lower_bound(first,last,value);

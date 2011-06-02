@@ -149,7 +149,7 @@ SET(DAKOTA_LIBS
     colin interfaces momh scolib pebbl tinyxml
     utilib 3po hopspack 
     cport amplsolver nidr dl 
-    boost_signals
+    boost_signals boost_regex
   )
 
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib

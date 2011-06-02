@@ -41,7 +41,7 @@ ADD_CUSTOM_TARGET(test_testutil ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/testutil.py)
 
 IF(PyTrilinos_ENABLE_Teuchos)
-#  PyTrilinos_MAKE_TEST(testTeuchos              )
+  PyTrilinos_MAKE_TEST(testTeuchos              )
   PyTrilinos_MAKE_TEST(testTeuchos_Comm         )
   PyTrilinos_MAKE_TEST(testTeuchos_ParameterList)
   PyTrilinos_MAKE_TEST(testTeuchos_ScalarTraits )
@@ -79,6 +79,10 @@ IF(PyTrilinos_ENABLE_EpetraExt)
     PyTrilinos_MAKE_TEST(testEpetraExt_HDF5)
   ENDIF(EpetraExt_USING_HDF5)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
+
+IF(PyTrilinos_ENABLE_Isorropia)
+  PyTrilinos_MAKE_TEST(testIsorropia)
+ENDIF(PyTrilinos_ENABLE_Isorropia)
 
 IF(PyTrilinos_ENABLE_AztecOO)
   PyTrilinos_MAKE_TEST(testAztecOO)

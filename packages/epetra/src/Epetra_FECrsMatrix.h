@@ -46,6 +46,9 @@
 
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CombineMode.h>
+
+#include <vector>
+
 class Epetra_Map;
 class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseMatrix;
@@ -586,6 +589,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 				 const double* values,
 				 int mode);
 
+  int InputGlobalValues_RowMajor(
+            int numRows, const int* rows,
+					  int numCols, const int* cols,
+					  const double* values,
+					  int mode);
+
    int InsertNonlocalRow(int row, int offset);
 
    int InputNonlocalValue(int rowoffset,
@@ -604,7 +613,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    int** nonlocalCols_;
    double** nonlocalCoefs_;
 
-   double* workData_;
+   //IMPORTANT NOTE: The use of class-member work-data arrays is
+   //**NOT** thread-safe.
+   std::vector<double> workData_;
+   std::vector<const double*> workData2d_;
    int workDataLength_;
 
    bool useNonlocalMatrix_;

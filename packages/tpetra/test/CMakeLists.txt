@@ -18,12 +18,13 @@ ADD_SUBDIRECTORIES(
   VbrMatrix
   RowMatrixTransposer
   MatrixMatrix
+  TypeStack
   inout
   )
 
-IF (Tpetra_ENABLE_BUGTESTS)
-  ADD_SUBDIRECTORY(BugTests)
-ENDIF()
+#IF (Tpetra_ENABLE_BUGTESTS)
+ADD_SUBDIRECTORY(BugTests)
+#ENDIF()
 
 PACKAGE_ADD_LIBRARY(
   tpetratestlib

@@ -495,6 +495,10 @@ APPEND_SET(SOURCES
   simple/random.c
   )
 
+APPEND_SET(NOINSTALLHEADERS
+  simple/simple_const.h
+  )
+
 #
 # src/timer
 #

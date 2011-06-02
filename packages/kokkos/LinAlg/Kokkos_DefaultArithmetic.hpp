@@ -191,6 +191,7 @@ namespace Kokkos {
       inline static void Init(MultiVector<Scalar,Node> &A, Scalar alpha) {
         const size_t nR = A.getNumRows();
         const size_t nC = A.getNumCols();
+        if (nR*nC == 0) return;
         const size_t stride = A.getStride();
         RCP<Node> node = A.getNode();
         ArrayRCP<Scalar> data = A.getValuesNonConst();

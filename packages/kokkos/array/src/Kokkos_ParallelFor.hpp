@@ -50,7 +50,9 @@ namespace Kokkos {
 
 namespace Impl {
 
-/** \brief ParallelFor operator with partial specialization for the device */
+/** \brief Implementation of ParallelFor operator that has a
+ *         partial specialization for the device.
+ */
 template< class FunctorType ,
           class DeviceType = typename FunctorType::device_type >
 class ParallelFor {
@@ -64,6 +66,7 @@ public:
 
 //----------------------------------------------------------------------------
 
+/** \brief  Call the functor in parallel 'work_count' times. */
 template< class FunctorType >
 inline
 void parallel_for( const size_t work_count ,
@@ -72,6 +75,10 @@ void parallel_for( const size_t work_count ,
   Impl::ParallelFor< FunctorType >::execute( work_count , functor );
 }
 
+/** \brief  Call the functor in parallel 'work_count' times,
+ *          wait for all calls to complete and then
+ *          output the wall-clock time spent in execution.
+ */
 template< class FunctorType >
 inline
 void parallel_for( const size_t work_count ,

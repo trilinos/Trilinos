@@ -631,6 +631,8 @@ void Zoltan_Input_HG_Init(ZHG *zhg)
   zhg->objLID = NULL;
   zhg->numHEdges= NULL;
 
+  zhg->coor = NULL;
+  
   zhg->fixed = NULL;
 
   zhg->GnRepartVtx = 0;
@@ -669,6 +671,7 @@ int Zoltan_Input_HG_Free(ZHG *zhg)
   ZOLTAN_FREE(&(zhg->objGID));
   ZOLTAN_FREE(&(zhg->objLID));
   ZOLTAN_FREE(&(zhg->numHEdges));
+  ZOLTAN_FREE(&(zhg->coor));
   ZOLTAN_FREE(&(zhg->fixed));
   ZOLTAN_FREE(&(zhg->Input_Parts));
   ZOLTAN_FREE(&(zhg->Output_Parts));

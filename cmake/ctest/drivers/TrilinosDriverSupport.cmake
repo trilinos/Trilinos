@@ -1,6 +1,7 @@
 include(ParseVariableArguments)
 INCLUDE(SetDefaultAndFromEnv)
 
+SET_DEFAULT_AND_FROM_ENV(TDD_FORCE_CMAKE_INSTALL 1)
 
 #
 # Placeholder for any global setup necessary on all machines...
@@ -67,6 +68,7 @@ function(TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE cmake_type)
 
   set_property(TEST install-cmake-${cmake_type}
     PROPERTY DEPENDS "uninstall-cmake-${cmake_type}")
+
 endfunction()
 
 
@@ -186,16 +188,27 @@ endfunction()
 # TRILINOS_DRIVER_ADD_DASHBOARD.
 #
 function(TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS)
-  get_property(types GLOBAL PROPERTY TD_CMAKE_INSTALLER_TYPES)
 
-  if(types)
-    list(REMOVE_DUPLICATES types)
-    foreach(type ${types})
-      TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE(${type})
-    endforeach()
-  else()
-    message("warning: no cmake install tests are necessary...")
-    message("  Put calls to TRILINOS_DRIVER_ADD_DASHBOARD")
-    message("  *before* calls to TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS...")
-  endif()
+  IF (TDD_FORCE_CMAKE_INSTALL STREQUAL 1) 
+
+    get_property(types GLOBAL PROPERTY TD_CMAKE_INSTALLER_TYPES)
+  
+    if (types)
+      list(REMOVE_DUPLICATES types)
+      foreach (type ${types})
+        MESSAGE(STATUS "Adding CMake install test ${type}")
+        TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE(${type})
+      endforeach()
+    else()
+      message("warning: no cmake install tests are necessary...")
+      message("  Put calls to TRILINOS_DRIVER_ADD_DASHBOARD")
+      message("  *before* calls to TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS...")
+    endif()
+
+  ELSE()
+
+    MESSAGE(STATUS "Skipping CMake install tests because TDD_FORCE_CMAKE_INSTALL!=1")
+
+  ENDIF()
+
 endfunction()

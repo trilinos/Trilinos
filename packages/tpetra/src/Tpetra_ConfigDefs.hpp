@@ -238,6 +238,9 @@ namespace Tpetra {
   //! Namespace for external %Tpetra functionality
   namespace Ext {
   }
+  //! Collection of matrix-matrix operations.
+  namespace MatrixMatrix {
+  }
 }
 
 #endif // TPETRA_CONFIGDEFS_HPP

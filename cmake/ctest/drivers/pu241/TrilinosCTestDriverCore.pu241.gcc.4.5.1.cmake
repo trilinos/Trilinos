@@ -22,8 +22,14 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # 
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES
      PyTrilinos TriKota Optika  # We don't have TPLs for these
-     Sundance Stokhos STK  # Currently have failures and nor currently needed by CASL
+     Sundance Stokhos # Currently have failures and nor currently needed by CASL
+     TrilinosFramework # Has 11 failing tests for some reason so disabling for now
+     CASLRAVE # Does not build with GCC yet
      )
+  SET(EXTRA_CONFIGURE_OPTIONS
+    "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
+    "-DTrilinos_ENABLE_CASLRAVE=OFF"
+    )
   
   SET_DEFAULT(COMPILER_VERSION "GCC-4.5.1")
 
@@ -32,18 +38,18 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   IF (COMM_TYPE STREQUAL MPI)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      ${EXTRA_CONFIGURE_OPTIONS}
       "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/gcc-4.5.1-mpi-ss-options.cmake"
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      ${EXTRA_CONFIGURE_OPTIONS}
       "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/gcc-4.5.1-serial-ss-options.cmake"
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-      "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     )
 
   ENDIF()

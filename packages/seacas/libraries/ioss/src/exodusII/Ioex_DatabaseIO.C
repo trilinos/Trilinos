@@ -1551,7 +1551,7 @@ namespace Ioex {
 	}
 
 	for (int i = 0; i < sidesetCount; i++) {
-	  char ss_name[maximumNameLength+1];
+	  char * ss_name = new char[maximumNameLength+1];
 	  error = ex_get_name(get_file_pointer(), EX_SIDE_SET, side_set_ids[i], ss_name);
 	  if (error < 0) {
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -1560,6 +1560,7 @@ namespace Ioex {
 	    Ioss::Utils::fixup_name(ss_name);
 	    decode_surface_name(fs_map, fs_set, ss_name);
 	  }
+          delete [] ss_name;
 	}
       }
 

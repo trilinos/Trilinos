@@ -479,7 +479,7 @@ Epetra_RowMatrix::RightScale;
 ///////////////////////////////////
 // Epetra_BasicRowMatrix support //
 ///////////////////////////////////
-%teuchos_rcp_epetra(Epetra_BasicRowMatrix)
+%teuchos_rcp(Epetra_BasicRowMatrix)
 %warnfilter(473)        Epetra_BasicRowMatrix;
 %feature("director")    Epetra_BasicRowMatrix;
 %rename(BasicRowMatrix) Epetra_BasicRowMatrix;
@@ -509,7 +509,7 @@ Epetra_RowMatrix::RightScale;
 //////////////////////////////
 // Epetra_CrsMatrix support //
 //////////////////////////////
-%teuchos_rcp_epetra(Epetra_CrsMatrix)
+%teuchos_rcp(Epetra_CrsMatrix)
 %teuchos_rcp_epetra_argout(Epetra_CrsMatrix)
 %feature("autodoc",
 "__init__(self, Epetra_DataAccess CV, Map rowMap, int numEntriesPerRow, 
@@ -1136,7 +1136,7 @@ Epetra_CrsMatrix::__getitem__;
 ////////////////////////////////
 // Epetra_FECrsMatrix support //
 ////////////////////////////////
-%teuchos_rcp_epetra(Epetra_FECrsMatrix)
+%teuchos_rcp(Epetra_FECrsMatrix)
 %rename(FECrsMatrix) Epetra_FECrsMatrix;
 %extend Epetra_FECrsMatrix
 {
@@ -1212,7 +1212,7 @@ Epetra_CrsMatrix::__getitem__;
 //////////////////////////////
 // Epetra_VbrMatrix support //
 //////////////////////////////
-%teuchos_rcp_epetra(Epetra_VbrMatrix)
+%teuchos_rcp(Epetra_VbrMatrix)
 %teuchos_rcp_epetra_argout(Epetra_VbrMatrix)
 %feature("autodoc",
 "
@@ -1337,14 +1337,14 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix&);
 ////////////////////////////////
 // Epetra_FEVbrMatrix support //
 ////////////////////////////////
-%teuchos_rcp_epetra(Epetra_FEVbrMatrix)
+%teuchos_rcp(Epetra_FEVbrMatrix)
 %rename(FEVbrMatrix) Epetra_FEVbrMatrix;
 %include "Epetra_FEVbrMatrix.h"
 
 //////////////////////////////
 // Epetra_JadMatrix support //
 //////////////////////////////
-%teuchos_rcp_epetra(Epetra_JadMatrix)
+%teuchos_rcp(Epetra_JadMatrix)
 %ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*&,int&,int&);
 %rename(JadMatrix) Epetra_JadMatrix;
 %include "Epetra_JadMatrix.h"
