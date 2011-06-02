@@ -17,6 +17,7 @@ FILE(GLOB SOURCES *.cpp)
 PACKAGE_ADD_LIBRARY(
   stk_algsup
   NOINSTALLHEADERS ${HEADERS}
+  DEPLIBS stk_mesh_base
   SOURCES ${SOURCES}
   )
 

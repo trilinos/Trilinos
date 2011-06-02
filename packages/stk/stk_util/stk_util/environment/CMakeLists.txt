@@ -71,6 +71,7 @@ ENDIF()
 
 PACKAGE_ADD_LIBRARY(
   stk_util_env
+  DEPLIBS stk_util_util
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
