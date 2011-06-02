@@ -80,7 +80,13 @@ public:
   /// \name Solver-dependent methods
   //@{
 
-  /// Pre-orders the matrix for minimal fill-in
+  /** \brief Pre-orders the matrix.
+   *
+   * Uses the default solver option, unless a solver-specific
+   * pre-ordering parameter is given.
+   *
+   * \sa setParameters
+   */
   virtual SolverBase& preOrdering( void ) = 0;
 
 
