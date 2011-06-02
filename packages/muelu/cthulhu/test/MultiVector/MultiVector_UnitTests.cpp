@@ -2343,24 +2343,26 @@ typedef std::complex<double> ComplexDouble;
     UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(MV, V, ORDINAL)
 
 #ifdef HAVE_CTHULHU_TPETRA
-  typedef Cthulhu::TpetraMultiVector<double,int,int> MMultiVector;//TODO: remove 'M' prefix
-  typedef Cthulhu::TpetraVector<double,int,int> MVector;
+  typedef Cthulhu::TpetraMultiVector<double,int,int, Kokkos::SerialNode> MMultiVector;//TODO: remove 'M' prefix
+  typedef Cthulhu::TpetraVector<double,int,int, Kokkos::SerialNode> MVector;
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-  UNIT_TEST_DOUBLE(MMultiVector, MVector, int)
+  //UNIT_TEST_DOUBLE(MMultiVector, MVector, int)
+  UNIT_TEST_SERIALNODE(MMultiVector, MVector, int, double)
 #endif
 
-#if !defined(FAST_DEVELOPMENT_BUILD)
-# if defined(HAVE_TPETRA_INST_FLOAT)
-    UNIT_TEST_FLOAT((MMultiVector, MVector, int)
-# endif 
-# if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-    UNIT_TEST_COMPLEX_FLOAT((MMultiVector, MVector, int)
-# endif 
-# if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-    UNIT_TEST_COMPLEX_DOUBLE((MMultiVector, MVector, int)
-# endif 
-#endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+// #if !defined(FAST_DEVELOPMENT_BUILD)
+// # if defined(HAVE_TPETRA_INST_FLOAT)
+//     UNIT_TEST_FLOAT((MMultiVector, MVector, int)
+// # endif 
+// # if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+//     UNIT_TEST_COMPLEX_FLOAT((MMultiVector, MVector, int)
+// # endif 
+// # if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+//     UNIT_TEST_COMPLEX_DOUBLE((MMultiVector, MVector, int)
+// # endif 
+// #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
+  // JG TODO: test with different Node type. It will require some work here ...
 }

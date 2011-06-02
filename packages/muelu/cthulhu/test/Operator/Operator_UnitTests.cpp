@@ -127,8 +127,9 @@ namespace {
   //
 
 #   define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                       \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Operator, ViewSwitching, SC, LO, GO, Node ) \
-
-  UNIT_TEST_GROUP_ORDINAL(double, int, int, SerialNode)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Operator, ViewSwitching, SC, LO, GO, Node )
+  
+  typedef Kokkos::DefaultNode::DefaultNodeType DefaultNodeType;
+  UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
 
 }
