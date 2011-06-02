@@ -202,7 +202,7 @@ public:
     const Teuchos::ArrayView<scalar_type> nzval,
     const Teuchos::ArrayView<global_ordinal_type> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
-    size_t& nnz,
+    global_size_type& nnz,
     bool local = false);
 
 
@@ -237,7 +237,7 @@ public:
     const Teuchos::ArrayView<scalar_type> nzval,
     const Teuchos::ArrayView<global_ordinal_type> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
-    size_t& nnz,
+    global_size_type& nnz,
     bool local = false);
 
 
@@ -254,7 +254,7 @@ public:
     const Teuchos::ArrayView<scalar_type> nzval,
     const Teuchos::ArrayView<global_ordinal_type> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
-    size_t& nnz);
+    global_size_type& nnz);
 
 
 /**
@@ -270,7 +270,7 @@ public:
     const Teuchos::ArrayView<scalar_type> nzval,
     const Teuchos::ArrayView<global_ordinal_type> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
-    size_t& nnz);
+    global_size_type& nnz);
 
 
   /**

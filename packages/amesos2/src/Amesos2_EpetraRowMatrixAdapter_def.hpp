@@ -122,9 +122,10 @@ MatrixAdapter<Epetra_RowMatrix>::getGlobalNNZ() const
 }
 
 
-size_t MatrixAdapter<Epetra_RowMatrix>::getMaxNNZ() const
+MatrixAdapter<Epetra_RowMatrix>::global_size_type
+MatrixAdapter<Epetra_RowMatrix>::getMaxNNZ() const
 {
-  return Teuchos::as<size_t>(mat_->MaxNumEntries());
+  return Teuchos::as<global_size_type>(mat_->MaxNumEntries());
 }
 
 
@@ -211,7 +212,7 @@ MatrixAdapter<Epetra_RowMatrix>::getCrs(
   const Teuchos::ArrayView<scalar_type> nzval,
   const Teuchos::ArrayView<global_ordinal_type> colind,
   const Teuchos::ArrayView<global_size_type> rowptr,
-  size_t& nnz,
+  global_size_type& nnz,
   bool local)
 {
   RCP<const Teuchos::Comm<int> > comm = getComm();
@@ -374,7 +375,7 @@ MatrixAdapter<Epetra_RowMatrix>::getCcs(
   const Teuchos::ArrayView<scalar_type> nzval,
   const Teuchos::ArrayView<global_ordinal_type> rowind,
   const Teuchos::ArrayView<global_size_type> colptr,
-  size_t& nnz,
+  global_size_type& nnz,
   bool local)
 {
   using Teuchos::Array;
@@ -458,7 +459,7 @@ MatrixAdapter<Epetra_RowMatrix>::getCrsAll(
   const Teuchos::ArrayView<scalar_type> nzval,
   const Teuchos::ArrayView<global_ordinal_type> colind,
   const Teuchos::ArrayView<global_size_type> rowptr,
-  size_t& nnz)
+  global_size_type& nnz)
 {
   using Teuchos::ArrayView;
   RCP<const Teuchos::Comm<int> > comm = getComm();
@@ -486,7 +487,7 @@ MatrixAdapter<Epetra_RowMatrix>::getCcsAll(
   const Teuchos::ArrayView<scalar_type> nzval,
   const Teuchos::ArrayView<global_ordinal_type> rowind,
   const Teuchos::ArrayView<global_size_type> colptr,
-  size_t& nnz)
+  global_size_type& nnz)
 {
   using Teuchos::ArrayView;
   RCP<const Teuchos::Comm<int> > comm = getComm();
