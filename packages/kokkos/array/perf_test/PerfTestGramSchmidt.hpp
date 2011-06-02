@@ -250,6 +250,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
       }
     }
 
+    device_type::wait_functor_completion();
+
     seconds = timer.seconds();
   }
 
