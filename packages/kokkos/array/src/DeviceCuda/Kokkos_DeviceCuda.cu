@@ -112,8 +112,10 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   //
   // cudaDeviceProp::major               : Device major number
   // cudaDeviceProp::minor               : Device minor number
+  // cudaDeviceProp::warpSize            : number of threads per warp
   // cudaDeviceProp::multiProcessorCount : number of multiprocessors
   // cudaDeviceProp::sharedMemPerBlock   : capacity of shared memory per block
+  // cudaDeviceProp::totalConstMem       : capacity of constant memory
   // cudaDeviceProp::totalGlobalMem      : capacity of global memory
   // cudaDeviceProp::maxGridSize[3]      : maximum grid size
 
@@ -126,10 +128,19 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   CUDA_SAFE_CALL( cudaGetDevice( & m_cudaDev ) );
   CUDA_SAFE_CALL( cudaGetDeviceProperties( & m_cudaProp , m_cudaDev ) );
 
+  if ( m_cudaProp.major < 2 && m_cudaProp.minor < 3 ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::DeviceCuda Capability " << m_cudaProp.major
+        << "." << m_cudaProp.minor
+        << " not supported; mininum Capability 1.3" ;
+    throw std::runtime_error( msg.str() );
+  }
+
   // Maximum number of warps,
   // at most one warp per thread in a warp for reduction.
 
-  m_maxWarp = Impl::DeviceCudaTraits::WarpSize ;
+  // m_maxWarp = Impl::DeviceCudaTraits::WarpSize ;
+  m_maxWarp = 16 ;
   while ( m_cudaProp.maxThreadsPerBlock <
           Impl::DeviceCudaTraits::WarpSize * m_maxWarp ) {
     m_maxWarp >>= 1 ;
@@ -259,29 +270,6 @@ DeviceCuda::maximum_grid_count()
 
   return s.m_cudaProp.multiProcessorCount * MaxResidentBlocksPerMultiprocessor ;
 }
-
-/*--------------------------------------------------------------------------*/
-
-#if 0
-
-DeviceCuda::parallel_for_size( size_t work_count , dim3 & grid , dim3 & block )
-{
-  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
-
-  block.x = Impl::DeviceCudaTraits::WarpSize ;
-  block.y = s.m_maxWarp ;
-  block.z = 1 ;
-
-  grid.x  = s.m_cudaProp.multiProcessorCount ;
-  grid.y  = 1 ;
-  grid.z  = 1 ;
-
-  // Want to use all of the multiprocessors
-  // A block resides on at most one multiprocessor.
-
-}
-
-#endif
 
 /*--------------------------------------------------------------------------*/
 
