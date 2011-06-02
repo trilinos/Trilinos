@@ -13,21 +13,12 @@
 #include <Isorropia_EpetraRedistributor.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-#define CHECK_FAILED() {      \
-  Comm.SumAll(&fail, &tmp, 1);      \
-  if (tmp){     \
-    failures++;      \
-    if (!runAll) goto Report;      \
-  }     \
-  fail = 0;     \
-  }
-
 #ifdef HAVE_EPETRA
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
+//#ifdef HAVE_MPI
+//#include <Epetra_MpiComm.h>
+//#else
 #include <Epetra_SerialComm.h>
-#endif
+//#endif
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Vector.h>
@@ -130,9 +121,9 @@ void matcher::process_mtx_compressed(char *fname)
 	  }
 	#endif
 
-	#ifdef HAVE_MPI
-	  MPI_Finalize();
-	#endif
+	//#ifdef HAVE_MPI
+	  //MPI_Finalize();
+	//#endif
 
 	rc=matrixPtr->ExtractCrsDataPointers(CRS_Pointers,CRS_Indices,CRS_Vals);
 	if(rc==0)
