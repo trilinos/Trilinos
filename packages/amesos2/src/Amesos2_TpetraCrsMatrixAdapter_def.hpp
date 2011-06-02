@@ -143,6 +143,7 @@ MatrixAdapter<
   using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::Array;
+  using Teuchos::ArrayView;
   using Teuchos::OrdinalTraits;
 
   RCP<const Teuchos::Comm<int> > comm = getComm();
@@ -206,106 +207,158 @@ MatrixAdapter<
       // most solvers expect for distributed matrices.
     } else {
 
-      /* Each processor has an array the length of globalNumRows, each index
-       * initialized to the max ordinal.  For each global index that the
-       * processor owns, they write their rank in that spot, however the
-       * processor that has rank == root write a -1.  We do a global array MIN
-       * reduction on those arrays.  The root writes -1 because we want to
-       * assure that we do local operations as much as we can.  It may be
-       * possible that two nodes have a copy of the same row, but we want to
-       * prefer the root's copy in all cases.
+      /* Each processor has an array the length of globalNumRows, each
+       * index initialized to the max ordinal.  For each global index
+       * that the processor owns, they write their rank in that spot,
+       * however the processor that has rank == root write a -1.  We
+       * do a global array MIN reduction on those arrays.  The root
+       * writes -1 because we want to assure that we do local
+       * operations as much as we can.  It may be possible that two
+       * nodes have a copy of the same row, but we want to prefer the
+       * root's copy in all cases.
        * 
-       * Now the processor with rank == root goes through the globally reduced
-       * array: For indices that have -1, then it does a local row copy, for
-       * others it gets the row copy from that processor indicated.  Meanwhile,
-       * other processors are sending the rows they've been assigned (the global
-       * rows corresponding to the indices in the reduced array that == their
-       * rank) to the root.
+       * Now the processor with rank == root goes through the globally
+       * reduced array: For its own rows it does a local row copy, for
+       * others it gets the row copy from that processor indicated.
+       * Meanwhile, other processors are sending the rows they've been
+       * assigned (the global rows corresponding to the indices in the
+       * reduced array that == their rank) to the root.
+       *
+       * ETB 06/02/11 : For some reason, the reduceAll operation isn't
+       * always working for all matrices and processor counts.  Can't
+       * explain this.  Instead, we can use a, perhaps less efficient,
+       * import of the entire matrix to serial, and then use that
+       * local serial matrix for the row copy operations.
        */
 
-      Array<int> minOwner(numrows); // Will hold global reduction
-      Array<int> myRows(numrows,OrdinalTraits<int>::max());
-      GlobalOrdinal minRow = rmap->getMinAllGlobalIndex();
-      GlobalOrdinal maxRow = rmap->getMaxAllGlobalIndex();
-      for( GlobalOrdinal row = minRow; row <= maxRow; ++row ){
-	// if global index is found on this node
-	if( rmap->isNodeGlobalElement(row) ){
-	  myRows[row] = (rank == root) ? -1 : rank;
-	}
-      }
-      // now perform global reduce of these arrays
-      Teuchos::MinValueReductionOp<int,int> op;
-      Teuchos::reduceAll(*comm, op, (int)myRows.size(),
-			 myRows.getRawPtr(), minOwner.getRawPtr());
+//       GlobalOrdinal minRow = rmap->getMinAllGlobalIndex();
+//       GlobalOrdinal maxRow = rmap->getMaxAllGlobalIndex();
+//       Array<int> minOwner(maxRow - minRow + 1); // Will hold global reduction
+//       Array<int> myRows(maxRow - minRow + 1,OrdinalTraits<int>::max());
 
-#ifdef HAVE_AMESOS2_DEBUG
-      std::cout << "min rank owner of each row: "
-		<< minOwner.toString() << std::endl;
-#endif
+//       ArrayView<const GlobalOrdinal> node_elements = rmap->getNodeElementList();
+//       typename ArrayView<const GlobalOrdinal>::iterator elem_it;
+//       for( elem_it = node_elements.begin(); elem_it != node_elements.end(); ++elem_it ){
+// 	myRows[*elem_it] = ( rank == root ) ? -1 : rank;
+//       }
+
+//       // now perform global reduce of these arrays
+//       Teuchos::MinValueReductionOp<int,size_t> op;
+//       Teuchos::reduceAll(*comm, op, as<int>(myRows.size()),
+// 			 myRows.getRawPtr(), minOwner.getRawPtr());
+
+//       if( rank == root ){
+// 	global_size_type rowInd = as<global_size_type>(minRow);
+// 	size_t rowNNZ, nnzRet;
+// 	for( GlobalOrdinal row = minRow; row <= maxRow; ++row ){
+// 	  size_t from = minOwner[row];
+// 	  rowptr[row] = as<global_size_type>(rowInd);
+// 	  if( from == OrdinalTraits<int>::max() ){ // No one owns this row
+// #ifdef HAVE_AMESOS2_DEBUG
+// 	    std::cout << "no-one owns row : " << row << std::endl;
+// #endif
+// 	    continue;
+// 	  } 
+// 	  if( from == -1 ){       // Copy from myself, 'row' is one of root's indices
+// 	    rowNNZ = mat_->getNumEntriesInGlobalRow(row);
+// 	    nnzRet = OrdinalTraits<size_t>::zero();
+// 	    TEST_FOR_EXCEPTION( !rmap->isNodeGlobalElement(row),
+// 				std::runtime_error,
+// 				"" << row << " is not owned by " << root );
+// 	    mat_->getGlobalRowCopy(row,
+// 				   colind.view(rowInd,rowNNZ),
+// 				   nzval.view(rowInd,rowNNZ),
+// 				   nnzRet);
+// 	    TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
+// 				std::runtime_error,
+// 				"Number of values returned different from number of values reported");
+// 	    rowInd += rowNNZ;
+// 	  } else {
+// 	    Teuchos::receive<int,size_t>(*comm, from, &rowNNZ);
+// 	    Teuchos::receive<int,GlobalOrdinal>(*comm, from, as<int>(rowNNZ),
+// 						colind.view(rowInd, rowNNZ).getRawPtr());
+// 	    Teuchos::receive<int,Scalar>(*comm, from, as<int>(rowNNZ),
+// 					 nzval.view(rowInd, rowNNZ).getRawPtr());
+// 	    rowInd += rowNNZ;
+// 	  }
+// 	}
+// 	rowptr[maxRow+1] = as<global_size_type>(nnz);
+//       } else {                  // I am not the root
+// 	size_t localNNZ = this->getLocalNNZ();
+// 	Teuchos::Array<GlobalOrdinal> colind_l(colind);
+// 	Teuchos::Array<Scalar> nzval_l(nzval);
+// 	colind_l.resize(localNNZ);
+// 	nzval_l.resize(localNNZ);
+// 	GlobalOrdinal rowInd = minRow;
+// 	size_t rowNNZ, nnzRet;
+// 	for( GlobalOrdinal row = minRow; row <= maxRow; ++row ){
+// 	  int from = minOwner[row];
+// 	  if( from == rank ){   // I am responsible for this row
+// 	    rowNNZ = mat_->getNumEntriesInGlobalRow(row);
+// 	    nnzRet = OrdinalTraits<size_t>::zero();
+// 	    TEST_FOR_EXCEPTION( !rmap->isNodeGlobalElement(row),
+// 				std::runtime_error,
+// 				"" << row << " is not owned by " << root );
+// 	    mat_->getGlobalRowCopy(row,
+// 				   colind_l.view(rowInd, rowNNZ),
+// 				   nzval_l.view(rowInd, rowNNZ),
+// 				   nnzRet);
+// 	    TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
+// 				std::runtime_error,
+// 				"Number of values returned different from number of values reported");
+// 	    // Send values, column indices, and row pointers to root
+// 	    Teuchos::send<int,size_t>(*comm, rowNNZ, root);
+// 	    Teuchos::send<int,GlobalOrdinal>(*comm, as<int>(rowNNZ),
+// 					     colind_l.view(rowInd,rowNNZ).getRawPtr(), root);
+// 	    Teuchos::send<int,Scalar>(*comm, as<int>(rowNNZ),
+// 				      nzval_l.view(rowInd,rowNNZ).getRawPtr(), root);
+// 	    rowInd += rowNNZ;   // This is purely local to this node
+// 	  }
+// 	}
+//       }
+      Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type > > o_map, l_map;
+      o_map = this->getRowMap();
+
+      size_t num_my_elements;
+      if( getComm()->getRank() == 0 ){
+	num_my_elements = Teuchos::as<size_t>(numrows);
+      } else {
+	num_my_elements = Teuchos::OrdinalTraits<size_t>::zero();
+      }
       
+      l_map = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal>( numrows,
+									num_my_elements,
+									o_map->getIndexBase(),
+									getComm(),
+									o_map->getNode()));
+    
+      Teuchos::RCP<matrix_type> l_mat;
+      l_mat = Teuchos::rcp(new matrix_type(l_map, this->getMaxNNZ()));
+      
+      Teuchos::RCP<Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> > importer;
+      importer = Teuchos::rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal>(o_map, l_map));
+      
+      l_mat->doImport(*mat_, *importer, Tpetra::REPLACE);
+      
+      // Finally, do copies
       if( rank == root ){
-	global_size_type rowInd = minRow;
-	size_t rowNNZ, nnzRet;
-	for( GlobalOrdinal row = minRow; row <= maxRow; ++row ){
-	  int from = minOwner[row];
-	  if( from == -1 ){       // Copy from myself, 'row' is one of my indices
-	    rowptr[row] = as<global_size_type>(rowInd);
-	    rowNNZ = mat_->getNumEntriesInGlobalRow(row);
-	    nnzRet = OrdinalTraits<size_t>::zero();
-	    TEST_FOR_EXCEPTION( !rmap->isNodeGlobalElement(row),
-				std::runtime_error,
-				"" << row << " is not owned by " << root );
-	    mat_->getGlobalRowCopy(row,
-				   colind.view(rowInd,rowNNZ),
-				   nzval.view(rowInd,rowNNZ),
-				   nnzRet);
-	    TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
-				std::runtime_error,
-				"Number of values returned different from number of values reported");
-	    rowInd += rowNNZ;
-	  } else {
-	    rowptr[row] = as<global_size_type>(rowInd);
-	    Teuchos::receive<int,size_t>(*comm, from, &rowNNZ);
-	    Teuchos::receive<int,GlobalOrdinal>(*comm, from, as<int>(rowNNZ),
-						colind.view(rowInd, rowNNZ).getRawPtr());
-	    Teuchos::receive<int,Scalar>(*comm, from, as<int>(rowNNZ),
-					 nzval.view(rowInd, rowNNZ).getRawPtr());
-	    rowInd += rowNNZ;
-	  }
+	global_size_type rowInd = as<global_size_type>(l_map->getMinGlobalIndex());
+	GlobalOrdinal maxRow = l_map->getMaxGlobalIndex();
+	for( GlobalOrdinal row = rowInd; row <= maxRow; ++row ){
+	  rowptr[row] = as<global_size_type>(rowInd);
+	  size_t rowNNZ = l_mat->getNumEntriesInLocalRow(row);
+	  size_t nnzRet = 0;
+	  l_mat->getGlobalRowCopy(row,
+				  colind.view(rowInd,rowNNZ),
+				  nzval.view(rowInd,rowNNZ),
+				  nnzRet);
+	  TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
+			      std::runtime_error,
+			      "Number of values returned different from \
+                          number of values reported");
+	  rowInd += rowNNZ;
 	}
 	rowptr[maxRow+1] = as<global_size_type>(nnz);
-      } else {                  // I am not the root
-	size_t localNNZ = this->getLocalNNZ();
-	Teuchos::Array<GlobalOrdinal> colind_l(colind);
-	Teuchos::Array<Scalar> nzval_l(nzval);
-	colind_l.resize(localNNZ);
-	nzval_l.resize(localNNZ);
-	GlobalOrdinal rowInd = minRow;
-	size_t rowNNZ, nnzRet;
-	for( GlobalOrdinal row = minRow; row <= maxRow; ++row ){
-	  int from = minOwner[row];
-	  if( from == rank ){   // I am responsible for this row
-	    rowNNZ = mat_->getNumEntriesInGlobalRow(row);
-	    nnzRet = OrdinalTraits<size_t>::zero();
-	    TEST_FOR_EXCEPTION( !rmap->isNodeGlobalElement(row),
-				std::runtime_error,
-				"" << row << " is not owned by " << root );
-	    mat_->getGlobalRowCopy(row,
-				   colind_l.view(rowInd, rowNNZ),
-				   nzval_l.view(rowInd, rowNNZ),
-				   nnzRet);
-	    TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
-				std::runtime_error,
-				"Number of values returned different from number of values reported");
-	    // Send values, column indices, and row pointers to root
-	    Teuchos::send<int,size_t>(*comm, rowNNZ, root);
-	    Teuchos::send<int,GlobalOrdinal>(*comm, as<int>(rowNNZ),
-					     colind_l.view(rowInd,rowNNZ).getRawPtr(), root);
-	    Teuchos::send<int,Scalar>(*comm, as<int>(rowNNZ),
-				      nzval_l.view(rowInd,rowNNZ).getRawPtr(), root);
-	    rowInd += rowNNZ;   // This is purely local to this node
-	  }
-	}
       }
     }
   }
