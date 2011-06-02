@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
+#include <cstring>
 
 
 #ifdef HAVE_MOERTEL_NEMESIS

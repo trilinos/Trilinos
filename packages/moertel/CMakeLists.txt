@@ -17,6 +17,8 @@ PACKAGE(Moertel)
 #  "Enable experimental."
 #  OFF )
 
+IF(Moertel_ENABLE_Mesh)
+
 # Exodus is optional, it can be missing, come in through a TPL, or Trios
 IF(TPL_ENABLE_ExodusII)
 ADD_OPTION_AND_DEFINE(TPL_ENABLE_ExodusII
@@ -51,6 +53,8 @@ IF(TPL_ENABLE_MPI AND HAVE_MOERTEL_EXODUS)
     "Enable ExodusII reader in Moertel requires Trios)."
     OFF )
   ENDIF()
+ENDIF()
+
 ENDIF()
 
 

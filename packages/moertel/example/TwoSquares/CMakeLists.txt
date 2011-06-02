@@ -24,10 +24,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "Test passed!"
   )
 
-IF(TwoSquares)
+
 PACKAGE_COPY_FILES_TO_BINARY_DIR(
    TwoSquaresCopyFiles
-   SOURCE_FILES TwoSquares.grid
+   DEST_FILES TwoSquares.grid
+   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/example/TwoSquares
    EXEDEPS TwoSquares
    )
-ENDIF()
