@@ -9,6 +9,8 @@
 #ifndef UNIT_TEST_GRAM_SCHMIDT_OPERATORS
 #define UNIT_TEST_GRAM_SCHMIDT_OPERATORS
 
+#include <cmath>
+
 namespace Kokkos {
 
 template< typename Scalar , class DeviceType , unsigned N = 1 >
@@ -54,7 +56,7 @@ struct DotSingle<Scalar, KOKKOS_MACRO_DEVICE , 1 > {
   }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
-  static void join( value_type & update , const value_type & source )
+  static void join( volatile value_type & update , const volatile value_type & source )
   { update += source ; }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -84,7 +86,7 @@ struct Dot< Scalar, KOKKOS_MACRO_DEVICE , 1 > {
   { update += X(iwork) * Y(iwork); }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
-  static void join( value_type & update , const value_type & source )
+  static void join( volatile value_type & update , const volatile value_type & source )
   { update += source ; }
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -141,31 +143,6 @@ struct MultiVectorYPAX<Scalar, KOKKOS_MACRO_DEVICE ,1> {
 
 template< typename Scalar , class DeviceType >
 struct ModifiedGramSchmidt ;
-
-template< typename Scalar , class DeviceType >
-struct MultiVectorTestFill ;
-
-//----------------------------------------------------------------------------
-
-template< typename Scalar >
-struct MultiVectorTestFill< Scalar , KOKKOS_MACRO_DEVICE >
-{
-  typedef KOKKOS_MACRO_DEVICE     device_type ;
-  typedef device_type::size_type  size_type ;
-
-  Kokkos::MultiVectorView< Scalar , device_type > A ;
-
-  MultiVectorTestFill( const Kokkos::MultiVectorView< Scalar , device_type > & argA )
-    : A( argA ) {}
-
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  {
-    for ( size_type j = 0 ; j < A.count() ; ++j ) {
-      A(iwork,j) = ( iwork + 1 ) * ( j + 1 );
-    }
-  }
-};
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -287,7 +264,11 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
 
     HostMultiVector A( Kokkos::create_labeled_multivector<HostMultiVector>( "A" , length , count ) );
 
-    Kokkos::parallel_for( length , MultiVectorTestFill<Scalar,device_type>( A ) );
+    for ( size_type j = 0 ; j < A.count() ; ++j ) {
+      for ( size_type i = 0 ; i < A.length() ; ++i ) {
+        A(i,j) = ( i + 1 ) * ( j + 1 );
+      }
+    }
 
     MultiVector Q ;
     MultiVector R ;

@@ -54,6 +54,14 @@ MultiVectorView< ValueType , DeviceType >
 create_labeled_multivector( const std::string & label ,
                             size_t length , size_t count = 1 );
 
+namespace Impl {
+
+template< typename ValueType , class DeviceDst , bool ContigDst ,
+                               class DeviceSrc , bool ContigSrc >
+class MultiVectorDeepCopy ;
+
+}
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 /** \brief  Multivector allocated and mapped
@@ -134,6 +142,11 @@ private:
   MultiVectorView< V , M >
   create_labeled_multivector( const std::string & label ,
                               size_t length , size_t count );
+
+  template< typename V , class Dst , bool , class Src , bool >
+  friend
+  class Impl::MultiVectorDeepCopy ;
+
 };
 
 //----------------------------------------------------------------------------
@@ -187,13 +200,20 @@ create_multivector( size_t length , size_t count = 1 )
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class DeviceDst , class DeviceSrc >
-class MultiVectorDeepCopy ;
-
-template< typename ValueType , class DeviceDst , class DeviceSrc >
 inline
 void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
                 const MultiVectorView< ValueType , DeviceSrc > & src )
-{ MultiVectorDeepCopy<ValueType,DeviceDst,DeviceSrc>::run( dst , src ); }
+{
+  typedef MultiVectorView< ValueType , DeviceDst > dst_type ;
+  typedef MultiVectorView< ValueType , DeviceSrc > src_type ;
+
+  Impl::multivector_require_equal_dimension( dst.length() , dst.count() ,
+                                             src.length() , src.count() );
+
+  Impl::MultiVectorDeepCopy<ValueType,
+                            DeviceDst,dst_type::Contiguous,
+                            DeviceSrc,dst_type::Contiguous>::run( dst , src );
+}
 
 } // namespace Kokkos
 
@@ -211,6 +231,7 @@ void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
 #include <Kokkos_DeviceTPI_macros.hpp>
 #include <impl/Kokkos_MultiVectorView_macros.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
+#include <DeviceTPI/Kokkos_DeviceTPI_MultiVectorView.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
@@ -221,5 +242,4 @@ void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
 #endif
 
 #endif /* KOKKOS_MULTIVECTORVIEW_HPP */
-
 

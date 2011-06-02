@@ -26,16 +26,43 @@ void run_test_cuda(int exp)
 
       const int parallel_work_length = 1<<i;
 
-      HexGrad< float , Kokkos::DeviceCuda >::test(parallel_work_length) ;
-    }
+      double seconds = HexGrad< float , Kokkos::DeviceCuda >::test(parallel_work_length) ;
 
-    std::cout << "PASSED : PerfTestCuda" << std::endl ;
+      std::cout << "\"Cuda HexGrad\" , "
+                << parallel_work_length
+                << " , "
+                << seconds
+                << std::endl ;
+    }
+    std::cout << "PASSED : PerfTestCuda HexGrad" << std::endl ;
   }
   catch( const std::exception & x ) {
-    std::cout << "FAILED : PerfTestCuda : " << x.what() << std::endl ;
+    std::cout << "FAILED : PerfTestCuda HexGrad : " << x.what() << std::endl ;
+  }
+
+  try {
+    for (int i = 1; i < exp; ++i) {
+
+      const int parallel_work_length = 1<<i;
+
+      const double seconds = ModifiedGramSchmidt< float , Kokkos::DeviceCuda >::test(parallel_work_length, 32 ) ;
+
+      std::cout << "\"GramSchmidt(32)\" , "
+                << parallel_work_length
+                << " , "
+                << seconds
+                << " , "
+                << seconds / parallel_work_length
+                << std::endl ;
+   }
+
+   std::cout << "PASSED : PerfTestCuda GramSchmidt" << std::endl ;
+  }
+  catch( const std::exception & x ) {
+    std::cout << "FAILED : PerfTestCuda GramSchmidt : " << x.what() << std::endl ;
   }
 #else 
-  std::cout << "PASSED : SKIPPED UnitTestCuda - NO DEVICE CUDA" << std::endl ;
+  std::cout << "PASSED : SKIPPED PerfTestCuda - NO DEVICE CUDA" << std::endl ;
 #endif
 }
 }

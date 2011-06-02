@@ -115,6 +115,7 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   // cudaDeviceProp::multiProcessorCount : number of multiprocessors
   // cudaDeviceProp::sharedMemPerBlock   : capacity of shared memory per block
   // cudaDeviceProp::totalGlobalMem      : capacity of global memory
+  // cudaDeviceProp::maxGridSize[3]      : maximum grid size
 
   enum { n = sizeof(DeviceCuda::size_type) };
 
@@ -250,9 +251,37 @@ DeviceCuda::maximum_warp_count()
 DeviceCuda::size_type
 DeviceCuda::maximum_grid_count()
 {
+  enum { MaxResidentBlocksPerMultiprocessor = 8 };
+
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
-  return s.m_cudaProp.maxGridSize[0];
+
+  // return s.m_cudaProp.maxGridSize[0];
+
+  return s.m_cudaProp.multiProcessorCount * MaxResidentBlocksPerMultiprocessor ;
 }
+
+/*--------------------------------------------------------------------------*/
+
+#if 0
+
+DeviceCuda::parallel_for_size( size_t work_count , dim3 & grid , dim3 & block )
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+
+  block.x = Impl::DeviceCudaTraits::WarpSize ;
+  block.y = s.m_maxWarp ;
+  block.z = 1 ;
+
+  grid.x  = s.m_cudaProp.multiProcessorCount ;
+  grid.y  = 1 ;
+  grid.z  = 1 ;
+
+  // Want to use all of the multiprocessors
+  // A block resides on at most one multiprocessor.
+
+}
+
+#endif
 
 /*--------------------------------------------------------------------------*/
 
@@ -318,8 +347,24 @@ void DeviceCuda::wait_functor_completion()
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
+__global__
+void cuda_test_launch_global()
+{
+  if ( 0 == threadIdx.x && 0 == threadIdx.y && 0 == threadIdx.z &&
+       0 == blockIdx.x  && 0 == blockIdx.y  && 0 == blockIdx.z ) {
+    printf("cuda_test_launch_global<<< { %d %d %d } , { %d %d %d } >>>()\n",
+           gridDim.x,gridDim.y,gridDim.z,
+           blockDim.x,blockDim.y,blockDim.z);
+  }
+}
+
 namespace Kokkos {
 namespace Impl {
+
+void cuda_test_launch( const dim3 & grid , const dim3 & block )
+{
+  cuda_test_launch_global<<<grid,block>>>();
+}
 
 void copy_to_cuda_from_host( void * dst , const void * src ,
                              size_t member_size , size_t member_count )

@@ -41,11 +41,12 @@
 #define KOKKOS_DEVICEHOST_MULTIVECTORVIEW_HPP
 
 namespace Kokkos {
+namespace Impl {
 
 /*------------------------------------------------------------------------*/
 
 template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceHost >
+class MultiVectorDeepCopy< ValueType , DeviceHost , true , DeviceHost , true >
 {
 public:
   typedef Impl::CopyFunctor< ValueType , DeviceHost > functor_type ;
@@ -62,30 +63,8 @@ public:
 };
 
 /*------------------------------------------------------------------------*/
-/** \brief  Copy Host to Host specialization */
-template< typename ValueType , class MapOpt >
-class MDArrayDeepCopy< ValueType ,
-                       DeviceHost , MapOpt , true ,
-                       DeviceHost , MapOpt , true >
-{
-public:
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
 
-  typedef Impl::CopyFunctor< ValueType , DeviceHost > functor_type ;
-
-  static void run( const dst_type & dst , const src_type & src )
-  {
-    Impl::mdarray_require_equal_dimension( dst , src );
-
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
-  }
-};
-
-/*------------------------------------------------------------------------*/
-
+} // namespace Impl
 } // namespace Kokkos
 
 

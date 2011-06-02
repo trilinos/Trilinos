@@ -44,24 +44,6 @@ namespace Kokkos {
 
 /*------------------------------------------------------------------------*/
 
-template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceHost >
-{
-public:
-  typedef Impl::CopyFunctor< ValueType , DeviceHost > functor_type ;
-
-  static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
-                   const MultiVectorView< ValueType , DeviceHost > & src )
-  {
-    Impl::multivector_require_equal_dimension( dst , src );
-
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_ptr_on_device ,
-                                src.m_ptr_on_device ) );
-  }
-};
-
-/*------------------------------------------------------------------------*/
 /** \brief  Copy Host to Host specialization */
 template< typename ValueType , class MapOpt >
 class MDArrayDeepCopy< ValueType ,

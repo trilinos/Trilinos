@@ -48,33 +48,39 @@
 
 namespace Kokkos {
 
-template< class FunctorType , class FinalizeType , class DeviceType >
+//----------------------------------------------------------------------------
+
+namespace Impl {
+
+template< class FunctorType ,
+          class FinalizeType ,
+          class DeviceType = typename FunctorType::device_type >
 class ParallelReduce {
 public:
-  typedef FunctorType                     functor_type ;
-  typedef FinalizeType                    finalize_type ;
-  typedef DeviceType                      device_type ;
-  typedef typename device_type::size_type size_type ;
+  // non-void FinalizeType post-processes the reduction result
+  static void execute( const size_t work_count ,
+                       const FunctorType  & functor ,
+                       const FinalizeType & finalize );
 
-  // Create and run the driver
-  ParallelReduce( const size_type      work_count ,
-                  const FunctorType &  functor ,
-                  const FinalizeType & finalize );
+  // Void FinalizeType returns the reduction result
+  static void execute( const size_t work_count ,
+                       const FunctorType  & functor ,
+                       typename FunctorType::value_type & result );
 };
+
+} // namespace Impl
+
+//----------------------------------------------------------------------------
 
 template< class FunctorType >
 typename FunctorType::value_type
 parallel_reduce( const size_t work_count ,
                  const FunctorType & functor )
 {
-  typedef typename FunctorType::device_type device_type ;
-  typedef typename FunctorType::value_type  value_type ;
+  typename FunctorType::value_type result ;
 
-  typedef ParallelReduce< FunctorType , void , device_type > driver_type ;
-
-  value_type result ;
-
-  const driver_type driver( work_count , functor , result );
+  Impl::ParallelReduce< FunctorType , void >
+    ::execute( work_count , functor , result );
 
   return result ;
 }
@@ -84,11 +90,8 @@ void parallel_reduce( const size_t work_count ,
                       const FunctorType & functor ,
                       typename FunctorType::value_type & result )
 {
-  typedef typename FunctorType::device_type device_type ;
-
-  typedef ParallelReduce< FunctorType , void , device_type > driver_type ;
-
-  const driver_type driver( work_count , functor , result );
+  Impl::ParallelReduce< FunctorType , void >
+    ::execute( work_count , functor , result );
 }
 
 template< class FunctorType , class FinalizeType >
@@ -96,11 +99,8 @@ void parallel_reduce( const size_t work_count ,
                       const FunctorType & functor ,
                       const FinalizeType & finalize )
 {
-  typedef typename FunctorType::device_type device_type ;
-
-  typedef ParallelReduce< FunctorType, FinalizeType, device_type > driver_type ;
-
-  const driver_type driver( work_count , functor , finalize );
+  Impl::ParallelReduce< FunctorType , FinalizeType >
+    ::execute( work_count , functor , finalize );
 }
 
 template< class FunctorType >
@@ -111,15 +111,14 @@ void parallel_reduce( const size_t work_count ,
 {
   typedef typename FunctorType::device_type device_type ;
 
-  typedef ParallelReduce< FunctorType , void , device_type > driver_type ;
-
   const Impl::Timer timer ;
 
-  const driver_type driver( work_count , functor , result );
+  Impl::ParallelReduce< FunctorType , void >
+    ::execute( work_count , functor , result );
 
   device_type::wait_functor_completion();
 
-  seconds = timer.seconds ;
+  seconds = timer.seconds() ;
 }
 
 template< class FunctorType , class FinalizeType >
@@ -130,15 +129,14 @@ void parallel_reduce( const size_t work_count ,
 {
   typedef typename FunctorType::device_type device_type ;
 
-  typedef ParallelReduce< FunctorType, FinalizeType, device_type > driver_type ;
-
   const Impl::Timer timer ;
 
-  const driver_type driver( work_count , functor , finalize );
+  Impl::ParallelReduce< FunctorType , FinalizeType >
+    ::execute( work_count , functor , finalize );
 
   device_type::wait_functor_completion();
 
-  seconds = timer.seconds ;
+  seconds = timer.seconds() ;
 }
 
 } // namespace Kokkos

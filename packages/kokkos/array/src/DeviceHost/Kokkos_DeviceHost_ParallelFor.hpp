@@ -41,6 +41,7 @@
 #define KOKKOS_DEVICEHOST_PARALLELFOR_HPP
 
 namespace Kokkos {
+namespace Impl {
 
 template< class FunctorType >
 class ParallelFor< FunctorType , DeviceHost > {
@@ -48,21 +49,34 @@ public:
   typedef DeviceHost             device_type ;
   typedef device_type::size_type size_type ;
 
-  const FunctorType m_functor ;
+  const FunctorType m_work_functor ;
   const size_type   m_work_count ;
 
+private:
+
   ParallelFor( const size_type work_count , const FunctorType & functor )
-    : m_functor( ( device_type::set_dispatch_functor() , functor ) )
+    : m_work_functor( functor )
     , m_work_count( work_count )
+  {}
+
+public:
+
+  static
+  void execute( const size_type work_count , const FunctorType & functor )
   {
+    device_type::set_dispatch_functor();
+
+    const ParallelFor driver( work_count , functor );
+
     device_type::clear_dispatch_functor();
 
-    for ( size_type iwork = 0 ; iwork < m_work_count ; ++iwork ) {
-      m_functor(iwork);
+    for ( size_type iwork = 0 ; iwork < driver.m_work_count ; ++iwork ) {
+      driver.m_work_functor(iwork);
     }
   }
 };
 
+} // namespace Impl
 } // namespace Kokkos
 
 #endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */

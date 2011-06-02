@@ -44,12 +44,12 @@
 #include <TPI.h>
 
 namespace Kokkos {
+namespace Impl {
 
 template< class FunctorType , class FinalizeType >
 class ParallelReduce< FunctorType , FinalizeType , DeviceTPI > {
 public:
-  typedef DeviceTPI              device_type ;
-  typedef device_type::size_type size_type ;
+  typedef DeviceTPI::size_type size_type ;
   typedef typename FunctorType::value_type value_type ;
 
   const FunctorType  m_work_functor ;
@@ -88,73 +88,70 @@ private:
     FunctorType::join( dst , src );
   }
 
-public:
-
   ParallelReduce( const size_type work_count ,
                   const FunctorType & functor ,
                   const FinalizeType & finalize )
-    : m_work_functor( ( device_type::set_dispatch_functor() , functor ) )
+    : m_work_functor( functor )
     , m_work_finalize( finalize )
     , m_work_count( work_count )
+    {}
+
+public:
+
+  static void execute( const size_type work_count ,
+                       const FunctorType & functor ,
+                       const FinalizeType & finalize )
   {
-    device_type::clear_dispatch_functor();
+    DeviceTPI::set_dispatch_functor();
+
+    ParallelReduce driver( work_count , functor , finalize );
+
+    DeviceTPI::clear_dispatch_functor();
 
     value_type result ;
 
     FunctorType::init( result );
 
-    TPI_Run_threads_reduce( & run_work_on_tpi , this ,
+    TPI_Run_threads_reduce( & run_work_on_tpi , & driver ,
                             & run_join_on_tpi ,
                             & run_init_on_tpi ,
                             sizeof(value_type) ,
                             & result );
 
-    m_work_finalize( result );
+    driver.m_work_finalize( result );
   }
 };
 
 //----------------------------------------------------------------------------
 
-namespace Impl {
-
-template< typename ValueType >
-struct AssignValueFunctor {
-
-  ValueType & ref ;
-
-  AssignValueFunctor( ValueType & arg_ref ) : ref( arg_ref ) {}
-
-  AssignValueFunctor( const AssignValueFunctor & rhs ) : ref( rhs.ref ) {}
-
-  void operator()( const ValueType & val ) const
-  { ref = val ; }
-};
-
-}
-
-//----------------------------------------------------------------------------
-
 template< class FunctorType >
 class ParallelReduce< FunctorType , void , DeviceTPI > 
-  : public ParallelReduce<
-      FunctorType ,
-      Impl::AssignValueFunctor< typename FunctorType::value_type > ,
-      DeviceTPI >
 {
 public:
-  typedef DeviceTPI                        device_type ;
-  typedef device_type::size_type           size_type ;
+  typedef DeviceTPI::size_type             size_type ;
   typedef typename FunctorType::value_type value_type ;
-  typedef Impl::AssignValueFunctor< value_type > finalize_type ;
 
-  typedef ParallelReduce< FunctorType , finalize_type , DeviceTPI > base_type ;
+  struct AssignValueFunctor {
 
-  ParallelReduce( const size_type     work_count ,
-                  const FunctorType & functor ,
-                        value_type  & result )
-    : base_type( work_count , functor , finalize_type( result ) ) {}
+    value_type & ref ;
+
+    AssignValueFunctor( value_type & arg_ref ) : ref( arg_ref ) {}
+
+    AssignValueFunctor( const AssignValueFunctor & rhs ) : ref( rhs.ref ) {}
+
+    void operator()( const value_type & val ) const { ref = val ; }
+  };
+
+  static void execute( const size_type     work_count ,
+                       const FunctorType & functor ,
+                             value_type  & result )
+  {
+    ParallelReduce< FunctorType , AssignValueFunctor , DeviceTPI >
+      ::execute( work_count , functor , AssignValueFunctor( result ) );
+  }
 };
 
+} // namespace Impl
 } // namespace Kokkos
 
 #endif /* KOKKOS_DEVICETPI_PARALLELREDUCE_HPP */

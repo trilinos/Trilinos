@@ -37,78 +37,47 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_PARALLELFOR_HPP
-#define KOKKOS_PARALLELFOR_HPP
-
-#include <cstddef>
-#include <Kokkos_ArrayForwardDeclarations.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#ifndef KOKKOS_DEVICETPI_MULTIVECTORVIEW_HPP
+#define KOKKOS_DEVICETPI_MULTIVECTORVIEW_HPP
 
 namespace Kokkos {
-
-//----------------------------------------------------------------------------
-
 namespace Impl {
 
-/** \brief ParallelFor operator with partial specialization for the device */
-template< class FunctorType ,
-          class DeviceType = typename FunctorType::device_type >
-class ParallelFor {
+template< typename ValueType >
+class MultiVectorDeepCopy< ValueType , DeviceTPI , true , DeviceHost , true >
+{
 public:
-  static
-  void execute( const size_t        work_count ,
-                const FunctorType & functor );
+  static void run( const MultiVectorView< ValueType , DeviceTPI >  & dst ,
+                   const MultiVectorView< ValueType , DeviceHost > & src )
+  {
+    typedef MultiVectorDeepCopy< ValueType , DeviceTPI , true ,
+                                             DeviceTPI , true > functor_type ;
+
+    parallel_for( dst.length() * dst.count() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+  }
+};
+
+template< typename ValueType >
+class MultiVectorDeepCopy< ValueType , DeviceHost , true , DeviceTPI , true >
+{
+public:
+  static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
+                   const MultiVectorView< ValueType , DeviceTPI >  & src )
+  {
+    typedef MultiVectorDeepCopy< ValueType , DeviceTPI , true ,
+                                             DeviceTPI , true > functor_type ;
+
+    parallel_for( dst.length() * dst.count() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+  }
 };
 
 } // namespace Impl
-
-//----------------------------------------------------------------------------
-
-template< class FunctorType >
-inline
-void parallel_for( const size_t work_count ,
-                   const FunctorType & functor )
-{
-  Impl::ParallelFor< FunctorType >::execute( work_count , functor );
-}
-
-template< class FunctorType >
-inline
-void parallel_for( const size_t work_count ,
-                   const FunctorType & functor ,
-                   double & seconds )
-{
-  typedef typename FunctorType::device_type device_type ;
-
-  Impl::Timer timer ; // Construct and initialize the timer
-
-  Impl::ParallelFor< FunctorType >::execute( work_count , functor );
-
-  // The ParallelFor may launch the functor and return immediately.
-  // Must wait for functor to complete to get correct timing data.
-  device_type::wait_functor_completion();
-
-  seconds = timer.seconds(); // Time since construction
-}
-
 } // namespace Kokkos
 
-//----------------------------------------------------------------------------
-// Partial specializations for known devices
+#endif /* #ifndef KOKKOS_DEVICETPI_MULTIVECTORVIEW_HPP */
 
-#if defined( KOKKOS_DEVICE_HOST )
-#include <DeviceHost/Kokkos_DeviceHost_ParallelFor.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_TPI )
-#include <DeviceTPI/Kokkos_DeviceTPI_ParallelFor.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_CUDA )
-#include <DeviceCuda/Kokkos_DeviceCuda_ParallelFor.hpp>
-#endif
-
-//----------------------------------------------------------------------------
-
-#endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */
 

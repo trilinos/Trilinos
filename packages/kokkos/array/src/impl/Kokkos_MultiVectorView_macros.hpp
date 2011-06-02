@@ -57,6 +57,8 @@ public:
   typedef KOKKOS_MACRO_DEVICE    device_type ;
   typedef device_type::size_type size_type ;
 
+  enum { Contiguous = true };
+
   /*------------------------------------------------------------------*/
   /** \brief  Query length of vectors */
   inline
@@ -162,10 +164,10 @@ public:
     , m_count(  m_ptr_on_device ? iEnd - iBeg : 0 )
     {
       if ( m_ptr_on_device ) {
-        device_type::assign_memory_view( rhs.m_memory );
+        device_type::assign_memory_view( m_memory , rhs.m_memory );
       }
       else if ( rhs.m_ptr_on_device ) {
-        KOKKOS_MACRO_CAN_THROW( Impl::multivectorview_range_error( iBeg , iEnd , rhs.m_count ) );
+        KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iEnd , rhs.m_count ) );
       }
     }
 
@@ -179,10 +181,10 @@ public:
     , m_count(  m_ptr_on_device ? 1 : 0 )
     {
       if ( m_ptr_on_device ) {
-        device_type::assign_memory_view( rhs.m_memory );
+        device_type::assign_memory_view( m_memory , rhs.m_memory );
       }
       else if ( rhs.m_ptr_on_device ) {
-        KOKKOS_MACRO_CAN_THROW( Impl::multivectorview_range_error( iBeg , iBeg + 1 , rhs.m_count ) );
+        KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iBeg + 1 , rhs.m_count ) );
       }
     }
 
@@ -212,15 +214,82 @@ private:
   create_labeled_multivector( const std::string & label ,
                               size_t length , size_t count );
 
-  template < typename V , class DeviceDst , class DeviceSrc >
+  template < typename V , class DeviceDst , bool ContigDst ,
+                          class DeviceSrc , bool ContigSrc >
   friend
-  class MultiVectorDeepCopy ;
+  class Impl::MultiVectorDeepCopy ;
 };
-
-//----------------------------------------------------------------------------
 
 } // namespace Kokkos
 
-#endif
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
+namespace Kokkos {
+namespace Impl {
+
+template < typename ValueType >
+class MultiVectorDeepCopy< ValueType , KOKKOS_MACRO_DEVICE , true ,
+                                       KOKKOS_MACRO_DEVICE , true > {
+public:
+  typedef KOKKOS_MACRO_DEVICE                        device_type ;
+  typedef device_type::size_type                     size_type ;
+  typedef MultiVectorView< ValueType , device_type > multivector_type ;
+
+        ValueType * const m_dst ;
+  const ValueType * const m_src ;
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type iwork ) const
+  { m_dst[iwork] = m_src[iwork] ; }
+
+  MultiVectorDeepCopy( ValueType * dst , const ValueType * src )
+    : m_dst( dst ), m_src( src ) {}
+
+  static
+  void run( const multivector_type & dst , const multivector_type & src )
+  {
+    parallel_for( dst.length() * dst.count() ,
+                  MultiVectorDeepCopy( dst.m_memory.ptr_on_device() ,
+                                       src.m_memory.ptr_on_device() ) );
+  }
+};
+
+template < typename ValueType >
+class MultiVectorDeepCopy< ValueType , KOKKOS_MACRO_DEVICE , false ,
+                                       KOKKOS_MACRO_DEVICE , false > {
+public:
+  typedef KOKKOS_MACRO_DEVICE                        device_type ;
+  typedef device_type::size_type                     size_type ;
+  typedef MultiVectorView< ValueType , device_type > multivector_type ;
+
+  const multivector_type m_dst ;
+  const multivector_type m_src ;
+  const size_type        m_count ;
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type iwork ) const
+  {
+    for ( size_type i = 0 ; i < m_count ; ++i ) {
+      m_dst(iwork,i) = m_src(iwork,i) ;
+    }
+  }
+
+  MultiVectorDeepCopy( const multivector_type & dst ,
+                       const multivector_type & src )
+    : m_dst( dst ), m_src( src ), m_count( dst.count() ) {}
+
+  static
+  void run( const multivector_type & dst , const multivector_type & src )
+  { parallel_for( dst.length() , MultiVectorDeepCopy( dst , src ) ); }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+#endif /* template specialization macros defined */
 
 

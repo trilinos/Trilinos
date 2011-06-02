@@ -6,6 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+namespace Test {
+
 template< typename Scalar , class DeviceType >
 struct HexSimpleFill ;
 
@@ -238,4 +240,6 @@ struct HexGrad< Scalar , KOKKOS_MACRO_DEVICE >
     return seconds ;
   }
 };
+
+}
 

@@ -40,6 +40,8 @@
 #ifndef KOKKOS_DEVICECUDA_PARALLELDRIVER_HPP
 #define KOKKOS_DEVICECUDA_PARALLELDRIVER_HPP
 
+#include <stdio.h>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -69,40 +71,10 @@ struct DeviceCudaTraits {
 
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
+/** \brief  Access to constant memory on the device */
 __device__ __constant__
 Kokkos::Impl::DeviceCudaTraits::ConstantGlobalBufferType
 kokkos_device_cuda_constant_memory_buffer ;
-
-template< class ParallelDriver >
-__global__
-void kokkos_device_cuda_parallel_driver()
-{
-  // The driver functor has been copied to constant memory
-  const ParallelDriver * const driver =
-    (const ParallelDriver *) kokkos_device_cuda_constant_memory_buffer ;
-
-  // Run the driver functor residing in constant memory
-  ParallelDriver::run_on_device( driver );
-}
-
-namespace Kokkos {
-namespace Impl {
-
-template< class ParallelDriver >
-void device_cuda_run( const ParallelDriver & driver ,
-                      const dim3           & grid ,
-                      const dim3           & block ,
-                      const DeviceCuda::size_type shmem = 0 )
-{
-  // Copy functor to constant memory on the device
-  cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(ParallelDriver) );
-
-  // Invoke the driver function on the device
-  kokkos_device_cuda_parallel_driver< ParallelDriver ><<< grid , block , shmem >>>();
-}
-
-}
-}
 
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 

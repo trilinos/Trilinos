@@ -47,56 +47,77 @@
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
 namespace Kokkos {
+namespace Impl {
+
+template< class DriverType >
+__global__
+static void cuda_parallel_for()
+{
+  typedef DeviceCuda::size_type size_type ;
+
+  // The driver functor has been copied to constant memory
+
+  const DriverType * const driver =
+    (const DriverType *) kokkos_device_cuda_constant_memory_buffer ;
+
+  const size_type work_stride = blockDim.x * gridDim.x ;
+
+  size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
+
+  for ( ; iwork < driver->m_work_count ; iwork += work_stride ) {
+    driver->m_work_functor( iwork );
+  }
+}
 
 template< class FunctorType >
 class ParallelFor< FunctorType , DeviceCuda > {
 public:
-  typedef DeviceCuda             device_type ;
-  typedef device_type::size_type size_type ;
-  typedef ParallelFor< FunctorType , DeviceCuda > self_type ;
 
-  const FunctorType m_work_functor ;
-  const size_type   m_work_count ;
+  const FunctorType                     m_work_functor ;
+  const typename FunctorType::size_type m_work_count ;  
 
-  //--------------------------------------------------------------------------
+private:
 
-  static inline
-  __device__
-  void run_on_device( const ParallelFor * driver )
-  {
-    const size_type work_stride = blockDim.x * blockDim.y * gridDim.x ;
-
-    size_type iwork = threadIdx.x + blockDim.x * (
-                      threadIdx.y + blockDim.y * blockIdx.x );
-
-    for ( ; iwork < driver->m_work_count ; iwork += work_stride ) {
-      driver->m_work_functor( iwork );
-    }
-  }
-
-  //--------------------------------------------------------------------------
-
-  ParallelFor( const size_type work_count , const FunctorType & functor )
-    : m_work_functor( ( device_type::set_dispatch_functor() , functor ) )
+  ParallelFor( const size_t work_count ,
+               const FunctorType & functor )
+    : m_work_functor( functor )
     , m_work_count( work_count )
+    {}
+
+  ParallelFor();
+  ParallelFor( const ParallelFor & );
+  ParallelFor & operator = ( const ParallelFor & );
+
+public:
+
+  static void execute( const size_t work_count ,
+                       const FunctorType & functor )
   {
-    device_type::clear_dispatch_functor();
+    enum { WarpSize = DeviceCudaTraits::WarpSize };
 
-    dim3 block( Impl::DeviceCudaTraits::WarpSize , 
-                device_type::maximum_warp_count() , 1 );
+    const size_t grid_max = DeviceCuda::maximum_grid_count();
 
-    dim3 grid( device_type::maximum_grid_count() , 1 , 1 );
+    const dim3 block( WarpSize , 1 , 1 );
 
-    // Reduce grid count until just enough blocks for the work.
+    dim3 grid( ( ( work_count + WarpSize - 1 ) / WarpSize ) , 1 , 1 );
 
-    while ( work_count <= block.x * block.y * ( grid.x >> 1 ) ) {
-      grid.x >>= 1 ;
-    }
+    if ( grid_max < grid.x ) grid.x = grid_max ;
 
-    Impl::device_cuda_run( *this , grid , block );
+    DeviceCuda::set_dispatch_functor();
+
+    ParallelFor driver( work_count , functor );
+
+    DeviceCuda::clear_dispatch_functor();
+
+    // Copy functor to constant memory on the device
+    cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(driver) );
+
+    // Invoke the driver function on the device
+    cuda_parallel_for< ParallelFor< FunctorType , DeviceCuda > > <<< grid , block >>>();
   }
 };
 
+} // namespace Impl
 } // namespace Kokkos
 
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */

@@ -57,7 +57,7 @@ void multivector_require_equal_dimension( const MultiVectorX & x ,
                                        y.length() , y.count() );
 }
 
-void multivectorview_range_error( size_t , size_t , size_t );
+void multivector_require_range( size_t , size_t , size_t );
 
 size_t mdarray_deduce_rank( size_t , size_t , size_t , size_t ,
                             size_t , size_t , size_t , size_t );

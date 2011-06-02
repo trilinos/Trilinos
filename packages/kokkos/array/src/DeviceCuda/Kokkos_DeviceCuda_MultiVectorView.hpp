@@ -48,9 +48,10 @@
 #include <DeviceCuda/Kokkos_DeviceCuda_DeepCopy.hpp>
 
 namespace Kokkos {
+namespace Impl {
 
 template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceCuda , DeviceHost >
+class MultiVectorDeepCopy< ValueType , DeviceCuda , true , DeviceHost , true >
 {
 public:
   static void run( const MultiVectorView< ValueType , DeviceCuda > & dst ,
@@ -59,12 +60,12 @@ public:
     Impl::copy_to_cuda_from_host( dst.m_ptr_on_device ,
                                   src.m_ptr_on_device,
                                   sizeof(ValueType),
-                                  dst.size() );
+                                  dst.length() * dst.count() );
   }
 };
 
 template< typename ValueType >
-class MultiVectorDeepCopy< ValueType , DeviceHost , DeviceCuda >
+class MultiVectorDeepCopy< ValueType , DeviceHost , true , DeviceCuda , true >
 {
 public:
   static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
@@ -73,10 +74,11 @@ public:
     Impl::copy_to_host_from_cuda( dst.m_ptr_on_device ,
                                   src.m_ptr_on_device,
                                   sizeof(ValueType),
-                                  dst.size() );
+                                  dst.length() * dst.count() );
   }
 };
 
+} // namespace Impl
 } // namespace Kokkos
 
 
