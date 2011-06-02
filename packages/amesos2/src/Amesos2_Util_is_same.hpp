@@ -46,37 +46,51 @@
 
 namespace Amesos {
 
-namespace Util {
+  namespace Util {
 
-/*==================== Simple Template Metaprogramming ==================== */
+    /*==================== Simple Template Metaprogramming ==================== */
 
-template <class T, T val>
-struct integral_constant
-{
-  typedef integral_constant<T, val>  type;
-  typedef T                          value_type;
-  static const T value;
-};
+    template <class T, T val>
+    struct integral_constant
+    {
+      typedef integral_constant<T, val>  type;
+      typedef T                          value_type;
+      static const T value;
+    };
 
-/* Some compilers support initializing static const members alongside the
- * definition, but others do not, so we go we the safe method of external
- * initialization.
- */
-template <class T, T val>
-const T integral_constant<T,val>::value = val;
+    /* Some compilers support initializing static const members alongside the
+     * definition, but others do not, so we go we the safe method of external
+     * initialization.
+     */
+    template <class T, T val>
+    const T integral_constant<T,val>::value = val;
 
-typedef integral_constant<bool, true>  true_type;
-typedef integral_constant<bool, false> false_type;
+    typedef integral_constant<bool, true>  true_type;
+    typedef integral_constant<bool, false> false_type;
 
-template <typename, typename>
-struct is_same : public false_type 
-{};
+    template <typename, typename>
+    struct is_same : public false_type 
+    {};
 
-template <typename T>
-struct is_same<T,T> : public true_type
-{};
+    template <typename T>
+    struct is_same<T,T> : public true_type
+    {};
 
-} // end namespace Util
+
+    template <bool B, typename T1, typename T2>
+    struct if_then_else {};
+
+    template <typename T1, typename T2>
+    struct if_then_else<true, T1, T2> {
+      typedef T1 type;
+    };
+
+    template <typename T1, typename T2>
+    struct if_then_else<false, T1, T2> {
+      typedef T2 type;
+    };
+
+  } // end namespace Util
 
 } // end namespace Amesos
 
