@@ -482,7 +482,7 @@ def assertNotGrepFileForRegexStrList(testObject, testName, fileName, regexStrLis
 # Main unit test driver
 def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
   expectPass, passRegexStrList, filePassRegexStrList=None, mustHaveCheckinTestOut=True, \
-  failRegexStrList=None, fileFailRegexStrList=None, envVars=[] \
+  failRegexStrList=None, fileFailRegexStrList=None, envVars=[], inPathEg=True, egVersion=True \
   ):
 
   scriptsDir = getScriptBaseDir()
@@ -517,9 +517,6 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     baseCmndInterceptsStr = \
       "FT: .*checkin-test-impl\.py.*\n" \
-      "FT: eg config --get user.email\n" \
-      "FT: which eg\n" \
-      "FT: eg --version\n" \
       "FT: date\n" \
       "FT: rm [a-zA-Z0-9_/\.]+\n" \
       "FT: touch .*\n" \
@@ -528,6 +525,15 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
       "FT: grep .*"+getTestOutputFileName()+"\n" \
       "FT: grep .*"+getEmailBodyFileName()+"\n" \
       "FT: grep .*REQUESTED ACTIONS\: PASSED.*\n"
+
+    if inPathEg:
+      baseCmndInterceptsStr += \
+      "IT: git config --get user.email; 0; bogous@somwhere.com\n" \
+      +"IT: which eg; 0; /some/path/eg\n"
+
+    if egVersion:
+      baseCmndInterceptsStr += \
+      "IT: eg --version; 0; "+g_officialEgVersion+"\n"
 
     fullCmndInterceptsStr = baseCmndInterceptsStr + cmndInterceptsStr
 
@@ -799,6 +805,53 @@ class test_checkin_test(unittest.TestCase):
        +"\-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON\n"),
       # ToDo: Add more files to check
       ]
+      )
+
+
+  # In this test, we test the behavior of the script where eg on the path
+  # is not found and the default eg is used instead.  We have to test the
+  # entire workflow in order to make sure that raw 'eg' is not used anywhere
+  # where it matters.
+  def test_do_all_no_eg_installed(self):
+    scriptsDir = getScriptBaseDir()
+    eg = scriptsDir+"/../DependencyUnitTests/MockTrilinos/commonTools/git/eg"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_no_eg_installed",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --without-serial-release" \
+      +" --do-all --push" \
+      ,
+      \
+      "IT: git config --get user.email; 0; bogous@somwhere.com\n" \
+      +"IT: which eg; 1; '/usr/bin/which: no eg in (path1:path2:path3)'\n" \
+      +"IT: "+eg+" --version; 0; "+g_officialEgVersion+"\n" \
+      +"IT: "+eg+" branch; 0; '* currentbranch'\n" \
+      +"IT: "+eg+" status; 0; '(on master branch)'\n" \
+      +"IT: "+eg+" pull; 0; 'initial eg pull passed'\n" \
+      +"IT: "+eg+" diff --name-status origin/currentbranch; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n" \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +"IT: "+eg+" pull && "+eg+" rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n"
+      +"IT: "+eg+" cat-file -p HEAD; 0; 'This is the last commit message'\n" \
+      +"IT: "+eg+" log --oneline currentbranch \^origin/currentbranch; 0; '12345 Only one commit'\n" \
+      +"IT: "+eg+" log --pretty=format:'%h' currentbranch\^ \^origin/currentbranch; 0; '12345'\n"
+      +"IT: "+eg+" commit --amend -F .*; 0; 'Amending the last commit passed'\n"
+      +"IT: "+eg+" log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n"
+      +"IT: cat modifiedFiles.out; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"\
+      +"IT: "+eg+" push; 0; 'push passes'\n" \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Warning, the eg command is not in your path! .*no eg in .path1:path2:path3.*\n" \
+      "Setting to default eg in source tree '.*/commonTools/git/eg'\n" \
+      ,
+      inPathEg=False, egVersion=False
       )
 
 
@@ -1697,25 +1750,6 @@ class test_checkin_test(unittest.TestCase):
   # F) Test various failing use cases
 
 
-  def test_do_all_no_eg_installed(self):
-    checkin_test_run_case(
-      \
-      self,
-      \
-      "do_all_no_eg_installed",
-      \
-      "--do-all" \
-      ,
-      \
-      "IT: which eg; 1; '/usr/bin/which: no eg in (path1:path2:path3)'\n" \
-      ,
-      \
-      False,
-      \
-      "Error, the eg command is not in your path!\n" \
-      )
-
-
   def test_do_all_wrong_eg_version(self):
     checkin_test_run_case(
       \
@@ -1732,6 +1766,8 @@ class test_checkin_test(unittest.TestCase):
       False,
       \
       "Error, the installed eg version wrong-version does not equal the official eg version "+g_officialEgVersion+"!\n" \
+      ,
+      egVersion=False
       )
 
 
@@ -1753,6 +1789,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "WARNING: No actions were performed!\n" \
       "REQUESTED ACTIONS: PASSED\n" \
+      ,
+      egVersion=False
       )
 
   #NOTE: I would also like to check the git verion but I can't becuase my

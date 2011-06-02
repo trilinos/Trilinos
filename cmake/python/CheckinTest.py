@@ -175,13 +175,17 @@ def assertEgGitVersionHelper(returnedVersion, expectedVersion):
       +expectedVersion+"!  To turn this check off, pass in --no-eg-git-version-check.")
 
 
-def assertEgGitVersions(inOptions):
+def setupAndAssertEgGitVersions(inOptions):
 
   egWhich = getCmndOutput("which eg", True, False)
   if egWhich == "" or re.match(".+no eg.+", egWhich):
-    raise Exception("Error, the eg command is not in your path! ("+egWhich+")")
+    print "Warning, the eg command is not in your path! ("+egWhich+")"
+    setattr(inOptions, "eg", inOptions.trilinosSrcDir+"/commonTools/git/eg")
+    print "Setting to default eg in source tree '"+inOptions.eg+"'!"
+  else:
+    setattr(inOptions, "eg", "eg")
 
-  egVersionOuput = getCmndOutput("eg --version", True, False)
+  egVersionOuput = getCmndOutput(inOptions.eg+" --version", True, False)
   egVersionsList = egVersionOuput.split('\n')
 
   if inOptions.enableEgGitVersionCheck:
@@ -234,7 +238,7 @@ def getRepoSpaceBranchFromOptionStr(extraPullFrom):
 def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
   doRebase=False)\
   :
-  cmnd = "eg pull"
+  cmnd = inOptions.eg+" pull"
   if pullFromRepo:
     repoSpaceBranch = getRepoSpaceBranchFromOptionStr(pullFromRepo)
     print "\nPulling in updates from '"+repoSpaceBranch+"' ...\n"
@@ -245,7 +249,7 @@ def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
     # modified files will be wrong.  I don't know why this is but if instead
     # you do a raw 'eg pull', then the right list of files shows up.
   if doRebase:
-    cmnd += " && eg rebase --against origin/"+inOptions.currentBranch
+    cmnd += " && "+inOptions.eg+" rebase --against origin/"+inOptions.currentBranch
   return echoRunSysCmnd( cmnd,
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
     outFile=os.path.join(baseTestDir, outFile),
@@ -417,7 +421,7 @@ reModifiedFiles = re.compile(r"^[MAD]\t(.+)$")
 
 
 def getCurrentBranchName(inOptions, baseTestDir):
-  branchesStr = getCmndOutput("eg branch", workingDir=inOptions.trilinosSrcDir)
+  branchesStr = getCmndOutput(inOptions.eg+" branch", workingDir=inOptions.trilinosSrcDir)
   for branchName in branchesStr.split('\n'):
     #print "branchName =", branchName
     if branchName[0] == '*':
@@ -429,7 +433,7 @@ def getCurrentBranchName(inOptions, baseTestDir):
 
 def getCurrentDiffOutput(gitRepoName, inOptions, baseTestDir):
   echoRunSysCmnd(
-    "eg diff --name-status origin/"+inOptions.currentBranch,
+    inOptions.eg+" diff --name-status origin/"+inOptions.currentBranch,
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
     outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName(gitRepoName)),
     timeCmnd=True
@@ -1329,7 +1333,7 @@ def getLastCommitMessageStr(inOptions, gitRepoName):
 
   # Get the raw output from the last current commit log
   rawLogOutput = getCmndOutput(
-    "eg cat-file -p HEAD",
+    inOptions.eg+" cat-file -p HEAD",
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
     )
 
@@ -1340,7 +1344,7 @@ def getLocalCommitsSummariesStr(inOptions, gitRepoName, appendRepoName):
 
   # Get the list of local commits other than this one
   rawLocalCommitsStr = getCmndOutput(
-    "eg log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
+    inOptions.eg+" log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
     True,
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
     )
@@ -1379,7 +1383,7 @@ def getLocalCommitsSHA1ListStr(inOptions, gitRepoName):
 
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
-    "eg log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
+    inOptions.eg+" log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
     True,
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
     )
@@ -1421,7 +1425,7 @@ def checkinTest(inOptions):
     inOptions.doBuild = True
     inOptions.doTest = True
 
-  assertEgGitVersions(inOptions)
+  setupAndAssertEgGitVersions(inOptions)
 
   if inOptions.overallNumProcs:
     inOptions.makeOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.makeOptions
@@ -1588,7 +1592,7 @@ def checkinTest(inOptions):
 
         print "\n3.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
-        egStatusOutput = getCmndOutput("eg status", True, throwOnError=False,
+        egStatusOutput = getCmndOutput(inOptions.eg+" status", True, throwOnError=False,
           workingDir=getGitRepoDir(inOptions.trilinosSrcDir,gitRepo.repoName))
   
         print \
@@ -2008,7 +2012,7 @@ def checkinTest(inOptions):
             if localCommitsExist:
   
               commitAmendRtn = echoRunSysCmnd(
-                "eg commit --amend" \
+                inOptions.eg+" commit --amend" \
                 " -F "+os.path.join(baseTestDir, finalCommitEmailBodyFileName),
                 workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
                 outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName(gitRepo.repoName)),
@@ -2091,7 +2095,7 @@ def checkinTest(inOptions):
 
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
-                "eg push origin "+inOptions.currentBranch,
+                inOptions.eg+" push origin "+inOptions.currentBranch,
                 workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
                 outFile=os.path.join(baseTestDir, getPushOutputFileName(gitRepo.repoName)),
                 throwExcept=False, timeCmnd=True )
