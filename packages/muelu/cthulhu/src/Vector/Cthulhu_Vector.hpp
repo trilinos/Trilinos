@@ -131,6 +131,7 @@ namespace Cthulhu {
 //     virtual void doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
 //                           const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
 
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doImport; // overloading, not hiding
     virtual void doImport(const Vector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
                           const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
 
@@ -139,6 +140,7 @@ namespace Cthulhu {
 //                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
 
     //! Export (using an Importer)
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport; // overloading, not hiding
     virtual void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
 

@@ -222,8 +222,9 @@ namespace Cthulhu {
 
     Epetra_Vector * getEpetra_Vector() const { CTHULHU_DEBUG_ME; return (*this->EpetraMultiVector::getEpetra_MultiVector())(0); }
 
-    inline void doImport(const Vector<double, int, int> &source, 
-                         const Import<int, int> &importer, CombineMode CM) {
+    using EpetraMultiVector::doImport; // overloading, not hiding
+    void doImport(const Vector<double, int, int> &source, 
+                  const Import<int, int> &importer, CombineMode CM) {
       CTHULHU_DEBUG_ME;
 
       CTHULHU_DYNAMIC_CAST(const EpetraVector, source, tSource, "Cthulhu::EpetraVector::doImport only accept Cthulhu::EpetraVector as input arguments.");
@@ -234,6 +235,7 @@ namespace Cthulhu {
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
+    using EpetraMultiVector::doExport; // overloading, not hiding
     void doExport(const Vector<double, int, int> &dest,
                   const Import<int, int>& importer, CombineMode CM) {
       CTHULHU_DEBUG_ME;

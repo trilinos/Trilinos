@@ -170,9 +170,9 @@ namespace Cthulhu {
     //     //! Advanced constructor accepting parallel buffer view.
     //     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) { CTHULHU_DEBUG_ME; vec_->(); };
 
-
-    inline void doImport(const Vector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
-                         const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) { 
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doImport; // overloading, not hiding
+    void doImport(const Vector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
+                  const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) { 
       CTHULHU_DEBUG_ME;
       
       typedef TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TTpetraVector;      
@@ -185,8 +185,9 @@ namespace Cthulhu {
       this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->doImport(*v, *tImporter.getTpetra_Import(), Cthulhu2Tpetra_CombineMode(CM));
     }
 
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport; // overloading, not hiding
     void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
-                  const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) {
+             const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) {
       CTHULHU_DEBUG_ME;
       
       typedef TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TTpetraVector;      
