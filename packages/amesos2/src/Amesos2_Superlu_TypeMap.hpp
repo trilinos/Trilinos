@@ -202,11 +202,11 @@ class SerializationTraits<Ordinal,SLU::Z::doublecomplex>
 // C++-style output functions for Superlu complex types
 namespace std {
   ostream& operator<<(ostream& out, const SLU::Z::doublecomplex z){
-    out << "(" << z.r << "," << z.i << ")";
+    return (out << "(" << z.r << "," << z.i << ")");
   }
 
   ostream& operator<<(ostream& out, const SLU::C::complex c){
-    out << "(" << c.r << "," << c.i << ")";
+    return (out << "(" << c.r << "," << c.i << ")");
   }
 }
 
