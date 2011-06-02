@@ -62,7 +62,7 @@ Solver<ConcreteSolver,Matrix,Vector>::Solver(
   Teuchos::RCP<Matrix> A,
   Teuchos::RCP<Vector> X,
   Teuchos::RCP<Vector> B )
-  :	matrixA_(new MatrixAdapter<Matrix>(A))
+  : matrixA_(new MatrixAdapter<Matrix>(A))
   , multiVecX_(new MultiVecAdapter<Vector>(X))
   , multiVecB_(new MultiVecAdapter<Vector>(B))
   , globalNumNonZeros_(matrixA_->getGlobalNNZ())
@@ -369,4 +369,4 @@ Solver<ConcreteSolver,Matrix,Vector>::name() const {
 
 } // end namespace Amesos
 
-#endif	// AMESOS2_SOLVER_DEF_HPP
+#endif  // AMESOS2_SOLVER_DEF_HPP
