@@ -68,6 +68,7 @@ SET(HEADERS ${HEADERS}
   epetra/Isorropia_EpetraRedistributor.hpp
   epetra/Isorropia_EpetraLibrary.hpp
   epetra/Isorropia_EpetraLevelScheduler.hpp
+  epetra/Isorropia_EpetraMatcher.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -81,6 +82,7 @@ SET(SOURCES ${SOURCES}
   epetra/Isorropia_EpetraRedistributor.cpp
   epetra/Isorropia_EpetraLibrary.cpp
   epetra/Isorropia_EpetraLevelScheduler.cpp
+  epetra/Isorropia_EpetraMatcher.cpp
   )
 
 #
