@@ -73,8 +73,8 @@ template< class FunctorType >
 class ParallelFor< FunctorType , DeviceCuda > {
 public:
 
-  const FunctorType                     m_work_functor ;
-  const typename FunctorType::size_type m_work_count ;  
+  const FunctorType           m_work_functor ;
+  const DeviceCuda::size_type m_work_count ;  
 
 private:
 

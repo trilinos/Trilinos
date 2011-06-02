@@ -17,6 +17,7 @@
 #include <UnitTestMultiVectorView.hpp>
 #include <UnitTestMDArrayView.hpp>
 #include <UnitTestMDArrayDeepCopy.hpp>
+#include <UnitTestMDArrayIndexMap.hpp>
 #include <UnitTestReduce.hpp>
 
 #include <Kokkos_DeviceClear_macros.hpp>
@@ -31,6 +32,8 @@ void test_device_host()
     UnitTestMultiVectorView< Kokkos::DeviceHost >();
     UnitTestMDArrayView<     Kokkos::DeviceHost >();
     UnitTestMDArrayDeepCopy< Kokkos::DeviceHost >();
+
+    Test::UnitTestMDArrayIndexMap< Kokkos::DeviceHost >();
 
     UnitTestReduce< long ,   Kokkos::DeviceHost >( 1000000 );
     UnitTestReduce< double , Kokkos::DeviceHost >( 1000000 );

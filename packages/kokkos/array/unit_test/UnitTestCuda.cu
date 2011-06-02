@@ -20,6 +20,7 @@
 #include <UnitTestMultiVectorView.hpp>
 #include <UnitTestMDArrayView.hpp>
 #include <UnitTestMDArrayDeepCopy.hpp>
+#include <UnitTestMDArrayIndexMap.hpp>
 #include <UnitTestReduce.hpp>
 
 namespace Test {
@@ -35,6 +36,8 @@ void test_device_cuda()
     UnitTestMultiVectorView< Kokkos::DeviceCuda >();
     UnitTestMDArrayView<     Kokkos::DeviceCuda >();
     UnitTestMDArrayDeepCopy< Kokkos::DeviceCuda >();
+
+    Test::UnitTestMDArrayIndexMap< Kokkos::DeviceCuda >();
 
     UnitTestReduce< long ,   Kokkos::DeviceCuda >( 1000000 );
     UnitTestReduce< double , Kokkos::DeviceCuda >( 1000000 );

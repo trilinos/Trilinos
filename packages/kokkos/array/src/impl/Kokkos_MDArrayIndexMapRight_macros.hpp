@@ -99,10 +99,10 @@ public:
              typename iType6 , typename iType7 >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type index( const iType0 & i0 , const iType1 & i1 ,
-                   const iType2 & i2 , const iType3 & i3 ,
-                   const iType4 & i4 , const iType5 & i5 ,
-                   const iType6 & i6 , const iType7 & i7 ) const
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 , const iType5 & i5 ,
+                    const iType6 & i6 , const iType7 & i7 ) const
   {
     KOKKOS_MACRO_CHECK(
       mdarray_require_dimension( m_rank,
@@ -122,10 +122,10 @@ public:
              typename iType6 >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type index( const iType0 & i0 , const iType1 & i1 ,
-                   const iType2 & i2 , const iType3 & i3 ,
-                   const iType4 & i4 , const iType5 & i5 ,
-                   const iType6 & i6 ) const
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 , const iType5 & i5 ,
+                    const iType6 & i6 ) const
   {
     KOKKOS_MACRO_CHECK(
       mdarray_require_dimension( m_rank,
@@ -144,9 +144,9 @@ public:
              typename iType4 , typename iType5 >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type index( const iType0 & i0 , const iType1 & i1 ,
-                   const iType2 & i2 , const iType3 & i3 ,
-                   const iType4 & i4 , const iType5 & i5 ) const
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 , const iType5 & i5 ) const
   {
     KOKKOS_MACRO_CHECK(
       mdarray_require_dimension( m_rank,
@@ -164,9 +164,9 @@ public:
              typename iType4 >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type index( const iType0 & i0 , const iType1 & i1 ,
-                   const iType2 & i2 , const iType3 & i3 ,
-                   const iType4 & i4 ) const
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 ) const
   {
     KOKKOS_MACRO_CHECK(
       mdarray_require_dimension( m_rank,
@@ -183,8 +183,8 @@ public:
              typename iType2 , typename iType3 >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type index( const iType0 & i0 , const iType1 & i1 ,
-                   const iType2 & i2 , const iType3 & i3 ) const
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ) const
   {
     KOKKOS_MACRO_CHECK(
       mdarray_require_dimension( m_rank,
@@ -201,8 +201,8 @@ public:
              typename iType2 >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type index( const iType0 & i0 , const iType1 & i1 ,
-                   const iType2 & i2 ) const
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 ) const
   {
     KOKKOS_MACRO_CHECK(
       mdarray_require_dimension( m_rank,
@@ -216,7 +216,7 @@ public:
   template < typename iType0 , typename iType1 >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type index( const iType0 & i0 , const iType1 & i1 ) const
+  size_type offset( const iType0 & i0 , const iType1 & i1 ) const
   {
     KOKKOS_MACRO_CHECK(
       mdarray_require_dimension( m_rank,
@@ -230,7 +230,7 @@ public:
   template < typename iType0 >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type index( const iType0 & i0 ) const
+  size_type offset( const iType0 & i0 ) const
   {
     KOKKOS_MACRO_CHECK(
       mdarray_require_dimension( m_rank,
@@ -245,12 +245,12 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  void reverse_index( size_t index, size_t * const indices ) const
+  void reverse_index( size_t offset, size_t * const indices ) const
   {
     for ( size_type i = m_rank ; 0 < i ; ) {
       --i ;
-      indices[i] = index % m_dims[i] ;
-      index /= m_dims[i] ;
+      indices[i] = offset % m_dims[i] ;
+      offset /= m_dims[i] ;
     }
   }
 

@@ -18,6 +18,7 @@
 #include <UnitTestMultiVectorView.hpp>
 #include <UnitTestMDArrayView.hpp>
 #include <UnitTestMDArrayDeepCopy.hpp>
+#include <UnitTestMDArrayIndexMap.hpp>
 #include <UnitTestReduce.hpp>
 
 #include <Kokkos_DeviceClear_macros.hpp>
@@ -34,6 +35,8 @@ void test_device_tpi()
     UnitTestMultiVectorView< Kokkos::DeviceTPI >();
     UnitTestMDArrayView<     Kokkos::DeviceTPI >();
     UnitTestMDArrayDeepCopy< Kokkos::DeviceTPI >();
+
+    Test::UnitTestMDArrayIndexMap< Kokkos::DeviceTPI >();
 
     UnitTestReduce< long ,   Kokkos::DeviceTPI >( 1000000 );
     UnitTestReduce< double , Kokkos::DeviceTPI >( 1000000 );
