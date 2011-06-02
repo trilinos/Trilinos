@@ -13,7 +13,6 @@
 #include <Isorropia_EpetraRedistributor.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
 
-static int tmp=0;
 #define CHECK_FAILED() {      \
   Comm.SumAll(&fail, &tmp, 1);      \
   if (tmp){     \
@@ -71,8 +70,6 @@ matcher::matcher(char * infile)
 }
 
 matcher::~matcher() {
-	int i;
-
 	mateU.clear();
 	mateV.clear();
 	del_m.clear();
@@ -85,25 +82,25 @@ matcher::~matcher() {
 void matcher::process_mtx_compressed(char *fname)
 {
 	/*****************************************/
-	int rc=0, fail = 0;
+	int rc=0;
 	#ifdef HAVE_EPETRAEXT
-	  bool verbose = false;
+	 // bool verbose = false;
 	  int localProc = 0;
 	//   std::string *fstr;
 
-	#ifdef HAVE_MPI
+	//#ifdef HAVE_MPI
 	  /*int numProcs;
 	  MPI_Init(&argc, &argv);
 	  MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
 	  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 	  const Epetra_MpiComm Comm(MPI_COMM_WORLD);
 	  const Epetra_MpiComm Comm;*/
-	#else
+	//#else
 	  const Epetra_SerialComm Comm;
-	#endif
+	//#endif
 
-	  string *inputFile = new string("a.mtx");
-	  const char *fname1 = inputFile->c_str();
+	  //string *inputFile = new string("a.mtx");
+	  //const char *fname1 = inputFile->c_str();
 
 	  // Read in the matrix market file and distribute its rows across the
 	  // processes.
@@ -163,11 +160,14 @@ int matcher::vlayer_clear()
 	#pragma omp parallel for
 	for(i=0;i<V;i++)
 		vlayered[i]=0;
+		
+	return 1;
 }
 
 int matcher::is_intersect(int k)
 {
-	int i,flag=0;
+	unsigned int i;
+	int flag=0;
 
 	#pragma omp parallel for
 	for(i=0;i<vlist.size();i++)
@@ -209,7 +209,7 @@ void matcher::update_vlayered(int k)
 
 int matcher::construct_layered_graph()
 {
-	int k,i,j,t,pos,flag;
+	int k,t,flag,i,j;
 	k=k_star=0;
 	
 	vlayer_clear();
@@ -252,7 +252,7 @@ int matcher::construct_layered_graph()
 		nvlist.clear();
 		counting=0;
 		flag=0;
-		omp_set_num_threads(8);			
+		//omp_set_num_threads(8);			
 		if(k==0)                
 		{
 				if(icm==1)
@@ -309,7 +309,7 @@ int matcher::construct_layered_graph()
 		{
 			flag=0;
 			#pragma omp parallel for private(j,t)
-			for(i=0;i<vlist.size();i++)
+			for(i=0;i<(signed)vlist.size();i++)
 			{
 				int id=mateV[vlist[i]];
 				LU[id].edgelist.clear();
@@ -332,7 +332,7 @@ int matcher::construct_layered_graph()
 		
 		vlist.clear();
 				
-		omp_set_num_threads(24);			
+		//omp_set_num_threads(24);			
 		update_vlayered(k+1);  // updating new inserted V nodes.*/
 						
 		if(flag==0)
@@ -349,9 +349,9 @@ int matcher::construct_layered_graph()
 		else  //build k+2.....
 		{
 			
-			omp_set_num_threads(8);				
+			//omp_set_num_threads(8);				
 			#pragma omp parallel for private(j)
-			for(j=0;j<vlist.size();j++)
+			for(j=0;j<(signed)vlist.size();j++)
 			{
 				int id=mateV[vlist[j]];
 				//cout<<"Construction..."<<endl;
@@ -377,7 +377,7 @@ int matcher::recursive_path_finder(int k, int p, vector<int>* path)
 
 	if(k%2==0) // Layers where vertices are from set U
 	{
-		for(i=0;i<LU[p].edgelist.size();i++)
+		for(i=0;(unsigned)i<LU[p].edgelist.size();i++)
 		{
 			ind=LU[p].edgelist[i];
 			
@@ -449,7 +449,7 @@ int matcher::iterative_path_finder(int k, int p, vector<int>* path)
 		{	
 			path->push_back(cur_p);
 
-			for(i=0;i<LU[cur_p].edgelist.size();i++)
+			for(i=0;(unsigned)i<LU[cur_p].edgelist.size();i++)
 			{
 				ind=LU[cur_p].edgelist[i];
 				vector<int> t;
@@ -489,7 +489,7 @@ void matcher::find_set_del_M()
 	delete_matched_v();
 	del_m.clear();
 	
-	omp_set_num_threads(2);
+	//omp_set_num_threads(2);
 	#pragma omp parallel for
 	for(i=0;i<U;i++)
 	{
@@ -535,13 +535,13 @@ int matcher::augment_matching()
 	#pragma omp parallel for private(j)
 	for(i=0;i<count;i++)
 	{
-		for(j=1;j<del_m[i].size()-2;j=j+2)
+		for(j=1;(unsigned)j<del_m[i].size()-2;j=j+2)
 		{
 			if(!remove_edge(del_m[i][j],del_m[i][j+1]))
 				cout<<"Error: Remove Edge...not found"<<endl;
 		}
 			
-		for(j=0;j<del_m[i].size()-1;j=j+2)
+		for(j=0;(unsigned)j<del_m[i].size()-1;j=j+2)
 			add_edge(del_m[i][j],del_m[i][j+1]);
 	}
 	del_m.clear();
@@ -563,7 +563,7 @@ bool matcher::U0_empty()
 
 vector<int> matcher::get_matching()
 {
-	int *p,i,cm,totc=0,count,j;
+	int totc=0,count;
 	time_t t1,t2,t3,t4,t_st,t_end;
 	time(&t_st);
 	icm=0;
