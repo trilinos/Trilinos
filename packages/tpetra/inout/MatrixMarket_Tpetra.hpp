@@ -326,6 +326,20 @@ namespace Tpetra {
 	 ArrayView<const global_ordinal_type> myRows = 
 	   pRowMap->getNodeElementList();
 	 const size_type myNumRows = myRows.size();
+	 TEST_FOR_EXCEPTION(static_cast<size_t>(myNumRows) != pRowMap->getNodeNumElements(),
+			    std::logic_error,
+			    "pRowMap->getNodeElementList().size() = " 
+			    << myNumRows
+			    << " != pRowMap->getNodeNumElements() = "
+			    << pRowMap->getNodeNumElements() << ".  "
+			    "Please report this bug to the Tpetra developers.");
+	 TEST_FOR_EXCEPTION(numEntriesPerRow.size() < myNumRows,
+			    std::logic_error,
+			    "numEntriesPerRow.size() = "
+			    << numEntriesPerRow.size()
+			    << " != pRowMap->getNodeElementList().size() = " 
+			    << myNumRows << ".  Please report this bug to the "
+			    "Tpetra developers.");
 
 	 // Space for my proc's number of entries per row.  
 	 // Will be filled in below.
@@ -395,7 +409,12 @@ namespace Tpetra {
 	     // if not done already) and fill its part of the matrix
 	     // (my*).
 	     for (size_type k = 0; k < myNumRows; ++k)
-	       myNumEntriesPerRow[k] = numEntriesPerRow[myRows[k]];
+	       {
+		 const global_ordinal_type myCurRow = myRows[k];
+		 const size_t numEntriesInThisRow = numEntriesPerRow[myCurRow];
+		 //myNumEntriesPerRow[k] = numEntriesPerRow[myCurRow];
+		 myNumEntriesPerRow[k] = numEntriesInThisRow;
+	       }
 	     if (extraDebug && debug)
 	       {
 		 cerr << "Proc " << Teuchos::rank (*(pRowMap->getComm())) 
@@ -1152,8 +1171,9 @@ namespace Tpetra {
 	//
 	// Should we run fillComplete() in tolerant mode, if the read
 	// did not succeed?
-	TEST_FOR_EXCEPTION(! readSuccess, std::invalid_argument, 
-			   "Failed to read in the Matrix Market sparse matrix.");
+	TEST_FOR_EXCEPTION(! readSuccess, std::runtime_error,
+			   "Failed to read in the Matrix Market sparse "
+			   "matrix.");
 	if (debug && myRank == 0)
 	  cerr << "Successfully read the Matrix Market data" << endl;
 
@@ -1178,8 +1198,12 @@ namespace Tpetra {
 	    // Packed coordinate matrix dimensions (numRows, numCols).
 	    Teuchos::Tuple<global_ordinal_type, 2> updatedDims;
 	    if (myRank == 0)
-	      {
-		updatedDims[0] = pAdder->getAdder()->numRows();
+	      { // If one or more bottom rows of the matrix contain no
+		// entries, then the Adder will report that the number
+		// of rows is less than that specified in the
+		// metadata.  We allow this case, and favor the
+		// metadata so that the zero row(s) will be included.
+		updatedDims[0] = std::max (dims[0], pAdder->getAdder()->numRows());
 		updatedDims[1] = pAdder->getAdder()->numCols();
 	      }
 	    Teuchos::broadcast (*pComm, 0, updatedDims);
@@ -1189,6 +1213,54 @@ namespace Tpetra {
 	      {
 		cerr << "-- Dimensions after: " << dims[0] << " x " << dims[1]
 		     << endl;
+	      }
+	  }
+	else 
+	  { // In strict mode, we require that the matrix's metadata
+	    // and its actual data agree, at least somewhat.  In
+	    // particular, the number of rows must agree, since
+	    // otherwise we cannot distribute the matrix correctly.
+
+	    // Teuchos::broadcast() doesn't know how to broadcast
+	    // bools, so we use an int with the standard 1 == true, 0
+	    // == false encoding.
+	    int dimsMatch = 1;
+	    if (myRank == 0)
+	      { // If one or more bottom rows of the matrix contain no
+		// entries, then the Adder will report that the number
+		// of rows is less than that specified in the
+		// metadata.  We allow this case, and favor the
+		// metadata, but do not allow the Adder to think there
+		// are more rows in the matrix than the metadata says.
+		if (dims[0] < pAdder->getAdder()->numRows())
+		  dimsMatch = 0;
+	      }
+	    Teuchos::broadcast (*pComm, 0, &dimsMatch);
+	    if (dimsMatch == 0)
+	      { // We're in an error state anyway, so we might as well
+		// work a little harder to print an informative error
+		// message.
+		//
+		// Broadcast the Adder's idea of the matrix dimensions
+		// from Proc 0 to all processes.
+		Teuchos::Tuple<global_ordinal_type, 2> addersDims;
+		if (myRank == 0)
+		  {
+		    addersDims[0] = pAdder->getAdder()->numRows();
+		    addersDims[1] = pAdder->getAdder()->numCols();
+		  }
+		Teuchos::broadcast (*pComm, 0, addersDims);
+		TEST_FOR_EXCEPTION(dimsMatch == 0, std::runtime_error,
+				   "The matrix metadata says that the matrix is "
+				   << dims[0] << " x " << dims[1] << ", but the "
+				   "actual data says that the matrix is " 
+				   << addersDims[0] << " x " << addersDims[1]
+				   << ".  That means the data includes more "
+				   "rows than reported in the metadata.  This "
+				   "is not allowed when parsing in strict mode."
+				   "  Parse the matrix in tolerant mode to "
+				   "ignore the metadata when it disagrees with "
+				   "the data.");
 	      }
 	  }
 
@@ -1240,10 +1312,23 @@ namespace Tpetra {
 	    // Get a temporary const view of the merged matrix entries.
 	    const std::vector<element_type>& entries = 
 	      pAdder->getAdder()->getEntries();
-	    // Number of rows in the matrix.
-	    const size_type numRows = pAdder->getAdder()->numRows();
+
+	    // Number of rows in the matrix.  If we are in tolerant
+	    // mode, we've already synchronized dims with the actual
+	    // matrix data.  If in strict mode, we should use dims (as
+	    // read from the file's metadata) rather than the matrix
+	    // data to determine the dimensions.  (The matrix data
+	    // will claim fewer rows than the metadata, if one or more
+	    // rows have no entries stored in the file.)
+	    const size_type numRows = dims[0]; 
+
 	    // Number of matrix entries (after merging).
 	    const size_type numEntries = entries.size();
+
+	    if (debug)
+	      cerr << "Proc 0: Matrix has numRows=" << numRows 
+		   << " rows and numEntries=" << numEntries 
+		   << " entries." << endl;
 
 	    // Make space for the CSR matrix data.  The conversion to
 	    // CSR algorithm is easier if we fill numEntriesPerRow
@@ -1289,16 +1374,51 @@ namespace Tpetra {
 	      // and values.
 	      rowPtr[numRows] = numEntries;
 	    }
-	    if (extraDebug && debug)
+	    if (debug)
 	      {
-		cerr << "Proc 0: numEntriesPerRow = [ ";
-		for (size_type k = 0; k < numRows; ++k)
-		  cerr << numEntriesPerRow[k] << " ";
+		const size_type maxToDisplay = 100;
+
+		cerr << "Proc 0: numEntriesPerRow[0.." << (numEntriesPerRow.size()-1) << "] ";
+		if (numRows > maxToDisplay)
+		  cerr << "(only showing first and last few entries) ";
+		cerr << "= [";
+		if (numRows > 0)
+		  {
+		    if (numRows > maxToDisplay)
+		      {
+			for (size_type k = 0; k < 2; ++k)
+			  cerr << numEntriesPerRow[k] << " ";
+			cerr << "... ";
+			for (size_type k = numRows-2; k < numRows-1; ++k)
+			  cerr << numEntriesPerRow[k] << " ";
+		      }
+		    else
+		      {		   
+			for (size_type k = 0; k < numRows-1; ++k)
+			  cerr << numEntriesPerRow[k] << " ";
+		      }
+		    cerr << numEntriesPerRow[numRows-1];
+		  }
 		cerr << "]" << endl;
-		cerr << "Proc 0: rowPtr = [ ";
-		for (size_type k = 0; k < numRows+1; ++k)
-		  cerr << rowPtr[k] << " ";
-		cerr << "]" << endl;
+
+		cerr << "Proc 0: rowPtr ";
+		if (numRows > maxToDisplay)
+		  cerr << "(only showing first and last few entries) ";
+		cerr << "= [";
+		if (numRows > maxToDisplay)
+		  {
+		    for (size_type k = 0; k < 2; ++k)
+		      cerr << rowPtr[k] << " ";
+		    cerr << "... ";
+		    for (size_type k = numRows-2; k < numRows; ++k)
+		      cerr << rowPtr[k] << " ";
+		  }
+		else
+		  {
+		    for (size_type k = 0; k < numRows; ++k)
+		      cerr << rowPtr[k] << " ";
+		  }
+		cerr << rowPtr[numRows] << "]" << endl;
 	      }
 	  }
 	// Now we're done with the Adder, so we can release the
