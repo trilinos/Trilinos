@@ -150,7 +150,8 @@ void cuda_reduce_global( const DriverType * const driver )
 
   extern __shared__ size_type shared_data[];
 
-  const size_type thread_id = threadIdx.x + blockDim.x * threadIdx.y ;
+  const size_type thread_of_block = threadIdx.x + blockDim.x * threadIdx.y ;
+  size_type i , j ;
 
   // Phase A: Output block's results to global memory
   //          and then input results into last block.
@@ -162,7 +163,7 @@ void cuda_reduce_global( const DriverType * const driver )
   // Read  by blockIdx.x == ( threadIdx.x + blockDim.x * threadIdx.y )
   // Determine correct location into scratch memory.
 
-  if ( thread_id < ValueWordCount ) {
+  if ( thread_of_block < ValueWordCount ) {
     const size_type thread_stride = blockDim.x * blockDim.y ;
 
     size_type * const scratch = driver->m_scratch_space +
@@ -170,7 +171,7 @@ void cuda_reduce_global( const DriverType * const driver )
         blockIdx.x &  WarpIndexMask  /* for threadIdx.x */ ,
         blockIdx.x >> WarpIndexShift /* for threadIdx.y */ );
 
-    for ( size_type i = thread_id ; i < ValueWordCount ; i += thread_stride ) {
+    for ( i = thread_of_block ; i < ValueWordCount ; i += thread_stride ) {
       scratch[i] = shared_data[i] ;
     }
 
@@ -179,7 +180,7 @@ void cuda_reduce_global( const DriverType * const driver )
 
   // Check if this is the last block to finish:
 
-  if ( 0 == thread_id ) {
+  if ( 0 == thread_of_block ) {
     // atomicInc returns value prior to increment.
 
     shared_data[ DriverType::shared_flag_offset() ] =
@@ -206,8 +207,8 @@ void cuda_reduce_global( const DriverType * const driver )
 
       // Coalesced global memory read for this warp's data.
 
-      size_type i = DriverType::shared_data_offset( 0 , threadIdx.y );
-      size_type j = i + WordsPerWarp ;
+      i = DriverType::shared_data_offset( 0 , threadIdx.y );
+      j = i + WordsPerWarp ;
 
       if ( driver->m_scratch_upper < j ) {
         j = driver->m_scratch_upper ;
@@ -283,6 +284,7 @@ static void cuda_parallel_reduce()
   }
 }
 
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 template< class FunctorType , class FinalizeType >

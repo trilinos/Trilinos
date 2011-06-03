@@ -51,6 +51,8 @@
 namespace Kokkos {
 namespace Impl {
 
+//----------------------------------------------------------------------------
+
 #if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 
 
 template< class DriverType >
@@ -60,12 +62,11 @@ static void cuda_parallel_for()
   typedef DeviceCuda::size_type size_type ;
 
   // The driver functor has been copied to constant memory
+  const DriverType * const driver = 
+    (const DriverType *) kokkos_device_cuda_constant_memory_buffer ;
 
-  const size_type work_count =
-    ((const DriverType *) kokkos_device_cuda_constant_memory_buffer)->m_work_count ;
-
-  const size_type work_stride =
-    ((const DriverType *) kokkos_device_cuda_constant_memory_buffer)->m_work_stride ;
+  const size_type work_count  = driver->m_work_count ;
+  const size_type work_stride = driver->m_work_stride ;
 
   size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
 
@@ -73,6 +74,21 @@ static void cuda_parallel_for()
     ((const DriverType *) kokkos_device_cuda_constant_memory_buffer)->m_work_functor( iwork );
   }
 }
+
+template< class DriverType >
+inline
+void cuda_parallel_for_launch( const DriverType & driver ,
+                               const dim3 & grid ,
+                               const dim3 & block )
+{
+  // Copy functor to constant memory on the device
+  cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
+
+  // Invoke the driver function on the device
+  cuda_parallel_for< DriverType > <<< grid , block >>>();
+}
+
+//----------------------------------------------------------------------------
 
 #else
 
@@ -89,7 +105,18 @@ static void cuda_parallel_for( const DriverType driver )
   }
 }
 
+template< class DriverType >
+inline
+void cuda_parallel_for_launch( const DriverType & driver ,
+                               const dim3 & grid ,
+                               const dim3 & block )
+{
+  cuda_parallel_for< DriverType > <<< grid , block >>>( driver );
+}
+
 #endif
+
+//----------------------------------------------------------------------------
 
 template< class FunctorType >
 class ParallelFor< FunctorType , DeviceCuda > {
@@ -130,24 +157,11 @@ public:
 
     DeviceCuda::set_dispatch_functor();
 
-    ParallelFor driver( functor , work_count , block.x * grid.x );
+    const ParallelFor driver( functor , work_count , block.x * grid.x );
 
     DeviceCuda::clear_dispatch_functor();
 
-#if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 
-
-    // Copy functor to constant memory on the device
-    cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(driver) );
-
-    // Invoke the driver function on the device
-    cuda_parallel_for< ParallelFor< FunctorType , DeviceCuda > > <<< grid , block >>>();
-
-#else
-
-    cuda_parallel_for< ParallelFor< FunctorType , DeviceCuda > > <<< grid , block >>>( driver );
-
-#endif
-
+    cuda_parallel_for_launch< ParallelFor >( driver , grid , block );
   }
 };
 
