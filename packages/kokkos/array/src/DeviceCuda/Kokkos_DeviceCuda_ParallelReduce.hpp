@@ -251,12 +251,13 @@ static void cuda_parallel_reduce()
 
   // Phase 1: Reduce to per-thread contributions
   {
-    const size_type work_stride = blockDim.x * blockDim.y * gridDim.x ;
+    const size_type work_count  = driver->m_work_count ;
+    const size_type work_stride = driver->m_work_stride ;
 
     size_type iwork =
       threadIdx.x + blockDim.x * ( threadIdx.y + blockDim.y * blockIdx.x );
 
-    for ( ; iwork < driver->m_work_count ; iwork += work_stride ) {
+    for ( ; iwork < work_count ; iwork += work_stride ) {
       driver->m_work_functor( iwork , value );
     }
   }
@@ -320,6 +321,7 @@ public:
   const FunctorType  m_work_functor ;
   const FinalizeType m_work_finalize ;
   const size_type    m_work_count ;
+  const size_type    m_work_stride ;
 
   // Scratch space for multi-block reduction
   // m_scratch_warp  == number of warps required
@@ -351,13 +353,15 @@ public:
 
 private:
 
-  ParallelReduce( const size_type      work_count ,
-                  const FunctorType  & functor ,
+  ParallelReduce( const FunctorType  & functor ,
                   const FinalizeType & finalize ,
+                  const size_type      work_count ,
+                  const size_type      work_stride ,
                   const size_t         grid_size )
     : m_work_functor(  functor )
     , m_work_finalize( finalize )
     , m_work_count(    work_count )
+    , m_work_stride(   work_stride )
     , m_scratch_space( device_type::reduce_multiblock_scratch_space() )
     , m_scratch_flag(  device_type::reduce_multiblock_scratch_flag() )
     , m_scratch_warp( ( grid_size >> WarpIndexShift ) +
@@ -405,7 +409,7 @@ public:
 
     device_type::set_dispatch_functor();
 
-    ParallelReduce driver( work_count , functor , finalize , grid.x );
+    ParallelReduce driver( functor , finalize , work_count , block.x * block.y * grid.x , grid.x );
 
     device_type::clear_dispatch_functor();
 

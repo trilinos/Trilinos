@@ -61,15 +61,16 @@ static void cuda_parallel_for()
 
   // The driver functor has been copied to constant memory
 
-  const DriverType * const driver =
-    (const DriverType *) kokkos_device_cuda_constant_memory_buffer ;
+  const size_type work_count =
+    ((const DriverType *) kokkos_device_cuda_constant_memory_buffer)->m_work_count ;
 
-  const size_type work_stride = blockDim.x * gridDim.x ;
+  const size_type work_stride =
+    ((const DriverType *) kokkos_device_cuda_constant_memory_buffer)->m_work_stride ;
 
   size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
 
-  for ( ; iwork < driver->m_work_count ; iwork += work_stride ) {
-    driver->m_work_functor( iwork );
+  for ( ; iwork < work_count ; iwork += work_stride ) {
+    ((const DriverType *) kokkos_device_cuda_constant_memory_buffer)->m_work_functor( iwork );
   }
 }
 
@@ -81,11 +82,9 @@ static void cuda_parallel_for( const DriverType driver )
 {
   typedef DeviceCuda::size_type size_type ;
 
-  const size_type work_stride = blockDim.x * gridDim.x ;
-
   size_type iwork = threadIdx.x + blockDim.x * blockIdx.x ;
 
-  for ( ; iwork < driver.m_work_count ; iwork += work_stride ) {
+  for ( ; iwork < driver.m_work_count ; iwork += driver.m_work_stride ) {
     driver.m_work_functor( iwork );
   }
 }
@@ -98,13 +97,16 @@ public:
 
   const FunctorType           m_work_functor ;
   const DeviceCuda::size_type m_work_count ;  
+  const DeviceCuda::size_type m_work_stride ;  
 
 private:
 
-  ParallelFor( const size_t work_count ,
-               const FunctorType & functor )
+  ParallelFor( const FunctorType & functor ,
+               const size_t work_count ,
+               const size_t work_stride )
     : m_work_functor( functor )
-    , m_work_count( work_count )
+    , m_work_count(  work_count )
+    , m_work_stride( work_stride )
     {}
 
   ParallelFor();
@@ -128,7 +130,7 @@ public:
 
     DeviceCuda::set_dispatch_functor();
 
-    ParallelFor driver( work_count , functor );
+    ParallelFor driver( functor , work_count , block.x * grid.x );
 
     DeviceCuda::clear_dispatch_functor();
 

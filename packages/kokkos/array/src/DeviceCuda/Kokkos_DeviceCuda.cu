@@ -140,11 +140,12 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   // at most one warp per thread in a warp for reduction.
 
   // m_maxWarp = Impl::DeviceCudaTraits::WarpSize ;
-  m_maxWarp = 16 ;
-  while ( m_cudaProp.maxThreadsPerBlock <
-          Impl::DeviceCudaTraits::WarpSize * m_maxWarp ) {
-    m_maxWarp >>= 1 ;
-  }
+  // while ( m_cudaProp.maxThreadsPerBlock <
+  //         Impl::DeviceCudaTraits::WarpSize * m_maxWarp ) {
+  //   m_maxWarp >>= 1 ;
+  // }
+
+  m_maxWarp = 8 ; // For performance use fewer warps and more blocks...
 
   // Allocate shared memory image for multiblock reduction scratch space
 
@@ -262,13 +263,18 @@ DeviceCuda::maximum_warp_count()
 DeviceCuda::size_type
 DeviceCuda::maximum_grid_count()
 {
+  // Set the maximum number of blocks to the maximum number of
+  // resident blocks per multiprocessor times the number of
+  // multiprocessors on the device.  Once a block is active on
+  // a multiprocessor  then let it do all the work that it can.
+
   enum { MaxResidentBlocksPerMultiprocessor = 8 };
 
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
 
-  // return s.m_cudaProp.maxGridSize[0];
-
   return s.m_cudaProp.multiProcessorCount * MaxResidentBlocksPerMultiprocessor ;
+
+  // return s.m_cudaProp.maxGridSize[0];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -335,24 +341,8 @@ void DeviceCuda::wait_functor_completion()
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
-__global__
-void cuda_test_launch_global()
-{
-  if ( 0 == threadIdx.x && 0 == threadIdx.y && 0 == threadIdx.z &&
-       0 == blockIdx.x  && 0 == blockIdx.y  && 0 == blockIdx.z ) {
-    printf("cuda_test_launch_global<<< { %d %d %d } , { %d %d %d } >>>()\n",
-           gridDim.x,gridDim.y,gridDim.z,
-           blockDim.x,blockDim.y,blockDim.z);
-  }
-}
-
 namespace Kokkos {
 namespace Impl {
-
-void cuda_test_launch( const dim3 & grid , const dim3 & block )
-{
-  cuda_test_launch_global<<<grid,block>>>();
-}
 
 void copy_to_cuda_from_host( void * dst , const void * src ,
                              size_t member_size , size_t member_count )
