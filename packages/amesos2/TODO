@@ -66,22 +66,22 @@ in terms of ``getCcs()``.
 
 One way to take care of this would be to define two types::
 
-  struct row_matrix {};
+  struct row_access {};
 
 and::
 
-  struct column_matrix {};
+  struct column_access {};
 
 Then, we define two overloaded versions of some common worker
 functions: ``do_getCrs()`` and ``do_getCcs()``.  For each, one
 overloaded version accepts as a function parameter an object of type
-``row_matrix``, and the other overloaded version takes as a parameter
-an object of type ``column_matrix``.
+``row_access``, and the other overloaded version takes as a parameter
+an object of type ``column_access``.
 
-The version of ``do_getCrs()`` that accepts a ``row_matrix`` object
+The version of ``do_getCrs()`` that accepts a ``row_access`` object
 defines the entirety of the method, while the ``do_getCcs()`` for
-``row_matrix`` call do_getCrs() and transposes the results.
-Conversely for the ``column_matrix`` versions.
+``row_access`` calls do_getCrs() and transposes the results.
+Conversely for the ``column_access`` versions.
 
 Here is a sample of what the setup might look like::
 
@@ -93,7 +93,7 @@ Here is a sample of what the setup might look like::
       const Teuchos::ArrayView<typename Matrix::global_ordinal_type> colind,
       const Teuchos::ArrayView<typename Matrix::global_size_type> rowptr,
       size_t& nnz,
-      row_matrix type,
+      row_access type,
       bool local = false,
       int root = 0);
 
@@ -102,7 +102,7 @@ Here is a sample of what the setup might look like::
       const Teuchos::ArrayView<typename Matrix::global_ordinal_type> colind,
       const Teuchos::ArrayView<typename Matrix::global_size_type> rowptr,
       size_t& nnz,
-      column_matrix type,
+      column_access type,
       bool local = false,
       int root = 0);
 
@@ -111,7 +111,7 @@ Here is a sample of what the setup might look like::
       const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
       const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
       size_t& nnz,
-      row_matrix type,
+      row_access type,
       bool local = false,
       int root = 0);
 
@@ -120,7 +120,7 @@ Here is a sample of what the setup might look like::
       const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
       const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
       size_t& nnz,
-      column_matrix type,
+      column_access type,
       bool local = false,
       int root = 0);
 
@@ -132,10 +132,10 @@ Here is a sample of what the setup might look like::
       bool local = false,
       int root = 0)
       {
-        typedef typename Matrix::access_type mat_access_type;
+	typedef typename Matrix::access_type mat_access_type;
 	do_getCrs(nzval,rowind,colptr,nnz,mat_access_type,local,root);
       }
-      
+
     void getCcs(
       const Teuchos::ArrauView<typename Matrix::scalar_type> nzval,
       const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
@@ -144,7 +144,7 @@ Here is a sample of what the setup might look like::
       bool local = false,
       int root = 0)
       {
-        typedef typename Matrix::access_type mat_access_type;
+	typedef typename Matrix::access_type mat_access_type;
 	do_getCcs(nzval,rowind,colptr,nnz,mat_access_type,local,root);
       }
   };
@@ -154,8 +154,8 @@ MatrixAdapter classes would publicly inherit from this base class::
   class MatrixAdapter< Epetra_RowMatrix >
     : public MatrixAdapterBase< MatrixAdapter< Epetra_RowMatrix > >
   {
-    typedef row_matrix access_type;
-    
+    typedef row_access access_type;
+
     ...
   }
 
@@ -165,8 +165,65 @@ implementation).
 
 Using this convention, it would be easy to define MatrixAdapter
 interfaces for MultiVector objects.  They would just need to define a
-``getGlobalRowCopy()`` method and ``typedef column_matrix
+``getGlobalRowCopy()`` method and ``typedef column_access
 access_type;``.
+
+
+Adapters in General
+===================
+
+It may be possible to define many of the more ``involved'' adapter
+operations, e.g.::
+
+  - MatrixAdapter<MAT>::getCrs()
+  - MatrixAdapter<MAT>::getCcs()
+  - MultiVecAdapter<MV>::localize()
+  - MultiVecAdapter<MV>::globalize()
+
+in terms of some of the less involved functions.  If we could pinpoint
+what those functions are, we could break the more involved functions
+out into an abstract base class and define them in terms of the
+simpler functions that are easier to wrap.  In that way, a future
+developer would not need to redefine getCrs() for every new sparse
+matrix object; she would just need to wrap some of the more general
+functions.
+
+We would also ideally be able to do this without breaking much
+existing code...
+
+::
+
+  struct has_special_impl {};
+  struct no_special_impl {};
+
+  class MatrixAdapter< Epetra_RowMatrix >
+    : public MatrixAdapterBase< MatrixAdapter< Epetra_RowMatrix > >
+  {
+    typedef no_special_impl get_crs_spec;
+
+    ...
+  }
+
+and in MatrixAdapterBase, an entry-point and two overloaded doers::
+
+  getCrs(...){
+    do_getCrs(..., adapter_type::get_crs_spec());
+  }
+
+  do_getCrs(..., no_special_impl nsi){
+    // do the `template algorithm` stuff here
+  }
+
+  do_getCrs(..., has_special_impl hsi){
+    // delegate to the specialized implementation found in the subclass
+    static_cast<adapter_type*>(this)->getCrs_spec(...);
+  }
+
+  struct row_access {};     // as above
+  struct column_access {};  // as above
+
+To accomplish all this, it may be useful to define some templated
+factories, or some nonmember constructors.
 
 
 Organization
