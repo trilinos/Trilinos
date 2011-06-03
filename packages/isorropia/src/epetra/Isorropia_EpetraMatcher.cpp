@@ -113,7 +113,7 @@ void matcher::process_mtx_compressed(char *fname)
 		 exit(1);
 	  }
 	  else
-	  		cout<<"Crs Matrix Created!!!"<<endl;
+	  		cout<<"Crs Matrix Created!!!...."<<endl;
 	#else
 	  fail = 0;
 	  if (localProc == 0){
@@ -149,7 +149,7 @@ int matcher::vlayer_clear()
 {
 	int i;
 	
-	#pragma omp parallel for
+	////#pragma omp parallel for
 	for(i=0;i<V;i++)
 		vlayered[i]=0;
 		
@@ -161,7 +161,7 @@ int matcher::is_intersect(int k)
 	unsigned int i;
 	int flag=0;
 
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for(i=0;i<vlist.size();i++)
 		if(mateV[vlist[i]]==-1)
 			flag=1;
@@ -175,7 +175,7 @@ void matcher::delete_matched_v()
 {
 	int i;
 	
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for(i=0;i<V;i++)
 		if(LV[i].layer_num==k_star)
 			if(mateV[i]!=-1) // !=-1 means already has a mate,i.e., this node is matched...so remove it
@@ -187,13 +187,13 @@ void matcher::update_vlayered(int k)
 	int i;
 	if(vlist.size()>0)
 		vlist.clear();
-	#pragma omp parallel for schedule(dynamic, 126)
+	//#pragma omp parallel for schedule(dynamic, 126)
 	for(i=0;i<V;i++)
 	{		
 		if(LV[i].layer_num==k)
 		{	
 			vlayered[i]=1;     // updating_valayered...
-			#pragma omp critical
+			//#pragma omp critical
 			vlist.push_back(i); //critical section
 		}
 	}
@@ -210,7 +210,7 @@ int matcher::construct_layered_graph()
 	tmp.layer_num=-1;
 	tmp.scanned=1;
 	
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for(i=0;i<V;i++)
 	{	
 		LV[i].layer_num=-1;
@@ -220,7 +220,7 @@ int matcher::construct_layered_graph()
 	// Creating L0
 	if(icm>1)
 	{
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for(i=0;i<U;i++)     // if mateU[i]==-1 it means that it is not matched
 		{
 			if(mateU[i]==-1)
@@ -249,7 +249,7 @@ int matcher::construct_layered_graph()
 		{
 				if(icm==1)
 				{
-					#pragma omp parallel for private(j,t)
+					//#pragma omp parallel for private(j,t)
 					for(i=0;i<U;i++)
 					{
 						LU[i].layer_num=0;
@@ -273,7 +273,7 @@ int matcher::construct_layered_graph()
 				}
 				else
 				{
-					#pragma omp parallel for private(j,t)
+					//#pragma omp parallel for private(j,t)
 					for(i=0;i<U;i++)
 					{
 						if(LU[i].layer_num==0)
@@ -300,7 +300,7 @@ int matcher::construct_layered_graph()
 		else
 		{
 			flag=0;
-			#pragma omp parallel for private(j,t)
+			//#pragma omp parallel for private(j,t)
 			for(i=0;i<(signed)vlist.size();i++)
 			{
 				int id=mateV[vlist[i]];
@@ -342,7 +342,7 @@ int matcher::construct_layered_graph()
 		{
 			
 			//omp_set_num_threads(8);				
-			#pragma omp parallel for private(j)
+			//#pragma omp parallel for private(j)
 			for(j=0;j<(signed)vlist.size();j++)
 			{
 				int id=mateV[vlist[j]];
@@ -374,7 +374,7 @@ int matcher::recursive_path_finder(int k, int p, vector<int>* path)
 			ind=LU[p].edgelist[i];
 			
 			res=0;
-			#pragma omp critical
+			//#pragma omp critical
 			if(LV[ind].scanned==0)              /// I am locking the whole L 
 			{	
 				LV[ind].scanned=1;
@@ -423,7 +423,7 @@ int matcher::iterative_path_finder(int k, int p, vector<int>* path)
 		if(cur_k==k_star)
 		{	
 			res=0;
-			#pragma omp critical
+			//#pragma omp critical
 			if(LV[cur_p].scanned==0)
 			{
 				LV[cur_p].scanned=1;
@@ -454,7 +454,7 @@ int matcher::iterative_path_finder(int k, int p, vector<int>* path)
 		else
 		{
 			res=0;
-			#pragma omp critical
+			//#pragma omp critical
 			if(LV[cur_p].scanned==0)
 			{
 				LV[cur_p].scanned=1;
@@ -482,7 +482,7 @@ void matcher::find_set_del_M()
 	del_m.clear();
 	
 	//omp_set_num_threads(2);
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for(i=0;i<U;i++)
 	{
 		if(LU[i].layer_num==0)
@@ -492,13 +492,13 @@ void matcher::find_set_del_M()
 			if(k_star>2000)
 			{	
 				if(iterative_path_finder(0,i,path)==1)
-					#pragma omp critical
+					//#pragma omp critical
 					del_m.push_back(*path);
 			}
 			else
 			{	
 				if(recursive_path_finder(0,i,path)==1)
-					#pragma omp critical
+					//#pragma omp critical
 					del_m.push_back(*path);
 			}
 			delete path;
@@ -524,7 +524,7 @@ int matcher::augment_matching()
 	int i,j,count;
 
 	count=del_m.size();
-	#pragma omp parallel for private(j)
+	//#pragma omp parallel for private(j)
 	for(i=0;i<count;i++)
 	{
 		for(j=1;(unsigned)j<del_m[i].size()-2;j=j+2)
@@ -544,7 +544,7 @@ bool matcher::U0_empty()
 {
 	int i,flag=0;
 	
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for(i=0;i<U;i++)
 		if(mateU[i]==-1)
 			flag=1;

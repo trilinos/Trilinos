@@ -35,7 +35,7 @@ USA
 #include <string>
 #include <list>
 #include <vector>
-#include <omp.h>
+//#include <omp.h>
 #include <ctime>
 #include <stack>
 #include <set>
