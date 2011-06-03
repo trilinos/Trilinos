@@ -578,6 +578,58 @@ namespace stk {
       //         std::cout.flush();
     }
 
+    void PerceptMesh::printEntity(std::ostream& out1, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field)
+    {
+      if (!field) field = getCoordinatesField();
+
+      if (entity.entity_rank() != stk::mesh::fem::FEMMetaData::NODE_RANK)
+        {
+          std::ostringstream out;
+          int fieldStride = 3;
+          {
+            unsigned nfr = field->restrictions().size();
+            //if (printInfo) std::cout << "P[" << p_rank << "] info>    number of field restrictions= " << nfr << std::endl;
+            for (unsigned ifr = 0; ifr < nfr; ifr++)
+              {
+                const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
+                //mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
+                fieldStride = fr.dimension() ;
+              }
+          }
+
+          out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: \n";
+
+          const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          unsigned num_node = elem_nodes.size();
+          std::vector<double> min(fieldStride, 1e+30);
+          std::vector<double> max(fieldStride, -1e+30);
+          for (unsigned inode=0; inode < num_node; inode++)
+            {
+              mesh::Entity & node = * elem_nodes[ inode ].entity();
+
+              out << "inode= " << inode << " id= " << node.identifier() << " ";
+              double *f_data = PerceptMesh::field_data(field, node);
+              out << " data = " ;
+              for (int ifd=0; ifd < fieldStride; ifd++)
+                {
+                  min[ifd] = std::min(f_data[ifd], min[ifd]);
+                  max[ifd] = std::max(f_data[ifd], max[ifd]);
+                  out << f_data[ifd] << " ";
+                }
+              out << "\n";
+            }
+          out << " min= " << min << "\n";
+          out << " max= " << max << "\n";
+          for (int ifd=0; ifd < fieldStride; ifd++)
+            {
+              max[ifd] = max[ifd] - min[ifd];
+            }
+          out << " max-min= " << max << "\n";
+          out1 << out.str() << std::endl;
+
+        }
+    }
+
     //========================================================================================================================
     /// low-level interfaces
 
@@ -1545,7 +1597,7 @@ namespace stk {
                     stk::mesh::Entity& element = bucket[iElement];
 
                     std::cout << "tmp UniformRefiner::dumpElements: newElement: " << element << std::endl;
-                    Util::printEntity(std::cout, element, getCoordinatesField() );
+                    printEntity(std::cout, element, getCoordinatesField() );
                   }
               }
             }

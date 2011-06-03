@@ -458,7 +458,12 @@ namespace stk {
 
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
-                unsigned num_elem_not_ghost_0_incr = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks);
+
+                bool count_only = false;
+                bool doAllElements = true;  
+
+                unsigned num_elem_not_ghost_0_incr = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks,
+                                                                      count_only, doAllElements);
 
                 num_elem_not_ghost_0 += num_elem_not_ghost_0_incr;
               }
@@ -491,7 +496,9 @@ namespace stk {
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
-                num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, elementType, needed_entity_ranks, false, false);
+                bool count_only = false;
+                bool doAllElements = false;  // only do ghost elements
+                num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
               }
             }
           m_nodeRegistry->endCheckForRemote();                /**/   TRACE_PRINT("Refiner: endCheckForRemote (top-level rank)... ");
@@ -534,7 +541,9 @@ namespace stk {
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
-                num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks, false, false);
+                bool count_only = false;
+                bool doAllElements = false;   // ghost elements only
+                num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
               }
             }
 
@@ -587,8 +596,9 @@ namespace stk {
 
             // count num new elements needed on this proc (served by UniformRefinerPattern)
             bool count_only = true;  
+            bool doAllElements = true;   
             /**/                                                TRACE_PRINT("Refiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... ");
-            unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks, count_only);
+            unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
             /**/                                                TRACE_PRINT("Refiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done ");
 
             unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
@@ -1041,8 +1051,25 @@ namespace stk {
                 
                 if (nodeIds_onSE.m_entity_id_vector[0] == 0)
                   {
-                    continue;
-                    //throw std::logic_error("Refiner::createNewNeededNodeIds logic err #5.0, nodeIds_onSE.m_entity_id_vector[i_new_node] == 0");
+                    // for debugging cases that may have inconsistent edge marking schemes
+#define DEBUG_ALLOW_0_ENTITY_ID_VECTOR 0
+                    if (DEBUG_ALLOW_0_ENTITY_ID_VECTOR)
+                      {
+                        continue;
+                      }
+                    else
+                      {
+                        std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " 
+                                  << " nodeIds_onSE.m_entity_id_vector[0] = " << nodeIds_onSE.m_entity_id_vector[0] 
+                                  << " element= " << element
+                                  << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
+                                  << " iSubDimOrd = " << iSubDimOrd
+                                  <<  std::endl;
+                        std::cout << " element= ";
+                        m_eMesh.printEntity(std::cout, element, 0);
+
+                        throw std::logic_error("Refiner::createNewNeededNodeIds logic err #5.0, nodeIds_onSE.m_entity_id_vector[i_new_node] == 0");
+                      }
                   }
 
                 stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
@@ -1096,8 +1123,23 @@ namespace stk {
                     {
                       if (nodeIds_onSE.m_entity_id_vector[i_new_node] == 0)
                         {
-                          continue;
-                          //throw std::logic_error("Refiner::createNewNeededNodeIds logic err #5, nodeIds_onSE.m_entity_id_vector[i_new_node] == 0");
+                          if (DEBUG_ALLOW_0_ENTITY_ID_VECTOR)
+                            {
+                              continue;
+                            }
+                          else
+                            {
+                              std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " 
+                                        << " nodeIds_onSE.m_entity_id_vector[0] = " << nodeIds_onSE.m_entity_id_vector[0] 
+                                        << " element= " << element
+                                        << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
+                                        << " iSubDimOrd = " << iSubDimOrd
+                                        <<  std::endl;
+                              std::cout << " element= ";
+                              m_eMesh.printEntity(std::cout, element, 0);
+
+                            }
+                          throw std::logic_error("Refiner::createNewNeededNodeIds logic err #5.1, nodeIds_onSE.m_entity_id_vector[i_new_node] == 0");
                         }
                       stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[i_new_node]);
 

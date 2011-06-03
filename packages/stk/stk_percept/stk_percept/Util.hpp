@@ -155,7 +155,7 @@ namespace stk {
           }
         return ret;
       }
-      static void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field);
+
       static bool approx_equal_relative(double a, double b, double tol) 
       { 
         if (fabs(a-b) <= tol*(fabs(a)+fabs(b))*0.5) 

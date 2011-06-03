@@ -724,7 +724,7 @@ namespace stk {
             if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 || toTopoKey == topo_key_hex20)
               {
                 //std::cout << "tmp here 1 i_new_node= " << i_new_node << " base element= " << std::endl;
-                if ( EXTRA_PRINT_URP_IF) Util::printEntity(std::cout, element, eMesh.getCoordinatesField() );
+                if ( EXTRA_PRINT_URP_IF) eMesh.printEntity(std::cout, element, eMesh.getCoordinatesField() );
 
                 interpolateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
                 if (0)
@@ -766,7 +766,7 @@ namespace stk {
         if ( EXTRA_PRINT_URP_IF)
           {
             std::cout << "tmp newElement: " << std::endl;
-            Util::printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
+            eMesh.printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
           }
       }
 
@@ -955,7 +955,7 @@ namespace stk {
             if (0 && EXTRA_PRINT_URP_IF)
               {
                 std::cout << "tmp newElement: " << std::endl;
-                Util::printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
+                eMesh.printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
               }
 
             element_pool++;

@@ -164,6 +164,8 @@ namespace stk {
       int
       getNumberElementsLocallyOwned();
 
+      void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+
       //========================================================================================================================
       /// low-level interfaces
       /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted

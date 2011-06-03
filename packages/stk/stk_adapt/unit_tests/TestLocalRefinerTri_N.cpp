@@ -86,7 +86,14 @@ namespace stk {
                   //double * const coord1 = stk::mesh::field_data( *coordField , node1 );
 
                   // choose to refine or not 
-                  if (0 || (node0.identifier() < node1.identifier() || (node0.identifier() % 2 == 0)))
+                  //if (0 || (node0.identifier() < node1.identifier() || (node0.identifier() % 2 == 0)))
+                  int delta = (int)node0.identifier() - (int)node1.identifier();
+                  if (delta < 0) delta = -delta;
+                  if ( delta > 4 && (node0.identifier() + node1.identifier() < 30))
+                    {
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                    }
+                  if ( (node0.identifier() + node1.identifier() > 20))
                     {
                       (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
                     }
