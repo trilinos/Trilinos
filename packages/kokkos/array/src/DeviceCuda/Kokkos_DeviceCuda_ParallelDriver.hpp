@@ -40,7 +40,7 @@
 #ifndef KOKKOS_DEVICECUDA_PARALLELDRIVER_HPP
 #define KOKKOS_DEVICECUDA_PARALLELDRIVER_HPP
 
-#include <stdio.h>
+#define KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 0
 
 namespace Kokkos {
 namespace Impl {
@@ -71,10 +71,14 @@ struct DeviceCudaTraits {
 
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
+#if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY
+
 /** \brief  Access to constant memory on the device */
 __device__ __constant__
 Kokkos::Impl::DeviceCudaTraits::ConstantGlobalBufferType
 kokkos_device_cuda_constant_memory_buffer ;
+
+#endif
 
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 

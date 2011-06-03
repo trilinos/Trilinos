@@ -136,7 +136,7 @@ void cuda_reduce_shared( const DeviceCuda::size_type used_warp_count )
 
 template< class DriverType >
 __device__
-void cuda_reduce_global( const DriverType * const driver )
+void cuda_reduce_global( const DriverType & driver )
 {
   typedef          DeviceCuda::size_type    size_type ;
   typedef typename DriverType::functor_type functor_type ;
@@ -166,7 +166,7 @@ void cuda_reduce_global( const DriverType * const driver )
   if ( thread_of_block < ValueWordCount ) {
     const size_type thread_stride = blockDim.x * blockDim.y ;
 
-    size_type * const scratch = driver->m_scratch_space +
+    size_type * const scratch = driver.m_scratch_space +
       DriverType::shared_data_offset(
         blockIdx.x &  WarpIndexMask  /* for threadIdx.x */ ,
         blockIdx.x >> WarpIndexShift /* for threadIdx.y */ );
@@ -184,7 +184,7 @@ void cuda_reduce_global( const DriverType * const driver )
     // atomicInc returns value prior to increment.
 
     shared_data[ DriverType::shared_flag_offset() ] =
-      gridDim.x == 1 + atomicInc( driver->m_scratch_flag , gridDim.x + 1 );
+      gridDim.x == 1 + atomicInc( driver.m_scratch_flag , gridDim.x + 1 );
   }
   __syncthreads();
 
@@ -198,20 +198,20 @@ void cuda_reduce_global( const DriverType * const driver )
 
     if ( blockDim.y == threadIdx.y + 1 &&
          blockDim.x == threadIdx.x + 1 ) {
-      *(driver->m_scratch_flag) = 0 ;
+      *(driver.m_scratch_flag) = 0 ;
     }
 
     // Each warp does a coalesced read of its own data.
 
-    if ( threadIdx.y < driver->m_scratch_warp ) {
+    if ( threadIdx.y < driver.m_scratch_warp ) {
 
       // Coalesced global memory read for this warp's data.
 
       i = DriverType::shared_data_offset( 0 , threadIdx.y );
       j = i + WordsPerWarp ;
 
-      if ( driver->m_scratch_upper < j ) {
-        j = driver->m_scratch_upper ;
+      if ( driver.m_scratch_upper < j ) {
+        j = driver.m_scratch_upper ;
 
         // Only partial data will be read by this warp
         // so initialize the values before reading.
@@ -219,12 +219,12 @@ void cuda_reduce_global( const DriverType * const driver )
       }
 
       for ( i += threadIdx.x ; i < j ; i += WarpSize ) {
-        shared_data[i] = driver->m_scratch_space[i] ;
+        shared_data[i] = driver.m_scratch_space[i] ;
       }
     }
 
     // Phase B: Reduce these contributions
-    cuda_reduce_shared< DriverType >( driver->m_scratch_warp );
+    cuda_reduce_shared< DriverType >( driver.m_scratch_warp );
   }
 }
 
@@ -232,18 +232,28 @@ void cuda_reduce_global( const DriverType * const driver )
 
 template< class DriverType >
 __global__
+
+#if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 
+
 static void cuda_parallel_reduce()
 {
+  // The driver functor has been copied to constant memory
+
+  const DriverType & driver =
+    *((const DriverType *) kokkos_device_cuda_constant_memory_buffer );
+
+#else
+
+static void cuda_parallel_reduce( const DriverType driver )
+{
+
+#endif
+
   typedef DeviceCuda::size_type size_type ;
   typedef typename DriverType::functor_type functor_type ;
   typedef typename functor_type::value_type value_type ;
 
   extern __shared__ size_type shared_data[];
-
-  // The driver functor has been copied to constant memory
-
-  const DriverType * const driver =
-    (const DriverType *) kokkos_device_cuda_constant_memory_buffer ;
 
   value_type & value =
     *( (value_type *)( shared_data + DriverType::shared_data_offset() ) );
@@ -252,14 +262,14 @@ static void cuda_parallel_reduce()
 
   // Phase 1: Reduce to per-thread contributions
   {
-    const size_type work_count  = driver->m_work_count ;
-    const size_type work_stride = driver->m_work_stride ;
+    const size_type work_count  = driver.m_work_count ;
+    const size_type work_stride = driver.m_work_stride ;
 
     size_type iwork =
       threadIdx.x + blockDim.x * ( threadIdx.y + blockDim.y * blockIdx.x );
 
     for ( ; iwork < work_count ; iwork += work_stride ) {
-      driver->m_work_functor( iwork , value );
+      driver.m_work_functor( iwork , value );
     }
   }
 
@@ -280,7 +290,7 @@ static void cuda_parallel_reduce()
 
   // Phase 4: Thread #0 of last block performs serial finalization
   if ( last_block && 0 == threadIdx.x && 0 == threadIdx.y ) {
-    driver->m_work_finalize( value );
+    driver.m_work_finalize( value );
   }
 }
 
@@ -290,8 +300,6 @@ static void cuda_parallel_reduce()
 template< class FunctorType , class FinalizeType >
 class ParallelReduce< FunctorType , FinalizeType , DeviceCuda > {
 public:
-  typedef ParallelReduce< FunctorType , FinalizeType , DeviceCuda > self_type ;
-
   typedef DeviceCuda                        device_type ;
   typedef FunctorType                       functor_type ;
   typedef FinalizeType                      finalize_type ;
@@ -379,6 +387,8 @@ public:
                 const FunctorType  & functor ,
                 const FinalizeType & finalize )
   {
+    typedef ParallelReduce< FunctorType , FinalizeType , DeviceCuda > self_type ;
+
     const size_type maximum_shared_words = device_type::maximum_shared_words();
 
     dim3 block( Impl::DeviceCudaTraits::WarpSize , 
@@ -411,15 +421,23 @@ public:
 
     device_type::set_dispatch_functor();
 
-    ParallelReduce driver( functor , finalize , work_count , block.x * block.y * grid.x , grid.x );
+    self_type driver( functor , finalize , work_count , block.x * block.y * grid.x , grid.x );
 
     device_type::clear_dispatch_functor();
 
+#if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 
+
     // Copy functor to constant memory on the device
-    cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(driver) );
+    cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(self_type) );
 
     // Invoke the driver function on the device
     cuda_parallel_reduce< self_type ><<< grid , block , shmem_size >>>();
+
+#else
+
+    cuda_parallel_reduce< self_type ><<< grid , block , shmem_size >>>( driver );
+
+#endif
   }
 };
 
