@@ -51,12 +51,12 @@
 #include "Amesos2_Util_is_same.hpp"
 
 namespace SLU {
-extern "C" {
-typedef int int_t;
+  extern "C" {
+    typedef int int_t;
 #include "slu_Cnames.h"
 #include "supermatrix.h"
 #include "slu_util.h"
-}
+  }
 }
 
 template <class Matrix, class Vector> class Superlu;
