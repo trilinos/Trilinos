@@ -1,8 +1,8 @@
-==========================
- New MultiVector Examples
-==========================
+======================
+ New Adapter Examples
+======================
 
-:author: Eric T Bavier <etbavier@sandia.gov>
+:author: Eric T Bavier <etbavie@sandia.gov>
 :date:   Mon Jul 19 16:30:07 CDT 2010
 
 
@@ -26,8 +26,8 @@ need editing:
    function calls, appropriate type conversions (explicit or implicit)
    will need to take place before return'ing.
 
-Of course, "NewMatrix" and "NewMultiVector", in the filenames and
-within the files themselves,will need to be changed to reflect the
+Of course the text "NewMatrix" and "NewMultiVector" in the filenames
+and within the files themselves will need to be changed to reflect the
 class that is being adapted.
 
 Finally, the new adapters will need to be added to Amesos2 by either

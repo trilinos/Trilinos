@@ -37,6 +37,5 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(Amesos2_SimpleSolve_File
-  SOURCE_FILES amesos_test_mat.hb
-               bcsstk14.hb
+  SOURCE_FILES ../test/matrices/arc130.mtx
   )

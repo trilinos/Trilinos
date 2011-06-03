@@ -54,8 +54,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
-#include <Tpetra_MatrixIO.hpp>
+#include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_Import.hpp>
 
 #include <Amesos2.hpp>
@@ -89,35 +88,37 @@ int main(int argc, char *argv[]) {
   //
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-  Teuchos::RCP<Node>             node = platform.getNode();
-  int myRank  = comm->getRank();
+  Teuchos::RCP<Node>                      node = platform.getNode();
+  int myRank = comm->getRank();
 
   Teuchos::oblackholestream blackhole;
-  std::ostream &out = ( myRank == 0 ? std::cout : blackhole );
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
 
   bool printMatrix   = false;
   bool printSolution = false;
   bool printTiming   = false;
+  bool allprint      = false;
   bool verbose = (myRank==0);
-  std::string filename("bcsstk14.hb");
+  std::string filename("arc130.mtx");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("print_matrix","no_print_matrix",&printMatrix,"Print the full matrix after reading it.");
-  cmdp.setOption("print_solution","no_print_solution",&printSolution,"Print solution vector after solve.");
-  cmdp.setOption("print_timing","no_print_timing",&printTiming,"Print solver timing statistics");
+  cmdp.setOption("print-matrix","no-print-matrix",&printMatrix,"Print the full matrix after reading it.");
+  cmdp.setOption("print-solution","no-print-solution",&printSolution,"Print solution vector after solve.");
+  cmdp.setOption("print-timing","no-print-timing",&printTiming,"Print solver timing statistics");
+  cmdp.setOption("all-print","root-print",&allprint,"All processors print to out");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
 
+  std::ostream& out = ( (allprint || (myRank == 0)) ? std::cout : blackhole );
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
+
   // Say hello
-  out << Amesos::version() << std::endl << std::endl;
+  out << myRank << " : " << Amesos::version() << std::endl << std::endl;
 
   const size_t numVectors = 1;
 
-  RCP<MAT> A;
-  Tpetra::Utils::readHBMatrix(filename,comm,node,A);
+  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(filename, comm, node);
   if( printMatrix ){
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
@@ -125,16 +126,18 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << A->description() << std::endl << std::endl;
   }
 
-  // create a Map
-  global_size_t nrows = A->getGlobalNumRows();
-  RCP<Tpetra::Map<LO,GO,Node> > map = rcp( new Tpetra::Map<LO,GO,Node>(nrows,0,comm) );
+  // get the maps
+  RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();		
+  RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+
+  GO nrows = dmnmap->getGlobalNumElements();
   RCP<Map<LO,GO,Node> > root_map
     = rcp( new Map<LO,GO,Node>(nrows,myRank == 0 ? nrows : 0,0,comm) );
   RCP<MV> Xhat = rcp( new MV(root_map,numVectors) );
-  RCP<Import<LO,GO,Node> > importer = rcp( new Import<LO,GO,Node>(map,root_map) );
+  RCP<Import<LO,GO,Node> > importer = rcp( new Import<LO,GO,Node>(dmnmap,root_map) );
 
   // Create random X
-  RCP<MV> X = rcp(new MV(map,numVectors));
+  RCP<MV> X = rcp(new MV(dmnmap,numVectors));
   X->randomize();
 
   /* Create B
@@ -148,7 +151,7 @@ int main(int argc, char *argv[]) {
    *   [10]
    *   [10]]
    */
-  RCP<MV> B = rcp(new MV(map,numVectors));
+  RCP<MV> B = rcp(new MV(rngmap,numVectors));
   B->putScalar(10);
   
 
@@ -161,11 +164,17 @@ int main(int argc, char *argv[]) {
 
     if( printSolution ){
       // Print the solution
-      Xhat->doImport(*X,*importer,Tpetra::REPLACE);
-      if( myRank == 0 ){
-        *fos << "Solution :" << std::endl;
+      if( allprint ){
+        if( myRank == 0 ) *fos << "Solution :" << std::endl;
         Xhat->describe(*fos,Teuchos::VERB_EXTREME);
         *fos << std::endl;
+      } else {
+	Xhat->doImport(*X,*importer,Tpetra::REPLACE);
+	if( myRank == 0 ){
+	  *fos << "Solution :" << std::endl;
+	  Xhat->describe(*fos,Teuchos::VERB_EXTREME);
+	  *fos << std::endl;
+	}
       }
     }
 

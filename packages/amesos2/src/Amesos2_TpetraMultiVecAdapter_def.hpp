@@ -68,7 +68,7 @@ namespace Amesos {
 				   size_t lda,
 				   bool global_copy) const
   {
-    size_t local_length = getLocalLength();
+    // size_t local_length = getLocalLength();
     global_size_type global_length = getGlobalLength();
     size_t num_vecs = getGlobalNumVectors();
 

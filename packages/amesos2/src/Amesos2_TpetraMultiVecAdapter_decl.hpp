@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -47,7 +47,7 @@
   \date   Wed May 26 19:49:10 CDT 2010
 
   \brief  Amesos2::MultiVecAdapter specialization for the
-          Tpetra::MultiVector class.
+	  Tpetra::MultiVector class.
 */
 
 #ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DECL_HPP
@@ -168,7 +168,7 @@ namespace Amesos {
     bool isLocal() const
     {
       if(getComm()->getSize() == 1){
-        return true;
+	return true;
       } // There may be other conditions to check
     }
 
@@ -354,7 +354,7 @@ namespace Amesos {
      *
      * \note We assume that the leading dimension of the data in
      * newVals is equal to the global length of a vector in \c this.
-     * 
+     *
      * \tparam Value_t The type of the data values that are being put into \c mv_
      *
      * \param newVals The values to be exported into the global space.
@@ -393,7 +393,7 @@ namespace Amesos {
      */
     void localize( bool root ) const;
 
-  
+
     /// The multivector this adapter wraps
     Teuchos::RCP<Tpetra::MultiVector<scalar_type,
 				     local_ordinal_type,
@@ -441,7 +441,7 @@ namespace Amesos {
     mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
 					   global_ordinal_type,
 					   node_type > > o_map_;
-  
+
   };                              // end class MultiVecAdapter<Tpetra::MultiVector>
 
 } // end namespace Amesos

@@ -43,7 +43,7 @@
 
 /**
    \file   SimpleSolve.cpp
-   \author Eric Bavier <etbavier@sandia.gov>
+   \author Eric Bavier <etbavie@sandia.gov>
    \date   Sat Jul 17 10:35:39 2010
 
    \brief  Simple example of Amesos2 usage.
