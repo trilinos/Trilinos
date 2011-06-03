@@ -62,6 +62,14 @@ namespace panzer {
 
     int_values.evaluateValues(node_coordinates);
     
+    TEST_EQUALITY(int_values.ip_coordinates.dimension(1), 4);
+    double realspace_x_coord = (1.0/std::sqrt(3) + 1.0) / 2.0;
+    double realspace_y_coord = (1.0/std::sqrt(3) + 1.0) / 2.0;
+    TEST_FLOATING_EQUALITY(int_values.ip_coordinates(0,0,0), 
+			   realspace_x_coord, 1.0e-8);
+    TEST_FLOATING_EQUALITY(int_values.ip_coordinates(0,0,1), 
+			   realspace_y_coord, 1.0e-8);
+
   }
 
 }

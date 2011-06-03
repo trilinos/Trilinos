@@ -34,6 +34,8 @@ namespace panzer {
     Array contravarient; 
     Array norm_contravarient; 
 
+    // integration points
+    Array ip_coordinates;      // <Cell,IP,Dimls>
   };
 
 } // namespace panzer

@@ -73,6 +73,9 @@ namespace panzer {
     norm_contravarient = 
       Intrepid::FieldContainer<double>(num_cells, num_ip);
 
+    ip_coordinates = 
+      Intrepid::FieldContainer<double>(num_cells, num_ip, num_space_dim);
+      
   }
   
 // ***********************************************************
@@ -184,6 +187,10 @@ namespace panzer {
       }
     }
 
+    // IP coordinates
+    {
+      cell_tools.mapToPhysicalFrame(ip_coordinates, cub_points, node_coordinates, *(int_rule->topology));
+    }
 
   }
 }
