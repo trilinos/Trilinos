@@ -110,7 +110,7 @@ def setup_parser():
 
     # Other options
     parser.add_argument('-C','--directory', metavar='DIR', help='change working directory')
-
+    
     # Parallel operation
     parallel = parser.add_argument_group('parallel control')
     # NOTE: --load-balance is taken care of by number of processes argument
@@ -220,6 +220,10 @@ def main():
     else:
         # Construct the sierra command from args
         cmd_str = "sierra"
+        
+        # TODO: use release version by omitting this later
+        #       for now we default to head
+        cmd_str += " -V head"
 
         # Find what args/options need to go to the sierra command itself (not the app)
         skip_list = ["num_proc"]
@@ -233,9 +237,9 @@ def main():
                 cmd_str += " %s" % convert_to_stk_adapt_option(args, arg)
 
         if (num_proc > 1):
-            cmd_str += " --loadbal=1"
+            cmd_str += " --load_balance=1"
         else:
-            cmd_str += " --loadbal=0"
+            cmd_str += " --load_balance=0"
 
         cmd_str += '"'
         run_cmd(cmd_str)

@@ -250,12 +250,16 @@ namespace stk {
         assert(nb->field_exists("mesh_model_coordinates"));
         Ioss::Field coordinates = nb->get_field("mesh_model_coordinates");
         spatial_dim = coordinates.transformed_storage()->component_count();
-#if 1
+
         if (!meta.is_FEM_initialized())
           {
-            meta.FEM_initialize(spatial_dim);
-          }
+            std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(spatial_dim);
+#if PERCEPT_USE_FAMILY_TREE
+            entity_rank_names.push_back("FAMILY_TREE");
 #endif
+            meta.FEM_initialize(spatial_dim, entity_rank_names);
+          }
+
         //s_spatial_dim = spatial_dim;
         //std::cout << "PerceptMeshReadWrite::process_read_nodeblocks_meta: spatial_dim= " << spatial_dim << std::endl;
 

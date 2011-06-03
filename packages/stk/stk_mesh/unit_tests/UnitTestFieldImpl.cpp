@@ -407,7 +407,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     const FieldBase::Restriction & rA = f2->restriction( 0 , pA );
     const FieldBase::Restriction & rD = f2->restriction( 0 , pD );
     STKUNIT_ASSERT( & rA == & rD );
-    STKUNIT_ASSERT( rA.ordinal() == pD.mesh_meta_data_ordinal() );
+    STKUNIT_ASSERT( rA.part_ordinal() == pD.mesh_meta_data_ordinal() );
   }
 
   //------------------------------
@@ -506,7 +506,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     unsigned max = 0 ;
 
     for ( ; i != ie ; ++i ) {
-      if ( i->ordinal() == entity_id ) {
+      if ( i->part_ordinal() == entity_id ) {
 	const unsigned len = pA.mesh_meta_data_ordinal() ? i->stride( pA.mesh_meta_data_ordinal() - 1 ) : 1 ;
         if ( max < len ) { max = len ; }
       }

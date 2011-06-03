@@ -34,6 +34,8 @@
 #include <stk_percept/ShardsInterfaceTable.hpp>
 #include <stk_percept/util/GeneralFunction.hpp>
 
+#include <stk_percept/PerceptMesh.hpp>
+
 SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag2 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag3 )

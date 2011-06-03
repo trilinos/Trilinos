@@ -48,7 +48,7 @@ std::ostream & print( std::ostream & s ,
   for ( std::vector<FieldBase::Restriction>::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
-    i->print( s, i->rank(), * all_parts[ i->ordinal() ], field.rank() );
+    i->print( s, i->entity_rank(), * all_parts[ i->part_ordinal() ], field.rank() );
   }
   s << std::endl << b << "}" ;
   return s ;

@@ -757,17 +757,12 @@ namespace stk {
 
           std::cout << "tmp: extension= " << extension << " meshFileName= " << meshFileName << " fullmesh= " << fullmesh << " base_name= " << base_name << std::endl;
 
-          std::string command="loadbal -No_subdirectory -suffix_mesh " + extension+" -suffix_spread "+extension+" -p "+toString(p_size)+ " ";
+          std::string command="loadbal -No_subdirectory -spread -suffix_mesh " + extension+" -suffix_spread "+extension+" -p "+toString(p_size)+ " ";
           command += "-R " +fullmesh+" " + base_name;
           //command += "-R ./ "  + base_name;
 
           std::cout << "RunEnvironment::doLoadBalance: command= " << command << std::endl;
 
-          runCommand(command);
-          //command = "./"+meshFileName.substr(0, meshFileName.length()-2)+".spd";
-          command = meshFileName.substr(0, meshFileName.length()-2)+".spd";
-          
-          std::cout << "RunEnvironment::doLoadBalance: command= " << command << std::endl;
           runCommand(command);
         }
 

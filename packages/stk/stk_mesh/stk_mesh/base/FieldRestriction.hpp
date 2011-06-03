@@ -12,8 +12,8 @@
 
 #include <vector>
 #include <Shards_Array.hpp>
-#include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
 
 #include <stk_util/util/SimpleArrayOps.hpp>
 
@@ -32,53 +32,80 @@ class FieldRestriction {
 
   typedef shards::array_traits::int_t size_type ;
 
-  FieldRestriction() : m_key() {
+  FieldRestriction()
+    : m_entityrank_partordinal(InvalidEntityRank,InvalidPartOrdinal)
+  {
     Copy<MaximumFieldDimension>( m_stride , size_type(0) );
   }
 
-  FieldRestriction( const FieldRestriction & rhs ): m_key( rhs.m_key ) {
+  FieldRestriction( const FieldRestriction & rhs )
+    : m_entityrank_partordinal( rhs.m_entityrank_partordinal )
+  {
     Copy< MaximumFieldDimension >( m_stride , rhs.m_stride );
   }
 
-  FieldRestriction & operator = ( const FieldRestriction & rhs ) {
-    m_key = rhs.m_key ;
+  FieldRestriction & operator = ( const FieldRestriction & rhs )
+  {
+    m_entityrank_partordinal = rhs.m_entityrank_partordinal ;
     Copy< MaximumFieldDimension >( m_stride , rhs.m_stride );
     return *this ;
   }
 
   FieldRestriction( EntityRank input_rank , PartOrdinal input_ordinal)
-    : m_key( input_rank, input_ordinal )
+    : m_entityrank_partordinal( input_rank, input_ordinal )
   {
     Copy< MaximumFieldDimension >( m_stride , size_type(0) );
   }
 
-  EntityRank rank()    const { return entity_rank( m_key ); }
-  PartOrdinal ordinal() const { return entity_id( m_key ); }
+  EntityRank entity_rank() const
+  {
+    return m_entityrank_partordinal.first;
+  }
+  PartOrdinal part_ordinal() const
+  {
+    return m_entityrank_partordinal.second;
+  }
 
-  size_type & stride_nonconst( Ordinal index ) { return m_stride[index]; }
+  size_type & stride( Ordinal index ) { return m_stride[index]; }
   const size_type & stride( Ordinal index ) const { return m_stride[index]; }
 
   size_type dimension() const { return m_stride[0]; }
 
-  bool operator < ( const FieldRestriction & rhs ) const { return this->m_key < rhs.m_key; }
-  bool operator == ( const FieldRestriction & rhs ) const { return this->m_key == rhs.m_key; }
-  bool operator != ( const FieldRestriction & rhs ) const { return this->m_key != rhs.m_key; }
+  bool operator < ( const FieldRestriction & rhs ) const
+  {
+    return this->m_entityrank_partordinal < rhs.m_entityrank_partordinal;
+  }
+  bool operator == ( const FieldRestriction & rhs ) const
+  {
+    return this->m_entityrank_partordinal == rhs.m_entityrank_partordinal;
+  }
+  bool operator != ( const FieldRestriction & rhs ) const
+  {
+    return this->m_entityrank_partordinal != rhs.m_entityrank_partordinal;
+  }
 
-  bool not_equal_stride( const FieldRestriction & rhs ) const 
-  { return Compare< MaximumFieldDimension >::not_equal( this->m_stride , rhs.m_stride ); }
+  bool not_equal_stride( const FieldRestriction & rhs ) const
+  {
+    return Compare< MaximumFieldDimension >::not_equal( this->m_stride , rhs.m_stride );
+  }
 
-  void print( std::ostream & os, const EntityRank & rank, const Part & part, FieldArrayRank field_rank ) const;
+  void print(
+      std::ostream & os,
+      const EntityRank & entity_rank,
+      const Part & part,
+      FieldArrayRank field_rank
+      ) const;
 
   private:
-  EntityKey m_key ;
+  std::pair<EntityRank,PartOrdinal> m_entityrank_partordinal;
   size_type m_stride[ MaximumFieldDimension ];
 };
 
 typedef std::vector<FieldRestriction> FieldRestrictionVector;
 
-std::string print_restriction( 
+std::string print_restriction(
     const FieldRestriction & restr,
-    const EntityRank & rank,
+    const EntityRank & entity_rank,
     const Part & part,
     FieldArrayRank field_rank
     );

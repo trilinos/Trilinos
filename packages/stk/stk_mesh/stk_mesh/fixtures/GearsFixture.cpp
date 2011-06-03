@@ -49,7 +49,7 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
-GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears)
+GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears, GearParams gear_params)
   : NUM_GEARS(num_gears)
   , meta_data( SpatialDimension )
   , bulk_data( fem::FEMMetaData::get_meta_data(meta_data) , pm )
@@ -107,7 +107,12 @@ GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears)
           cartesian_coord_field,
           displacement_field,
           translation_field,
-          cylindrical_coord_field
+          cylindrical_coord_field,
+          gear_params.element_size,
+          gear_params.radius_min,
+          gear_params.radius_max,
+          gear_params.height_min,
+          gear_params.height_max
           );
   }
 }

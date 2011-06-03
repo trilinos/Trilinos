@@ -44,7 +44,9 @@
 #include <stk_percept/SameRankRelation.hpp>
 
 
-//using namespace Intrepid;
+
+// if this is set, use stk_mesh relations to hold parent/child information, else use special data structures for this
+#define PERCEPT_USE_FAMILY_TREE 0
 
 using namespace shards;
 

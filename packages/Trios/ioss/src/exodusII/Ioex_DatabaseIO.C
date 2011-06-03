@@ -618,7 +618,7 @@ namespace Ioex {
       // For an exodusII file, timesteps are global and are stored in the region.
       // Read the timesteps and add to the region
       tsteps.resize(timestep_count);
-      int error = ex_get_all_times(get_file_pointer(), &tsteps[0]);
+      int error = ex_get_all_times(get_file_pointer(), (tsteps.empty() ? NULL : &tsteps[0]));
       if (error < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -1000,7 +1000,7 @@ namespace Ioex {
     {
       Ioss::SerializeIO	serializeIO__(this);
 
-      error = ex_get_ids(get_file_pointer(), EX_ELEM_BLOCK, &element_block_ids[0]);
+      error = ex_get_ids(get_file_pointer(), EX_ELEM_BLOCK, (element_block_ids.empty() ? NULL : &element_block_ids[0]));
       if (error < 0) {
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
@@ -1025,7 +1025,7 @@ namespace Ioex {
 	int nodes_per_element;
 	int attributes_per_element;
 
-	char * const element_type = &all_element_type[0] + iblk * (max_string_length+1);
+	char * const element_type = (all_element_type.empty() ? NULL : &all_element_type[0]) + iblk * (max_string_length+1);
 
 	error = ex_get_elem_block(get_file_pointer(), id,
 				  element_type,
@@ -1049,7 +1049,7 @@ namespace Ioex {
     }
 
     // This is a collective call...
-    util().attribute_reduction(all_element_type_length, &all_element_type[0]);
+    util().attribute_reduction(all_element_type_length, (all_element_type.empty() ? NULL : &all_element_type[0]));
 
     // The element attribute count will either be 0 if there are no
     // elements in the element block on this processor, or it will be
@@ -1057,11 +1057,11 @@ namespace Ioex {
     // over all processors, each processor will then have the correct
     // attribute count...
     // This is a collective call...
-    util().global_array_minmax(&attributes[0], attributes.size(), Ioss::ParallelUtils::DO_MAX);
+    util().global_array_minmax((attributes.empty() ? NULL : &attributes[0]), attributes.size(), Ioss::ParallelUtils::DO_MAX);
 
     // Similar for number of nodes per element...
     // This is a collective call... Could combine with previous call to eliminate one call...
-    util().global_array_minmax(&my_node_count[0], my_node_count.size(), Ioss::ParallelUtils::DO_MAX);
+    util().global_array_minmax((my_node_count.empty() ? NULL : &my_node_count[0]), my_node_count.size(), Ioss::ParallelUtils::DO_MAX);
 
     // Determine global element count for each element block....
     // Can also get this from an nemesis call, but the data may not always be there in all cases.
@@ -1233,7 +1233,7 @@ namespace Ioex {
       int my_element_count = eb->get_property("entity_count").get_int();
       if (my_element_count > 0) {
 	std::vector<int> conn(my_element_count * element_nodes);
-	ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, &conn[0], NULL, NULL);
+	ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, (conn.empty() ? NULL : &conn[0]), NULL, NULL);
 	
 	for (int i=0; i < my_element_count * element_nodes; i++) {
 	  node_used[conn[i]-1] = blk_position+1;
@@ -1366,7 +1366,7 @@ namespace Ioex {
 	IOSS_ERROR(errmsg);
       }
       
-      result = MPI_Waitall(req_cnt, &request[0], &status[0]);
+      result = MPI_Waitall(req_cnt, (request.empty() ? NULL : &request[0]), (status.empty() ? NULL : &status[0]));
       
       if (result != MPI_SUCCESS) {
 	std::ostringstream errmsg;
@@ -1430,7 +1430,7 @@ namespace Ioex {
       }
 
       std::vector<unsigned> out_data(elementBlockCount * bits_size);
-      MPI_Allreduce((void*)&data[0], &out_data[0], static_cast<int>(data.size()),
+      MPI_Allreduce((void*)(data.empty() ? NULL : &data[0]), (out_data.empty() ? NULL : &out_data[0]), static_cast<int>(data.size()),
 		    MPI_UNSIGNED, MPI_BOR, util().communicator());
 
       offset = 0;
@@ -1488,7 +1488,7 @@ namespace Ioex {
       int my_element_count = block->get_property("entity_count").get_int();
       if (my_element_count > 0) {
 	std::vector<int> conn(my_element_count * element_nodes);
-	ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, &conn[0], NULL, NULL);
+	ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, (conn.empty() ? NULL : &conn[0]), NULL, NULL);
 	
 	for (int j=0; j < my_element_count * element_nodes; j++) {
 	  nodeConnectivityStatus[conn[j]-1] |= status;
@@ -1529,7 +1529,7 @@ namespace Ioex {
       Ioss::IntVector side_set_ids(sidesetCount);
       {
 	Ioss::SerializeIO	serializeIO__(this);
-	int error = ex_get_ids(get_file_pointer(), EX_SIDE_SET, &side_set_ids[0]);
+	int error = ex_get_ids(get_file_pointer(), EX_SIDE_SET, (side_set_ids.empty() ? NULL : &side_set_ids[0]));
 	if (error < 0) {
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
@@ -1615,7 +1615,7 @@ namespace Ioex {
 	  Ioss::IntVector element(number_sides);
 	  Ioss::IntVector sides(number_sides);
 	  
-	  int ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &sides[0]);
+	  int ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, (element.empty() ? NULL : &element[0]), (sides.empty() ? NULL : &sides[0]));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  
@@ -1748,7 +1748,7 @@ namespace Ioex {
 
 	  // See if any processor has non-zero count for the topo_map counts
 	  // For the side_map, need the max value.
-	  util().global_array_minmax(&global_side_counts[0], global_side_counts.size(),
+	  util().global_array_minmax((global_side_counts.empty() ? NULL : &global_side_counts[0]), global_side_counts.size(),
 				     Ioss::ParallelUtils::DO_MAX);
 	}
 
@@ -1898,7 +1898,7 @@ namespace Ioex {
 	Ioss::IntVector element(number_sides);
 	Ioss::IntVector sides(number_sides);
 	
-	int ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &sides[0]);
+	int ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, (element.empty() ? NULL : &element[0]), (sides.empty() ? NULL : &sides[0]));
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	
@@ -1916,7 +1916,7 @@ namespace Ioex {
 
       // Synchronize among all processors....
       if (isParallel) {
-	util().global_array_minmax(&block_ids[0],
+	util().global_array_minmax((block_ids.empty() ? NULL : &block_ids[0]),
 					 block_ids.size(),
 					 Ioss::ParallelUtils::DO_MAX);
       }
@@ -1960,7 +1960,7 @@ namespace Ioex {
     
     // Synchronize among all processors....
     if (isParallel) {
-      util().global_array_minmax(&block_ids[0],
+      util().global_array_minmax((block_ids.empty() ? NULL : &block_ids[0]),
 				 block_ids.size(),
 				 Ioss::ParallelUtils::DO_MAX);
     }
@@ -1995,7 +1995,7 @@ namespace Ioex {
     // Get exodusII nodeset metadata
     if (nodesetCount > 0) {
       Ioss::IntVector nodeset_ids(nodesetCount);
-      int error = ex_get_ids(get_file_pointer(), EX_NODE_SET, &nodeset_ids[0]);
+      int error = ex_get_ids(get_file_pointer(), EX_NODE_SET, (nodeset_ids.empty() ? NULL : &nodeset_ids[0]));
       if (error < 0) {
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
       }
@@ -2144,7 +2144,7 @@ namespace Ioex {
 	    // Cast 'data' to correct size -- double
 	    double *rdata = static_cast<double*>(data);
 
-	    int ierr = ex_get_coord(get_file_pointer(), &x[0], &y[0], &z[0]);
+	    int ierr = ex_get_coord(get_file_pointer(), (x.empty() ? NULL : &x[0]), (y.empty() ? NULL : &y[0]), (z.empty() ? NULL : &z[0]));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -2232,7 +2232,7 @@ namespace Ioex {
       }
       assert(var_index > 0);
       ierr = ex_get_var(get_file_pointer(), step, type,
-			var_index, id, num_entity, &temp[0]);
+			var_index, id, num_entity, (temp.empty() ? NULL : &temp[0]));
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -2284,7 +2284,7 @@ namespace Ioex {
       var_index = sidesetVariables.find(var_name)->second;
       assert(var_index > 0);
       ierr = ex_get_var(get_file_pointer(), step, EX_SIDE_SET,
-			var_index, id, side_count, &temp[0]);
+			var_index, id, side_count, (temp.empty() ? NULL : &temp[0]));
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -2394,9 +2394,9 @@ namespace Ioex {
 	    // FIX: Hardwired map ids....
 	    int eb_offset = eb->get_offset();
 	    ex_get_partial_elem_map(get_file_pointer(), 1, eb_offset+1, my_element_count,
-				    &element[0]);
+				    (element.empty() ? NULL : &element[0]));
 	    ex_get_partial_elem_map(get_file_pointer(), 2, eb_offset+1, my_element_count,
-				    &side[0]);
+				    (side.empty() ? NULL : &side[0]));
 
 	    int index = 0;
 	    for (int i=0; i < my_element_count; i++) {
@@ -2442,7 +2442,7 @@ namespace Ioex {
 		double *rdata = static_cast<double*>(data);
 		for (int i=0; i < comp_count; i++) {
 		  ierr = ex_get_one_attr(get_file_pointer(), EX_ELEM_BLOCK, id,
-					 offset+i, &local_data[0]);
+					 offset+i, (local_data.empty() ? NULL : &local_data[0]));
 		  if (ierr < 0)
 		    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -2669,7 +2669,7 @@ namespace Ioex {
 
 	  if (number_distribution_factors == static_cast<int>(num_to_get)) {
 	    std::vector<double> real_ids(num_to_get);
-	    ierr = ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, &real_ids[0]);
+	    ierr = ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, (real_ids.empty() ? NULL : &real_ids[0]));
 	    
 	    // Need to convert 'double' to 'int' for Sierra use...
 	    int* ids = static_cast<int*>(data);
@@ -2713,7 +2713,7 @@ namespace Ioex {
 	    element = new int[number_sides];
 	  }
 
-	  ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, element, &sides[0]);
+	  ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, element, (sides.empty() ? NULL : &sides[0]));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -2724,7 +2724,7 @@ namespace Ioex {
 	    }
 	  } else {
 	    Ioss::IntVector is_valid_side(number_sides);
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, element, &sides[0],
+	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, element, (sides.empty() ? NULL : &sides[0]),
 							number_sides, get_region());
 	    size_t ieb = 0;
 	    for (int iel = 0; iel < number_sides; iel++) {
@@ -2759,7 +2759,7 @@ namespace Ioex {
 	  Ioss::IntVector element(number_sides);
 	  Ioss::IntVector sides(number_sides);
 
-	  ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &sides[0]);
+	  ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, (element.empty() ? NULL : &element[0]), (sides.empty() ? NULL : &sides[0]));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -2772,7 +2772,7 @@ namespace Ioex {
 	    assert(index/2 == entity_count);
 	  } else {
 	    Ioss::IntVector is_valid_side(number_sides);
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, &element[0], &sides[0],
+	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, (element.empty() ? NULL : &element[0]), (sides.empty() ? NULL : &sides[0]),
 							number_sides, get_region());
 
 	    size_t index = 0;
@@ -2803,7 +2803,7 @@ namespace Ioex {
 	  Ioss::IntVector element(number_sides);
 	  Ioss::IntVector sides(number_sides);
 
-	  ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &sides[0]);
+	  ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, (element.empty() ? NULL : &element[0]), (sides.empty() ? NULL : &sides[0]));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -2816,7 +2816,7 @@ namespace Ioex {
 	    assert(index/2 == entity_count);
 	  } else {
 	    Ioss::IntVector is_valid_side(number_sides);
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, &element[0], &sides[0],
+	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, (element.empty() ? NULL : &element[0]), (sides.empty() ? NULL : &sides[0]),
 							number_sides, get_region());
 
 	    size_t index = 0;
@@ -2866,10 +2866,10 @@ namespace Ioex {
 //----
 	    Ioss::IntVector element(number_sides);
 	    Ioss::IntVector sides(number_sides);
-	    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &sides[0]);
+	    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, (element.empty() ? NULL : &element[0]), (sides.empty() ? NULL : &sides[0]));
 //----
 	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb,
-							&element[0], &sides[0],
+							(element.empty() ? NULL : &element[0]), (sides.empty() ? NULL : &sides[0]),
 							number_sides, get_region());
 	  }
 	  
@@ -2900,13 +2900,13 @@ namespace Ioex {
     Ioss::IntVector element(number_sides);
     Ioss::IntVector side(number_sides);
 
-    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &side[0]);
+    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, (element.empty() ? NULL : &element[0]), (side.empty() ? NULL : &side[0]));
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
 //----
 
     Ioss::IntVector is_valid_side(number_sides);
-    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, &element[0], &side[0],
+    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, (element.empty() ? NULL : &element[0]), (side.empty() ? NULL : &side[0]),
 						number_sides, get_region());
 
     Ioss::IntVector elconnect;
@@ -2942,7 +2942,7 @@ namespace Ioex {
 	    elconnect.resize(elconsize);
 	  }
 	  get_field_internal(block, block->get_field("connectivity"),
-			     &elconnect[0], nelem*nelnode*sizeof(int));
+			     (elconnect.empty() ? NULL : &elconnect[0]), nelem*nelnode*sizeof(int));
 	  conn_block = block;
 	  current_side = -1;
 	}
@@ -2998,7 +2998,7 @@ namespace Ioex {
 
     // Allocate space for distribution factors.
     std::vector<double> dist(number_distribution_factors);
-    ierr = ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, &dist[0]);
+    ierr = ex_get_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id, (dist.empty() ? NULL : &dist[0]));
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -3035,13 +3035,13 @@ namespace Ioex {
     Ioss::IntVector element(number_sides);
     Ioss::IntVector side(number_sides);
 
-    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &side[0]);
+    ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, (element.empty() ? NULL : &element[0]), (side.empty() ? NULL : &side[0]));
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
 //----
 
     Ioss::IntVector is_valid_side(number_sides);
-    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, &element[0], &side[0],
+    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, (element.empty() ? NULL : &element[0]), (side.empty() ? NULL : &side[0]),
 						number_sides, get_region());
 
     int ieb = 0; // counter for distribution factors in this sideblock
@@ -3163,7 +3163,7 @@ namespace Ioex {
 	      if (spatialDimension == 3)
 		z[i] = rdata[index++];
 	    }
-	    int ierr = ex_put_coord(get_file_pointer(), &x[0], &y[0], &z[0]);
+	    int ierr = ex_put_coord(get_file_pointer(), (x.empty() ? NULL : &x[0]), (y.empty() ? NULL : &y[0]), (z.empty() ? NULL : &z[0]));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -3279,11 +3279,11 @@ namespace Ioex {
 
 	    int eb_offset = eb->get_offset();
 	    ierr = ex_put_partial_elem_map(get_file_pointer(), 1, eb_offset+1, my_element_count,
-					   &element[0]);
+					   (element.empty() ? NULL : &element[0]));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	    ierr = ex_put_partial_elem_map(get_file_pointer(), 2, eb_offset+1, my_element_count,
-					   &side[0]);
+					   (side.empty() ? NULL : &side[0]));
 	    if (ierr < 0)
 	      exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -3338,7 +3338,7 @@ namespace Ioex {
 		}
 		
 		ierr = ex_put_one_attr(get_file_pointer(), EX_ELEM_BLOCK, id,
-				       offset+i, &local_data[0]);
+				       offset+i, (local_data.empty() ? NULL : &local_data[0]));
 		if (ierr < 0)
 		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	      }
@@ -3620,7 +3620,7 @@ namespace Ioex {
 	assert(num_out == nodeCount);
 
 	// Write the variable...
-	int ierr = ex_put_var(get_file_pointer(), step, EX_NODAL, var_index, 0, num_out, &temp[0]);
+	int ierr = ex_put_var(get_file_pointer(), step, EX_NODAL, var_index, 0, num_out, (temp.empty() ? NULL : &temp[0]));
 	if (ierr < 0) {
 	  std::ostringstream errmsg;
 	  errmsg << "ERROR: Problem outputting nodal variable '" << var_name
@@ -3725,9 +3725,9 @@ namespace Ioex {
 	int ierr;
 	if (!surfaceSplitBackwardCompatibility && type == EX_SIDE_SET) {
 	  int offset = ge->get_property("set_offset").get_int();
-	  ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id, offset+1, count, &temp[0]);
+	  ierr = ex_put_n_var(get_file_pointer(), step, type, var_index, id, offset+1, count, (temp.empty() ? NULL : &temp[0]));
 	} else {
-	  ierr = ex_put_var(get_file_pointer(), step, type, var_index, id, count, &temp[0]);
+	  ierr = ex_put_var(get_file_pointer(), step, type, var_index, id, count, (temp.empty() ? NULL : &temp[0]));
 	}
 
 	if (ierr < 0)
@@ -3836,7 +3836,7 @@ namespace Ioex {
     size_t count = globalValues.size();
     if (count > 0) {
       int ierr = ex_put_glob_vars(get_file_pointer(), step, count,
-				  (double*)&globalValues[0]);
+				  (double*)(globalValues.empty() ? NULL : &globalValues[0]));
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
     }
@@ -3848,7 +3848,7 @@ namespace Ioex {
     size_t count = globalValues.size();
     if (count > 0) {
       int ierr = ex_get_glob_vars(get_file_pointer(), step, count,
-				  &globalValues[0]);
+				  (globalValues.empty() ? NULL : &globalValues[0]));
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
     }
@@ -3954,7 +3954,7 @@ namespace Ioex {
 
 	if (commsetNodeCount > 0) {
 	  int ierr = ne_put_node_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
-				      &entities[0], &procs[0], myProcessor);
+				      (entities.empty() ? NULL : &entities[0]), (procs.empty() ? NULL : &procs[0]), myProcessor);
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
@@ -4009,7 +4009,7 @@ namespace Ioex {
 	  }
 #endif
 
-	  int ierr = ne_put_node_map(get_file_pointer(), &internal[0], &entities[0], NULL,
+	  int ierr = ne_put_node_map(get_file_pointer(), (internal.empty() ? NULL : &internal[0]), (entities.empty() ? NULL : &entities[0]), NULL,
 				     myProcessor);
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -4039,7 +4039,7 @@ namespace Ioex {
 	}
 #else
 	int ierr = ne_put_elem_cmap(get_file_pointer(), get_id(cs, (ex_entity_type)0, &ids_),
-				    &entities[0], &sides[0], &procs[0], myProcessor);
+				    (entities.empty() ? NULL : &entities[0]), (sides.empty() ? NULL : &sides[0]), (procs.empty() ? NULL : &procs[0]), myProcessor);
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 #endif
@@ -4085,8 +4085,8 @@ namespace Ioex {
 	}
 #endif
 
-	ierr = ne_put_elem_map(get_file_pointer(), &internal[0],
-			       &entities[0], myProcessor);
+	ierr = ne_put_elem_map(get_file_pointer(), (internal.empty() ? NULL : &internal[0]),
+			       (entities.empty() ? NULL : &entities[0]), myProcessor);
 	if (ierr < 0)
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -4133,7 +4133,7 @@ namespace Ioex {
 	    real_ids[i] = static_cast<double>(ids[i]);
 	  }
 	  //	  int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id, &real_ids[0]);
-	  int ierr = ne_put_n_side_set_df(get_file_pointer(), id, offset+1, entity_count, &real_ids[0]);
+	  int ierr = ne_put_n_side_set_df(get_file_pointer(), id, offset+1, entity_count, (real_ids.empty() ? NULL : &real_ids[0]));
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
@@ -4190,9 +4190,9 @@ namespace Ioex {
 
 	  int ierr;
 	  if (!surfaceSplitBackwardCompatibility) {
-	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, &element[0], &side[0]);
+	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, (element.empty() ? NULL : &element[0]), (side.empty() ? NULL : &side[0]));
 	  } else {
-	    ierr = ex_put_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &side[0]);
+	    ierr = ex_put_set(get_file_pointer(), EX_SIDE_SET, id, (element.empty() ? NULL : &element[0]), (side.empty() ? NULL : &side[0]));
 	  }
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -4223,9 +4223,9 @@ namespace Ioex {
 
 	  int ierr;
 	  if (!surfaceSplitBackwardCompatibility) {
-	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, &element[0], &side[0]);
+	    ierr = ne_put_n_side_set(get_file_pointer(), id, offset+1, entity_count, (element.empty() ? NULL : &element[0]), (side.empty() ? NULL : &side[0]));
 	  } else {
-	    ierr = ex_put_set(get_file_pointer(), EX_SIDE_SET, id, &element[0], &side[0]);
+	    ierr = ex_put_set(get_file_pointer(), EX_SIDE_SET, id, (element.empty() ? NULL : &element[0]), (side.empty() ? NULL : &side[0]));
 	  }
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);

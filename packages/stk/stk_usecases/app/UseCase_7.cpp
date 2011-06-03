@@ -218,8 +218,8 @@ bool use_case_7_driver(
 
     stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
     stk::mesh::fem::CellTopology qshell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<> >());
-    stk::mesh::fem::set_cell_topology( fem_meta, block_hex, hex_top );
-    stk::mesh::fem::set_cell_topology( fem_meta, block_quad_shell, qshell_top );
+    stk::mesh::fem::set_cell_topology( block_hex, hex_top );
+    stk::mesh::fem::set_cell_topology( block_quad_shell, qshell_top );
 
     //--------------------------------
     // Declaring fields of specified types on all nodes:

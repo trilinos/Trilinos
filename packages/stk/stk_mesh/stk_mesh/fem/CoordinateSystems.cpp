@@ -58,6 +58,10 @@ const char * get_string( const char * const func ,
 
 //----------------------------------------------------------------------
 
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( SimpleArrayTag )
+
+//----------------------------------------------------------------------
+
 const Cartesian2d & Cartesian2d::tag()
 { static const Cartesian2d self ; return self ; }
 

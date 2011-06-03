@@ -49,7 +49,7 @@ void sort_unique( std::vector<DistributedIndex::KeyProc> & key_usage )
 
 void sort_unique( std::vector<DistributedIndex::KeyType> & keys )
 {
-  stk::util::radix_sort_unsigned(&keys[0], keys.size());
+  stk::util::radix_sort_unsigned((keys.empty() ? NULL : &keys[0]), keys.size());
 
   std::vector<DistributedIndex::KeyType>::iterator
     i = keys.begin() ,
@@ -162,7 +162,7 @@ DistributedIndex::DistributedIndex (
       m_key_span = partition_bounds ;
     }
     if (m_comm_size > 1) {
-      MPI_Bcast( & m_key_span[0], info[0] * sizeof(KeySpan), MPI_BYTE, 0, comm );
+      MPI_Bcast( (m_key_span.empty() ? NULL : & m_key_span[0]), info[0] * sizeof(KeySpan), MPI_BYTE, 0, comm );
     }
   }
 #else
@@ -669,7 +669,7 @@ void DistributedIndex::generate_new_global_key_upper_bound(
 
 #if defined( STK_HAS_MPI )
   if (m_comm_size > 1) {
-    MPI_Allreduce( & local_counts[0] , & global_counts[0] ,
+    MPI_Allreduce( (local_counts.empty() ? NULL : & local_counts[0]) , (global_counts.empty() ? NULL : & global_counts[0]) ,
                    m_span_count + 1 , MPI_UNSIGNED_LONG ,
                    MPI_SUM , m_comm );
   }
@@ -819,8 +819,8 @@ void DistributedIndex::generate_new_keys_global_planning(
 
   if (m_comm_size > 1) { // Gather requests into per-process spans
     // MPI doesn't do 'const' in its interface, but the send buffer is const
-    void * send_buf = const_cast<void*>( (void *)( & new_request[0] ));
-    void * recv_buf = & new_request_global[0] ;
+    void * send_buf = const_cast<void*>( (void *)( (new_request.empty() ? NULL : & new_request[0]) ));
+    void * recv_buf = (new_request_global.empty() ? NULL : & new_request_global[0]) ;
     MPI_Allgather( send_buf , m_span_count , MPI_LONG ,
                    recv_buf , m_span_count , MPI_LONG , m_comm );
   }
@@ -990,7 +990,7 @@ void DistributedIndex::generate_new_keys(
   // Unpacking
   unpack_recv_buffer( all, m_comm_size, new_keys);
 
-  stk::util::radix_sort_unsigned(&new_keys[0], new_keys.size());
+  stk::util::radix_sort_unsigned((new_keys.empty() ? NULL : &new_keys[0]), new_keys.size());
 
   requested_keys.resize( m_span_count );
 

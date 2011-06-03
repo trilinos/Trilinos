@@ -137,8 +137,11 @@ namespace Iopg {
     spatialDimension(3), nodeCount(0),
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),
+    nodeCmapIds(NULL), nodeCmapNodeCnts(NULL),
+    elemCmapIds(NULL), elemCmapElemCnts(NULL), 
     commsetNodeCount(0), commsetElemCount(0),
-    sequentialNG2L(false), sequentialEG2L(false)
+    sequentialNG2L(false), sequentialEG2L(false),
+    blockAdjacenciesCalculated(false)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;
@@ -370,6 +373,9 @@ namespace Iopg {
 				      myProcessor);
       if (error < 0)
 	pamgen_error(get_file_pointer(), __LINE__, myProcessor);
+
+      commsetNodeCount = num_node_cmaps;
+      commsetElemCount = num_elem_cmaps;
 
       // A nemesis file typically separates nodes into multiple
       // communication sets by processor.  (each set specifies

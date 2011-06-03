@@ -335,7 +335,8 @@ namespace Ioss {
     // NOTE:  For restart input databases, it is possible that the time
     //        is not monotonically increasing...
     double out_time = time;
-    if (!get_database()->is_input() && stateTimes.size() >= 1 && time <= stateTimes[stateTimes.size()-1]) {
+    if ( !get_database()->is_input() && !get_database()->usage() == WRITE_HEARTBEAT &&
+	 stateTimes.size() >= 1 && time <= stateTimes[stateTimes.size()-1]) {
       // Check that time is increasing...
       std::ostringstream errmsg;
       errmsg << "Current time, " << time

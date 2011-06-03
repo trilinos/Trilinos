@@ -7,7 +7,9 @@
 
 #include <Shards_CellTopologyData.h>
 
-#define FACE_BREAKER_HETERO_ENRICH_3D 0
+
+#define FACE_BREAKER_HETERO_ENRICH_3D 1
+
 #if FACE_BREAKER_HETERO_ENRICH_3D
 #include "UniformRefinerPattern_Quad4_Quad4_4_sierra.hpp"
 #include "UniformRefinerPattern_Tri3_Tri3_4_sierra.hpp"
@@ -40,18 +42,31 @@ namespace stk {
         // list all types of known break patterns to be used here
         m_bp.resize(0);
 
+        int spatialDim = eMesh.getSpatialDim();
+
+        // refine
+
+        // put them in reverse topological rank order
+
+        if (spatialDim != 3)
+          {
+            throw std::runtime_error("URP_Heterogeneous_Enrich_3D is only for 3D meshes");
+          }
+
 //         // refine
 //         m_bp.push_back(  new UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort > (eMesh, block_names) );
 //         m_bp.push_back(  new UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort > (eMesh, block_names) );
 //         m_bp.push_back(  new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort > (eMesh, block_names) );
 
-//         m_bp.push_back(  new UniformRefinerPattern<shards::ShellQuadrilateral<4>,  shards::ShellQuadrilateral<4>,   4, SierraPort > (eMesh, block_names) );
-//         m_bp.push_back(  new UniformRefinerPattern<shards::ShellTriangle<3>,       shards::ShellTriangle<3>,   4, SierraPort > (eMesh, block_names) );
 
         // enrich
         m_bp.push_back ( new UniformRefinerPattern< shards::Wedge<6>, shards::Wedge<15>, 1, SierraPort >                 (eMesh, block_names) );
         m_bp.push_back ( new UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<10>,  1, SierraPort >   (eMesh, block_names) );
         m_bp.push_back ( new UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<27>,   1, SierraPort >   (eMesh, block_names) );
+
+        //m_bp.push_back(  new UniformRefinerPattern<shards::ShellQuadrilateral<4>,  shards::ShellQuadrilateral<9>,   1, SierraPort > (eMesh, block_names) );
+        //m_bp.push_back(  new UniformRefinerPattern<shards::ShellTriangle<3>,       shards::ShellTriangle<3>,   4, SierraPort > (eMesh, block_names) );
+
 
 #if FACE_BREAKER_HETERO_ENRICH_3D
         

@@ -284,7 +284,7 @@ void use_case_AD_driver(
 
     stk::mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", element_rank);
     stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
-    stk::mesh::fem::set_cell_topology( mesh_meta_data, block_hex, hex_top );
+    stk::mesh::fem::set_cell_topology( block_hex, hex_top );
 
     //--------------------------------
 

@@ -18,7 +18,7 @@
 
 namespace stk {
 namespace mesh {
- 
+
 //----------------------------------------------------------------------
 
 namespace {
@@ -32,7 +32,7 @@ std::size_t stride( std::size_t size , std::size_t align )
 }
 
 DataTraits::~DataTraits() {}
- 
+
 DataTraits::DataTraits( const std::type_info & arg_type ,
                         const char * const     arg_name ,
                         std::size_t            arg_size ,
@@ -144,10 +144,10 @@ struct IsSameType<A,A> { enum { value = true }; };
 
 
 template< typename T >
-class DataTraitsNumeric : public DataTraits {
+class DataTraitsCommon : public DataTraits {
 public:
 
-  explicit DataTraitsNumeric( const char * arg_name )
+  explicit DataTraitsCommon( const char * arg_name )
     : DataTraits( typeid(T) , arg_name , sizeof(T) , sizeof(T) )
   {
     is_pod            = true ;
@@ -196,16 +196,6 @@ public:
     buf.unpack<T>( x , n );
   }
 
-  void print( std::ostream & s , const void * v , std::size_t n ) const
-  {
-    if ( n ) {
-      const T * x = reinterpret_cast<const T*>( v );
-      const T * const x_end = x + n ;
-      s << *x++ ;
-      while ( x_end != x ) { s << " " << *x++ ; }
-    }
-  }
-
   void copy( void * vx , const void * vy , std::size_t n ) const
   {
     const T * y = reinterpret_cast<const T*>( vy );
@@ -222,21 +212,21 @@ public:
     while ( x_end != x ) { *x++ += *y++ ; };
   }
 
-  void max( void * vx , const void * vy , std::size_t n ) const
+  virtual void print( std::ostream & s , const void * v , std::size_t n ) const
   {
-    const T * y = reinterpret_cast<const T*>( vy );
-    T * x = reinterpret_cast<T*>( vx );
-    T * const x_end = x + n ;
-    for ( ; x_end != x ; ++x , ++y ) { if ( *x < *y ) { *x = *y ; } }
+    if ( n ) {
+      const T * x = reinterpret_cast<const T*>( v );
+      const T * const x_end = x + n ;
+      s << *x++ ;
+      while ( x_end != x ) { s << " " << *x++ ; }
+    }
   }
 
-  void min( void * vx , const void * vy , std::size_t n ) const
-  {
-    const T * y = reinterpret_cast<const T*>( vy );
-    T * x = reinterpret_cast<T*>( vx );
-    T * const x_end = x + n ;
-    for ( ; x_end != x ; ++x , ++y ) { if ( *x > *y ) { *x = *y ; } }
-  }
+  virtual void max( void * vx , const void * vy , std::size_t n ) const
+  { ThrowErrorMsg( "not supported" ); }
+
+  virtual void min( void * vx , const void * vy , std::size_t n ) const
+  { ThrowErrorMsg( "not supported" ); }
 
   virtual void bit_and( void * , const void * , std::size_t ) const
   { ThrowErrorMsg( "not supported" ); }
@@ -249,11 +239,43 @@ public:
 };
 
 template< typename T >
+class DataTraitsNumeric : public DataTraitsCommon<T> {
+public:
+
+  explicit DataTraitsNumeric( const char * arg_name )
+    : DataTraitsCommon<T>( arg_name )  {}
+
+  virtual void max( void * vx , const void * vy , std::size_t n ) const
+  {
+    const T * y = reinterpret_cast<const T*>( vy );
+    T * x = reinterpret_cast<T*>( vx );
+    T * const x_end = x + n ;
+    for ( ; x_end != x ; ++x , ++y ) { if ( *x < *y ) { *x = *y ; } }
+  }
+
+  virtual void min( void * vx , const void * vy , std::size_t n ) const
+  {
+    const T * y = reinterpret_cast<const T*>( vy );
+    T * x = reinterpret_cast<T*>( vx );
+    T * const x_end = x + n ;
+    for ( ; x_end != x ; ++x , ++y ) { if ( *x > *y ) { *x = *y ; } }
+  }
+};
+
+template< typename T >
+class DataTraitsComplex : public DataTraitsCommon<T> {
+public:
+
+  explicit DataTraitsComplex( const char * arg_name )
+    : DataTraitsCommon<T>( arg_name ) {}
+};
+
+template< typename T >
 class DataTraitsIntegral : public DataTraitsNumeric<T> {
 public:
   DataTraitsIntegral( const char * name ) : DataTraitsNumeric<T>( name ) {}
 
-  void bit_and( void * vx , const void * vy , std::size_t n ) const
+  virtual void bit_and( void * vx , const void * vy , std::size_t n ) const
   {
     const T * y = reinterpret_cast<const T*>( vy );
     T * x = reinterpret_cast<T*>( vx );
@@ -261,7 +283,7 @@ public:
     while ( x_end != x ) { *x++ &= *y++ ; }
   }
 
-  void bit_or( void * vx , const void * vy , std::size_t n ) const
+  virtual void bit_or( void * vx , const void * vy , std::size_t n ) const
   {
     const T * y = reinterpret_cast<const T*>( vy );
     T * x = reinterpret_cast<T*>( vx );
@@ -269,7 +291,7 @@ public:
     while ( x_end != x ) { *x++ |= *y++ ; }
   }
 
-  void bit_xor( void * vx , const void * vy , std::size_t n ) const
+  virtual void bit_xor( void * vx , const void * vy , std::size_t n ) const
   {
     const T * y = reinterpret_cast<const T*>( vy );
     T * x = reinterpret_cast<T*>( vx );
@@ -282,7 +304,7 @@ class DataTraitsChar : public DataTraitsIntegral<char> {
 public:
   DataTraitsChar() : DataTraitsIntegral<char>( "char" ) {}
 
-  void print( std::ostream & s , const void * v , std::size_t n ) const
+  virtual void print( std::ostream & s , const void * v , std::size_t n ) const
   {
     if ( n ) {
       const char * x = reinterpret_cast<const char*>( v );
@@ -298,7 +320,7 @@ public:
   DataTraitsUnsignedChar()
     : DataTraitsIntegral<unsigned char>( "unsigned char" ) {}
 
-  void print( std::ostream & s , const void * v , std::size_t n ) const
+  virtual void print( std::ostream & s , const void * v , std::size_t n ) const
   {
     if ( n ) {
       const unsigned char * x = reinterpret_cast<const unsigned char*>( v );
@@ -315,6 +337,11 @@ public:
 template<>      \
 const DataTraits & data_traits<T>()     \
 { static const DataTraitsNumeric<T> traits( #T ); return traits ; }
+
+#define DATA_TRAITS_COMPLEX( T )        \
+template<>      \
+const DataTraits & data_traits<T>()     \
+{ static const DataTraitsComplex<T> traits( #T ); return traits ; }
 
 #define DATA_TRAITS_INTEGRAL( T )        \
 template<>      \
@@ -337,6 +364,8 @@ DATA_TRAITS_INTEGRAL( long )
 DATA_TRAITS_INTEGRAL( unsigned long )
 DATA_TRAITS_NUMERIC( float )
 DATA_TRAITS_NUMERIC( double )
+DATA_TRAITS_COMPLEX( std::complex<float> ) // TODO: Probably not right
+DATA_TRAITS_COMPLEX( std::complex<double> ) // TODO: Probably not right
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -416,6 +445,9 @@ DATA_TRAITS_POINTER( long )
 DATA_TRAITS_POINTER( unsigned long )
 DATA_TRAITS_POINTER( float )
 DATA_TRAITS_POINTER( double )
+DATA_TRAITS_POINTER( void )
+DATA_TRAITS_POINTER( std::complex<float> )
+DATA_TRAITS_POINTER( std::complex<double> )
 
 //----------------------------------------------------------------------
 

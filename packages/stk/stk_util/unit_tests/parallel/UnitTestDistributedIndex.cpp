@@ -534,7 +534,7 @@ void UnitTestSTKParallelDistributedIndex::test_generate_bad()
   STKUNIT_ASSERT_THROW( di.generate_new_keys( requests , generated_keys ), std::runtime_error );
 
   if( mpi_rank == mpi_size -1 ) {
-    requests[0] = 2*(partition_spans[0].second - partition_spans[0].first);
+    requests.push_back(2*(partition_spans[0].second - partition_spans[0].first));
   }
 
   STKUNIT_ASSERT_THROW( di.generate_new_keys( requests , generated_keys ), std::runtime_error );

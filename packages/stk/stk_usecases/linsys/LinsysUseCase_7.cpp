@@ -101,7 +101,7 @@ bool use_case_7_driver( MPI_Comm comm ,
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    
+
     stk::mesh::fem::FEMMetaData mesh_meta_data( SpatialDim ) ;
 
     //--------------------------------
@@ -119,8 +119,8 @@ bool use_case_7_driver( MPI_Comm comm ,
 
     stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
     stk::mesh::fem::CellTopology qshell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<> >());
-    stk::mesh::fem::set_cell_topology( mesh_meta_data, block_hex, hex_top );
-    stk::mesh::fem::set_cell_topology( mesh_meta_data, block_quad_shell, qshell_top );
+    stk::mesh::fem::set_cell_topology( block_hex, hex_top );
+    stk::mesh::fem::set_cell_topology( block_quad_shell, qshell_top );
 
     stk::io::put_io_part_attribute(block_hex);
     stk::io::put_io_part_attribute(block_quad_shell);
@@ -212,8 +212,8 @@ bool use_case_7_driver( MPI_Comm comm ,
     //------------------------------------------------------------------
 
     int numProcs=1, myProc=0;
-    myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
-    numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+    MPI_Comm_size(comm, &numProcs);
+    MPI_Comm_rank(comm, &myProc);
 
     //Now begin the use-case:
     //Create a fei::Factory of type Factory_Trilinos, which will produce
