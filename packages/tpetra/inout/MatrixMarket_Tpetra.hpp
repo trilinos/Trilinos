@@ -179,8 +179,10 @@ namespace Tpetra {
 	  {
 	    TEST_FOR_EXCEPTION(! pRowMap->isDistributed() && pComm->getSize() > 1, 
 			       std::invalid_argument,
-			       "The specified row map is not distributed, but the "
-			       "given communicator includes > 1 ranks.");
+			       "The specified row map is not distributed, but "
+			       "the given communicator includes more than one "
+			       "rank (in fact, there are " << pComm->getSize() 
+			       << " ranks).");
 	    TEST_FOR_EXCEPTION(pRowMap->getComm() != pComm, 
 			       std::invalid_argument,
 			       "The specified row map's communicator (pRowMap->"
@@ -333,9 +335,9 @@ namespace Tpetra {
 			    << " != pRowMap->getNodeNumElements() = "
 			    << pRowMap->getNodeNumElements() << ".  "
 			    "Please report this bug to the Tpetra developers.");
-	 TEST_FOR_EXCEPTION(numEntriesPerRow.size() < myNumRows,
+	 TEST_FOR_EXCEPTION(myRank == 0 && numEntriesPerRow.size() < myNumRows,
 			    std::logic_error,
-			    "numEntriesPerRow.size() = "
+			    "On Proc 0: numEntriesPerRow.size() = "
 			    << numEntriesPerRow.size()
 			    << " != pRowMap->getNodeElementList().size() = " 
 			    << myNumRows << ".  Please report this bug to the "
