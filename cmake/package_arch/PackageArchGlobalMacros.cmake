@@ -34,10 +34,10 @@ MACRO(PACKAGE_ARCH_READ_IN_OPTIONS_FROM_FILE)
     "Name of an optional file that is included first to define any cmake options with SET( ... CACHE ...) calls."
     )
 
-  IF (${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE)
-    MESSAGE("Reading in configuration options from ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE} ...")
-    INCLUDE(${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE})
-  ENDIF()
+  FOREACH (CONFIG_OPTS_FILE ${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE})
+    MESSAGE("Reading in configuration options from ${CONFIG_OPTS_FILE} ...")
+    INCLUDE(${CONFIG_OPTS_FILE})
+  ENDFOREACH()
 
 
 ENDMACRO()
