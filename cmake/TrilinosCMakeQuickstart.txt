@@ -1001,10 +1001,15 @@ H) Dashboard submissions
 
 You can use the extended CTest scripting system in Trilinos to submit
 package-by-package build, test, coverage, memcheck results to the dashboard.
-To do this, just configure a build directory like you would for any other
-purpose and they type:
 
-  $ env CTEST_BUILD_FLAGS=-j4 CTEST_PARALLEL_LEVEL=4 make dashboard
+First, configure as normal but add the build and test parallel levels with:
+
+  $ ./do-configure -DCTEST_BUILD_FLAGS:STRING=-j4 -DCTEST_PARALLEL_LEVEL:STRING=4 \
+    [OTHER OPTIONS]
+
+Then, invoke the build, test and submit with:
+
+  $ make dashboard
 
 This invokes the advanced CTest script
 Trilinos/cmake/ctest/experimental_build_test.cmake to do an experimental build
@@ -1056,8 +1061,7 @@ Currently, this options includes:
 For example, to run an experimental build and in the process change the build
 name and the options to pass to 'make', use:
 
-  $ env CTEST_BUILD_NAME=MyBuild CTEST_BUILD_FLAGS='-j8' CTEST_PARALLEL_LEVEL=8 \
-    make dashboard
+  $ env CTEST_BUILD_NAME=MyBuild make dashboard
 
 After this finishes running, look for the build 'MyBuild' (or whatever build
 name you used above) in the Trilinos CDash dashboard.
