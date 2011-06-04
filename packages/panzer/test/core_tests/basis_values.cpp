@@ -73,7 +73,28 @@ namespace panzer {
     
     basis_values.evaluateValues(int_values.cub_points,
 				int_values.jac_inv,
-				int_values.weighted_measure);
+				int_values.weighted_measure,
+				node_coordinates);
+
+    TEST_FLOATING_EQUALITY(basis_values.basis_coordinates(0,0,x),
+			   0.0, 1.0e-8);
+    TEST_FLOATING_EQUALITY(basis_values.basis_coordinates(0,0,y),
+			   0.0, 1.0e-8);
+
+    TEST_FLOATING_EQUALITY(basis_values.basis_coordinates(0,1,x),
+			   1.0, 1.0e-8);
+    TEST_FLOATING_EQUALITY(basis_values.basis_coordinates(0,1,y),
+			   0.0, 1.0e-8);
+
+    TEST_FLOATING_EQUALITY(basis_values.basis_coordinates(0,2,x),
+			   1.0, 1.0e-8);
+    TEST_FLOATING_EQUALITY(basis_values.basis_coordinates(0,2,y),
+			   1.0, 1.0e-8);
+
+    TEST_FLOATING_EQUALITY(basis_values.basis_coordinates(0,3,x),
+			   0.0, 1.0e-8);
+    TEST_FLOATING_EQUALITY(basis_values.basis_coordinates(0,3,y),
+			   1.0, 1.0e-8);
 
   }
 

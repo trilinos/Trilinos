@@ -17,7 +17,8 @@ namespace panzer {
    
     void evaluateValues(const Array& cub_points,
 			const Array& jac_inv,
-			const Array& weighted_measure);
+			const Array& weighted_measure,
+			const Array& node_coordinates);
 
     Array basis_ref;           // <BASIS,IP>
     Array basis;               // <Cell,BASIS,IP>
@@ -25,6 +26,20 @@ namespace panzer {
     Array grad_basis;          // <Cell,BASIS,IP,Dim>
     Array weighted_basis;      // <Cell,BASIS,IP>
     Array weighted_grad_basis; // <Cell,BASIS,IP,Dim>
+
+    /** Carterisan coordinates for basis coefficients
+
+        NOTE: This quantity is not always available.  Certain bases
+        may not have a corresponding coordiante value
+    */
+    Array basis_coordinates_ref;     // <Cell,BASIS>
+
+    /** Carterisan coordinates for basis coefficients
+
+        NOTE: This quantity is not always available.  Certain bases
+        may not have a corresponding coordiante value
+    */
+    Array basis_coordinates;         // <Cell,BASIS,Dim>
 
     Teuchos::RCP<panzer::Basis> panzer_basis;
     

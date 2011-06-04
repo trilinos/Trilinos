@@ -226,7 +226,8 @@ panzer::buildWorksets(const std::string& block_id,
 
       worksets[wkst].bases[i]->evaluateValues(worksets[wkst].int_rules[int_degree_index]->cub_points,
 					      worksets[wkst].int_rules[int_degree_index]->jac_inv,
-					      worksets[wkst].int_rules[int_degree_index]->weighted_measure);
+					      worksets[wkst].int_rules[int_degree_index]->weighted_measure,
+					      worksets[wkst].cell_vertex_coordinates);
     }
   }
 
@@ -377,7 +378,8 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 
       wkst->second.bases[i]->evaluateValues(wkst->second.int_rules[int_degree_index]->cub_points,
 					    wkst->second.int_rules[int_degree_index]->jac_inv,
-					    wkst->second.int_rules[int_degree_index]->weighted_measure);
+					    wkst->second.int_rules[int_degree_index]->weighted_measure,
+					    wkst->second.cell_vertex_coordinates);
 
     }
 

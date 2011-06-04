@@ -52,6 +52,14 @@ namespace panzer {
 				       b->basis_grad->dimension(2),
 				       b->basis_grad->dimension(3));
     
+    basis_coordinates_ref = 
+      Intrepid::FieldContainer<double>(b->getCardinality(),
+				       b->getDimension());
+    basis_coordinates = 
+      Intrepid::FieldContainer<double>(b->getNumCells(),
+				       b->getCardinality(),
+				       b->getDimension());
+
   }
   
   // ***********************************************************
@@ -62,7 +70,8 @@ namespace panzer {
   void panzer::BasisValues<Scalar,Array>::
   evaluateValues(const Array& cub_points,
 		 const Array& jac_inv,
-		 const Array& weighted_measure)
+		 const Array& weighted_measure,
+		 const Array& node_coordinates)
   {    
     intrepid_basis->getValues(basis_ref, cub_points, 
 			      Intrepid::OPERATOR_VALUE);
@@ -88,6 +97,22 @@ namespace panzer {
       multiplyMeasure<double>(weighted_grad_basis, 
 			      weighted_measure, 
 			      grad_basis);
+
+    // If basis supports coordinate values at basis points, then
+    // compute these values
+    {
+      Teuchos::RCP<Intrepid::DofCoordsInterface<Array> > coords;
+      coords = Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Array> >(intrepid_basis);
+      if (!Teuchos::is_null(coords)) {
+	coords->getDofCoords(basis_coordinates_ref);
+	Intrepid::CellTools<Scalar> cell_tools;
+	cell_tools.mapToPhysicalFrame(basis_coordinates, 
+				      basis_coordinates_ref,
+				      node_coordinates,
+				      panzer_basis->getIntrepidBasis()->getBaseCellTopology());
+      }
+    }
+
   }
 
 }
