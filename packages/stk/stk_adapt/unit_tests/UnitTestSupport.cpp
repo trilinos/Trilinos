@@ -54,6 +54,11 @@ namespace stk {
                       bool diff_2 = PerceptMesh::mesh_difference(eMesh2, eMesh_gold, diff_msg, print_during_diff);
                       //std::cout << "tmp diff_2= " << diff_2 << std::endl;
                       diff = diff_2;
+                      if (diff_2)
+                        { 
+                          //bool diff_3 = 
+                            PerceptMesh::mesh_difference(eMesh2, eMesh_gold, diff_msg, true);
+                        }
                     }
 
                   STKUNIT_EXPECT_TRUE(!diff);

@@ -252,6 +252,7 @@ namespace stk {
       //=============================================================================
 
 
+#if 0
       STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N)
       {
         EXCEPTWATCH;
@@ -301,7 +302,7 @@ namespace stk {
           }
 
       }
-
+#endif
 
 
 
