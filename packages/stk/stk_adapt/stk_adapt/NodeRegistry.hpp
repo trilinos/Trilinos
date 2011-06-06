@@ -1905,6 +1905,43 @@ namespace stk {
 
       }
 
+    public:
+      SubDimCellToDataMap& getMap() { return  m_cell_2_data_map; }
+
+      // remove any sub-dim entities from the map that have a node in deleted_nodes
+      void cleanDeletedNodes(std::set<stk::mesh::Entity *>& deleted_nodes)
+      {
+        SubDimCellToDataMap::iterator iter;
+        SubDimCellToDataMap& map = m_cell_2_data_map;
+        //std::set<const SubDimCell_SDSEntityType *> subDimEntitySet;
+        //  subDimEntitySet.insert(&subDimEntity);
+
+        //SubDimCellData& getNewNodeAndOwningElement(SubDimCell_SDSEntityType& subDimEntity)
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+
+            bool found = false;
+            for (unsigned ii = 0; ii < nodeIds_onSE.size(); ii++)
+              {
+                if (deleted_nodes.find(nodeIds_onSE[ii]) != deleted_nodes.end())
+                  {
+                    found = true;
+                    break;
+                  }
+              }
+            if (found)
+              {
+                nodeIds_onSE.resize(0);
+              }
+          }
+
+      }
+
     private:
       percept::PerceptMesh& m_eMesh;
       stk::CommAll * m_comm_all;

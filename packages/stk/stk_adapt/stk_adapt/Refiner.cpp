@@ -199,6 +199,8 @@ namespace stk {
     void Refiner::
     checkBreakPatternValidityAndBuildRanks(std::vector<stk::mesh::EntityRank>& ranks)
     {
+      ranks.resize(0);
+
       m_eMesh.getBulkData()->modification_begin();
       for (unsigned ibp = 0; ibp < m_breakPattern.size(); ibp++)
         {
@@ -301,7 +303,7 @@ namespace stk {
       };
 #endif
 
-      std::vector<stk::mesh::EntityRank> ranks;
+      std::vector<stk::mesh::EntityRank>& ranks = m_ranks;
 
       // check logic of break pattern setup and also build ranks used vector
       checkBreakPatternValidityAndBuildRanks(ranks);
@@ -1046,6 +1048,12 @@ namespace stk {
                   continue;
                 }
               NodeIdsOnSubDimEntityType& nodeIds_onSE = *nodeIds_onSE_ptr;
+
+              if (nodeIds_onSE.size() == 0)
+                {
+                  new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd].resize(0);
+                  continue;
+                }
 
               if (!nodeIds_onSE[0]) {
                 
@@ -1886,12 +1894,17 @@ namespace stk {
             for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
               {
                 stk::mesh::Entity& element = bucket[ientity];
-                elements_to_unref.insert(&element);
+                bool elementIsGhost = m_eMesh.isGhostElement(element);
+                if (!elementIsGhost) 
+                  {
+                    elements_to_unref.insert(&element);
+                  }
               }
           }
         }
       unrefineTheseElements(elements_to_unref);
     }
+
 
     void 
     Refiner::
@@ -2036,6 +2049,9 @@ namespace stk {
 
       //std::cout << "tmp copied_list.size() = " << copied_list.size() << std::endl;
 
+      ElementUnrefineCollection parent_elements;
+      ElementUnrefineCollection parent_elements_copy;
+
       // remove elements marked for unrefine (make sure they are children)
       for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
            u_iter != elements_to_unref.end(); ++u_iter)
@@ -2067,6 +2083,13 @@ namespace stk {
                 }
           
               //std::cout << "tmp removing family_tree: " << family_tree->identifier() << std::endl;
+              stk::mesh::Entity *parent = family_tree_relations[0].entity();
+              if (!parent)
+                {
+                  throw std::logic_error("Refiner::unrefineTheseElements parent == null");
+                }
+              parent_elements.insert(parent);
+              parent_elements_copy.insert(parent);
 
               if ( ! m_eMesh.getBulkData()->destroy_entity( family_tree ) )
                 {
@@ -2095,10 +2118,83 @@ namespace stk {
         }
           
       // remove deleted nodes
+      m_nodeRegistry->cleanDeletedNodes(deleted_nodes);
 
+#if 1
+      //
+      // FIXME refactor to a generic function operating on a collection of elements; incorporate with the doBreak() calls above
+      //
       // re-mesh
+      if (1)
+      {
+        std::cout << "tmp parent_elements.size() = " << parent_elements.size() << std::endl;
+        static NewSubEntityNodesType s_new_sub_entity_nodes(stk::percept::EntityRankEnd);
+        
+        NewSubEntityNodesType& new_sub_entity_nodes = s_new_sub_entity_nodes;
 
+        for (unsigned irank=0; irank < m_ranks.size(); irank++)
+          {
+            vector<NeededEntityType> needed_entity_ranks;
+            m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
+            vector<stk::mesh::Entity *> new_elements;
+
+            // count num new elements needed on this proc (served by UniformRefinerPattern)
+            unsigned num_elem_not_ghost = 0u;
+
+            for (ElementUnrefineCollection::iterator p_iter = parent_elements.begin();
+                 p_iter != parent_elements.end(); ++p_iter)
+              {
+                stk::mesh::Entity *parent = *p_iter;
+
+                stk::mesh::Entity& element = *parent;
+
+                if (!m_eMesh.isGhostElement(element))
+                  {
+                    ++num_elem_not_ghost;
+                  }
+              }
+
+            unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
+
+            // create new entities on this proc
+            new_elements.resize(0);                                                
+            m_eMesh.createEntities( m_ranks[irank], num_elem_needed, new_elements); 
+            vector<stk::mesh::Entity *>::iterator element_pool_it = new_elements.begin();
+
+            // FIXME - we could directly call this with a refactor to change elementColors passed in here as a generic collection + checking for element Type
+            //
+            //createElementsAndNodesAndConnectLocal(m_ranks[irank], m_breakPattern[irank], elementColors, needed_entity_ranks, new_elements);
+
+            for (ElementUnrefineCollection::iterator p_iter = parent_elements.begin();
+                 p_iter != parent_elements.end(); ++p_iter)
+              {
+                stk::mesh::Entity *parent = *p_iter;
+
+                const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*parent);
+                CellTopology cell_topo(cell_topo_data);
+                unsigned elementType = cell_topo.getKey();
+                unsigned bpElementType = m_breakPattern[irank]->getFromTypeKey();
+                if (elementType == bpElementType)
+                  {
+                    stk::mesh::Entity& element = *parent;
+
+                    if (!m_eMesh.isGhostElement(element))
+                      {
+                        //std::cout << "P["<< m_eMesh.getRank() << "] element.owner_rank() = " << element.owner_rank() << std::endl;
+                        if (createNewNeededNodeIds(cell_topo_data, element, needed_entity_ranks, new_sub_entity_nodes))
+                          {
+                            //std::cout << "typeid= " << typeid(*breakPattern).name() << std::endl;
+                            throw std::logic_error("unrefineTheseElements:: createNewNeededNodeIds failed");
+                          }
+                        
+                        m_breakPattern[irank]->createNewElements(m_eMesh, *m_nodeRegistry, element, new_sub_entity_nodes, element_pool_it, m_proc_rank_field);
+                      }
+                  }
+              }
+          }
+      }
+#endif
       m_eMesh.getBulkData()->modification_end();
 
     }
