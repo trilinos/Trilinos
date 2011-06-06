@@ -32,13 +32,7 @@ ADD_OPTION_AND_DEFINE(
 ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_Array
   HAVE_KOKKOS_ARRAY
-  "Enable Kokkos arrays."
-  OFF
-  )
-ADD_OPTION_AND_DEFINE(
-  Kokkos_ENABLE_MDArray
-  HAVE_KOKKOS_MDARRAY
-  "Enable Kokkos multi-dimensional arrays."
+  "Enable Kokkos multidimensional arrays."
   OFF
   )
 
@@ -159,9 +153,6 @@ ENDIF()
 
 IF (Kokkos_ENABLE_Array)
   ADD_SUBDIRECTORY(array)
-ENDIF()
-IF (Kokkos_ENABLE_MDArray)
-  ADD_SUBDIRECTORY(MDArray)
 ENDIF()
 
 ######################################################################
