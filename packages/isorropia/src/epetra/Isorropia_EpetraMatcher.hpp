@@ -30,12 +30,15 @@ USA
 #ifndef _Isorropia_EpetraMatcher_hpp_
 #define _Isorropia_EpetraMatcher_hpp_
 
+#include <Isorropia_ConfigDefs.hpp>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <list>
 #include <vector>
-//#include <omp.h>
+#ifdef ISORROPIA_HAVE_OMP
+#include <omp.h>
+#endif
 #include <ctime>
 #include <stack>
 #include <set>
