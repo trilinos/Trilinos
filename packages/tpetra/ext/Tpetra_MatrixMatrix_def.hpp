@@ -545,14 +545,14 @@ getGlobalRowFromLocalIndex(
   LocalOrdinal localRow,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview, 
   Array<GlobalOrdinal>& indices,
-  Array<Scalar>& values)
+  Array<Scalar>& values,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colMap)
 {
-  ArrayView<const LocalOrdinal> localIndices;
-  ArrayView<const Scalar> constValues;
-  Mview.importMatrix->getLocalRowView(localRow, localIndices, constValues);
+  ArrayView<const LocalOrdinal> localIndices = Mview.indices[localRow];
+  ArrayView<const Scalar> constValues = Mview.values[localRow];
   values = Array<Scalar>(constValues);
-  for(typename Array<GlobalOrdinal>::size_type i = 0; i<indices.size(); ++i){
-    indices.push_back(Mview.importColMap->getGlobalElement(indices[i]));
+  for(typename Array<GlobalOrdinal>::size_type i = 0; i<localIndices.size(); ++i){
+    indices.push_back(Mview.colMap->getGlobalElement(localIndices[i]));
   }
   sort2(indices.begin(), indices.end(), values.begin());
 }
@@ -569,8 +569,11 @@ void mult_A_Btrans(
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
   //Nieve implementation
-  for(GlobalOrdinal i=0; (global_size_t)i<Aview.importMatrix->getGlobalNumRows(); ++i){
+  for(GlobalOrdinal i=0; (global_size_t)i<Aview.rowMap->getGlobalNumElements(); ++i){
     if(Aview.remote[i]){
+      continue;
+    }
+    if(Aview.indices[i].size() == 0){
       continue;
     }
     LocalOrdinal localARow = Aview.rowMap->getLocalElement(i);
@@ -578,15 +581,18 @@ void mult_A_Btrans(
     Array<Scalar> cValues;
     Array<GlobalOrdinal> aIndices;
     Array<Scalar> aValues;
-    getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues);
-    for(GlobalOrdinal j=0; (global_size_t)j<Bview.importMatrix->getGlobalNumRows(); ++j){
+    getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
+    for(GlobalOrdinal j=0; (global_size_t)j<Bview.rowMap->getGlobalNumElements(); ++j){
       if(Bview.remote[j]){
+        continue;
+      }
+      if(Bview.indices[i].size() == 0){
         continue;
       }
       LocalOrdinal localBRow = Bview.rowMap->getLocalElement(j); 
       Array<GlobalOrdinal> bIndices;
       Array<Scalar> bValues;
-      getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues);
+      getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
       Scalar product = 
         sparsedot(aValues, aIndices, bValues, bIndices);
       cIndices.push_back(j);

@@ -162,7 +162,8 @@ getGlobalRowFromLocalIndex(
   LocalOrdinal localRow,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview, 
   Array<GlobalOrdinal>& indices,
-  ArrayView<Scalar>& values);
+  ArrayView<Scalar>& values,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colMap);
 
 template<class Scalar, 
          class LocalOrdinal, 
