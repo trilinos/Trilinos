@@ -99,8 +99,8 @@ namespace stk {
         //             throw std::runtime_error("RefinerPattern_Tri3_Tri3_2 can only refine element with one marked edge");
         //           }
 
-        if (num_edges_marked == 0)
-          return;
+//         if (num_edges_marked == 0)
+//           return;
         
         // if (num_edges_marked == 2)
         //  return;
@@ -257,7 +257,7 @@ namespace stk {
                 elems[2] = tri_tuple_type( EDGE_N(jedge), VERT_N(i1),            EDGE_N( jedgep ) );
               }
           }
-        else
+        else if (num_edges_marked == 1)
           {
             elems.resize(2);
             for (int iedge = 0; iedge < 3; iedge++)
@@ -270,6 +270,11 @@ namespace stk {
                     break;
                   }
               }
+          }
+        else if (num_edges_marked == 0)
+          {
+            elems.resize(1);
+            elems[0] = tri_tuple_type(VERT_N(0), VERT_N(1), VERT_N(2) );
           }
 
         //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);

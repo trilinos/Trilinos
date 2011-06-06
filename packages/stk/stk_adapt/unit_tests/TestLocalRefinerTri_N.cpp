@@ -87,20 +87,72 @@ namespace stk {
 
                   // choose to refine or not 
                   //if (0 || (node0.identifier() < node1.identifier() || (node0.identifier() % 2 == 0)))
-                  int delta = (int)node0.identifier() - (int)node1.identifier();
-                  if (delta < 0) delta = -delta;
-                  if ( delta > 4 && (node0.identifier() + node1.identifier() < 30))
+                  if (node0.identifier() + node1.identifier() < 40)
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
-                    }
-                  if ( (node0.identifier() + node1.identifier() > 20))
-                    {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      int delta = (int)node0.identifier() - (int)node1.identifier();
+                      if (delta < 0) delta = -delta;
+                      if ( delta > 4 && (node0.identifier() + node1.identifier() < 30))
+                        {
+                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                        }
+                      if ( (node0.identifier() + node1.identifier() > 20))
+                        {
+                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                        }
                     }
                 }
 
             } // iSubDimOrd
         } // ineed_ent
+    }
+
+    ElementUnrefineCollection TestLocalRefinerTri_N::buildTestUnrefList()
+    {
+      ElementUnrefineCollection elements_to_unref;
+
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        {
+          //if (removePartSelector(**k)) 
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            const unsigned num_entity_in_bucket = bucket.size();
+            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+              {
+                stk::mesh::Entity& element = bucket[ientity];
+                bool elementIsGhost = m_eMesh.isGhostElement(element);
+                if (elementIsGhost)
+                  continue;
+                
+                const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+
+                if (elem_nodes.size() && m_eMesh.isChildElement(element))
+                  {
+                    bool found = true;
+                    for (unsigned inode=0; inode < elem_nodes.size(); inode++)
+                      {
+                        stk::mesh::Entity *node = elem_nodes[inode].entity();
+                        double *coord = stk::mesh::field_data( *m_eMesh.getCoordinatesField(), *node );
+                        if (coord[0] > 2.1 || coord[1] > 2.1)
+                          {
+                            found = false;
+                            break;
+                          }
+                      }
+                    if (found)
+                      {
+                        elements_to_unref.insert(&element);
+                        //std::cout << "tmp element id= " << element.identifier() << " ";
+                        //m_eMesh.printEntity(std::cout, element);
+                      }
+                  }
+              }
+          }
+        }
+
+      return elements_to_unref;
     }
 
 

@@ -1870,8 +1870,35 @@ namespace stk {
       
     void 
     Refiner::
+    unrefineAll()
+    {
+      ElementUnrefineCollection elements_to_unref;
+
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        {
+          //if (removePartSelector(**k)) 
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            const unsigned num_entity_in_bucket = bucket.size();
+            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+              {
+                stk::mesh::Entity& element = bucket[ientity];
+                elements_to_unref.insert(&element);
+              }
+          }
+        }
+      unrefineTheseElements(elements_to_unref);
+    }
+
+    void 
+    Refiner::
     unrefineTheseElements(ElementUnrefineCollection& elements_to_unref)
     {
+      m_eMesh.getBulkData()->modification_begin();
+
       // mark nodes
       // set<> kept_nodes
       // set<> deleted_nodes
@@ -1917,6 +1944,162 @@ namespace stk {
                [option 2]: use existing db, add parallel comm
                
       */
+
+      //std::cout << "tmp elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
+
+      typedef std::set<stk::mesh::Entity *> NodeSetType;
+      NodeSetType kept_nodes;
+      NodeSetType deleted_nodes;
+
+      // mark kept nodes
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        {
+          //if (removePartSelector(**k)) 
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            const unsigned num_entity_in_bucket = bucket.size();
+            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+              {
+                stk::mesh::Entity& element = bucket[ientity];
+                bool in_unref_set = elements_to_unref.find( &element ) != elements_to_unref.end();
+                if (!in_unref_set)
+                  {
+                    const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+          
+                    for (unsigned inode=0; inode < elem_nodes.size(); inode++)
+                      {
+                        stk::mesh::Entity *node = elem_nodes[inode].entity();
+                        kept_nodes.insert(node);
+                      }
+                  }
+              }
+          }
+        }
+
+#if 0
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        {
+          //if (removePartSelector(**k)) 
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            const unsigned num_entity_in_bucket = bucket.size();
+            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+              {
+                stk::mesh::Entity& node = bucket[ientity];
+
+                kept_nodes.insert(&node);
+              }
+          }
+        }
+#endif
+      
+      // mark deleted nodes that aren't marked 'kept'
+      for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
+           u_iter != elements_to_unref.end(); ++u_iter)
+        {
+          stk::mesh::Entity * element = *u_iter;
+          const mesh::PairIterRelation elem_nodes = element->relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+          
+          for (unsigned inode=0; inode < elem_nodes.size(); inode++)
+            {
+              stk::mesh::Entity *node = elem_nodes[inode].entity();
+              bool in_kept_nodes_set = kept_nodes.find( node ) != kept_nodes.end();
+              if (!in_kept_nodes_set)
+                {
+                  deleted_nodes.insert(node);
+                }
+            }
+        }
+
+      
+      ElementUnrefineCollection copied_list;
+      for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
+           u_iter != elements_to_unref.end(); ++u_iter)
+        {
+          stk::mesh::Entity * element_p = *u_iter;
+          if (m_eMesh.isChildElement(*element_p))
+            {
+              copied_list.insert(element_p);
+              //std::cout << "tmp element to be removed id= " << element_p->identifier() << " " << std::endl;
+            }
+          else
+            {
+              throw std::logic_error("Refiner::unrefineTheseElements a non-child element was asked to be refined");
+            }
+        }
+
+      //std::cout << "tmp copied_list.size() = " << copied_list.size() << std::endl;
+
+      // remove elements marked for unrefine (make sure they are children)
+      for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
+           u_iter != elements_to_unref.end(); ++u_iter)
+        {
+          stk::mesh::Entity * element_p = *u_iter;
+          //std::cout << "tmp element to be removed id= " << element_p->identifier() << " " << std::endl;
+          if (copied_list.find(element_p) != copied_list.end())
+            {
+              const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+              std::vector<stk::mesh::Entity *> siblings;
+              stk::mesh::PairIterRelation child_to_family_tree_relations = element_p->relations(FAMILY_TREE_RANK);
+              if (child_to_family_tree_relations.size() != 1)
+                {
+                  throw std::logic_error("Refiner::unrefineTheseElements child_to_family_tree_relations.size() != 1");
+                }
+
+              stk::mesh::Entity *family_tree = child_to_family_tree_relations[0].entity();
+              stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(m_eMesh.element_rank());
+              if (family_tree_relations.size() == 0)
+                {
+                  throw std::logic_error("Refiner::unrefineTheseElements family_tree_relations.size() == 0");
+                }
+
+              for (unsigned ichild=1; ichild < family_tree_relations.size(); ichild++)
+                {
+                  stk::mesh::Entity *child = family_tree_relations[ichild].entity();
+                  siblings.push_back(child);
+                  copied_list.erase(child);
+                }
+          
+              //std::cout << "tmp removing family_tree: " << family_tree->identifier() << std::endl;
+
+              if ( ! m_eMesh.getBulkData()->destroy_entity( family_tree ) )
+                {
+                  throw std::logic_error("Refiner::unrefineTheseElements couldn't remove element, destroy_entity returned false for family_tree.");
+                }
+
+              for (unsigned ichild=0; ichild < siblings.size(); ichild++)
+                {
+                  stk::mesh::Entity *child = siblings[ichild];
+
+                  //std::cout << "tmp removing child: " << child->identifier() << " " << *child << std::endl;
+                  if ( ! m_eMesh.getBulkData()->destroy_entity( child ) )
+                    {
+                      CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(*child));
+                      //std::cout << "tmp Refiner::unrefineTheseElements couldn't remove element  cell= " << cell_topo.getName() << std::endl;
+
+                      const mesh::PairIterRelation elem_relations = child->relations(child->entity_rank()+1);
+                      //std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
+                      //m_eMesh.printEntity(std::cout, *child);
+              
+                      throw std::logic_error("Refiner::unrefineTheseElements couldn't remove element, destroy_entity returned false.");
+                    }
+                }
+          
+            }
+        }
+          
+      // remove deleted nodes
+
+      // re-mesh
+
+
+      m_eMesh.getBulkData()->modification_end();
 
     }
 

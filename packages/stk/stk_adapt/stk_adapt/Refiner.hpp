@@ -48,6 +48,8 @@
 namespace stk {
   namespace adapt {
 
+    typedef std::set<stk::mesh::Entity *> ElementUnrefineCollection;
+
     using std::vector;
     using std::map;
     using std::set;
@@ -118,6 +120,13 @@ namespace stk {
       bool
       getDoProgressMeter();
 
+
+      void 
+      unrefineTheseElements(ElementUnrefineCollection& elements_to_unref);
+
+      void 
+      unrefineAll();
+
     protected:
   
       /**  Overrides start =======> 
@@ -175,10 +184,7 @@ namespace stk {
 
       /// =========>  Overrides  end
 
-      typedef std::set<stk::mesh::Entity *> ElementUnrefineCollection;
 
-      void 
-      unrefineTheseElements(ElementUnrefineCollection& elements_to_unref);
 
       void 
       removeFamilyTrees();

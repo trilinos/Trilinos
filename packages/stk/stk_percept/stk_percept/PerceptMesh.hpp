@@ -46,7 +46,7 @@
 
 
 // if this is set, use stk_mesh relations to hold parent/child information, else use special data structures for this
-#define PERCEPT_USE_FAMILY_TREE 0
+#define PERCEPT_USE_FAMILY_TREE 1
 
 using namespace shards;
 
@@ -192,6 +192,25 @@ namespace stk {
         //throw std::runtime_error("not impl"); // FIXME
         bool isGhost = element.owner_rank() != getRank();
         return isGhost;
+      }
+
+       bool isChildElement( const stk::mesh::Entity& element)
+      {
+        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+        stk::mesh::PairIterRelation child_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+        if (child_to_family_tree_relations.size()==0 )
+          {
+            std::cout << "no FAMILY_TREE_RANK relations: element= " << element << std::endl;
+            printEntity(std::cout, element);
+            throw std::runtime_error("no FAMILY_TREE_RANK relations: element");
+          }
+        stk::mesh::Entity *family_tree = child_to_family_tree_relations[0].entity();
+        stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element_rank());
+        stk::mesh::Entity *parent = family_tree_relations[0].entity();
+        if (&element == parent)
+          return false;
+        else
+          return true;
       }
 
       static inline

@@ -17,6 +17,8 @@ namespace stk {
     public:
       TestLocalRefinerTri_N(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
 
+      ElementUnrefineCollection  buildTestUnrefList();
+
     protected:
 
       // not needed

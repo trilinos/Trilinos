@@ -242,11 +242,18 @@ namespace stk {
             save_or_diff(eMesh, output_files_loc+"local_tri_N_0.e");
 
             TestLocalRefinerTri_N breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
-            //breaker.setRemoveOldElements(false);
+            breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
             eMesh.printInfo("local tri mesh refined", 2);
+            //eMesh.dumpElements();
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1.e");
+
+            //breaker.unrefineAll();
+            ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
+            breaker.unrefineTheseElements(elements_to_unref);
+
+            save_or_diff(eMesh, output_files_loc+"local_tri_N_1_unref.e");
 
             exit(123);
             // end_demo
