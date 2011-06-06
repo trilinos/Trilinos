@@ -569,27 +569,27 @@ void mult_A_Btrans(
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
   //Nieve implementation
-  for(GlobalOrdinal i=0; (global_size_t)i<Aview.rowMap->getGlobalNumElements(); ++i){
-    if(Aview.remote[i]){
-      continue;
-    }
-    if(Aview.indices[i].size() == 0){
+  for(GlobalOrdinal i=Aview.rowMap->getMinAllGlobalIndex(); i<Aview.rowMap->getMaxAllGlobalIndex(); ++i){
+    if(!Aview.rowMap->isNodeGlobalElement(i)){
       continue;
     }
     LocalOrdinal localARow = Aview.rowMap->getLocalElement(i);
+    if(Aview.indices[localARow].size() == 0){
+      continue;
+    }
     Array<GlobalOrdinal> cIndices;
     Array<Scalar> cValues;
     Array<GlobalOrdinal> aIndices;
     Array<Scalar> aValues;
     getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
-    for(GlobalOrdinal j=0; (global_size_t)j<Bview.rowMap->getGlobalNumElements(); ++j){
-      if(Bview.remote[j]){
-        continue;
-      }
-      if(Bview.indices[i].size() == 0){
+    for(GlobalOrdinal j=Bview.rowMap->getMinAllGlobalIndex(); j<Bview.rowMap->getMaxAllGlobalIndex(); ++j){
+      if(!Bview.rowMap->isNodeGlobalElement(j)){
         continue;
       }
       LocalOrdinal localBRow = Bview.rowMap->getLocalElement(j); 
+      if(Bview.indices[localBRow].size() == 0){
+        continue;
+      }
       Array<GlobalOrdinal> bIndices;
       Array<Scalar> bValues;
       getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
