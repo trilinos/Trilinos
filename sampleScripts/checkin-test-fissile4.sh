@@ -26,7 +26,8 @@ fi
 
 TRILINOS_BASE_DIR_ABS=$(readlink -f $TRILINOS_BASE_DIR)
 
-EXTRA_REPOS_FULL_LIST="CASLBOA CASLRAVE LIMEExt PSSDriversExt"
+# Must be in the correct order (see ExtraExternalRepositories.casl_vri.cmake)
+EXTRA_REPOS_FULL_LIST="StartCCMExt DeCARTExt CASLBOA CASLRAVE LIMEExt PSSDriversExt"
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/gcc-4.5.1-mpi-options.cmake
