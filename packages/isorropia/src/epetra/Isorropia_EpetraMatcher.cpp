@@ -68,16 +68,16 @@ void matcher::process_mtx_compressed(char *fname)
 	#ifdef HAVE_EPETRAEXT
 	 int localProc = 0;
 	
-	#ifdef HAVE_MPI
+	/*#ifdef HAVE_MPI
 		int numProcs;
 	 	MPI_Init(&argc, &argv);
 	  	MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
 	  	MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 	  	const Epetra_MpiComm Comm(MPI_COMM_WORLD);
 	  	const Epetra_MpiComm Comm;
-	#else
+	#else*/
 	  const Epetra_SerialComm Comm;
-	#endif
+	//#endif
 
 	  Epetra_CrsMatrix *matrixPtr;
 	  rc = EpetraExt::MatrixMarketFileToCrsMatrix(fname, Comm, matrixPtr);
