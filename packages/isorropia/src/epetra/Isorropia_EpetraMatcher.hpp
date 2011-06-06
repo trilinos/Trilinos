@@ -43,8 +43,6 @@ USA
 #include <stack>
 #include <set>
 
-//namespace Isorropia {
-//namespace Epetra {
 namespace std{
 class Node
 {
@@ -99,8 +97,5 @@ public:
 	bool U0_empty();
 };
 } //namespace std
-//}//namespace Epetra
-//}//namespace Isorropia
-
 #endif
 

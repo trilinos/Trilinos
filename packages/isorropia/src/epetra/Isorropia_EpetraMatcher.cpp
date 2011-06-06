@@ -8,9 +8,6 @@
 
 #include"Isorropia_EpetraMatcher.hpp"
 #include <Isorropia_Epetra.hpp>
-#include <Isorropia_EpetraPartitioner.hpp>
-#include <Isorropia_EpetraRedistributor.hpp>
-#include <Isorropia_EpetraCostDescriber.hpp>
 
 #ifdef HAVE_EPETRA
 #ifdef HAVE_MPI
@@ -20,17 +17,12 @@
 #endif
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
-#include <Epetra_Vector.h>
 #include <Epetra_Import.h>
 #ifdef HAVE_EPETRAEXT
 #include <EpetraExt_CrsMatrixIn.h>
 #endif
 
 #endif
-
-#include <Teuchos_CommandLineProcessor.hpp>
-
-#include <unistd.h>
 
 using namespace std;
 //__sync_fetch_and_add(&a,1);
@@ -74,34 +66,18 @@ void matcher::process_mtx_compressed(char *fname)
 	/*****************************************/
 	int rc=0;
 	#ifdef HAVE_EPETRAEXT
-	 // bool verbose = false;
-	  int localProc = 0;
-	//   std::string *fstr;
-
-	//#ifdef HAVE_MPI
-	  /*int numProcs;
-	  MPI_Init(&argc, &argv);
-	  MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
-	  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-	  const Epetra_MpiComm Comm(MPI_COMM_WORLD);
-	  const Epetra_MpiComm Comm;*/
-	  
-	//#else
+	 int localProc = 0;
+	
+	#ifdef HAVE_MPI
+		int numProcs;
+	 	MPI_Init(&argc, &argv);
+	  	MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
+	  	MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+	  	const Epetra_MpiComm Comm(MPI_COMM_WORLD);
+	  	const Epetra_MpiComm Comm;
+	#else
 	  const Epetra_SerialComm Comm;
-	//#endif
-
-	  //string *inputFile = new string("a.mtx");
-	  //const char *fname1 = inputFile->c_str();
-
-	  // Read in the matrix market file and distribute its rows across the
-	  // processes.
-	  //
-	  // This reader uses the default Epetra_Map for number of rows for the
-	  // RowMap() and for the RangeMap().  For non-square matrices it uses
-	  // the default Epetra_Map for the number of columns for the DomainMap(),
-	  // otherwise it uses the RowMap().
-	  //
-	  // The maps can be specified with other versions of MMFtoCrsMatrix().
+	#endif
 
 	  Epetra_CrsMatrix *matrixPtr;
 	  rc = EpetraExt::MatrixMarketFileToCrsMatrix(fname, Comm, matrixPtr);
