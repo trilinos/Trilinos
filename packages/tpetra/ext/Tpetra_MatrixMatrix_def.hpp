@@ -535,6 +535,28 @@ void mult_A_B(
 
 }
 
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
+void
+getGlobalRowFromLocalIndex(
+  LocalOrdinal localRow,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview, 
+  Array<GlobalOrdinal>& indices,
+  Array<Scalar>& values)
+{
+  ArrayView<const LocalOrdinal> localIndices;
+  ArrayView<const Scalar> constValues;
+  Mview.importMatrix->getLocalRowView(localRow, localIndices, constValues);
+  values = Array<Scalar>(constValues);
+  for(typename Array<GlobalOrdinal>::size_type i = 0; i<indices.size(); ++i){
+    indices.push_back(Mview.importColMap->getGlobalElement(indices[i]));
+  }
+  sort2(indices.begin(), indices.end(), values.begin());
+}
+
 //kernel method for computing the local portion of C = A*B^T
 template<class Scalar,
          class LocalOrdinal, 
@@ -546,7 +568,34 @@ void mult_A_Btrans(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
-  size_t maxlen = 0;
+  //Nieve implementation
+  for(GlobalOrdinal i=0; (global_size_t)i<Aview.importMatrix->getGlobalNumRows(); ++i){
+    if(Aview.remote[i]){
+      continue;
+    }
+    LocalOrdinal localARow = Aview.rowMap->getLocalElement(i);
+    Array<GlobalOrdinal> cIndices;
+    Array<Scalar> cValues;
+    Array<GlobalOrdinal> aIndices;
+    Array<Scalar> aValues;
+    getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues);
+    for(GlobalOrdinal j=0; (global_size_t)j<Bview.importMatrix->getGlobalNumRows(); ++j){
+      if(Bview.remote[j]){
+        continue;
+      }
+      LocalOrdinal localBRow = Bview.rowMap->getLocalElement(j); 
+      Array<GlobalOrdinal> bIndices;
+      Array<Scalar> bValues;
+      getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues);
+      Scalar product = 
+        sparsedot(aValues, aIndices, bValues, bIndices);
+      cIndices.push_back(j);
+      cValues.push_back(product);
+    }
+    C.insertGlobalValues(i, cIndices(), cValues());
+  }
+  //Real optimized version, not working.
+  /*size_t maxlen = 0;
   for (size_t i=0; i<Aview.numRows; ++i) {
     if (Aview.numEntriesPerRow[i] > maxlen) maxlen = Aview.numEntriesPerRow[i];
   }
@@ -701,7 +750,7 @@ void mult_A_Btrans(
       }
 
     }
-  }
+  }*/
 }
 
 
@@ -1340,10 +1389,10 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
 }
 
 
-template<class Scalar, class LocalOrdinal>
+template<class Scalar, class GlobalOrdinal>
 Scalar sparsedot(
-  const ArrayView<Scalar>& u, const ArrayView<LocalOrdinal>& u_ind,
-  const ArrayView<Scalar>& v, const ArrayView<LocalOrdinal>& v_ind)
+  const Array<Scalar>& u, const Array<GlobalOrdinal>& u_ind,
+  const Array<Scalar>& v, const Array<GlobalOrdinal>& v_ind)
 {
   const size_t usize = (size_t)u.size();
   const size_t vsize = (size_t)v.size();
@@ -1351,8 +1400,8 @@ Scalar sparsedot(
   size_t v_idx = 0;
   size_t u_idx = 0;
   while(v_idx < vsize && u_idx < usize) {
-    LocalOrdinal ui = u_ind[u_idx];
-    LocalOrdinal vi = v_ind[v_idx];
+    GlobalOrdinal ui = u_ind[u_idx];
+    GlobalOrdinal vi = v_ind[v_idx];
     if (ui < vi) {
       ++u_idx;
     }
