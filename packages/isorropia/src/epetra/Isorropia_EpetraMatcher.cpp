@@ -10,11 +10,11 @@
 #include <Isorropia_Epetra.hpp>
 
 #ifdef HAVE_EPETRA
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
+//#ifdef HAVE_MPI
+//#include <Epetra_MpiComm.h>
+//#else
 #include <Epetra_SerialComm.h>
-#endif
+//#endif
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Import.h>
