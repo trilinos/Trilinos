@@ -26,11 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_2DARRAY_HPP
-#define TEUCHOS_2DARRAY_HPP
+#ifndef TEUCHOS_TWODARRAY_HPP
+#define TEUCHOS_TWODARRAY_HPP
 
 
-/*! \file Teuchos_2DArray.hpp
+/*! \file Teuchos_TwoDArray.hpp
   \brief A thin wrapper around the Teuchos Array class that allows for 
   2 dimensional arrays.
 */
@@ -42,17 +42,19 @@ namespace Teuchos{
 
 
 template<class T> 
-class 2DArray{
+class TwoDArray{
 public:
-  2DArray(size_type width, size_type height):_width(width),_height(height),_data(Array(width*height, 0)){}
-  2DArray(size_type width, size_type height, Array<T> data):
+  typedef Ordinal size_type;
+  TwoDArray(size_type width, size_type height):
+    _width(width),_height(height),_data(Array<T>(width*height, 0)){}
+  TwoDArray(size_type width, size_type height, Array<T> data):
     _width(width),_height(height),_data(data){}
-  virtual ~2DArray(){}
+  virtual ~TwoDArray(){}
 
 
-  inline ArrayView<T> 2DArray::operator[](size_type i);
+  inline ArrayView<T> operator[](size_type i);
   
-  inline ArrayView<const T> 2DArray::operator[](size_type i) const;
+  inline ArrayView<const T> operator[](size_type i) const;
 
   inline size_type getWidth() const{
     return _width;
@@ -62,7 +64,7 @@ public:
     return _height;
   }
 
-  inline Array<const T> get1DArray() const{
+  inline Array<const T> getDataArray() const{
     return _data;
   }
 
@@ -71,40 +73,37 @@ private:
   Array<T> _data;
 };
 
-inline Array<const T> 2DArray::getDataArray() const{
-  return _data;
+
+template<class T> inline
+ArrayView<T> TwoDArray<T>::operator[](size_type i){
+  return _data.view(_width*i, _width);  
 }
 
 template<class T> inline
-ArrayView<T> 2DArray::operator[](size_type i){
-  return data.view(width*i, width);  
-}
-
-template<class T> inline
-ArrayView<const T> 2DArray::operator[](size_type i) const{
-  return data.view(width*i, width);  
+ArrayView<const T> TwoDArray<T>::operator[](size_type i) const{
+  return _data.view(_width*i, _width);  
 }
 
 template<class T>
-std::istringstream& operator>> (std::istringstream& in, 2DArray<T>& array){
+std::istringstream& operator>> (std::istringstream& in, TwoDArray<T>& array){
   std::string input = in.str();
-  size_type dimCharPos = input.find_first_of('x');
-  size_type delimCharPos = input.find_first_of(':');
+  size_t dimCharPos = input.find_first_of('x');
+  size_t delimCharPos = input.find_first_of(':');
   std::string valueData = input.substr(delimCharPos+1);
-  istringstream widthStream(input.substr(0,dimCharPos))
-  istringstream heightStream(input.substr(dimCharPos+1, delimCharPos-dimCharPos-1));
+  std::istringstream widthStream(input.substr(0,dimCharPos));
+  std::istringstream heightStream(input.substr(dimCharPos+1, delimCharPos-dimCharPos-1));
   size_t width, height;
   widthStream >> width;
   heightStream >> height;
   array = fromStringToArray<T>(valueData);
-  array = 2DArray(width, height, array);
+  array = TwoDArray<T>(width, height, array);
   return in;
 }
 
 template<class T> inline
-std::ostream& Teuchos::operator<<( std::ostream& os, const 2DArray<T>& array){
+std::ostream& operator<<( std::ostream& os, const TwoDArray<T>& array){
   return os << array.getWidth() << "x" << array.getHeight() << 
-    ":" << Teuchos::toString(array.get1DArray());
+    ":" << Teuchos::toString(array.getDataArray());
 }
 
 

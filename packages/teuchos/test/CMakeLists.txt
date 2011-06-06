@@ -26,4 +26,5 @@ ADD_SUBDIRECTORIES(
   XML
   XMLParser
   dyn_cast
+  TwoDArray
   )
