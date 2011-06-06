@@ -68,6 +68,16 @@ public:
     return _data;
   }
 
+  static const std::string& getDimensionsSeperator(){
+    static const std::string dimensionSeperator = ":";
+    return dimensionSeperator;
+  }
+
+  static const std::string& getDimensionsDelimiter(){
+    static const std::string dimensionsDelimiter = "x";
+    return dimensionsDelimiter;
+  }
+
 private:
   size_type _width, _height;
   Array<T> _data;
@@ -87,8 +97,10 @@ ArrayView<const T> TwoDArray<T>::operator[](size_type i) const{
 template<class T>
 std::istringstream& operator>> (std::istringstream& in, TwoDArray<T>& array){
   std::string input = in.str();
-  size_t dimCharPos = input.find_first_of('x');
-  size_t delimCharPos = input.find_first_of(':');
+  size_t dimCharPos = 
+    input.find_first_of(TwoDArray<T>::getDimensionsDelimiter());
+  size_t delimCharPos = 
+    input.find_first_of(TwoDArray<T>::getDimensionsSeperator());
   std::string valueData = input.substr(delimCharPos+1);
   std::istringstream widthStream(input.substr(0,dimCharPos));
   std::istringstream heightStream(input.substr(dimCharPos+1, delimCharPos-dimCharPos-1));
@@ -101,13 +113,16 @@ std::istringstream& operator>> (std::istringstream& in, TwoDArray<T>& array){
 }
 
 template<class T> inline
-std::ostream& operator<<( std::ostream& os, const TwoDArray<T>& array){
-  return os << array.getWidth() << "x" << array.getHeight() << 
-    ":" << Teuchos::toString(array.getDataArray());
+std::ostream& operator<<(std::ostream& os, const TwoDArray<T>& array){
+  return os << array.getWidth() << 
+    TwoDArray<T>::getDimensionsDelimiter() <<
+    array.getHeight() << 
+    TwoDArray<T>::getDimensionsDelimiter() <<
+    Teuchos::toString(array.getDataArray());
 }
 
 
 } //namespace Teuchos
 
 
-#endif // TEUCHOS_ARRAY_H
+#endif // TEUCHOS_TWODARRAY_H
