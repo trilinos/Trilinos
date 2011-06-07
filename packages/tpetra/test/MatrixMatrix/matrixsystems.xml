@@ -16,7 +16,7 @@
 		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
 	</ParameterList> -->
-	<!--  Known to not work at this time, Kurtis Nusbaum 03/24/2011
+  <!-- works but only in serial -->
   <ParameterList name="syntheticBT">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synBTa.mtx" type="string"/>
@@ -25,6 +25,7 @@
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
 	</ParameterList> 
+	<!--  Known to not work at this time, Kurtis Nusbaum 03/24/2011
   <ParameterList name="cdt_system">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/cdt_m.mtx" type="string"/>
