@@ -63,6 +63,64 @@
 namespace Tpetra {
   namespace MatrixMarket {
 
+    namespace details {
+      /// \class SetScientific
+      /// \brief Make the given output stream write floating-point numbers in scientific notation in this object's scope.
+      /// \author Mark Hoemmen
+      ///
+      template<class Scalar>
+      class SetScientific {
+      public:
+	typedef Scalar scalar_type;
+
+	SetScientific (std::ostream& out) : 
+	  out_ (out), originalFlags_ (out.flags()) 
+	{
+	  typedef Teuchos::ScalarTraits<scalar_type> STS;
+	  typedef typename STS::magnitudeType magnitude_type;
+	  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+	  // Print floating-point values in scientific notation.
+	  out << std::scientific;
+
+	  // We're writing decimal digits, so compute the number of
+	  // digits we need to get reasonable accuracy when reading
+	  // values back in.
+	  //
+	  // There is actually an algorithm, due to Guy Steele (yes,
+	  // _that_ Guy Steele) et al., for idempotent printing of
+	  // finite-length floating-point values.  We should actually
+	  // implement that algorithm, but I don't have time for that
+	  // now.  Currently, I just print no more than (one decimal
+	  // digit more than (the number of decimal digits justified
+	  // by the precision of magnitude_type)).
+
+	  // FIXME (mfh 06 Apr 2011) This will only work if log10 is
+	  // defined for magnitude_type inputs.  Teuchos::ScalarTraits
+	  // does not currently have an log10() class method.
+	  const magnitude_type numDecDigits = STM::t() * std::log10 (STM::base());
+
+	  // Round and add one. Hopefully this doesn't overflow...
+	  const magnitude_type one = STM::one();
+	  const magnitude_type two = one + one;
+	  const int prec = 1 + static_cast<int> ((two*numDecDigits + one) / two);
+	  
+	  // Set the number of (decimal) digits after the decimal
+	  // point to print.
+	  out.precision (prec);
+	}	
+
+	~SetScientific () {
+	  out_.flags (originalFlags_);
+	}
+
+	//! The output stream to which to apply flags.
+	std::ostream& out_;
+	//! The output stream's original flags.
+	std::ios_base::fmtflags originalFlags_;
+      };
+    } // namespace details
+
     /// \class Reader
     /// \brief Matrix Market file reader for Tpetra::CrsMatrix.
     ///
@@ -1580,6 +1638,9 @@ namespace Tpetra {
 	writeSparse (out, pMatrix);
       }
 
+    private:
+
+  public:
       /// \brief Print the sparse matrix in Matrix Market format.
       ///
       /// Write the given Tpetra::CrsMatrix sparse matrix to an output
@@ -1603,6 +1664,12 @@ namespace Tpetra {
 	typedef typename STS::magnitudeType magnitude_type;
 	typedef typename Teuchos::ScalarTraits<magnitude_type> STM;
 	typedef typename ArrayView<scalar_type>::size_type size_type;
+
+	// Make the output stream write floating-point numbers in
+	// scientific notation.  It will politely put the output
+	// stream back to its state on input, when this scope
+	// terminates.
+	details::SetScientific<scalar_type> sci (out);
 
 	RCP<const Comm<int> > pComm = pMatrix->getComm();
 	const int myRank = Teuchos::rank (*pComm);
@@ -1650,7 +1717,7 @@ namespace Tpetra {
 	if (pMatrix->isGloballyIndexed())
 	  {
 	    for (global_ordinal_type globalRowIndex = pGatherRowMap->getMinAllGlobalIndex();
-		 globalRowIndex < pGatherRowMap->getMaxAllGlobalIndex();
+		 globalRowIndex <= pGatherRowMap->getMaxAllGlobalIndex();
 		 ++globalRowIndex)
 	      {
 		ArrayView<const global_ordinal_type> ind;
@@ -1681,7 +1748,7 @@ namespace Tpetra {
 	    RCP<const map_type> pColMap = newMatrix->getColMap ();
 
 	    for (local_ordinal_type localRowIndex = pGatherRowMap->getMinLocalIndex();
-		 localRowIndex < pRowMap->getMaxLocalIndex();
+		 localRowIndex <= pGatherRowMap->getMaxLocalIndex();
 		 ++localRowIndex)
 	      {
 		// Convert from local to global row index.
