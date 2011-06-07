@@ -1559,23 +1559,37 @@ namespace Tpetra {
       typedef typename SparseMatrixType::global_ordinal_type global_ordinal_type;
       typedef typename SparseMatrixType::node_type node_type;
 
+      /// \brief Print the sparse matrix in Matrix Market format.
+      ///
+      /// Write the given Tpetra::CrsMatrix sparse matrix to the given
+      /// file, using the Matrix Market "coordinate" format.  MPI Proc
+      /// 0 is the only MPI process that opens or writes to the file.
+      ///
+      /// \warning The current implementation gathers the whole matrix
+      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
+      ///   the matrix is too big to fit on one process.  This will be
+      ///   fixed in the future.
+      ///
       static void
       writeSparseFile (const std::string& filename,
 		       Teuchos::RCP<const sparse_matrix_type>& pMatrix)
       {
-	TEST_FOR_EXCEPTION(true, std::logic_error, 
-			   "Not implemented yet.  First, we need to change "
-			   "writeSparse() so that it only writes to the output "
-			   "stream argument on Rank 0.");
+	std::ofstream out (filename.c_str());
+	writeSparse (out, pMatrix);
       }
 
       /// \brief Print the sparse matrix in Matrix Market format.
       ///
-      /// Write the given Tpetra::CrsMatrix sparse matrix to a Matrix
-      /// Market "coordinate" format sparse matrix output stream.
-      /// Currently, this method assumes that all ranks can write to
-      /// the output stream; this will be fixed in the future, so that
-      /// it only writes to the output stream on Rank 0.
+      /// Write the given Tpetra::CrsMatrix sparse matrix to an output
+      /// stream, using the Matrix Market "coordinate" format.  MPI
+      /// Proc 0 is the only MPI process that writes to the output
+      /// stream.
+      ///
+      /// \warning The current implementation gathers the whole matrix
+      ///   onto MPI Proc 0.  This will cause out-of-memory errors if
+      ///   the matrix is too big to fit on one process.  This will be
+      ///   fixed in the future.
+      ///
       static void
       writeSparse (std::ostream& out,
 		   const Teuchos::RCP<const sparse_matrix_type>& pMatrix)
@@ -1589,168 +1603,65 @@ namespace Tpetra {
 	typedef typename ArrayView<scalar_type>::size_type size_type;
 
 	RCP<const Comm<int> > pComm = pMatrix->getComm();
-	const int numProcs = Teuchos::size (*pComm);
 	const int myRank = Teuchos::rank (*pComm);
+	RCP<const map_type> pRowMap = pMatrix->getRowMap();
+	const global_size_t globalNumElements = pRowMap->getGlobalNumElements ();
 
-	//
-	// Set up the output stream.
-	//
-	// Print floating-point values in scientific notation.
-	out << std::scientific;
+	// Make the "gather" row map, where Proc 0 owns all rows and
+	// the other procs own no rows.
+	const size_t localNumElements = (myRank == 0) ? globalNumElements : 0;
+	RCP<const map_type> pGatherRowMap = 
+	  createContigMapWithNode (globalNumElements, localNumElements, 
+				   pComm, pRowMap->getNode());
 
-	// We're writing decimal digits, so compute the number of
-	// digits we need to get reasonable accuracy when reading
-	// values back in.
-	//
-	// There is actually an algorithm, due to Guy Steele (yes,
-	// _that_ Guy Steele) et al., for idempotent printing of
-	// finite-length floating-point values.  We should actually
-	// implement that algorithm, but I don't have time for that
-	// now.  Currently, I just print no more than (one decimal
-	// digit more than (the number of decimal digits justified by
-	// the precision of magnitude_type)).
-	{
-	  // FIXME (mfh 06 Apr 2011) This will only work if log10 is
-	  // defined for magnitude_type inputs.  Teuchos::ScalarTraits
-	  // does not currently have an log10() class method.
-	  const magnitude_type numDecDigits = 
-	    STM::t() * std::log10 (STM::base());
+	// Current map is the source map, gather map is the target map.
+	typedef Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+	import_type importer (pRowMap, pGatherRowMap);
 
-	  // Round and add one. Hopefully this doesn't overflow...
-	  const magnitude_type one = STM::one();
-	  const magnitude_type two = one + one;
-	  const int prec = 1 + static_cast<int> ((two*numDecDigits + one) / two);
+	// Create a new CrsMatrix to hold the result of the import.
+	RCP<sparse_matrix_type> newMatrix = createCrsMatrix (pGatherRowMap);
 
-	  // Set the number of (decimal) digits after the decimal
-	  // point to print.
-	  out.precision (prec);
-	}	
+	// Import the sparse matrix onto Proc 0.
+	newMatrix->doImport (*pMatrix, importer, INSERT);
+	newMatrix->fillComplete ();
+	// Now newMatrix is globally indexed.
 
-	// Number of errors encountered while printing out the matrix.
-	int numPrintErrors = 0;
+	// Print the Matrix Market banner line.  CrsMatrix stores data
+	// nonsymmetrically.
+	out << "%%MatrixMarket matrix coordinate " 
+	    << (STS::isComplex ? "complex" : "real") 
+	    << " general" << endl;
+	
+	// Print the Matrix Market header (# rows, # columns, # nonzeros).
+	out << newMatrix->pRangeMap()->getGlobalNumElements() 
+	    << " "
+	    << newMatrix->pDomainMap()->getGlobalNumElements() 
+	    << " "
+	    << newMatrix->getGlobalNumEntries() 
+	    << endl;
 
-	// Rank 0: Print the banner line and the dimensions line to out.
-	if (myRank == 0)
+	// Print the entries of the matrix.
+	for (global_ordinal_type globalRowIndex = pGatherRowMap->getMinAllGlobalIndex();
+	     globalRowIndex < pRowMap->getMaxAllGlobalIndex();
+	     ++globalRowIndex)
 	  {
-	    out << "%%MatrixMarket matrix coordinate ";
-	    if (STS::isComplex)
-	      out << "complex ";
-	    else
-	      out << "real ";
-	    out << "general" << endl;
+	    ArrayView<global_ordinal_type> ind;
+	    ArrayView<scalar_type> val;
 
-	    // getGlobalNum{Rows,Cols}() does not return what you
-	    // think it should return.  Instead, ask the range
-	    // resp. domain map for the number of rows
-	    // resp. columns in the matrix.
-	    out << pMatrix->getRangeMap()->getGlobalNumElements() 
-		<< " "
-		<< pMatrix->getDomainMap()->getGlobalNumElements() 
-		<< " "
-		<< pMatrix->getGlobalNumEntries()
-		<< endl;
-	  }
-	Teuchos::barrier (*pComm);
-
-	// Let each processor in turn print its rows to out.  We
-	// assume that all processors can print to out.  We do
-	// _not_ assume here that the row map is one-to-one;
-	// printing should work just fine, as long as nonzeros
-	// themselves are not stored redundantly.
-	for (int p = 0; p < numProcs; ++p)
-	  {
-	    if (myRank == p)
+	    newMatrix->getGlobalRowView (globalRowIndex, ind, val);
+	    for (ArrayView<global_ordinal_type>::const_iterator indIter = ind.begin(),
+		   ArrayView<scalar_type>::const_iterator valIter = val.begin();
+		 indIter != ind.end(), valIter != val.end();
+		 ++indIter, ++valIter)
 	      {
-		// Storage for column indices and values in each
-		// row.  Will be resized as necessary.  (Proc p
-		// may not own any rows, in which case Proc p
-		// won't need to allocate these at all.
-		Array<global_ordinal_type> indices;
-		Array<scalar_type> values;
-		
-		// List of the rows with storage on Proc p.
-		ArrayView<const global_ordinal_type> myRows = 
-		  pMatrix->getRowMap()->getNodeElementList();
-		// Number of rows with storage on Proc p.
-		const size_type myNumRows = myRows.size();
-		
-		// For each row that Proc p owns, print its entries.
-		for (size_type k = 0; k < myNumRows; ++k)
-		  {
-		    const global_ordinal_type curRow = myRows[k];
-		    size_t numEntries = 
-		      pMatrix->getNumEntriesInGlobalRow (curRow);
-		    
-		    // Resize (if necessary) the arrays for holding
-		    // column indices and values for the current row.
-		    //
-		    // Signed to unsigned integer conversion, for
-		    // integers of the same size, shouldn't overflow.
-		    if (static_cast<size_t> (indices.size()) < numEntries)
-		      indices.resize (numEntries);
-		    if (static_cast<size_t> (values.size()) < numEntries)
-		      values.resize (numEntries);
-		    // This views are exactly the right length to hold
-		    // the data for the current row.  indices and
-		    // values may be longer than necessary; that's an
-		    // optimization, to avoid resizing them with every
-		    // row.
-		    ArrayView<global_ordinal_type> indicesView = 
-		      indices.view (0, numEntries);
-		    ArrayView<scalar_type> valuesView = 
-		      values.view (0, numEntries);
-
-		    // Make sure there were no surprises with the
-		    // number of entries.
-		    size_t newNumEntries = 0;
-		    pMatrix->getGlobalRowCopy (curRow, indicesView,
-					       valuesView, newNumEntries);
-		    if (newNumEntries != numEntries)
-		      numPrintErrors++;
-		    else
-		      {
-			// This will convert the current row index to
-			// the one-based indices that Matrix Market
-			// files want.  Ditto for the column index
-			// code within the for loop.
-			const global_ordinal_type indexBase = 
-			  pMatrix->getIndexBase();
-			const global_ordinal_type curRowIdx = 
-			  curRow +
-			  static_cast<global_ordinal_type>(1) - 
-			  indexBase;
-			// Loop over all entries in the current row,
-			// printing each entry on a separate line.
-			for (size_t j = 0; j < numEntries; ++j)
-			  {
-			    const global_ordinal_type curColIdx = 
-			      indicesView[j] + 
-			      static_cast<global_ordinal_type>(1) - 
-			      indexBase;
-			    out << curRowIdx << " " 
-				<< curColIdx << " ";
-			    if (STS::isComplex)
-			      out << STS::real(valuesView[j]) << " " 
-				  << STS::imag(valuesView[j]);
-			    else
-			      out << valuesView[j];
-			    out << endl;
-			  }
-		      }
-		  }
-		Teuchos::barrier (*pComm);
-
-		// If there were any errors on any processors, stop
-		// right away and throw an exception.
-		int totalNumPrintErrors = 0;
-		Teuchos::reduceAll (*pComm, Teuchos::REDUCE_SUM, numPrintErrors,
-				    Teuchos::Ptr<int> (&totalNumPrintErrors));
-		TEST_FOR_EXCEPTION(totalNumPrintErrors > 0, std::runtime_error,
-				   "Failed to print Tpetra::CrsMatrix.  Total "
-				   "number of print errors thus far: " 
-				   << numPrintErrors);
-	      } // If myRank == p
-	  } // For each proc p in 0, 1, ..., numProcs-1
+		out << globalRowIndex << " " << *indIter << " ";
+		if (STS::isComplex)
+		  out << STS::real(*valIter) << " " << STS::imag(*valIter);
+		else
+		  out << *valIter;
+	      }
+	    out << endl;
+	  }
       }
     }; // class Writer
     
