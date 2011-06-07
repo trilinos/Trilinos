@@ -2,7 +2,7 @@
 #
 # ***********************************************************************
 #
-#           Amesos2: Templated Direct Sparse Solver Package 
+#           Amesos2: Templated Direct Sparse Solver Package
 #                  Copyright 2010 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -151,6 +151,37 @@ IF (${PACKAGE_NAME}_ENABLE_SUPERLUMT)
     )
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_EPETRA)
+  APPEND_SET(HEADERS
+    Amesos2_EpetraCrsMatrixAdapter.hpp
+    Amesos2_EpetraCrsMatrixAdapter_decl.hpp
+    Amesos2_EpetraCrsMatrixAdapter_def.hpp
+    Amesos2_EpetraJadMatrixAdapter_decl.hpp
+    Amesos2_EpetraJadMatrixAdapter_def.hpp
+    Amesos2_EpetraJadMatrixAdapter.hpp
+    Amesos2_EpetraMsrMatrixAdapter_decl.hpp
+    Amesos2_EpetraMsrMatrixAdapter_def.hpp
+    Amesos2_EpetraMsrMatrixAdapter.hpp
+    Amesos2_EpetraMultiVecAdapter_decl.hpp
+    Amesos2_EpetraMultiVecAdapter_def.hpp
+    Amesos2_EpetraMultiVecAdapter.hpp
+    Amesos2_EpetraRowMatrixAdapter_decl.hpp
+    Amesos2_EpetraRowMatrixAdapter_def.hpp
+    Amesos2_EpetraRowMatrixAdapter.hpp
+    Amesos2_EpetraVbrMatrixAdapter_decl.hpp
+    Amesos2_EpetraMultiVecAdapter.hpp
+    Amesos2_EpetraMultiVecAdapter_decl.hpp
+    Amesos2_EpetraMultiVecAdapter_def.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_EpetraCrsMatrixAdapter.cpp
+    Amesos2_EpetraJadMatrixAdapter.cpp
+    Amesos2_EpetraMsrMatrixAdapter.cpp
+    Amesos2_EpetraRowMatrixAdapter.cpp
+    Amesos2_EpetraVbrMatrixAdapter.cpp
+    )
+ENDIF()
 
 #
 # C) Define the targets for package's library(s)

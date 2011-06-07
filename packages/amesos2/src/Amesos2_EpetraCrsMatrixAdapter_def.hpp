@@ -67,7 +67,7 @@ MatrixAdapter<Epetra_CrsMatrix>::MatrixAdapter(
 
 
 MatrixAdapter<Epetra_CrsMatrix>::MatrixAdapter(
-  const RCP<Epetra_CrsMatrix>& m)
+  const Teuchos::RCP<Epetra_CrsMatrix>& m)
   : MatrixAdapter<Epetra_RowMatrix>(m)
 { }
 

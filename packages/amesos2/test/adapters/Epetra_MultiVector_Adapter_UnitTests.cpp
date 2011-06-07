@@ -54,182 +54,225 @@
 
 namespace {
 
-using std::cout;
-using std::endl;
-using std::string;
+  using std::cout;
+  using std::endl;
+  using std::string;
 
-using Teuchos::as;
-using Teuchos::RCP;
-using Teuchos::ArrayRCP;
-using Teuchos::rcp;
-using Teuchos::Comm;
-using Teuchos::Array;
-using Teuchos::ArrayView;
-using Teuchos::tuple;
-using Teuchos::ScalarTraits;
-using Teuchos::OrdinalTraits;
-using Teuchos::FancyOStream;
-using Teuchos::VerboseObjectBase;
+  using Teuchos::as;
+  using Teuchos::RCP;
+  using Teuchos::ArrayRCP;
+  using Teuchos::rcp;
+  using Teuchos::Comm;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::tuple;
+  using Teuchos::ScalarTraits;
+  using Teuchos::OrdinalTraits;
+  using Teuchos::FancyOStream;
+  using Teuchos::VerboseObjectBase;
 
-using Amesos::MultiVecAdapter;
+  using Amesos::MultiVecAdapter;
 
-using Amesos::Util::is_same;
+  using Amesos::Util::is_same;
 
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
-bool testMpi = false;
+  bool testMpi = false;
 
-// Where to look for input files
-string filedir;
+  // Where to look for input files
+  string filedir;
 
-TEUCHOS_STATIC_SETUP()
-{
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
-  clp.setOption("filedir",&filedir,"Directory of matrix files.");
-  clp.addOutputSetupOptions(true);
-  clp.setOption("test-mpi", "test-serial", &testMpi,
-    "Test Serial by default (for now) or force MPI test.  In a serial build,"
-    " this option is ignored and a serial comm is always used." );
-}
+  TEUCHOS_STATIC_SETUP()
+  {
+    Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
+    clp.setOption("filedir",&filedir,"Directory of matrix files.");
+    clp.addOutputSetupOptions(true);
+    clp.setOption("test-mpi", "test-serial", &testMpi,
+		  "Test Serial by default (for now) or force MPI test.  In a serial build,"
+		  " this option is ignored and a serial comm is always used." );
+  }
 
-const Epetra_Comm& getDefaultComm()
-{
+  const Epetra_Comm* getDefaultComm()
+  {
 #ifdef EPETRA_MPI
-  return Epetra_MpiComm( MPI_COMM_WORLD );
+    return new Epetra_MpiComm( MPI_COMM_WORLD );
 #else
-  return Epetra_SerialComm();
+    return new Epetra_SerialComm();
 #endif
-}
+  }
 
-RCP<FancyOStream> getDefaultOStream()
-{
-  return( VerboseObjectBase::getDefaultOStream() );
-}
+  RCP<FancyOStream> getDefaultOStream()
+  {
+    return( VerboseObjectBase::getDefaultOStream() );
+  }
 
-/*
- * UNIT TESTS
- */
-
-TEUCHOS_UNIT_TEST( MultiVecAdapter, Initialization )
-{
-  /* Test correct initialization of the MultiVecAdapter
-   *
-   * - All Constructors
-   * - Correct initialization of class members
-   * - Correct typedefs ( using Amesos::is_same<> )
+  /*
+   * UNIT TESTS
    */
-  typedef ScalarTraits<double> ST;
-  typedef Epetra_MultiVector MV;
-  typedef MultiVecAdapter<MV> ADAPT;
 
-  Epetra_SerialComm comm;
-  // create a Map
-  const size_t numLocal = 10;
-  Epetra_Map map(-1,numLocal,0,comm);
+  TEUCHOS_UNIT_TEST( MultiVecAdapter, Initialization )
+  {
+    /* Test correct initialization of the MultiVecAdapter
+     *
+     * - All Constructors
+     * - Correct initialization of class members
+     * - Correct typedefs ( using Amesos::is_same<> )
+     */
+    typedef ScalarTraits<double> ST;
+    typedef Epetra_MultiVector MV;
+    typedef MultiVecAdapter<MV> ADAPT;
 
-  RCP<MV> mv = rcp(new MV(map,11));
-  mv->Random();
+    Epetra_SerialComm comm;
+    // create a Map
+    const size_t numLocal = 10;
+    Epetra_Map map(-1,numLocal,0,comm);
 
-  RCP<ADAPT> adapter = rcp(new ADAPT(mv));
-  // Test copy constructor
-  RCP<ADAPT> adapter2 = rcp(new ADAPT(*adapter));
+    RCP<MV> mv = rcp(new MV(map,11));
+    mv->Random();
 
-  // Check that the values remain the same (more comprehensive test of get1dView elsewhere...
-  // TEST_EQUALITY( mv->get1dViewNonConst(),      adapter->get1dViewNonConst() );
-  // TEST_EQUALITY( adapter->get1dViewNonConst(), adapter2->get1dViewNonConst() );
+    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    // Test copy constructor
+    RCP<ADAPT> adapter2 = rcp(new ADAPT(*adapter));
 
-  // The following should all pass at compile time
-  TEST_ASSERT( (is_same<double, ADAPT::scalar_type>::value) );
-  TEST_ASSERT( (is_same<int,    ADAPT::local_ordinal_type>::value) );
-  TEST_ASSERT( (is_same<int,    ADAPT::global_ordinal_type>::value) );
-  TEST_ASSERT( (is_same<Node,   ADAPT::node_type>::value) );
-  TEST_ASSERT( (is_same<size_t, ADAPT::global_size_type>::value) );
-  TEST_ASSERT( (is_same<MV,     ADAPT::multivec_type>::value) );
+    // Check that the values remain the same (more comprehensive test of get1dView elsewhere...
+    // TEST_EQUALITY( mv->get1dViewNonConst(),      adapter->get1dViewNonConst() );
+    // TEST_EQUALITY( adapter->get1dViewNonConst(), adapter2->get1dViewNonConst() );
 
-}
+    // The following should all pass at compile time
+    TEST_ASSERT( (is_same<double, ADAPT::scalar_type>::value) );
+    TEST_ASSERT( (is_same<int,    ADAPT::local_ordinal_type>::value) );
+    TEST_ASSERT( (is_same<int,    ADAPT::global_ordinal_type>::value) );
+    TEST_ASSERT( (is_same<Node,   ADAPT::node_type>::value) );
+    TEST_ASSERT( (is_same<size_t, ADAPT::global_size_type>::value) );
+    TEST_ASSERT( (is_same<MV,     ADAPT::multivec_type>::value) );
 
-TEUCHOS_UNIT_TEST( MultiVecAdapter, Dimensions )
-{
-  // Test that the dimensions reported by the adapter match those as reported
-  // by the Tpetra::MultiVector
-  typedef ScalarTraits<double> ST;
-  typedef Epetra_MultiVector MV;
-  typedef MultiVecAdapter<MV> ADAPT;
+  }
 
-  Epetra_SerialComm comm;
-  // create a Map
-  const size_t numLocal = 10;
-  Epetra_Map map(-1,numLocal,0,comm);
+  TEUCHOS_UNIT_TEST( MultiVecAdapter, Dimensions )
+  {
+    // Test that the dimensions reported by the adapter match those as reported
+    // by the Tpetra::MultiVector
+    typedef ScalarTraits<double> ST;
+    typedef Epetra_MultiVector MV;
+    typedef MultiVecAdapter<MV> ADAPT;
 
-  RCP<MV> mv = rcp(new MV(map,11));
-  mv->Random();
+    const Epetra_Comm* comm = getDefaultComm();
+    // create a Map
+    const size_t numLocal = 10;
+    Epetra_Map map(-1,numLocal,0,*comm);
 
-  RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    RCP<MV> mv = rcp(new MV(map,11));
+    mv->Random();
 
-  TEST_EQUALITY( mv->MyLength(),     as<int>(adapter->getLocalLength())     );
-  TEST_EQUALITY( mv->NumVectors(),   as<int>(adapter->getLocalNumVectors()) );
-  TEST_EQUALITY( mv->NumVectors(),   as<int>(adapter->getGlobalNumVectors()));
-  TEST_EQUALITY( mv->GlobalLength(), as<int>(adapter->getGlobalLength())    );
-  TEST_EQUALITY( mv->Stride(),       as<int>(adapter->getStride())          );
+    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
 
-}
+    TEST_EQUALITY( mv->MyLength(),     as<int>(adapter->getLocalLength())     );
+    TEST_EQUALITY( mv->NumVectors(),   as<int>(adapter->getLocalNumVectors()) );
+    TEST_EQUALITY( mv->NumVectors(),   as<int>(adapter->getGlobalNumVectors()));
+    TEST_EQUALITY( mv->GlobalLength(), as<int>(adapter->getGlobalLength())    );
+    TEST_EQUALITY( mv->Stride(),       as<int>(adapter->getStride())          );
 
-TEUCHOS_UNIT_TEST( MultiVecAdapter, Copy )
-{
-  /* Test the get1dCopy() method of MultiVecAdapter.  We can check against a
-   * known multivector and also check against what is returned by the
-   * Tpetra::MultiVector.
-   */
-}
+    delete comm;
+  }
 
-TEUCHOS_UNIT_TEST( MultiVecAdapter, View )
-{
-  /* Test the get1dViewNonConst() method of MultiVecAdapter.  We can check against a
-   * known multivector and also check against what is returned by the
-   * Tpetra::MultiVector.
-   */
-  typedef ScalarTraits<double> ST;
-  typedef Epetra_MultiVector MV;
-  typedef MultiVecAdapter<MV> ADAPT;
+  TEUCHOS_UNIT_TEST( MultiVecAdapter, Copy )
+  {
+    /* Test the get1dCopy() method of MultiVecAdapter.  We can check against a
+     * known multivector and also check against what is returned by the
+     * Tpetra::MultiVector.
+     */
+    typedef ScalarTraits<double> ST;
+    typedef Epetra_MultiVector MV;
+    typedef MultiVecAdapter<MV> ADAPT;
 
-  Epetra_SerialComm comm;
+    const Epetra_Comm* comm = getDefaultComm();
+    int numprocs = comm->NumProc();
+    int rank = comm->MyPID();
 
-  // create a Map
-  const size_t numVectors = 7;
-  const size_t numLocal = 13;
-  Epetra_Map map(-1,numLocal,0,comm);
+    // create a Map
+    const size_t numVectors = 3;
+    const size_t numLocal = 13;
+    Epetra_Map map(-1,numLocal,0,*comm);
 
-  RCP<MV> mv = rcp(new MV(map,numVectors));
-  mv->Random();
+    RCP<MV> mv = rcp(new MV(map,numVectors));
+    mv->Random();
 
-  RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    // mv->Print(std::cout);
 
-  // Check that the values remain the same
-  double* values;
-  int lda;
-  mv->ExtractView(&values,&lda);
+    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    Array<double> original(numVectors*numLocal*numprocs);
+    Array<double> copy(numVectors*numLocal*numprocs);
 
-  TEST_EQUALITY( Teuchos::arcp(values,0,numVectors*numLocal,false), adapter->get1dViewNonConst() );
+    adapter->get1dCopy(copy(),numLocal*numprocs,true);
 
-  // Check that direct changes to the wrapped object are reflected in the adapter
-  mv->Random();
-  TEST_EQUALITY( Teuchos::arcp(values,0,numVectors*numLocal,false), adapter->get1dViewNonConst() );
+    // Just rank==0 process has global copy of mv data, check against an import
+    int my_elements = 0;
+    if( rank == 0 ){
+      my_elements = numLocal*numprocs;
+    }
+    Epetra_Map root_map(-1,my_elements,0,*comm);
+    MV root_mv(root_map, numVectors);
+    Epetra_Import importer(root_map, map);
+    root_mv.Import(*mv, importer, Insert);
 
-  // check that 1dView and 1dCopy have the same values
-  ArrayRCP<double> view;
-  view = adapter->get1dViewNonConst();
+    // root_mv.Print(std::cout);
 
-  // clear view, ensure that mv is zero
-  std::fill(view.begin(), view.end(), as<double>(0.0));
-  view = Teuchos::null;
-  Array<double> norms(numVectors), zeros(numVectors,as<double>(0.0));
-  mv->Norm2(norms.getRawPtr());
-  TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,as<double>(0.0));
-}
+    root_mv.ExtractCopy(original.getRawPtr(), numLocal*numprocs);
 
-/* Also test the updateValues() method, once it is implemented.  It should
- * take a representation from either the get1dCopy or get2dCopy methods and
- * place the values back into the matrix (either serial or distributed)
- */
+    TEST_EQUALITY( original, copy );
+
+
+    // Check getting copy of just local data
+    original.clear();
+    original.resize(numVectors*numLocal);
+    copy.clear();
+    copy.resize(numVectors*numLocal);
+    mv->Random();
+    
+    mv->ExtractCopy(original.getRawPtr(),mv->MyLength());
+    adapter->get1dCopy(copy(),adapter->getLocalLength(),false);
+    
+    // Check that the values remain the same
+    TEST_EQUALITY( original, copy );
+
+    delete comm;
+  }
+
+  // Do not check Views, since their use is deprecated already
+
+  TEUCHOS_UNIT_TEST( MultiVecAdapter, Globalize )
+  {
+    typedef ScalarTraits<double> ST;
+    typedef Epetra_MultiVector MV;
+    typedef MultiVecAdapter<MV> ADAPT;
+
+    const Epetra_Comm* comm = getDefaultComm();
+    int numprocs = comm->NumProc();
+    int rank = comm->MyPID();
+
+    // create a Map
+    const size_t numVectors = 7;
+    const size_t numLocal = 13;
+    Epetra_Map map(-1,numLocal,0,*comm);
+
+    RCP<MV> mv = rcp(new MV(map,numVectors));
+    mv->Random();
+
+    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    Array<double> original(numVectors*numLocal*numprocs);
+    Array<double> copy(numVectors*numLocal*numprocs);
+
+    if( rank == 0 ){
+      std::fill(original.begin(), original.end(), 1.9);
+    }
+
+    adapter->globalize(original(), 0); // distribute rank 0's data
+    adapter->get1dCopy(copy(),numLocal*numprocs,true);
+
+    // Check that the values are the same
+    TEST_COMPARE_FLOATING_ARRAYS( original, copy, 1e-8 ); // Really, the two should be *exactly* the same
+
+    delete comm;
+  }
 
 } // end anonymous namespace

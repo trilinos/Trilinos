@@ -238,7 +238,8 @@ namespace Amesos {
 
   template <class Matrix,
 	    class Vector >
-  bool Factory<Matrix,Vector>::query(const std::string solverName){
+  bool Factory<Matrix,Vector>::query(const std::string solver_name){
+    std::string solverName = tolower(solver_name); // for easier string checking
 #ifdef HAVE_AMESOS2_KLU2
     if((solverName == "amesos2_klu2") || (solverName == "klu2")){
       return( true );

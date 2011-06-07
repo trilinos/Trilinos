@@ -71,7 +71,7 @@ template<>
 class MatrixAdapter< Epetra_CrsMatrix > : public MatrixAdapter< Epetra_RowMatrix >
 {
 public:
-  // override matrix typedef
+  // `override' matrix typedef
   typedef Epetra_CrsMatrix matrix_type;
 
   /// The name of this adapter class.

@@ -54,6 +54,12 @@
 /* Define if we have MPI */
 #cmakedefine HAVE_AMESOS2_MPI
 
+/* Define if we want EpetraExt support for tests and examples */
+#cmakedefine HAVE_AMESOS2_EPETRAEXT
+
+/* Define if we want Epetra matrix and multivector support */
+#cmakedefine HAVE_AMESOS2_EPETRA
+
 /****************************
  * Solver Interface Defines *
  ****************************/

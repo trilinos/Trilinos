@@ -149,7 +149,7 @@ public:
 
 
   /// Returns the Teuchos::Comm object associated with this multi-vector
-  const Teuchos::RCP<const Teuchos::Comm<int> >& getComm() const;
+  const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
 
   /// Get the length of vectors local to the calling node
@@ -197,7 +197,9 @@ public:
    *
    *  Each multi-vector is \c lda apart in memory.
    */
-  void get1dCopy( const Teuchos::ArrayView<scalar_type>& A, size_t lda );
+  void get1dCopy( const Teuchos::ArrayView<scalar_type>& A,
+		  size_t lda,
+		  bool global_copy ) const;
 
 
   /**
@@ -268,7 +270,7 @@ public:
    *
    * \post The values in \c l_mv_ will be equal to the values in \c mv_
    */
-  void globalize();
+  void globalize(int root = 0);
 
 
   /**
@@ -282,7 +284,7 @@ public:
    * \param newVals The values to be exported into the global space.
    */
   template<typename Value_t>
-  void globalize( const Teuchos::ArrayView<Value_t>& newVals );
+  void globalize( const Teuchos::ArrayView<Value_t>& newVals, int root = 0 );
 
 
   /// Get a short description of this adapter class
@@ -329,19 +331,19 @@ private:
    *
    * Contains a local view of the entire multi-vector.
    */
-  Teuchos::RCP<multivec_type> l_mv_;
+  mutable Teuchos::RCP<multivec_type> l_mv_;
 
   /**
    * \brief local-local multi-vector.
    *
    * Holds only a representation of the vectors local to the calling processor.
    */
-  Teuchos::RCP<multivec_type> l_l_mv_;
+  mutable Teuchos::RCP<multivec_type> l_l_mv_;
 
-  Teuchos::RCP<Epetra_BlockMap> o_map_, l_map_;
+  mutable Teuchos::RCP<Epetra_BlockMap> o_map_, l_map_;
 
-  Teuchos::RCP<Epetra_Import> importer_;
-  Teuchos::RCP<Epetra_Export> exporter_;
+  mutable Teuchos::RCP<Epetra_Import> importer_;
+  mutable Teuchos::RCP<Epetra_Export> exporter_;
 
 };                              // end class MultiVecAdapter<NewMultiVec>
 

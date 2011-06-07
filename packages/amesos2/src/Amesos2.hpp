@@ -41,6 +41,7 @@
 //
 // @HEADER
 
+#include "Amesos2_config.h"
 #include "Amesos2_Factory.hpp"
 
 /*

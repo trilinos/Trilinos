@@ -283,12 +283,6 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS(original, copy, 1e-8); // Really, the two should be *exactly* the same
   }
 
-  /* Also test the globalize() method, once it is implemented.  It
-   * should take a representation from either the get1dCopy or get2dCopy
-   * methods and place the values back into the matrix (either serial or
-   * distributed)
-   */
-
 
   /*
    * Instantiations

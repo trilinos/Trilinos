@@ -17,3 +17,16 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  Solver_Test
+  SOURCES
+    Solver_Test
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+# PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyFiles
+#   SOURCE_FILES ./solvers/solver_tests.xml
+#   EXEDEPS Solver_Test
+#   )

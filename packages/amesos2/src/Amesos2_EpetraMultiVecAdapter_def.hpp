@@ -97,7 +97,7 @@ bool MultiVecAdapter<Epetra_MultiVector>::isLocal() const
 
 
 // ETB: Following code borrowed from Thyra wrappers
-const Teuchos::RCP<const Teuchos::Comm<int> >&
+const Teuchos::RCP<const Teuchos::Comm<int> >
 MultiVecAdapter<Epetra_MultiVector>::getComm() const
 {
   using Teuchos::rcp;
@@ -234,15 +234,42 @@ MultiVecAdapter<Epetra_MultiVector>::getVectorNonConst( size_t j )
 
 void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
   const Teuchos::ArrayView<MultiVecAdapter<Epetra_MultiVector>::scalar_type>& A,
-  size_t lda)
+  size_t lda,
+  bool global_copy) const
 {
-  if( !isLocal() ){
-    this->localize();
-
-    l_mv_->ExtractCopy(A.getRawPtr(),lda);
-  } else {
-    mv_->ExtractCopy(A.getRawPtr(),lda);
+  // size_t local_length = getLocalLength();
+  global_size_type global_length = getGlobalLength();
+  size_t num_vecs = getGlobalNumVectors();
+  
+  const Epetra_BlockMap o_map(mv_->Map());
+  Epetra_BlockMap l_map(o_map);
+  
+  if( global_copy ){
+    // l_map = Tpetra::createLocalMapWithNode
+    //        <local_ordinal_type,
+    //        global_ordinal_type,
+    //        node_type>( Teuchos::as<size_t>(global_length),
+    //                    getComm(),
+    //                    o_map->getNode() );
+    
+    int num_my_elements = 0;
+    if( o_map.Comm().MyPID() == 0 ){
+      num_my_elements = Teuchos::as<int>(global_length);
+    } 
+    l_map = Epetra_Map( -1, // not locally replicated
+			num_my_elements,
+			o_map.IndexBase(),
+			o_map.Comm());
   }
+  
+  multivec_type l_mv(l_map, num_vecs);
+  
+  Epetra_Import importer(l_map, o_map); // Note, target/source order is reversed in Tpetra
+
+  l_mv.Import(*mv_, importer, Insert);
+
+  // Finally, do copy
+  l_mv.ExtractCopy(A.getRawPtr(), lda);
 }
 
 
@@ -393,7 +420,7 @@ MultiVecAdapter<Epetra_MultiVector>::get2dViewNonConst( bool local )
 
 
 void
-MultiVecAdapter<Epetra_MultiVector>::globalize()
+MultiVecAdapter<Epetra_MultiVector>::globalize(int root)
 {
   TEST_FOR_EXCEPTION(
     true,
@@ -404,38 +431,48 @@ MultiVecAdapter<Epetra_MultiVector>::globalize()
 
 template <typename Value_t>
 void
-MultiVecAdapter<Epetra_MultiVector>::globalize(const Teuchos::ArrayView<Value_t>& newVals)
+MultiVecAdapter<Epetra_MultiVector>::globalize(const Teuchos::ArrayView<Value_t>& newVals, int root)
 {
-  if( !isLocal() ){
-    if( l_mv_.is_null() ){
-      localize();
-    }
-    Teuchos::ArrayRCP<scalar_type> l_ptr = this->get1dViewNonConst();
-
-    typename Teuchos::ArrayRCP<scalar_type>::iterator it = l_ptr.begin();
-    typename Teuchos::ArrayRCP<scalar_type>::iterator end = l_ptr.end();
-
-    typename Teuchos::ArrayView<Value_t>::iterator val_it = newVals.begin();
-
-    // Update local view, doing conversion
-    for( ; it != end; ++it ){
-      *it = Teuchos::as<scalar_type>(*val_it++);
-    }
-
-    mv_->Import(*l_mv_, *exporter_, Insert);
+#ifdef HAVE_AMESOS2_DEBUG
+  std::cout << "globalizing : " << newVals.toString() << std::endl;
+#endif
+  size_t num_vecs  = getGlobalNumVectors();
+  global_size_type global_length = getGlobalLength();
+  int num_elems;
+  const Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
+  
+  const Epetra_BlockMap o_map = mv_->Map();
+  if( o_map.Comm().MyPID() == root ){ // root distributes its values
+    num_elems = Teuchos::as<int>(global_length);
   } else {
-    Teuchos::ArrayRCP<scalar_type> ptr = this->get1dViewNonConst();
-
-    typename Teuchos::ArrayRCP<scalar_type>::iterator it = ptr.begin();
-    typename Teuchos::ArrayRCP<scalar_type>::iterator end = ptr.end();
-
-    typename Teuchos::ArrayView<Value_t>::iterator val_it = newVals.begin();
-
-    // Update view, doing conversion
-    for( ; it != end; ++it ){
+    num_elems = Teuchos::OrdinalTraits<int>::zero();
+  }
+  const Epetra_Map l_map(-1, // do not construct as a locally replicated map
+			 num_elems,
+			 o_map.IndexBase(),
+			 o_map.Comm());
+  
+  // Do conversion to Scalar values
+  Teuchos::Array<scalar_type> converted_vals(newVals.size());
+  typedef typename Teuchos::Array<scalar_type>::iterator scalar_it_t;
+  typedef typename Teuchos::ArrayView<Value_t>::iterator value_it_t;
+  value_it_t val_it = newVals.begin();
+  scalar_it_t it = converted_vals.begin();
+  scalar_it_t end = converted_vals.end();
+  for( ; it != end; ++it )
+    {
       *it = Teuchos::as<scalar_type>(*val_it++);
     }
-  }
+  
+#ifdef HAVE_AMESOS2_DEBUG			
+  std::cout << "converted vals : " << converted_vals.toString() << std::endl;
+#endif
+  
+  multivec_type l_mv(Copy, l_map, converted_vals.getRawPtr(), Teuchos::as<int>(global_length), num_vecs);
+  
+  Epetra_Import importer(o_map, l_map);
+  
+  mv_->Import(l_mv, importer, Insert);
 }
 
 

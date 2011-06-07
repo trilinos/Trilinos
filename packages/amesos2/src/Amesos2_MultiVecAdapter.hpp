@@ -46,9 +46,15 @@
 
 #include "Amesos2_MultiVecAdapter_decl.hpp"
 #include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
+#ifdef HAVE_AMESOS2_EPETRA
+#  include "Amesos2_EpetraMultiVecAdapter_decl.hpp"
+#endif
 
 #ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 #  include "Amesos2_TpetraMultiVecAdapter_def.hpp"
+#  ifdef HAVE_AMESOS2_EPETRA
+#    include "Amesos2_EpetraMultiVecAdapter_def.hpp"
+#  endif
 #endif
 
 #endif  // AMESOS2_MULTIVECADAPTER_HPP
