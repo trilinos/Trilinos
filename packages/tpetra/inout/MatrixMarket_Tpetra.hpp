@@ -1559,6 +1559,8 @@ namespace Tpetra {
       typedef typename SparseMatrixType::global_ordinal_type global_ordinal_type;
       typedef typename SparseMatrixType::node_type node_type;
 
+      typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+
       /// \brief Print the sparse matrix in Matrix Market format.
       ///
       /// Write the given Tpetra::CrsMatrix sparse matrix to the given
@@ -1572,7 +1574,7 @@ namespace Tpetra {
       ///
       static void
       writeSparseFile (const std::string& filename,
-		       Teuchos::RCP<const sparse_matrix_type>& pMatrix)
+		       const Teuchos::RCP<const sparse_matrix_type>& pMatrix)
       {
 	std::ofstream out (filename.c_str());
 	writeSparse (out, pMatrix);
@@ -1610,16 +1612,15 @@ namespace Tpetra {
 	// Make the "gather" row map, where Proc 0 owns all rows and
 	// the other procs own no rows.
 	const size_t localNumElements = (myRank == 0) ? globalNumElements : 0;
-	RCP<const map_type> pGatherRowMap = 
-	  createContigMapWithNode (globalNumElements, localNumElements, 
-				   pComm, pRowMap->getNode());
-
+	RCP<node_type> pNode = pRowMap->getNode();
+	RCP<const map_type> pGatherRowMap = createContigMapWithNode<local_ordinal_type, global_ordinal_type, node_type> (globalNumElements, localNumElements, pComm, pNode);
+	
 	// Current map is the source map, gather map is the target map.
 	typedef Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
 	import_type importer (pRowMap, pGatherRowMap);
 
 	// Create a new CrsMatrix to hold the result of the import.
-	RCP<sparse_matrix_type> newMatrix = createCrsMatrix (pGatherRowMap);
+	RCP<sparse_matrix_type> newMatrix = createCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> (pGatherRowMap);
 
 	// Import the sparse matrix onto Proc 0.
 	newMatrix->doImport (*pMatrix, importer, INSERT);
@@ -1633,34 +1634,91 @@ namespace Tpetra {
 	    << " general" << endl;
 	
 	// Print the Matrix Market header (# rows, # columns, # nonzeros).
-	out << newMatrix->pRangeMap()->getGlobalNumElements() 
+	out << newMatrix->getRangeMap()->getGlobalNumElements() 
 	    << " "
-	    << newMatrix->pDomainMap()->getGlobalNumElements() 
+	    << newMatrix->getDomainMap()->getGlobalNumElements() 
 	    << " "
 	    << newMatrix->getGlobalNumEntries() 
 	    << endl;
 
-	// Print the entries of the matrix.
-	for (global_ordinal_type globalRowIndex = pGatherRowMap->getMinAllGlobalIndex();
-	     globalRowIndex < pRowMap->getMaxAllGlobalIndex();
-	     ++globalRowIndex)
-	  {
-	    ArrayView<global_ordinal_type> ind;
-	    ArrayView<scalar_type> val;
+	// Index base (0-based or 1-based) for the row map.
+	const global_ordinal_type rowIndexBase = pGatherRowMap->getIndexBase();
+	// Index base (0-based or 1-based) for the column map.
+	const global_ordinal_type colIndexBase = newMatrix->getColMap()->getIndexBase();
 
-	    newMatrix->getGlobalRowView (globalRowIndex, ind, val);
-	    for (ArrayView<global_ordinal_type>::const_iterator indIter = ind.begin(),
-		   ArrayView<scalar_type>::const_iterator valIter = val.begin();
-		 indIter != ind.end(), valIter != val.end();
-		 ++indIter, ++valIter)
+	// Print the entries of the matrix.
+	if (pMatrix->isGloballyIndexed())
+	  {
+	    for (global_ordinal_type globalRowIndex = pGatherRowMap->getMinAllGlobalIndex();
+		 globalRowIndex < pGatherRowMap->getMaxAllGlobalIndex();
+		 ++globalRowIndex)
 	      {
-		out << globalRowIndex << " " << *indIter << " ";
-		if (STS::isComplex)
-		  out << STS::real(*valIter) << " " << STS::imag(*valIter);
-		else
-		  out << *valIter;
+		ArrayView<const global_ordinal_type> ind;
+		ArrayView<const scalar_type> val;
+
+		newMatrix->getGlobalRowView (globalRowIndex, ind, val);
+		typename ArrayView<const global_ordinal_type>::const_iterator indIter = ind.begin();
+		typename ArrayView<const scalar_type>::const_iterator valIter = val.begin();
+		for (; indIter != ind.end(), valIter != val.end();
+		     ++indIter, ++valIter)
+		  {
+		    const global_ordinal_type globalColIndex = *indIter;
+
+		    // Matrix Market files use 1-based indices.
+		    out << (globalRowIndex + 1 - rowIndexBase) << " " 
+			<< (globalColIndex + 1 - colIndexBase) << " ";
+		    if (STS::isComplex)
+		      out << STS::real(*valIter) << " " << STS::imag(*valIter);
+		    else
+		      out << *valIter;
+		  }
+		out << endl;
 	      }
-	    out << endl;
+	  }
+	else
+	  {
+	    typedef Teuchos::OrdinalTraits<global_ordinal_type> OTG;
+	    RCP<const map_type> pColMap = newMatrix->getColMap ();
+
+	    for (local_ordinal_type localRowIndex = pGatherRowMap->getMinLocalIndex();
+		 localRowIndex < pRowMap->getMaxLocalIndex();
+		 ++localRowIndex)
+	      {
+		// Convert from local to global row index.
+		const global_ordinal_type globalRowIndex = pGatherRowMap->getGlobalElement (localRowIndex);
+		TEST_FOR_EXCEPTION(globalRowIndex == OTG::invalid(), 
+				   std::logic_error,
+				   "Failed to convert \"local\" row index " 
+				   << localRowIndex << " into a global row "
+				   "index.  Please report this bug to the "
+				   "Tpetra developers.");
+		ArrayView<const local_ordinal_type> ind;
+		ArrayView<const scalar_type> val;
+
+		newMatrix->getLocalRowView (localRowIndex, ind, val);
+		typename ArrayView<const local_ordinal_type>::const_iterator indIter = ind.begin();
+		typename ArrayView<const scalar_type>::const_iterator valIter = val.begin();
+		for (; indIter != ind.end(), valIter != val.end();
+		     ++indIter, ++valIter)
+		  {
+		    // Convert from local to global index.
+		    const global_ordinal_type globalColIndex = pColMap->getGlobalElement (*indIter);
+		    TEST_FOR_EXCEPTION(globalColIndex == OTG::invalid(), 
+				       std::logic_error,
+				       "Failed to convert \"local\" column index " 
+				       << *indIter << " into a global column "
+				       "index.  Please report this bug to the "
+				       "Tpetra developers.");
+		    // Matrix Market files use 1-based indices.
+		    out << (globalRowIndex + 1 - rowIndexBase) << " " 
+			<< (globalColIndex + 1 - colIndexBase) << " ";
+		    if (STS::isComplex)
+		      out << STS::real(*valIter) << " " << STS::imag(*valIter);
+		    else
+		      out << *valIter;
+		    out << endl;
+		  }
+	      }
 	  }
       }
     }; // class Writer

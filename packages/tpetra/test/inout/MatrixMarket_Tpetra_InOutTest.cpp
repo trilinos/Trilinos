@@ -115,8 +115,9 @@ namespace Tpetra {
 	// #else
 	typedef Kokkos::SerialNode node_type;
 	// #endif // defined(HAVE_KOKKOS_TBB)
-
 	typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+	const bool callFillComplete = true;
 
 	// Get a Kokkos Node instance for the particular Node type.
 	RCP<node_type> pNode = getNode<node_type>();
@@ -124,35 +125,36 @@ namespace Tpetra {
 
 	if (verbose && myRank == 0)
 	  cout << "About to read Matrix Market file \"" << inputFilename 
-	       << "\":" << endl;
+	       << "\""
+	       << (callFillComplete ? " (calling fillComplete())" : "")
+	       << ":" << endl;
 
 	// Read the sparse matrix from the given Matrix Market file.
 	// This routine acts like an MPI barrier.
-	const bool callFillComplete = true;
 	typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
 	  global_ordinal_type, node_type> sparse_matrix_type;
 	typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 	RCP<sparse_matrix_type> pMatrix =
 	  reader_type::readSparseFile (inputFilename, pComm, pNode, 
 				       callFillComplete, tolerant, debug);
-	if (! pMatrix.is_null())
-	  {
-	    if (verbose && myRank == 0)
-	      cout << "Successfully read Matrix Market file \"" << inputFilename 
-		   << "\"." << endl;
-	  }
-	else 
-	  {
-	    if (verbose && myRank == 0)
-	      cout << "Failed to read Matrix Market file \"" << inputFilename 
-		   << "\"." << endl;
-	  }
+	TEST_FOR_EXCEPTION(pMatrix.is_null(), std::runtime_error,
+			   "The Tpetra::CrsMatrix returned from "
+			   "readSparseFile() is null.");
+	TEST_FOR_EXCEPTION(callFillComplete && ! pMatrix->isFillComplete(), 
+			   std::logic_error,
+			   "We asked readSparseFile() to call fillComplete() "
+			   "on the Tpetra::CrsMatrix before returning it, but"
+			   " it did not.");
 
-	typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> writer_type;
+	if (! pMatrix.is_null() && verbose && myRank == 0)
+	  cout << "Successfully read Matrix Market file \"" << inputFilename 
+	       << "\"." << endl;
+
+	typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
+	if (testWrite && outputFilename != "")
+	  writer_type::writeSparseFile (outputFilename, pMatrix);
 	if (echo)
 	  writer_type::writeSparse (cout, pMatrix);
-	if (testWrite && outputFilename != "")
-	  writer_type::writeSparse (outputFilename, pMatrix);
       }
     } // namespace Test
   } // namespace MatrixMarket
@@ -232,7 +234,7 @@ main (int argc, char *argv[])
   // "TEST PASSED" message.
   if (inputFilename != "")
     {
-      using Tpetra::MatrixMarket::Test::testReadSparseFile;
+      using Tpetra::MatrixMarket::Test::testReadAndWriteSparseFile;
       testReadAndWriteSparseFile (inputFilename, outputFilename, pComm, 
 				  testWrite, echo, tolerant, verbose, debug);
     }
