@@ -49,6 +49,8 @@ public:
     _width(width),_height(height),_data(Array<T>(width*height, 0)){}
   TwoDArray(size_type width, size_type height, Array<T> data):
     _width(width),_height(height),_data(data){}
+  TwoDArray():
+    _width(0),_height(0),_data(Array<T>()){}
   virtual ~TwoDArray(){}
 
 
@@ -64,7 +66,7 @@ public:
     return _height;
   }
 
-  inline Array<const T> getDataArray() const{
+  inline const Array<T>& getDataArray() const{
     return _data;
   }
 
@@ -77,6 +79,10 @@ public:
     static const std::string dimensionsDelimiter = "x";
     return dimensionsDelimiter;
   }
+
+  static std::string toString(const TwoDArray<T> array);
+
+  static TwoDArray<T> fromString(const std::string& string);
 
 private:
   size_type _width, _height;
@@ -95,31 +101,70 @@ ArrayView<const T> TwoDArray<T>::operator[](size_type i) const{
 }
 
 template<class T>
-std::istringstream& operator>> (std::istringstream& in, TwoDArray<T>& array){
-  std::string input = in.str();
+std::string TwoDArray<T>::toString(const TwoDArray<T> array){
+  std::stringstream widthStream;
+  std::stringstream heightStream;
+  widthStream << array.getWidth();
+  heightStream << array.getHeight();
+  return widthStream.str() +
+    TwoDArray<T>::getDimensionsDelimiter() +
+    heightStream.str() +
+    TwoDArray<T>::getDimensionsSeperator() +
+    array.getDataArray().toString();
+}
+
+template<class T>
+TwoDArray<T> TwoDArray<T>::fromString(const std::string& string){
   size_t dimCharPos = 
-    input.find_first_of(TwoDArray<T>::getDimensionsDelimiter());
-  size_t delimCharPos = 
-    input.find_first_of(TwoDArray<T>::getDimensionsSeperator());
-  std::string valueData = input.substr(delimCharPos+1);
-  std::istringstream widthStream(input.substr(0,dimCharPos));
-  std::istringstream heightStream(input.substr(dimCharPos+1, delimCharPos-dimCharPos-1));
+    string.find_first_of(TwoDArray<T>::getDimensionsDelimiter());
+  size_t seperatorPos = 
+    string.find_first_of(TwoDArray<T>::getDimensionsSeperator());
+  std::string valueData = string.substr(seperatorPos+1);
+  std::istringstream widthStream(string.substr(0,dimCharPos));
+  std::istringstream heightStream(string.substr(dimCharPos+1, seperatorPos-dimCharPos-1));
   size_t width, height;
   widthStream >> width;
   heightStream >> height;
-  array = fromStringToArray<T>(valueData);
-  array = TwoDArray<T>(width, height, array);
+  Array<T> array = fromStringToArray<T>(valueData);
+  return TwoDArray<T>(width, height, array);
+}
+
+template<class T>
+std::istringstream& operator>> (std::istringstream& in, TwoDArray<T>& array){
+  array = TwoDArray<T>::fromString(in.str());
   return in;
 }
 
 template<class T> inline
 std::ostream& operator<<(std::ostream& os, const TwoDArray<T>& array){
-  return os << array.getWidth() << 
-    TwoDArray<T>::getDimensionsDelimiter() <<
-    array.getHeight() << 
-    TwoDArray<T>::getDimensionsDelimiter() <<
-    Teuchos::toString(array.getDataArray());
+  return os << TwoDArray<T>::toString(array);
 }
+
+template<typename T> inline
+bool operator==( const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
+  return a1.getDataArray() == a2.getDataArray() && 
+    a1.getWidth() == a2.getWidth() &&
+    a1.getHeight() == a2.getHeight();
+}
+
+inline
+std::string getTwoDArrayTypeNameTraitsFormat(){
+  return "Array(*)";
+}
+
+template<typename T>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<TwoDArray<T> > {
+public:
+  static std::string name(){ 
+    std::string formatString = getTwoDArrayTypeNameTraitsFormat();
+    size_t starPos = formatString.find("*");
+    std::string prefix = formatString.substr(0,starPos);
+    std::string postFix = formatString.substr(starPos+1);
+    return prefix+TypeNameTraits<T>::name()+postFix;
+  }
+  static std::string concreteName(const TwoDArray<T>&)
+    { return name(); }
+};
 
 
 } //namespace Teuchos

@@ -36,7 +36,7 @@ namespace Teuchos{
 /**
  * Test all the validator dependencies.
  */
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
+TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, simpleTest){
   TwoDArray<int> simpleArray(2,2);
   simpleArray[0][0] =1;
   simpleArray[0][1] =2;
@@ -56,7 +56,16 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 
 }
   
-
+TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, stringFunctions){
+  TwoDArray<int> simpleArray(2,2);
+  simpleArray[0][0] =1;
+  simpleArray[0][1] =2;
+  simpleArray[1][0] =3;
+  simpleArray[1][1] =4;
+  std::string stringRep = TwoDArray<int>::toString(simpleArray);
+  TwoDArray<int> convertedArray = TwoDArray<int>::fromString(stringRep);
+  TEST_EQUALITY(simpleArray, convertedArray)
+}
 
 } //namespace Teuchos
 
