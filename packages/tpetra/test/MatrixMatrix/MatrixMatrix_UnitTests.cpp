@@ -69,7 +69,7 @@ template<class CrsMatrix_t> double getNorm(RCP<CrsMatrix_t> matrix){
     ArrayView<const double> valsView = vals();
     matrix->getLocalRowView(i, indsView, valsView);
     for(size_t j=0; ((size_t)j)<numRowEnts; ++j){
-      mySum = valsView[j]*valsView[j];
+      mySum += valsView[j]*valsView[j];
     }
   }
   double totalSum = 0;
@@ -129,6 +129,7 @@ add_test_results add_into_test(
 
 template<class Ordinal>
 mult_test_results multiply_test(
+  const std::string& name,
   RCP<Matrix_t> A,
   RCP<Matrix_t> B,
   bool AT,
@@ -145,6 +146,11 @@ mult_test_results multiply_test(
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
   computedC->globalAssemble();
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx",computedC);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx",C);
+   
   double cNorm = getNorm(C);
   Tpetra::MatrixMatrix::Add(*C, false, -1.0, *computedC, 1.0);
   computedC->fillComplete();
@@ -214,6 +220,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       "Type name: " << it->second.getAny().typeName() << 
       std::endl << std::endl);
     Teuchos::ParameterList currentSystem = matrixSystems->sublist(it->first); 
+    std::string name = currentSystem.name();
     std::string A_file = currentSystem.get<std::string>("A");
     std::string B_file = currentSystem.get<std::string>("B");
     std::string C_file = currentSystem.get<std::string>("C");
@@ -234,7 +241,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       if(verbose){
         out << "Running multiply test for " << currentSystem.name() << std::endl;
       }
-      mult_test_results results = multiply_test(A,B,AT,BT,C,comm, out);
+      mult_test_results results = multiply_test(name, A,B,AT,BT,C,comm, out);
       if(verbose){
         out << "Results:" <<std::endl;
         out << "\tEpsilon: " << results.epsilon << std::endl;

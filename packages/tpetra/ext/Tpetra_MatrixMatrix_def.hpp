@@ -569,7 +569,7 @@ void mult_A_Btrans(
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
   //Nieve implementation
-  for(GlobalOrdinal i=Aview.rowMap->getMinAllGlobalIndex(); i<Aview.rowMap->getMaxAllGlobalIndex(); ++i){
+  for(GlobalOrdinal i=Aview.rowMap->getMinAllGlobalIndex(); i<=Aview.rowMap->getMaxAllGlobalIndex(); ++i){
     if(!Aview.rowMap->isNodeGlobalElement(i)){
       continue;
     }
@@ -582,7 +582,7 @@ void mult_A_Btrans(
     Array<GlobalOrdinal> aIndices;
     Array<Scalar> aValues;
     getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
-    for(GlobalOrdinal j=Bview.rowMap->getMinAllGlobalIndex(); j<Bview.rowMap->getMaxAllGlobalIndex(); ++j){
+    for(GlobalOrdinal j=Bview.rowMap->getMinAllGlobalIndex(); j<=Bview.rowMap->getMaxAllGlobalIndex(); ++j){
       if(!Bview.rowMap->isNodeGlobalElement(j)){
         continue;
       }

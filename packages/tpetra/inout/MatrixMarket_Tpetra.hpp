@@ -2426,7 +2426,7 @@ namespace Tpetra {
 		      }
 		  }
 	      }
-	  }
+      }
       }
 
       /// \brief Print the multivector in Matrix Market format.
