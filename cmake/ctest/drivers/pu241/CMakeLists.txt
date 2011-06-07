@@ -57,23 +57,29 @@ if (RUN_REGULAR_TESTS)
     )
 
   #
-  # Run builds of just Trilinos packages with the Intel ???
-  # compiler and submit to the main Trilinos CDash sever so that
-  # Trilinos developers can help maintain their packages on this
-  # platform.
+  # Run builds of just CASL add-on packages and LIME components 
+  # with the Intel 12.0.4 compiler and submit to the CASL CDash 
+  # server
   #
 
-#  TRILINOS_DRIVER_ADD_DASHBOARD(
-#    SERIAL_DEBUG_ICPC
-#    ctest_linux_nightly_serial_debug_icpc_pu241_trilinos.cmake
-#    TIMEOUT_MINUTES 240
-#    )
-#
-#  TRILINOS_DRIVER_ADD_DASHBOARD(
-#    SERIAL_RELEASE_ICPC
-#    ctest_linux_nightly_serial_release_icpc_pu241_trilinos.cmake
-#    TIMEOUT_MINUTES 240
-#    )
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_DEBUG_ICPC_CASLDEV
+    ctest_linux_nightly_serial_debug_icpc_12.0.4_casl_dev.cmake
+    TIMEOUT_MINUTES 240
+    )
+
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_RELEASE_ICPC_CASLDEV
+    ctest_linux_nightly_serial_release_icpc_12.0.4_casl_dev.cmake
+    TIMEOUT_MINUTES 240
+    )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_RELEASE_ICPC_CASLDEV_NATIVEBUILDS
+    ctest_linux_nightly_serial_release_icpc_12.0.4_casl_dev_native.cmake
+    TIMEOUT_MINUTES 240
+    )
 
 endif()
 
