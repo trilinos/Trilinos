@@ -166,7 +166,9 @@ private:
  */
 #define TEUCHOS_ADD_ARRAYTYPE_CONVERTER(T) \
   Teuchos::ParameterEntryXMLConverterDB::addConverter( \
-    Teuchos::rcp(new Teuchos::StandardTemplatedParameterConverter< Teuchos::Array< T > >));
+    Teuchos::rcp(new Teuchos::StandardTemplatedParameterConverter< Teuchos::Array< T > >)); \
+  Teuchos::ParameterEntryXMLConverterDB::addConverter( \
+    Teuchos::rcp(new Teuchos::StandardTemplatedParameterConverter< Teuchos::TwoDArray< T > >));
 
 /**
  * Add both a converter for type T and Array<T> to CONVERTER_MAP

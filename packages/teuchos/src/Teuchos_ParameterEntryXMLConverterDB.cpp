@@ -30,6 +30,7 @@
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
 #include "Teuchos_StaticSetupMacro.hpp"
+#include "Teuchos_TwoDArray.hpp"
 
 namespace Teuchos{
 

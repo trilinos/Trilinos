@@ -47,6 +47,8 @@ public:
   typedef Ordinal size_type;
   TwoDArray(size_type width, size_type height):
     _width(width),_height(height),_data(Array<T>(width*height, 0)){}
+  TwoDArray(size_type width, size_type height, T value):
+    _width(width),_height(height),_data(Array<T>(width*height, value)){}
   TwoDArray(size_type width, size_type height, Array<T> data):
     _width(width),_height(height),_data(data){}
   TwoDArray():
@@ -149,7 +151,7 @@ bool operator==( const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
 
 inline
 std::string getTwoDArrayTypeNameTraitsFormat(){
-  return "Array(*)";
+  return "TwoDArray(*)";
 }
 
 template<typename T>
