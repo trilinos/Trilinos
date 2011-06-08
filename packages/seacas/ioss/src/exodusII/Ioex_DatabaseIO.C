@@ -1769,7 +1769,7 @@ namespace Ioex {
 #else
 	    if (true) {
 #endif
-	      int side_count = (*I).second;
+	      int my_side_count = (*I).second;
 
 	      std::string side_block_name = "surface_" + topo_or_block_name + "_" + side_topo->name();
 	      if (side_set_name == "universal_sideset") {
@@ -1810,7 +1810,7 @@ namespace Ioex {
 	      Ioss::SideBlock *side_block = new Ioss::SideBlock(this, side_block_name,
 								side_topo->name(),
 								elem_topo->name(),
-								side_count);
+								my_side_count);
 	      side_set->add(side_block);
 
 	      // Note that all sideblocks within a specific
@@ -1859,18 +1859,18 @@ namespace Ioex {
 		storage += "]";
 		side_block->field_add(Ioss::Field("distribution_factors",
 						Ioss::Field::REAL, storage,
-						Ioss::Field::MESH, side_count));
+						Ioss::Field::MESH, my_side_count));
 	      }
 
 	      if (side_set_name == "universal_sideset") {
 		side_block->field_add(Ioss::Field("side_ids",
 						Ioss::Field::INTEGER, "scalar",
-						Ioss::Field::MESH, side_count));
+						Ioss::Field::MESH, my_side_count));
 	      }
 
 	      // Add results fields 
 	      Ioss::SerializeIO	serializeIO__(this);
-	      add_results_fields(EX_SIDE_SET, side_block, side_count, iss);
+	      add_results_fields(EX_SIDE_SET, side_block, my_side_count, iss);
 	    }
 	  }
 	  ++I;
@@ -2265,8 +2265,8 @@ namespace Ioex {
   {
     int num_valid_sides = 0;
     const Ioss::VariableType *var_type = field.raw_storage();
-    size_t side_count = is_valid_side.size();
-    std::vector<double> temp(side_count);
+    size_t my_side_count = is_valid_side.size();
+    std::vector<double> temp(my_side_count);
 
     int step = get_current_state();
 
@@ -2284,7 +2284,7 @@ namespace Ioex {
       var_index = sidesetVariables.find(var_name)->second;
       assert(var_index > 0);
       ierr = ex_get_var(get_file_pointer(), step, EX_SIDE_SET,
-			var_index, id, side_count, (temp.empty() ? NULL : &temp[0]));
+			var_index, id, my_side_count, (temp.empty() ? NULL : &temp[0]));
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -2292,7 +2292,7 @@ namespace Ioex {
       int j = i;
       if (field.get_type() == Ioss::Field::INTEGER) {
 	int *ivar = static_cast<int*>(variables);
-	for (size_t k = 0; k < side_count; k++) {
+	for (size_t k = 0; k < my_side_count; k++) {
 	  if (is_valid_side[k] == 1) {
 	    ivar[j] = static_cast<int>(temp[k]);
 	    j += comp_count;
@@ -2300,7 +2300,7 @@ namespace Ioex {
 	}
       } else if (field.get_type() == Ioss::Field::REAL) {
 	double *rvar = static_cast<double*>(variables);
-	for (size_t k = 0; k < side_count; k++) {
+	for (size_t k = 0; k < my_side_count; k++) {
 	  if (is_valid_side[k] == 1) {
 	    rvar[j] = temp[k];
 	    j += comp_count;
@@ -2656,7 +2656,7 @@ namespace Ioex {
 	// sideset.  Because of this, the passed in 'data' may not be
 	// large enough to hold the data residing in the sideset and we
 	// may need to allocate a temporary array...  This can be checked
-	// by comparing the size of the sideset with the 'side_count' of
+	// by comparing the size of the sideset with the 'my_side_count' of
 	// the side block.
 
 	// Get size of data stored on the file...
@@ -2988,7 +2988,7 @@ namespace Ioex {
       return 0;
     }
 
-    // Take care of the easy situation -- If 'side_count' ==
+    // Take care of the easy situation -- If 'my_side_count' ==
     // 'number_sides' then the sideset is stored in a single sideblock
     // and all distribution factors on the database are transferred
     // 1-to-1 into 'dist_fact' array.

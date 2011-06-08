@@ -855,7 +855,7 @@ namespace Iopg {
 #else
 	    if (true) {
 #endif
-	      int side_count = (*I).second;
+	      int my_side_count = (*I).second;
 
 	      std::string side_block_name = "surface_" + topo_or_block_name + "_" + side_topo->name();
 	      if (side_set_name == "universal_sideset") {
@@ -896,7 +896,7 @@ namespace Iopg {
 	      Ioss::SideBlock *side_block = new Ioss::SideBlock(this, side_block_name,
 								side_topo->name(),
 								elem_topo->name(),
-								side_count);
+								my_side_count);
 	      side_set->add(side_block);
 
 	      // Note that all sideblocks within a specific
@@ -945,13 +945,13 @@ namespace Iopg {
 		storage += "]";
 		side_block->field_add(Ioss::Field("distribution_factors",
 						Ioss::Field::REAL, storage,
-						Ioss::Field::MESH, side_count));
+						Ioss::Field::MESH, my_side_count));
 	      }
 
 	      if (side_set_name == "universal_sideset") {
 		side_block->field_add(Ioss::Field("side_ids",
 						Ioss::Field::INTEGER, "scalar",
-						Ioss::Field::MESH, side_count));
+						Ioss::Field::MESH, my_side_count));
 	      }
 	    }
 	  }
@@ -1220,7 +1220,7 @@ namespace Iopg {
 	// sideset.  Because of this, the passed in 'data' may not be
 	// large enough to hold the data residing in the sideset and we
 	// may need to allocate a temporary array...  This can be checked
-	// by comparing the size of the sideset with the 'side_count' of
+	// by comparing the size of the sideset with the 'my_side_count' of
 	// the side block.
 
 	if (field.get_name() == "side_ids") {
