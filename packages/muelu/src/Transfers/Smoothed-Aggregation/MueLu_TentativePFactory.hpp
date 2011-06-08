@@ -11,6 +11,9 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
+#include "MueLu_Utilities.hpp"
+#include "Cthulhu_ImportFactory.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -143,17 +146,13 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     /*! @brief Make tentative prolongator with QR.
 
         - FIXME There is no attempt to detect if the aggregate is too small to support the NS.
-        - FIXME This needs to use Jeremie's Aggregate class.
-        - FIXME Aggregates of size 3 are hard-wired in. (AFAIK, no assumptions of size 3, however.)
     */
     static void MakeTentative(Level &fineLevel, Level &coarseLevel)
     {
       using Teuchos::ArrayRCP;
 
-      //TODO checkout aggregates from Level hash table
-
       Teuchos::RCP< Operator > fineA = fineLevel.GetA();
-      GO nFineDofs = fineA->getNodeNumRows();
+      RCP<const Teuchos::Comm<int> > comm = fineA->getRowMap()->getComm();
 
       RCP<Aggregates> aggregates;
       fineLevel.CheckOut("Aggregates",aggregates);
@@ -175,18 +174,46 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       // Compute array of aggregate sizes.
       ArrayRCP<GO> aggSizes  = aggregates->ComputeAggregateSizes();
 
-      // Find the largest aggregate.
+      // Calculate total #dofs in local aggregates, find size of the largest aggregate.
       LO maxAggSize=0;
-      for (typename Teuchos::ArrayRCP<GO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i)
+      LO numDofsInLocalAggs=0;
+      for (typename Teuchos::ArrayRCP<GO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i) {
         if (*i > maxAggSize) maxAggSize = *i;
+        numDofsInLocalAggs += *i;
+      }
 
       // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
       // aggToRowMap[i][j] is the jth DOF in aggregate i
-      ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
-      //FIXME Ok, here's something that scares me:
-      //FIXME I don't know whether the remaining code will choke on DOFs that belong to
-      //FIXME another processor's aggregate. So far, this hasn't cropped up.
+      ArrayRCP< ArrayRCP<LO> > aggToRowMap(numAggs);
+
       aggregates->ComputeAggregateToRowMap(aggToRowMap);
+
+      // Create the numbering for the new row map for Ptent as follows:
+      // convert LIDs in aggToRowmap to GIDs, put them in an ArrayView,
+      // and call the Map constructor that takes arbitrary distributions.
+
+      //FIXME work around until Cthulhu view table is fixed
+      RCP<const Epetra_CrsMatrix> epA = Utils::Op2EpetraCrs(fineA);
+
+      std::vector<GO> globalIdsForPtent;
+      for (int i=0; i< aggToRowMap.size(); ++i) {
+        for (int k=0; k< aggToRowMap[i].size(); ++k) {
+          globalIdsForPtent.push_back(epA->ColMap().GID(aggToRowMap[i][k]));
+        }
+      }
+
+      Teuchos::ArrayView<GO> gidsForPtent(&globalIdsForPtent[0],globalIdsForPtent.size());
+
+      LO indexBase=fineA->getRowMap()->getIndexBase();
+
+      RCP<const Map > rowMapForPtent =
+         MapFactory::Build(
+           fineA->getRowMap()->lib(),
+           Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(),
+           gidsForPtent,
+           indexBase,
+           fineA->getRowMap()->getComm()
+         );
 
       // Allocate workspace for LAPACK QR routines.
       ArrayRCP<SC> localQR(maxAggSize*NSDim); // The submatrix of the nullspace to be orthogonalized.
@@ -197,21 +224,31 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       ArrayRCP<SC> tau(NSDim);                // (out) scalar factors of elementary reflectors, input to DORGQR
       LO           info=0;                      // (out) =0: success; =i, i<0: i-th argument has illegal value
 
-      // Pull out the nullspace vectors so that we can have random access.
-      // (Question -- do we have to do this?)
-      ArrayRCP< ArrayRCP<const SC> > fineNS(NSDim);
-      for (size_t i=0; i<NSDim; ++i)
-        fineNS[i] = fineNullspace->getData(i);
-
       //Allocate storage for the coarse nullspace.
-      LO indexBase=fineA->getRowMap()->getIndexBase();
 
-      RCP<const Map > coarseMap = MapFactory::Build(fineA->getRowMap()->lib(), Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(), nCoarseDofs, indexBase, fineA->getRowMap()->getComm()); //JG:Cthulhu::global_size_t>?
+      RCP<const Map > coarseMap = MapFactory::Build(fineA->getRowMap()->lib(),
+                                    Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(), nCoarseDofs,
+                                    indexBase, fineA->getRowMap()->getComm()); //JG:Cthulhu::global_size_t>?
+
       RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
       ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);
       for (size_t i=0; i<NSDim; ++i)
         coarseNS[i] = coarseNullspace->getDataNonConst(i);
 
+      // Builds overlapped nullspace.
+      const RCP<const Map> nonUniqueMap = aggregates->GetMap();
+      GO nFineDofs = nonUniqueMap->getNodeNumElements();
+      const RCP<const Map> uniqueMap    = fineA->getDomainMap(); //FIXME won't work for systems
+      RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+      RCP<MultiVector> fineNullspaceWithOverlap = MultiVectorFactory::Build(nonUniqueMap,NSDim);
+      fineNullspaceWithOverlap->doImport(*fineNullspace,*importer,Cthulhu::INSERT);
+
+      // Pull out the nullspace vectors so that we can have random access.
+      // (Question -- do we have to do this?)
+      ArrayRCP< ArrayRCP<const SC> > fineNS(NSDim);
+      for (size_t i=0; i<NSDim; ++i)
+        fineNS[i] = fineNullspaceWithOverlap->getData(i);
+ 
       //Allocate temporary storage for the tentative prolongator.
       // TODO Right now, this is stored as a point matrix.
       // TODO we should be able to allocate something other than a CRS matrix
@@ -221,7 +258,9 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       ArrayRCP<GO> colPtr(nFineDofs*NSDim,0);
       ArrayRCP<SC> valPtr(nFineDofs*NSDim,0.);
 
-      RCP<Operator> Ptentative = rcp(new CrsOperator(fineA->getDomainMap(), NSDim));
+      // Ptentative's row map is such that all DoF's in an aggregate
+      // are local and consecutive.  Use fineA's domain map to FillComplete.
+      RCP<Operator> Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim));
 
       //used in the case of just one nullspace vector
       Teuchos::Array<Magnitude> norms(NSDim);
@@ -234,6 +273,7 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       //*****************************************************************
       //Loop over all aggregates and calculate local QR decompositions.
       //*****************************************************************
+      GO ctr=0; //for indexing into Ptent data vectors
       for (LO agg=0; agg<numAggs; ++agg)
       {
         LO myAggSize = aggSizes[agg];
@@ -244,7 +284,12 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
              for (LO k=0; k<myAggSize; ++k) {
                 //aggToRowMap[i][k] is the kth DOF in the ith aggregate
                 //fineNS[j][n] is the nth entry in the jth NS vector
+                try{
                 localQR[j* myAggSize + k] = fineNS[j][ aggToRowMap[agg][k] ];
+                }
+                catch(...) {
+                  std::cerr << "caught an error!" << std::endl;
+                }
              } //for (LO k=0 ...
            } //for (LO j=0 ...
 
@@ -281,10 +326,17 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
         // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
         // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
+        // This stores the (offset+k)th entry only if it is local according to the coarseMap.
         Cthulhu::global_size_t offset=agg*NSDim;
         for (size_t j=0; j<NSDim; ++j) {
           for (size_t k=0; k<=j; ++k) {
-            coarseNS[j][offset+k] = localQR[ myAggSize*j + k ];
+           try {
+            if (coarseMap->isNodeLocalElement(offset+k))
+              coarseNS[j][offset+k] = localQR[ myAggSize*j + k ]; //TODO is offset+k the correct local ID?!
+           }
+           catch(...) {
+             std::cout << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
+           }
           }
         }
 
@@ -320,14 +372,18 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
         //Save the part of tentative P (the Q factor) corresponding to the current aggregate
         //in a CSR format.  This saves the entire Q factor as if it were dense.
-        GO index;
         for (GO j=0; j<myAggSize; ++j) {
           for (size_t k=0; k<NSDim; ++k) {
-            index = rowPtr[aggToRowMap[agg][j]]+k;
+            GO index = ctr++;
             //FIXME -- what happens if the map is blocked?
+            try{
             colPtr[index] = coarseMap->getGlobalElement(agg * NSDim + k);
             valPtr[index] = localQR[k*myAggSize+j];
-          }
+            }
+           catch(...) {
+             std::cout << "caught error in colPtr/valPtr insert, index="<<index<<std::endl;
+           }
+          } //for (size_t k=0; k<NSDim; ++k) {
         }
 
       } // for (LO agg=0; agg<numAggs; ++agg)
@@ -336,6 +392,7 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       // ************* end of aggregate-wise QR ********************
       // ***********************************************************
 
+#if REMOVE_ALL_ZEROS  //FIXME
       //Remove all zeros in the tentative prolongator data arrays.
       GO k = rowPtr[0];
       GO nNonzeros=0;
@@ -344,34 +401,48 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       {
         for (GO j=k; j< rowPtr[i+1]; ++j) {
           if (valPtr[j] != 0.0) {
+           try{
             valPtr[index] = valPtr[j];
             colPtr[index] = colPtr[j];
+           }
+           catch(...) {
+             std::cout << "caught error in valPtr insert, index="<<index<< std::endl;
+           }
             ++index;
             ++nNonzeros;
           }
         }
+          std::cout << "pid " << fineA->getRowMap()->getComm()->getRank()
+                    << ": i = " << i << ", old rowPtr = " << rowPtr[i+1] << ", new rowPtr = " << index << std::endl;
         k = rowPtr[i+1];
         rowPtr[i+1] = index;
       } //for (GO i=0...
+#endif
 
       //Insert into the final tentative prolongator matrix.
-      //TODO I don't know how to efficiently insert data into a matrix.
-      //TODO In Epetra, you can use Views of data pointers.  In Tpetra, I don't know whether this can be done.
-      //TODO So for right now, I just insert row by row.
-      RCP<const Map> fineRowMap = fineA->getRowMap();
+      //Since now the Q may have rows that it does not own,
+      //check each row to see if it's local.  If so, insert it.  Otherwise, skip it.
       for (GO i=0; i<nFineDofs; ++i)
       {
         //j=rowPtr[i], j1 = rowPtr[i+1]
         //columns are in colPtr[j] ... colPtr[j1]-1
         //values are in valPtr[j] ... valPtr[j1]-1
-        GO start = rowPtr[i];
-        GO nnz = rowPtr[i+1] - rowPtr[i];
-        Ptentative->insertGlobalValues(fineRowMap->getGlobalElement(i),
-                                      colPtr.view(start,nnz),
-                                      valPtr.view(start,nnz));
-      }
+        if (rowMapForPtent->isNodeLocalElement(i)) {
+        try{
+          GO start = rowPtr[i];
+          GO nnz = rowPtr[i+1] - rowPtr[i];
+              
+          Ptentative->insertGlobalValues(rowMapForPtent->getGlobalElement(i),
+                                        colPtr.view(start,nnz),
+                                        valPtr.view(start,nnz));
+        }
+           catch(...) {
+             std::cout << "pid " << fineA->getRowMap()->getComm()->getRank() << "caught error in insertGlobalValue, i="<<i<<std::endl;
+           }
+        }
+      } //for (GO i=0; i<nFineDofs; ++i)
 
-      Ptentative->fillComplete(coarseMap,fineA->getRangeMap());
+      Ptentative->fillComplete(coarseMap,fineA->getDomainMap()); //(domain,range) of Ptentative
 
       coarseLevel.Save("Nullspace",coarseNullspace);
       coarseLevel.Save("Ptent",Ptentative);

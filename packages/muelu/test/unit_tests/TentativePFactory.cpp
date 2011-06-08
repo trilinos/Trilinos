@@ -44,7 +44,7 @@ namespace {
 
     Level fineLevel;
     fineLevel.SetLevelID(1);
-    RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
+    RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
     fineLevel.SetA(A);
 
     Level coarseLevel;
@@ -52,15 +52,11 @@ namespace {
     // first iteration calls LAPACK QR
     // second iteration (with only one NS vector) exercises manual orthogonalization
     for (LO NSdim = 2; NSdim >= 1; --NSdim) {
-      //RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),1);
-      //nullSpace->putScalar( (SC) 1.0);
-      // create 3 nullspace vectors
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       nullSpace->randomize();
       fineLevel.Save("Nullspace",nullSpace);
       fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
-      //FIXME is implemented
-  
+                                      //FIXME is implemented
       MueLu::AggregationOptions aggOptions;
       aggOptions.SetMinNodesPerAggregate(3);
       aggOptions.SetMaxNeighAlreadySelected(0);
@@ -73,11 +69,9 @@ namespace {
 
       RCP<Operator> Ptent; 
       coarseLevel.Examine("Ptent",Ptent);
-      //Ptent->describe(out,Teuchos::VERB_EXTREME);
 
       RCP<MultiVector> coarseNullSpace; 
       coarseLevel.Examine("Nullspace",coarseNullSpace);
-      //out << *coarseNullSpace << std::endl;
 
       //check interpolation
       RCP<MultiVector> PtN = MultiVectorFactory::Build(A->getRowMap(),NSdim);
@@ -88,8 +82,6 @@ namespace {
 
       //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
       diff->update(1.0,*nullSpace,-1.0,*PtN,0.0);
-
-      //out << *diff << std::endl;
 
       Teuchos::Array<ST::magnitudeType> norms(NSdim);
       diff->norm2(norms);

@@ -44,8 +44,7 @@ namespace {
   {
       out << "version: " << MueLu::Version() << std::endl;
 
-      //RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
-      RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(39);
+      RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(36);
       RCP<const Map> rowmap = A->getRowMap();
       RCP<Aggregates> aggregates = gimmeAggregates(A);
       GO numAggs = aggregates->GetNumAggregates();

@@ -300,7 +300,20 @@ namespace MueLu {
     static void MatrixPrint(RCP<Operator> const &Op, std::string const &label) {
 #ifdef HAVE_MUELU_EPETRA 
       RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
-      std::cout << "\n===============\n" << label << "\n==============" << std::endl;
+      int mypid = epOp->RowMap().Comm().MyPID();
+      if (mypid == 0)
+        std::cout << "\n===============\n" << label << "\n==============" << std::endl;
+
+      if (mypid == 0) std::cout << "\n   -- row map -- \n" << std::endl;
+      std::cout << epOp->RowMap() << std::endl;
+      sleep(1);
+      epOp->RowMap().Comm().Barrier();
+
+      if (mypid == 0) std::cout << "\n   -- column map -- \n" << std::endl;
+      std::cout << epOp->ColMap() << std::endl;
+      sleep(1);
+      epOp->RowMap().Comm().Barrier();
+
       std::cout << *epOp << std::endl;
 #endif
     }
@@ -440,28 +453,22 @@ namespace MueLu {
      char hostname[80];
      if (str != NULL) i++;
    
-     FILE * MueLu_capture_flag;
-     MueLu_capture_flag = fopen("MueLu_debug_now","r");
-     if(MueLu_capture_flag) {
-       i++;
-       fclose(MueLu_capture_flag);
+     int mypid = Comm.getRank();
+     int root = 0;
+     char buff;
+     FILE * MueLu_capture_flag=0;
+
+     if (mypid == 0) {
+       MueLu_capture_flag = fopen("MueLu_debug_now","r");
+       if (MueLu_capture_flag) {
+         buff = 'T';
+         fclose(MueLu_capture_flag);
+       } else 
+         buff = 'F';
      }
-   
-     GO mypid = Comm.getRank();
+     //Comm.broadcast(root,1,buff); //FIXME
 
-     //Comm.SumAll(&i, &j, 1);
-     /*
-     Teuchos::Array recvBuffer(1);
-     Teuchos::Array<Packet> sendBuff(count),
-     gatherAll(comm,count,&sendBuff[0],Ordinal(allRecvBuff.size()),&allRecvBuff[0]);
-
-     //FIXME
-     Teuchos::Array<GO> recvBuffer(1);
-     Teuchos::Array<GO> sendBuffer(1);
-     Comm.gatherAll(1,sendBuffer,1,recvBuffer);
-     */
-   
-     if (j != 0)
+     if (buff == 'T')
      {
        if (mypid  == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
        for (i = 0; i <Comm.getSize() ; i++) {
