@@ -1153,6 +1153,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
 
   mesh.modification_end();
 
+
   bool do_actual_test = false;  // FIXME - the following is the test we want to pass
   if (do_actual_test && 0 == p_rank)
     {
