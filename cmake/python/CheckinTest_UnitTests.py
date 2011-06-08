@@ -286,6 +286,9 @@ g_cmndinterceptsStatusPullPasses = \
 g_cmndinterceptsDiffOnlyPasses = \
   "IT: eg diff --name-status origin/currentbranch; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
 
+g_cmndinterceptsDiffOnlyNoChangesPasses = \
+  "IT: eg diff --name-status origin/currentbranch; 0; ''\n"
+
 g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos = \
   "IT: eg diff --name-status origin/currentbranch; 0; 'M\tteko/CMakeLists.txt'\n"
 
@@ -964,6 +967,38 @@ class test_checkin_test(unittest.TestCase):
       +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
       )
+
+
+  def test_abort_gracefully_if_no_enables(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "abort_gracefully_if_no_enables",
+      \
+      " --abort-gracefully-if-no-enables --do-all --push",
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsStatusPullPasses \
+      +g_cmndinterceptsDiffOnlyNoChangesPasses \
+      ,
+      \
+      True,
+      \
+      "Skipping configure because no packages are enabled and --abort-gracefully-if-no-enables!\n" \
+      +"subjectLine = .passed: Trilinos/MPI_DEBUG: skipped configure, build, test due to no enabled packages.\n" \
+      +"subjectLine = .passed: Trilinos/SERIAL_RELEASE: skipped configure, build, test due to no enabled packages.\n" \
+      +"0) MPI_DEBUG => passed: skipped configure, build, test due to no enabled packages => Not ready to push!\n" \
+      +"1) SERIAL_RELEASE => passed: skipped configure, build, test due to no enabled packages => Not ready to push!\n" \
+      +"MPI_DEBUG: Skipping sending build/test case email because there were no enables and --abort-gracefully-if-no-enables was set!\n"
+      +"SERIAL_RELEASE: Skipping sending build/test case email because there were no enables and --abort-gracefully-if-no-enables was set!\n"
+      +"Skipping sending final email because there were no enables and --abort-gracefully-if-no-enables was set!\n" \
+      +"ABORTED DUE TO NO ENABLES: Trilinos:\n" \
+      +"REQUESTED ACTIONS: PASSED\n" \
+      )
+
+
+  # ToDo: Add a test case where PS has not enables but SS does!
 
 
   def test_do_all_no_append_test_results_push_pass(self):
