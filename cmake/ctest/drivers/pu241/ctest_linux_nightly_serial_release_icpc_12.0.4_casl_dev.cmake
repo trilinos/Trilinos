@@ -3,7 +3,7 @@
 #
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.icpc.12.0.4.cmake")
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToCaslDevVera.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToCaslDev.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/casl-vri-packages-coupled.cmake")
 
 SET(COMM_TYPE SERIAL)
