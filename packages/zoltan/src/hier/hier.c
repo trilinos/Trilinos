@@ -1243,6 +1243,10 @@ div_t result;
   if (!hpp->spec){
     if (zz->Proc == 0){
       pnames = make_platform_name_string();
+      if (pnames == NULL){
+        ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
+        return ZOLTAN_MEMERR;
+      }
       i = strlen(pnames) + 2048;
       msg = (char *)ZOLTAN_MALLOC(i);
       if (!msg){
@@ -1510,7 +1514,7 @@ static int insert_unique_gnos_of_interest(HierPartParams *hpp,
       mid = (high+low)/2;
     }
     /* did we find it? */
-    if (hpp->gnos_of_interest[mid] == gno) return;
+    if (hpp->gnos_of_interest[mid] == gno) return ZOLTAN_OK;
   }
 
   /* no, insert it */
@@ -2959,7 +2963,7 @@ char *yo = "make_platform_name_string";
   msg = (char *)ZOLTAN_MALLOC(len);
   if (!msg){
     ZOLTAN_PRINT_ERROR(-1, yo, "Out of memory");
-    return ZOLTAN_MEMERR;
+    return NULL;
   }
   msg[0] = 0;
 
