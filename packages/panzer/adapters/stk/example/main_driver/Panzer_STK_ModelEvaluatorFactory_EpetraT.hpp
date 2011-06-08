@@ -10,6 +10,7 @@
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_MultiBlockMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
+#include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
@@ -285,6 +286,17 @@ namespace panzer_stk {
       eloc->x = Teuchos::rcp_const_cast<Epetra_Vector>(ep_me->get_x_init());
       
       panzer::evaluateInitialCondition(fmb->getWorksets(), phx_ic_field_managers, loc, 0.0);
+
+      // Push solution into ghosted epetra vector and then into stk for outputting
+      { 
+	Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap()));
+	Teuchos::RCP<Epetra_Import> importer = ep_lof->getGhostedImport();
+	ghosted_solution.PutScalar(0.0);
+	ghosted_solution.Import(*(eloc->x),*importer,Insert);
+	
+	write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
+			    ghosted_solution);
+      }
 
       if (is_transient)
 	mesh->writeToExodus(0.0);
