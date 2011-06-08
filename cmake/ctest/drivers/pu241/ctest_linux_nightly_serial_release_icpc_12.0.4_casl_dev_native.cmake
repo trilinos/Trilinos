@@ -6,9 +6,6 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.pu241.icpc.12.0.4.cma
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/SubmitToCaslDev.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/casl-vri-packages-native.cmake")
 
-message( "in ctest native: discovered that PVM_LIBRARY_DIRS is ${PVM_LIBRARY_DIRS}\n" )
-message( "in ctest native: discovered that PVM_INCLUDE_DIRS is ${PVM_INCLUDE_DIRS}\n" )
-
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME SERIAL_RELEASE_ICPC_NATIVEBUILDS)
