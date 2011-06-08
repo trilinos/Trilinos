@@ -576,6 +576,11 @@ clp.add_option(
   help="Do not enable forward Trilinos packages.", default=True )
 
 clp.add_option(
+  "--abort-gracefully-if-no-enables", dest="abortGracefullyIfNoEnables", action="store_true",
+  help="If set, then the script will abort gracefully if packages are enabled.",
+  default=False )
+
+clp.add_option(
   "--extra-cmake-options", dest="extraCmakeOptions", type="string", default="",
   help="Extra options to pass to 'cmake' after all other options." \
   +" This should be used only as a last resort.  To disable packages, instead use" \
@@ -800,6 +805,8 @@ if options.enableFwdPackages:
   print "  --enable-fwd-packages \\"
 else:
   print "  --no-enable-fwd-packages \\"
+if options.abortGracefullyIfNoEnables:
+  print "  --abort-gracefully-if-no-enables \\"
 print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
 if options.overallNumProcs:
   print "  -j"+options.overallNumProcs+" \\"

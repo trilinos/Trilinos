@@ -2,16 +2,12 @@
 // Name        : parallel_HK.cpp
 // Author      : Arif Khan
 // Email       : khan58@purdue.edu
-// Copyright   : Purdue University
+// Copyright   : Sandia National Labs
 // Description : Parallel Hopkroft_Karp in C++/openMP, Ansi-style
 //============================================================================
 
 #include"Isorropia_EpetraMatcher.hpp"
-#include <Isorropia_ConfigDefs.hpp>
 #include <Isorropia_Epetra.hpp>
-#include <Isorropia_EpetraPartitioner.hpp>
-#include <Isorropia_EpetraRedistributor.hpp>
-#include <Isorropia_EpetraCostDescriber.hpp>
 
 #ifdef HAVE_EPETRA
 //#ifdef HAVE_MPI
@@ -21,17 +17,12 @@
 //#endif
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
-#include <Epetra_Vector.h>
 #include <Epetra_Import.h>
 #ifdef HAVE_EPETRAEXT
 #include <EpetraExt_CrsMatrixIn.h>
 #endif
 
 #endif
-
-#include <Teuchos_CommandLineProcessor.hpp>
-
-#include <unistd.h>
 
 using namespace std;
 //__sync_fetch_and_add(&a,1);
@@ -75,34 +66,18 @@ void matcher::process_mtx_compressed(char *fname)
 	/*****************************************/
 	int rc=0;
 	#ifdef HAVE_EPETRAEXT
-	 // bool verbose = false;
-	  int localProc = 0;
-	//   std::string *fstr;
-
-	//#ifdef HAVE_MPI
-	  /*int numProcs;
-	  MPI_Init(&argc, &argv);
-	  MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
-	  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-	  const Epetra_MpiComm Comm(MPI_COMM_WORLD);
-	  const Epetra_MpiComm Comm;*/
-	  
-	//#else
+	 int localProc = 0;
+	
+	/*#ifdef HAVE_MPI
+		int numProcs;
+	 	MPI_Init(&argc, &argv);
+	  	MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
+	  	MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+	  	const Epetra_MpiComm Comm(MPI_COMM_WORLD);
+	  	const Epetra_MpiComm Comm;
+	#else*/
 	  const Epetra_SerialComm Comm;
 	//#endif
-
-	  //string *inputFile = new string("a.mtx");
-	  //const char *fname1 = inputFile->c_str();
-
-	  // Read in the matrix market file and distribute its rows across the
-	  // processes.
-	  //
-	  // This reader uses the default Epetra_Map for number of rows for the
-	  // RowMap() and for the RangeMap().  For non-square matrices it uses
-	  // the default Epetra_Map for the number of columns for the DomainMap(),
-	  // otherwise it uses the RowMap().
-	  //
-	  // The maps can be specified with other versions of MMFtoCrsMatrix().
 
 	  Epetra_CrsMatrix *matrixPtr;
 	  rc = EpetraExt::MatrixMarketFileToCrsMatrix(fname, Comm, matrixPtr);
@@ -113,7 +88,7 @@ void matcher::process_mtx_compressed(char *fname)
 		 exit(1);
 	  }
 	  else
-	  		cout<<"Crs Matrix Created!!!"<<endl;
+	  		cout<<"Crs Matrix Created!!!...."<<endl;
 	#else
 	  fail = 0;
 	  if (localProc == 0){
@@ -121,10 +96,7 @@ void matcher::process_mtx_compressed(char *fname)
 	  }
 	#endif
 
-	//#ifdef HAVE_MPI
-	  //MPI_Finalize();
-	//#endif
-
+	
 	rc=matrixPtr->ExtractCrsDataPointers(CRS_Pointers,CRS_Indices,CRS_Vals);
 	if(rc==0)
 		cout<<"Input Processing Done"<<endl;
@@ -149,7 +121,9 @@ int matcher::vlayer_clear()
 {
 	int i;
 	
+	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel for
+	#endif
 	for(i=0;i<V;i++)
 		vlayered[i]=0;
 		
@@ -161,7 +135,9 @@ int matcher::is_intersect(int k)
 	unsigned int i;
 	int flag=0;
 
+	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel for
+	#endif
 	for(i=0;i<vlist.size();i++)
 		if(mateV[vlist[i]]==-1)
 			flag=1;
@@ -175,7 +151,9 @@ void matcher::delete_matched_v()
 {
 	int i;
 	
+	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel for
+	#endif
 	for(i=0;i<V;i++)
 		if(LV[i].layer_num==k_star)
 			if(mateV[i]!=-1) // !=-1 means already has a mate,i.e., this node is matched...so remove it
@@ -187,13 +165,19 @@ void matcher::update_vlayered(int k)
 	int i;
 	if(vlist.size()>0)
 		vlist.clear();
+	
+	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel for schedule(dynamic, 126)
+	#endif
 	for(i=0;i<V;i++)
 	{		
 		if(LV[i].layer_num==k)
 		{	
 			vlayered[i]=1;     // updating_valayered...
+			
+			#ifdef ISORROPIA_HAVE_OMP
 			#pragma omp critical
+			#endif
 			vlist.push_back(i); //critical section
 		}
 	}
@@ -210,7 +194,9 @@ int matcher::construct_layered_graph()
 	tmp.layer_num=-1;
 	tmp.scanned=1;
 	
+	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel for
+	#endif
 	for(i=0;i<V;i++)
 	{	
 		LV[i].layer_num=-1;
@@ -220,7 +206,9 @@ int matcher::construct_layered_graph()
 	// Creating L0
 	if(icm>1)
 	{
+		#ifdef ISORROPIA_HAVE_OMP
 		#pragma omp parallel for
+		#endif
 		for(i=0;i<U;i++)     // if mateU[i]==-1 it means that it is not matched
 		{
 			if(mateU[i]==-1)
@@ -244,12 +232,15 @@ int matcher::construct_layered_graph()
 		nvlist.clear();
 		counting=0;
 		flag=0;
+		
 		//omp_set_num_threads(8);			
 		if(k==0)                
 		{
 				if(icm==1)
 				{
+					#ifdef ISORROPIA_HAVE_OMP
 					#pragma omp parallel for private(j,t)
+					#endif
 					for(i=0;i<U;i++)
 					{
 						LU[i].layer_num=0;
@@ -273,7 +264,9 @@ int matcher::construct_layered_graph()
 				}
 				else
 				{
+					#ifdef ISORROPIA_HAVE_OMP
 					#pragma omp parallel for private(j,t)
+					#endif
 					for(i=0;i<U;i++)
 					{
 						if(LU[i].layer_num==0)
@@ -300,7 +293,10 @@ int matcher::construct_layered_graph()
 		else
 		{
 			flag=0;
+			
+			#ifdef ISORROPIA_HAVE_OMP
 			#pragma omp parallel for private(j,t)
+			#endif
 			for(i=0;i<(signed)vlist.size();i++)
 			{
 				int id=mateV[vlist[i]];
@@ -342,7 +338,10 @@ int matcher::construct_layered_graph()
 		{
 			
 			//omp_set_num_threads(8);				
+			
+			#ifdef ISORROPIA_HAVE_OMP
 			#pragma omp parallel for private(j)
+			#endif
 			for(j=0;j<(signed)vlist.size();j++)
 			{
 				int id=mateV[vlist[j]];
@@ -374,7 +373,10 @@ int matcher::recursive_path_finder(int k, int p, vector<int>* path)
 			ind=LU[p].edgelist[i];
 			
 			res=0;
+			
+			#ifdef ISORROPIA_HAVE_OMP
 			#pragma omp critical
+			#endif
 			if(LV[ind].scanned==0)              /// I am locking the whole L 
 			{	
 				LV[ind].scanned=1;
@@ -423,7 +425,10 @@ int matcher::iterative_path_finder(int k, int p, vector<int>* path)
 		if(cur_k==k_star)
 		{	
 			res=0;
+			
+			#ifdef ISORROPIA_HAVE_OMP
 			#pragma omp critical
+			#endif
 			if(LV[cur_p].scanned==0)
 			{
 				LV[cur_p].scanned=1;
@@ -454,7 +459,10 @@ int matcher::iterative_path_finder(int k, int p, vector<int>* path)
 		else
 		{
 			res=0;
+			
+			#ifdef ISORROPIA_HAVE_OMP
 			#pragma omp critical
+			#endif
 			if(LV[cur_p].scanned==0)
 			{
 				LV[cur_p].scanned=1;
@@ -482,7 +490,10 @@ void matcher::find_set_del_M()
 	del_m.clear();
 	
 	//omp_set_num_threads(2);
+	
+	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel for
+	#endif
 	for(i=0;i<U;i++)
 	{
 		if(LU[i].layer_num==0)
@@ -492,13 +503,19 @@ void matcher::find_set_del_M()
 			if(k_star>2000)
 			{	
 				if(iterative_path_finder(0,i,path)==1)
+					
+					#ifdef ISORROPIA_HAVE_OMP
 					#pragma omp critical
+					#endif
 					del_m.push_back(*path);
 			}
 			else
 			{	
 				if(recursive_path_finder(0,i,path)==1)
+					
+					#ifdef ISORROPIA_HAVE_OMP
 					#pragma omp critical
+					#endif
 					del_m.push_back(*path);
 			}
 			delete path;
@@ -524,7 +541,10 @@ int matcher::augment_matching()
 	int i,j,count;
 
 	count=del_m.size();
+	
+	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel for private(j)
+	#endif
 	for(i=0;i<count;i++)
 	{
 		for(j=1;(unsigned)j<del_m[i].size()-2;j=j+2)
@@ -544,7 +564,9 @@ bool matcher::U0_empty()
 {
 	int i,flag=0;
 	
+	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel for
+	#endif
 	for(i=0;i<U;i++)
 		if(mateU[i]==-1)
 			flag=1;

@@ -26,14 +26,16 @@ fi
 
 TRILINOS_BASE_DIR_ABS=$(readlink -f $TRILINOS_BASE_DIR)
 
-EXTRA_REPOS_FULL_LIST="CASLBOA CASLRAVE LIMEExt PSSDriversExt"
+# Must be in the correct order (see ExtraExternalRepositories.casl_vri.cmake)
+EXTRA_REPOS_FULL_LIST="StartCCMExt DeCARTExt CASLBOA CASLRAVE LIMEExt PSSDriversExt"
+DRIVERS_BASE_DIR="$TRILINOS_BASE_DIR_ABS/Trilinos/cmake/ctest/drivers/pu241"
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/gcc-4.5.1-mpi-options.cmake
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-options.cmake
 " > MPI_DEBUG.config
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/gcc-4.5.1-serial-options.cmake
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=$DRIVERS_BASE_DIR/gcc-4.5.1-serial-options.cmake
 " > SERIAL_RELEASE.config
 
 #
@@ -42,28 +44,32 @@ echo "
 
 # note: the pvm dirs below can be removed when configure_options_files supports multiple fragments
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/intel-12.191-options.cmake
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=$DRIVERS_BASE_DIR/intel-12.0.4-options.cmake;$DRIVERS_BASE_DIR/SubmitToCaslDev.cmake;$DRIVERS_BASE_DIR/casl-vri-packages-coupled.cmake
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
 -DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
--DTPL_ENABLE_PVM:BOOL=ON
--DPVM_LIBRARY_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/lib/LINUX64'
--DPVM_INCLUDE_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/include'
--DVERA_COUPLED_BOA:BOOL=OFF
--DVERA_COUPLED_RAVE:BOOL=OFF
 -DDART_TESTING_TIMEOUT:STRING=660
 " > VERA_INTEL.config
 
 echo "
--DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${TRILINOS_BASE_DIR_ABS}/Trilinos/cmake/ctest/drivers/pu241/intel-12.191-options.cmake
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=$DRIVERS_BASE_DIR/intel-12.0.4-options.cmake;$DRIVERS_BASE_DIR/SubmitToCaslDev.cmake;$DRIVERS_BASE_DIR/casl-vri-packages-coupled.cmake
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
 -DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
--DTPL_ENABLE_PVM:BOOL=ON
--DPVM_LIBRARY_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/lib/LINUX64'
--DPVM_INCLUDE_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/include'
--DVERA_COUPLED_BOA:BOOL=ON
--DVERA_COUPLED_RAVE:BOOL=ON
 -DDART_TESTING_TIMEOUT:STRING=660
 " > VERA_INTEL_VERACOUPLINGS.config
+
+echo "
+-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=$DRIVERS_BASE_DIR/intel-12.0.4-options.cmake;$DRIVERS_BASE_DIR/SubmitToCaslDev.cmake;$DRIVERS_BASE_DIR/casl-vri-packages-native.cmake
+-DCMAKE_BUILD_TYPE:STRING=RELEASE
+-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
+-DTrilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=OFF
+-DTrilinos_ALL_PACKAGES:BOOL=OFF
+-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF
+-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
+-DTrilinos_ENABLE_TESTS:BOOL=ON
+-DTrilinos_ENABLE_CASLRAVE:BOOL=ON
+-DTrilinos_ENABLE_CASLBOA:BOOL=ON
+-DDART_TESTING_TIMEOUT:STRING=660
+" > VERA_INTEL_NATIVEBUILDS.config
 
 #
 # Load up the list of extra repos based on what is present:

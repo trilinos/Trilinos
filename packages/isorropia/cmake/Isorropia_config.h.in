@@ -14,3 +14,6 @@
 
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
+
+/* define if we want to use MPI */
+#cmakedefine ISORROPIA_HAVE_OMP

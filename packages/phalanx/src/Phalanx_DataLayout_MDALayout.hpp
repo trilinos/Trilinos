@@ -103,10 +103,8 @@ namespace PHX {
 
     virtual void dimensions(std::vector<size_type>& dim) const; 
 
-    //! Returns the name of the input ordinal
     virtual std::string name(size_type ordinal) const;
 
-    //! Returns the names of all ordinals in a vector
     virtual void names(std::vector<std::string>& names) const; 
 
     virtual size_type size() const;
