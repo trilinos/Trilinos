@@ -1076,7 +1076,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
 {
-  // A family tree is a higher-rank entity (rank = element_rank() + 1) that 
+  // A family tree is a higher-rank entity (rank = element_rank() + 1) that
   //   has down-relations to elements used, for example, to hold parent/child
   //   relations in an adapted mesh.
   //
@@ -1086,10 +1086,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   //
   // To test this, we use the mesh above, with elem 1 going on rank 0 and
   // elem 2 going on rank 1. Nodes 3,4 are shared. After the mesh is set up
-  // we add two rank-3 (family tree) entities and have them point down to 
+  // we add two rank-3 (family tree) entities and have them point down to
   // just the single rank-2 elements.  Then we check that they are properly
   // ghosted after modification_end.
-
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -1105,7 +1104,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   unsigned p_rank = mesh.parallel_rank();
   unsigned p_size = mesh.parallel_size();
 
-  // Bail if we only have one proc
+  // test below only setup for 2 procs
   if (p_size !=  2) {
     return;
   }
@@ -1116,7 +1115,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   EntityVector nodes;
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
   const EntityRank family_tree_rank = meta_data.element_rank() + 1;
-  std::cout << "family_tree_rank= " << family_tree_rank << std::endl;
 
   if (p_rank < 2) {
     // We're just going to add everything to the universal part
@@ -1153,11 +1151,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
 
   mesh.modification_end();
 
+  const EntityId my_family_tree_id = p_rank+1;
 
-  bool do_actual_test = false;  // FIXME - the following is the test we want to pass
+  // FIXME - the following is the test we want to pass but is currently failing due to a possible bug in stk_mesh
+  bool do_actual_test = false;  
   if (do_actual_test && 0 == p_rank)
     {
-      const EntityId my_family_tree_id = p_rank+1;
       const EntityId my_expected_ghosted_family_tree_id = p_rank+2;
       Entity *my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
       Entity *my_expected_ghosted_family_tree = mesh.get_entity(family_tree_rank, my_expected_ghosted_family_tree_id);
@@ -1172,7 +1171,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   if (do_verify_nodes_test)
     {
       // do this for all procs
-      const EntityId my_family_tree_id = p_rank+1;
       const EntityId my_element_id = my_family_tree_id;
       Entity *my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
       Entity *my_element = mesh.get_entity(meta_data.element_rank(), my_element_id);
