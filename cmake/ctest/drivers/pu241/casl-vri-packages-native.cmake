@@ -12,22 +12,9 @@
 #    source /opt/casldev/env/casl_dev_env.sh
 #
 
+INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/casl-vri-tpls.cmake)
+
 SET(Trilinos_EXTRAREPOS_FILE "${CTEST_SCRIPT_DIRECTORY}/ExtraExternalRepositories.casl_vri.cmake")
 SET(Trilinos_PACKAGES CASLBOA CASLRAVE LIME VRIPSS)
-SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTPL_ENABLE_JDK:BOOL=ON"
-  "-DJDK_LIBRARY_DIRS='/usr/lib/jvm/java/jre/lib/amd64/server'"
-  "-DJDK_INCLUDE_DIRS='/usr/lib/jvm/java/include'"
-  "-DTPL_ENABLE_OpenSSL:BOOL=ON"
-  "-DTPL_ENABLE_LIBXML2:BOOL=ON"
-  "-DTPL_ENABLE_HDF5CPP:BOOL=ON"
-  "-DTPL_ENABLE_Zlib:BOOL=ON"
-  "-DTPL_ENABLE_TCL:BOOL=ON"
-  "-DTCL_LIBRARY_NAMES='tcl8.5'"
-  "-DTPL_ENABLE_PVM:BOOL=ON"
-  "-DPVM_LIBRARY_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/lib/LINUX64'"
-  "-DPVM_INCLUDE_DIRS:PATH='/opt/intel-11.1.064/tpls/pvm3/include'"
-  "-DVERA_COUPLED_BOA:BOOL=OFF"
-  "-DVERA_COUPLED_RAVE:BOOL=OFF"
-  )
-
+SET(VERA_COUPLED_BOA  OFF CACHE BOOL "")
+SET(VERA_COUPLED_RAVE OFF CACHE BOOL "")
