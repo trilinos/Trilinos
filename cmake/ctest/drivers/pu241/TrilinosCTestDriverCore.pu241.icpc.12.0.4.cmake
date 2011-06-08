@@ -20,10 +20,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # We don't have TPLs for PyTrilinos, Optika, and TriKota
   # There is some strange problem with TrilinosFramework causing an strange error.
-  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES TrilinosFramework PyTrilinos TriKota Optika)
-
-  # Enable LIME since it is EX currently
-  SET(Trilinos_ADDITIONAL_PACKAGES CASLBOA CASLRAVE LIME)
+  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES
+     PyTrilinos TriKota Optika 
+     TrilinosFramework 
+     )
   
   SET_DEFAULT(COMPILER_VERSION "ICPC-12.0.4")
   

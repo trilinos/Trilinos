@@ -1,7 +1,7 @@
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-12.0.4-options.cmake)
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/boost-1.46.1-options.cmake)
 
-SET(INTEL_BIN ${INTEL_12_0_4_ROOT}/bin/intel64)
+SET(INTEL_BIN /opt/intel/Compiler/composerxe-2011.4.191/bin/intel64)
 
 SET(CMAKE_SKIP_RPATH ON BOOL "")
 #SET(BUILD_SHARED_LIBS ON CACHE BOOL "")
