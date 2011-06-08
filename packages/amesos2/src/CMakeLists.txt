@@ -81,6 +81,7 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+  Amesos2.hpp
   Amesos2_Control.hpp
   Amesos2_Factory.hpp
   Amesos2_Factory_decl.hpp

@@ -506,24 +506,24 @@ MatrixAdapter<Epetra_RowMatrix>::getCcsAll(
 }
 
 
-void
-MatrixAdapter<Epetra_RowMatrix>::updateValuesCrs(
-  const Teuchos::ArrayView<scalar_type> nzval,
-  const Teuchos::ArrayView<global_ordinal_type> colind,
-  const Teuchos::ArrayView<global_size_type> rowptr)
-{
-  // TODO: implement!
-}
+// void
+// MatrixAdapter<Epetra_RowMatrix>::updateValuesCrs(
+//   const Teuchos::ArrayView<scalar_type> nzval,
+//   const Teuchos::ArrayView<global_ordinal_type> colind,
+//   const Teuchos::ArrayView<global_size_type> rowptr)
+// {
+//   // TODO: implement!
+// }
   
 
-void
-MatrixAdapter<Epetra_RowMatrix>::updateValuesCcs(
-  const Teuchos::ArrayView<scalar_type> nzval,
-  const Teuchos::ArrayView<global_ordinal_type> rowind,
-  const Teuchos::ArrayView<global_size_type> colptr)
-{
-  // TODO: implement!
-}
+// void
+// MatrixAdapter<Epetra_RowMatrix>::updateValuesCcs(
+//   const Teuchos::ArrayView<scalar_type> nzval,
+//   const Teuchos::ArrayView<global_ordinal_type> rowind,
+//   const Teuchos::ArrayView<global_size_type> colptr)
+// {
+//   // TODO: implement!
+// }
 
 
 std::string
@@ -536,13 +536,13 @@ MatrixAdapter<Epetra_RowMatrix>::description() const
 }
 
 
-void
-MatrixAdapter<Epetra_RowMatrix>::describe(
-  Teuchos::FancyOStream& os,
-  const Teuchos::EVerbosityLevel verbLevel) const
-{
-  // TODO: implement!
-}
+// void
+// MatrixAdapter<Epetra_RowMatrix>::describe(
+//   Teuchos::FancyOStream& os,
+//   const Teuchos::EVerbosityLevel verbLevel) const
+// {
+//   // TODO: implement!
+// }
 
 
 const char* MatrixAdapter<Epetra_RowMatrix>::name

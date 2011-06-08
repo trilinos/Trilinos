@@ -8,8 +8,6 @@
  *         parameters are specified by an input XML file.
  */
 
-#include "Amesos2_config.h"
-
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TestingHelpers.hpp>
@@ -20,6 +18,11 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Comm.hpp>
+
+#include <Tpetra_DefaultPlatform.hpp>
+#include <MatrixMarket_Tpetra.hpp> // For reading matrix-market files
+
+#include "Amesos2.hpp"          // includes everything from Amesos2
 
 #ifdef HAVE_AMESOS2_EPETRAEXT
 #ifdef HAVE_MPI
@@ -34,10 +37,6 @@
 #include <EpetraExt_CrsMatrixIn.h>
 #endif	// HAVE_AMESOS2_EPETRAEXT
 
-#include <Tpetra_DefaultPlatform.hpp>
-#include <MatrixMarket_Tpetra.hpp> // For reading matrix-market files
-
-#include <Amesos2.hpp>          // includes everything from Amesos2
 
 using std::string;
 
@@ -234,11 +233,11 @@ bool do_mat_test(const ParameterList& parameters)
 	 * move to nonmember constructors
 	 * (i.e. Amesos::create<MAT,MV>("solver"); )
 	 */
-	if( Amesos::Factory<int,int>::query(solver_name) ){
+	if( Amesos::query(solver_name) ){
 	  // then we have support for this solver
 
 	  if( verbosity > 1) *fos << "  - with " << solver_name << " : " << std::endl;
-	  
+
 	  ParameterList test_params = Teuchos::getValue<ParameterList>(parameters.entry(solver_it));
 	  bool solver_success = test_mat_with_solver(mm_file, solver_name, test_params, solve_params);
 
@@ -248,7 +247,7 @@ bool do_mat_test(const ParameterList& parameters)
 	    else *fos << "failed";
 	    *fos << std::endl;
 	  }
-	  
+
 	  success &= solver_success;
 	} else {
 	  if( verbosity > 1 ) *fos << "  - " << solver_name << " not enabled, skipping..." << std::endl;
@@ -263,10 +262,10 @@ bool do_mat_test(const ParameterList& parameters)
     }
     if( !success ) *fos << "failed!";
     else *fos << "passed";
-    
+
     *fos << std::endl;
   }
-  
+
   return( success );
 }
 
@@ -294,7 +293,7 @@ bool test_mat_with_solver(const string& mm_file,
 #else
 	if( verbosity > 1 ){
 	  *fos << "EpetraExt must be enabled for testing of epetra objects.  Skipping this test."
-	       << std::end;
+	       << std::endl;
 	}
 #endif
       } else if( object_name == "tpetra" ){
@@ -327,12 +326,10 @@ bool do_epetra_test(const string& mm_file,
   typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 5;     // arbitrary number
 
-  bool transpose;
+  bool transpose = false;
   if( solve_params.isParameter("transpose") ){
     if( solve_params.get<bool>("transpose") ){
       transpose = true;
-    } else {
-      transpose = false;
     }
   }
 
@@ -377,7 +374,7 @@ bool do_epetra_test(const string& mm_file,
 
   RCP<MAT> A_rcp(A);
   RCP<Amesos::SolverBase> solver
-    = Amesos::Factory<MAT,MV>::create(solver_name, A_rcp, Xhat, B );
+    = Amesos::create<MAT,MV>(solver_name, A_rcp, Xhat, B );
 
   solver->setParameters( rcpFromRef(solve_params) );
   try {
@@ -473,12 +470,10 @@ bool do_tpetra_test_with_types(const string& mm_file,
   typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 5;     // arbitrary number
 
-  bool transpose;
+  bool transpose = false;
   if( solve_params.isParameter("transpose") ){
     if( solve_params.get<bool>("transpose") ){
       transpose = true;
-    } else {
-      transpose = false;
     }
   }
 
@@ -516,7 +511,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
   A->apply(*X,*B,trans);
 
   RCP<Amesos::SolverBase> solver
-    = Amesos::Factory<MAT,MV>::create(solver_name, A, Xhat, B );
+    = Amesos::create<MAT,MV>(solver_name, A, Xhat, B );
 
   solver->setParameters( rcpFromRef(solve_params) );
   try {

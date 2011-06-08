@@ -59,6 +59,7 @@
 #include <Teuchos_CommHelpers.hpp>
 
 #include <Tpetra_Map.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
 
 #include <Epetra_RowMatrix.h>
 #include <Epetra_Map.h>
@@ -285,7 +286,7 @@ public:
   void updateValuesCrs(
     const Teuchos::ArrayView<scalar_type> nzval,
     const Teuchos::ArrayView<global_ordinal_type> colind,
-    const Teuchos::ArrayView<global_size_type> rowptr);
+    const Teuchos::ArrayView<global_size_type> rowptr) {}
 
 
 /**
@@ -300,7 +301,7 @@ public:
   void updateValuesCcs(
     const Teuchos::ArrayView<scalar_type> nzval,
     const Teuchos::ArrayView<global_ordinal_type> rowind,
-    const Teuchos::ArrayView<global_size_type> colptr);
+    const Teuchos::ArrayView<global_size_type> colptr) {}
 
 
   /// Get a short description of this adapter class
@@ -310,7 +311,7 @@ public:
   /// Print a description of this adapter to the Fancy Output Stream.
   void describe(
     Teuchos::FancyOStream& os,
-    const Teuchos::EVerbosityLevel verbLevel) const;
+    const Teuchos::EVerbosityLevel verbLevel) const {}
 
 
 private:

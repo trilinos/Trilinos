@@ -55,7 +55,6 @@
 
 #include <Teuchos_Ptr.hpp>
 
-#include "Amesos2_MatrixAdapter.hpp"
 
 using Tpetra::CrsMatrix;
 

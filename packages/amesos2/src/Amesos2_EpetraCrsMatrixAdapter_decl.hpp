@@ -55,7 +55,7 @@
 #include <Epetra_CrsMatrix.h>
 
 #include "Amesos2_MatrixAdapter_decl.hpp"
-#include "Amesos2_EpetraRowMatrixAdapter.hpp"
+#include "Amesos2_EpetraRowMatrixAdapter_decl.hpp"
 
 namespace Amesos {
 

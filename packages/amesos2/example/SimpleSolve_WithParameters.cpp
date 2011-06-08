@@ -62,8 +62,8 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-#include <Amesos2.hpp>
-#include <Amesos2_Version.hpp>
+#include "Amesos2.hpp"
+#include "Amesos2_Version.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Constructor from Factory
-  RCP<Amesos::SolverBase> solver = Amesos::Factory<MAT,MV>::create("Superlu",A,X,B);
+  RCP<Amesos::SolverBase> solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
 
   // Create a Teuchos::ParameterList to hold solver parameters
   Teuchos::ParameterList params;

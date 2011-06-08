@@ -43,7 +43,7 @@
 
 /**
    \file   Amesos2_Superlu_TypeMap.hpp
-   \author Eric Bavier <etbavier@etbavier@sandia.gov>
+   \author Eric Bavier <etbavie@sandia.gov>
    \date   Mon May 31 23:12:32 2010
 
    \brief Provides definition of SuperLU types as well as conversions and type

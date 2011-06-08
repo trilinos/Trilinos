@@ -56,7 +56,7 @@
 #include <complex>
 
 #include "Amesos2_FunctionMap.hpp"
-#include "Amesos2_MatrixAdapter.hpp"
+// #include "Amesos2_MatrixAdapter.hpp"
 #include "Amesos2_Superlu_TypeMap.hpp"
 
 

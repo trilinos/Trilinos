@@ -59,8 +59,8 @@
 #define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
 #include <Tpetra_MatrixIO.hpp>
 
-#include <Amesos2.hpp>
-#include <Amesos2_Version.hpp>
+#include "Amesos2.hpp"
+#include "Amesos2_Version.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
   // Constructor from Factory
   RCP<Amesos::SolverBase> solver;
   try{
-    solver = Amesos::Factory<MAT,MV>::create("Superlu",A,X,B);
+    solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
 
     solver->symbolicFactorization().numericFactorization().solve();
 

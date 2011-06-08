@@ -44,7 +44,7 @@
 #ifndef AMESOS2_TYPEMAP_HPP
 #define AMESOS2_TYPEMAP_HPP
 
-#include "Teuchos_ScalarTraits.hpp"
+#include <Teuchos_ScalarTraits.hpp>
 
 namespace Amesos {
 

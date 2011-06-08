@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -46,12 +46,14 @@
    \author Eric Bavier <etbavier@sandia.gov>
    \date   Thu Jul  8 22:57:26 2010
 
-   \brief  Templated Amesos2 solver Factory. Definitions.
+   \brief  Templated Amesos2 solver factory methods. Definitions.
 */
 
 
 #ifndef AMESOS2_FACTORY_DEF_HPP
 #define AMESOS2_FACTORY_DEF_HPP
+
+#include "Amesos2_config.h"
 
 #include <Teuchos_RCP.hpp>
 
@@ -69,7 +71,7 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   RCP<SolverBase>
-  Factory<Matrix,Vector>::create(Matrix* A, Vector* X, Vector* B)
+  create(Matrix* A, Vector* X, Vector* B)
   {
     std::string solver = "Klu2";
     // Pass non-owning RCP objects to other factory method
@@ -80,7 +82,7 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   RCP<SolverBase>
-  Factory<Matrix,Vector>::create(RCP<Matrix> A, RCP<Vector> X, RCP<Vector> B)
+  create(RCP<Matrix> A, RCP<Vector> X, RCP<Vector> B)
   {
     std::string solver = "Klu2";
     return( create(solver, A, X, B) );
@@ -90,7 +92,7 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   RCP<SolverBase>
-  Factory<Matrix,Vector>::create(const char* solverName, Matrix* A, Vector* X, Vector* B)
+  create(const char* solverName, Matrix* A, Vector* X, Vector* B)
   {
     std::string solver = solverName;
     // Pass non-owning RCP objects to other factory method
@@ -101,10 +103,10 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   RCP<SolverBase>
-  Factory<Matrix,Vector>::create(const char* solverName,
-				 const RCP<Matrix> A,
-				 const RCP<Vector> X,
-				 const RCP<Vector> B)
+  create(const char* solverName,
+	 const RCP<Matrix> A,
+	 const RCP<Vector> X,
+	 const RCP<Vector> B)
   {
     std::string solver = solverName;
     return( create(solver, A, X, B) );
@@ -114,7 +116,7 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   RCP<SolverBase>
-  Factory<Matrix,Vector>::create(const std::string solverName, Matrix* A, Vector* X, Vector* B)
+  create(const std::string solverName, Matrix* A, Vector* X, Vector* B)
   {
     // Pass non-owning RCP objects to other factory method
     return( create(solverName, rcp(A,false), rcp(X,false), rcp(B,false)) );
@@ -124,14 +126,14 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   RCP<SolverBase>
-  Factory<Matrix,Vector>::create(const std::string solver_name,
-				 const RCP<Matrix> A,
-				 const RCP<Vector> X,
-				 const RCP<Vector> B)
+  create(const std::string solver_name,
+	 const RCP<Matrix> A,
+	 const RCP<Vector> X,
+	 const RCP<Vector> B)
   {
     std::string solverName = tolower(solver_name); // for easy string checking
     // Check for our native solver first.
-    // 
+    //
     // Remove compiler guards once interface is finalized, since we will always include it?
 #ifdef HAVE_AMESOS2_KLU2
     if((solverName == "amesos2_klu2") || (solverName == "klu2")){
@@ -228,17 +230,16 @@ namespace Amesos {
   }
 
 
-  template <class Matrix,
-	    class Vector >
-  bool Factory<Matrix,Vector>::query(const char* solverName){
+  /**********************
+   *   QUERY function   *
+   **********************/
+
+  bool query(const char* solverName){
     std::string solver = solverName;
     return( query(solver) );
   }
 
-
-  template <class Matrix,
-	    class Vector >
-  bool Factory<Matrix,Vector>::query(const std::string solver_name){
+  bool query(const std::string solver_name){
     std::string solverName = tolower(solver_name); // for easier string checking
 #ifdef HAVE_AMESOS2_KLU2
     if((solverName == "amesos2_klu2") || (solverName == "klu2")){
@@ -340,14 +341,6 @@ namespace Amesos {
       }
     return rtn;
   }
-
-
-  // Here in Amesos.cpp there is a function defined getValidParameters.
-  // We decided it would be best to have such functionality be part of
-  // the Solver class, with some functionality being delegated to the
-  // solver implementations
-
-
 } // end namespace Amesos
 
-#endif	// AMESOS2_FACTORY_DEF_HPP
+#endif  // AMESOS2_FACTORY_DEF_HPP

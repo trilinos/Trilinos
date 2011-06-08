@@ -44,8 +44,8 @@
 #ifndef AMESOS2_MATRIXHELPER_HPP
 #define AMESOS2_MATRIXHELPER_HPP
 
-#include "Amesos2_MatrixAdapter.hpp"
-#include "Amesos2_MultiVecAdapter.hpp"
+// #include "Amesos2_MatrixAdapter.hpp"
+// #include "Amesos2_MultiVecAdapter.hpp"
 
 namespace Amesos {
 

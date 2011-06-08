@@ -63,9 +63,8 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <MatrixMarket_Tpetra.hpp> // for loading matrices from file
 
-#include "Amesos2_Factory.hpp"
+#include "Amesos2.hpp"
 #include "Amesos2_Util_is_same.hpp"
-#include "Amesos2_Superlu.hpp"
 
 #define DEBUG
 
@@ -161,7 +160,7 @@ namespace {
   AMat->apply(*X,*B,trans);						\
 									\
   RCP<Amesos::SolverBase> solver					\
-  = Amesos::Factory<MAT,MV>::create("Superlu", AMat, Xhat, B );		\
+  = Amesos::create<MAT,MV>("Superlu", AMat, Xhat, B );			\
 									\
   Teuchos::ParameterList params;					\
   if( transpose ){							\

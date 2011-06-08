@@ -42,21 +42,41 @@
 // @HEADER
 
 /**
-  \file   Amesos2_Factory_decl.hpp
-  \author Eric T Bavier <etbavier@sandia.gov>
-  \date   Thu Dec 31 10:32:08 2009
-
-  \brief  Amesos2 Abstract Factory for producing solver interfaces. Declarations.
-*/
+ * \file   Amesos2_Factory_decl.hpp
+ * \author Eric Bavier <etbavie@sandia.gov>
+ * \date   Tue Jun  7 16:25:16 2011
+ * 
+ * \brief  Contains declarations for Amesos::create and Amesos::query.
+ *
+ * Amesos2 defines the nonmember factory method \c Amesos::create for
+ * creating instances of Amesos2 solvers.  The \c Amesos::query
+ * function can be used to ask Amesos2 at runtime whether a particular
+ * solver is supported.
+ * 
+ * \attention
+ * Users should favour these factory methods for creating Amesos2 solver
+ * instances over explicitly instantiating their own.
+ *
+ * \note A solver's third-party library must be enabled in the
+ * Trilinos build, and Amesos2 must be also told to enable it.  Put
+ * <tt>Amesos2_ENABLE_<i>SOLVERNAME</i>:BOOL=ON</tt> in your Trilinos
+ * configuration script to do this, where <i>SOLVERNAME</i> is the
+ * name of the solver you would like to enable.
+ *
+ * \section usage Example Usage
+ *
+ * \code
+ * typedef Tpetra::CrsMatrix<double,int> MAT;
+ * typedef Tpetra::MultiVector<double,int> VEC;
+ * // ... Create A of type RCP<MAT>, and X and B of type RCP<VEC> ...
+ * RCP<Amesos::SolverBase> solver = Amesos::create<MAT,VEC>("Superlu", A, X, B);
+ * \endcode
+ */
 
 #ifndef AMESOS2_FACTORY_DECL_HPP
 #define AMESOS2_FACTORY_DECL_HPP
 
-#include <Teuchos_RCP.hpp>
-
 #include "Amesos2_config.h"
-
-#include "Amesos2_SolverBase.hpp"
 
 #ifdef HAVE_AMESOS2_KLU2
 #include "Amesos2_Klu2.hpp"
@@ -104,34 +124,7 @@ using Teuchos::rcp;
 
 namespace Amesos {
 
-
-/**
- * \brief Abstract Factory for creating instances of Amesos2 Solver interfaces.
- *
- * \attention
- * Users should favour these static factory methods for creating Amesos2 solver
- * instances over explicitly instantiating their own.
- *
- * \note A solver's third-party library must be enabled in the Trilinos build,
- * and Amesos must be also told to enable it.  Put
- * <tt>Amesos2_ENABLE_<i>SOLVERNAME</i>:BOOL=ON</tt> in your Trilinos
- * configuration script to do this, where <i>SOLVERNAME</i> is the name of the
- * solver you would like to enable.
- *
- * \section usage Example Usage
- *
- * \code
- * typedef Tpetra::CrsMatrix<double,int> MAT;
- * typedef Tpetra::MultiVector<double,int> VEC;
- * // ... Create A of type RCP<MAT>, and X and B of type RCP<VEC> ...
- * RCP<SolverBase> solver = Factory<MAT,VEC>::create("Superlu", A, X, B);
- * \endcode
- *
- */
-template <typename Matrix,
-          typename Vector >
-class Factory {
-public:
+  class SolverBase;
 
   /**
    * \brief Creates an Amesos2 Solver interface with Matrix A, LHS vector X,
@@ -145,7 +138,9 @@ public:
    *
    * \return A <tt>Teuchos::RCP</tt> to a KLU2 solver interface.
    */
-  static Teuchos::RCP<SolverBase>
+  template <typename Matrix,
+	    typename Vector >
+  Teuchos::RCP<SolverBase>
   create(Matrix* A, Vector* X, Vector* B);
 
 
@@ -161,11 +156,12 @@ public:
    *
    * \return A <tt>Teuchos::RCP</tt> to a KLU2 solver interface.
    */
-  static Teuchos::RCP<SolverBase>
-  create(
-    Teuchos::RCP<Matrix> A,
-    Teuchos::RCP<Vector> X,
-    Teuchos::RCP<Vector> B);
+  template <typename Matrix,
+	    typename Vector >
+  Teuchos::RCP<SolverBase>
+  create(Teuchos::RCP<Matrix> A,
+	 Teuchos::RCP<Vector> X,
+	 Teuchos::RCP<Vector> B);
 
 
   /**
@@ -183,7 +179,9 @@ public:
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    */
-  static Teuchos::RCP<SolverBase>
+  template <typename Matrix,
+	    typename Vector >
+  Teuchos::RCP<SolverBase>
   create(const char* solverName, Matrix* A, Vector* X, Vector* B);
 
 
@@ -201,12 +199,13 @@ public:
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    */
-  static Teuchos::RCP<SolverBase>
-  create(
-    const char* solverName,
-    const Teuchos::RCP<Matrix> A,
-    const Teuchos::RCP<Vector> X,
-    const Teuchos::RCP<Vector> B);
+  template <typename Matrix,
+	    typename Vector >
+  Teuchos::RCP<SolverBase>
+  create(const char* solverName,
+	 const Teuchos::RCP<Matrix> A,
+	 const Teuchos::RCP<Vector> X,
+	 const Teuchos::RCP<Vector> B);
 
 
   /**
@@ -223,7 +222,9 @@ public:
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    */
-  static Teuchos::RCP<SolverBase>
+  template <typename Matrix,
+	    typename Vector >
+  Teuchos::RCP<SolverBase>
   create(const std::string solverName, Matrix* A, Vector* X, Vector* B);
 
 
@@ -241,12 +242,13 @@ public:
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    */
-  static Teuchos::RCP<SolverBase>
-  create(
-    const std::string solverName,
-    const Teuchos::RCP<Matrix> A,
-    const Teuchos::RCP<Vector> X,
-    const Teuchos::RCP<Vector> B);
+  template <typename Matrix,
+	    typename Vector >
+  Teuchos::RCP<SolverBase>
+  create(const std::string solverName,
+	 const Teuchos::RCP<Matrix> A,
+	 const Teuchos::RCP<Vector> X,
+	 const Teuchos::RCP<Vector> B);
 
 
   /**
@@ -254,7 +256,7 @@ public:
    *
    * \return \c true if the solver is supported.
    */
-  static bool query(const char* solverName);
+  bool query(const char* solverName);
 
 
   /**
@@ -262,17 +264,8 @@ public:
    *
    * \return \c true if the solver is supported.
    */
-  static bool query(const std::string solverName);
+  bool query(const std::string solverName);
 
-
-  // TODO: Here in Amesos.cpp there is a function defined
-  // getValidParameters.  I wonder if it would be more appropriate
-  // to define this function in the base Solver and concrete Solver
-  // classes instead.
-
-};				// end class Amesos2::Factory
-
-
-} // end namespace Amesos
+}
 
 #endif	// AMESOS2_FACTORY_DECL_HPP

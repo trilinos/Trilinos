@@ -64,8 +64,8 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-#include <Amesos2.hpp>
-#include <Amesos2_Version.hpp>
+#include "Amesos2.hpp"
+#include "Amesos2_Version.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
   RCP<MV> B = rcp(new MV(map,tuple<Scalar>(-7,18,3,17,18,28),nrows,numVectors));
 
   // Create solver interface to Superlu through Amesos::Factory
-  RCP<Amesos::SolverBase> solver = Amesos::Factory<MAT,MV>::create("Superlu",A,X,B);
+  RCP<Amesos::SolverBase> solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
 
   solver->symbolicFactorization().numericFactorization().solve();
 

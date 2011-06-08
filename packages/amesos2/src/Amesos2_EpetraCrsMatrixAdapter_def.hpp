@@ -52,6 +52,8 @@
 #ifndef AMESOS2_EPETRA_CRSMATRIX_ADAPTER_DEF_HPP
 #define AMESOS2_EPETRA_CRSMATRIX_ADAPTER_DEF_HPP
 
+#include "Amesos2_EpetraRowMatrixAdapter_def.hpp"
+
 namespace Amesos {
 
 
