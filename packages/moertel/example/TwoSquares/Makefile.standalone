@@ -17,15 +17,15 @@ TRILINOS_HOME = /Users/hansga/root/usr/local/trilinos-10.6/OSX_BIN
 ## Note some of these may be defined
 ## in environment variables.
 
-#use_Trios = yes
+#use_seacas = yes
 
 
 include $(TRILINOS_HOME)/include/Makefile.export.Moertel
 include $(TRILINOS_HOME)/include/Makefile.export.Ifpack
 
-# if using Trios for ExodusII support
-ifeq ($(use_Trios),yes)
-include $(TRILINOS_HOME)/include/Makefile.export.Trios
+# if using SEACAS for ExodusII support
+ifeq ($(use_seacas),yes)
+include $(TRILINOS_HOME)/include/Makefile.export.seacas
 endif
 
 #MOERTEL_CXX_FLAGS = -g 
@@ -42,10 +42,10 @@ endif
 #	$(Moertel_INCLUDE_DIRS) -I.. -DHAVE_MOERTEL_EXODUS
 #
 #
-# Using Trios
-ifeq ($(use_Trios),yes)
-COMPILE_FLAGS = $(Moertel_CXX_FLAGS) $(Trios_TPL_INCLUDE_DIRS) \
-	$(Moertel_INCLUDE_DIRS) $(Trios_TPL_LIBRARIES) $(Ifpack_TPL_INCLUDE_DIRS) -I.. -DHAVE_MOERTEL_EXODUS
+# Using seacas
+ifeq ($(use_seacas),yes)
+COMPILE_FLAGS = $(Moertel_CXX_FLAGS) $(SEACAS_TPL_INCLUDE_DIRS) \
+	$(Moertel_INCLUDE_DIRS) $(SEACAS_TPL_LIBRARIES) $(Ifpack_TPL_INCLUDE_DIRS) -I.. -DHAVE_MOERTEL_EXODUS
 else
 COMPILE_FLAGS = $(Moertel_CXX_FLAGS)  $(Moertel_INCLUDE_DIRS) $(Ifpack_TPL_INCLUDE_DIRS) -I..
 endif
@@ -58,9 +58,9 @@ endif
 
 
 
-# Using Trios
-ifeq ($(use_Trios),yes)
-LINK_FLAGS = $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) $(Trios_LIBRARIES) $(Trios_TPL_LIBRARIES) \
+# Using seacas
+ifeq ($(use_seacas),yes)
+LINK_FLAGS = $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) $(SEACAS_LIBRARIES) $(SEACAS_TPL_LIBRARIES) \
 			 $(Ifpack_TPL_LIBRARY_DIRS) $(Ifpack_TPL_LIBRARIES) -lgaleri
 else
 LINK_FLAGS = $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) \

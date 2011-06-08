@@ -50,7 +50,7 @@ point to the location of your netcdf installation.
 and specify the compiler and other options as detailed in the
 file. Then, do "make -f Makefile.standalone".
 
-4. Building in the Trilinos system as part of the Trios package. 
+4. Building in the Trilinos system as part of the seacas package. 
 See the Trilinos documentation for more details.
 
 Once you have built the library, you can test it by typing "make

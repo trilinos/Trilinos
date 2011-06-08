@@ -169,8 +169,13 @@
       <Email address="pamgen-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="Trios">
+  <SubProject name="SEACAS">
     <Dependency name="Pamgen" type="LO"/>
+    <EmailAddresses>
+      <Email address="seacas-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
+  <SubProject name="Trios">
     <EmailAddresses>
       <Email address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -414,7 +419,7 @@
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Pamgen" type="ILO"/>
-    <Dependency name="Trios" type="LO"/>
+    <Dependency name="SEACAS" type="LO"/>
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
     <Dependency name="FEI" type="LO"/>
@@ -489,7 +494,7 @@
     <Dependency name="Galeri" type="TR"/>
     <Dependency name="Amesos" type="LR"/>
     <Dependency name="Pamgen" type="ILO"/>
-    <Dependency name="Trios" type="LO"/>
+    <Dependency name="SEACAS" type="LO"/>
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="LR"/>
     <EmailAddresses>
@@ -514,7 +519,7 @@
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="Pamgen" type="TO"/>
-    <Dependency name="Trios" type="ILO"/>
+    <Dependency name="SEACAS" type="ILO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
@@ -678,7 +683,7 @@
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LR"/>
     <Dependency name="Pamgen" type="ILO"/>
-    <Dependency name="Trios" type="LO"/>
+    <Dependency name="SEACAS" type="LO"/>
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="LR"/>

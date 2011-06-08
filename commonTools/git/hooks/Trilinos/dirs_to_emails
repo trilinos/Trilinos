@@ -60,6 +60,7 @@ packages/intrepid intrepid-checkins@software.sandia.gov
 packages/shards shards-checkins@software.sandia.gov
 packages/stk stk-checkins@software.sandia.gov
 packages/Trios trios-checkins@software.sandia.gov
+packages/seacas seacas-checkins@software.sandia.gov
 packages/teko teko-checkins@software.sandia.gov
 doc/Thyra thyra-checkins@software.sandia.gov
 doc/RefCountPtr teuchos-checkins@software.sandia.gov

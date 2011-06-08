@@ -79,7 +79,7 @@ PACKAGE_ADD_LIBRARY(
 	DEPLIBS exodus
 )
 
-IF (Trios_ENABLE_TESTS)
+IF (seacas_ENABLE_TESTS)
 
   PACKAGE_ADD_TEST(
   	  ne_test

@@ -1,6 +1,6 @@
-Here is a build script to build Trios in Trilinos. 
+Here is a build script to build SEACAS in Trilinos. 
 
-Trios uses the following TPLS, some are optional: 
+SEACAS uses the following TPLS, some are optional: 
 
 * netcdf -- http://www.unidata.ucar.edu/software/netcdf/index.html
   - used by exodus and nemesis (and ioss since it uses exodus and nemesis)
@@ -16,12 +16,12 @@ Trios uses the following TPLS, some are optional:
 * pamgen -- http://trilinos.sandia.gov/packages/pamgen
 
 ========================================================================
-CMake defines used to build Trios:
-      -D Trilinos_ENABLE_Trios:BOOL=ON 
+CMake defines used to build SEACAS:
+      -D Trilinos_ENABLE_SEACAS:BOOL=ON 
   
   EXODUS:  
     If the exodus library should be built, then add the defines:
-      -D Trios_ENABLE_EXODUS:BOOL=TRUE 
+      -D SEACAS_ENABLE_EXODUS:BOOL=TRUE 
       -D TPL_ENABLE_netcdf:BOOL=ON 
       -D TPL_Netcdf_INCLUDE_DIRS:PATH={path to netcdf includes}
       -D Netcdf_LIBRARY_DIRS:PATH={path to netcdf library}
@@ -32,17 +32,17 @@ CMake defines used to build Trios:
       -D Trilinos_ENABLE_Pamgen:BOOL=TRUE 
 
   XDMF:
-      -D Trios_ENABLE_XDMF:BOOL=FALSE 
+      -D SEACAS_ENABLE_XDMF:BOOL=FALSE 
   if xdmf enabled: (will also need hdf5 library)
       -D TPL_XDMF_INCLUDE_DIRS:PATH={path to xdmf includes}
       -D XDMF_LIBRARY_DIRS:PATH={path to xdmf library}
 
-  Trios/ioss can be built either in serial mode or with mpi using the
+  SEACAS/ioss can be built either in serial mode or with mpi using the
   standard Trilinos configuration flag.  The exodus and nemesis
   libraries can be built either way, but they have no mpi-related
   code, so the parallel and serial libraries are the same.
 
-A script that can be used to build Trios is:
+A script that can be used to build SEACAS is:
 --------------------------------cut here--------------------------------
 EXTRA_ARGS=$@
 
@@ -66,19 +66,19 @@ cmake  \
 -D DART_TESTING_TIMEOUT:STRING=600 \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
--D Trilinos_ENABLE_Trios:BOOL=ON \
+-D Trilinos_ENABLE_SEACAS:BOOL=ON \
 -D Trilinos_ENABLE_STK:BOOL=OFF \
 -D Trilinos_ENABLE_Pamgen:BOOL=OFF \
 -D TPL_ENABLE_MPI:BOOL=OFF \
 -D TPL_ENABLE_Netcdf:BOOL=ON \
 -D TPL_Netcdf_INCLUDE_DIRS:PATH=$ACCESS/include \
 -D Netcdf_LIBRARY_DIRS:PATH=$ACCESS/lib \
--D Trios_ENABLE_XDMF:BOOL=FALSE \
--D Trios_ENABLE_EXODUS:BOOL=TRUE \
+-D SEACAS_ENABLE_XDMF:BOOL=FALSE \
+-D SEACAS_ENABLE_EXODUS:BOOL=TRUE \
 -D CMAKE_INSTALL_PREFIX:PATH=/scratch/gdsjaar/TrilinosTest \
 -D TPL_ENABLE_MPI:BOOL=${MPI} \
 -D Trilinos_ENABLE_MPI:BOOL=${MPI} \
--D Trios_ENABLE_APPLICATIONS:BOOL=ON \
+-D SEACAS_ENABLE_APPLICATIONS:BOOL=ON \
 $EXTRA_ARGS \
 ../
 

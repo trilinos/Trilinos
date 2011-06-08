@@ -1,5 +1,0 @@
-
-/* Define to indicate that Trios is in Trilinos (rather than in Sierra) */
-#cmakedefine HAVE_Trios_Trilinos
-
-#cmakedefine HAVE_MPI

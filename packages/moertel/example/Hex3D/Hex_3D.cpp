@@ -50,7 +50,7 @@
 #include "Galeri_Utils.h"
 #include "Galeri_FiniteElements.h"
 
-#if defined(HAVE_TRIOS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
+#if defined(HAVE_SEACAS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
 #include "ExodusInterface.h"
 #endif
 
@@ -461,7 +461,7 @@ int main(int argc, char *argv[])
     //manager.SetInputMatrix(&A,false);
     //manager.Solve(list,LHS,RHS);
 	
-#if defined(HAVE_TRIOS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
+#if defined(HAVE_SEACAS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
 
     // ==================    //
     // Output using ExodusII //

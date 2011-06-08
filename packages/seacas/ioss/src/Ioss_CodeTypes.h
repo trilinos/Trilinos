@@ -38,7 +38,7 @@
 #define HAVE_MPI
 #else
 #if !defined(NO_MPI)
-#include <Trios_config.h>
+#include <seacas_config.h>
 #endif
 #endif
 #endif

@@ -52,9 +52,9 @@ PACKAGE_ADD_TEST(
 
 # Should be a better way to do this, but...
 if (TPL_ENABLE_MPI)
- set_property(TEST Trios_ReadEdgeFaceWithConcats_MPI_1 APPEND PROPERTY DEPENDS Trios_CreateEdgeFaceWithConcats_MPI_1)
+ set_property(TEST SEACAS_ReadEdgeFaceWithConcats_MPI_1 APPEND PROPERTY DEPENDS SEACAS_CreateEdgeFaceWithConcats_MPI_1)
 ELSE()
- set_property(TEST Trios_ReadEdgeFaceWithConcats APPEND PROPERTY DEPENDS Trios_CreateEdgeFaceWithConcats)
+ set_property(TEST SEACAS_ReadEdgeFaceWithConcats APPEND PROPERTY DEPENDS SEACAS_CreateEdgeFaceWithConcats)
 ENDIF()
 
 # ===============================================
