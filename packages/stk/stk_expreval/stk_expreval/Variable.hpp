@@ -251,6 +251,10 @@ public:
     return *this;
   }
 
+  double *getAddress() const {
+    return m_doublePtr;
+  }
+  
   /**
    * @brief Member function <b>getValue</b> returns the variable value as a double.
    *
