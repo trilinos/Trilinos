@@ -626,8 +626,105 @@ namespace stk {
             }
           out << " max-min= " << max << "\n";
           out1 << out.str() << std::endl;
+          
+        }
+    }
+
+    std::string PerceptMesh::printEntityCompact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field)
+    {
+      if (!field) field = getCoordinatesField();
+      std::ostringstream out;
+
+      if (entity.entity_rank() == stk::mesh::fem::FEMMetaData::NODE_RANK)
+        {
+          out << "NODE: " << entity.identifier() << "\n";
+        }
+      else
+        {
+          int fieldStride = 3;
+          {
+            unsigned nfr = field->restrictions().size();
+            //if (printInfo) std::cout << "P[" << p_rank << "] info>    number of field restrictions= " << nfr << std::endl;
+            for (unsigned ifr = 0; ifr < nfr; ifr++)
+              {
+                const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
+                //mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
+                fieldStride = fr.dimension() ;
+              }
+          }
+
+          out << "E= " << entity.identifier() << " R= " << entity.entity_rank();
+
+          const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+
+          std::string ghost_or_not = "N";
+          if (isGhostElement(entity))
+            ghost_or_not = "G";
+          out << " GN= " << ghost_or_not << " ";
+          if (entity.entity_rank() == FAMILY_TREE_RANK)
+            {
+              out << " FT= ";
+              for (int rank = (int)element_rank(); rank >= 0; --rank)
+                {
+                  const mesh::PairIterRelation family_tree_relations = entity.relations( (unsigned)rank );
+                  unsigned num_node = family_tree_relations.size();
+                  if (num_node) out << " |" << rank << "| ";
+                  for (unsigned inode=0; inode < num_node; inode++)
+                    {
+                      mesh::Entity & node = * family_tree_relations[ inode ].entity();
+                      out << node.identifier() << " ";
+                    }
+                }
+            }
+          else
+            {
+              std::string parent_or_child_or_none = "N";
+              if (entity.relations(FAMILY_TREE_RANK).size())
+                {
+                  parent_or_child_or_none = (isChildElement(entity) ? "C" : "P");
+                }              
+              out << " PCN= " << parent_or_child_or_none << " ";
+              out << " N= ";
+              const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+              unsigned num_node = elem_nodes.size();
+              std::vector<double> min(fieldStride, 1e+30);
+              std::vector<double> max(fieldStride, -1e+30);
+              for (unsigned inode=0; inode < num_node; inode++)
+                {
+                  mesh::Entity & node = * elem_nodes[ inode ].entity();
+
+                  out << node.identifier() << " ";
+                }
+              out << " D= ";
+              for (unsigned inode=0; inode < num_node; inode++)
+                {
+                  mesh::Entity & node = * elem_nodes[ inode ].entity();
+
+                  out << "{ ";
+                  double *f_data = PerceptMesh::field_data(field, node);
+                  for (int ifd=0; ifd < fieldStride; ifd++)
+                    {
+                      min[ifd] = std::min(f_data[ifd], min[ifd]);
+                      max[ifd] = std::max(f_data[ifd], max[ifd]);
+                      out << f_data[ifd] << ", ";
+                    }
+                  out << "}";
+                }
+              /*
+                out << " min= " << min << "\n";
+                out << " max= " << max << "\n";
+                for (int ifd=0; ifd < fieldStride; ifd++)
+                {
+                max[ifd] = max[ifd] - min[ifd];
+                }
+                out << " max-min= " << max << "\n";
+              */
+              //out << "\n";
+            }
 
         }
+
+      return out.str();
     }
 
     //========================================================================================================================
@@ -1601,6 +1698,40 @@ namespace stk {
                   }
               }
             }
+        }
+    }
+
+    void PerceptMesh::
+    dumpElementsCompact()
+    {
+      MPI_Barrier( getBulkData()->parallel() );
+      for (unsigned irank = 0u; irank < getParallelSize(); irank++)
+        {
+          if (getRank() == irank) 
+            {
+              std::ostringstream out;
+              out << "\nP[" << getRank() << "]= \n";
+
+              for (unsigned irank = 0; irank < 2u; irank++)
+                {
+                  const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() + irank );
+
+                  for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+                    {
+                      stk::mesh::Bucket & bucket = **k ;
+                      const unsigned num_elements_in_bucket = bucket.size();
+
+                      for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                        {
+                          stk::mesh::Entity& element = bucket[iElement];
+
+                          out << printEntityCompact( element ) << "\n";
+                        }
+                    }
+                }
+              std::cout << out.str() << std::endl;
+            }
+          MPI_Barrier( getBulkData()->parallel() );
         }
     }
 

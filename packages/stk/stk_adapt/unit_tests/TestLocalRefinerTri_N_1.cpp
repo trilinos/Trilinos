@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include <exception>
 #include <fstream>
 #include <set>
@@ -7,7 +9,7 @@
 #include <mpi.h>
 #endif
 
-#include <unit_tests/TestLocalRefinerTri_N.hpp>
+#include <unit_tests/TestLocalRefinerTri_N_1.hpp>
 
 //#define STK_ADAPT_HAS_GEOMETRY
 #undef STK_ADAPT_HAS_GEOMETRY
@@ -26,16 +28,31 @@ namespace stk {
   namespace adapt {
 
 
-    // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N in UnitTestLocalRefiner.cpp)
+    // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_1 in UnitTestLocalRefiner.cpp)
 
-    TestLocalRefinerTri_N::TestLocalRefinerTri_N(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    TestLocalRefinerTri_N_1::TestLocalRefinerTri_N_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
       Refiner(eMesh, bp, proc_rank_field)
     {
     }
 
-    void TestLocalRefinerTri_N::
+    static std::vector<unsigned> get_random_sequence(int min, int max, int num)
+    {
+      srand(1234);
+      
+      std::vector<unsigned> seq(num);
+      for (int i = 0; i < num; i++)
+        {
+          seq[i] = (int)((double)min + ((double)(max - min)) * (double)rand()/((double)RAND_MAX));
+        }
+      return seq;
+    }
+
+    void TestLocalRefinerTri_N_1::
     applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
+      //static int n_seq = 400;
+      static std::vector<unsigned> random_sequence = get_random_sequence(1, 50, 50);
+
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
       CellTopology cell_topo(cell_topo_data);
@@ -88,19 +105,9 @@ namespace stk {
                   //double * const coord1 = stk::mesh::field_data( *coordField , node1 );
 
                   // choose to refine or not 
-                  //if (0 || (node0.identifier() < node1.identifier() || (node0.identifier() % 2 == 0)))
-                  if (node0.identifier() + node1.identifier() < 40)
+                  if (random_sequence[ node0.identifier() + node1.identifier() ] < node0.identifier() + node1.identifier())
                     {
-                      int delta = (int)node0.identifier() - (int)node1.identifier();
-                      if (delta < 0) delta = -delta;
-                      if ( delta > 4 && (node0.identifier() + node1.identifier() < 30))
-                        {
-                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
-                        }
-                      if ( (node0.identifier() + node1.identifier() > 20))
-                        {
-                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
-                        }
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
                     }
                 }
 
@@ -108,7 +115,7 @@ namespace stk {
         } // ineed_ent
     }
 
-    ElementUnrefineCollection TestLocalRefinerTri_N::buildTestUnrefList()
+    ElementUnrefineCollection TestLocalRefinerTri_N_1::buildTestUnrefList()
     {
       ElementUnrefineCollection elements_to_unref;
 
@@ -124,13 +131,16 @@ namespace stk {
             for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
               {
                 stk::mesh::Entity& element = bucket[ientity];
+#if 0
+                // add ghost elements here, but skip them in Refiner::unrefineTheseElements
                 bool elementIsGhost = m_eMesh.isGhostElement(element);
                 if (elementIsGhost)
                   continue;
+#endif
                 
                 const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-                if (elem_nodes.size() && m_eMesh.isChildElement(element))
+                if (elem_nodes.size() && m_eMesh.isChildElement(element, false))
                   {
                     bool found = true;
                     for (unsigned inode=0; inode < elem_nodes.size(); inode++)

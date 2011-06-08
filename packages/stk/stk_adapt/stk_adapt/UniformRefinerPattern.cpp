@@ -178,6 +178,49 @@ namespace stk {
 
       eMesh.getBulkData()->declare_relation(*family_tree, newElement, ordinal + 1);  // the + 1 here is to give space for the parent
 
+      // add all the nodes for ghosting purposes
+      if (1)
+        {
+          
+          mesh::PairIterRelation elem_nodes = parent_elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          for (unsigned i = 0; i < elem_nodes.size(); i++)
+            {
+              bool found = false;
+              mesh::PairIterRelation ft_nodes = family_tree->relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+              for (unsigned j = 0; j < ft_nodes.size(); j++)
+                {
+                  if (ft_nodes[j].entity() == elem_nodes[i].entity())
+                    {
+                      found = true;
+                      break;
+                    }
+                }
+              if (!found)
+                {
+                  eMesh.getBulkData()->declare_relation(*family_tree, *elem_nodes[i].entity(), ft_nodes.size());
+                }
+            }
+
+          elem_nodes = newElement.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          for (unsigned i = 0; i < elem_nodes.size(); i++)
+            {
+              bool found = false;
+              mesh::PairIterRelation ft_nodes = family_tree->relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+              for (unsigned j = 0; j < ft_nodes.size(); j++)
+                {
+                  if (ft_nodes[j].entity() == elem_nodes[i].entity())
+                    {
+                      found = true;
+                      break;
+                    }
+                }
+              if (!found)
+                {
+                  eMesh.getBulkData()->declare_relation(*family_tree, *elem_nodes[i].entity(), ft_nodes.size());
+                }
+            }
+        }
+
       if (0) std::cout << "tmp here 12 ordinal= " << ordinal << " [ " << getNumNewElemPerElem() << "] newElement_ptr= "<< &newElement<< std::endl;
 #endif
     }

@@ -165,6 +165,7 @@ namespace stk {
       getNumberElementsLocallyOwned();
 
       void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+      std::string printEntityCompact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
 
       //========================================================================================================================
       /// low-level interfaces
@@ -183,6 +184,7 @@ namespace stk {
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");
       void dumpElements(const std::string& partName = "");
+      void dumpElementsCompact();
 
       unsigned getRank() { return getBulkData()->parallel_rank(); }
       unsigned getParallelRank() { return getBulkData()->parallel_rank(); }
@@ -194,15 +196,22 @@ namespace stk {
         return isGhost;
       }
 
-       bool isChildElement( const stk::mesh::Entity& element)
+      bool isChildElement( const stk::mesh::Entity& element, bool check_for_family_tree=true)
       {
         const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
         stk::mesh::PairIterRelation child_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
         if (child_to_family_tree_relations.size()==0 )
           {
-            std::cout << "no FAMILY_TREE_RANK relations: element= " << element << std::endl;
-            printEntity(std::cout, element);
-            throw std::runtime_error("no FAMILY_TREE_RANK relations: element");
+            if (check_for_family_tree)
+              {
+                std::cout << "no FAMILY_TREE_RANK relations: element= " << element << std::endl;
+                printEntity(std::cout, element);
+                throw std::runtime_error("no FAMILY_TREE_RANK relations: element");
+              }
+            else
+              {
+                return false;
+              }
           }
         stk::mesh::Entity *family_tree = child_to_family_tree_relations[0].entity();
         stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element_rank());

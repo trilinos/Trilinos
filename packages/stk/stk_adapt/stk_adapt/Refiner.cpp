@@ -2036,6 +2036,11 @@ namespace stk {
            u_iter != elements_to_unref.end(); ++u_iter)
         {
           stk::mesh::Entity * element_p = *u_iter;
+
+          bool elementIsGhost = m_eMesh.isGhostElement(*element_p);
+          if (elementIsGhost)
+            continue;
+
           if (m_eMesh.isChildElement(*element_p))
             {
               copied_list.insert(element_p);
@@ -2052,11 +2057,15 @@ namespace stk {
       ElementUnrefineCollection parent_elements;
       ElementUnrefineCollection parent_elements_copy;
 
-      // remove elements marked for unrefine (make sure they are children)
+      // remove elements marked for unrefine (make sure they are children and not ghosts)
       for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
            u_iter != elements_to_unref.end(); ++u_iter)
         {
           stk::mesh::Entity * element_p = *u_iter;
+          bool elementIsGhost = m_eMesh.isGhostElement(*element_p);
+          if (elementIsGhost)
+            continue;
+
           //std::cout << "tmp element to be removed id= " << element_p->identifier() << " " << std::endl;
           if (copied_list.find(element_p) != copied_list.end())
             {
@@ -2120,7 +2129,6 @@ namespace stk {
       // remove deleted nodes
       m_nodeRegistry->cleanDeletedNodes(deleted_nodes);
 
-#if 1
       //
       // FIXME refactor to a generic function operating on a collection of elements; incorporate with the doBreak() calls above
       //
@@ -2194,7 +2202,7 @@ namespace stk {
               }
           }
       }
-#endif
+
       m_eMesh.getBulkData()->modification_end();
 
     }
