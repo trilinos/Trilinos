@@ -193,7 +193,14 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       // and call the Map constructor that takes arbitrary distributions.
 
       //FIXME work around until Cthulhu view table is fixed
-      RCP<const Epetra_CrsMatrix> epA = Utils::Op2EpetraCrs(fineA);
+      RCP<const Epetra_CrsMatrix> epA;
+      try {
+        epA = Utils::Op2EpetraCrs(fineA);
+      }
+      catch(...) {
+        std::cout << "TentativePFactory : temporarily using Epetra column map until Operator view is fixed" << std::endl;
+        throw;
+      }
 
       std::vector<GO> globalIdsForPtent;
       for (int i=0; i< aggToRowMap.size(); ++i) {
