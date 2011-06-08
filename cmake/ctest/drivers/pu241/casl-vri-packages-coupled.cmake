@@ -12,8 +12,6 @@
 #    source /opt/casldev/env/casl_dev_env.sh
 #
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/casl-vri-tpls.cmake")
-
 SET(Trilinos_EXTRAREPOS_FILE "${CTEST_SCRIPT_DIRECTORY}/ExtraExternalRepositories.casl_vri.cmake")
 SET(Trilinos_PACKAGES CASLBOA CASLRAVE LIME VRIPSS)
 SET(VERA_COUPLED_BOA  ON CACHE BOOL "")
