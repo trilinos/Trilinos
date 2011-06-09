@@ -2004,6 +2004,9 @@ namespace Tpetra {
         const LocalOrdinal LID = importLIDs[i];
         const GlobalOrdinal myGID = this->getMap()->getGlobalElement(LID);
         const size_t rowSize = numPacketsPerLID[i] / SizeOfOrdValPair;
+        if(rowSize == 0){
+          continue;
+        }
         // get import views
         avIndsC = imports(curOffsetInBytes,rowSize*sizeof(GlobalOrdinal));
         avValsC = imports(curOffsetInBytes+rowSize*sizeof(GlobalOrdinal),rowSize*sizeof(Scalar));

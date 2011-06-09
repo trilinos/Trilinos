@@ -1062,6 +1062,8 @@ void import_and_extract_views(
   Mview.indices.resize(         Mview.numRows);
   Mview.values.resize(          Mview.numRows);
   Mview.remote.resize(          Mview.numRows);
+
+
   Mview.origRowMap = M.getRowMap();
   Mview.rowMap = targetMap;
   Mview.colMap = M.getColMap();
@@ -1294,6 +1296,36 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
   const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap)
 {
+/*
+  std::map<LocalOrdinal, Array<int> > rowsToSendToNodes;
+  ArrayView<const GlobalOrdinal> myGlobalRows = 
+    M->getRowMap()->getNodeElementList();
+
+  Array<GlobalOrdinal> currentRow(
+    M->getCrsGraph()->getNodeMaxNumEntries());;
+  size_t numEntriesInCurrentRow;
+  ArrayView<int> currentNodes;
+  for(ArrayView<const GlobalOrdinal>::iterator it = myGlobalRows.begin();
+    it != myGlobalRows.end();
+    ++it)
+  {
+    M->getCrsGraph()->getGlobalRowCopy(i, currentRow(), numEntriesInCurrentRow);
+
+  }
+  for(LocalOrdinal i = M->getRowMap()->getMinLocalIndex();
+    i < M->getRowMap->getMaxLocalIndex();
+    ++i)
+  {
+    M->getCrsGraph()->getGlobalRowCopy(i, currentRow, numEntriesInCurrentRow);
+    colmap->getRemoteIndexList(
+      currentRow(0,numEntriesInCurrentRow), currentNodes);
+    if(currentNodes.size() > 0){
+      rowsToSendToNodes[i] = Array(currentNodes);
+    }
+  }
+*/
+
+
   //The goal of this function is to find all rows in the matrix M that contain
   //column-indices which are in 'colmap'. A map containing those rows is
   //returned.
