@@ -2285,7 +2285,7 @@ namespace Tpetra {
       static void
       writeSparse (std::ostream& out,
 		   const Teuchos::RCP<const sparse_matrix_type>& pMatrix
-      )
+       )
       {
 	using Teuchos::Comm;
 	using Teuchos::RCP;
