@@ -258,10 +258,10 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > form_map_union(
    */
   template <class Scalar, class GlobalOrdinal>
   Scalar sparsedot(
-    const Teuchos::Array<Scalar> &u, 
-    const Teuchos::Array<GlobalOrdinal> &u_ind, 
-    const Teuchos::Array<Scalar> &v, 
-    const Teuchos::Array<GlobalOrdinal> &v_ind);
+    const Teuchos::ArrayView<Scalar> &u, 
+    const Teuchos::ArrayView<GlobalOrdinal> &u_ind, 
+    const Teuchos::ArrayView<Scalar> &v, 
+    const Teuchos::ArrayView<GlobalOrdinal> &v_ind);
   
 }//end namespace MMdetails
 

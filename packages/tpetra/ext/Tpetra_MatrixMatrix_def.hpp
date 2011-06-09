@@ -569,11 +569,12 @@ void mult_A_Btrans(
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
   //Nieve implementation
-  for(GlobalOrdinal i=Aview.rowMap->getMinAllGlobalIndex(); i<=Aview.rowMap->getMaxAllGlobalIndex(); ++i){
-    if(!Aview.rowMap->isNodeGlobalElement(i)){
-      continue;
-    }
-    LocalOrdinal localARow = Aview.rowMap->getLocalElement(i);
+  /*for(GlobalOrdinal i=Aview.rowMap->getMinAllGlobalIndex(); i<=Aview.rowMap->getMaxAllGlobalIndex(); ++i){*/
+  /*for(typename ArrayView<const GlobalOrdinal>::iterator it = Aview.rowMap->getNodeElementList().begin();
+      it != Aview.rowMap->getNodeElementList().end();
+      ++it)
+  {
+    LocalOrdinal localARow = Aview.rowMap->getLocalElement(*it);
     if(Aview.indices[localARow].size() == 0){
       continue;
     }
@@ -582,11 +583,11 @@ void mult_A_Btrans(
     Array<GlobalOrdinal> aIndices;
     Array<Scalar> aValues;
     getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
-    for(GlobalOrdinal j=Bview.rowMap->getMinAllGlobalIndex(); j<=Bview.rowMap->getMaxAllGlobalIndex(); ++j){
-      if(!Bview.rowMap->isNodeGlobalElement(j)){
-        continue;
-      }
-      LocalOrdinal localBRow = Bview.rowMap->getLocalElement(j); 
+  for(typename ArrayView<const GlobalOrdinal>::iterator it2 = Bview.rowMap->getNodeElementList().begin();
+      it2 != Bview.rowMap->getNodeElementList().end();
+      ++it2)
+  {
+      LocalOrdinal localBRow = Bview.rowMap->getLocalElement(*it2); 
       if(Bview.indices[localBRow].size() == 0){
         continue;
       }
@@ -594,14 +595,16 @@ void mult_A_Btrans(
       Array<Scalar> bValues;
       getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
       Scalar product = 
-        sparsedot(aValues, aIndices, bValues, bIndices);
-      cIndices.push_back(j);
-      cValues.push_back(product);
+        sparsedot(aValues(), aIndices(), bValues(), bIndices());
+      if(product != 0){
+        cIndices.push_back(*it2);
+        cValues.push_back(product);
+      }
     }
-    C.insertGlobalValues(i, cIndices(), cValues());
-  }
+    C.insertGlobalValues(*it, cIndices(), cValues());
+  }*/
   //Real optimized version, not working.
-  /*size_t maxlen = 0;
+  size_t maxlen = 0;
   for (size_t i=0; i<Aview.numRows; ++i) {
     if (Aview.numEntriesPerRow[i] > maxlen) maxlen = Aview.numEntriesPerRow[i];
   }
@@ -610,12 +613,18 @@ void mult_A_Btrans(
   }
 
   size_t numBrows = Bview.numRows;
+  size_t numBcols = Bview.colMap->getNodeNumElements();
 
   Array<GlobalOrdinal>     iwork(maxlen*2);
   ArrayView<GlobalOrdinal>  Aind = iwork(0,maxlen);
   ArrayView<GlobalOrdinal>  Bind = iwork(maxlen,maxlen);
 
   ArrayView<const GlobalOrdinal> bgids = Bview.colMap->getNodeElementList();
+  Array<GlobalOrdinal> bcols(numBcols);
+  for(size_t i=0; i<numBcols; ++i) {
+    LocalOrdinal blid = Bview.colMap->getLocalElement(bgids[i]);
+    bcols[blid] = bgids[i];
+  }
 
   Array<Scalar>      vals(maxlen*2);
   ArrayView<Scalar> bvals = vals(0,maxlen);
@@ -648,7 +657,7 @@ void mult_A_Btrans(
     }
     else {
       for(size_t k=0; k<Blen_i; ++k) {
-        temp = bgids[Bindices_i[k]];
+        temp = bcols[Bindices_i[k]];
         if (temp < b_firstcol[i]) b_firstcol[i] = temp;
         if (temp > b_lastcol[i]) b_lastcol[i] = temp;
       }
@@ -727,7 +736,7 @@ void mult_A_Btrans(
       }
       else {
         for(size_t k=0; k<B_len_j; ++k) {
-          tmp = bgids[Bindices_j[k]];
+          tmp = bcols[Bindices_j[k]];
           if (tmp < mina || tmp > maxa) {
             continue;
           }
@@ -756,7 +765,7 @@ void mult_A_Btrans(
       }
 
     }
-  }*/
+  }
 }
 
 
@@ -1429,8 +1438,8 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
 
 template<class Scalar, class GlobalOrdinal>
 Scalar sparsedot(
-  const Array<Scalar>& u, const Array<GlobalOrdinal>& u_ind,
-  const Array<Scalar>& v, const Array<GlobalOrdinal>& v_ind)
+  const ArrayView<Scalar>& u, const ArrayView<GlobalOrdinal>& u_ind,
+  const ArrayView<Scalar>& v, const ArrayView<GlobalOrdinal>& v_ind)
 {
   const size_t usize = (size_t)u.size();
   const size_t vsize = (size_t)v.size();
@@ -1496,5 +1505,10 @@ Scalar sparsedot(
     SCALAR scalarA, \
     CrsMatrix<SCALAR, LO, GO, NODE>& B, \
     SCALAR scalarB ); \
+  \
+  template \
+  Scalar MMdetails::sparsedot( \
+    const ArrayView< SCALAR >& u, const ArrayView< GO >& u_ind, \
+    const ArrayView< SCALAR >& v, const ArrayView< GO >& v_ind);
 
 #endif // TPETRA_MATRIXMATRIX_DEF_HPP

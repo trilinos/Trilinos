@@ -2255,7 +2255,8 @@ namespace Tpetra {
       ///
       static void
       writeSparseFile (const std::string& filename,
-		       const Teuchos::RCP<const sparse_matrix_type>& pMatrix)
+		       const Teuchos::RCP<const sparse_matrix_type>& pMatrix
+           )
       {
 	const int myRank = Teuchos::rank (*(pMatrix->getComm()));
 	std::ofstream out;	
@@ -2283,7 +2284,8 @@ namespace Tpetra {
       ///
       static void
       writeSparse (std::ostream& out,
-		   const Teuchos::RCP<const sparse_matrix_type>& pMatrix)
+		   const Teuchos::RCP<const sparse_matrix_type>& pMatrix
+      )
       {
 	using Teuchos::Comm;
 	using Teuchos::RCP;

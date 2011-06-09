@@ -20,6 +20,7 @@ namespace {
   using Teuchos::null;
   using Teuchos::rcp;
   using Teuchos::RCP;
+  using Teuchos::tuple;
   using Tpetra::global_size_t;
   using Teuchos::Comm;
   using Tpetra::CrsMatrix;
@@ -147,9 +148,9 @@ mult_test_results multiply_test(
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
   computedC->globalAssemble();
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-    name+"_calculated.mtx",computedC);
+    name+"_calculated.mtx",computedC, false);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-    name+"_real.mtx",C);
+    name+"_real.mtx",C, false);
    
   double cNorm = getNorm(C);
   Tpetra::MatrixMatrix::Add(*C, false, -1.0, *computedC, 1.0);
@@ -269,6 +270,15 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       out << "\tEpsilon: " << results.epsilon << std::endl;
     }
   }   
+}
+
+TEUCHOS_UNIT_TEST(Tpetra_MatMat, sparse_dot_test){
+  Array<double> uVal = tuple<double>(4,8,1,6);
+  Array<double> vVal = tuple<double>(3,2,4,50);
+  Array<int> uInd = tuple<int>(0,5,7,9);
+  Array<int> vInd = tuple<int>(0,9,10,11);
+  TEST_EQUALITY_CONST(
+    Tpetra::MMdetails::sparsedot(uVal(), uInd(), vVal(), vInd()), 24);
 }
 
 
