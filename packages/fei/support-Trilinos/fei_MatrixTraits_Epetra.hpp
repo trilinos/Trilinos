@@ -66,11 +66,22 @@ namespace fei {
                      const double* const* values,
                            bool sum_into)
       {
+        //!!! STATIC DATA NOT THREAD-SAFE !!!!!
+        static std::vector<int> idx;
+        idx.resize(numRows+numCols);
+        int* idx_row = &idx[0];
+        int* idx_col = idx_row+numRows;
+        for(int i=0; i<numRows; ++i) {
+          idx_row[i] = mat->RowMap().LID(rows[i]);
+        }
+        for(int i=0; i<numCols; ++i) {
+          idx_col[i] = mat->ColMap().LID(cols[i]);
+        }
         if (sum_into) {
           for(int i=0; i<numRows; ++i) {
-            int err = mat->SumIntoGlobalValues(rows[i], numCols,
+            int err = mat->SumIntoMyValues(idx_row[i], numCols,
                                                (double*)values[i],
-                                               (int*)cols);
+                                               idx_col);
             if (err != 0) {
               return(err);
             }
@@ -78,9 +89,9 @@ namespace fei {
         }
         else {
           for(int i=0; i<numRows; ++i) {
-            int err = mat->ReplaceGlobalValues(rows[i], numCols,
+            int err = mat->ReplaceMyValues(idx_row[i], numCols,
                                                (double*)values[i],
-                                               (int*)cols);
+                                               idx_col);
             if (err != 0) {
               return(err);
             }
