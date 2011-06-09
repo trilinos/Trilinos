@@ -1077,8 +1077,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
 {
   // A family tree is a higher-rank entity (rank = element_rank() + 1) that
-  //   has down-relations to elements used, for example, to hold parent/child
-  //   relations in an adapted mesh.
+  // has down-relations to elements used, for example, to hold parent/child
+  // relations in an adapted mesh.
   //
   // 1---3---5
   // | 1 | 2 |
@@ -1109,54 +1109,95 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
     return;
   }
 
+  //
   // Begin modification cycle so we can create the entities and relations
+  //
+
   mesh.modification_begin();
 
   EntityVector nodes;
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
   const EntityRank family_tree_rank = meta_data.element_rank() + 1;
+  const EntityId my_family_tree_id = p_rank+1;
 
-  if (p_rank < 2) {
-    // We're just going to add everything to the universal part
-    stk::mesh::PartVector empty_parts;
+  // We're just going to add everything to the universal part
+  stk::mesh::PartVector empty_parts;
 
-    // Create element
-    const EntityRank elem_rank = meta_data.element_rank();
-    Entity & elem = mesh.declare_entity(elem_rank,
-                                        p_rank+1, //elem_id
-                                        empty_parts);
+  // Create element
+  const EntityRank elem_rank = meta_data.element_rank();
+  Entity & elem = mesh.declare_entity(elem_rank,
+                                      p_rank+1, //elem_id
+                                      empty_parts);
 
-    // Create nodes
-    const unsigned starting_node_id = p_rank * nodes_per_side + 1;
-    for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-      nodes.push_back(&mesh.declare_entity(NODE_RANK,
-                                           id,
-                                           empty_parts));
-    }
-
-    // Add relations to nodes
-    unsigned rel_id = 0;
-    for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
-      mesh.declare_relation( elem, **itr, rel_id );
-    }
-
-    // Create family tree
-    Entity & family_tree = mesh.declare_entity(family_tree_rank,
-                                               p_rank+1, // use same elem_id
-                                               empty_parts);
-    // Add relation to element
-    mesh.declare_relation( family_tree, elem, 0);
-
+  // Create nodes
+  const unsigned starting_node_id = p_rank * nodes_per_side + 1;
+  for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
+    nodes.push_back(&mesh.declare_entity(NODE_RANK,
+                                         id,
+                                         empty_parts));
   }
+
+  // Add relations to nodes
+  unsigned rel_id = 0;
+  for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
+    mesh.declare_relation( elem, **itr, rel_id );
+  }
+
+  // Create family tree
+  Entity & family_tree = mesh.declare_entity(family_tree_rank,
+                                             my_family_tree_id,
+                                             empty_parts);
+  // Add relation to element
+  mesh.declare_relation( family_tree, elem, 0);
 
   mesh.modification_end();
 
-  const EntityId my_family_tree_id = p_rank+1;
+  //
+  // Test correctness of ghosting
+  //
 
   // FIXME - the following is the test we want to pass but is currently failing due to a possible bug in stk_mesh
-  bool do_actual_test = false;  
-  if (do_actual_test && 0 == p_rank)
-    {
+  bool do_actual_test = true;
+  if (do_actual_test && p_rank == 0) {
+    const EntityId my_expected_ghosted_family_tree_id = p_rank+2;
+    Entity *my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
+    Entity *my_expected_ghosted_family_tree = mesh.get_entity(family_tree_rank, my_expected_ghosted_family_tree_id);
+    STKUNIT_ASSERT(my_family_tree);
+    STKUNIT_ASSERT(my_expected_ghosted_family_tree);
+    STKUNIT_ASSERT(1 == my_expected_ghosted_family_tree->owner_rank());
+    STKUNIT_ASSERT(0 == my_family_tree->owner_rank());
+  }
+
+  // Verify that ghosting occurs when the nodes are also present
+  bool do_verify_nodes_test = true;
+  if (do_verify_nodes_test) {
+    // do this for all procs
+    const EntityId my_element_id = my_family_tree_id;
+    Entity *my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
+    Entity *my_element = mesh.get_entity(meta_data.element_rank(), my_element_id);
+    STKUNIT_ASSERT(my_family_tree);
+    STKUNIT_ASSERT(my_element);
+
+    mesh.modification_begin();
+    stk::mesh::PairIterRelation elem_nodes = my_element->relations(0);
+    for (unsigned inode=0; inode < elem_nodes.size(); inode++) {
+      bool found = false;
+      stk::mesh::PairIterRelation ft_nodes = my_family_tree->relations(0);
+      for (unsigned jnode = 0; jnode < ft_nodes.size(); jnode++) {
+        if (ft_nodes[jnode].entity() == elem_nodes[inode].entity()) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        mesh.declare_relation(*my_family_tree, *elem_nodes[inode].entity(), ft_nodes.size());
+      }
+    }
+    mesh.modification_end();
+
+    // now check it for proc 0
+    if ( 0 == p_rank) {
+      const EntityId my_family_tree_id = p_rank+1;
       const EntityId my_expected_ghosted_family_tree_id = p_rank+2;
       Entity *my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
       Entity *my_expected_ghosted_family_tree = mesh.get_entity(family_tree_rank, my_expected_ghosted_family_tree_id);
@@ -1165,50 +1206,5 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
       STKUNIT_ASSERT(1 == my_expected_ghosted_family_tree->owner_rank());
       STKUNIT_ASSERT(0 == my_family_tree->owner_rank());
     }
-
-  // verify that ghosting occurs when the nodes are also present
-  bool do_verify_nodes_test = true;
-  if (do_verify_nodes_test)
-    {
-      // do this for all procs
-      const EntityId my_element_id = my_family_tree_id;
-      Entity *my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
-      Entity *my_element = mesh.get_entity(meta_data.element_rank(), my_element_id);
-      STKUNIT_ASSERT(my_family_tree);
-      STKUNIT_ASSERT(my_element);
-
-      mesh.modification_begin();
-      stk::mesh::PairIterRelation elem_nodes = my_element->relations(0);
-      for (unsigned inode=0; inode < elem_nodes.size(); inode++)
-        {
-          bool found = false;
-          stk::mesh::PairIterRelation ft_nodes = my_family_tree->relations(0);
-          for (unsigned jnode = 0; jnode < ft_nodes.size(); jnode++)
-            {
-              if (ft_nodes[jnode].entity() == elem_nodes[inode].entity())
-                {
-                  found = true;
-                  break;
-                }
-            }
-          if (!found)
-            {
-              mesh.declare_relation(*my_family_tree, *elem_nodes[inode].entity(), ft_nodes.size());
-            }
-        }
-      mesh.modification_end();
-
-      // now check it for proc 0
-      if ( 0 == p_rank)
-        {
-          const EntityId my_family_tree_id = p_rank+1;
-          const EntityId my_expected_ghosted_family_tree_id = p_rank+2;
-          Entity *my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
-          Entity *my_expected_ghosted_family_tree = mesh.get_entity(family_tree_rank, my_expected_ghosted_family_tree_id);
-          STKUNIT_ASSERT(my_family_tree);
-          STKUNIT_ASSERT(my_expected_ghosted_family_tree);
-          STKUNIT_ASSERT(1 == my_expected_ghosted_family_tree->owner_rank());
-          STKUNIT_ASSERT(0 == my_family_tree->owner_rank());
-        }
-    }
+  }
 }
