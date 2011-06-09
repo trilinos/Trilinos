@@ -1,0 +1,12 @@
+XCOMM $Id: Imakefile,v 1.3 2004/12/14 19:08:42 gdsjaar Exp $
+
+EXTRA_INCLUDES = -I../main -I../util
+
+SRCS = \
+eigenvec2.c  eigenvec3.c  inertial.c  inertial1d.c \
+inertial2d.c inertial3d.c make_subgeom.c
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libchaco.a,$(OBJS),../)
+

@@ -1,0 +1,11 @@
+XCOMM $Id: Imakefile,v 1.4 2004/12/14 19:08:42 gdsjaar Exp $
+
+EXTRA_INCLUDES = -I../main -I../util
+
+SRCS = \
+check_graph.c free_graph.c graph_out.c mm_out.c reformat.c subgraph.c
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libchaco.a,$(OBJS),../)
+

@@ -1,0 +1,10 @@
+XCOMM $Id: Imakefile,v 1.4 2004/12/14 19:08:41 gdsjaar Exp $
+
+EXTRA_INCLUDES = -I../main -I../util
+
+SRCS = add_edges.c connect_enforce.c connected.c find_comps.c heap.c 
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libchaco.a,$(OBJS),../)
+
