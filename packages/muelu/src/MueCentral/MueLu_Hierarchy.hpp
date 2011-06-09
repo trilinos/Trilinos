@@ -328,9 +328,10 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        @param InitialGuessIsZero Currently does nothing. FIXME
        @param Cycle Supports VCYCLE and WCYCLE types.
      */
-     void Iterate(MultiVector const &B, LO nIts, MultiVector &X,
+  void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value=1
                   bool const &InitialGuessIsZero=false, CycleType const &Cycle=VCYCLE, LO const &startLevel=0)
      {
+
        //Teuchos::Array<Magnitude> norms(1);
        //Teuchos::OSTab tab(*out_);
 
@@ -414,3 +415,4 @@ std::ostream& operator<<(std::ostream& os, Hierarchy<Scalar,LocalOrdinal,GlobalO
 #define MUELU_HIERARCHY_SHORT
 
 #endif //ifndef MUELU_HIERARCHY_HPP
+// TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).

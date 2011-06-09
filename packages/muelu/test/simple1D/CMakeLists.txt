@@ -6,12 +6,17 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 
-SET(SOURCES "")
-APPEND_SET(SOURCES main.cpp)
-
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     simple1D
-    SOURCES ${SOURCES}
+    SOURCES main.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu muelu-cthulhu
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    simple1D-belose1
+    SOURCES main-belosE1.cpp
     ARGS ""
     COMM serial mpi
     DEPLIBS muelu muelu-cthulhu
