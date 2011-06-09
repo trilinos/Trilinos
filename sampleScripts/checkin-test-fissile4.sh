@@ -95,11 +95,15 @@ done
 
 $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --extra-repos=$EXTRA_REPOS \
--j16 \
+-j8 \
 --ctest-timeout=180 \
 --disable-packages=$DISABLE_PACKAGES \
+--ctest-options="-E '(Ifpack_BlockCheby_MPI_4)'" \
 $EXTRA_ARGS  
 
-# NOTE: By default we use 16 processes which is 1/2 of the 32
-# processes on this machine.  This way two people can build and test
+# NOTE: By default we use 8 processes which is 1/4 of the 32 processes
+# on a fissile 4 machine.  This way four people can build and test
 # Trilinos without taxing the machine too much.
+
+# The above the test Ifpack_BlockCheby_MPI_4 is disabled becuses they
+# have checked STL errors (see bugs 5203 and 5204).
