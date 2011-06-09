@@ -334,6 +334,9 @@ SIMPLE = \
 	$(srcdir)/simple/cyclic.c \
 	$(srcdir)/simple/random.c
 
+SIMPLE_H = \
+	$(srcdir)/simple/simple_const.h
+
 TIMER_H = \
 	$(srcdir)/timer/timer_const.h
 
@@ -591,6 +594,7 @@ ZOLTAN_H = \
 	$(REFTREE_H) \
 	$(SCOTCH_INTERFACE_H) \
 	$(TIMER_H) \
+	$(SIMPLE_H) \
 	$(UTILITIES_H) \
 	$(ZZ_H) \
 	$(FORTRAN_H)

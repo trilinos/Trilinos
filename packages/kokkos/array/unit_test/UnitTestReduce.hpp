@@ -45,27 +45,23 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_ValueDeepCopy.hpp>
-// #include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_ParallelReduce.hpp>
 
 #include <impl/Kokkos_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
-namespace {
+namespace UnitTest {
 
 template< typename ScalarType , class DeviceType >
-class UnitTestReduce ;
-
-template< typename ScalarType , class DeviceType >
-class UnitTestReduceFunctor ;
+class ReduceFunctor ;
 
 template< typename ScalarType >
-class UnitTestReduceFunctor< ScalarType , Kokkos :: KOKKOS_MACRO_DEVICE >
+class ReduceFunctor< ScalarType , KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos :: KOKKOS_MACRO_DEVICE device_type ;
-  typedef device_type :: size_type      size_type ;
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
 
   struct value_type {
     ScalarType value[3] ;
@@ -73,10 +69,14 @@ public:
 
   const size_type nwork ;
 
-  UnitTestReduceFunctor( const size_type & arg_nwork ) : nwork( arg_nwork ) {}
+  ReduceFunctor( const size_type & arg_nwork ) : nwork( arg_nwork ) {}
 
-  UnitTestReduceFunctor( const UnitTestReduceFunctor & rhs ) : nwork( rhs.nwork ) {}
+  ReduceFunctor( const ReduceFunctor & rhs )
+    : nwork( rhs.nwork ) {}
 
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
+  inline
   KOKKOS_MACRO_DEVICE_FUNCTION
   static void init( value_type & dst )
   {
@@ -85,8 +85,10 @@ public:
     dst.value[2] = 0 ;
   }
 
+  inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  static void join( volatile value_type & dst , const volatile value_type & src )
+  static void join( volatile value_type & dst ,
+                    const volatile value_type & src )
   {
     dst.value[0] += src.value[0] ;
     dst.value[1] += src.value[1] ;
@@ -100,17 +102,26 @@ public:
     dst.value[1] += iwork + 1 ;
     dst.value[2] += nwork - iwork ;
   } 
+
+#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+
 };
 
+} // namespace UnitTest
+
+namespace {
+
+template< typename ScalarType , class DeviceType >
+class UnitTestReduce ;
 
 template< typename ScalarType >
-class UnitTestReduce< ScalarType , Kokkos :: KOKKOS_MACRO_DEVICE >
+class UnitTestReduce< ScalarType , KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos :: KOKKOS_MACRO_DEVICE device_type ;
-  typedef device_type :: size_type      size_type ;
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
 
-  typedef UnitTestReduceFunctor< ScalarType , device_type > functor_type ;
+  typedef UnitTest::ReduceFunctor< ScalarType , device_type > functor_type ;
 
   typedef typename functor_type::value_type value_type ;
 
@@ -152,6 +163,13 @@ public:
     if ( result.value[0] != (ScalarType) nw ||
          result.value[1] != (ScalarType) nsum ||
          result.value[2] != (ScalarType) nsum ) {
+      std::cout << " { " << result.value[0]
+                << " , " << result.value[1]
+                << " , " << result.value[2]
+                << " } != { " << nw
+                << " , " << nsum
+                << " , " << nsum
+                << " }" << std::endl ;
       error( "FAILED" );
     }
   }

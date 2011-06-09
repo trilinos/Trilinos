@@ -24,6 +24,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   "-DMPI_BASE_DIR:PATH=/home/jmwille/install/openmpi-1.4.3"
+  "-DBoost_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/boost_1_46_1"
   )
 
 #

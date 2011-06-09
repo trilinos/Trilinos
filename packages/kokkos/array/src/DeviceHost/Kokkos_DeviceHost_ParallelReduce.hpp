@@ -41,6 +41,7 @@
 #define KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP
 
 namespace Kokkos {
+namespace Impl {
 
 template< class FunctorType >
 class ParallelReduce< FunctorType , void , DeviceHost > {
@@ -49,82 +50,85 @@ public:
   typedef device_type::size_type size_type ;
   typedef typename FunctorType::value_type value_type ;
 
-  const FunctorType  m_functor ;
+  const FunctorType  m_work_functor ;
   const size_type    m_work_count ;
 
-  ParallelReduce( const size_type work_count ,
+private:
+
+  ParallelReduce( const size_type     work_count ,
                   const FunctorType & functor )
-    : m_functor( functor )
+    : m_work_functor( functor )
     , m_work_count( work_count )
     {}
 
-  static value_type run( const DeviceHost::size_type work_count ,
-                         const FunctorType &         functor )
+public:
+
+  static
+  void execute( const size_type     work_count ,
+                const FunctorType & functor ,
+                      value_type  & result )
   {
-    value_type result ;
-
-    FunctorType::init( result );
-
-    // Make a copy just like other devices will have to.
-
     device_type::set_dispatch_functor();
 
-    const ParallelReduce tmp( work_count , functor );
+    const ParallelReduce driver( work_count , functor );
 
     device_type::clear_dispatch_functor();
 
-    for ( size_type iwork = 0 ; iwork < tmp.m_work_count ; ++iwork ) {
-      tmp.m_functor(iwork,result);
-    }
+    FunctorType::init( result );
 
-    return result ;
+    for ( size_type iwork = 0 ; iwork < driver.m_work_count ; ++iwork ) {
+      driver.m_work_functor(iwork,result);
+    }
   }
 };
 
 template< class FunctorType , class FinalizeType >
 class ParallelReduce< FunctorType , FinalizeType , DeviceHost > {
 public:
-  typedef DeviceHost             device_type ;
-  typedef device_type::size_type size_type ;
+  typedef DeviceHost                       device_type ;
+  typedef device_type::size_type           size_type ;
+  typedef typename FunctorType::value_type value_type ;
 
-  const FunctorType  m_functor ;
+  const FunctorType  m_work_functor ;
   const FinalizeType m_finalize ;
   const size_type    m_work_count ;
 
-  ParallelReduce( const size_type work_count ,
-                  const FunctorType & functor ,
+private:
+
+  ParallelReduce( const size_type      work_count ,
+                  const FunctorType  & functor ,
                   const FinalizeType & finalize )
-    : m_functor( functor )
+    : m_work_functor( functor )
     , m_finalize( finalize )
     , m_work_count( work_count )
-    {}
+  {}
 
-  static void run( const DeviceHost::size_type work_count ,
-                   const FunctorType &         functor ,
-                   const FinalizeType &        finalize )
+public:
+
+  static
+  void execute( const size_type      work_count ,
+                const FunctorType  & functor ,
+                const FinalizeType & finalize )
   {
-    typedef typename FunctorType::value_type value_type ;
+    device_type::set_dispatch_functor();
+
+    ParallelReduce driver( work_count , functor , finalize );
+
+    device_type::clear_dispatch_functor();
 
     value_type result ;
 
     FunctorType::init( result );
 
-    // Make a copy just like other devices will have to.
-
-    device_type::set_dispatch_functor();
-
-    const ParallelReduce tmp( work_count , functor , finalize );
-
-    device_type::clear_dispatch_functor();
-
-    for ( size_type iwork = 0 ; iwork < tmp.m_work_count ; ++iwork ) {
-      tmp.m_functor(iwork,result);
+    for ( size_type iwork = 0 ; iwork < driver.m_work_count ; ++iwork ) {
+      driver.m_work_functor(iwork,result);
     }
 
-    tmp.m_finalize( result );
+    driver.m_finalize( result );
   }
 };
 
+} // namespace Impl
 } // namespace Kokkos
 
 #endif /* KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP */

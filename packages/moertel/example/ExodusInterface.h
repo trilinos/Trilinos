@@ -80,7 +80,7 @@ public:
     vector<int>    vertices(data.NumVerticesPerElement());
 
     const Epetra_Map& RowMap = data.RowMap();
-    const Epetra_Map& VertexMap = data.VertexMap();
+//    const Epetra_Map& VertexMap = data.VertexMap();
 
     std::vector<double> x(data.NumMyVertices());
     std::vector<double> y(data.NumMyVertices());

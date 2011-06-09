@@ -6,6 +6,18 @@ INCLUDE(PackageListHelpers)
 
 
 #
+# Helper functions
+#
+
+MACRO(ALLOW_MISSING_EXTERNAL_PACKAGES)
+  FOREACH(PACKAGE ${ARGN})
+    SET(${PACKAGE}_ALLOW_MISSING_EXTERNAL_PACKAGE TRUE)
+  ENDFOREACH()
+ENDMACRO()
+
+
+
+#
 # Below, we change the value of user cache values like
 # ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME},
 # ${PACKAGE_NAME}_ENABLE_TESTS, and ${PACKAGE_NAME}_ENABLE_EXAMPLES by

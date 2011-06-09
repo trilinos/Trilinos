@@ -71,6 +71,16 @@ namespace Stokhos {
 
     // Constructor
     SGModelEvaluator_Adaptive(
+      const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
+      const Teuchos::RCP<Stokhos::AdaptivityManager> & am,
+      const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& sg_quad_,
+      const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp_,
+      const Teuchos::RCP<const Stokhos::ParallelData>& sg_parallel_data_,
+      bool onlyUseLinear_,int kExpOrder_, 
+      const Teuchos::RCP<Teuchos::ParameterList>& params_);
+
+    // Constructor
+    SGModelEvaluator_Adaptive(
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_master_basis,
       const std::vector<Teuchos::RCP<const Stokhos::ProductBasis<int,double> > > & sg_row_dof_basis,
@@ -230,15 +240,18 @@ namespace Stokhos {
     create_g_mv_sg(int l, int num_vecs, Epetra_DataAccess CV = Copy, 
 		const Epetra_MultiVector* v = NULL) const;
 
-  protected:
+    Teuchos::RCP<const Stokhos::AdaptivityManager> getAdaptivityManager() const
+    { return adaptMngr; }
 
-    std::vector<Teuchos::RCP<const Stokhos::ProductBasis<int,double> > > sg_row_dof_basis;
+  protected:
 
     //! Underlying model evaluator
     Teuchos::RCP<EpetraExt::ModelEvaluator> me;
 
     //! Stochastic Galerkin basis
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> > sg_basis;
+
+    std::vector<Teuchos::RCP<const Stokhos::ProductBasis<int,double> > > sg_row_dof_basis;
 
     //! Stochastic Galerkin quadrature
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > sg_quad;

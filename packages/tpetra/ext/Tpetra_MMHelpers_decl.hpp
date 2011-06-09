@@ -38,7 +38,7 @@
 #include <map>
 
 
-/*! \file Tpetra_MMMultiply_decl.hpp 
+/*! \file Tpetra_MMHelpers_decl.hpp 
 
     The declarations for the class Tpetra::MMMultiMultiply and related non-member constructors.
  */

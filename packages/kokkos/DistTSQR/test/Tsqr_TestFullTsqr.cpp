@@ -62,6 +62,7 @@ namespace {
       numCols (testParams->get<int> ("numCols")),
       contiguousCacheBlocks (testParams->get<bool> ("contiguousCacheBlocks")),
       testFactorExplicit (testParams->get<bool> ("testFactorExplicit")),
+      testRankRevealing (testParams->get<bool> ("testRankRevealing")),
       printFieldNames (testParams->get<bool> ("printFieldNames")),
       printResults (testParams->get<bool> ("printResults")),
       failIfInaccurate (testParams->get<bool> ("failIfInaccurate")),
@@ -77,6 +78,7 @@ namespace {
     ordinal_type numCols;
     bool contiguousCacheBlocks;
     bool testFactorExplicit;
+    bool testRankRevealing;
     bool printFieldNames;
     bool printResults;
     bool failIfInaccurate;
@@ -150,6 +152,10 @@ namespace {
 			       "noTestFactorExplicit",
 			       &testFactorExplicit,
 			       defaultParams->getEntry("testFactorExplicit").docString().c_str());
+	cmdLineProc.setOption ("testRankRevealing",
+			       "noTestRankRevealing",
+			       &testRankRevealing,
+			       defaultParams->getEntry("testRankRevealing").docString().c_str());
 	cmdLineProc.setOption ("printFieldNames",
 			       "noPrintFieldNames",
 			       &printFieldNames,
@@ -206,6 +212,7 @@ namespace {
     testParams->set ("numRowsLocal", options.numRowsLocal);
     testParams->set ("numCols", options.numCols);
     testParams->set ("testFactorExplicit", options.testFactorExplicit);
+    testParams->set ("testRankRevealing", options.testRankRevealing);
     testParams->set ("contiguousCacheBlocks", options.contiguousCacheBlocks);
     testParams->set ("printFieldNames", options.printFieldNames);
     testParams->set ("printResults", options.printResults);

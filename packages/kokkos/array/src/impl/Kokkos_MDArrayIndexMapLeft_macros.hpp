@@ -37,14 +37,11 @@
  *************************************************************************
  */
 
-#if ! defined(KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION) || \
+#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_HOST_FUNCTION)           || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
-
-#error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
+#error "Including <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp> without macros defined"
 
 #else
 
@@ -54,7 +51,7 @@ namespace Impl {
 template< class DeviceType , class MapOption > class MDArrayIndexMap ;
 
 template<>
-class MDArrayIndexMap< KOKKOS_MACRO_DEVICE , Kokkos::MDArrayIndexMapLeft > {
+class MDArrayIndexMap< KOKKOS_MACRO_DEVICE , MDArrayIndexMapLeft > {
 public:
 
   typedef KOKKOS_MACRO_DEVICE     device_type;
@@ -63,13 +60,11 @@ public:
   enum { MAX_RANK = 8 };
 
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type rank() const { return m_rank; }
 
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type size() const
     {
       size_type n = m_dims[0] ;
@@ -79,8 +74,7 @@ public:
 
   template< typename iType >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension( const iType & ordinal ) const
   {
     KOKKOS_MACRO_CHECK( require_less( ordinal , m_rank ) );
@@ -89,8 +83,7 @@ public:
 
   template< typename iType >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   void dimensions( iType * const dims ) const
   {
     for ( size_type i = 0 ; i < m_rank ; ++i ) {
@@ -105,8 +98,7 @@ public:
              typename iType4 , typename iType5 ,
              typename iType6 , typename iType7 >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const iType0 & i0 , const iType1 & i1 ,
                     const iType2 & i2 , const iType3 & i3 ,
                     const iType4 & i4 , const iType5 & i5 ,
@@ -129,8 +121,7 @@ public:
              typename iType4 , typename iType5 ,
              typename iType6 >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const iType0 & i0 , const iType1 & i1 ,
                     const iType2 & i2 , const iType3 & i3 ,
                     const iType4 & i4 , const iType5 & i5 ,
@@ -152,8 +143,7 @@ public:
              typename iType2 , typename iType3 ,
              typename iType4 , typename iType5 >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const iType0 & i0 , const iType1 & i1 ,
                     const iType2 & i2 , const iType3 & i3 ,
                     const iType4 & i4 , const iType5 & i5 ) const
@@ -173,8 +163,7 @@ public:
              typename iType2 , typename iType3 ,
              typename iType4 >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const iType0 & i0 , const iType1 & i1 ,
                     const iType2 & i2 , const iType3 & i3 ,
                     const iType4 & i4 ) const
@@ -193,8 +182,7 @@ public:
   template < typename iType0 , typename iType1 ,
              typename iType2 , typename iType3 >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const iType0 & i0 , const iType1 & i1 ,
                     const iType2 & i2 , const iType3 & i3 ) const
   {
@@ -211,8 +199,7 @@ public:
   template < typename iType0 , typename iType1 ,
              typename iType2 >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const iType0 & i0 , const iType1 & i1 ,
                     const iType2 & i2 ) const
   {
@@ -228,8 +215,7 @@ public:
 
   template < typename iType0 , typename iType1 >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const iType0 & i0 , const iType1 & i1 ) const
   {
     KOKKOS_MACRO_CHECK(
@@ -243,8 +229,7 @@ public:
 
   template < typename iType0 >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type offset( const iType0 & i0 ) const
   {
     KOKKOS_MACRO_CHECK(
@@ -259,8 +244,7 @@ public:
   //------------------------------------
 
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   void reverse_index( size_t offset, size_t * const indices ) const
   {
     for ( size_type i = 0 ; i < m_rank ; ++i ) {
@@ -272,7 +256,7 @@ public:
   //--------------------------------------
 
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MDArrayIndexMap()
     : m_rank(0)
   {
@@ -283,9 +267,8 @@ public:
   }
 
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
   MDArrayIndexMap( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-                       size_t n4 , size_t n5 , size_t n6 , size_t n7 )
+                   size_t n4 , size_t n5 , size_t n6 , size_t n7 )
     : m_rank( mdarray_deduce_rank( n0, n1, n2, n3, n4, n5, n6, n7 ) )
   {
     m_dims[0] = n0 ; m_dims[1] = n1 ; m_dims[2] = n2 ; m_dims[3] = n3 ;
@@ -293,7 +276,6 @@ public:
   }
 
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
   MDArrayIndexMap( size_t arg_rank, const size_t * const arg_dims )
     : m_rank(arg_rank)
   {
@@ -309,8 +291,7 @@ public:
   template < class IndexMap >
   explicit
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MDArrayIndexMap( const IndexMap & rhs )
     : m_rank( rhs.rank() )
   {
@@ -325,8 +306,7 @@ public:
 
   template < class IndexMap >
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MDArrayIndexMap & operator = ( const IndexMap & rhs )
   {
     if (this != & rhs ) {

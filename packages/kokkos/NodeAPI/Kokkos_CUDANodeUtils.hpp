@@ -5,7 +5,6 @@
 #include <cuda_runtime.h>
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_CUDA_util_inline_runtime.h"
 #define KOKKOS_NO_INCLUDE_INSTANTIATIONS
 #include "Kokkos_CUDANodeMemoryModel.hpp"
 
@@ -72,7 +71,11 @@ namespace Kokkos {
 #endif
     T *hostPtr = NULL;
     // alloc page-locked ("pinned") memory on the host
-    cutilSafeCallNoSync( cudaHostAlloc( (void**)&hostPtr, devbuf_.size()*sizeof(T), cudaHostAllocDefault) );
+    cudaError_t err = cudaHostAlloc( (void**)&hostPtr, devbuf_.size()*sizeof(T), cudaHostAllocDefault);
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+        "Kokkos::CUDANodeCopyBackDeallocator::alloc(): cudaHostAlloc() returned error:\n"
+        << cudaGetErrorString(err) 
+    );
 #ifdef HAVE_KOKKOS_DEBUG
     // save the allocated address for debug checking
     originalHostPtr_ = hostPtr; 
@@ -96,7 +99,11 @@ namespace Kokkos {
       ArrayView<const T> tmpav((const T*)hostPtr, devbuf_.size(), Teuchos::RCP_DISABLE_NODE_LOOKUP);
       node_->template copyToBuffer<T>(devbuf_.size(), tmpav, devbuf_);
     }
-    cutilSafeCallNoSync( cudaFreeHost( (void**)hostPtr ) );
+    cudaError_t err = cudaFreeHost( (void**)hostPtr );
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
+        "Kokkos::CUDANodeCopyBackDeallocator::free(): cudaFreeHost() returned error:\n"
+        << cudaGetErrorString(err) 
+    );
     hostPtr = NULL;
   }
 

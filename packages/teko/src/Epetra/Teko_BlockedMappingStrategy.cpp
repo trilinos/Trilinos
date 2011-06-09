@@ -154,7 +154,7 @@ void BlockedMappingStrategy::buildBlockTransferData(const std::vector<std::vecto
      const Teuchos::RCP<const Epetra_Map> & baseMap, const Epetra_Comm & comm)
 {
    // build block for each vector
-   for(int i=0;i<vars.size();i++) {
+   for(std::size_t i=0;i<vars.size();i++) {
       // build maps and exporters/importers
       Blocking::MapPair mapPair = Blocking::buildSubMap(vars[i],comm);
       Blocking::ImExPair iePair = Blocking::buildExportImport(*baseMap, mapPair);

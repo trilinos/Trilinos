@@ -54,10 +54,10 @@ namespace {
 template< class > class UnitTestMDArrayView ;
 
 template<>
-class UnitTestMDArrayView< Kokkos :: KOKKOS_MACRO_DEVICE >
+class UnitTestMDArrayView< KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef KOKKOS_MACRO_DEVICE device ;
 
   typedef Kokkos::MDArrayView< double , device > dView ;
   typedef Kokkos::MDArrayView< int ,    device > iView ;
@@ -102,17 +102,13 @@ public:
       error("FAILED Allocate view");
     }
 
-  
-    dx(0) = 20 ;
-    ix(0) = 10 ;
-  
     dView dz = dy = dx ;
     iView iz = iy = ix ;
   
-    if ( & dx(0) != & dy(0) ||
-         & dx(0) != & dz(0) ||
-         & ix(0) != & iy(0) ||
-         & ix(0) != & iz(0) ) {
+    if ( dx != dy ||
+         dx != dz ||
+         ix != iy ||
+         ix != iz ) {
       error("FAILED Assign view");
     }
 
@@ -120,11 +116,9 @@ public:
     iy = iView();
   
     if ( dx.rank() != 0 ||
-         & dy(0) != & dz(0) ||
-         & ix(0) != & iz(0) ||
-         iy.rank() != 0 ||
-         dy(0) != 20 ||
-         iz(0) != 10 ) {
+         dy != dz ||
+         ix != iz ||
+         iy.rank() != 0 ) {
       error("FAILED Clear view");
     }
 

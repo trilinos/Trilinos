@@ -43,6 +43,8 @@
 #include <sstream>
 
 #include <Kokkos_DeviceCuda.hpp>
+#include <DeviceCuda/Kokkos_DeviceCuda_ParallelDriver.hpp>
+#include <DeviceCuda/Kokkos_DeviceCuda_DeepCopy.hpp>
 #include <impl/Kokkos_MemoryInfo.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -66,16 +68,25 @@ void cuda_safe_call( cudaError e , const char * name )
 
 class DeviceCuda_Impl {
 public:
-  Impl::MemoryInfoSet            m_allocations ;
-  struct cudaDeviceProp          m_cudaProp ;
-  int                            m_cudaDev ;
-  CudaDevice::Traits::WordType * m_reduceScratchSpace ;
-  CudaDevice::Traits::WordType * m_reduceScratchFlag ;
+  Impl::MemoryInfoSet     m_allocations ;
+  struct cudaDeviceProp   m_cudaProp ;
+  int                     m_cudaDev ;
+  unsigned                m_maxWarp ;
+  DeviceCuda::size_type * m_reduceScratchSpace ;
+  DeviceCuda::size_type * m_reduceScratchFlag ;
 
   explicit DeviceCuda_Impl( int cuda_device_id );
   ~DeviceCuda_Impl();
 
   static DeviceCuda_Impl & singleton( int cuda_device_id = 0 );
+
+  void * allocate_memory(
+    const std::string    & label ,
+    const std::type_info & type ,
+    const size_t member_size ,
+    const size_t member_count );
+
+  void deallocate_memory( void * ptr );
 
 private:
   DeviceCuda_Impl();
@@ -89,10 +100,11 @@ DeviceCuda_Impl & DeviceCuda_Impl::singleton( int cuda_device_id )
   return self ;
 }
 
-DeviceCuda_Impl::DeviceCuda_Impl( cuda_device_id )
+DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   : m_allocations()
   , m_cudaProp()
   , m_cudaDev( cuda_device_id )
+  , m_maxWarp( 0 )
   , m_reduceScratchSpace( 0 )
   , m_reduceScratchFlag( 0 )
 {
@@ -100,28 +112,50 @@ DeviceCuda_Impl::DeviceCuda_Impl( cuda_device_id )
   //
   // cudaDeviceProp::major               : Device major number
   // cudaDeviceProp::minor               : Device minor number
+  // cudaDeviceProp::warpSize            : number of threads per warp
   // cudaDeviceProp::multiProcessorCount : number of multiprocessors
   // cudaDeviceProp::sharedMemPerBlock   : capacity of shared memory per block
+  // cudaDeviceProp::totalConstMem       : capacity of constant memory
   // cudaDeviceProp::totalGlobalMem      : capacity of global memory
+  // cudaDeviceProp::maxGridSize[3]      : maximum grid size
 
-  enum { n = sizeof(DeviceCuda::Traits::WordType) };
+  enum { n = sizeof(DeviceCuda::size_type) };
 
-  const DeviceCuda::Traits::WordType zero = 0 ;
+  const DeviceCuda::size_type zero = 0 ;
 
   // Device query
 
   CUDA_SAFE_CALL( cudaGetDevice( & m_cudaDev ) );
   CUDA_SAFE_CALL( cudaGetDeviceProperties( & m_cudaProp , m_cudaDev ) );
 
+  if ( m_cudaProp.major < 2 && m_cudaProp.minor < 3 ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::DeviceCuda Capability " << m_cudaProp.major
+        << "." << m_cudaProp.minor
+        << " not supported; mininum Capability 1.3" ;
+    throw std::runtime_error( msg.str() );
+  }
+
+  // Maximum number of warps,
+  // at most one warp per thread in a warp for reduction.
+
+  // m_maxWarp = Impl::DeviceCudaTraits::WarpSize ;
+  // while ( m_cudaProp.maxThreadsPerBlock <
+  //         Impl::DeviceCudaTraits::WarpSize * m_maxWarp ) {
+  //   m_maxWarp >>= 1 ;
+  // }
+
+  m_maxWarp = 8 ; // For performance use fewer warps and more blocks...
+
   // Allocate shared memory image for multiblock reduction scratch space
 
   const size_t sharedWord =
    ( m_cudaProp.sharedMemPerBlock + n - 1 ) / n ;
 
-  m_reduceScratchSpace =
+  m_reduceScratchSpace = (DeviceCuda::size_type *)
     allocate_memory( std::string("MultiblockReduceScratchSpace") ,
-                     typeid( DeviceCuda::Traits::WordType ),
-                     sizeof( DeviceCuda::Traits::WordType ),
+                     typeid( DeviceCuda::size_type ),
+                     sizeof( DeviceCuda::size_type ),
                      sharedWord + 1 );
 
   m_reduceScratchFlag = m_reduceScratchSpace + sharedWord ;
@@ -143,49 +177,23 @@ DeviceCuda_Impl::~DeviceCuda_Impl()
   }
 }
 
-}
-
-/*--------------------------------------------------------------------------*/
-
-DeviceCuda::initialize( int cuda_device_id )
-{
-  DeviceCuda_Impl::singleton( cuda_device_id );
-}
-
-DeviceCuda::Traits::WordType *
-DeviceCuda::reduce_multiblock_scratch_space()
-{
-  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
-  return s.m_reduceScratchSpace ;
-}
-
-DeviceCuda::Traits::WordType *
-DeviceCuda::reduce_multiblock_scratch_flag()
-{
-  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
-  return s.m_reduceScratchFlag ;
-}
-
-/*--------------------------------------------------------------------------*/
-
-void * DeviceCuda::allocate_memory(
+void * DeviceCuda_Impl::allocate_memory(
   const std::string    & label ,
   const std::type_info & type ,
   const size_t member_size ,
   const size_t member_count )
 {
-  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
-
   Impl::MemoryInfo tmp ;
 
   tmp.m_type  = & type ;
   tmp.m_label = label ;
   tmp.m_size  = member_size ;
   tmp.m_count = member_count ;
-  tmp.m_ptr   = calloc( member_size , member_count );
+
+  CUDA_SAFE_CALL( cudaMalloc( & tmp.m_ptr , member_size * member_count ) );
 
   const bool ok_alloc  = 0 != tmp.m_ptr ;
-  const bool ok_insert = ok_alloc && s.m_allocations.insert( tmp );
+  const bool ok_insert = ok_alloc && m_allocations.insert( tmp );
 
   if ( ! ok_alloc || ! ok_insert ) {
     std::ostringstream msg ;
@@ -202,18 +210,91 @@ void * DeviceCuda::allocate_memory(
   return tmp.m_ptr ;
 }
 
-void DeviceCuda::deallocate_memory( void * ptr )
+void DeviceCuda_Impl::deallocate_memory( void * ptr )
 {
-  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
-
-  if ( ! s.m_allocations.erase( ptr ) ) {
+  if ( ! m_allocations.erase( ptr ) ) {
     std::ostringstream msg ;
     msg << "Kokkos::DeviceCuda::deallocate_memory( " << ptr
         << " ) FAILED memory allocated by this device" ;
     throw std::runtime_error( msg.str() );
   }
 
-  free( ptr );
+  CUDA_SAFE_CALL( cudaFree( ptr ) );
+}
+
+}
+
+/*--------------------------------------------------------------------------*/
+
+void DeviceCuda::initialize( int cuda_device_id )
+{
+  DeviceCuda_Impl::singleton( cuda_device_id );
+}
+
+DeviceCuda::size_type *
+DeviceCuda::reduce_multiblock_scratch_space()
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+  return s.m_reduceScratchSpace ;
+}
+
+DeviceCuda::size_type *
+DeviceCuda::reduce_multiblock_scratch_flag()
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+  return s.m_reduceScratchFlag ;
+}
+
+DeviceCuda::size_type
+DeviceCuda::maximum_shared_words()
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+  
+ return s.m_cudaProp.sharedMemPerBlock / sizeof(size_type);
+}
+
+DeviceCuda::size_type
+DeviceCuda::maximum_warp_count()
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+  return s.m_maxWarp ;
+}
+
+DeviceCuda::size_type
+DeviceCuda::maximum_grid_count()
+{
+  // Set the maximum number of blocks to the maximum number of
+  // resident blocks per multiprocessor times the number of
+  // multiprocessors on the device.  Once a block is active on
+  // a multiprocessor  then let it do all the work that it can.
+
+  enum { MaxResidentBlocksPerMultiprocessor = 8 };
+
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+
+  return s.m_cudaProp.multiProcessorCount * MaxResidentBlocksPerMultiprocessor ;
+
+  // return s.m_cudaProp.maxGridSize[0];
+}
+
+/*--------------------------------------------------------------------------*/
+
+void * DeviceCuda::allocate_memory(
+  const std::string    & label ,
+  const std::type_info & type ,
+  const size_t member_size ,
+  const size_t member_count )
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+
+  return s.allocate_memory( label ,type , member_size , member_count );
+}
+
+void DeviceCuda::deallocate_memory( void * ptr )
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+
+  s.deallocate_memory( ptr );
 }
 
 void DeviceCuda::print_memory_view( std::ostream & o )
@@ -250,6 +331,34 @@ void DeviceCuda::clear_dispatch_functor()
   m_launching_kernel = false ;
 }
 
+void DeviceCuda::wait_functor_completion()
+{
+  cudaThreadSynchronize();
+}
 
 } // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+
+namespace Kokkos {
+namespace Impl {
+
+void copy_to_cuda_from_host( void * dst , const void * src ,
+                             size_t member_size , size_t member_count )
+{
+  CUDA_SAFE_CALL(
+    cudaMemcpy( dst , src , member_size * member_count , cudaMemcpyHostToDevice ) );
+
+}
+
+void copy_to_host_from_cuda( void * dst , const void * src ,
+                             size_t member_size , size_t member_count )
+{
+  CUDA_SAFE_CALL(
+    cudaMemcpy( dst , src , member_size * member_count , cudaMemcpyDeviceToHost ) );
+}
+
+}
+}
 

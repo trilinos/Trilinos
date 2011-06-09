@@ -124,7 +124,7 @@ void tBlockedEpetraOperator::buildBlockGIDs(std::vector<std::vector<int> > & gid
       blk2.push_back(gid);
    }
 
-   TEUCHOS_ASSERT(blk0.size()+blk1.size()+blk2.size()==numLocal);
+   TEUCHOS_ASSERT(int(blk0.size()+blk1.size()+blk2.size())==numLocal);
 }
 
 void tBlockedEpetraOperator::initializeTest() 

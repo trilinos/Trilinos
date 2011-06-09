@@ -31,6 +31,7 @@ extern "C" {
 #include "reftree_const.h"
 #include "ha_const.h"
 #include "rib_const.h"
+#include "simple_const.h"
 #include "hsfc_const.h"
 #include "all_allo_const.h"
 #include "order_const.h"
@@ -78,6 +79,8 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_Color_Set_Param,
        /*** Add your new parameter setting function here! ***/
        Zoltan_Graph_Package_Set_Param,
+       Zoltan_Random_Set_Param,
+
        NULL /* Last entry _must_ be NULL! */
 };
 

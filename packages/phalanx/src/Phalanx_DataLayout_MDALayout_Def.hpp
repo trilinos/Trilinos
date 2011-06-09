@@ -335,6 +335,17 @@ dimensions(std::vector<size_type>& dim) const
 //**********************************************************************
 template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+void PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+names(std::vector<std::string>& names) const
+{ 
+  names.resize(Rank);
+  for(std::size_t i=0; i < names.size(); ++i)
+    names[i] = m_dim_name[i];
+}
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 PHX::DataLayout::size_type PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 size() const
 { return m_size; }
@@ -366,6 +377,26 @@ dimension(size_type ordinal) const
   }
   
   return m_dim_size[ordinal];
+}
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+std::string
+PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+name(size_type ordinal) const
+{ 
+  if (ordinal > Rank-1 || ordinal < 0) {
+    std::ostringstream os;
+    os << "Requested Ordinal " << ordinal 
+       << " is outside the valid range of 0 - " << Rank - 1
+       << " in DataLayout object:\n"
+       << m_identifier << std::endl;
+    TEST_FOR_EXCEPTION(ordinal > Rank-1 || ordinal < 0, 
+		       std::logic_error, os.str());
+  }
+  
+  return m_dim_name[ordinal];
 }
 
 //**********************************************************************

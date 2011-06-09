@@ -463,13 +463,6 @@ static int rcb_fn(
 
   /* initializations */
 
-  /* Check how many weights per dot there are. */
-  if (wgtflag>RB_MAX_WGTS){
-    sprintf(msg, "Too many weights (%1d) were given; only the first %1d will be used.", wgtflag, RB_MAX_WGTS);
-    ZOLTAN_PRINT_WARN(proc, yo, msg);
-    wgtflag = RB_MAX_WGTS;
-  }
-
   if ((wgtflag > 1) && (pivot_choice == PIVOT_CHOICE_RANDOM)){
     /* If RANDOM turns out to be wanted for wgtflag>1, we can implement it */
     ZOLTAN_PRINT_WARN(proc, yo, 
@@ -852,7 +845,7 @@ static int rcb_fn(
         if (pivot_choice == PIVOT_CHOICE_BISECTION){
           if (!Zoltan_RB_find_median(          
                zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight, dotmark, dotnum, proc, 
-               fraclo[0], local_comm, &valuehalf, first_guess,
+               fraclo, local_comm, &valuehalf, first_guess,
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                weight[0], weightlo, weighthi,
@@ -865,7 +858,7 @@ static int rcb_fn(
         else{
           if (!Zoltan_RB_find_median_randomized(
                zz->Tflops_Special, pts, dotpt->Weight, dotpt->uniformWeight, dotmark, dotnum, proc, 
-               fraclo[0], local_comm, &valuehalf, first_guess,
+               fraclo, local_comm, &valuehalf, first_guess,
                nprocs, old_nprocs, proclower, old_nparts, 
                wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                weight[0], weightlo, weighthi,
@@ -1607,7 +1600,7 @@ static int serial_rcb(
         if (pivot_choice == PIVOT_CHOICE_BISECTION){
           if (!Zoltan_RB_find_median(
                  0, coord, wgts, uniformWeight, dotmark, dotnum, proc, 
-                 fractionlo[0], MPI_COMM_SELF, &valuehalf, 
+                 fractionlo, MPI_COMM_SELF, &valuehalf, 
                  first_guess, zz->Num_Proc, 1, zz->Proc, num_parts,
                  wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 
                  weight[0], weightlo, weighthi,
@@ -1620,7 +1613,7 @@ static int serial_rcb(
         else{  
           if (!Zoltan_RB_find_median_randomized(
                  0, coord, wgts, uniformWeight,  dotmark, dotnum, proc, 
-                 fractionlo[0], MPI_COMM_SELF, &valuehalf, 
+                 fractionlo, MPI_COMM_SELF, &valuehalf, 
                  first_guess,
                  zz->Num_Proc, 1, zz->Proc, num_parts,
                  wgtflag, rcbbox->lo[dim], rcbbox->hi[dim], 

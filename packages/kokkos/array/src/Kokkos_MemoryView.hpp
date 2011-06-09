@@ -40,6 +40,8 @@
 #ifndef KOKKOS_MEMORYVIEW_HPP
 #define KOKKOS_MEMORYVIEW_HPP
 
+#include <Kokkos_ArrayForwardDeclarations.hpp>
+
 namespace Kokkos {
 
 template< typename ValueType , class DeviceType >
@@ -53,10 +55,20 @@ private:
 
 public:
 
+  /** \brief  Only defined on the device */
   ValueType * ptr_on_device() const ;
 
   MemoryView();
   ~MemoryView();
+
+  /** \brief  If a non-null view */
+  operator bool() const ;
+
+  /** \brief  View to the same memory */
+  bool operator == ( const MemoryView & ) const ;
+
+  /** \brief  Not view to the same memory */
+  bool operator != ( const MemoryView & ) const ;
 };
 
 } // namespace Kokkos

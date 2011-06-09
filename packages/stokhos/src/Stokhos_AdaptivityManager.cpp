@@ -80,15 +80,9 @@ setupOperator(Epetra_CrsMatrix & A,const Sparse3Tensor<int,double> & Cijk,Stokho
               bool onlyUseLinear,bool includeMean) const
 {
    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
-   static bool written = false;
 
    // Zero out matrix
    A.PutScalar(0.0);
-
-   if(not written) {
-      EpetraExt::RowMatrixToMatrixMarketFile("Graph.mm",A);
-      written = true;
-   }
 
    // Compute loop bounds
    Cijk_type::k_iterator k_begin = Cijk.k_begin();
@@ -189,11 +183,10 @@ sumInOperator(Epetra_CrsMatrix & A,const Stokhos::Sparse3Tensor<int,double> & Ci
   */
 void Stokhos::AdaptivityManager::copyToAdaptiveVector(const Stokhos::EpetraVectorOrthogPoly & x_sg,Epetra_Vector & x) const
 {
-   int numBlocks = x_sg.size();
    Teuchos::RCP<const EpetraExt::BlockVector> x_sg_bv = x_sg.getBlockVector();
 
    // copy from adapted vector to deterministic
-   for(int i=0;i<sg_basis_row_dof_.size();i++) {
+   for(std::size_t i=0;i<sg_basis_row_dof_.size();i++) {
       int P_i = getRowStochasticBasisSize(i); 
       int localId = rowMap_->LID(getGlobalRowId(i,0));
 
@@ -216,7 +209,7 @@ void Stokhos::AdaptivityManager::copyFromAdaptiveVector(const Epetra_Vector & x,
       x_sg_bv->GetBlock(blk)->PutScalar(0.0);
 
    // copy from adapted vector to deterministic
-   for(int i=0;i<sg_basis_row_dof_.size();i++) {
+   for(std::size_t i=0;i<sg_basis_row_dof_.size();i++) {
       int P_i = getRowStochasticBasisSize(i); 
       int localId = rowMap_->LID(getGlobalRowId(i,0));
 

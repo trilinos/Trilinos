@@ -55,6 +55,13 @@ IF(TriKota_ENABLE_DakotaCMake)
   ADD_SUBDIRECTORY(Dakota)
   MESSAGE("<--TriKota: Finished Dakota configure.")
 
+  # Put all of Dakota's compile line defines in TriKota_config.h which
+  # expands @DAKOTA_DEFINES@
+  GET_PROPERTY(DAKOTA_DEFS DIRECTORY Dakota/src PROPERTY COMPILE_DEFINITIONS)
+  SET(DAKOTA_DEFINES  "")
+  FOREACH(DAKOTA_DEF IN LISTS DAKOTA_DEFS)
+    SET(DAKOTA_DEFINES "${DAKOTA_DEFINES}#define ${DAKOTA_DEF}\n")
+  ENDFOREACH()
 ENDIF()
 
 ADD_SUBDIRECTORY(src)

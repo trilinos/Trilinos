@@ -398,7 +398,7 @@ namespace Tpetra {
       \pre <tt>tgt != null</tt>
       \return Returns the Import object. If <tt>src == tgt</tt>, returns \c null. (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.) 
 
-      \relates Import
+      \relatesalso Import
     */
   template <class LO, class GO, class Node> 
   RCP< const Import<LO,GO,Node> >

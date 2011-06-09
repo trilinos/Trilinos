@@ -519,8 +519,12 @@ namespace TSQR {
       // have to convert it back to an Ordinal in order to allocate
       // the workspace array and pass it in to LAPACK as the LWORK
       // argument.  Ordinal definitely must be a signed type, since
-      // LWORK = -1 indicates a workspace query.
-      svd_lwork = static_cast<Ordinal> (svd_lwork_scalar);
+      // LWORK = -1 indicates a workspace query.  If Scalar is
+      // complex, LAPACK had better return something with a zero
+      // imaginary part, since I can't allocate imaginary amounts of
+      // memory!  (Take the real part to avoid rounding error, since
+      // magnitude() may be implemented using a square root always...)
+      svd_lwork = static_cast<Ordinal> (Teuchos::ScalarTraits<Scalar>::real (svd_lwork_scalar));
 
       // LAPACK should always return an LWORK that fits in Ordinal,
       // but it's a good idea to check anyway.  We do so by checking
@@ -564,7 +568,7 @@ namespace TSQR {
     // The tolerance "tol" is relative to the largest singular
     // value, which is the 2-norm of the matrix.
     const magnitude_type absolute_tolerance = tol * singular_values[0];
-    Ordinal rank = 0;
+    Ordinal rank = ncols; // "innocent unless proven guilty"
     for (Ordinal k = 0; k < ncols; ++k)
       // First branch of the IF ensures correctness even if all the
       // singular values are zero and the absolute tolerance is

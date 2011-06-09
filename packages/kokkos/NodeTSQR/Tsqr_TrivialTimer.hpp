@@ -23,14 +23,12 @@ namespace TSQR {
 
     /// \brief Start the timer.
     ///
-    /// This is a trivial timer, so this implementation does nothing.
-    /// However, it satisfies our TimerType concept.
+    /// This is a trivial timer, so this implementation does not
+    /// actually return valid times.  However, it satisfies our
+    /// TimerType concept.
     void start (bool reset = false);
     
-    /// \brief Stop the timer and return elapsed time.
-    ///
-    /// This is a trivial timer, so his implementation does nothing.
-    /// This method should return 0.
+    //! Stop the timer and return (fake) elapsed time.
     double stop ();
 
     //! Whether this timer is running
@@ -42,6 +40,14 @@ namespace TSQR {
   private:
     //! Name of this timer
     std::string name_;
+
+    /// \brief Counter, used to implement trivial timer feature.
+    ///
+    /// In order to compute the "resolution" of this fake timer, we
+    /// add a counter which is incremented on each call to \c stop().
+    /// The \c stop() method computes a fake timing result based on
+    /// the counter value.
+    size_t counter_;
     
     //! Whether this timer is running
     bool isRunning_;

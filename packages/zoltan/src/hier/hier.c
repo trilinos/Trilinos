@@ -1195,6 +1195,11 @@ div_t result;
     hpp->spec = 
       (zoltan_platform_specification *)ZOLTAN_CALLOC(sizeof(zoltan_platform_specification), 1);
 
+    if (!hpp->spec){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
+      return ZOLTAN_MEMERR;
+    }
+
     hpp->spec->platform_name = NULL; 
 
     if (topology[0]){
@@ -1238,8 +1243,16 @@ div_t result;
   if (!hpp->spec){
     if (zz->Proc == 0){
       pnames = make_platform_name_string();
+      if (pnames == NULL){
+        ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
+        return ZOLTAN_MEMERR;
+      }
       i = strlen(pnames) + 2048;
       msg = (char *)ZOLTAN_MALLOC(i);
+      if (!msg){
+        ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
+        return ZOLTAN_MEMERR;
+      }
       strcpy(msg,"Error:\n");
       strcat(msg, "HIER_ASSIST requested but insufficient topology information provided.\n\n" 
         "Specify PLATFORM_NAME or TOPOLOGY.\n\n");
@@ -1465,9 +1478,10 @@ static int is_gno_local(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno) {
 /* insert a gid uniquely into the (ordered) gnos_of_interest array */
 /* it might be more efficient to make a big unsorted array with duplicates 
    then remove duplicates and sort */
-static void insert_unique_gnos_of_interest(HierPartParams *hpp,
+static int insert_unique_gnos_of_interest(HierPartParams *hpp,
 					   ZOLTAN_GNO_TYPE gno) {
   int low, mid, high, index;
+  char *yo = "insert_unique_gnos_of_interest";
 
   HIER_CHECK_GNO_RANGE(gno);
 
@@ -1478,6 +1492,11 @@ static void insert_unique_gnos_of_interest(HierPartParams *hpp,
     hpp->gnos_of_interest = 
       (ZOLTAN_GNO_TYPE *)ZOLTAN_REALLOC(hpp->gnos_of_interest, 
           sizeof(ZOLTAN_GNO_TYPE)* hpp->allocsize_gnos_of_interest);
+
+    if (hpp->gnos_of_interest){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
+      return ZOLTAN_MEMERR;
+    }
   }
 
   /* find it (or not) */
@@ -1495,7 +1514,7 @@ static void insert_unique_gnos_of_interest(HierPartParams *hpp,
       mid = (high+low)/2;
     }
     /* did we find it? */
-    if (hpp->gnos_of_interest[mid] == gno) return;
+    if (hpp->gnos_of_interest[mid] == gno) return ZOLTAN_OK;
   }
 
   /* no, insert it */
@@ -1506,6 +1525,8 @@ static void insert_unique_gnos_of_interest(HierPartParams *hpp,
   }
   hpp->gnos_of_interest[index] = gno;
   hpp->num_gnos_of_interest++;
+
+  return ZOLTAN_OK;
 }
 
 /* request locations of migrated gids of interest to graph callbacks */
@@ -1539,7 +1560,9 @@ static int find_needed_gno_procs(HierPartParams *hpp) {
 	  adjgid = hpp->adjncy[adjindex];
 	  HIER_CHECK_GNO_RANGE(adjgid);
 	  if (!is_gno_local(hpp, adjgid)) {
-	    insert_unique_gnos_of_interest(hpp, adjgid);
+	    ierr = insert_unique_gnos_of_interest(hpp, adjgid);
+            if (ierr != ZOLTAN_OK)
+              goto End;
 	  }
 	}
       }
@@ -1560,7 +1583,9 @@ static int find_needed_gno_procs(HierPartParams *hpp) {
 	adjgid = adjlist[adjindex];
 	HIER_CHECK_GNO_RANGE(adjgid);
 	if (!is_gno_local(hpp, adjgid)) {
-	  insert_unique_gnos_of_interest(hpp, adjgid);
+	  ierr = insert_unique_gnos_of_interest(hpp, adjgid);
+          if (ierr != ZOLTAN_OK)
+            goto End;
 	}
       }
     }
@@ -2066,6 +2091,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   /* first populate a proclist to create a communication plan */
   if (hpp->num_migrated_in_gnos) {
     proclist = (int *)ZOLTAN_MALLOC(hpp->num_migrated_in_gnos*sizeof(int));
+    if (!proclist){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "out of memory");
+      *ierr=ZOLTAN_MEMERR;
+    }
     for (i=0; i<hpp->num_migrated_in_gnos; i++) {
       for (proc=0; proc<hpp->origzz->Num_Proc; proc++) {
 	if ((hpp->migrated_in_gnos[i] >= hpp->vtxdist[proc]) && 
@@ -2084,6 +2113,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   /* allocate space for the information we'll send and receive */
   if (hpp->num_migrated_in_gnos) {
     sendbuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(2*hpp->num_migrated_in_gnos*sizeof(ZOLTAN_GNO_TYPE));
+    if (!sendbuf){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "out of memory");
+      *ierr=ZOLTAN_MEMERR;
+    }
     for (i=0; i<hpp->num_migrated_in_gnos; i++) {
       sendbuf[2*i] = hpp->migrated_in_gnos[i];
       sendbuf[2*i+1] = (ZOLTAN_GNO_TYPE)hpp->origzz->Proc;  /* assumes proc ID can fit in an ZOLTAN_GNO_TYPE */
@@ -2092,6 +2125,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
 
   if (nreturn) {
     recvbuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(2*nreturn*sizeof(ZOLTAN_GNO_TYPE));
+    if (!recvbuf){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "out of memory");
+      *ierr=ZOLTAN_MEMERR;
+    }
   }
 
   /* do the communication */
@@ -2140,6 +2177,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   if (nreturn) {
     ddlookup = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(nreturn*sizeof(ZOLTAN_GNO_TYPE));   
     owners = (int *)ZOLTAN_MALLOC(nreturn*sizeof(int));
+    if (!ddlookup || !owners){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "out of memory");
+      *ierr=ZOLTAN_MEMERR;
+    }
     for (i=0; i<nreturn; i++) {
       ddlookup[i]=(ZOLTAN_ID_TYPE)recvbuf[2*i];
     }
@@ -2910,6 +2951,7 @@ static char *make_platform_name_string()
 int i;
 int len;
 char *msg;
+char *yo = "make_platform_name_string";
 
 
   for (i=0, len=0; i < ZOLTAN_HIER_LAST_PLATFORM; i++){
@@ -2919,6 +2961,10 @@ char *msg;
   len += ((ZOLTAN_HIER_LAST_PLATFORM * 3) + 64);
 
   msg = (char *)ZOLTAN_MALLOC(len);
+  if (!msg){
+    ZOLTAN_PRINT_ERROR(-1, yo, "Out of memory");
+    return NULL;
+  }
   msg[0] = 0;
 
   for (i=1; i <= ZOLTAN_HIER_LAST_PLATFORM; i++){

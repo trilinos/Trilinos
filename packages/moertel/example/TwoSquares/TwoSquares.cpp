@@ -141,7 +141,10 @@ int main(int argc, char *argv[])
     %
     % where S1 = (-1,1) x (-1,1) and S2 = (-1, 1) x (1, 3).
     */
+
     FileGrid Grid(Comm, "TwoSquares.grid");
+    
+    
     
     
     // create a list of all nodes that are linked to a face
@@ -480,11 +483,18 @@ int main(int argc, char *argv[])
   }
   catch (int e) {
     cerr << "Caught exception, value = " << e << endl;
+	status = 1;
+  }
+  catch (Galeri::Exception& rhs) {
+
+			cerr << "Caught Galeri exception: ";
+			rhs.Print();
+	status = 1;
   }
   catch (...) {
     cerr << "Caught generic exception" << endl;
+	status = 1;
   }
-
 
 #ifdef HAVE_MPI
   MPI_Finalize();

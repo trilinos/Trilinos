@@ -42,17 +42,25 @@
 
 #include <cstddef>
 #include <string>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
+#include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class DeviceType > class MultiVectorView ;
-
 template< typename ValueType , class DeviceType >
 MultiVectorView< ValueType , DeviceType >
 create_labeled_multivector( const std::string & label ,
                             size_t length , size_t count = 1 );
+
+namespace Impl {
+
+template< typename ValueType , class DeviceDst , bool ContigDst ,
+                               class DeviceSrc , bool ContigSrc >
+class MultiVectorDeepCopy ;
+
+}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -116,7 +124,14 @@ public:
   MultiVectorView( const MultiVectorView & rhs , size_type iVbeg , size_type iVend );
 
   /*------------------------------------------------------------------*/
+  /** \brief  Query if NULL view */
+  operator bool () const ;
 
+  /** \brief  Query if view to same memory */
+  bool operator == ( const MultiVectorView & ) const ;
+
+  /** \brief  Query if not view to same memory */
+  bool operator != ( const MultiVectorView & ) const ;
 private:
 
   MultiVectorView( const std::string & label ,
@@ -127,6 +142,11 @@ private:
   MultiVectorView< V , M >
   create_labeled_multivector( const std::string & label ,
                               size_t length , size_t count );
+
+  template< typename V , class Dst , bool , class Src , bool >
+  friend
+  class Impl::MultiVectorDeepCopy ;
+
 };
 
 //----------------------------------------------------------------------------
@@ -166,8 +186,6 @@ create_multivector( size_t length , size_t count = 1 )
     ( std::string() , length , count );
 }
 
-//----------------------------------------------------------------------------
-
 template< class MultiVectorType >
 inline
 MultiVectorView< typename MultiVectorType::value_type ,
@@ -179,6 +197,24 @@ create_multivector( size_t length , size_t count = 1 )
          ( std::string() , length , count );
 }
 
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+inline
+void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
+                const MultiVectorView< ValueType , DeviceSrc > & src )
+{
+  typedef MultiVectorView< ValueType , DeviceDst > dst_type ;
+  typedef MultiVectorView< ValueType , DeviceSrc > src_type ;
+
+  Impl::multivector_require_equal_dimension( dst.length() , dst.count() ,
+                                             src.length() , src.count() );
+
+  Impl::MultiVectorDeepCopy<ValueType,
+                            DeviceDst,dst_type::Contiguous,
+                            DeviceSrc,dst_type::Contiguous>::run( dst , src );
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -186,23 +222,24 @@ create_multivector( size_t length , size_t count = 1 )
 // Partial specializations for known devices
   
 #if defined( KOKKOS_DEVICE_HOST )
-#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 #include <impl/Kokkos_MultiVectorView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 #endif
   
 #if defined( KOKKOS_DEVICE_TPI )
-#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <Kokkos_DeviceTPI_macros.hpp>
 #include <impl/Kokkos_MultiVectorView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
+#include <DeviceTPI/Kokkos_DeviceTPI_MultiVectorView.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
-#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
 #include <impl/Kokkos_MultiVectorView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
+#include <DeviceCuda/Kokkos_DeviceCuda_MultiVectorView.hpp>
 #endif
 
 #endif /* KOKKOS_MULTIVECTORVIEW_HPP */
-
 

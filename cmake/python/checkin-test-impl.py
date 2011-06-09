@@ -576,6 +576,11 @@ clp.add_option(
   help="Do not enable forward Trilinos packages.", default=True )
 
 clp.add_option(
+  "--abort-gracefully-if-no-enables", dest="abortGracefullyIfNoEnables", action="store_true",
+  help="If set, then the script will abort gracefully if packages are enabled.",
+  default=False )
+
+clp.add_option(
   "--extra-cmake-options", dest="extraCmakeOptions", type="string", default="",
   help="Extra options to pass to 'cmake' after all other options." \
   +" This should be used only as a last resort.  To disable packages, instead use" \
@@ -631,12 +636,12 @@ clp.add_option(
 
 clp.add_option(
   "--send-email-to", dest="sendEmailTo", type="string",
-  default=getCmndOutput("eg config --get user.email", True, False),
+  default=getCmndOutput("git config --get user.email", True, False),
   help="List of comma-separated email addresses to send email notification to" \
   +" after every build/test case finishes and at the end for an overall summary" \
   +" and push status." \
   +"  By default, this is the email address you set for git returned by" \
-  +" `eg config --get user.email`.  In order to turn off email" \
+  +" `git config --get user.email`.  In order to turn off email" \
   +" notification, just set --send-email-to='' and no email will be sent." )
 
 clp.add_option(
@@ -800,6 +805,8 @@ if options.enableFwdPackages:
   print "  --enable-fwd-packages \\"
 else:
   print "  --no-enable-fwd-packages \\"
+if options.abortGracefullyIfNoEnables:
+  print "  --abort-gracefully-if-no-enables \\"
 print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
 if options.overallNumProcs:
   print "  -j"+options.overallNumProcs+" \\"

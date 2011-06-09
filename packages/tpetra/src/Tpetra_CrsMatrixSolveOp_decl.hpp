@@ -95,7 +95,7 @@ namespace Tpetra {
 
   /*! \brief Non-member function to create CrsMatrixSolveOp
 
-      \relates CrsMatrixSolveOp
+      \relatesalso CrsMatrixSolveOp
    */
   template <class Scalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::RCP< CrsMatrixSolveOp<Scalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >

@@ -240,7 +240,6 @@ void LSCSIMPLECStrategy::initializeFromParameterList(const Teuchos::ParameterLis
 {
    // get string specifying inverse
    std::string invStr="", invVStr="", invPStr="";
-   bool rowZeroing = true;
    bool useLDU = false;
    scaleType_ = Diagonal;
 

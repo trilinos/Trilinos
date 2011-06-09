@@ -56,6 +56,7 @@
 */
 
 struct Point : public shards::ArrayDimTag {
+  Point(){};
   const char * name() const ;
   static const Point& tag();
 };

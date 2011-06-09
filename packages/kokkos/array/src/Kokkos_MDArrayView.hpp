@@ -42,15 +42,11 @@
 
 #include <cstddef>
 #include <string>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
+#include <impl/Kokkos_ArrayBounds.hpp>
+#include <impl/Kokkos_StaticAssert.hpp>
 
 namespace Kokkos {
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType ,
-          class DeviceType ,
-          class MapOption = typename DeviceType::default_mdarray_map >
-class MDArrayView ;
 
 template< typename ValueType , class DeviceType , class MapOption >
 MDArrayView< ValueType , DeviceType , MapOption >
@@ -59,13 +55,18 @@ create_labeled_mdarray( const std::string & label ,
                                     size_t n3 = 0 , size_t n4 = 0 ,
                                     size_t n5 = 0 , size_t n6 = 0 ,
                                     size_t n7 = 0 );
+
+namespace Impl {
+
+template< typename ValueType ,
+          class DeviceDst , class MapDst , bool ContigDst ,
+          class DeviceSrc , class MapSrc , bool ContigSrc >
+class MDArrayDeepCopy ;
+
 }
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-
-namespace Kokkos {
-
 /** \brief  Multidimensional array allocated and mapped
  *          onto a compute device.
  *
@@ -104,8 +105,8 @@ public:
   typedef typename DeviceType::size_type  size_type ;
 
   /*------------------------------------------------------------------*/
-  /** \brief  True if the array type has contigous memory
-   *          If contigous then can get a pointer to the memory.
+  /** \brief  True if the array type has contiguous memory
+   *          If contiguous then can get a pointer to the memory.
    */
   enum { Contiguous = false };
 
@@ -202,6 +203,14 @@ public:
   inline
   ~MDArrayView();
 
+  /*------------------------------------------------------------------*/
+  /** \brief  Query if non-NULL view */
+  operator bool () const ;
+
+  bool operator == ( const MDArrayView & ) const ;
+
+  bool operator != ( const MDArrayView & ) const ;
+
 private:
 
   MDArrayView( const std::string & label ,
@@ -214,6 +223,12 @@ private:
   create_labeled_mdarray( const std::string & label ,
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
+
+  
+  template< typename V , class DeviceDst , class MapDst , bool ContigDst ,
+                         class DeviceSrc , class MapSrc , bool ContigSrc >
+  friend
+  class Impl::MDArrayDeepCopy ;
 };
 
 //----------------------------------------------------------------------------
@@ -313,40 +328,114 @@ create_mdarray( size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
            ( std::string() , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
 }
 
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class DeviceDst , class MapDst ,
+                               class DeviceSrc , class MapSrc >
+inline
+void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
+                const MDArrayView<ValueType,DeviceSrc,MapSrc> & src )
+{
+  enum { ContigDst = MDArrayView<ValueType,DeviceDst,MapDst>::Contiguous };
+  enum { ContigSrc = MDArrayView<ValueType,DeviceSrc,MapSrc>::Contiguous };
+
+  typedef MDArrayView<ValueType,DeviceDst,MapDst>  dst_type ;
+  typedef MDArrayView<ValueType,DeviceSrc,MapSrc>  src_type ;
+
+  Impl::mdarray_require_equal_dimension( dst , src );
+
+  Impl::MDArrayDeepCopy< ValueType,
+                         DeviceDst, MapDst, ContigDst,
+                         DeviceSrc, MapSrc, ContigSrc >::run( dst , src );
+}
+
 } // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-#include <impl/Kokkos_ArrayBounds.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Partial specializations for known devices and default index maps
 
 #if defined( KOKKOS_DEVICE_HOST )
-#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 #include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
+#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
 #include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_TPI )
-#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <Kokkos_DeviceTPI_macros.hpp>
 #include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
+#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
 #include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
+#include <DeviceTPI/Kokkos_DeviceTPI_MDArrayView.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
-#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
 #include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
+#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
 #include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
+#include <DeviceCuda/Kokkos_DeviceCuda_MDArrayView.hpp>
 #endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+/** \brief  Deep copy between different devices, different maps,
+ *          and no assumption of contiguity.
+ */
+template< typename ValueType , class DeviceDst , class MapDst , bool ,
+                               class DeviceSrc , class MapSrc , bool >
+class MDArrayDeepCopy {
+private:
+  enum { okD = StaticAssert< ! SameType<DeviceDst,DeviceSrc>::value >::value };
+  enum { okM = StaticAssert< ! SameType<MapDst,MapSrc>::value >::value };
+public:
+
+  typedef MDArrayView<ValueType,DeviceDst,MapDst> dst_type ;
+  typedef MDArrayView<ValueType,DeviceSrc,MapSrc> src_type ;
+  typedef MDArrayView<ValueType,DeviceDst,MapSrc> dst_srcmap_type ;
+
+  typedef MDArrayDeepCopy< ValueType,
+                           DeviceDst,MapSrc,dst_srcmap_type::Contiguous,
+                           DeviceSrc,MapSrc,src_type::Contiguous >
+    relocate_operator ;
+
+  typedef MDArrayDeepCopy< ValueType,
+                           DeviceDst,MapDst, dst_type::Contiguous,
+                           DeviceDst,MapSrc, dst_srcmap_type::Contiguous >
+    remap_operator ;
+
+  // Both the devices and the maps are different.
+  // Copy to a temporary on the destination with the source map
+  // and then remap the temporary to the final array.
+  static
+  void run( const dst_type & dst , const src_type & src )
+  {
+    size_t dims[ MDArrayMaxRank ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+    dst.dimensions( dims );
+
+    dst_srcmap_type tmp_dst = create_labeled_mdarray<dst_srcmap_type>(
+                                "temporary" ,
+                                dims[0] , dims[1] , dims[2] , dims[3] ,
+                                dims[4] , dims[5] , dims[6] , dims[7] );
+
+    relocate_operator::run( tmp_dst , src );
+    remap_operator   ::run( dst ,     tmp_dst );
+  }
+};
+
+//----------------------------------------------------------------------------
+
+} // namespace Impl
+} // namespace Kokkos
 
 #endif /* KOKKOS_MDARRAYVIEW_HPP */
 

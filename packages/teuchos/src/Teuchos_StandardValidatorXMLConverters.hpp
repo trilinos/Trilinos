@@ -73,7 +73,7 @@ namespace Teuchos {
  * XML attribute, all other "String" tags must do so as well.
  */
 template<class IntegralType>
-class TEUCHOS_LIB_DLL_EXPORT StringToIntegralValidatorXMLConverter : 
+class StringToIntegralValidatorXMLConverter : 
   public ValidatorXMLConverter
 {
 
@@ -319,7 +319,7 @@ private:
  * The "min", "max", "step", and "precision" XML attributes are all optional.
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT EnhancedNumberValidatorXMLConverter : public ValidatorXMLConverter
+class EnhancedNumberValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:
@@ -572,7 +572,7 @@ private:
  * \endcode
  */
 template<class ValidatorType, class EntryType>
-class TEUCHOS_LIB_DLL_EXPORT ArrayValidatorXMLConverter : public ValidatorXMLConverter
+class ArrayValidatorXMLConverter : public ValidatorXMLConverter
 {
 
 public:

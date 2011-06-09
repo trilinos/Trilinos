@@ -11,6 +11,7 @@
 
 #include <iosfwd>
 #include <vector>
+#include <cstddef>
 
 #include <stk_util/parallel/Parallel.hpp>
 

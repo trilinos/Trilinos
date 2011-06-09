@@ -17,23 +17,47 @@ PACKAGE(Moertel)
 #  "Enable experimental."
 #  OFF )
 
+IF(Moertel_ENABLE_Mesh)
+
+# Exodus is optional, it can be missing, come in through a TPL, or Trios
 IF(TPL_ENABLE_ExodusII)
 ADD_OPTION_AND_DEFINE(TPL_ENABLE_ExodusII
   HAVE_MOERTEL_EXODUS
-  "Enable ExodusII reader in Moertel requires ExodusII TPL)."
+  "Enable ExodusII reader in Moertel requires ExodusII TPL."
   OFF )
   INCLUDE_DIRECTORIES(${TPL_ExodusII_INCLUDE_DIRS})
+  #ELSEIF(Trilinos_ENABLE_Trios)
+  #ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_Trios
+ELSEIF(Trios_ENABLE_EXODUS)
+  ADD_OPTION_AND_DEFINE(Trios_ENABLE_EXODUS
+  HAVE_MOERTEL_EXODUS
+  "Enable ExodusII reader in Moertel requires Trios)."
+  OFF )
+  INCLUDE_DIRECTORIES(${Trios_INCLUDE_DIRS})
 ENDIF()
 
-IF(TPL_ENABLE_MPI)
+# Nemesis is optional, it can be missing, come in through a TPL, or Trios
+# It is only needed when MPI is enabled, and if Exodus is present
+IF(TPL_ENABLE_MPI AND HAVE_MOERTEL_EXODUS)
   IF(TPL_ENABLE_Nemesis)
   ADD_OPTION_AND_DEFINE(TPL_ENABLE_Nemesis
     HAVE_MOERTEL_NEMESIS
-    "Enable ExodusII/Nemesis reader in Moertel requires Nemesis TPL)."
+    "Enable ExodusII/Nemesis reader in Moertel requires Nemesis TPL."
     OFF )
     INCLUDE_DIRECTORIES(${TPL_Nemesis_INCLUDE_DIRS})
+	#ELSEIF(Trilinos_ENABLE_Trios)
+	#ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_Trios
+  ELSEIF(Trios_ENABLE_NEMESIS)
+  ADD_OPTION_AND_DEFINE(Trios_ENABLE_NEMESIS
+    HAVE_MOERTEL_NEMESIS
+    "Enable ExodusII reader in Moertel requires Trios)."
+    OFF )
   ENDIF()
 ENDIF()
+
+ENDIF()
+
+
 
 
 #
@@ -41,7 +65,6 @@ ENDIF()
 #
 
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(src-mesh)
 
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 

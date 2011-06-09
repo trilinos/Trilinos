@@ -23,10 +23,6 @@ C++ includes: Epetra_BasicDirectory.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BasicDirectory::Epetra_BasicDirectory "Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap
 &Map)
 
@@ -42,10 +38,6 @@ Epetra_BasicDirectory copy constructor. ";
 Epetra_BasicDirectory destructor. ";
 
 /*  Query method  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BasicDirectory::GetDirectoryEntries "int Epetra_BasicDirectory::GetDirectoryEntries(const Epetra_BlockMap
 &Map, const int NumEntries, const int *GlobalEntries, int *Procs, int
@@ -99,10 +91,6 @@ processor.
 If any GIDs are owned by multiple processors, returns false. ";
 
 /*  I/O Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BasicDirectory::Print "void
 Epetra_BasicDirectory::Print(ostream &os) const
@@ -189,10 +177,6 @@ C++ includes: Epetra_BasicRowMatrix.h ";
 
 /*  Constructor/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BasicRowMatrix::Epetra_BasicRowMatrix "Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm &Comm)
 
 Epetra_BasicRowMatrix constuctor. ";
@@ -202,10 +186,6 @@ Epetra_BasicRowMatrix constuctor. ";
 Epetra_BasicRowMatrix Destructor. ";
 
 /*  Setup functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BasicRowMatrix::SetMaps "void
 Epetra_BasicRowMatrix::SetMaps(const Epetra_Map &RowMap, const
@@ -222,10 +202,6 @@ Set maps (Version 2); call this function or the previous, but not
 both. ";
 
 /*  User-required implementation methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BasicRowMatrix::ExtractMyRowCopy "virtual int Epetra_BasicRowMatrix::ExtractMyRowCopy(int MyRow, int
 Length, int &NumEntries, double *Values, int *Indices) const =0
@@ -312,10 +288,6 @@ Integer error code, set to 0 if successful, set to -1 if MyRow not
 valid. ";
 
 /*  Computational methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BasicRowMatrix::Multiply "int
 Epetra_BasicRowMatrix::Multiply(bool TransA, const Epetra_MultiVector
@@ -456,10 +428,6 @@ Integer error code, set to 0 if successful. ";
 
 /*  Matrix Properties Query Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BasicRowMatrix::Filled "virtual bool
 Epetra_BasicRowMatrix::Filled() const
 
@@ -478,10 +446,6 @@ If matrix is upper triangular, this query returns true, otherwise it
 returns false. ";
 
 /*  Atribute access functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BasicRowMatrix::NormInf "virtual double
 Epetra_BasicRowMatrix::NormInf() const
@@ -582,10 +546,6 @@ matrix. ";
 
 /*  I/O Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BasicRowMatrix::Print "void
 Epetra_BasicRowMatrix::Print(ostream &os) const
 
@@ -593,10 +553,6 @@ Print method. ";
 
 /*  Additional methods required to support the Epetra_RowMatrix
 interface  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BasicRowMatrix::SetUseTranspose "virtual int Epetra_BasicRowMatrix::SetUseTranspose(bool use_transpose)
 
@@ -669,10 +625,6 @@ Returns the current UseTranspose setting. ";
 
 /*  Additional accessor methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BasicRowMatrix::Importer "virtual const
 Epetra_Import* Epetra_BasicRowMatrix::Importer() const
 
@@ -713,10 +665,6 @@ Epetra_RowMatrix object is valid. ";
 
 /*  Post-construction modifications  */
 
-/*
-
-*/
-
 
 // File: classEpetra__BLAS.xml
 %feature("docstring") Epetra_BLAS "
@@ -744,10 +692,6 @@ C++ includes: Epetra_BLAS.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BLAS::Epetra_BLAS "Epetra_BLAS::Epetra_BLAS(void)
 
 Epetra_BLAS Constructor.
@@ -765,10 +709,6 @@ Makes an exact copy of an existing Epetra_BLAS instance. ";
 Epetra_BLAS Destructor. ";
 
 /*  Level 1 BLAS  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BLAS::ASUM "float
 Epetra_BLAS::ASUM(const int N, const float *X, const int INCX=1) const
@@ -808,75 +748,67 @@ Epetra_BLAS norm function (DNRM2). ";
 Epetra_BLAS::SCAL(const int N, const float ALPHA, float *X, const int
 INCX=1) const
 
-Epetra_BLAS vector scale function (SSCAL). ";
+Epetra_BLAS vector scale function (SSCAL) ";
 
 %feature("docstring")  Epetra_BLAS::SCAL "void
 Epetra_BLAS::SCAL(const int N, const double ALPHA, double *X, const
 int INCX=1) const
 
-Epetra_BLAS vector scale function (DSCAL). ";
+Epetra_BLAS vector scale function (DSCAL) ";
 
 %feature("docstring")  Epetra_BLAS::COPY "void
 Epetra_BLAS::COPY(const int N, const float *X, float *Y, const int
 INCX=1, const int INCY=1) const
 
-Epetra_BLAS vector copy function (SCOPY). ";
+Epetra_BLAS vector copy function (SCOPY) ";
 
 %feature("docstring")  Epetra_BLAS::COPY "void
 Epetra_BLAS::COPY(const int N, const double *X, double *Y, const int
 INCX=1, const int INCY=1) const
 
-Epetra_BLAS vector scale function (DCOPY). ";
+Epetra_BLAS vector scale function (DCOPY) ";
 
 %feature("docstring")  Epetra_BLAS::IAMAX "int
 Epetra_BLAS::IAMAX(const int N, const float *X, const int INCX=1)
 const
 
-Epetra_BLAS arg maximum of absolute value function (ISAMAX). ";
+Epetra_BLAS arg maximum of absolute value function (ISAMAX) ";
 
 %feature("docstring")  Epetra_BLAS::IAMAX "int
 Epetra_BLAS::IAMAX(const int N, const double *X, const int INCX=1)
 const
 
-Epetra_BLAS arg maximum of absolute value function (IDAMAX). ";
+Epetra_BLAS arg maximum of absolute value function (IDAMAX) ";
 
 %feature("docstring")  Epetra_BLAS::AXPY "void
 Epetra_BLAS::AXPY(const int N, const float ALPHA, const float *X,
 float *Y, const int INCX=1, const int INCY=1) const
 
-Epetra_BLAS vector update function (SAXPY). ";
+Epetra_BLAS vector update function (SAXPY) ";
 
 %feature("docstring")  Epetra_BLAS::AXPY "void
 Epetra_BLAS::AXPY(const int N, const double ALPHA, const double *X,
 double *Y, const int INCX=1, const int INCY=1) const
 
-Epetra_BLAS vector update function (DAXPY). ";
+Epetra_BLAS vector update function (DAXPY) ";
 
 /*  Level 2 BLAS  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BLAS::GEMV "void
 Epetra_BLAS::GEMV(const char TRANS, const int M, const int N, const
 float ALPHA, const float *A, const int LDA, const float *X, const
 float BETA, float *Y, const int INCX=1, const int INCY=1) const
 
-Epetra_BLAS matrix-vector multiply function (SGEMV). ";
+Epetra_BLAS matrix-vector multiply function (SGEMV) ";
 
 %feature("docstring")  Epetra_BLAS::GEMV "void
 Epetra_BLAS::GEMV(const char TRANS, const int M, const int N, const
 double ALPHA, const double *A, const int LDA, const double *X, const
 double BETA, double *Y, const int INCX=1, const int INCY=1) const
 
-Epetra_BLAS matrix-vector multiply function (DGEMV). ";
+Epetra_BLAS matrix-vector multiply function (DGEMV) ";
 
 /*  Level 3 BLAS  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BLAS::GEMM "void
 Epetra_BLAS::GEMM(const char TRANSA, const char TRANSB, const int M,
@@ -884,7 +816,7 @@ const int N, const int K, const float ALPHA, const float *A, const int
 LDA, const float *B, const int LDB, const float BETA, float *C, const
 int LDC) const
 
-Epetra_BLAS matrix-matrix multiply function (SGEMM). ";
+Epetra_BLAS matrix-matrix multiply function (SGEMM) ";
 
 %feature("docstring")  Epetra_BLAS::GEMM "void
 Epetra_BLAS::GEMM(const char TRANSA, const char TRANSB, const int M,
@@ -892,14 +824,14 @@ const int N, const int K, const double ALPHA, const double *A, const
 int LDA, const double *B, const int LDB, const double BETA, double *C,
 const int LDC) const
 
-Epetra_BLAS matrix-matrix multiply function (DGEMM). ";
+Epetra_BLAS matrix-matrix multiply function (DGEMM) ";
 
 %feature("docstring")  Epetra_BLAS::SYMM "void
 Epetra_BLAS::SYMM(const char SIDE, const char UPLO, const int M, const
 int N, const float ALPHA, const float *A, const int LDA, const float
 *B, const int LDB, const float BETA, float *C, const int LDC) const
 
-Epetra_BLAS symmetric matrix-matrix multiply function (SSYMM). ";
+Epetra_BLAS symmetric matrix-matrix multiply function (SSYMM) ";
 
 %feature("docstring")  Epetra_BLAS::SYMM "void
 Epetra_BLAS::SYMM(const char SIDE, const char UPLO, const int M, const
@@ -907,35 +839,35 @@ int N, const double ALPHA, const double *A, const int LDA, const
 double *B, const int LDB, const double BETA, double *C, const int LDC)
 const
 
-Epetra_BLAS matrix-matrix multiply function (DSYMM). ";
+Epetra_BLAS matrix-matrix multiply function (DSYMM) ";
 
 %feature("docstring")  Epetra_BLAS::TRMM "void
 Epetra_BLAS::TRMM(const char SIDE, const char UPLO, const char TRANSA,
 const char DIAG, const int M, const int N, const float ALPHA, const
 float *A, const int LDA, float *B, const int LDB) const
 
-Epetra_BLAS triangular matrix-matrix multiply function (STRMM). ";
+Epetra_BLAS triangular matrix-matrix multiply function (STRMM) ";
 
 %feature("docstring")  Epetra_BLAS::TRMM "void
 Epetra_BLAS::TRMM(const char SIDE, const char UPLO, const char TRANSA,
 const char DIAG, const int M, const int N, const double ALPHA, const
 double *A, const int LDA, double *B, const int LDB) const
 
-Epetra_BLAS triangular matrix-matrix multiply function (DTRMM). ";
+Epetra_BLAS triangular matrix-matrix multiply function (DTRMM) ";
 
 %feature("docstring")  Epetra_BLAS::SYRK "void
 Epetra_BLAS::SYRK(const char UPLO, const char TRANS, const int N,
 const int K, const float ALPHA, const float *A, const int LDA, const
 float BETA, float *C, const int LDC) const
 
-Eperta_BLAS symetric rank k funtion (ssyrk). ";
+Eperta_BLAS symetric rank k funtion (ssyrk) ";
 
 %feature("docstring")  Epetra_BLAS::SYRK "void
 Epetra_BLAS::SYRK(const char UPLO, const char TRANS, const int N,
 const int K, const double ALPHA, const double *A, const int LDA, const
 double BETA, double *C, const int LDC) const
 
-Eperta_BLAS symetric rank k funtion (dsyrk). ";
+Eperta_BLAS symetric rank k funtion (dsyrk) ";
 
 
 // File: classEpetra__BlockMap.xml
@@ -1105,10 +1037,6 @@ C++ includes: Epetra_BlockMap.h ";
 
 /*  Constructors/destructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 ElementSize, int IndexBase, const Epetra_Comm &Comm)
 
@@ -1271,10 +1199,6 @@ Epetra_BlockMap destructor. ";
 
 /*  Local/Global ID accessor methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BlockMap::RemoteIDList "int
 Epetra_BlockMap::RemoteIDList(int NumIDs, const int *GIDList, int
 *PIDList, int *LIDList) const
@@ -1368,10 +1292,6 @@ The maximum local index value on the calling processor. ";
 
 /*  Size and dimension accessor functions  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BlockMap::NumGlobalElements "int
 Epetra_BlockMap::NumGlobalElements() const
 
@@ -1449,10 +1369,6 @@ Maximum element size across all processors. ";
 
 /*  Miscellaneous boolean tests  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BlockMap::UniqueGIDs "bool
 Epetra_BlockMap::UniqueGIDs() const
 
@@ -1494,10 +1410,6 @@ Epetra_BlockMap::DistributedGlobal() const
 Returns true if map is defined across more than one processor. ";
 
 /*  Array accessor functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BlockMap::MyGlobalElements "int *
 Epetra_BlockMap::MyGlobalElements() const
@@ -1548,10 +1460,6 @@ passed in. ";
 
 /*  Miscellaneous  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_BlockMap::Print "void
 Epetra_BlockMap::Print(ostream &os) const
 
@@ -1566,10 +1474,6 @@ Access function for Epetra_Comm communicator. ";
 Epetra_BlockMap::IsOneToOne() const ";
 
 /*  Expert Users and Developers Only  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_BlockMap::ReferenceCount "int
 Epetra_BlockMap::ReferenceCount() const
@@ -1600,10 +1504,6 @@ C++ includes: Epetra_BlockMapData.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 
 // File: classEpetra__Comm.xml
 %feature("docstring") Epetra_Comm "
@@ -1632,10 +1532,6 @@ C++ includes: Epetra_Comm.h ";
 
 /*  Constructor / Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Comm::Clone "virtual Epetra_Comm*
 Epetra_Comm::Clone() const =0
 
@@ -1652,10 +1548,6 @@ Epetra_Comm Destructor. ";
 
 /*  Barrier Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Comm::Barrier "virtual void
 Epetra_Comm::Barrier() const =0
 
@@ -1665,10 +1557,6 @@ Each processor must wait at the point the barrier is called until all
 processors have arrived. ";
 
 /*  Broadcast Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Comm::Broadcast "virtual int
 Epetra_Comm::Broadcast(double *MyVals, int Count, int Root) const =0
@@ -1756,10 +1644,6 @@ will receive a copy of Values. ";
 
 /*  Gather Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Comm::GatherAll "virtual int
 Epetra_Comm::GatherAll(double *MyVals, double *AllVals, int Count)
 const =0
@@ -1820,10 +1704,6 @@ processors. Must be of size NumProc*Count.
 Count:  In On entry, contains the length of the list of MyVals. ";
 
 /*  Sum Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Comm::SumAll "virtual int
 Epetra_Comm::SumAll(double *PartialSums, double *GlobalSums, int
@@ -1886,10 +1766,6 @@ all processors.
 Count:  In On entry, contains the length of the list of values. ";
 
 /*  Max/Min Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Comm::MaxAll "virtual int
 Epetra_Comm::MaxAll(double *PartialMaxs, double *GlobalMaxs, int
@@ -2019,10 +1895,6 @@ Count:  In On entry, contains the length of the list of values. ";
 
 /*  Parallel Prefix Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Comm::ScanSum "virtual int
 Epetra_Comm::ScanSum(double *MyVals, double *ScanSums, int Count)
 const =0
@@ -2089,10 +1961,6 @@ Count:  In On entry, contains the length of the list of values. ";
 
 /*  Attribute Accessor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Comm::MyPID "virtual int
 Epetra_Comm::MyPID() const =0
 
@@ -2111,10 +1979,6 @@ returns 1. ";
 
 /*  Gather/Scatter and Directory Constructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Comm::CreateDistributor "virtual
 Epetra_Distributor* Epetra_Comm::CreateDistributor() const =0
 
@@ -2127,10 +1991,6 @@ Epetra_Directory* Epetra_Comm::CreateDirectory(const Epetra_BlockMap
 Create a directory object for the given Epetra_BlockMap. ";
 
 /*  I/O methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Comm::PrintInfo "virtual void
 Epetra_Comm::PrintInfo(ostream &os) const =0
@@ -2152,10 +2012,6 @@ C++ includes: Epetra_CompObject.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CompObject::Epetra_CompObject "Epetra_CompObject::Epetra_CompObject()
 
 Basic Epetra_CompObject constuctor. ";
@@ -2169,10 +2025,6 @@ Epetra_CompObject copy constructor. ";
 Epetra_CompObject destructor. ";
 
 /*  Set/Get counter method  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CompObject::SetFlopCounter "void
 Epetra_CompObject::SetFlopCounter(const Epetra_Flops &FlopCounter_in)
@@ -2197,10 +2049,6 @@ object, returns 0 if none. ";
 
 /*  Set flop count methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CompObject::ResetFlops "void
 Epetra_CompObject::ResetFlops() const
 
@@ -2214,10 +2062,6 @@ Returns the number of floating point operations with this multi-
 vector. ";
 
 /*  Update flop count methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CompObject::UpdateFlops "void
 Epetra_CompObject::UpdateFlops(int Flops_in) const
@@ -2462,10 +2306,6 @@ C++ includes: Epetra_CrsGraph.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsGraph::Epetra_CrsGraph "Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const
 Epetra_BlockMap &RowMap, const int *NumIndicesPerRow, bool
 StaticProfile=false)
@@ -2603,10 +2443,6 @@ Epetra_CrsGraph Destructor. ";
 
 /*  Insertion/Removal methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsGraph::InsertGlobalIndices "int
 Epetra_CrsGraph::InsertGlobalIndices(int GlobalRow, int NumIndices,
 int *Indices)
@@ -2729,10 +2565,6 @@ IndicesAreLocal()==true, StorageOptimized()==false ";
 
 /*  Transformation methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsGraph::FillComplete "int
 Epetra_CrsGraph::FillComplete()
 
@@ -2798,10 +2630,6 @@ graph is minimized.
 StorageOptimized()==true, if successful ";
 
 /*  Extraction methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsGraph::ExtractGlobalRowCopy "int
 Epetra_CrsGraph::ExtractGlobalRowCopy(int GlobalRow, int LenOfIndices,
@@ -2893,10 +2721,6 @@ IndicesAreLocal()==true ";
 
 /*  Graph Properties Query Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsGraph::Filled "bool
 Epetra_CrsGraph::Filled() const
 
@@ -2963,10 +2787,6 @@ either of the FillComplete functions will result in MakeColMap being
 called.) ";
 
 /*  Atribute access functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsGraph::NumMyRows "int
 Epetra_CrsGraph::NumMyRows() const
@@ -3244,10 +3064,6 @@ graph. ";
 
 /*  Local/Global ID methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsGraph::LRID "int
 Epetra_CrsGraph::LRID(int GRID_in) const
 
@@ -3306,15 +3122,7 @@ HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 
 /*  Inlined Operator Methods  */
 
-/*
-
-*/
-
 /*  I/O Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsGraph::Print "void
 Epetra_CrsGraph::Print(ostream &os) const
@@ -3329,10 +3137,6 @@ Epetra_CrsGraph::PrintGraphData(ostream &os, int level) const ";
 
 /*  Deprecated methods:  These methods still work, but will be removed
 in a future version  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsGraph::ImportMap "const
 Epetra_BlockMap& Epetra_CrsGraph::ImportMap() const
@@ -3352,10 +3156,6 @@ Use FillComplete(const Epetra_BlockMap& DomainMap, const
 Epetra_BlockMap& RangeMap) instead. ";
 
 /*  Expert Users and Developers Only  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsGraph::ReferenceCount "int
 Epetra_CrsGraph::ReferenceCount() const
@@ -3405,16 +3205,8 @@ C++ includes: Epetra_CrsGraphData.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 /*  Helper methods called in CrsGraph. Mainly memory allocations and
 deallocations.  */
-
-/*
-
-*/
 
 
 // File: classEpetra__CrsMatrix.xml
@@ -3557,10 +3349,6 @@ constructor.
 C++ includes: Epetra_CrsMatrix.h ";
 
 /*  Constructors/Destructor  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const
 Epetra_Map &RowMap, const int *NumEntriesPerRow, bool
@@ -3709,10 +3497,6 @@ Copy constructor. ";
 Epetra_CrsMatrix Destructor. ";
 
 /*  Insertion/Replace/SumInto methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsMatrix::PutScalar "int
 Epetra_CrsMatrix::PutScalar(double ScalarConstant)
@@ -4015,10 +3799,6 @@ Diagonal values have been replaced with the values of Diagonal. ";
 
 /*  Transformation methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsMatrix::FillComplete "int
 Epetra_CrsMatrix::FillComplete(bool OptimizeDataStorage=true)
 
@@ -4073,10 +3853,6 @@ Eliminates memory that is used for construction. Make consecutive row
 index sections contiguous. ";
 
 /*  Extraction methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsMatrix::ExtractGlobalRowCopy "int
 Epetra_CrsMatrix::ExtractGlobalRowCopy(int GlobalRow, int Length, int
@@ -4269,10 +4045,6 @@ Values:  - (Out) Extracted values for this row.
 Integer error code, set to 0 if successful. ";
 
 /*  Computational methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsMatrix::Multiply "int
 Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector &x,
@@ -4558,10 +4330,6 @@ The matrix will be scaled as described above. ";
 
 /*  Matrix Properties Query Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsMatrix::Filled "bool
 Epetra_CrsMatrix::Filled() const
 
@@ -4611,10 +4379,6 @@ If matrix has no diagonal entries in global index space, this query
 returns true, otherwise it returns false. ";
 
 /*  Atribute access functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsMatrix::NormInf "double
 Epetra_CrsMatrix::NormInf() const
@@ -4828,10 +4592,6 @@ matrix. ";
 
 /*  Local/Global ID methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsMatrix::LRID "int
 Epetra_CrsMatrix::LRID(int GRID_in) const
 
@@ -4896,10 +4656,6 @@ returns false. ";
 
 /*  I/O Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsMatrix::Print "void
 Epetra_CrsMatrix::Print(ostream &os) const
 
@@ -4907,10 +4663,6 @@ Print method. ";
 
 /*  Additional methods required to support the Epetra_Operator
 interface  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsMatrix::Label "const char*
 Epetra_CrsMatrix::Label() const
@@ -5011,10 +4763,6 @@ operator. ";
 /*  Additional methods required to implement Epetra_RowMatrix
 interface  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsMatrix::NumMyRowEntries "int
 Epetra_CrsMatrix::NumMyRowEntries(int MyRow, int &NumEntries) const
 
@@ -5062,17 +4810,9 @@ for distributed operations. ";
 
 /*  Inlined Operator Methods  */
 
-/*
-
-*/
-
 /*  Expert-only methods:  These methods are intended for experts only
 and have some risk of changing in the future, since they rely on
 underlying data structure assumptions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsMatrix::ExtractCrsDataPointers "int
 Epetra_CrsMatrix::ExtractCrsDataPointers(int *&IndexOffset, int
@@ -5123,10 +4863,6 @@ even within the ghost variables. Always returns 0. ";
 
 /*  Deprecated methods:  These methods still work, but will be removed
 in a future version  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsMatrix::ImportMap "const Epetra_Map&
 Epetra_CrsMatrix::ImportMap() const
@@ -5241,10 +4977,6 @@ C++ includes: Epetra_CrsSingletonFilter.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")
 Epetra_CrsSingletonFilter::Epetra_CrsSingletonFilter "Epetra_CrsSingletonFilter::Epetra_CrsSingletonFilter()
 
@@ -5256,10 +4988,6 @@ Epetra_CrsSingletonFilter::~Epetra_CrsSingletonFilter "Epetra_CrsSingletonFilter
 Epetra_CrsSingletonFilter Destructor. ";
 
 /*  Analyze methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsSingletonFilter::Analyze "int
 Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix *FullMatrix)
@@ -5283,10 +5011,6 @@ Returns true if singletons were detected in this matrix (must be
 called after Analyze() to be effective). ";
 
 /*  Reduce methods  */
-
-/*
-
-*/
 
 %feature("docstring")
 Epetra_CrsSingletonFilter::ConstructReducedProblem "int
@@ -5316,10 +5040,6 @@ Error code, set to 0 if no error. ";
 
 /*  Methods to construct Full System Solution  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_CrsSingletonFilter::ComputeFullSolution
 "int Epetra_CrsSingletonFilter::ComputeFullSolution()
 
@@ -5333,10 +5053,6 @@ original problem will be in the LHS of the original
 Epetra_LinearProblem. ";
 
 /*  Filter Statistics  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsSingletonFilter::NumRowSingletons "int Epetra_CrsSingletonFilter::NumRowSingletons() const
 
@@ -5372,10 +5088,6 @@ Returns ratio of reduced system to full system nonzero count, returns
 -1.0 if reduced problem not constructed. ";
 
 /*  Attribute Access Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_CrsSingletonFilter::FullProblem "Epetra_LinearProblem* Epetra_CrsSingletonFilter::FullProblem() const
 
@@ -5461,15 +5173,7 @@ C++ includes: Epetra_Data.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 /*  Reference-Counting Methods  */
-
-/*
-
-*/
 
 
 // File: classEpetra__Directory.xml
@@ -5487,20 +5191,12 @@ C++ includes: Epetra_Directory.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Directory::~Epetra_Directory "virtual
 Epetra_Directory::~Epetra_Directory()
 
 Epetra_Directory destructor. ";
 
 /*  Query method  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Directory::GetDirectoryEntries "virtual
 int Epetra_Directory::GetDirectoryEntries(const Epetra_BlockMap &Map,
@@ -5582,10 +5278,6 @@ C++ includes: Epetra_DistObject.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_DistObject::Epetra_DistObject "Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap &Map)
 
 Basic Epetra_DistObject constuctor.
@@ -5634,10 +5326,6 @@ Epetra_DistObject copy constructor. ";
 Epetra_DistObject destructor. ";
 
 /*  Import/Export Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_DistObject::Import "int
 Epetra_DistObject::Import(const Epetra_SrcDistObject &A, const
@@ -5725,10 +5413,6 @@ Integer error code, set to 0 if successful. ";
 
 /*  Attribute accessor methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_DistObject::Map "const Epetra_BlockMap&
 Epetra_DistObject::Map() const
 
@@ -5747,10 +5431,6 @@ local replicated. ";
 
 /*  Miscellaneous  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_DistObject::Print "void
 Epetra_DistObject::Print(ostream &os) const
 
@@ -5758,15 +5438,7 @@ Print method. ";
 
 /*  Internal utilities  */
 
-/*
-
-*/
-
 /*  Virtual methods to be implemented by derived class  */
-
-/*
-
-*/
 
 
 // File: classEpetra__Distributor.xml
@@ -5790,10 +5462,6 @@ C++ includes: Epetra_Distributor.h ";
 
 /*  Constructor and Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Distributor::Clone "virtual
 Epetra_Distributor* Epetra_Distributor::Clone()=0
 
@@ -5804,10 +5472,6 @@ Epetra_Distributor clone constructor. ";
 Epetra_Distributor Destructor. ";
 
 /*  Gather/Scatter Constructors  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Distributor::CreateFromSends "virtual
 int Epetra_Distributor::CreateFromSends(const int &NumExportIDs, const
@@ -5862,10 +5526,6 @@ ExportPIDs:  Out List of processors that will get the exported IDs. ";
 
 /*  Execute Gather/Scatter Operations (Constant size objects)  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Distributor::Do "virtual int
 Epetra_Distributor::Do(char *export_objs, int obj_size, int
 &len_import_objs, char *&import_objs)=0
@@ -5884,7 +5544,7 @@ Epetra_Distributor::DoPosts(char *export_objs, int obj_size, int
 &len_import_objs, char *&import_objs)=0
 
 Post buffer of export objects (can do other local work before
-executing Waits). ";
+executing Waits) ";
 
 %feature("docstring")  Epetra_Distributor::DoWaits "virtual int
 Epetra_Distributor::DoWaits()=0
@@ -5896,7 +5556,7 @@ int Epetra_Distributor::DoReversePosts(char *export_objs, int
 obj_size, int &len_import_objs, char *&import_objs)=0
 
 Do reverse post of buffer of export objects (can do other local work
-before executing Waits). ";
+before executing Waits) ";
 
 %feature("docstring")  Epetra_Distributor::DoReverseWaits "virtual
 int Epetra_Distributor::DoReverseWaits()=0
@@ -5905,43 +5565,35 @@ Wait on a reverse set of posts. ";
 
 /*  Execute Gather/Scatter Operations (Non-constant size objects)  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Distributor::Do "virtual int
 Epetra_Distributor::Do(char *export_objs, int obj_size, int *&sizes,
 int &len_import_objs, char *&import_objs)=0
 
 Execute plan on buffer of export objects in a single step (object size
-may vary). ";
+may vary) ";
 
 %feature("docstring")  Epetra_Distributor::DoReverse "virtual int
 Epetra_Distributor::DoReverse(char *export_objs, int obj_size, int
 *&sizes, int &len_import_objs, char *&import_objs)=0
 
 Execute reverse of plan on buffer of export objects in a single step
-(object size may vary). ";
+(object size may vary) ";
 
 %feature("docstring")  Epetra_Distributor::DoPosts "virtual int
 Epetra_Distributor::DoPosts(char *export_objs, int obj_size, int
 *&sizes, int &len_import_objs, char *&import_objs)=0
 
 Post buffer of export objects (can do other local work before
-executing Waits). ";
+executing Waits) ";
 
 %feature("docstring")  Epetra_Distributor::DoReversePosts "virtual
 int Epetra_Distributor::DoReversePosts(char *export_objs, int
 obj_size, int *&sizes, int &len_import_objs, char *&import_objs)=0
 
 Do reverse post of buffer of export objects (can do other local work
-before executing Waits). ";
+before executing Waits) ";
 
 /*  Print object to an output stream  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Distributor::Print "virtual void
 Epetra_Distributor::Print(ostream &os) const =0 ";
@@ -5966,10 +5618,6 @@ global IDs of elements that we want to export to later.
 C++ includes: Epetra_Export.h ";
 
 /*  Print object to an output stream  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Export::Print "void
 Epetra_Export::Print(ostream &os) const
@@ -6979,101 +6627,7 @@ Epetra_VbrMatrix functionality is also available.
 
 C++ includes: Epetra_FEVbrMatrix.h ";
 
-/*  Insertion/Replace/SumInto methods  */
-
-/*
-
-*/
-
-%feature("docstring")  Epetra_FEVbrMatrix::PutScalar "int
-Epetra_FEVbrMatrix::PutScalar(double ScalarConstant)
-
-Initialize all values in graph of the matrix with constant value.
-
-Parameters:
------------
-
-In:  ScalarConstant - Value to use.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::BeginInsertGlobalValues "int Epetra_FEVbrMatrix::BeginInsertGlobalValues(int BlockRow, int
-NumBlockEntries, int *BlockIndices)
-
-Initiate insertion of a list of elements in a given global row of the
-matrix, values are inserted via SubmitEntry().
-
-Parameters:
------------
-
-In:  BlockRow - Block Row number (in global coordinates) to put
-elements.
-
-In:  NumBlockEntries - Number of entries.
-
-In:  Indices - Global column indices corresponding to values.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::BeginReplaceGlobalValues "int Epetra_FEVbrMatrix::BeginReplaceGlobalValues(int BlockRow, int
-NumBlockEntries, int *BlockIndices)
-
-Initiate replacement of current values with this list of entries for a
-given global row of the matrix, values are replaced via SubmitEntry().
-
-Parameters:
------------
-
-In:  Row - Block Row number (in global coordinates) to put elements.
-
-In:  NumBlockEntries - Number of entries.
-
-In:  Indices - Global column indices corresponding to values.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::BeginSumIntoGlobalValues "int Epetra_FEVbrMatrix::BeginSumIntoGlobalValues(int BlockRow, int
-NumBlockEntries, int *BlockIndices)
-
-Initiate summing into current values with this list of entries for a
-given global row of the matrix, values are replaced via SubmitEntry().
-
-Parameters:
------------
-
-In:  Row - Block Row number (in global coordinates) to put elements.
-
-In:  NumBlockEntries - Number of entries.
-
-In:  Indices - Global column indices corresponding to values.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::SubmitBlockEntry "int
-Epetra_FEVbrMatrix::SubmitBlockEntry(double *Values, int LDA, int
-NumRows, int NumCols)
-
-Submit a block entry to the indicated block row and column specified
-in the Begin routine. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::EndSubmitEntries "int
-Epetra_FEVbrMatrix::EndSubmitEntries()
-
-Completes processing of all data passed in for the current block row.
-
-This function completes the processing of all block entries submitted
-via SubmitBlockEntry(). It also checks to make sure that
-SubmitBlockEntry was called the correct number of times as specified
-by the Begin routine that initiated the entry process. ";
-
-%feature("docstring")  Epetra_FEVbrMatrix::GlobalAssemble "int
-Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete=true) ";
-
 /*  Constructors/Destructor  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_FEVbrMatrix::Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV, const
 Epetra_BlockMap &RowMap, int *NumBlockEntriesPerRow, bool
@@ -7175,6 +6729,92 @@ Copy Constructor. ";
 %feature("docstring")  Epetra_FEVbrMatrix::~Epetra_FEVbrMatrix "Epetra_FEVbrMatrix::~Epetra_FEVbrMatrix()
 
 Epetra_VbrMatrix Destructor. ";
+
+/*  Insertion/Replace/SumInto methods  */
+
+%feature("docstring")  Epetra_FEVbrMatrix::PutScalar "int
+Epetra_FEVbrMatrix::PutScalar(double ScalarConstant)
+
+Initialize all values in graph of the matrix with constant value.
+
+Parameters:
+-----------
+
+In:  ScalarConstant - Value to use.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::BeginInsertGlobalValues "int Epetra_FEVbrMatrix::BeginInsertGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate insertion of a list of elements in a given global row of the
+matrix, values are inserted via SubmitEntry().
+
+Parameters:
+-----------
+
+In:  BlockRow - Block Row number (in global coordinates) to put
+elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::BeginReplaceGlobalValues "int Epetra_FEVbrMatrix::BeginReplaceGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate replacement of current values with this list of entries for a
+given global row of the matrix, values are replaced via SubmitEntry()
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in global coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::BeginSumIntoGlobalValues "int Epetra_FEVbrMatrix::BeginSumIntoGlobalValues(int BlockRow, int
+NumBlockEntries, int *BlockIndices)
+
+Initiate summing into current values with this list of entries for a
+given global row of the matrix, values are replaced via SubmitEntry()
+
+Parameters:
+-----------
+
+In:  Row - Block Row number (in global coordinates) to put elements.
+
+In:  NumBlockEntries - Number of entries.
+
+In:  Indices - Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::SubmitBlockEntry "int
+Epetra_FEVbrMatrix::SubmitBlockEntry(double *Values, int LDA, int
+NumRows, int NumCols)
+
+Submit a block entry to the indicated block row and column specified
+in the Begin routine. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::EndSubmitEntries "int
+Epetra_FEVbrMatrix::EndSubmitEntries()
+
+Completes processing of all data passed in for the current block row.
+
+This function completes the processing of all block entries submitted
+via SubmitBlockEntry(). It also checks to make sure that
+SubmitBlockEntry was called the correct number of times as specified
+by the Begin routine that initiated the entry process. ";
+
+%feature("docstring")  Epetra_FEVbrMatrix::GlobalAssemble "int
+Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete=true) ";
 
 
 // File: classEpetra__FEVector.xml
@@ -7388,10 +7028,6 @@ global IDs that are owned by the calling processor.
 C++ includes: Epetra_Import.h ";
 
 /*  Print object to an output stream  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Import::Print "void
 Epetra_Import::Print(ostream &os) const
@@ -7681,10 +7317,6 @@ C++ includes: Epetra_IntSerialDenseMatrix.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")
 Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix "Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix()
 
@@ -7752,10 +7384,6 @@ Epetra_IntSerialDenseMatrix destructor. ";
 
 /*  Shaping/sizing Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_IntSerialDenseMatrix::Shape "int
 Epetra_IntSerialDenseMatrix::Shape(int NumRows, int NumCols)
 
@@ -7798,10 +7426,6 @@ submatrix) is copied to the new matrix.
 Integer error code, set to 0 if successful. ";
 
 /*  Data Accessor methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_IntSerialDenseMatrix::OneNorm "int
 Epetra_IntSerialDenseMatrix::OneNorm()
@@ -7857,20 +7481,12 @@ Returns the data access mode of the this matrix. ";
 
 /*  I/O methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_IntSerialDenseMatrix::Print "void
 Epetra_IntSerialDenseMatrix::Print(ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
 /*  Expert-only unsupported methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_IntSerialDenseMatrix::MakeViewOf "int
 Epetra_IntSerialDenseMatrix::MakeViewOf(const
@@ -7945,20 +7561,12 @@ C++ includes: Epetra_IntSerialDenseVector.h ";
 
 /*  I/O methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_IntSerialDenseVector::Print "void
 Epetra_IntSerialDenseVector::Print(ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
 /*  Expert-only unsupported methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_IntSerialDenseVector::MakeViewOf "int
 Epetra_IntSerialDenseVector::MakeViewOf(const
@@ -8179,10 +7787,6 @@ C++ includes: Epetra_IntVector.h ";
 
 /*  Constructors/destructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_IntVector::Epetra_IntVector "Epetra_IntVector::Epetra_IntVector(const Epetra_BlockMap &Map, bool
 zeroOut=true)
 
@@ -8236,20 +7840,12 @@ Epetra_IntVector destructor. ";
 
 /*  Post-construction modification methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_IntVector::PutValue "int
 Epetra_IntVector::PutValue(int Value)
 
 Set all elements of the vector to Value. ";
 
 /*  Extraction methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_IntVector::ExtractCopy "int
 Epetra_IntVector::ExtractCopy(int *V) const
@@ -8278,10 +7874,6 @@ Integer error code, set to 0 if successful. ";
 
 /*  Mathematical methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_IntVector::MaxValue "int
 Epetra_IntVector::MaxValue()
 
@@ -8298,15 +7890,7 @@ Minimum value across all processors. ";
 
 /*  Overloaded operators  */
 
-/*
-
-*/
-
 /*  Attribute access functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_IntVector::Values "int*
 Epetra_IntVector::Values() const
@@ -8325,10 +7909,6 @@ Epetra_IntVector::GlobalLength() const
 Returns the global vector length of vectors in the multi-vector. ";
 
 /*  I/O methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_IntVector::Print "void
 Epetra_IntVector::Print(ostream &os) const
@@ -8352,10 +7932,6 @@ C++ includes: Epetra_InvOperator.h ";
 
 /*  Constructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_InvOperator::Epetra_InvOperator "Epetra_InvOperator::Epetra_InvOperator(Epetra_Operator *operatorIn)
 
 Uses an Epetra_Operator instance to implement the Epetra_Operator
@@ -8374,10 +7950,6 @@ In:  - A fully-constructed Epetra_Operator object. ";
 Destructor. ";
 
 /*  Atribute set methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_InvOperator::SetUseTranspose "int
 Epetra_InvOperator::SetUseTranspose(bool UseTranspose_in)
@@ -8398,10 +7970,6 @@ otherwise just use operator.
 WARNING:  - This method has no effect and returns -1 as error code. ";
 
 /*  Mathematical functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_InvOperator::Apply "int
 Epetra_InvOperator::Apply(const Epetra_MultiVector &X,
@@ -8444,10 +8012,6 @@ Epetra_InvOperator::NormInf() const
 Returns the infinity norm of the global matrix. ";
 
 /*  Atribute access functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_InvOperator::Label "const char*
 Epetra_InvOperator::Label() const
@@ -8506,10 +8070,6 @@ C++ includes: Epetra_JadMatrix.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_JadMatrix::Epetra_JadMatrix "Epetra_JadMatrix::Epetra_JadMatrix(const Epetra_RowMatrix &Matrix)
 
 Epetra_JadMatrix constuctor. ";
@@ -8520,10 +8080,6 @@ Epetra_JadMatrix Destructor. ";
 
 /*  Post-construction modifications  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_JadMatrix::UpdateValues "int
 Epetra_JadMatrix::UpdateValues(const Epetra_RowMatrix &Matrix, bool
 CheckStructure=false)
@@ -8531,10 +8087,6 @@ CheckStructure=false)
 Update values using a matrix with identical structure. ";
 
 /*  Methods required for implementing Epetra_BasicRowMatrix  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_JadMatrix::ExtractMyRowCopy "int
 Epetra_JadMatrix::ExtractMyRowCopy(int MyRow, int Length, int
@@ -8627,10 +8179,6 @@ Unchanged. ";
 
 /*  Computational methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_JadMatrix::Multiply "int
 Epetra_JadMatrix::Multiply(bool TransA, const Epetra_MultiVector &X,
 Epetra_MultiVector &Y) const
@@ -8702,10 +8250,6 @@ C++ includes: Epetra_LAPACK.h ";
 
 /*  Constructors/destructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LAPACK::Epetra_LAPACK "Epetra_LAPACK::Epetra_LAPACK(void)
 
 Epetra_LAPACK Constructor.
@@ -8724,21 +8268,17 @@ Epetra_LAPACK Destructor. ";
 
 /*  Symmetric Positive Definite linear system routines  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LAPACK::POTRF "void
 Epetra_LAPACK::POTRF(const char UPLO, const int N, float *A, const int
 LDA, int *INFO) const
 
-Epetra_LAPACK factorization for positive definite matrix (SPOTRF). ";
+Epetra_LAPACK factorization for positive definite matrix (SPOTRF) ";
 
 %feature("docstring")  Epetra_LAPACK::POTRF "void
 Epetra_LAPACK::POTRF(const char UPLO, const int N, double *A, const
 int LDA, int *INFO) const
 
-Epetra_LAPACK factorization for positive definite matrix (DPOTRF). ";
+Epetra_LAPACK factorization for positive definite matrix (DPOTRF) ";
 
 %feature("docstring")  Epetra_LAPACK::POTRS "void
 Epetra_LAPACK::POTRS(const char UPLO, const int N, const int NRHS,
@@ -8746,7 +8286,7 @@ const float *A, const int LDA, float *X, const int LDX, int *INFO)
 const
 
 Epetra_LAPACK solve (after factorization) for positive definite matrix
-(SPOTRS). ";
+(SPOTRS) ";
 
 %feature("docstring")  Epetra_LAPACK::POTRS "void
 Epetra_LAPACK::POTRS(const char UPLO, const int N, const int NRHS,
@@ -8754,19 +8294,19 @@ const double *A, const int LDA, double *X, const int LDX, int *INFO)
 const
 
 Epetra_LAPACK solve (after factorization) for positive definite matrix
-(DPOTRS). ";
+(DPOTRS) ";
 
 %feature("docstring")  Epetra_LAPACK::POTRI "void
 Epetra_LAPACK::POTRI(const char UPLO, const int N, float *A, const int
 LDA, int *INFO) const
 
-Epetra_LAPACK inversion for positive definite matrix (SPOTRI). ";
+Epetra_LAPACK inversion for positive definite matrix (SPOTRI) ";
 
 %feature("docstring")  Epetra_LAPACK::POTRI "void
 Epetra_LAPACK::POTRI(const char UPLO, const int N, double *A, const
 int LDA, int *INFO) const
 
-Epetra_LAPACK inversion for positive definite matrix (DPOTRI). ";
+Epetra_LAPACK inversion for positive definite matrix (DPOTRI) ";
 
 %feature("docstring")  Epetra_LAPACK::POCON "void
 Epetra_LAPACK::POCON(const char UPLO, const int N, const float *A,
@@ -8774,7 +8314,7 @@ const int LDA, const float ANORM, float *RCOND, float *WORK, int
 *IWORK, int *INFO) const
 
 Epetra_LAPACK condition number estimator for positive definite matrix
-(SPOCON). ";
+(SPOCON) ";
 
 %feature("docstring")  Epetra_LAPACK::POCON "void
 Epetra_LAPACK::POCON(const char UPLO, const int N, const double *A,
@@ -8782,33 +8322,31 @@ const int LDA, const double ANORM, double *RCOND, double *WORK, int
 *IWORK, int *INFO) const
 
 Epetra_LAPACK condition number estimator for positive definite matrix
-(DPOCON). ";
+(DPOCON) ";
 
 %feature("docstring")  Epetra_LAPACK::POSV "void
 Epetra_LAPACK::POSV(const char UPLO, const int N, const int NRHS,
 float *A, const int LDA, float *X, const int LDX, int *INFO) const
 
-Epetra_LAPACK factor and solve for positive definite matrix (SPOSV).
-";
+Epetra_LAPACK factor and solve for positive definite matrix (SPOSV) ";
 
 %feature("docstring")  Epetra_LAPACK::POSV "void
 Epetra_LAPACK::POSV(const char UPLO, const int N, const int NRHS,
 double *A, const int LDA, double *X, const int LDX, int *INFO) const
 
-Epetra_LAPACK factor and solve for positive definite matrix (DPOSV).
-";
+Epetra_LAPACK factor and solve for positive definite matrix (DPOSV) ";
 
 %feature("docstring")  Epetra_LAPACK::POEQU "void
 Epetra_LAPACK::POEQU(const int N, const float *A, const int LDA, float
 *S, float *SCOND, float *AMAX, int *INFO) const
 
-Epetra_LAPACK equilibration for positive definite matrix (SPOEQU). ";
+Epetra_LAPACK equilibration for positive definite matrix (SPOEQU) ";
 
 %feature("docstring")  Epetra_LAPACK::POEQU "void
 Epetra_LAPACK::POEQU(const int N, const double *A, const int LDA,
 double *S, double *SCOND, double *AMAX, int *INFO) const
 
-Epetra_LAPACK equilibration for positive definite matrix (DPOEQU). ";
+Epetra_LAPACK equilibration for positive definite matrix (DPOEQU) ";
 
 %feature("docstring")  Epetra_LAPACK::PORFS "void
 Epetra_LAPACK::PORFS(const char UPLO, const int N, const int NRHS,
@@ -8816,7 +8354,7 @@ const float *A, const int LDA, const float *AF, const int LDAF, const
 float *B, const int LDB, float *X, const int LDX, float *FERR, float
 *BERR, float *WORK, int *IWORK, int *INFO) const
 
-Epetra_LAPACK solve driver for positive definite matrix (SPOSVX). ";
+Epetra_LAPACK solve driver for positive definite matrix (SPOSVX) ";
 
 %feature("docstring")  Epetra_LAPACK::PORFS "void
 Epetra_LAPACK::PORFS(const char UPLO, const int N, const int NRHS,
@@ -8824,7 +8362,7 @@ const double *A, const int LDA, const double *AF, const int LDAF,
 const double *B, const int LDB, double *X, const int LDX, double
 *FERR, double *BERR, double *WORK, int *IWORK, int *INFO) const
 
-Epetra_LAPACK solve driver for positive definite matrix (DPOSVX). ";
+Epetra_LAPACK solve driver for positive definite matrix (DPOSVX) ";
 
 %feature("docstring")  Epetra_LAPACK::POSVX "void
 Epetra_LAPACK::POSVX(const char FACT, const char UPLO, const int N,
@@ -8833,7 +8371,7 @@ const char EQUED, float *S, float *B, const int LDB, float *X, const
 int LDX, float *RCOND, float *FERR, float *BERR, float *WORK, int
 *IWORK, int *INFO) const
 
-Epetra_LAPACK solve driver for positive definite matrix (SPOSVX). ";
+Epetra_LAPACK solve driver for positive definite matrix (SPOSVX) ";
 
 %feature("docstring")  Epetra_LAPACK::POSVX "void
 Epetra_LAPACK::POSVX(const char FACT, const char UPLO, const int N,
@@ -8842,13 +8380,9 @@ const char EQUED, double *S, double *B, const int LDB, double *X,
 const int LDX, double *RCOND, double *FERR, double *BERR, double
 *WORK, int *IWORK, int *INFO) const
 
-Epetra_LAPACK solve driver for positive definite matrix (DPOSVX). ";
+Epetra_LAPACK solve driver for positive definite matrix (DPOSVX) ";
 
 /*  General linear system routines  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LAPACK::GELS "void
 Epetra_LAPACK::GELS(const char TRANS, const int M, const int N, const
@@ -8861,32 +8395,32 @@ Epetra_LAPACK simple driver to solve least-squares systems. ";
 Epetra_LAPACK::GETRF(const int M, const int N, float *A, const int
 LDA, int *IPIV, int *INFO) const
 
-Epetra_LAPACK factorization for general matrix (SGETRF). ";
+Epetra_LAPACK factorization for general matrix (SGETRF) ";
 
 %feature("docstring")  Epetra_LAPACK::GETRF "void
 Epetra_LAPACK::GETRF(const int M, const int N, double *A, const int
 LDA, int *IPIV, int *INFO) const
 
-Epetra_LAPACK factorization for general matrix (DGETRF). ";
+Epetra_LAPACK factorization for general matrix (DGETRF) ";
 
 %feature("docstring")  Epetra_LAPACK::GEQRF "void
 Epetra_LAPACK::GEQRF(const int M, const int N, float *A, const int
 LDA, float *TAU, float *WORK, const int lwork, int *INFO) const
 
-Epetra_LAPACK QR factorization for general matrix (SGEQRF). ";
+Epetra_LAPACK QR factorization for general matrix (SGEQRF) ";
 
 %feature("docstring")  Epetra_LAPACK::GEQRF "void
 Epetra_LAPACK::GEQRF(const int M, const int N, double *A, const int
 LDA, double *TAU, double *WORK, const int lwork, int *INFO) const
 
-Epetra_LAPACK factorization for general matrix (DGEQRF). ";
+Epetra_LAPACK factorization for general matrix (DGEQRF) ";
 
 %feature("docstring")  Epetra_LAPACK::GETRS "void
 Epetra_LAPACK::GETRS(const char TRANS, const int N, const int NRHS,
 const float *A, const int LDA, const int *IPIV, float *X, const int
 LDX, int *INFO) const
 
-Epetra_LAPACK solve (after factorization) for general matrix (SGETRS).
+Epetra_LAPACK solve (after factorization) for general matrix (SGETRS)
 ";
 
 %feature("docstring")  Epetra_LAPACK::GETRS "void
@@ -8894,27 +8428,27 @@ Epetra_LAPACK::GETRS(const char TRANS, const int N, const int NRHS,
 const double *A, const int LDA, const int *IPIV, double *X, const int
 LDX, int *INFO) const
 
-Epetra_LAPACK solve (after factorization) for general matrix (DGETRS).
+Epetra_LAPACK solve (after factorization) for general matrix (DGETRS)
 ";
 
 %feature("docstring")  Epetra_LAPACK::GETRI "void
 Epetra_LAPACK::GETRI(const int N, float *A, const int LDA, int *IPIV,
 float *WORK, const int *LWORK, int *INFO) const
 
-Epetra_LAPACK inversion for general matrix (SGETRI). ";
+Epetra_LAPACK inversion for general matrix (SGETRI) ";
 
 %feature("docstring")  Epetra_LAPACK::GETRI "void
 Epetra_LAPACK::GETRI(const int N, double *A, const int LDA, int *IPIV,
 double *WORK, const int *LWORK, int *INFO) const
 
-Epetra_LAPACK inversion for general matrix (DGETRI). ";
+Epetra_LAPACK inversion for general matrix (DGETRI) ";
 
 %feature("docstring")  Epetra_LAPACK::GECON "void
 Epetra_LAPACK::GECON(const char NORM, const int N, const float *A,
 const int LDA, const float ANORM, float *RCOND, float *WORK, int
 *IWORK, int *INFO) const
 
-Epetra_LAPACK condition number estimator for general matrix (SGECON).
+Epetra_LAPACK condition number estimator for general matrix (SGECON)
 ";
 
 %feature("docstring")  Epetra_LAPACK::GECON "void
@@ -8922,34 +8456,34 @@ Epetra_LAPACK::GECON(const char NORM, const int N, const double *A,
 const int LDA, const double ANORM, double *RCOND, double *WORK, int
 *IWORK, int *INFO) const
 
-Epetra_LAPACK condition number estimator for general matrix (DGECON).
+Epetra_LAPACK condition number estimator for general matrix (DGECON)
 ";
 
 %feature("docstring")  Epetra_LAPACK::GESV "void
 Epetra_LAPACK::GESV(const int N, const int NRHS, float *A, const int
 LDA, int *IPIV, float *X, const int LDX, int *INFO) const
 
-Epetra_LAPACK factor and solve for general matrix (SGESV). ";
+Epetra_LAPACK factor and solve for general matrix (SGESV) ";
 
 %feature("docstring")  Epetra_LAPACK::GESV "void
 Epetra_LAPACK::GESV(const int N, const int NRHS, double *A, const int
 LDA, int *IPIV, double *X, const int LDX, int *INFO) const
 
-Epetra_LAPACK factor and solve for general matrix (DGESV). ";
+Epetra_LAPACK factor and solve for general matrix (DGESV) ";
 
 %feature("docstring")  Epetra_LAPACK::GEEQU "void
 Epetra_LAPACK::GEEQU(const int M, const int N, const float *A, const
 int LDA, float *R, float *C, float *ROWCND, float *COLCND, float
 *AMAX, int *INFO) const
 
-Epetra_LAPACK equilibration for general matrix (SGEEQU). ";
+Epetra_LAPACK equilibration for general matrix (SGEEQU) ";
 
 %feature("docstring")  Epetra_LAPACK::GEEQU "void
 Epetra_LAPACK::GEEQU(const int M, const int N, const double *A, const
 int LDA, double *R, double *C, double *ROWCND, double *COLCND, double
 *AMAX, int *INFO) const
 
-Epetra_LAPACK equilibration for general matrix (DGEEQU). ";
+Epetra_LAPACK equilibration for general matrix (DGEEQU) ";
 
 %feature("docstring")  Epetra_LAPACK::GERFS "void
 Epetra_LAPACK::GERFS(const char TRANS, const int N, const int NRHS,
@@ -8957,7 +8491,7 @@ const float *A, const int LDA, const float *AF, const int LDAF, const
 int *IPIV, const float *B, const int LDB, float *X, const int LDX,
 float *FERR, float *BERR, float *WORK, int *IWORK, int *INFO) const
 
-Epetra_LAPACK Refine solution (GERFS). ";
+Epetra_LAPACK Refine solution (GERFS) ";
 
 %feature("docstring")  Epetra_LAPACK::GERFS "void
 Epetra_LAPACK::GERFS(const char TRANS, const int N, const int NRHS,
@@ -8966,7 +8500,7 @@ const int *IPIV, const double *B, const int LDB, double *X, const int
 LDX, double *FERR, double *BERR, double *WORK, int *IWORK, int *INFO)
 const
 
-Epetra_LAPACK Refine solution (GERFS). ";
+Epetra_LAPACK Refine solution (GERFS) ";
 
 %feature("docstring")  Epetra_LAPACK::GESVX "void
 Epetra_LAPACK::GESVX(const char FACT, const char TRANS, const int N,
@@ -8975,7 +8509,7 @@ int *IPIV, const char EQUED, float *R, float *C, float *B, const int
 LDB, float *X, const int LDX, float *RCOND, float *FERR, float *BERR,
 float *WORK, int *IWORK, int *INFO) const
 
-Epetra_LAPACK solve driver for general matrix (SGESVX). ";
+Epetra_LAPACK solve driver for general matrix (SGESVX) ";
 
 %feature("docstring")  Epetra_LAPACK::GESVX "void
 Epetra_LAPACK::GESVX(const char FACT, const char TRANS, const int N,
@@ -8984,27 +8518,23 @@ int *IPIV, const char EQUED, double *R, double *C, double *B, const
 int LDB, double *X, const int LDX, double *RCOND, double *FERR, double
 *BERR, double *WORK, int *IWORK, int *INFO) const
 
-Epetra_LAPACK solve driver for general matrix (DGESVX). ";
+Epetra_LAPACK solve driver for general matrix (DGESVX) ";
 
 %feature("docstring")  Epetra_LAPACK::GEHRD "void
 Epetra_LAPACK::GEHRD(const int N, const int ILO, const int IHI, float
 *A, const int LDA, float *TAU, float *WORK, const int LWORK, int
 *INFO) const
 
-Epetra_LAPACK wrapper for reduction to Hessenberg form (SGEHRD). ";
+Epetra_LAPACK wrapper for reduction to Hessenberg form (SGEHRD) ";
 
 %feature("docstring")  Epetra_LAPACK::GEHRD "void
 Epetra_LAPACK::GEHRD(const int N, const int ILO, const int IHI, double
 *A, const int LDA, double *TAU, double *WORK, const int LWORK, int
 *INFO) const
 
-Epetra_LAPACK wrapper for reduction to Hessenberg form (DGEHRD). ";
+Epetra_LAPACK wrapper for reduction to Hessenberg form (DGEHRD) ";
 
 /*  Hessenberg routines  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LAPACK::HSEQR "void
 Epetra_LAPACK::HSEQR(const char JOB, const char COMPZ, const int N,
@@ -9013,7 +8543,7 @@ float *WI, float *Z, const int LDZ, float *WORK, const int LWORK, int
 *INFO) const
 
 Epetra_LAPACK wrapper for computing the eigenvalues of a real upper
-Hessenberg matrix (SHSEQR). ";
+Hessenberg matrix (SHSEQR) ";
 
 %feature("docstring")  Epetra_LAPACK::HSEQR "void
 Epetra_LAPACK::HSEQR(const char JOB, const char COMPZ, const int N,
@@ -9022,13 +8552,9 @@ double *WI, double *Z, const int LDZ, double *WORK, const int LWORK,
 int *INFO) const
 
 Epetra_LAPACK wrapper for computing the eigenvalues of a real upper
-Hessenberg matrix (DHSEQR). ";
+Hessenberg matrix (DHSEQR) ";
 
 /*  Orthogonal matrix routines  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LAPACK::ORGQR "void
 Epetra_LAPACK::ORGQR(const int M, const int N, const int K, float *A,
@@ -9037,7 +8563,7 @@ const
 
 Epetra_LAPACK wrapper for generating a m x n real matrix Q with
 orthonormal columns, defined as the product of k elementary
-reflectors. (SORGQR). ";
+reflectors. (SORGQR) ";
 
 %feature("docstring")  Epetra_LAPACK::ORGQR "void
 Epetra_LAPACK::ORGQR(const int M, const int N, const int K, double *A,
@@ -9046,7 +8572,7 @@ const
 
 Epetra_LAPACK wrapper for generating a m x n real matrix Q with
 orthonormal columns, defined as the product of k elementary
-reflectors. (DORGQR). ";
+reflectors. (DORGQR) ";
 
 %feature("docstring")  Epetra_LAPACK::ORGHR "void
 Epetra_LAPACK::ORGHR(const int N, const int ILO, const int IHI, float
@@ -9054,7 +8580,7 @@ Epetra_LAPACK::ORGHR(const int N, const int ILO, const int IHI, float
 *INFO) const
 
 Epetra_LAPACK wrapper for generating a real orthogonal matrix Q
-defined by elementary reflectors. (SORGHR). ";
+defined by elementary reflectors. (SORGHR) ";
 
 %feature("docstring")  Epetra_LAPACK::ORGHR "void
 Epetra_LAPACK::ORGHR(const int N, const int ILO, const int IHI, double
@@ -9062,7 +8588,7 @@ Epetra_LAPACK::ORGHR(const int N, const int ILO, const int IHI, double
 *INFO) const
 
 Epetra_LAPACK wrapper for generating a real orthogonal matrix Q
-defined by elementary reflectors. (DORGHR). ";
+defined by elementary reflectors. (DORGHR) ";
 
 %feature("docstring")  Epetra_LAPACK::ORMHR "void
 Epetra_LAPACK::ORMHR(const char SIDE, const char TRANS, const int M,
@@ -9071,7 +8597,7 @@ LDA, const float *TAU, float *C, const int LDC, float *WORK, const int
 LWORK, int *INFO) const
 
 Epetra_LAPACK wrapper for applying an orthogonal matrix in-place
-(SORMHR). ";
+(SORMHR) ";
 
 %feature("docstring")  Epetra_LAPACK::ORMHR "void
 Epetra_LAPACK::ORMHR(const char SIDE, const char TRANS, const int M,
@@ -9080,7 +8606,7 @@ LDA, const double *TAU, double *C, const int LDC, double *WORK, const
 int LWORK, int *INFO) const
 
 Epetra_LAPACK wrapper for applying an orthogonal matrix in-place
-(DORMHR). ";
+(DORMHR) ";
 
 %feature("docstring")  Epetra_LAPACK::LARFT "void
 Epetra_LAPACK::LARFT(const char DIRECT, const char STOREV, const int
@@ -9100,10 +8626,6 @@ elementary Householder reflectors (DLARFT). ";
 
 /*  Triangular matrix routines  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LAPACK::TREVC "void
 Epetra_LAPACK::TREVC(const char SIDE, const char HOWMNY, int *SELECT,
 const int N, const float *T, const int LDT, float *VL, const int LDVL,
@@ -9111,7 +8633,7 @@ float *VR, const int LDVR, const int MM, int *M, float *WORK, int
 *INFO) const
 
 Epetra_LAPACK wrapper for computing eigenvectors of a quasi-
-triangular/triagnular matrix (STREVC).
+triangular/triagnular matrix (STREVC)
 
 WARNING:  HOWMNY = 'S\" is not supported. ";
 
@@ -9122,7 +8644,7 @@ LDVL, double *VR, const int LDVR, const int MM, int *M, double *WORK,
 int *INFO) const
 
 Epetra_LAPACK wrapper for computing eigenvectors of a quasi-
-triangular/triagnular matrix (DTREVC).
+triangular/triagnular matrix (DTREVC)
 
 WARNING:  HOWMNY = 'S\" is not supported. ";
 
@@ -9132,7 +8654,7 @@ int LDT, float *Q, const int LDQ, int IFST, int ILST, float *WORK, int
 *INFO) const
 
 Epetra_LAPACK wrapper for reordering the real-Schur/Schur
-factorization of a matrix (STREXC). ";
+factorization of a matrix (STREXC) ";
 
 %feature("docstring")  Epetra_LAPACK::TREXC "void
 Epetra_LAPACK::TREXC(const char COMPQ, const int N, double *T, const
@@ -9140,13 +8662,9 @@ int LDT, double *Q, const int LDQ, int IFST, int ILST, double *WORK,
 int *INFO) const
 
 Epetra_LAPACK wrapper for reordering the real-Schur/Schur
-factorization of a matrix (DTREXC). ";
+factorization of a matrix (DTREXC) ";
 
 /*  Singular Value Decomposition matrix routines  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LAPACK::GESVD "void
 Epetra_LAPACK::GESVD(const char JOBU, const char JOBVT, const int M,
@@ -9155,7 +8673,7 @@ LDU, float *VT, const int LDVT, float *WORK, const int *LWORK, int
 *INFO) const
 
 Epetra_LAPACK wrapper for computing the singular value decomposition
-(SGESVD). ";
+(SGESVD) ";
 
 %feature("docstring")  Epetra_LAPACK::GESVD "void
 Epetra_LAPACK::GESVD(const char JOBU, const char JOBVT, const int M,
@@ -9164,7 +8682,7 @@ LDU, double *VT, const int LDVT, double *WORK, const int *LWORK, int
 *INFO) const
 
 Epetra_LAPACK wrapper for computing the singular value decomposition
-(DGESVD). ";
+(DGESVD) ";
 
 %feature("docstring")  Epetra_LAPACK::GGSVD "void
 Epetra_LAPACK::GGSVD(const char JOBU, const char JOBV, const char
@@ -9189,10 +8707,6 @@ decomposition (GSVD) of an M-by-N real matrix A and P-by-N real matrix
 B. ";
 
 /*  Eigenvalue/Eigenvector routines  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LAPACK::GEEV "void
 Epetra_LAPACK::GEEV(const char JOBVL, const char JOBVR, const int N,
@@ -9427,10 +8941,6 @@ optionally, the left and/or right generalized eigenvectors. ";
 
 /*  Linear Least Squares  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LAPACK::GGLSE "void
 Epetra_LAPACK::GGLSE(const int M, const int N, const int P, double *A,
 const int LDA, double *B, const int LDB, double *C, double *D, double
@@ -9449,10 +8959,6 @@ squares (LSE) problem. ";
 
 /*  Machine characteristics routines  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LAPACK::LAMCH "void
 Epetra_LAPACK::LAMCH(const char CMACH, float &T) const
 
@@ -9468,10 +8974,6 @@ single precision floating point characteristics. This information is
 returned by the Lapack routine. ";
 
 /*  Triangular solve  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LAPACK::TRTRS "void
 Epetra_LAPACK::TRTRS(const char UPLO, const char TRANS, const char
@@ -9501,10 +9003,6 @@ returns the solution. the elapsed time for each calling processor.
 C++ includes: Epetra_LinearProblem.h ";
 
 /*  Constructors/Destructor  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LinearProblem::Epetra_LinearProblem "Epetra_LinearProblem::Epetra_LinearProblem(void)
 
@@ -9545,10 +9043,6 @@ Completely deletes a Epetra_LinearProblem object. ";
 
 /*  Integrity check method  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LinearProblem::CheckInput "int
 Epetra_LinearProblem::CheckInput() const
 
@@ -9560,10 +9054,6 @@ done if the user passes in an Epetra_Operator that is not an
 Epetra_Matrix ";
 
 /*  Set methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LinearProblem::AssertSymmetric "void
 Epetra_LinearProblem::AssertSymmetric() ";
@@ -9612,10 +9102,6 @@ Sets a pointer to a Epetra_MultiVector. No copy of the object is made.
 
 /*  Computational methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LinearProblem::LeftScale "int
 Epetra_LinearProblem::LeftScale(const Epetra_Vector &D)
 
@@ -9655,10 +9141,6 @@ Integer error code, set to 0 if successful. Return -1 if operator is
 not a matrix. ";
 
 /*  Accessor methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LinearProblem::GetOperator "Epetra_Operator* Epetra_LinearProblem::GetOperator() const
 
@@ -9705,10 +9187,6 @@ not the problem should be completely replicated on all processors.
 C++ includes: Epetra_LinearProblemRedistor.h ";
 
 /*  Constructors/destructors  */
-
-/*
-
-*/
 
 %feature("docstring")
 Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor "Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem
@@ -9766,10 +9244,6 @@ Epetra_LinearProblemRedistor::~Epetra_LinearProblemRedistor "Epetra_LinearProble
 Epetra_LinearProblemRedistor destructor. ";
 
 /*  Forward transformation methods  */
-
-/*
-
-*/
 
 %feature("docstring")
 Epetra_LinearProblemRedistor::CreateRedistProblem "int
@@ -9872,10 +9346,6 @@ Integer error code, 0 if no errors. ";
 
 /*  Reverse transformation methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LinearProblemRedistor::UpdateOriginalLHS
 "int
 Epetra_LinearProblemRedistor::UpdateOriginalLHS(Epetra_MultiVector
@@ -9902,10 +9372,6 @@ Error code, returns 0 if no error. ";
 
 /*  Attribute accessor methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LinearProblemRedistor::RedistMap "const
 Epetra_Map& Epetra_LinearProblemRedistor::RedistMap() const
 
@@ -9931,10 +9397,6 @@ after CreateRedistProblem() is called. ";
 
 /*  Utility methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_LinearProblemRedistor::ExtractHbData "int Epetra_LinearProblemRedistor::ExtractHbData(int &M, int &N, int
 &nz, int *&ptr, int *&ind, double *&val, int &Nrhs, double *&rhs, int
 &ldrhs, double *&lhs, int &ldlhs) const
@@ -9949,10 +9411,6 @@ are owned by the Epetra_LinearProblemRedistor class, and they will be
 deleted when the owning class is destroyed. ";
 
 /*  I/O methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_LinearProblemRedistor::Print "virtual
 void Epetra_LinearProblemRedistor::Print(ostream &os) const
@@ -10285,10 +9743,6 @@ C++ includes: Epetra_MapColoring.h ";
 
 /*  Constructors/destructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MapColoring::Epetra_MapColoring "Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap &Map,
 const int DefaultColor=0)
 
@@ -10342,21 +9796,9 @@ Epetra_MapColoring destructor. ";
 
 /*  Set Color methods  */
 
-/*
-
-*/
-
 /*  Local/Global color accessor methods  */
 
-/*
-
-*/
-
 /*  Color Information Access Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MapColoring::NumColors "int
 Epetra_MapColoring::NumColors() const
@@ -10413,10 +9855,6 @@ that LID. ";
 
 /*  Epetra_Map and Epetra_BlockMap generators  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MapColoring::GenerateMap "Epetra_Map *
 Epetra_MapColoring::GenerateMap(int Color) const
 
@@ -10445,10 +9883,6 @@ the map is generated, the user is responsible for deleting it. ";
 
 /*  I/O methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MapColoring::Print "void
 Epetra_MapColoring::Print(ostream &os) const
 
@@ -10467,10 +9901,6 @@ Epetra classes to run on a parallel computer using MPI.
 C++ includes: Epetra_MpiComm.h ";
 
 /*  Constructor/Destructor Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiComm::Epetra_MpiComm "Epetra_MpiComm::Epetra_MpiComm(MPI_Comm comm)
 
@@ -10501,10 +9931,6 @@ prior to calling this function. ";
 
 /*  Barrier Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiComm::Barrier "void
 Epetra_MpiComm::Barrier() const
 
@@ -10514,10 +9940,6 @@ Causes each processor in the communicator to wait until all processors
 have arrived. ";
 
 /*  Broadcast Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiComm::Broadcast "int
 Epetra_MpiComm::Broadcast(double *MyVals, int Count, int Root) const
@@ -10605,10 +10027,6 @@ will receive a copy of Values. ";
 
 /*  Gather Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiComm::GatherAll "int
 Epetra_MpiComm::GatherAll(double *MyVals, double *AllVals, int Count)
 const
@@ -10669,10 +10087,6 @@ processors. Must by of size NumProc*Count.
 Count:  In On entry, contains the length of the list of MyVals. ";
 
 /*  Sum Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiComm::SumAll "int
 Epetra_MpiComm::SumAll(double *PartialSums, double *GlobalSums, int
@@ -10735,10 +10149,6 @@ all processors.
 Count:  In On entry, contains the length of the list of values. ";
 
 /*  Max/Min Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiComm::MaxAll "int
 Epetra_MpiComm::MaxAll(double *PartialMaxs, double *GlobalMaxs, int
@@ -10868,10 +10278,6 @@ Count:  In On entry, contains the length of the list of values. ";
 
 /*  Parallel Prefix Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiComm::ScanSum "int
 Epetra_MpiComm::ScanSum(double *MyVals, double *ScanSums, int Count)
 const
@@ -10938,10 +10344,6 @@ Count:  In On entry, contains the length of the list of values. ";
 
 /*  Attribute Accessor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiComm::Comm "MPI_Comm
 Epetra_MpiComm::Comm() const
 
@@ -10965,10 +10367,6 @@ returns 1. ";
 
 /*  Gather/Scatter and Directory Constructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiComm::CreateDistributor "Epetra_Distributor * Epetra_MpiComm::CreateDistributor() const
 
 Create a distributor object. ";
@@ -10979,10 +10377,6 @@ Epetra_BlockMap &Map) const
 Create a directory object for the given Epetra_BlockMap. ";
 
 /*  MPI-specific Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiComm::GetMpiTag "int
 Epetra_MpiComm::GetMpiTag() const
@@ -10998,10 +10392,6 @@ know we are MPI. ";
 
 /*  Print object to an output stream  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiComm::Print "void
 Epetra_MpiComm::Print(ostream &os) const
 
@@ -11013,10 +10403,6 @@ Epetra_MpiComm::PrintInfo(ostream &os) const
 Print method that implements Epetra_Comm virtual PrintInfo method. ";
 
 /*  Expert Users and Developers Only  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiComm::ReferenceCount "int
 Epetra_MpiComm::ReferenceCount() const
@@ -11047,10 +10433,6 @@ C++ includes: Epetra_MpiCommData.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 
 // File: classEpetra__MpiDistributor.xml
 %feature("docstring") Epetra_MpiDistributor "
@@ -11067,10 +10449,6 @@ actually produced by calling a method in the Epetra_MpiComm class.
 C++ includes: Epetra_MpiDistributor.h ";
 
 /*  Constructors/Destructor  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiDistributor::Epetra_MpiDistributor "Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm
 &Comm)
@@ -11091,10 +10469,6 @@ Clone method. ";
 Epetra_Comm Destructor. ";
 
 /*  Gather/Scatter Constructors  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiDistributor::CreateFromSends "int
 Epetra_MpiDistributor::CreateFromSends(const int &NumExportIDs, const
@@ -11151,10 +10525,6 @@ ExportPIDs:  Out List of processors that will get the exported IDs. ";
 
 /*  Execute Gather/Scatter Operations  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiDistributor::Do "int
 Epetra_MpiDistributor::Do(char *export_objs, int obj_size, int
 &len_import_objs, char *&import_objs)
@@ -11173,7 +10543,7 @@ Epetra_MpiDistributor::DoPosts(char *export_objs, int obj_size, int
 &len_import_objs, char *&import_objs)
 
 Post buffer of export objects (can do other local work before
-executing Waits). ";
+executing Waits) ";
 
 %feature("docstring")  Epetra_MpiDistributor::DoWaits "int
 Epetra_MpiDistributor::DoWaits()
@@ -11185,7 +10555,7 @@ Epetra_MpiDistributor::DoReversePosts(char *export_objs, int obj_size,
 int &len_import_objs, char *&import_objs)
 
 Do reverse post of buffer of export objects (can do other local work
-before executing Waits). ";
+before executing Waits) ";
 
 %feature("docstring")  Epetra_MpiDistributor::DoReverseWaits "int
 Epetra_MpiDistributor::DoReverseWaits()
@@ -11194,43 +10564,35 @@ Wait on a reverse set of posts. ";
 
 /*  Execute Gather/Scatter Operations (Non-constant size objects)  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiDistributor::Do "int
 Epetra_MpiDistributor::Do(char *export_objs, int obj_size, int
 *&sizes, int &len_import_objs, char *&import_objs)
 
 Execute plan on buffer of export objects in a single step (object size
-may vary). ";
+may vary) ";
 
 %feature("docstring")  Epetra_MpiDistributor::DoReverse "int
 Epetra_MpiDistributor::DoReverse(char *export_objs, int obj_size, int
 *&sizes, int &len_import_objs, char *&import_objs)
 
 Execute reverse of plan on buffer of export objects in a single step
-(object size may vary). ";
+(object size may vary) ";
 
 %feature("docstring")  Epetra_MpiDistributor::DoPosts "int
 Epetra_MpiDistributor::DoPosts(char *export_objs, int obj_size, int
 *&sizes, int &len_import_objs, char *&import_objs)
 
 Post buffer of export objects (can do other local work before
-executing Waits). ";
+executing Waits) ";
 
 %feature("docstring")  Epetra_MpiDistributor::DoReversePosts "int
 Epetra_MpiDistributor::DoReversePosts(char *export_objs, int obj_size,
 int *&sizes, int &len_import_objs, char *&import_objs)
 
 Do reverse post of buffer of export objects (can do other local work
-before executing Waits). ";
+before executing Waits) ";
 
 /*  Print object to an output stream  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiDistributor::Print "void
 Epetra_MpiDistributor::Print(ostream &os) const ";
@@ -11252,10 +10614,6 @@ processes.
 C++ includes: Epetra_MpiSmpComm.h ";
 
 /*  Constructor/Destructor Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiSmpComm::Epetra_MpiSmpComm "Epetra_MpiSmpComm::Epetra_MpiSmpComm(MPI_Comm comm)
 
@@ -11286,10 +10644,6 @@ destroyed prior to calling this function. ";
 
 /*  Barrier Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiSmpComm::Barrier "void
 Epetra_MpiSmpComm::Barrier() const
 
@@ -11299,10 +10653,6 @@ Causes each processor in the communicator to wait until all processors
 have arrived. ";
 
 /*  Broadcast Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiSmpComm::Broadcast "int
 Epetra_MpiSmpComm::Broadcast(double *MyVals, int Count, int Root)
@@ -11391,10 +10741,6 @@ will receive a copy of Values. ";
 
 /*  Gather Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiSmpComm::GatherAll "int
 Epetra_MpiSmpComm::GatherAll(double *MyVals, double *AllVals, int
 Count) const
@@ -11457,10 +10803,6 @@ Count:  In On entry, contains the length of the list of MyVals. ";
 
 /*  Sum Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiSmpComm::SumAll "int
 Epetra_MpiSmpComm::SumAll(double *PartialSums, double *GlobalSums, int
 Count) const
@@ -11522,10 +10864,6 @@ all processors.
 Count:  In On entry, contains the length of the list of values. ";
 
 /*  Max/Min Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiSmpComm::MaxAll "int
 Epetra_MpiSmpComm::MaxAll(double *PartialMaxs, double *GlobalMaxs, int
@@ -11655,10 +10993,6 @@ Count:  In On entry, contains the length of the list of values. ";
 
 /*  Parallel Prefix Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiSmpComm::ScanSum "int
 Epetra_MpiSmpComm::ScanSum(double *MyVals, double *ScanSums, int
 Count) const
@@ -11727,10 +11061,6 @@ Count:  In On entry, contains the length of the list of values. ";
 
 /*  Attribute Accessor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiSmpComm::Comm "MPI_Comm
 Epetra_MpiSmpComm::Comm() const
 
@@ -11754,10 +11084,6 @@ returns 1. ";
 
 /*  Gather/Scatter and Directory Constructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiSmpComm::CreateDistributor "Epetra_Distributor * Epetra_MpiSmpComm::CreateDistributor() const
 
 Create a distributor object. ";
@@ -11768,10 +11094,6 @@ Epetra_BlockMap &Map) const
 Create a directory object for the given Epetra_BlockMap. ";
 
 /*  MPI-specific Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiSmpComm::GetMpiTag "int
 Epetra_MpiSmpComm::GetMpiTag() const
@@ -11786,10 +11108,6 @@ Acquire an MPI tag from the Epetra range of 24050-24099, increment
 tag. ";
 
 /*  Experimental SMP cluster methods (not rigorously implemented)  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MpiSmpComm::NodeBarrier "void
 Epetra_MpiSmpComm::NodeBarrier() const
@@ -11860,10 +11178,6 @@ associated with a single node with the same ID. ";
 
 /*  Print object to an output stream  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MpiSmpComm::Print "void
 Epetra_MpiSmpComm::Print(ostream &os) const
 
@@ -11889,10 +11203,6 @@ inherits reference-counting from it.
 C++ includes: Epetra_MpiSmpCommData.h ";
 
 /*  Constructor/Destructor Methods  */
-
-/*
-
-*/
 
 
 // File: classEpetra__MultiVector.xml
@@ -12037,10 +11347,6 @@ C++ includes: Epetra_MultiVector.h ";
 
 /*  Constructors/destructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MultiVector::Epetra_MultiVector "Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap &Map, int
 NumVectors, bool zeroOut=true)
 
@@ -12170,10 +11476,6 @@ section for further discussion. ";
 Epetra_MultiVector destructor. ";
 
 /*  Post-construction modification routines  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MultiVector::ReplaceGlobalValue "int
 Epetra_MultiVector::ReplaceGlobalValue(int GlobalRow, int VectorIndex,
@@ -12443,10 +11745,6 @@ Integer error code, set to 0 if successful. ";
 
 /*  Extraction methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MultiVector::ExtractCopy "int
 Epetra_MultiVector::ExtractCopy(double *A, int MyLDA) const
 
@@ -12523,10 +11821,6 @@ Integer error code, set to 0 if successful.  See Detailed Description
 section for further discussion. ";
 
 /*  Mathematical methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MultiVector::Dot "int
 Epetra_MultiVector::Dot(const Epetra_MultiVector &A, double *Result)
@@ -12852,10 +12146,6 @@ ScalarAB * B @ A where @ denotes element-wise division. ";
 
 /*  Random number utilities  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MultiVector::SetSeed "int
 Epetra_MultiVector::SetSeed(unsigned int Seed_in)
 
@@ -12877,15 +12167,7 @@ Current random number seed. ";
 
 /*  Overloaded operators  */
 
-/*
-
-*/
-
 /*  Attribute access functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MultiVector::NumVectors "int
 Epetra_MultiVector::NumVectors() const
@@ -12917,20 +12199,12 @@ Returns true if this multi-vector has constant stride between vectors.
 
 /*  I/O methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_MultiVector::Print "void
 Epetra_MultiVector::Print(ostream &os) const
 
 Print method. ";
 
 /*  Expert-only unsupported methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_MultiVector::ResetView "int
 Epetra_MultiVector::ResetView(double **ArrayOfPointers)
@@ -12997,10 +12271,6 @@ C++ includes: Epetra_Object.h ";
 
 /*  Constructors/destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Object::Epetra_Object "Epetra_Object::Epetra_Object(int TracebackModeIn=-1, bool
 set_label=true)
 
@@ -13030,10 +12300,6 @@ Epetra_Object Destructor.
 Completely deletes a Epetra_Object object. ";
 
 /*  Attribute set/get methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Object::SetLabel "void
 Epetra_Object::SetLabel(const char *const Label)
@@ -13077,10 +12343,6 @@ Get the output stream for error reporting. ";
 
 /*  Miscellaneous  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Object::Print "void
 Epetra_Object::Print(ostream &os) const
 
@@ -13105,10 +12367,6 @@ objects such as Epetra_CrsMatrix.
 C++ includes: Epetra_OffsetIndex.h ";
 
 /*  Print object to an output stream  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_OffsetIndex::Print "void
 Epetra_OffsetIndex::Print(ostream &os) const
@@ -13169,20 +12427,12 @@ C++ includes: Epetra_Operator.h ";
 
 /*  Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Operator::~Epetra_Operator "virtual
 Epetra_Operator::~Epetra_Operator()
 
 Destructor. ";
 
 /*  Atribute set methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Operator::SetUseTranspose "virtual int
 Epetra_Operator::SetUseTranspose(bool UseTranspose)=0
@@ -13204,10 +12454,6 @@ Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
 
 /*  Mathematical functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Operator::Apply "virtual int
 Epetra_Operator::Apply(const Epetra_MultiVector &X, Epetra_MultiVector
@@ -13254,10 +12500,6 @@ Returns the infinity norm of the global matrix. ";
 
 /*  Atribute access functions  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Operator::Label "virtual const char*
 Epetra_Operator::Label() const =0
 
@@ -13303,10 +12545,6 @@ C++ includes: Epetra_OskiError.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiError::Epetra_OskiError "Epetra_OskiError::Epetra_OskiError()
 
 Default Constructor. ";
@@ -13317,10 +12555,6 @@ Epetra_OskiError::~Epetra_OskiError()
 Destructor. ";
 
 /*  Set/Get  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_OskiError::OskiGetErrorHandler "Epetra_OskiError Epetra_OskiError::OskiGetErrorHandler()
 
@@ -13386,10 +12620,6 @@ C++ includes: Epetra_OskiMatrix.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiMatrix::Epetra_OskiMatrix "Epetra_OskiMatrix::Epetra_OskiMatrix(const Epetra_OskiMatrix &Source)
 
 Copy constructor. ";
@@ -13439,10 +12669,6 @@ Epetra_OskiMatrix::~Epetra_OskiMatrix()
 Destructor. ";
 
 /*  Extract/Replace Values  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_OskiMatrix::ReplaceMyValues "int
 Epetra_OskiMatrix::ReplaceMyValues(int MyRow, int NumEntries, double
@@ -13558,10 +12784,6 @@ Filled()==true
 Diagonal values have been replaced with the values of Diagonal. ";
 
 /*  Computational methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_OskiMatrix::Multiply "int
 Epetra_OskiMatrix::Multiply(bool TransA, const Epetra_Vector &x,
@@ -14034,10 +13256,6 @@ Unchanged ";
 
 /*  Tuning  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiMatrix::SetHint "int
 Epetra_OskiMatrix::SetHint(const Teuchos::ParameterList &List)
 
@@ -14497,10 +13715,6 @@ returned. ";
 
 /*  Data Structure Transformation Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiMatrix::IsMatrixTransformed "int
 Epetra_OskiMatrix::IsMatrixTransformed() const
 
@@ -14573,10 +13787,6 @@ C++ includes: Epetra_OskiMultiVector.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiMultiVector::Epetra_OskiMultiVector
 "Epetra_OskiMultiVector::Epetra_OskiMultiVector(const
 Epetra_OskiMultiVector &Source)
@@ -14608,10 +13818,6 @@ Destructor. ";
 
 /*  Extraction Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiMultiVector::Copy_Created "bool
 Epetra_OskiMultiVector::Copy_Created() const
 
@@ -14629,10 +13835,6 @@ Returns the Epetra portion of the Multi-Vector. ";
 
 /*  Operators  */
 
-/*
-
-*/
-
 
 // File: classEpetra__OskiPermutation.xml
 %feature("docstring") Epetra_OskiPermutation "
@@ -14648,10 +13850,6 @@ applied to an Epetra_OskiMultiVector.
 C++ includes: Epetra_OskiPermutation.h ";
 
 /*  Constructor/Destructor  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_OskiPermutation::Epetra_OskiPermutation
 "Epetra_OskiPermutation::Epetra_OskiPermutation()
@@ -14682,20 +13880,12 @@ Destructor. ";
 
 /*  Replace Method  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiPermutation::ReplacePermutation "void Epetra_OskiPermutation::ReplacePermutation(const oski_perm_t
 &InPerm)
 
 Stores a permutation in the data structure. ";
 
 /*  Apply  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_OskiPermutation::PermuteVector "int
 Epetra_OskiPermutation::PermuteVector(const bool TransA,
@@ -14739,10 +13929,6 @@ C++ includes: Epetra_OskiUtils.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiUtils::Epetra_OskiUtils "Epetra_OskiUtils::Epetra_OskiUtils()
 
 Default Constructor. ";
@@ -14753,10 +13939,6 @@ Epetra_OskiUtils::~Epetra_OskiUtils()
 Destructor. ";
 
 /*  Start/End  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_OskiUtils::Init "void
 Epetra_OskiUtils::Init()
@@ -14792,10 +13974,6 @@ C++ includes: Epetra_OskiVector.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiVector::Epetra_OskiVector "Epetra_OskiVector::Epetra_OskiVector(const Epetra_OskiVector &Source)
 
 Copy constructor. ";
@@ -14819,20 +13997,12 @@ Destructor. ";
 
 /*  Extraction Method  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_OskiVector::Epetra_View "const
 Epetra_Vector* Epetra_OskiVector::Epetra_View() const
 
 Returns a view to the Epetra Object. ";
 
 /*  Operators  */
-
-/*
-
-*/
 
 
 // File: classEpetra__RowMatrix.xml
@@ -14851,20 +14021,12 @@ C++ includes: Epetra_RowMatrix.h ";
 
 /*  Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_RowMatrix::~Epetra_RowMatrix "virtual
 Epetra_RowMatrix::~Epetra_RowMatrix()
 
 Destructor. ";
 
 /*  Matrix data extraction routines  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_RowMatrix::NumMyRowEntries "virtual int
 Epetra_RowMatrix::NumMyRowEntries(int MyRow, int &NumEntries) const =0
@@ -14921,10 +14083,6 @@ Out:  Diagonal - Extracted main diagonal.
 Integer error code, set to 0 if successful. ";
 
 /*  Mathematical functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_RowMatrix::Multiply "virtual int
 Epetra_RowMatrix::Multiply(bool TransA, const Epetra_MultiVector &X,
@@ -15054,10 +14212,6 @@ Integer error code, set to 0 if successful. ";
 
 /*  Atribute access functions  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_RowMatrix::Filled "virtual bool
 Epetra_RowMatrix::Filled() const =0
 
@@ -15163,10 +14317,6 @@ C++ includes: Epetra_RowMatrixTransposer.h ";
 
 /*  Constructors/destructors  */
 
-/*
-
-*/
-
 %feature("docstring")
 Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer "Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(Epetra_RowMatrix
 *OrigMatrix)
@@ -15194,10 +14344,6 @@ Epetra_RowMatrixTransposer::~Epetra_RowMatrixTransposer "Epetra_RowMatrixTranspo
 Epetra_RowMatrixTransposer destructor. ";
 
 /*  Forward transformation methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_RowMatrixTransposer::CreateTranspose "int Epetra_RowMatrixTransposer::CreateTranspose(const bool
 MakeDataContiguous, Epetra_CrsMatrix *&TransposeMatrix, Epetra_Map
@@ -15251,10 +14397,6 @@ occured. ";
 
 /*  Reverse transformation methods  */
 
-/*
-
-*/
-
 %feature("docstring")
 Epetra_RowMatrixTransposer::UpdateOriginalMatrixValues "int
 Epetra_RowMatrixTransposer::UpdateOriginalMatrixValues()
@@ -15263,10 +14405,6 @@ Update values of original matrix (Not implemented and not sure if we
 will implement this). ";
 
 /*  Attribute accessor methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_RowMatrixTransposer::TransposeRowMap "const Epetra_Map& Epetra_RowMatrixTransposer::TransposeRowMap() const
 
@@ -15303,10 +14441,6 @@ C++ includes: Epetra_SerialComm.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialComm::Epetra_SerialComm "Epetra_SerialComm::Epetra_SerialComm()
 
 Epetra_SerialComm Serial Constructor.
@@ -15337,10 +14471,6 @@ destroyed prior to calling this function. ";
 
 /*  Barrier Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialComm::Barrier "void
 Epetra_SerialComm::Barrier() const
 
@@ -15349,10 +14479,6 @@ Epetra_SerialComm Barrier function.
 A no-op for a serial communicator. ";
 
 /*  Broadcast Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialComm::Broadcast "int
 Epetra_SerialComm::Broadcast(double *MyVals, int Count, int Root)
@@ -15437,10 +14563,6 @@ will receive a copy of MyVals. ";
 
 /*  Gather Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialComm::GatherAll "int
 Epetra_SerialComm::GatherAll(double *MyVals, double *AllVals, int
 Count) const
@@ -15500,10 +14622,6 @@ Count:  In On entry, contains the length of the list of MyVals. ";
 
 /*  Sum Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialComm::SumAll "int
 Epetra_SerialComm::SumAll(double *PartialSums, double *GlobalSums, int
 Count) const
@@ -15562,10 +14680,6 @@ all processors.
 Count:  In On entry, contains the length of the list of values. ";
 
 /*  Max/Min Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialComm::MaxAll "int
 Epetra_SerialComm::MaxAll(double *PartialMaxs, double *GlobalMaxs, int
@@ -15689,10 +14803,6 @@ Count:  In On entry, contains the length of the list of values. ";
 
 /*  Parallel Prefix Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialComm::ScanSum "int
 Epetra_SerialComm::ScanSum(double *MyVals, double *ScanSums, int
 Count) const
@@ -15752,10 +14862,6 @@ Count:  In On entry, contains the length of the list of values. ";
 
 /*  Attribute Accessor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialComm::MyPID "int
 Epetra_SerialComm::MyPID() const
 
@@ -15772,10 +14878,6 @@ Returns total number of processes (always returns 1 for SerialComm).
 
 /*  Gather/Scatter and Directory Constructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialComm::CreateDistributor "Epetra_Distributor * Epetra_SerialComm::CreateDistributor() const
 
 Create a distributor object. ";
@@ -15786,10 +14888,6 @@ Epetra_BlockMap &Map) const
 Create a directory object for the given Epetra_BlockMap. ";
 
 /*  Print object to an output stream  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialComm::Print "void
 Epetra_SerialComm::Print(ostream &os) const
@@ -15802,10 +14900,6 @@ Epetra_SerialComm::PrintInfo(ostream &os) const
 Print method that implements Epetra_Comm virtual PrintInfo method. ";
 
 /*  Expert Users and Developers Only  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialComm::ReferenceCount "int
 Epetra_SerialComm::ReferenceCount() const
@@ -15835,10 +14929,6 @@ inherits reference-counting from it.
 C++ includes: Epetra_SerialCommData.h ";
 
 /*  Constructor/Destructor Methods  */
-
-/*
-
-*/
 
 
 // File: classEpetra__SerialDenseMatrix.xml
@@ -15896,10 +14986,6 @@ base class.
 C++ includes: Epetra_SerialDenseMatrix.h ";
 
 /*  Constructor/Destructor Methods  */
-
-/*
-
-*/
 
 %feature("docstring")
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix "Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(bool
@@ -15968,10 +15054,6 @@ Epetra_SerialDenseMatrix destructor. ";
 
 /*  Shaping/sizing Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseMatrix::Shape "int
 Epetra_SerialDenseMatrix::Shape(int NumRows, int NumCols)
 
@@ -16014,10 +15096,6 @@ submatrix) is copied to the new matrix.
 Integer error code, set to 0 if successful. ";
 
 /*  Mathematical methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseMatrix::Multiply "int
 Epetra_SerialDenseMatrix::Multiply(char TransA, char TransB, double
@@ -16109,10 +15187,6 @@ Computes the Infinity-Norm of the this matrix. ";
 
 /*  Data Accessor methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseMatrix::Random "int
 Epetra_SerialDenseMatrix::Random()
 
@@ -16155,10 +15229,6 @@ Returns the data access mode of the this matrix. ";
 
 /*  I/O methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseMatrix::Print "void
 Epetra_SerialDenseMatrix::Print(ostream &os) const
 
@@ -16166,10 +15236,6 @@ Print service methods; defines behavior of ostream << operator. ";
 
 /*  Deprecated methods (will be removed in later versions of this
 class)  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseMatrix::OneNorm "virtual
 double Epetra_SerialDenseMatrix::OneNorm() const
@@ -16186,10 +15252,6 @@ Computes the Infinity-Norm of the this matrix (identical to NormInf()
 method). ";
 
 /*  Additional methods to support Epetra_SerialDenseOperator interface
-*/
-
-/*
-
 */
 
 %feature("docstring")  Epetra_SerialDenseMatrix::SetUseTranspose "virtual int Epetra_SerialDenseMatrix::SetUseTranspose(bool
@@ -16284,10 +15346,6 @@ C++ includes: Epetra_SerialDenseOperator.h ";
 
 /*  Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")
 Epetra_SerialDenseOperator::~Epetra_SerialDenseOperator "virtual
 Epetra_SerialDenseOperator::~Epetra_SerialDenseOperator()
@@ -16295,10 +15353,6 @@ Epetra_SerialDenseOperator::~Epetra_SerialDenseOperator()
 Destructor. ";
 
 /*  Atribute set methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseOperator::SetUseTranspose "virtual int Epetra_SerialDenseOperator::SetUseTranspose(bool
 UseTranspose)=0
@@ -16320,10 +15374,6 @@ Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
 
 /*  Mathematical functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseOperator::Apply "virtual int
 Epetra_SerialDenseOperator::Apply(const Epetra_SerialDenseMatrix &X,
@@ -16362,10 +15412,6 @@ double Epetra_SerialDenseOperator::NormInf() const =0
 Returns the infinity norm of the global matrix. ";
 
 /*  Atribute access functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseOperator::Label "virtual
 const char* Epetra_SerialDenseOperator::Label() const =0
@@ -16494,10 +15540,6 @@ C++ includes: Epetra_SerialDenseSolver.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")
 Epetra_SerialDenseSolver::Epetra_SerialDenseSolver "Epetra_SerialDenseSolver::Epetra_SerialDenseSolver()
 
@@ -16510,10 +15552,6 @@ Epetra_SerialDenseSolver::~Epetra_SerialDenseSolver "Epetra_SerialDenseSolver::~
 Epetra_SerialDenseSolver destructor. ";
 
 /*  Set Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseSolver::SetMatrix "int
 Epetra_SerialDenseSolver::SetMatrix(Epetra_SerialDenseMatrix &A)
@@ -16531,10 +15569,6 @@ dimension of B must match row dimension of A. X and B must have the
 same dimensions. ";
 
 /*  Strategy modifying Methods  */
-
-/*
-
-*/
 
 %feature("docstring")
 Epetra_SerialDenseSolver::FactorWithEquilibration "void
@@ -16568,10 +15602,6 @@ solve step is complete. These arrays are accessible via the FERR() and
 BERR() access functions. ";
 
 /*  Factor/Solve/Invert Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseSolver::Factor "int
 Epetra_SerialDenseSolver::Factor(void)
@@ -16655,10 +15685,6 @@ LAPACK error code INFO. ";
 
 /*  Query methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseSolver::Transpose "bool
 Epetra_SerialDenseSolver::Transpose()
 
@@ -16717,10 +15743,6 @@ Returns true if the current set of vectors has been solved. ";
 Returns true if the current set of vectors has been refined. ";
 
 /*  Data Accessor methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseSolver::Matrix "Epetra_SerialDenseMatrix* Epetra_SerialDenseSolver::Matrix() const
 
@@ -16863,10 +15885,6 @@ Returns a pointer to the column scale vector used for equilibration.
 
 /*  I/O methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseSolver::Print "void
 Epetra_SerialDenseSolver::Print(ostream &os) const
 
@@ -16948,10 +15966,6 @@ C++ includes: Epetra_SerialDenseSVD.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseSVD::Epetra_SerialDenseSVD "Epetra_SerialDenseSVD::Epetra_SerialDenseSVD()
 
 Default constructor; matrix should be set using SetMatrix(), LHS and
@@ -16962,10 +15976,6 @@ RHS set with SetVectors(). ";
 Epetra_SerialDenseSVD destructor. ";
 
 /*  Set Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseSVD::SetMatrix "int
 Epetra_SerialDenseSVD::SetMatrix(Epetra_SerialDenseMatrix &A)
@@ -16983,10 +15993,6 @@ dimension of B must match row dimension of A. X and B must have the
 same dimensions. ";
 
 /*  Strategy modifying Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseSVD::SolveWithTranspose "void Epetra_SerialDenseSVD::SolveWithTranspose(bool Flag)
 
@@ -17026,10 +16032,6 @@ LAPACK error code INFO. ";
 
 /*  Query methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseSVD::Transpose "bool
 Epetra_SerialDenseSVD::Transpose()
 
@@ -17053,10 +16055,6 @@ Epetra_SerialDenseSVD::Solved()
 Returns true if the current set of vectors has been solved. ";
 
 /*  Data Accessor methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseSVD::Matrix "Epetra_SerialDenseMatrix* Epetra_SerialDenseSVD::Matrix() const
 
@@ -17144,10 +16142,6 @@ computed). ";
 
 /*  I/O methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseSVD::Print "void
 Epetra_SerialDenseSVD::Print(ostream &os) const
 
@@ -17155,10 +16149,6 @@ Print service methods; defines behavior of ostream << operator. ";
 
 /*  Additional methods for support of Epetra_SerialDenseOperator
 interface  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseSVD::SetUseTranspose "virtual int Epetra_SerialDenseSVD::SetUseTranspose(bool use_transpose)
 
@@ -17312,10 +16302,6 @@ C++ includes: Epetra_SerialDenseVector.h ";
 
 /*  Constructors/destructors  */
 
-/*
-
-*/
-
 %feature("docstring")
 Epetra_SerialDenseVector::Epetra_SerialDenseVector "Epetra_SerialDenseVector::Epetra_SerialDenseVector()
 
@@ -17372,10 +16358,6 @@ Epetra_SerialDenseVector destructor. ";
 
 /*  Post-construction modification routines  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseVector::Size "int
 Epetra_SerialDenseVector::Size(int Length_in)
 
@@ -17413,15 +16395,7 @@ Integer error code, set to 0 if successful. ";
 
 /*  Element access methods  */
 
-/*
-
-*/
-
 /*  Mathematical methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseVector::Random "int
 Epetra_SerialDenseVector::Random()
@@ -17474,10 +16448,6 @@ Infinity-norm of the vector. ";
 
 /*  Attribute access methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialDenseVector::Length "int
 Epetra_SerialDenseVector::Length() const
 
@@ -17493,10 +16463,6 @@ Returns pointer to the values in vector. ";
 Returns the data access mode of the this vector. ";
 
 /*  I/O methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialDenseVector::Print "void
 Epetra_SerialDenseVector::Print(ostream &os) const
@@ -17519,10 +16485,6 @@ Epetra_SerialComm class.
 C++ includes: Epetra_SerialDistributor.h ";
 
 /*  Constructor/Destructor  */
-
-/*
-
-*/
 
 %feature("docstring")
 Epetra_SerialDistributor::Epetra_SerialDistributor "Epetra_SerialDistributor::Epetra_SerialDistributor(const
@@ -17614,7 +16576,7 @@ Epetra_SerialDistributor::DoPosts(char *export_objs, int obj_size, int
 &len_import_objs, char *&import_objs)
 
 Post buffer of export objects (can do other local work before
-executing Waits). ";
+executing Waits) ";
 
 %feature("docstring")  Epetra_SerialDistributor::DoWaits "int
 Epetra_SerialDistributor::DoWaits()
@@ -17626,7 +16588,7 @@ Epetra_SerialDistributor::DoReversePosts(char *export_objs, int
 obj_size, int &len_import_objs, char *&import_objs)
 
 Do reverse post of buffer of export objects (can do other local work
-before executing Waits). ";
+before executing Waits) ";
 
 %feature("docstring")  Epetra_SerialDistributor::DoReverseWaits "int
 Epetra_SerialDistributor::DoReverseWaits()
@@ -17638,28 +16600,28 @@ Epetra_SerialDistributor::Do(char *export_objs, int obj_size, int
 *&sizes, int &len_import_objs, char *&import_objs)
 
 Execute plan on buffer of export objects in a single step (object size
-may vary). ";
+may vary) ";
 
 %feature("docstring")  Epetra_SerialDistributor::DoReverse "int
 Epetra_SerialDistributor::DoReverse(char *export_objs, int obj_size,
 int *&sizes, int &len_import_objs, char *&import_objs)
 
 Execute reverse of plan on buffer of export objects in a single step
-(object size may vary). ";
+(object size may vary) ";
 
 %feature("docstring")  Epetra_SerialDistributor::DoPosts "int
 Epetra_SerialDistributor::DoPosts(char *export_objs, int obj_size, int
 *&sizes, int &len_import_objs, char *&import_objs)
 
 Post buffer of export objects (can do other local work before
-executing Waits). ";
+executing Waits) ";
 
 %feature("docstring")  Epetra_SerialDistributor::DoReversePosts "int
 Epetra_SerialDistributor::DoReversePosts(char *export_objs, int
 obj_size, int *&sizes, int &len_import_objs, char *&import_objs)
 
 Do reverse post of buffer of export objects (can do other local work
-before executing Waits). ";
+before executing Waits) ";
 
 %feature("docstring")  Epetra_SerialDistributor::Print "void
 Epetra_SerialDistributor::Print(ostream &os) const ";
@@ -17786,10 +16748,6 @@ C++ includes: Epetra_SerialSpdDenseSolver.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")
 Epetra_SerialSpdDenseSolver::Epetra_SerialSpdDenseSolver "Epetra_SerialSpdDenseSolver::Epetra_SerialSpdDenseSolver()
 
@@ -17803,10 +16761,6 @@ Epetra_SerialDenseSolver destructor. ";
 
 /*  Set Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialSpdDenseSolver::SetMatrix "int
 Epetra_SerialSpdDenseSolver::SetMatrix(Epetra_SerialSymDenseMatrix
 &A_in)
@@ -17815,10 +16769,6 @@ Sets the pointers for coefficient matrix; special version for
 symmetric matrices. ";
 
 /*  Factor/Solve/Invert Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialSpdDenseSolver::Factor "int
 Epetra_SerialSpdDenseSolver::Factor(void)
@@ -17906,10 +16856,6 @@ LAPACK error code INFO. ";
 
 /*  Query methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialSpdDenseSolver::ShouldEquilibrate
 "bool Epetra_SerialSpdDenseSolver::ShouldEquilibrate()
 
@@ -17917,10 +16863,6 @@ Returns true if the LAPACK general rules for equilibration suggest you
 should equilibrate the system. ";
 
 /*  Data Accessor methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialSpdDenseSolver::SymMatrix "Epetra_SerialSymDenseMatrix* Epetra_SerialSpdDenseSolver::SymMatrix()
 const
@@ -18028,10 +16970,6 @@ C++ includes: Epetra_SerialSymDenseMatrix.h ";
 
 /*  Constructor/Destructor Methods  */
 
-/*
-
-*/
-
 %feature("docstring")
 Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix "Epetra_SerialSymDenseMatrix::Epetra_SerialSymDenseMatrix(void)
 
@@ -18082,10 +17020,6 @@ Epetra_SerialSymDenseMatrix destructor. ";
 
 /*  Set Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialSymDenseMatrix::Shape "int
 Epetra_SerialSymDenseMatrix::Shape(int NumRowsCols)
 
@@ -18135,10 +17069,6 @@ Specify that the upper triangle of the this matrix should be used. ";
 
 /*  Query methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SerialSymDenseMatrix::Upper "bool
 Epetra_SerialSymDenseMatrix::Upper() const
 
@@ -18150,10 +17080,6 @@ Epetra_SerialSymDenseMatrix::UPLO() const
 Returns character value of UPLO used by LAPACK routines. ";
 
 /*  Mathematical Methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialSymDenseMatrix::Scale "int
 Epetra_SerialSymDenseMatrix::Scale(double ScalarA)
@@ -18184,10 +17110,6 @@ Computes the Infinity-Norm of the this matrix. ";
 
 /*  Deprecated methods (will be removed in later versions of this
 class)  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SerialSymDenseMatrix::OneNorm "double
 Epetra_SerialSymDenseMatrix::OneNorm() const
@@ -18227,19 +17149,11 @@ C++ includes: Epetra_SrcDistObject.h ";
 
 /*  Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_SrcDistObject::~Epetra_SrcDistObject "virtual Epetra_SrcDistObject::~Epetra_SrcDistObject()
 
 Epetra_SrcDistObject destructor. ";
 
 /*  Attribute accessor methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_SrcDistObject::Map "virtual const
 Epetra_BlockMap& Epetra_SrcDistObject::Map() const =0
@@ -18345,19 +17259,15 @@ C++ includes: Epetra_Util.h ";
 
 /*  Random number utilities  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Util::RandomInt "unsigned int
 Epetra_Util::RandomInt()
 
-Returns a random integer on the interval (0, 2^31-1). ";
+Returns a random integer on the interval (0, 2^31-1) ";
 
 %feature("docstring")  Epetra_Util::RandomDouble "double
 Epetra_Util::RandomDouble()
 
-Returns a random double on the interval (-1.0,1.0). ";
+Returns a random double on the interval (-1.0,1.0) ";
 
 %feature("docstring")  Epetra_Util::Seed "unsigned int
 Epetra_Util::Seed() const
@@ -18543,10 +17453,6 @@ C++ includes: Epetra_VbrMatrix.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrMatrix::Epetra_VbrMatrix "Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const
 Epetra_BlockMap &RowMap, int *NumBlockEntriesPerRow)
 
@@ -18659,10 +17565,6 @@ Epetra_VbrMatrix Destructor. ";
 
 /*  Insertion/Replace/SumInto methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrMatrix::PutScalar "int
 Epetra_VbrMatrix::PutScalar(double ScalarConstant)
 
@@ -18730,7 +17632,7 @@ Integer error code, set to 0 if successful. ";
 NumBlockEntries, int *BlockIndices)
 
 Initiate replacement of current values with this list of entries for a
-given global row of the matrix, values are replaced via SubmitEntry().
+given global row of the matrix, values are replaced via SubmitEntry()
 
 Parameters:
 -----------
@@ -18748,7 +17650,7 @@ Epetra_VbrMatrix::BeginReplaceMyValues(int BlockRow, int
 NumBlockEntries, int *BlockIndices)
 
 Initiate replacement of current values with this list of entries for a
-given local row of the matrix, values are replaced via SubmitEntry().
+given local row of the matrix, values are replaced via SubmitEntry()
 
 Parameters:
 -----------
@@ -18765,7 +17667,7 @@ Integer error code, set to 0 if successful. ";
 NumBlockEntries, int *BlockIndices)
 
 Initiate summing into current values with this list of entries for a
-given global row of the matrix, values are replaced via SubmitEntry().
+given global row of the matrix, values are replaced via SubmitEntry()
 
 Parameters:
 -----------
@@ -18783,7 +17685,7 @@ Epetra_VbrMatrix::BeginSumIntoMyValues(int BlockRow, int
 NumBlockEntries, int *BlockIndices)
 
 Initiate summing into current values with this list of entries for a
-given local row of the matrix, values are replaced via SubmitEntry().
+given local row of the matrix, values are replaced via SubmitEntry()
 
 Parameters:
 -----------
@@ -18861,10 +17763,6 @@ If FillComplete() has been called, this query returns true, otherwise
 it returns false. ";
 
 /*  Extraction methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_VbrMatrix::ExtractGlobalBlockRowPointers
 "int Epetra_VbrMatrix::ExtractGlobalBlockRowPointers(int BlockRow,
@@ -19222,10 +18120,6 @@ Out:  LDA - Column stride of Values. ";
 
 /*  Computational methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrMatrix::Multiply1 "int
 Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector &x,
 Epetra_Vector &y) const
@@ -19393,10 +18287,6 @@ Integer error code, set to 0 if successful. ";
 
 /*  Matrix Properties Query Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrMatrix::OptimizeStorage "int
 Epetra_VbrMatrix::OptimizeStorage()
 
@@ -19446,10 +18336,6 @@ If matrix has no diagonal entries based on global row/column index
 comparisons, this query returns true, otherwise it returns false. ";
 
 /*  Atribute access functions  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_VbrMatrix::NormInf "double
 Epetra_VbrMatrix::NormInf() const
@@ -19693,10 +18579,6 @@ matrix. ";
 
 /*  Local/Global ID methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrMatrix::LRID "int
 Epetra_VbrMatrix::LRID(int GRID_in) const
 
@@ -19753,10 +18635,6 @@ returns false. ";
 
 /*  I/O Methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrMatrix::Print "void
 Epetra_VbrMatrix::Print(ostream &os) const
 
@@ -19764,10 +18642,6 @@ Print method. ";
 
 /*  Additional methods required to support the Epetra_Operator
 interface  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_VbrMatrix::Label "const char*
 Epetra_VbrMatrix::Label() const
@@ -19859,10 +18733,6 @@ operator. ";
 
 /*  Additional methods required to implement RowMatrix interface  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrMatrix::ExtractGlobalRowCopy "int
 Epetra_VbrMatrix::ExtractGlobalRowCopy(int GlobalRow, int Length, int
 &NumEntries, double *Values, int *Indices) const
@@ -19953,10 +18823,6 @@ for distributed operations. ";
 /*  Deprecated methods:  These methods still work, but will be removed
 in a future version  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrMatrix::BlockImportMap "const
 Epetra_BlockMap& Epetra_VbrMatrix::BlockImportMap() const
 
@@ -19998,10 +18864,6 @@ C++ includes: Epetra_VbrRowMatrix.h ";
 
 /*  Constructors/Destructor  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrRowMatrix::Epetra_VbrRowMatrix "Epetra_VbrRowMatrix::Epetra_VbrRowMatrix(Epetra_VbrMatrix *Matrix)
 
 Epetra_VbrRowMatrix constuctor. ";
@@ -20012,20 +18874,12 @@ Epetra_VbrRowMatrix Destructor. ";
 
 /*  Post-construction modifications  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_VbrRowMatrix::UpdateMatrix "int
 Epetra_VbrRowMatrix::UpdateMatrix(Epetra_VbrMatrix *Matrix)
 
 Update the matrix to which this object points. ";
 
 /*  Methods required for implementing Epetra_BasicRowMatrix  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_VbrRowMatrix::ExtractMyRowCopy "int
 Epetra_VbrRowMatrix::ExtractMyRowCopy(int MyRow, int Length, int
@@ -20117,10 +18971,6 @@ None.
 Unchanged. ";
 
 /*  Computational methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_VbrRowMatrix::RightScale "int
 Epetra_VbrRowMatrix::RightScale(const Epetra_Vector &x)
@@ -20297,10 +19147,6 @@ C++ includes: Epetra_Vector.h ";
 
 /*  Constructors/destructors  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Vector::Epetra_Vector "Epetra_Vector::Epetra_Vector(const Epetra_BlockMap &Map, bool
 zeroOut=true)
 
@@ -20368,10 +19214,6 @@ section for further discussion. ";
 Epetra_Vector destructor. ";
 
 /*  Post-construction modification routines  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Vector::ReplaceGlobalValues "int
 Epetra_Vector::ReplaceGlobalValues(int NumEntries, const double
@@ -20595,10 +19437,6 @@ indices are not associated with calling processor. ";
 
 /*  Extraction methods  */
 
-/*
-
-*/
-
 %feature("docstring")  Epetra_Vector::ExtractCopy "int
 Epetra_Vector::ExtractCopy(double *V) const
 
@@ -20626,15 +19464,7 @@ Integer error code, set to 0 if successful. ";
 
 /*  Overloaded operators  */
 
-/*
-
-*/
-
 /*  Expert-only unsupported methods  */
-
-/*
-
-*/
 
 %feature("docstring")  Epetra_Vector::ResetView "int
 Epetra_Vector::ResetView(double *Values_in)

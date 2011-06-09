@@ -175,13 +175,17 @@ def assertEgGitVersionHelper(returnedVersion, expectedVersion):
       +expectedVersion+"!  To turn this check off, pass in --no-eg-git-version-check.")
 
 
-def assertEgGitVersions(inOptions):
+def setupAndAssertEgGitVersions(inOptions):
 
   egWhich = getCmndOutput("which eg", True, False)
   if egWhich == "" or re.match(".+no eg.+", egWhich):
-    raise Exception("Error, the eg command is not in your path! ("+egWhich+")")
+    print "Warning, the eg command is not in your path! ("+egWhich+")"
+    setattr(inOptions, "eg", inOptions.trilinosSrcDir+"/commonTools/git/eg")
+    print "Setting to default eg in source tree '"+inOptions.eg+"'!"
+  else:
+    setattr(inOptions, "eg", "eg")
 
-  egVersionOuput = getCmndOutput("eg --version", True, False)
+  egVersionOuput = getCmndOutput(inOptions.eg+" --version", True, False)
   egVersionsList = egVersionOuput.split('\n')
 
   if inOptions.enableEgGitVersionCheck:
@@ -234,7 +238,7 @@ def getRepoSpaceBranchFromOptionStr(extraPullFrom):
 def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
   doRebase=False)\
   :
-  cmnd = "eg pull"
+  cmnd = inOptions.eg+" pull"
   if pullFromRepo:
     repoSpaceBranch = getRepoSpaceBranchFromOptionStr(pullFromRepo)
     print "\nPulling in updates from '"+repoSpaceBranch+"' ...\n"
@@ -245,7 +249,7 @@ def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
     # modified files will be wrong.  I don't know why this is but if instead
     # you do a raw 'eg pull', then the right list of files shows up.
   if doRebase:
-    cmnd += " && eg rebase --against origin/"+inOptions.currentBranch
+    cmnd += " && "+inOptions.eg+" rebase --against origin/"+inOptions.currentBranch
   return echoRunSysCmnd( cmnd,
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
     outFile=os.path.join(baseTestDir, outFile),
@@ -291,6 +295,7 @@ class BuildTestCase:
     self.runBuildTestCase = runBuildTestCase
     self.isDefaultBuild = isDefaultBuild
     self.extraCMakeOptions = extraCMakeOptions
+    self.skippedConfigureDueToNoEnables = False
     self.buildIdx = buildIdx
     self.timings = Timings()
 
@@ -417,7 +422,7 @@ reModifiedFiles = re.compile(r"^[MAD]\t(.+)$")
 
 
 def getCurrentBranchName(inOptions, baseTestDir):
-  branchesStr = getCmndOutput("eg branch", workingDir=inOptions.trilinosSrcDir)
+  branchesStr = getCmndOutput(inOptions.eg+" branch", workingDir=inOptions.trilinosSrcDir)
   for branchName in branchesStr.split('\n'):
     #print "branchName =", branchName
     if branchName[0] == '*':
@@ -429,7 +434,7 @@ def getCurrentBranchName(inOptions, baseTestDir):
 
 def getCurrentDiffOutput(gitRepoName, inOptions, baseTestDir):
   echoRunSysCmnd(
-    "eg diff --name-status origin/"+inOptions.currentBranch,
+    inOptions.eg+" diff --name-status origin/"+inOptions.currentBranch,
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
     outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName(gitRepoName)),
     timeCmnd=True
@@ -510,18 +515,18 @@ def getStageStatus(stageName, stageDoBool, stagePassed, stageTiming):
   return stageStatusStr
 
 
-def getTotalTimeBeginStr(buildTestName):
-  return "Total time for "+buildTestName
+def getTotalTimeBeginStr(buildTestCaseName):
+  return "Total time for "+buildTestCaseName
 
 
-def getTotalTimeLineStr(buildTestName, timeInMin):
-  return getTotalTimeBeginStr(buildTestName)+" = "+str(timeInMin) + " min"
+def getTotalTimeLineStr(buildTestCaseName, timeInMin):
+  return getTotalTimeBeginStr(buildTestCaseName)+" = "+str(timeInMin) + " min"
 
 
-def getTimeInMinFromTotalTimeLine(buildTestName, totalTimeLine):
+def getTimeInMinFromTotalTimeLine(buildTestCaseName, totalTimeLine):
   if not totalTimeLine:
     return -1.0
-  m = re.match(getTotalTimeBeginStr(buildTestName)+r" = (.+) min", totalTimeLine)
+  m = re.match(getTotalTimeBeginStr(buildTestCaseName)+r" = (.+) min", totalTimeLine)
   if m and m.groups():
     return float(m.groups()[0])
   else:
@@ -531,9 +536,11 @@ def getTimeInMinFromTotalTimeLine(buildTestName, totalTimeLine):
 reCtestFailTotal = re.compile(r".+, ([0-9]+) tests failed out of ([0-9]+)")
 
 
-def analyzeResultsSendEmail(inOptions, buildTestName,
+def analyzeResultsSendEmail(inOptions, buildTestCase,
   enabledPackagesList, cmakeOptions, startingTime, timings ) \
   :
+
+  buildTestCaseName = buildTestCase.name
 
   print ""
   print "E.1) Determine what passed and failed ..."
@@ -704,6 +711,10 @@ def analyzeResultsSendEmail(inOptions, buildTestName,
       buildCaseStatus += "configure-only passed"
       overallPassed = True
       selectedFinalStatus = True
+    elif buildTestCase.skippedConfigureDueToNoEnables:
+      buildCaseStatus += "skipped configure, build, test due to no enabled packages"
+      overallPassed = True
+      selectedFinalStatus = True
     elif configureOutputExists:
       buildCaseStatus += "configure failed"
       overallPassed = False
@@ -726,7 +737,7 @@ def analyzeResultsSendEmail(inOptions, buildTestName,
   if not selectedFinalStatus:
     raise Exception("Error, final pass/fail status not found!")
 
-  subjectLine = "Trilinos/"+buildTestName+": "+buildCaseStatus
+  subjectLine = "Trilinos/"+buildTestCaseName+": "+buildCaseStatus
   if overallPassed:
     subjectLine = "passed: " + subjectLine
   else:
@@ -775,7 +786,7 @@ def analyzeResultsSendEmail(inOptions, buildTestName,
   endingTime = time.time()
   totalTime = (endingTime - startingTime) / 60.0
 
-  emailBody += "\n"+getTotalTimeLineStr(buildTestName, totalTime)+"\n"
+  emailBody += "\n"+getTotalTimeLineStr(buildTestCaseName, totalTime)+"\n"
 
   #print "emailBody:\n\n\n\n", emailBody, "\n\n\n\n"
 
@@ -788,7 +799,11 @@ def analyzeResultsSendEmail(inOptions, buildTestName,
   print "E.3) Send the email message ..."
   print ""
 
-  if inOptions.sendEmailTo:
+  if inOptions.sendEmailTo and buildTestCase.skippedConfigureDueToNoEnables:
+
+    print buildTestCaseName + ": Skipping sending build/test case email because there were no enables and --abort-gracefully-if-no-enables was set!"
+
+  elif inOptions.sendEmailTo:
 
     emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
     echoRunSysCmnd("mailx -s \""+subjectLine+"\" "+emailAddresses+" < "+getEmailBodyFileName())
@@ -880,6 +895,9 @@ def getEnablesLists(inOptions, gitRepoList, baseTestDir, verbose):
       else:
         if verbose:
           print "\nThe file "+diffOutFileName+" does not exist!\n"
+
+  if not enablePackagesList:
+    return (cmakePkgOptions, enablePackagesList)
 
   if inOptions.extraRepos:
     cmakePkgOptions.append("-DTrilinos_EXTRA_REPOSITORIES:STRING="+inOptions.extraRepos)
@@ -1007,6 +1025,11 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
     if inOptions.doConfigure and not preConfigurePassed:
 
       print "\nSkipping configure because pre-configure failed (see above)!\n"
+
+    elif (not enablePackagesList) and inOptions.abortGracefullyIfNoEnables:
+
+      print "\nSkipping configure because no packages are enabled and --abort-gracefully-if-no-enables!\n"
+      buildTestCase.skippedConfigureDueToNoEnables = True
   
     elif inOptions.doConfigure:
   
@@ -1120,7 +1143,7 @@ def runBuildTestCase(inOptions, gitRepoList, buildTestCase, timings):
 
   if performAnyActions(inOptions):
 
-    result = analyzeResultsSendEmail(inOptions, buildTestCaseName,
+    result = analyzeResultsSendEmail(inOptions, buildTestCase,
       enablePackagesList, cmakeOptions, startingTime, timings)
     if not result: success = False
 
@@ -1190,7 +1213,7 @@ def runBuildTestCaseDriver(inOptions, gitRepoList, baseTestDir, buildTestCase, t
   return success
 
 
-def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestName, inOptions):
+def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestCaseName, inOptions):
 
   statusMsg = None
   timeInMin = -1.0
@@ -1199,40 +1222,40 @@ def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestName, inOptions):
     buildTestCaseActionsPass = True
     buildTestCaseOkayToCommit = True
     statusMsg = \
-      "Test case "+buildTestName+" was not run! => Does not affect push readiness!"
+      "Test case "+buildTestCaseName+" was not run! => Does not affect push readiness!"
     return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin)
 
-  if not os.path.exists(buildTestName) and not performAnyBuildTestActions(inOptions):
+  if not os.path.exists(buildTestCaseName) and not performAnyBuildTestActions(inOptions):
     buildTestCaseActionsPass = True
     buildTestCaseOkayToCommit = False
-    statusMsg = "No configure, build, or test for "+buildTestName+" was requested!"
+    statusMsg = "No configure, build, or test for "+buildTestCaseName+" was requested!"
     return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin)
 
-  if not os.path.exists(buildTestName):
+  if not os.path.exists(buildTestCaseName):
     buildTestCaseActionsPass = False
     buildTestCaseOkayToCommit = False
-    statusMsg = "The directory "+buildTestName+" does not exist!"
+    statusMsg = "The directory "+buildTestCaseName+" does not exist!"
 
-  emailsuccessFileName = buildTestName+"/"+getEmailSuccessFileName()
+  emailsuccessFileName = buildTestCaseName+"/"+getEmailSuccessFileName()
   if os.path.exists(emailsuccessFileName):
     buildTestCaseActionsPass = True
   else:
     buildTestCaseActionsPass = False
 
-  testSuccessFileName = buildTestName+"/"+getTestSuccessFileName()
+  testSuccessFileName = buildTestCaseName+"/"+getTestSuccessFileName()
   if os.path.exists(testSuccessFileName):
     buildTestCaseOkayToCommit = True
   else:
     buildTestCaseOkayToCommit = False
 
   if not statusMsg:
-    statusMsg = getBuildTestCaseSummary(buildTestName)
+    statusMsg = getBuildTestCaseSummary(buildTestCaseName)
 
-  emailBodyFileName = buildTestName+"/"+getEmailBodyFileName()
+  emailBodyFileName = buildTestCaseName+"/"+getEmailBodyFileName()
   if os.path.exists(emailBodyFileName):
-    timeInMinLine = getCmndOutput("grep '"+getTotalTimeBeginStr(buildTestName)+"' " + \
+    timeInMinLine = getCmndOutput("grep '"+getTotalTimeBeginStr(buildTestCaseName)+"' " + \
       emailBodyFileName, True, False)
-    timeInMin = getTimeInMinFromTotalTimeLine(buildTestName, timeInMinLine)
+    timeInMin = getTimeInMinFromTotalTimeLine(buildTestCaseName, timeInMinLine)
 
   return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin)
 
@@ -1329,7 +1352,7 @@ def getLastCommitMessageStr(inOptions, gitRepoName):
 
   # Get the raw output from the last current commit log
   rawLogOutput = getCmndOutput(
-    "eg cat-file -p HEAD",
+    inOptions.eg+" cat-file -p HEAD",
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
     )
 
@@ -1340,7 +1363,7 @@ def getLocalCommitsSummariesStr(inOptions, gitRepoName, appendRepoName):
 
   # Get the list of local commits other than this one
   rawLocalCommitsStr = getCmndOutput(
-    "eg log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
+    inOptions.eg+" log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
     True,
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
     )
@@ -1379,7 +1402,7 @@ def getLocalCommitsSHA1ListStr(inOptions, gitRepoName):
 
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
-    "eg log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
+    inOptions.eg+" log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
     True,
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName)
     )
@@ -1389,6 +1412,12 @@ def getLocalCommitsSHA1ListStr(inOptions, gitRepoName):
       + (", ".join(rawLocalCommitsStr.split("\n")))) + "\n"
 
   return ""
+
+
+def getLocalCommitsExist(inOptions, gitRepoName):
+  if getLocalCommitsSummariesStr(inOptions, gitRepoName, False)[1]:
+    return True
+  return False
 
 
 def checkinTest(inOptions):
@@ -1421,7 +1450,7 @@ def checkinTest(inOptions):
     inOptions.doBuild = True
     inOptions.doTest = True
 
-  assertEgGitVersions(inOptions)
+  setupAndAssertEgGitVersions(inOptions)
 
   if inOptions.overallNumProcs:
     inOptions.makeOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.makeOptions
@@ -1588,7 +1617,7 @@ def checkinTest(inOptions):
 
         print "\n3.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
 
-        egStatusOutput = getCmndOutput("eg status", True, throwOnError=False,
+        egStatusOutput = getCmndOutput(inOptions.eg+" status", True, throwOnError=False,
           workingDir=getGitRepoDir(inOptions.trilinosSrcDir,gitRepo.repoName))
   
         print \
@@ -1820,10 +1849,10 @@ def checkinTest(inOptions):
 
       for i in range(len(buildTestCaseList)):
         buildTestCase = buildTestCaseList[i]
-        buildTestName = buildTestCase.name
+        buildTestCaseName = buildTestCase.name
         (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin) = \
-          checkBuildTestCaseStatus(buildTestCase.runBuildTestCase, buildTestName, inOptions)
-        buildTestCaseStatusStr = str(i)+") "+buildTestName+" => "+statusMsg
+          checkBuildTestCaseStatus(buildTestCase.runBuildTestCase, buildTestCaseName, inOptions)
+        buildTestCaseStatusStr = str(i)+") "+buildTestCaseName+" => "+statusMsg
         if not buildTestCaseOkayToCommit:
           buildTestCaseStatusStr += " => Not ready to push!"
         buildTestCaseStatusStr += " ("+formatMinutesStr(timeInMin)+")\n"
@@ -2008,7 +2037,7 @@ def checkinTest(inOptions):
             if localCommitsExist:
   
               commitAmendRtn = echoRunSysCmnd(
-                "eg commit --amend" \
+                inOptions.eg+" commit --amend" \
                 " -F "+os.path.join(baseTestDir, finalCommitEmailBodyFileName),
                 workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
                 outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName(gitRepo.repoName)),
@@ -2091,7 +2120,7 @@ def checkinTest(inOptions):
 
             if not debugSkipPush:
               pushRtn = echoRunSysCmnd(
-                "eg push origin "+inOptions.currentBranch,
+                inOptions.eg+" push origin "+inOptions.currentBranch,
                 workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepo.repoName),
                 outFile=os.path.join(baseTestDir, getPushOutputFileName(gitRepo.repoName)),
                 throwExcept=False, timeCmnd=True )
@@ -2148,6 +2177,8 @@ def checkinTest(inOptions):
     print "\n***"
     print "*** 9) Create and send push (or readiness status) notification email  ..."
     print "***\n"
+    
+    allConfiguresAbortedDueToNoEnablesGracefullAbort = False
 
     if inOptions.doPushReadinessCheck:
 
@@ -2155,11 +2186,22 @@ def checkinTest(inOptions):
       print "\n9.a) Getting final status to send out in the summary email ...\n"
       #
 
+      # Determine if all confiugres were aborted because no package enables
+      # and gracefull abort option was set
+      allConfiguresAbortedDueToNoEnablesGracefullAbort = True
+      for buildTestCase in buildTestCaseList:
+        if not buildTestCase.skippedConfigureDueToNoEnables:
+          allConfiguresAbortedDueToNoEnablesGracefullAbort = False
+
       if not pullPassed:
         subjectLine = "INITIAL PULL FAILED"
         commitEmailBodyExtra += "\n\nFailed because initial pull failed!" \
           " See '"+getInitialPullOutputFileName("*")+"'\n\n"
         success = False
+      elif allConfiguresAbortedDueToNoEnablesGracefullAbort:
+        subjectLine = "ABORTED DUE TO NO ENABLES"
+        commitEmailBodyExtra += "\n\nAborted because no enables and --abort-gracefully-if-no-enables was set!\n\n"
+        success = True
       elif not pullFinalPassed:
         subjectLine = "FINAL PULL FAILED"
         commitEmailBodyExtra += "\n\nFailed because the final pull failed!" \
@@ -2203,8 +2245,12 @@ def checkinTest(inOptions):
       #
     
       subjectLine += ": Trilinos: "+getHostname()
+
+      if inOptions.sendEmailTo and allConfiguresAbortedDueToNoEnablesGracefullAbort:
+
+        print "\nSkipping sending final email because there were no enables and --abort-gracefully-if-no-enables was set!"
   
-      if inOptions.sendEmailTo:
+      elif inOptions.sendEmailTo:
     
         emailBodyStr = subjectLine + "\n\n"
         emailBodyStr += getCmndOutput("date", True) + "\n\n"

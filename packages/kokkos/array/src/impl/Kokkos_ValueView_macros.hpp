@@ -37,14 +37,11 @@
  *************************************************************************
  */
 
-#if ! defined(KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION) || \
+#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_HOST_FUNCTION)           || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
-
-#error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
+#error "Including <Kokkos_ValueView_macros.hpp> without macros defined"
 
 #else
 
@@ -60,23 +57,41 @@ public:
   typedef KOKKOS_MACRO_DEVICE device_type ;
 
   /*------------------------------------------------------------------*/
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+
   /** \brief  Access value */
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
   value_type & operator* () const 
   { return * m_memory.ptr_on_device(); }
 
+#endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  operator bool() const
+  { return m_memory.operator bool(); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator == ( const ValueView & rhs ) const
+  { return m_memory.operator==( rhs.m_memory ); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator != ( const ValueView & rhs ) const
+  { return m_memory.operator!=( rhs.m_memory ); }
+
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ValueView() : m_memory() {}
 
   /** \brief  Construct a view of the array */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ValueView( const ValueView & rhs )
     : m_memory()
     { device_type::assign_memory_view( m_memory , rhs.m_memory ); }
@@ -86,8 +101,7 @@ public:
    *          then allocated memory is deallocated.
    */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ValueView & operator = ( const ValueView & rhs )
     { device_type::assign_memory_view( m_memory , rhs.m_memory ); return *this ; }
   
@@ -98,6 +112,9 @@ public:
     { device_type::clear_memory_view( m_memory ); }
 
   /*------------------------------------------------------------------*/
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+
   /** \brief  Allow the ValueView to be a parallel reduce
    *          'finalize functor' that assigns the reduced value
    *          on the device.
@@ -106,6 +123,8 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( const value_type & rhs ) const
     { * m_memory.ptr_on_device() = rhs ; }
+
+#endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
 
 private:
 
@@ -120,12 +139,25 @@ private:
   friend
   ValueView< V , D >
   create_labeled_value( const std::string & label );
-};
 
-//----------------------------------------------------------------------------
+  template< typename , class , class >
+  friend
+  class Impl::ValueDeepCopy ;
+};
 
 } // namespace Kokkos
 
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
 #endif /* KOKKOS_VALUEVIEW_HPP */
 
 

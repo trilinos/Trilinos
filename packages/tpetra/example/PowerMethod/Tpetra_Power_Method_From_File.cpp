@@ -22,18 +22,21 @@ int main(int argc, char *argv[]) {
   //
   // Specify types used in this example
   // 
-  typedef double Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-  typedef int Ordinal;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef double                                                  Scalar;
+  typedef Teuchos::ScalarTraits<Scalar>::magnitudeType            Magnitude;
+  typedef int                                                     Ordinal;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+  typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;
+  using Teuchos::RCP;
+  using Teuchos::tuple;
 
   // 
   // Get the default communicator and node
   //
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-  Teuchos::RCP<Node>             node = platform.getNode();
+  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  RCP<Node>                      node = platform.getNode();
   const int myRank = comm->getRank();
 
   //
@@ -65,10 +68,10 @@ int main(int argc, char *argv[]) {
   //
   // Read Tpetra::CrsMatrix from file
   //
-  Teuchos::RCP< Tpetra::CrsMatrix<Scalar,Ordinal> > A;
+  RCP<CrsMatrix> A;
   Tpetra::Utils::readHBMatrix(filename,comm,node,A);
   if (printMatrix) {
-    Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
   else if (verbose) {
@@ -78,8 +81,7 @@ int main(int argc, char *argv[]) {
   //
   // Iterate
   //
-  Scalar lambda; (void)lambda;
-  lambda = TpetraExamples::powerMethod<Scalar,Ordinal>(A, niters, tolerance, verbose);
+  TpetraExamples::powerMethod<Scalar,Ordinal>(A, niters, tolerance, verbose);
 
   if (verbose) {
     std::cout << "\nEnd Result: TEST PASSED" << std::endl;

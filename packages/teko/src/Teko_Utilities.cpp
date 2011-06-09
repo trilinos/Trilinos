@@ -76,6 +76,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
+#include "EpetraExt_Transpose_RowMatrix.h"
+
 // Anasazi includes
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziThyraAdapter.hpp"
@@ -971,6 +973,28 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
                                      " + " + opr->getObjectLabel() + " )");
 
    return explicitOp;
+}
+
+const LinearOp explicitTranspose(const LinearOp & op)
+{
+   RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+   TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::logic_error,
+                             "Teko::explicitTranspose Not an Epetra_Operator");
+   RCP<const Epetra_RowMatrix> eRowMatrixOp 
+         = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(eOp);
+   TEST_FOR_EXCEPTION(eRowMatrixOp==Teuchos::null,std::logic_error,
+                             "Teko::explicitTranspose Not an Epetra_RowMatrix");
+
+   // we now have a delete transpose operator
+   EpetraExt::RowMatrix_Transpose tranposeOp;
+   Epetra_RowMatrix & eMat = tranposeOp(const_cast<Epetra_RowMatrix &>(*eRowMatrixOp));
+
+   // this copy is because of a poor implementation of the EpetraExt::Transform 
+   // implementation
+   Teuchos::RCP<Epetra_CrsMatrix> crsMat 
+         = Teuchos::rcp(new Epetra_CrsMatrix(dynamic_cast<Epetra_CrsMatrix &>(eMat)));
+
+   return Thyra::epetraLinearOp(crsMat);
 }
 
 const LinearOp buildDiagonal(const MultiVector & src,const std::string & lbl)

@@ -26,6 +26,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DCMAKE_CXX_COMPILER:FILEPATH=/home/jmwille/install/gcc4.6.0/bin/g++"
   "-DCMAKE_C_COMPILER:FILEPATH=/home/jmwille/install/gcc4.6.0/bin/gcc"
   "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/jmwille/install/gcc4.6.0/bin/gfortran"
+  "-DBoost_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/boost_1_46_1"
   )
 
 #

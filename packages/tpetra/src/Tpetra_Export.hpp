@@ -409,7 +409,7 @@ namespace Tpetra {
       \pre <tt>tgt != null</tt>
       \return Returns the Export object. If <tt>src == tgt</tt>, returns \c null. (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.) 
 
-      \relates Export
+      \relatesalso Export
     */
   template <class LO, class GO, class Node> 
   RCP< const Export<LO,GO,Node> >

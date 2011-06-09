@@ -49,7 +49,6 @@ namespace Impl {
 
 enum { MAX_RANK = 8 };
 
-
 size_t mdarray_deduce_rank( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
                             size_t n4 , size_t n5 , size_t n6 , size_t n7 )
 {
@@ -146,6 +145,32 @@ void mdarray_require_equal_dimension(
   }
 }
 
+void multivector_require_range( size_t beg , size_t end , size_t bound )
+{
+  if ( ! ( beg < end || end <= bound ) ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::Impl::multivector_require_range FAILED : " ;
+    msg << beg << " < " << end << " <= " << bound ;
+    throw std::runtime_error( msg.str() );
+  }
+}
+
+void multivector_require_equal_dimension(
+  size_t length_x , size_t count_x ,
+  size_t length_y , size_t count_y )
+{
+  if ( length_x != length_y || count_x != count_y ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::Impl::multivector_require_equal_dimension FAILED :" ;
+    if ( length_x != length_y ) {
+      msg << " length( " << length_x << " != " << length_y << " )" ;
+    }
+    if ( count_x != count_y ) {
+      msg << " count( " << count_x << " != " << count_y << " )" ;
+    }
+    throw std::runtime_error( msg.str() );
+  }
+}
 
 } // namespace Impl
 } // namespace Kokkos

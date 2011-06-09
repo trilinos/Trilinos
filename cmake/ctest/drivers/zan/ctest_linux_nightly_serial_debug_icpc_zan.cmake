@@ -18,6 +18,7 @@ SET(EXTRA_EXCLUDE_PACKAGES Sundance Rythmos STK Phalanx Thyra)
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Fortran:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
+  "-DTrilinos_ENABLE_STK:BOOL=OFF"
   )
 
 #

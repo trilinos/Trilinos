@@ -42,12 +42,11 @@
 
 #include <cstddef>
 #include <string>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType > class ValueView ;
 
 template< typename ValueType , class DeviceType >
 ValueView< ValueType , DeviceType >
@@ -102,6 +101,7 @@ private:
 };
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 template< typename ValueType , class DeviceType >
 inline
@@ -136,27 +136,84 @@ create_value( const std::string & label )
     ( std::string() );
 }
 
-} // namespace Kokkos
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
+namespace Impl {
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+class ValueDeepCopy ;
+
+} // namespace Impl
+
+template< typename ValueType , class DeviceType >
+inline
+void deep_copy( const ValueView<ValueType,DeviceType> & dst ,
+                const ValueType & src )
+{
+  Impl::ValueDeepCopy<ValueType,DeviceType,DeviceHost>::run( dst , src );
+}
+
+template< typename ValueType , class DeviceType >
+inline
+void deep_copy( ValueType & dst ,
+                const ValueView<ValueType,DeviceType> & src )
+{
+  Impl::ValueDeepCopy<ValueType,DeviceHost,DeviceType>::run( dst , src );
+}
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+void deep_copy( const ValueView< ValueType , DeviceDst > & dst ,
+                const ValueView< ValueType , DeviceSrc > & src )
+{
+  Impl::ValueDeepCopy<ValueType,DeviceDst,DeviceSrc>::run( dst , src );
+}
+
+//----------------------------------------------------------------------------
+
+namespace Impl {
+
+template< typename ValueType >
+class ValueDeepCopy< ValueType , DeviceHost , DeviceHost > {
+public:
+  static void run( const ValueView< ValueType , DeviceHost > & dst ,
+                   const ValueType & src )
+  { *dst = src ; }
+
+  static void run( ValueType & dst ,
+                   const ValueView< ValueType , DeviceHost > & src )
+  { dst = *src ; }
+
+  static void run( const ValueView< ValueType , DeviceHost > & dst ,
+                   const ValueView< ValueType , DeviceHost > & src )
+  { *dst = *src ; }
+};
+
+}
+}
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Partial specializations for known devices
 
 #if defined( KOKKOS_DEVICE_HOST )
-#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 #include <impl/Kokkos_ValueView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_TPI )
-#include <impl/Kokkos_DeviceTPI_macros.hpp>
+#include <Kokkos_DeviceTPI_macros.hpp>
 #include <impl/Kokkos_ValueView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
+#include <DeviceTPI/Kokkos_DeviceTPI_ValueView.hpp>
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
-#include <impl/Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_DeviceCuda_macros.hpp>
 #include <impl/Kokkos_ValueView_macros.hpp>
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
+#include <DeviceCuda/Kokkos_DeviceCuda_ValueView.hpp>
 #endif
 
 //----------------------------------------------------------------------------

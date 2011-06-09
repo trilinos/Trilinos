@@ -44,20 +44,15 @@
 #include <TPI.h>
 
 namespace Kokkos {
+namespace Impl {
 
 template< class FunctorType >
 class ParallelFor< FunctorType , DeviceTPI > {
 public:
-  typedef DeviceTPI              device_type ;
-  typedef device_type::size_type size_type ;
+  typedef DeviceTPI::size_type size_type ;
 
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
-
-  ParallelFor( const size_type work_count , const FunctorType & functor )
-    : m_work_functor( functor )
-    , m_work_count( work_count )
-    {}
 
 private:
 
@@ -77,23 +72,27 @@ private:
     }
   }
 
+  ParallelFor( const size_type work_count , const FunctorType & functor )
+    : m_work_functor( functor )
+    , m_work_count( work_count )
+  {}
+
 public:
 
-  static void run( const size_type     work_count ,
-                   const FunctorType & work_functor )
+  static void execute( const size_type work_count ,
+                       const FunctorType & functor )
   {
-    // Make a copy just like other devices will have to.
+    DeviceTPI::set_dispatch_functor();
 
-    device_type::set_dispatch_functor();
+    ParallelFor driver( work_count , functor );
 
-    const ParallelFor tmp( work_count , work_functor );
+    DeviceTPI::clear_dispatch_functor();
 
-    device_type::clear_dispatch_functor();
-
-    TPI_Run_threads( & run_on_tpi , & tmp , 0 );
+    TPI_Run_threads( & run_on_tpi , & driver , 0 );
   }
 };
 
+} // namespace Impl
 } // namespace Kokkos
 
 #endif /* KOKKOS_DEVICETPI_PARALLELFOR_HPP */

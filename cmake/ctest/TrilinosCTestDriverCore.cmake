@@ -836,6 +836,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
 
       IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
         MESSAGE("Switch to branch ${Trilinos_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
+        QUEUE_ERROR("Switch to branch ${Trilinos_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
       ENDIF()
       #Apparently the successful branch switch is also written to stderr.
       MESSAGE("${BRANCH_ERROR}")
