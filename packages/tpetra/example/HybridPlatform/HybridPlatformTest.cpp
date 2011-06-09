@@ -10,8 +10,6 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
-
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
 #include <Tpetra_MatrixIO.hpp>
 
 std::string fnMatrix("bcsstk17.rsa");
@@ -19,14 +17,15 @@ bool testPassed;
 
 template <class Node, class Scalar, class Ordinal>
 Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ordinal,Node> > &A, size_t niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose) {
+  using Teuchos::RCP;
+  typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> Vector;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-  const bool INITIALIZE_TO_ZERO = true;
-  // create three vectors; do not bother initializing q to zero, as we will fill it with random below
-  Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> z(A->getRangeMap(), INITIALIZE_TO_ZERO),
-                                              q(A->getRangeMap(), INITIALIZE_TO_ZERO),
-                                              r(A->getRangeMap(), INITIALIZE_TO_ZERO);
+  // create three vectors
+  RCP<Vector> z = Tpetra::createVector<Scalar>(A->getRangeMap()),
+              q = Tpetra::createVector<Scalar>(A->getRangeMap()),
+              r = Tpetra::createVector<Scalar>(A->getRangeMap());
   // Fill z with random numbers
-  z.randomize();
+  z->randomize();
   // Variables needed for iteration
   const Scalar ONE  = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
@@ -34,13 +33,13 @@ Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ord
   Magnitude normz, residual = static_cast<Magnitude>(0.0);
   // power iteration
   for (size_t iter = 0; iter < niters; ++iter) {
-    normz = z.norm2();                            // Compute 2-norm of z
-    q.scale(ONE/normz, z);                        // Set q = z / normz
-    A->apply(q, z);                               // Compute z = A*q
-    lambda = q.dot(z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
+    normz = z->norm2();                            // Compute 2-norm of z
+    q->scale(ONE/normz, *z);                       // Set q = z / normz
+    A->apply(*q, *z);                              // Compute z = A*q
+    lambda = q->dot(*z);                           // Approximate maximum eigenvalue: lamba = dot(q,z)
     if ( iter % 100 == 0 || iter + 1 == niters ) {
-      r.update(ONE, z, -lambda, q, ZERO);     // Compute A*q - lambda*q
-      residual = Teuchos::ScalarTraits<Scalar>::magnitude(r.norm2() / lambda);
+      r->update(ONE, *z, -lambda, *q, ZERO);       // Compute A*q - lambda*q
+      residual = Teuchos::ScalarTraits<Scalar>::magnitude(r->norm2() / lambda);
       if (verbose) {
         std::cout << "Iter = " << iter << "  Lambda = " << lambda 
                   << "  Residual of A*q - lambda*q = " 
