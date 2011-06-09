@@ -1820,14 +1820,14 @@ namespace Tpetra {
 	dims[0] = 0;
 	dims[1] = 0;
 
+	// Current line number in the input stream.  Only valid on
+	// Rank 0.  Various calls will modify this depending on the
+	// number of lines that are read from the input stream.
+	size_t lineNumber = 1; 	
+
 	// Only Rank 0 gets to read matrix data from the input stream.
 	if (myRank == 0)
 	  {
-	    // Current line number in the input stream.  Various calls
-	    // will modify this depending on the number of lines that are
-	    // read from the input stream.
-	    size_t lineNumber = 1; 	
-
 	    if (debug && myRank == 0)
 	      cerr << "About to read Matrix Market banner line" << endl;
 
@@ -1867,18 +1867,18 @@ namespace Tpetra {
 	    // third element of the dimensions Tuple: "real" == 0,
 	    // "complex" == 1, "integer" == 0 (same as "real").
 	    // "pattern" == 2.  The lat
-	    if (pBanner->dataType == "real")
+	    if (pBanner->dataType() == "real" || pBanner->dataType() == "integer")
 	      dims[2] = 0;
-	    else if (pBanner->dataType == "complex")
+	    else if (pBanner->dataType() == "complex")
 	      dims[2] = 1;
-	    else if (pBanner->dataType == "integer")
-	      dims[2] = 0;
 	    else
 	      { // We should never get here; Banner validates the
 		// reported data type and ensures it is one of the
 		// above three values.  We repeat the full test to
 		// make the exception message more informative.
-		TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && pBanner->dataType() != "complex" && pBanner->dataType != "integer", 
+		TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
+				   pBanner->dataType() != "complex" && 
+				   pBanner->dataType() != "integer", 
 				   std::logic_error, 
 				   "Unrecognized Matrix Market data type \"" 
 				   << pBanner->dataType() << "\".");
@@ -1897,12 +1897,12 @@ namespace Tpetra {
 	    while (commentLine)
 	      {
 		// Is it even valid to read from the input stream?
-		TEST_FOR_EXCEPTION(in.eof() || in.fail(), std::runtime_error,
+		TEST_FOR_EXCEPTION(in.eof() || in.fail(), 
+				   std::runtime_error,
 				   "Unable to get array dimensions line (at all) "
-				   "from (line " << lineNumber << ") of input "
-				   "stream; the input stream claims that it is "
-				   (in.eof() ? "at \"end-of-file\"." : 
-				    "it is in a \"fail\"ed state."));
+				   "from line " << lineNumber << " of input "
+				   "stream.  The input stream claims that it is "
+				   << (in.eof() ? "at end-of-file." : "in a failed state."));
 		// Try to get the next line from the input stream.
 		if (getline(in, line))
 		  ++lineNumber; // We did actually read a line
@@ -1967,13 +1967,13 @@ namespace Tpetra {
 	// this to construct a "distributed" vector X owned entirely
 	// by Rank 0.  Rank 0 will then read all the matrix entries
 	// and put them in X.
-	RCP<Map<LO, GO, Node> > pRank0Map = 
+	RCP<map_type> pRank0Map = 
 	  createContigMapWithNode<LO, GO, Node> (numRows, 
 						 (myRank == 0 ? numRows : 0),
 						 pComm, pNode);
 
 	// Make a multivector X owned entirely by Rank 0.
-	RCP<MultiVecType> X = 
+	RCP<multivector_type> X = 
 	  createMultiVector<S, LO, GO, Node> (pRank0Map, numCols);
 	
 	//
@@ -1992,7 +1992,7 @@ namespace Tpetra {
 	    
 	    // Get a writeable 1-D view of the entries of X.
 	    // Rank 0 owns all of them.
-	    ArrayRCP<S> X_view = get1dViewNonConst ();
+	    ArrayRCP<S> X_view = X->get1dViewNonConst ();
 	    TEST_FOR_EXCEPTION(X_view.size() <= numRows * numCols,
 			       std::logic_error,
 			       "The view of X has size " << X_view 
@@ -2007,17 +2007,17 @@ namespace Tpetra {
 	    // "integer" == 0 (same as "real"), "pattern" == 2.  We do not
 	    // allow dense matrices to be pattern matrices, so dims[2] ==
 	    // 0 or 1.  We've already checked for this above.
-	    const bool isComplex == (dims[2] == 1);
+	    const bool isComplex = (dims[2] == 1);
 	    size_t count = 0, curRow = 0, curCol = 0;
 
 	    std::string line;
 	    while (getline(in, line))
 	      {
 		++lineNumber;
-		// Is the current line a comment line?
+		// Is the current line a comment line?  If it's not,
+		// line.substr(start,size) contains the data.
 		size_t start = 0, size = 0;
-		commentLine = checkCommentLine (line, start, size, 
-						lineNumber, tolerant);
+		const bool commentLine = checkCommentLine (line, start, size, lineNumber, tolerant);
 		if (! commentLine)
 		  {
 		    // Make sure we have room in which to put the new
@@ -2078,11 +2078,9 @@ namespace Tpetra {
 				       << lineNumber << " of the Matrix Market "
 				       "file.");
 
-		    // val = S(real, imag).  We have to template it
-		    // because we don't know that S is a complex type;
-		    // if we write S(real,imag), the compiler will
-		    // complain if S is a real type.
-		    assignScalar<S> (val, real, imag);
+		    // val = S(real, imag), without potential badness
+		    // if S is a real type.
+		    details::assignScalar<S> (val, real, imag);
 
 		    curRow = count % numRows;
 		    curCol = count / numRows;
@@ -2116,7 +2114,7 @@ namespace Tpetra {
 							       pComm, 
 							       pNode);
 	// Make a multivector Y with map pMap.
-	RCP<MultiVecType> Y = 
+	RCP<multivector_type> Y = 
 	  createMultiVector<S, LO, GO, Node> (pMap, numCols);
 
 	// Make an Export object that will export X to Y.  First
@@ -2129,6 +2127,9 @@ namespace Tpetra {
 
 	// Export X into Y.
 	Y->doExport (X, exporter, INSERT);
+
+	if (debug && myRank == 0)
+	  cerr << "Done!" << endl;
 
 	// Y is the resulting read-in multivector, distributed over
 	// all process(es) in the communicator.
