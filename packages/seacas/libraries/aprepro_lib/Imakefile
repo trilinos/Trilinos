@@ -1,0 +1,55 @@
+#if defined SGIArchitecture
+CXXETRA_DEFINES = -ptused
+#endif
+
+#if HasFlexBison
+BISON = bison --yacc --defines
+FLEX = flex
+
+apr_parser.cc aprepro_parser.h: aprepro.yy
+	$(BISON) -o apr_parser.cc --defines=aprepro_parser.h aprepro.yy
+
+apr_scanner.cc: aprepro.ll
+	$(FLEX) -o apr_scanner.cc aprepro.ll
+
+ExtraStuffToClean(apr_scanner.cc apr_parser.cc aprepro_parser.h location.hh position.hh stack.hh)
+#endif
+
+CXXEXTRA_INCLUDES = -I.
+
+LIBRARY = libaprepro.a
+
+INCLIST = aprepro.h
+aprepro.cc: aprepro_parser.h
+
+SRCS = aprepro.cc apr_util.cc apr_stats.cc apr_init.cc apr_builtin.cc apr_units.cc apr_tokenize.cc
+OBJS = $(SRCS:.cc=.o)  apr_scanner.o  apr_parser.o 
+
+NormalLibraryTarget(aprepro,$(OBJS))
+InstallLibrary(aprepro,$(LIBDIR))
+
+test: apr_test
+
+NormalCCTarget(apr_test,apr_test.o,$(LIBRARY),NullParameter,-laprepro)
+
+InstallIncludeList(makeincludes,$(INCLIST),$(INCDIR))
+InstallIncludeList(install,$(INCLIST),$(INCDIR))
+
+test: check
+
+check: apr_test
+	@echo "****Test should produce the following 4 lines of output to stderr:"
+	@echo "	Aprepro: WARN: Variable \`b' redefined (test.inp_app, line 19)"
+	@echo "	Aprepro: WARN: Undefined variable \`Parse' (test.inp_app, line 74)"
+	@echo "	Aprepro: ERR:  syntax error (test.inp_app, line 74)"
+	@echo "	Aprepro: WARN: Undefined variable \`T' (test.inp_app, line 106)"
+	@echo " "
+	./apr_test test.inp_app >distribution.out
+	@echo " "
+	@echo "****'<' denotes standard, '>' denotes current output"
+	@echo "****Differences should be limited to small differences in"
+	@echo "	numerical precision only."
+	-diff --ignore-all-space test_standard.out distribution.out
+
+CleanTarget()
+DependTarget()
