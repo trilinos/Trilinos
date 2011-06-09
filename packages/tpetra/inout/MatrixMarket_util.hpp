@@ -49,6 +49,41 @@
 namespace Tpetra {
   namespace MatrixMarket {
 
+    // \fn assignScalar
+    // \brief val = S(real, imag).
+    //
+    // We have to template it because we don't know that S is a
+    // complex type; if we write S(real,imag), the compiler will
+    // complain if S is a real type.
+    template<class Scalar, bool isComplex=Teuchos::ScalarTraits<Scalar>::isComplex>
+    inline void 
+    assignScalar (Scalar& val, 
+		  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& real,
+		  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& imag);
+
+    template<class Real, false>
+    inline void 
+    assignScalar<Real, false> (Real& val, 
+			       const Real& real,
+			       const Real& imag)
+    {
+      // imag had better be zero.  We're ignoring it regardless.
+      (void) imag;
+      val = real; 
+    }
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+    template<class MagType, true>
+    inline void 
+    assignScalar (std::complex<MagType>& val, 
+		  const MagType& real,
+		  const MagType& imag)
+    {
+      val = std::complex<MagType> (real, imag);
+    }
+#endif // HAVE_TEUCHOS_COMPLEX
+
+
     static bool isSkew (const std::string& symmType) {
       return symmType.size() >= 4 && symmType.substr(0,4) == "skew";
     }
