@@ -686,7 +686,7 @@ clp.add_option(
   +" complex workflows involving local branches with multiple merges." \
   +"  However, this will result in non-linear history and will allow for" \
   +" trivial merge commits with origin/master to get pushed.  This mode" \
-  +" should only be used in cases where the rebase mode will not or " \
+  +" should only be used in cases where the rebase mode will not work or " \
   +" when it is desired to use a merge commit to integrate changes on a" \
   +" branch that you wish be able to easily back out.  For sophisticated" \
   +" users of git, this may in fact be the prefered mode.",
@@ -833,6 +833,10 @@ if options.doPushReadinessCheck:
   print "  --do-push-readiness-check \\"
 else:
   print "  --skip-push-readiness-check \\"
+if options.rebase:
+  print "  --rebase \\"
+else:
+  print "  --no-rebase \\"
 if options.appendTestResults:
   print "  --append-test-results \\"
 else:
