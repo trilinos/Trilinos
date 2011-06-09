@@ -37,22 +37,23 @@ namespace Teuchos{
  * Test all the validator dependencies.
  */
 TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, simpleTest){
-  TwoDArray<int> simpleArray(2,2);
+  TwoDArray<int> simpleArray(2,3);
   simpleArray[0][0] =1;
   simpleArray[0][1] =2;
   simpleArray[1][0] =3;
   simpleArray[1][1] =4;
+  simpleArray[2][0] =5;
+  simpleArray[2][1] =6;
   TEST_EQUALITY_CONST(simpleArray[0][0],1)
   TEST_EQUALITY_CONST(simpleArray[0][1],2)
   TEST_EQUALITY_CONST(simpleArray[1][0],3)
   TEST_EQUALITY_CONST(simpleArray[1][1],4)
-	
-	//TEST_NOTHROW(stringValiDepList.validateParameters(stringValiDepList));
-	/*TEST_ASSERT(depSheet1->hasDependents(
-    stringValiDepList.getEntryRCP("Food Type")));*/
-	/*TEST_THROW(stringValiDepList.validateParameters(stringValiDepList), 
-    Exceptions::InvalidParameterValue);
-	stringValiDepList.set("Food Selector", "Pepsi");*/
+  TEST_EQUALITY_CONST(simpleArray[2][0],5)
+  TEST_EQUALITY_CONST(simpleArray[2][1],6)
+  TEST_EQUALITY_CONST(simpleArray.getNumCols(), 2)
+  TEST_EQUALITY_CONST(simpleArray.getNumRows(), 3)
+  Array<int> oneDArray = tuple<int>(1,2,3,4,5,6);	
+  TEST_COMPARE_ARRAYS(oneDArray, simpleArray.getDataArray())
 
 }
   
