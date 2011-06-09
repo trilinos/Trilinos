@@ -108,6 +108,19 @@ namespace MueLu {
         RCP<CrsOperator> A = BuildMatrix(matrixList);
         return A;
       } // Build1DPoisson()
+
+      // Create a 2D Poisson matrix with the specified number of rows
+      // nx: global number of rows
+      // ny: global number of rows
+      static RCP<CrsOperator> Build2DPoisson(int nx, int ny=-1) { //global_size_t
+        Teuchos::ParameterList matrixList;
+        if (ny==-1) ny=nx;
+        matrixList.set("nx", nx);
+        matrixList.set("ny", ny);
+        matrixList.set("matrixType","Laplace2D");
+        RCP<CrsOperator> A = BuildMatrix(matrixList);
+        return A;
+      } // Build2DPoisson()
  
     }; // class Factory
 
