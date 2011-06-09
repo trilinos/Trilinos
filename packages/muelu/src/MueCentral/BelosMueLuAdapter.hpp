@@ -5,6 +5,35 @@
 #include "BelosMultiVec.hpp"
 #include "MueLu_Hierarchy.hpp"
 
+// Here is some documentation about the adapter interface of Belos:
+// Belos uses the traits techniques for its adapters. Traits OP and MV must be implemented for your operator and multivector classes.
+// What is somehow confusing is that Belos also provides an interface Belos::Operator and Belos::MultiVec.
+// Internally, Belos only use the traits, not the interface. But Traits for Belos::Operator and Belos::MultiVec are provided, so you can either:
+// - implements directly the traits Belos::OperatorTraits and Belos::MultiVecTraits
+// - implements the interface Belos::Operator and Belos::MultiVec
+//
+// Here are the adapaters provided by Belos:
+// Traits are implemented for three couples of <MV,OP>, and Belos works out of the box with the following combinaison of <MV,OP>:
+// - MV=Belos::MultiVec<...>, OP=Belos::Operator<...>
+// - MV=Epetra_MultiVector, OP=Epetra_Operator
+// - MV=Tpetra_MultiVector<...>, MV=Tpetra_MultiVector<...>
+//
+// In addition, wrappers around Epetra_MultiVector and Epetra_Operator are provided to turn these Epetra objects to Belos::MultiVec and Belos::Operator and use MV=Belos::MultiVec<...>, OP=Belos::Operator<...> with Epetra.
+// The wrappers are the classes Belos::EpetraMultiVec and Belos::EpetraOp 
+// So when using Epetra, you have the choice to:
+// - use Belos::LinearProblem<double, Belos::Operator<double>, Belos::MultiVec<double>>
+// - or Belos::LinearProblem<double, Epetra_Operator<double>, Epetra_MultiVec<double>>
+//
+// If you use Epetra, you have to be carreful with the meaning for Epetra_Operator::Apply:
+// For instance, Ifpack smoother implements the Epetra_Operator interface but to apply the preconditionner, you have to use ApplyInverse() instead of Apply()!
+// To swap the method Apply() and ApplyInverse() of an Epetra_Operator, you can use the class Belos::EpetraPrecOp. Belos::EpetraPrecOp can be used with both OP=Belos::Operator<...> and OP=Epetra_Operator.
+//
+// Belos file description:
+// - src/BelosMultiVecTraits.hpp src/BelosOperatorTraits.hpp : Traits used internally by Belos
+// - tpetra/src/BelosTpetraAdapter.*                         : Specialization of the Traits for Tpetra
+// - epetra/src/BelosEpetraAdapter.*                         : Specialization of the Traits for Epetra + Implementation of the interface Belos::MultiVec and Belos::Operator for Epetra + Implementation of Belos::EpetraPrecOp
+// - src/BelosMultiVec.hpp src/BelosOperator.hpp             : Definition of the interfaces Belos::MultiVec and Belos::Operator + Specialization of the Traits for these interfaces
+
 namespace Belos { 
   // TODO: Should this file be moved to Belos ?
   // TODO: The relation between Belos and MueLu is: Belos uses MueLu as a Preconditionner. So it makes more sense to me.
