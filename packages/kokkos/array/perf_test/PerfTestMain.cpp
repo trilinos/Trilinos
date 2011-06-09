@@ -40,7 +40,7 @@ int main( int argc , char ** argv )
   Test::run_test_tpi_hexgrad(  10 , 24 );
   Test::run_test_cuda_hexgrad( 10 , 24 );
 
-  Test::run_test_host_gramschmidt( 10 , 20 );
+ Test::run_test_host_gramschmidt( 10 , 20 );
   Test::run_test_tpi_gramschmidt(  10 , 24 );
   Test::run_test_cuda_gramschmidt( 10 , 24 );
 

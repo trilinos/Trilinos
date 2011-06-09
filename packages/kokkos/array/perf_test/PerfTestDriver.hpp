@@ -15,7 +15,7 @@ template<>
 void run_test_hexgrad< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
 {
   std::string label_hexgrad ;
-  label_hexgrad.append( "\"HexGrad< float , " );
+  label_hexgrad.append( "\"HexGrad< double , " );
   label_hexgrad.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
   label_hexgrad.append( " >\"" );
 
@@ -24,7 +24,7 @@ void run_test_hexgrad< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
 
       const int parallel_work_length = 1<<i;
 
-      double seconds = HexGrad< float , KOKKOS_MACRO_DEVICE >::test(parallel_work_length) ;
+      double seconds = HexGrad< double , KOKKOS_MACRO_DEVICE >::test(parallel_work_length) ;
 
       std::cout << label_hexgrad
                 << " , " << parallel_work_length
@@ -43,12 +43,12 @@ template<>
 void run_test_gramschmidt< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
 {
   std::string label_hexgrad ;
-  label_hexgrad.append( "\"HexGrad< float , " );
+  label_hexgrad.append( "\"HexGrad< double , " );
   label_hexgrad.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
   label_hexgrad.append( " >\"" );
 
   std::string label_gramschmidt ;
-  label_gramschmidt.append( "\"GramSchmidt< float , " );
+  label_gramschmidt.append( "\"GramSchmidt< double , " );
   label_gramschmidt.append( KOKKOS_MACRO_TO_STRING( KOKKOS_MACRO_DEVICE ) );
   label_gramschmidt.append( " >\"" );
   try {
@@ -56,7 +56,7 @@ void run_test_gramschmidt< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
 
       const int parallel_work_length = 1<<i;
 
-      const double seconds = ModifiedGramSchmidt< float , KOKKOS_MACRO_DEVICE >::test(parallel_work_length, 32 ) ;
+      const double seconds = ModifiedGramSchmidt< double , KOKKOS_MACRO_DEVICE >::test(parallel_work_length, 32 ) ;
 
       std::cout << label_gramschmidt
                 << " , " << parallel_work_length
