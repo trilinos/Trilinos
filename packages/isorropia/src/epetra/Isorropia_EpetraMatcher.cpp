@@ -7,30 +7,25 @@
 //============================================================================
 
 #include"Isorropia_EpetraMatcher.hpp"
-#include <Isorropia_Epetra.hpp>
-
-#ifdef HAVE_EPETRA
-//#ifdef HAVE_MPI
-//#include <Epetra_MpiComm.h>
-//#else
-#include <Epetra_SerialComm.h>
-//#endif
-#include <Epetra_Map.h>
-#include <Epetra_CrsMatrix.h>
-#include <Epetra_Import.h>
-#ifdef HAVE_EPETRAEXT
-#include <EpetraExt_CrsMatrixIn.h>
-#endif
-
-#endif
 
 using namespace std;
 //__sync_fetch_and_add(&a,1);
 
-matcher::matcher(char * infile)
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrixPtr,const Teuchos::ParameterList& paramlist)
 {
-	int i;
-	process_mtx_compressed(infile);
+	int rc=0,i;
+	
+	rc=matrixPtr->ExtractCrsDataPointers(CRS_Pointers,CRS_Indices,CRS_Vals);
+	if(rc==0)
+		cout<<"Input Processing Done"<<endl;
+	else
+		cout<<"Input Processing Failed"<<endl;
+		
+	U=matrixPtr->NumGlobalRows();
+	V=matrixPtr->NumGlobalCols();
+	E=matrixPtr->NumGlobalNonzeros();
+	cout<<"(U,V,E):"<<U<<","<<V<<","<<E<<endl;
+	
 	finish=false;
 
 	Node t;
@@ -51,7 +46,53 @@ matcher::matcher(char * infile)
 	}
 }
 
-matcher::~matcher() {
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::ParameterList& paramlist)
+{
+	int rc=0,i;
+	
+	rc=matrixPtr->ExtractCrsDataPointers(CRS_Pointers,CRS_Indices,CRS_Vals);
+	if(rc==0)
+		cout<<"Input Processing Done"<<endl;
+	else
+		cout<<"Input Processing Failed"<<endl;
+		
+	U=matrixPtr->NumGlobalRows();
+	V=matrixPtr->NumGlobalCols();
+	E=matrixPtr->NumGlobalNonzeros();
+	cout<<"(U,V,E):"<<U<<","<<V<<","<<E<<endl;
+	
+	finish=false;
+
+	Node t;
+	t.layer_num=-1;
+	t.scanned=1;
+	t.edgelist.clear();
+	
+	for(i=0;i<U;i++)
+	{	
+		LU.push_back(t);
+		mateU.push_back(-1);
+	}
+	for(i=0;i<V;i++)
+	{	
+		LV.push_back(t);
+		mateV.push_back(-1);
+		vlayered.push_back(0);
+	}
+}
+
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& paramlist)
+{
+	
+}
+
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph> graphPtr,const Teuchos::ParameterList& paramlist)
+{
+	
+}
+
+
+Isorropia_EpetraMatcher::~Isorropia_EpetraMatcher() {
 	mateU.clear();
 	mateV.clear();
 	del_m.clear();
@@ -61,7 +102,45 @@ matcher::~matcher() {
 	graph.clear();
 }
 
-void matcher::process_mtx_compressed(char *fname)
+void Isorropia_EpetraMatcher::extractRowPermutationCopy(int len, int& size, int* array) const
+{
+	const int *ptr=&mateU[0];
+	size=MIN(size,len);
+	memcpy (array, ptr, size * sizeof(int));
+}
+void Isorropia_EpetraMatcher::extractColumnPermutationCopy(int len, int& size, int* array) const
+{
+	const int *ptr=&mateV[0];
+	size=MIN(size,len);
+	memcpy (array, ptr, size * sizeof(int));
+}
+
+void Isorropia_EpetraMatcher::getMatchedEdges(int len,int& size,int* array) const
+{
+	int i,j;
+	j=0;
+	for(i=0;i<U;i++)
+		if(mateU[i]!=-1)
+		{	
+			array[j]=i;
+			array[j+1]=mateU[i];
+			j++;
+		}
+}
+int Isorropia_EpetraMatcher::getNumberOfMatchedVertices()
+{
+	return 2*matched_;
+}
+Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
+{
+	return NULL;
+}
+Epetra_Map* Isorropia_EpetraMatcher::getPermutedColumnMap()
+{
+	return NULL;
+}
+
+void Isorropia_EpetraMatcher::process_mtx_compressed(char *fname)
 {
 	/*****************************************/
 	int rc=0;
@@ -117,7 +196,7 @@ void matcher::process_mtx_compressed(char *fname)
 }
 
 
-int matcher::vlayer_clear()
+int Isorropia_EpetraMatcher::vlayer_clear()
 {
 	int i;
 	
@@ -130,7 +209,7 @@ int matcher::vlayer_clear()
 	return 1;
 }
 
-int matcher::is_intersect(int k)
+int Isorropia_EpetraMatcher::is_intersect(int k)
 {
 	unsigned int i;
 	int flag=0;
@@ -147,7 +226,7 @@ int matcher::is_intersect(int k)
 	return 0;
 }
 
-void matcher::delete_matched_v()
+void Isorropia_EpetraMatcher::delete_matched_v()
 {
 	int i;
 	
@@ -160,7 +239,7 @@ void matcher::delete_matched_v()
 				LV[i].scanned=1; // removing it and make it scanned=1 actually equivalent
 }
 
-void matcher::update_vlayered(int k)
+void Isorropia_EpetraMatcher::update_vlayered(int k)
 {
 	int i;
 	if(vlist.size()>0)
@@ -183,7 +262,7 @@ void matcher::update_vlayered(int k)
 	}
 }
 
-int matcher::construct_layered_graph()
+int Isorropia_EpetraMatcher::construct_layered_graph()
 {
 	int k,t,flag,i,j;
 	k=k_star=0;
@@ -358,7 +437,7 @@ int matcher::construct_layered_graph()
 	return k_star;
 }
 
-int matcher::recursive_path_finder(int k, int p, vector<int>* path)
+int Isorropia_EpetraMatcher::recursive_path_finder(int k, int p, vector<int>* path)
 {
 	int i,ind,res=0;
 	path->push_back(p);
@@ -396,7 +475,7 @@ int matcher::recursive_path_finder(int k, int p, vector<int>* path)
 	return 0;
 }
 
-int matcher::iterative_path_finder(int k, int p, vector<int>* path)
+int Isorropia_EpetraMatcher::iterative_path_finder(int k, int p, vector<int>* path)
 {
 	int i,ind,res=0,cur_p,cur_k,last_k;
 	stack <vector<int> > st;
@@ -483,7 +562,7 @@ int matcher::iterative_path_finder(int k, int p, vector<int>* path)
 	return 0;
 }
 
-void matcher::find_set_del_M()
+void Isorropia_EpetraMatcher::find_set_del_M()
 {
 	int i;
 	delete_matched_v();
@@ -523,20 +602,20 @@ void matcher::find_set_del_M()
 	}
 }
 
-bool matcher::remove_edge(int s, int t)
+bool Isorropia_EpetraMatcher::remove_edge(int s, int t)
 {
 	mateV[s]=-1;
 	mateU[t]=-1;
 	return true;
 }
 
-void matcher::add_edge(int s, int t)
+void Isorropia_EpetraMatcher::add_edge(int s, int t)
 {
 	mateU[s]=t;
 	mateV[t]=s;
 }
 
-int matcher::augment_matching()
+int Isorropia_EpetraMatcher::augment_matching()
 {
 	int i,j,count;
 
@@ -560,7 +639,7 @@ int matcher::augment_matching()
 	return count;
 }
 
-bool matcher::U0_empty()
+bool Isorropia_EpetraMatcher::U0_empty()
 {
 	int i,flag=0;
 	
@@ -575,7 +654,73 @@ bool matcher::U0_empty()
 	else return true;
 }
 
-vector<int> matcher::get_matching()
+void Isorropia_EpetraMatcher::filler()
+{
+	int i,j,rowfill,colfill,flag;
+	
+	vector<int> temp(U,-1);
+	
+	#ifdef ISORROPIA_HAVE_OMP
+	#pragma omp parallel for
+	#endif
+	for(i=0;i<U;i++)
+		temp[i]=mateU[i];
+	
+	rowfill=U-matched_;
+	
+	j=0;
+	while(rowfill>0)
+	{
+		for(i=0;i<U;i++)
+			if(mateU[i]==-1)
+			{
+				flag=0;
+				for(;j<V;j++)
+					if(mateV[j]==-1)
+					{
+						mateU[i]=j;
+						j++;
+						rowfill--;
+						flag=1;
+						break;
+					}
+				if(flag==0)         /// U>V
+				{
+					mateU[i]=j;
+					j++;
+					rowfill--;
+				}
+			}
+	}
+	
+	colfill=V-matched_;
+	
+	j=0;
+	while(colfill>0)
+	{
+		for(i=0;i<V;i++)
+			if(mateV[i]==-1)
+			{
+				flag=0;
+				for(;j<U;j++)
+					if(temp[j]==-1)
+					{
+						mateV[i]=j;
+						j++;
+						colfill--;
+						flag=1;
+						break;
+					}
+				if(flag==0)         /// V>U
+				{
+					mateV[i]=j;
+					j++;
+					colfill--;
+				}
+			}
+	}
+}
+int Isorropia_EpetraMatcher::match()
 {
 	int totc=0,count;
 	time_t t1,t2,t3,t4,t_st,t_end;
@@ -599,9 +744,10 @@ vector<int> matcher::get_matching()
 		cout<<"["<<icm<<"] Layers="<<k_star+1<<" BFS="<<difftime(t2,t1)<<" DFS="<<difftime(t3,t2)<<" Time="<<difftime(t4,t1)<<" matched="<<count<<" size="<<totc<<endl;
 	}
 	time(&t_end);
-	
+	matched_=totc;
+	filler();
 	cout<<"Total time is less than "<<(t_end-t_st)+1<<" seconds"<<endl;
 	/// Returning the matched edges in int*
-	return mateU;
+	return 0;
 }
 
