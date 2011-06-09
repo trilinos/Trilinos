@@ -1493,7 +1493,7 @@ static int insert_unique_gnos_of_interest(HierPartParams *hpp,
       (ZOLTAN_GNO_TYPE *)ZOLTAN_REALLOC(hpp->gnos_of_interest, 
           sizeof(ZOLTAN_GNO_TYPE)* hpp->allocsize_gnos_of_interest);
 
-    if (hpp->gnos_of_interest){
+    if (!hpp->gnos_of_interest){
       ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
       return ZOLTAN_MEMERR;
     }
