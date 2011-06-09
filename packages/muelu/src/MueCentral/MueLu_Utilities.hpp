@@ -24,6 +24,7 @@
 
 #ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
+#include "EpetraExt_RowMatrixOut.h"
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
@@ -31,6 +32,7 @@
 #include <Cthulhu_TpetraVector.hpp>
 #include <Cthulhu_TpetraMultiVector.hpp>
 #include "Tpetra_MatrixMatrix.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 #endif
 
 namespace MueLu {
@@ -496,6 +498,41 @@ namespace MueLu {
       }
    
    } //BreakForDebugger()
+
+
+   /*! @brief Save matrix to file in Matrix Market format.
+
+     TODO Move this to Cthulhu?
+   */
+   static void Write(std::string const & fileName, RCP<Operator> const & Op) {
+    RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
+    if (crsOp == Teuchos::null)
+      throw(Exceptions::BadCast("Only Cthulhu::CrsOperator is supported in matrix writing"));
+    RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
+    const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
+    const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
+    if (tmp_ECrsMtx != Teuchos::null) {
+
+      RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
+      int rv = EpetraExt::RowMatrixToMatrixMarketFile(fileName.c_str(), *A);
+      if (rv != 0) {
+        std::ostringstream buf;
+        buf << rv;
+      std::string msg = "EpetraExt::RowMatrixToMatrixMarketFile return value of " + buf.str();
+      throw(Exceptions::RuntimeError(msg));
+      }
+
+    } else if (tmp_TCrsMtx != Teuchos::null) {
+
+      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = tmp_TCrsMtx->getTpetra_CrsMatrix();
+      Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >::writeSparseFile(fileName,A);
+
+    } else {
+
+      throw(Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing"));
+    }
+
+   } //Write
 
   }; // class
 
