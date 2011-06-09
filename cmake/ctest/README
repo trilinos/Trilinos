@@ -153,7 +153,7 @@ After the local CTest processes are working, just to make sure the
 submit works, you can run a final trial build with:
 
   $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
-     CTEST_TEST_TYPE=Experimental CTEST_DO_UPDATES=FASLE \
+     CTEST_TEST_TYPE=Experimental CTEST_DO_UPDATES=FALSE \
      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
      CTEST_DO_SUBMIT=ON CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
@@ -222,7 +222,7 @@ Once you are done with the initial run, you can test it out
 interactively in a rapid, iterative process by setting up the
 following additionial environment variables:
 
-  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_UPDATES=FASLE \
+  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_UPDATES=FALSE \
       CTEST_DO_SUBMIT=FALSE \
       TDD_DO_SUBMIT=FALSE TDD_IN_TESTING_MODE=ON \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
