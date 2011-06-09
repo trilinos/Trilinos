@@ -14,8 +14,6 @@ SET(BUILD_DIR_NAME SERIAL_RELEASE_GCC_CASLDEV)
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 SET(EXTRA_CONFIGURE_OPTIONS
   ${EXTRA_CONFIGURE_OPTIONS}
-  # GCC 4.5.1 doesn't currently build WEC components
-  -DTrilinos_ENABLE_CASLRAVE:BOOL=OFF
   # ToDo: Add other extra configure options
   )
 
