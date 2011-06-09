@@ -415,10 +415,8 @@ protected:
   //! If true, the linear solve tolerance comes from NOX (i.e. Inexact Newton)
   bool getLinearSolveToleranceFromNox;
 
-#ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
   mutable int linearSolveCount;
-#endif
 #endif
 
 };
