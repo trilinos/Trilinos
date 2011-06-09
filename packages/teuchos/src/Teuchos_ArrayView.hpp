@@ -297,15 +297,16 @@ template<class T>
 const ArrayView<T>&
 ArrayView<T>::assert_in_range(size_type offset, size_type size_in) const
 {
-  
   assert_not_null();
+  TEST_FOR_EXCEPTION( size_in == as<size_type>(0), RangeError,
+    "Error, size=0 is not allowed!" );
   TEST_FOR_EXCEPTION(
     !(
       ( 0 <= offset && offset+size_in <= this->size() )
       &&
       size_in >= 0
       ),
-    Teuchos::RangeError,
+    RangeError,
     typeName(*this)<<"::assert_in_range():"
     " Error, [offset,offset+size) = ["<<offset<<","<<(offset+size_in)<<")"
     " does not lie in the range [0,"<<this->size()<<")!"

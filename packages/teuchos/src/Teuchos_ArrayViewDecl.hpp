@@ -186,7 +186,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->get() != NULL</tt>
-   * <li><tt>0 <= offset && offset < this->size()</tt>
+   * <li><tt>0 <= i && i < this->size()</tt>
 	 * </ul>
    */
 	T& operator[](size_type i) const;
@@ -207,6 +207,7 @@ public:
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->get() != NULL</tt>
    * <li><tt>0 <= offset && offset + size <= this->size()</tt>
+   * <li><tt>0 < size</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
@@ -215,7 +216,8 @@ public:
    */
 	ArrayView<T> view( size_type offset, size_type size ) const;
 
-	/** \brief Return a view of a contiguous range of elements (calls view(offset,size)).
+	/** \brief Return a view of a contiguous range of elements (calls
+   * view(offset, size)).
    */
 	ArrayView<T> operator()( size_type offset, size_type size ) const;
 
