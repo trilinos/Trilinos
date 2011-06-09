@@ -68,5 +68,13 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, stringFunctions){
   TEST_EQUALITY(simpleArray, convertedArray)
 }
 
+TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, emptyTest){
+  TwoDArray<int> emptyArray;
+  TEST_EQUALITY_CONST(emptyArray.getNumCols(), 0)
+  TEST_EQUALITY_CONST(emptyArray.getNumRows(), 0)
+  TEST_EQUALITY_CONST(emptyArray.getDataArray().size(), 0)
+
+}
+
 } //namespace Teuchos
 
