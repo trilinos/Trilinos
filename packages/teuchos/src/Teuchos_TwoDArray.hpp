@@ -63,14 +63,14 @@ public:
    * @param numRows The number of rows in the TwoDArray.
    * @param value The value with which to populate the TwoDArray.
    */
-  TwoDArray(size_type numCols, size_type numRows, T value=T()):
-    _numCols(numCols),_numRows(numRows),_data(Array<T>(numCols*numRows, value))
+  TwoDArray(size_type numRows, size_type numCols, T value=T()):
+    _numRows(numRows),_numCols(numCols),_data(Array<T>(numCols*numRows, value))
     {}
   /**
    * \brief Constructs an empty TwoDArray.
    */
   TwoDArray():
-    _numCols(0),_numRows(0),_data(Array<T>()){}
+    _numRows(0),_numCols(0),_data(Array<T>()){}
 
   /** \brief . */
   virtual ~TwoDArray(){}
@@ -86,19 +86,29 @@ public:
   /** \brief Returns a const ArrayView containing the contents of row i */
   inline const ArrayView<T> operator[](size_type i) const;
 
-  /** \brief returns the number of columns in the TwoDArray. */
-  inline size_type getNumCols() const{
-    return _numCols;
-  }
-
   /** \brief returns the number of rows in the TwoDArray. */
   inline size_type getNumRows() const{
     return _numRows;
   }
 
+  /** \brief returns the number of columns in the TwoDArray. */
+  inline size_type getNumCols() const{
+    return _numCols;
+  }
+
   /** \brief Returns the 1D array that is backing this TwoDArray. */
   inline const Array<T>& getDataArray() const{
     return _data;
+  }
+
+  /** \brief Returns the element located at i,j */
+  inline T& operator()(size_type i, size_type j){
+    return _data[(i*_numCols)+j];
+  }
+
+  /** \brief Returns the element located at i,j */
+  inline const T& operator()(size_type i, size_type j) const{
+    return _data[(i*_numCols)+j];
   }
 
   //@}
@@ -131,10 +141,10 @@ public:
   //@}
   
 private:
-  size_type _numCols, _numRows;
+  size_type _numRows,_numCols;
   Array<T> _data;
-  TwoDArray(size_type numCols, size_type numRows, Array<T> data):
-    _numCols(numCols),_numRows(numRows),_data(data){}
+  TwoDArray(size_type numRows, size_type numCols, Array<T> data):
+    _numRows(numRows),_numCols(numCols),_data(data){}
 };
 
 template<class T> inline
@@ -153,9 +163,10 @@ std::string TwoDArray<T>::toString(const TwoDArray<T> array){
   std::stringstream numRowsStream;
   numColsStream << array.getNumCols();
   numRowsStream << array.getNumRows();
-  return numColsStream.str() +
-    TwoDArray<T>::getDimensionsDelimiter() +
+  return 
     numRowsStream.str() +
+    TwoDArray<T>::getDimensionsDelimiter() +
+    numColsStream.str() +
     TwoDArray<T>::getDimensionsSeperator() +
     array.getDataArray().toString();
 }
@@ -167,13 +178,13 @@ TwoDArray<T> TwoDArray<T>::fromString(const std::string& string){
   size_t seperatorPos = 
     string.find_first_of(TwoDArray<T>::getDimensionsSeperator());
   std::string valueData = string.substr(seperatorPos+1);
-  std::istringstream numColsStream(string.substr(0,dimCharPos));
-  std::istringstream numRowsStream(string.substr(dimCharPos+1, seperatorPos-dimCharPos-1));
-  size_t numCols, numRows;
-  numColsStream >> numCols;
+  std::istringstream numRowsStream(string.substr(0,dimCharPos));
+  std::istringstream numColsStream(string.substr(dimCharPos+1, seperatorPos-dimCharPos-1));
+  size_t numRows, numCols;
   numRowsStream >> numRows;
+  numColsStream >> numCols;
   Array<T> array = fromStringToArray<T>(valueData);
-  return TwoDArray<T>(numCols, numRows, array);
+  return TwoDArray<T>(numRows, numCols, array);
 }
 
 /* \brief .
@@ -200,8 +211,8 @@ std::ostream& operator<<(std::ostream& os, const TwoDArray<T>& array){
 template<typename T> inline
 bool operator==( const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
   return a1.getDataArray() == a2.getDataArray() && 
-    a1.getNumCols() == a2.getNumCols() &&
-    a1.getNumRows() == a2.getNumRows();
+    a1.getNumRows() == a2.getNumRows() &&
+    a1.getNumCols() == a2.getNumCols();
 }
 
 /**

@@ -37,7 +37,7 @@ namespace Teuchos{
  * Test all the validator dependencies.
  */
 TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, simpleTest){
-  TwoDArray<int> simpleArray(2,3);
+  TwoDArray<int> simpleArray(3,2);
   simpleArray[0][0] =1;
   simpleArray[0][1] =2;
   simpleArray[1][0] =3;
@@ -50,8 +50,16 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, simpleTest){
   TEST_EQUALITY_CONST(simpleArray[1][1],4)
   TEST_EQUALITY_CONST(simpleArray[2][0],5)
   TEST_EQUALITY_CONST(simpleArray[2][1],6)
-  TEST_EQUALITY_CONST(simpleArray.getNumCols(), 2)
+
+  TEST_EQUALITY_CONST(simpleArray(0,0),1)
+  TEST_EQUALITY_CONST(simpleArray(0,1),2)
+  TEST_EQUALITY_CONST(simpleArray(1,0),3)
+  TEST_EQUALITY_CONST(simpleArray(1,1),4)
+  TEST_EQUALITY_CONST(simpleArray(2,0),5)
+  TEST_EQUALITY_CONST(simpleArray(2,1),6)
+
   TEST_EQUALITY_CONST(simpleArray.getNumRows(), 3)
+  TEST_EQUALITY_CONST(simpleArray.getNumCols(), 2)
   Array<int> oneDArray = tuple<int>(1,2,3,4,5,6);	
   TEST_COMPARE_ARRAYS(oneDArray, simpleArray.getDataArray())
 
@@ -70,8 +78,8 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, stringFunctions){
 
 TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, emptyTest){
   TwoDArray<int> emptyArray;
-  TEST_EQUALITY_CONST(emptyArray.getNumCols(), 0)
   TEST_EQUALITY_CONST(emptyArray.getNumRows(), 0)
+  TEST_EQUALITY_CONST(emptyArray.getNumCols(), 0)
   TEST_EQUALITY_CONST(emptyArray.getDataArray().size(), 0)
 
 }
