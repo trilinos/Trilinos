@@ -38,9 +38,15 @@ namespace Belos {
   // TODO: Should this file be moved to Belos ?
   // TODO: The relation between Belos and MueLu is: Belos uses MueLu as a Preconditionner. So it makes more sense to me.
 
-  // Turns a MueLu::Hierarchy object to a Belos::Operator.
+  // Here are a list of the Belos adapters for MueLu. To use Belos::LinearProblem<ScalarType,MV,OP> with:
+  // - MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>, turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp
+  // - MV=Epetra_MultiVector          and OP=Epetra_Operator            , turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp (TODO: not available yet)
+  // - MV=Tpetra::MultiVector<...>    and OP=Tpetra_MultiVector<...>    , turns your MueLu::Hierarchy into a Belos::MueLuTpetraPrecOp (TODO: not available yet)
+  // - MV=Cthulhu::MultiVector<...>   and OP=Cthulhu::MultiVector<...>  , turns your MueLu::Hierarchy into a Belos::MueLuCthulhuPrecOp
+
+  // Turns a MueLu::Hierarchy<ScalarType,...> object to a Belos::Operator<ScalarType>.
   // This allows to use MueLu as a preconditionner for a Belos::LinearProblem
-  // where ScalarType=, MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>
+  // with ScalarType=, MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>
   //
   // Note: this adapter is implemented only for Epetra (and ScalarType=double), because the interface Belos::Operator and Belos::MultiVec is only implemented for Epetra in Belos.
   // For Tpetra, you can use directly the adapter provided for Belos::LinearProblem where OP=Tpetra::Operator<...> or OP=Cthulhu::Operator<...>
@@ -72,6 +78,7 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
+    // Note: throw EpetraOpFailure exceptions as Belos::EpetraOp
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
 
       TEST_FOR_EXCEPTION(trans!=NOTRANS, EpetraOpFailure, 
