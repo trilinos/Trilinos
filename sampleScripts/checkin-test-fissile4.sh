@@ -30,6 +30,9 @@ TRILINOS_BASE_DIR_ABS=$(readlink -f $TRILINOS_BASE_DIR)
 EXTRA_REPOS_FULL_LIST="StartCCMExt DeCARTExt CASLBOA CASLRAVE LIMEExt PSSDriversExt"
 DRIVERS_BASE_DIR="$TRILINOS_BASE_DIR_ABS/Trilinos/cmake/ctest/drivers/pu241"
 
+# Pakage in Trilinos to disable (mostly for auotmated CI server)
+DISABLE_PACKAGES=PyTrilinos,TriKota,Optika,Sundance,Stokhos,STK
+
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-options.cmake
 " > MPI_DEBUG.config
@@ -94,6 +97,7 @@ $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 --extra-repos=$EXTRA_REPOS \
 -j16 \
 --ctest-timeout=180 \
+--disable-packages=$DISABLE_PACKAGES \
 $EXTRA_ARGS  
 
 # NOTE: By default we use 16 processes which is 1/2 of the 32
