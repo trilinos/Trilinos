@@ -1,0 +1,60 @@
+XCOMM Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
+XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+XCOMM certain rights in this software
+XCOMM 
+XCOMM Redistribution and use in source and binary forms, with or without
+XCOMM modification, are permitted provided that the following conditions are
+XCOMM met:
+XCOMM 
+XCOMM     * Redistributions of source code must retain the above copyright
+XCOMM       notice, this list of conditions and the following disclaimer.
+XCOMM 
+XCOMM     * Redistributions in binary form must reproduce the above
+XCOMM       copyright notice, this list of conditions and the following
+XCOMM       disclaimer in the documentation and/or other materials provided
+XCOMM       with the distribution.
+XCOMM 
+XCOMM     * Neither the name of Sandia Corporation nor the names of its
+XCOMM       contributors may be used to endorse or promote products derived
+XCOMM       from this software without specific prior written permission.
+XCOMM 
+XCOMM THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+XCOMM "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+XCOMM LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+XCOMM A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+XCOMM OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+XCOMM SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+XCOMM LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+XCOMM DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+XCOMM THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+XCOMM (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+XCOMM OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+XCOMM 
+
+XCOMM Imakefile for nem_spread
+
+#if defined(OSF1Architecture)
+CDEBUGFLAGS=-O
+CCOPTIONS=
+#endif
+
+CODE = nem_spread
+
+SRCS = \
+el_check_monot.c         el_elm_info.c            el_exoII_io.c \
+el_exoII_io_util.c       pe_check_inp.c           pe_exoII_2par_exoII.c \
+pe_init_info.c           pe_input.c               pe_load_lb_info.c \
+pe_str_util.c            pe_util.c                pe_write_parExo_info.c \
+ps_restart.c             rf_allo.c                rf_comm.c \
+rf_mesh_param.c          rf_pre_proc.c            rf_util.c \
+sort_utils.c		 add_to_log.c \
+md_timer_getrusage.c md_wrap_generic_c.c
+
+LIBS = $(NEMESISC) $(EXOIIV2C) $(NETCDF) -lm
+OBJS = ${SRCS:.c=.o}
+
+NormalCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallTarget(install,$(CODE),$(INSTBINFLAGS),$(BINDIR))
+
+DependTarget()

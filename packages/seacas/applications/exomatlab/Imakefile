@@ -1,0 +1,14 @@
+LIBS = $(IOSS) $(EXODUS) $(NEMESIS) $(NETCDF)  
+CXXEXTRA_DEFINES = -I$(INCDIR)/ioss -DNO_MPI 
+
+PROGS=exomatlab2
+
+SRCS = exomatlab.C GetLongOpt.C SystemInterface.C add_to_log.C
+OBJS = $(SRCS:.C=.o)
+
+NormalCCTarget($(PROGS), $(OBJS), NullParameter, NullParameter, $(LIBS))
+InstallTarget(install,$(PROGS), $(INSTBINFLAGS),$(BINDIR))
+DependTarget()
+
+
+

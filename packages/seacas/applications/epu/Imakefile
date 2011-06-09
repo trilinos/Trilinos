@@ -1,0 +1,25 @@
+CODE = epu
+
+#if defined(CrossLinuxArchitecture)
+CXXSTD_DEFINES = -Dlinux -D__alpha__ -DADDC_ $(CXXPROJECT_DEFINES)
+#endif
+
+#if defined SGIArchitecture
+CXXEXTRA_DEFINES = -LANG:std
+LOCAL_LDFLAGS = -LANG:std
+#endif
+
+LIBS = $(EXOIIV2C) $(NETCDF) -lm
+
+SRCS =	ExodusFile.C GetLongOpt.C \
+	Internals.C ParallelDisks.C \
+	SystemInterface.C epu.C tokenize.C \
+	smart_assert.C add_to_log.C timer.C to_string.C
+
+OBJS = $(SRCS:.C=.o)
+
+NormalCCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallNamedTarget(install,$(CODE),NullParameter,$(BINDIR),$(CODE))
+
+DependTarget()
