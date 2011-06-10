@@ -71,8 +71,29 @@ add_entity( const EntityKey & entity_key,
 
 
 
+// Get a const reference to the Entity from the entity_local_id.
+inline const STKGenericMesh::entity_value & get_entity(
+    STKGenericMesh::entity_local_id entity_lid,
+    const STKGenericMesh & mesh
+    )
+{
+  return *entity_lid;
+}
+
+
+// This function is exactly the same as the one above because of the typedefs.
+// Get a const reference to the Entity from the entity_descriptor.
+//inline const STKGenericMesh::entity_value & get_entity(
+//    STKGenericMesh::entity_descriptor entity_d,
+//    const STKGenericMesh & mesh
+//    )
+//{
+//  return *entity_d;
+//}
+
+
 // destroy_entity:
-inline void remove_entity( typename STKGenericMesh::entity_local_id entity_lid, STKGenericMesh & mesh )
+inline void remove_entity( STKGenericMesh::entity_local_id entity_lid, STKGenericMesh & mesh )
 {
   mesh.m_bulk_data.destroy_entity(entity_lid);
 }
@@ -111,9 +132,11 @@ inline STKGenericMesh::relation_descriptor add_relation(
     STKGenericMesh & mesh
     )
 {
-  STKGenericMesh::entity_value & entity_from = get_entity(x_entity_from,mesh);
-  STKGenericMesh::entity_value & entity_to   = get_entity(x_entity_to,mesh);
-  mesh.declare_relation(entity_from,entity_to,relation_id);
+  const STKGenericMesh::entity_value & entity_from = get_entity(x_entity_from,mesh);
+  const STKGenericMesh::entity_value & entity_to   = get_entity(x_entity_to,mesh);
+  STKGenericMesh::entity_value & nonconst_entity_from = const_cast<STKGenericMesh::entity_value&>(entity_from);
+  STKGenericMesh::entity_value & nonconst_entity_to = const_cast<STKGenericMesh::entity_value&>(entity_to);
+  mesh.m_bulk_data.declare_relation(nonconst_entity_from,nonconst_entity_to,relation_id);
   Internal_STK_Relation_Descriptor_Adapter relation_d(x_entity_from, x_entity_to, relation_id);
   return relation_d;
 }
@@ -121,36 +144,14 @@ inline STKGenericMesh::relation_descriptor add_relation(
 // Remove this relation from the mesh.
 inline void remove_relation( STKGenericMesh::relation_descriptor relation_d, STKGenericMesh & mesh )
 {
-  mesh.destroy_relation(*relation_d.m_entity_from, *relation_d.m_entity_to, relation_d.m_relation_id );
-}
-
-
-// Get a const reference to the Entity from the entity_local_id.
-inline const STKGenericMesh::entity_value & get_entity(
-    generic_mesh_traits<Mesh>::entity_local_id entity_lid,
-    const Mesh & Mesh
-    )
-{
-  return *entity_lid;
-}
-
-
-// Generic API:  Get a const reference to the Entity from the entity_descriptor.
-template <typename Mesh>
-inline const generic_mesh_traits<Mesh>::entity_value & get_entity(
-    generic_mesh_traits<Mesh>::entity_descriptor entity_d,
-    const Mesh & Mesh
-    )
-{
-  return *entity_d;
+  mesh.m_bulk_data.destroy_relation(*relation_d.m_entity_from, *relation_d.m_entity_to, relation_d.m_relation_id );
 }
 
 
 // Generic API:  Get an entity_descriptor from an entity_local_id
-template <typename Mesh>
-inline typename generic_mesh_traits<Mesh>::entity_local_id entity_descriptor_to_local_id(
-    typename generic_mesh_traits<Mesh>::entity_descriptor entity_d,
-    const Mesh & mesh
+inline STKGenericMesh::entity_local_id entity_descriptor_to_local_id(
+    STKGenericMesh::entity_descriptor entity_d,
+    const STKGenericMesh & mesh
     )
 {
   return entity_d;
@@ -158,10 +159,9 @@ inline typename generic_mesh_traits<Mesh>::entity_local_id entity_descriptor_to_
 
 
 // Generic API:  Get an entity_local_id from an entity_descriptor.
-template <typename Mesh>
-inline typename generic_mesh_traits<Mesh>::entity_descriptor entity_local_id_to_descriptor(
-    typename generic_mesh_traits<Mesh>::entity_local_id entity_lid,
-    const Mesh & mesh
+inline STKGenericMesh::entity_descriptor entity_local_id_to_descriptor(
+    STKGenericMesh::entity_local_id entity_lid,
+    const STKGenericMesh & mesh
     )
 {
   return entity_lid;
@@ -170,77 +170,108 @@ inline typename generic_mesh_traits<Mesh>::entity_descriptor entity_local_id_to_
 
 
 // Generic API:  Get a range to all entities in the mesh.
-template <typename Mesh>
 inline std::pair<
-                  typename generic_mesh_traits<Mesh>::entity_descriptor_iterator,
-                  typename generic_mesh_traits<Mesh>::entity_descriptor_iterator
+                  STKGenericMesh::entity_descriptor_iterator,
+                  STKGenericMesh::entity_descriptor_iterator
                 >
-  get_entities(Mesh & mesh);
+  get_entities(STKGenericMesh & mesh)
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return std::pair<STKGenericMesh::entity_descriptor_iterator,STKGenericMesh::entity_descriptor_iterator>(NULL,NULL);
+}
 
 
 // Generic API:
-template <typename Mesh>
 inline
 std::pair<
-          typename generic_mesh_traits<Mesh>::bucket_entity_descriptor_iterator,
-          typename generic_mesh_traits<Mesh>::bucket_entity_descriptor_iterator
+          STKGenericMesh::bucket_entity_descriptor_iterator,
+          STKGenericMesh::bucket_entity_descriptor_iterator
          >
-  get_entities( typename generic_mesh_traits<Mesh>::bucket_descriptor bucket_descriptor,
-                Mesh & mesh
-              );
+  get_entities( STKGenericMesh::bucket_descriptor bucket_descriptor,
+                STKGenericMesh & mesh
+              )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return std::pair<STKGenericMesh::bucket_entity_descriptor_iterator,STKGenericMesh::bucket_entity_descriptor_iterator>(NULL,NULL);
+}
 
 
 
 // Generic API:  Get a range to all the relations for this entity_local_id
-template <typename Mesh>
 inline std::pair<
-                  typename generic_mesh_traits<Mesh>::relation_descriptor_iterator,
-                  typename generic_mesh_traits<Mesh>::relation_descriptor_iterator
+                  STKGenericMesh::relation_descriptor_iterator,
+                  STKGenericMesh::relation_descriptor_iterator
                 >
-  get_relations( generic_mesh_traits<Mesh>::entity_local_id entity_lid, Mesh & mesh );
+  get_relations( STKGenericMesh::entity_local_id entity_lid, STKGenericMesh & mesh )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return std::pair<STKGenericMesh::relation_descriptor_iterator,STKGenericMesh::relation_descriptor_iterator>(NULL,NULL);
+}
 
 
 // Generic API:  Get a range to all the relations for this entity_descriptor
-template <typename Mesh>
-inline std::pair<generic_mesh_traits<Mesh>::relation_descriptor_iterator, generic_mesh_traits<Mesh>::relation_descriptor_iterator>
-  get_relations( generic_mesh_traits<Mesh>::entity_descriptor entity_d, Mesh & mesh );
+//inline std::pair<
+//                  STKGenericMesh::relation_descriptor_iterator,
+//                  STKGenericMesh::relation_descriptor_iterator
+//                >
+//  get_relations( STKGenericMesh::entity_descriptor entity_d, STKGenericMesh & mesh )
+//{
+//  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+//  return std::pair<STKGenericMesh::relation_descriptor_iterator,STKGenericMesh::relation_descriptor_iterator>(NULL,NULL);
+//}
 
 
 
 // Generic API:  Get a range to selected relations for this entity_local_id
 // Selector is a unary-predicate that takes a relation_descriptor and returns true/false
-template <typename Mesh, typename Selector>
-inline std::pair<generic_mesh_traits<Mesh>::selected_relation_descriptor_iterator,generic_mesh_traits<Mesh>::selected_relation_descriptor_iterator>
+template <typename Selector>
+inline std::pair<
+                  STKGenericMesh::selected_relation_descriptor_iterator,
+                  STKGenericMesh::selected_relation_descriptor_iterator
+                >
   get_relations(
-      generic_mesh_traits<Mesh>::entity_local_id entity_lid,
+      STKGenericMesh::entity_local_id entity_lid,
       Selector & selector,
-      Mesh & mesh
-      );
+      STKGenericMesh & mesh
+      )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return std::pair<STKGenericMesh::selected_relation_descriptor_iterator,STKGenericMesh::selected_relation_descriptor_iterator>(NULL,NULL);
+}
 
 
 // Generic API:  Get a range to selected relations for this entity_descriptor
 // Selector is a unary-predicate that takes a relation_descriptor and returns true/false
-template <typename Mesh, typename Selector>
-inline std::pair<generic_mesh_traits<Mesh>::selected_relation_descriptor_iterator,generic_mesh_traits<Mesh>::selected_relation_descriptor_iterator>
-  get_relations(
-      generic_mesh_traits<Mesh>::entity_descriptor entity_d,
-      Selector & selector,
-      Mesh & mesh
-      );
+//template <typename Selector>
+//inline std::pair<
+//                  STKGenericMesh::selected_relation_descriptor_iterator,
+//                  STKGenericMesh::selected_relation_descriptor_iterator
+//                >
+//  get_relations(
+//      STKGenericMesh::entity_descriptor entity_d,
+//      Selector & selector,
+//      STKGenericMesh & mesh
+//      )
+//{
+//  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+//  return std::pair<STKGenericMesh::selected_relation_descriptor_iterator,STKGenericMesh::selected_relation_descriptor_iterator>(NULL,NULL);
+//}
 
 
 // Generic API:  Get a bucket for an entity_descriptor
-template <typename Mesh>
-inline typename generic_mesh_traits<Mesh>::bucket_descriptor
-get_bucket( typename generic_mesh_traits<Mesh>::entity_descriptor entity,
-               Mesh & mesh );
+inline STKGenericMesh::bucket_descriptor
+get_bucket( STKGenericMesh::entity_descriptor entity, STKGenericMesh & mesh )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return NULL;
+}
 
 
 // Not supported by stk_mesh:
 inline
 std::pair<
-          typename STKGenericMesh::bucket_descriptor_iterator,
-          typename STKGenericMesh::bucket_descriptor_iterator
+          STKGenericMesh::bucket_descriptor_iterator,
+          STKGenericMesh::bucket_descriptor_iterator
          >
 get_buckets( const STKGenericMesh & mesh )
 {
@@ -251,50 +282,62 @@ get_buckets( const STKGenericMesh & mesh )
 // An API that is almost the same as the Generic Mesh API:
 inline
 std::pair<
-          typename STKGenericMesh::bucket_descriptor_iterator,
-          typename STKGenericMesh::bucket_descriptor_iterator
+          STKGenericMesh::bucket_descriptor_iterator,
+          STKGenericMesh::bucket_descriptor_iterator
          >
 get_buckets( EntityRank entity_rank, const STKGenericMesh & mesh )
 {
-  const BucketVector & buckets = mesh.buckets(entity_rank);
-  return std::make_pair(buckets.begin(),buckets.end());
+  //const BucketVector & buckets = mesh.m_bulk_data.buckets(entity_rank);
+  //return std::make_pair(buckets.begin(),buckets.end());
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return std::pair<STKGenericMesh::bucket_descriptor_iterator,STKGenericMesh::bucket_descriptor_iterator>(NULL,NULL);
 }
 
 // Generic API:  Get buckets associated with a Selector.
 // Selector is a unary-predicate that takes a bucket_descriptor and returns true/false
-template <typename Mesh, typename Selector >
+template <typename Selector >
 inline
 std::pair<
-          typename generic_mesh_traits<Mesh>::selected_bucket_descriptor_iterator,
-          typename generic_mesh_traits<Mesh>::selected_bucket_descriptor_iterator
+          STKGenericMesh::selected_bucket_descriptor_iterator,
+          STKGenericMesh::selected_bucket_descriptor_iterator
          >
-get_buckets( const Selector & selector, Mesh & mesh );
+get_buckets( const Selector & selector, STKGenericMesh & mesh )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return std::pair<STKGenericMesh::selected_relation_descriptor_iterator,STKGenericMesh::selected_relation_descriptor_iterator>(NULL,NULL);
+}
 
 
 // Generic API:  Get buckets for a particular part_descriptor.
-template <typename Mesh>
 inline
 std::pair<
-          typename generic_mesh_traits<Mesh>::part_bucket_descriptor_iterator,
-          typename generic_mesh_traits<Mesh>::part_bucket_descriptor_iterator
+          STKGenericMesh::part_bucket_descriptor_iterator,
+          STKGenericMesh::part_bucket_descriptor_iterator
          >
-get_buckets( typename generic_mesh_traits<Mesh>::part_descriptor part_descriptor,
-               Mesh & mesh );
+get_buckets( STKGenericMesh::part_descriptor part_descriptor, STKGenericMesh & mesh )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return std::pair<STKGenericMesh::part_bucket_descriptor_iterator,STKGenericMesh::part_bucket_descriptor_iterator>(NULL,NULL);
+}
 
 
 
 // Generic API:  add this part to the Mesh.
-template <typename Mesh>
-inline typename generic_mesh_traits<Mesh>::part_descriptor
-add_part( const typename generic_mesh_traits<Mesh>::part_value & part_value,
-         Mesh & mesh );
+inline STKGenericMesh::part_descriptor
+add_part( const STKGenericMesh::part_value & part_value, STKGenericMesh & mesh )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return NULL;
+}
+
 
 
 // Generic API:  remove this part from the Mesh.
-template <typename Mesh>
 inline void
-remove_part( typename generic_mesh_traits<Mesh>::part_descriptor part_descriptor,
-            Mesh & mesh );
+remove_part( STKGenericMesh::part_descriptor part_descriptor, STKGenericMesh & mesh )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+}
 
 
 
@@ -313,7 +356,7 @@ move_entity( STKGenericMesh::entity_descriptor entity_descriptor,
   std::copy(add_first,add_last,std::back_inserter(add_parts));
   std::copy(remove_first,remove_last,std::back_inserter(remove_parts));
   STKGenericMesh::entity_value & entity = get_entity(entity_descriptor, mesh);
-  mesh.change_entity_parts( entity, add_parts, remove_parts );
+  mesh.m_bulk_data.change_entity_parts( entity, add_parts, remove_parts );
   STKGenericMesh::bucket_value & bucket = entity.bucket();
   STKGenericMesh::bucket_descriptor bucket_d = &bucket;
   return bucket_d;
@@ -322,26 +365,31 @@ move_entity( STKGenericMesh::entity_descriptor entity_descriptor,
 
 
 // Generic API:  Get all parts on the mesh.
-template <typename Mesh>
 inline
 std::pair<
-          typename generic_mesh_traits<Mesh>::part_descriptor_iterator,
-          typename generic_mesh_traits<Mesh>::part_descriptor_iterator
+          STKGenericMesh::part_descriptor_iterator,
+          STKGenericMesh::part_descriptor_iterator
          >
-get_parts( const Mesh & mesh );
+get_parts( const STKGenericMesh & mesh )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return std::pair<STKGenericMesh::part_descriptor_iterator,STKGenericMesh::part_descriptor_iterator>(NULL,NULL);
+}
 
 
 // Generic API:  Get all Parts associated with a bucket.
-template <typename Mesh>
 inline
 std::pair<
-          typename generic_mesh_traits<Mesh>::bucket_part_descriptor_iterator,
-          typename generic_mesh_traits<Mesh>::bucket_part_descriptor_iterator
+          STKGenericMesh::bucket_part_descriptor_iterator,
+          STKGenericMesh::bucket_part_descriptor_iterator
          >
 get_parts(
-    typename generic_mesh_traits<Mesh>::bucket_descriptor bucket_descriptor,
-    Mesh & mesh
-    );
+    STKGenericMesh::bucket_descriptor bucket_descriptor, STKGenericMesh & mesh
+    )
+{
+  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
+  return std::pair<STKGenericMesh::bucket_part_descriptor_iterator,STKGenericMesh::bucket_part_descriptor_iterator>(NULL,NULL);
+}
 
 
 } // namespace mesh
