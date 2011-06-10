@@ -288,6 +288,18 @@ public:
   //! @name Methods implementing Operator
   //@{ 
 
+  //! \brief Computes the sparse matrix-multivector multiplication.
+  /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
+    - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
+  */
+  virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+                     Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                     Scalar alpha = ScalarTraits<Scalar>::one(),
+                     Scalar beta = ScalarTraits<Scalar>::zero()) const {
+
+    return matrixData_->apply(X,Y,mode,alpha,beta);
+  }
+  
   //! \brief Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
   inline const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
