@@ -120,10 +120,8 @@ namespace Cthulhu {
     //! Get the Comm object for this Map
     virtual const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Get the Node object for this Map
     virtual const Teuchos::RCP<Node> getNode() const = 0;
-#endif
 
     //@}
 
