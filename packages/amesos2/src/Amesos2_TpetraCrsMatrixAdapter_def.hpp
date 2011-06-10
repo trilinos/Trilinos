@@ -314,7 +314,7 @@ MatrixAdapter<
 // 	    rowInd += rowNNZ;   // This is purely local to this node
 // 	  }
 // 	}
-//       }
+//    }
       Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type > > o_map, l_map;
       o_map = this->getRowMap();
 

@@ -75,10 +75,10 @@ Superlu<Matrix,Vector>::Superlu(
   SLU::StatInit(&(data_.stat));
 
   data_.perm_r.resize(this->globalNumRows_);
-  data_.perm_c.resize(this->globalNumRows_);
-  data_.etree.resize(this->globalNumRows_);
+  data_.perm_c.resize(this->globalNumCols_);
+  data_.etree.resize(this->globalNumCols_);
   data_.R.resize(this->globalNumRows_);
-  data_.C.resize(this->globalNumRows_);
+  data_.C.resize(this->globalNumCols_);
 
   data_.relax = SLU::sp_ienv(2); // Query optimal relax param from superlu
   data_.panel_size = SLU::sp_ienv(1); // Query optimal panel size
@@ -216,6 +216,18 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
     }
   }
 
+#ifdef HAVE_AMESOS2_DEBUG
+  // TEST_FOR_EXCEPTION( (data_.A.Store)->nnz != this->globalNumNonZeros_,
+  // 		      std::runtime_error,
+  // 		      "Error in converting to SuperLU SuperMatrix: wrong number of non-zeros." );
+  TEST_FOR_EXCEPTION( data_.A.ncol != this->globalNumCols_,
+		      std::runtime_error,
+		      "Error in converting to SuperLU SuperMatrix: wrong number of global columns." );
+  TEST_FOR_EXCEPTION( data_.A.nrow != this->globalNumRows_,
+		      std::runtime_error,
+		      "Error in converting to SuperLU SuperMatrix: wrong number of global rows." );
+#endif
+
   if ( this->status_.root_ ) { // Do factorization
     Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 
@@ -286,6 +298,9 @@ Superlu<Matrix,Vector>::solve_impl()
     Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
 
     size_t ldx, ldb;
+#ifdef HAVE_AMESOS2_DEBUG
+    std::cout << "Creating LHS and RHS multivectors" << std::endl;
+#endif
     MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
       this->multiVecX_.ptr(),
       xValues(),                // pass as ArrayView
@@ -299,6 +314,9 @@ Superlu<Matrix,Vector>::solve_impl()
       ldb,
       Teuchos::ptrFromRef(data_.B),
       this->timers_.vecRedistTime_);
+#ifdef HAVE_AMESOS2_DEBUG
+    std::cout << "Done creating LHS and RHS multivectors" << std::endl;
+#endif
   }         // end block for conversion time
   int ierr = 0; // returned error code
 

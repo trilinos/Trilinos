@@ -87,8 +87,7 @@ namespace Amesos {
      * \callgraph
      */
     template <class Matrix>
-    static void createCRSMatrix(
-                                const Teuchos::Ptr<Matrix>& mat,
+    static void createCRSMatrix(const Teuchos::Ptr<Matrix>& mat,
                                 const Teuchos::ArrayView<typename TypeMap<Superlu,typename Matrix::scalar_type>::type>& nzval,
                                 const Teuchos::ArrayView<int>& colind,
                                 const Teuchos::ArrayView<int>& rowptr,
@@ -172,8 +171,7 @@ namespace Amesos {
       }
       // end conversions
 
-      FunctionMap<Superlu,scalar_type>::create_CompRow_Matrix(
-                                                              A.getRawPtr(), rows, cols, nnz, nzval.getRawPtr(),
+      FunctionMap<Superlu,scalar_type>::create_CompRow_Matrix(A.getRawPtr(), rows, cols, nnz, nzval.getRawPtr(),
                                                               colind.getRawPtr(), rowptr.getRawPtr(), SLU::SLU_NR,
                                                               dtype, SLU::SLU_GE);
     }
