@@ -194,18 +194,27 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
       //FIXME work around until Cthulhu view table is fixed
       RCP<const Epetra_CrsMatrix> epA;
+      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA;
       try {
         epA = Utils::Op2EpetraCrs(fineA);
       }
       catch(...) {
-        std::cout << "TentativePFactory : temporarily using Epetra column map until Operator view is fixed" << std::endl;
-        throw;
+        ;//do nothing
+      }
+      try {
+        tpA = Utils::Op2TpetraCrs(fineA);
+      }
+      catch(...) {
+        ;//do nothing
       }
 
       std::vector<GO> globalIdsForPtent;
       for (int i=0; i< aggToRowMap.size(); ++i) {
         for (int k=0; k< aggToRowMap[i].size(); ++k) {
-          globalIdsForPtent.push_back(epA->ColMap().GID(aggToRowMap[i][k]));
+          if (epA != Teuchos::null)
+            globalIdsForPtent.push_back(epA->ColMap().GID(aggToRowMap[i][k]));
+          else if (tpA != Teuchos::null)
+            globalIdsForPtent.push_back(tpA->getColMap()->getGlobalElement(aggToRowMap[i][k]));
         }
       }
 
@@ -399,7 +408,6 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       // ************* end of aggregate-wise QR ********************
       // ***********************************************************
 
-#if REMOVE_ALL_ZEROS  //FIXME
       //Remove all zeros in the tentative prolongator data arrays.
       GO k = rowPtr[0];
       GO nNonzeros=0;
@@ -419,12 +427,9 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
             ++nNonzeros;
           }
         }
-          std::cout << "pid " << fineA->getRowMap()->getComm()->getRank()
-                    << ": i = " << i << ", old rowPtr = " << rowPtr[i+1] << ", new rowPtr = " << index << std::endl;
         k = rowPtr[i+1];
         rowPtr[i+1] = index;
       } //for (GO i=0...
-#endif
 
       //Insert into the final tentative prolongator matrix.
       //Since now the Q may have rows that it does not own,
@@ -438,7 +443,7 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
         try{
           GO start = rowPtr[i];
           GO nnz = rowPtr[i+1] - rowPtr[i];
-              
+
           Ptentative->insertGlobalValues(rowMapForPtent->getGlobalElement(i),
                                         colPtr.view(start,nnz),
                                         valPtr.view(start,nnz));
