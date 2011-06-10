@@ -569,8 +569,8 @@ void mult_A_Btrans(
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
   //Nieve implementation
-  /*for(GlobalOrdinal i=Aview.rowMap->getMinAllGlobalIndex(); i<=Aview.rowMap->getMaxAllGlobalIndex(); ++i){*/
-  /*for(typename ArrayView<const GlobalOrdinal>::iterator it = Aview.rowMap->getNodeElementList().begin();
+/*  for(GlobalOrdinal i=Aview.rowMap->getMinAllGlobalIndex(); i<=Aview.rowMap->getMaxAllGlobalIndex(); ++i){*/
+  for(typename ArrayView<const GlobalOrdinal>::iterator it = Aview.rowMap->getNodeElementList().begin();
       it != Aview.rowMap->getNodeElementList().end();
       ++it)
   {
@@ -583,6 +583,7 @@ void mult_A_Btrans(
     Array<GlobalOrdinal> aIndices;
     Array<Scalar> aValues;
     getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
+  /*for(GlobalOrdinal j=Bview.rowMap->getMinAllGlobalIndex(); j<=Bview.rowMap->getMaxAllGlobalIndex(); ++j){*/
   for(typename ArrayView<const GlobalOrdinal>::iterator it2 = Bview.rowMap->getNodeElementList().begin();
       it2 != Bview.rowMap->getNodeElementList().end();
       ++it2)
@@ -602,9 +603,9 @@ void mult_A_Btrans(
       }
     }
     C.insertGlobalValues(*it, cIndices(), cValues());
-  }*/
+  }
   //Real optimized version, not working.
-  size_t maxlen = 0;
+  /*size_t maxlen = 0;
   for (size_t i=0; i<Aview.numRows; ++i) {
     if (Aview.numEntriesPerRow[i] > maxlen) maxlen = Aview.numEntriesPerRow[i];
   }
@@ -765,7 +766,7 @@ void mult_A_Btrans(
       }
 
     }
-  }
+  }*/
 }
 
 
