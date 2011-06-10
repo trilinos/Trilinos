@@ -90,6 +90,11 @@ namespace {
         out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
         TEUCHOS_TEST_EQUALITY(norms[i]<1e-12, true, out, success);
       }
+
+      //TODO check normalization of columns
+      //RCP<const Map > coarseMap = coarseNullSpace->
+      //TODO check orthogonality of columns
+
     } //for (LO NSdim = 1; NSdim <= 2; ++NSdim)
 
   } //MakeTentative
