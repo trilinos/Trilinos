@@ -10,15 +10,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  Epetra_MultiVector_Adapter_UnitTests
-  SOURCES
-    Epetra_MultiVector_Adapter_UnitTests
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Tpetra_CrsMatrix_Adapter_UnitTests
   SOURCES
     Tpetra_CrsMatrix_Adapter_UnitTests
@@ -27,11 +18,22 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  Epetra_RowMatrix_Adapter_UnitTests
-  SOURCES
+IF (${PACKAGE_NAME}_ENABLE_EPETRA)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Epetra_MultiVector_Adapter_UnitTests
+    SOURCES
+      Epetra_MultiVector_Adapter_UnitTests
+      ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Epetra_RowMatrix_Adapter_UnitTests
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
+    SOURCES
+      Epetra_RowMatrix_Adapter_UnitTests
+      ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()
