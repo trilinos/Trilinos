@@ -313,7 +313,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
 //         typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 //FIXME delete this macro
-#define GimmeNorm(someVec,someLabel) {(someVec)->norm2(norms); \
+#define GimmeNorm(someVec,someLabel) {(someVec).norm2(norms); \
          *out_ << someLabel << " = " << norms<< std::endl;}
 
      /*!
@@ -368,10 +368,10 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
            RCP<MultiVector> residual = Utils::Residual(*(Fine->GetA()),X,B);
            RCP<Operator> R = Coarse->GetR();
-           RCP<MultiVector> coarseRhs = MultiVectorFactory::Build(R->getRowMap(),X.getNumVectors());
+           RCP<MultiVector> coarseRhs = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
            R->multiply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
 
-           RCP<MultiVector> coarseX = MultiVectorFactory::Build(R->getRowMap(),X.getNumVectors());
+           RCP<MultiVector> coarseX = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
            coarseX->putScalar(0.);
 
            Iterate(*coarseRhs,1,*coarseX,true,Cycle,startLevel+1);
@@ -381,10 +381,10 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                                      // ^^ nonzero initial guess
      
            RCP<Operator> P = Coarse->GetP();
-           RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRowMap(),X.getNumVectors());
+           RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(),X.getNumVectors());
            P->multiply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
            //correction->norm2(norms);
-
+           
            X.update(1.0,*correction,1.0);
 
            if (postSmoo != Teuchos::null) {
