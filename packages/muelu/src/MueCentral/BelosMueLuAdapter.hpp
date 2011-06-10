@@ -54,7 +54,7 @@ namespace Belos {
   // A - MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>, turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp
   // B - MV=Epetra_MultiVector          and OP=Epetra_Operator            , turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp (TODO: not available yet)
   // C - MV=Tpetra::MultiVector<...>    and OP=Tpetra_Operator<...>       , turns your MueLu::Hierarchy into a Belos::MueLuTpetraPrecOp (TODO: not available yet)
-  // D - MV=Cthulhu::MultiVector<...>   and OP=Cthulhu::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuCthulhuPrecOp => TODO: description not exactly right
+  // D - MV=Cthulhu::MultiVector<...>   and OP=Cthulhu::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuCthulhuPrecOp => TODO: this description have to be improved
   // TODO: I can also quickly implements couples Tpetra::MultiVector/Cthulhu::Operator and Epetra_MultiVector/Cthulhu::Operator
 
   // -----------------------------------------------------------------------------------------------------------------------------------
@@ -161,18 +161,10 @@ namespace Belos {
   // This approach is very similar with what is done with Belos::Operator but here, we don't need to wrap Cthulhu::MultiVector
   // I think that the OperatorT interface should be provided by Belos and replace the Belos::Operator
 
-  // TODO: remplace OperatorT<Scalar,LocalOrdinal...> by OperatorT<MV> for more genericity if this class moves to Belos (it can replace Belos::Operator)
-
   //
-  // Base class for the Belos OP template type (as Belos::Operator<>) but this one deals with Cthulhu::MultiVector
-  template <class Scalar, 
-            class LocalOrdinal  = int, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
+  // Base class for the Belos OP template type (as Belos::Operator<>) but this one deals with any kind of vector (not only Belos::MultiVec as the Belos::Operator interface)
+  template <class MV> 
   class OperatorT {
- 
-    typedef Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
     
   public:
     
@@ -194,7 +186,7 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-    virtual void Apply ( const MultiVector & x, MultiVector & y, ETrans trans=NOTRANS ) const = 0;
+    virtual void Apply ( const MV & x, MV & y, ETrans trans=NOTRANS ) const = 0;
   };
   
   /// \brief Specialization of OperatorTraits for OperatorT.
@@ -204,17 +196,15 @@ namespace Belos {
   /// abstract interface. Any class that inherits
   /// from Belos::OperatorT will be accepted by the Belos templated
   /// solvers, due to this specialization of Belos::OperatorTraits.
-  template <class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class OperatorTraits<ScalarType, Cthulhu::MultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node>, OperatorT<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > 
+  template <class ScalarType, class MV>
+  class OperatorTraits<ScalarType, MV, OperatorT<MV> >
   {
-
-    typedef Cthulhu::MultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
 
   public:
     //! Specialization of Apply() for OperatorT.
-    static void Apply (const OperatorT<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>& Op, 
-                       const MultiVector& x, 
-                       MultiVector& y, ETrans trans=NOTRANS) { 
+    static void Apply (const OperatorT<MV>& Op, 
+                       const MV& x, 
+                       MV& y, ETrans trans=NOTRANS) { 
       Op.Apply (x, y, trans); 
     }
   };
@@ -231,12 +221,15 @@ namespace Belos {
     {}};
 
   // TODO: doc
+  // TODO: should be it named CthulhuOp (if Cthulhu used by other packages) ?
   template <class Scalar, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
-  class MueLuOp : public OperatorT<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> {  //TODO: should be it named CthulhuOp (if Cthulhu used by other packages) ?
+  class MueLuOp : 
+    public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+  {  
     
     typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
     typedef Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
@@ -282,7 +275,7 @@ namespace Belos {
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
-  class MueLuPrecOp : public OperatorT<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> { 
+  class MueLuPrecOp : public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > { 
     
     typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Hierarchy;
     typedef Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;

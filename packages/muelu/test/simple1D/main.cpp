@@ -233,7 +233,8 @@ int main(int argc, char *argv[]) {
     X->norm2(norms);
     std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
-  
+
+  //#define JG_TODO
 #ifdef JG_TODO
   // Use AMG as a preconditioner in Belos
   {
@@ -241,7 +242,7 @@ int main(int argc, char *argv[]) {
   
     typedef ST::magnitudeType                 MT;
     typedef Cthulhu::MultiVector<SC>          MV;
-    typedef Belos::OperatorT<SC,LO,GO,NO,LMO> OP;
+    typedef Belos::OperatorT<MV>              OP;
   
     // Construct a Belos LinearProblem object
     RCP<OP> belosOp   = rcp (new Belos::MueLuOp<SC,LO,GO,NO,LMO>(Op) );    // Turns a Cthulhu::Operator object into a Belos operator
