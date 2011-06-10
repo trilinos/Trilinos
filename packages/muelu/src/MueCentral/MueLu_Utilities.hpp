@@ -267,6 +267,7 @@ namespace MueLu {
         RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
         Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
         
+        //FIXME is there a bug if beta=0?
         int i = EpetraExt::MatrixMatrix::Add(*epA,false,(double)alpha,*epB,false,(double)beta,ref2epC);
 
         if (i != 0) {
