@@ -1,7 +1,51 @@
+// @HEADER
+//
+// ***********************************************************************
+//
+//           Amesos2: Templated Direct Sparse Solver Package
+//                  Copyright 2010 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
+
 #include <string>
 
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
@@ -9,7 +53,6 @@
 #include <MatrixMarket_Tpetra.hpp> // for loading matrices from file
 
 #include "Amesos2.hpp"
-#include "Amesos2_Util_is_same.hpp"
 
 using std::cout;
 using std::endl;
@@ -22,7 +65,6 @@ using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 using Teuchos::Comm;
 using Teuchos::Array;
-using Teuchos::ArrayView;
 using Teuchos::tuple;
 using Teuchos::ScalarTraits;
 using Teuchos::OrdinalTraits;
@@ -40,6 +82,7 @@ typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 typedef Platform::NodeType Node;
 
 int main(int argc, char *argv[]){
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   typedef float SCALAR;
   typedef int LO;
   typedef int GO;
@@ -51,6 +94,9 @@ int main(int argc, char *argv[]){
   typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 1;
 
+  std::ostream &out = std::cout;
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
+
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Comm<int> > comm = platform.getComm();
   RCP<Node>             node = platform.getNode();
@@ -58,17 +104,27 @@ int main(int argc, char *argv[]){
   RCP<MAT> A =
     Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../test/matrices/amesos2_test_mat3.mtx",comm,node);
 
-  RCP<const Map<LO,GO,Node> > rowmap = A->getRowMap();
-  RCP<const Map<LO,GO,Node> > colmap = A->getColMap();
+  RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
+  RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
 
-  RCP<MV> X = rcp(new MV(rowmap,
-			 tuple<cmplx>(cmplx(-0.58657, 0.10646),
-				      cmplx(0.86716, 0.75421),
-				      cmplx(0.58970, 0.29876)),
-			 3,
-			 numVecs));
-  RCP<MV> B = rcp(new MV(colmap,numVecs));
-  RCP<MV> Xhat = rcp(new MV(rowmap,numVecs));
+  // Create the know-solution vector
+  std::map<GO,cmplx> xValues;
+  xValues[0] = cmplx(-0.58657, 0.10646);
+  xValues[1] = cmplx(0.86716, 0.75421); 
+  xValues[2] = cmplx(0.58970, 0.29876);
+
+  typename std::map<GO,cmplx>::iterator it;
+  RCP<MV> X = rcp(new MV(dmnmap, numVecs));
+  X->setObjectLabel("X");
+
+  for( it = xValues.begin(); it != xValues.end(); ++it ){
+    if( rngmap->isNodeGlobalElement( (*it).first ) ){
+      X->replaceGlobalValue( (*it).first, 0, (*it).second );
+    }
+  }
+
+  RCP<MV> Xhat = rcp(new MV(dmnmap, numVecs));
+  RCP<MV> B    = rcp(new MV(rngmap, numVecs));
   X->setObjectLabel("X");
   B->setObjectLabel("B");
   Xhat->setObjectLabel("Xhat");
@@ -82,19 +138,15 @@ int main(int argc, char *argv[]){
     = Amesos::create<MAT,MV>("Superlu", A, Xhat, B );
 
   Teuchos::ParameterList params;
-  //  params.set("Trans","TRANS","Solve with conjugate-transpose");
+  // Setting the following will cause Amesos2 to complain
+  // params.set("Trans","CONJ","Solve with conjugate-transpose");
 
   solver->setParameters( rcpFromRef(params) );
   solver->symbolicFactorization().numericFactorization().solve();
 
-  std::ostream &out = std::cout;
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
-
-#ifdef HAVE_AMESOS2_DEBUG
   B->describe(*fos, Teuchos::VERB_EXTREME);
   Xhat->describe(*fos, Teuchos::VERB_EXTREME);
   X->describe(*fos, Teuchos::VERB_EXTREME);
-#endif
 
   // Check result of solve
   Array<Mag> xhatnorms(numVecs), xnorms(numVecs);

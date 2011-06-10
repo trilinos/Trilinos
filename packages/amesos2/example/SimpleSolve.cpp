@@ -140,7 +140,13 @@ int main(int argc, char *argv[]) {
    *   [18]
    *   [28]]
    */
-  RCP<MV> B = rcp(new MV(map,tuple<Scalar>(-7,18,3,17,18,28),nrows,numVectors));
+  RCP<MV> B = rcp(new MV(map,numVectors));
+  int data[6] = {-7,18,3,17,18,28};
+  for( int i = 0; i < 6; ++i ){
+    if( B->getMap()->isNodeGlobalElement(i) ){
+      B->replaceGlobalValue(i,0,data[i]);
+    }
+  }
 
   // Create solver interface to Superlu through Amesos::Factory
   RCP<Amesos::SolverBase> solver = Amesos::create<MAT,MV>("Superlu", A, X, B);

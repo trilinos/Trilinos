@@ -55,9 +55,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Import.hpp>
 
-// I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
-#include <Tpetra_MatrixIO.hpp>
+#include <MatrixMarket_Tpetra.hpp>
 
 #include "Amesos2.hpp"
 #include "Amesos2_Version.hpp"
@@ -100,27 +98,23 @@ int main(int argc, char *argv[]) {
   bool printSolution = false;
   bool printTiming   = false;
   bool verbose       = false;
-  std::string filename("bcsstk14.hb");
+  std::string filename("arc130.mtx");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("print_matrix","no_print_matrix",&printMatrix,"Print the full matrix after reading it.");
-  cmdp.setOption("print_solution","no_print_solution",&printSolution,"Print solution vector after solve.");
-  cmdp.setOption("print_timing","no_print_timing",&printTiming,"Print solver timing statistics");
+  cmdp.setOption("filename",&filename,"Filename for Matrix-Market test matrix.");
+  cmdp.setOption("print-matrix","no-print-matrix",&printMatrix,"Print the full matrix after reading it.");
+  cmdp.setOption("print-solution","no-print-solution",&printSolution,"Print solution vector after solve.");
+  cmdp.setOption("print-timing","no-print-timing",&printTiming,"Print solver timing statistics");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
 
   // Say hello
-
   if( myRank == 0 ) *fos << Amesos::version() << std::endl << std::endl;
 
   const size_t numVectors = 1;
 
-//  RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
-
-  RCP<MAT> A;
-  Tpetra::Utils::readHBMatrix(filename,comm,node,A);
+  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(filename,comm,node);
   if( printMatrix ){
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
@@ -128,12 +122,12 @@ int main(int argc, char *argv[]) {
     *fos << std::endl << A->description() << std::endl << std::endl;
   }
 
-  // create a Map
-  global_size_t nrows = A->getGlobalNumRows();
-  RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(nrows,0,comm) );
+  // get the maps
+  RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();		
+  RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
 
   // Create random X
-  RCP<MV> X = rcp( new MV(map,numVectors) );
+  RCP<MV> X = rcp( new MV(dmnmap,numVectors) );
   X->randomize();
 
   /* Create B
@@ -147,7 +141,7 @@ int main(int argc, char *argv[]) {
    *   [10]
    *   [10]]
    */
-  RCP<MV> B = rcp(new MV(map,numVectors));
+  RCP<MV> B = rcp(new MV(rngmap,numVectors));
   B->putScalar(10);
 
   // Constructor from Factory
@@ -165,10 +159,12 @@ int main(int argc, char *argv[]) {
     // change one of the matrix values and re-solve.
     //
     // Replace the lowest column index and lowest row index entry with "20"
+    A->resumeFill();
     A->replaceGlobalValues(
       Teuchos::as<GO>(A->getRowMap()->getMinGlobalIndex()),
       tuple<GO>(A->getColMap()->getMinGlobalIndex()),
       tuple<Scalar>(20));
+    A->fillComplete();
 
     solver->numericFactorization().solve();
 
