@@ -490,7 +490,6 @@ namespace Cthulhu {
      //! @name Methods implementing Operator
      //@{ 
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
      //! \brief Computes the sparse matrix-multivector multiplication.
      /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
        - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
@@ -498,9 +497,13 @@ namespace Cthulhu {
      inline void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                        Teuchos::ETransp mode = Teuchos::NO_TRANS,
                        Scalar alpha = ScalarTraits<Scalar>::one(),
-                       Scalar beta = ScalarTraits<Scalar>::zero()) const { CTHULHU_DEBUG_ME; //mtx_->apply(X, Y, mode, alpha, beta); TODO
+                       Scalar beta = ScalarTraits<Scalar>::zero()) const { 
+       CTHULHU_DEBUG_ME; 
+
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, X, tX, "Cthulhu::TpetraCrsMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(      TpetraMultiVector, Y, tY, "Cthulhu::TpetraCrsMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+      mtx_->apply(*tX.getTpetra_MultiVector(), *tY.getTpetra_MultiVector(), mode, alpha, beta);
      }
-#endif // CTHULHU_NOT_IMPLEMENTED
 
      //! Indicates whether this operator supports applying the adjoint operator.
      inline bool hasTransposeApply() const { CTHULHU_DEBUG_ME; return mtx_->hasTransposeApply(); }

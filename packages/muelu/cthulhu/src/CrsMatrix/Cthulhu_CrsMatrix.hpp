@@ -452,7 +452,6 @@ namespace Cthulhu {
     //! @name Methods implementing Operator
     //@{ 
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! \brief Computes the sparse matrix-multivector multiplication.
     /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
       - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
@@ -461,7 +460,6 @@ namespace Cthulhu {
                        Teuchos::ETransp mode = Teuchos::NO_TRANS,
                        Scalar alpha = ScalarTraits<Scalar>::one(),
                        Scalar beta = ScalarTraits<Scalar>::zero()) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Indicates whether this operator supports applying the adjoint operator.

@@ -575,17 +575,29 @@ namespace Cthulhu {
     //! @name Methods implementing Operator
     //@{ 
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! \brief Computes the sparse matrix-multivector multiplication.
     /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
       - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
     */
     inline void apply(const MultiVector<double,int,int> & X, MultiVector<double,int,int> &Y, 
                       Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                      double alpha = doubleTraits<double>::one(),
-                      double beta = doubleTraits<double>::zero()) const { CTHULHU_DEBUG_ME; //mtx_->apply(X, Y, mode, alpha, beta); TODO
+                      double alpha = ScalarTraits<double>::one(),
+                      double beta = ScalarTraits<double>::zero()) const { 
+      CTHULHU_DEBUG_ME; 
+
+      TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
+      
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, X, eX, "Cthulhu::EpetraCrsMatrix->apply() only accept Cthulhu::EpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(      EpetraMultiVector, Y, eY, "Cthulhu::EpetraCrsMatrix->apply() only accept Cthulhu::EpetraMultiVector as input arguments.");
+
+      TEST_FOR_EXCEPTION((mode != Teuchos::NO_TRANS) && (mode == Teuchos::TRANS), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraCrsMatrix->apply() only accept mode == NO_TRANS or mode == TRANS");
+      bool eTrans = Teuchos2Epetra_Trans(mode);
+
+      // /!\ UseTranspose value
+      TEST_FOR_EXCEPTION(mtx_->UseTranspose(), Cthulhu::Exceptions::NotImplemented, "An exception is throw to let you know that Cthulhu::EpetraCrsMatrix->apply() do not take into account the UseTranspose() parameter of Epetra_CrsMatrix.");
+      
+      CTHULHU_ERR_CHECK(mtx_->Multiply(eTrans, *eX.getEpetra_MultiVector(), *eY.getEpetra_MultiVector()));
     }
-#endif // CTHULHU_NOT_IMPLEMENTED
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Indicates whether this operator supports applying the adjoint operator.
