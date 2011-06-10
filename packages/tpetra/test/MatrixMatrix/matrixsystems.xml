@@ -15,7 +15,6 @@
 		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
 	</ParameterList>
-  <!-- works but only in serial -->
   <ParameterList name="syntheticBT">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synBTa.mtx" type="string"/>
