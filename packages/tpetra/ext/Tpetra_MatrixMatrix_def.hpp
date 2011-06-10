@@ -40,6 +40,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include <algorithm>
+#include "Teuchos_FancyOStream.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
   //#include "Tpetra_MMMultiply_decl.hpp"
@@ -551,8 +552,13 @@ getGlobalRowFromLocalIndex(
   ArrayView<const LocalOrdinal> localIndices = Mview.indices[localRow];
   ArrayView<const Scalar> constValues = Mview.values[localRow];
   values = Array<Scalar>(constValues);
-  for(typename Array<GlobalOrdinal>::size_type i = 0; i<localIndices.size(); ++i){
-    indices.push_back(Mview.colMap->getGlobalElement(localIndices[i]));
+  
+  int rank = colMap->getComm()->getRank();
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
+  fos->setOutputToRootOnly(rank);
+  //*fos << "Rank: " << rank << " localRow: " << localIndices << std::endl;
+  for(typename ArrayView<const LocalOrdinal>::iterator it=localIndices.begin(); it!=localIndices.end(); ++it){
+    indices.push_back(colMap->getGlobalElement(*it));
   }
   sort2(indices.begin(), indices.end(), values.begin());
 }
@@ -568,12 +574,18 @@ void mult_A_Btrans(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
+  int rank = Aview.origRowMap->getComm()->getRank();
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
+  fos->setOutputToRootOnly(rank);
+  //*fos << std::endl;
+  //Bview.importColMap->describe(*fos, Teuchos::VERB_EXTREME);
+  //*fos << "Rank: " << rank << " " << Bview.indices << std::endl;
+  //Bview.rowMap->describe(*fos, Teuchos::VERB_EXTREME);
   //Nieve implementation
-/*  for(GlobalOrdinal i=Aview.rowMap->getMinAllGlobalIndex(); i<=Aview.rowMap->getMaxAllGlobalIndex(); ++i){*/
   for(typename ArrayView<const GlobalOrdinal>::iterator it = Aview.rowMap->getNodeElementList().begin();
       it != Aview.rowMap->getNodeElementList().end();
-      ++it)
-  {
+      ++it){
+  //for(LocalOrdinal i = 0; i<Aview.numRows; ++i){
     LocalOrdinal localARow = Aview.rowMap->getLocalElement(*it);
     if(Aview.indices[localARow].size() == 0){
       continue;
@@ -583,25 +595,37 @@ void mult_A_Btrans(
     Array<GlobalOrdinal> aIndices;
     Array<Scalar> aValues;
     getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
-  /*for(GlobalOrdinal j=Bview.rowMap->getMinAllGlobalIndex(); j<=Bview.rowMap->getMaxAllGlobalIndex(); ++j){*/
+    //*fos << "A Rank: " << rank << " Global Row: " << *it<< " Inds: " << aIndices << std::endl;
+    
   for(typename ArrayView<const GlobalOrdinal>::iterator it2 = Bview.rowMap->getNodeElementList().begin();
       it2 != Bview.rowMap->getNodeElementList().end();
-      ++it2)
-  {
-      LocalOrdinal localBRow = Bview.rowMap->getLocalElement(*it2); 
+      ++it2){
+    //for(LocalOrdinal j = 0; j <Bview.numRows; j++){
+      LocalOrdinal localBRow = Bview.rowMap->getLocalElement(*it2);
       if(Bview.indices[localBRow].size() == 0){
         continue;
       }
       Array<GlobalOrdinal> bIndices;
       Array<Scalar> bValues;
-      getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
+      if(Bview.remote[localBRow]){
+        getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
+      }
+      else{
+        getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.colMap);
+      }
+      //*fos << "B Rank: " << rank << " Global Row: " << *it2<< " Inds: " << bIndices << std::endl;
       Scalar product = 
         sparsedot(aValues(), aIndices(), bValues(), bIndices());
       if(product != 0){
+        //*fos << "Non zero sparse dot!" << std::endl;
+        //GlobalOrdinal cCol = Bview.rowMap->getGlobalElement(j);
+        //TEST_FOR_EXCEPTION(cCol == OrdinalTraits<GlobalOrdinal>::invalid(), std::runtime_error, "Couldn't find global row maping for " + j);
         cIndices.push_back(*it2);
         cValues.push_back(product);
       }
     }
+    //GlobalOrdinal cRow = Aview.rowMap->getGlobalElement(i);
+    //TEST_FOR_EXCEPTION(cRow == OrdinalTraits<GlobalOrdinal>::invalid(), std::runtime_error, "Couldn't find global row mapping for " + i);
     C.insertGlobalValues(*it, cIndices(), cValues());
   }
   //Real optimized version, not working.
@@ -1117,7 +1141,6 @@ void import_and_extract_views(
   Teuchos::reduceAll(*(Mrowmap->getComm()) , Teuchos::REDUCE_MAX, Mview.numRemote, Teuchos::outArg(globalMaxNumRemote) );
 
   if (globalMaxNumRemote > 0) {
-
     // Create a map that describes the remote rows of M that we need.
 
     Array<GlobalOrdinal> MremoteRows(Mview.numRemote);
@@ -1134,12 +1157,13 @@ void import_and_extract_views(
       }
     }
 
-    RCP<Map_t> MremoteRowMap = rcp(new Map_t(
+    RCP<const Map_t> MremoteRowMap = rcp(new Map_t(
       OrdinalTraits<GlobalOrdinal>::invalid(), 
       MremoteRows(), 
       Mrowmap->getIndexBase(), 
       Mrowmap->getComm(), 
       Mrowmap->getNode()));
+    //MremoteRowMap = form_map_union(MremoteRowMap, Mrowmap);
 
     // Create an importer with target-map MremoteRowMap and source-map Mrowmap.
     Import<LocalOrdinal, GlobalOrdinal, Node> importer(Mrowmap, MremoteRowMap);
@@ -1151,6 +1175,10 @@ void import_and_extract_views(
 
     // Save the column map of the imported matrix, so that we can convert indices back to global for arithmetic later
     Mview.importColMap = Mview.importMatrix->getColMap();
+    /*int rank = Mview.importMatrix->getComm()->getRank();
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
+    fos->setOutputToRootOnly(rank);
+    Mview.importMatrix->describe(*fos, Teuchos::VERB_EXTREME);*/
 
     // Finally, use the freshly imported data to fill in the gaps in our views of rows of M.
     for(size_t i=0; i < Mview.numRows; ++i) 
