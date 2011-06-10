@@ -42,6 +42,18 @@
 // @HEADER
 */
 
+/******************
+ * Package macros *
+ ******************/
+
+#define AMESOS2_VERSION "${AMESOS2_VERSION}"
+
+#define AMESOS2_RELEASE_DATE "${AMESOS2_RELEASE_DATE}"
+
+/******************
+ * Config Options *
+ ******************/
+
 /* define if new form of std::count is supported */
 #cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
 

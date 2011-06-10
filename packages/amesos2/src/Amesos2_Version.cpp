@@ -44,12 +44,14 @@
 #ifndef AMESOS2_VERSION_CPP
 #define AMESOS2_VERSION_CPP
 
+#include "Amesos2_config.h"
+
 #include <string>
 
 namespace Amesos {
 
 std::string version(){
-  return( "Amesos2 version AMESOS2_VERSION - PACKAGE_RELEASE_DATE");
+  return( "Amesos2 version " AMESOS2_VERSION " - " AMESOS2_RELEASE_DATE );
 }
 
 } // end namespace Amesos

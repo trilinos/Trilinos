@@ -6,8 +6,8 @@ INCLUDE(PackageMacros)
 
 PACKAGE(Amesos2)
 
-SET(${PACKAGE_NAME}_VERSION "0.1d")
-SET(${PACKAGE_NAME}_RELEASE_DATE "06/06/2011")
+SET(${PACKAGE_NAME_UC}_VERSION "0.1d")
+SET(${PACKAGE_NAME_UC}_RELEASE_DATE "06/06/2011")
 
 #
 # B) Set up package-specific options
@@ -19,12 +19,12 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_EXPERIMENTAL
   OFF )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_EpetraExt
-  HAVE_AMESOS2_EPETRAEXT
+  HAVE_${PACKAGE_NAME_UC}_EPETRAEXT
   "Enable EpetraExt functionality (for examples and testing)"
   ${Trilinos_ENABLE_EpetraExt} )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Epetra
-  HAVE_AMESOS2_EPETRA
+  HAVE_${PACKAGE_NAME_UC}_EPETRA
   "Enable support for Epetra matrix and multivector objects"
   ${Trilinos_ENABLE_Epetra} )
 
@@ -33,19 +33,19 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Epetra
 # Add options to enable TPL solver interfaces
 #
 
-#ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KLU2
-  #HAVE_AMESOS2_KLU2
-  #"Enable KLU2 functionality."
-  #ON )
+# ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KLU2
+#   HAVE_AMESOS2_KLU2
+#   "Enable KLU2 functionality."
+#   ON )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLU
-  HAVE_AMESOS2_SUPERLU
-  "Enable Superlu functionality."
+  HAVE_${PACKAGE_NAME_UC}_SUPERLU
+  "Enable SuperLU functionality.  Requires the SuperLU TPL."
   ON )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLUMT
-  HAVE_AMESOS2_SUPERLUMT
-  "Enable SuperLU_MT functionality."
+  HAVE_${PACKAGE_NAME_UC}_SUPERLUMT
+  "Enable SuperLU_MT functionality.  Requires the SuperLUMT TPL"
   OFF )
 
 
