@@ -126,11 +126,16 @@ int main(int argc, char *argv[]) {
   /*                                                                                */
   /**********************************************************************************/
 
+  // dump matrix to file
+  //std::string fileName = "Amat.mm";
+  //Utils::Write(fileName,Op);
+
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
   Teuchos::Array<ST::magnitudeType> norms(1);
   nullSpace->norm1(norms);
-  std::cout << "||NS|| = " << norms[0] << std::endl;
+  if (comm->getRank() == 0)
+    std::cout << "||NS|| = " << norms[0] << std::endl;
 
   RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -156,6 +161,7 @@ int main(int argc, char *argv[]) {
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
+  //Pfact->SetDampingFactor(0.);
   RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
@@ -164,6 +170,13 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: type", "Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  /*
+  ifpackList.set("type", "Chebyshev");
+  ifpackList.set("chebyshev: degree", (int) 1);
+  ifpackList.set("chebyshev: max eigenvalue", (double) 2.0);
+  ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
+  ifpackList.set("chebyshev: zero starting solution", false);
+  */
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
     smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
@@ -182,8 +195,14 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList status;
   status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
-  std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
+  //RCP<MueLu::Level<SC,LO,GO,NO,LMO> > coarseLevel = H.GetLevel(1);
+  //RCP<Operator> P = coarseLevel->GetP();
+  //fileName = "Pfinal.mm";
+  //Utils::Write(fileName,P);
+  if (comm->getRank() == 0) {
+    std::cout  << "======================\n Multigrid statistics \n======================" << std::endl;
+    status.print(std::cout,Teuchos::ParameterList::PrintOptions().indent(2));
+  }
 
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
 
@@ -219,7 +238,8 @@ int main(int argc, char *argv[]) {
   X->setSeed(846930886);
   X->randomize();
   X->norm2(norms);
-  std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+  if (comm->getRank() == 0)
+    std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
@@ -231,7 +251,8 @@ int main(int argc, char *argv[]) {
     H->Iterate(*RHS,its,*X);
 
     X->norm2(norms);
-    std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+    if (comm->getRank() == 0)
+      std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
 
   //#define JG_TODO
