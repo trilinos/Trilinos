@@ -36,9 +36,9 @@ namespace Rythmos {
 
 /** \brief Compare two times taking into account floating point errors.
  *
- * \returns Return <tt> -1 </tt> if <tt> v1 < v2  </tt>, 
- *                 <tt>  0 </tt> if <tt> v1 == v2 </tt> and 
- *                 <tt> +1 </tt> if <tt> v1 > v2  </tt>.
+ * \returns Return <tt> -1 </tt> if <tt> t1 < t2  </tt>, 
+ *                 <tt>  0 </tt> if <tt> t1 == t2 </tt> and 
+ *                 <tt> +1 </tt> if <tt> t1 > t2  </tt>.
  *
  * Note that this function compares t1 to t2 and not the other way around.
  *
@@ -55,6 +55,8 @@ namespace Rythmos {
  * the bool <tt>isAtOrPastEndTime</tt> may actually be <tt>false</tt>!  This
  * is especially a danger if IEEE floating point numerics are not being used
  * (and there are many systems that do not for speed and other reasons).
+ *
+ * \relates TimeRange
  */
 template<class TimeType>
 int compareTimeValues( const TimeType &t1, const TimeType &t2 );

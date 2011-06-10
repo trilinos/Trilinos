@@ -62,10 +62,12 @@ class ImplicitBDFStepperStepControl
     /** \name Overridden from StepControlStrategyBase */
     //@{
     /** \brief . */
-    void setRequestedStepSize(const StepperBase<Scalar>& stepper, const Scalar& stepSize, const StepSizeType& stepSizeType);
+    void setRequestedStepSize(const StepperBase<Scalar>& stepper,
+      const Scalar& stepSize, const StepSizeType& stepSizeType);
 
     /** \brief . */
-    void nextStepSize(const StepperBase<Scalar>& stepper, Scalar* stepSize, StepSizeType* stepSizeType, int* order);
+    void nextStepSize(const StepperBase<Scalar>& stepper, Scalar* stepSize,
+      StepSizeType* stepSizeType, int* order);
 
     /** \brief . */
     void setCorrection(
