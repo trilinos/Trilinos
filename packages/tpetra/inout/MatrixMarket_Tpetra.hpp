@@ -2429,8 +2429,7 @@ namespace Tpetra {
 		  }
 	      }
       }
-      }
-
+}
       /// \brief Print the multivector in Matrix Market format.
       ///
       /// Write the given Tpetra::MultiVector matrix to the given
