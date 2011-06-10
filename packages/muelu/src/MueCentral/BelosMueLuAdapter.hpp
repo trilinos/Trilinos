@@ -8,6 +8,10 @@
 #include "BelosEpetraAdapter.hpp"
 #endif
 
+#ifdef HAVE_CTHULHU_EPETRA
+#include "BelosTpetraAdapter.hpp"
+#endif
+
 #include "MueLu_Hierarchy.hpp"
 
 #include "BelosMueLuAdapterMultiVector.hpp" // this defines the MultiVecTraits for Cthulhu::MultiVector
@@ -47,15 +51,14 @@
 //
 
 namespace Belos { 
-  // TODO: Should this file be moved to Belos ?
-  // TODO: The relation between Belos and MueLu is: Belos uses MueLu as a Preconditionner. So it makes more sense to me.
+  // TODO: Should this file be moved to Belos ? The relation between Belos and MueLu is: Belos uses MueLu as a Preconditionner. So it makes more sense to me.
 
   // Here are a list of the Belos adapters for MueLu. To use Belos::LinearProblem<ScalarType,MV,OP> with:
   // A - MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>, turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp
-  // B - MV=Epetra_MultiVector          and OP=Epetra_Operator            , turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp (TODO: not available yet)
+  // B - MV=Epetra_MultiVector          and OP=Epetra_Operator            , turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp (TODO: not available yet, and it is actually an adapter Epetra/MueLu)
   // C - MV=Tpetra::MultiVector<...>    and OP=Tpetra_Operator<...>       , turns your MueLu::Hierarchy into a Belos::MueLuTpetraPrecOp (TODO: not available yet)
   // D - MV=Cthulhu::MultiVector<...>   and OP=Cthulhu::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuCthulhuPrecOp => TODO: this description have to be improved
-  // TODO: I can also quickly implements couples Tpetra::MultiVector/Cthulhu::Operator and Epetra_MultiVector/Cthulhu::Operator
+  // TODO: I can also quickly implements couples Tpetra::MultiVector/Cthulhu::Operator and Epetra_MultiVector/Cthulhu::Operator=> it's more for debugging...because it skip the CthulhuMultiVecTrait
 
   // -----------------------------------------------------------------------------------------------------------------------------------
   //  A: MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>
@@ -228,11 +231,13 @@ namespace Belos {
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
   class MueLuOp : 
-    public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+    public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ,
+    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > // mainly for debug: allow to skip the code of Cthulhu::MultiVectorTraits
   {  
     
     typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
     typedef Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMultiVector;
 
   public:
     
@@ -264,6 +269,28 @@ namespace Belos {
       Op_->apply(x,y);
     }
 
+    // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
+    /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
+      to it resulting in the Tpetra::MultiVector \c y, which is returned.
+      \note It is expected that any problem with applying this operator to \c x will be
+      indicated by an std::exception being thrown.
+    */
+    void Apply ( const TMultiVector& x, TMultiVector& y, ETrans trans=NOTRANS ) const {
+      TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+                         "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
+
+
+      TMultiVector & temp_x = const_cast<TMultiVector &>(x);
+
+      const Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(Teuchos::rcpFromRef(temp_x));
+      Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(Teuchos::rcpFromRef(y));
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      tY.putScalar(0.0);
+
+      Op_->apply(tX,tY);
+    }
+
   private:
   
     Teuchos::RCP<Operator> Op_;
@@ -275,10 +302,14 @@ namespace Belos {
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
-  class MueLuPrecOp : public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > { 
+  class MueLuPrecOp : 
+    public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >,
+    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > 
+  { 
     
     typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Hierarchy;
     typedef Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMultiVector; //TODO: remove for readability
 
   public:
     
@@ -313,6 +344,29 @@ namespace Belos {
       
     }
   
+    // TO SKIP THE TRAIT IMPLEMENTATION OF CTHULU::MULTIVECTOR
+    /*! \brief This routine takes the Tpetra::MultiVector \c x and applies the operator
+      to it resulting in the Tpetra::MultiVector \c y, which is returned.
+      \note It is expected that any problem with applying this operator to \c x will be
+      indicated by an std::exception being thrown.
+    */
+    void Apply ( const TMultiVector& x, TMultiVector& y, ETrans trans=NOTRANS ) const {
+
+      TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
+                         "Belos::MueLuTpetraPrecOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners."); 
+
+      TMultiVector & temp_x = const_cast<TMultiVector &>(x);
+
+      const Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(Teuchos::rcpFromRef(temp_x));
+      Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(Teuchos::rcpFromRef(y));
+
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      tY.putScalar(0.0);
+
+      Hierarchy_->Iterate( tX, 1, tY , true);
+      
+    }
+
   private:
   
     Teuchos::RCP<Hierarchy> Hierarchy_;
