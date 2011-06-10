@@ -37,7 +37,7 @@ using Tpetra::MultiVector;
 using Tpetra::Map;
 
 typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-typedef typename Platform::NodeType Node;
+typedef Platform::NodeType Node;
 
 int main(int argc, char *argv[]){
   typedef float SCALAR;
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
   typedef CrsMatrix<cmplx,LO,GO,Node> MAT;
   typedef ScalarTraits<cmplx> ST;
   typedef MultiVector<cmplx,LO,GO,Node> MV;
-  typedef typename ST::magnitudeType Mag;
+  typedef ST::magnitudeType Mag;
   typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 1;
 

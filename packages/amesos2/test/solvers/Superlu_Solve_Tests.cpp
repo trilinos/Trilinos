@@ -93,7 +93,7 @@ namespace {
   using Amesos::Util::is_same;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-  typedef typename Platform::NodeType Node;
+  typedef Platform::NodeType Node;
 
   bool testMpi = false;
 

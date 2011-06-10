@@ -119,7 +119,7 @@ bool test_tpetra(const string& mm_file,
 
 
 typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-typedef typename Platform::NodeType DefaultNode;
+typedef Platform::NodeType DefaultNode;
 
 int main(int argc, char*argv[])
 {
@@ -322,7 +322,7 @@ bool do_epetra_test(const string& mm_file,
   typedef Epetra_CrsMatrix MAT;
   typedef Epetra_MultiVector MV;
   typedef ScalarTraits<double> ST;
-  typedef typename ST::magnitudeType Mag;
+  typedef ST::magnitudeType Mag;
   typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 5;     // arbitrary number
 
