@@ -84,5 +84,19 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, emptyTest){
 
 }
 
+TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, streamTests){
+  TwoDArray<int> simpleArray(2,2);
+  simpleArray[0][0] =1;
+  simpleArray[0][1] =2;
+  simpleArray[1][0] =3;
+  simpleArray[1][1] =4;
+  std::stringstream ss;
+  ss << simpleArray;
+  TwoDArray<int> readArray;
+  ss >> readArray;
+  TEST_EQUALITY(simpleArray, readArray);
+}
+
+
 } //namespace Teuchos
 
