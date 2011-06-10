@@ -266,7 +266,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
-#  define DEBUG_UNIT_TEST_GROUP( T )
+#  define DEBUG_UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, view_size_zero, T )
 
 #else // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
@@ -278,7 +279,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
 #define UNIT_TEST_GROUP( T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, arrayView_construct_zero_size, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, arrayView, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, view_size_zero, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, assignmentOperator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, iterators, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, danglingView_std_vector, T ) \
