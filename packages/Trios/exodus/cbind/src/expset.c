@@ -123,7 +123,7 @@ int ex_put_set (int   exoid,
     entryptr = VAR_ELEM_SS(set_id_ndx);
     extraptr = VAR_SIDE_SS(set_id_ndx);
   }
-  if (set_type == EX_ELEM_SET) {
+  else if (set_type == EX_ELEM_SET) {
     entryptr = VAR_ELEM_ELS(set_id_ndx);
     extraptr = NULL;
   }

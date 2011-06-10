@@ -100,6 +100,7 @@ int main (int argc, char **argv)
   char *attrib_names[10];
   char name[MAX_STR_LENGTH+1];
   char title[MAX_LINE_LENGTH+1], elem_type[MAX_STR_LENGTH+1];
+  char title_chk[MAX_LINE_LENGTH+1];
   char *cdum = 0;
   char *prop_names[3];
 
@@ -146,6 +147,12 @@ int main (int argc, char **argv)
   printf ("num_node_sets = %3d\n",num_node_sets);
   printf ("num_side_sets = %3d\n",num_side_sets);
 
+  /* Check that ex_inquire gives same title */
+  error = ex_inquire (exoid, EX_INQ_TITLE, &idum, &fdum, title_chk);
+  if (strcmp(title, title_chk) != 0) {
+    printf ("error in ex_inquire for EX_INQ_TITLE\n");
+  }
+  
   /* read nodal coordinates values and names from database */
 
   x = (float *) calloc(num_nodes, sizeof(float));

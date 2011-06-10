@@ -512,6 +512,13 @@ enum ex_element_type {
 }; 
 typedef enum ex_element_type ex_element_type;
 
+enum ex_coordinate_frame_type {
+  EX_CF_RECTANGULAR =   1,
+  EX_CF_CYLINDRICAL =   2,
+  EX_CF_SPHERICAL   =   3
+}; 
+typedef enum ex_coordinate_frame_type ex_coordinate_frame_type;
+
 /* Internal structure declarations */
 
 struct elem_blk_parm

@@ -115,16 +115,111 @@ void ex_err(const char *module_name,
     fprintf(stderr, "[%s] %s\n",module_name,message);
     if (exoptval & EX_VERBOSE)
       fprintf(stderr, "    exerrval = %d\n",err_num);
-    switch (err_num) 
-    {
-      case NC_ESTS:
-        fprintf (stderr," In FORTRAN interface, string too small\n");
-        break;
-      case NC_EMAXNAME:
-        fprintf (stderr," length of name exceeds NC_MAX_NAME\n");
-        break;
-      case EX_MSG:
-        break;
+    switch (err_num) {
+    case NC_SYSERR:
+      fprintf (stderr," System error -- Usually disk full or filesystem issue\n");
+      break;
+    case NC_ESTS:
+      fprintf (stderr," In FORTRAN interface, string too small\n");
+      break;
+    case NC_EMAXNAME:
+      fprintf (stderr," length of name exceeds NC_MAX_NAME\n");
+      break;
+    case NC_EMAXDIMS:
+      fprintf (stderr," netcdf constraint NC_MAX_DIMS exceeded\n");
+      break;
+    case NC_EMAXVARS:
+      fprintf (stderr," netcdf constraint NC_MAX_VARS exceeded\n");
+      break;
+    case NC_EBADID:
+      fprintf (stderr," Not a netcdf id\n");
+      break;
+    case NC_ENFILE:
+      fprintf (stderr," Too many exodus (netcdf) files open\n");
+      break;
+    case NC_EEXIST:
+      fprintf (stderr," exodus (netcdf) file exists && NC_NOCLOBBER\n");
+      break;
+    case NC_EINVAL:
+      fprintf (stderr," Invalid Argument\n");
+      break;
+    case NC_EPERM:
+      fprintf (stderr," Write to read only\n");
+      break;
+    case NC_ENOTINDEFINE:
+      fprintf (stderr," Operation not allowed in data mode\n");
+      break;
+    case NC_EINDEFINE:
+      fprintf (stderr," Operation not allowed in define mode\n");
+      break;
+    case NC_EINVALCOORDS:
+      fprintf (stderr," Index exceeds dimension bound\n");
+      break;
+    case NC_ENAMEINUSE:
+      fprintf (stderr," String match to name in use\n");
+      break;
+    case NC_ENOTATT:
+      fprintf (stderr," Attribute not found\n");
+      break;
+    case NC_EMAXATTS:
+      fprintf (stderr," NC_MAX_ATTRS exceeded\n");
+      break;
+    case NC_EBADTYPE:
+      fprintf (stderr," Not a netcdf data type\n");
+      break;
+    case NC_EBADDIM:
+      fprintf (stderr," Invalid dimension id or name\n");
+      break;
+    case NC_EUNLIMPOS:
+      fprintf (stderr," NC_UNLIMITED in the wrong index\n");
+      break;
+    case NC_ENOTVAR:
+      fprintf (stderr," Variable not found\n");
+      break;
+    case NC_EGLOBAL:
+      fprintf (stderr," Action prohibited on NC_GLOBAL varid\n");
+      break;
+    case NC_ENOTNC:
+      fprintf (stderr," Not an exodus (netcdf) file\n");
+      break;
+    case NC_EUNLIMIT:
+      fprintf (stderr," NC_UNLIMITED size already in use\n");
+      break;
+    case NC_ENORECVARS:
+      fprintf (stderr," nc_rec op when there are no record vars\n");
+      break;
+    case NC_ECHAR:
+      fprintf (stderr," Attempt to convert between text & numbers\n");
+      break;
+    case NC_EEDGE:
+      fprintf (stderr," Start+count exceeds dimension bound\n");
+      break;
+    case NC_ESTRIDE:
+      fprintf (stderr," Illegal stride\n");
+      break;
+    case NC_EBADNAME:
+      fprintf (stderr," Attribute or variable name contains illegal characters\n");
+      break;
+    case NC_ERANGE:
+      fprintf (stderr," Math result not representable\n");
+      break;
+    case NC_ENOMEM:
+      fprintf (stderr," Memory allocation (malloc) failure\n");
+      break;
+    case NC_EVARSIZE:
+      fprintf (stderr," One or more variable sizes violate format constraints\n");
+      break;
+    case NC_EDIMSIZE:
+      fprintf (stderr," Invalid dimension size\n");
+      break;
+    case NC_ETRUNC:
+      fprintf (stderr," File likely truncated or possibly corrupted\n");
+      break;
+    case NC_EAXISTYPE:
+      fprintf (stderr," Unknown axis type.\n");
+      break;
+    case EX_MSG:
+      break;
     }
   } 
   /* save the error message for replays */

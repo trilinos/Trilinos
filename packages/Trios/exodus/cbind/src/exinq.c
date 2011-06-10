@@ -423,7 +423,7 @@ int ex_inquire (int   exoid,
   
   exerrval = 0; /* clear error code */
 
-  if (ret_char)  ret_char  = '\0';
+  if (ret_char)  *ret_char  = '\0';
   if (ret_int)   *ret_int   = 0;
 
   switch (req_info) {
