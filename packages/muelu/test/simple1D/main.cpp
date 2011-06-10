@@ -234,6 +234,7 @@ int main(int argc, char *argv[]) {
     std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
   
+#ifdef JG_TODO
   // Use AMG as a preconditioner in Belos
   {
     X->putScalar( (SC) 0.0);
@@ -303,6 +304,7 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 
   } // end of Belos
+#endif // JG_TODO
 
   return EXIT_SUCCESS;
 

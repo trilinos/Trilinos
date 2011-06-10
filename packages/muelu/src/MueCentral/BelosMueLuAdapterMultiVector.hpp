@@ -242,6 +242,10 @@ namespace Belos {
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
                                  Scalar beta, Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
     {
+      TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
+
+#ifdef JG_TODO
+
       KOKKOS_NODE_TRACE("Belos::MVT::MvTimesMatAddMv()")
 #ifdef HAVE_BELOS_CTHULHU_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
@@ -255,6 +259,8 @@ namespace Belos {
       Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > B_mv = Cthulhu::MultiVectorFactory<Scalar,LO,GO,Node>::Build(LocalMap,Bvalues,B.stride(),B.numCols());
       // multiply
       mv.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A, *B_mv, beta);
+
+#endif //JG_TODO
     }
 
     static void MvAddMv( Scalar alpha, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, Scalar beta, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& B, Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
@@ -270,6 +276,10 @@ namespace Belos {
 
     static void MvTransMv( Scalar alpha, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
     { 
+      TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
+
+#ifdef JG_TODO
+
       KOKKOS_NODE_TRACE("Belos::MVT::MvTransMv()")
 #ifdef HAVE_BELOS_CTHULHU_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
@@ -317,6 +327,7 @@ namespace Belos {
           }
         }
       }
+#endif // JG_TODO
     }
 
     static void MvDot( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
