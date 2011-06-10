@@ -12,6 +12,8 @@
 #include "Cthulhu_EpetraMap.hpp" 
 #include "Epetra_MultiVector.h"
 
+#include "Cthulhu_Trans.hpp"
+
 #include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
@@ -330,10 +332,21 @@ namespace Cthulhu {
     //! Compute max value of each vector in multi-vector.
     inline void maxValue(const Teuchos::ArrayView<double> &maxs) const { CTHULHU_DEBUG_ME; vec_->MaxValue(maxs.getRawPtr()); } //TODO: size() ?
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const double &alpha, const MultiVector<double,int,int> &A, const MultiVector<double,int,int> &B, const double &beta) { CTHULHU_DEBUG_ME; vec_->multiply(transA, transB, alpha, A, B, beta); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const double &alpha, const MultiVector<double,int,int> &A, const MultiVector<double,int,int> &B, const double &beta) { 
+      CTHULHU_DEBUG_ME; 
+
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "Cthulhu::EpetraMultiVector->multiply() only accept Cthulhu::EpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, B, eB, "Cthulhu::EpetraMultiVector->multiply() only accept Cthulhu::EpetraMultiVector as input arguments.");
+
+      // TODO: Check if following exception useful here.
+      TEST_FOR_EXCEPTION((transA != Teuchos::NO_TRANS) && (transA == Teuchos::TRANS), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraMultiVector->multiply() only accept transA == NO_TRANS or transA == TRANS");
+      TEST_FOR_EXCEPTION((transB != Teuchos::NO_TRANS) && (transB == Teuchos::TRANS), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraMultiVector->multiply() only accept transB == NO_TRANS or transB == TRANS");
+      bool eTransA = Teuchos2Epetra_Trans(transA);
+      bool eTransB = Teuchos2Epetra_Trans(transB);
+
+      CTHULHU_ERR_CHECK(vec_->Multiply(eTransA, eTransB, alpha, *eA.getEpetra_MultiVector(), *eB.getEpetra_MultiVector(), beta));
+    }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a EpetraMultiVector B.

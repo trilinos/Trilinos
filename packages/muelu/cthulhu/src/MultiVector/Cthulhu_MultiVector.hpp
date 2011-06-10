@@ -262,10 +262,8 @@ namespace Cthulhu {
     //! Compute max value of each vector in multi-vector.
     virtual void maxValue(const Teuchos::ArrayView<Scalar> &maxs) const =0;
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a MultiVector B.

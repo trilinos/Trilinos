@@ -398,10 +398,12 @@ namespace Cthulhu {
     //! Compute max value of each vector in multi-vector.
     inline void maxValue(const Teuchos::ArrayView<int> &maxs) const { CTHULHU_DEBUG_ME;       TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int> &A, const MultiVector<int,int,int> &B, const int &beta) { CTHULHU_DEBUG_ME; vec_->multiply(transA, transB, alpha, A, B, beta); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int> &A, const MultiVector<int,int,int> &B, const int &beta) { 
+      CTHULHU_DEBUG_ME; 
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "Not available in Epetra"); 
+    }
+
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a EpetraMultiVector B.

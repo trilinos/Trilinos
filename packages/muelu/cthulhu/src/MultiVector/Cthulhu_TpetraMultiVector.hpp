@@ -125,7 +125,7 @@ namespace Cthulhu {
     //! = Operator.
     /*! \param In A - Multivector to copy
      */
-    inline TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) { CTHULHU_DEBUG_ME; return vec_->(source); }
+    inline TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) { CTHULHU_DEBUG_ME; return vec_->(source); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //@}
@@ -319,7 +319,14 @@ namespace Cthulhu {
     inline void maxValue(const Teuchos::ArrayView<Scalar> &maxs) const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); vec_->meanValue(maxs); }
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) { CTHULHU_DEBUG_ME; vec_->multiply(transA, transB, alpha, A, B, beta); }
+    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) { 
+      CTHULHU_DEBUG_ME; 
+      
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, A, tA, "Cthulhu::TpetraMultiVectorMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, B, tB, "Cthulhu::TpetraMultiVectorMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+
+      vec_->multiply(transA, transB, alpha, *tA.getTpetra_MultiVector(), *tB.getTpetra_MultiVector(), beta); 
+    }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a TpetraMultiVector B.
@@ -328,7 +335,7 @@ namespace Cthulhu {
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-    inline void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
+    inline void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
 #endif // CTHULHU_NOT_IMPLEMENTED
     //@} 
 
