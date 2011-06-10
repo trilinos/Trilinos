@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package
+//           Amesos2: Templated Direct Sparse Solver Package 
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,15 +45,14 @@
   \file   Amesos2_EpetraRowMatrixAdapter_def.hpp
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Tue Jul 20 00:05:08 CDT 2010
-
+  
   \brief  Amesos2::MatrixAdapter specialization for the
-	  Epetra_RowMatrix interface.
+          Epetra_RowMatrix interface.
 */
 
 #ifndef AMESOS2_EPETRA_ROWMATRIX_ADAPTER_DEF_HPP
 #define AMESOS2_EPETRA_ROWMATRIX_ADAPTER_DEF_HPP
 
-#include <Epetra_Import.h>
 
 namespace Amesos {
 
@@ -99,14 +98,14 @@ size_t MatrixAdapter<Epetra_RowMatrix>::getLocalNumCols() const
 MatrixAdapter<Epetra_RowMatrix>::global_size_type
 MatrixAdapter<Epetra_RowMatrix>::getGlobalNumRows() const
 {
-  return Teuchos::as<global_size_type>(mat_->RowMatrixRowMap().MaxAllGID() + 1);
+  return Teuchos::as<global_size_type>(mat_->NumGlobalRows());
 }
 
 
 MatrixAdapter<Epetra_RowMatrix>::global_size_type
 MatrixAdapter<Epetra_RowMatrix>::getGlobalNumCols() const
 {
-  return Teuchos::as<global_size_type>(mat_->RowMatrixColMap().MaxAllGID() + 1);
+  return Teuchos::as<global_size_type>(mat_->NumGlobalCols());
 }
 
 
@@ -147,7 +146,7 @@ MatrixAdapter<Epetra_RowMatrix>::getComm() const
   }
 
 #ifdef HAVE_MPI
-
+  
   RCP<const Epetra_MpiComm>
     mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm>(rcp(mat_->Comm().Clone()));
   if( mpiEpetraComm.get() ) {
@@ -156,19 +155,19 @@ MatrixAdapter<Epetra_RowMatrix>::getComm() const
   set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
   RCP<const Teuchos::MpiComm<int> >
     mpiComm = rcp(new Teuchos::MpiComm<int>(rawMpiComm));
-  return mpiComm;
+  return mpiComm; 
 }
 
 #endif // HAVE_MPI
-
+  
   // If you get here then the conversion failed!
   return Teuchos::null;
 }
 
 
 RCP<const Tpetra::Map<MatrixAdapter<Epetra_RowMatrix>::local_ordinal_type,
-		      MatrixAdapter<Epetra_RowMatrix>::global_ordinal_type,
-		      MatrixAdapter<Epetra_RowMatrix>::node_type> >
+                      MatrixAdapter<Epetra_RowMatrix>::global_ordinal_type,
+                      MatrixAdapter<Epetra_RowMatrix>::node_type> >
 MatrixAdapter<Epetra_RowMatrix>::getRowMap() const
 {
   Teuchos::Array<int> local_element_list(mat_->RowMatrixRowMap().NumMyElements());
@@ -179,18 +178,18 @@ MatrixAdapter<Epetra_RowMatrix>::getRowMap() const
   int index_base = mat_->RowMatrixRowMap().IndexBase();
 
   return( rcp(new Tpetra::Map<local_ordinal_type,global_ordinal_type>(
-	num_global_elements,
-	local_element_list,
-	index_base,
-	this->getComm())) );
+        num_global_elements,
+        local_element_list,
+        index_base,
+        this->getComm())) );
 }
 
 
 
 
 RCP<const Tpetra::Map<MatrixAdapter<Epetra_RowMatrix>::local_ordinal_type,
-		      MatrixAdapter<Epetra_RowMatrix>::global_ordinal_type,
-		      MatrixAdapter<Epetra_RowMatrix>::node_type> >
+                      MatrixAdapter<Epetra_RowMatrix>::global_ordinal_type,
+                      MatrixAdapter<Epetra_RowMatrix>::node_type> >
 MatrixAdapter<Epetra_RowMatrix>::getColMap() const
 {
   Teuchos::Array<int> local_element_list(mat_->RowMatrixColMap().NumMyElements());
@@ -201,10 +200,10 @@ MatrixAdapter<Epetra_RowMatrix>::getColMap() const
   int index_base = mat_->RowMatrixColMap().IndexBase();
 
   return( rcp(new Tpetra::Map<local_ordinal_type,global_ordinal_type>(
-	num_global_elements,
-	local_element_list,
-	index_base,
-	this->getComm())) );
+        num_global_elements,
+        local_element_list,
+        index_base,
+        this->getComm())) );
 }
 
 
@@ -216,8 +215,6 @@ MatrixAdapter<Epetra_RowMatrix>::getCrs(
   global_size_type& nnz,
   bool local)
 {
-  using Teuchos::as;
-
   RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
   const int root = 0;
@@ -233,18 +230,18 @@ MatrixAdapter<Epetra_RowMatrix>::getCrs(
     nnz = mat_->NumGlobalNonzeros();
   }
   TEST_FOR_EXCEPTION( ((rank == root)
-      && (as<size_t>(nzval.size()) < nnz)) ||
-    (local && (as<size_t>(nzval.size()) < nnz)),
+      && (Teuchos::as<size_t>(nzval.size()) < nnz)) ||
+    (local && (Teuchos::as<size_t>(nzval.size()) < nnz)),
     std::length_error,
     "nzval not large enough to hold nonzero values");
   TEST_FOR_EXCEPTION( ((rank == root)
-      && (as<size_t>(colind.size()) < nnz)) ||
-    (local && (as<size_t>(colind.size()) < nnz)),
+      && (Teuchos::as<size_t>(colind.size()) < nnz)) ||
+    (local && (Teuchos::as<size_t>(colind.size()) < nnz)),
     std::length_error,
     "colind not large enough to hold index values");
   TEST_FOR_EXCEPTION( ((rank == root)
-      && (as<global_ordinal_type>(rowptr.size()) < numrows + 1)) ||
-    (local && (as<global_ordinal_type>(rowptr.size()) < numrows + 1)),
+      && (Teuchos::as<global_ordinal_type>(rowptr.size()) < numrows + 1)) ||
+    (local && (Teuchos::as<global_ordinal_type>(rowptr.size()) < numrows + 1)),
     std::length_error,
     "rowptr not large enough to hold row index values");
   // TODO: Is there possibly a better way to test locality?
@@ -257,14 +254,14 @@ MatrixAdapter<Epetra_RowMatrix>::getCrs(
       mat_->NumMyRowEntries(row,rowNNZ);
       int nnzRet = 0;
       TEST_FOR_EXCEPTION(
-	mat_->ExtractMyRowCopy(
-	  row,
-	  rowNNZ,
-	  nnzRet,
-	  nzval.view(rowInd,rowNNZ).getRawPtr(),
-	  colind.view(rowInd,rowNNZ).getRawPtr()) != 0, // Method returns 0 on success
-	std::runtime_error,
-	"Error extracting row copy from Epetra_RowMatrix");
+        mat_->ExtractMyRowCopy(
+          row,
+          rowNNZ,
+          nnzRet,
+          nzval.view(rowInd,rowNNZ).getRawPtr(),
+          colind.view(rowInd,rowNNZ).getRawPtr()) != 0, // Method returns 0 on success
+        std::runtime_error,
+        "Error extracting row copy from Epetra_RowMatrix");
       rowInd += rowNNZ;
     }
     rowptr[numrows] = nnz;
@@ -280,162 +277,90 @@ MatrixAdapter<Epetra_RowMatrix>::getCrs(
      * assure that we do local operations as much as we can.  It may be
      * possible that two nodes have a copy of the same row, but we want to
      * prefer the root's copy in all cases.
-     *
+     * 
      * Now the processor with rank == root goes through the globally reduced
      * array: For indices that have -1, then it does a local row copy, for
      * others it gets the row copy from that processor indicated.  Meanwhile,
      * other processors are sending the rows they've been assigned (the global
      * rows corresponding to the indices in the reduced array that == their
      * rank) to the root.
-     *
-     * ETB 06/02/11 : For some reason, the reduceAll operation isn't
-     * always working for all matrices and processor counts.  Can't
-     * explain this.  Instead, we can use a, perhaps less efficient,
-     * import of the entire matrix to serial, and then use that
-     * local serial matrix for the row copy operations.
      */
 
-    // Array<int> minOwner(numrows); // Will hold global reduction
-    // Array<int> myRows(numrows,OrdinalTraits<int>::max());
-    // for( global_ordinal_type row = 0; row < numrows; ++row ){
-    //   // if global index is found on this node
-    //   if( mat_->RowMatrixRowMap().MyGID(row) ){
-    //     myRows[row] = (rank == root) ? -1 : rank;
-    //   }
-    // }
-    // // now perform global reduce of these arrays
-    // Teuchos::MinValueReductionOp<int,int> op;
-    // Teuchos::reduceAll(*comm, op, (int)myRows.size(),
-    //   myRows.getRawPtr(), minOwner.getRawPtr());
-
-    // int row_copy_return;
-    // Epetra_Map col_map = mat_->RowMatrixColMap();
-    // if( rank == root ){
-    //   global_size_type rowInd = 0;
-    //   int rowNNZ, nnzRet;
-    //   for( global_ordinal_type row = 0; row < numrows; ++row ){
-    //     int from = minOwner[row];
-    //     if( from == -1 ){       // Copy from myself
-    //       rowptr[row] = rowInd;
-    //       mat_->NumMyRowEntries(row,rowNNZ);
-    // 	  Array<local_ordinal_type> local_colind(rowNNZ);
-    //       nnzRet = 0;
-    //       row_copy_return = mat_->ExtractMyRowCopy(row,
-    //                                 rowNNZ,
-    //                                 nnzRet,
-    //                                 nzval.view(rowInd,rowNNZ).getRawPtr(),
-    //                                 local_colind.getRawPtr());
-    //       TEST_FOR_EXCEPTION( row_copy_return != 0, // Method returns 0 on success
-    //         std::runtime_error,
-    //         "Error extracting row copy from Epetra_RowMatrix");
-    // 	  // Transform local column ids into global ids
-    // 	  Array<local_ordinal_type>::iterator l_it;
-    // 	  for( l_it = local_colind.begin(); l_it != local_colind.end(); ++l_it ){
-    // 	    *l_it = col_map.GID(*l_it);
-    // 	  }
-    // 	  colind.view(rowInd,rowNNZ).assign(local_colind());
-    //       rowInd += rowNNZ;
-    //     } else {
-    //       rowptr[row] = rowInd;
-    //       Teuchos::receive(*comm, from, &rowNNZ);
-    //       Teuchos::receive(*comm, from, (int)rowNNZ,
-    //         colind.view(rowInd, rowNNZ).getRawPtr());
-    //       Teuchos::receive(*comm, from, (int)rowNNZ,
-    //         nzval.view(rowInd, rowNNZ).getRawPtr());
-    //       rowInd += rowNNZ;
-    //     }
-    //     rowptr[numrows] = nnz;
-    //   }
-    // } else {                  // I am not the root
-    //   int localNNZ = mat_->NumMyNonzeros();
-    //   Teuchos::Array<global_ordinal_type> colind_l(colind);
-    //   Teuchos::Array<scalar_type> nzval_l(nzval);
-    //   colind_l.resize(localNNZ);
-    //   nzval_l.resize(localNNZ);
-    //   global_ordinal_type rowInd = 0;
-    //   int rowNNZ, nnzRet;
-    //   for( global_ordinal_type row = 0; row < numrows; ++row ){
-    //     int from = minOwner[row];
-    //     if( from == rank ){   // I am responsible for this row
-    //       int my_row = mat_->RowMatrixRowMap().LID(row);
-    //       mat_->NumMyRowEntries(my_row,rowNNZ);
-    // 	  Array<local_ordinal_type> local_colind_l(rowNNZ);
-    //       nnzRet = 0;
-    // 	  row_copy_return = mat_->ExtractMyRowCopy(
-    // 				    my_row,
-    // 				    rowNNZ,
-    // 				    nnzRet,
-    // 				    nzval_l.view(rowInd, rowNNZ).getRawPtr(),
-    // 				    local_colind_l.getRawPtr());
-    //       TEST_FOR_EXCEPTION( row_copy_return != 0,
-    //         std::runtime_error,
-    //         "Error extraction row copy from Epetra_RowMatrix");
-
-    // 	  // Transform local column ids into global ids
-    // 	  Array<local_ordinal_type>::iterator l_it;
-    // 	  for( l_it = local_colind_l.begin(); l_it != local_colind_l.end(); ++l_it ){
-    // 	    *l_it = col_map.GID(*l_it);
-    // 	  }
-    // 	  colind_l.view(rowInd,rowNNZ).assign(local_colind_l());
-
-    //       // Send values, column indices, and row pointers to root
-    //       Teuchos::send(*comm, rowNNZ, root);
-    //       Teuchos::send(*comm, (int)rowNNZ,
-    //         colind_l.view(rowInd,rowNNZ).getRawPtr(), root);
-    //       Teuchos::send(*comm, (int)rowNNZ,
-    //         nzval_l.view(rowInd,rowNNZ).getRawPtr(), root);
-    //       rowInd += rowNNZ;   // This is purely local to this node
-    //     }
-    //   }
-    // }
-
-    Epetra_Map o_map = mat_->RowMatrixRowMap();
-
-    size_t num_my_elements;
-    if( getComm()->getRank() == 0 ){
-      num_my_elements = as<size_t>(numrows);
-    } else {
-      num_my_elements = Teuchos::OrdinalTraits<size_t>::zero();
-    }
-
-    Epetra_Map l_map( -1,	// do not locally replicate this matrix
-		      as<int>(num_my_elements),
-		      o_map.IndexBase(),
-		      o_map.Comm()));
-
-    Teuchos::RCP<matrix_type> l_mat;
-    l_mat = Teuchos::rcp(new matrix_type(l_map, as<int>(this->getMaxNNZ())));
-
-    Epetra_Import importer(l_map, o_map);
-
-    // General Epetra_RowMatrix does not support an import operation!
-    l_mat->Import(*mat_, importer, Insert);
-
-    // Finally, do copies
-    if( rank == root ){
-      global_size_type rowInd = as<global_size_type>(l_map.MinAllGID());
-      GlobalOrdinal maxRow = l_map.MaxAllGID();
-      for( GlobalOrdinal row = rowInd; row <= maxRow; ++row ){
-	rowptr[row] = as<global_size_type>(rowInd);
-	int rowNNZ;
-	l_mat->NumMyRowEntries(row, rowNNZ);
-	int nnzRet = 0;
-	int row_copy_return = l_mat->ExtractMyRowCopy(
-				       row,
-				       rowNNZ,
-				       nnzRet,
-				       nzval.view(rowInd,rowNNZ).getRawPtr(),
-				       colind.view(rowInd,rowNNZ).getRawPtr());
-	TEST_FOR_EXCEPTION( row_copy_return != 0,
-			    std::runtime_error,
-			    "Eror extracting row copy from Epetra_RowMatrix" );
-	TEST_FOR_EXCEPTION( rowNNZ != nnzRet,
-			    std::runtime_error,
-			    "Number of values returned different from"
-			    "number of values reported");
-	rowInd += as<global_size_type>(rowNNZ);
+    Array<int> minOwner(numrows); // Will hold global reduction
+    Array<int> myRows(numrows,OrdinalTraits<int>::max());
+    for( global_ordinal_type row = 0; row < numrows; ++row ){
+      // if global index is found on this node
+      if( mat_->RowMatrixRowMap().MyGID(row) ){
+        myRows[row] = (rank == root) ? -1 : rank;
       }
-      rowptr[maxRow+1] = as<global_size_type>(nnz);
+    }
+    // now perform global reduce of these arrays
+    Teuchos::MinValueReductionOp<int,int> op;
+    Teuchos::reduceAll(*comm, op, (int)myRows.size(),
+      myRows.getRawPtr(), minOwner.getRawPtr());
+
+    if( rank == root ){
+      global_size_type rowInd = 0;
+      int rowNNZ, nnzRet;
+      for( global_ordinal_type row = 0; row < numrows; ++row ){
+        int from = minOwner[row];
+        if( from == -1 ){       // Copy from myself
+          rowptr[row] = rowInd;
+          mat_->NumMyRowEntries(row,rowNNZ);
+          nnzRet = 0;
+          TEST_FOR_EXCEPTION(
+            mat_->ExtractMyRowCopy(
+              row,
+              rowNNZ,
+              nnzRet,
+              nzval.view(rowInd,rowNNZ).getRawPtr(),
+              colind.view(rowInd,rowNNZ).getRawPtr()) != 0, // Method returns 0 on success
+            std::runtime_error,
+            "Error extracting row copy from Epetra_RowMatrix");
+          rowInd += rowNNZ;
+        } else {
+          rowptr[row] = rowInd;
+          Teuchos::receive(*comm, from, &rowNNZ);
+          Teuchos::receive(*comm, from, (int)rowNNZ,
+            colind.view(rowInd, rowNNZ).getRawPtr());
+          Teuchos::receive(*comm, from, (int)rowNNZ,
+            nzval.view(rowInd, rowNNZ).getRawPtr());
+          rowInd += rowNNZ;
+        }
+        rowptr[numrows] = nnz;
+      }
+    } else {                  // I am not the root
+      int localNNZ = mat_->NumMyNonzeros();
+      Teuchos::Array<global_ordinal_type> colind_l(colind);
+      Teuchos::Array<scalar_type> nzval_l(nzval);
+      colind_l.resize(localNNZ);
+      nzval_l.resize(localNNZ);
+      global_ordinal_type rowInd = 0;
+      int rowNNZ, nnzRet;
+      for( global_ordinal_type row = 0; row < numrows; ++row ){
+        int from = minOwner[row];
+        if( from == rank ){   // I am responsible for this row
+          int my_row = mat_->RowMatrixRowMap().LID(row);
+          mat_->NumMyRowEntries(my_row,rowNNZ);
+          nnzRet = 0;
+          TEST_FOR_EXCEPTION(
+            mat_->ExtractMyRowCopy(
+              my_row,
+              rowNNZ,
+              nnzRet,
+              nzval_l.view(rowInd, rowNNZ).getRawPtr(),
+              colind_l.view(rowInd, rowNNZ).getRawPtr()) != 0,
+            std::runtime_error,
+            "Error extraction row copy from Epetra_RowMatrix");
+          // Send values, column indices, and row pointers to root
+          Teuchos::send(*comm, rowNNZ, root);
+          Teuchos::send(*comm, (int)rowNNZ,
+            colind_l.view(rowInd,rowNNZ).getRawPtr(), root);
+          Teuchos::send(*comm, (int)rowNNZ,
+            nzval_l.view(rowInd,rowNNZ).getRawPtr(), root);
+          rowInd += rowNNZ;   // This is purely local to this node
+        }
+      }
     }
   }
 }
@@ -462,7 +387,7 @@ MatrixAdapter<Epetra_RowMatrix>::getCcs(
 
   global_size_type numCols = 0;
   global_size_type numRows = 0;
-
+  
   if ( local ){
     numCols = getLocalNumCols();
     numRows = getLocalNumRows();
@@ -470,7 +395,7 @@ MatrixAdapter<Epetra_RowMatrix>::getCcs(
     numCols = getGlobalNumCols();
     numRows = getGlobalNumRows();
   }
-
+  
   Array<scalar_type> nzval_tmp(nzval.size());
   Array<global_ordinal_type> colind(nzval.size());
   Array<global_size_type> rowptr(numRows + 1);
@@ -479,7 +404,7 @@ MatrixAdapter<Epetra_RowMatrix>::getCcs(
   /* We now have a compressed-row storage format of this matrix.  We transform
    * this into a compressed-column format using a distribution-counting sort
    * algorithm, which is described by D.E. Knuth in TAOCP Vol 3, 2nd ed pg 78.
-
+   
    * Check the conditional execution here.  Also, we were having trouble with
    * Tpetra::CrsMatrix not reporting the correct global number of columns.
    */
@@ -515,10 +440,10 @@ MatrixAdapter<Epetra_RowMatrix>::getCcs(
       global_ordinal_type u = rowptr[row];
       global_ordinal_type v = rowptr[row + 1];
       for( global_ordinal_type j = u; j < v; ++j ){
-	global_ordinal_type i = count[colind[j]];
-	nzval[i] = nzval_tmp[j];
-	rowind[i] = row;
-	++(count[colind[j]]);
+        global_ordinal_type i = count[colind[j]];
+        nzval[i] = nzval_tmp[j];
+        rowind[i] = row;
+        ++(count[colind[j]]);
       }
     }
   }
@@ -589,7 +514,7 @@ MatrixAdapter<Epetra_RowMatrix>::getCcsAll(
 // {
 //   // TODO: implement!
 // }
-
+  
 
 // void
 // MatrixAdapter<Epetra_RowMatrix>::updateValuesCcs(
