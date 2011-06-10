@@ -136,7 +136,7 @@ int main(int argc, char*argv[])
   string xml_file("solvers_test.xml"); // default xml file
   bool allprint = false;
   Teuchos::CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("xml_params", &xml_file, "XML Parameters file");
+  cmdp.setOption("xml-params", &xml_file, "XML Parameters file");
   cmdp.setOption("all-print","root-print",&allprint,"All processors print to out");
   cmdp.setOption("filedir", &filedir, "Directory to search for matrix files");
   cmdp.setOption("verbosity", &verbosity, "Set verbosity level of output");
@@ -150,10 +150,8 @@ int main(int argc, char*argv[])
   }
 
   // set up output streams based on command-line parameters
-  Teuchos::oblackholestream blackhole;
-  std::ostream& out = ( (allprint || (rank == root)) ? std::cout : blackhole );
-  fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
-
+  fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  if( !allprint ) fos->setOutputToRootOnly( root );
 
   //Read the contents of the xml file into a ParameterList.
   if( verbosity > 0 ){
@@ -340,7 +338,7 @@ bool do_epetra_test(const string& mm_file,
 #endif
 
   if( verbosity > 2 ){
-    *fos << "      Reading matrix from " << mm_file << std::endl;
+    *fos << "      Reading matrix from " << mm_file << " ... ";
   }
   std::string path = filedir + mm_file;
   MAT* A;
@@ -349,6 +347,8 @@ bool do_epetra_test(const string& mm_file,
     *fos << "error reading file from disk, aborting run." << std::endl;
     return( false );
   }
+  if( verbosity > 2 ) *fos << "done" << std::endl;
+  if( verbosity > 3 ) A->Print(std::cout);
 
   const Epetra_Map dmnmap = A->DomainMap();
   const Epetra_Map rngmap = A->RangeMap();
@@ -370,7 +370,9 @@ bool do_epetra_test(const string& mm_file,
   B->SetLabel("B");
   Xhat->SetLabel("Xhat");
   X->Random();
+  if( verbosity > 2 ) *fos << "      Doing matvec multiply ... ";
   A->Multiply(transpose, *X, *B);
+  if( verbosity > 2 ) *fos << "done" << std::endl;
 
   RCP<MAT> A_rcp(A);
   RCP<Amesos::SolverBase> solver
@@ -378,9 +380,11 @@ bool do_epetra_test(const string& mm_file,
 
   solver->setParameters( rcpFromRef(solve_params) );
   try {
+    if( verbosity > 2 ) *fos << "      Solving system ... ";
     solver->symbolicFactorization().numericFactorization().solve();
+    if( verbosity > 2 ) *fos << "done" << std::endl;
   } catch ( std::exception e ){
-    *fos << "Exception encountered during solution." << std::endl;
+    *fos << "Exception encountered during solution: " << e.what() << std::endl;
     return( false );
   }
   if( verbosity > 2 ){
@@ -482,11 +486,23 @@ bool do_tpetra_test_with_types(const string& mm_file,
   RCP<Node>             node = platform.getNode();
 
   if( verbosity > 2 ){
-    *fos << "      Reading matrix from " << mm_file << std::endl;
+    *fos << "      Reading matrix from " << mm_file << " ... ";
   }
   std::string path = filedir + mm_file;
   RCP<MAT> A =
     Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path, comm, node);
+
+  if( verbosity > 2 ){
+    *fos << " done" << std::endl;
+    switch( verbosity ){
+    case 6:
+      A->describe(*fos, Teuchos::VERB_EXTREME); break;
+    case 5:
+      A->describe(*fos, Teuchos::VERB_HIGH); break;
+    case 4:
+      A->describe(*fos, Teuchos::VERB_LOW); break;
+    }
+  }
 
   RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > dmnmap = A->getDomainMap();
   RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rngmap = A->getRangeMap();
@@ -517,7 +533,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
   try {
     solver->symbolicFactorization().numericFactorization().solve();
   } catch ( std::exception e ){
-    *fos << "Exception encountered during solution." << std::endl;
+    *fos << "Exception encountered during solution." << e.what() << std::endl;
     return( false );
   }
   if( verbosity > 2 ){

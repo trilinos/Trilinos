@@ -279,8 +279,12 @@ namespace {
     RCP<const Comm<int> > comm = platform.getComm();
     RCP<Node>             node = platform.getNode();
 
+    out << "Reading file" << std::endl;
+
     RCP<MAT> A =
       Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../matrices/amesos2_test_mat1.mtx",comm,node);
+
+    out << "Done reading file" << std::endl;
 
     RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
     RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
@@ -297,13 +301,19 @@ namespace {
 
     Xhat->randomize();
 
+    out << "Creating solver" << std::endl;
+
     // Solve A*Xhat = B for Xhat using the Superlu solver
     RCP<Amesos::SolverBase> solver
       = Amesos::create<MAT,MV>("Superlu", A, Xhat, B );
 
+    out << "Done creating solver" << std::endl;
+
     solver->symbolicFactorization();
     solver->numericFactorization();
+    out << "Doing solve" << std::endl;
     solver->solve();
+    out << "Solve finished" << std::endl;
 
     Xhat->describe(out, Teuchos::VERB_EXTREME);
     X->describe(out, Teuchos::VERB_EXTREME);
