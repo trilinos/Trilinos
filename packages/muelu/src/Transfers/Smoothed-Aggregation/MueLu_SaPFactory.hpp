@@ -149,7 +149,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       //FIXME Cthulhu::Operator should calculate/stash max eigenvalue
       //FIXME SC lambdaMax = Op->GetDinvALambda();
 
-      if (lambdaMax != 0) {
+      if (dampingFactor_ != 0) {
         Teuchos::RCP< Operator > Op = fineLevel.GetA();
         RCP<Operator> D = Utils::BuildMatrixInverseDiagonal(Op);
         RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,Ptent);
