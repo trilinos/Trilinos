@@ -24,6 +24,14 @@
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
 	</ParameterList> 
+  <ParameterList name="smallBT">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/smallBTa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/smallBTb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/smallBTc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="true" type="bool"/>
+	</ParameterList> 
   <!-- Doesn't work but i might remove any way because it's so small
   <ParameterList name="cdt_system">
     <Parameter name="op" value="multiply" type="string"/>
