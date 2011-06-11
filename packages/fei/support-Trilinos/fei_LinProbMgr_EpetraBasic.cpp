@@ -87,12 +87,12 @@ void LinProbMgr_EpetraBasic
   std::vector<int>& rowOffsets = fei_srgraph_->rowOffsets;
 
   //First create an array of num-indices-per-row.
-  std::vector<int> numIndicesPerRow(rowNumbers.size());
+  std::vector<int> numIndicesPerRow; numIndicesPerRow.reserve(rowNumbers.size());
 
   int err;
   unsigned i;
   for(i=0; i<numIndicesPerRow.size(); ++i) {
-    numIndicesPerRow[i] = rowOffsets[i+1] - rowOffsets[i];
+    numIndicesPerRow.push_back(rowOffsets[i+1] - rowOffsets[i]);
   }
 
   bool static_profile = true;
