@@ -17,6 +17,7 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Zoltan_Parameters.hpp>
 
 //
 // TODO: doxygen comments and error handling and timing
@@ -49,6 +50,7 @@ char *align(char *buf, int nbytes, DeallocateAlignedBuffer *&dealloc)
   intptr_t ptr = reinterpret_cast<intptr_t>(buf);
 
   dealloc = new DeallocateAlignedBuffer;
+  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, 1, dealloc != NULL);
 
   if (nbytes < 2)
     return buf;
@@ -92,19 +94,23 @@ char *align(char *buf, int nbytes, DeallocateAlignedBuffer *&dealloc)
 template <typename T, typename LNO>
 void AlltoAll(const Teuchos::Comm<int> &comm,
               const Teuchos::ArrayView<T> &sendBuf,  // input
-              LNO count,                      // input
-              Teuchos::ArrayRCP<T> &recvBuf)  // output - allocated here
+              LNO count,                             // input
+              Teuchos::ArrayRCP<T> &recvBuf,         // output - allocated here
+              Teuchos::RCP<Zoltan_Parameters> &params) 
+            
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
 
-  if (count == 0) return;
+  if (count == 0) return;   // count is the same on all procs
 
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
 
   // Create a T-aligned receive buffer.
 
   T *ptr = new T [nprocs * count];
+
+  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, nprocs*count, ptr != NULL);
 
   Teuchos::ArrayRCP<T> inBuf(ptr, 0, nprocs * count, true);
 
@@ -131,11 +137,19 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
 
   for (int p=0; p < nprocs; p++){
     if (p != rank)
-      Teuchos::readySend<int, T>(comm, sendBuf.view(p*count, count), p);
+      try {
+        Teuchos::readySend<int, T>(comm, sendBuf.view(p*count, count), p);
+      } 
+      catch (const std::exception &e)
+        Z2_THROW_OUTSIDE_ERROR(params, e);
   }
 
   if (req.size() > 0){
-    Teuchos::waitAll<int>(comm, req);
+    try {
+      Teuchos::waitAll<int>(comm, req);
+    }
+    catch (const std::exception &e)
+      Z2_THROW_OUTSIDE_ERROR(params, e);
   }
 
   recvBuf = inBuf;
@@ -163,12 +177,17 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
               const Teuchos::ArrayView<T> &sendBuf,      // input
               const Teuchos::ArrayView<LNO> &sendCount,  // input
               Teuchos::ArrayRCP<T> &recvBuf,      // output, allocated here
-              Teuchos::ArrayRCP<LNO> &recvCount)  // output, allocated here
+              Teuchos::ArrayRCP<LNO> &recvCount,  // output, allocated here
+              Teuchos::RCP<Zoltan_Parameters > &params)  // output, allocated here
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
 
-  AlltoAll<LNO, LNO>(comm, sendCount, 1, recvCount);
+  try{
+    AlltoAll<LNO, LNO>(comm, sendCount, 1, recvCount);
+  }
+  catch (const std::exception &e)
+    throw (e);
 
   size_t totalIn=0, offsetIn=0, offsetOut=0;
 
@@ -180,7 +199,11 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
     }
   }
 
-  T *ptr = new T [totalIn];
+  T *ptr = NULL;
+  if (totalIn)
+    ptr = new T [totalIn];
+
+  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, totalIn, !totalIn || (ptr != NULL));
 
   Teuchos::ArrayRCP<T> inBuf(ptr, 0, totalIn, true);
 
@@ -193,15 +216,23 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
 
   // Post receives
 
+  Teuchos::CommRequest r;
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
 
   offsetIn = 0;
 
   for (int p=0; p < nprocs; p++){
     if (p != rank && recvCount[p] > 0){
-      Teuchos::ArrayRCP<T> recvBufPtr(inBuf.get() + offsetIn, 
-        0, recvCount[p], false);
-      req.push_back(Teuchos::ireceive<int, T>(comm, recvBufPtr, p));
+      Teuchos::ArrayRCP<T> recvBufPtr(inBuf.get() + offsetIn, 0, recvCount[p], false);
+
+      try{
+        r  = Teuchos::ireceive<int, T>(comm, recvBufPtr, p);
+      }
+      catch (const std::exception &e){
+        Z2_THROW_OUTSIDE_ERROR(params, e);
+      }
+    
+      req.push_back(r);
     }
     offsetIn += recvCount[p];
   }
@@ -216,14 +247,21 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
 
   for (int p=0; p < nprocs; p++){
     if (p != rank && sendCount[p] > 0){
-      Teuchos::readySend<int, T>(comm, 
-        sendBuf.view(offsetOut, sendCount[p]), p);
+      try{
+        Teuchos::readySend<int, T>(comm, sendBuf.view(offsetOut, sendCount[p]), p);
+      }
+      catch(const std::exception &e)
+        Z2_THROW_OUTSIDE_ERROR(params, e);
     }
     offsetOut += sendCount[p];
   }
 
   if (req.size() > 0){
-    Teuchos::waitAll<int>(comm, req);
+    try{
+      Teuchos::waitAll<int>(comm, req);
+    }
+    catch(const std::exception &e)
+      Z2_THROW_OUTSIDE_ERROR(params, e);
   }
 
   recvBuf = inBuf;
@@ -380,10 +418,13 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
   LNO            vLen=0)      // set if all vectors are the same length
 {
   int nprocs = comm.getSize();
-
-  LNO *sendSize = new LNO [nprocs];
   size_t totalSendSize = 0;
   LNO offset = 0;
+
+  // TODO these should be Teuchos::Ptr
+
+  LNO *sendSize = new LNO [nprocs];
+  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, nprocs, sendSize!= NULL);
 
   for (int p=0; p < nprocs; p++){
     if (sendCount[p] > 0){
@@ -399,7 +440,12 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
     }
   }
 
-  T *buf = new T [totalSendSize / sizeof(T)];
+  T *buf = NULL;
+
+  if (totalSendSize > 0)
+    buf = new T [totalSendSize / sizeof(T)];
+  
+  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, totalSendSize, !totalSendSize || (buf!= NULL));
 
   std::vector<T> *vptr = sendBuf.getRawPtr();
 
@@ -419,14 +465,14 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
   Teuchos::ArrayRCP<T> recvT;
   Teuchos::ArrayRCP<LNO> recvSize;
 
-  AlltoAllv<T, LNO>(comm, sendTView, sendSizeView,
-                            recvT, recvSize);
+  AlltoAllv<T, LNO>(comm, sendTView, sendSizeView, recvT, recvSize);
 
   delete [] buf;
   delete [] sendSize;
 
-  LNO *vectorCount = new LNO [nprocs];
   LNO totalCount = 0;
+  LNO *vectorCount = new LNO [nprocs];
+  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, nprocs, vectorCount != NULL);
 
   buf = recvT.get();
   charBuf = reinterpret_cast<char *>(buf);
@@ -445,7 +491,11 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
     }
   }
 
-  std::vector<T> *inVectors = new std::vector<T> [totalCount];
+  std::vector<T> *inVectors = NULL;
+  if (totalCount)
+    inVectors = new std::vector<T> [totalCount];
+
+  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, totalCount, !totalCount || (inVectors != NULL));
 
   buf = recvT.get();
   charBuf = reinterpret_cast<char *>(buf);

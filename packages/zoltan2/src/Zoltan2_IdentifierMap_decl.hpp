@@ -19,9 +19,18 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Zoltan_Parameters.hpp>
 
 namespace Z2
 {
+
+/*! \brief Identifier translations available from IdentifierMap.
+
+  GNO and LNO are the internal Zoltan2 global and local IDs.
+  GID and LID are the global and local IDs used by the caller.
+  The internal GNOs may be the same as the GIDs if the caller
+  used a data type that can be used as a Teuchos Ordinal.
+*/
 
 enum TranslationType {
   TRANSLATE_GNO_TO_GID,
@@ -49,6 +58,10 @@ private:
 
   Teuchos::RCP<const Teuchos::Comm<int> > _comm;
 
+  // Input communicator
+
+  Teuchos::RCP<Zoltan_Parameters> _params;
+
   // Application global and local IDs
 
   Teuchos::ArrayRCP<AppGID> _myGids; 
@@ -67,7 +80,6 @@ private:
   // A hash table from application local ID key to our local index.
 
   Teuchos::RCP<Teuchos::Hashtable<double, LNO> >  _lidHash;
-
 
   typename Teuchos::Array<GNO>::size_type _globalNumberOfIds;
   typename Teuchos::Array<GNO>::size_type _localNumberOfIds;
@@ -113,7 +125,11 @@ public:
    */
   bool gnosAreGids();
 
-  /*! Map application global IDs to internal global numbers or vice versa.
+  /*! Map the application global IDs to internal global numbers or vice versa.
+
+      \param gid an array of caller's global IDs
+      \param gno an array of Zoltan2 global numbers
+      \param tt should be TRANSLATE_GNO_TO_GID or TRANSLATE_GID_TO_GNO 
 
       This is a local call.  If gid is a vector of application global IDs, then
       gno will be set to the corresponding internal global numbers.  If the
@@ -129,6 +145,10 @@ public:
 
   /*! Map application local IDs to internal global numbers or vice versa.
 
+      \param lid an array of caller's local IDs
+      \param gno an array of Zoltan2 global numbers
+      \param tt should be TRANSLATE_GNO_TO_LID or TRANSLATE_LID_TO_GNO 
+
       This is a local call.  If lid is a vector of application local IDs, then
       gno will be set to the corresponding internal global numbers.  If the
       gno vector contains internal global numbers, they will be translated
@@ -139,12 +159,17 @@ public:
                     Teuchos::ArrayView<GNO> gno,
                     TranslationType tt);
 
-  /*! Map application global IDs to internal global numbers or vice versa.
+  /*! Map application global IDs to internal global numbers.
 
-      All processes must call this.  The global IDs or global numbers
-      supplied may belong to another process.  This method will fill
-      in the empty vector with the corresponding id, and will fill the
-      proc vector with the owner of the global ID.
+      \param in_gid input, an array of the Caller's global IDs
+      \param out_gno output, an array of the corresponding global numbers
+                          used by Zoltan2
+      \param out_proc output, an array of the process ranks corresponding with
+                         the in_gid and out_gno, out_proc[i] is the process
+                         that supplied in_gid[i] to Zoltan2.
+
+      All processes must call this.  The global IDs 
+      supplied may belong to another process.  
    */
   void gidGlobalTranslate( Teuchos::ArrayView<const AppGID> in_gid,
                            Teuchos::ArrayView<GNO> out_gno,

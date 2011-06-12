@@ -18,59 +18,53 @@
 /*! \file Zoltan2_IdentifierTraits.hpp
   \brief Defines basic traits for application supplied local and global IDs.
 
-    Note: Do not try to write an Identifier value to an ostream.  
-    Some Identifier data types can not be written to an ostream.
+  The data types permitted for global identifiers for Zoltan2 callers include
+  some that are not represented in Teuchos::OrdinalTraits.  A common case is
+  when a matrix nonzero is represented as an (i,j) pair.
+
+  Zoltan2 uses the IdentifierTraits structures to manage the application
+  supplied identifiers.
 */
 
 /*! \namespace Z2
   \brief Internal Zoltan2 namespace.
 
-  This namespace contains the objects and functions that are not
+  This namespace contains the internal symbols that are not
   part of the Zoltan2 user interface.
 */
-
 namespace Z2
 {
 
 /*! 
-    \brief Determine whether id type is a Teuchos communication Packet type.
-    \tparam T data type for identifier
-    \result true if it is a Teuchos Packet type
+    \brief Structure to catch invalid Indentifier types.
  */
-
-template <typename T>
-bool isPacket() {
-  return Teuchos::SerializationTraits<int, T>::supportsDirectSerialization;
-}
-
 template<typename T>
 struct UndefinedIdentifierTraits
 { 
-static inline T notDefined() { return T::Identifier_Type_Needs_To_Be_Added(); } };
+static inline T notDefined() { return T::Identifier_Type_Needs_To_Be_Added(); } 
+};
 
 
 /*! \struct IdentifierTraits
     \brief The functions to be defined for each valid id type.
-    \tparam  T the local or global identifier data type
+    \tparam  T the identifier data type
 */
 
 template<typename T>
 struct IdentifierTraits {
 
   /*! \brief Compute an integer hash code for the id.
-      \param id an application's local or global identifier
+      \param the id
       \result the integer code, need not be unique for each id
    */
-      
   static int hashCode(const T id) { 
    return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 
   /*! \brief Compute a key which will be unique for each id.
-      \param id an application's local or global identifier
+      \param the id
       \result the key
    */
-  
   static double key(const T id){
    return UndefinedIdentifierTraits<T>::notDefined(); 
   }
@@ -79,55 +73,56 @@ struct IdentifierTraits {
       \param the key
       \result the identifier that would have generated this key
    */
-
   static T keyToGid(const double x){
    return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 		
   /*! \brief The name of the identifier data type.
-      \result The name as a std::string.
+      \result The name
    */
-
   static inline std::string name() { 
     return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 
-  /*! \brief Inform caller if the data type can be used by Teuchos::hashCode.
-      \result true if the data type can be used with Teuchos::hashCode.
+  /*! \brief Determine whether the data type can be used by Teuchos::hashCode.
+      \result true if the data type can be used with Teuchos::hashCode
    */
-
   static inline bool isHashKeyType() {
     return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 
-  /*! \brief Inform caller if the data type is a Teuchos GlobalOrdinal
-      \result true if it is a Teuchos GlobalOrdinal
-   */
+  /*! \brief Determine whether the data type can be a Teuchos Ordinal
+      \result true if it can be a Teuchos Ordinal
 
+      Only data types with definitions in Teuchos_OrdinalTraits.hpp
+      can be used as Ordinals in Teuchos.
+   */
   static inline bool isGlobalOrdinalType() {
     return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 
-  /*! \brief Inform caller if the data type is a Teuchos Packet type 
-      \result true if it is a Teuchos Packet type
-   */
+  /*! 
+      \brief Determine whether the data type can be used in Teuchos communication.
+      \tparam T the data type 
+      \result true if it can be a Teuchos Packet type
 
+      Packet data types used in Teuchos_CommHelpers.hpp must have a definition in 
+      Teuchos::SerializationTraits.
+   */
   static inline bool isPacketType() {
     return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 
-  /*! \brief Determine if two identifiers are the same.
+  /*! \brief Determine if two identifiers are the same type.
       \result true if they are the same.
    */
-
   static inline bool equal(const T a, const T b) {
     return UndefinedIdentifierTraits<T>::notDefined(); 
   }
 
-  /*! \brief Determine if data type can be an application global ID.
+  /*! \brief Determine if data type can be used by Zoltan2 caller an application global ID.
       \result true if they can.
    */
-
   static inline bool is_valid_id_type() { return false; }
 };
 
@@ -142,7 +137,9 @@ struct IdentifierTraits<char> {
   static inline std::string name()     { return("char");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
-  static inline bool isPacketType() { return isPacket< char >(); }
+  static inline bool isPacketType() { 
+    return Teuchos::SerializationTraits<int, char>::supportsDirectSerialization;
+  }
   static inline bool equal(const char  a, const char  b) { return (a==b); }
   static inline bool is_valid_id_type() { return true; }
 };
@@ -157,7 +154,9 @@ struct IdentifierTraits<short int> {
   static inline std::string name()          { return("short int");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
-  static inline bool isPacketType() { return isPacket<short int>(); }
+  static inline bool isPacketType() { 
+    return Teuchos::SerializationTraits<int, short int>::supportsDirectSerialization;
+  }
   static inline bool equal(const short int a, const short int b) { 
     return (a==b) ; }
   static inline bool is_valid_id_type() { return true; }
@@ -171,7 +170,9 @@ struct IdentifierTraits<int> {
   static inline std::string name()    { return("int");}
   static inline bool isHashKeyType() { return true; }
   static inline bool isGlobalOrdinalType() { return true; }
-  static inline bool isPacketType() { return isPacket<int>(); }
+  static inline bool isPacketType() { 
+    return Teuchos::SerializationTraits<int, int>::supportsDirectSerialization;
+  }
   static inline bool equal(const  int a, const  int b) { 
     return (a==b) ; }
   static inline bool is_valid_id_type() { return true; }
@@ -188,7 +189,9 @@ struct IdentifierTraits<unsigned int> {
   static inline std::string name()             { return("unsigned int");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
-  static inline bool isPacketType() { return isPacket<unsigned int>(); }
+  static inline bool isPacketType() {
+    return Teuchos::SerializationTraits<int, unsigned int>::supportsDirectSerialization;
+  }
   static inline bool equal(const unsigned int a, const unsigned int b) { 
     return (a==b) ; }
   static inline bool is_valid_id_type() { return true; }
@@ -208,7 +211,9 @@ struct IdentifierTraits<long> {
   static inline std::string name()    { return("long");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
-  static inline bool isPacketType() { return isPacket<long>(); }
+  static inline bool isPacketType() { 
+    return Teuchos::SerializationTraits<int, long>::supportsDirectSerialization;
+  }
   static inline bool equal(const long a, const long b) { 
     return (a==b) ; }
   static inline bool is_valid_id_type() { return true; }
@@ -225,7 +230,9 @@ struct IdentifierTraits<unsigned long> {
   static inline std::string name()   { return("unsigned long");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
-  static inline bool isPacketType() { return isPacket<unsigned long>(); }
+  static inline bool isPacketType() { 
+    return Teuchos::SerializationTraits<int, unsigned long>::supportsDirectSerialization;
+  }
   static inline bool equal( const unsigned long a, 
     const unsigned long b) { return (a==b) ; }
   static inline bool is_valid_id_type() { return true; }
@@ -249,7 +256,9 @@ struct IdentifierTraits<long long> {
   static inline std::string name()    { return("long long");}
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return true; }
-  static inline bool isPacketType() { return isPacket<long long>(); }
+  static inline bool isPacketType() { 
+     return Teuchos::SerializationTraits<int, long long>::supportsDirectSerialization;
+  }
   static inline bool equal( const long long a, const long long b) { 
     return (a==b) ; }
   static inline bool is_valid_id_type() { return true; }
@@ -267,6 +276,8 @@ struct IdentifierTraits<unsigned long long > {
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return false; }
   static inline bool isPacketType() { 
+    return Teuchos::SerializationTraits<int, unsigned long long>::supportsDirectSerialization;
+  }
     return isPacket<unsigned long long>(); }
   static inline bool equal( const unsigned long long a, 
     const unsigned long long b) { return (a==b) ; }
@@ -308,7 +319,9 @@ struct IdentifierTraits<std::pair<T1, T2> > {
   }
   static inline bool isHashKeyType() { return false; }
   static inline bool isGlobalOrdinalType() { return false; }
-  static inline bool isPacketType() { return isPacket<std::pair<T1, T2> >(); }
+  static inline bool isPacketType() { 
+    return Teuchos::SerializationTraits<int, std::pair<T1, T2> >::supportsDirectSerialization;
+  }
   static inline bool equal( const std::pair<T1, T2> a, 
     const std::pair<T1, T2> b) { 
     return ((a.first==b.first) && (a.second==b.second)); }
