@@ -140,13 +140,14 @@ create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
     }
 
     emap = create_Epetra_Map(comm, ordered_local_eqns);
+    delete [] used_row;
   }
 
 //  EpetraExt::BlockMapToMatrixMarketFile("EBMap.np12.mm",emap,"AriaTest");
 
-  std::vector<int> rowLengths(numLocallyOwnedRows);
+  std::vector<int> rowLengths; rowLengths.reserve(numLocallyOwnedRows);
   for(int ii=0; ii<numLocallyOwnedRows; ++ii) {
-    rowLengths[ii] = rowOffsets[ii+1]-rowOffsets[ii];
+    rowLengths.push_back(rowOffsets[ii+1]-rowOffsets[ii]);
   }
 
   bool staticProfile = true;

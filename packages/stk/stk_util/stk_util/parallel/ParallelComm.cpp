@@ -42,7 +42,7 @@ bool all_to_all_dense( ParallelMachine p_comm ,
 
     std::vector<int> tmp( p_size * 4 );
 
-    int * const send_counts = & tmp[0] ;
+    int * const send_counts = (tmp.empty() ? NULL : & tmp[0]) ;
     int * const send_displs = send_counts + p_size ;
     int * const recv_counts = send_displs + p_size ;
     int * const recv_displs = recv_counts + p_size ;
@@ -156,8 +156,8 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
         msg << method << " LOCAL ERROR: " << result << " == MPI_Rsend , " ;
       }
       else {
-        MPI_Request * const p_request = & request[0] ;
-        MPI_Status  * const p_status  = & status[0] ;
+        MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
+        MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
 
         result = MPI_Waitall( num_recv , p_request , p_status );
       }
@@ -373,8 +373,8 @@ bool CommAll::allocate_buffers( const unsigned num_msg_bounds ,
     tmp[i] = m_send[i].size();
   }
 
-  const unsigned * const send_size = & tmp[0] ;
-  const unsigned * const recv_size = symmetric ? & tmp[0] : NULL ;
+  const unsigned * const send_size = (tmp.empty() ? NULL : & tmp[0]) ;
+  const unsigned * const recv_size = symmetric ? (tmp.empty() ? NULL : & tmp[0]) : NULL ;
 
   return allocate_buffers( m_comm, num_msg_bounds,
                            send_size, recv_size, local_flag );
@@ -443,7 +443,7 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 
     if ( send_none ) { tmp_send.resize( m_size , uzero ); }
 
-    const unsigned * const send = send_none ? & tmp_send[0] : send_size ;
+    const unsigned * const send = send_none ? (tmp_send.empty() ? NULL : & tmp_send[0]) : send_size ;
 
     m_send = CommBuffer::allocate( m_size , send );
 
@@ -457,12 +457,12 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 
         tmp_recv.resize( m_size , uzero );
 
-        unsigned * const r = & tmp_recv[0] ;
+        unsigned * const r = (tmp_recv.empty() ? NULL : & tmp_recv[0]) ;
 
         comm_sizes( m_comm , m_bound , m_max , send , r );
       }
 
-      const unsigned * const recv = recv_tbd  ? & tmp_recv[0] : recv_size ;
+      const unsigned * const recv = recv_tbd  ? (tmp_recv.empty() ? NULL : & tmp_recv[0]) : recv_size ;
 
       m_recv = CommBuffer::allocate( m_size , recv );
     }
@@ -788,8 +788,8 @@ bool comm_dense_sizes( ParallelMachine comm ,
   }
 
   {
-    unsigned * const ps = & send_buf[0] ;
-    unsigned * const pr = & recv_buf[0] ;
+    unsigned * const ps = (send_buf.empty() ? NULL : & send_buf[0]) ;
+    unsigned * const pr = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
     const int result =
        MPI_Alltoall( ps , 2 , MPI_UNSIGNED , pr , 2 , MPI_UNSIGNED , comm );
 
@@ -875,8 +875,8 @@ bool comm_sizes( ParallelMachine comm ,
     std::vector<unsigned> send_buf( p_size + 2 , uzero );
     std::vector<unsigned> recv_buf( p_size + 2 , uzero );
 
-    unsigned * const p_send = & send_buf[0] ;
-    unsigned * const p_recv = & recv_buf[0] ;
+    unsigned * const p_send = (send_buf.empty() ? NULL : & send_buf[0]) ;
+    unsigned * const p_recv = (recv_buf.empty() ? NULL : & recv_buf[0]) ;
 
     for ( unsigned i = 0 ; i < p_size ; ++i ) {
       recv_size[i] = 0 ; // Zero output
@@ -967,8 +967,8 @@ bool comm_sizes( ParallelMachine comm ,
     // Wait for all receives
 
     {
-      MPI_Request * const p_request = & request[0] ;
-      MPI_Status  * const p_status  = & status[0] ;
+      MPI_Request * const p_request = (request.empty() ? NULL : & request[0]) ;
+      MPI_Status  * const p_status  = (status.empty() ? NULL : & status[0]) ;
       result = MPI_Waitall( num_recv , p_request , p_status );
     }
     if ( MPI_SUCCESS != result ) {

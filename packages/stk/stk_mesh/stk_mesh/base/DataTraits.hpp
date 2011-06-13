@@ -50,6 +50,7 @@ template<> const DataTraits & data_traits< double >();
 template<> const DataTraits & data_traits< std::complex<float> >();
 template<> const DataTraits & data_traits< std::complex<double> >();
 
+template<> const DataTraits & data_traits< void * >();
 template<> const DataTraits & data_traits< signed   char * >();
 template<> const DataTraits & data_traits< unsigned char * >();
 template<> const DataTraits & data_traits< signed   short * >();

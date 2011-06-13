@@ -76,60 +76,155 @@ namespace stk {
 
 
     /*
-    static const SameRankRelationValue * getChildVectorPtr(  SameRankRelation& repo , Entity *parent)
-    {
-       SameRankRelation::const_iterator i = repo.find( parent );
+      static const SameRankRelationValue * getChildVectorPtr(  SameRankRelation& repo , Entity *parent)
+      {
+      SameRankRelation::const_iterator i = repo.find( parent );
       if (i != repo.end()) 
-        return &i->second;
+      return &i->second;
       else
-        return 0;
-    }
+      return 0;
+      }
     */
 
+#if PERCEPT_USE_FAMILY_TREE == 0
     /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
-    void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement, 
+    void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity& parent_elem, stk::mesh::Entity& newElement, 
                                                                unsigned ordinal, unsigned *numChild)
     {
 #if NEW_FIX_ELEMENT_SIDES
       VERIFY_OP(ordinal, < , getNumNewElemPerElem(), "logic error in set_parent_child_relations");
-      VERIFY_OP(&old_owning_elem, != , 0, "set_parent_child_relations: old_owning_elem is null");
+      VERIFY_OP(&parent_elem, != , 0, "set_parent_child_relations: parent_elem is null");
       VERIFY_OP(&newElement, != , 0, "set_parent_child_relations: newElement is null");
 
-      //eMesh.getBulkData()->declare_relation( old_owning_elem, newElement, ordinal);
-      
-      // is this necessary?
-      // eMesh.getBulkData()->declare_relation( newElement, old_owning_elem, 0u);
-      //static PerceptEntityVector empty_entity_vector;
-
-      if (0 == &old_owning_elem)
+      if (0 == &parent_elem)
         {
-          throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations old_owning_elem is null");
+          throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations parent_elem is null");
         }
 
-      PerceptEntityVector& entity_vector = eMesh.adapt_parent_to_child_relations()[&old_owning_elem];
-      /*
-      const PerceptEntityVector * entity_vector_ptr = getChildVectorPtr(eMesh.adapt_parent_to_child_relations(), &old_owning_elem);
-      if (!entity_vector_ptr)
-        {
-          eMesh.adapt_parent_to_child_relations()[&old_owning_elem] = PerceptEntityVector();
-        }
-      entity_vector_ptr = getChildVectorPtr(eMesh.adapt_parent_to_child_relations(), &old_owning_elem);
-      PerceptEntityVector& entity_vector = *entity_vector_ptr;
-      */
+      PerceptEntityVector& entity_vector = eMesh.adapt_parent_to_child_relations()[&parent_elem];
 
       //entity_vector.reserve(getNumNewElemPerElem());
+#if 0
       unsigned nchild = getNumNewElemPerElem();
       if (numChild) nchild = *numChild;
       if (entity_vector.size() != nchild)
         {
           entity_vector.resize(nchild);
         }
+#else
+      if (ordinal + 1 > entity_vector.size())
+        {
+          entity_vector.resize(ordinal+1);
+        }
+#endif
       entity_vector[ordinal] = &newElement;
 
       if (0) std::cout << "tmp here 12 ordinal= " << ordinal << " [ " << getNumNewElemPerElem() << "] newElement_ptr= "<< &newElement<< std::endl;
-
 #endif
     }
+
+#elif PERCEPT_USE_FAMILY_TREE == 1
+    /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
+    void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity& parent_elem, stk::mesh::Entity& newElement, 
+                                                               unsigned ordinal, unsigned *numChild)
+    {
+#if NEW_FIX_ELEMENT_SIDES
+
+      VERIFY_OP(ordinal, < , getNumNewElemPerElem(), "logic error in set_parent_child_relations");
+      VERIFY_OP(&parent_elem, != , 0, "set_parent_child_relations: parent_elem is null");
+      VERIFY_OP(&newElement, != , 0, "set_parent_child_relations: newElement is null");
+
+      //eMesh.getBulkData()->declare_relation( parent_elem, newElement, ordinal);
+      
+      // is this necessary?
+      // eMesh.getBulkData()->declare_relation( newElement, parent_elem, 0u);
+      //static PerceptEntityVector empty_entity_vector;
+
+      if (0 == &parent_elem)
+        {
+          throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations parent_elem is null");
+        }
+
+      const unsigned FAMILY_TREE_RANK = eMesh.element_rank() + 1u;
+      //static const unsigned FAMILY_TREE_RANK = 4u;
+      stk::mesh::Entity* family_tree = 0;
+      mesh::PairIterRelation parent_to_family_tree_relations = parent_elem.relations(FAMILY_TREE_RANK);
+      if (parent_to_family_tree_relations.size() == 0)
+        {
+          unsigned parent_id = parent_elem.identifier();
+
+          stk::mesh::PartVector add(1, &eMesh.getFEM_meta_data()->universal_part());
+          family_tree = & eMesh.getBulkData()->declare_entity(FAMILY_TREE_RANK, parent_id, add);
+          // from->to
+          eMesh.getBulkData()->declare_relation(*family_tree, parent_elem, 0u);
+          //std::cout << "tmp super->parent " << family_tree->identifier() << " -> " << parent_elem.identifier() << " " << parent_elem << std::endl;
+          parent_to_family_tree_relations = parent_elem.relations(FAMILY_TREE_RANK);
+        }
+
+      if (parent_to_family_tree_relations.size() == 1)
+        {
+          family_tree = parent_to_family_tree_relations[0].entity();
+        }
+      else
+        {
+          throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations no family_tree");
+        }
+
+      //entity_vector.reserve(getNumNewElemPerElem());
+      unsigned nchild = getNumNewElemPerElem();
+      if (numChild) nchild = *numChild;
+
+      //std::cout << "tmp super->child " << family_tree->identifier() << " -> " << newElement.identifier() << " [" << ordinal << "]" << newElement << std::endl;
+
+      eMesh.getBulkData()->declare_relation(*family_tree, newElement, ordinal + 1);  // the + 1 here is to give space for the parent
+
+      // add all the nodes for ghosting purposes
+      if (1)
+        {
+          
+          mesh::PairIterRelation elem_nodes = parent_elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          for (unsigned i = 0; i < elem_nodes.size(); i++)
+            {
+              bool found = false;
+              mesh::PairIterRelation ft_nodes = family_tree->relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+              for (unsigned j = 0; j < ft_nodes.size(); j++)
+                {
+                  if (ft_nodes[j].entity() == elem_nodes[i].entity())
+                    {
+                      found = true;
+                      break;
+                    }
+                }
+              if (!found)
+                {
+                  eMesh.getBulkData()->declare_relation(*family_tree, *elem_nodes[i].entity(), ft_nodes.size());
+                }
+            }
+
+          elem_nodes = newElement.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          for (unsigned i = 0; i < elem_nodes.size(); i++)
+            {
+              bool found = false;
+              mesh::PairIterRelation ft_nodes = family_tree->relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+              for (unsigned j = 0; j < ft_nodes.size(); j++)
+                {
+                  if (ft_nodes[j].entity() == elem_nodes[i].entity())
+                    {
+                      found = true;
+                      break;
+                    }
+                }
+              if (!found)
+                {
+                  eMesh.getBulkData()->declare_relation(*family_tree, *elem_nodes[i].entity(), ft_nodes.size());
+                }
+            }
+        }
+
+      if (0) std::cout << "tmp here 12 ordinal= " << ordinal << " [ " << getNumNewElemPerElem() << "] newElement_ptr= "<< &newElement<< std::endl;
+#endif
+    }
+#endif
 
   }
 }

@@ -44,7 +44,9 @@
 #include <stk_percept/SameRankRelation.hpp>
 
 
-//using namespace Intrepid;
+
+// if this is set, use stk_mesh relations to hold parent/child information, else use special data structures for this
+#define PERCEPT_USE_FAMILY_TREE 1
 
 using namespace shards;
 
@@ -162,6 +164,9 @@ namespace stk {
       int
       getNumberElementsLocallyOwned();
 
+      void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+      std::string printEntityCompact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+
       //========================================================================================================================
       /// low-level interfaces
       /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted
@@ -179,6 +184,7 @@ namespace stk {
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");
       void dumpElements(const std::string& partName = "");
+      void dumpElementsCompact();
 
       unsigned getRank() { return getBulkData()->parallel_rank(); }
       unsigned getParallelRank() { return getBulkData()->parallel_rank(); }
@@ -188,6 +194,32 @@ namespace stk {
         //throw std::runtime_error("not impl"); // FIXME
         bool isGhost = element.owner_rank() != getRank();
         return isGhost;
+      }
+
+      bool isChildElement( const stk::mesh::Entity& element, bool check_for_family_tree=true)
+      {
+        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+        stk::mesh::PairIterRelation child_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+        if (child_to_family_tree_relations.size()==0 )
+          {
+            if (check_for_family_tree)
+              {
+                std::cout << "no FAMILY_TREE_RANK relations: element= " << element << std::endl;
+                printEntity(std::cout, element);
+                throw std::runtime_error("no FAMILY_TREE_RANK relations: element");
+              }
+            else
+              {
+                return false;
+              }
+          }
+        stk::mesh::Entity *family_tree = child_to_family_tree_relations[0].entity();
+        stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element_rank());
+        stk::mesh::Entity *parent = family_tree_relations[0].entity();
+        if (&element == parent)
+          return false;
+        else
+          return true;
       }
 
       static inline

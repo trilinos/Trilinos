@@ -26,6 +26,7 @@
 #include <stk_io/IossBridge.hpp>
 #include <init/Ionit_Initializer.h>
 
+
 // template<typename Element>
 //   void clone(const VectorOfInt& oldElems, VectorOfInt& newElems, VectorOfCoord& nodePool, VectorOfCoord& newNodes, Transform& xform)
 // {
@@ -445,9 +446,19 @@ namespace stk
       stkMeshCreateBulkAfterMetaCommit(comm);
     }
 
+    static std::vector<std::string> get_entity_rank_names(unsigned dim)
+    {
+      std::vector<std::string> names = stk::mesh::fem::entity_rank_names(dim);
+#if PERCEPT_USE_FAMILY_TREE
+      names.push_back("FAMILY_TREE");
+#endif
+      return names;
+    }
+
     void SweepMesher::stkMeshCreateMetaNoCommit(stk::ParallelMachine& comm)
     {
-      m_metaData = new stk::mesh::fem::FEMMetaData(3); //  stk::mesh::fem::fem_entity_rank_names() );
+      //m_metaData = new stk::mesh::fem::FEMMetaData(3); //  stk::mesh::fem::fem_entity_rank_names() );  // FAMILY_TREE search
+      m_metaData = new stk::mesh::fem::FEMMetaData(3, get_entity_rank_names(3u) ); //  stk::mesh::fem::fem_entity_rank_names() );
       //m_metaData = & stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData);
       m_bulkData = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
       m_parts.resize(NUM_ELEM_TYPES);

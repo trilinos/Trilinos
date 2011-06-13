@@ -30,6 +30,8 @@ namespace mesh {
  *   stk::mesh::Field<double, stk::mesh::Cartesian>
  */
 
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( SimpleArrayTag )
+
 /**
  *   \brief Implement an shards::ArrayDimTag for Cartesian coordinate dimensions.
  *

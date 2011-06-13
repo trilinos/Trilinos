@@ -83,7 +83,7 @@ int VectorReducer::scatterToOverlap()
 //----------------------------------------------------------------------------
 int VectorReducer::gatherFromOverlap(bool accumulate)
 {
-  reducer_->assembleReducedVector(isSolution_, *target_, accumulate);
+  reducer_->assembleReducedVector(isSolution_, *target_);
   return(target_->gatherFromOverlap(accumulate));
 }
 

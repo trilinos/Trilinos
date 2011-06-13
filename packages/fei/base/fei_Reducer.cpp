@@ -839,7 +839,7 @@ Reducer::addVectorValues(int numValues,
   }
 
   if (rhs_vec_counter_ > 600) {
-    assembleReducedVector(soln_vector, feivec, sum_into);
+    assembleReducedVector(soln_vector, feivec);
   }
 
   return(0);
@@ -847,8 +847,7 @@ Reducer::addVectorValues(int numValues,
 
 void
 Reducer::assembleReducedVector(bool soln_vector,
-                               fei::Vector& feivec,
-                               bool sum_into)
+                               fei::Vector& feivec)
 {
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -871,14 +870,8 @@ Reducer::assembleReducedVector(bool soln_vector,
     fei::impl_utils::translate_to_reduced_eqns(*this, tmpVec1_);
 
     int which_vector = 0;
-    if (sum_into) {
-      feivec.sumIn(tmpVec1_.size(), &(tmpVec1_.indices()[0]),
-                   &(tmpVec1_.coefs()[0]), which_vector);
-    }
-    else {
-      feivec.copyIn(tmpVec1_.size(), &(tmpVec1_.indices()[0]),
-                    &(tmpVec1_.coefs()[0]), which_vector);
-    }
+    feivec.sumIn(tmpVec1_.size(), &(tmpVec1_.indices()[0]),
+                 &(tmpVec1_.coefs()[0]), which_vector);
   }
 
   fei::FillableVec& vec_i = fi_;
@@ -888,14 +881,8 @@ Reducer::assembleReducedVector(bool soln_vector,
     fei::impl_utils::translate_to_reduced_eqns(*this, csvec_i);
 
     int which_vector = 0;
-    if (sum_into) {
-      feivec.sumIn(csvec_i.size(), &(csvec_i.indices()[0]),
-                   &(csvec_i.coefs()[0]), which_vector);
-    }
-    else {
-      feivec.copyIn(csvec_i.size(), &(csvec_i.indices()[0]),
-                    &(csvec_i.coefs()[0]), which_vector);
-    }
+    feivec.sumIn(csvec_i.size(), &(csvec_i.indices()[0]),
+                 &(csvec_i.coefs()[0]), which_vector);
 
     vec_i.clear();
   }

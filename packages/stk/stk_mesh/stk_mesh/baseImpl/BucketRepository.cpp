@@ -77,8 +77,8 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
 
       if ( ibeg->not_equal_stride(*dim) ) {
 
-        Part & p_old = MetaData::get(field).get_part( ibeg->ordinal() );
-        Part & p_new = MetaData::get(field).get_part( dim->ordinal() );
+        Part & p_old = MetaData::get(field).get_part( ibeg->part_ordinal() );
+        Part & p_new = MetaData::get(field).get_part( dim->part_ordinal() );
 
         std::ostringstream msg ;
         msg << method ;

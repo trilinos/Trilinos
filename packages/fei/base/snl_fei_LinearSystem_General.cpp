@@ -524,7 +524,9 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
   fei::SharedPtr<fei::SparseRowGraph> remoteGraph =
     matrixGraph_->getRemotelyOwnedGraphRows();
 
-  CHK_ERR( snl_fei::gatherRemoteEssBCs(*essBCvalues_, remoteGraph.get(), *matrix) );
+  if (!BCenforcement_no_column_mod_) {
+    CHK_ERR( snl_fei::gatherRemoteEssBCs(*essBCvalues_, remoteGraph.get(), *matrix) );
+  }
 
   unsigned numBCRows = inner->getNumRows();
 
@@ -534,7 +536,7 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
        << numBCRows << FEI_ENDL;
   }
 
-  if (numBCRows > 0) {
+  if (numBCRows > 0 && !BCenforcement_no_column_mod_) {
     std::vector<int*> colIndices(numBCRows);
     std::vector<double*> coefs(numBCRows);
     std::vector<int> colIndLengths(numBCRows);

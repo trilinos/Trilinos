@@ -187,11 +187,11 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
   
   data.resize(field.raw_count() * field.raw_storage()->component_count());
   size_t data_size = data.size() * sizeof(double);
-  int retval = internal_get_field_data(field, &data[0], data_size);
+  int retval = internal_get_field_data(field, (data.empty() ? NULL : &data[0]), data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0)
-    field.transform(&data[0]);
+    field.transform((data.empty() ? NULL : &data[0]));
 
   return retval;
 }
@@ -211,11 +211,11 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
   
   data.resize(field.raw_count() * field.raw_storage()->component_count());
   size_t data_size = data.size() * sizeof(int);
-  int retval = internal_get_field_data(field, &data[0], data_size);
+  int retval = internal_get_field_data(field, (data.empty() ? NULL : &data[0]), data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0)
-    field.transform(&data[0]);
+    field.transform((data.empty() ? NULL : &data[0]));
 
   return retval;
 }
@@ -235,11 +235,11 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
   
   data.resize(field.raw_count() * field.raw_storage()->component_count());
   size_t data_size = data.size() * sizeof(char);
-  int retval = internal_get_field_data(field, &data[0], data_size);
+  int retval = internal_get_field_data(field, (data.empty() ? NULL : &data[0]), data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0)
-    field.transform(&data[0]);
+    field.transform((data.empty() ? NULL : &data[0]));
 
   return retval;
 }
@@ -260,11 +260,11 @@ int Ioss::GroupingEntity::get_field_data(const std::string& field_name,
 
   data.resize(field.raw_count() * field.raw_storage()->component_count());
   size_t data_size = data.size() * sizeof(Complex);
-  int retval = internal_get_field_data(field, &data[0], data_size);
+  int retval = internal_get_field_data(field, (data.empty() ? NULL : &data[0]), data_size);
 
   // At this point, transform the field if specified...
   if (retval >= 0)
-    field.transform(&data[0]);
+    field.transform((data.empty() ? NULL : &data[0]));
 
   return retval;
 }
@@ -282,8 +282,8 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::REAL);
   size_t data_size = data.size() * sizeof(double);
-  field.transform(&data[0]);
-  return internal_put_field_data(field, &data[0], data_size);
+  field.transform((data.empty() ? NULL : &data[0]));
+  return internal_put_field_data(field, (data.empty() ? NULL : &data[0]), data_size);
 }
 
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
@@ -299,8 +299,8 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::INTEGER);
   size_t data_size = data.size() * sizeof(int);
-  field.transform(&data[0]);
-  return internal_put_field_data(field, &data[0], data_size);
+  field.transform((data.empty() ? NULL : &data[0]));
+  return internal_put_field_data(field, (data.empty() ? NULL : &data[0]), data_size);
 }
 
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
@@ -316,8 +316,8 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::CHARACTER);
   size_t data_size = data.size() * sizeof(char);
-  field.transform(&data[0]);
-  return internal_put_field_data(field, &data[0], data_size);
+  field.transform((data.empty() ? NULL : &data[0]));
+  return internal_put_field_data(field, (data.empty() ? NULL : &data[0]), data_size);
 }
 
 int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
@@ -333,7 +333,7 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::COMPLEX);
   size_t data_size = data.size() * sizeof(Complex);
-  field.transform(&data[0]);
-  return internal_put_field_data(field, &data[0], data_size);
+  field.transform((data.empty() ? NULL : &data[0]));
+  return internal_put_field_data(field, (data.empty() ? NULL : &data[0]), data_size);
 }
 

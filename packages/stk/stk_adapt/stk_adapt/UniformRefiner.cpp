@@ -9,18 +9,6 @@
 
 #include <stk_adapt/UniformRefiner.hpp>
 
-//#define STK_ADAPT_HAS_GEOMETRY
-#undef STK_ADAPT_HAS_GEOMETRY
-#if defined( STK_ADAPT_HAS_GEOMETRY )
-#include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
-#include <stk_adapt/geometry/MeshGeometry.hpp>
-#include <stk_adapt/geometry/GeometryFactory.hpp>
-#endif
-
-// FIXME
-// #include <stk_mesh/baseImpl/EntityImpl.hpp>
-// #include <stk_mesh/base/Entity.hpp>
-// FIXME
 
 namespace stk {
   namespace adapt {

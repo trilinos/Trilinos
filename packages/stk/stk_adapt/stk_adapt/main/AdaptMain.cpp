@@ -271,6 +271,7 @@ namespace stk {
       std::string block_name_exc = "";
       std::string convert="";
       std::string refine="DEFAULT";
+      //std::string refine="";
       std::string enrich="";
       bool doRefineMesh = true;
       int load_balance = 1;
@@ -280,6 +281,7 @@ namespace stk {
       int number_refines = 1;
       int proc_rank_field = 0;
       int query_only = 0;
+      int progress_meter = 0;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -319,6 +321,7 @@ namespace stk {
       run_environment.clp.setOption("output_mesh"              , &output_mesh              , "output mesh name");
 
       run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
+      run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
 
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
       run_environment.clp.setOption("block_name"               , &block_name_inc           , block_name_desc_inc.c_str());
@@ -476,6 +479,7 @@ namespace stk {
                 breaker.setGeometryFile(input_geometry);
             breaker.setRemoveOldElements(remove_original_elements);
             breaker.setQueryPassOnly(query_only == 1);
+            breaker.setDoProgressMeter(progress_meter == 1);
             //breaker.setIgnoreSideSets(true);
 
             for (int iBreak = 0; iBreak < number_refines; iBreak++)

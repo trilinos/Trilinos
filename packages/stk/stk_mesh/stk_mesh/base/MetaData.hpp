@@ -21,6 +21,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/PropertyBase.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
 
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
@@ -845,10 +846,10 @@ bool MetaData::check_rank(EntityRank rank) const
 
 inline
 bool
-is_auto_declared_part(const Part &part) 
+is_auto_declared_part(const Part &part)
 {
   const std::string &part_name = part.name();
-  
+
   return !part_name.empty() && part_name[0] == '{';
 }
 

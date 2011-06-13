@@ -10,7 +10,7 @@
 namespace stk {
   namespace adapt {
     namespace unit_tests {
-      
+
       /// CONFIGURATIONS
       ///  you can choose to use regression testing or not (see always_do_regression_tests)
 
@@ -54,6 +54,11 @@ namespace stk {
                       bool diff_2 = PerceptMesh::mesh_difference(eMesh2, eMesh_gold, diff_msg, print_during_diff);
                       //std::cout << "tmp diff_2= " << diff_2 << std::endl;
                       diff = diff_2;
+                      if (diff_2)
+                        {
+                          //bool diff_3 =
+                            PerceptMesh::mesh_difference(eMesh2, eMesh_gold, diff_msg, true);
+                        }
                     }
 
                   STKUNIT_EXPECT_TRUE(!diff);
@@ -74,7 +79,7 @@ namespace stk {
 
 
       bool UnitTestSupport::always_do_regression_tests = true;
- 
+
     }
   }
 }

@@ -621,7 +621,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
     std::cout << "P[" << p_rank << "] nodeId_0 = " << nodeIds_onSE_0 << " node_0= " << node_0 << std::endl;
     if (p_size == 2)
     {
-      STKUNIT_EXPECT_EQ(nodeIds_onSE_0[0]->identifier(), 25u);
+      STKUNIT_EXPECT_EQ(nodeIds_onSE_0[0]->identifier(), 22u);
     }
 
     // end_demo

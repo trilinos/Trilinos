@@ -57,12 +57,21 @@ namespace stk {
         typedef stk::mesh::Field<Scalar, stk::mesh::Cartesian>    CoordFieldType;
         typedef stk::mesh::Field<Scalar*,stk::mesh::ElementNode>  CoordGatherFieldType;
 
+        static std::vector<std::string> get_entity_rank_names(unsigned dim)
+        {
+          std::vector<std::string> names = stk::mesh::fem::entity_rank_names(dim);
+#if PERCEPT_USE_FAMILY_TREE
+          names.push_back("FAMILY_TREE");
+#endif
+          return names;
+        }
+
         ~QuadFixture()
         {}
 
         QuadFixture( stk::ParallelMachine pm ,
                      unsigned nx , unsigned ny, bool generate_sidesets_in )
-          : meta_data(2, stk::mesh::fem::entity_rank_names(2) ),
+          : meta_data(2, get_entity_rank_names(2) ),
             bulk_data(  stk::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm ),
             quad_part( meta_data.declare_part("block_1", meta_data.element_rank() ) ),
             coord_field( meta_data.declare_field<CoordFieldType>("coordinates") ),

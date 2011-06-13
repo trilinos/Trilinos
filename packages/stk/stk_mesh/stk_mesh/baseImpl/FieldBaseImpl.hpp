@@ -87,8 +87,8 @@ public:
 
   const FieldRestrictionVector &restrictions() const ;
 
-  FieldBase * field_state( unsigned i) const {
-    return m_field_states[i];
+  FieldBase * field_state(FieldState fstate) const {
+    return m_field_states[fstate];
   }
 
   void insert_restriction( const char       * arg_method ,

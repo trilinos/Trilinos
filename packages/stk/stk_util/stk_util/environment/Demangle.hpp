@@ -11,7 +11,7 @@
 
 #include <string>
 
-#if __GNUC__ == 3 || __GNUC__ == 4
+#if __GNUC__ == 3 || __GNUC__ == 4 || defined __xlC__
 #define STK_USE_PLATFORM_DEMANGLER
 #endif
 

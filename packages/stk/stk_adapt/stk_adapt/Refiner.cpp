@@ -10,8 +10,6 @@
 #include <stk_adapt/Refiner.hpp>
 
 
-//#define STK_ADAPT_HAS_GEOMETRY
-#undef STK_ADAPT_HAS_GEOMETRY
 #if defined( STK_ADAPT_HAS_GEOMETRY )
 #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
 #include <stk_adapt/geometry/MeshGeometry.hpp>
@@ -20,20 +18,15 @@
 
 #include <stk_adapt/NodeRegistryDef.hpp>
 
-// FIXME
-// #include <stk_mesh/baseImpl/EntityImpl.hpp>
-// #include <stk_mesh/base/Entity.hpp>
-// FIXME
-
 namespace stk {
   namespace adapt {
 
     using namespace std;
     using namespace percept;
 
-    Refiner::Refiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
-      m_eMesh(eMesh), m_breakPattern(), 
-      m_nodeRegistry(0), 
+    Refiner::Refiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) :
+      m_eMesh(eMesh), m_breakPattern(),
+      m_nodeRegistry(0),
       m_proc_rank_field(proc_rank_field), m_doRemove(true), m_ranks(), m_ignoreSideSets(false),
       m_geomFile(""), m_geomSnap(false),
       m_doQueryOnly(false),
@@ -41,10 +34,17 @@ namespace stk {
       m_doProgress(true && (0 == eMesh.getRank()) )
     {
       bp.setSubPatterns(m_breakPattern, eMesh);
+      m_nodeRegistry = new NodeRegistry (m_eMesh);
+    }
+
+    Refiner::~Refiner()
+    {
+      if (m_nodeRegistry)
+        delete m_nodeRegistry;
     }
 
 #define EXTRA_PRINT_UR_GETBLOCKS 0
- 
+
     void Refiner::
     setGeometryFile(std::string file_name) { m_geomFile = file_name;
       m_geomSnap = true; }
@@ -61,17 +61,17 @@ namespace stk {
 
     bool Refiner::
     getDoProgressMeter() { return m_doProgress; }
-      
+
     void Refiner::
-    setIgnoreSideSets(bool ignore_ss) 
-    { 
+    setIgnoreSideSets(bool ignore_ss)
+    {
       m_ignoreSideSets= ignore_ss;
     }
 
     bool Refiner::
-    getIgnoreSideSets() 
-    { 
-      return m_ignoreSideSets; 
+    getIgnoreSideSets()
+    {
+      return m_ignoreSideSets;
     }
 
     void Refiner::
@@ -98,9 +98,9 @@ namespace stk {
       const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( rank );
 
       unsigned nele=0;
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (on_locally_owned_part(**k) && fromPartsSelector(**k) ) 
+          if (on_locally_owned_part(**k) && fromPartsSelector(**k) )
             //if ( on_locally_owned_part(**k) )
             {
               stk::mesh::Bucket & bucket = **k ;
@@ -120,7 +120,7 @@ namespace stk {
                       //exit(1);
                     }
 
-                  
+
                   if (elementType && (topo.getKey() != *elementType))
                     {
                     }
@@ -180,7 +180,7 @@ namespace stk {
     {
       if (0)
         {
-          std::cout 
+          std::cout
             << "sizeof(myVec) = " << sizeof(myVec) << " "
             << "sizeof(Relation) = " << sizeof(stk::mesh::Relation) << " "
             << "sizeof(Entity) = " << sizeof(stk::mesh::Entity) << " "
@@ -199,6 +199,8 @@ namespace stk {
     void Refiner::
     checkBreakPatternValidityAndBuildRanks(std::vector<stk::mesh::EntityRank>& ranks)
     {
+      ranks.resize(0);
+
       m_eMesh.getBulkData()->modification_begin();
       for (unsigned ibp = 0; ibp < m_breakPattern.size(); ibp++)
         {
@@ -232,7 +234,7 @@ namespace stk {
     applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-                
+
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
@@ -275,8 +277,18 @@ namespace stk {
 
       if (0) doPrintSizes();
 
-      NodeRegistry nr (m_eMesh);
-      m_nodeRegistry = &nr;
+      //NodeRegistry nr (m_eMesh);
+      //m_nodeRegistry = &nr;
+
+//       if (m_nodeRegistry)
+//         {
+//           delete m_nodeRegistry;
+//         }
+
+//        if (!m_nodeRegistry)
+//          {
+//            m_nodeRegistry = new NodeRegistry (m_eMesh);
+//          }
 
       CommDataType buffer_entry;
 
@@ -291,8 +303,7 @@ namespace stk {
       };
 #endif
 
-      std::vector<stk::mesh::EntityRank> ranks;
-
+      std::vector<stk::mesh::EntityRank>& ranks = m_ranks;
       // check logic of break pattern setup and also build ranks used vector
       checkBreakPatternValidityAndBuildRanks(ranks);
 
@@ -325,7 +336,7 @@ namespace stk {
               shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
 
               mesh::Selector selector(m_eMesh.getFEM_meta_data()->locally_owned_part());
-              if (fromPartsAll.size()) 
+              if (fromPartsAll.size())
                 {
                   selector = mesh::Selector();
                   for (unsigned ipart = 0; ipart < fromPartsAll.size(); ipart++)
@@ -345,7 +356,7 @@ namespace stk {
                 }
               std::vector<unsigned> count ;
               stk::mesh::count_entities( selector, *m_eMesh.getBulkData(), count );
-              if (count.size() < 3) 
+              if (count.size() < 3)
                 {
                   throw std::logic_error("logic error in Refiner m_refinementInfoByType");
                 }
@@ -380,7 +391,7 @@ namespace stk {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       // do the top level, all elements of this rank operation
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      unsigned num_elem_not_ghost_0 = 0; 
+      unsigned num_elem_not_ghost_0 = 0;
 
       ///////////////////////////////////////////////////////////
       ///// Do the mesh coloring step for each type of element
@@ -394,8 +405,8 @@ namespace stk {
           unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
           shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
 
-          if (TRACE_STAGE_PRINT) std::cout << "tmp Refiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] 
-                                           << " elementType= " << elementType 
+          if (TRACE_STAGE_PRINT) std::cout << "tmp Refiner:: irank = " << irank << " ranks[irank] = " << ranks[irank]
+                                           << " elementType= " << elementType
                                            << " cell_topo= " << cell_topo.getName()
                                            << std::endl;
 
@@ -404,7 +415,7 @@ namespace stk {
           // this gives a list of colored elements for this element type only
           stk::mesh::PartVector * fromParts = 0;
           fromParts = &(m_breakPattern[irank]->getFromParts());
-          
+
           //!FIXME add part info
           Colorer meshColorerThisTypeOnly(elementColorsByType[irank], ranks_one);   TRACE_PRINT("Refiner: Color mesh (all top level rank elements)... ");
           meshColorerThisTypeOnly.color(m_eMesh, &elementType, fromParts);          TRACE_PRINT("Refiner: Color mesh (all top level rank elements)...done ");
@@ -437,7 +448,7 @@ namespace stk {
 
           // register non-ghosted elements needs for new nodes, parallel create new nodes
           m_nodeRegistry->beginRegistration();
-      
+
           for (unsigned irank = 0; irank < ranks.size(); irank++)
             {
               unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
@@ -448,7 +459,12 @@ namespace stk {
 
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
-                unsigned num_elem_not_ghost_0_incr = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks);
+
+                bool count_only = false;
+                bool doAllElements = true;
+
+                unsigned num_elem_not_ghost_0_incr = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks,
+                                                                      count_only, doAllElements);
 
                 num_elem_not_ghost_0 += num_elem_not_ghost_0_incr;
               }
@@ -481,7 +497,9 @@ namespace stk {
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
-                num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, elementType, needed_entity_ranks, false, false);
+                bool count_only = false;
+                bool doAllElements = false;  // only do ghost elements
+                num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
               }
             }
           m_nodeRegistry->endCheckForRemote();                /**/   TRACE_PRINT("Refiner: endCheckForRemote (top-level rank)... ");
@@ -490,11 +508,11 @@ namespace stk {
             {
               std::cout << "num_elem= " << num_elem << std::endl;
               MPI_Barrier( MPI_COMM_WORLD );
-              std::cout << "P["<< m_eMesh.getRank() 
+              std::cout << "P["<< m_eMesh.getRank()
                         <<"] ========================================================================================================================" << std::endl;
               m_nodeRegistry->checkDB();
               MPI_Barrier( MPI_COMM_WORLD );
-              std::cout << "P["<< m_eMesh.getRank() 
+              std::cout << "P["<< m_eMesh.getRank()
                         <<"] ========================================================================================================================" << std::endl;
             }
 
@@ -524,7 +542,9 @@ namespace stk {
                 vector<NeededEntityType> needed_entity_ranks;
                 m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
 
-                num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks, false, false);
+                bool count_only = false;
+                bool doAllElements = false;   // ghost elements only
+                num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
               }
             }
 
@@ -536,11 +556,11 @@ namespace stk {
             {
               std::cout << "num_elem= " << num_elem << std::endl;
               MPI_Barrier( MPI_COMM_WORLD );
-              std::cout << "P["<< m_eMesh.getRank() 
+              std::cout << "P["<< m_eMesh.getRank()
                         <<"] ========================================================================================================================" << std::endl;
               m_nodeRegistry->checkDB();
               MPI_Barrier( MPI_COMM_WORLD );
-              std::cout << "P["<< m_eMesh.getRank() 
+              std::cout << "P["<< m_eMesh.getRank()
                         <<"] ========================================================================================================================" << std::endl;
             }
         }  // get from remote
@@ -549,14 +569,14 @@ namespace stk {
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       // for each element type, in top-down rank order, do the rest of the refinement operations
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      bulkData.modification_begin(); 
+      bulkData.modification_begin();
       for (unsigned irank = 0; irank < ranks.size(); irank++)
         {
           EXCEPTWATCH;
 
           unsigned elementType = m_breakPattern[irank]->getFromTypeKey();
-          if (TRACE_STAGE_PRINT) 
-            std::cout << "tmp Refiner:: irank = " << irank 
+          if (TRACE_STAGE_PRINT)
+            std::cout << "tmp Refiner:: irank = " << irank
                       << " ranks[irank] = " << ranks[irank] << " elementType= " << elementType << std::endl;
 
           std::vector<stk::mesh::EntityRank> ranks_one(1, ranks[irank]);
@@ -570,20 +590,21 @@ namespace stk {
 
           vector<stk::mesh::Entity *> new_elements;
 
-          //bulkData.modification_begin(); 
+          //bulkData.modification_begin();
 
           {
             EXCEPTWATCH;
 
             // count num new elements needed on this proc (served by UniformRefinerPattern)
-            bool count_only = true;  
+            bool count_only = true;
+            bool doAllElements = true;
             /**/                                                TRACE_PRINT("Refiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... ");
-            unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks, count_only);
+            unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
             /**/                                                TRACE_PRINT("Refiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done ");
 
             unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
 
-            if (0 && num_elem_not_ghost != num_elem_not_ghost_0) 
+            if (0 && num_elem_not_ghost != num_elem_not_ghost_0)
               {
                 std::cout << "num_elem_not_ghost_0 = " << num_elem_not_ghost_0 << " num_elem_not_ghost= " << num_elem_not_ghost << std::endl;
                 throw std::runtime_error("num_elem_not_ghost_0 != num_elem_not_ghost");
@@ -595,7 +616,7 @@ namespace stk {
             m_eMesh.createEntities( ranks[irank], num_elem_needed, new_elements);  /**/ TRACE_PRINT("Refiner: createEntities... ranks[irank]==ranks[0] done ");
             m_nodeRegistry->endLocalMeshMods();
 
-          } 
+          }
 
 
           /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -615,17 +636,18 @@ namespace stk {
 
           /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.]... ");
 #if !STK_ADAPT_URP_LOCAL_NODE_COMPS
+          if (0)
           {
             EXCEPTWATCH;
             //if (ranks[irank] == ranks[0])
             // only need to do this once: the map is fully built and we loop over the map's faces/edges, which are fixed after the getFromRemote step
-            if (irank == 0) 
+            if (irank == 0)
               {
                 if (0)
                   {
                     shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
 
-                    if (1) std::cout << "tmp Refiner:: calling addToExistingPartsNew() irank = " << irank << " ranks[irank] = " << ranks[irank] 
+                    if (1) std::cout << "tmp Refiner:: calling addToExistingPartsNew() irank = " << irank << " ranks[irank] = " << ranks[irank]
                                      << " cell_topo= " << cell_topo.getName()
                                      << std::endl;
                   }
@@ -635,7 +657,7 @@ namespace stk {
                 m_nodeRegistry->makeCentroid(m_eMesh.getCoordinatesField());
                 //std::cout << "tmp makeCentroid...done " << std::endl;
                 //std::cout << "tmp interpolateFields... " << std::endl;
-                m_nodeRegistry->interpolateFields();
+                //FIXME m_nodeRegistry->interpolateFields();
                 //std::cout << "tmp interpolateFields...done " << std::endl;
               }
           }
@@ -666,12 +688,40 @@ namespace stk {
           }
 
           /**/                                                TRACE_PRINT("Refiner: modification_end...start... ");
-          //FIXME FIXME FIXME 
+          //FIXME FIXME FIXME
           //bulkData.modification_end();
           /**/                                                TRACE_PRINT("Refiner: modification_end...done ");
 
         } // irank
 
+      /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.]... ");
+#if !STK_ADAPT_URP_LOCAL_NODE_COMPS
+      if (1)
+        {
+          EXCEPTWATCH;
+          // only need to do this once: the map is fully built and we loop over the map's faces/edges, which are fixed after the getFromRemote step
+
+          m_nodeRegistry->addToExistingPartsNew();
+          //std::cout << "tmp makeCentroid... " << std::endl;
+          m_nodeRegistry->makeCentroid(m_eMesh.getCoordinatesField());
+          //std::cout << "tmp makeCentroid...done " << std::endl;
+          //std::cout << "tmp interpolateFields... " << std::endl;
+          //FIXME m_nodeRegistry->interpolateFields();
+          //std::cout << "tmp interpolateFields...done " << std::endl;
+        }
+      //std::cout << "tmp dumpElements 1" << std::endl;
+      // m_eMesh.dumpElements();
+#endif
+      /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.] ...done ");
+
+
+      /***********************/                           TRACE_PRINT("Refiner: fixElementSides1 ");
+      fixElementSides1();
+      m_eMesh.adapt_parent_to_child_relations().clear();
+      /***********************/                           TRACE_PRINT("Refiner: fixElementSides1...done ");
+
+      //std::cout << "tmp dumpElements 2" << std::endl;
+      //m_eMesh.dumpElements();
 
       if (m_doRemove)
         {
@@ -680,8 +730,8 @@ namespace stk {
           //bulkData.modification_begin();
 
           /***********************/                           TRACE_PRINT("Refiner: fixElementSides1 ");
-          fixElementSides1();
-          m_eMesh.adapt_parent_to_child_relations().clear();
+          //           fixElementSides1();
+          //           m_eMesh.adapt_parent_to_child_relations().clear();
           /***********************/                           TRACE_PRINT("Refiner: fixElementSides1...done ");
 
           if (m_doProgress)
@@ -698,37 +748,29 @@ namespace stk {
                   notifyObservers(&pd);
                 }
 
+#if PERCEPT_USE_FAMILY_TREE
+              if (irank == 0)
+                removeFamilyTrees();
+#endif
+
               removeOldElements(ranks[irank], m_breakPattern[irank]);
               renameNewParts(ranks[irank], m_breakPattern[irank]);
               fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
-            } 
+            }
           if (m_doProgress)
             {
               ProgressMeterData pd(ProgressMeterData::FINI, 0.0, "removeOldElements");
               notifyObservers(&pd);
             }
- 
-          /**/                                                TRACE_PRINT("Refiner: modification_end...start ");
-          //bulkData.modification_end();
-          /**/                                                TRACE_PRINT("Refiner: modification_end...done ");
-        }
 
-#if defined( STK_ADAPT_HAS_GEOMETRY )
-      if (0 && m_geomSnap)
-        {
-          GeometryKernelOpenNURBS gk;
-          MeshGeometry mesh_geometry(&gk);
-          GeometryFactory factory(&gk, &mesh_geometry);
-          factory.read_file(m_geomFile, &m_eMesh);
-          mesh_geometry.snap_points_to_geometry(&m_eMesh);
         }
-#endif
 
       /**/                                                TRACE_PRINT("Refiner: modification_end...start... ");
       bulkData.modification_end();
       /**/                                                TRACE_PRINT("Refiner: modification_end...done ");
 
-      /**/                                                TRACE_PRINT( "Refiner:doBreak ... done");
+      //std::cout << "tmp dumpElements 3" << std::endl;
+      //m_eMesh.dumpElements();
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
       if (m_geomSnap)
@@ -741,6 +783,8 @@ namespace stk {
         }
 #endif
 
+      /**/                                                TRACE_PRINT( "Refiner:doBreak ... done");
+
       //std::cout << "tmp m_nodeRegistry.m_gee_cnt= " << m_nodeRegistry->m_gee_cnt << std::endl;
       //std::cout << "tmp m_nodeRegistry.m_gen_cnt= " << m_nodeRegistry->m_gen_cnt << std::endl;
 
@@ -748,7 +792,7 @@ namespace stk {
 
 
     unsigned Refiner::
-    doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
+    doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
                      vector< ColorerSetType >& elementColors, unsigned elementType,
                      vector<NeededEntityType>& needed_entity_ranks,
                      bool only_count, bool doAllElements)
@@ -767,7 +811,7 @@ namespace stk {
           notifyObservers(&pd);
         }
       int progress_meter_when_to_post = progress_meter_num_total / m_progress_meter_frequency;
-      if (0 == progress_meter_when_to_post) 
+      if (0 == progress_meter_when_to_post)
         progress_meter_when_to_post = 1;
       double d_progress_meter_num_total = progress_meter_num_total;
 
@@ -784,14 +828,14 @@ namespace stk {
 
           // do in threaded mode FIXME
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();
-               iele !=  elementColors[icolor].end(); 
+               iele !=  elementColors[icolor].end();
                iele++)
             {
               const stk::mesh::Entity * element_p =  *iele;
               const stk::mesh::Entity& element = * element_p;
 
               bool elementIsGhost = m_eMesh.isGhostElement(element);
-              if (!elementIsGhost) 
+              if (!elementIsGhost)
                 ++num_elem;
 
               if (!only_count && (doAllElements || elementIsGhost))
@@ -822,7 +866,7 @@ namespace stk {
 
     void Refiner::
     createElementsAndNodesAndConnectLocal(stk::mesh::EntityRank rank, UniformRefinerPatternBase *breakPattern,
-                                          vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,  
+                                          vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,
                                           vector<stk::mesh::Entity *>& new_elements_pool)
     {
       EXCEPTWATCH;
@@ -834,7 +878,7 @@ namespace stk {
 
       int jele = 0;
       int numPrints = 20;
-      
+
       // create new elements and connect them up
 
       for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
@@ -848,8 +892,8 @@ namespace stk {
       if (printEvery == 0) printEvery = 1;
       if (0)
         {
-          std::cout << "Refiner::createElementsAndNodesAndConnectLocal: rank= " << rank 
-                    << " elementColors.size() = " << elementColors.size() << " num elements = " << nele  
+          std::cout << "Refiner::createElementsAndNodesAndConnectLocal: rank= " << rank
+                    << " elementColors.size() = " << elementColors.size() << " num elements = " << nele
                     << " printEvery= " << printEvery
                     << std::endl;
         }
@@ -863,7 +907,7 @@ namespace stk {
         {
           TRACE_PRINT(  "Refiner:createElementsAndNodesAndConnectLocal color= " + percept::toString(icolor) + " [ " +
                         (percept::toString (((double)icolor)/((double)elementColors.size())*100 )).substr(0,4) + " %] ");
-          
+
           if (elementColors[icolor].size() == 0)
             {
               std::cout << "tmp elementColors size = 0!!!" << std::endl;
@@ -874,19 +918,19 @@ namespace stk {
 
           const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*first_element_p);
           CellTopology cell_topo(cell_topo_data);
-          
+
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();  iele !=  elementColors[icolor].end();  iele++)
             {
 
               stk::mesh::Entity* element_p = *iele;
-              if (!element_p) 
+              if (!element_p)
                 {
                   throw std::runtime_error("Refiner::createElementsAndNodesAndConnectLocal");
                 }
 
               if (0 && (jele % printEvery == 0))
                 {
-                  std::cout << "Refiner::createElementsAndNodesAndConnectLocal: element # = " << jele << " [" 
+                  std::cout << "Refiner::createElementsAndNodesAndConnectLocal: element # = " << jele << " ["
                             << (((double)jele)/((double)nele)*100.0) << " %]" << std::endl;
                 }
               if (m_doProgress && (jele % printEvery == 0))
@@ -901,7 +945,7 @@ namespace stk {
                 {
                   double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_proc_rank_field) , element );
                   fdata[0] = double(element.owner_rank());
-                  //if (1 || element.owner_rank() == 3) 
+                  //if (1 || element.owner_rank() == 3)
                   //  std::cout << "tmp element.owner_rank() = " << element.owner_rank() << std::endl;
                 }
 
@@ -925,7 +969,7 @@ namespace stk {
 
                   /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_createNewElements);
                 }
-              
+
               ++jele;
             }
         }
@@ -940,9 +984,9 @@ namespace stk {
 
     /// create a list of nodes from the new nodes that can be easily deciphered by the UniformRefinerPattern
     /// Returns the 3D array new_sub_entity_nodes[entity_rank][ordinal_of_sub_dim_entity][ordinal_of_node_on_sub_dim_entity]
-    
+
     bool Refiner::
-    createNewNeededNodeIds(const CellTopologyData * const cell_topo_data, 
+    createNewNeededNodeIds(const CellTopologyData * const cell_topo_data,
                            const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& new_sub_entity_nodes)
     {
       EXCEPTWATCH;
@@ -987,6 +1031,12 @@ namespace stk {
                         << std::endl;
             }
 
+          // ensure nodes don't get inadvertently reused
+          for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
+            {
+              new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd].resize(0);
+            }
+
           for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
             {
               // CHECK
@@ -998,13 +1048,42 @@ namespace stk {
                 }
               NodeIdsOnSubDimEntityType& nodeIds_onSE = *nodeIds_onSE_ptr;
 
+              if (nodeIds_onSE.size() == 0)
+                {
+                  new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd].resize(0);
+                  continue;
+                }
+
               if (!nodeIds_onSE[0]) {
-                
+
+                if (nodeIds_onSE.m_entity_id_vector[0] == 0)
+                  {
+                    // for debugging cases that may have inconsistent edge marking schemes
+#define DEBUG_ALLOW_0_ENTITY_ID_VECTOR 0
+                    if (DEBUG_ALLOW_0_ENTITY_ID_VECTOR)
+                      {
+                        continue;
+                      }
+                    else
+                      {
+                        std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << "
+                                  << " nodeIds_onSE.m_entity_id_vector[0] = " << nodeIds_onSE.m_entity_id_vector[0]
+                                  << " element= " << element
+                                  << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
+                                  << " iSubDimOrd = " << iSubDimOrd
+                                  <<  std::endl;
+                        std::cout << " element= ";
+                        m_eMesh.printEntity(std::cout, element, 0);
+
+                        throw std::logic_error("Refiner::createNewNeededNodeIds logic err #5.0, nodeIds_onSE.m_entity_id_vector[i_new_node] == 0");
+                      }
+                  }
+
                 stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
-                
+
                 if (!node1)
                   {
-                    std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " 
+                    std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << "
                               << " nodeIds_onSE.m_entity_id_vector[0] = " << nodeIds_onSE.m_entity_id_vector[0] << " node1= " << node1
                               << " element= " << element
                               << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
@@ -1020,7 +1099,7 @@ namespace stk {
                   const CellTopologyData * const cell_topo_data_0 = stk::percept::PerceptMesh::get_cell_topology(element);
                   CellTopology cell_topo_0(cell_topo_data_0);
 
-                  std::cout << "tmp 43 cell_topo= " << cell_topo_0.getName() << " ineed_ent= " << ineed_ent << " needed_entity_ranks[ineed_ent].first/second = " 
+                  std::cout << "tmp 43 cell_topo= " << cell_topo_0.getName() << " ineed_ent= " << ineed_ent << " needed_entity_ranks[ineed_ent].first/second = "
                             << needed_entity_ranks[ineed_ent].first << " "
                             << needed_entity_ranks[ineed_ent].second
                             << std::endl;
@@ -1047,8 +1126,28 @@ namespace stk {
                 }
               for (unsigned i_new_node = 0; i_new_node < num_new_nodes_needed; i_new_node++)
                 {
-                  if (!nodeIds_onSE[i_new_node]) 
+                  if (!nodeIds_onSE[i_new_node])
                     {
+                      if (nodeIds_onSE.m_entity_id_vector[i_new_node] == 0)
+                        {
+                          if (DEBUG_ALLOW_0_ENTITY_ID_VECTOR)
+                            {
+                              continue;
+                            }
+                          else
+                            {
+                              std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << "
+                                        << " nodeIds_onSE.m_entity_id_vector[0] = " << nodeIds_onSE.m_entity_id_vector[0]
+                                        << " element= " << element
+                                        << " needed_entity_ranks= " << needed_entity_ranks[ineed_ent].first
+                                        << " iSubDimOrd = " << iSubDimOrd
+                                        <<  std::endl;
+                              std::cout << " element= ";
+                              m_eMesh.printEntity(std::cout, element, 0);
+
+                            }
+                          throw std::logic_error("Refiner::createNewNeededNodeIds logic err #5.1, nodeIds_onSE.m_entity_id_vector[i_new_node] == 0");
+                        }
                       stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[i_new_node]);
 
                       if (!node1)
@@ -1058,6 +1157,7 @@ namespace stk {
                       nodeIds_onSE[i_new_node] = node1;
                     }
                   new_sub_entity_nodes[needed_entity_ranks[ineed_ent].first][iSubDimOrd][i_new_node] = nodeIds_onSE[i_new_node]->identifier();
+
                 }
             }
         }
@@ -1101,30 +1201,23 @@ namespace stk {
     }
 
 
-#if 0
-    static const SameRankRelationValue& getChildVector(  SameRankRelation& repo , stk::mesh::Entity *parent)
-    {
-      SameRankRelation::const_iterator i = repo.find( parent );
-      if (i != repo.end()) 
-        return i->second;
-      else
-        throw std::logic_error("Refiner::getChildVector: no child vec");
-    }
-#endif
 
+#if PERCEPT_USE_FAMILY_TREE == 0
     static const SameRankRelationValue * getChildVectorPtr(  SameRankRelation& repo , stk::mesh::Entity *parent)
     {
       SameRankRelation::const_iterator i = repo.find( parent );
-      if (i != repo.end()) 
+      if (i != repo.end())
         return &i->second;
       else
         return 0;
     }
+#endif
 
     /** Sets orientations and associativity of elements to sub-dimensional faces/edges after refinement.
      */
 #define EXTRA_PRINT_UR_FES 0
 
+#if PERCEPT_USE_FAMILY_TREE == 0
     void Refiner::
     fixElementSides1(stk::mesh::EntityRank side_rank)
     {
@@ -1194,7 +1287,7 @@ namespace stk {
               mesh::PairIterRelation parent_sides = parent->relations(side_rank);
               mesh::PairIterRelation side_to_parent = parent->relations(m_eMesh.element_rank());
 
-              //std::cout << "tmp here 1 child_nsides= " << child_nsides 
+              //std::cout << "tmp here 1 child_nsides= " << child_nsides
               //          << " parent_sides.size()=" << parent_sides.size() <<  " side_to_parent.size() = " << side_to_parent.size() << std::endl;
 
               for (unsigned i_parent_side = 0; i_parent_side < parent_sides.size(); i_parent_side++)
@@ -1228,8 +1321,8 @@ namespace stk {
                       int permIndex = -1;
                       int permPolarity = 1;
 
-                      // use of i_parent_side here implies that the children's sides match up with the parents, this could be untrue - 
-                      //  then will require a search through all child faces 
+                      // use of i_parent_side here implies that the children's sides match up with the parents, this could be untrue -
+                      //  then will require a search through all child faces
                       // NOTE: have to search over child faces due to different topology cases - if parent & child have same topology,
                       //   we can save a few ops here TODO FIXME
                       unsigned k_child_side = 0;
@@ -1250,7 +1343,7 @@ namespace stk {
                             {
                               PerceptMesh::element_side_permutation(*child, *parent_side_child, j_child_side, permIndex, permPolarity);
                               if (0)
-                                std::cout << "tmp j_child_side = " << j_child_side << " permIndex= " << permIndex 
+                                std::cout << "tmp j_child_side = " << j_child_side << " permIndex= " << permIndex
                                           << " child= " << *child
                                           << " parent_side_child= " << *parent_side_child
                                           <<  std::endl;
@@ -1266,7 +1359,7 @@ namespace stk {
                       if (permIndex >= 0)
                         {
                           if (0)
-                            std::cout << "tmp decl rel permIndex= " << permIndex 
+                            std::cout << "tmp decl rel permIndex= " << permIndex
                                       << " child= " << *child
                                       << " parent_side_child= " << *parent_side_child
                                       <<  std::endl;
@@ -1284,19 +1377,266 @@ namespace stk {
         }
     }
 
+#elif PERCEPT_USE_FAMILY_TREE == 1
+
+    void Refiner::
+    fixElementSides1(stk::mesh::EntityRank side_rank)
+    {
+      EXCEPTWATCH;
+
+      bool notFound = true;
+      for (unsigned ibp = 0; ibp < m_breakPattern.size(); ibp++)
+        {
+          // only check the side elements
+          if (m_breakPattern[ibp]->getPrimaryEntityRank() == side_rank)
+            {
+              notFound = false;
+            }
+        }
+      if (notFound)
+        {
+          std::cout << "Refiner::fixElementSides1: missing sub-dim break pattern - logic error\n"
+            " ---- for this refinement pattern to be able to handle sidesets and edgesets you must provide the sub-dim break pattern\n"
+            " ---- or you must set the setIgnoreSideSets() flag " << std::endl;
+          throw std::logic_error("Refiner::fixElementSides1: missing sub-dim break pattern - logic error");
+          return;
+        }
+
+
+      // FIXME
+      const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( FAMILY_TREE_RANK );
+
+      //std::cout << "tmp parent_child.size() = " << parent_child.size() << std::endl;
+
+      // loop over all the available parent/child relations by looping over the super-nannies (entities of rank  = 1+element_rank() )
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          stk::mesh::Bucket & bucket = **k ;
+          const unsigned num_elements_in_bucket = bucket.size();
+          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+            {
+              stk::mesh::Entity& family_tree = bucket[iElement];
+              //for (unsigned rank = 1u; rank <= eMesh.element_rank(); rank++)
+              //for (unsigned rank = m_eMesh.element_rank(); rank <= m_eMesh.element_rank(); rank++)
+              unsigned rank = m_eMesh.element_rank();
+                {
+                  // only look at element rank
+                  mesh::PairIterRelation family_tree_relations = family_tree.relations(rank);
+                  if (family_tree_relations.size())
+                    {
+                      // get the parent from the family_tree
+                      stk::mesh::Entity* parent = family_tree_relations[0].entity();
+
+                      if (0)
+                        {
+                          std::cout << "tmp family_tree_relations, family_tree id= " << family_tree.identifier() << std::endl;
+                          for (unsigned ipc = 0; ipc < family_tree_relations.size(); ipc++)
+                            {
+                              std::cout << "tmp ipc = " << ipc << " entity_rank = " << family_tree_relations[ipc].entity()->entity_rank()
+                                        << " entity= " << *family_tree_relations[ipc].entity()
+                                        << std::endl;
+                            }
+                        }
+
+                      if (0 == parent)
+                        {
+                          throw std::logic_error("Refiner::fixElementSides1 parent is null");
+                        }
+
+                      const CellTopologyData *parent_topo_data = stk::percept::PerceptMesh::get_cell_topology(*parent);
+                      if (0 == parent_topo_data)
+                        {
+                          throw std::logic_error("Refiner::fixElementSides1 parent_topo_data is null");
+                        }
+
+                      shards::CellTopology parent_topo(stk::percept::PerceptMesh::get_cell_topology(*parent));
+                      //unsigned parent_nsides = (unsigned)parent_topo.getSideCount();
+
+                      // loop over each child associated with parent
+                      for (unsigned i_child = 1; i_child < family_tree_relations.size(); i_child++)
+                        {
+                          stk::mesh::Entity *child = family_tree_relations[i_child].entity();
+
+                          if (!child)
+                            {
+                              //std::cout << "fixElementSides1: child == null, i_child= " << i_child << " nchild= " << child_vector.size() << std::endl;
+                              throw std::runtime_error("fixElementSides1: child == null");
+                            }
+
+                          shards::CellTopology child_topo(stk::percept::PerceptMesh::get_cell_topology(*child));
+                          unsigned child_nsides = (unsigned)child_topo.getSideCount();
+
+                          // if parent has any side relations, check if any of the sides' children match the parent's children's faces
+                          mesh::PairIterRelation parent_sides = parent->relations(side_rank);
+
+                          //??? mesh::PairIterRelation side_to_parent = parent->relations(m_eMesh.element_rank());
+
+                          //std::cout << "tmp here 1 child_nsides= " << child_nsides
+                          //          << " parent_sides.size()=" << parent_sides.size() <<  " side_to_parent.size() = " << side_to_parent.size() << std::endl;
+
+                          for (unsigned i_parent_side = 0; i_parent_side < parent_sides.size(); i_parent_side++)
+                            {
+                              stk::mesh::Entity *parent_side = parent_sides[i_parent_side].entity();
+                              //unsigned local_parent_side_id = parent_sides[i_parent_side].identifier();
+
+                              if (!parent_side)
+                                {
+                                  throw std::logic_error("parent_side is null");
+                                }
+                              //SameRankRelation& repo = m_eMesh.adapt_parent_to_child_relations();
+                              //SameRankRelationValue& parent_side_children = m_eMesh.adapt_parent_to_child_relations()[parent_side];
+                              //const SameRankRelationValue* parent_side_children_ptr = getChildVectorPtr(repo, parent_side);
+
+                              mesh::PairIterRelation parent_side_to_family_tree_relations = parent_side->relations(FAMILY_TREE_RANK);
+
+                              if (! parent_side_to_family_tree_relations.size())
+                                {
+                                  //std::cout << "tmp found parent_side_to_family_tree_relations.size() == 0" << std::endl;
+                                  continue;
+                                }
+
+                              //std::cout << "tmp found parent_side_to_family_tree_relations.size() != 0, = " << parent_side_to_family_tree_relations.size() << std::endl;
+                              stk::mesh::Entity *sn_check = parent_side_to_family_tree_relations[0].entity();
+
+                              // check
+                              if (1)
+                                {
+                                  stk::mesh::Entity *ps_check = sn_check->relations(parent_side->entity_rank())[0].entity();
+                                  if (ps_check != parent_side)
+                                    {
+                                      std::cout << "error: parent_side_to_family_tree_relations broken" << std::endl;
+                                      throw std::logic_error( "error: parent_side_to_family_tree_relations broken");
+                                    }
+                                }
+
+                              mesh::PairIterRelation family_tree_parent_side_relations = sn_check->relations(parent_side->entity_rank());
+
+                              if (! family_tree_parent_side_relations.size())
+                                {
+                                  //std::cout << "tmp found family_tree_parent_side_relations.size() == 0" << std::endl;
+                                  continue;
+                                }
+
+                              //std::cout << "tmp found family_tree_parent_side_relations.size() != 0, = " << family_tree_parent_side_relations.size() <<  std::endl;
+
+                              for (unsigned i_parent_side_child = 1; i_parent_side_child < family_tree_parent_side_relations.size(); i_parent_side_child++)
+                                {
+                                  // the child of the parent's side
+                                  stk::mesh::Entity *parent_side_child = family_tree_parent_side_relations[i_parent_side_child].entity();
+
+                                  //std::cout << "tmp here 3 parent_side_child = " << *parent_side_child
+                                  //      << std::endl;
+
+                                  int permIndex = -1;
+                                  int permPolarity = 1;
+
+                                  // use of i_parent_side here implies that the children's sides match up with the parents, this could be untrue -
+                                  //  then will require a search through all child faces
+                                  // NOTE: have to search over child faces due to different topology cases - if parent & child have same topology,
+                                  //   we can save a few ops here TODO FIXME
+                                  unsigned k_child_side = 0;
+
+#if 0
+                                  // FIXME - why is this #if'd out?
+                                  boolean sameTopology = false; // FIXME - get this from the break pattern
+                                  if (sameTopology)
+                                    {
+                                      PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
+                                    }
+#endif
+
+                                  if (permIndex < 0)
+                                    {
+                                      // try search
+                                      for (unsigned j_child_side = 0; j_child_side < child_nsides; j_child_side++)
+                                        {
+                                          PerceptMesh::element_side_permutation(*child, *parent_side_child, j_child_side, permIndex, permPolarity);
+                                          if (0)
+                                            std::cout << "tmp j_child_side = " << j_child_side << " permIndex= " << permIndex
+                                                      << " child= " << *child
+                                                      << " parent_side_child= " << *parent_side_child
+                                                      <<  std::endl;
+
+                                          if (permIndex >= 0)
+                                            {
+                                              k_child_side = j_child_side;
+                                              break;
+                                            }
+                                        }
+                                    }
+
+                                  if (permIndex >= 0)
+                                    {
+                                      if (0)
+                                        std::cout << "tmp decl rel permIndex= " << permIndex
+                                                  << " child= " << *child
+                                                  << " parent_side_child= " << *parent_side_child
+                                                  <<  std::endl;
+                                      m_eMesh.getBulkData()->declare_relation(*child, *parent_side_child, k_child_side);
+                                      PerceptMesh::element_side_permutation(*child, *parent_side_child, k_child_side, permIndex, permPolarity);
+                                    }
+                                  else
+                                    {
+                                      // error condition?
+                                      //throw std::runtime_error("fixElementSides1: couldn't find a matching face");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+#endif
+
     void Refiner::
     fixElementSides(stk::mesh::EntityRank side_rank)
     {
 
     }
 
-#undef EXTRA_PRINT_UR_FES 
+#undef EXTRA_PRINT_UR_FES
 
     /** Sets orientations and associativity of elements to sub-dimensional faces/edges after refinement.
      */
     void Refiner::
     checkFixElementSides(stk::mesh::EntityRank side_rank, stk::mesh::EntityRank elem_rank)
     {
+    }
+
+    void Refiner::removeFamilyTrees()
+    {
+      EXCEPTWATCH;
+
+      elements_to_be_destroyed_type elements_to_be_destroyed;
+
+      const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( FAMILY_TREE_RANK );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          //if (removePartSelector(**k))
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              const unsigned num_elements_in_bucket = bucket.size();
+
+              for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                {
+                  stk::mesh::Entity& element = bucket[iElement];
+                  stk::mesh::Entity* element_p = &element;
+
+#if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
+                  elements_to_be_destroyed.push_back(element_p);
+#else
+                  elements_to_be_destroyed.insert(element_p);
+#endif
+                }
+            }
+        }
+      //std::cout << "tmp P[" << m_eMesh.getRank() << "] removing family_trees, size() = "  << elements_to_be_destroyed.size() << std::endl;
+      removeOldElements(elements_to_be_destroyed);
     }
 
     void Refiner::
@@ -1327,9 +1667,9 @@ namespace stk {
 
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
       unsigned nel = 0u;
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (removePartSelector(**k)) 
+          if (removePartSelector(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
@@ -1339,10 +1679,10 @@ namespace stk {
         }
       elements_to_be_destroyed.reserve(nel);
 #endif
-      
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (removePartSelector(**k)) 
+          if (removePartSelector(**k))
             {
               stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket = bucket.size();
@@ -1400,7 +1740,7 @@ namespace stk {
         }
 
       //std::cout << "tmp Refiner::removeOldElements pass2 size = " << elements_to_be_destroyed_pass2.size() << std::endl;
-      for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed_pass2.begin(); 
+      for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed_pass2.begin();
            itbd != elements_to_be_destroyed_pass2.end();  ++itbd)
         {
           stk::mesh::Entity *element_p = *itbd;
@@ -1410,7 +1750,7 @@ namespace stk {
               std::cout << "tmp Refiner::removeOldElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
               const mesh::PairIterRelation elem_relations = element_p->relations(element_p->entity_rank()+1);
               std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
-              
+
               throw std::logic_error("Refiner::removeOldElements couldn't remove element, destroy_entity returned false.");
             }
         }
@@ -1436,14 +1776,14 @@ namespace stk {
               if (0) std::cout << "tmp fixSurfaceAndEdgeSetNames:: skipping toPartName= " << toPartName << " typeid= " << typeid(*breakPattern).name()  << std::endl;
               continue;
             }
-          
+
           std::string newToPartName = toPartName;
 
           StringStringMap::iterator map_it;
           StringStringMap str_map =  breakPattern->fixSurfaceAndEdgeSetNamesMap();
-          if (0) std::cout << "tmp fixSurfaceAndEdgeSetNamesMap:: str_map.size()= " << str_map.size() 
+          if (0) std::cout << "tmp fixSurfaceAndEdgeSetNamesMap:: str_map.size()= " << str_map.size()
             //<< " " << breakPattern->getFromTopoPartName() << "__" << breakPattern->getToTopoPartName()
-                           << " typeid= " << typeid(*breakPattern).name() 
+                           << " typeid= " << typeid(*breakPattern).name()
                            << std::endl;
 
           for (map_it = str_map.begin(); map_it != str_map.end(); map_it++)
@@ -1451,14 +1791,14 @@ namespace stk {
               std::string from_str = map_it->first;
               std::string to_str = map_it->second;
               Util::replace(newToPartName, from_str, to_str);
-              if (0) 
+              if (0)
                 std::cout << "tmp fixSurfaceAndEdgeSetNamesMap: old= " << toPartName << " new= " << newToPartName << std::endl;
             }
 
           *toPartName_p = newToPartName;
 
           if (0)
-            std::cout << "tmp fixSurfaceAndEdgeSetNamesMap:: P[" << m_eMesh.getRank() << "] new part name= " << toParts[i_part]->name() 
+            std::cout << "tmp fixSurfaceAndEdgeSetNamesMap:: P[" << m_eMesh.getRank() << "] new part name= " << toParts[i_part]->name()
                       << " old part name = " << toPartName
                       << std::endl;
         }
@@ -1470,7 +1810,7 @@ namespace stk {
     ///   originalPartName_urpconv -> originalPartName    The new part has the same name as the original part with urpconv appended, which
     ///                                                      is then changed back to the original part name
     ///
-    /// So, after the renaming, the original part name holds the new elements, and the original elements are 
+    /// So, after the renaming, the original part name holds the new elements, and the original elements are
     ///   in the part with the original name appended with _uo_1000.  These parts are ignored on subsequent input.
     ///
     void Refiner::
@@ -1484,7 +1824,7 @@ namespace stk {
         {
           for (unsigned i_part = 0; i_part < toParts.size(); i_part++)
             {
-              std::cout << "tmp toParts[i_part]->name() = " << toParts[i_part]->name() 
+              std::cout << "tmp toParts[i_part]->name() = " << toParts[i_part]->name()
                         << " fromParts[i_part]->name() = " << fromParts[i_part]->name()  << std::endl;
             }
 
@@ -1514,27 +1854,358 @@ namespace stk {
           if (0) std::cout << "tmp  after: fromPartName= " << fromParts[i_part]->name() << " toPartName= " << toParts[i_part]->name() << std::endl;
 
           if (0)
-            std::cout << "tmp P[" << m_eMesh.getRank() << "] fromPartName: " << fromPartName << " part= " << toParts[i_part]->name() 
+            std::cout << "tmp P[" << m_eMesh.getRank() << "] fromPartName: " << fromPartName << " part= " << toParts[i_part]->name()
                       << " old part name = " << fromPart->name()
                       << std::endl;
         }
     }
 
 
-    std::vector< RefinementInfoByType >& 
+    std::vector< RefinementInfoByType >&
     Refiner::
-    getRefinementInfoByType() 
-    { 
-      return m_refinementInfoByType; 
+    getRefinementInfoByType()
+    {
+      return m_refinementInfoByType;
     }
 
-    void 
+    void
     Refiner::
     setQueryPassOnly(bool doQueryOnly)
     {
       m_doQueryOnly = doQueryOnly;
     }
-      
+
+    void
+    Refiner::
+    unrefineAll()
+    {
+      ElementUnrefineCollection elements_to_unref;
+
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          //if (removePartSelector(**k))
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            const unsigned num_entity_in_bucket = bucket.size();
+            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+              {
+                stk::mesh::Entity& element = bucket[ientity];
+                bool elementIsGhost = m_eMesh.isGhostElement(element);
+                if (!elementIsGhost)
+                  {
+                    elements_to_unref.insert(&element);
+                  }
+              }
+          }
+        }
+      unrefineTheseElements(elements_to_unref);
+    }
+
+
+    void
+    Refiner::
+    unrefineTheseElements(ElementUnrefineCollection& elements_to_unref)
+    {
+      m_eMesh.getBulkData()->modification_begin();
+
+      // mark nodes
+      // set<> kept_nodes
+      // set<> deleted_nodes
+
+
+      /* Algorithm Option 1:
+         (requires parallel comm)
+         1. reset/initialize node registry
+         2. loop over elements;
+               verify has no children
+               get the parent;
+
+         2. loop over elements;
+               verify has no children
+               get the parent;
+               loop over parent sub-dim entities;
+                 for
+      */
+
+      /* Option 2,3: purely local
+
+         0. keep NodeRegistry DB always (could be compressed later with a single int holding element id + subDim +iord)
+         1. mark all nodes belonging to non-deleted leaf elements as KEPT
+         2. foreach elements_to_unref;
+               verify has no children
+               get the parent;
+               mark nodes of deleted elements as DELETED (but if KEPT is set, then don't delete)
+         3. foreach elements_to_unref
+               a. delete parent's children (once only of course)
+               b. delete any DELETED nodes (if not done automagically by stk_mesh in step 3a)
+               c. for sanity, delete DELETED nodes from NodeRegistry DB
+
+         [option 2]:
+         4. re-refine using currently marked edges using templates
+
+         [option 3]:
+         4. re-refine using currently marked edges using a local triangulation of each parent and its marked edges
+               [option 1]: use a local Delaunay method
+               [option 2]: project to a master element, use some form of template approach
+
+         5. rebuild when there's a load-balance?
+               [option 1]: build a surrogate DB in stk_mesh using face/edge and attributes
+               [option 2]: use existing db, add parallel comm
+
+      */
+
+      //std::cout << "tmp elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
+
+      typedef std::set<stk::mesh::Entity *> NodeSetType;
+      NodeSetType kept_nodes;
+      NodeSetType deleted_nodes;
+
+      // mark kept nodes
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          //if (removePartSelector(**k))
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            const unsigned num_entity_in_bucket = bucket.size();
+            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+              {
+                stk::mesh::Entity& element = bucket[ientity];
+                bool in_unref_set = elements_to_unref.find( &element ) != elements_to_unref.end();
+                if (!in_unref_set)
+                  {
+                    const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+
+                    for (unsigned inode=0; inode < elem_nodes.size(); inode++)
+                      {
+                        stk::mesh::Entity *node = elem_nodes[inode].entity();
+                        kept_nodes.insert(node);
+                      }
+                  }
+              }
+          }
+        }
+
+#if 0
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          //if (removePartSelector(**k))
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            const unsigned num_entity_in_bucket = bucket.size();
+            for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
+              {
+                stk::mesh::Entity& node = bucket[ientity];
+
+                kept_nodes.insert(&node);
+              }
+          }
+        }
+#endif
+
+      // mark deleted nodes that aren't marked 'kept'
+      for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
+           u_iter != elements_to_unref.end(); ++u_iter)
+        {
+          stk::mesh::Entity * element = *u_iter;
+          const mesh::PairIterRelation elem_nodes = element->relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+
+          for (unsigned inode=0; inode < elem_nodes.size(); inode++)
+            {
+              stk::mesh::Entity *node = elem_nodes[inode].entity();
+              bool in_kept_nodes_set = kept_nodes.find( node ) != kept_nodes.end();
+              if (!in_kept_nodes_set)
+                {
+                  deleted_nodes.insert(node);
+                }
+            }
+        }
+
+
+      ElementUnrefineCollection copied_list;
+      for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
+           u_iter != elements_to_unref.end(); ++u_iter)
+        {
+          stk::mesh::Entity * element_p = *u_iter;
+
+          bool elementIsGhost = m_eMesh.isGhostElement(*element_p);
+          if (elementIsGhost)
+            continue;
+
+          if (m_eMesh.isChildElement(*element_p))
+            {
+              copied_list.insert(element_p);
+              //std::cout << "tmp element to be removed id= " << element_p->identifier() << " " << std::endl;
+            }
+          else
+            {
+              throw std::logic_error("Refiner::unrefineTheseElements a non-child element was asked to be refined");
+            }
+        }
+
+      //std::cout << "tmp copied_list.size() = " << copied_list.size() << std::endl;
+
+      ElementUnrefineCollection parent_elements;
+      ElementUnrefineCollection parent_elements_copy;
+
+      // remove elements marked for unrefine (make sure they are children and not ghosts)
+      for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
+           u_iter != elements_to_unref.end(); ++u_iter)
+        {
+          stk::mesh::Entity * element_p = *u_iter;
+          bool elementIsGhost = m_eMesh.isGhostElement(*element_p);
+          if (elementIsGhost)
+            continue;
+
+          //std::cout << "tmp element to be removed id= " << element_p->identifier() << " " << std::endl;
+          if (copied_list.find(element_p) != copied_list.end())
+            {
+              const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+              std::vector<stk::mesh::Entity *> siblings;
+              stk::mesh::PairIterRelation child_to_family_tree_relations = element_p->relations(FAMILY_TREE_RANK);
+              if (child_to_family_tree_relations.size() != 1)
+                {
+                  throw std::logic_error("Refiner::unrefineTheseElements child_to_family_tree_relations.size() != 1");
+                }
+
+              stk::mesh::Entity *family_tree = child_to_family_tree_relations[0].entity();
+              stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(m_eMesh.element_rank());
+              if (family_tree_relations.size() == 0)
+                {
+                  throw std::logic_error("Refiner::unrefineTheseElements family_tree_relations.size() == 0");
+                }
+
+              for (unsigned ichild=1; ichild < family_tree_relations.size(); ichild++)
+                {
+                  stk::mesh::Entity *child = family_tree_relations[ichild].entity();
+                  siblings.push_back(child);
+                  copied_list.erase(child);
+                }
+
+              //std::cout << "tmp removing family_tree: " << family_tree->identifier() << std::endl;
+              stk::mesh::Entity *parent = family_tree_relations[0].entity();
+              if (!parent)
+                {
+                  throw std::logic_error("Refiner::unrefineTheseElements parent == null");
+                }
+              parent_elements.insert(parent);
+              parent_elements_copy.insert(parent);
+
+              if ( ! m_eMesh.getBulkData()->destroy_entity( family_tree ) )
+                {
+                  throw std::logic_error("Refiner::unrefineTheseElements couldn't remove element, destroy_entity returned false for family_tree.");
+                }
+
+              for (unsigned ichild=0; ichild < siblings.size(); ichild++)
+                {
+                  stk::mesh::Entity *child = siblings[ichild];
+
+                  //std::cout << "tmp removing child: " << child->identifier() << " " << *child << std::endl;
+                  if ( ! m_eMesh.getBulkData()->destroy_entity( child ) )
+                    {
+                      CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(*child));
+                      //std::cout << "tmp Refiner::unrefineTheseElements couldn't remove element  cell= " << cell_topo.getName() << std::endl;
+
+                      const mesh::PairIterRelation elem_relations = child->relations(child->entity_rank()+1);
+                      //std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
+                      //m_eMesh.printEntity(std::cout, *child);
+
+                      throw std::logic_error("Refiner::unrefineTheseElements couldn't remove element, destroy_entity returned false.");
+                    }
+                }
+
+            }
+        }
+
+      // remove deleted nodes
+      m_nodeRegistry->cleanDeletedNodes(deleted_nodes);
+
+      //
+      // FIXME refactor to a generic function operating on a collection of elements; incorporate with the doBreak() calls above
+      //
+      // re-mesh
+      if (1)
+      {
+        std::cout << "tmp parent_elements.size() = " << parent_elements.size() << std::endl;
+        static NewSubEntityNodesType s_new_sub_entity_nodes(stk::percept::EntityRankEnd);
+
+        NewSubEntityNodesType& new_sub_entity_nodes = s_new_sub_entity_nodes;
+
+        for (unsigned irank=0; irank < m_ranks.size(); irank++)
+          {
+            vector<NeededEntityType> needed_entity_ranks;
+            m_breakPattern[irank]->fillNeededEntities(needed_entity_ranks);
+
+            vector<stk::mesh::Entity *> new_elements;
+
+            // count num new elements needed on this proc (served by UniformRefinerPattern)
+            unsigned num_elem_not_ghost = 0u;
+
+            for (ElementUnrefineCollection::iterator p_iter = parent_elements.begin();
+                 p_iter != parent_elements.end(); ++p_iter)
+              {
+                stk::mesh::Entity *parent = *p_iter;
+
+                stk::mesh::Entity& element = *parent;
+
+                if (!m_eMesh.isGhostElement(element))
+                  {
+                    ++num_elem_not_ghost;
+                  }
+              }
+
+            unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
+
+            // create new entities on this proc
+            new_elements.resize(0);
+            m_eMesh.createEntities( m_ranks[irank], num_elem_needed, new_elements);
+            vector<stk::mesh::Entity *>::iterator element_pool_it = new_elements.begin();
+
+            // FIXME - we could directly call this with a refactor to change elementColors passed in here as a generic collection + checking for element Type
+            //
+            //createElementsAndNodesAndConnectLocal(m_ranks[irank], m_breakPattern[irank], elementColors, needed_entity_ranks, new_elements);
+
+            for (ElementUnrefineCollection::iterator p_iter = parent_elements.begin();
+                 p_iter != parent_elements.end(); ++p_iter)
+              {
+                stk::mesh::Entity *parent = *p_iter;
+
+                const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*parent);
+                CellTopology cell_topo(cell_topo_data);
+                unsigned elementType = cell_topo.getKey();
+                unsigned bpElementType = m_breakPattern[irank]->getFromTypeKey();
+                if (elementType == bpElementType)
+                  {
+                    stk::mesh::Entity& element = *parent;
+
+                    if (!m_eMesh.isGhostElement(element))
+                      {
+                        //std::cout << "P["<< m_eMesh.getRank() << "] element.owner_rank() = " << element.owner_rank() << std::endl;
+                        if (createNewNeededNodeIds(cell_topo_data, element, needed_entity_ranks, new_sub_entity_nodes))
+                          {
+                            //std::cout << "typeid= " << typeid(*breakPattern).name() << std::endl;
+                            throw std::logic_error("unrefineTheseElements:: createNewNeededNodeIds failed");
+                          }
+
+                        m_breakPattern[irank]->createNewElements(m_eMesh, *m_nodeRegistry, element, new_sub_entity_nodes, element_pool_it, m_proc_rank_field);
+                      }
+                  }
+              }
+          }
+      }
+
+      m_eMesh.getBulkData()->modification_end();
+
+    }
+
 
   } // namespace adapt
 } // namespace stk

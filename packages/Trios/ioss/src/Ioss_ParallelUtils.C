@@ -213,7 +213,7 @@ void Ioss::ParallelUtils::global_count(const IntVector &local_counts, IntVector 
       errmsg << "Attempting mpi while in barrier owned by " << Ioss::SerializeIO::getOwner();
       IOSS_ERROR(errmsg);
     }
-    const int success = MPI_Allreduce((void*)&local_counts[0], &global_counts[0],
+    const int success = MPI_Allreduce((void*)(local_counts.empty() ? NULL : &local_counts[0]), (global_counts.empty() ? NULL : &global_counts[0]),
 				      static_cast<int>(local_counts.size()),
 				      MPI_INT, MPI_SUM, communicator_);
     if (success !=  MPI_SUCCESS) {
@@ -347,7 +347,7 @@ void Ioss::ParallelUtils::global_array_minmax(int *local_minmax, size_t count, I
     else
       oper = MPI_MIN;
 
-    const int success = MPI_Allreduce((void*)&local_minmax[0], &maxout[0],
+    const int success = MPI_Allreduce((void*)&local_minmax[0], (maxout.empty() ? NULL : &maxout[0]),
 				      static_cast<int>(count),
 				      MPI_INT, oper, communicator_);
     if (success !=  MPI_SUCCESS) {
@@ -382,7 +382,7 @@ void Ioss::ParallelUtils::global_array_minmax(unsigned int *local_minmax, size_t
     else
       oper = MPI_MIN;
 
-    const int success = MPI_Allreduce((void*)&local_minmax[0], &maxout[0],
+    const int success = MPI_Allreduce((void*)&local_minmax[0], (maxout.empty() ? NULL : &maxout[0]),
 				      static_cast<int>(count),
 				      MPI_UNSIGNED, oper, communicator_);
     if (success !=  MPI_SUCCESS) {
@@ -416,7 +416,7 @@ void Ioss::ParallelUtils::global_array_minmax(double *local_minmax, size_t count
     else
       oper = MPI_MIN;
 
-    const int success = MPI_Allreduce((void*)&local_minmax[0], &maxout[0],
+    const int success = MPI_Allreduce((void*)&local_minmax[0], (maxout.empty() ? NULL : &maxout[0]),
 				      static_cast<int>(count),
 				      MPI_DOUBLE, oper, communicator_);
     if (success !=  MPI_SUCCESS) {
@@ -440,7 +440,7 @@ void Ioss::ParallelUtils::gather(int my_value, std::vector<int> &result) const
 #ifdef HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Gather((void*)&my_value,  1, MPI_INT,
-				   (void*)&result[0], 1, MPI_INT,
+				   (void*)(result.empty() ? NULL : (result.empty() ? NULL : &result[0])), 1, MPI_INT,
 				   0, communicator_);
     if (success !=  MPI_SUCCESS) {
       std::ostringstream errmsg;
@@ -463,8 +463,8 @@ void Ioss::ParallelUtils::gather(std::vector<int> &my_values, std::vector<int> &
   }
 #ifdef HAVE_MPI
   if (parallel_size() > 1) {
-    const int success = MPI_Gather((void*)&my_values[0],  count, MPI_INT,
-				   (void*)&result[0], count, MPI_INT,
+    const int success = MPI_Gather((void*)(my_values.empty() ? NULL : (my_values.empty() ? NULL : &my_values[0])),  count, MPI_INT,
+				   (void*)(result.empty() ? NULL : &result[0]), count, MPI_INT,
 				   0, communicator_);
     if (success !=  MPI_SUCCESS) {
       std::ostringstream errmsg;

@@ -422,55 +422,6 @@ get_heap_info(
         return false;
     }
 
-    //========================================================================================================================
-
-    void Util::printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field)
-    {
-      if (entity.entity_rank() != stk::mesh::fem::FEMMetaData::NODE_RANK)
-        {
-          int fieldStride = 3;
-          {
-            unsigned nfr = field->restrictions().size();
-            //if (printInfo) std::cout << "P[" << p_rank << "] info>    number of field restrictions= " << nfr << std::endl;
-            for (unsigned ifr = 0; ifr < nfr; ifr++)
-              {
-                const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-                //mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
-                fieldStride = fr.dimension() ;
-              }
-          }
-
-          out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: \n";
-
-          const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
-          unsigned num_node = elem_nodes.size();
-          std::vector<double> min(fieldStride, 1e+30);
-          std::vector<double> max(fieldStride, -1e+30);
-          for (unsigned inode=0; inode < num_node; inode++)
-            {
-              mesh::Entity & node = * elem_nodes[ inode ].entity();
-
-              out << "inode= " << inode << " id= " << node.identifier() << " ";
-              double *f_data = PerceptMesh::field_data(field, node);
-              out << " data = " ;
-              for (int ifd=0; ifd < fieldStride; ifd++)
-                {
-                  min[ifd] = std::min(f_data[ifd], min[ifd]);
-                  max[ifd] = std::max(f_data[ifd], max[ifd]);
-                  out << f_data[ifd] << " ";
-                }
-              out << std::endl;
-            }
-          out << " min= " << min << std::endl;
-          out << " max= " << max << std::endl;
-          for (int ifd=0; ifd < fieldStride; ifd++)
-            {
-              max[ifd] = max[ifd] - min[ifd];
-            }
-          out << " max-min= " << max << std::endl;
-
-        }
-    }
 
 
     //========================================================================================================================

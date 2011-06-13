@@ -12,7 +12,7 @@ namespace stk {
   namespace adapt {
 
     /// this is for testing only - or could be unsed in future for a bisection-based refinement scheme
-    
+
     template <>
     class RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, 2 > : public URP<shards::Triangle<3>,shards::Triangle<3>  >
     {
@@ -57,14 +57,14 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(1);
-        needed_entities[0].first = m_eMesh.edge_rank();    
+        needed_entities[0].first = m_eMesh.edge_rank();
         needed_entities[0].second = 1u;
       }
 
       virtual unsigned getNumNewElemPerElem() { return 2; }
 
-      void 
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
+      void
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
                         stk::mesh::FieldBase *proc_rank_field=0)
       {
@@ -78,7 +78,7 @@ namespace stk {
         std::vector<stk::mesh::Part*> add_parts;
         std::vector<stk::mesh::Part*> remove_parts;
         add_parts = m_toParts;
-        
+
 
         unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 3; iedge++)
@@ -112,11 +112,11 @@ namespace stk {
 
         //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
 
-        
+
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
             stk::mesh::Entity& newElement = *(*element_pool);
-            std::cout << "tmp newElement id = " << newElement.identifier() << std::endl;
+            //std::cout << "tmp newElement id = " << newElement.identifier() << std::endl;
 
             if (proc_rank_field)
               {
@@ -147,9 +147,9 @@ namespace stk {
 
           }
 
-      
+
       }
-      
+
     };
 
   }

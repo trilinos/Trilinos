@@ -1,5 +1,5 @@
 /**   ------------------------------------------------------------
- *    Copyright 2003 - 2010 Sandia Corporation.
+ *    Copyright 2003 - 2011 Sandia Corporation.
  *    Under the terms of Contract DE-AC04-94AL85000, there is a
  *    non-exclusive license for use of this work by or on behalf
  *    of the U.S. Government.  Export of this program may require
@@ -493,6 +493,7 @@ parseAssign(
     assign = new Node(OPCODE_ASSIGN);
 
     assign->m_data.variable.variable = eval.getVariableMap()[(*from).getString()];
+    assign->m_data.variable.variable->setDependent();
     assign->m_right = parseExpression(eval, assign_it + 1, to);
 
     if ((*(from + 1)).getToken() == TOKEN_LBRACK)

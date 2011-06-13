@@ -82,6 +82,60 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+
+#if 0
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9_shell_1)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced (I presume there are too few elements)
+
+        if (p_size <= 1)
+          {
+            // start_demo_break_quad4_to_quad9_to_quad9_shell
+            std::string input_mesh = "./input_files/shell-tests/freshell_quad4.g";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh(3u);
+            eMesh.open(input_mesh);
+
+            ShellQuad4_ShellQuad9_1 break_quad4_to_quad9_1(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            //         int vectorDimension = 3;
+
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+
+            eMesh.commit();
+
+            eMesh.printInfo("quad mesh");
+            eMesh.saveAs("./output_files/freshell_quad4_quad9_0.g");
+
+            UNIFORM_REFINER breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched");
+            eMesh.saveAs("./output_files/freshell_quad4_quad9_1.g");
+            eMesh.saveAs("./input_files/freshell_quad9_quad9_0.g");
+
+          }
+      }
+#endif
+
 
       STKUNIT_UNIT_TEST(regr_uniformRefiner, beam_enrich)
       {
@@ -356,6 +410,89 @@ namespace stk
       //======================================================================================================================
 
 
+#if 0
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9_shell)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced (I presume there are too few elements)
+
+        if (p_size <= 1)
+          {
+            // start_demo_break_quad4_to_quad9_to_quad9_shell
+            std::string input_mesh = "./input_files/shell-tests/freshell_quad4.g";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh(3u);
+            eMesh.open(input_mesh);
+
+            ShellQuad4_ShellQuad9_1 break_quad4_to_quad9_1(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            //         int vectorDimension = 3;
+
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+
+            eMesh.commit();
+
+            eMesh.printInfo("quad mesh");
+            eMesh.saveAs("./output_files/freshell_quad4_quad9_0.g");
+
+            UNIFORM_REFINER breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched");
+            eMesh.saveAs("./output_files/freshell_quad4_quad9_1.g");
+            eMesh.saveAs("./input_files/freshell_quad9_quad9_0.g");
+
+          }
+
+#if 0
+        if (1 && p_size <= 1)
+          {
+
+            percept::PerceptMesh eMesh(3u);
+            eMesh.open("./input_files/freshell_quad9_quad9_0.g");
+
+            ShellQuad9_ShellQuad9_4 break_quad9_to_quad_9(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+
+            eMesh.commit();
+
+            //eMesh.printInfo("quad mesh");
+            //eMesh.saveAs("./output_files/freshell_quad4_quad9_0.g");
+
+            UNIFORM_REFINER breaker(eMesh, break_quad9_to_quad_9, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched and refined");
+            eMesh.saveAs("./output_files/freshell_quad9_quad9_1.g");
+            // end_demo
+
+          }
+#endif
+      }
+#endif
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+
       STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_quad_shell)
       {
         EXCEPTWATCH;
@@ -539,6 +676,7 @@ namespace stk
             //UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 > break_quad_to_tri_6;
             UNIFORM_REFINER breaker(eMesh, break_quad_to_tri_6, proc_rank_field);
             breaker.setRemoveOldElements(false);
+            breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
             //eMesh.saveAs("./output_files/break_test/quad/square/square_quad4_out.e");
@@ -579,7 +717,7 @@ namespace stk
             //UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 > break_quad_to_tri_6;
             UNIFORM_REFINER breaker(eMesh, break_quad_to_tri_4, proc_rank_field);
             breaker.setRemoveOldElements(false);
-
+            breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
             //eMesh.saveAs("./input_files/break_test/quad/square/square_quad4_out.e");

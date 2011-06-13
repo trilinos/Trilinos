@@ -155,7 +155,7 @@ FieldBase * FieldRepository::declare_field(
 
   if ( NULL != f[0] ) {
     for ( unsigned i = 1 ; i < arg_num_states ; ++i ) {
-      f[i] = f[0]->m_impl.field_state(i);
+      f[i] = f[0]->m_impl.field_state(static_cast<FieldState>(i));
     }
   }
   else {
