@@ -1,5 +1,6 @@
 INCLUDE(PackageAddExecutable)
 INCLUDE(CheckIncludeFile)
+SET(CMAKE_EXECUTABLE_SUFFIX "")
 
 IF (Trilinos_ENABLE_Zoltan)
    INCLUDE_DIRECTORIES(${Zoltan_INCLUDE_DIRS})
