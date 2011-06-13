@@ -57,6 +57,17 @@ function execute_loadbalance {
     nemesis=$basename.nem
     genesis=$basename.$genesis_suffix
 
+    # Check for valid executable...
+    if [ ! -x $NEM_SLICE ]
+    then
+	echo
+	echo "ERROR: Could not find or execute $NEM_SLICE"
+	echo "ERROR: Configuration error"
+	echo
+
+	return -1
+    fi
+
     date=`date '+%m/%d/%y'`
     time=`date '+%H:%M:%S'`
     prob_dir=`pwd | sed "s/.*\///g"`
@@ -106,6 +117,16 @@ function execute_spread {
     genesis=$basename.$genesis_suffix
 
     pexsh=$basename.pex
+
+    # Check for valid executable...
+    if [ ! -x $NEM_SPREAD ]
+    then
+	echo
+	echo "ERROR: Could not find or execute $NEM_SPREAD"
+	echo "ERROR: Configuration error"
+	echo
+	return -1
+    fi
     
     if [ "$subdir" != "." ]
     then
