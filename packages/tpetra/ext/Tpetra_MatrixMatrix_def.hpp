@@ -1535,8 +1535,10 @@ Scalar sparsedot(
     CrsMatrix<SCALAR, LO, GO, NODE>& B, \
     SCALAR scalarB ); \
   \
+
+#define TPETRA_SPARSEDOT_INSTANT(SCALAR,GO) \
   template \
-  Scalar MMdetails::sparsedot( \
+  SCALAR MMdetails::sparsedot( \
     const ArrayView< SCALAR >& u, const ArrayView< GO >& u_ind, \
     const ArrayView< SCALAR >& v, const ArrayView< GO >& v_ind);
 
