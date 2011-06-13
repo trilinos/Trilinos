@@ -147,10 +147,10 @@ mult_test_results multiply_test(
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
   computedC->globalAssemble();
-  /*Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_calculated.mtx",computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-    name+"_real.mtx",C);*/
+    name+"_real.mtx",C);
    
   double cNorm = getNorm(C);
   Tpetra::MatrixMatrix::Add(*C, false, -1.0, *computedC, 1.0);

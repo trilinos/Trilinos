@@ -106,7 +106,7 @@ void Multiply(
   if (transposeA && transposeB)  scenario = 4;//A^T*B^T
 
   //now check size compatibility
-  global_size_t Aouter = transposeA ? A.getGlobalNumCols() : A.getGlobalNumRows();
+  global_size_t Aouter = transposeA ? A.getDomainMap()->getGlobalNumElements() : A.getGlobalNumRows();
   global_size_t Bouter = transposeB ? B.getGlobalNumRows() : B.getGlobalNumCols();
   global_size_t Ainner = transposeA ? A.getGlobalNumRows() : A.getGlobalNumCols();
   global_size_t Binner = transposeB ? B.getGlobalNumCols() : B.getGlobalNumRows();
@@ -829,10 +829,10 @@ void mult_Atrans_B(
 
   size_t i, j, k;
 
-  for(j=OrdinalTraits<size_t>::zero(); j<C_numCols; ++j) {
+ /* for(j=OrdinalTraits<size_t>::zero(); j<C_numCols; ++j) {
     C_row_i[j] = ScalarTraits<Scalar>::zero();
     C_colInds[j] = OrdinalTraits<GlobalOrdinal>::zero();
-  }
+  }*/
 
   //To form C = A^T*B, compute a series of outer-product updates.
   //
@@ -913,9 +913,9 @@ void mult_Atrans_B(
       //
 
       C_filled ?
-        C.sumIntoGlobalValues(global_row, C_colInds(), C_row_i() )
+        C.sumIntoGlobalValues(global_row, C_colInds(0,Blen), C_row_i(0,Blen) )
         :
-        C.insertGlobalValues(global_row, C_colInds(), C_row_i());
+        C.insertGlobalValues(global_row, C_colInds(0,Blen), C_row_i(0,Blen));
 
     }
   }
