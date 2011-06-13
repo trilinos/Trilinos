@@ -304,7 +304,6 @@ namespace stk {
 #endif
 
       std::vector<stk::mesh::EntityRank>& ranks = m_ranks;
-
       // check logic of break pattern setup and also build ranks used vector
       checkBreakPatternValidityAndBuildRanks(ranks);
 
