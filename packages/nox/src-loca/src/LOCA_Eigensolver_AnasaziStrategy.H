@@ -162,10 +162,6 @@ namespace LOCA {
 
       //! Is problem symmetric
       bool isSymmetric;
-
-      //! Sorting manager to handle the sorting of eigenvalues
-      Teuchos::RCP< Anasazi::SortManager<double> > locaSort;
-
     }; // Class AnasaziStrategy
 
   } // Namespace Eigensolver
