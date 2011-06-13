@@ -2004,6 +2004,9 @@ namespace Tpetra {
         const LocalOrdinal LID = importLIDs[i];
         const GlobalOrdinal myGID = this->getMap()->getGlobalElement(LID);
         const size_t rowSize = numPacketsPerLID[i] / SizeOfOrdValPair;
+        //Needs to be in here in case of zero lenght rows.
+        //If not, the lines following the if statement error out
+        //if the row length is zero. KLN 13/06/2011
         if(rowSize == 0){
           continue;
         }
