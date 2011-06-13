@@ -113,7 +113,7 @@ int main(int argc, char *argv[]){
   xValues[1] = cmplx(0.86716, 0.75421); 
   xValues[2] = cmplx(0.58970, 0.29876);
 
-  typename std::map<GO,cmplx>::iterator it;
+  std::map<GO,cmplx>::iterator it;
   RCP<MV> X = rcp(new MV(dmnmap, numVecs));
   X->setObjectLabel("X");
 
