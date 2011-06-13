@@ -85,72 +85,72 @@ namespace stk {
     //========================================================================================================================
     //========================================================================================================================
     //template<class UniformRefinerPattern>
-    class Refiner : public stk::percept::Observable<ProgressMeterData> 
+    class Refiner : public stk::percept::Observable<ProgressMeterData>
     {
     public:
       Refiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
       //Refiner(percept::PerceptMesh& eMesh, std::vector<UniformRefinerPatternBase *>&  bp, stk::mesh::FieldBase *proc_rank_field=0);
       ~Refiner();
 
-      void 
+      void
       doBreak();
 
-      void 
+      void
       setRemoveOldElements(bool do_remove);
-      bool 
+      bool
       getRemoveOldElements();
-      
+
       void
       setGeometryFile(std::string file_name);
 
-      void 
+      void
       setIgnoreSideSets(bool ignore_sidesets) ;
 
-      bool 
+      bool
       getIgnoreSideSets();
 
-      std::vector< RefinementInfoByType >& 
+      std::vector< RefinementInfoByType >&
       getRefinementInfoByType();
 
-      void 
+      void
       setQueryPassOnly(bool doQueryOnly);
 
-      void 
+      void
       setDoProgressMeter(bool do_progress);
       bool
       getDoProgressMeter();
 
 
-      void 
+      void
       unrefineTheseElements(ElementUnrefineCollection& elements_to_unref);
 
-      void 
+      void
       unrefineAll();
 
     protected:
-  
-      /**  Overrides start =======> 
+
+      /**  Overrides start =======>
        */
 
       /** Overrides
-       * 
+       *
        * Client (derived-class) code should override this to provide a loop over all (or some) of the elements and apply the given @param function on the NodeRegistry
        *   m_nodeRegistry data member.  The same loop should be executed every time this method is called (i.e. the same elements should be visited).  Also, there
        *   is policy associated with the @param only_count and @param doAllElements inputs.  If doAllElements==true, then ghost elements should not be skipped.
        *   If only_count==true, then *do not* call the supplied @param function, rather just count the number of elements to be visited and return that number.
        *   @return Always return the number of elements visited (modulo the doAllElements parameter).
-       * 
+       *
        *   @see UniformRefiner implementation of this method for an example.
        */
-      
+
       virtual unsigned
-      doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
+      doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
                        vector< ColorerSetType >& elementColors, unsigned elementType,
                        vector<NeededEntityType>& needed_entity_ranks,
                        bool only_count=false, bool doAllElements=true) ;
 
       /** Create a list of nodes from the new nodes that can be easily deciphered by the UniformRefinerPattern.
-       * 
+       *
        *  This is a helper function that gets all the nodes ready for use in creating new elements.  For each rank of those needed by
        *  the algorithm (supplied information from the break pattern), it fills the 3D array new_sub_entity_nodes with the new nodes.
        *
@@ -158,74 +158,74 @@ namespace stk {
        *
        */
       virtual bool
-      createNewNeededNodeIds(const CellTopologyData * const cell_topo_data, 
+      createNewNeededNodeIds(const CellTopologyData * const cell_topo_data,
                              const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes) ;
 
       /** Method that actually creates new elements by first calling createNewNeededNodeIds then calls the break pattern's createNewElements method.
        *
        *  A sample implementation is shown in @see UniformRefiner
        */
-      virtual void 
-      createElementsAndNodesAndConnectLocal(unsigned irank,  UniformRefinerPatternBase* breakPattern, 
-                                            vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,  
+      virtual void
+      createElementsAndNodesAndConnectLocal(unsigned irank,  UniformRefinerPatternBase* breakPattern,
+                                            vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,
                                             vector<stk::mesh::Entity *>& new_elements_pool) ;
 
       /** This is a helper method that loops over all sub-dimensional entities whose rank matches on of those in @param needed_entity_ranks
        *    and registers that sub-dimensional entity as needing a new node, or whatever other function NodeRegistry requires (getFromRemote(), etc)
        *  Override it to only apply the @param function to the desired sub-entities (e.g. for non-uniform/local refinement)
-       *  
+       *
        *  It is a copy of NodeRegistry's doForAllSubEntities method.  Provided here so it can be overridden.
-       * 
+       *
        */
 
-      virtual void 
-      applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      virtual void
+      applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element,
                                               vector<NeededEntityType>& needed_entity_ranks);
 
       /// =========>  Overrides  end
 
 
 
-      void 
+      void
       removeFamilyTrees();
 
-      void 
+      void
       removeOldElements(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern );
 
-      void 
+      void
       removeOldElements( elements_to_be_destroyed_type& elements_to_be_destroyed);
 
-      void 
+      void
       addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);
 
-      void 
+      void
       renameNewParts(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
 
-      void 
+      void
       fixSurfaceAndEdgeSetNames(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
 
-      void 
+      void
       fixElementSides();
 
-      void 
+      void
       fixElementSides1();
 
-      void 
+      void
       fixElementSides(stk::mesh::EntityRank side_rank);
 
-      void 
+      void
       fixElementSides1(stk::mesh::EntityRank side_rank);
 
-      void 
+      void
       checkFixElementSides(stk::mesh::EntityRank side_rank, stk::mesh::EntityRank elem_rank);
 
-      void 
+      void
       buildElementSideDB(SubDimCellToDataMap& cell_2_data_map);
 
-      void 
+      void
       trace_print(std::string msg);
 
-      void 
+      void
       checkBreakPatternValidityAndBuildRanks(std::vector<stk::mesh::EntityRank>& ranks);
 
 

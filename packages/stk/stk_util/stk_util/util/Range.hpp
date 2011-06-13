@@ -14,49 +14,49 @@
 namespace stk {
 
 template <class It>
-inline 
+inline
 typename boost::iterator_range<It>::const_iterator const_begin(const boost::iterator_range<It> &range) {
   return boost::begin(range);
 }
 
 template <class It>
-inline 
+inline
 typename boost::iterator_range<It>::const_iterator const_end(const boost::iterator_range<It> &range) {
   return boost::end(range);
 }
 
 template <class It>
-inline 
+inline
 typename boost::iterator_range<It>::iterator begin(const boost::iterator_range<It> &range) {
   return boost::begin(range);
 }
 
 template <class It>
-inline 
+inline
 typename boost::iterator_range<It>::iterator end(const boost::iterator_range<It> &range) {
   return boost::end(range);
 }
 
 template <class T>
-inline 
+inline
 typename boost::iterator_range<T>::const_iterator const_begin(const boost::sub_range<T> &range) {
   return boost::begin(range);
 }
 
 template <class T>
-inline 
+inline
 typename boost::iterator_range<T>::const_iterator const_end(const boost::sub_range<T> &range) {
   return boost::end(range);
 }
 
 template <class T>
-inline 
+inline
 typename boost::iterator_range<T>::iterator begin(const boost::sub_range<T> &range) {
   return boost::begin(range);
 }
 
 template <class T>
-inline 
+inline
 typename boost::iterator_range<T>::iterator end(const boost::sub_range<T> &range) {
   return boost::end(range);
 }
