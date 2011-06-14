@@ -1,0 +1,38 @@
+XCOMM $Id: Imakefile,v 1.2 1998/04/27 22:29:01 rwstotz Exp $
+
+#define IHaveSubdirs
+
+#define PassDebugFlags	"DEBUG=$(DEBUG)" \
+	                "CDEBUGFLAGS=$(CDEBUGFLAGS)" \
+	                "CXXDEBUGFLAGS=$(CXXDEBUGFLAGS)" \
+			"F90DEBUGFLAGS=$(F90DEBUGFLAGS)" \
+			"F77DEBUGFLAGS=$(F77DEBUGFLAGS)"
+
+#define ExtraOptions	"CCOPTIONS=$(CCOPTIONS)" \
+			"F77OPTIONS=$(F77OPTIONS)"
+
+#ifdef PARALLEL
+CCOPTIONS  = ParallelCCOptions
+F77OPTIONS = ParallelF77Options
+LIBDIR     = $(PLIBDIR)
+#endif
+
+SUBDIRS = \
+assign       bpmatch   coarsen  connect   eigen \
+graph        inertial  input    internal  klspiff \
+klvspiff     main      misc     optimize  refine_map \
+refine_part  submain   symmlq   tinvit    util
+
+AllTarget(libchaco.a)
+
+NamedTargetSubdirs(libchaco.a,$(SUBDIRS),"makeing chaco ",PassDebugFlags ExtraOptions,libchaco.a)
+
+InstallLibrary(chaco,$(LIBDIR))
+
+InstallSubdirIncludeList(install,main,chaco.h,$(INCDIR))
+InstallSubdirIncludeList(makeincludes,main,chaco.h,$(INCDIR))
+
+#if Parallel
+InstallParallelLibrary(chaco,$(PLIBDIR))
+#endif
+

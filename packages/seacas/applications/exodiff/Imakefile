@@ -1,0 +1,22 @@
+XCOMM Tool for finding differences between two ExodusII files
+
+CODE = exodiff
+
+#if defined(CrossLinuxArchitecture)
+CXXSTD_DEFINES = -Dlinux -D__alpha__ -DADDC_ $(CXXPROJECT_DEFINES)
+#endif
+
+LIBS = $(EXOIIV2C) $(NETCDF) -lm
+
+SRCS = exoII_read.C  exo_block.C  exodiff.C Specifications.C \
+       initialize.C  node_set.C   side_set.C    stringx.C \
+       create_file.C map.C smart_assert.C exo_entity.C FileInfo.C \
+       add_to_log.C Tolerance.C   iqsort.C  check.C parsing.C util.C
+
+OBJS = $(SRCS:.C=.o)
+
+NormalCCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallNamedTarget(install,$(CODE),NullParameter,$(BINDIR),$(CODE))
+
+DependTarget()

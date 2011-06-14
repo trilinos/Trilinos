@@ -182,7 +182,6 @@ public:
     const RCP<Thyra::ModelEvaluator<Scalar> >& model
     ) = 0;
 
-
   /** \brief Return of the model is only const or can be returned as a
    * non-const object.
    */
@@ -250,23 +249,31 @@ public:
    * <b>Preconditions:</b><ul>
    * <li><tt>dt > 0.0</tt> (i.e. only forward steps are allowed)
    * <li><tt>!is_null(this->getModel())</tt>
+   * <li><tt>isInitialized(*this) == true</tt>
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   *
+   * <li>[<tt>returnVal > 0.0</tt>] <tt>this->getTimeRange()</tt> returns the
+   * time range <tt>[tk, tk + returnVal]</tt> where <tt>tk</tt> is the
+   * beginning of the timestep and <tt>tk + returnVal</tt> is the end of the
+   * time step.
+   *
+   * <li>[<tt>returnVal > 0.0</tt>] <tt>this->getPoints()</tt> will return
+   * values of <tt>x(t)</tt> and <tt>x_dot(t)</tt> for all <tt>t</tt> in
+   * <tt>this->getTimeRange()</tt>.
+   *
    * </ul>
    *
    * \returns If <tt>returnVal > 0.0</tt>, then a step of size
-   * <tt>returnVal</tt> was taken.  If <tt>returnVal <= 0.0</tt>, then the
-   * step could not be taken for some reason.  If <tt>returnVal <= 0.0</tt>,
+   * <tt>returnVal</tt> was taken.  If <tt>returnVal == 0.0</tt>, then the
+   * step could not be taken for some reason.  If <tt>returnVal == 0.0</tt>,
    * then <tt>*this</tt> is guaranteed to be in the same state after the
    * function returns as it was before the function was called.  This allows a
    * client to try a different step size or make other adjustments.
    *
-   * If stepType == STEP_TYPE_VARIABLE, and returnVal <= 0.0 then no variable step
-   * will succeed in its current state. 
-   *
-   * <b>Preconditions:</b><ul>
-   *
-   * <li><tt>isInitialized(*this) == true</tt>
-   *
-   * </ul>
+   * If stepType == STEP_TYPE_VARIABLE, and returnVal == 0.0 then no variable
+   * step will succeed in its current state.
    */
   virtual Scalar takeStep(Scalar dt, StepSizeType stepType) = 0;
 

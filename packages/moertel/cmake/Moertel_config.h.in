@@ -21,8 +21,8 @@
 /* Define if we have Nemesis as a TPL */
 #cmakedefine HAVE_MOERTEL_NEMESIS
 
-/* Define if we want to use Trios (ExodusII/Nemesis) */
-#cmakedefine HAVE_MOERTEL_TRIOS
+/* Define if we want to use SEACAS (ExodusII/Nemesis) */
+#cmakedefine HAVE_MOERTEL_SEACAS
 
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI

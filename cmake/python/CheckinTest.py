@@ -896,6 +896,12 @@ def getEnablesLists(inOptions, gitRepoList, baseTestDir, verbose):
         if verbose:
           print "\nThe file "+diffOutFileName+" does not exist!\n"
 
+  if inOptions.disablePackages:
+    for disablePackage in inOptions.disablePackages.split(","):
+      packageIdx = findInSequence(enablePackagesList, disablePackage)
+      if packageIdx >= 0:
+        del enablePackagesList[packageIdx]
+
   if not enablePackagesList:
     return (cmakePkgOptions, enablePackagesList)
 

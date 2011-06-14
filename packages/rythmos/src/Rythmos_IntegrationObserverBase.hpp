@@ -43,9 +43,12 @@ public:
    * <b>Preconditions:</b><ul>
    * <li> <tt>integrationTimeDomain.length() > 0.0</tt>
    * </ul>
+   *
+   * \todo Add initial guess as an argument
    */
   virtual void resetIntegrationObserver(
     const TimeRange<Scalar> &integrationTimeDomain
+    // ToDo: Pass in the initial condition to the observer
     ) = 0;
 
   /** \brief Observer an integration step.
@@ -70,6 +73,14 @@ public:
    *
    * NOTE: The function <tt>resetIntegrationControlStrategy()</tt> must be
    * called prior to even the first call to function.
+   *
+   * NOTE: If <tt>isInitialTimeStep(stepper->getTimeRange(), fullTimeRange) ==
+   * true</tt> then this is the first time step (where <tt>fullTimeRange</tt>
+   * was passed into <tt>resetIntegrationObserver()</tt>.
+   *
+   * NOTE: If <tt>isFinalTimeStep(stepper->getTimeRange(), fullTimeRange) ==
+   * true</tt> then this is the last time step (where <tt>fullTimeRange</tt>
+   * was passed into <tt>resetIntegrationObserver()</tt>.
    */
   virtual void observeCompletedTimeStep(
     const StepperBase<Scalar> &stepper,
@@ -78,6 +89,38 @@ public:
     ) = 0;
 
 };
+
+
+/** \brief Helper function to tell an IntegrationObserverBase object if an
+ * observed time step is the first time step or not.
+ *
+ * \todo Unit test this function!
+ */
+template<class Scalar>
+bool isInitialTimeStep(
+  const TimeRange<Scalar> &currentTimeRange,
+  const TimeRange<Scalar> &fullTimeRange
+  )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return compareTimeValues(currentTimeRange.lower(), fullTimeRange.lower()) == ST::zero();
+}
+
+
+/** \brief Helper function to tell an IntegrationObserverBase object if an
+ * observed time step is the last time step or not.
+ *
+ * \todo Unit test this function!
+ */
+template<class Scalar>
+bool isFinalTimeStep(
+  const TimeRange<Scalar> &currentTimeRange,
+  const TimeRange<Scalar> &fullTimeRange
+  )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  return compareTimeValues(currentTimeRange.upper(), fullTimeRange.upper()) >= ST::zero();
+}
 
 
 } // namespace Rythmos
