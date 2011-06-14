@@ -616,7 +616,7 @@ void mult_A_Btrans(
       //*fos << "B Rank: " << rank << " Global Row: " << *it2<< " Inds: " << bIndices << std::endl;
       Scalar product = 
         sparsedot(aValues(), aIndices(), bValues(), bIndices());
-      if(product != 0){
+      if(product != ScalarTraits<Scalar>::zero()){
         //*fos << "Non zero sparse dot!" << std::endl;
         //GlobalOrdinal cCol = Bview.rowMap->getGlobalElement(j);
         //TEST_FOR_EXCEPTION(cCol == OrdinalTraits<GlobalOrdinal>::invalid(), std::runtime_error, "Couldn't find global row maping for " + j);
