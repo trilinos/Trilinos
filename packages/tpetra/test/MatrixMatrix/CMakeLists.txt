@@ -24,7 +24,7 @@ smallAdda.mtx smallAddb.mtx smallAddc.mtx
 smallATa.mtx smallATb.mtx smallATc.mtx
 rectAPa.mtx rectAPb.mtx rectAPc.mtx
 rectRAa.mtx rectRAb.mtx rectRAc.mtx
-rectPRa.mtx rectPRb.mtx rectPRc.mtx
+rectRPa.mtx rectRPb.mtx rectRPc.mtx
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix/matrices
 DEST_DIR ${PACKAGE_BINARY_DIR}/test/MatrixMatrix/matrices
 EXEDEPS MatrixMatrix_UnitTests
