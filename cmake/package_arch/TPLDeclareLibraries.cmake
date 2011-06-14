@@ -262,9 +262,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   
     ENDIF()
   
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      PRINT_VAR(TPL_${TPL_NAME}_LIBRARIES)
-    ENDIF()
+    # Print the final value to be used *always*
+    MESSAGE(STATUS "  TPL_${TPL_NAME}_LIBRARIES='${TPL_${TPL_NAME}_LIBRARIES}'")
 
   ELSE()
   
@@ -388,9 +387,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
 
   ENDIF()
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    PRINT_VAR(TPL_${TPL_NAME}_INCLUDE_DIRS)
-  ENDIF()
+  # Print the final value to be used *always*
+  MESSAGE(STATUS "  TPL_${TPL_NAME}_INCLUDE_DIRS='${TPL_${TPL_NAME}_INCLUDE_DIRS}'")
 
   # Set library directories to null always.  We do this because
   # the package support code expects this variable and it is used
