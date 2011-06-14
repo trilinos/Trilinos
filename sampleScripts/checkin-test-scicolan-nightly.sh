@@ -16,7 +16,8 @@ EXTRA_ARGS=$@
 #
 
 echo "
--DTrilinos_ENABLE_Fortran:BOOL=OFF
+-D Trilinos_ENABLE_Fortran:BOOL=OFF
+-D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON
 -D TPL_ENABLE_Boost:BOOL=ON
 -D Boost_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/boost
 -D Boost_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/boost/1.46.1/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared
