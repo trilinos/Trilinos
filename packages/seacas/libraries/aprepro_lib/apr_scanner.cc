@@ -379,7 +379,7 @@ typedef unsigned char YY_CHAR;
 #define yytext_ptr yytext
 #define YY_INTERACTIVE
 
-#include <FlexLexer.h>
+#include "FlexLexer.h"
 
 /* %if-c-only Standard (non-C++) definition */
 /* %endif */
@@ -1189,6 +1189,8 @@ static yyconst flex_int16_t yy_rule_linenum[87] =
 #include "aprepro.h"
 #include "apr_util.h"
 
+#define YY_NO_UNISTD_H 1
+
 /* import the parser's token type into a local typedef */
 typedef SEAMS::Parser::token token;
 typedef SEAMS::Parser::token_type token_type;
@@ -1247,7 +1249,7 @@ int if_lvl = 0;
 /* %if-c-only */
 /* %endif */
 /* %if-c++-only */
-#include <unistd.h>
+
 /* %endif */
 #endif
 
@@ -2861,8 +2863,6 @@ int yyFlexLexer::yy_get_next_buffer()
 /* %endif */
 
 /* %if-c++-only */
-
-extern "C" int isatty (int );
 
 /* %endif */
 

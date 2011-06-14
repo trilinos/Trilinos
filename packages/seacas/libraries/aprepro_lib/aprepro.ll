@@ -13,6 +13,7 @@
 #include "aprepro.h"
 #include "apr_util.h"
 
+#define YY_NO_UNISTD_H
 /* import the parser's token type into a local typedef */
 typedef SEAMS::Parser::token token;
 typedef SEAMS::Parser::token_type token_type;
