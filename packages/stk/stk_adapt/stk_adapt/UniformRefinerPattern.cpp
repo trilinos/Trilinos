@@ -174,9 +174,12 @@ namespace stk {
                     {
                       throw std::logic_error("UniformRefinerPatternBase::set_parent_child_relations: EntityId not large enough on this platform.");
                     }
-                  stk::mesh::EntityId bit = 1;  // just to avoid having to use a hard-coded constant which may be platform dependent
-                  family_tree_id = family_tree_id | (bit << 60);
-                  //std::cout << "tmp family_tree_id = " << family_tree_id << std::endl;
+                  //stk::mesh::EntityId bit = 1;  // just to avoid having to use a hard-coded constant which may be platform dependent
+                  //family_tree_id = family_tree_id | (bit << 60);  // actual
+                  // tmp for readability
+                  family_tree_id = family_tree_id + 1000000000u;
+                  
+                  //std::cout << "tmp family_tree_id = " << family_tree_id << " parent_id= " << parent_id << std::endl;
                 }
               family_tree = & eMesh.getBulkData()->declare_entity(FAMILY_TREE_RANK, parent_id, add);
             }
@@ -205,7 +208,7 @@ namespace stk {
       if (numChild) nchild = *numChild;
 
       // error check
-      if (0)
+      if (1)
         {
           mesh::PairIterRelation family_tree_relations = family_tree->relations(parent_elem.entity_rank());
           for (unsigned i = 1; i < family_tree_relations.size(); i++)

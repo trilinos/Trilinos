@@ -837,7 +837,9 @@ namespace stk {
               // FIXME
               // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error is isParentElement)
               const bool check_for_family_tree = false;  
-              if (m_eMesh.isParentElement(element, check_for_family_tree))
+              bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
+              
+              if (isParent)
                 continue;
 
               bool elementIsGhost = m_eMesh.isGhostElement(element);
@@ -954,6 +956,23 @@ namespace stk {
                   //if (1 || element.owner_rank() == 3)
                   //  std::cout << "tmp element.owner_rank() = " << element.owner_rank() << std::endl;
                 }
+              // FIXME
+
+              // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error if isParentElement)
+              const bool check_for_family_tree = false;  
+              bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
+              if (0)
+                {
+                  const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+                  stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+                  if (element_to_family_tree_relations.size() == 1)
+                    {
+                      std::cout << " isParent = " << isParent << " isChild = " << m_eMesh.isChildElement(element) << " element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
+                    }
+                }
+              
+              if (isParent)
+                continue;
 
 
               if (!m_eMesh.isGhostElement(element))

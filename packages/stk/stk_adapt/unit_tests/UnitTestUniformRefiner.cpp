@@ -1372,8 +1372,8 @@ namespace stk {
 
                 //breaker.setRemoveOldElements(false);
                 breaker.doBreak();
-                std::string fileName1 = std::string(output_files_loc+"quad_fixture_")+toString(iBreak+1)+std::string(".e");
-                std::string fileName2 = std::string(input_files_loc+"quad_fixture_")+toString(iBreak+1)+std::string(".e");
+                std::string fileName1 = std::string(output_files_loc+"quad_fixture_")+toString( iBreak + 1 )+std::string(".e");
+                std::string fileName2 = std::string(input_files_loc+"quad_fixture_")+toString( iBreak + 1 )+std::string(".e");
 
                 //eMesh1.printInfo("quad_fixture_1.e");
 

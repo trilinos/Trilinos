@@ -1712,9 +1712,9 @@ namespace stk {
               std::ostringstream out;
               out << "\nP[" << getRank() << "]= \n";
 
-              for (unsigned irank = 0; irank < 2u; irank++)
+              for (unsigned jrank = 0; jrank < 2u; jrank++)
                 {
-                  const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() + irank );
+                  const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() + jrank );
 
                   for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
                     {
