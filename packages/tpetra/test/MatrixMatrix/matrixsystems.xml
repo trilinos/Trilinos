@@ -42,6 +42,14 @@ A*B
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
+  <ParameterList name="RectangleQ*P">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/rectQPa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectQPb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectQPc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
 	<ParameterList name="RectangleR*P">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/rectRPa.mtx" type="string"/>
