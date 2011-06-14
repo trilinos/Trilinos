@@ -34,6 +34,16 @@ A*B
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
+	<!-- 
+    Not working because of a problem with fill complete      
+   <ParameterList name="RectangleR*A">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/rectRAa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectRAb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectRAc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList> -->
   <ParameterList name="syntheticT">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synTa.mtx" type="string"/>
