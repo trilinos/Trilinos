@@ -1390,7 +1390,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "enable_disable_packages",
       \
-      "--enable-packages=TrilinosFramework,RTOp,Thyra" \
+      "--enable-packages=TrilinosFramework,RTOp,Thyra,Tpetra" \
       +" --disable-packages=Tpetra,Sundance",
       \
       "\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n" \
@@ -1401,7 +1401,12 @@ class test_checkin_test(unittest.TestCase):
       ,
       \
       "\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_Tpetra:BOOL=ON\n" \
       )
+    # Above, Teuchos should not be enabled because --enable-packages should
+    # result in the modified file in Teuchos to be ignored.  The enable for
+    # Tpetra should not be on because it should be removed from the enable
+    # list.
 
 
   def test_no_enable_fwd_packages(self):
