@@ -1,12 +1,32 @@
-\BOOKMARK [0][-]{chapter*.5}{Nomenclature}{}% 1
-\BOOKMARK [0][-]{chapter.1}{Introduction}{}% 2
-\BOOKMARK [1][-]{section*.6}{Introduction}{chapter.1}% 3
-\BOOKMARK [0][-]{chapter.2}{Development of the Optika package}{}% 4
-\BOOKMARK [1][-]{section*.7}{Background}{chapter.2}% 5
-\BOOKMARK [2][-]{section*.8}{A Closer Look At The Problem}{section*.7}% 6
-\BOOKMARK [2][-]{section*.9}{Why Not Something Else?}{section*.7}% 7
-\BOOKMARK [3][-]{section*.10}{Something Simple}{section*.9}% 8
-\BOOKMARK [3][-]{section*.11}{Cross-Platform}{section*.9}% 9
-\BOOKMARK [3][-]{section*.12}{Trilinos Integration}{section*.9}% 10
-\BOOKMARK [1][-]{section*.13}{Optika Overview}{chapter.2}% 11
-\BOOKMARK [2][-]{section*.14}{GUI Fundamentals}{section*.13}% 12
+\BOOKMARK [1][-]{section*.6}{Nomenclature}{}% 1
+\BOOKMARK [1][-]{section*.7}{Introduction}{}% 2
+\BOOKMARK [1][-]{section*.8}{Background}{}% 3
+\BOOKMARK [2][-]{section*.9}{A Closer Look At The Problem}{section*.8}% 4
+\BOOKMARK [2][-]{section*.10}{Why Not Something Else?}{section*.8}% 5
+\BOOKMARK [1][-]{section*.14}{Optika Overview}{}% 6
+\BOOKMARK [2][-]{section*.15}{GUI Fundamentals}{section*.14}% 7
+\BOOKMARK [2][-]{section*.16}{Underlying Technologies}{section*.14}% 8
+\BOOKMARK [1][-]{section*.17}{Basic Optika Usage}{}% 9
+\BOOKMARK [2][-]{section*.18}{Utilizing C++ to Create A GUI}{section*.17}% 10
+\BOOKMARK [2][-]{section*.19}{Utilizing XML to Create a GUI}{section*.17}% 11
+\BOOKMARK [1][-]{section*.20}{Validators}{}% 12
+\BOOKMARK [2][-]{section*.21}{Enhanced Number Validators}{section*.20}% 13
+\BOOKMARK [2][-]{section*.22}{String Validators}{section*.20}% 14
+\BOOKMARK [2][-]{section*.23}{Filename Validators}{section*.20}% 15
+\BOOKMARK [2][-]{section*.24}{Array Validators}{section*.20}% 16
+\BOOKMARK [1][-]{section*.25}{Dependencies}{}% 17
+\BOOKMARK [2][-]{section*.26}{Visual Dependencies}{section*.25}% 18
+\BOOKMARK [2][-]{section*.30}{Validator Dependencies}{section*.25}% 19
+\BOOKMARK [2][-]{section*.34}{Number Array Length Dependencies}{section*.25}% 20
+\BOOKMARK [1][-]{section*.35}{Condition Visual Dependencies}{}% 21
+\BOOKMARK [2][-]{section*.36}{Parameter Conditions}{section*.35}% 22
+\BOOKMARK [2][-]{section*.40}{Boolean Logic Conditions}{section*.35}% 23
+\BOOKMARK [2][-]{section*.41}{Not Conditions}{section*.35}% 24
+\BOOKMARK [2][-]{section*.42}{Using Conditions With Dependencies}{section*.35}% 25
+\BOOKMARK [1][-]{section*.43}{Other Features of Optika}{}% 26
+\BOOKMARK [2][-]{section*.44}{Custom Functions}{section*.43}% 27
+\BOOKMARK [2][-]{section*.45}{Customizing Look And Feel}{section*.43}% 28
+\BOOKMARK [1][-]{section*.46}{Future Development}{}% 29
+\BOOKMARK [1][-]{section*.47}{Contributions}{}% 30
+\BOOKMARK [0][-]{section*.48}{References}{}% 31
+\BOOKMARK [1][-]{appendix.A}{Functions}{section*.48}% 32

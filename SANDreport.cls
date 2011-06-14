@@ -1,5 +1,5 @@
 % ---------------------------------------------------------------------------- %
-% $Id: SANDreport.cls,v 1.83 2009/04/30 23:15:05 rolf Exp $
+% $Id: SANDreport.cls,v 1.92 2010/12/13 17:15:04 rolf Exp $
 %
 % We start out with the standard LaTeX document class "article" or "report" and
 % modify it so it conforms to the Sandia Technical report style.
@@ -10,7 +10,7 @@
 % Get the latest version and more at
 %    http://www.cs.sandia.gov/~rolf/SANDreport
 %
-% Rolf Riesen, April 30, 2009.
+% Rolf Riesen, August 14, 2010.
 %
 %
 % 06/14/2002 v1.01
@@ -292,15 +292,32 @@
 %        option which adds "Page intentionally blank" to blank pages
 %    - Shared text bewteen examples is now in seperate files and \input into the
 %        examples
-
+%
+% 07/02/2010 v1.33
+%    - More accurate use of \CoverFont (interlinear spacing)
+%    - New DOE statement on cover page
+%    - (electronic copy) instead of just (electronic) for the tech library distribution
+%
+% 08/08/2010 v1.34
+%    - Add the NNSA logo on page 3. Sand publication (and report) guidelines have always
+%        required it, but previous versions of the Word template and this class file
+%        have not used it. Thanks to David Thompson who worked it out with Jennifer Hallstrom
+%        and provided the necessary changes.
+%
+% 08/14/2010 v1.35
+%    - The NNSA logo is not necessary at CA or NM. (Linda
+%        Lovato-Montoya and Jennifer Hallstrom)
+%
+% 12/13/2010 v1.36
+%    - LDRD office MS is now 0359, org 1911
 
 
 % ******************************************************************************
 % Package definitions
 %
     % The version and date of this file
-    \newcommand\SANDreportVersionOnly{ v1.32 }		% leave the spaces before and after version
-    \newcommand\SANDreportVersionDate{2008/04/30}	% Date has to be in this format!
+    \newcommand\SANDreportVersionOnly{ v1.36 }		% leave the spaces before and after version
+    \newcommand\SANDreportVersionDate{2010/12/13}	% Date has to be in this format!
 
     \typeout{Using Sandia Technical Report class: \SANDreportVersionDate, \SANDreportVersionOnly Rolf Riesen}
     \newcommand\SANDreportVersion{\SANDreportVersionDate \SANDreportVersionOnly}
@@ -516,9 +533,10 @@
 		\vspace*{\fill}							% Code I found, but can't remember where
 		\begin{center}							% Code I found, but can't remember where
 		    This page intentionally left blank.\\
-		    {\CoverFont{m}{6}{6pt}(Well, it's not blank anymore...)}
+		    % {\CoverFont{m}{6}{7pt}(Well, it's not blank anymore...)}
 		\end{center}							% Code I found, but can't remember where
 		\vspace{\fill}							% Code I found, but can't remember where
+		% FIXME: Maybe we still want page numbers... Maybe another option?
 		\thispagestyle{empty}						% Code I found, but can't remember where
 		\newpage							% \cleardoublepage from latex.ltx
 		\if@twocolumn\hbox{}\newpage\fi\fi\fi}				% \cleardoublepage from latex.ltx
@@ -542,6 +560,7 @@
 	\fontfamily{phv}
 	\fontseries{#1}
 	\fontshape{n}
+	% #3 should be 20% larger than #2
 	\fontsize{#2}{#3}
 	\selectfont
     }
@@ -563,7 +582,7 @@
 	%
 	%\hspace*{-0.375in}
 	\begin{minipage}[t]{6.0in}
-	    \CoverFont{b}{18}{20pt}
+	    \CoverFont{b}{18}{22pt}
 	    SANDIA REPORT
 	    \vspace{0.125in}\\
 	    \CoverFont{m}{12}{14pt}
@@ -597,14 +616,13 @@
 
 	    \vspace{0.25in}
 	    \CoverFont{m}{8}{10pt}
-	    \selectfont
 	    Prepared by\\
 	    Sandia National Laboratories\\
 	    Albuquerque, New Mexico 87185 and Livermore, California 94550\\
 	    \\
-	    Sandia is a multiprogram laboratory operated by Sandia Corporation,\\
-	    a Lockheed Martin Company, for the United States Department of Energy's\\
-	    National Nuclear Security Administration under Contract DE-AC04-94-AL85000.\\
+	    Sandia National Laboratories is a multi-program laboratory managed and operated by Sandia Corporation,\\
+	    a wholly owned subsidiary of Lockheed Martin Corporation, for the U.S. Department of Energy's\\
+	    National Nuclear Security Administration under contract DE-AC04-94AL85000.\\
 	    \\
 	    \MarkCoverVar
 	\end{minipage}
@@ -705,6 +723,9 @@
 	    \vspace{0.125in}
 
 	    \includegraphics[width=0.75in]{DOEbwlogo}
+	    % Not necessary for SAND reports
+	    % \hfill
+	    % \includegraphics[height=0.5in]{NNSAbwlogo}
 	\end{minipage}
 	\end{center}
 
@@ -950,7 +971,7 @@
 	    \ifthenelse{\boolean{distClassified}}   {
 		\SANDdistInternal{2}{9018}{Central Technical Files}{8944 (1 electronic and 1 hardcopy)}
 	    }{}
-	    \SANDdistInternal{1}{0899}{Technical Library}{8944 (electronic)}
+	    \SANDdistInternal{1}{0899}{Technical Library}{8944 (electronic copy)}
 
 	    % If this report has a Patent Caution or Patent Interest
 	    \ifthenelse{\boolean{distPatent}}   {
@@ -964,7 +985,7 @@
 
 	    % If this report is for LDRD work
 	    \ifthenelse{\boolean{distLDRD}}   {
-		\SANDdistInternal{1}{0123}{D. Chavez, LDRD Office}{1011}
+		\SANDdistInternal{1}{0359}{D. Chavez, LDRD Office}{1911}
 	    }{}
 
 	}{}
@@ -975,7 +996,7 @@
 		\SANDdistInternalM{2}{2497}{Central Technical Files}{8944 (1 electronic and 1 hardcopy)}
 	    }{}
 
-	    \SANDdistInternal{1}{0899}{Technical Library}{9536 (electronic)}
+	    \SANDdistInternal{1}{0899}{Technical Library}{9536 (electronic copy)}
 
 	    % If this report has a Patent Caution or Patent Interest
 	    \ifthenelse{\boolean{distPatent}}   {
@@ -989,7 +1010,7 @@
 
 	    % If this report is for LDRD work
 	    \ifthenelse{\boolean{distLDRD}}   {
-		\SANDdistInternal{1}{0123}{D. Chavez, LDRD Office}{1011}
+		\SANDdistInternal{1}{0359}{D. Chavez, LDRD Office}{1911}
 	    }{}
 
 	}{}
@@ -1340,7 +1361,7 @@
 	\ClassError{SANDreport.cls}{\@backslashchar SANDmarkCoverTitle doesn't work yet; sorry.}{Don't
 	know where to put the text on the title page.}
 	\sbox{\MarkTitletempbox}{{\bf #1\\}{#2}}
-	\renewcommand{\MarkCoverVar}{{{\CoverFont{b}{12}{12pt}#1}\\ {\CoverFont{m}{8}{10pt}}{#2}}}
+	\renewcommand{\MarkCoverVar}{{{\CoverFont{b}{12}{14pt}#1}\\ {\CoverFont{m}{8}{10pt}}{#2}}}
     }
 
     \newcommand{\SANDmarkCover}[1]{
@@ -1880,7 +1901,7 @@
 	\cleardoublepage	% We're on the inside end page now
 	\mbox{}			% Some invisible text
 	\vfill
-	\hfill {\CoverFont{m}{6}{6pt} \SANDreportVersionOnly}
+	\hfill {\CoverFont{m}{6}{7pt} \SANDreportVersionOnly}
 	\setboolean{SANDmarkingsRequired}{false}
 	\thispagestyle{empty}
 	\pagestyle{empty}
