@@ -931,8 +931,8 @@ Teuchos::ParameterList::print() const
 
 Print function to use in debugging in a debugger.
 
-Prints to *VerboseObjectBase::getDefaultOStream() so it will print
-well in parallel. ";
+Prints to *VerboseObjectBasegetDefaultOStream() so it will print well
+in parallel. ";
 
 %feature("docstring")  Teuchos::ParameterList::print "std::ostream &
 Teuchos::ParameterList::print(std::ostream &os, const PrintOptions
@@ -972,12 +972,12 @@ An iterator pointing beyond the last entry. ";
 %feature("docstring")  Teuchos::ParameterList::entry "const
 ParameterEntry & Teuchos::ParameterList::entry(ConstIterator i) const
 
-Access to ParameterEntry (i.e., returns i->second) ";
+Access to ParameterEntry (i.e., returns i->second). ";
 
 %feature("docstring")  Teuchos::ParameterList::name "const
 std::string & Teuchos::ParameterList::name(ConstIterator i) const
 
-Access to name (i.e., returns i->first) ";
+Access to name (i.e., returns i->first). ";
 
 /*  Validation Functions  */
 
@@ -1066,6 +1066,47 @@ There are not more parameters or sublists left in *this
 
 A breath-first search is performed to validate all of the parameters
 in one sublist before moving into nested subslist. ";
+
+
+// File: classTeuchos_1_1ParameterList_1_1PrintOptions.xml
+%feature("docstring") Teuchos::ParameterList::PrintOptions "
+
+Utility class for setting and passing in print options.
+
+C++ includes: Teuchos_ParameterList.hpp ";
+
+%feature("docstring")
+Teuchos::ParameterList::PrintOptions::PrintOptions "Teuchos::ParameterList::PrintOptions::PrintOptions() ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::indent "PrintOptions& Teuchos::ParameterList::PrintOptions::indent(int
+_indent) ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showTypes
+"PrintOptions& Teuchos::ParameterList::PrintOptions::showTypes(bool
+_showTypes) ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showFlags
+"PrintOptions& Teuchos::ParameterList::PrintOptions::showFlags(bool
+_showFlags) ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showDoc "PrintOptions& Teuchos::ParameterList::PrintOptions::showDoc(bool
+_showDoc) ";
+
+%feature("docstring")
+Teuchos::ParameterList::PrintOptions::incrIndent "PrintOptions&
+Teuchos::ParameterList::PrintOptions::incrIndent(int indents) ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::indent "int Teuchos::ParameterList::PrintOptions::indent() const ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showTypes
+"bool Teuchos::ParameterList::PrintOptions::showTypes() const ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showFlags
+"bool Teuchos::ParameterList::PrintOptions::showFlags() const ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::showDoc "bool Teuchos::ParameterList::PrintOptions::showDoc() const ";
+
+%feature("docstring")  Teuchos::ParameterList::PrintOptions::copy "PrintOptions Teuchos::ParameterList::PrintOptions::copy() const ";
 
 
 // File: classTeuchos_1_1ParameterListAcceptor.xml
@@ -1173,6 +1214,8 @@ C++ includes: Teuchos_ParameterListAcceptorDefaultBase.hpp ";
 
 /*  Overridden from ParameterListAcceptor  */
 
+/* */
+
 %feature("docstring")
 Teuchos::ParameterListAcceptorDefaultBase::getNonconstParameterList "RCP< ParameterList >
 Teuchos::ParameterListAcceptorDefaultBase::getNonconstParameterList()
@@ -1190,6 +1233,8 @@ Teuchos::ParameterListAcceptorDefaultBase::getParameterList() const ";
 
 /*  Protected accessors to actual parameter list object.  */
 
+/* */
+
 
 // File: classTeuchos_1_1ParameterListNonAcceptor.xml
 %feature("docstring") Teuchos::ParameterListNonAcceptor "
@@ -1204,6 +1249,8 @@ C++ includes: Teuchos_ParameterListNonAcceptor.hpp ";
 
 /*  Overridden from ParameterListAcceptor  */
 
+/* */
+
 %feature("docstring")
 Teuchos::ParameterListNonAcceptor::setParameterList "void
 Teuchos::ParameterListNonAcceptor::setParameterList(RCP< ParameterList
@@ -1217,47 +1264,6 @@ ParameterList >
 Teuchos::ParameterListNonAcceptor::getValidParameters() const
 
 Returns a non-null but empty parameter list. ";
-
-
-// File: classTeuchos_1_1ParameterList_1_1PrintOptions.xml
-%feature("docstring") Teuchos::ParameterList::PrintOptions "
-
-Utility class for setting and passing in print options.
-
-C++ includes: Teuchos_ParameterList.hpp ";
-
-%feature("docstring")
-Teuchos::ParameterList::PrintOptions::PrintOptions "Teuchos::ParameterList::PrintOptions::PrintOptions() ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::indent "PrintOptions& Teuchos::ParameterList::PrintOptions::indent(int
-_indent) ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showTypes
-"PrintOptions& Teuchos::ParameterList::PrintOptions::showTypes(bool
-_showTypes) ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showFlags
-"PrintOptions& Teuchos::ParameterList::PrintOptions::showFlags(bool
-_showFlags) ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showDoc "PrintOptions& Teuchos::ParameterList::PrintOptions::showDoc(bool
-_showDoc) ";
-
-%feature("docstring")
-Teuchos::ParameterList::PrintOptions::incrIndent "PrintOptions&
-Teuchos::ParameterList::PrintOptions::incrIndent(int indents) ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::indent "int Teuchos::ParameterList::PrintOptions::indent() const ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showTypes
-"bool Teuchos::ParameterList::PrintOptions::showTypes() const ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showFlags
-"bool Teuchos::ParameterList::PrintOptions::showFlags() const ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::showDoc "bool Teuchos::ParameterList::PrintOptions::showDoc() const ";
-
-%feature("docstring")  Teuchos::ParameterList::PrintOptions::copy "PrintOptions Teuchos::ParameterList::PrintOptions::copy() const ";
 
 
 // File: structTeuchos_1_1ScalarTraits_3_01char_01_4.xml
@@ -1772,7 +1778,7 @@ Write the header. ";
 %feature("docstring")  Teuchos::XMLObjectImplem::terminatedHeader "std::string XMLObjectImplem::terminatedHeader(bool strictXML=false)
 const
 
-Write the header terminated as <Header> ";
+Write the header terminated as <Header>. ";
 
 %feature("docstring")  Teuchos::XMLObjectImplem::footer "std::string
 Teuchos::XMLObjectImplem::footer() const
@@ -1788,6 +1794,8 @@ Writes an XML object to a parameter list.
 C++ includes: Teuchos_XMLParameterListReader.hpp ";
 
 /*  Public Types  */
+
+/* */
 
 /*  Constructors  */
 
@@ -1817,6 +1825,8 @@ Writes a ParameterList to an XML object.
 C++ includes: Teuchos_XMLParameterListWriter.hpp ";
 
 /*  Public Types  */
+
+/* */
 
 /*  Constructors  */
 
@@ -1860,8 +1870,13 @@ Consume the XMLInputStream to build an XMLObject. ";
 
 
 // File: namespaceTeuchos.xml
-%feature("docstring")  Teuchos::Exceptions::printValidParameters "void Teuchos::printValidParameters(const ParameterListAcceptor
-&paramListAccpetor, std::ostream &out, const bool showDoc=true)
+%feature("docstring")  Teuchos::Exceptions::haveSameValues "bool
+Teuchos::haveSameValues(const ParameterList &list1, const
+ParameterList &list2) ";
+
+%feature("docstring")  Teuchos::Exceptions::printValidParameters "TEUCHOS_LIB_DLL_EXPORT void Teuchos::printValidParameters(const
+ParameterListAcceptor &paramListAccpetor, std::ostream &out, const
+bool showDoc=true)
 
 Pretty print the valid parameters from a ParameterListAccpetor object.
 ";
@@ -1880,6 +1895,49 @@ std::string >(const std::string &name) const ";
 const std::string & > " void Teuchos::XMLObject::addAttribute< const
 std::string & >(const std::string &name, const std::string &value) ";
 
+%feature("docstring")
+Teuchos::Exceptions::updateParametersFromXmlFile "void
+Teuchos::updateParametersFromXmlFile(const std::string &xmlFileName,
+ParameterList *paramList) ";
+
+%feature("docstring")
+Teuchos::Exceptions::updateParametersFromXmlFileAndBroadcast "void
+Teuchos::updateParametersFromXmlFileAndBroadcast(const std::string
+&xmlFileName, ParameterList *paramList, const Comm< int > &comm) ";
+
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlFile(const std::string &xmlFileName) ";
+
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlFile(const std::string &xmlFileName, RCP<
+DependencySheet > depSheet) ";
+
+%feature("docstring")
+Teuchos::Exceptions::updateParametersFromXmlString "void
+Teuchos::updateParametersFromXmlString(const std::string &xmlStr,
+ParameterList *paramList) ";
+
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlString
+"Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlString(const std::string &xmlStr) ";
+
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlString
+"Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlString(const std::string &xmlStr, RCP<
+DependencySheet > depSheet) ";
+
+%feature("docstring")
+Teuchos::Exceptions::writeParameterListToXmlOStream "void
+Teuchos::writeParameterListToXmlOStream(const ParameterList
+&paramList, std::ostream &xmlOut, RCP< const DependencySheet >
+depSheet) ";
+
+%feature("docstring")
+Teuchos::Exceptions::writeParameterListToXmlFile "void
+Teuchos::writeParameterListToXmlFile(const ParameterList &paramList,
+const std::string &xmlFileName, RCP< const DependencySheet > depSheet)
+";
+
 
 // File: namespaceTeuchos_1_1Exceptions.xml
 
@@ -1891,6 +1949,8 @@ std::string & >(const std::string &name, const std::string &value) ";
 
 
 // File: Teuchos__ParameterList_8cpp.xml
+%feature("docstring")  Teuchos::filterValueToString "std::string
+@2::filterValueToString(const Teuchos::ParameterEntry &entry) ";
 
 
 // File: Teuchos__ParameterList_8hpp.xml
@@ -1924,6 +1984,11 @@ std::string & >(const std::string &name, const std::string &value) ";
 
 
 // File: Teuchos__ScalarTraits_8cpp.xml
+%feature("docstring")  returnFloatZero "float @13::returnFloatZero()
+";
+
+%feature("docstring")  returnDoubleZero "double
+@13::returnDoubleZero() ";
 
 
 // File: Teuchos__ScalarTraits_8hpp.xml
@@ -2001,11 +2066,11 @@ std::string & >(const std::string &name, const std::string &value) ";
 // File: Teuchos__XMLParser_8hpp.xml
 
 
-// File: dir_3e7ac0723db077e4460d28d277456290.xml
+// File: dir_65f6d23da234a7168833c1821735e923.xml
 
 
-// File: dir_ccb49250c8a2ae42b75bc28c0fcd3e62.xml
+// File: dir_09fc306ea299b58fb03525b9d7f8a6b7.xml
 
 
-// File: ParameterList_2cxx_main_8cpp-example.xml
+// File: ParameterList_2cxx__main_8cpp-example.xml
 
