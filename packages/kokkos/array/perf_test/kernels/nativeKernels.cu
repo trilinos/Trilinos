@@ -771,124 +771,6 @@ __global__ void HexGrad5 (double * f, double * g){
 
 }
 
-__global__ void HexGrad6 (	double * f, 
-							double * g){
-
-
-//////////////////////////////////////////////////////////////////////////
-//	fifth optimization of the original kernel							//
-//																		//
-//	this kernel further reduces the memory footprint by eliminating 	//
-//	stored intermediates. Instead, this kernel opts to calculate		//
-//	all needed values on the fly.										//
-//////////////////////////////////////////////////////////////////////////
-
-	unsigned int index = blockIdx.x*(blockDim.x) + threadIdx.x;
-	unsigned int e_count = gridDim.x * blockDim.x;
-
-	double a[8], b[8];
-
-	// Z
-	a[0] = f[index]; index += e_count;
-	a[1] = f[index]; index += e_count;
-	a[2] = f[index]; index += e_count;
-	a[3] = f[index]; index += e_count;
-	a[4] = f[index]; index += e_count;
-	a[5] = f[index]; index += e_count;
-	a[6] = f[index]; index += e_count;
-	a[7] = f[index]; index += e_count;
-
-	// Y
-	b[0] = f[index]; index += e_count;
-	b[1] = f[index]; index += e_count;
-	b[2] = f[index]; index += e_count;
-	b[3] = f[index]; index += e_count;
-	b[4] = f[index]; index += e_count;
-	b[5] = f[index]; index += e_count;
-	b[6] = f[index]; index += e_count;
-	b[7] = f[index]; index += e_count;
- 
-	// X grad
-    g[index] = (b[1] *  ((a[5] - a[2]) + (a[4] - a[3]))) - (b[2] * (a[3] - a[1])) - (b[3] *  ((a[7] - a[2]) + (a[4] - a[1]))) \
-			 + (b[4] *  ((a[7] - a[5]) + (a[3] - a[1]))) + (b[5] * (a[4] - a[1])) - (b[7] * (a[4] - a[3])); index += e_count;
-    g[index] = (b[2] *  ((a[5] - a[0]) + (a[6] - a[3]))) + (b[3] * (a[2] - a[0])) - (b[0] *  ((a[5] - a[2]) + (a[4] - a[3]))) \
-			 - (b[5] *  ((a[6] - a[4]) + (a[2] - a[0]))) + (b[6] * (a[5] - a[2])) - (b[4] * (a[5] - a[0])); index += e_count;
-    g[index] = (b[3] *  ((a[6] - a[1]) + (a[7] - a[0]))) + (b[0] * (a[3] - a[1])) - (b[1] *  ((a[5] - a[0]) + (a[6] - a[3]))) \
-			 - (b[6] *  ((a[7] - a[5]) + (a[3] - a[1]))) + (b[7] * (a[6] - a[3])) - (b[5] * (a[6] - a[1])); index += e_count;
-    g[index] = (b[0] *  ((a[7] - a[2]) + (a[4] - a[1]))) - (b[1] * (a[2] - a[0])) - (b[2] *  ((a[6] - a[1]) + (a[7] - a[0]))) \
-			 + (b[7] *  ((a[6] - a[4]) + (a[2] - a[0]))) + (b[4] * (a[7] - a[0])) - (b[6] * (a[7] - a[2])); index += e_count;
-    g[index] = (b[5] *  ((a[6] - a[1]) + (a[7] - a[0]))) + (b[6] * (a[7] - a[5])) - (b[7] *  ((a[5] - a[0]) + (a[6] - a[3]))) \
-			 - (b[0] *  ((a[7] - a[5]) + (a[3] - a[1]))) - (b[3] * (a[7] - a[0])) + (b[1] * (a[5] - a[0])); index += e_count;
-    g[index] = (b[6] *  ((a[7] - a[2]) + (a[4] - a[1]))) - (b[4] * ((a[6] - a[1]) + (b[7] - a[0])))  - (a[7] * (a[6] - a[4]))\
-			 + (b[1] *  ((a[6] - a[4]) + (a[2] - a[0]))) - (b[0] * (a[4] - a[1])) + (b[2] * (a[6] - a[1])); index += e_count;
-    g[index] = (b[7] *  ((a[5] - a[2]) + (a[4] - a[3]))) - (b[5] * ((a[7] - a[2]) + (b[4] - a[1])))  - (a[4] * (a[7] - a[5]))\
-			 + (b[2] *  ((a[7] - a[5]) + (a[3] - a[1]))) - (b[1] * (a[5] - a[2])) + (b[3] * (a[7] - a[2])); index += e_count;
-    g[index] = (b[4] *  ((a[5] - a[0]) + (a[6] - a[3]))) - (b[6] * ((a[5] - a[2]) + (b[4] - a[3])))  + (a[5] * (a[6] - a[4]))\
-			 - (b[3] *  ((a[6] - a[4]) + (a[2] - a[0]))) - (b[2] * (a[6] - a[3])) + (b[0] * (a[4] - a[3])); index += e_count;
-
-	// X
-
-	a[7] = f[index]; index -= e_count;
-	a[6] = f[index]; index -= e_count;
-	a[5] = f[index]; index -= e_count;
-	a[4] = f[index]; index -= e_count;
-	a[3] = f[index]; index -= e_count;
-	a[2] = f[index]; index -= e_count;
-	a[1] = f[index]; index -= e_count;
-	a[0] = f[index]; index -= e_count;
-
-	index -= 8 * e_count;
-
-	// Z grad
-    g[index] = (a[4] *  ((b[5] - b[0]) + (b[6] - b[3]))) - (a[6] *  ((b[5] - b[2]) + (b[4] - b[3]))) + (a[5] * (b[6] - b[4])) \
-			 - (a[3] *  ((b[6] - b[4]) + (b[2] - b[0]))) - (a[2] * (b[6] - b[3])) + (a[0] * (b[4] - b[3])); index -= e_count;
-    g[index] = (a[7] *  ((b[5] - b[2]) + (b[4] - b[3]))) - (a[5] *  ((b[7] - b[2]) + (b[4] - b[1])))  - (a[4] * (b[7] - b[5]))\
-			 + (a[2] *  ((b[7] - b[5]) + (b[3] - b[1]))) - (a[1] * (b[5] - b[2])) + (a[3] * (b[7] - b[2])); index -= e_count;
-    g[index] = (a[6] *  ((b[7] - b[2]) + (b[4] - b[1]))) - (a[4] *  ((b[6] - b[1]) + (b[7] - b[0])))  - (a[7] * (b[6] - b[4]))\
-			 + (a[1] *  ((b[6] - b[4]) + (b[2] - b[0]))) - (a[0] * (b[4] - b[1])) + (a[2] * (b[6] - b[1])); index -= e_count;
-    g[index] = (a[5] *  ((b[6] - b[1]) + (b[7] - b[0]))) + (a[6] * (b[7] - b[5])) - (a[7] *  ((b[5] - b[0]) + (b[6] - b[3]))) \
-			 - (a[0] *  ((b[7] - b[5]) + (b[3] - b[1]))) - (a[3] * (b[7] - b[0])) + (a[1] * (b[5] - b[0])); index -= e_count;
-    g[index] = (a[0] *  ((b[7] - b[2]) + (b[4] - b[1]))) - (a[1] * (b[2] - b[0])) - (a[2] *  ((b[6] - b[1]) + (b[7] - b[0]))) \
-			 + (a[7] *  ((b[6] - b[4]) + (b[2] - b[0]))) + (a[4] * (b[7] - b[0])) - (a[6] * (b[7] - b[2])); index -= e_count;
-    g[index] = (a[3] *  ((b[6] - b[1]) + (b[7] - b[0]))) + (a[0] * (b[3] - b[1])) - (a[1] *  ((b[5] - b[0]) + (b[6] - b[3]))) \
-			 - (a[6] *  ((b[7] - b[5]) + (b[3] - b[1]))) + (a[7] * (b[6] - b[3])) - (a[5] * (b[6] - b[1])); index -= e_count;
-    g[index] = (a[2] *  ((b[5] - b[0]) + (b[6] - b[3]))) + (a[3] * (b[2] - b[0])) - (a[0] *  ((b[5] - b[2]) + (b[4] - b[3]))) \
-			 - (a[5] *  ((b[6] - b[4]) + (b[2] - b[0]))) + (a[6] * (b[5] - b[2])) - (a[4] * (b[5] - b[0])); index -= e_count;
-    g[index] = (a[1] *  ((b[5] - b[2]) + (b[4] - b[3]))) - (a[2] * (b[3] - b[1])) - (a[3] *  ((b[7] - b[2]) + (b[4] - b[1]))) \
-			 + (a[4] *  ((b[7] - b[5]) + (b[3] - b[1]))) + (a[5] * (b[4] - b[1])) - (a[7] * (b[4] - b[3])); index -= e_count;
- 
-	// Z
-
-	b[0] = f[index]; index += e_count;
-	b[1] = f[index]; index += e_count;
-	b[2] = f[index]; index += e_count;
-	b[3] = f[index]; index += e_count;
-	b[4] = f[index]; index += e_count;
-	b[5] = f[index]; index += e_count;
-	b[6] = f[index]; index += e_count;
-	b[7] = f[index]; index += e_count;
-
-	//	Y grad
-
-    g[index] = (a[1] *  ((a[5] - a[2]) + (a[4] - a[3]))) - (a[2] * (a[3] - a[1])) - (a[3] *  ((a[7] - a[2]) + (a[4] - a[1]))) \
-			 + (a[4] *  ((a[7] - a[5]) + (a[3] - a[1]))) + (a[5] * (a[4] - a[1])) - (a[7] * (a[4] - a[3])); index += e_count;
-    g[index] = (a[2] *  ((a[5] - a[0]) + (a[6] - a[3]))) + (a[3] * (a[2] - a[0])) - (a[0] *  ((a[5] - a[2]) + (a[4] - a[3]))) \
-			 - (a[5] *  ((a[6] - a[4]) + (a[2] - a[0]))) + (a[6] * (a[5] - a[2])) - (a[4] * (a[5] - a[0])); index += e_count;
-    g[index] = (a[3] *  ((a[6] - a[1]) + (a[7] - a[0]))) + (a[0] * (a[3] - a[1])) - (a[1] *  ((a[5] - a[0]) + (a[6] - a[3]))) \
-			 - (a[6] *  ((a[7] - a[5]) + (a[3] - a[1]))) + (a[7] * (a[6] - a[3])) - (a[5] * (a[6] - a[1])); index += e_count;
-    g[index] = (a[0] *  ((a[7] - a[2]) + (a[4] - a[1]))) - (a[1] * (a[2] - a[0])) - (a[2] *  ((a[6] - a[1]) + (a[7] - a[0]))) \
-			 + (a[7] *  ((a[6] - a[4]) + (a[2] - a[0]))) + (a[4] * (a[7] - a[0])) - (a[6] * (a[7] - a[2])); index += e_count;
-    g[index] = (a[5] *  ((a[6] - a[1]) + (a[7] - a[0]))) + (a[6] * (a[7] - a[5])) - (a[7] *  ((a[5] - a[0]) + (a[6] - a[3]))) \
-			 - (a[0] *  ((a[7] - a[5]) + (a[3] - a[1]))) - (a[3] * (a[7] - a[0])) + (a[1] * (a[5] - a[0])); index += e_count;
-    g[index] = (a[6] *  ((a[7] - a[2]) + (a[4] - a[1]))) - (a[4] * ((a[6] - a[1]) + (a[7] - a[0])))  - (a[7] * (a[6] - a[4]))\
-			 + (a[1] *  ((a[6] - a[4]) + (a[2] - a[0]))) - (a[0] * (a[4] - a[1])) + (a[2] * (a[6] - a[1])); index += e_count;
-    g[index] = (a[7] *  ((a[5] - a[2]) + (a[4] - a[3]))) - (a[5] * ((a[7] - a[2]) + (a[4] - a[1])))  - (a[4] * (a[7] - a[5]))\
-			 + (a[2] *  ((a[7] - a[5]) + (a[3] - a[1]))) - (a[1] * (a[5] - a[2])) + (a[3] * (a[7] - a[2])); index += e_count;
-    g[index] = (a[4] *  ((a[5] - a[0]) + (a[6] - a[3]))) - (a[6] * ((a[5] - a[2]) + (a[4] - a[3])))  + (a[5] * (a[6] - a[4]))\
-			 - (a[3] *  ((a[6] - a[4]) + (a[2] - a[0]))) - (a[2] * (a[6] - a[3])) + (a[0] * (a[4] - a[3])); index += e_count;
-
-
-}
 
 __global__ void scale (	double * input, 
 							double * scalar_array, 
@@ -1327,7 +1209,6 @@ void test_hex_grad(){
 	//	HexGrad3<<<blocks, threads>>>(fD, gD);
 	//	HexGrad4<<<blocks, threads>>>(fD, gD);
 	//	HexGrad5<<<blocks, threads>>>(fD, gD);
-	//	HexGrad6<<<blocks, threads>>>(fD, gD);
 
 		cudaThreadSynchronize();
 
