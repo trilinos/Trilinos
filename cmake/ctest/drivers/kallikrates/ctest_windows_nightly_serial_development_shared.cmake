@@ -16,6 +16,7 @@ SET(CTEST_TEST_TYPE EXPERIMENTAL)
 
 #The dll export macros have only been added for a few  packages so we can really only test those packages
 SET(Trilinos_PACKAGES "Teuchos;Epetra;Anasazi")
+SET(CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES FALSE)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DBUILD_SHARED_LIBS:BOOL=ON"
