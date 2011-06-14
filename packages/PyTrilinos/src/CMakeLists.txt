@@ -218,6 +218,10 @@ MESSAGE(STATUS "PyTrilinos installation path: ${PyTrilinos_INSTALL_DIR}")
 ADD_SUBDIRECTORY(PyTrilinos)
 
 #
+# Add the script subdirectory
+ADD_SUBDIRECTORY(scripts)
+
+#
 # Initialize the list of additional clean files
 SET(ADDITIONAL_CLEAN_FILES "")
 
@@ -291,6 +295,21 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA)
     LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/${MODULE_NAME}.pyc")
+  #
+  # PyTrilinos.Isorropia
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/Isorropia")
+    SET(TRILINOS_LIBS ${ISORROPIA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/Isorropia/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling Isorropia/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Isorropia/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Isorropia/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/Isorropia)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/Isorropia)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/Isorropia/${MODULE_NAME}.pyc")
   #
   # PyTrilinos
   ELSE("${MODULE_OUTDIR}")

@@ -41,6 +41,9 @@ FOREACH(PACKAGE ${PyTrilinos_PACKAGES})
 ENDFOREACH(PACKAGE ${PyTrilinos_PACKAGES})
 SET(PyTrilinos_ALL "${PyTrilinos_ALL}]")
 
+# Define a trigger target
+ADD_CUSTOM_TARGET(Pure_Python_Modules ALL)
+
 # Define the list of local modules
 SET(LOCAL_MODULES __init__ PropertyBase typed_tuple typed_list typed_dict)
 
@@ -53,13 +56,10 @@ FOREACH(MODULE ${LOCAL_MODULES})
 
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py)
-  ADD_CUSTOM_TARGET(${MODULE} ALL
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.pyc)
-  ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.pyc
+  ADD_CUSTOM_COMMAND(TARGET Pure_Python_Modules
     COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('${MODULE}.py')"
     COMMENT "Byte compiling ${MODULE}.py"
-    VERBATIM
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py)
+    VERBATIM)
   INSTALL(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py
     ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.pyc
@@ -74,6 +74,12 @@ LIST(APPEND            clean_files ${ADDITIONAL_CLEAN_FILES})
 LIST(REMOVE_DUPLICATES clean_files)
 LIST(REMOVE_ITEM       clean_files "")
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}")
+
+# The Isorropia module employs namespaces, so include the Isorropia
+# directory
+IF(PyTrilinos_NABLE_Isorropia)
+  ADD_SUBDIRECTORY(Isorropia)
+ENDIF(PyTrilinos_NABLE_Isorropia)
 
 # The NOX module employs namespaces, so include the NOX directory
 IF(PyTrilinos_ENABLE_NOX)
