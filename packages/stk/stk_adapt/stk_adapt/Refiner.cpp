@@ -834,6 +834,12 @@ namespace stk {
               const stk::mesh::Entity * element_p =  *iele;
               const stk::mesh::Entity& element = * element_p;
 
+              // FIXME
+              // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error is isParentElement)
+              const bool check_for_family_tree = false;  
+              if (m_eMesh.isParentElement(element, check_for_family_tree))
+                continue;
+
               bool elementIsGhost = m_eMesh.isGhostElement(element);
               if (!elementIsGhost)
                 ++num_elem;
@@ -1379,6 +1385,7 @@ namespace stk {
 
 #elif PERCEPT_USE_FAMILY_TREE == 1
 
+
     void Refiner::
     fixElementSides1(stk::mesh::EntityRank side_rank)
     {
@@ -1419,14 +1426,15 @@ namespace stk {
               stk::mesh::Entity& family_tree = bucket[iElement];
               //for (unsigned rank = 1u; rank <= eMesh.element_rank(); rank++)
               //for (unsigned rank = m_eMesh.element_rank(); rank <= m_eMesh.element_rank(); rank++)
-              unsigned rank = m_eMesh.element_rank();
+              unsigned element_rank = m_eMesh.element_rank();
                 {
                   // only look at element rank
-                  mesh::PairIterRelation family_tree_relations = family_tree.relations(rank);
+                  mesh::PairIterRelation family_tree_relations = family_tree.relations(element_rank);
                   if (family_tree_relations.size())
                     {
                       // get the parent from the family_tree
                       stk::mesh::Entity* parent = family_tree_relations[0].entity();
+
 
                       if (0)
                         {
@@ -1449,6 +1457,10 @@ namespace stk {
                         {
                           throw std::logic_error("Refiner::fixElementSides1 parent_topo_data is null");
                         }
+
+                      // skip non-leaf nodes of the tree
+                      if (!m_eMesh.isParentElementLeaf(*parent))
+                        continue;
 
                       shards::CellTopology parent_topo(stk::percept::PerceptMesh::get_cell_topology(*parent));
                       //unsigned parent_nsides = (unsigned)parent_topo.getSideCount();

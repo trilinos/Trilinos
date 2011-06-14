@@ -133,12 +133,12 @@ namespace stk {
        */
 
       /** Overrides
-       *
-       * Client (derived-class) code should override this to provide a loop over all (or some) of the elements and apply the given @param function on the NodeRegistry
        *   m_nodeRegistry data member.  The same loop should be executed every time this method is called (i.e. the same elements should be visited).  Also, there
        *   is policy associated with the @param only_count and @param doAllElements inputs.  If doAllElements==true, then ghost elements should not be skipped.
        *   If only_count==true, then *do not* call the supplied @param function, rather just count the number of elements to be visited and return that number.
        *   @return Always return the number of elements visited (modulo the doAllElements parameter).
+       * 
+       *   Note: client code can just use the supplied implementation in this base class - it is not necessary to override
        *
        *   @see UniformRefiner implementation of this method for an example.
        */
@@ -175,7 +175,8 @@ namespace stk {
        *  Override it to only apply the @param function to the desired sub-entities (e.g. for non-uniform/local refinement)
        *
        *  It is a copy of NodeRegistry's doForAllSubEntities method.  Provided here so it can be overridden.
-       *
+       * 
+       *  Note: this is the minimal function that needs to be overridden to get different marking/refining behavior
        */
 
       virtual void

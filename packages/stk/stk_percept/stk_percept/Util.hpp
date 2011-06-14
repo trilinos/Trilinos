@@ -225,9 +225,11 @@ namespace stk {
     LapCountType getAccumulatedLap(stk::diag::Timer& timer, bool option=false);
 
     //========================================================================================================================
-    inline std::string toString(int v) { return boost::lexical_cast<std::string>(v); }
-    inline std::string toString(unsigned v) { return boost::lexical_cast<std::string>(v); }
-    inline std::string toString(double v) { return boost::lexical_cast<std::string>(v); }
+//     inline std::string toString(int v) { return boost::lexical_cast<std::string>(v); }
+//     inline std::string toString(unsigned v) { return boost::lexical_cast<std::string>(v); }
+//     inline std::string toString(double v) { return boost::lexical_cast<std::string>(v); }
+    template<class T> 
+    std::string toString(T t) { return boost::lexical_cast<std::string>(t); }
 
     //========================================================================================================================
 

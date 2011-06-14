@@ -1016,7 +1016,7 @@ namespace stk {
     void PerceptMesh::
     createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity *>& requested_entities)
     {
-      std::vector<size_t> requests(  m_metaData->entity_rank_count(), 0 );
+      std::vector<size_t> requests(  m_metaData->entity_rank_count() , 0 );
       requests[entityRank] = count;
       getBulkData()->generate_new_entities( requests, requested_entities );
     }

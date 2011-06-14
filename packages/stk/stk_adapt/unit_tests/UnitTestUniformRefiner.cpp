@@ -253,11 +253,11 @@ namespace stk {
             UniformRefiner breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
-            MPI_Barrier( MPI_COMM_WORLD );
+            //MPI_Barrier( MPI_COMM_WORLD );
 
-            eMesh.dumpElementsCompact();
+            //eMesh.dumpElementsCompact();
 
-            MPI_Barrier( MPI_COMM_WORLD );
+            //MPI_Barrier( MPI_COMM_WORLD );
             //exit(123);
 
             
@@ -305,9 +305,9 @@ namespace stk {
             UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
-            eMesh.dumpElementsCompact();
+            //eMesh.dumpElementsCompact();
 
-            MPI_Barrier( MPI_COMM_WORLD );
+            //MPI_Barrier( MPI_COMM_WORLD );
             //exit(123);
 
             
@@ -323,7 +323,8 @@ namespace stk {
       //=============================================================================
       //=============================================================================
 
-      STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_1)
+      //STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_1)
+      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_N_1)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -360,12 +361,12 @@ namespace stk {
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.dumpElementsCompact();
+            //eMesh.dumpElementsCompact();
 
             //eMesh.printInfo("local tri mesh refined", 2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1_1_"+post_fix[p_size]+".e");
 
-            MPI_Barrier( MPI_COMM_WORLD );
+            //MPI_Barrier( MPI_COMM_WORLD );
             //exit(123);
 
             //breaker.unrefineAll();
@@ -387,7 +388,7 @@ namespace stk {
       //=============================================================================
       //=============================================================================
 
-      STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_2)
+      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_N_2)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
@@ -421,16 +422,22 @@ namespace stk {
             save_or_diff(eMesh, output_files_loc+"local_tri_N_2_0_"+post_fix[p_size]+".e");
 
             TestLocalRefinerTri_N_2 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
-            breaker.setRemoveOldElements(false);
-            breaker.doBreak();
+            breaker.setRemoveOldElements(true);
+            for (int ipass=0; ipass < 2; ipass++)
+              {
+                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                breaker.doBreak();
+              }
 
-            eMesh.dumpElementsCompact();
+            //eMesh.dumpElementsCompact();
 
             //eMesh.printInfo("local tri mesh refined", 2);
-            save_or_diff(eMesh, output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
+            //save_or_diff(eMesh, output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
+            eMesh.saveAs(output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
 
-            MPI_Barrier( MPI_COMM_WORLD );
+            //MPI_Barrier( MPI_COMM_WORLD );
             //exit(123);
+#if 0            
 
             //breaker.unrefineAll();
             ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
@@ -440,7 +447,7 @@ namespace stk {
             eMesh.saveAs( output_files_loc+"local_tri_N_2_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_2_1_unref_"+post_fix[p_size]+".e");
             //exit(123);
-
+#endif
             // end_demo
           }
 
@@ -453,7 +460,8 @@ namespace stk {
       //=============================================================================
 
 
-      STKUNIT_UNIT_TEST(unit_tmp, break_tri_to_tri_N)
+      //STKUNIT_UNIT_TEST(unit_tmp, break_tri_to_tri_N)
+      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_N)
       {
         EXCEPTWATCH;
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
