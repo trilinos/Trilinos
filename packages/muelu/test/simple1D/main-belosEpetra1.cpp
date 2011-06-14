@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   Cthulhu::Parameters cthulhuParameters(clp);             // manage parameters of cthulhu
 
   // custom parameters
-  LO maxLevels = 3;
+  LO maxLevels = 2;
   LO its=10;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
@@ -163,6 +163,8 @@ int main(int argc, char *argv[]) {
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
   RCP<SmootherPrototype> smooProto;
+
+
   Teuchos::ParameterList ifpackList;
   ifpackList.set("relaxation: type", "Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
@@ -197,7 +199,11 @@ int main(int argc, char *argv[]) {
     amesosList.set("PrintTiming",true);
     coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
     //#elif HAVE_MUELU_IFPACK...
+#else
+#error ERROR
 #endif
+
+
   } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
   Teuchos::ParameterList ifpack2List;
@@ -211,6 +217,22 @@ int main(int argc, char *argv[]) {
   if (coarseProto == Teuchos::null) {
     throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
   }
+
+//   if (0) {
+//     Teuchos::ParameterList ifpackList;
+//     ifpackList.set("fact: drop tolerance", 1e-1);
+//     ifpackList.set("fact: level-of-fill", 0);
+//     ifpackList.set("schwarz: combine mode", "Add");
+//     coarseProto = rcp( new IfpackSmoother("ILUT",ifpackList) );
+//   }
+//   { 
+//     Teuchos::ParameterList ifpackList;
+//     ifpackList.set("relaxation: type", "Gauss-Seidel");
+//     ifpackList.set("relaxation: sweeps", (LO) 1);
+//     ifpackList.set("relaxation: damping factor", (SC) 1.0);
+//     coarseProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+//   }
+
 
   SmootherFactory coarseSolveFact(coarseProto);
   H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
@@ -242,7 +264,6 @@ int main(int argc, char *argv[]) {
     std::cout << "Epetra Belos run:" << std::endl;
 
     X->putScalar( (SC) 0.0);
-    bool proc_verbose=true;
 
     typedef double                            ST;
     typedef Teuchos::ScalarTraits<ST>        SCT;
@@ -287,8 +308,8 @@ int main(int argc, char *argv[]) {
     // Create an iterative solver manager.
     // *****Create parameter list for the belos solver manager*****
     //
-    int maxiters = 10;
-    double tol = 1e-4;
+    int maxiters = 99;
+    double tol = 1e-7;
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
@@ -333,12 +354,9 @@ int main(int argc, char *argv[]) {
 
     if (ret!=Belos::Converged || badRes) {
       std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-      //      return EXIT_FAILURE;
+    } else {
+      std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
     }
-
-    // Default return value
-    //
-    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 
   }
 
@@ -367,7 +385,8 @@ int main(int argc, char *argv[]) {
 
     // create the preconditioner. For valid PrecType values,
     // please check the documentation
-    std::string PrecType = "ILU"; // incomplete LU
+    //    std::string PrecType = "ILU"; // incomplete LU
+    std::string PrecType = "point relaxation stand-alone"; 
     int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
     // it is ignored.
 
@@ -379,12 +398,16 @@ int main(int argc, char *argv[]) {
     assert(Prec != Teuchos::null);
   
     // specify parameters for ILU
-    ifpackList.set("fact: drop tolerance", 1e-9);
-    ifpackList.set("fact: level-of-fill", 1);
-    // the combine mode is on the following:
-    // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
-    // Their meaning is as defined in file Epetra_CombineMode.h
-    ifpackList.set("schwarz: combine mode", "Add");
+    ifpackList.set("relaxation: type", "Gauss-Seidel");
+    ifpackList.set("relaxation: sweeps", (LO) 1);
+    ifpackList.set("relaxation: damping factor", (SC) 1.0);
+
+//     ifpackList.set("fact: drop tolerance", 1e-1);
+//     ifpackList.set("fact: level-of-fill", 0);
+//     // the combine mode is on the following:
+//     // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
+//     // Their meaning is as defined in file Epetra_CombineMode.h
+//     ifpackList.set("schwarz: combine mode", "Add");
     // sets the parameters
     IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
     
@@ -408,8 +431,8 @@ int main(int argc, char *argv[]) {
     //
     ParameterList belosList;
     int blocksize = 1;
-    int maxiters=10;
-    double tol = 1e-4;
+    int maxiters = 9;
+    double tol = 1e-7;
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
@@ -478,15 +501,9 @@ int main(int argc, char *argv[]) {
 
     if (ret!=Belos::Converged || badRes) {
       std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
-      return -1;
+    } else {
+      std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
     }
-    //
-    // Default return value
-    //
-    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-    return 0;
-
-
 
   }
 
