@@ -14,6 +14,20 @@ INCLUDE(SetAndIncDirs)
 # Macro that configures the package's main config.h file
 #
 
+FUNCTION(PACKAGE_ADD_CONFIG_DEFINE DEFINE)
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    MESSAGE("\nPackage ${PACKAGE_NAME}: adding compiler define to config file: ${DEFINE}")
+  ENDIF()
+  GLOBAL_SET(${PACKAGE_NAME}_CONFIG_DEFINES "${${PACKAGE_NAME}_CONFIG_DEFINES}\n#define ${DEFINE}")
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    MESSAGE("--${${PACKAGE_NAME}_CONFIG_DEFINES}")
+  ENDIF()
+ENDFUNCTION() 
+
+#
+# Macro that configures the package's main config.h file
+#
+
 FUNCTION(PACKAGE_CONFIGURE_FILE PACKAGE_NAME_CONFIG_FILE)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
