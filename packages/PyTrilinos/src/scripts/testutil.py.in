@@ -1,0 +1,101 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2009) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+# System module imports
+from   distutils.util import get_platform
+import os.path
+import sys
+
+#
+# Function fromPyTrilinosImport():  this function mimics the statement
+#
+#   from PyTrilinos import ...
+#
+# but allows the user to force the import to come from the local build
+# directory.
+#
+def fromPyTrilinosImport(name, fromBuild=False, globals={}, locals={}):
+    """
+    fromPyTrilinosImport(name, fromBuild=False, globals={}, locals={}) -> module
+
+    Return the requested PyTrilinos module.  Argument 'name' must be a valid
+    PyTrilinos module name, such as 'Teuchos', Epetra', 'AztecOO', etc.  If
+    argument 'fromBuild' is False, then this function returns what would be
+    obtained from the statement 'from PyTrilinos import <name>', which in all
+    liklihood will be a system-installed version of PyTrilinos.  If it is True,
+    the function ensures that the module that gets returned is from the local
+    build directory.
+
+    fromPyTrilinosImport() is designed to work from the local build directory,
+    whether that directory is an autotools build directory, or a cmake build
+    directory.
+    """
+
+    PyTrilinosStr = "PyTrilinos"
+
+    # If fromBuild is True, then we need to put the build directory into the
+    # search path.  There are two posibilites: the autotools build directory or
+    # the cmake build directory.  The cmake build system utilizes a directory
+    # that should always exist, so we check for the existence of the autotools
+    # build directory to determine which build system is being used.
+    if fromBuild:
+        myDir,myName = os.path.split(__file__)
+        libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
+        autoDir = os.path.normpath(os.path.join(myDir, "../..", "src", "build",
+                                                libDir))
+        cmakeDir = os.path.normpath(os.path.join(myDir, "../..", "src"))
+        if os.path.isdir(autoDir):
+            buildDir = autoDir
+        else:
+            buildDir = cmakeDir
+        # Update the sys.path list of search paths.
+        if buildDir not in sys.path:
+            sys.path.insert(1, buildDir)
+
+    # Time to import the module from the PyTrilinos package, whether the build
+    # directory has been added to the search path or not.
+    fullname = PyTrilinosStr + "." + name
+    PyTrilinosPkg = __import__(fullname, globals, locals)
+    module = sys.modules[fullname]
+
+    # If fromBuild is True, then the user is going to expect the module to have
+    # been imported from the build directory.  If the local version has not yet
+    # been built, it is possible that the __import__() function picked up a
+    # system-installed PyTrilinos.  This scenario should raise an exception.
+    if fromBuild:
+        PyTrilinosDir = os.path.join(buildDir, PyTrilinosStr)
+        importDir = PyTrilinosPkg.__path__[0]
+        if importDir != PyTrilinosDir:
+            raise ImportError, "PyTrilinos not imported from build directory"
+
+    # We have the module and it is from the expected location, so return it to
+    # the user.
+    return module
