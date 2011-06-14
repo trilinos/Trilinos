@@ -145,7 +145,7 @@ namespace stk {
       // if this is the first time the parent_elem has been visited, or if the parent_elem is the child of another parent,
       //   (at level 0 only, which is what isChildElement checks), then we need to add a new family tree
 
-      bool ALLOW_MULTI_LEVEL=false;
+      bool ALLOW_MULTI_LEVEL = true;
 
       if ( (!ALLOW_MULTI_LEVEL && (parent_to_family_tree_relations.size() == 0 ) ) ||
            ( ALLOW_MULTI_LEVEL && (parent_to_family_tree_relations.size() == 0 || (parent_to_family_tree_relations.size() == 1 && eMesh.isChildElement(parent_elem))) )
@@ -176,7 +176,7 @@ namespace stk {
                     }
                   stk::mesh::EntityId bit = 1;  // just to avoid having to use a hard-coded constant which may be platform dependent
                   family_tree_id = family_tree_id | (bit << 60);
-                  std::cout << "tmp family_tree_id = " << family_tree_id << std::endl;
+                  //std::cout << "tmp family_tree_id = " << family_tree_id << std::endl;
                 }
               family_tree = & eMesh.getBulkData()->declare_entity(FAMILY_TREE_RANK, parent_id, add);
             }
