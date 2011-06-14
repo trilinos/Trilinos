@@ -1,0 +1,60 @@
+CXX = g++
+CXXFLAGS = -I. -W -Wall -Wextra -ansi -g
+
+LEX = flex
+YACC = bison
+
+AR = ar cr
+LDFLAGS = 
+RANLIB = ranlib
+
+all: apr_test
+
+# Set to 'true' to return lex (flex) and yacc (bison) to regenerate scanner and parser files.
+GENERATE_FILES = false
+
+ifeq ($(GENERATE_FILES), true)
+# Generate scanner and parser
+parser.cc aprepro_parser.h: aprepro.yy
+	$(YACC) -o parser.cc --defines=aprepro_parser.h aprepro.yy
+
+scanner.cc: aprepro.ll
+	$(LEX) -o scanner.cc aprepro.ll
+endif
+
+aprepro.cc: aprepro_parser.h
+
+SRCS = aprepro.cc util.cc stats.cc init.cc builtin.cc units.cc
+OBJS = $(SRCS:.cc=.o)  scanner.o  parser.o 
+
+libaprepro.a:  $(OBJS)
+	$(AR) $@ $?
+	$(RANLIB) $@
+
+apr_test: apr_test.o libaprepro.a
+	$(CXX) $(LDFLAGS) -o $@ apr_test.o -L. -laprepro
+
+clean:
+	rm -f *~
+	rm -f *.o
+	rm -f *.a
+ifeq ($(GENERATE_FILES), true)
+	rm -f parser.cc aprepro_parser.h scanner.cc
+endif
+	rm -f apr_test
+
+test: check
+
+check: apr_test
+	@echo "****Test should produce the following 4 lines of output to stderr:"
+	@echo "	Aprepro: WARN: Variable \`b' redefined (test.inp_app, line 19)"
+	@echo "	Aprepro: WARN: Undefined variable \`Parse' (test.inp_app, line 74)"
+	@echo "	Aprepro: ERR:  syntax error (test.inp_app, line 74)"
+	@echo "	Aprepro: WARN: Undefined variable \`T' (test.inp_app, line 106)"
+	@echo " "
+	./apr_test test.inp_app >distribution.out
+	@echo " "
+	@echo "****'<' denotes standard, '>' denotes current output"
+	@echo "****Differences should be limited to small differences in"
+	@echo "	numerical precision only."
+	-diff --ignore-all-space test_standard.out distribution.out

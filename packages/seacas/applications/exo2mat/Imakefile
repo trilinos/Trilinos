@@ -1,0 +1,19 @@
+XCOMM $Id: Imakefile,v 1.5 2006/01/19 16:26:43 gdsjaar Exp $
+
+#if HasMatlab
+EXTRA_DEFINES = -DHAS_MATLAB -DV5_COMPAT
+#endif
+
+CODE = exo2mat
+
+SRC = exo2mat.c add_to_log.c
+
+OBJS = $(SRC:.c=.o)
+
+INCLUDES = MatlabIncludes
+
+LIBS = $(EXOIIV2C) $(NETCDF) $(MATLABLIBRARIES) -lm
+
+NormalCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallTarget(install,$(CODE),$(INSTBINFLAGS),$(BINDIR))

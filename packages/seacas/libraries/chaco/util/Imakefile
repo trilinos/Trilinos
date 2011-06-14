@@ -1,0 +1,20 @@
+XCOMM $Id: Imakefile,v 1.4 2004/12/14 19:08:45 gdsjaar Exp $
+
+#if !defined(OSF1Architecture) && !defined(SunArchitecture) && !defined(SGIArchitecture) && !defined(HPArchitecture) && !defined(LinuxArchitecture)
+DEFINES = -DNO_GETRUSAGE
+#endif
+
+EXTRA_INCLUDES = -I../main -I../util
+
+SRCS = \
+affirm.c          array_alloc_2D.c  bail.c       bit_reverse.c  checkpnt.c \
+cpvec.c           dot.c             doubleout.c  gray.c         input_int.c \
+machine_params.c  makevwsqrt.c      mergesort.c  mkvec.c        norm.c \
+normalize.c       randomize.c       scadd.c      seconds.c      setvec.c \
+shell_sort.c      smalloc.c         strout.c     tri_prod.c     true_or_false.c \
+update.c          vecout.c          vecran.c     vecscale.c	random.c
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libchaco.a,$(OBJS),../)
+

@@ -20,10 +20,10 @@
 #
 #-----------------------------------------------------------------------------
 
-# Decide whether to build the Trios mesh IO package.
+# Decide whether to build the SEACAS mesh IO package.
 # Default is yes. 
 #
-ENABLE_TRIOS=ON
+ENABLE_SEACAS=ON
 # Decide whether to build Stokhos. Default is yes.
 ENABLE_STOKHOS=ON
 
@@ -188,16 +188,16 @@ ${ECHO} cmake \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=${EXPLICIT_TEMPLATES} \
 -D Trilinos_ENABLE_Sundance:BOOL=ON \
 -D Sundance_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
--D Trilinos_ENABLE_Trios:BOOL=${ENABLE_TRIOS} \
+-D Trilinos_ENABLE_SEACAS:BOOL=${ENABLE_SEACAS} \
 -D Trilinos_ENABLE_Sacado:BOOL=${ENABLE_SACADO} \
 -D Trilinos_ENABLE_Stokhos:BOOL=${ENABLE_STOKHOS} \
 -D Stokhos_ENABLE_TESTS:BOOL=OFF \
 -D Stokhos_ENABLE_EXAMPLES:BOOL=OFF \
--D Trios_ENABLE_TESTS:BOOL=OFF \
--D Trios_ENABLE_EXAMPLES:BOOL=OFF \
+-D SEACAS_ENABLE_TESTS:BOOL=OFF \
+-D SEACAS_ENABLE_EXAMPLES:BOOL=OFF \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
--D Sundance_ENABLE_Trios:BOOL=${ENABLE_TRIOS} \
+-D Sundance_ENABLE_SEACAS:BOOL=${ENABLE_SEACAS} \
 -D Teuchos_ORDINAL_TYPE:STRING=${ORDINAL_TYPE} \
 -D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
 -D NOX_ENABLE_LOCA:BOOL=OFF \

@@ -1,0 +1,64 @@
+XCOMM Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
+XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+XCOMM certain rights in this software
+XCOMM 
+XCOMM Redistribution and use in source and binary forms, with or without
+XCOMM modification, are permitted provided that the following conditions are
+XCOMM met:
+XCOMM 
+XCOMM     * Redistributions of source code must retain the above copyright
+XCOMM       notice, this list of conditions and the following disclaimer.
+XCOMM 
+XCOMM     * Redistributions in binary form must reproduce the above
+XCOMM       copyright notice, this list of conditions and the following
+XCOMM       disclaimer in the documentation and/or other materials provided
+XCOMM       with the distribution.
+XCOMM 
+XCOMM     * Neither the name of Sandia Corporation nor the names of its
+XCOMM       contributors may be used to endorse or promote products derived
+XCOMM       from this software without specific prior written permission.
+XCOMM 
+XCOMM THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+XCOMM "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+XCOMM LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+XCOMM A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+XCOMM OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+XCOMM SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+XCOMM LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+XCOMM DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+XCOMM THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+XCOMM (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+XCOMM OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+XCOMM 
+
+#if defined(OSF1Architecture)
+CDEBUGFLAGS=-O
+CCOPTIONS=
+#endif
+
+CODE = nem_slice
+
+# Nem_slice uses zoltan which requires MPI.
+# We use a pseudo-MPI which is not parallel, but provides the mpi interface.
+#if defined(CatamountArchitecture) || defined(CrossCatamountArchitecture)
+CC = cc
+#else
+CC = $(ACCESSDIR)/siMPI/bin/mpicc
+#endif
+
+DEFINES = -DHAS_GETRUSAGE
+
+SRCS = \
+elb_allo.c       elb_elem.c       elb_err.c        elb_exo_util.c \
+elb_graph.c      elb_groups.c     elb_inp.c        elb_loadbal.c \
+elb_main.c       elb_output.c     elb_time.c       elb_util.c \
+add_to_log.c     getopt.c         md_getsubopt.c
+
+OBJS = ${SRCS:.c=.o}
+
+LIBS = $(EXOIIV2C) $(NETCDF) $(NEMESISC) $(CHACO) $(ZOLTAN) -lm
+
+NormalCTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallTarget(install,$(CODE),$(INSTBINFLAGS),$(BINDIR))
+

@@ -43,6 +43,7 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ${Trilinos_SOURCE_DIR}/packages/WebTrilinos
     ${Trilinos_SOURCE_DIR}/packages/cmmlib
     ${Trilinos_SOURCE_DIR}/packages/Trios
+    ${Trilinos_SOURCE_DIR}/packages/seacas
     ${Trilinos_SOURCE_DIR}/packages/meros
     ${Trilinos_SOURCE_DIR}/packages/phdmesh
     ${Trilinos_SOURCE_DIR}/demos/FEApp

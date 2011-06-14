@@ -1,0 +1,305 @@
+#!/bin/bash
+
+########################################################################
+function usage {
+cat <<DECOMP_USAGE_EOF
+Usage:  decomp [-h] --processors <processor count> [-n <nemslice options>]
+               [--root <root directory>] [--subdir <sub directory]
+               [--multikl] [--spectral] [--inertial] [--linear]
+               [--rcb] [--rib] [--hsfc] [--random] [--scattered]
+               [...others...] meshfile.ext
+
+Decomposition methods: [0..3] = speed ranking 0=fastest
+ --multikl:   [3] Multilevel KL. Gives high quality partitions.
+                  Slow, high memory use.
+ --spectral:  [2] use eigenvectors of a matrix constructed from the 
+                  graph to partition the graph.
+ --hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
+ --rib:       [?] Recursive Inertial Bisection (uses Zoltan)
+ --rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
+ --inertial:  [1] (default) vertices divided into sets of equal mass by planes
+                  orthogonal to the principle axis. Good, fast, medium memory
+ --linear:    [0] vertices in order first n/p to proc 0, next to proc 1. 
+                  (fast and sometimes good).
+ --random:    [0] vertices are assigned randomly to sets in a way that 
+                  preserves balance.
+ --scattered: [0] vertices are handed out in order with the next vertex 
+                  going to whichever set is smallest.
+ --brick      [-] special decomposition method; not useful for general use.
+ --zpinch     [-] special decomposition method; not useful for general use.
+      (See jal.sandia.gov/SEACAS/Documentation/chaco.pdf and 
+           www.cs.sandia.gov/Zoltan/ug_html/ug.html for details)
+
+Other options:
+--help             Print this message (-h)
+--processors #p    Specify number of processors (-p, -j)
+--root root_dir    Root directory to begin the path to on the separate disks (-R)
+--subdir sub_dir   Continuation of the path on the separate disks to the files (-S)
+
+   help-email: seacas-users@software.sandia.gov (code, script)
+  Information: www.jal.sandia.gov/SEACAS/SEACAS.html (IRN)
+               endo.sandia.gov/SEACAS/SEACAS.html    (EON)
+DECOMP_USAGE_EOF
+exit 1
+}
+
+########################################################################
+function execute_loadbalance {
+    basename=$1
+    processors=$2
+    decomp_method=$3
+    nem_slice_flag=$4
+    NEM_SLICE=$5
+
+    input=$basename.$input_suffix
+    output=$basename.decomp.out
+    error=$basename.decomp.err
+    nemesis=$basename.nem
+    genesis=$basename.$genesis_suffix
+
+    # Check for valid executable...
+    if [ ! -x $NEM_SLICE ]
+    then
+	echo
+	echo "ERROR: Could not find or execute $NEM_SLICE"
+	echo "ERROR: Configuration error"
+	echo
+
+	return -1
+    fi
+
+    date=`date '+%m/%d/%y'`
+    time=`date '+%H:%M:%S'`
+    prob_dir=`pwd | sed "s/.*\///g"`
+    
+    echo ""
+    echo "    Starting loadbal calculation for $basename"
+    echo "         `date`"
+    echo ""
+    echo "    .... begining decomposition ...."
+    echo "         see $output for current status"
+    
+    
+    if [ -e $output ]
+    then
+	rm -f $output
+    fi
+    echo "===========================================================" >  $output
+    echo "| Sandia Engineering Analysis Access procedure for: decomp " >> $output
+    echo '| $Revision: 1.57 $, $Date: 2008/05/19 12:29:22 $'           >> $output   
+    echo "===========================================================" >> $output
+    
+    echo "Executing:"
+    echo "   $NEM_SLICE -e $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
+    if [ -e $input ]
+    then
+	($NEM_SLICE -e $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis >> $output) 
+	load_rc=$?
+    else
+	($NEM_SLICE -e $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis >> $output)
+	load_rc=$?
+    fi
+    return $load_rc
+}
+
+########################################################################
+# Create the nem_spread input file (basename.pex) and execute nem_spread...
+function execute_spread {
+    basename=$1
+    rootdir=$2
+    subdir=$3
+    numproc=$4
+    NEM_SPREAD=$5
+
+    output=$basename.decomp.out
+    error=$basename.decomp.err
+    nemesis=$basename.nem
+    genesis=$basename.$genesis_suffix
+
+    pexsh=$basename.pex
+
+    # Check for valid executable...
+    if [ ! -x $NEM_SPREAD ]
+    then
+	echo
+	echo "ERROR: Could not find or execute $NEM_SPREAD"
+	echo "ERROR: Configuration error"
+	echo
+	return -1
+    fi
+    
+    if [ "$subdir" != "." ]
+    then
+	dir=$rootdir/$subdir
+	if [ ! -e $dir ]
+	then
+	    echo "making directory $dir"
+	    mkdir -p $dir
+	fi
+    fi
+    
+    if [ -e $pexsh ]
+    then
+	/bin/rm -rf $pexsh
+    fi
+    
+    echo "Creating $pexsh"
+    echo "Input FEM file                   = $genesis"                  >  $pexsh
+    echo "LB file                          = $nemesis"                  >> $pexsh
+    echo "File Extension for Spread Files  = .$spread_suffix"           >> $pexsh
+    echo "Number of Processors             = $numproc "                 >> $pexsh
+    echo "------------------------------------------------------------" >> $pexsh
+    echo "                Parallel I/O section"                         >> $pexsh
+    echo "------------------------------------------------------------" >> $pexsh
+    echo "Parallel Disk Info= number=1, offset=1, zeros, nosubdirectory">> $pexsh
+    echo "Parallel file location = root=$rootdir, subdir=$subdir"       >> $pexsh
+    
+    $NEM_SPREAD $pexsh
+}
+
+########################################################################
+# initialize variables
+echo "==========================================================="
+echo "| Sandia Engineering Analysis Access procedure for: decomp "
+echo "| Version: 2011/06/10                                      "
+echo "==========================================================="
+
+basename=''
+processors=''
+decomp_method="-l inertial"
+nem_slice_flag="-c"
+rootdir="`pwd`/"
+subdir="."
+
+userid=`echo $LOGNAME`
+curdir=`pwd`
+
+BIN=@CMAKE_INSTALL_PREFIX@/bin
+NEM_SLICE=$BIN/nem_slice
+NEM_SPREAD=$BIN/nem_spread
+
+input_suffix='i'
+genesis_suffix='g'
+spread_suffix='g'
+  
+JUNK=`env | grep "ALEGRA_EXE"`
+if [ -n "$JUNK" ]; then
+  input_suffix='inp'
+  genesis_suffix='gen'
+fi
+
+if test -z "$1"
+then
+  usage
+fi
+
+########################################################################
+# decomp options:
+TEMP=`getopt -o hno:p:j:r:R:S: -a \
+    --long help,nem_slice_flag,processors:,rootdir:,subdir: \
+    --long multikl,rcb,rib,sfc,spectral,inertial,linear,random,scattered,brick,zpinch \
+    -n 'decomp' -- "$@"`
+
+if [ $? != 0 ] ; then usage ; exit 1 ; fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+while true ; do
+	case "$1" in
+	    -h|--help)
+	      usage ; shift ;;
+	    -n|--nem_slice_flag)
+	      nem_slice_flag="$2" ; shift 2 ;;
+	    -p|-j|--processors)
+	      processors=$2 ; shift 2 ;;
+	    -R|--rootdir)
+	      rootdir=$2 ; shift 2 ;;
+	    -S|--subdir)
+	      subdir=$2 ; shift 2 ;;
+	    --suffix_mesh)
+	      genesis_suffix=$2 ; shift 2 ;;
+	    --suffix_spread)
+	      spread_suffix=$2 ; shift 2 ;;
+	    --No_scalar_mesh)
+	      scalar_mesh="no" ; shift ;;
+
+# Decomposition Method options...
+	    --multikl)   decomp_method="-l multikl" ; shift ;;
+	    --rcb)       decomp_method="-l rcb" ; shift ;;
+	    --rib)       decomp_method="-l rib" ; shift ;;
+	    --hsfc)      decomp_method="-l hsfc" ; shift ;;
+	    --spectral)  decomp_method="-l spectral" ; shift ;;
+	    --inertial)  decomp_method="-l inertial" ; shift ;;
+	    --linear)    decomp_method="-l linear" ; shift ;;
+	    --random)    decomp_method="-l random" ; shift ;;
+	    --scattered) decomp_method="-l scattered" ; shift ;;
+	    --brick)     decomp_method="-l brick" ; shift ;;
+	    --zpinch)    decomp_method="-l zpinch" ; shift ;;
+	    --) shift ; break ;;
+	    *) echo "ERROR: unrecognized option $1" ; shift ;;
+	esac
+done
+
+########################################################################
+if test -z "$1"
+then
+    echo "ERROR:******************************************************************"
+    echo "ERROR:"
+    echo "ERROR:  No 'meshfile' specified."
+    echo "ERROR:"
+    echo "ERROR:******************************************************************"
+    usage
+else
+    if [ -e "$1" ]
+    then
+	file=$1
+	suffix_mesh=${file##*.}
+	    suffix_spread=$suffix_mesh
+	    basename=${file%.*}
+    else
+	echo "ERROR:******************************************************************"
+	echo "ERROR:"
+	echo "ERROR: $1 does not exist."
+	echo "ERROR:"
+	echo "ERROR:******************************************************************"
+	usage
+    fi
+fi    
+
+if test -z "$processors"
+then
+  echo
+  echo "ERROR:***************************************************"
+  echo "ERROR:"
+  echo "ERROR: Must specify number of processors --processors (-p -j) option"
+  echo "ERROR:"
+  echo "ERROR:***************************************************"
+  echo
+  usage
+fi
+
+########################################################################
+execute_loadbalance "$basename" "$processors" "$decomp_method" "$nem_slice_flag" "$NEM_SLICE"
+if [ $? -ne 0 ]
+then
+    echo "ERROR:******************************************************************"
+    echo "ERROR:"
+    echo "ERROR     During nem_slice execution. Check error output above and rerun"
+    echo "ERROR:"
+    echo "ERROR:******************************************************************"
+    exit 1
+fi
+
+########################################################################
+execute_spread "$basename" "$rootdir" "$subdir" "$processors" "$NEM_SPREAD"
+if [ $? -ne 0 ]
+then
+    echo "ERROR:******************************************************************"
+    echo "ERROR:"
+    echo "ERROR    During nem_spread execution. Check error output above and rerun"
+    echo "ERROR:"
+    echo "ERROR:******************************************************************"
+    exit 1
+fi
+
+echo "DECOMP Successful Execution"

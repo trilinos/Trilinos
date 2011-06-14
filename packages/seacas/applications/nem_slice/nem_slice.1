@@ -1,0 +1,318 @@
+.TH NEM_SLICE 1 LOCAL
+.SH NAME
+nem_slice - generate a load-balance file from an ExodusII geometry file
+.SH SYNOPSIS
+.B nem_slice
+[
+.B -h
+] [
+.B -V
+] [
+.B -a
+.I inpfile
+] [ <
+.B -n
+|
+.B -e
+>
+.B -v
+.B -m
+.I machine_desc
+.B -l
+.I loadbal_desc
+.B -s
+.I eigensolv_desc
+] [
+.B -w
+.I weighting_desc
+] [
+.B -g
+.I group_list
+] [
+.B -f
+] [
+.B -c
+] [
+.B -o
+.I outfile
+] [
+.I exoIIfile
+]
+.SH DESCRIPTION
+.I nem_slice
+reads in a FEM description of the geometry of a problem from an
+.I ExodusII
+file,
+.I exoIIfile
+, generates either a nodal or elemental graph of the problem,
+calls
+.I Chaco
+to load balance the graph, and outputs a
+.I NemesisI
+load-balance file.
+.SH OPTIONS
+The
+.B -h
+option causes
+.I nem_slice
+to print out usage information. If the
+.B -h
+option is specified all other options are ignored.
+.PP
+The
+.B -V
+option causes
+.I nem_slice
+to print out the version number. If the
+.B -V
+option is specified all other options are ignored.
+.PP
+If the
+.B -a
+option is specified all parameters will be set from an ASCII input
+file. Other command line options may be used with
+.B -a
+and such options will override anything respecified in the ASCII input
+file.
+.PP
+The
+.B -n
+option specifies that a nodal decomposition should be performed on
+the input FEM mesh, while the
+.B -e
+option specifies that an elemental decomposition should be
+performed. One of either
+.B -e
+or
+.B -n
+is required.
+.PP
+The
+.B -v
+option is used to indicate that you wish to output an ExodusII file
+which will allow you to visualize the load balance results. If the
+mesh consists of one type of element then the visualization is done by
+element blocks. If the mesh consists of mixed element types then the
+visualization is done by assigning nodal results variables to each
+FEM node in the mesh, the value of which corresponds to the processor
+ID that node is assigned to.
+.PP
+The
+.B -m
+option is used to describe the parallel architecture for which the
+load balance will be performed. There are currently three choices for
+this option,
+.I mesh
+for an n-dimensional mesh architecture,
+.I hcube
+for a hypercube architecture, or
+.I cluster
+for a cluster architecture. All machine type specifications require
+a sub-option giving the dimension(s) of the machine, and thus the
+number of processors, for which the load balance is to be performed.
+.PP
+The
+.B -l
+option is used to specify which method to utilize in generating a load
+balance for the given problem. In addition, a sub-option of
+.B kl
+can be specified if Kernighan-Lin refinement is desired and the main
+method does not use KL by default. Another sub-option is the number of
+sections to use (see the Chaco User's Guide for further
+information). This can be specified with the sub-option,
+.B num_sects=value.
+An additional sub-option requires that the load balanced domains
+are connected. This can be specified with the sub-option,
+.B cnctd_dom.
+Supported methods for load balancing are:
+.PP
+.B 	multikl
+.br
+.B 	spectral
+.br
+.B 	inertial
+.br
+.B 	linear
+.br
+.B 	random
+.br
+.B 	scattered
+.br
+.B 	zpinch
+.br
+.B 	infile=filename
+.br
+The last option,
+.B infile,
+reads the assignment vector from and input file. When using this option,
+no other load balancing is performed. In addition, the is a sub-option,
+.B outfile=filename,
+that will write out the assignment vector after the load balancing is
+complete.
+.PP
+The
+.B -s
+option is used to specify parameters for the eigensolver, if the
+method utilizes an eigensolver. Parameters which can be specified are:
+.PP
+.B 	tolerance=value
+.br
+.B 	use_rqi
+.br
+.B 	vmax=value
+.PP
+The
+.B -o
+option gives the name of the
+.I NemesisI
+output file. By default the output file name is generated from the
+input file name with different additions depending on the method being
+used for load balancing and the number of processors for which the
+load balance was generated.
+.PP
+The
+.B -w
+option is used to specify how to weight the graph of the problem once
+it is generated. Currently
+.I read
+,
+.I eb
+, and
+.I edges
+sub-options are supported. The
+.I read
+sub-option allows the reading in of weights from an ExodusII file.
+Nodal values are read for nodal decompositions and elemental values
+for elemental decompositions. Along with the
+.I read
+sub-option other sub-options which can be specified are the name of the
+variable, either nodal or elemental depending on the method requested,
+as it exists in the ExodusII input file. This variable can either be
+specified via it's name with the
+.I var_name
+sub-option. Or it can be specified with it's index via the
+.I var_index
+sub-option.
+In addition the time index from which to read the given variable can
+also be specified with the
+.I time_index
+sub-option. The
+.I eb
+sub-option is used to give a specific weight to a given element block.
+The format to give block
+.I n
+a weight of
+.I m
+is
+.br
+	eb=n:m
+.br
+If the sub-option
+.I eb
+comes after the
+.I read
+sub-option in the weighting specifications, then the value for the
+element block overwrites the values read in from the ExodusII file.
+If the
+.I eb
+sub-option comes before the
+.I read
+sub-option, then it is ignored. The
+.I edges
+sub-option is used to turn on edge weights for an elemental decomposition.
+The default is that edge weights are not calculated. This sub-option is
+ignored for a nodal decomposition.
+.PP
+The
+.B -g
+option allows the user to break up the element blocks into groups
+that will be passed seperately to Chaco. If the group descriptor
+has white spaces in it, then it must be enclosed in quotes (").
+The following rules apply to the descriptor:
+.br
+	- Blocks are grouped using the slash "/" character.
+.br
+	- Ids are separated with white space, comma, or by the hyphen "-"
+character. The hyphen, "-", is used to include all elment blocks between
+the two given ID's.
+.br
+	- Any blocks not included in the list, are added to a separate group.
+.br
+	- Duplicates in the list are permitted, but the last group to which a
+block is placed is where the block will go.
+.br
+	- Block IDs not in the exodus file are quietly ignored.
+.PP
+The
+.B -c
+option turns off some of the error checking that nem_slice does while
+finding elemental communication maps.
+.PP
+.SH INPUT FILE FORMAT
+The optional ASCII input file closely mimics the command line
+options. The file consists of a sequence of keys, each with a tab or
+``='' separated value. The order of the keys is not significant and a
+line beginning with a ``#'' is considered to be a comment. The
+following keys are recognized by
+.I nem_slice
+:
+.PP
+	Input ExodusII File
+.br
+	Output NemesisI File
+.br
+	Graph Type
+.br
+	Decomposition Method
+.br
+	Solver Specifications
+.br
+	Machine Description
+.br
+	Weighting Specifications
+.br
+	Misc Options
+.PP
+The case of the words forming a key is not significant.
+.SH COMMAND LINE EXAMPLES
+To obtain a nodal load balance for a 2D mesh parallel computer with
+processors arrayed in a 10x20 grid using multi-level decomposition:
+.PP
+.B 	nem_slice -n -m mesh=10x20 -l multikl geom.exoII
+.PP
+For the same problem to be run on a 5 dimensional hypercube use:
+.PP
+.B 	nem_slice -n -m hcube=5 -l multikl geom.exoII
+.PP
+To generate an elemental based load balance using a spectral method,
+with KL refinement, for a 3D mesh architecture, with the RQI
+eigensolver and quadrisection:
+.PP
+.B 	nem_slice -e -m mesh=10x5x2 -l spectral,kl,num_sects=1 -s use_rqi
+.PP
+To generate a nodal based load balance with Inertial+KL with weights
+read from nodal results contained in an ExodusII file use:
+.PP
+.B 	nem_slice -n -m mesh=10x5x2 -l inertial,kl -w read=weights.exoII,vindx=1,time=2
+.PP
+.SH ASCII INPUT FILE EXAMPLE
+	(See the file "input-ldbl" distributed with the executable)
+.SH SEE ALSO
+.B The Chaco User's Guide Version 1.0;
+B. Hendrickson, R. Leland; Sandia Report SAND93-2339, Nov. 1993
+.PP
+.B NemesisI: A Set of Functions for Describing Unstructured Finite
+.B Element Data on Parallel Computers;
+G. Hennigan, J. Shadid
+.SH NOTES
+.B nem_slice
+attempts to be smart about parsing command line, or ASCII input file,
+options. However, some errors may sneak through, in which case
+.B Chaco
+is relied upon for error detection.
+.SH AUTHORS
+Gary L. Hennigan, Sandia National Labs, Dept. 9221
+.br
+Matthew M. St. John, Sandia National Labs, Dept. 9221
+.br
+John N. Shadid, Sandia National Labs, Dept. 9221

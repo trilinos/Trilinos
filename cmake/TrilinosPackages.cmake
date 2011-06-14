@@ -72,7 +72,8 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Galeri                galeri                         PS
   Amesos                amesos                         PS
   Pamgen                pamgen                         PS
-  Trios                 Trios                          SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
+  SEACAS                seacas                         SS # Depends on netcdf, optionally hdf5, xdmf, pamgen
+  Trios                 Trios                          SS 
   Ifpack                ifpack                         PS
   Komplex               komplex                        PS
   ML                    ml                             PS
@@ -128,6 +129,7 @@ PACKAGE_DISABLE_ON_PLATFORMS(Ifpack2 Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(TriKota Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Pamgen Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(STK Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(SEACAS Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)

@@ -1,0 +1,12 @@
+XCOMM $Id: Imakefile,v 1.5 2004/12/14 19:08:42 gdsjaar Exp $
+
+EXTRA_INCLUDES = -I../main -I../util
+
+SRCS = \
+check_input.c     input_assign.c    input_graph.c     read_val.c \
+input.c           input_geom.c      read_params.c     reflect_input.c
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libchaco.a,$(OBJS),../)
+

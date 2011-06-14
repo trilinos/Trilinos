@@ -1,0 +1,139 @@
+$ Test program for Aprepro
+$
+Test number reprsentations
+{1}	{10e-1}	{10.e-1}	{.1e+1}	{.1e1}
+{1}	{10E-1}	{10.E-1}	{.1E+1}	{.1E1}
+	
+Test assign statements:
+{_a = 5}	{b=_a}	$ Should print 5 5
+{_a +=b}	{_a} 	$ Should print 10 10
+{_a -=b}	{_a}	$ Should print 5 5
+{_a *=b}	{_a}	$ Should print 25 25
+{_a /=b}	{_a}	$ Should print 5 5
+{_a ^=b}	{_a}	$ Should print 3125 3125
+{_a = b}	{_a**=b}	{_a}	$ Should print 5 3125 3125
+
+Test trigonometric functions (radians)
+{pi = d2r(180)} {atan2(0,-1)} {4*atan(1.0)} $ Three values of pi
+{_a = sin(pi/4)}	{pi-4*asin(_a)}	$ sin(pi/4)
+{b = cos(pi/4)}	{pi-4*acos(b)}	$ cos(pi/4)
+{c = tan(pi/4)}	{pi-4*atan(c)}	$ tan(pi/4)
+
+Test trigonometric functions (degrees)
+{r2d(pi)}	{pid = atan2d(0,-1)}	{4 * atand(1.0)}
+{ad = sind(180/4)}	{180-4*asind(ad)}	$ sin(180/4)
+{bd = cosd(180/4)}	{180-4*acosd(bd)}	$ cos(180/4)
+{cd = tand(180/4)}	{180-4*atand(cd)}	$ tan(180/4)
+
+Test max, min, sign, dim, abs
+{pmin = min(0.5, 1.0)}	{nmin = min(-0.5, -1.0)} $ Should be 0.5, -1
+{pmax = max(0.5, 1.0)}	{nmax = max(-0.5, -1.0)} $ Should be 1.0, -0.5
+{zero = 0} {sign(0.5, zero) + sign(0.5, -zero)}	$ Should be 0 1
+{nonzero = 1} {sign(0.5, nonzero) + sign(0.5, -nonzero)} $ Should be 1 0
+{dim(5.5, 4.5)}	{dim(4.5, 5.5)}	$ Should be 1 0
+
+$ Test ifdef lines
+{ifyes = 1} {ifno = 0}
+	{Ifdef(ifyes)}
+This line should be echoed. (a)
+ {Endif}
+This line should be echoed. (b)
+     {Ifdef(ifno)}
+This line should not be echoed
+ 	 {Endif}
+This line should be echoed. (c)
+  {Ifdef(ifundefined)}
+This line should not be echoed
+        {Endif}
+This line should be echoed. (d)
+
+$ Test if - else lines
+             {Ifdef(ifyes)}
+This line should be echoed. (1)
+			{Else}
+This line should not be echoed (2)
+	{Endif}
+		{Ifdef(ifno)}
+This line should not be echoed. (3)
+ {Else}
+This line should be echoed (4)
+   {Endif}
+
+$ Test if - else lines
+ {Ifndef(ifyes)}
+This line should not be echoed. (5)
+  {Else}
+This line should be echoed (6)
+   {Endif}
+    {Ifndef(ifno)}
+This line should be echoed. (7)
+ {Else}
+This line should not be echoed (8)
+  {Endif}
+$ Lines a, b, c, d, 1, 4, 6, 7 should be echoed
+$ Check line counting -- should be on line 74: {Parse Error}
+{ifdef(ifyes)} {This should be an error}
+{endif}
+
+$ Test int and [] (shortcut for int)
+{int(5.01)}	{int(-5.01)}
+{[5.01]}	{[-5.01]}
+
+$ Test looping - print sin, cos from 0 to 90 by 5
+{angle = -5}
+{Loop(19)}
+{angle += 5}	{_sa=sind(angle)}	{_ca=cosd(angle)} {hypot(_sa, _ca)} 
+{EndLoop}
+
+$$$$ Test formatting and string concatenation
+{_i = 0} {_SAVE = _FORMAT}
+{loop(20)}
+{IO(++_i)} Using the format {_FORMAT = "%." // tostring(_i) // "g"},	PI = {PI}
+{endloop}
+Reset format to default: {_FORMAT = _SAVE}
+
+$$$$ Test string rescanning and executing
+{ECHO(OFF)}
+{Test = '	This is line 1: {a = atan2(0,-1)}
+        This is line 2: {sin(a/4)}
+	This is line 3: {cos(a/4)}'}
+{Test2 = 'This has an embedded string: {T = "This is a string"}'}
+{ECHO(ON)}
+Original String:
+{Test}
+Rescanned String:
+{rescan(Test)} 
+Original String:
+{Test2}
+Print Value of variable T = {T}
+Rescanned String:
+{rescan(Test2)} 
+Print Value of variable T = {T}
+
+Original String: {t1 = "atan2(0,-1)"}
+Executed String: {execute(t1)}
+
+string = {_string = " one two, three"}
+delimiter "{_delm = " ,"}"
+word count = {word_count(_string,_delm)}
+second word = "{get_word(2,_string,_delm)}"
+
+string = {_string = " (one two, three * four - five"}
+delimiter "{_delm = " ,(*-"}"
+word count = {word_count(_string,_delm)}
+second word = "{get_word(2,_string,_delm)}"
+
+
+string = {_string = " one two, three"}
+delimiter "{_delm = " ,"}"
+word count = { iwords = word_count(_string,_delm)}
+
+{_n = 0}
+	{loop(iwords)}
+word {++_n} = "{get_word(_n,_string,_delm)}"
+   {endloop}
+
+$ Check parsing of escaped braces...
+\{ int a = b + {PI/2} \}
+\{ \}
+
