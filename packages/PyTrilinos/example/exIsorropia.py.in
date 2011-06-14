@@ -1,0 +1,145 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python interface to Trilinos
+#                   Copyright (2010) Sandia Corporation
+#
+# Under terms of contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# license, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# without any warranty; without even the implied warranty of
+# merchantability or fitness for a particular purpose.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+# This example script currently builds an Epetra.CrsGraph object and uses it to
+# build an Isorropia.Epetra.Colorer.
+
+#
+# System imports
+from   optparse import *
+import sys
+from   types    import *
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
+Isorropia = fromPyTrilinosImport('Isorropia', options.testharness)
+Teuchos   = fromPyTrilinosImport('Teuchos'  , options.testharness)
+
+################################################################################
+
+def buildGraph(comm, nRows):
+    map = Epetra.Map(nRows, 0, comm)
+    graph = Epetra.CrsGraph(Epetra.Copy, map, 3)
+    for gid in map.MyGlobalElements():
+        if gid == 0:
+            indices = [0, 1]
+        elif gid == nRows-1:
+            indices = [nRows-2, nRows-1]
+        else:
+            indices = [gid-1, gid, gid+1]
+        graph.InsertGlobalIndices(gid, indices)
+    graph.FillComplete()
+    return graph
+
+def main(comm):
+
+    iAmRoot = comm.MyPID() == 0
+
+    if iAmRoot: print "\nBuilding CRS graph"
+    nRows = 10 * comm.NumProc()
+    crsg = buildGraph(comm, nRows)
+
+    print crsg
+
+    if iAmRoot: print "Constructing Isorropia.Epetra.Colorer"
+    colorer = Isorropia.Epetra.Colorer(crsg)
+
+    print colorer.elemsWithColor(0)
+
+
+    pList = Teuchos.ParameterList()
+    pList.set("PARTITIONING METHOD", "RANDOM")
+
+    if iAmRoot: print "Constructing Isorropia.Epetra.Partitioner"
+    partitioner = Isorropia.Epetra.Partitioner(crsg, pList)
+    partitioner.partition(True)
+    print partitioner
+
+    pList.set("PARTITIONING METHOD", "HYPERGRAPH2D")
+    if iAmRoot: print "Constructing Isorropia.Epetra.Partitioner2D"
+    part2D = Isorropia.Epetra.Partitioner2D(crsg, pList)
+    print part2D
+
+    if iAmRoot: print "Constructing Isorropia.Epetra.Redistributor"
+    Redis = Isorropia.Epetra.Redistributor(partitioner)
+    newCrsg = Redis.redistribute(crsg)
+    print Redis
+
+    print newCrsg
+
+    print "BUILDING COSTDESCRIBER"
+    costDesc = Isorropia.Epetra.CostDescriber()
+    print costDesc
+
+################################################################################
+
+if __name__ == "__main__":
+
+    # Obtain the default communicator
+    comm    = Epetra.PyComm()
+    iAmRoot = comm.MyPID() == 0
+
+    if iAmRoot:
+        print "********************"
+        print "** exIsorropia.py **"
+        print "********************"
+
+    # Run the test and catch any errors
+    try:
+        main(comm)
+        errors = 0
+    except Exception, e:
+        print e
+        errors = 1
+
+    # Sum the errors, report the status and exit
+    totalErrors = comm.SumAll(errors)
+    if iAmRoot:
+        print
+        if errors == 0:
+            print "End Result: TEST PASSED"
+        else:
+            print "End Result: TEST FAILED"
+    sys.exit(errors)

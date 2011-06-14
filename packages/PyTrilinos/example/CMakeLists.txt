@@ -85,6 +85,12 @@ IF(PyTrilinos_ENABLE_EpetraExt)
   ENDIF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
+IF(PyTrilinos_ENABLE_Isorropia)
+  IF(PyTrilinos_ENABLE_Epetra)
+    PyTrilinos_MAKE_TEST(exIsorropia)
+  ENDIF(PyTrilinos_ENABLE_Epetra)
+ENDIF(PyTrilinos_ENABLE_Isorropia)
+
 IF(PyTrilinos_ENABLE_AztecOO)
   IF(PyTrilinos_ENABLE_Epetra)
     IF(PyTrilinos_ENABLE_Galeri)
