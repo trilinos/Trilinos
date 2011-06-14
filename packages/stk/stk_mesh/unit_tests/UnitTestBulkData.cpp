@@ -1152,39 +1152,33 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   mesh.modification_end();
 
   //
-  // Test correctness of ghosting
+  // Test correctness of ghosting: Check that adjacent family-trees are ghosted on this proc
   //
 
-  // FIXME - the following is the test we want to pass but is currently failing due to a possible bug in stk_mesh
-  bool do_actual_test = false;
+  // Compute and store ids of adjacent family-trees
+  std::vector<EntityId> family_tree_ghost_ids;
+  if (p_rank > 0) {
+    family_tree_ghost_ids.push_back(my_family_tree_id - 1);
+  }
+  if (p_rank < p_size - 1) {
+    family_tree_ghost_ids.push_back(my_family_tree_id + 1);
+  }
 
-  // Check that adjacent family-trees are ghosted on this proc
-  if (do_actual_test) {
-    // Compute and store ids of adjacent family-trees
-    std::vector<EntityId> family_tree_ghost_ids;
-    if (p_rank > 0) {
-      family_tree_ghost_ids.push_back(my_family_tree_id - 1);
-    }
-    if (p_rank < p_size - 1) {
-      family_tree_ghost_ids.push_back(my_family_tree_id + 1);
-    }
+  // Check that my_family_tree exists and I own it
+  Entity *my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
+  STKUNIT_ASSERT(my_family_tree);
+  STKUNIT_ASSERT( (p_rank) == my_family_tree->owner_rank());
 
-    // Check that my_family_tree exists and I own it
-    Entity *my_family_tree = mesh.get_entity(family_tree_rank, my_family_tree_id);
-    STKUNIT_ASSERT(my_family_tree);
-    STKUNIT_ASSERT( (p_rank) == my_family_tree->owner_rank());
+  // Check that adjacent family-trees exist and are ghosted
+  for (std::vector<EntityId>::const_iterator
+       itr = family_tree_ghost_ids.begin(); itr != family_tree_ghost_ids.end(); ++itr) {
+    EntityId expected_ghosted_family_tree_id = *itr;
 
-    // Check that adjacent family-trees exist and are ghosted
-    for (std::vector<EntityId>::const_iterator
-         itr = family_tree_ghost_ids.begin(); itr != family_tree_ghost_ids.end(); ++itr) {
-      EntityId expected_ghosted_family_tree_id = *itr;
+    Entity *expected_ghosted_family_tree = mesh.get_entity(family_tree_rank, expected_ghosted_family_tree_id);
+    STKUNIT_ASSERT(expected_ghosted_family_tree);
+    STKUNIT_ASSERT(expected_ghosted_family_tree_id - 1 == expected_ghosted_family_tree->owner_rank());
 
-      Entity *expected_ghosted_family_tree = mesh.get_entity(family_tree_rank, expected_ghosted_family_tree_id);
-      STKUNIT_ASSERT(expected_ghosted_family_tree);
-      STKUNIT_ASSERT((p_rank+1) == expected_ghosted_family_tree->owner_rank());
-
-      stk::mesh::Bucket& bucket = expected_ghosted_family_tree->bucket();
-      STKUNIT_ASSERT(!bucket.member(owned) && !bucket.member(shared));
-    }
+    stk::mesh::Bucket& bucket = expected_ghosted_family_tree->bucket();
+    STKUNIT_ASSERT(!bucket.member(owned) && !bucket.member(shared));
   }
 }

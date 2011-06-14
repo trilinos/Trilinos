@@ -647,6 +647,29 @@ void comm_sync_send_recv(
   }
 }
 
+void insert_upward_relations(Entity& rel_entity,
+                             const EntityRank rank_of_orig_entity,
+                             const unsigned my_rank,
+                             const unsigned share_proc,
+                             std::vector<EntityProc>& send)
+{
+  // If related entity is higher rank, I own it, and it is not
+  // already shared by proc, ghost it to the sharing processor.
+  if ( rank_of_orig_entity < rel_entity.entity_rank() &&
+       rel_entity.owner_rank() == my_rank &&
+       ! in_shared( rel_entity , share_proc ) ) {
+
+    EntityProc entry( &rel_entity , share_proc );
+    send.push_back( entry );
+
+    // There may be even higher-ranking entities that need to be ghosted, so we must recurse
+    for ( PairIterRelation rel = rel_entity.relations() ; ! rel.empty() ; ++rel ) {
+      Entity * const rel_of_rel_entity = rel->entity();
+      insert_upward_relations(*rel_of_rel_entity, rel_entity.entity_rank(), my_rank, share_proc, send);
+    }
+  }
+}
+
 } // namespace <>
 
 //----------------------------------------------------------------------
@@ -676,20 +699,11 @@ void BulkData::internal_regenerate_shared_aura()
 
       const unsigned share_proc = sharing[j].proc ;
 
-      for ( PairIterRelation
-            rel = entity.relations() ; ! rel.empty() ; ++rel ) {
+      for ( PairIterRelation rel = entity.relations() ; ! rel.empty() ; ++rel ) {
 
         Entity * const rel_entity = rel->entity();
 
-        // If related entity is higher rank, I own it, and it is not
-        // already shared by proc, ghost it to the sharing processor
-        if ( erank < rel_entity->entity_rank() &&
-                     rel_entity->owner_rank() == m_parallel_rank &&
-             ! in_shared( *rel_entity , share_proc ) ) {
-
-          EntityProc entry( rel_entity , share_proc );
-          send.push_back( entry );
-        }
+        insert_upward_relations(*rel_entity, erank, m_parallel_rank, share_proc, send);
       }
     }
   }
