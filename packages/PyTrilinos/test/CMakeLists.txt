@@ -80,6 +80,10 @@ IF(PyTrilinos_ENABLE_EpetraExt)
   ENDIF(EpetraExt_USING_HDF5)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
+IF(PyTrilinos_ENABLE_Isorropia)
+  PyTrilinos_MAKE_TEST(testIsorropia)
+ENDIF(PyTrilinos_ENABLE_Isorropia)
+
 IF(PyTrilinos_ENABLE_AztecOO)
   PyTrilinos_MAKE_TEST(testAztecOO)
 ENDIF(PyTrilinos_ENABLE_AztecOO)
