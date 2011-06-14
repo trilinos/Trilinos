@@ -93,7 +93,8 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, streamTests){
   std::stringstream ss;
   ss << simpleArray;
   TwoDArray<int> readArray;
-  ss >> readArray;
+  std::istringstream instream(ss.str()); 
+  instream >> readArray;
   TEST_EQUALITY(simpleArray, readArray);
 }
 
