@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <aprepro.h>
+#include "aprepro.h"
 
 namespace SEAMS {
 extern Aprepro *aprepro;
