@@ -66,3 +66,4 @@ XPETRA_THREADED_GCC/
 XPETRA_THREADED/
 
 /build
+packages/tpetra/test/MatrixMatrix/matrices/*.m
