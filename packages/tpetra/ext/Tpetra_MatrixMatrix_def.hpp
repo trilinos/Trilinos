@@ -106,10 +106,12 @@ void Multiply(
   if (transposeA && transposeB)  scenario = 4;//A^T*B^T
 
   //now check size compatibility
-  global_size_t Aouter = transposeA ? A.getDomainMap()->getGlobalNumElements() : A.getGlobalNumRows();
-  global_size_t Bouter = transposeB ? B.getGlobalNumRows() : B.getGlobalNumCols();
-  global_size_t Ainner = transposeA ? A.getGlobalNumRows() : A.getGlobalNumCols();
-  global_size_t Binner = transposeB ? B.getGlobalNumCols() : B.getGlobalNumRows();
+  global_size_t numACols = A.getDomainMap()->getGlobalNumElements();
+  global_size_t numBCols = B.getDomainMap()->getGlobalNumElements();
+  global_size_t Aouter = transposeA ? numACols : A.getGlobalNumRows();
+  global_size_t Bouter = transposeB ? B.getGlobalNumRows() : numBCols;
+  global_size_t Ainner = transposeA ? A.getGlobalNumRows() : numACols;
+  global_size_t Binner = transposeB ? numBCols : B.getGlobalNumRows();
   TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
     "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
     "must match for matrix-matrix product. op(A) is "

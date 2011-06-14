@@ -1,3 +1,22 @@
+<!-- Note
+A*B
+      A^T * B
+      A*B^T
+      A*P
+      R*A
+      R*P
+      Q*P
+      Q*R
+
+     where
+
+      A is m-by-m
+      B is m-by-m
+      P is m-by-n
+      R is n-by-m
+      m > n
+      Q is a permutation matrix (identity matrix with rows swapped around)
+-->
 <ParameterList>
 	<ParameterList name="synthetic1">
     <Parameter name="op" value="multiply" type="string"/>
@@ -7,7 +26,15 @@
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
-     <ParameterList name="syntheticT">
+	<ParameterList name="RectangleA*P">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/rectAPa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectAPb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectAPc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+  <ParameterList name="syntheticT">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synTa.mtx" type="string"/>
 		<Parameter name="B" value="matrices/synTb.mtx" type="string"/>
