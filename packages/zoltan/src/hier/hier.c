@@ -858,7 +858,7 @@ int Zoltan_Hier(
         ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
       }
 
-#ifdef HIER_NO_MULTI_CALL_BACKS
+#ifndef HIER_MULTI_CALL_BACKS
   
       ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_OBJ_SIZE_FN_TYPE,
   			 (void (*)()) Zoltan_Hier_Obj_Size_Fn,
