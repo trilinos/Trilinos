@@ -1688,7 +1688,7 @@ namespace Tpetra {
             if (myImageID == 0) out << "\nDomain map is row map.";
           }
           else if (getDomainMap() == getColMap()) {
-            if (myImageID == 0) out << "\nDomain map is row map.";
+            if (myImageID == 0) out << "\nDomain map is col map.";
           }
           else {
             if (myImageID == 0) out << "\nDomain map: " << std::endl;
