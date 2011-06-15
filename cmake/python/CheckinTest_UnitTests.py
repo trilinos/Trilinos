@@ -274,10 +274,13 @@ g_cmndinterceptsStatusPasses = \
   "IT: eg status; 0; '(on master branch)'\n"
 
 g_cmndinterceptsPullOnlyPasses = \
-  "IT: eg pull; 0; 'initial eg pull passed'\n"
+  "IT: eg pull; 0; 'pulled changes passes'\n"
 
 g_cmndinterceptsPullOnlyFails = \
   "IT: eg pull; 1; 'pull failed'\n"
+
+g_cmndinterceptsPullOnlyNoUpdatesPasses = \
+  "IT: eg pull; 0; 'Already up-to-date.'\n"
 
 g_cmndinterceptsStatusPullPasses = \
   g_cmndinterceptsStatusPasses+ \
@@ -373,11 +376,14 @@ g_cmndinterceptsSendBuildTestCaseEmail = \
 g_cmndinterceptsSendFinalEmail = \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
-g_cmndinterceptsExtraRepo1DoAllThroughTest = \
+g_cmndinterceptsExtraRepo1ThroughStatusPasses = \
   "IT: cmake .+ -P .+/PackageArchDumpDepsXmlScript.cmake; 0; 'dump XML file passed'\n" \
   +g_cmndinterceptsCurrentBranch \
   +g_cmndinterceptsStatusPasses \
-  +g_cmndinterceptsStatusPasses \
+  +g_cmndinterceptsStatusPasses
+
+g_cmndinterceptsExtraRepo1DoAllThroughTest = \
+  g_cmndinterceptsExtraRepo1ThroughStatusPasses \
   +g_cmndinterceptsPullOnlyPasses \
   +g_cmndinterceptsPullOnlyPasses \
   +g_cmndinterceptsDiffOnlyPasses \
@@ -625,7 +631,6 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
     +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect push readiness!\n" \
     +g_expectedCommonOptionsSummary \
-    +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
     +"=> A PUSH IS READY TO BE PERFORMED!\n" \
     +"^READY TO PUSH: Trilinos:\n" \
     ,
@@ -741,7 +746,7 @@ class test_checkin_test(unittest.TestCase):
       "do_all_push_pass",
       \
       "--make-options=-j3 --ctest-options=-j5" \
-      +" --do-all --push" \
+      +" --abort-gracefully-if-no-updates --do-all --push" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
       g_cmndinterceptsCurrentBranch \
@@ -757,7 +762,9 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      g_expectedRegexUpdateWithBuildCasePasses \
+      "Pulled changes from this repo!\n" \
+      +"There where at least some changes pulled!\n" \
+      +g_expectedRegexUpdateWithBuildCasePasses \
       +g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
@@ -771,7 +778,7 @@ class test_checkin_test(unittest.TestCase):
       +"Running: ssh -q godel /some/dir/some_command.sh &\n" \
       ,
       [
-      (getInitialPullOutputFileName(""), "initial eg pull passed\n"),
+      (getInitialPullOutputFileName(""), "pulled changes passes\n"),
       (getModifiedFilesOutputFileName(""), "M\tpackages/teuchos/CMakeLists.txt\n"),
       (getFinalPullOutputFileName(""), "final eg pull and rebase passed\n"),
       (getFinalCommitBodyFileName(""),
@@ -888,7 +895,6 @@ class test_checkin_test(unittest.TestCase):
       +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
       +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect push readiness!\n" \
       +g_expectedCommonOptionsSummary \
-      +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
       +"A current successful pull does \*not\* exist => Not ready for final push!\n" \
       +"Explanation: In order to safely push, the local working directory needs\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
@@ -926,7 +932,6 @@ class test_checkin_test(unittest.TestCase):
       +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"Test: FAILED\n" \
-      +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"\*\*\* WARNING: The acceptance criteria for doing a push has \*not\*\n" \
       +"\*\*\* been met, but a push is being forced anyway by --force-push!\n" \
@@ -963,7 +968,6 @@ class test_checkin_test(unittest.TestCase):
       \
       "Running: rm -rf MPI_DEBUG\n" \
       +"0) MPI_DEBUG => No configure, build, or test for MPI_DEBUG was requested! => Not ready to push!\n" \
-      +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
       )
@@ -1282,6 +1286,224 @@ class test_checkin_test(unittest.TestCase):
       envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
       )
 
+
+  def test_extra_repo_1_abort_gracefully_if_no_updates_no_updates_passes(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_abort_gracefully_if_no_updates_no_updates_passes",
+      \
+      "--extra-repos=preCopyrightTrilinos --abort-gracefully-if-no-updates --do-all --pull", \
+      \
+      g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsDiffOnlyNoChangesPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      ,
+      \
+      True,
+      \
+      "Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      +"Did not pull any changes from this repo!\n" \
+      +"No changes were pulled!\n" \
+      +"Not perfoming any build cases because pull did not give any changes" \
+        " and --abort-gracefully-if-no-updates!\n" \
+      +"Skipping sending final email because there were no updates" \
+          " and --abort-gracefully-if-no-updates was set!\n" \
+      +"ABORTED DUE TO NO UPDATES\n" \
+      +"REQUESTED ACTIONS: PASSED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_no_updates_passes(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_extra_pull_abort_gracefully_if_no_updates_no_updates_passes",
+      \
+      "--extra-repos=preCopyrightTrilinos --abort-gracefully-if-no-updates" \
+      +" --extra-pull-from=machine:master --do-all --pull" \
+      ,
+      \
+      g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsDiffOnlyNoChangesPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      ,
+      \
+      True,
+      \
+      "Pulling in packages from extra repos: preCopyrightTrilinos ...\n" \
+      +"Did not pull any changes from this repo!\n" \
+      +"No changes were pulled!\n" \
+      +"Not perfoming any build cases because pull did not give any changes" \
+        " and --abort-gracefully-if-no-updates!\n" \
+      +"Skipping sending final email because there were no updates" \
+          " and --abort-gracefully-if-no-updates was set!\n" \
+      +"ABORTED DUE TO NO UPDATES\n" \
+      +"REQUESTED ACTIONS: PASSED\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_update(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_update",
+      \
+      "--extra-repos=preCopyrightTrilinos --abort-gracefully-if-no-updates" \
+      +" --extra-pull-from=machine:master --pull" \
+      ,
+      \
+      g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsDiffOnlyNoChangesPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Pulled changes from this repo!\n" \
+      +"Did not pull any changes from this repo!\n" \
+      +"There where at least some changes pulled!\n" \
+      +"Update passed!\n" \
+      +"NOT READY TO PUSH\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_update(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_update",
+      \
+      "--extra-repos=preCopyrightTrilinos --abort-gracefully-if-no-updates" \
+      +" --extra-pull-from=machine:master --pull" \
+      ,
+      \
+      g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsDiffOnlyNoChangesPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Pulled changes from this repo!\n" \
+      +"Did not pull any changes from this repo!\n" \
+      +"There where at least some changes pulled!\n" \
+      +"Update passed!\n" \
+      +"NOT READY TO PUSH\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_extra_update(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_extra_update",
+      \
+      "--extra-repos=preCopyrightTrilinos --abort-gracefully-if-no-updates" \
+      +" --extra-pull-from=machine:master --pull" \
+      ,
+      \
+      g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsDiffOnlyNoChangesPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Pulled changes from this repo!\n" \
+      +"Did not pull any changes from this repo!\n" \
+      +"There where at least some changes pulled!\n" \
+      +"Update passed!\n" \
+      +"NOT READY TO PUSH\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_extra_update(self):
+    scriptsDir = getScriptBaseDir()
+    trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_extra_update",
+      \
+      "--extra-repos=preCopyrightTrilinos --abort-gracefully-if-no-updates" \
+      +" --extra-pull-from=machine:master --pull" \
+      ,
+      \
+      g_cmndinterceptsExtraRepo1ThroughStatusPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyNoUpdatesPasses \
+      +g_cmndinterceptsPullOnlyPasses \
+      +g_cmndinterceptsDiffOnlyNoChangesPasses \
+      +g_cmndinterceptsDiffOnlyPassesPreCopyrightTrilinos \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "Pulled changes from this repo!\n" \
+      +"Did not pull any changes from this repo!\n" \
+      +"There where at least some changes pulled!\n" \
+      +"Update passed!\n" \
+      +"NOT READY TO PUSH\n" \
+      ,
+      \
+      envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
     
   # B) Test package enable/disable logic
 
@@ -1482,7 +1704,6 @@ class test_checkin_test(unittest.TestCase):
       g_expectedRegexUpdatePasses \
       +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
       +"0) MPI_DEBUG => No configure, build, or test for MPI_DEBUG was requested! => Not ready to push!\n" \
-      +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
       )
@@ -1531,7 +1752,6 @@ class test_checkin_test(unittest.TestCase):
       +"Pulling in updates from .machine:\/repo\/dir\/repo master.\n" \
       +"eg pull machine:\/repo\/dir\/repo master\n" \
       +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
-      +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
       )
@@ -1553,7 +1773,6 @@ class test_checkin_test(unittest.TestCase):
       \
       "Skipping all updates on request!\n" \
       +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
-      +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^INITIAL PULL FAILED: Trilinos:\n"
       )
@@ -1932,7 +2151,6 @@ class test_checkin_test(unittest.TestCase):
       "ERROR: There are changed unstaged uncommitted files => cannot continue!\n" \
       "Update failed!\n" \
       "Not running any build/test cases because the update (pull) failed!\n" \
-      "A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "INITIAL PULL FAILED: Trilinos:\n"
       )
@@ -1955,7 +2173,6 @@ class test_checkin_test(unittest.TestCase):
       "ERROR: There are changed staged uncommitted files => cannot continue!\n" \
       "Update failed!\n" \
       "Not running any build/test cases because the update (pull) failed!\n" \
-      "A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "INITIAL PULL FAILED: Trilinos:\n"
       )
@@ -1978,7 +2195,6 @@ class test_checkin_test(unittest.TestCase):
       "ERROR: There are newly created uncommitted files => Cannot continue!\n" \
       "Update failed!\n" \
       "Not running any build/test cases because the update (pull) failed!\n" \
-      "A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "INITIAL PULL FAILED: Trilinos:\n"
       )
@@ -2337,7 +2553,6 @@ class test_checkin_test(unittest.TestCase):
       +"CTest was invoked but no tests were run!\n"\
       +"At least one of the actions (update, configure, built, test) failed or was not performed correctly!\n" \
        +"0) MPI_DEBUG => FAILED: no tests run\n" \
-      +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^FAILED CONFIGURE/BUILD/TEST: Trilinos:\n" \
       +"REQUESTED ACTIONS: FAILED\n" \
@@ -2366,7 +2581,6 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
       +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
-      +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
       +"A current successful pull does \*not\* exist => Not ready for final push!\n"\
       +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n"\
       +"^ABORTED COMMIT/PUSH: Trilinos:\n" \

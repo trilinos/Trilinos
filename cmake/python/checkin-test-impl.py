@@ -576,8 +576,21 @@ clp.add_option(
   help="Do not enable forward Trilinos packages.", default=True )
 
 clp.add_option(
+  "--continue-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_false",
+  help="If set, then the script will continue if no updates are pulled from any repo. [default]",
+  default=False )
+clp.add_option(
+  "--abort-gracefully-if-no-updates", dest="abortGracefullyIfNoUpdates", action="store_true",
+  help="If set, then the script will abort gracefully if no updates are pulled from any repo.",
+  default=False )
+
+clp.add_option(
+  "--continue-if-no-enables", dest="abortGracefullyIfNoEnables", action="store_false",
+  help="If set, then the script will continue if no packages are enabled. [default]",
+  default=False )
+clp.add_option(
   "--abort-gracefully-if-no-enables", dest="abortGracefullyIfNoEnables", action="store_true",
-  help="If set, then the script will abort gracefully if packages are enabled.",
+  help="If set, then the script will abort gracefully if no packages are enabled.",
   default=False )
 
 clp.add_option(
@@ -805,8 +818,14 @@ if options.enableFwdPackages:
   print "  --enable-fwd-packages \\"
 else:
   print "  --no-enable-fwd-packages \\"
+if options.abortGracefullyIfNoUpdates:
+  print "  --abort-gracefully-if-no-updates \\"
+else:
+  print "  --continue-if-no-updates \\"
 if options.abortGracefullyIfNoEnables:
   print "  --abort-gracefully-if-no-enables \\"
+else:
+  print "  --continue-if-no-enables \\"
 print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
 if options.overallNumProcs:
   print "  -j"+options.overallNumProcs+" \\"

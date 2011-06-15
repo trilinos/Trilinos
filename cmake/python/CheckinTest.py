@@ -235,6 +235,14 @@ def getRepoSpaceBranchFromOptionStr(extraPullFrom):
   return repo + " " + branch
 
 
+def didSinglePullBringChanges(pullOutFileFullPath):
+  pullOutFileStr = readStrFromFile(pullOutFileFullPath)
+  #print "\npullOutFileStr:\n" + pullOutFileStr
+  alreadyUpToDateIdx = pullOutFileStr.find("Already up-to-date")
+  #print "alreadyUpToDateIdx = "+str(alreadyUpToDateIdx)
+  return alreadyUpToDateIdx == -1
+
+
 def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
   doRebase=False)\
   :
@@ -244,17 +252,24 @@ def executePull(gitRepoName, inOptions, baseTestDir, outFile, pullFromRepo=None,
     print "\nPulling in updates from '"+repoSpaceBranch+"' ...\n"
     cmnd += " " + repoSpaceBranch
   else:
-    print "\nPulling in updates from 'origin' ...\n"
+    print "\nPulling in updates from 'origin' ..."
     # NOTE: If you do 'eg pull origin <branch>', then the list of locally
     # modified files will be wrong.  I don't know why this is but if instead
     # you do a raw 'eg pull', then the right list of files shows up.
   if doRebase:
     cmnd += " && "+inOptions.eg+" rebase --against origin/"+inOptions.currentBranch
-  return echoRunSysCmnd( cmnd,
+  outFileFullPath = os.path.join(baseTestDir, outFile)
+  (updateRtn, updateTimings) = echoRunSysCmnd( cmnd,
     workingDir=getGitRepoDir(inOptions.trilinosSrcDir, gitRepoName),
-    outFile=os.path.join(baseTestDir, outFile),
+    outFile=outFileFullPath,
     timeCmnd=True, returnTimeCmnd=True, throwExcept=False
     )
+  pullGotChanges = didSinglePullBringChanges(outFileFullPath)
+  if pullGotChanges:
+    print "\n  Pulled changes from this repo!"
+  else:
+    print "\n  Did not pull any changes from this repo!"
+  return (updateRtn, updateTimings, pullGotChanges)
 
 
 class Timings:
@@ -1608,6 +1623,8 @@ def checkinTest(inOptions):
 
     doingAtLeastOnePull = inOptions.doPull
 
+    pulledSomeChanges = False
+
     if not doingAtLeastOnePull:
 
       print "\nSkipping all updates on request!\n"
@@ -1661,7 +1678,6 @@ def checkinTest(inOptions):
 
         #print "gitRepo =", gitRepo
         repoIdx += 1
-     
 
     if doingAtLeastOnePull and pullPassed:
 
@@ -1679,9 +1695,12 @@ def checkinTest(inOptions):
         for gitRepo in gitRepoList:
           print "\n3.b."+str(repoIdx)+") Git Repo: "+gitRepo.repoName
           echoChDir(baseTestDir)
-          (updateRtn, updateTimings) = executePull(gitRepo.repoName,
+          (updateRtn, updateTimings, pullGotChanges) = executePull(
+            gitRepo.repoName,
             inOptions, baseTestDir,
             getInitialPullOutputFileName(gitRepo.repoName))
+          if pullGotChanges:
+            pulledSomeChanges = True
           timings.update += updateTimings
           if updateRtn != 0:
             print "\nPull failed!\n"
@@ -1702,10 +1721,13 @@ def checkinTest(inOptions):
         for gitRepo in gitRepoList:
           print "\n3.c."+str(repoIdx)+") Git Repo: "+gitRepo.repoName
           echoChDir(baseTestDir)
-          (updateRtn, updateTimings) = executePull(gitRepo.repoName,
+          (updateRtn, updateTimings, pullGotChanges) = executePull(
+            gitRepo.repoName,
             inOptions, baseTestDir,
             getInitialExtraPullOutputFileName(gitRepo.repoName),
             inOptions.extraPullFrom )
+          if pullGotChanges:
+            pulledSomeChanges = True
           timings.update += updateTimings
           if updateRtn != 0:
             print "\nPull failed!\n"
@@ -1715,6 +1737,12 @@ def checkinTest(inOptions):
       else:
         print "\nSkipping extra pull from '"+inOptions.extraPullFrom+"'!\n"
 
+    # Given overall status of the pulls and determine if to abort gracefully
+    if pulledSomeChanges:
+      print "There where at least some changes pulled!"
+    else:
+      print "No changes were pulled!"
+ 
     #
     print "\nDetermine overall update pass/fail ...\n"
     #
@@ -1764,13 +1792,19 @@ def checkinTest(inOptions):
 
     # Determine if we will run the build/test cases or not
 
-    # Set runBuildCases flag
+    # Set runBuildCases flag and other logic
+    abortGracefullyDueToNoUpdates = False
     if not performAnyBuildTestActions(inOptions):
       print "\nNot performing any build cases because no --configure, --build or --test" \
         " was specified!\n"
       runBuildCases = False
     elif doingAtLeastOnePull:
-      if pullPassed:
+      if not pulledSomeChanges and inOptions.abortGracefullyIfNoUpdates:
+        abortGracefullyDueToNoUpdates = True
+        print "\nNot perfoming any build cases because pull did not give any changes" \
+          " and --abort-gracefully-if-no-updates!\n"
+        runBuildCases = False
+      elif pullPassed:
         print "\nThe updated passsed, running the build/test cases ...\n"
         runBuildCases = True
       else:
@@ -1870,17 +1904,11 @@ def checkinTest(inOptions):
           success = False
         if not buildTestCaseOkayToCommit:
           okayToCommit = False
-        
 
-      # Print message if a commit is okay or not
-      if okayToCommit:
-        print "\nThe tests ran and all passed!\n\n" \
-          "  => A COMMIT IS OKAY TO BE PERFORMED!\n"
-      else:
+      if not okayToCommit:
         print "\nAt least one of the actions (update, configure, built, test)" \
-          " failed or was not performed correctly!\n\n" \
-          "  => A COMMIT IS *NOT* OKAY TO BE PERFORMED!\n"
-      
+          " failed or was not performed correctly!\n"
+     
       # Determine if we should do a forced push
       if inOptions.doPushReadinessCheck and not okayToCommit and inOptions.forcePush \
         :
@@ -1937,7 +1965,7 @@ def checkinTest(inOptions):
     
     if not inOptions.doPush:
   
-      print "\nNot doing the push on request (--no-push) but sending an email" \
+      print "\nNot doing the push but sending an email" \
             " about the commit/push readiness status ..."
   
       if okayToPush:
@@ -1980,7 +2008,7 @@ def checkinTest(inOptions):
   
           print "\n7.a."+str(repoIdx)+") Git Repo: '"+gitRepo.repoName+"'"
   
-          (update2Rtn, update2Time) = \
+          (update2Rtn, update2Time, pullGotChanges) = \
             executePull(gitRepo.repoName, inOptions, baseTestDir,
               getFinalPullOutputFileName(gitRepo.repoName), None,
               doFinalRebase )
@@ -2204,6 +2232,10 @@ def checkinTest(inOptions):
         commitEmailBodyExtra += "\n\nFailed because initial pull failed!" \
           " See '"+getInitialPullOutputFileName("*")+"'\n\n"
         success = False
+      elif abortGracefullyDueToNoUpdates:
+        subjectLine = "ABORTED DUE TO NO UPDATES"
+        commitEmailBodyExtra += "\n\nAborted because no updates and --abort-gracefully-if-no-updates was set!\n\n"
+        success = True
       elif allConfiguresAbortedDueToNoEnablesGracefullAbort:
         subjectLine = "ABORTED DUE TO NO ENABLES"
         commitEmailBodyExtra += "\n\nAborted because no enables and --abort-gracefully-if-no-enables was set!\n\n"
@@ -2252,9 +2284,15 @@ def checkinTest(inOptions):
     
       subjectLine += ": Trilinos: "+getHostname()
 
-      if inOptions.sendEmailTo and allConfiguresAbortedDueToNoEnablesGracefullAbort:
+      if inOptions.sendEmailTo and abortGracefullyDueToNoUpdates:
 
-        print "\nSkipping sending final email because there were no enables and --abort-gracefully-if-no-enables was set!"
+        print "\nSkipping sending final email because there were no updates" \
+          " and --abort-gracefully-if-no-updates was set!"
+
+      elif inOptions.sendEmailTo and allConfiguresAbortedDueToNoEnablesGracefullAbort:
+
+        print "\nSkipping sending final email because there were no enables" \
+          " and --abort-gracefully-if-no-enables was set!"
   
       elif inOptions.sendEmailTo:
     
