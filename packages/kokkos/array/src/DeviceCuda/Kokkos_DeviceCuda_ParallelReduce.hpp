@@ -63,9 +63,8 @@ template< class DriverType >
 __device__
 void cuda_reduce_shared( const DeviceCuda::size_type used_warp_count )
 {
-  typedef          DeviceCuda::size_type    size_type ;
-  typedef typename DriverType::functor_type functor_type ;
-  typedef typename DriverType::value_type   value_type ;
+  typedef          DeviceCuda::size_type  size_type ;
+  typedef typename DriverType::value_type value_type ;
 
   typedef volatile value_type * vvp ;
   typedef volatile const value_type * cvvp ;
@@ -94,11 +93,11 @@ void cuda_reduce_shared( const DeviceCuda::size_type used_warp_count )
 
     size_type * const data = shared_data + DriverType::shared_data_offset();
 
-    functor_type::join( *((vvp) data), *((cvvp)( data + n16 )) );
-    functor_type::join( *((vvp) data), *((cvvp)( data +  n8 )) );
-    functor_type::join( *((vvp) data), *((cvvp)( data +  n4 )) );
-    functor_type::join( *((vvp) data), *((cvvp)( data +  n2 )) );
-    functor_type::join( *((vvp) data), *((cvvp)( data +  n1 )) );
+    DriverType::join( *((vvp) data), *((cvvp)( data + n16 )) );
+    DriverType::join( *((vvp) data), *((cvvp)( data +  n8 )) );
+    DriverType::join( *((vvp) data), *((cvvp)( data +  n4 )) );
+    DriverType::join( *((vvp) data), *((cvvp)( data +  n2 )) );
+    DriverType::join( *((vvp) data), *((cvvp)( data +  n1 )) );
   }
 
   // Phase B: Use a single warp to reduce results from each warp.
@@ -120,15 +119,15 @@ void cuda_reduce_shared( const DeviceCuda::size_type used_warp_count )
       if ( threadIdx.x + 4 < used_warp_count ) {
         if ( threadIdx.x + 8 < used_warp_count ) {
           if ( threadIdx.x + 16 < used_warp_count ) {
-            functor_type::join( *((vvp) data) , *((cvvp)( data + n16 )) );
+            DriverType::join( *((vvp) data) , *((cvvp)( data + n16 )) );
           }
-          functor_type::join( *((vvp) data) , *((cvvp)( data + n8 )) );
+          DriverType::join( *((vvp) data) , *((cvvp)( data + n8 )) );
         }
-        functor_type::join( *((vvp) data) , *((cvvp)( data + n4 )) );
+        DriverType::join( *((vvp) data) , *((cvvp)( data + n4 )) );
       }
-      functor_type::join( *((vvp) data) , *((cvvp)( data + n2 )) );
+      DriverType::join( *((vvp) data) , *((cvvp)( data + n2 )) );
     }
-    functor_type::join( *((vvp) data) , *((cvvp)( data + n1 )) );
+    DriverType::join( *((vvp) data) , *((cvvp)( data + n1 )) );
   }
 }
 
@@ -138,9 +137,8 @@ template< class DriverType >
 __device__
 void cuda_reduce_global( const DriverType & driver )
 {
-  typedef          DeviceCuda::size_type    size_type ;
-  typedef typename DriverType::functor_type functor_type ;
-  typedef typename DriverType::value_type   value_type ;
+  typedef          DeviceCuda::size_type  size_type ;
+  typedef typename DriverType::value_type value_type ;
 
   enum { WarpSize       = Impl::DeviceCudaTraits::WarpSize };
   enum { WarpIndexMask  = Impl::DeviceCudaTraits::WarpIndexMask };
@@ -215,7 +213,7 @@ void cuda_reduce_global( const DriverType & driver )
 
         // Only partial data will be read by this warp
         // so initialize the values before reading.
-        functor_type::init( *((value_type *)( shared_data + DriverType::shared_data_offset() )) );
+        DriverType::init( *((value_type *)( shared_data + DriverType::shared_data_offset() )) );
       }
 
       for ( i += threadIdx.x ; i < j ; i += WarpSize ) {
@@ -249,16 +247,15 @@ static void cuda_parallel_reduce( const DriverType driver )
 
 #endif
 
-  typedef DeviceCuda::size_type size_type ;
-  typedef typename DriverType::functor_type functor_type ;
-  typedef typename functor_type::value_type value_type ;
+  typedef          DeviceCuda::size_type  size_type ;
+  typedef typename DriverType::value_type value_type ;
 
   extern __shared__ size_type shared_data[];
 
   value_type & value =
     *( (value_type *)( shared_data + DriverType::shared_data_offset() ) );
 
-  functor_type::init( value );
+  DriverType::init( value );
 
   // Phase 1: Reduce to per-thread contributions
   {
@@ -300,11 +297,9 @@ static void cuda_parallel_reduce( const DriverType driver )
 template< class FunctorType , class FinalizeType >
 class ParallelReduce< FunctorType , FinalizeType , DeviceCuda > {
 public:
-  typedef DeviceCuda                        device_type ;
-  typedef FunctorType                       functor_type ;
-  typedef FinalizeType                      finalize_type ;
-  typedef device_type::size_type            size_type ;
-  typedef typename functor_type::value_type value_type ;
+  typedef          DeviceCuda               device_type ;
+  typedef          DeviceCuda::size_type    size_type ;
+  typedef typename FunctorType::value_type  value_type ;
 
   enum { WarpSize   = Impl::DeviceCudaTraits::WarpSize };
   enum { WarpStride = WarpSize + 1 };
@@ -359,6 +354,17 @@ public:
   size_type shared_flag_offset()
   { return ValueWordStride * ( WarpStride * blockDim.y - 1 ); }
 
+  static inline
+  __device__
+  void join( volatile       value_type & update ,
+             volatile const value_type & input )
+    { FunctorType::join( update , input ); }
+
+  static inline
+  __device__
+  void init( value_type & update )
+    { FunctorType::init( update ); }
+
   //----------------------------------------------------------------------
 
 private:
@@ -367,7 +373,7 @@ private:
                   const FinalizeType & finalize ,
                   const size_type      work_count ,
                   const size_type      work_stride ,
-                  const size_t         grid_size )
+                  const size_type      grid_size )
     : m_work_functor(  functor )
     , m_work_finalize( finalize )
     , m_work_count(    work_count )

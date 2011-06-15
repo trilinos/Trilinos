@@ -41,6 +41,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
+#include <vector>
 
 #include <Kokkos_DeviceCuda.hpp>
 #include <DeviceCuda/Kokkos_DeviceCuda_ParallelDriver.hpp>
@@ -68,12 +69,14 @@ void cuda_safe_call( cudaError e , const char * name )
 
 class DeviceCuda_Impl {
 public:
-  Impl::MemoryInfoSet     m_allocations ;
-  struct cudaDeviceProp   m_cudaProp ;
-  int                     m_cudaDev ;
-  unsigned                m_maxWarp ;
-  DeviceCuda::size_type * m_reduceScratchSpace ;
-  DeviceCuda::size_type * m_reduceScratchFlag ;
+  Impl::MemoryInfoSet       m_allocations ;
+  struct cudaDeviceProp     m_cudaProp ;
+  int                       m_cudaDev ;
+  unsigned                  m_maxWarp ;
+  unsigned                  m_maxBlock ;
+  std::vector<cudaStream_t> m_streams ;
+  DeviceCuda::size_type   * m_reduceScratchSpace ;
+  DeviceCuda::size_type   * m_reduceScratchFlag ;
 
   explicit DeviceCuda_Impl( int cuda_device_id );
   ~DeviceCuda_Impl();
@@ -105,6 +108,8 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   , m_cudaProp()
   , m_cudaDev( cuda_device_id )
   , m_maxWarp( 0 )
+  , m_maxBlock( 0 )
+  , m_streams()
   , m_reduceScratchSpace( 0 )
   , m_reduceScratchFlag( 0 )
 {
@@ -121,8 +126,7 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
 
   enum { n = sizeof(DeviceCuda::size_type) };
 
-  const DeviceCuda::size_type zero = 0 ;
-
+  //----------------------------------
   // Device query
 
   CUDA_SAFE_CALL( cudaGetDevice( & m_cudaDev ) );
@@ -136,6 +140,7 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
     throw std::runtime_error( msg.str() );
   }
 
+  //----------------------------------
   // Maximum number of warps,
   // at most one warp per thread in a warp for reduction.
 
@@ -147,6 +152,28 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
 
   m_maxWarp = 8 ; // For performance use fewer warps and more blocks...
 
+  //----------------------------------
+  // Set the maximum number of blocks to the maximum number of
+  // resident blocks per multiprocessor times the number of
+  // multiprocessors on the device.  Once a block is active on
+  // a multiprocessor then let it do all the work that it can.
+
+  enum { MaxResidentBlocksPerMultiprocessor = 8 };
+
+  m_maxBlock = m_cudaProp.multiProcessorCount *
+               MaxResidentBlocksPerMultiprocessor ;
+
+  //----------------------------------
+  // Allocate a parallel stream for each multiprocessor
+  // to support concurrent heterogeneous multi-functor execution.
+
+  m_streams.resize( m_cudaProp.multiProcessorCount );
+
+  for ( int i = 0 ; i < m_cudaProp.multiProcessorCount ; ++i ) {
+    CUDA_SAFE_CALL( cudaStreamCreate( & m_streams[i] ) );
+  }
+
+  //----------------------------------
   // Allocate shared memory image for multiblock reduction scratch space
 
   const size_t sharedWord =
@@ -160,8 +187,14 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
 
   m_reduceScratchFlag = m_reduceScratchSpace + sharedWord ;
 
-  CUDA_SAFE_CALL(
-    cudaMemcpy( m_reduceScratchFlag , & zero , n, cudaMemcpyHostToDevice ) );
+  {
+    const DeviceCuda::size_type zero = 0 ;
+
+    CUDA_SAFE_CALL(
+      cudaMemcpy( m_reduceScratchFlag , & zero , n, cudaMemcpyHostToDevice ) );
+  }
+
+  //----------------------------------
 }
 
 DeviceCuda_Impl::~DeviceCuda_Impl()
@@ -170,6 +203,12 @@ DeviceCuda_Impl::~DeviceCuda_Impl()
 
   m_reduceScratchSpace = 0 ;
   m_reduceScratchFlag  = 0 ;
+
+  for ( int i = 0 ; i < m_cudaProp.multiProcessorCount ; ++i ) {
+    CUDA_SAFE_CALL( cudaStreamDestroy( m_streams[i] ) );
+  }
+
+  m_streams.clear();
 
   if ( ! m_allocations.empty() ) {
     std::cerr << "Kokkos::DeviceCuda memory leaks:" << std::endl ;
@@ -263,18 +302,17 @@ DeviceCuda::maximum_warp_count()
 DeviceCuda::size_type
 DeviceCuda::maximum_grid_count()
 {
-  // Set the maximum number of blocks to the maximum number of
-  // resident blocks per multiprocessor times the number of
-  // multiprocessors on the device.  Once a block is active on
-  // a multiprocessor  then let it do all the work that it can.
-
-  enum { MaxResidentBlocksPerMultiprocessor = 8 };
-
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
 
-  return s.m_cudaProp.multiProcessorCount * MaxResidentBlocksPerMultiprocessor ;
+  return s.m_maxBlock ;
+}
 
-  // return s.m_cudaProp.maxGridSize[0];
+const std::vector<cudaStream_t> &
+DeviceCuda::streams()
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+
+  return s.m_streams ;
 }
 
 /*--------------------------------------------------------------------------*/

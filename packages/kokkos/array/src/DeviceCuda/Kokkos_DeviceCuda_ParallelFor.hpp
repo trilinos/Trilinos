@@ -136,15 +136,15 @@ public:
 
 #if KOKKOS_DEVICE_CUDA_USE_CONSTANT_MEMORY 
 
-  // Copy functor to constant memory on the device
-  cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(self_type) );
+    // Copy functor to constant memory on the device
+    cudaMemcpyToSymbol( kokkos_device_cuda_constant_memory_buffer , & driver , sizeof(self_type) );
 
-  // Invoke the driver function on the device
-  cuda_parallel_for< self_type > <<< grid , block >>>();
+    // Invoke the driver function on the device
+    cuda_parallel_for< self_type > <<< grid , block >>>();
 
 #else
 
-  cuda_parallel_for< self_type > <<< grid , block >>>( driver );
+    cuda_parallel_for< self_type > <<< grid , block >>>( driver );
 
 #endif
   }
