@@ -41,7 +41,7 @@ ADD_CUSTOM_TARGET(test_testutil ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/testutil.py)
 
 IF(PyTrilinos_ENABLE_Teuchos)
-#  PyTrilinos_MAKE_TEST(testTeuchos              )
+  PyTrilinos_MAKE_TEST(testTeuchos              )
   PyTrilinos_MAKE_TEST(testTeuchos_Comm         )
   PyTrilinos_MAKE_TEST(testTeuchos_ParameterList)
   PyTrilinos_MAKE_TEST(testTeuchos_ScalarTraits )
