@@ -70,7 +70,7 @@ namespace {
     RCP<Operator> coarseOp = coarseLevel.GetA();
 
     //Calculate result2 = (R*A*P)*X
-    RCP<MultiVector> result2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
+    RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
     coarseOp->multiply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
   
     Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);

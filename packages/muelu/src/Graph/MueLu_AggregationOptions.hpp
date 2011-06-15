@@ -25,7 +25,8 @@ namespace MueLu {
     
   public:
     
-    AggregationOptions() {} //TODO: init
+    AggregationOptions():printFlag_(1),ordering_(NATURAL),minNodesPerAggregate_(1),maxNeighAlreadySelected_(0),phase3AggCreation_(.5){}
+
     ~AggregationOptions() {}
 
     inline void SetPrintFlag(double printFlag) { printFlag_ = printFlag; } //TODO: to be removed
