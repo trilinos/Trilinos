@@ -26,69 +26,12 @@
 namespace Z2
 {
 
-#if 0
-// Special deallocator for aligned buffers.
-
-class DeallocateAlignedBuffer
-{
-private:
-  int offset;
-public:
-  DeallocateAlignedBuffer(int i): offset(i) {}
-  DeallocateAlignedBuffer(): offset(0) {}
-  void set_offset(int i) {offset = i;}
-  int get_offset() {return offset;}
-  typedef char ptr_t;
-  void free(char* ptr) { delete [] static_cast<char *>(ptr-offset); }
-};
-
-// Align a buffer, return the new pointer and create special deallocator
-//   for Teuchos::RCP.  The size of the buffer is >= nbytes.
-
-char *align(char *buf, int nbytes, DeallocateAlignedBuffer *&dealloc)
-{
-  intptr_t ptr = reinterpret_cast<intptr_t>(buf);
-
-  dealloc = new DeallocateAlignedBuffer;
-  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, 1, dealloc != NULL);
-
-  if (nbytes < 2)
-    return buf;
-
-  int mask = 1, bit = 1;
-  int byte_alignment = 2;
-
-  while (byte_alignment < nbytes){
-    mask |= ( 1 << bit++);
-    byte_alignment *= 2;
-  }
-
-  while ((ptr & mask) > 0)
-    ptr++;
-
-  intptr_t offset = reinterpret_cast<intptr_t>(buf) - ptr;
-
-  dealloc->set_offset(static_cast<int>(offset));
-
-  return reinterpret_cast<char *>(ptr);
-}
-#endif
-
-/*! \brief Interprocess communication for non-conforming data types.
+/*! \brief AlltoAll sends/receives a fixed number of objects to/from all processes.
  *
- *  Zoltan2 uses Teuchos for interprocess communication, which
- *  requires Scalars and GlobalOrdinals that support traits
- *  defined in Teuchos.  In general, the application global IDs
- *  may not be of Scalar or GlobalOrdinal type.  If they are not
- *  then they are converted to conforming types by Zoltan2.  But 
- *  this requires interprocess communcation during Problem pre- 
- *  and post-processing.
- *
- *  For this event, we define an AlltoAll that takes an arbitrary
- *  data type.  Once global IDs are translated to Zoltan2 internal
- *  global numbers, communication is done exclusively with Teuchos.
- *
- *  It may help to make sendBuf T-aligned.
+ * The data type T of the objects must be a type for which 
+ * Teuchos::SerializationTraits are defined.  This
+ * is most likely every data type including std::pair<T1,T2>. It does not
+ * include std::vector<T2>.
  */
 
 template <typename T, typename LNO>
@@ -155,21 +98,12 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
   recvBuf = inBuf;
 }
 
-/*! \brief Interprocess communication for non-conforming data types.
+/*! \brief AlltoAllv sends/receives a variable number of objects to/from all processes.
  *
- *  Zoltan2 uses Teuchos for interprocess communication, which
- *  requires Scalars and GlobalOrdinals that support traits
- *  defined in Teuchos.  In general, the application global IDs
- *  may not be of Scalar or GlobalOrdinal type.  If they are not
- *  then they are converted to conforming types by Zoltan2.  But 
- *  this requires interprocess communcation during Problem pre- 
- *  and post-processing.
- *
- *  For this event, we define an AlltoAllv that takes an arbitrary
- *  data type.  Once global IDs are translated to Zoltan2 internal
- *  global numbers, communication is done exclusively with Teuchos.
- *
- *  It may help if sendBuf is T-aligned.
+ * The data type T of the objects must be a type for which 
+ * Teuchos::SerializationTraits are defined.  This
+ * is most likely every data type including std::pair<T1,T2>. It does not
+ * include std::vector<T2>.
  */
 
 template <typename T, typename LNO>
@@ -267,13 +201,11 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
   recvBuf = inBuf;
 }
 
-// A version of AlltoAllv for sending std::vector<T>.
-//
-// T is a Scalar type.
+/*! \brief Serialization for std::vector<T>
 //
 // Teuchos::SerializationTraits exist for types that can be
 // sent in a Teuchos message, such as std::pair<T1, T2>.  It
-// does not exist for std::vector<T>, and it seems the
+// does not exist for std::vector<T>, and it seems the serialization
 // interface does not make this possible.
 // 
 // These four methods are what the SerializationTraits interface
@@ -292,8 +224,6 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
 //        ...
 //      T last element of last vector
 //
-
-
 // Important: number of bytes returned is always a multiple of sizeof(T)
 
 template <typename T, typename LNO>
@@ -408,6 +338,15 @@ template <typename T, typename LNO>
   }
 
 }
+
+/*! \brief AlltoAllv sends/receives a std::vector<T> to/from all processes.
+ *
+ * The vectors need not be the same length. The data type T must be a type 
+ * for which Teuchos::SerializationTraits are defined.  This
+ * is most likely every data type including std::pair<T1,T2>. It does not
+ * include std::vector<T2>.
+ */
+
 
 template <typename T, typename LNO>
 void AlltoAllv(const Teuchos::Comm<int>     &comm,
