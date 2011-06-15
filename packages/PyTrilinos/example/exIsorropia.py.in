@@ -97,9 +97,14 @@ def main(comm):
     partitioner.partition(True)
     print partitioner
 
+    #pList.set("PARTITIONING METHOD", "HYPERGRAPH2D")
+    #if iAmRoot: print "Constructing Isorropia.Epetra.Partitioner2D"
+    #part2D = Isorropia.Epetra.Partitioner2D(crsg, pList)
+    #print part2D
+
     pList.set("PARTITIONING METHOD", "HYPERGRAPH2D")
-    if iAmRoot: print "Constructing Isorropia.Epetra.Partitioner2D"
-    part2D = Isorropia.Epetra.Partitioner2D(crsg, pList)
+    if iAmRoot: print "Constructing Isorropia.Epetra.Partitioner"
+    part2D = Isorropia.Epetra.Partitioner(crsg, pList)
     print part2D
 
     if iAmRoot: print "Constructing Isorropia.Epetra.Redistributor"
