@@ -15,8 +15,10 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
     Epetra_Map *localDRowMap)
 {
     double relative_thres = config->relative_threshold;
+    int nvectors = 16;
 
-    HyperLU_Probing_Operator probeop(G, R, LP, solver, C, localDRowMap);
+    HyperLU_Probing_Operator probeop(G, R, LP, solver, C, localDRowMap,
+                                    nvectors);
 
     // Get row map
     Epetra_Map rMap = G->RowMap();
@@ -70,10 +72,12 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
     int *indices = new int[localElems];      // than one vector
     double *vecvalues;
     int dropped = 0;
-    int nvectors = 16;
     double *maxvalue = new double[nvectors];
 #ifdef TIMING_OUTPUT
     ftime.start();
+#endif
+#ifdef TIMING_OUTPUT
+    Teuchos::Time app_time("Apply time");
 #endif
     int findex = totalElems / nvectors ;
     for (i = 0 ; i < findex*nvectors ; i+=nvectors)
@@ -92,7 +96,13 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
             }
         }
 
+#ifdef TIMING_OUTPUT
+        app_time.start();
+#endif
         probeop.Apply(probevec, Scol);
+#ifdef TIMING_OUTPUT
+        app_time.stop();
+#endif
         //cout << Scol << endl;
 
         Scol.MaxValue(maxvalue);
@@ -126,6 +136,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
         }
     }
 
+    probeop.ResetTempVectors(1);
+
     for ( ; i < totalElems ; i++)
     {
         Epetra_MultiVector probevec(rMap, 1); // TODO: Try doing more than one
@@ -137,7 +149,13 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
             probevec.ReplaceGlobalValue(allSGID[i], 0, 1.0);
         }
 
+#ifdef TIMING_OUTPUT
+        app_time.start();
+#endif
         probeop.Apply(probevec, Scol);
+#ifdef TIMING_OUTPUT
+        app_time.stop();
+#endif
         //cout << Scol << endl;
 
         vecvalues = Scol[0];
@@ -170,6 +188,9 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
     ftime.stop();
     cout << "Time in finding and dropping entries" << ftime.totalElapsedTime() << endl;
     ftime.reset();
+#endif
+#ifdef TIMING_OUTPUT
+    cout << "Time in Apply of probing" << app_time.totalElapsedTime() << endl;
 #endif
     Sbar->FillComplete();
     cout << "#dropped entries" << dropped << endl;
@@ -219,6 +240,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
     Epetra_Map G_localRMap (-1, g_localElems, g_rows, 0, LComm);
     Epetra_Map R_localRMap (-1, r_localElems, r_rows, 0, LComm);
     Epetra_Map R_localCMap (-1, r_localcolElems, r_cols, 0, LComm);
+
+    cout << "#local rows" << g_localElems << "#non zero local cols" << c_localcolElems << endl;
 
     int nentries1, gid;
     // maxentries is the maximum of all three possible matrices as the arrays
@@ -296,8 +319,9 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
     localG.FillComplete();
     cout << "Created local G matrix" << endl;
 
+    int nvectors = 16;
     HyperLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
-                                        localDRowMap);
+                                        localDRowMap, nvectors);
 
     //cout << " totalElems in Schur Complement" << totalElems << endl;
     //cout << myPID << " localElems" << localElems << endl;
@@ -306,6 +330,9 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
 #ifdef TIMING_OUTPUT
     Teuchos::Time ftime("setup time");
     ftime.start();
+#endif
+#ifdef TIMING_OUTPUT
+    Teuchos::Time app_time("setup time");
 #endif
 
     int nentries;
@@ -316,7 +343,6 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
     int *indices = new int[g_localElems];
     double *vecvalues;
     int dropped = 0;
-    int nvectors = 4;
     double *maxvalue = new double[nvectors];
 #ifdef TIMING_OUTPUT
     ftime.start();
@@ -325,12 +351,10 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
 
     int cindex;
     int mypid = C->Comm().MyPID();
+    Epetra_MultiVector probevec(G_localRMap, nvectors);
+    Epetra_MultiVector Scol(G_localRMap, nvectors);
     for (i = 0 ; i < findex*nvectors ; i+=nvectors)
     {
-        // TODO: Can move the next two decalarations outside the loop
-        Epetra_MultiVector probevec(G_localRMap, nvectors);
-        Epetra_MultiVector Scol(G_localRMap, nvectors);
-
         probevec.PutScalar(0.0);
         for (int k = 0; k < nvectors; k++)
         {
@@ -345,7 +369,13 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
         //if (mypid == 0)
         //cout << probevec << endl;
 
+#ifdef TIMING_OUTPUT
+        app_time.start();
+#endif
         probeop.Apply(probevec, Scol);
+#ifdef TIMING_OUTPUT
+        app_time.stop();
+#endif
         //if (mypid == 0)
         //cout << Scol << endl;
 
@@ -380,6 +410,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
         }
     }
 
+    probeop.ResetTempVectors(1);
+
     for ( ; i < g_localElems ; i++)
     {
         // TODO: Can move the next two decalarations outside the loop
@@ -391,7 +423,13 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
         // of C, there might be null columns in C
         probevec.ReplaceGlobalValue(g_rows[i], 0, 1.0);
 
+#ifdef TIMING_OUTPUT
+        app_time.start();
+#endif
         probeop.Apply(probevec, Scol);
+#ifdef TIMING_OUTPUT
+        app_time.stop();
+#endif
         //cout << Scol << endl;
 
         vecvalues = Scol[0];
@@ -429,6 +467,10 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
     cout << "Time in finding and dropping entries" << ftime.totalElapsedTime() << endl;
     ftime.reset();
 #endif
+#ifdef TIMING_OUTPUT
+    cout << "Time in Apply of probing" << app_time.totalElapsedTime() << endl;
+#endif
+    probeop.PrintTimingInfo();
     Sbar->FillComplete();
     cout << "#dropped entries" << dropped << endl;
     delete[] values;

@@ -7,10 +7,12 @@
 #include <Teuchos_Time.hpp>
 #include "hyperlu_probing_operator.h"
 
+// TODO: 1. ltemp is not needed in the all local case.
+
 HyperLU_Probing_Operator::HyperLU_Probing_Operator(Epetra_CrsMatrix *G, 
     Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
-    Epetra_Map *localDRowMap)
+    Epetra_Map *localDRowMap, int nvectors)
 {
     G_ = G;
     R_ = R;
@@ -18,6 +20,20 @@ HyperLU_Probing_Operator::HyperLU_Probing_Operator(Epetra_CrsMatrix *G,
     solver_ = solver;
     C_ = C;
     localDRowMap_ = localDRowMap;
+    ResetTempVectors(nvectors);
+    nvectors_ = nvectors;
+
+#ifdef TIMING_OUTPUT
+    using Teuchos::RCP;
+    using Teuchos::Time;
+    matvec_time_ = RCP<Time>(new Time("First 2 Matvec time in prober: "));
+    localize_time_ = RCP<Time>(new Time("Localize time in prober: "));
+    trisolve_time_ = RCP<Time>(new Time("Triangular solve time in prober: "));
+    dist_time_ = RCP<Time>(new Time("Distribute time in prober: "));
+    matvec2_time_ = RCP<Time>(new Time("Second 1 matvec time in prober: "));
+    apply_time_ = RCP<Time>(new Time("Apply time in prober: "));
+    update_time_ = RCP<Time>(new Time("Update time in prober: "));
+#endif
 }
 
 int HyperLU_Probing_Operator::SetUseTranspose(bool useTranspose)
@@ -28,28 +44,29 @@ int HyperLU_Probing_Operator::SetUseTranspose(bool useTranspose)
 int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
             Epetra_MultiVector &Y) const
 {
+#ifdef TIMING_OUTPUT
+    apply_time_->start();
+#endif
+
     int nvectors = X.NumVectors();
+    bool local = (G_->Comm().NumProc() == 1);
     //cout << "No of colors after probing" << nvectors << endl;
-    Epetra_MultiVector temp(C_->RowMap(), nvectors);
-    Epetra_MultiVector temp2(G_->RowMap(), nvectors);
 
-#ifdef TIMING_OUTPUT_2
-    Teuchos::Time ftime("setup time");
-    ftime.start();
-#endif
-    G_->Multiply(false, X, temp2);
-    C_->Multiply(false, X, temp);
-#ifdef TIMING_OUTPUT_2
-    ftime.stop();
-    cout << "Time to Compute 2 matvecs" << ftime.totalElapsedTime() << endl;
-    ftime.reset();
+#ifdef TIMING_OUTPUT
+    matvec_time_->start();
 #endif
 
-    Epetra_MultiVector ltemp(*localDRowMap_, nvectors);
-    Epetra_MultiVector localX(*localDRowMap_, nvectors);
+    G_->Multiply(false, X, *temp2);
+    C_->Multiply(false, X, *temp);
+
+#ifdef TIMING_OUTPUT
+    matvec_time_->stop();
+#endif
 
     int nrows = C_->RowMap().NumMyElements();
+
 #ifdef DEBUG
+    cout << "DEBUG MODE" << endl;
     assert(nrows == localDRowMap_->NumGlobalElements());
 
     int gids[nrows], gids1[nrows];
@@ -61,77 +78,127 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
        assert(gids[i] == gids1[i]);
     }
 #endif
-    //cout << "Map check done" << endl;
-    // ]
 
-#ifdef TIMING_OUTPUT_2
-    ftime.start();
+#ifdef TIMING_OUTPUT
+    localize_time_->start();
 #endif
+
+    int err;
     int lda;
     double *values;
-    int err = temp.ExtractView(&values, &lda);
-    assert (err == 0);
-
-    // copy to local vector //TODO: OMP parallel
-    assert(lda == nrows);
-
-//#pragma omp parallel for shared(nvectors, nrows, values)
-    for (int v = 0; v < nvectors; v++)
+    if (!local)
     {
-       for (int i = 0; i < nrows; i++)
-       {
-           err = ltemp.ReplaceMyValue(i, v, values[i+v*lda]);
-           assert (err == 0);
-       }
+        err = temp->ExtractView(&values, &lda);
+        assert (err == 0);
+
+        // copy to local vector //TODO: OMP parallel
+        assert(lda == nrows);
+
+    //#pragma omp parallel for shared(nvectors, nrows, values)
+        for (int v = 0; v < nvectors; v++)
+        {
+           for (int i = 0; i < nrows; i++)
+           {
+               err = ltemp->ReplaceMyValue(i, v, values[i+v*lda]);
+               assert (err == 0);
+           }
+        }
     }
 
-#ifdef TIMING_OUTPUT_2
-    ftime.stop();
-    cout << "Time to localize vector" << ftime.totalElapsedTime() << endl;
-    ftime.reset();
+#ifdef TIMING_OUTPUT
+    localize_time_->stop();
+    trisolve_time_->start();
 #endif
-    LP_->SetRHS(&ltemp);
-    LP_->SetLHS(&localX);
-#ifdef TIMING_OUTPUT_2
-    ftime.start();
-#endif
+
+    if (!local)
+    {
+        LP_->SetRHS(ltemp.getRawPtr());
+    }
+    else
+    {
+        LP_->SetRHS(temp.getRawPtr());
+    }
+    LP_->SetLHS(localX.getRawPtr());
     solver_->Solve();
-#ifdef TIMING_OUTPUT_2
-    ftime.stop();
-    cout << "Time to do triangular solve" << ftime.totalElapsedTime() << endl;
-    ftime.reset();
-    ftime.start();
-#endif
-    err = localX.ExtractView(&values, &lda);
-    assert (err == 0);
 
-    //Copy back to dist vector //TODO: OMP parallel
-//#pragma omp parallel for
-    for (int v = 0; v < nvectors; v++)
+#ifdef TIMING_OUTPUT
+    trisolve_time_->stop();
+    dist_time_->start();
+#endif
+
+    if (!local)
     {
-       for (int i = 0; i < nrows; i++)
-       {
-           err = temp.ReplaceMyValue(i, v, values[i+v*lda]);
-           assert (err == 0);
-       }
+        err = localX->ExtractView(&values, &lda);
+        assert (err == 0);
+
+        //Copy back to dist vector //TODO: OMP parallel
+    //#pragma omp parallel for
+        for (int v = 0; v < nvectors; v++)
+        {
+           for (int i = 0; i < nrows; i++)
+           {
+               err = temp->ReplaceMyValue(i, v, values[i+v*lda]);
+               assert (err == 0);
+           }
+        }
     }
-#ifdef TIMING_OUTPUT_2
-    ftime.stop();
-    cout << "Time to distribute vector" << ftime.totalElapsedTime() << endl;
-    ftime.reset();
-    ftime.start();
+
+#ifdef TIMING_OUTPUT
+    dist_time_->stop();
+    matvec2_time_->start();
 #endif
 
-    R_->Multiply(false, temp, Y);
-#ifdef TIMING_OUTPUT_2
-    ftime.stop();
-    cout << "Time to do 1 matvec" << ftime.totalElapsedTime() << endl;
-    ftime.reset();
+    if (!local)
+    {
+        R_->Multiply(false, *temp, Y);
+    }
+    else
+    {
+        R_->Multiply(false, *localX, Y);
+    }
+
+#ifdef TIMING_OUTPUT
+    matvec2_time_->stop();
+    update_time_->start();
 #endif
-    err = Y.Update(1.0, temp2, -1.0);
+
+    err = Y.Update(1.0, *temp2, -1.0);
     //cout << Y.MyLength() << " " << temp2.MyLength() << endl;
     assert(err == 0);
+
+#ifdef TIMING_OUTPUT
+    update_time_->stop();
+    apply_time_->stop();
+#endif
     return 0;
+}
+
+void HyperLU_Probing_Operator::PrintTimingInfo()
+{
+#ifdef TIMING_OUTPUT
+    cout << matvec_time_->name()<< matvec_time_->totalElapsedTime() << endl;
+    cout << localize_time_->name()<< localize_time_->totalElapsedTime() << endl;
+    cout << trisolve_time_->name()<< trisolve_time_->totalElapsedTime() << endl;
+    cout << dist_time_->name() <<dist_time_->totalElapsedTime() << endl;
+    cout << matvec2_time_->name() <<matvec2_time_->totalElapsedTime() << endl;
+    cout << update_time_->name() <<update_time_->totalElapsedTime() << endl;
+    cout << apply_time_->name() <<apply_time_->totalElapsedTime() << endl;
+#endif
+}
+
+void HyperLU_Probing_Operator::ResetTempVectors(int nvectors)
+{
+    using Teuchos::RCP;
+    nvectors_ = nvectors;
+    // If vectors were created already, they will be freed.
+    temp = RCP<Epetra_MultiVector>(new Epetra_MultiVector(C_->RowMap(),
+                                     nvectors));
+    temp2 = RCP<Epetra_MultiVector>(new Epetra_MultiVector(G_->RowMap(),
+                                     nvectors));
+    ltemp = RCP<Epetra_MultiVector>(new Epetra_MultiVector(*localDRowMap_,
+                                     nvectors));
+    localX = RCP<Epetra_MultiVector>(new Epetra_MultiVector(*localDRowMap_,
+                                     nvectors));
 }
 
 int HyperLU_Probing_Operator::ApplyInverse(const Epetra_MultiVector &X,

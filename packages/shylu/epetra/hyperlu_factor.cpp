@@ -564,10 +564,6 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
 
     if (config->schurApproxMethod == 1)
     {
-        //Set up the probing operator
-        HyperLU_Probing_Operator probeop(&S, Rptr, LP, Solver, Cptr,
-                                        &LocalDRowMap);
-
         Teuchos::ParameterList pList;
         Teuchos::RCP<const Epetra_CrsGraph> rSg = Teuchos::rcpFromRef(Sg);
         Isorropia::Epetra::Prober prober(rSg, pList, false);
@@ -583,6 +579,11 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
         ftime.reset();
         ftime.start();
 #endif
+        int nvectors = prober.getNumOrthogonalVectors();
+        //Set up the probing operator
+        HyperLU_Probing_Operator probeop(&S, Rptr, LP, Solver, Cptr,
+                                        &LocalDRowMap, nvectors);
+
         cout << "Doing probing" << endl;
         Sbar = prober.probe(probeop);
         cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
