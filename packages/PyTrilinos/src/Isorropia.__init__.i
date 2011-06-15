@@ -91,7 +91,7 @@ __version__ = Isorropia_Version().split()[3]
 /////////////////////////////////
 // Isorropia::Operator support //
 /////////////////////////////////
-//%teuchos_rcp(Isorropia::Operator)
+%teuchos_rcp(Isorropia::Operator)
 %include "Isorropia_Operator.hpp"
 
 ////////////////////////////////
@@ -117,7 +117,7 @@ __version__ = Isorropia_Version().split()[3]
 ////////////////////////////////////
 // Isorropia::Partitioner support //
 ////////////////////////////////////
-//%teuchos_rcp(Isorropia::Partitioner)
+%teuchos_rcp(Isorropia::Partitioner)
 %include "Isorropia_Partitioner.hpp"
 
 //////////////////////////////////////
@@ -135,19 +135,19 @@ __version__ = Isorropia_Version().split()[3]
 //////////////////////////////////////
 // Isorropia::CostDescriber support //
 //////////////////////////////////////
-//%teuchos_rcp(Isorropia::CostDescriber)
+%teuchos_rcp(Isorropia::CostDescriber)
 %include "Isorropia_CostDescriber.hpp"
 
-//////////////////////////////////////
+////////////////////////////////
 // Isorropia::Orderer support //
-//////////////////////////////////////
-//%teuchos_rcp(Isorropia::Orderer)
+////////////////////////////////
+%teuchos_rcp(Isorropia::Orderer)
 %include "Isorropia_Orderer.hpp"
 
-//////////////////////////////////////
+///////////////////////////////////////
 // Isorropia::LevelScheduler support //
-//////////////////////////////////////
-//%teuchos_rcp(Isorropia::LevelScheduler)
+///////////////////////////////////////
+%teuchos_rcp(Isorropia::LevelScheduler)
 %include "Isorropia_LevelScheduler.hpp"
 
 // Isorropia namespace imports

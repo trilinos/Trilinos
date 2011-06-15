@@ -158,6 +158,7 @@ The purpose of Isorropia.Epetra is to ....
 /////////////////////////////////////////
 // Isorropia::Epetra::Operator support //
 /////////////////////////////////////////
+%teuchos_rcp(Isorropia::Epetra::Operator)
 %apply (int* ARGOUT_ARRAY1, int DIM1) {(int* elementList, int len)};
 %apply (int DIM1, int* ARGOUT_ARRAY1) {(int len, int* array)};
 %include "Isorropia_EpetraOperator.hpp"
@@ -173,7 +174,7 @@ The purpose of Isorropia.Epetra is to ....
 ////////////////////////////////////////////
 // Isorropia::Epetra::Partitioner support //
 ////////////////////////////////////////////
-//%teuchos_rcp(Isorropia::Epetra::Partitioner)
+%teuchos_rcp(Isorropia::Epetra::Partitioner)
 %ignore Isorropia::Epetra::Partitioner::createNewMap(Epetra_Map *&);
 %include "Isorropia_EpetraPartitioner.hpp"
 
@@ -186,7 +187,7 @@ The purpose of Isorropia.Epetra is to ....
 //////////////////////////////////////////////
 // Isorropia::Epetra::Redistributor support //
 //////////////////////////////////////////////
-%teuchos_rcp(Isorropia::Epetra::Redistributor)
+//%teuchos_rcp(Isorropia::Epetra::Redistributor)
 %ignore Isorropia::Epetra::Redistributor::redistribute(Epetra_CrsMatrix const &, Epetra_CrsMatrix *&, bool);
 %ignore Isorropia::Epetra::Redistributor::redistribute(Epetra_RowMatrix const &, Epetra_CrsMatrix *&, bool);
 %ignore Isorropia::Epetra::Redistributor::redistribute(Epetra_Vector const &, Epetra_Vector *&);
@@ -196,7 +197,7 @@ The purpose of Isorropia.Epetra is to ....
 //////////////////////////////////////////////
 // Isorropia::Epetra::CostDescriber support //
 //////////////////////////////////////////////
-//%teuchos_rcp(Isorropia::Epetra::CostDescriber)
+%teuchos_rcp(Isorropia::Epetra::CostDescriber)
 %apply (int DIM1, float* ARGOUT_ARRAY1) {(int len, float* weights)};
 %apply (int DIM1, int* ARGOUT_ARRAY1) {(int len, int* global_ids)};
 %include "Isorropia_EpetraCostDescriber.hpp"
