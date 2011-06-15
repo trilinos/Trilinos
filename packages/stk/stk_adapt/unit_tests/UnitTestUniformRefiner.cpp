@@ -422,7 +422,7 @@ namespace stk {
             save_or_diff(eMesh, output_files_loc+"local_tri_N_2_0_"+post_fix[p_size]+".e");
 
             TestLocalRefinerTri_N_2 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
-            breaker.setRemoveOldElements(true);
+            breaker.setRemoveOldElements(false);
             for (int ipass=0; ipass < 2; ipass++)
               {
                 std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;

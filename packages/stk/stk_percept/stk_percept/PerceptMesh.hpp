@@ -64,13 +64,13 @@ namespace stk {
     static const unsigned EntityRankEnd = 6;
 
     enum FamiltyTreeLevel {
-      FT_LEVEL_0 = 0,
-      FT_LEVEL_1 = 1
+      FAMILY_TREE_LEVEL_0 = 0,
+      FAMILY_TREE_LEVEL_1 = 1
     };
 
     enum FamiltyTreeParentIndex {
-      FT_PARENT = 0,
-      FT_CHILD_START_INDEX = 1
+      FAMILY_TREE_PARENT = 0,
+      FAMILY_TREE_CHILD_START_INDEX = 1
     };
 
 
@@ -225,12 +225,12 @@ namespace stk {
               }
           }
         // in this case, we specifically look at only the 0'th familty tree relation 
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[FT_LEVEL_0].entity();
+        stk::mesh::Entity *family_tree = element_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity();
         stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
-        stk::mesh::Entity *parent = family_tree_relations[FT_PARENT].entity();
+        stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
         if (&element == parent)
           {
-            if (element_to_family_tree_relations[FT_PARENT].identifier() != 0)
+            if (element_to_family_tree_relations[FAMILY_TREE_PARENT].identifier() != 0)
               {
                 throw std::runtime_error("isChildElement:: bad identifier in isChildElement");
               }
@@ -265,16 +265,16 @@ namespace stk {
           return isChildElement(element, check_for_family_tree);
         else
           {
-            stk::mesh::Entity *family_tree = element_to_family_tree_relations[FT_LEVEL_1].entity();
+            stk::mesh::Entity *family_tree = element_to_family_tree_relations[FAMILY_TREE_LEVEL_1].entity();
             stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
             if (family_tree_relations.size() == 0)
               {
                 throw std::logic_error(std::string("isChildElementLeaf:: family_tree_relations size=0 = "));
               }
-            stk::mesh::Entity *parent = family_tree_relations[FT_PARENT].entity();
+            stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
             if (&element == parent)
               {
-                if (element_to_family_tree_relations[FT_PARENT].identifier() != 0)
+                if (element_to_family_tree_relations[FAMILY_TREE_PARENT].identifier() != 0)
                   {
                     throw std::runtime_error("isChildElementLeaf:: bad identifier ");
                   }
@@ -317,10 +317,10 @@ namespace stk {
                           << std::endl;
                 throw std::logic_error(std::string("isParentElement:: family_tree_relations size=0 = "));
               }
-            stk::mesh::Entity *parent = family_tree_relations[FT_PARENT].entity();
+            stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
             if (&element == parent)
               {
-                if (element_to_family_tree_relations[FT_PARENT].identifier() != 0)
+                if (element_to_family_tree_relations[FAMILY_TREE_PARENT].identifier() != 0)
                   {
                     throw std::runtime_error("isParentElement:: bad identifier ");
                   }
@@ -359,7 +359,7 @@ namespace stk {
 
         //bool isParent = false;
 
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[FT_LEVEL_1].entity();
+        stk::mesh::Entity *family_tree = element_to_family_tree_relations[FAMILY_TREE_LEVEL_1].entity();
         stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
         if (family_tree_relations.size() == 0)
           {
@@ -401,13 +401,13 @@ namespace stk {
         if (element_to_family_tree_relations.size() == 1)
           return false;
 
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[FT_LEVEL_1].entity();
+        stk::mesh::Entity *family_tree = element_to_family_tree_relations[FAMILY_TREE_LEVEL_1].entity();
         stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
         if (family_tree_relations.size() == 0)
           {
             throw std::logic_error(std::string("isParentElementLevel2:: family_tree_relations size=0 = "));
           }
-        stk::mesh::Entity *parent = family_tree_relations[FT_PARENT].entity();
+        stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
         if (parent == &element)
           return true;
         return false;

@@ -961,7 +961,7 @@ namespace stk {
               // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error if isParentElement)
               const bool check_for_family_tree = false;  
               bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
-              if (0)
+              if (1)
                 {
                   const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
                   stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
