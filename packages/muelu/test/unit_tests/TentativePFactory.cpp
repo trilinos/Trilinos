@@ -75,7 +75,7 @@ namespace {
       coarseLevel.Examine("Nullspace",coarseNullSpace);
 
       //check interpolation
-      RCP<MultiVector> PtN = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+      RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
       Ptent->multiply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
 
       RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
