@@ -91,6 +91,10 @@ int main(int argc, char *argv[]) {
     // TODO: print custom parameters
   }
 
+  if (cthulhuParameters.GetLib() != Cthulhu::UseEpetra) {
+    std::cout << "This example is Epetra only" << std::endl;
+    return EXIT_FAILURE;
+  }
 
 #ifdef FOR_PARALLEL_DEBUGGING
   //Utils::BreakForDebugger(*comm);
@@ -166,7 +170,7 @@ int main(int argc, char *argv[]) {
 
 
   Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
@@ -218,22 +222,6 @@ int main(int argc, char *argv[]) {
     throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
   }
 
-//   if (0) {
-//     Teuchos::ParameterList ifpackList;
-//     ifpackList.set("fact: drop tolerance", 1e-1);
-//     ifpackList.set("fact: level-of-fill", 0);
-//     ifpackList.set("schwarz: combine mode", "Add");
-//     coarseProto = rcp( new IfpackSmoother("ILUT",ifpackList) );
-//   }
-//   { 
-//     Teuchos::ParameterList ifpackList;
-//     ifpackList.set("relaxation: type", "Gauss-Seidel");
-//     ifpackList.set("relaxation: sweeps", (LO) 1);
-//     ifpackList.set("relaxation: damping factor", (SC) 1.0);
-//     coarseProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-//   }
-
-
   SmootherFactory coarseSolveFact(coarseProto);
   H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
@@ -243,9 +231,7 @@ int main(int argc, char *argv[]) {
   X->setSeed(846930886);
   X->randomize();
 
-  //  X->putScalar( (SC) 1.0); //TMP
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-  // RHS->putScalar ( (SC) 1.0); //TMP
 
   X->norm2(norms);
   std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
@@ -258,7 +244,6 @@ int main(int argc, char *argv[]) {
   X->norm2(norms);
   std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   
-
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
     std::cout << "- - - - - - - - - - :" << std::endl;
     std::cout << "Epetra Belos run:" << std::endl;
@@ -281,11 +266,6 @@ int main(int argc, char *argv[]) {
     RCP<Epetra_MultiVector> eX = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstEpetraMV(X);
     RCP<Epetra_MultiVector> eB = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstEpetraMV(RHS);
 
-    // RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*eA, OverlapLevel) );
-    //    RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
-    
-    //    RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*eA, OverlapLevel) );
-    //    RCP<Belos::MueLuPrecOp<double> > belosPrec = rcp( new Belos::MueLuPrecOp<double>( H ) );
     RCP<Belos::MueLuEpetraPrecOp> belosPrec = rcp( new Belos::MueLuEpetraPrecOp( H ) );
     
     //
@@ -308,7 +288,7 @@ int main(int argc, char *argv[]) {
     // Create an iterative solver manager.
     // *****Create parameter list for the belos solver manager*****
     //
-    int maxiters = 99;
+    int maxiters = 100;
     double tol = 1e-7;
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
@@ -359,154 +339,6 @@ int main(int argc, char *argv[]) {
     }
 
   }
-
-
-  {
-    typedef double                            ST;
-    typedef Teuchos::ScalarTraits<ST>        SCT;
-    typedef SCT::magnitudeType                MT;
-    typedef Epetra_MultiVector                MV;
-    typedef Epetra_Operator                   OP;
-    typedef Belos::MultiVecTraits<ST,MV>     MVT;
-    typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
-
-    using Teuchos::ParameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
-    //
-    // ************Construct preconditioner*************
-    //
-    ParameterList ifpackList;
-    
-    // allocates an IFPACK factory. No data is associated
-    // to this object (only method Create()).
-    Ifpack Factory;
-
-    // create the preconditioner. For valid PrecType values,
-    // please check the documentation
-    //    std::string PrecType = "ILU"; // incomplete LU
-    std::string PrecType = "point relaxation stand-alone"; 
-    int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
-    // it is ignored.
-
-    RCP<Epetra_CrsMatrix> eA = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);  
-    RCP<Epetra_MultiVector> eX = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstEpetraMV(X);
-    RCP<Epetra_MultiVector> eB = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstEpetraMV(RHS);
-
-    RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*eA, OverlapLevel) );
-    assert(Prec != Teuchos::null);
-  
-    // specify parameters for ILU
-    ifpackList.set("relaxation: type", "Gauss-Seidel");
-    ifpackList.set("relaxation: sweeps", (LO) 1);
-    ifpackList.set("relaxation: damping factor", (SC) 1.0);
-
-//     ifpackList.set("fact: drop tolerance", 1e-1);
-//     ifpackList.set("fact: level-of-fill", 0);
-//     // the combine mode is on the following:
-//     // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
-//     // Their meaning is as defined in file Epetra_CombineMode.h
-//     ifpackList.set("schwarz: combine mode", "Add");
-    // sets the parameters
-    IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
-    
-    // initialize the preconditioner. At this point the matrix must
-    // have been FillComplete()'d, but actual values are ignored.
-    IFPACK_CHK_ERR(Prec->Initialize());
-
-    // Builds the preconditioners, by looking for the values of
-    // the matrix.
-    IFPACK_CHK_ERR(Prec->Compute());
-
-    // Create the Belos preconditioned operator from the Ifpack preconditioner.
-    // NOTE:  This is necessary because Belos expects an operator to apply the
-    //        preconditioner with Apply() NOT ApplyInverse().
-    RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
-
-    //
-    // *****Create parameter list for the block CG solver manager*****
-    //
-    const int NumGlobalElements = eB->GlobalLength();
-    //
-    ParameterList belosList;
-    int blocksize = 1;
-    int maxiters = 9;
-    double tol = 1e-7;
-    belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
-    belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
-    belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-  
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
-		   Belos::TimingDetails + Belos::StatusTestDetails );
-  
-    //
-    // *******Construct a preconditioned linear problem********
-    //
-
-    RCP<Belos::LinearProblem<double,MV,OP> > problem = rcp( new Belos::LinearProblem<double,MV,OP>( eA, eX, eB ) );
-    problem->setLeftPrec( belosPrec );
-
-    bool set = problem->setProblem();
-    if (set == false) {
-      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-      return -1;
-    }
-  
-    // Create an iterative solver manager.
-    RCP< Belos::SolverManager<double,MV,OP> > solver = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(problem, rcp(&belosList,false)) );
-  
-    //
-    // *******************************************************************
-    // *************Start the block CG iteration*************************
-    // *******************************************************************
-    //
-    std::cout << std::endl << std::endl;
-    std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
-    std::cout << "Block size used by solver: " << blocksize << std::endl;
-    std::cout << "Maximum number of iterations allowed: " << maxiters << std::endl;
-    std::cout << "Relative residual tolerance: " << tol << std::endl;
-    std::cout << std::endl;
-
-    //
-    // Perform solve
-    //
-    Belos::ReturnType ret = solver->solve();
-    //
-    // Get the number of iterations for this solve.
-    //
-    int numIters = solver->getNumIters();
-    std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
-    //
-    // Compute actual residuals.
-    //
-    bool badRes = false;
-    int numrhs = 1;
-    std::vector<double> actual_resids( numrhs );
-    std::vector<double> rhs_norm( numrhs );
-    
-    RCP<MultiVector> cResid = MultiVectorFactory::Build(map,numrhs); 
-    RCP<Epetra_MultiVector> resid = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstEpetraMV(cResid);
-    
-    OPT::Apply( *eA, *eX, *resid );
-    MVT::MvAddMv( -1.0, *resid, 1.0, *eB, *resid );
-    MVT::MvNorm( *resid, actual_resids );
-    MVT::MvNorm( *eB, rhs_norm );
-    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
-    for ( int i=0; i<numrhs; i++) {
-      double actRes = actual_resids[i]/rhs_norm[i];
-      std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-      if (actRes > tol) badRes = true;
-    }
-
-    if (ret!=Belos::Converged || badRes) {
-      std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
-    } else {
-      std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-    }
-
-  }
-
 
   return EXIT_SUCCESS;
 

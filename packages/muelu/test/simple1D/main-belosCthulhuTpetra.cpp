@@ -88,6 +88,10 @@ int main(int argc, char *argv[]) {
     // TODO: print custom parameters
   }
 
+  if (cthulhuParameters.GetLib() != Cthulhu::UseTpetra) {
+    std::cout << "This example is Tpetra only" << std::endl;
+    return EXIT_FAILURE;
+  }
 
 #ifdef FOR_PARALLEL_DEBUGGING
   //Utils::BreakForDebugger(*comm);
@@ -161,7 +165,7 @@ int main(int argc, char *argv[]) {
 
   RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
@@ -268,8 +272,8 @@ int main(int argc, char *argv[]) {
     // Create an iterative solver manager.
 
     // Belos parameter list
-    int maxiters = 10;
-    double tol = 1e-4;
+    int maxiters = 100;
+    double tol = 1e-7;
     Teuchos::ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
