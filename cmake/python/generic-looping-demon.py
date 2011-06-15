@@ -38,11 +38,18 @@ clp.add_option(
   help="Input to the standard unix/linux 'sleep' command" \
   +" (e.g. '60s') to space out iterations of the script.")
 
-dateTimeFormat = "%Y-%m-%d %H:%M:%S"
+dateFormat = "%Y-%m-%d"
+timeFormat = "%H:%M:%S"
+dateTimeFormat = dateFormat+" "+timeFormat
 clp.add_option(
   "--run-till", dest="runTill", type="string", default="",
-  help="The absolute time script will run iterations till." \
+  help="The absolute time the script will run iterations till." \
   +" This takes the format "+dateTimeFormat+" (e.g. 2011-06-09 18:00:00).")
+
+clp.add_option(
+  "--today-run-till", dest="todayRunTill", type="string", default="",
+  help="The time today the script will run iterations till." \
+  +" This takes the format "+timeFormat+" (e.g. 18:00:00).")
 
 (options, args) = clp.parse_args()
 
@@ -50,6 +57,8 @@ clp.add_option(
 #
 # Check the input arguments
 #
+
+import sys
 
 if not options.command:
   print "\nError, you must set the --command argument!"
@@ -59,8 +68,8 @@ if not options.loopInterval:
   print "\nError, you must set the --loop-interval argument!"
   sys.exit(1)
 
-if not options.runTill:
-  print "\nError, you must set the --runTill argument!"
+if not (options.runTill or options.todayRunTill):
+  print "\nError, you must set either the --run-till or --today-run-till argument!"
   sys.exit(1)
 
 
@@ -74,7 +83,10 @@ print "Script: generic-looping-demon.py \\"
 
 print "  --command='"+options.command+"' \\"
 print "  --loop-interval='"+options.loopInterval+"' \\"
-print "  --run-till='"+options.runTill+"' \\"
+if options.runTill:
+  print "  --run-till='"+options.runTill+"' \\"
+if options.todayRunTill:
+  print "  --run-till='"+options.todayRunTill+"' \\"
 
 
 #
@@ -98,7 +110,6 @@ def formatDateTime(dateTimeObj):
 # Executable statements
 #
 
-import sys
 import os
 import datetime
 
@@ -107,16 +118,23 @@ sys.path.insert(0, scriptsDir)
 
 from GeneralScriptSupport import *
 
-finalTime = parseDateTimeString(options.runTill)
-print "The script will run iterations till = " + formatDateTime(finalTime) + "\n"
+if options.runTill:
+  finalDateTime = parseDateTimeString(options.runTill)
+elif options.todayRunTill:
+  todayDate = datetime.datetime.today()
+  todayDateStr = datetime.datetime.strftime(todayDate, dateFormat)
+  finalDateTime = parseDateTimeString(todayDateStr+" "+options.todayRunTill)
+
+print "The script will run iterations till = " + formatDateTime(finalDateTime) + "\n"
+
 currentTime = datetime.datetime.now()
 iteration = 0
 
-while currentTime < finalTime:
+while currentTime < finalDateTime:
   print "*****************************************************************************\n" \
     + str(iteration) + ":" \
     + " current time = " + formatDateTime(currentTime) \
-    + ", final time = " + formatDateTime(finalTime)
+    + ", final time = " + formatDateTime(finalDateTime)
   echoRunSysCmnd(options.command, throwExcept=False, timeCmnd=True)
   echoRunSysCmnd("sleep "+options.loopInterval)
   currentTime = datetime.datetime.now()
