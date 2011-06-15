@@ -8,13 +8,13 @@
 #include <Epetra_Comm.h>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_RCP.hpp>
-#include "hyperlu_util.h"
+#include "shylu_util.h"
 
-class HyperLU_Probing_Operator : public virtual Epetra_Operator
+class ShyLU_Probing_Operator : public virtual Epetra_Operator
 {
 
     public:
-    HyperLU_Probing_Operator(Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
+    ShyLU_Probing_Operator(Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *LocalDRowMap, int nvectors);
 

@@ -1,6 +1,6 @@
-/** \file hyperlu_util.cpp
+/** \file shylu_util.cpp
 
-    \brief Utilities for HyperLU
+    \brief Utilities for ShyLU
 
     \author Siva Rajamanickam
 
@@ -24,7 +24,7 @@
 #include "Isorropia_EpetraRedistributor.hpp"
 #include "Isorropia_EpetraPartitioner.hpp"
 
-#include "hyperlu_util.h"
+#include "shylu_util.h"
 
 
 using namespace std;

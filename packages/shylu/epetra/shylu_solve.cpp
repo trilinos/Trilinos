@@ -1,4 +1,4 @@
-/** \file hyperlu_solve.cpp
+/** \file shylu_solve.cpp
 
     \brief Solve the system for a given r.h.s (approximately)
 
@@ -6,10 +6,10 @@
 
 */
 
-#include "hyperlu_util.h"
-#include "hyperlu.h"
+#include "shylu_util.h"
+#include "shylu.h"
 
-int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
+int shylu_solve(shylu_data *data, shylu_config *config,
     const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 {
     int err;

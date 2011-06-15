@@ -28,7 +28,7 @@ typedef struct
                                 // but required for Amesos_Pardiso
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     AztecOO *innersolver;            // inner solver
-} hyperlu_data;
+} shylu_data;
 
 typedef struct
 {
@@ -44,20 +44,20 @@ typedef struct
     double inner_tolerance;     // relative residual tolerance for inner solver
     string libName;             // library for the outer solver
     int sep_type;
-} hyperlu_config;
+} shylu_config;
 
-int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config 
+int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config 
                 *config);
 
-int hyperlu_solve(hyperlu_data *data, hyperlu_config *config,
+int shylu_solve(shylu_data *data, shylu_config *config,
     const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
-Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
+Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);
 
-Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
+Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);

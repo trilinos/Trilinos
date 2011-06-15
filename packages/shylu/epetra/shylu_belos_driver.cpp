@@ -1,11 +1,11 @@
-/** \file hyperlu_driver.cpp
+/** \file shylu_driver.cpp
 
     \brief Factors and solves a sparse matrix using LU factorization.
 
     \author Siva Rajamanickam
 
     \remark Usage:
-    \code mpirun -n np hyperlu_driver.exe
+    \code mpirun -n np shylu_driver.exe
 
 */
 
@@ -49,9 +49,9 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra_utils.h"
 
-#include "hyperlu.h"
-#include "hyperlu_util.h"
-#include "Ifpack_HyperLU.h"
+#include "shylu.h"
+#include "shylu_util.h"
+#include "Ifpack_ShyLU.h"
 #include "Ifpack_ILUT.h"
 #include "Ifpack_ILU.h"
 
@@ -99,8 +99,8 @@ int main(int argc, char *argv[])
     int nProcs, myPID ;
     Teuchos::ParameterList pLUList ;        // ParaLU parameters
     Teuchos::ParameterList isoList ;        // Isorropia parameters
-    Teuchos::ParameterList hyperLUList ;    // HyperLU parameters
-    string ipFileName = "HyperLU.xml";       // TODO : Accept as i/p
+    Teuchos::ParameterList shyLUList ;    // ShyLU parameters
+    string ipFileName = "ShyLU.xml";       // TODO : Accept as i/p
 
     nProcs = mpiSession.getNProc();
     myPID = Comm.MyPID();
@@ -113,8 +113,8 @@ int main(int argc, char *argv[])
     // =================== Read input xml file =============================
     Teuchos::updateParametersFromXmlFile(ipFileName, &pLUList);
     isoList = pLUList.sublist("Isorropia Input");
-    hyperLUList = pLUList.sublist("HyperLU Input");
-    hyperLUList.set("Outer Solver Library", "Belos");
+    shyLUList = pLUList.sublist("ShyLU Input");
+    shyLUList.set("Outer Solver Library", "Belos");
     // Get matrix market file name
     string MMFileName = Teuchos::getParameter<string>(pLUList, "mm_file");
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
@@ -173,10 +173,10 @@ int main(int argc, char *argv[])
 
     Ifpack_Preconditioner *prec;
     ML_Epetra::MultiLevelPreconditioner *MLprec;
-    if (prec_type.compare("HyperLU") == 0)
+    if (prec_type.compare("ShyLU") == 0)
     {
-        prec = new Ifpack_HyperLU(A);
-        prec->SetParameters(hyperLUList);
+        prec = new Ifpack_ShyLU(A);
+        prec->SetParameters(shyLUList);
         prec->Initialize();
         prec->Compute();
         //cout << " Going to set it in solver" << endl ;

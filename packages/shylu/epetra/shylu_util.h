@@ -1,12 +1,12 @@
-/** \file hyperlu_util.h
+/** \file shylu_util.h
 
-    \brief Utilities for HyperLU
+    \brief Utilities for ShyLU
 
     \author Siva Rajamanickam
 
 */
-#ifndef HYPERLU_UTIL_H
-#define HYPERLU_UTIL_H
+#ifndef SHYLU_UTIL_H
+#define SHYLU_UTIL_H
 
 #include <assert.h>
 #include <mpi.h>
@@ -70,4 +70,4 @@ void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
         int Lnr, int *LeftElems,
         int Rnr, int *RightElems, string s1, string s2, bool cols);
 
-#endif //HYPERLU_UTIL_H
+#endif //SHYLU_UTIL_H

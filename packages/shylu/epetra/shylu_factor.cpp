@@ -1,11 +1,8 @@
-/** \file parallel_LU.cpp
+/** \file shylu_factor.cpp
 
     \brief Factors sparse matrix using LU factorization.
 
     \author Siva Rajamanickam
-
-    \remark Usage:
-    \code ./parallel_LU.exe \endcode
 
     This version extracts the non zero rows/columns of R/C, hence Si is smaller
     the complete diagonal block. This version also
@@ -27,12 +24,12 @@
    */
 #define BLOCK_DIAGONAL_Si
 
-#include "hyperlu.h"
-#include "hyperlu_util.h"
-#include "hyperlu_probing_operator.h"
+#include "shylu.h"
+#include "shylu_util.h"
+#include "shylu_probing_operator.h"
 
 
-int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
+int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
                 *config)
 {
     int myPID = A->Comm().MyPID();
@@ -581,7 +578,7 @@ int HyperLU_factor(Epetra_CrsMatrix *A, hyperlu_data *data, hyperlu_config
 #endif
         int nvectors = prober.getNumOrthogonalVectors();
         //Set up the probing operator
-        HyperLU_Probing_Operator probeop(&S, Rptr, LP, Solver, Cptr,
+        ShyLU_Probing_Operator probeop(&S, Rptr, LP, Solver, Cptr,
                                         &LocalDRowMap, nvectors);
 
         cout << "Doing probing" << endl;

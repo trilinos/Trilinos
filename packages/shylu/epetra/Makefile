@@ -6,27 +6,27 @@ default: driver belos_driver
 
 include ./Makefile.export.Trilinos_install
 
-OBJ = hyperlu_factor.o hyperlu_util.o Ifpack_HyperLU.o hyperlu_probing_operator.o hyperlu_solve.o hyperlu_schur.o
+OBJ = shylu_factor.o shylu_util.o Ifpack_ShyLU.o shylu_probing_operator.o shylu_solve.o shylu_schur.o
 
 all: driver belos_driver
 
 library: $(OBJ) 
-	$(Trilinos_AR) cr libhyperlu.a $(OBJ)
+	$(Trilinos_AR) cr libshylu.a $(OBJ)
 
-exec: $(OBJ) hyperlu.o
-	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) hyperlu.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -o hyperlu_factor.exe
+exec: $(OBJ) shylu.o
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) shylu.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -o shylu_factor.exe
 
-driver: $(OBJ) hyperlu_driver.o
-	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) hyperlu_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_driver.exe
+driver: $(OBJ) shylu_driver.o
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) shylu_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o shylu_driver.exe
 
-belos_driver: $(OBJ) hyperlu_belos_driver.o
-	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) hyperlu_belos_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o hyperlu_belos_driver.exe
+belos_driver: $(OBJ) shylu_belos_driver.o
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) shylu_belos_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o shylu_belos_driver.exe
 
 adriver: $(OBJ) amesos_driver.o
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) $(OBJ) amesos_driver.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -o amesos_driver.exe
 
-prober: hyperlu_prober.o
-	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) hyperlu_prober.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -o hyperlu_prober.exe
+prober: shylu_prober.o
+	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) shylu_prober.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -o shylu_prober.exe
 
 #problem: AztecOO_problem.o
 	#$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) AztecOO_problem.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o AztecOO_problem.exe
@@ -35,39 +35,39 @@ prober: hyperlu_prober.o
 	#$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) Graph_problem.o $(Trilinos_LIBRARIES) $(Trilinos_TPL_LIBRARIES) -lgfortran -o Graph_problem.exe
 
 clean:
-	- rm a.out *.o *.a hyperlu_driver.exe hyperlu_factor.exe hyperlu_belos_driver.exe
+	- rm a.out *.o *.a shylu_driver.exe shylu_factor.exe shylu_belos_driver.exe
 
-hyperlu_factor.o: ./hyperlu_factor.cpp
+shylu_factor.o: ./shylu_factor.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
-hyperlu_util.o: ./hyperlu_util.cpp
+shylu_util.o: ./shylu_util.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
-Ifpack_HyperLU.o: ./Ifpack_HyperLU.cpp
+Ifpack_ShyLU.o: ./Ifpack_ShyLU.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
-hyperlu.o: ./hyperlu.cpp
+shylu.o: ./shylu.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
-hyperlu_driver.o: ./hyperlu_driver.cpp
+shylu_driver.o: ./shylu_driver.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
 amesos_driver.o: ./amesos_driver.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
-hyperlu_prober.o: ./hyperlu_prober.cpp
+shylu_prober.o: ./shylu_prober.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
-hyperlu_probing_operator.o: ./hyperlu_probing_operator.cpp
+shylu_probing_operator.o: ./shylu_probing_operator.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
-hyperlu_belos_driver.o: ./hyperlu_belos_driver.cpp
+shylu_belos_driver.o: ./shylu_belos_driver.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
-hyperlu_solve.o: ./hyperlu_solve.cpp
+shylu_solve.o: ./shylu_solve.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
-hyperlu_schur.o: ./hyperlu_schur.cpp
+shylu_schur.o: ./shylu_schur.cpp
 	$(Trilinos_CXX_COMPILER) $(Trilinos_CXX_COMPILER_FLAGS) $(Trilinos_INCLUDE_DIRS) $(Trilinos_LIBRARY_DIRS) -c $< -o $@
 
 #Graph_problem.o: ./Graph_problem.cpp

@@ -1,15 +1,15 @@
 
-#include "hyperlu.h"
-#include "hyperlu_util.h"
+#include "shylu.h"
+#include "shylu_util.h"
 //#include "EpetraExt_Transpose_RowMatrix.h"
 #include "Epetra_Vector.h"
-#include "hyperlu_probing_operator.h"
+#include "shylu_probing_operator.h"
 
 /* Apply an identity matrix to the Schur complement operator. Drop the entries
    entries using a relative threshold. Assemble the result in a Crs Matrix
    which will be our approximate Schur complement.
    */
-Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
+Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap)
@@ -17,7 +17,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
     double relative_thres = config->relative_threshold;
     int nvectors = 16;
 
-    HyperLU_Probing_Operator probeop(G, R, LP, solver, C, localDRowMap,
+    ShyLU_Probing_Operator probeop(G, R, LP, solver, C, localDRowMap,
                                     nvectors);
 
     // Get row map
@@ -204,7 +204,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(hyperlu_config *config,
 }
 
 /* Computes the approximate Schur complement for the wide separator */
-Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
+Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap)
@@ -320,7 +320,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(hyperlu_config *config,
     cout << "Created local G matrix" << endl;
 
     int nvectors = 16;
-    HyperLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
+    ShyLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
                                         localDRowMap, nvectors);
 
     //cout << " totalElems in Schur Complement" << totalElems << endl;

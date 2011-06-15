@@ -1,13 +1,13 @@
-/** \file Ifpack_HyperLU.h
+/** \file Ifpack_ShyLU.h
 
-    \brief Use HyperLU as a preconditioner within IFPACK.
+    \brief Use ShyLU as a preconditioner within IFPACK.
 
     \author Siva Rajamanickam
 
 */
 
-#ifndef IFPACK_HYPERLU_H
-#define IFPACK_HYPERLU_H
+#ifndef IFPACK_SHYLU_H
+#define IFPACK_SHYLU_H
 
 #include <assert.h>
 #include <iostream>
@@ -44,7 +44,7 @@
 #include "AztecOO.h"
 
 
-#include "hyperlu_util.h"
+#include "shylu_util.h"
 
 // Ifpack includes
 #include "Ifpack_Preconditioner.h"
@@ -64,15 +64,15 @@
 
 using namespace std;
 
-class Ifpack_HyperLU: public Ifpack_Preconditioner
+class Ifpack_ShyLU: public Ifpack_Preconditioner
 {
     public:
     // @{ Constructors and destructors.
     //! Constructor
-    Ifpack_HyperLU(Epetra_CrsMatrix* A);
+    Ifpack_ShyLU(Epetra_CrsMatrix* A);
 
     //! Destructor
-    ~Ifpack_HyperLU()
+    ~Ifpack_ShyLU()
     {
         Destroy();
     }
@@ -253,12 +253,12 @@ int JustTryIt() ;
     // @{ Private methods
 
     //! Copy constructor (should never be used)
-    Ifpack_HyperLU(const Ifpack_HyperLU& RHS) :
+    Ifpack_ShyLU(const Ifpack_ShyLU& RHS) :
     Time_(RHS.Comm())
     {}
 
     //! operator= (should never be used)
-    Ifpack_HyperLU& operator=(const Ifpack_HyperLU& RHS)
+    Ifpack_ShyLU& operator=(const Ifpack_ShyLU& RHS)
     {
         return(*this);
     }
@@ -286,8 +286,8 @@ int JustTryIt() ;
 
     Teuchos::ParameterList List_;
     //mutable AztecOO *solver_; // Ugh !!! Mutable ! To workaround AztecOO bug
-    mutable hyperlu_data hlu_data_; // More mutable !!!
-    mutable hyperlu_config hlu_config_; // More mutable !!
+    mutable shylu_data slu_data_; // More mutable !!!
+    mutable shylu_config slu_config_; // More mutable !!
 
     //fpr later use
     Isorropia::Epetra::Partitioner *partitioner_;
@@ -327,4 +327,4 @@ int JustTryIt() ;
 
 };
 
-#endif /* IFPACK_HYPERLU_H */
+#endif /* IFPACK_SHYLU_H */

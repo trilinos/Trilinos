@@ -5,11 +5,11 @@
 #include <Amesos_BaseSolver.h>
 #include <Epetra_MultiVector.h>
 #include <Teuchos_Time.hpp>
-#include "hyperlu_probing_operator.h"
+#include "shylu_probing_operator.h"
 
 // TODO: 1. ltemp is not needed in the all local case.
 
-HyperLU_Probing_Operator::HyperLU_Probing_Operator(Epetra_CrsMatrix *G, 
+ShyLU_Probing_Operator::ShyLU_Probing_Operator(Epetra_CrsMatrix *G, 
     Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap, int nvectors)
@@ -36,12 +36,12 @@ HyperLU_Probing_Operator::HyperLU_Probing_Operator(Epetra_CrsMatrix *G,
 #endif
 }
 
-int HyperLU_Probing_Operator::SetUseTranspose(bool useTranspose)
+int ShyLU_Probing_Operator::SetUseTranspose(bool useTranspose)
 {
     return 0;
 }
 
-int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
+int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
             Epetra_MultiVector &Y) const
 {
 #ifdef TIMING_OUTPUT
@@ -173,7 +173,7 @@ int HyperLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     return 0;
 }
 
-void HyperLU_Probing_Operator::PrintTimingInfo()
+void ShyLU_Probing_Operator::PrintTimingInfo()
 {
 #ifdef TIMING_OUTPUT
     cout << matvec_time_->name()<< matvec_time_->totalElapsedTime() << endl;
@@ -186,7 +186,7 @@ void HyperLU_Probing_Operator::PrintTimingInfo()
 #endif
 }
 
-void HyperLU_Probing_Operator::ResetTempVectors(int nvectors)
+void ShyLU_Probing_Operator::ResetTempVectors(int nvectors)
 {
     using Teuchos::RCP;
     nvectors_ = nvectors;
@@ -201,44 +201,44 @@ void HyperLU_Probing_Operator::ResetTempVectors(int nvectors)
                                      nvectors));
 }
 
-int HyperLU_Probing_Operator::ApplyInverse(const Epetra_MultiVector &X,
+int ShyLU_Probing_Operator::ApplyInverse(const Epetra_MultiVector &X,
              Epetra_MultiVector &Y) const
 {
     return 0;
 }
 
-double HyperLU_Probing_Operator::NormInf() const
+double ShyLU_Probing_Operator::NormInf() const
 {
    return -1;
 }
 
-const char* HyperLU_Probing_Operator::Label() const
+const char* ShyLU_Probing_Operator::Label() const
 {
-    return "Hyperlu probing";
+    return "Shylu probing";
 }
 
-bool HyperLU_Probing_Operator::UseTranspose() const
-{
-    return false;
-}
-
-bool HyperLU_Probing_Operator::HasNormInf() const
+bool ShyLU_Probing_Operator::UseTranspose() const
 {
     return false;
 }
 
-const Epetra_Comm& HyperLU_Probing_Operator::Comm() const
+bool ShyLU_Probing_Operator::HasNormInf() const
+{
+    return false;
+}
+
+const Epetra_Comm& ShyLU_Probing_Operator::Comm() const
 {
     return C_->Comm();
 }
 
-const Epetra_Map& HyperLU_Probing_Operator::OperatorDomainMap() const
+const Epetra_Map& ShyLU_Probing_Operator::OperatorDomainMap() const
 {
     //return C_->ColMap();
     return C_->DomainMap();
 }
 
-const Epetra_Map& HyperLU_Probing_Operator::OperatorRangeMap() const
+const Epetra_Map& ShyLU_Probing_Operator::OperatorRangeMap() const
 {
     //return R_->RowMap();
     return R_->RangeMap();

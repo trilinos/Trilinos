@@ -1,5 +1,5 @@
 
-/** \file hyperlu.cpp
+/** \file shylu.cpp
 
     \brief Factors and solves a sparse matrix using LU factorization.
 
@@ -51,8 +51,8 @@
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"
 
-#include "hyperlu.h"
-#include "hyperlu_util.h"
+#include "shylu.h"
+#include "shylu_util.h"
 
 using namespace std;
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     int nProcs, myPID ;
     Teuchos::ParameterList pLUList ;        // ParaLU parameters
     Teuchos::ParameterList isoList ;        // Isorropia parameters
-    string ipFileName = "HyperLU.xml";       // TODO : Accept as i/p
+    string ipFileName = "ShyLU.xml";       // TODO : Accept as i/p
     int sym = 1; // TODO: Need rectangular factorization for unsymmetric case
 
     nProcs = mpiSession.getNProc();
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     int Dnr, Snr;
     int *DRowElems, *SRowElems, *piv;
 
-    HyperLU_factor(A, sym, localS, LP, Solver, Dnr, DRowElems, Snr, SRowElems,
+    shylu_factor(A, sym, localS, LP, Solver, Dnr, DRowElems, Snr, SRowElems,
                     piv, CMV);
 
     delete localS;

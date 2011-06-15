@@ -1,11 +1,11 @@
-/** \file hyperlu_driver.cpp
+/** \file amesos_driver.cpp
 
     \brief Factors and solves a sparse matrix using LU factorization.
 
     \author Siva Rajamanickam
 
     \remark Usage:
-    \code mpirun -n np hyperlu_driver.exe
+    \code mpirun -n np amesos_driver.exe
 
 */
 
@@ -48,12 +48,6 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra_utils.h"
 
-#include "hyperlu.h"
-#include "hyperlu_util.h"
-#include "Ifpack_HyperLU.h"
-#include "Ifpack_ILUT.h"
-#include "Ifpack_ILU.h"
-
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -67,7 +61,7 @@ int main(int argc, char *argv[])
     int nProcs, myPID ;
     Teuchos::ParameterList pLUList ;        // ParaLU parameters
     Teuchos::ParameterList isoList ;        // Isorropia parameters
-    string ipFileName = "HyperLU.xml";       // TODO : Accept as i/p
+    string ipFileName = "ShyLU.xml";       // TODO : Accept as i/p
 
     nProcs = mpiSession.getNProc();
     myPID = Comm.MyPID();
