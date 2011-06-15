@@ -35,16 +35,16 @@ integer *itnmin;
 
     /* Local variables */
     static doublereal alfa, diag, dbar, beta, gbar, oldb, epsa;
-    extern doublereal ddot_();
+    extern doublereal chddot_();
     static doublereal gmin, gmax, zbar, epsr, epsx, beta1;
-    extern doublereal dnrm2_();
+    extern doublereal chdnrm2_();
     static integer i;
     static doublereal gamma, s, t, delta, z, denom;
     extern /* Subroutine */ int aprod_();
     static doublereal bstep;
-    extern /* Subroutine */ int dcopy_();
+    extern /* Subroutine */ int chdcopy_();
     static doublereal epsln;
-    extern /* Subroutine */ int daxpy_();
+    extern /* Subroutine */ int chdaxpy_();
     static doublereal tnorm, cs, ynorm2, sn, cgnorm;
     extern /* Subroutine */ int msolve_();
     static doublereal snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
@@ -324,7 +324,7 @@ ist ) -rwl*/
 
 /*     Alter the words */
 /*            double precision, */
-/*            daxpy, dcopy, ddot, dnrm2 */
+/*            chdaxpy, chdcopy, chddot, chdnrm2 */
 /*     to their single or double equivalents. */
 /*     ------------------------------------------------------------------ 
 */
@@ -467,7 +467,7 @@ ist ) -rwl*/
 /*     Subroutines and functions */
 
 /*     USER       aprod, msolve */
-/*     BLAS       daxpy, dcopy, ddot , dnrm2 */
+/*     BLAS       chdaxpy, chdcopy, chddot , chdnrm2 */
 
 
 /*     Intrinsics and local variables */
@@ -485,14 +485,14 @@ ist ) -rwl*/
     /* Function Body */
 /*     ------------------------------------------------------------------ 
 */
-/*     Compute eps, the machine precision.  The call to daxpy is */
+/*     Compute eps, the machine precision.  The call to chdaxpy is */
 /*     intended to fool compilers that use extra-length registers. */
     eps = .0625;
 L10:
     eps /= 2.;
     x[1] = eps;
     y[1] = 1.;
-    daxpy_(&c__1, &c_b4, &x[1], &c__1, &y[1], &c__1);
+    chdaxpy_(&c__1, &c_b4, &x[1], &c__1, &y[1], &c__1);
     if (y[1] > 1.) {
 	goto L10;
     }
@@ -519,8 +519,8 @@ L10:
 /*     Set up y for the first Lanczos vector v1. */
 /*     y is really beta1 * P * v1  where  P = C**(-1). */
 /*     y and beta1 will be zero if b = 0. */
-    dcopy_(n, &b[1], &c__1, &y[1], &c__1);
-    dcopy_(n, &b[1], &c__1, &r1[1], &c__1);
+    chdcopy_(n, &b[1], &c__1, &y[1], &c__1);
+    chdcopy_(n, &b[1], &c__1, &r1[1], &c__1);
     if (*precon) {
 	msolve_(n, &r1[1], &y[1], a, &vwsqrt[1], &work[1]);
     }
@@ -529,12 +529,12 @@ L10:
 /*     else */
 /*        b1  = zero */
 /*     end if */
-    beta1 = ddot_(n, &r1[1], &c__1, &y[1], &c__1);
+    beta1 = chddot_(n, &r1[1], &c__1, &y[1], &c__1);
 /*     See if msolve is symmetric. */
     if (*checka && *precon) {
 	msolve_(n, &y[1], &r2[1], a, &vwsqrt[1], &work[1]);
-	s = ddot_(n, &y[1], &c__1, &y[1], &c__1);
-	t = ddot_(n, &r1[1], &c__1, &r2[1], &c__1);
+	s = chddot_(n, &y[1], &c__1, &y[1], &c__1);
+	t = chddot_(n, &r1[1], &c__1, &r2[1], &c__1);
 	z = (d__1 = s - t, abs(d__1));
 	epsa = (s + eps) * pow_dd(&eps, &c_b18);
 	if (z > epsa) {
@@ -563,8 +563,8 @@ L10:
     aprod_(n, &v[1], &y[1], a, &vwsqrt[1], &work[1], orthlist);
     if (*checka) {
 	aprod_(n, &y[1], &r2[1], a, &vwsqrt[1], &work[1], orthlist);
-	s = ddot_(n, &y[1], &c__1, &y[1], &c__1);
-	t = ddot_(n, &v[1], &c__1, &r2[1], &c__1);
+	s = chddot_(n, &y[1], &c__1, &y[1], &c__1);
+	t = chddot_(n, &v[1], &c__1, &r2[1], &c__1);
 	z = (d__1 = s - t, abs(d__1));
 	epsa = (s + eps) * pow_dd(&eps, &c_b18);
 	if (z > epsa) {
@@ -576,21 +576,21 @@ L10:
 /*     Again, y is beta * P * v2  where  P = C**(-1). */
 /*     y and beta will be zero or very small if b is an eigenvector. */
     d__1 = -(*shift);
-    daxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
-    alfa = ddot_(n, &v[1], &c__1, &y[1], &c__1);
+    chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
+    alfa = chddot_(n, &v[1], &c__1, &y[1], &c__1);
     d__1 = -alfa / beta1;
-    daxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
+    chdaxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
 /*     Make sure  r2  will be orthogonal to the first  v. */
-    z = ddot_(n, &v[1], &c__1, &y[1], &c__1);
-    s = ddot_(n, &v[1], &c__1, &v[1], &c__1);
+    z = chddot_(n, &v[1], &c__1, &y[1], &c__1);
+    s = chddot_(n, &v[1], &c__1, &v[1], &c__1);
     d__1 = -z / s;
-    daxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
-    dcopy_(n, &y[1], &c__1, &r2[1], &c__1);
+    chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
+    chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
     if (*precon) {
 	msolve_(n, &r2[1], &y[1], a, &vwsqrt[1], &work[1]);
     }
     oldb = beta1;
-    beta = ddot_(n, &r2[1], &c__1, &y[1], &c__1);
+    beta = chddot_(n, &r2[1], &c__1, &y[1], &c__1);
     if (beta < 0.) {
 	*istop = 8;
 	goto L900;
@@ -601,9 +601,9 @@ L10:
 	*istop = -1;
     }
 /*     See if the local reorthogonalization achieved anything. */
-    denom = sqrt(s) * dnrm2_(n, &r2[1], &c__1) + eps;
+    denom = sqrt(s) * chdnrm2_(n, &r2[1], &c__1) + eps;
     s = z / denom;
-    t = ddot_(n, &v[1], &c__1, &r2[1], &c__1) / denom;
+    t = chddot_(n, &v[1], &c__1, &r2[1], &c__1) / denom;
 /*     if (nout .gt. 0  .and.  goodb) then */
 /*        write(nout, 1100) beta1, alfa, s, t */
 /*     end if */
@@ -628,7 +628,7 @@ L10:
 /* L200: */
 	}
     } else {
-	dcopy_(n, &v[1], &c__1, &w[1], &c__1);
+	chdcopy_(n, &v[1], &c__1, &w[1], &c__1);
     }
 /*     ------------------------------------------------------------------ 
 */
@@ -746,24 +746,24 @@ L600:
     }
     aprod_(n, &v[1], &y[1], a, &vwsqrt[1], &work[1], orthlist);
     d__1 = -(*shift);
-    daxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
+    chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
     d__1 = -beta / oldb;
-    daxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
-    alfa = ddot_(n, &v[1], &c__1, &y[1], &c__1);
+    chdaxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
+    alfa = chddot_(n, &v[1], &c__1, &y[1], &c__1);
 /* Computing 2nd power */
     d__1 = alfa;
 /* Computing 2nd power */
     d__2 = beta;
     tnorm = tnorm + d__1 * d__1 + d__2 * d__2 * 2.;
     d__1 = -alfa / beta;
-    daxpy_(n, &d__1, &r2[1], &c__1, &y[1], &c__1);
-    dcopy_(n, &r2[1], &c__1, &r1[1], &c__1);
-    dcopy_(n, &y[1], &c__1, &r2[1], &c__1);
+    chdaxpy_(n, &d__1, &r2[1], &c__1, &y[1], &c__1);
+    chdcopy_(n, &r2[1], &c__1, &r1[1], &c__1);
+    chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
     if (*precon) {
 	msolve_(n, &r2[1], &y[1], a, &vwsqrt[1], &work[1]);
     }
     oldb = beta;
-    beta = ddot_(n, &r2[1], &c__1, &y[1], &c__1);
+    beta = chddot_(n, &r2[1], &c__1, &y[1], &c__1);
     if (beta < 0.) {
 	*istop = 6;
 	goto L800;
@@ -821,18 +821,18 @@ L800:
 	d__1 = zbar;
 	*ynorm = sqrt(ynorm2 + d__1 * d__1);
 	*rnorm = cgnorm;
-	daxpy_(n, &zbar, &w[1], &c__1, &x[1], &c__1);
+	chdaxpy_(n, &zbar, &w[1], &c__1, &x[1], &c__1);
     } else {
 	*rnorm = lqnorm;
     }
     if (*goodb) {
 /*        Add the step along  b. */
 	bstep /= beta1;
-	dcopy_(n, &b[1], &c__1, &y[1], &c__1);
+	chdcopy_(n, &b[1], &c__1, &y[1], &c__1);
 	if (*precon) {
 	    msolve_(n, &b[1], &y[1], a, &vwsqrt[1], &work[1]);
 	}
-	daxpy_(n, &bstep, &y[1], &c__1, &x[1], &c__1);
+	chdaxpy_(n, &bstep, &y[1], &c__1, &x[1], &c__1);
     }
 /*     ================================================================== 
 */

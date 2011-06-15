@@ -258,7 +258,7 @@
 *
 *     Alter the words
 *            double precision,
-*            daxpy, dcopy, ddot, dnrm2
+*            chdaxpy, chdcopy, chddot, chdnrm2
 *     to their single or double equivalents.
 *     ------------------------------------------------------------------
 *
@@ -379,13 +379,13 @@
 *     Subroutines and functions
 *
 *     USER       aprod, msolve
-*     BLAS       daxpy, dcopy, ddot , dnrm2
+*     BLAS       chdaxpy, chdcopy, chddot , chdnrm2
 *
 *
 *     Intrinsics and local variables
 
       intrinsic          abs, max, min, mod, sqrt
-      double precision   ddot, dnrm2
+      double precision   chddot, chdnrm2
       double precision   alfa, b1, beta, beta1, bstep, cs,
      $                   cgnorm, dbar, delta, denom, diag,
      $                   eps, epsa, epsln, epsr, epsx,
@@ -419,7 +419,7 @@
 *     ------------------------------------------------------------------
 
 
-*     Compute eps, the machine precision.  The call to daxpy is
+*     Compute eps, the machine precision.  The call to chdaxpy is
 *     intended to fool compilers that use extra-length registers.
 
       eps    = one / 16.0d+0
@@ -427,7 +427,7 @@
    10 eps    = eps / two
       x(1)   = eps
       y(1)   = one
-      call daxpy ( 1, one, x, 1, y, 1 )
+      call chdaxpy ( 1, one, x, 1, y, 1 )
       if (y(1) .gt. one) go to 10
 
       eps    = eps * two
@@ -458,22 +458,22 @@ c     end if
 *     y is really beta1 * P * v1  where  P = C**(-1).
 *     y and beta1 will be zero if b = 0.
 
-      call dcopy ( n, b, 1, y , 1 )
-      call dcopy ( n, b, 1, r1, 1 )
+      call chdcopy ( n, b, 1, y , 1 )
+      call chdcopy ( n, b, 1, r1, 1 )
       if ( precon ) call msolve( n, r1, y, A, vwsqrt, work )
 c     if ( goodb  ) then
 c        b1  = y(1)
 c     else
 c        b1  = zero
 c     end if
-      beta1  = ddot  ( n, r1, 1, y, 1 )
+      beta1  = chddot  ( n, r1, 1, y, 1 )
 
 *     See if msolve is symmetric.
 
       if (checka  .and.  precon) then
          call msolve( n, y, r2, A, vwsqrt, work )
-         s      = ddot  ( n, y, 1, y, 1 )
-         t      = ddot  ( n,r1, 1,r2, 1 )
+         s      = chddot  ( n, y, 1, y, 1 )
+         t      = chddot  ( n,r1, 1,r2, 1 )
          z      = abs( s - t )
          epsa   = (s + eps) * eps**0.33333
          if (z .gt. epsa) then
@@ -508,8 +508,8 @@ c     end if
       call aprod( n, v, y, A, vwsqrt, work, orthlist )
       if (checka) then
          call aprod ( n, y, r2, A, vwsqrt, work, orthlist )
-         s      = ddot  ( n, y, 1, y, 1 )
-         t      = ddot  ( n, v, 1,r2, 1 )
+         s      = chddot  ( n, y, 1, y, 1 )
+         t      = chddot  ( n, v, 1,r2, 1 )
          z      = abs( s - t )
          epsa   = (s + eps) * eps**0.33333
          if (z .gt. epsa) then
@@ -522,20 +522,20 @@ c     end if
 *     Again, y is beta * P * v2  where  P = C**(-1).
 *     y and beta will be zero or very small if b is an eigenvector.
 
-      call daxpy ( n, (- shift), v, 1, y, 1 )
-      alfa   = ddot  ( n, v, 1, y, 1 )
-      call daxpy ( n, (- alfa / beta1), r1, 1, y, 1 )
+      call chdaxpy ( n, (- shift), v, 1, y, 1 )
+      alfa   = chddot  ( n, v, 1, y, 1 )
+      call chdaxpy ( n, (- alfa / beta1), r1, 1, y, 1 )
 
 *     Make sure  r2  will be orthogonal to the first  v.
 
-      z      = ddot  ( n, v, 1, y, 1 )
-      s      = ddot  ( n, v, 1, v, 1 )
-      call daxpy ( n, (- z / s), v, 1, y, 1 )
+      z      = chddot  ( n, v, 1, y, 1 )
+      s      = chddot  ( n, v, 1, v, 1 )
+      call chdaxpy ( n, (- z / s), v, 1, y, 1 )
 
-      call dcopy ( n, y, 1, r2, 1 )
+      call chdcopy ( n, y, 1, r2, 1 )
       if ( precon ) call msolve( n, r2, y, A, vwsqrt, work )
       oldb   = beta1
-      beta   = ddot  ( n, r2, 1, y, 1 )
+      beta   = chddot  ( n, r2, 1, y, 1 )
 
       if (beta .lt. zero) then
          istop = 8
@@ -551,9 +551,9 @@ c     end if
 
 *     See if the local reorthogonalization achieved anything.
 
-      denom  = sqrt( s ) * dnrm2( n, r2, 1 )  +  eps
+      denom  = sqrt( s ) * chdnrm2( n, r2, 1 )  +  eps
       s      = z / denom
-      t      = ddot  ( n, v, 1, r2, 1 ) / denom
+      t      = chddot  ( n, v, 1, r2, 1 ) / denom
 
 c     if (nout .gt. 0  .and.  goodb) then
 c        write(nout, 1100) beta1, alfa, s, t
@@ -578,7 +578,7 @@ c     end if
             w(i)  = zero
   200    continue
       else
-         call dcopy ( n, v, 1, w, 1 )
+         call chdcopy ( n, v, 1, w, 1 )
       end if
 
 *     ------------------------------------------------------------------
@@ -664,16 +664,16 @@ c     if (mod(itn,10) .eq. 0) write(nout, 1500)
   620 continue
 
       call aprod ( n, v, y, A, vwsqrt, work, orthlist )
-      call daxpy ( n, (- shift), v, 1, y, 1 )
-      call daxpy ( n, (- beta / oldb), r1, 1, y, 1 )
-      alfa   = ddot( n, v, 1, y, 1 )
+      call chdaxpy ( n, (- shift), v, 1, y, 1 )
+      call chdaxpy ( n, (- beta / oldb), r1, 1, y, 1 )
+      alfa   = chddot( n, v, 1, y, 1 )
       tnorm  = tnorm  +  alfa**2  +  two * beta**2
-      call daxpy ( n, (- alfa / beta), r2, 1, y, 1 )
-      call dcopy ( n, r2, 1, r1, 1 )
-      call dcopy ( n, y, 1, r2, 1 )
+      call chdaxpy ( n, (- alfa / beta), r2, 1, y, 1 )
+      call chdcopy ( n, r2, 1, r1, 1 )
+      call chdcopy ( n, y, 1, r2, 1 )
       if ( precon ) call msolve( n, r2, y, A, vwsqrt, work )
       oldb   = beta
-      beta   = ddot  ( n, r2, 1, y, 1 )
+      beta   = chddot  ( n, r2, 1, y, 1 )
       if (beta .lt. zero) then
          istop = 6
          go to 800
@@ -728,7 +728,7 @@ c     if (mod(itn,10) .eq. 0) write(nout, 1500)
          bstep  = snprod * zbar  +  bstep
          ynorm  = sqrt( ynorm2  +  zbar**2 )
          rnorm  = cgnorm
-         call daxpy ( n, zbar, w, 1, x, 1 )
+         call chdaxpy ( n, zbar, w, 1, x, 1 )
       else
          rnorm  = lqnorm
       end if
@@ -738,9 +738,9 @@ c     if (mod(itn,10) .eq. 0) write(nout, 1500)
 *        Add the step along  b.
 
          bstep  = bstep / beta1
-         call dcopy ( n, b, 1, y, 1 )
+         call chdcopy ( n, b, 1, y, 1 )
          if ( precon ) call msolve( n, b, y, A, vwsqrt, work )
-         call daxpy ( n, bstep, y, 1, x, 1 )
+         call chdaxpy ( n, bstep, y, 1, x, 1 )
       end if
 
 *     ==================================================================
