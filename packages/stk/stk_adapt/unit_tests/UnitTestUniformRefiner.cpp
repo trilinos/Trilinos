@@ -67,6 +67,7 @@ namespace stk {
   namespace adapt {
     namespace unit_tests {
 
+      static int printInfoLevel = 0;
 
       /// configuration: you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
       /// The following defines where to put the input and output files created by this set of functions
@@ -171,7 +172,7 @@ namespace stk {
             fixture.generate_mesh();
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-            eMesh.printInfo("quad fixture", 2);
+            eMesh.printInfo("quad fixture", printInfoLevel);
             save_or_diff(eMesh, input_files_loc+"quad_fixture.e");
           }
 
@@ -189,7 +190,7 @@ namespace stk {
             fixture.generate_mesh();
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-            eMesh.printInfo("quad fixture no sidesets", 2);
+            eMesh.printInfo("quad fixture no sidesets", printInfoLevel);
             save_or_diff(eMesh, input_files_loc+"quad_fixture_no_sidesets.e");
           }
       }
@@ -489,14 +490,14 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_0.e");
 
             TestLocalRefinerTri_N breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined", printInfoLevel);
             //eMesh.dumpElements();
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1.e");
 
@@ -720,7 +721,7 @@ namespace stk {
 
               save_or_diff(eMesh, output_files_loc+"beam_enrich_0.e");
 
-              eMesh.printInfo("beam", 2);
+              eMesh.printInfo("beam", printInfoLevel);
 
               UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
               //breaker.setRemoveOldElements(false);
@@ -776,7 +777,7 @@ namespace stk {
 
               save_or_diff(eMesh, output_files_loc+"beam_0.e");
 
-              eMesh.printInfo("beam", 2);
+              eMesh.printInfo("beam", printInfoLevel);
 
               UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
               //breaker.setRemoveOldElements(false);

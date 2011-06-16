@@ -67,6 +67,7 @@ namespace stk {
   namespace adapt {
     namespace unit_tests {
 
+      static int printInfoLevel = 0;
 
       /// configuration: you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
       /// The following defines where to put the input and output files created by this set of functions
@@ -128,14 +129,14 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_0.e");
 
             TestLocalRefinerTri breaker(eMesh, break_tri_to_tri_2, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_1.e");
 
             // end_demo
@@ -179,7 +180,7 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_1_0.e");
 
             bool diagonals=true;
@@ -187,7 +188,7 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_1_1.e");
 
             // end_demo
@@ -232,7 +233,7 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_2_0.e");
 
             bool diagonals=false;
@@ -240,7 +241,7 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined",  printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_2_1.e");
 
             // end_demo
@@ -282,14 +283,14 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_0.e");
 
             TestLocalRefinerTri_N breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined",  printInfoLevel);
             //eMesh.dumpElements();
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1.e");
 
@@ -339,14 +340,14 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1_0.e");
 
             TestLocalRefinerTri_N_1 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined",  printInfoLevel);
             //eMesh.dumpElements();
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1_1.e");
 

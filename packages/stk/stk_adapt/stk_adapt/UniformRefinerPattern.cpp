@@ -189,7 +189,7 @@ namespace stk {
                   //stk::mesh::EntityId bit = 1;  // just to avoid having to use a hard-coded constant which may be platform dependent
                   //family_tree_id = family_tree_id | (bit << 60);  // actual
                   // tmp for readability
-                  family_tree_id = family_tree_id + 1000000000u;
+                  family_tree_id = family_tree_id + FAMILY_TREE_MAX_ENTITY_FOR_SHIFT; //1 000 000 000u;
                   
 #if DEBUG_MULTI_LEVEL
                   std::cout << "tmp family_tree_id = " << family_tree_id << " parent_id= " << parent_id << std::endl;
@@ -235,7 +235,9 @@ namespace stk {
           //VERIFY_OP_ON(family_tree, !=, 0,"err1");
           //VERIFY_OP_ON(family_tree, ==, parent_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity(),"err2");
           
-          family_tree = parent_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity();
+          unsigned parent_elem_ft_level_0 = eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, parent_elem);
+          //family_tree = parent_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity();
+          family_tree = parent_to_family_tree_relations[parent_elem_ft_level_0].entity();
         }
       else if (ALLOW_MULTI_LEVEL && parent_to_family_tree_relations.size() == 2)
         {
@@ -245,7 +247,11 @@ namespace stk {
 
           // EXPLANATION:  stk_mesh inserts back-relations in front of existing relations (it uses the std::vector<Relation>::insert method)
           // FIXME - need a unit test to check if this ever breaks in the future (i.e. going to boost::mesh)
-          family_tree = parent_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity();
+          //family_tree = parent_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity();
+
+          unsigned parent_elem_ft_level_1 = eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, parent_elem);
+          family_tree = parent_to_family_tree_relations[parent_elem_ft_level_1].entity();
+
         }
       else
         {

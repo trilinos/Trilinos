@@ -63,6 +63,9 @@ namespace stk {
 
     static const unsigned EntityRankEnd = 6;
 
+    // explanation: to know which of the two possible family trees are present we identify the 
+    const stk::mesh::EntityId FAMILY_TREE_MAX_ENTITY_FOR_SHIFT=1000u*1000u*1000u*1000u*1000u;  // 1e15
+
     enum FamiltyTreeLevel {
       FAMILY_TREE_LEVEL_0 = 0,
       FAMILY_TREE_LEVEL_1 = 1
@@ -72,7 +75,6 @@ namespace stk {
       FAMILY_TREE_PARENT = 0,
       FAMILY_TREE_CHILD_START_INDEX = 1
     };
-
 
     using namespace interface_table;
 
@@ -206,7 +208,38 @@ namespace stk {
         return isGhost;
       }
 
-      /// the element is not a parent of the 0'th family_tree relation 
+      /// the element is not a parent of the 0'th family_tree relation
+
+      unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity& element)
+      {
+        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+        if (level == FAMILY_TREE_LEVEL_0)
+          {
+            if (element_to_family_tree_relations.size() <= 1) return 0;
+            if (element_to_family_tree_relations[0].entity()->identifier() < FAMILY_TREE_MAX_ENTITY_FOR_SHIFT) return 0;
+            else if (element_to_family_tree_relations[1].entity()->identifier() < FAMILY_TREE_MAX_ENTITY_FOR_SHIFT) return 1;
+            else
+              {
+                throw std::logic_error("PerceptMesh:: getFamilyTreeRelationIndex logic error 1");
+              }
+          }
+        else if (level == FAMILY_TREE_LEVEL_1)
+          {
+            if (element_to_family_tree_relations.size() <= 1) 
+              {
+                throw std::logic_error("PerceptMesh:: getFamilyTreeRelationIndex logic error 2");
+              }
+            if (element_to_family_tree_relations[0].entity()->identifier() > FAMILY_TREE_MAX_ENTITY_FOR_SHIFT) return 0;
+            else if (element_to_family_tree_relations[1].entity()->identifier() > FAMILY_TREE_MAX_ENTITY_FOR_SHIFT) return 1;
+            else
+              {
+                throw std::logic_error("PerceptMesh:: getFamilyTreeRelationIndex logic error 3");
+              }
+          }
+        return 0;
+      }
+
       bool isChildElement( const stk::mesh::Entity& element, bool check_for_family_tree=true)
       {
         const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
@@ -225,7 +258,8 @@ namespace stk {
               }
           }
         // in this case, we specifically look at only the 0'th familty tree relation 
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[FAMILY_TREE_LEVEL_0].entity();
+        unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
+        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
         stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
         stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
         if (&element == parent)
@@ -265,7 +299,9 @@ namespace stk {
           return isChildElement(element, check_for_family_tree);
         else
           {
-            stk::mesh::Entity *family_tree = element_to_family_tree_relations[FAMILY_TREE_LEVEL_1].entity();
+            unsigned element_ft_level_1 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
+
+            stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_1].entity();
             stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
             if (family_tree_relations.size() == 0)
               {
@@ -359,7 +395,9 @@ namespace stk {
 
         //bool isParent = false;
 
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[FAMILY_TREE_LEVEL_1].entity();
+
+        unsigned element_ft_level_1 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
+        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_1].entity();
         stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
         if (family_tree_relations.size() == 0)
           {
@@ -401,7 +439,8 @@ namespace stk {
         if (element_to_family_tree_relations.size() == 1)
           return false;
 
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[FAMILY_TREE_LEVEL_1].entity();
+        unsigned element_ft_level_1 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
+        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_1].entity();
         stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
         if (family_tree_relations.size() == 0)
           {
