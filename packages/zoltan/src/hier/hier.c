@@ -858,6 +858,7 @@ int Zoltan_Hier(
         ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
       }
 
+#define HIER_MULTI_CALL_BACKS
 #ifndef HIER_MULTI_CALL_BACKS
   
       ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_OBJ_SIZE_FN_TYPE,
@@ -2806,7 +2807,7 @@ static void Zoltan_Hier_Unpack_Obj_Multi_Fn(void *data,
       if (!info) {
         *ierr = ZOLTAN_MEMERR;
         ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory.");
-        return;
+        break;
       }
 
       hpp->migrated_in_data[local_index] = (void *)info;
@@ -2890,7 +2891,11 @@ static void Zoltan_Hier_Unpack_Obj_Multi_Fn(void *data,
       break;
     }
   }
-  if (info) free_hier_mig_data(info);
+
+  if ((*ierr != ZOLTAN_OK) && info)
+    free_hier_mig_data(info);
+
+  return;
 }
 
 /* static helper function used by Zoltan_Hier_Mid_Migrate_Fn */
