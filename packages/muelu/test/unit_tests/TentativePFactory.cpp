@@ -76,7 +76,7 @@ namespace {
 
       //check interpolation
       RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
-      Ptent->multiply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
+      Ptent->apply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
 
       RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       diff->putScalar(0.0);
@@ -136,7 +136,7 @@ namespace {
     //check interpolation
     LO NSdim = 1;
     RCP<MultiVector> PtN = MultiVectorFactory::Build(A->getRowMap(),NSdim);
-    Ptent->multiply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
+    Ptent->apply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
 
     RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
     diff->putScalar(0.0);

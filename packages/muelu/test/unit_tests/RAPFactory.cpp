@@ -60,9 +60,9 @@ namespace {
     X->randomize();
 
     //Calculate result1 = R*(A*(P*X))
-    P->multiply(*X,*workVec1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    Op->multiply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-    R->multiply(*workVec2,*result1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    R->apply(*workVec2,*result1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
     RAPFactory rap;
     rap.Build(fineLevel,coarseLevel);
@@ -71,7 +71,7 @@ namespace {
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
-    coarseOp->multiply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
   
     Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);

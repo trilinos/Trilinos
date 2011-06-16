@@ -427,7 +427,7 @@ namespace MueLu {
      //const size_t numVecs = X.getNumVectors();
      const size_t numVecs = 1;
      RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRowMap(),numVecs);
-     Op.multiply(X,*RES,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+     Op.apply(X,*RES,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
      RES->update(one,RHS,negone);
      return RES;
    }

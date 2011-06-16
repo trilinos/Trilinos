@@ -346,7 +346,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
   X->setSeed(846930886);
   X->randomize();
-  //Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  //Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
   X->norm2(norms);
   X->scale(1/norms[0]);

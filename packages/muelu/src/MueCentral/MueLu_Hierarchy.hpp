@@ -369,7 +369,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            RCP<MultiVector> residual = Utils::Residual(*(Fine->GetA()),X,B);
            RCP<Operator> R = Coarse->GetR();
            RCP<MultiVector> coarseRhs = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
-           R->multiply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
+           R->apply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
 
            RCP<MultiVector> coarseX = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
            coarseX->putScalar(0.);
@@ -382,7 +382,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      
            RCP<Operator> P = Coarse->GetP();
            RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(),X.getNumVectors());
-           P->multiply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
+           P->apply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
            //correction->norm2(norms);
            
            X.update(1.0,*correction,1.0);

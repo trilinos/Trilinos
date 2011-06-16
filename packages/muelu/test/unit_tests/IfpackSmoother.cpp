@@ -69,7 +69,7 @@ namespace {
 
         X->setSeed(846930886);
         X->randomize();
-        Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+        Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
         X->putScalar( (SC) 0.0);
 
@@ -123,7 +123,7 @@ namespace {
         X->scale(1/norms[0]);
         X->norm2(norms);
         out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl; //TODO: why std:ios is on the current namespace ??
-        //Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+        //Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
 
         int numIts = 1;
@@ -180,7 +180,7 @@ namespace {
         Teuchos::Array<ST::magnitudeType> norms(1);
         Xtrue->norm2(norms);
         Xtrue->scale(1/norms[0]);
-        Op->multiply(*Xtrue,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+        Op->apply(*Xtrue,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
         RCP<Epetra_MultiVector> epRHS = Utils::MV2NonConstEpetraMV(RHS);
         RHS->norm2(norms);
         out << "||RHS|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
