@@ -7,6 +7,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    ScalingTest
+    SOURCES ScalingTest.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu muelu-cthulhu
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
     simple1D
     SOURCES main.cpp
     ARGS ""
