@@ -17,7 +17,8 @@
 // (Diag|Trace)IfWatching will produce diag/trace output if the given key is in
 // the watch list AND the given PrintMask is activated.
 //
-// A common idiom for code that wants tracing:
+// A common idiom for code that wants tracing (put this code in your main):
+//   stk::mesh::setStream(use_case::dwout().rdbuf());
 //   meshlog.setPrintMask(stk::mesh::LOG_ENTITY | stk::mesh::LOG_TRACE | stk::mesh::LOG_TRACE_SUB_CALLS);
 //   stk::mesh::watch(stk::mesh::EntityKey(0, 11));
 //   stk::diag::Trace::addTraceFunction("stk::mesh::");
@@ -102,6 +103,11 @@ void watch(const T& watch_item)
 {
   // leaks, but who cares
   new WatchClass<T>(watch_item);
+}
+
+inline void setStream(std::ostream& stream)
+{
+  initDiagWriter(stream);
 }
 
 #ifdef STK_MESH_TRACE_ENABLED

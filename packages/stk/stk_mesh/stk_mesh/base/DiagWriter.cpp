@@ -6,13 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-// Don't want stk_mesh/base depending on stk_util/use_cases. Figure out
-// a way to sever this dependencies.
-#ifdef STK_MESH_TRACE_ENABLED
-
 #include <stk_util/util/Bootstrap.hpp>
-
-#include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
 #include <stk_mesh/base/DiagWriter.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -22,11 +16,22 @@
 namespace stk {
 namespace mesh {
 
+namespace {
+
+static stk::diag::Writer* s_diagWriter = NULL;
+
+}
+
+void initDiagWriter(std::ostream& stream)
+{
+  s_diagWriter = new stk::diag::Writer(stream.rdbuf(),
+                                       theDiagWriterParser().parse(std::getenv("MESHLOG")));
+}
+
 stk::diag::Writer & theDiagWriter()
 {
-  static stk::diag::Writer s_diagWriter(use_case::dwout().rdbuf(),
-                                        theDiagWriterParser().parse(std::getenv("MESHLOG")));
-  return s_diagWriter;
+  ThrowRequireMsg(s_diagWriter != NULL, "Please call initDiagWwriter before theDiagWriter");
+  return *s_diagWriter;
 }
 
 DiagWriterParser & theDiagWriterParser()
@@ -143,5 +148,3 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entit
 
 } // namespace mesh
 } // namespace stk
-
-#endif

@@ -1,8 +1,6 @@
 #ifndef stk_mesh_DiagWriter_h
 #define stk_mesh_DiagWriter_h
 
-#ifdef STK_MESH_TRACE_ENABLED
-
 #include <stk_util/diag/Trace.hpp>
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/WriterOStream.hpp>
@@ -11,12 +9,18 @@
 #include <stk_mesh/base/DiagWriter_fwd.hpp>
 #include <stk_mesh/base/Part.hpp>
 
+// Note, this classes/functions in this header are for internal use only.
+// The API for tracing is defined in Trace.hpp
+
 namespace stk {
 namespace mesh {
 
 class Part;
 class Entity;
 union EntityKey;
+
+// Must be called before theDiagWriter/meshlog
+void initDiagWriter(std::ostream& stream);
 
 stk::diag::Writer &theDiagWriter();
 #define meshlog stk::mesh::theDiagWriter()
@@ -67,7 +71,5 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entit
 
 } // namespace mesh
 } // namespace stk
-
-#endif
 
 #endif // stk_mesh_DiagWriter_h
