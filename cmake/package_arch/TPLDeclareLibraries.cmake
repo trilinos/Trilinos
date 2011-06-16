@@ -160,6 +160,28 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   ENDIF()
 
   #
+  # Set the lib extentions to find
+  #
+
+  # Save the default the first time through
+  IF (NOT CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT)
+   SET(CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT ${CMAKE_FIND_LIBRARY_SUFFIXES})
+   #PRINT_VAR(CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT)
+  ENDIF()
+
+  # Set 
+  IF (TPL_FIND_SHARED_LIBS)
+    # The default should be to find shared libs first
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT})
+  ELSE()
+    if(WIN32)
+      SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
+    else()
+      SET(CMAKE_FIND_LIBRARY_SUFFIXES .a )
+    endif()
+  ENDIF()
+
+  #
   # Direct build options
   #
 
@@ -437,5 +459,3 @@ FUNCTION(TPL_TENTATIVELY_ENABLE TPL_NAME)
   ENDIF()
 
 ENDFUNCTION()
-
-

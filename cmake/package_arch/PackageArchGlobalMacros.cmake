@@ -120,6 +120,9 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
   
+  ADVANCED_SET(TPL_FIND_SHARED_LIBS OFF CACHE ON
+    "If ON, then the TPL system will find shared libs if the exist, otherwise will only find static libs." )
+  
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
     CACHE PATH
     "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
