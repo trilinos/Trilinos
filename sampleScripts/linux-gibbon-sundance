@@ -9,7 +9,7 @@
 # If your system isn't organized this way, you can copy this script
 # and modify as per your system.
 #
-GCC_VERSION=4.4.2
+GCC_VERSION=4.5.1
 COMPILER_VERSION=gcc-${GCC_VERSION}
 COMPILER_ROOT=/usr/local/${COMPILER_VERSION}
 BIN_PATH=${COMPILER_ROOT}/bin
