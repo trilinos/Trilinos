@@ -284,10 +284,10 @@ void Add(
     SpMatOps> CrsMatrix_t;
   RCP<const CrsMatrix_t> Aprime = null;
   if( transposeA ){
-    RCP<CrsMatrix_t> transpose = null;
+    //RCP<CrsMatrix_t> transpose = null;
 	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
-    theTransposer.createTranspose(DoOptimizeStorage, transpose);
-    Aprime = transpose;
+    Aprime = theTransposer.createTranspose(DoOptimizeStorage); //, transpose);
+    //Aprime = transpose;
   }
   else{
     Aprime = rcpFromRef(A);
@@ -356,10 +356,10 @@ void Add(
 
   //explicit tranpose A formed as necessary
   if( transposeA ) {
-    RCP<CrsMatrix_t> aTrans;
+    //RCP<CrsMatrix_t> aTrans;
 	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
-    theTransposer.createTranspose(DoOptimizeStorage, aTrans);
-    Aprime = aTrans;
+    Aprime = theTransposer.createTranspose(DoOptimizeStorage); //, aTrans);
+    //Aprime = aTrans;
   }
   else{
     Aprime = rcpFromRef(A);
@@ -367,10 +367,10 @@ void Add(
 
   //explicit tranpose B formed as necessary
   if( transposeB ) {
-    RCP<CrsMatrix_t> bTrans = null;
+    //RCP<CrsMatrix_t> bTrans = null;
 	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(B);
-    theTransposer.createTranspose(DoOptimizeStorage, bTrans);
-    Bprime = bTrans;
+    Bprime = theTransposer.createTranspose(DoOptimizeStorage); //, bTrans);
+    //Bprime = bTrans;
   }
   else{
     Bprime = rcpFromRef(B);

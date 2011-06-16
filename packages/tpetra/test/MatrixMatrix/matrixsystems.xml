@@ -139,4 +139,12 @@ A*B
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
+	<ParameterList name="Rectangular Matricies with B Transposed">
+    <Parameter name="op" value="add" type="string"/>
+		<Parameter name="A" value="matrices/rectTransAdda.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectTransAddb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectTransAddc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="true" type="bool"/>
+	</ParameterList>
 </ParameterList>

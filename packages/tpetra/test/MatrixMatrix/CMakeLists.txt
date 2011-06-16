@@ -27,6 +27,7 @@ rectRAa.mtx rectRAb.mtx rectRAc.mtx
 rectRPa.mtx rectRPb.mtx rectRPc.mtx
 rectQPa.mtx rectQPb.mtx rectQPc.mtx
 rectQRa.mtx rectQRb.mtx rectQRc.mtx
+rectTransAdda.mtx rectTransAddb.mtx rectTransAddc.mtx
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix/matrices
 DEST_DIR ${PACKAGE_BINARY_DIR}/test/MatrixMatrix/matrices
 EXEDEPS MatrixMatrix_UnitTests
