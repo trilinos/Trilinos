@@ -50,14 +50,6 @@ namespace Cthulhu {
       if (tMap != null)
         return rcp( new TpetraMultiVector(map, NumVectors, zeroOut) );
 #endif
-#ifdef HAVE_CTHULHU_EPETRA
-/*
-FIXME jglonglong
-      const RCP<const EpetraMap> &eMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(map);
-      if (eMap != null)
-        return rcp( new EpetraMultiVector(map, NumVectors, zeroOut) );
-*/
-#endif
 
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map. The exact type of the Map 'map' is unknown.");
     }
@@ -66,6 +58,44 @@ FIXME jglonglong
     // Other constructors here
 #endif
     
+  };
+
+  template <>
+  class MultiVectorFactory<int, int, Kokkos::DefaultNode::DefaultNodeType> {
+  
+    typedef Map<int, int> Map;
+    typedef MultiVector<double, int, int> MultiVector;
+#ifdef HAVE_CTHULHU_TPETRA
+    typedef TpetraMap<int, int> TpetraMap;
+    typedef TpetraMultiVector<double, int, int> TpetraMultiVector;
+#endif
+
+  private:
+    //! Private constructor. This is a static class. 
+    MultiVectorFactory() {}
+    
+  public:
+    
+    //! Constructor specifying the number of non-zeros for all rows.
+    static RCP<MultiVector> Build(const Teuchos::RCP<const Map> &map, size_t NumVectors, bool zeroOut=true) {
+#ifdef HAVE_CTHULHU_TPETRA
+      const RCP<const TpetraMap> &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(map);
+      if (tMap != null)
+        return rcp( new TpetraMultiVector(map, NumVectors, zeroOut) );
+#endif
+#ifdef HAVE_CTHULHU_EPETRA
+      const RCP<const EpetraMap> &eMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(map);
+      if (eMap != null)
+        return rcp( new EpetraMultiVector(map, NumVectors, zeroOut) );
+#endif
+
+      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map. The exact type of the Map 'map' is unknown.");
+    }
+
+#ifdef CTHULHU_NOT_IMPLEMENTED
+    // Other constructors here
+#endif
+   
   };
 
 }
