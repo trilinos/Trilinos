@@ -53,9 +53,9 @@ template<class Scalar,
   class GlobalOrdinal, 
   class Node, 
   class SpMatOps>
-void 
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (const OptimizeOption optimizeTranspose, 
-    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
+RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (const OptimizeOption optimizeTranspose
+    /*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
 {
 
   optimizeTranspose_ = optimizeTranspose;
@@ -144,9 +144,10 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
 
 
   // for now, we don't care about the domain/range maps, as we won't be applying this matrix as an operator
-  transposeMatrix_->fillComplete(transRowMap, origRowMap, optimizeTranspose_);
+  //transposeMatrix_->fillComplete(transRowMap, origRowMap, optimizeTranspose_);
+  transposeMatrix_->fillComplete(origRowMap, transRowMap, optimizeTranspose_);
 
-  transposeMatrix = transposeMatrix_;
+  return transposeMatrix_;
 }
 
 //
