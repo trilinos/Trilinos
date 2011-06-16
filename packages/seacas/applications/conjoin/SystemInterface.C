@@ -61,11 +61,13 @@ void Excn::SystemInterface::enroll_options()
 		  "");
   options_.enroll("element_status_variable", GetLongOpt::MandatoryValue,
 		  "Name to use as element existance status variable;\n"
-                  "\t\tmust not exist on input files. Default = elem_status",
+                  "\t\tmust not exist on input files. If NONE, then not created.\n"
+		  "\t\tDefault = elem_status",
 		  "elem_status");
   
   options_.enroll("nodal_status_variable", GetLongOpt::MandatoryValue,
-		  "Name to use as nodal status variable;\n\t\tmust not exist on input files. Default = node_status",
+		  "Name to use as nodal status variable;\n\t\tmust not exist on input files.\n"
+		  "\t\tIf NONE, then not created. Default = node_status",
 		  "node_status");
   
   options_.enroll("omit_nodesets", GetLongOpt::NoValue,
