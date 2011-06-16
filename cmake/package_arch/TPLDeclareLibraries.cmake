@@ -172,7 +172,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   # Set 
   IF (TPL_FIND_SHARED_LIBS)
     # The default should be to find shared libs first
-    SET(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT})
+    #SET(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT})
+    # Disable this for now because it caused Trilinos CI to fail.
   ELSE()
     if(WIN32)
       SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
