@@ -44,20 +44,22 @@
 #ifndef AMESOS2_MATRIXADAPTER_HPP
 #define AMESOS2_MATRIXADAPTER_HPP
 
-#include "Amesos2_MatrixAdapter_decl.hpp"
-#include "Amesos2_TpetraCrsMatrixAdapter_decl.hpp"
+#include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_decl.hpp"
+#include "Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp"
 #ifdef HAVE_AMESOS2_EPETRA
-#  include "Amesos2_EpetraRowMatrixAdapter_decl.hpp"
-#  include "Amesos2_EpetraCrsMatrixAdapter_decl.hpp"
-// Add more epetra interfaces when needed
+#  include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_decl.hpp"
+#  include "Amesos2_EpetraCrsMatrix_MatrixAdapter_decl.hpp"
 #endif
+#include "Amesos2_MatrixAdapter_decl.hpp"
 
 #ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-#  include "Amesos2_TpetraCrsMatrixAdapter_def.hpp"
+#  include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_def.hpp"
+#  include "Amesos2_TpetraCrsMatrix_MatrixAdapter_def.hpp"
 #  ifdef HAVE_AMESOS2_EPETRA
-#    include "Amesos2_EpetraRowMatrixAdapter_def.hpp"
-#    include "Amesos2_EpetraCrsMatrixAdapter_def.hpp"
+#    include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_def.hpp"
+#    include "Amesos2_EpetraCrsMatrix_MatrixAdapter_def.hpp"
 #  endif
+#  include "Amesos2_MatrixAdapter_def.hpp"
 #endif
 
 #endif  // AMESOS2_MATRIXADAPTER_HPP

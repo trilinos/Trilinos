@@ -88,16 +88,16 @@ namespace Amesos {
      */
     template <class Matrix>
     static void createCRSMatrix(const Teuchos::Ptr<Matrix>& mat,
-                                const Teuchos::ArrayView<typename TypeMap<Superlu,typename Matrix::scalar_type>::type>& nzval,
+                                const Teuchos::ArrayView<typename TypeMap<Superlu,typename Matrix::scalar_t>::type>& nzval,
                                 const Teuchos::ArrayView<int>& colind,
                                 const Teuchos::ArrayView<int>& rowptr,
                                 const Teuchos::Ptr<SLU::SuperMatrix>& A,
                                 Teuchos::Time& mtxRedistTime
                                 )
     {
-      typedef typename Matrix::scalar_type                     scalar_type;
-      typedef typename Matrix::global_ordinal_type                 go_type;
-      typedef typename Matrix::global_size_type                    gs_type;
+      typedef typename Matrix::scalar_t                        scalar_type;
+      typedef typename Matrix::global_ordinal_t                    go_type;
+      typedef typename Matrix::global_size_t                       gs_type;
       typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
       // Get the SLU data type for this type of matrix
       SLU::Dtype_t dtype = TypeMap<Amesos::Superlu,scalar_type>::dtype;
@@ -131,8 +131,12 @@ namespace Amesos {
       {
         Teuchos::TimeMonitor mtxRedistTimer( mtxRedistTime );
 
-        mat->getCrs((ArrayView<scalar_type>)nzval_tmp,
-                    (ArrayView<go_type>)colind_tmp, (ArrayView<gs_type>)rowptr_tmp, nnz_ret);
+        mat->getCrs(nzval_tmp(),
+                    colind_tmp(),
+		    rowptr_tmp(),
+		    nnz_ret,
+		    Rooted,
+		    Arbitrary);
       }
 
       TEST_FOR_EXCEPTION( nnz_ret != Teuchos::as<size_t>(nnz),

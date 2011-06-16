@@ -46,12 +46,5 @@
 
 #include "Amesos2_MatrixAdapter.hpp"
 
-#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-#  include "Amesos2_TpetraCrsMatrixAdapter_def.hpp"
-#  ifdef HAVE_AMESOS2_EPETRA
-#    include "Amesos2_EpetraRowMatrixAdapter_def.hpp"
-#    include "Amesos2_EpetraCrsMatrixAdapter_def.hpp"
-#  endif
-#endif
 
 #endif  // AMESOS2_MATRIXADAPTER_CPP

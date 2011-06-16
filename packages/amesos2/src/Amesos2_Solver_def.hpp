@@ -62,7 +62,7 @@ Solver<ConcreteSolver,Matrix,Vector>::Solver(
   Teuchos::RCP<Matrix> A,
   Teuchos::RCP<Vector> X,
   Teuchos::RCP<Vector> B )
-  : matrixA_(new MatrixAdapter<Matrix>(A))
+  : matrixA_(createMatrixAdapter<Matrix>(A))
   , multiVecX_(new MultiVecAdapter<Vector>(X))
   , multiVecB_(new MultiVecAdapter<Vector>(B))
   , globalNumNonZeros_(matrixA_->getGlobalNNZ())

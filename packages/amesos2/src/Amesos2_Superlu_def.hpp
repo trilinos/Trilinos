@@ -273,7 +273,7 @@ Superlu<Matrix,Vector>::solve_impl()
   }
   // root sets up for Solve and calls SuperLU
 
-  typedef typename MatrixAdapter<Matrix>::scalar_type scalar_type;
+  typedef typename MatrixTraits<Matrix>::scalar_t scalar_type;
   typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
 
   global_size_type len_rhs = this->multiVecX_->getGlobalLength();

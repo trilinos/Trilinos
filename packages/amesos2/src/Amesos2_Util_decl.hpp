@@ -52,61 +52,112 @@
 #ifndef AMESOS2_UTIL_DECL_HPP
 #define AMESOS2_UTIL_DECL_HPP
 
+#include "Amesos2_config.h"
+
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_BLAS_types.hpp>
+#include <Teuchos_ArrayView.hpp>
 #include <Teuchos_FancyOStream.hpp>
+
+#ifdef HAVE_AMESOS2_EPETRA
+#  include <Epetra_Comm.h>
+#  include <Epetra_SerialComm.h>
+#  ifdef HAVE_MPI
+#    include <Epetra_MpiComm.h>
+#  endif
+#  include <Epetra_BlockMap.h>
+#endif
+
+#include <Tpetra_Map.hpp>
 
 namespace Amesos {
 
-namespace Util {
+  namespace Util {
+
+    using Teuchos::RCP;
+    using Teuchos::ArrayView;
+
+    struct has_special_impl {};
+    struct no_special_impl {};
+
+    struct row_access {};
+    struct col_access {};
+
+#ifdef HAVE_AMESOS2_EPETRA
+    template <typename LO,
+	      typename GO,
+	      typename Node>
+    RCP<Tpetra::Map<LO,GO,Node> >
+    epetra_map_to_tpetra_map(Epetra_BlockMap map);
+
+    const RCP<const Teuchos::Comm<int> > to_teuchos_comm(RCP<const Epetra_Comm> c);
+    
+//     const RCP<const Teuchos::Comm<int> > to_teuchos_comm(RCP<const Epetra_SerialComm> c);
+    
+// #ifdef HAVE_MPI
+//     const RCP<const Teuchos::Comm<int> > to_teuchos_comm(RCP<const Epetra_MpiComm> c);
+// #endif
+    
+#endif	// HAVE_AMESOS2_EPETRA
+
+    /**
+     * Transposes the compressed sparse matrix.
+     */
+    template <typename Scalar,
+	      typename GlobalOrdinal,
+	      typename GlobalSizeT>
+    void transpose(ArrayView<Scalar> vals,
+		   ArrayView<GlobalOrdinal> indices,
+		   ArrayView<GlobalSizeT> ptr);
 
 
-/**
- * \brief Computes the true residual
- *
- * Computes the true residual, \f$ B - A*X \f$ , and prints the results.
- *
- * \param A Matrix
- * \param X Vector
- * \param B Vector
- * \param trans  \c true = use transpose for matrix-vector multiply
- * \param prefix string prefix to prints before rest of output
- *
- */
-template <typename Matrix,
-          typename Vector>
-void computeTrueResidual(
-  const Teuchos::RCP<Matrix>& A,
-  const Teuchos::RCP<Vector>& X,
-  const Teuchos::RCP<Vector>& B,
-  const Teuchos::ETransp trans=Teuchos::NO_TRANS,
-  const std::string prefix="");
+
+    /**
+     * \brief Computes the true residual
+     *
+     * Computes the true residual, \f$ B - A*X \f$ , and prints the results.
+     *
+     * \param A Matrix
+     * \param X Vector
+     * \param B Vector
+     * \param trans  \c true = use transpose for matrix-vector multiply
+     * \param prefix string prefix to prints before rest of output
+     *
+     */
+    template <typename Matrix,
+	      typename Vector>
+    void computeTrueResidual(
+			     const RCP<Matrix>& A,
+			     const RCP<Vector>& X,
+			     const RCP<Vector>& B,
+			     const Teuchos::ETransp trans=Teuchos::NO_TRANS,
+			     const std::string prefix="");
 
 
-/* We assume that Matrix and Vector are some instance of a
- * Amesos::MatrixAdapter or a Amesos::MultiVecAdapter, or at least implement
- * the required methods
- */
-template< typename Matrix,
-          typename Vector>
-void computeVectorNorms(
-  const Teuchos::RCP<Matrix> X,
-  const Teuchos::RCP<Vector> B,
-  std::string prefix="");
+    /* We assume that Matrix and Vector are some instance of a
+     * Amesos::MatrixAdapter or a Amesos::MultiVecAdapter, or at least implement
+     * the required methods
+     */
+    template< typename Matrix,
+	      typename Vector>
+    void computeVectorNorms(
+			    const RCP<Matrix> X,
+			    const RCP<Vector> B,
+			    std::string prefix="");
 
 
-/// Uses a heuristic to set the maximum number of processors
-template <typename Matrix>
-void setMaxProcesses(
-  const Teuchos::RCP<Matrix>& A,
-  int& maxProcesses);
+    /// Uses a heuristic to set the maximum number of processors
+    template <typename Matrix>
+    void setMaxProcesses(
+			 const RCP<Matrix>& A,
+			 int& maxProcesses);
 
 
-/// Prints a line of 70 "-"s on std::cout.
-void printLine( Teuchos::FancyOStream &out );
+    /// Prints a line of 70 "-"s on std::cout.
+    void printLine( Teuchos::FancyOStream &out );
 
 
-} // end namespace Util
+  } // end namespace Util
 
 } // end namespace Amesos
 

@@ -1,205 +1,282 @@
-// @HEADER
-//
-// ***********************************************************************
-//
-//           Amesos2: Templated Direct Sparse Solver Package 
-//                  Copyright 2010 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//
-// @HEADER
+#ifndef AMESOS2_MATRIXADAPTER_DECL_HPP
+#define AMESOS2_MATRIXADAPTER_DECL_HPP
 
-/**
-  \file   Amesos2_MatrixAdapter.hpp
-  \author Eric T Bavier <etbavier@sandia.gov>
-  \date   Sat Feb  6 10:00:22 2010
+#include "Amesos2_config.h"
 
-  \brief  A templated adapter class for Matrix Objects.
-          Specializations may be created for any matrix that needs to
-          be adapted for use by Amesos2.
-*/
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_ArrayView.hpp>
+#include <Teuchos_VerbosityLevel.hpp>
+#include <Teuchos_FancyOStream.hpp>
 
-#ifndef AMESOS2_MATRIX_ADAPTER_DECL_HPP
-#define AMESOS2_MATRIX_ADAPTER_DECL_HPP
+#include <Tpetra_ConfigDefs.hpp>	// for global_size_t
+
+#include "Amesos2_ConcreteMatrixAdapter.hpp"
+#include "Amesos2_Util.hpp"
+#include "Amesos2_MatrixTraits.hpp"
 
 namespace Amesos {
 
+  using Amesos::Util::has_special_impl;
+  using Amesos::Util::no_special_impl;
+  using Amesos::Util::row_access;
+  using Amesos::Util::col_access;
+  
+  using Teuchos::RCP;
 
-/**
- * \brief A templated Matrix class adapter for Amesos2.
- *
- * Specializations of this templated class provide a unified interface
- * to Matrix types for Amesos2.  Any specializations are expected to
- * implement the following methods:
- *
- * <br>
- * <b>Implementation Requirements:</b>
- * <ul>
- * <li> Default constructor
- * \code MatrixAdapter<matrix_type>(); \endcode
- * </li>
- *
- * <li> Wrapper constructor.
- *
- * \code
- * MatrixAdapter<matrix_type>(const Teuchos::RCP<matrix_type>& mat);
- * \endcode
- * </li>
- *
- * <li> Copy constructor.
- *
- * \code
- * MatrixAdapter<matrix_type>(const MatrixAdapter<matrix_type>& adapter);
- * \endcode
- * </li>
- *
- * <li> Method to get locality of matrix, either globally or locally indexed.
- *
- * \code
- * bool isLocal() const;
- * \endcode
- * </li>
- *
- * <li> Method to get matrix communicator.
- *
- * \code
- * const Teuchos::RCP<const Teuchos::Comm<int> >& getComm() const;
- * \endcode
- * </li>
- *
- * <li> Methods to get the local and global number of rows and columns
- *
- * \code
- * size_t getLocalNumRows() const;
- *
- * size_t getLocalNumCols() const;
- *
- * global_size_type getGlobalNumRows() const;
- *
- * global_size_type getGlobalNumCols() const;
- * \endcode
- * </li>
- *
- * <li> Method to access number of nonzero entries.
- *
- * \code
- * size_t getLocalNNZ() const;
- *
- * global_size_type getGlobalNNZ() const;
- * \endcode
- * </li>
- *
- * <li> Method to get the maximum number of nonzeros in all rows.
- * \code
- * size_t getMaxNNZ() const;
- * \endcode
- * </li>
- *
- * <li> Map methods
- * \code
- * Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getRowMap() const;
- *
- * Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getColMap() const;
- * \endcode
- * </li>
- *
- * <li> Methods to get compressed-row and compressed-column representations of
- * the underlying matrix.
- *
- * \code
- * void getCrs(
- *   const Teuchos::ArrayView<scalar_type> nzval,
- *   const Teuchos::ArrayView<GO> colind,
- *   const Teuchos::ArrayView<global_size_type> rowptr,
- *   size_t& nnz,
- *   bool local = false);
- *
- * void getCcs(
- *   const Teuchos::ArrayView<scalar_type> nzval,
- *   const Teuchos::ArrayView<GO> rowind,
- *   const Teuchos::ArrayView<global_size_type> colptr,
- *   size_t& nnz,
- *   bool local = false);
- *
- * void getCrsAll(
- *   const Teuchos::ArrayView<scalar_type> nzval,
- *   const Teuchos::ArrayView<GO> colind,
- *   const Teuchos::ArrayView<global_size_type> rowptr,
- *   size_t& nnz);
- *
- * void getCcsAll(
- *   const Teuchos::ArrayView<scalar_type> nzval,
- *   const Teuchos::ArrayView<GO> rowind,
- *   const Teuchos::ArrayView<global_size_type> colptr,
- *   size_t& nnz)
- * \endcode
- * </li>
- *
- * <li> Methods to update the underlying matrix given CRS and CCS
- * representations.
- *
- * \code
- * void updateValuesCrs(
- *   const Teuchos::ArrayView<scalar_type> nzval,
- *   const Teuchos::ArrayView<GO> colind,
- *   const Teuchos::ArrayView<global_size_type> rowptr);
- *
- * void updateValuesCcs(
- *   const Teuchos::ArrayView<scalar_type> nzval,
- *   const Teuchos::ArrayView<GO> rowind,
- *   const Teuchos::ArrayView<global_size_type> colptr);
- * \endcode
- *
- * <li> Get a description of this adapter
- * \code
- * std::string description() const;
- * \endcode
- * </li>
- *
- * <li>Print the matrix to the \c os output stream
- * \code
- * void describe(
- *   Teuchos::FancyOStream& os,
- *   const Teuchos::EVerbosityLevel verbLevel) const;
- * \endcode
- * </li>
- */
-template <class MatrixType>
-struct MatrixAdapter
-{};
+  typedef enum {
+    Distributed,                /**< no processor has a view of the entire matrix, only local pieces */
+    Distributed_No_Overlap,     /**< no row or column may be present on more than one processor */
+    Globally_Replicated,        /**< each processor has a view of the entire matrix */
+    Rooted,                     /**< only \c rank=0 has a full view, all others have nothing. */
+    // SameDistribution            /**< Use whatever distribution the matrix adapter currently has */
+  } EDistribution;
+
+  typedef enum {
+    Sorted_Indices,             /**< row/col indices need to appear in sorted order */
+    Arbitrary                   /**< index order can be arbitrary */
+  } EStorage_Ordering;
+
+  /**
+   * \brief A Matrix adapter interface for Amesos2.
+   *
+   * All Amesos2 solver interfaces are expected to use this matrix
+   * adapter interface to make their lives easier.  The methods have
+   * been chosen to cater to a wide variety of third-party direct
+   * sparse solvers' needs.
+   */
+  template < class Matrix >
+  class MatrixAdapter {
+  public:
+
+    typedef typename MatrixTraits<Matrix>::scalar_t                 scalar_t;
+    typedef typename MatrixTraits<Matrix>::local_ordinal_t   local_ordinal_t;
+    typedef typename MatrixTraits<Matrix>::global_ordinal_t global_ordinal_t;
+    typedef typename MatrixTraits<Matrix>::node_t                     node_t;
+    // typedef typename MatrixTraits<Matrix>::local_mat_ops_t   local_mat_ops_t;
+    typedef Tpetra::global_size_t                              global_size_t;
+
+    typedef MatrixAdapter<Matrix> type;
+    typedef ConcreteMatrixAdapter<Matrix> adapter_t;
+
+    MatrixAdapter(RCP<Matrix> m);
+
+
+    /**
+     * \brief Gets a compressed-row storage summary of \c this
+     *
+     * Extracts a compressed-row storage format of the matrix and stores the
+     * information in the user-supplied containers.
+     *
+     * \param [out] nzval will hold the values of the nonzero entries of \c this
+     * \param [out] colind will hold the column indices of \c this for each row.
+     * \param [out] rowptr is of size <tt>nrow + 1</tt> and <tt>rowptr[j]</tt>
+     *              stores the location in \c nzval and \c colind which starts
+     *              row \c j of \c this.  <tt>rowptr[nrow] = nnz</tt>, where \c
+     *              nrow is the number of rows in this matrix.
+     * \param [out] nnz is the number of nonzero entries in this matrix.
+     * \param [in]  distribution
+     * \param [in]  ordering
+     *
+     * \exception std::length_error Thrown if \c nzval or \c colind is not
+     * large enough to hold the global number of nonzero values.
+     *
+     * \exception std::length_error Thrown if \c rowptr is not at least
+     * <tt>nrow + 1</tt> in size, the required size.
+     *
+     * \exception std::runtime_error Thrown if there is an error while extracting
+     * row values from the underlying matrix.
+     */
+    void getCrs(const Teuchos::ArrayView<scalar_t> nzval,
+		const Teuchos::ArrayView<global_ordinal_t> colind,
+		const Teuchos::ArrayView<global_size_t> rowptr,
+		global_size_t& nnz,
+		EDistribution distribution,
+		EStorage_Ordering ordering) const;
+
+    /**
+     * \brief Gets a compressed-column storage summary of \c this
+     *
+     * Extracts a compressed-column storage format of the matrix and stores the
+     * information in the user-supplied containers.
+     *
+     * \param [out] nzval will hold the values of the nonzero entries of \c this
+     * \param [out] rowind will hold the row indices of \c this for each column.
+     * \param [out] colptr is of size <tt>ncol + 1</tt> and <tt>colptr[j]</tt>
+     *              stores the location in \c nzval and \c rowind which starts
+     *              column \c j of \c this.  <tt>colptr[ncol] = nnz</tt>, where \c
+     *              ncol is the number of columns in this matrix.
+     * \param [out] nnz is the number of nonzero entries in this matrix.
+     * \param [in]  distribution
+     * \param [in]  ordering
+     *
+     * \exception std::length_error Thrown if \c nzval or \c rowind is not
+     * large enough to hold the global number of nonzero values.
+     *
+     * \exception std::length_error Thrown if \c colptr is not at least
+     * <tt>ncol + 1</tt> in size, the required size.
+     *
+     * \exception std::runtime_error Thrown if there is an error while extracting
+     * row values from the underlying matrix.
+     */
+    void getCcs(const Teuchos::ArrayView<scalar_t> nzval,
+		const Teuchos::ArrayView<global_ordinal_t> rowind,
+		const Teuchos::ArrayView<global_size_t> colptr,
+		global_size_t& nnz,
+		EDistribution distribution,
+		EStorage_Ordering ordering) const;
+
+
+    /// Returns the Teuchos::Comm object associated with this matrix.
+    const RCP<const Teuchos::Comm<int> > getComm() const
+    {
+      return comm_;
+    }
+
+    /// Get the number of rows in this matrix
+    global_size_t getGlobalNumRows() const;
+
+    /// Get the number of columns in this matrix
+    global_size_t getGlobalNumCols() const;
+
+    /// Get the global number of non-zeros in this sparse matrix
+    global_size_t getGlobalNNZ() const;
+
+    /// Returns a short description of this Solver
+    std::string description() const;
+
+    /// Describes of this matrix adapter with some level of verbosity.
+    void describe(Teuchos::FancyOStream &out,
+		  const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+
+
+  private:
+
+    void help_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
+		     const Teuchos::ArrayView<global_ordinal_t> colind,
+		     const Teuchos::ArrayView<global_size_t> rowptr,
+		     global_size_t& nnz,
+		     EDistribution distribution,
+		     EStorage_Ordering ordering,
+		     has_special_impl hsi) const;
+
+    void help_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
+		     const Teuchos::ArrayView<global_ordinal_t> colind,
+		     const Teuchos::ArrayView<global_size_t> rowptr,
+		     global_size_t& nnz,
+		     EDistribution distribution,
+		     EStorage_Ordering ordering,
+		     no_special_impl nsi) const;
+
+    void do_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
+		   const Teuchos::ArrayView<global_ordinal_t> colind,
+		   const Teuchos::ArrayView<global_size_t> rowptr,
+		   global_size_t& nnz,
+		   EDistribution distribution,
+		   EStorage_Ordering ordering,
+		   row_access ra) const;
+
+    void do_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
+		   const Teuchos::ArrayView<global_ordinal_t> colind,
+		   const Teuchos::ArrayView<global_size_t> rowptr,
+		   global_size_t& nnz,
+		   EDistribution distribution,
+		   EStorage_Ordering ordering,
+		   col_access ca) const;
+
+    void help_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
+		     const Teuchos::ArrayView<global_ordinal_t> rowind,
+		     const Teuchos::ArrayView<global_size_t> colptr,
+		     global_size_t& nnz,
+		     EDistribution distribution,
+		     EStorage_Ordering ordering,
+		     has_special_impl hsi) const;
+
+    void help_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
+		     const Teuchos::ArrayView<global_ordinal_t> rowind,
+		     const Teuchos::ArrayView<global_size_t> colptr,
+		     global_size_t& nnz,
+		     EDistribution distribution,
+		     EStorage_Ordering ordering,
+		     no_special_impl nsi) const;
+
+    void do_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
+		   const Teuchos::ArrayView<global_ordinal_t> rowind,
+		   const Teuchos::ArrayView<global_size_t> colptr,
+		   global_size_t& nnz,
+		   EDistribution distribution,
+		   EStorage_Ordering ordering,
+		   row_access ra) const;
+
+    void do_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
+		   const Teuchos::ArrayView<global_ordinal_t> rowind,
+		   const Teuchos::ArrayView<global_size_t> colptr,
+		   global_size_t& nnz,
+		   EDistribution distribution,
+		   EStorage_Ordering ordering,
+		   col_access ca) const;
+
+  protected:
+    // These methods will link to concrete implementations, and may
+    // also be used by them
+    void getGlobalRowCopy(global_ordinal_t row,
+			  const Teuchos::ArrayView<global_ordinal_t>& indices,
+			  const Teuchos::ArrayView<scalar_t>& vals,
+			  size_t& nnz) const;
+
+    void getGlobalColCopy(global_ordinal_t col,
+			  const Teuchos::ArrayView<global_ordinal_t>& indices,
+			  const Teuchos::ArrayView<scalar_t>& vals,
+			  size_t& nnz) const;
+
+    size_t getMaxRowNNZ() const;
+
+    size_t getMaxColNNZ() const;
+
+    size_t getGlobalRowNNZ(global_ordinal_t row) const;
+
+    size_t getLocalRowNNZ(local_ordinal_t row) const;
+
+    size_t getGlobalColNNZ(global_ordinal_t col) const;
+
+    size_t getLocalColNNZ(local_ordinal_t col) const;
+
+    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    getRowMap() const {
+      return row_map_;
+    }
+
+    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    getColMap() const {
+      return col_map_;
+    }
+
+    bool isLocallyIndexed() const;
+
+    bool isGloballyIndexed() const;
+
+    RCP<const type> get(EDistribution d) const;
+
+  protected:
+    const RCP<const Matrix> mat_;
+
+    // only need to be mutable for the initial assignment, is there
+    // another way to do this?
+    mutable RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > row_map_;
+
+    mutable RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > col_map_;
+
+    mutable RCP<const Teuchos::Comm<int> > comm_;
+    
+  };				// end class MatrixAdapter
+
+
+  // Factory creation method
+  template<typename Matrix>
+  Teuchos::RCP<MatrixAdapter<Matrix> >
+  createMatrixAdapter(Teuchos::RCP<Matrix> m){
+    return( rcp(new ConcreteMatrixAdapter<Matrix>(m)) );
+  }
 
 } // end namespace Amesos
 
-#endif // AMESOS2_MATRIX_ADAPTER_DECL_HPP
+#endif	// AMESOS2_MATRIXADAPTER_DECL_HPP

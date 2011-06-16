@@ -52,10 +52,52 @@
 #ifndef AMESOS2_UTIL_DEF_HPP
 #define AMESOS2_UTIL_DEF_HPP
 
+#include "Amesos2_config.h"
+
+#include <Teuchos_DefaultSerialComm.hpp>
+#ifdef HAVE_MPI
+#include <Teuchos_DefaultMpiComm.hpp>
+#endif
+
 #include <Teuchos_ScalarTraits.hpp>
 
+#ifdef HAVE_AMESOS2_EPETRA
+const Teuchos::RCP<const Teuchos::Comm<int> >
+Amesos::Util::to_teuchos_comm(Teuchos::RCP<const Epetra_Comm> c){
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::set_extra_data;
+
+  Teuchos::RCP<const Epetra_SerialComm>
+    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm>(c);
+  if( serialEpetraComm.get() ) {
+    Teuchos::RCP<const Teuchos::SerialComm<int> >
+      serialComm = rcp(new Teuchos::SerialComm<int>());
+    set_extra_data( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg(serialComm) );
+    return serialComm;
+  }
+  
+#ifdef HAVE_MPI
+  Teuchos::RCP<const Epetra_MpiComm>
+    mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm>(c);
+  if( mpiEpetraComm.get() ) {
+    Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
+      rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
+    set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
+    Teuchos::RCP<const Teuchos::MpiComm<int> >
+      mpiComm = rcp(new Teuchos::MpiComm<int>(rawMpiComm));
+    return mpiComm;
+  }
+#endif
+
+  return(Teuchos::null);
+}
+
+#endif	// HAVE_AMESOS2_EPETRA
+
 /*
- * TODO: Use Matrix and MultiVecAdapters instead of strait matrix and vector arguments
+ * TODO: Use Matrix and MultiVecAdapters instead of strait matrix and
+ * vector arguments
  */
 template <typename Matrix,
           typename Vector>

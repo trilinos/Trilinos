@@ -58,6 +58,7 @@
 #include <Teuchos_ParameterList.hpp>
 
 #include "Amesos2_SolverBase.hpp"
+#include "Amesos2_MatrixTraits.hpp"
 #include "Amesos2_MatrixAdapter.hpp"
 #include "Amesos2_MultiVecAdapter.hpp"
 #include "Amesos2_Util.hpp"
@@ -101,14 +102,14 @@ class Solver : public  Amesos::SolverBase
 public:
 
   // Grant public access to contained types
-  typedef ConcreteSolver<Matrix,Vector>                            solver_type;
-  typedef Matrix                                                   matrix_type;
-  typedef Vector                                                   vector_type;
-  typedef typename MatrixAdapter<matrix_type>::scalar_type         scalar_type;
-  typedef typename MatrixAdapter<matrix_type>::local_ordinal_type  local_ordinal_type;
-  typedef typename MatrixAdapter<matrix_type>::global_ordinal_type global_ordinal_type;
-  typedef typename MatrixAdapter<matrix_type>::global_size_type    global_size_type;
-  typedef typename MatrixAdapter<matrix_type>::node_type           node_type;
+  typedef ConcreteSolver<Matrix,Vector>                           solver_type;
+  typedef Matrix                                                  matrix_type;
+  typedef Vector                                                  vector_type;
+  typedef typename MatrixAdapter<matrix_type>::scalar_t           scalar_type;
+  typedef typename MatrixAdapter<matrix_type>::local_ordinal_t    local_ordinal_type;
+  typedef typename MatrixAdapter<matrix_type>::global_ordinal_t   global_ordinal_type;
+  typedef typename MatrixAdapter<matrix_type>::global_size_t      global_size_type;
+  // typedef typename MatrixAdapter<matrix_type>::node_t             node_type;
 
 
   /// \name Constructor/Destructor methods

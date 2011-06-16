@@ -41,21 +41,12 @@
 //
 // @HEADER
 
-#ifndef AMESOS2_UTIL_CPP
-#define AMESOS2_UTIL_CPP
+#ifndef AMESOS2_TPETRA_ROWMATRIX_ABSTRACTMATRIXADAPTER_HPP
+#define AMESOS2_TPETRA_ROWMATRIX_ABSTRACTMATRIXADAPTER_HPP
 
-#include "Amesos2_Util.hpp"
+#include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_decl.hpp"
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#  include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_def.hpp"
+#endif
 
-#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-#  include "Amesos2_Util_def.hpp"
-#  include "Teuchos_ExplicitInstantiationHelpers.hpp"
-namespace Amesos {
-/* Need to figure out the explicit instantiation system for Amesos2, since we
- * are instantiating not only on the Scalar types, but Matrices and Vectors
- */
-
-// TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES( )
-}
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-
-#endif  // AMESOS2_UTIL_CPP
+#endif  // AMESOS2_TPETRA_ROWMATRIX_ABSTRACTMATRIXADAPTER_HPP
