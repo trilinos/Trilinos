@@ -1,42 +1,52 @@
-#include <stdlib.h>
+#ifndef stk_adapt_TestLocalRefinerTri_N_3_hpp
+#define stk_adapt_TestLocalRefinerTri_N_3_hpp
 
-#include <exception>
-#include <fstream>
-#include <set>
-#include <typeinfo>
-
-#if defined( STK_HAS_MPI )
-#include <mpi.h>
-#endif
-
-#include <unit_tests/TestLocalRefinerTri_N_2.hpp>
-
-//#define STK_ADAPT_HAS_GEOMETRY
-#undef STK_ADAPT_HAS_GEOMETRY
-#if defined( STK_ADAPT_HAS_GEOMETRY )
-#include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
-#include <stk_adapt/geometry/MeshGeometry.hpp>
-#include <stk_adapt/geometry/GeometryFactory.hpp>
-#endif
-
-// FIXME
-// #include <stk_mesh/baseImpl/EntityImpl.hpp>
-// #include <stk_mesh/base/Entity.hpp>
-// FIXME
+#include <stk_adapt/Refiner.hpp>
 
 namespace stk {
   namespace adapt {
 
+    //========================================================================================================================
+    //========================================================================================================================
+    //========================================================================================================================
+    /**
+     * A test implementation that marks some edges randomly to test RefinerPattern_Tri3_Tri3_N_3
+     */
+    class TestLocalRefinerTri_N_3 : public Refiner
+    {
+    public:
+      TestLocalRefinerTri_N_3(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
 
-    // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_2 in UnitTestLocalRefiner.cpp)
+      ElementUnrefineCollection  buildTestUnrefList();
 
-    TestLocalRefinerTri_N_2::TestLocalRefinerTri_N_2(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    protected:
+
+      // not needed
+#if 0
+      virtual unsigned
+      doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
+                       vector< ColorerSetType >& elementColors, unsigned elementType,
+                       vector<NeededEntityType>& needed_entity_ranks,
+                       bool only_count=false, bool doAllElements=true);
+#endif
+
+
+      virtual void 
+      applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+                                              vector<NeededEntityType>& needed_entity_ranks);
+
+
+    };
+
+    // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3 in UnitTestLocalRefiner.cpp)
+
+    TestLocalRefinerTri_N_3::TestLocalRefinerTri_N_3(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
       Refiner(eMesh, bp, proc_rank_field)
     {
     }
 
 
-    void TestLocalRefinerTri_N_2::
+    void TestLocalRefinerTri_N_3::
     applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
@@ -95,10 +105,19 @@ namespace stk {
                   // vertical line position
                   const double vx = 0.21;
 
+                  // horizontal line position
+                  const double vy = 1.21;
+
                   // choose to refine or not 
-                  if ( std::fabs(coord0[0]-coord1[0]) > 1.e-3 &&
-                       ( (coord0[0] < vx && vx < coord1[0]) || (coord1[0] < vx && vx < coord0[0]) )
-                       )
+                  if (
+                      ( std::fabs(coord0[0]-coord1[0]) > 1.e-3 &&
+                        ( (coord0[0] < vx && vx < coord1[0]) || (coord1[0] < vx && vx < coord0[0]) )
+                        )
+                      ||
+                      ( std::fabs(coord0[1]-coord1[1]) > 1.e-3 &&
+                        ( (coord0[1] < vy && vy < coord1[1]) || (coord1[1] < vy && vy < coord0[1]) )
+                        )
+                      )
                     {
                       (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
                     }
@@ -108,7 +127,7 @@ namespace stk {
         } // ineed_ent
     }
 
-    ElementUnrefineCollection TestLocalRefinerTri_N_2::buildTestUnrefList()
+    ElementUnrefineCollection TestLocalRefinerTri_N_3::buildTestUnrefList()
     {
       ElementUnrefineCollection elements_to_unref;
 
@@ -151,7 +170,7 @@ namespace stk {
                     if (found)
                       {
                         elements_to_unref.insert(&element);
-                        //std::cout << "tmp element id= " << element.identifier() << " ";
+                        std::cout << "tmp unref element id= " << element.identifier() << std::endl;
                         //m_eMesh.printEntity(std::cout, element);
                       }
                   }
@@ -163,5 +182,6 @@ namespace stk {
     }
 
 
-  } // namespace adapt
-} // namespace stk
+  }
+}
+#endif

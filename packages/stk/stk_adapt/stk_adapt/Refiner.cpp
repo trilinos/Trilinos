@@ -1990,6 +1990,8 @@ namespace stk {
 
       //std::cout << "tmp elements_to_unref.size() = " << elements_to_unref.size() << std::endl;
 
+#define DEBUG_UNREF 0
+
       typedef std::set<stk::mesh::Entity *> NodeSetType;
       NodeSetType kept_nodes;
       NodeSetType deleted_nodes;
@@ -2074,7 +2076,9 @@ namespace stk {
           if (m_eMesh.isChildElement(*element_p))
             {
               copied_list.insert(element_p);
-              //std::cout << "tmp element to be removed id= " << element_p->identifier() << " " << std::endl;
+#if DEBUG_UNREF
+              std::cout << "tmp element to be removed id= " << element_p->identifier() << " " << std::endl;
+#endif
             }
           else
             {
@@ -2082,7 +2086,9 @@ namespace stk {
             }
         }
 
-      //std::cout << "tmp copied_list.size() = " << copied_list.size() << std::endl;
+#if DEBUG_UNREF
+      std::cout << "tmp copied_list.size() = " << copied_list.size() << std::endl;
+#endif
 
       ElementUnrefineCollection parent_elements;
       ElementUnrefineCollection parent_elements_copy;
@@ -2096,18 +2102,23 @@ namespace stk {
           if (elementIsGhost)
             continue;
 
-          //std::cout << "tmp element to be removed id= " << element_p->identifier() << " " << std::endl;
+#if DEBUG_UNREF
+          std::cout << "tmp element to be removed id= " << element_p->identifier() << " " << std::endl;
+#endif
           if (copied_list.find(element_p) != copied_list.end())
             {
               const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
               std::vector<stk::mesh::Entity *> siblings;
               stk::mesh::PairIterRelation child_to_family_tree_relations = element_p->relations(FAMILY_TREE_RANK);
-              if (child_to_family_tree_relations.size() != 1)
+
+              if (0 && child_to_family_tree_relations.size() != 1)
                 {
                   throw std::logic_error("Refiner::unrefineTheseElements child_to_family_tree_relations.size() != 1");
                 }
 
-              stk::mesh::Entity *family_tree = child_to_family_tree_relations[0].entity();
+              unsigned child_ft_level_0 = m_eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, *element_p);
+
+              stk::mesh::Entity *family_tree = child_to_family_tree_relations[child_ft_level_0].entity();
               stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(m_eMesh.element_rank());
               if (family_tree_relations.size() == 0)
                 {
@@ -2121,7 +2132,9 @@ namespace stk {
                   copied_list.erase(child);
                 }
 
-              //std::cout << "tmp removing family_tree: " << family_tree->identifier() << std::endl;
+#if DEBUG_UNREF
+              std::cout << "tmp removing family_tree: " << family_tree->identifier() << std::endl;
+#endif
               stk::mesh::Entity *parent = family_tree_relations[0].entity();
               if (!parent)
                 {
@@ -2139,15 +2152,19 @@ namespace stk {
                 {
                   stk::mesh::Entity *child = siblings[ichild];
 
-                  //std::cout << "tmp removing child: " << child->identifier() << " " << *child << std::endl;
+#if DEBUG_UNREF
+                  std::cout << "tmp removing child: " << child->identifier() << " " << *child << std::endl;
+#endif
                   if ( ! m_eMesh.getBulkData()->destroy_entity( child ) )
                     {
                       CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(*child));
-                      //std::cout << "tmp Refiner::unrefineTheseElements couldn't remove element  cell= " << cell_topo.getName() << std::endl;
 
                       const mesh::PairIterRelation elem_relations = child->relations(child->entity_rank()+1);
-                      //std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
-                      //m_eMesh.printEntity(std::cout, *child);
+#if DEBUG_UNREF
+                      std::cout << "tmp Refiner::unrefineTheseElements couldn't remove element  cell= " << cell_topo.getName() << std::endl;
+                      std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
+                      m_eMesh.printEntity(std::cout, *child);
+#endif
 
                       throw std::logic_error("Refiner::unrefineTheseElements couldn't remove element, destroy_entity returned false.");
                     }
