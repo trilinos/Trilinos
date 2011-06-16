@@ -120,7 +120,7 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
   
-  ADVANCED_SET(TPL_FIND_SHARED_LIBS OFF CACHE ON
+  ADVANCED_SET(TPL_FIND_SHARED_LIBS ON CACHE BOOL
     "If ON, then the TPL system will find shared libs if the exist, otherwise will only find static libs." )
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
