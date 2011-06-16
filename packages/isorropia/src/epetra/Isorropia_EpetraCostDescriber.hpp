@@ -213,6 +213,7 @@ public:
 
   // Add documentation
 
+#ifdef USE_UTILS
   int compareBeforeAndAfterHypergraph( const Epetra_RowMatrix &in_m, const Epetra_RowMatrix &out_m,
             const Epetra_Import &importer,
             std::vector<double> &balance, std::vector<double> &cutn, std::vector<double> &cutl) const;
@@ -229,6 +230,7 @@ public:
 
   int compareBeforeAndAfterImbalance(const Epetra_MultiVector &mv, const  Epetra_Import &importer,
                   std::vector<double> &min, std::vector<double> &max, std::vector<double> &avg) const;
+#endif
 
 private:
 

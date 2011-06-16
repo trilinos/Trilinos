@@ -19,8 +19,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   #SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS )
 
   # We don't have TPLs for PyTrilinos, Optika, and TriKota
-  # There is some strange problem with TrilinosFramework causing an strange error.
-  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES TrilinosFramework PyTrilinos TriKota Optika)
+  # 
+  SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES
+     PyTrilinos TriKota Optika  # We don't have TPLs for these
+     Sundance Stokhos STK  # Currently have failures and nor currently needed by CASL
+     )
   
   SET_DEFAULT(COMPILER_VERSION "GCC-4.5.1")
 

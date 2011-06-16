@@ -67,7 +67,7 @@ struct UndefinedScalarTraits
  * <li> The default defined specializations are provided for \c int, \c float, and \c double.
  * 
  * <li> If Teuchos is configured with </tt>Teuchos_ENABLE_COMPLEX=ON</tt> then
- * ScalarTraits also has a parital specialization for all
+ * ScalarTraits also has a partial specialization for all
  * <tt>std::complex</tt> numbers of the form <tt>std::complex<T></tt>.
  * 
  * </ol>

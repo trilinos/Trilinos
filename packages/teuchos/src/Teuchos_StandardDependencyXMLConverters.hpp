@@ -309,7 +309,7 @@ public:
  *  true.
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT NumberVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
+class NumberVisualDependencyXMLConverter : public VisualDependencyXMLConverter{
 
 public:
 
@@ -586,7 +586,7 @@ private:
  * The "defaultValidatorId" XML attribute is optional.
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT RangeValidatorDependencyXMLConverter : 
+class RangeValidatorDependencyXMLConverter : 
   public ValidatorDependencyXMLConverter{
 
 public:
@@ -774,7 +774,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
  \endcode
  */
 template<class DependeeType, class DependentType>
-class TEUCHOS_LIB_DLL_EXPORT NumberArrayLengthDependencyXMLConverter : public DependencyXMLConverter{
+class NumberArrayLengthDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 

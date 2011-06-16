@@ -151,11 +151,15 @@ namespace Tpetra {
 
   /** \brief Non-member function to create a Vector from a specified Map.
   
-      \relates Vector
+      \relatesalso Vector
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
+  RCP< Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  createVector(const RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) 
+  {
+    const bool DO_INIT_TO_ZERO = true;
+    return rcp( new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,DO_INIT_TO_ZERO) );
+  }
 
 } // namespace Tpetra
 

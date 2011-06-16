@@ -54,11 +54,14 @@ namespace {
 template< class > class UnitTestMDArrayDeepCopy ;
 
 template<>
-class UnitTestMDArrayDeepCopy< Kokkos :: KOKKOS_MACRO_DEVICE >
+class UnitTestMDArrayDeepCopy< KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef KOKKOS_MACRO_DEVICE device ;
+  typedef Kokkos::DeviceHost  host ;
 
+  typedef Kokkos::MDArrayView< double , host > host_dView ;
+  typedef Kokkos::MDArrayView< int ,    host > host_iView ;
   typedef Kokkos::MDArrayView< double , device > dView ;
   typedef Kokkos::MDArrayView< int ,    device > iView ;
 
@@ -84,23 +87,35 @@ public:
 
     dView dx , dy ;
     iView ix , iy ;
+    host_dView host_dx , host_dy ;
+    host_iView host_ix , host_iy ;
+
+    host_dx = Kokkos::create_labeled_mdarray< host_dView > ( "dx" , dN );
+    host_dy = Kokkos::create_labeled_mdarray< host_dView > ( "dy" , dN );
+    host_ix = Kokkos::create_labeled_mdarray< host_iView > ( "ix" , iN );
+    host_iy = Kokkos::create_labeled_mdarray< host_iView > ( "iy" , iN );
 
     dx = Kokkos::create_labeled_mdarray< dView > ( "dx" , dN );
     dy = Kokkos::create_labeled_mdarray< dView > ( "dy" , dN );
     ix = Kokkos::create_labeled_mdarray< iView > ( "ix" , iN );
     iy = Kokkos::create_labeled_mdarray< iView > ( "iy" , iN );
 
-    for ( size_t i = 0 ; i < dN ; ++i ) { dx(i) = i ; }
-    for ( size_t i = 0 ; i < iN ; ++i ) { ix(i) = iN - i ; }
+    for ( size_t i = 0 ; i < dN ; ++i ) { host_dx(i) = i ; }
+    for ( size_t i = 0 ; i < iN ; ++i ) { host_ix(i) = iN - i ; }
 
+    Kokkos::deep_copy( dx , host_dx );
     Kokkos::deep_copy( dy , dx );
+    Kokkos::deep_copy( host_dy , dy );
+
+    Kokkos::deep_copy( ix , host_ix );
     Kokkos::deep_copy( iy , ix );
+    Kokkos::deep_copy( host_iy , iy );
   
     for ( size_t i = 0 ; i < dN ; ++i ) {
-      if ( dx(i) != dy(i) ) error( " FAILED double copy" );
+      if ( host_dx(i) != host_dy(i) ) error( " FAILED double copy" );
     }
     for ( size_t i = 0 ; i < iN ; ++i ) {
-      if ( ix(i) != iy(i) ) error( " FAILED int copy" );
+      if ( host_ix(i) != host_iy(i) ) error( " FAILED int copy" );
     }
   }
 };

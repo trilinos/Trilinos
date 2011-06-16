@@ -55,10 +55,8 @@ namespace app {
   // ========================================================================
   void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
   {
-    const stk::mesh::EntityRank element_rank = meta.element_rank();
-
     const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-    stk::io::default_part_processing(elem_blocks, meta, element_rank);
+    stk::io::default_part_processing(elem_blocks, meta);
 
     // Parts were created above, now handle element block specific
     // information (topology, attributes, ...);
@@ -96,7 +94,7 @@ namespace app {
   void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
   {
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-    stk::io::default_part_processing(node_sets, meta, stk::mesh::fem::FEMMetaData::NODE_RANK);
+    stk::io::default_part_processing(node_sets, meta);
 
     /// \todo REFACTOR should "distribution_factor" be a default field
     /// that is automatically declared on all objects that it exists
@@ -131,100 +129,70 @@ namespace app {
   }
 
   // ========================================================================
-  void process_surface_entity(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta,
-			      stk::mesh::EntityRank entity_rank)
+  void process_surface_entity(Ioss::SideSet *sset, stk::mesh::fem::FEMMetaData &meta)
   {
-    assert(entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET);
-    if (entity->type() == Ioss::FACESET) {
-      Ioss::FaceSet *fs = dynamic_cast<Ioss::FaceSet *>(entity);
-      assert(fs != NULL);
-      const Ioss::FaceBlockContainer& blocks = fs->get_face_blocks();
-      stk::io::default_part_processing(blocks, meta, entity_rank);
-    } else if (entity->type() == Ioss::EDGESET) {
-      Ioss::EdgeSet *es = dynamic_cast<Ioss::EdgeSet *>(entity);
-      assert(es != NULL);
-      const Ioss::EdgeBlockContainer& blocks = es->get_edge_blocks();
-      stk::io::default_part_processing(blocks, meta, entity_rank);
-    }
+    assert(sset->type() == Ioss::SIDESET);
+    const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
+    stk::io::default_part_processing(blocks, meta);
 
-    stk::mesh::Part* const fs_part = meta.get_part(entity->name());
-    assert(fs_part != NULL);
+    stk::mesh::Part* const sideset_part = meta.get_part(sset->name());
+    assert(sideset_part != NULL);
 
     stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = NULL;
     bool surface_df_defined = false; // Has the surface df field been defined yet?
 
 
-    int block_count = entity->block_count();
+    int block_count = sset->block_count();
     for (int i=0; i < block_count; i++) {
-      Ioss::EntityBlock *fb = entity->get_block(i);
-      if (stk::io::include_entity(fb)) {
-	std::cout << fb->type_string() << " " << fb->name() << "\n";
-	stk::mesh::Part * const fb_part = meta.get_part(fb->name());
-	assert(fb_part != NULL);
-	meta.declare_part_subset(*fs_part, *fb_part);
+      Ioss::SideBlock *sideblock = sset->get_block(i);
+      if (stk::io::include_entity(sideblock)) {
+	std::cout << sideblock->type_string() << " " << sideblock->name() << "\n";
+	stk::mesh::Part * const sideblock_part = meta.get_part(sideblock->name());
+	assert(sideblock_part != NULL);
+	meta.declare_part_subset(*sideset_part, *sideblock_part);
 
-        const stk::mesh::EntityRank part_rank = fb_part->primary_entity_rank();
+        const stk::mesh::EntityRank part_rank = sideblock_part->primary_entity_rank();
 
 	/// \todo REFACTOR How to associate distribution_factors field
-	/// with the faceset part if a face is a member of multiple
-	/// facesets
+	/// with the sideset part if a face is a member of multiple
+	/// sidesets
 
-	if (fb->field_exists("distribution_factors")) {
+	if (sideblock->field_exists("distribution_factors")) {
 	  if (!surface_df_defined) {
-	    std::string field_name = entity->name() + "_distribution_factors";
+	    std::string field_name = sset->name() + "_distribution_factors";
 	    distribution_factors_field =
 	      &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
-	    stk::io::set_distribution_factor_field(*fs_part, *distribution_factors_field);
+	    stk::io::set_distribution_factor_field(*sideset_part, *distribution_factors_field);
 	    surface_df_defined = true;
 	  }
-	  stk::io::set_distribution_factor_field(*fb_part, *distribution_factors_field);
-	  int face_node_count = fb->topology()->number_nodes();
+	  stk::io::set_distribution_factor_field(*sideblock_part, *distribution_factors_field);
+	  int side_node_count = sideblock->topology()->number_nodes();
 	  stk::mesh::put_field(*distribution_factors_field,
                                part_rank ,
-                               *fb_part, face_node_count);
+                               *sideblock_part, side_node_count);
 	}
 
 	/// \todo IMPLEMENT truly handle fields... For this case we
 	/// are just defining a field for each transient field that is
 	/// present in the mesh...
-	stk::io::define_io_fields(fb, Ioss::Field::TRANSIENT,
-                                  *fb_part, part_rank );
+	stk::io::define_io_fields(sideblock, Ioss::Field::TRANSIENT,
+                                  *sideblock_part, part_rank );
       }
     }
   }
 
   // ========================================================================
-  void process_facesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
+  void process_sidesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
   {
-    const stk::mesh::EntityRank side_rank = meta.side_rank();
+    const Ioss::SideSetContainer& side_sets = region.get_sidesets();
+    stk::io::default_part_processing(side_sets, meta);
 
-    const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-    stk::io::default_part_processing(face_sets, meta, side_rank);
-
-    for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-	it != face_sets.end(); ++it) {
-      Ioss::FaceSet *entity = *it;
+    for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+	it != side_sets.end(); ++it) {
+      Ioss::SideSet *entity = *it;
 
       if (stk::io::include_entity(entity)) {
-	process_surface_entity(entity, meta, side_rank);
-      }
-    }
-  }
-
-  // ========================================================================
-  void process_edgesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
-  {
-    const stk::mesh::EntityRank edge_rank = meta.edge_rank();
-
-    const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-    stk::io::default_part_processing(edge_sets, meta, edge_rank);
-
-    for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-	it != edge_sets.end(); ++it) {
-      Ioss::EdgeSet *entity = *it;
-
-      if (stk::io::include_entity(entity)) {
-	process_surface_entity(entity, meta, edge_rank);
+	process_surface_entity(entity, meta);
       }
     }
   }
@@ -355,10 +323,9 @@ namespace app {
   }
 
   // ========================================================================
-  void process_surface_entity(const Ioss::GroupingEntity* io ,
-			      stk::mesh::BulkData & bulk)
+  void process_surface_entity(const Ioss::SideSet* io, stk::mesh::BulkData & bulk)
   {
-    assert(io->type() == Ioss::FACESET || io->type() == Ioss::EDGESET);
+    assert(io->type() == Ioss::SIDESET);
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
     stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(meta);
 
@@ -366,7 +333,7 @@ namespace app {
 
     int block_count = io->block_count();
     for (int i=0; i < block_count; i++) {
-      Ioss::EntityBlock *block = io->get_block(i);
+      Ioss::SideBlock *block = io->get_block(i);
       if (stk::io::include_entity(block)) {
 	std::vector<int> side_ids ;
 	std::vector<int> elem_side ;
@@ -412,28 +379,13 @@ namespace app {
   }
 
   // ========================================================================
-  void process_facesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
+  void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
   {
-    const Ioss::FaceSetContainer& face_sets = region.get_facesets();
+    const Ioss::SideSetContainer& side_sets = region.get_sidesets();
 
-    for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
-	it != face_sets.end(); ++it) {
-      Ioss::FaceSet *entity = *it;
-
-      if (stk::io::include_entity(entity)) {
-	process_surface_entity(entity, bulk);
-      }
-    }
-  }
-
-  // ========================================================================
-  void process_edgesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
-  {
-    const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-
-    for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
-	it != edge_sets.end(); ++it) {
-      Ioss::EdgeSet *entity = *it;
+    for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
+	it != side_sets.end(); ++it) {
+      Ioss::SideSet *entity = *it;
 
       if (stk::io::include_entity(entity)) {
 	process_surface_entity(entity, bulk);
@@ -490,18 +442,18 @@ namespace app {
 	// Get Ioss::GroupingEntity corresponding to this part...
 	Ioss::GroupingEntity *entity = region.get_entity(part->name());
 	if (entity != NULL) {
-	  if (entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET) {
-	    int block_count = entity->block_count();
+	  if (entity->type() == Ioss::SIDESET) {
+	    Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+	    assert(sset != NULL);
+	    int block_count = sset->block_count();
 	    for (int i=0; i < block_count; i++) {
-	      Ioss::EntityBlock *fb = entity->get_block(i);
+	      Ioss::SideBlock *fb = sset->get_block(i);
 	      /// \todo REFACTOR Need filtering mechanism.
-		app::get_field_data(bulk, *part,
-                                    part_rank,
+		app::get_field_data(bulk, *part, part_rank,
 				    fb, Ioss::Field::TRANSIENT);
 	    }
 	  } else {
-	    app::get_field_data(bulk, *part,
-                                part_rank,
+	    app::get_field_data(bulk, *part, part_rank,
 				entity, Ioss::Field::TRANSIENT);
 	  }
 	} else {
@@ -561,19 +513,18 @@ namespace app {
 	Ioss::GroupingEntity *entity = region.get_entity(part->name());
 	if (entity != NULL) {
 
-	  if (entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET) {
-	    int block_count = entity->block_count();
+	  if (entity->type() == Ioss::SIDESET) {
+	    Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+	    int block_count = sset->block_count();
 
 	    for (int i=0; i < block_count; i++) {
-	      Ioss::EntityBlock *fb = entity->get_block(i);
+	      Ioss::SideBlock *fb = sset->get_block(i);
 	      /// \todo REFACTOR Need filtering mechanism.
-	      app::put_field_data(bulk, *part,
-                                  part_rank,
+	      app::put_field_data(bulk, *part, part_rank,
 				  fb, Ioss::Field::TRANSIENT);
 	    }
 	  } else {
-	    app::put_field_data(bulk, *part,
-                                part_rank,
+	    app::put_field_data(bulk, *part, part_rank,
 				entity, Ioss::Field::TRANSIENT);
 	  }
 	} else {
@@ -655,8 +606,7 @@ namespace app {
     stk::mesh::fem::FEMMetaData meta_data( spatial_dimension );
     app::process_elementblocks(in_region, meta_data);
     app::process_nodeblocks(in_region,    meta_data);
-    app::process_facesets(in_region,      meta_data);
-    app::process_edgesets(in_region,      meta_data);
+    app::process_sidesets(in_region,      meta_data);
     app::process_nodesets(in_region,      meta_data);
 
     //----------------------------------
@@ -669,8 +619,7 @@ namespace app {
     bulk_data.modification_begin();
     app::process_elementblocks(in_region, bulk_data);
     app::process_nodeblocks(in_region,    bulk_data);
-    app::process_facesets(in_region,      bulk_data);
-    app::process_edgesets(in_region,      bulk_data);
+    app::process_sidesets(in_region,      bulk_data);
     app::process_nodesets(in_region,      bulk_data);
     bulk_data.modification_end();
 
@@ -730,10 +679,11 @@ namespace app {
 	// Get Ioss::GroupingEntity corresponding to this part...
 	Ioss::GroupingEntity *entity = out_region.get_entity(part->name());
 	if (entity != NULL) {
-	  if (entity->type() == Ioss::FACESET || entity->type() == Ioss::EDGESET) {
-	    int block_count = entity->block_count();
+	  if (entity->type() == Ioss::SIDESET) {
+	    Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+	    int block_count = sset->block_count();
 	    for (int i=0; i < block_count; i++) {
-	      Ioss::EntityBlock *fb = entity->get_block(i);
+	      Ioss::EntityBlock *fb = sset->get_block(i);
 	      /// \todo REFACTOR Need filtering mechanism.
 		stk::io::ioss_add_fields(*part, part_rank,
 					 fb, Ioss::Field::TRANSIENT);

@@ -42,6 +42,7 @@
 
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_adapt/UniformRefiner.hpp>
+#include <unit_tests/TestLocalRefiner.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 #include <stk_percept/RunEnvironment.hpp>
 
@@ -53,6 +54,9 @@
 
 #include <use_cases/UseCase_3.hpp>
 
+// this is for testing the local-refine refactoring 
+#define UNIFORM_REFINER UniformRefiner
+//#define UNIFORM_REFINER TestLocalRefiner
 
 namespace stk
 {
@@ -77,6 +81,60 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+
+#if 0
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9_shell_1)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced (I presume there are too few elements)
+
+        if (p_size <= 1)
+          {
+            // start_demo_break_quad4_to_quad9_to_quad9_shell
+            std::string input_mesh = "./input_files/shell-tests/freshell_quad4.g";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh(3u);
+            eMesh.open(input_mesh);
+
+            ShellQuad4_ShellQuad9_1 break_quad4_to_quad9_1(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            //         int vectorDimension = 3;
+
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+
+            eMesh.commit();
+
+            eMesh.printInfo("quad mesh");
+            eMesh.saveAs("./output_files/freshell_quad4_quad9_0.g");
+
+            UNIFORM_REFINER breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched");
+            eMesh.saveAs("./output_files/freshell_quad4_quad9_1.g");
+            eMesh.saveAs("./input_files/freshell_quad9_quad9_0.g");
+
+          }
+      }
+#endif
 
 
       STKUNIT_UNIT_TEST(regr_uniformRefiner, beam_enrich)
@@ -118,7 +176,7 @@ namespace stk
 
               eMesh.printInfo("beam", 2);
 
-              UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+              UNIFORM_REFINER breaker(eMesh, break_pattern, proc_rank_field);
               //breaker.setRemoveOldElements(false);
               breaker.setIgnoreSideSets(true);
               breaker.doBreak();
@@ -168,7 +226,7 @@ namespace stk
 
               eMesh.printInfo("beam", 2);
 
-              UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+              UNIFORM_REFINER breaker(eMesh, break_pattern, proc_rank_field);
               //breaker.setRemoveOldElements(false);
               breaker.setIgnoreSideSets(true);
               breaker.doBreak();
@@ -308,7 +366,7 @@ namespace stk
             eMesh.printInfo("quad mesh");
             eMesh.saveAs("./output_files/freshell_quad4_quad8_0.g");
 
-            UniformRefiner breaker(eMesh, break_quad4_to_quad8_1, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad4_to_quad8_1, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
@@ -335,7 +393,7 @@ namespace stk
             //eMesh.printInfo("quad mesh");
             //eMesh.saveAs("./output_files/freshell_quad4_quad8_0.g");
 
-            UniformRefiner breaker(eMesh, break_quad8_to_quad_8, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad8_to_quad_8, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
@@ -346,6 +404,89 @@ namespace stk
 
           }
       }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+
+#if 0
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad9_to_quad9_shell)
+      {
+        EXCEPTWATCH;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+
+        // this case can't be load balanced (I presume there are too few elements)
+
+        if (p_size <= 1)
+          {
+            // start_demo_break_quad4_to_quad9_to_quad9_shell
+            std::string input_mesh = "./input_files/shell-tests/freshell_quad4.g";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            percept::PerceptMesh eMesh(3u);
+            eMesh.open(input_mesh);
+
+            ShellQuad4_ShellQuad9_1 break_quad4_to_quad9_1(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            //         int vectorDimension = 3;
+
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+
+            eMesh.commit();
+
+            eMesh.printInfo("quad mesh");
+            eMesh.saveAs("./output_files/freshell_quad4_quad9_0.g");
+
+            UNIFORM_REFINER breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched");
+            eMesh.saveAs("./output_files/freshell_quad4_quad9_1.g");
+            eMesh.saveAs("./input_files/freshell_quad9_quad9_0.g");
+
+          }
+
+#if 0
+        if (1 && p_size <= 1)
+          {
+
+            percept::PerceptMesh eMesh(3u);
+            eMesh.open("./input_files/freshell_quad9_quad9_0.g");
+
+            ShellQuad9_ShellQuad9_4 break_quad9_to_quad_9(eMesh);
+
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+
+            eMesh.commit();
+
+            //eMesh.printInfo("quad mesh");
+            //eMesh.saveAs("./output_files/freshell_quad4_quad9_0.g");
+
+            UNIFORM_REFINER breaker(eMesh, break_quad9_to_quad_9, proc_rank_field);
+            //breaker.setIgnoreSideSets(true);
+            breaker.doBreak();
+
+            //eMesh.printInfo("quad mesh refined", 5);
+            eMesh.printInfo("quad shell mesh enriched and refined");
+            eMesh.saveAs("./output_files/freshell_quad9_quad9_1.g");
+            // end_demo
+
+          }
+#endif
+      }
+#endif
 
       //======================================================================================================================
       //======================================================================================================================
@@ -387,7 +528,7 @@ namespace stk
             eMesh.printInfo("quad mesh");
             eMesh.saveAs("./output_files/freshell_quad4_0.g");
 
-            UniformRefiner breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
@@ -435,7 +576,7 @@ namespace stk
             eMesh.printInfo("tri mesh");
             eMesh.saveAs("./output_files/freshell_tri3_0.g");
 
-            UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
@@ -533,8 +674,9 @@ namespace stk
             eMesh.printInfo("quad mesh");
 
             //UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 > break_quad_to_tri_6;
-            UniformRefiner breaker(eMesh, break_quad_to_tri_6, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad_to_tri_6, proc_rank_field);
             breaker.setRemoveOldElements(false);
+            breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
             //eMesh.saveAs("./output_files/break_test/quad/square/square_quad4_out.e");
@@ -573,9 +715,9 @@ namespace stk
             eMesh.printInfo("quad mesh");
 
             //UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>, 6 > break_quad_to_tri_6;
-            UniformRefiner breaker(eMesh, break_quad_to_tri_4, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad_to_tri_4, proc_rank_field);
             breaker.setRemoveOldElements(false);
-
+            breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
             //eMesh.saveAs("./input_files/break_test/quad/square/square_quad4_out.e");
@@ -610,7 +752,7 @@ namespace stk
 
             eMesh.printInfo("quad mesh");
 
-            UniformRefiner breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
             //breaker.setRemoveOldElements(false);
             breaker.setIgnoreSideSets(true);
             breaker.doBreak();
@@ -646,7 +788,7 @@ namespace stk
 
             eMesh.printInfo("quad mesh");
 
-            UniformRefiner breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
@@ -692,7 +834,7 @@ namespace stk
 
             eMesh.printInfo("quad mesh");
 
-            UniformRefiner breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad_to_quad_4, proc_rank_field);
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
@@ -736,7 +878,7 @@ namespace stk
         eMesh.printInfo();
         eMesh.saveAs(std::string("./output_files/")+std::string("hex_tet_24_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
-        UniformRefiner breaker(eMesh, break_hex_to_tet, proc_rank_field);
+        UNIFORM_REFINER breaker(eMesh, break_hex_to_tet, proc_rank_field);
         breaker.setRemoveOldElements(true);
 
         breaker.doBreak();
@@ -779,7 +921,7 @@ namespace stk
         eMesh.printInfo();
         eMesh.saveAs(std::string("./output_files/")+std::string("hex_tet_6_12_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
-        UniformRefiner breaker(eMesh, break_hex_to_tet, proc_rank_field);
+        UNIFORM_REFINER breaker(eMesh, break_hex_to_tet, proc_rank_field);
         breaker.setRemoveOldElements(true);
         //breaker.setIgnoreSideSets(true);
 
@@ -821,7 +963,7 @@ namespace stk
             eMesh.printInfo();
             eMesh.saveAs("./output_files/cylinder_hex8_tet4_6_12_0.e");
 
-            UniformRefiner breaker(eMesh, break_hex_to_tet, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_hex_to_tet, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
@@ -913,7 +1055,7 @@ namespace stk
                 //                 if (iBreak != 0)
                 //                   proc_rank_field = eMesh1.getField("proc_rank");
 
-                UniformRefiner breaker(eMesh1, break_quad_to_quad_4, proc_rank_field);
+                UNIFORM_REFINER breaker(eMesh1, break_quad_to_quad_4, proc_rank_field);
 
                 //breaker.setRemoveOldElements(false);
                 breaker.doBreak();
@@ -981,7 +1123,7 @@ namespace stk
             stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh1.commit();
 
-            UniformRefiner breaker(eMesh1, break_quad_to_quad_4, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh1, break_quad_to_quad_4, proc_rank_field);
 
             for (int iBreak = 0; iBreak < 2; iBreak++)
               {
@@ -1033,7 +1175,7 @@ namespace stk
 
             eMesh.saveAs("./output_files/quad_fixture_quad9_0.e");
 
-            UniformRefiner breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
 
             breaker.doBreak();
             eMesh.saveAs("./output_files/quad_fixture_quad9_1.e");
@@ -1077,7 +1219,7 @@ namespace stk
 
             eMesh.saveAs("./output_files/quad_fixture_quad8_0.e");
 
-            UniformRefiner breaker(eMesh, break_quad4_to_quad8_1, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad4_to_quad8_1, proc_rank_field);
 
             breaker.doBreak();
             eMesh.saveAs("./output_files/quad_fixture_quad8_1.e");
@@ -1110,7 +1252,7 @@ namespace stk
 
             eMesh.commit();
 
-            UniformRefiner breaker(eMesh, break_quad8_to_quad8_4, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_quad8_to_quad8_4, proc_rank_field);
             breaker.setIgnoreSideSets(false);
 
             breaker.doBreak();
@@ -1157,7 +1299,7 @@ namespace stk
 
               //eMesh.saveAs("./output_files/quad_fixture_quad9_0.e");
 
-              UniformRefiner breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
+              UNIFORM_REFINER breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
 
               breaker.doBreak();
               eMesh.saveAs("./input_files/quad_1x1_quad9_quad9_0.e");
@@ -1174,7 +1316,7 @@ namespace stk
 
               //em1.saveAs("./output_files/quad_1x1_quad9_0.e");
 
-              UniformRefiner breaker(em1, break_q9_q9, proc_rank_field);
+              UNIFORM_REFINER breaker(em1, break_q9_q9, proc_rank_field);
               breaker.setIgnoreSideSets(!doGenSideSets);
 
               breaker.doBreak();
@@ -1223,7 +1365,7 @@ namespace stk
 
               //eMesh.saveAs("./output_files/quad_fixture_quad9_0.e");
 
-              UniformRefiner breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
+              UNIFORM_REFINER breaker(eMesh, break_quad4_to_quad9_1, proc_rank_field);
               std::cout << "break_quad4_to_quad9_1.fixSurfaceAndEdgeSetNamesMap().size()= "
                         << break_quad4_to_quad9_1.fixSurfaceAndEdgeSetNamesMap().size() << std::endl;
 
@@ -1243,7 +1385,7 @@ namespace stk
 
               //em1.saveAs("./output_files/quad_fixture_quad9_0.e");
 
-              UniformRefiner breaker(em1, break_q9_q9, proc_rank_field);
+              UNIFORM_REFINER breaker(em1, break_q9_q9, proc_rank_field);
               breaker.setIgnoreSideSets(!doGenSideSets);
 
               breaker.doBreak();
@@ -1329,7 +1471,7 @@ namespace stk
             eMesh.printInfo("tri mesh");
             eMesh.saveAs("./output_files/quad_fixture_tri3_0.e");
 
-            UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
             breaker.doBreak();
 
             //eMesh.printInfo("tri mesh refined", 5);
@@ -1389,7 +1531,7 @@ namespace stk
             eMesh.printInfo("tri mesh tri6");
             eMesh.saveAs("./output_files/quad_fixture_tri3_tri6_0.e");
 
-            UniformRefiner breaker(eMesh, break_tri3_to_tri6, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_tri3_to_tri6, proc_rank_field);
             breaker.doBreak();
 
             //eMesh.printInfo("tri mesh refined", 5);
@@ -1437,7 +1579,7 @@ namespace stk
             eMesh.printInfo("tri mesh tri6");
             eMesh.saveAs("./output_files/quad_fixture_tri6_tri6_0.e");
 
-            UniformRefiner breaker(eMesh, break_tri6_to_tri6, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_tri6_to_tri6, proc_rank_field);
             breaker.doBreak();
 
             eMesh.printInfo("tri mesh refined");
@@ -1498,7 +1640,7 @@ namespace stk
             eMesh.commit();
             eMesh.printInfo("tet mesh");
 
-            UniformRefiner breaker(eMesh, break_tet_tet, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_tet_tet, proc_rank_field);
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
@@ -1537,7 +1679,7 @@ namespace stk
             eMesh.commit();
             eMesh.printInfo("tet mesh");
 
-            UniformRefiner breaker(eMesh, break_tet_tet, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_tet_tet, proc_rank_field);
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
@@ -1575,7 +1717,7 @@ namespace stk
             eMesh.commit();
             eMesh.printInfo("tet mesh");
 
-            UniformRefiner breaker(eMesh, break_tet_tet, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_tet_tet, proc_rank_field);
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
@@ -1599,7 +1741,7 @@ namespace stk
             eMesh.commit();
             //eMesh.printInfo("tet mesh");
 
-            UniformRefiner breaker(eMesh, break_tet_tet, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_tet_tet, proc_rank_field);
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
             //breaker.doBreak();
@@ -1648,7 +1790,7 @@ namespace stk
         eMesh.printInfo();
         eMesh.saveAs(std::string("./output_files/")+std::string("hex_hex_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
-        UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+        UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
         breaker.setRemoveOldElements(true);
 
         breaker.doBreak();
@@ -1688,7 +1830,7 @@ namespace stk
             eMesh.printInfo();
             eMesh.saveAs("./output_files/cylinder_hex8_0.e");
 
-            UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
             breaker.doBreak();
 
             eMesh.saveAs("./output_files/cylinder_hex8_1.e");
@@ -1728,7 +1870,7 @@ namespace stk
         eMesh.printInfo();
         eMesh.saveAs(std::string("./output_files/")+std::string("hex8_hex27_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
-        UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+        UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
         breaker.setRemoveOldElements(true);
 
         breaker.doBreak();
@@ -1768,7 +1910,7 @@ namespace stk
             eMesh.printInfo();
             eMesh.saveAs("./output_files/cylinder_hex27_0.e");
 
-            UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
             breaker.doBreak();
 
             eMesh.saveAs("./output_files/cylinder_hex27_1.e");
@@ -1806,7 +1948,7 @@ namespace stk
         eMesh.printInfo();
         eMesh.saveAs(std::string("./output_files/")+std::string("hex8_hex20_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
-        UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+        UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
         breaker.setRemoveOldElements(true);
 
         breaker.doBreak();
@@ -1848,7 +1990,7 @@ namespace stk
             eMesh.printInfo();
             eMesh.saveAs("./output_files/cylinder_hex20_0.e");
 
-            UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
             breaker.doBreak();
 
             eMesh.saveAs("./output_files/cylinder_hex20_1.e");
@@ -1887,7 +2029,7 @@ namespace stk
             eMesh.commit();
             eMesh.saveAs(std::string("./output_files/")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
 
-            UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
             breaker.setRemoveOldElements(true);
 
             breaker.doBreak();
@@ -1927,7 +2069,7 @@ namespace stk
             eMesh.commit();
             eMesh.saveAs("./output_files/cylinder_hex20_hex20_0.e");
 
-            UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
             //breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
@@ -1966,7 +2108,7 @@ namespace stk
           eMesh.printInfo();
           eMesh.saveAs(std::string("./output_files/")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
-          UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+          UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
           breaker.setRemoveOldElements(true);
 
           breaker.doBreak();
@@ -1990,7 +2132,7 @@ namespace stk
           //eMesh.printInfo();
           //eMesh.saveAs(std::string("./output_files/")+std::string("hex27_hex27_cube1x1x")+toString(p_size)+std::string("-orig.e"));
 
-          UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+          UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
           // FIXME
           breaker.setIgnoreSideSets(true);
           breaker.setRemoveOldElements(true);
@@ -2034,7 +2176,7 @@ namespace stk
               eMesh.printInfo();
               eMesh.saveAs("./output_files/cylinder_hex8_hex27_0.e");
 
-              UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+              UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
               breaker.doBreak();
 
               eMesh.saveAs("./input_files/cylinder_hex8_hex27_1.e");
@@ -2053,7 +2195,7 @@ namespace stk
 
               eMesh.commit();
 
-              UniformRefiner breaker(eMesh, break_hex_to_hex, proc_rank_field);
+              UNIFORM_REFINER breaker(eMesh, break_hex_to_hex, proc_rank_field);
               //FIXME breaker.setIgnoreSideSets(false);
               breaker.setRemoveOldElements(true);
 
@@ -2110,7 +2252,7 @@ namespace stk
 
             eMesh.commit();
 
-            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
 
             eMesh.saveAs("./output_files/swept-wedge_1.e");
@@ -2161,7 +2303,7 @@ namespace stk
 
             eMesh.commit();
 
-            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
 
             eMesh.saveAs("./output_files/swept-wedge_enrich_1.e");
@@ -2203,7 +2345,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
-            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
             eMesh.saveAs("./input_files/swept-wedge_enrich_refine_0.e");
           }
@@ -2221,7 +2363,7 @@ namespace stk
 
             eMesh.commit();
 
-            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_wedge, proc_rank_field);
             breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 
@@ -2293,7 +2435,7 @@ namespace stk
                 stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
 
-                UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
+                UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
 
                 //breaker.setRemoveOldElements(false);
                 breaker.setIgnoreSideSets(true);
@@ -2351,7 +2493,7 @@ namespace stk
 
               eMesh.printInfo("beam", 2);
 
-              UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+              UNIFORM_REFINER breaker(eMesh, break_pattern, proc_rank_field);
               //breaker.setRemoveOldElements(false);
               breaker.setIgnoreSideSets(true);
               breaker.doBreak();
@@ -2400,7 +2542,7 @@ namespace stk
             eMesh.printInfo("biplane", 2);
             eMesh.saveAs("./output_files/biplane_0.e");
 
-            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_pattern, proc_rank_field);
             //breaker.setRemoveOldElements(false);
             breaker.setIgnoreSideSets(false);
             breaker.doBreak();
@@ -2444,7 +2586,7 @@ namespace stk
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
-            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_pattern, proc_rank_field);
 
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
@@ -2493,7 +2635,7 @@ namespace stk
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
-            UniformRefiner breaker(eMesh, break_pattern, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_pattern, proc_rank_field);
 
             //breaker.setRemoveOldElements(false);
             //breaker.setIgnoreSideSets(true);
@@ -2570,7 +2712,7 @@ namespace stk
                 eMesh1.commit();
                 //eMesh1.printInfo("hetero_enrich_2", 4);
 
-                UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
+                UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
 
                 //breaker.setRemoveOldElements(false);
                 breaker.setIgnoreSideSets(true);
@@ -2614,7 +2756,7 @@ namespace stk
                 stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
 
-                UniformRefiner breaker(eMesh1, break_pattern, proc_rank_field);
+                UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
 
                 //breaker.setRemoveOldElements(false);
                 breaker.setIgnoreSideSets(true);
@@ -2681,7 +2823,7 @@ namespace stk
 
             wedgeFixture.createBulkAfterMetaCommit(MPI_COMM_WORLD);
 
-            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
 
             //eMesh.saveAs("./output_files/swept-wedge6_18_enrich_0.e");
@@ -2717,7 +2859,7 @@ namespace stk
 
             eMesh.commit();
 
-            UniformRefiner breaker(eMesh, break_wedge, proc_rank_field);
+            UNIFORM_REFINER breaker(eMesh, break_wedge, proc_rank_field);
             breaker.setIgnoreSideSets(true);
             breaker.doBreak();
 

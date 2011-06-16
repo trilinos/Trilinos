@@ -38,6 +38,7 @@
 #include "Teuchos_StandardValidatorXMLConverters.hpp"
 #include "Teuchos_StringInputStream.hpp"
 #include "Teuchos_XMLParser.hpp"
+#include "Teuchos_TwoDArray.hpp"
 
 #include "Teuchos_XMLParameterListTestHelpers.hpp"
 
@@ -49,7 +50,8 @@ namespace Teuchos {
   myList.set( #T , as<T>(VALUE));
 const int g_arraySize = 5;
 #define ADD_ARRAY_TYPE_PARAMETER(T,VALUE) \
-  myList.set( #T " Array", Array< T >(g_arraySize, ( T ) VALUE ));
+  myList.set( #T " Array", Array< T >(g_arraySize, ( T ) VALUE ));\
+  myList.set( #T " 2DArray", TwoDArray< T >(g_arraySize, g_arraySize, ( T ) VALUE ));
 #define ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(T,VALUE) \
   ADD_TYPE_PARAMETER(T,VALUE); \
   ADD_ARRAY_TYPE_PARAMETER(T,VALUE);
@@ -61,6 +63,8 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, ADD_TYPE_AND_ARRAY_TYPE_PARAMETER)
   TEST_EQUALITY( getParameter<int>(myList, "int"), 2 );
   TEST_EQUALITY( getParameter<Array<int> >(myList, "int Array"),
     Array<int>(g_arraySize, as<int>(2)) );
+  TEST_EQUALITY( getParameter<TwoDArray<int> >(myList, "int 2DArray"),
+    TwoDArray<int>(g_arraySize, g_arraySize, as<int>(2)) );
 }
 
 TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters)
@@ -85,13 +89,13 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters)
   ADD_TYPE_PARAMETER(bool, true);
 
   RCP<ParameterList> readInPL = writeThenReadPL(myList);
+
+  out << "\nmyList:\n";
+  myList.print(out);
+  out << "\n*readInPL:\n";
+  readInPL->print(out);
+
   TEST_ASSERT(haveSameValues(myList, *readInPL));
-  if (!success) {
-    out << "\nmyList:\n";
-    myList.print(out);
-    out << "\n*readInPL:\n";
-    readInPL->print(out);
-  }
 }
 
 TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryConverterExceptions)

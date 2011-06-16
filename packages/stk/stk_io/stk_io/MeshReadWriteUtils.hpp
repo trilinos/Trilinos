@@ -9,6 +9,7 @@
 #ifndef STK_IO_MESHREADWRITEUTILS_HPP
 #define STK_IO_MESHREADWRITEUTILS_HPP
 #include <string>
+#include <vector>
 #include <stk_util/parallel/Parallel.hpp>
 
 namespace Ioss {
@@ -189,6 +190,12 @@ namespace stk {
     int process_output_request(MeshData &mesh_data,
 			       stk::mesh::BulkData &bulk,
 			       double time);
+    /**
+     * Method to query a MeshData for the number of element blocks and the
+     * number of elements in each. MeshData is input, std:vector is output
+     */
+    void get_element_block_sizes(MeshData &mesh_data,
+                                 std::vector<int>& el_blocks);
   }
 }
 #endif

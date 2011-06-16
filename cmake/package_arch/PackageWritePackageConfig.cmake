@@ -42,9 +42,9 @@ ENDFUNCTION()
 #  considered a "dependency" if they are enabled for the package.
 #
 FUNCTION(CHECK_IS_DEPENDENCY PACKAGE_NAME DEPENDENT_PACKAGE IS_DEPENDENCY)
-  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("checking dependency for package ${PACKAGE_NAME} on package ${DEPENDENT_PACKAGE}")
-  ENDIF()
+  #IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+  #  MESSAGE("checking dependency for package ${PACKAGE_NAME} on package ${DEPENDENT_PACKAGE}")
+  #ENDIF()
   SET(_IS_DEPENDENCY FALSE)
 
   #check if the package is being checked against itself

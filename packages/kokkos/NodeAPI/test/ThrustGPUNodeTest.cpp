@@ -3,7 +3,6 @@
 #ifdef HAVE_KOKKOS_THRUST
 
 #include "NodeTest.hpp"
-#include "Kokkos_CUDA_util_inline_runtime.h"
 #include <thrust/device_vector.h>
 
 void thrust_float_alloc(int N, thrust::device_vector<float> &buff);
@@ -42,7 +41,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         thrust_float_init(buff);
       }
-      Kokkos::cutilSafeThreadSync();
+      thrustNode_->sync();
     }
     float sum;
     {
@@ -50,7 +49,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         sum = thrust_float_sum(buff);
       }
-      Kokkos::cutilSafeThreadSync();
+      thrustNode_->sync();
     }
     result = sum;
     ret.first  = iTime.totalElapsedTime();
@@ -69,7 +68,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         thrust_int_init(buff);
       }
-      Kokkos::cutilSafeThreadSync();
+      thrustNode_->sync();
     }
     int sum;
     {
@@ -77,7 +76,7 @@ namespace {
       for (int t=0; t < numIters; ++t) {
         sum = thrust_int_sum(buff);
       }
-      Kokkos::cutilSafeThreadSync();
+      thrustNode_->sync();
     }
     result = sum;
     ret.first  = iTime.totalElapsedTime();

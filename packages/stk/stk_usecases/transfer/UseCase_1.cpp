@@ -96,7 +96,7 @@ use_case_1_driver(
   const stk::mesh::EntityRank element_rank = domain_meta_data.element_rank();
   stk::mesh::Part & block_hex        = domain_meta_data.declare_part("block_1", element_rank);
   stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
-  stk::mesh::fem::set_cell_topology( domain_meta_data, block_hex, hex_top );
+  stk::mesh::fem::set_cell_topology( block_hex, hex_top );
   domain_meta_data.commit();
 
   stk::mesh::BulkData domain_bulk_data(domain_meta_data.get_meta_data(domain_meta_data) , comm);

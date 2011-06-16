@@ -6,14 +6,14 @@
 namespace stk {
 namespace mesh {
 
-  void FieldRestriction::print( 
-      std::ostream & os, 
-      const EntityRank & rank, 
-      const Part & part, 
-      FieldArrayRank field_rank 
+  void FieldRestriction::print(
+      std::ostream & os,
+      const EntityRank & entity_rank,
+      const Part & part,
+      FieldArrayRank field_rank
       ) const
   {
-    os << "{ entity_rank(" << rank << ") part(" << part.name() << ") : " ;
+    os << "{ entity_rank(" << entity_rank << ") part(" << part.name() << ") : " ;
     os << m_stride[0] ;
     for ( FieldArrayRank i = 1 ; i < field_rank ; ++i ) {
       if ( ! m_stride[i] ) {
@@ -29,17 +29,17 @@ namespace mesh {
     os << " }" ;
   }
 
-  std::string print_restriction( 
+  std::string print_restriction(
       const FieldRestriction & restr,
-      const EntityRank & rank,
+      const EntityRank & entity_rank,
       const Part & part,
       FieldArrayRank field_rank
-      ) 
+      )
   {
     std::ostringstream oss;
-    restr.print(oss, rank, part, field_rank);
+    restr.print(oss, entity_rank, part, field_rank);
     return oss.str();
   }
 
-} // namespace mesh 
-} // namespace stk 
+} // namespace mesh
+} // namespace stk

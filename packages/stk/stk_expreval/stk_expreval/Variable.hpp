@@ -39,13 +39,15 @@ public:
    *
    */
   enum Type {DOUBLE, INTEGER};
-
+  enum Use {DEPENDENT, INDEPENDENT};
+  
   /**
    * Creates a new <b>Variable</b> instance.
    *
    */
   Variable()
     : m_type(DOUBLE),
+      m_use(INDEPENDENT),
       m_doublePtr(&m_doubleValue),
       m_doubleValue(0.0)
   {}
@@ -59,7 +61,8 @@ public:
    *
    */
   explicit Variable(Type type)
-    : m_type(type)
+    : m_type(type),
+      m_use(INDEPENDENT)
   {
     switch (type) {
     case DOUBLE:
@@ -85,6 +88,7 @@ public:
    */
   explicit Variable(double &address)
     : m_type(DOUBLE),
+      m_use(INDEPENDENT),
       m_doublePtr(&address),
       m_doubleValue(0.0)
   {}
@@ -101,6 +105,7 @@ public:
    */
   explicit Variable(int &address)
     : m_type(INTEGER),
+      m_use(INDEPENDENT),
       m_intPtr(&address),
       m_intValue(0)
   {}
@@ -138,6 +143,20 @@ public:
     else if (m_type == DOUBLE)
       *m_doublePtr = (double) value;
     return *this;
+  }
+
+private:
+  Variable(const Variable &);
+  Variable &operator=(const Variable &);
+
+public:
+
+  void setDependent() {
+    m_use = DEPENDENT;
+  }
+  
+  bool isDependent() const {
+    return m_use == DEPENDENT;
   }
 
   /**
@@ -232,6 +251,10 @@ public:
     return *this;
   }
 
+  double *getAddress() const {
+    return m_doublePtr;
+  }
+  
   /**
    * @brief Member function <b>getValue</b> returns the variable value as a double.
    *
@@ -248,14 +271,16 @@ public:
   }
 
 private:
-  Type	m_type;			        ///< Variable data type
+  Type	        m_type;                 ///< Variable data type
+  Use           m_use;                  ///< Variable is dependent or independent
+  
   union {
     double *	m_doublePtr;		///< Pointer to value as double
     int *	m_intPtr;		///< Pointer to value as integer
   };
   union {
     double	m_doubleValue;		///< Local variable value as double
-    int	m_intValue;			///< Local variable value as integer
+    int	        m_intValue;             ///< Local variable value as integer
   };
 };
 

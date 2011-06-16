@@ -28,6 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include "TriKota_ConfigDefs.hpp"
 #include "sandia_sgmg.H"
 #include "sandia_rules.H"
 #include "pecos_global_defs.hpp"

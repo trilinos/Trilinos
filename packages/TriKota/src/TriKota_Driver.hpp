@@ -31,6 +31,9 @@
 #ifndef TRIKOTA_DRIVER
 #define TRIKOTA_DRIVER
 
+// Have to do this first to pull in all of Dakota's #define's
+#include "TriKota_ConfigDefs.hpp"
+
 // Dakota includes
 
 #include "system_defs.h"

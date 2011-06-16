@@ -40,12 +40,13 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include <algorithm>
+#include "Teuchos_FancyOStream.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
   //#include "Tpetra_MMMultiply_decl.hpp"
 #endif
 
-/*! \file Tpetra_MMMultiply_def.hpp 
+/*! \file Tpetra_MatrixMatrix_def.hpp 
 
     The implementations for the members of class Tpetra::MatrixMatrixMultiply and related non-member constructors.
  */
@@ -105,10 +106,12 @@ void Multiply(
   if (transposeA && transposeB)  scenario = 4;//A^T*B^T
 
   //now check size compatibility
-  global_size_t Aouter = transposeA ? A.getGlobalNumCols() : A.getGlobalNumRows();
-  global_size_t Bouter = transposeB ? B.getGlobalNumRows() : B.getGlobalNumCols();
-  global_size_t Ainner = transposeA ? A.getGlobalNumRows() : A.getGlobalNumCols();
-  global_size_t Binner = transposeB ? B.getGlobalNumCols() : B.getGlobalNumRows();
+  global_size_t numACols = A.getDomainMap()->getGlobalNumElements();
+  global_size_t numBCols = B.getDomainMap()->getGlobalNumElements();
+  global_size_t Aouter = transposeA ? numACols : A.getGlobalNumRows();
+  global_size_t Bouter = transposeB ? B.getGlobalNumRows() : numBCols;
+  global_size_t Ainner = transposeA ? A.getGlobalNumRows() : numACols;
+  global_size_t Binner = transposeB ? numBCols : B.getGlobalNumRows();
   TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
     "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
     "must match for matrix-matrix product. op(A) is "
@@ -535,6 +538,29 @@ void mult_A_B(
 
 }
 
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
+void
+getGlobalRowFromLocalIndex(
+  LocalOrdinal localRow,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview, 
+  Array<GlobalOrdinal>& indices,
+  Array<Scalar>& values,
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colMap)
+{
+  ArrayView<const LocalOrdinal> localIndices = Mview.indices[localRow];
+  ArrayView<const Scalar> constValues = Mview.values[localRow];
+  values = Array<Scalar>(constValues);
+  
+  for(typename ArrayView<const LocalOrdinal>::iterator it=localIndices.begin(); it!=localIndices.end(); ++it){
+    indices.push_back(colMap->getGlobalElement(*it));
+  }
+  sort2(indices.begin(), indices.end(), values.begin());
+}
+
 //kernel method for computing the local portion of C = A*B^T
 template<class Scalar,
          class LocalOrdinal, 
@@ -546,7 +572,51 @@ void mult_A_Btrans(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
-  size_t maxlen = 0;
+  //Nieve implementation
+  for(typename ArrayView<const GlobalOrdinal>::iterator it = Aview.rowMap->getNodeElementList().begin();
+      it != Aview.rowMap->getNodeElementList().end();
+      ++it){
+    LocalOrdinal localARow = Aview.rowMap->getLocalElement(*it);
+    if(Aview.indices[localARow].size() == 0){
+      continue;
+    }
+    Array<GlobalOrdinal> cIndices;
+    Array<Scalar> cValues;
+    Array<GlobalOrdinal> aIndices;
+    Array<Scalar> aValues;
+    getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
+    
+  for(typename ArrayView<const GlobalOrdinal>::iterator it2 = Bview.rowMap->getNodeElementList().begin();
+      it2 != Bview.rowMap->getNodeElementList().end();
+      ++it2){
+      LocalOrdinal localBRow = Bview.rowMap->getLocalElement(*it2);
+      if(Bview.indices[localBRow].size() == 0){
+        continue;
+      }
+      Array<GlobalOrdinal> bIndices;
+      Array<Scalar> bValues;
+      if(Bview.remote[localBRow]){
+        getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
+      }
+      else{
+        getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.colMap);
+      }
+      Scalar product = 
+        sparsedot(aValues(), aIndices(), bValues(), bIndices());
+      if(product != ScalarTraits<Scalar>::zero()){
+        cIndices.push_back(*it2);
+        cValues.push_back(product);
+      }
+    }
+    if(C.isFillComplete()){
+      C.sumIntoGlobalValues(*it, cIndices(), cValues());
+    } 
+    else{
+      C.insertGlobalValues(*it, cIndices(), cValues());
+    }
+  }
+  //Real optimized version, not working.
+  /*size_t maxlen = 0;
   for (size_t i=0; i<Aview.numRows; ++i) {
     if (Aview.numEntriesPerRow[i] > maxlen) maxlen = Aview.numEntriesPerRow[i];
   }
@@ -555,12 +625,18 @@ void mult_A_Btrans(
   }
 
   size_t numBrows = Bview.numRows;
+  size_t numBcols = Bview.colMap->getNodeNumElements();
 
   Array<GlobalOrdinal>     iwork(maxlen*2);
   ArrayView<GlobalOrdinal>  Aind = iwork(0,maxlen);
   ArrayView<GlobalOrdinal>  Bind = iwork(maxlen,maxlen);
 
   ArrayView<const GlobalOrdinal> bgids = Bview.colMap->getNodeElementList();
+  Array<GlobalOrdinal> bcols(numBcols);
+  for(size_t i=0; i<numBcols; ++i) {
+    LocalOrdinal blid = Bview.colMap->getLocalElement(bgids[i]);
+    bcols[blid] = bgids[i];
+  }
 
   Array<Scalar>      vals(maxlen*2);
   ArrayView<Scalar> bvals = vals(0,maxlen);
@@ -593,7 +669,7 @@ void mult_A_Btrans(
     }
     else {
       for(size_t k=0; k<Blen_i; ++k) {
-        temp = bgids[Bindices_i[k]];
+        temp = bcols[Bindices_i[k]];
         if (temp < b_firstcol[i]) b_firstcol[i] = temp;
         if (temp > b_lastcol[i]) b_lastcol[i] = temp;
       }
@@ -672,7 +748,7 @@ void mult_A_Btrans(
       }
       else {
         for(size_t k=0; k<B_len_j; ++k) {
-          tmp = bgids[Bindices_j[k]];
+          tmp = bcols[Bindices_j[k]];
           if (tmp < mina || tmp > maxa) {
             continue;
           }
@@ -701,7 +777,7 @@ void mult_A_Btrans(
       }
 
     }
-  }
+  }*/
 }
 
 
@@ -740,10 +816,10 @@ void mult_Atrans_B(
 
   size_t i, j, k;
 
-  for(j=OrdinalTraits<size_t>::zero(); j<C_numCols; ++j) {
+ /* for(j=OrdinalTraits<size_t>::zero(); j<C_numCols; ++j) {
     C_row_i[j] = ScalarTraits<Scalar>::zero();
     C_colInds[j] = OrdinalTraits<GlobalOrdinal>::zero();
-  }
+  }*/
 
   //To form C = A^T*B, compute a series of outer-product updates.
   //
@@ -824,9 +900,9 @@ void mult_Atrans_B(
       //
 
       C_filled ?
-        C.sumIntoGlobalValues(global_row, C_colInds(), C_row_i() )
+        C.sumIntoGlobalValues(global_row, C_colInds(0,Blen), C_row_i(0,Blen) )
         :
-        C.insertGlobalValues(global_row, C_colInds(), C_row_i());
+        C.insertGlobalValues(global_row, C_colInds(0,Blen), C_row_i(0,Blen));
 
     }
   }
@@ -1007,6 +1083,8 @@ void import_and_extract_views(
   Mview.indices.resize(         Mview.numRows);
   Mview.values.resize(          Mview.numRows);
   Mview.remote.resize(          Mview.numRows);
+
+
   Mview.origRowMap = M.getRowMap();
   Mview.rowMap = targetMap;
   Mview.colMap = M.getColMap();
@@ -1050,7 +1128,6 @@ void import_and_extract_views(
   Teuchos::reduceAll(*(Mrowmap->getComm()) , Teuchos::REDUCE_MAX, Mview.numRemote, Teuchos::outArg(globalMaxNumRemote) );
 
   if (globalMaxNumRemote > 0) {
-
     // Create a map that describes the remote rows of M that we need.
 
     Array<GlobalOrdinal> MremoteRows(Mview.numRemote);
@@ -1067,12 +1144,13 @@ void import_and_extract_views(
       }
     }
 
-    RCP<Map_t> MremoteRowMap = rcp(new Map_t(
+    RCP<const Map_t> MremoteRowMap = rcp(new Map_t(
       OrdinalTraits<GlobalOrdinal>::invalid(), 
       MremoteRows(), 
       Mrowmap->getIndexBase(), 
       Mrowmap->getComm(), 
       Mrowmap->getNode()));
+    //MremoteRowMap = form_map_union(MremoteRowMap, Mrowmap);
 
     // Create an importer with target-map MremoteRowMap and source-map Mrowmap.
     Import<LocalOrdinal, GlobalOrdinal, Node> importer(Mrowmap, MremoteRowMap);
@@ -1239,6 +1317,36 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
   const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap)
 {
+/*
+  std::map<LocalOrdinal, Array<int> > rowsToSendToNodes;
+  ArrayView<const GlobalOrdinal> myGlobalRows = 
+    M->getRowMap()->getNodeElementList();
+
+  Array<GlobalOrdinal> currentRow(
+    M->getCrsGraph()->getNodeMaxNumEntries());;
+  size_t numEntriesInCurrentRow;
+  ArrayView<int> currentNodes;
+  for(ArrayView<const GlobalOrdinal>::iterator it = myGlobalRows.begin();
+    it != myGlobalRows.end();
+    ++it)
+  {
+    M->getCrsGraph()->getGlobalRowCopy(i, currentRow(), numEntriesInCurrentRow);
+
+  }
+  for(LocalOrdinal i = M->getRowMap()->getMinLocalIndex();
+    i < M->getRowMap->getMaxLocalIndex();
+    ++i)
+  {
+    M->getCrsGraph()->getGlobalRowCopy(i, currentRow, numEntriesInCurrentRow);
+    colmap->getRemoteIndexList(
+      currentRow(0,numEntriesInCurrentRow), currentNodes);
+    if(currentNodes.size() > 0){
+      rowsToSendToNodes[i] = Array(currentNodes);
+    }
+  }
+*/
+
+
   //The goal of this function is to find all rows in the matrix M that contain
   //column-indices which are in 'colmap'. A map containing those rows is
   //returned.
@@ -1340,10 +1448,10 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
 }
 
 
-template<class Scalar, class LocalOrdinal>
+template<class Scalar, class GlobalOrdinal>
 Scalar sparsedot(
-  const ArrayView<Scalar>& u, const ArrayView<LocalOrdinal>& u_ind,
-  const ArrayView<Scalar>& v, const ArrayView<LocalOrdinal>& v_ind)
+  const ArrayView<Scalar>& u, const ArrayView<GlobalOrdinal>& u_ind,
+  const ArrayView<Scalar>& v, const ArrayView<GlobalOrdinal>& v_ind)
 {
   const size_t usize = (size_t)u.size();
   const size_t vsize = (size_t)v.size();
@@ -1351,8 +1459,8 @@ Scalar sparsedot(
   size_t v_idx = 0;
   size_t u_idx = 0;
   while(v_idx < vsize && u_idx < usize) {
-    LocalOrdinal ui = u_ind[u_idx];
-    LocalOrdinal vi = v_ind[v_idx];
+    GlobalOrdinal ui = u_ind[u_idx];
+    GlobalOrdinal vi = v_ind[v_idx];
     if (ui < vi) {
       ++u_idx;
     }
@@ -1409,5 +1517,12 @@ Scalar sparsedot(
     SCALAR scalarA, \
     CrsMatrix<SCALAR, LO, GO, NODE>& B, \
     SCALAR scalarB ); \
+  \
+
+#define TPETRA_SPARSEDOT_INSTANT(SCALAR,GO) \
+  template \
+  SCALAR MMdetails::sparsedot( \
+    const ArrayView< SCALAR >& u, const ArrayView< GO >& u_ind, \
+    const ArrayView< SCALAR >& v, const ArrayView< GO >& v_ind);
 
 #endif // TPETRA_MATRIXMATRIX_DEF_HPP

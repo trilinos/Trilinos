@@ -42,33 +42,56 @@
 
 #include <cstddef>
 
+#include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <Kokkos_ValueView.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
 namespace Kokkos {
 
-template< class FunctorType , class FinalizeType , class DeviceType >
+//----------------------------------------------------------------------------
+
+namespace Impl {
+
+template< class FunctorType ,
+          class FinalizeType ,
+          class DeviceType = typename FunctorType::device_type >
 class ParallelReduce {
 public:
-  typedef FunctorType                     functor_type ;
-  typedef FinalizeType                    finalize_type ;
-  typedef DeviceType                      device_type ;
-  typedef typename device_type::size_type size_type ;
+  // non-void FinalizeType post-processes the reduction result
+  static void execute( const size_t work_count ,
+                       const FunctorType  & functor ,
+                       const FinalizeType & finalize );
 
-  static void run( const size_type      work_count ,
-                   const FunctorType &  functor ,
-                   const FinalizeType & finalize );
+  // Void FinalizeType returns the reduction result
+  static void execute( const size_t work_count ,
+                       const FunctorType  & functor ,
+                       typename FunctorType::value_type & result );
 };
+
+} // namespace Impl
+
+//----------------------------------------------------------------------------
 
 template< class FunctorType >
 typename FunctorType::value_type
 parallel_reduce( const size_t work_count ,
                  const FunctorType & functor )
 {
-  typedef typename FunctorType::device_type device_type ;
+  typename FunctorType::value_type result ;
 
-  typedef ParallelReduce< FunctorType , void , device_type > op_type ;
+  Impl::ParallelReduce< FunctorType , void >
+    ::execute( work_count , functor , result );
 
-  return op_type::run( work_count , functor );
+  return result ;
+}
+
+template< class FunctorType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      typename FunctorType::value_type & result )
+{
+  Impl::ParallelReduce< FunctorType , void >
+    ::execute( work_count , functor , result );
 }
 
 template< class FunctorType , class FinalizeType >
@@ -76,11 +99,44 @@ void parallel_reduce( const size_t work_count ,
                       const FunctorType & functor ,
                       const FinalizeType & finalize )
 {
+  Impl::ParallelReduce< FunctorType , FinalizeType >
+    ::execute( work_count , functor , finalize );
+}
+
+template< class FunctorType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      typename FunctorType::value_type & result ,
+                      double & seconds )
+{
   typedef typename FunctorType::device_type device_type ;
 
-  typedef ParallelReduce< FunctorType , FinalizeType , device_type > op_type ;
+  const Impl::Timer timer ;
 
-  op_type::run( work_count , functor , finalize );
+  Impl::ParallelReduce< FunctorType , void >
+    ::execute( work_count , functor , result );
+
+  device_type::wait_functor_completion();
+
+  seconds = timer.seconds() ;
+}
+
+template< class FunctorType , class FinalizeType >
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      const FinalizeType & finalize ,
+                      double & seconds )
+{
+  typedef typename FunctorType::device_type device_type ;
+
+  const Impl::Timer timer ;
+
+  Impl::ParallelReduce< FunctorType , FinalizeType >
+    ::execute( work_count , functor , finalize );
+
+  device_type::wait_functor_completion();
+
+  seconds = timer.seconds() ;
 }
 
 } // namespace Kokkos
@@ -97,6 +153,7 @@ void parallel_reduce( const size_t work_count ,
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
+#include <DeviceCuda/Kokkos_DeviceCuda_ParallelReduce.hpp>
 #endif
 
 //----------------------------------------------------------------------------

@@ -40,27 +40,18 @@
 #ifndef KOKKOS_VIEWTRACKER_hpp
 #define KOKKOS_VIEWTRACKER_hpp
 
-#include <cstddef>
-
 namespace Kokkos {
 namespace Impl {
 
-class ViewTracker {
-private:
+//----------------------------------------------------------------------------
 
-  ViewTracker * next ;
+struct ViewTracker {
 
-  ViewTracker( const ViewTracker & rhs );
-  ViewTracker & operator = ( const ViewTracker & rhs );
-
-public:
-
-  inline ViewTracker() : next( NULL ) {}
-
-  /** \brief  Required to already be NULL.
-   *          However, it is bad form to throw an exception from a destructor.
+  /** \brief  MUST be initialized to zero when constructed.
+   *          No constructors or destructors defined to enable
+   *          compilation on host and devices without requiring macros.
    */
-  inline ~ViewTracker() { next = NULL ; }
+  ViewTracker * next ;
 
   /** \brief  Insert 'this' into the shared views of 'rhs'.
    *          Return true  if 'this' successfully joins the shared views.
@@ -76,7 +67,7 @@ public:
   /** \brief  For testing purposes only!
    *          Query the count of shared views.
    */
-  size_t test_support_view_count() const ;
+  unsigned test_support_view_count() const ;
 };
 
 } // namespace Impl

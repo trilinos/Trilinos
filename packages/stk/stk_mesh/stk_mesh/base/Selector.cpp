@@ -370,7 +370,7 @@ Selector selectField( const FieldBase& field )
   const FieldRestrictionVector& rvec = field.restrictions();
 
   for(size_t i=0; i<rvec.size(); ++i) {
-    selector |= meta.get_part(rvec[i].ordinal());
+    selector |= meta.get_part(rvec[i].part_ordinal());
   }
   return selector;
 }

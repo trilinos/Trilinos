@@ -42,8 +42,9 @@
 
 #include <iosfwd>
 #include <typeinfo>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
+
 #include <Kokkos_MemoryView.hpp>
-#include <Kokkos_MDArrayIndexMaps.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
 
 #define KOKKOS_DEVICE_HOST  Kokkos::DeviceHost
@@ -66,8 +67,8 @@ private:
 
 public:
 
-  /** \brief  On the cuda device use unsigned int for indexing */
-  typedef unsigned int         size_type ;
+  /** \brief  On the host device use size_t for indexing */
+  typedef size_t               size_type ;
   typedef MDArrayIndexMapLeft  default_mdarray_map ;
 
   /*--------------------------------*/
@@ -120,50 +121,18 @@ public:
 
   static void set_dispatch_functor();
   static void clear_dispatch_functor();
+  static void wait_functor_completion() {}
 
   /*--------------------------------*/
 };
 
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
-
-template< typename ValueType >
-class MemoryView< ValueType , DeviceHost > {
-private:
-
-  friend class DeviceHost ;
-
-  Impl::ViewTracker m_tracker ;
-  ValueType       * m_ptr_on_device ;
-
-  MemoryView( const MemoryView & rhs );
-  MemoryView & operator = ( const MemoryView & rhs );
-
-public:
-
-  typedef DeviceHost device_type ;
-
-  inline
-  ValueType * ptr_on_device() const { return m_ptr_on_device ; }
-
-  /** \brief  Construct a NULL view */
-  inline
-  MemoryView() : m_tracker(), m_ptr_on_device(0) {}
-
-  /**  \brief  Destroy this view of the array.
-   *           If the last view then allocated memory is deallocated.
-   */
-  inline
-  ~MemoryView() { device_type::clear_memory_view( *this ); }
-
-  /** \brief  Support testing with view count */
-  size_t test_support_view_count() const
-    { return m_tracker.test_support_view_count(); }
-};
-
-/*--------------------------------------------------------------------------*/
-
 } // namespace Kokkos
+
+/*--------------------------------------------------------------------------*/
+
+#include <Kokkos_DeviceHost_macros.hpp>
+#include <impl/Kokkos_MemoryView_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
 
 #endif /* #define KOKKOS_DEVICEHOST_HPP */
 

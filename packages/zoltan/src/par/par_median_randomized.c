@@ -61,14 +61,14 @@ static int mark_median(int *, int *, int, int, double *, double, int);
 static int reorder_list(double *, int, int* , int *);
 static void sample_partition(int, int *, double *, double, int, double *);
 
-static int test_candidate(int *, int *, double *, int *, double *, double, double, int, 
+static int test_candidate(int *, int *, double *, int *, double *, int, double, double, int, 
    double, double, double, commStruct *, double *, double *, int *, int *);
 
 static void mark_lo_and_hi(double, double, double *, double *, int *, int *, 
-                           double *, double *, double, int *, commStruct *);
+                           double *, double *, int, double, int *, commStruct *);
 static int get_median_candidates(double *, int, double *, int, double, commStruct *);
 static int get_3plus_candidates(int, int *, double *, double, commStruct *, double *);
-static double serial_find_median2(double *, double *, int *, int, int *);
+static double serial_find_median2(double *, double *, int, int *, int, int *);
 
 static double *msgBuf=NULL;
 
@@ -97,7 +97,7 @@ int Zoltan_RB_find_median_randomized(
                                 1 - dot is > valuehalf                       */
   int dotnum,           /* number of dots (length of three previous arrays   */
   int proc,             /* this proc number (rank)                           */
-  double fractionlo,    /* fraction of weight that should be in bottom half  */
+  double *fractionlo,    /* fraction of weight that should be in bottom half  */
   MPI_Comm local_comm,  /* MPI communicator on which to find median          */
   double *valuehalf,    /* on entry - first guess , on exit - median         */
   int first_guess,      /* if set, use value in valuehalf as first guess     */
@@ -117,6 +117,7 @@ int Zoltan_RB_find_median_randomized(
 )
 {
 /* Local declarations. */
+  double *w;
   double  wtmax;
   double  tolerance;                 /* largest single weight of a dot */
   double  targetlo;                  /* desired wt in lower half */
@@ -170,11 +171,14 @@ int Zoltan_RB_find_median_randomized(
    */
   wtmax = 0.0;
   numlist = dotnum;
+  w = wgts;
   for (i = 0; i < dotnum; i++) {
     dotlist[i] = i;
 
-    if (wgtflag)
-      if (wgts[i] > wtmax) wtmax = wgts[i];
+    if (wgtflag){
+      if (*w > wtmax) wtmax = *w;
+      w += wgtflag;
+    }
   }
 
   rank = proc - proclower;
@@ -212,7 +216,7 @@ int Zoltan_RB_find_median_randomized(
                be in balance with the target weight.  A tolerance less than
                half of the largest weight would allow infinite looping as a
                node of largest weight was passed back and forth. */
-  targetlo = fractionlo * weight;
+  targetlo = fractionlo[0] * weight;
 
   invalidDot = valuemax + 1.0;
   validMax = valuemax + .5;
@@ -234,7 +238,7 @@ int Zoltan_RB_find_median_randomized(
     if (first_guess){                /* If we have a first guess, try it */
       tmp_half = *valuehalf;
 
-      found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts, uniformWeight, weight,
+      found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts, wgtflag, uniformWeight, weight,
                          rectilinear_blocks, tolerance, targetlo,
                          tmp_half, &comm, &weightlo, &weighthi, &markactive, &loopCount);
 
@@ -254,9 +258,9 @@ int Zoltan_RB_find_median_randomized(
     else{            /* otherwise begin with the local median on each process */
       if (dotnum > 0){
         if (num_procs == 1)
-          tmp_half = serial_find_median2(dots, wgts, dotlist, dotnum, &loopCount);
+          tmp_half = serial_find_median2(dots, wgts, wgtflag, dotlist, dotnum, &loopCount);
         else
-          tmp_half = serial_find_median2(dots, wgts, dotlist, dotnum, NULL);
+          tmp_half = serial_find_median2(dots, wgts, wgtflag, dotlist, dotnum, NULL);
       }
       else{
         tmp_half = invalidDot;
@@ -274,7 +278,7 @@ int Zoltan_RB_find_median_randomized(
       if (ndots == 1){ /*   If only one dot - it must be median */
       
         /* Write dotmark array, compute weightlo, weighthi */
-        test_candidate(&numlist, dotlist, dots, dotmark, wgts, uniformWeight, weight,
+        test_candidate(&numlist, dotlist, dots, dotmark, wgts, wgtflag, uniformWeight, weight,
                            rectilinear_blocks, tolerance, targetlo,
                            medians[0], &comm, &weightlo, &weighthi, &markactive, &loopCount);
   
@@ -287,7 +291,7 @@ int Zoltan_RB_find_median_randomized(
           */
   
         found_median = test_candidate(&numlist, dotlist, dots, dotmark, 
-                           wgts, uniformWeight, weight, rectilinear_blocks, 
+                           wgts, wgtflag, uniformWeight, weight, rectilinear_blocks, 
                            tolerance, targetlo,
                            medians[0], &comm, &weightlo, &weighthi, &markactive, &loopCount);
   
@@ -296,7 +300,7 @@ int Zoltan_RB_find_median_randomized(
         }
         else{
           found_median = test_candidate(&numlist, dotlist, dots, dotmark, 
-                           wgts, uniformWeight, weight, rectilinear_blocks, 
+                           wgts, wgtflag, uniformWeight, weight, rectilinear_blocks, 
                            tolerance, targetlo,
                            medians[1], &comm, &weightlo, &weighthi, &markactive, &loopCount);
   
@@ -313,7 +317,7 @@ int Zoltan_RB_find_median_randomized(
         /* to save time in test_candidate, mark all dots we know can not be median */
 
         mark_lo_and_hi(medians[0], medians[ndots-1], &weightlo, &weighthi,
-                       &numlist, dotlist, dots, wgts, uniformWeight, dotmark, &comm);
+                       &numlist, dotlist, dots, wgts, wgtflag, uniformWeight, dotmark, &comm);
       }
     }
 
@@ -331,7 +335,7 @@ int Zoltan_RB_find_median_randomized(
         middle = (left + right) >> 1;
         tmp_half = medians[middle];
 
-        found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts,uniformWeight,  weight,
+        found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts,wgtflag, uniformWeight,  weight,
                          rectilinear_blocks, tolerance, targetlo,
                          tmp_half, &comm, &weightlo, &weighthi, &markactive, &loopCount);
 
@@ -357,7 +361,7 @@ int Zoltan_RB_find_median_randomized(
 
         if (ndots == 1){   /* must be median, mark dots & compute weights */
 
-          found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts, uniformWeight, weight,
+          found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts, wgtflag, uniformWeight, weight,
                          rectilinear_blocks, tolerance, targetlo,
                          medians[0], &comm, &weightlo, &weighthi, &markactive, &loopCount);
           tmp_half = medians[0];
@@ -365,14 +369,14 @@ int Zoltan_RB_find_median_randomized(
         }
         else if (ndots == 2){   /* one must be the median */
 
-          found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts, uniformWeight, weight,
+          found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts, wgtflag, uniformWeight, weight,
                          rectilinear_blocks, tolerance, targetlo,
                          medians[0], &comm, &weightlo, &weighthi, &markactive, &loopCount);
           if (found_median){
             tmp_half = medians[0];
           }
           else{
-            found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts, uniformWeight, weight,
+            found_median = test_candidate(&numlist, dotlist, dots, dotmark, wgts, wgtflag, uniformWeight, weight,
                          rectilinear_blocks, tolerance, targetlo,
                          medians[1], &comm, &weightlo, &weighthi, &markactive, &loopCount);
             tmp_half = medians[1];
@@ -613,7 +617,7 @@ int mid = numlist >> 1;
  * Write dotmark array with LOPART and HIPART markers.
  */
 static int test_candidate(int *numlist, int *dotlist, double *dots, int *dotmark, 
-                          double *wgts, double uniformWeight, double totalweight, int rectilinear_blocks,
+                          double *wgts, int wgtflag, double uniformWeight, double totalweight, int rectilinear_blocks,
                           double tolerance, double targetlo,
                           double candidate, commStruct *comm,
                           double *weightlo, double *weighthi, int *markactive, int *count)
@@ -621,7 +625,7 @@ static int test_candidate(int *numlist, int *dotlist, double *dots, int *dotmark
 int i, j, k, ndots;
 double global[3], local[3];
 double totallo, totalmed, totalhi;
-double leftTotal, rightTotal, diff1, diff2, wtupto, wtsum;
+double leftTotal, rightTotal, diff1, diff2, wtupto, wtsum, tmpwgt;
 int found_median = 0;
 int Tflops_Special = comm->Tflops_Special;
 int proclower = comm->proclower;
@@ -634,46 +638,24 @@ int countlo=0, countmed=0, counthi=0, indexmed=-1;
 
   if (count) (*count)++;
 
-  if (wgts){
-    for (j = 0; j < *numlist; j++) {
-      i = dotlist[j];
-      if (dots[i] < candidate) {
-        mylo += wgts[i];
-        dotmark[i] = LOPART;
-        countlo++;
-      }
-      else if (dots[i] == candidate) {
-        mymed +=  wgts[i];
-        countmed++;
-        dotmark[i] = MEDPART;
-        if (indexmed < 0) indexmed = j;
-      }
-      else{
-        myhi += wgts[i];
-        dotmark[i] = HIPART;
-        counthi++;
-      }
+  for (j = 0; j < *numlist; j++) {
+    i = dotlist[j];
+    tmpwgt = (wgts ? wgts[i*wgtflag] : uniformWeight);
+    if (dots[i] < candidate) {
+      mylo += tmpwgt;
+      dotmark[i] = LOPART;
+      countlo++;
     }
-  }
-  else{
-    for (j = 0; j < *numlist; j++) {
-      i = dotlist[j];
-      if (dots[i] < candidate) {
-        mylo += uniformWeight;
-        dotmark[i] = LOPART;
-        countlo++;
-      }
-      else if (dots[i] == candidate) {
-        mymed += uniformWeight;
-        countmed++;
-        dotmark[i] = MEDPART;
-        if (indexmed < 0) indexmed = j;
-      }
-      else{
-        myhi += uniformWeight;
-        dotmark[i] = HIPART;
-        counthi++;
-      }
+    else if (dots[i] == candidate) {
+      mymed += tmpwgt;
+      countmed++;
+      dotmark[i] = MEDPART;
+      if (indexmed < 0) indexmed = j;
+    }
+    else{
+      myhi += tmpwgt;
+      dotmark[i] = HIPART;
+      counthi++;
     }
   }
 
@@ -789,7 +771,7 @@ int countlo=0, countmed=0, counthi=0, indexmed=-1;
           k = 0;
           for (i=0; i<countmed; i++){
             j = mark_median(dotlist, dotmark, j, 1, dots, candidate, LOPART);
-            mylo += (wgts ? wgts[dotlist[j-1]] : uniformWeight);
+            mylo += (wgts ? wgts[dotlist[j-1]*wgtflag] : uniformWeight);
             k++;
             if (wtsum + mylo >= targetlo - tolerance){
               break;
@@ -797,7 +779,7 @@ int countlo=0, countmed=0, counthi=0, indexmed=-1;
           }
           for (i=0; i < countmed-k; i++){
             j = mark_median(dotlist, dotmark, j, 1, dots, candidate, HIPART);
-            myhi += (wgts ? wgts[dotlist[j-1]] : uniformWeight);
+            myhi += (wgts ? wgts[dotlist[j-1]*wgtflag] : uniformWeight);
           }
         }
       }
@@ -837,13 +819,14 @@ int countlo=0, countmed=0, counthi=0, indexmed=-1;
 
 static void mark_lo_and_hi(double loBound, double hiBound,
                double *weightlo, double *weighthi,
-               int *numlist, int *dotlist, double *dots, double *wgts,  double uniformWeight,
-               int *dotmark, commStruct *comm)
+               int *numlist, int *dotlist, double *dots, double *wgts,  int wgtflag,
+               double uniformWeight, int *dotmark, commStruct *comm)
 {
 int i, j, k;
 double wlo=0.0;
 double whi=0.0;
 double local[2], global[2];
+double tmpwgt;
 int Tflops_Special = comm->Tflops_Special;
 int proclower = comm->proclower;
 int rank = comm->rank;
@@ -852,38 +835,21 @@ MPI_Comm local_comm = comm->comm;
 
   k = 0;
 
-  if (wgts){
-    for (j=0; j < *numlist; j++){
-      i = dotlist[j];
-      if (dots[i] < loBound){
-        wlo += wgts[i];
-        dotmark[i] = LOPART;
-      }
-      else if (dots[i] > hiBound){
-        whi += wgts[i];
-        dotmark[i] = HIPART;
-      }
-      else{
-        if (k < j) dotlist[k] = i;
-        k++;
-      }
+  for (j=0; j < *numlist; j++){
+    i = dotlist[j];
+    tmpwgt = (wgts ? wgts[i*wgtflag] : uniformWeight);
+   
+    if (dots[i] < loBound){
+      wlo += tmpwgt;
+      dotmark[i] = LOPART;
     }
-  }
-  else{
-    for (j=0; j < *numlist; j++){
-      i = dotlist[j];
-      if (dots[i] < loBound){
-        wlo += uniformWeight;
-        dotmark[i] = LOPART;
-      }
-      else if (dots[i] > hiBound){
-        whi += uniformWeight;
-        dotmark[i] = HIPART;
-      }
-      else{
-        if (k < j) dotlist[k] = i;
-        k++;
-      }
+    else if (dots[i] > hiBound){
+      whi += tmpwgt;
+      dotmark[i] = HIPART;
+    }
+    else{
+      if (k < j) dotlist[k] = i;
+      k++;
     }
   }
 
@@ -1001,7 +967,7 @@ int num_procs = comm->num_procs;
 
 
 /* Doesn't rewrite dots array.  Takes array of active dots.  */
-static double serial_find_median2(double *dots, double *wgts, int *dotidx, int dotnum, int *count)
+static double serial_find_median2(double *dots, double *wgts, int wgtflag, int *dotidx, int dotnum, int *count)
 {
 int lb, ub, idx, i, pivotIdx, numPivots;
 int *widx=NULL;
@@ -1017,7 +983,7 @@ double *dotCopy = NULL;
   if (wgts){
     widx = (int *)ZOLTAN_MALLOC(dotnum * sizeof(int));
     for (i=0; i<dotnum; i++){
-      widx[i] = dotidx[i];  /* map from dot to its weight */
+      widx[i] = dotidx[i] * wgtflag;  /* map from dot to its weight */
       dotCopy[i] = dots[dotidx[i]];
     }
   }

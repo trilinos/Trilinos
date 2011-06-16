@@ -160,6 +160,31 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   ENDIF()
 
   #
+  # Set the lib extentions to find
+  #
+
+  # Save the default the first time through
+  IF (NOT CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT)
+   SET(TPL_CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT ${CMAKE_FIND_LIBRARY_SUFFIXES})
+   PRINT_VAR(TPL_CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT)
+  ENDIF()
+
+  #PRINT_VAR(TPL_FIND_SHARED_LIBS)
+  #PRINT_VAR(CMAKE_FIND_LIBRARY_SUFFIXES)
+  # Set libraries to find
+  IF (TPL_FIND_SHARED_LIBS)
+    # The default should be to find shared libs first
+    SET(TPL_CMAKE_FIND_LIBRARY_SUFFIXES ${TPL_CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT})
+  ELSE()
+    if(WIN32)
+      SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a)
+    else()
+      SET(CMAKE_FIND_LIBRARY_SUFFIXES .a )
+    endif()
+  ENDIF()
+  #PRINT_VAR(CMAKE_FIND_LIBRARY_SUFFIXES)
+
+  #
   # Direct build options
   #
 
@@ -262,9 +287,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   
     ENDIF()
   
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      PRINT_VAR(TPL_${TPL_NAME}_LIBRARIES)
-    ENDIF()
+    # Print the final value to be used *always*
+    MESSAGE(STATUS "  TPL_${TPL_NAME}_LIBRARIES='${TPL_${TPL_NAME}_LIBRARIES}'")
 
   ELSE()
   
@@ -388,9 +412,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
 
   ENDIF()
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    PRINT_VAR(TPL_${TPL_NAME}_INCLUDE_DIRS)
-  ENDIF()
+  # Print the final value to be used *always*
+  MESSAGE(STATUS "  TPL_${TPL_NAME}_INCLUDE_DIRS='${TPL_${TPL_NAME}_INCLUDE_DIRS}'")
 
   # Set library directories to null always.  We do this because
   # the package support code expects this variable and it is used
@@ -439,5 +462,3 @@ FUNCTION(TPL_TENTATIVELY_ENABLE TPL_NAME)
   ENDIF()
 
 ENDFUNCTION()
-
-

@@ -1,62 +1,66 @@
 
 #include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceTPI.hpp>
-#include <Kokkos_DeviceCuda.hpp>
 
 #include <Kokkos_ValueView.hpp>
 #include <Kokkos_MultiVectorView.hpp>
 #include <Kokkos_MDArrayView.hpp>
-#include <Kokkos_MDArrayDeepCopy.hpp>
+
 #include <Kokkos_ParallelFor.hpp>
 #include <Kokkos_ParallelReduce.hpp>
 
 //----------------------------------------------------------------------------
 
-#include <impl/Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_DeviceHost_macros.hpp>
 
 #include <UnitTestDeviceMemoryManagement.hpp>
 #include <UnitTestValueView.hpp>
 #include <UnitTestMultiVectorView.hpp>
 #include <UnitTestMDArrayView.hpp>
 #include <UnitTestMDArrayDeepCopy.hpp>
+#include <UnitTestMDArrayIndexMap.hpp>
 #include <UnitTestReduce.hpp>
 
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceClear_macros.hpp>
+
+namespace Test {
+
+void test_device_host()
+{
+  try {
+    UnitTestDeviceMemoryManagement< Kokkos::DeviceHost >();
+    UnitTestValueView<       Kokkos::DeviceHost >();
+    UnitTestMultiVectorView< Kokkos::DeviceHost >();
+    UnitTestMDArrayView<     Kokkos::DeviceHost >();
+    UnitTestMDArrayDeepCopy< Kokkos::DeviceHost >();
+
+    Test::UnitTestMDArrayIndexMap< Kokkos::DeviceHost >();
+
+    UnitTestReduce< long ,   Kokkos::DeviceHost >( 1000000 );
+    UnitTestReduce< double , Kokkos::DeviceHost >( 1000000 );
+
+    std::cout << "PASSED : UnitTestHost" << std::endl ;
+  }
+  catch( const std::exception & x ) {
+    std::cout << "FAILED : UnitTestHost : " << x.what() << std::endl ;
+  }
+}
+
+}
 
 //----------------------------------------------------------------------------
 
-#include <impl/Kokkos_DeviceTPI_macros.hpp>
-
-#include <UnitTestDeviceMemoryManagement.hpp>
-#include <UnitTestValueView.hpp>
-#include <UnitTestMultiVectorView.hpp>
-#include <UnitTestMDArrayView.hpp>
-#include <UnitTestMDArrayDeepCopy.hpp>
-#include <UnitTestReduce.hpp>
-
-#include <impl/Kokkos_DeviceClear_macros.hpp>
+namespace Test {
+void test_device_tpi();
+void test_device_cuda();
+}
 
 //----------------------------------------------------------------------------
 
 int main()
 {
-  Kokkos::DeviceTPI::initialize( 4 );
-
-  UnitTestDeviceMemoryManagement< Kokkos::DeviceHost >();
-  UnitTestDeviceMemoryManagement< Kokkos::DeviceTPI >();
-  UnitTestValueView< Kokkos::DeviceHost >();
-  UnitTestValueView< Kokkos::DeviceTPI >();
-  UnitTestMultiVectorView< Kokkos::DeviceHost >();
-  UnitTestMultiVectorView< Kokkos::DeviceTPI >();
-  UnitTestMDArrayView< Kokkos::DeviceHost >();
-  UnitTestMDArrayView< Kokkos::DeviceTPI >();
-  UnitTestMDArrayDeepCopy< Kokkos::DeviceHost >();
-  UnitTestMDArrayDeepCopy< Kokkos::DeviceTPI >();
-
-  UnitTestReduce< long , Kokkos::DeviceHost >( 1000000 );
-  UnitTestReduce< double , Kokkos::DeviceHost >( 1000000 );
-  UnitTestReduce< long , Kokkos::DeviceTPI >( 1000000 );
-  UnitTestReduce< double , Kokkos::DeviceTPI >( 1000000 );
+  Test::test_device_host();
+  Test::test_device_tpi();
+  Test::test_device_cuda();
 
   return 0 ;
 }

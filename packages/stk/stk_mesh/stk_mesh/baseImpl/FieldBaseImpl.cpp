@@ -104,15 +104,15 @@ void FieldBaseImpl::insert_restriction(
   {
     unsigned i = 0 ;
     if ( m_rank ) {
-      for ( i = 0 ; i < m_rank ; ++i ) { tmp.stride_nonconst(i) = arg_stride[i] ; }
+      for ( i = 0 ; i < m_rank ; ++i ) { tmp.stride(i) = arg_stride[i] ; }
     }
     else { // Scalar field is 0 == m_rank
       i = 1 ;
-      tmp.stride_nonconst(0) = 1 ;
+      tmp.stride(0) = 1 ;
     }
     // Remaining dimensions are 1, no change to stride
     for ( ; i < MaximumFieldDimension ; ++i ) {
-      tmp.stride_nonconst(i) = tmp.stride(i-1) ;
+      tmp.stride(i) = tmp.stride(i-1) ;
     }
 
     for ( i = 1 ; i < m_rank ; ++i ) {
@@ -153,18 +153,19 @@ void FieldBaseImpl::verify_and_clean_restrictions(
 
   const FieldRestriction invalid_restr ;
   FieldRestrictionVector & rMap = restrictions();
-  FieldRestrictionVector::iterator i , j ;
 
-  for ( i = rMap.begin() ; i != rMap.end() ; ++i ) {
+  // Search for redundant field restrictions. A restriction R is redundant if there exists
+  // another restriction on a superset of R's part that is for entities of the same rank as R.
+  for (FieldRestrictionVector::iterator i = rMap.begin() ; i != rMap.end() ; ++i ) {
     if ( *i != invalid_restr ) {
-      const EntityRank rankI = i->rank();
-      const Part     & partI = * arg_all_parts[ i->ordinal() ];
+      const EntityRank rankI = i->entity_rank();
+      const Part     & partI = * arg_all_parts[ i->part_ordinal() ];
       bool    found_superset = false ;
 
-      for ( j = i + 1 ; j != rMap.end() && ! found_superset ; ++j ) {
+      for (FieldRestrictionVector::iterator j = i + 1 ; j != rMap.end() && ! found_superset ; ++j ) {
         if ( *j != invalid_restr ) {
-          const EntityRank rankJ = j->rank();
-          const Part     & partJ = * arg_all_parts[ j->ordinal() ];
+          const EntityRank rankJ = j->entity_rank();
+          const Part     & partJ = * arg_all_parts[ j->part_ordinal() ];
 
           if ( rankI == rankJ ) {
             const bool found_subset = contain( partI.subsets() , partJ );
@@ -188,19 +189,8 @@ void FieldBaseImpl::verify_and_clean_restrictions(
   }
 
   // Clean out redundant entries:
-  // NOTE: test for 'i != rMap.end()' not needed since i is
-  //       incremented no more than j and j is checked. Keeping check in
-  //       silences klocwork and guards against future change...
-  for ( j = i = rMap.begin() ; j != rMap.end() && i != rMap.end(); ++j ) {
-    if ( *j != invalid_restr ) {
-      if ( *i == invalid_restr ) {
-        *i = *j ;
-      }
-      ++i ;
-    }
-  }
-
-  rMap.erase( i , j );
+  FieldRestrictionVector::iterator new_end = std::remove(rMap.begin(), rMap.end(), invalid_restr);
+  rMap.erase(new_end, rMap.end());
 }
 
 
@@ -241,7 +231,7 @@ unsigned FieldBaseImpl::max_size( unsigned entity_rank ) const
         FieldRestrictionVector::const_iterator i = rMap.begin();
 
   for ( ; i != ie ; ++i ) {
-    if ( i->rank() == entity_rank ) {
+    if ( i->entity_rank() == entity_rank ) {
       const unsigned len = m_rank ? i->stride( m_rank - 1 ) : 1 ;
       if ( max < len ) { max = len ; }
     }
@@ -291,7 +281,7 @@ std::ostream & print( std::ostream & s ,
   for ( FieldBase::RestrictionVector::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
-    i->print( s, i->rank(), * all_parts[ i->ordinal() ], field.rank() );
+    i->print( s, i->entity_rank(), * all_parts[ i->part_ordinal() ], field.rank() );
     s << std::endl;
   }
   s << std::endl << b << "}" ;

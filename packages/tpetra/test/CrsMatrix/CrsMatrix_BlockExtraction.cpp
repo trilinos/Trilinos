@@ -1,7 +1,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
-#include "Tpetra_DefaultPlatform.hpp"
-#include "TpetraExt_BlockExtraction.hpp"
+#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include "TpetraExt_BlockExtraction.hpp"
 #include <numeric>
 #include <algorithm>
 
@@ -242,13 +243,107 @@ namespace {
   }
 
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BlockRowExtraction, DiagonalExtraction, LO, GO, Scalar )
+  {
+    typedef Tpetra::Map<LO,GO>           Map;
+    typedef Tpetra::BlockMap<LO,GO> BlockMap;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    //
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int myImageID = comm->getRank();
+    //
+    // set the block sizes
+    // try to hit the border cases: some zero block at the outside and inside, 
+    Teuchos::Tuple<int,6> block_sizes = Teuchos::tuple<int>( myImageID%2 , 2 , 0 , myImageID+1 , 3, (myImageID+1)%2 );
+    const int numBlocks = (int)block_sizes.size();
+    const int maxBlockSize = *std::max_element( block_sizes.begin(), block_sizes.end() );
+    //
+    // create a point Map
+    //
+    const size_t numLocal = std::accumulate( block_sizes.begin(), block_sizes.end(), 0 );
+    RCP<const Map> map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
+    //
+    // fill matrix for testing
+    // 
+    //
+    RCP<const RowMatrix<Scalar,LO,GO> > mat;
+    {
+      RCP<CrsMatrix<Scalar,LO,GO> > mat_crs = Tpetra::createCrsMatrix<Scalar>( map );
+      for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+        // add diagonal entries
+        mat_crs->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(1.0) );
+        // add some entries outside of the diagonal block; max
+        if (gid - maxBlockSize >= map->getMinGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid - maxBlockSize), tuple<Scalar>(1.0) );
+        if (gid + maxBlockSize <= map->getMaxGlobalIndex()) mat_crs->insertGlobalValues( gid, tuple<GO>(gid + maxBlockSize), tuple<Scalar>(1.0) );
+      }
+      mat_crs->fillComplete();
+      mat = mat_crs;
+    }
+
+    //
+    // create a BlockMap for the row and column partitioning (since we will be testing against the block diagonls
+    //
+    Teuchos::Tuple<GO,6> globalBlockIDs = Teuchos::tuple<GO>(1,2,3,4,5,6);
+    RCP<const BlockMap> bmap = rcp(new BlockMap(map,globalBlockIDs,block_sizes,map->getNode()));
+
+    // 
+    // perform block diagonal extraction
+    // 
+    Teuchos::ArrayRCP<Scalar> block_diagonals;
+    Teuchos::ArrayRCP<LO>     block_offsets;
+    Tpetra::Ext::extractBlockDiagonals<Scalar,LO,GO>( *mat, *bmap, block_diagonals, block_offsets );
+
+    // 
+    // perform block row extractions
+    //
+    int total_num_nonzeros_extracted = 0;
+    for (int b=0; b < numBlocks; ++b)
+    {
+      Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > block_entries;
+      Teuchos::ArrayRCP< LO >                        block_indices;
+      Tpetra::Ext::extractBlockRow(b, *mat, *bmap, *bmap, block_entries, block_indices);
+      TEST_EQUALITY( block_entries.size(), block_indices.size() );
+      if (block_sizes[b] == 0) {
+        // trivial block, nothing to extract
+        TEST_EQUALITY_CONST( block_entries.size() == 0, true );
+      }
+      else {
+        TEST_EQUALITY_CONST( block_entries.size() > 0, true );
+        // find the diagonal, compare it against block_diagonals[b]
+        bool diagFound = false;
+        for (Teuchos_Ordinal jj=0; jj < block_entries.size(); ++jj) 
+        {
+          // block row partitioning is block column partitioning for this test
+          // therefore, we don't need to compare global block IDs; local block IDs will suffice
+          if ( block_indices[jj] == b ) 
+          {
+            // can't find the diagonal block twice
+            TEST_EQUALITY_CONST( diagFound, false ); 
+            TEST_COMPARE_ARRAYS( block_entries[jj], block_diagonals(block_offsets[b],block_sizes[b]*block_sizes[b]) );
+            diagFound = true;
+          }
+          // count the number of non-zeros
+          const int num_zeros_extracted = (int)std::count( block_entries[jj].begin(), block_entries[jj].end(), ScalarTraits<Scalar>::zero() );
+          total_num_nonzeros_extracted += (int)block_entries[jj].size() - num_zeros_extracted;
+        }
+        TEST_EQUALITY_CONST( diagFound, true );
+      }
+    }
+    // should have extracted all non-zeros, no more or less
+    TEST_EQUALITY( total_num_nonzeros_extracted , (int)mat->getNodeNumEntries() );
+  }
+
+
   // 
   // INSTANTIATIONS
   //
 
 #define UNIT_TEST_ORDINAL_SCALAR(LO, GO, SCALAR) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockDiagonalExtraction, SimpleExtraction, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockDiagonalExtraction, RuntimeExceptions, LO, GO, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BlockRowExtraction,      DiagonalExtraction, LO, GO, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
         UNIT_TEST_ORDINAL_SCALAR(LO, GO, double)

@@ -53,24 +53,37 @@ namespace TSQR {
     /// double, float, complex<double>, complex<float> -- i.e.,
     /// S,D,C,Z).
     /// 
-    /// \param numRows [in]  Number of rows in the cache block A, 
-    ///   used when testing [R; A]
-    /// \param numCols [in] Number of columns in the matrices to test
-    /// \param test_complex [in] Whether or not to test complex
-    ///   arithmetic routines
+    /// \param numRows [in] When testing the [R; A] routines, the
+    ///   number of rows in the cache block A.
+    ///
+    /// \param numCols [in] Number of columns in the test matrices.
+    ///
+    /// \param testReal [in] Whether or not to test TSQR::Combine for
+    ///   real arithmetic.  For now, this means Scalar={float,double}.
+    ///
+    /// \param testComplex [in] Whether or not to test TSQR::Combine
+    ///   for complex arithmetic.  For now, this means
+    ///   Scalar={std::complex<float>, std::complex<double>}.
+    ///
     /// \param printFieldNames [in] Whether to print field names (to
-    ///   make machine parsing of results easier)
-    /// \param simulate_sequential_tsqr [in] Whether to use 
-    ///   TSQR::Combine to simulate SequentialTsqr
+    ///   make machine parsing of results easier).
+    ///
+    /// \param simulateSequentialTsqr [in] Whether to use 
+    ///   TSQR::Combine to simulate SequentialTsqr.
+    ///
     /// \param debug [in] Whether to print (possibly verbose)
-    ///   debugging output
+    ///   debugging output to stderr.
+    ///
+    /// \note This routine will only test Combine if at least one of
+    ///   testReal and testComplex is true.
     void
     verifyCombine (const int numRows,
 		   const int numCols, 
-		   const bool test_complex,
-		   const bool printFieldNames = true,
-		   const bool simulate_sequential_tsqr = false,
-		   const bool debug = false);
+		   const bool testReal,
+		   const bool testComplex,
+		   const bool printFieldNames,
+		   const bool simulateSequentialTsqr,
+		   const bool debug);
 
   } // namespace Test
 } // namespace TSQR

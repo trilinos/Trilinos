@@ -64,13 +64,13 @@ def findInSequence(seq, item):
 
 
 def removeItemsFromList(list, items):
-  itemsRemoved = 0
+  numItemsRemoved = 0
   for item in items:
     if item in list:
       idx = list.index(item)
       del list[idx]
-      itemsRemoved = itemsRemoved + 1
-  return itemsRemoved
+      numItemsRemoved = numItemsRemoved + 1
+  return numItemsRemoved
 
 
 ######################################

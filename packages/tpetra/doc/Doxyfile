@@ -47,11 +47,17 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc groups.doc ../src ../rti ../ext ../example/PowerMethod ../example/RTInterface
+INPUT                  = index.doc groups.doc ../src ../rti ../ext ../example/PowerMethod ../example/RTInterface ../inout
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = NO
 EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
-                         ../src/Tpetra_ExplicitInstantiationHelpers.hpp 
+                         ../src/Tpetra_ExplicitInstantiationHelpers.hpp \
+                         ../src/Tpetra_CrsMatrix_def.hpp \
+                         ../src/Tpetra_CrsMatrixMultiplyOp_def.hpp \
+                         ../src/Tpetra_CrsMatrixSolveOp_def.hpp \
+                         ../src/Tpetra_Map_def.hpp \
+                         ../ext/TpetraExt_BlockExtraction_def.hpp
+
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           =  ../example ../test
 EXAMPLE_RECURSIVE       = YES

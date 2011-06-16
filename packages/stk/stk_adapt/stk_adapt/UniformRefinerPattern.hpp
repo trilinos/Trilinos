@@ -89,9 +89,29 @@ namespace stk {
     /// 2D array new_sub_entity_nodes[entity_rank][ordinal_of_node_on_sub_dim_entity]
 
 #define VERT_N(i) elem_nodes[i].entity()->identifier()
-#define EDGE_N(i) new_sub_entity_nodes[m_eMesh.edge_rank()][i][0]
-#define FACE_N(i) new_sub_entity_nodes[m_eMesh.face_rank()][i][0]
-#define NN(i_entity_rank, j_ordinal_on_subDim_entity) new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity][0]
+
+// #define VERT_N(i) elem_nodes[i].entity()->identifier()
+// #define EDGE_N(i) new_sub_entity_nodes[m_eMesh.edge_rank()][i][0]
+// #define FACE_N(i) new_sub_entity_nodes[m_eMesh.face_rank()][i][0]
+// #define NN(i_entity_rank, j_ordinal_on_subDim_entity) new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity][0]
+
+
+#define DEBUG_URP_HPP 0
+
+#if defined(NDEBUG) || !DEBUG_URP_HPP
+
+#  define NN(i_entity_rank, j_ordinal_on_subDim_entity) new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity][0]
+
+#else
+
+#  define NN(i_entity_rank, j_ordinal_on_subDim_entity) \
+    ( ((unsigned)i_entity_rank < new_sub_entity_nodes.size() && (unsigned)j_ordinal_on_subDim_entity < new_sub_entity_nodes[i_entity_rank].size() \
+       && new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity].size() ) ? new_sub_entity_nodes[i_entity_rank][j_ordinal_on_subDim_entity][0] : 0u )
+
+#endif
+
+#define EDGE_N(i) NN(m_eMesh.edge_rank(), i)
+#define FACE_N(i) NN(m_eMesh.face_rank(), i)
 
 #define EDGE_N_Q(iedge, inode_on_edge) new_sub_entity_nodes[m_eMesh.edge_rank()][iedge][inode_on_edge]
 #define FACE_N_Q(iface, inode_on_face) new_sub_entity_nodes[m_eMesh.face_rank()][iface][inode_on_face]
@@ -261,6 +281,7 @@ namespace stk {
           topo_key_hex20      = shards::Hexahedron<20>::key,
           topo_key_quad8      = shards::Quadrilateral<8>::key,
           topo_key_shellquad8 = shards::ShellQuadrilateral<8>::key,
+          topo_key_shellquad9 = shards::ShellQuadrilateral<9>::key,
           topo_key_quad9      = shards::Quadrilateral<9>::key,
           topo_key_wedge15    = shards::Wedge<15>::key,
 
@@ -606,9 +627,9 @@ namespace stk {
           for (unsigned ifr = 0; ifr < nfr; ifr++)
             {
               const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-              fr_type = fr.rank();
+              fr_type = fr.entity_rank();
               fieldStride = fr.dimension() ;
-              stk::mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
+              stk::mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.part_ordinal());
               if (EXTRA_PRINT_URP_IF && nfr != 1 ) std::cout << "tmp P[" << 0 << "] info>    number of field restrictions= " << nfr << " fr_type= " << fr_type
                                             << " fieldStride = " << fieldStride << " frpart= " << frpart.name()
                                             << std::endl;
@@ -703,7 +724,7 @@ namespace stk {
             if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 || toTopoKey == topo_key_hex20)
               {
                 //std::cout << "tmp here 1 i_new_node= " << i_new_node << " base element= " << std::endl;
-                if ( EXTRA_PRINT_URP_IF) Util::printEntity(std::cout, element, eMesh.getCoordinatesField() );
+                if ( EXTRA_PRINT_URP_IF) eMesh.printEntity(std::cout, element, eMesh.getCoordinatesField() );
 
                 interpolateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
                 if (0)
@@ -745,7 +766,7 @@ namespace stk {
         if ( EXTRA_PRINT_URP_IF)
           {
             std::cout << "tmp newElement: " << std::endl;
-            Util::printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
+            eMesh.printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
           }
       }
 
@@ -812,6 +833,7 @@ namespace stk {
 
         add_parts = m_toParts;
 
+#if STK_ADAPT_URP_LOCAL_NODE_COMPS
         for (unsigned i_need = 0; i_need < needed_entities.size(); i_need++)
           {
             unsigned nSubDimEntities = 1;
@@ -826,13 +848,12 @@ namespace stk {
 
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
-#if STK_ADAPT_URP_LOCAL_NODE_COMPS
                  nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
                  nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
                  nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
-#endif
               }
           }
+#endif
 
         const CellTopologyData * const cell_topo_data_toTopo = shards::getCellTopologyData< ToTopology >();
         shards::CellTopology cellTopo(cell_topo_data_toTopo);
@@ -930,6 +951,12 @@ namespace stk {
               }
 
             //set_parent_child_relations(eMesh, element, newElement, ielem);
+
+            if (0 && EXTRA_PRINT_URP_IF)
+              {
+                std::cout << "tmp newElement: " << std::endl;
+                eMesh.printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
+              }
 
             element_pool++;
 
@@ -2606,6 +2633,14 @@ namespace stk {
     public:
     };
 
+    // FIXME - temporary for testing only - we need a RefinerPattern with UniformRefinerPattern as a sub-class
+    // (i.e. rename UniformRefinerPattern to RefinerPattern, create new UniformRefinerPattern as sub-class of RefinerPattern, specialize)
+    template<typename FromTopology,  typename ToTopology, int NumToCreate, class OptionalTag=void>
+    class RefinerPattern : public URP<FromTopology, ToTopology> //, public URP1<FromTopology, ToTopology>
+    {
+    public:
+    };
+
 
   }
 }
@@ -2656,6 +2691,7 @@ namespace stk {
 #include "UniformRefinerPattern_Quad4_Quad9_1_sierra.hpp"
 #include "UniformRefinerPattern_Quad4_Quad8_1_sierra.hpp"
 #include "UniformRefinerPattern_ShellQuad4_ShellQuad8_1_sierra.hpp"
+#include "UniformRefinerPattern_ShellQuad4_ShellQuad9_1_sierra.hpp"
 #include "UniformRefinerPattern_Tri3_Tri6_1_sierra.hpp"
 #include "UniformRefinerPattern_Tet4_Tet10_1_sierra.hpp"
 #include "UniformRefinerPattern_Hex8_Hex27_1_sierra.hpp"
@@ -2671,6 +2707,10 @@ namespace stk {
 #include "UniformRefinerPattern_Quad4_Tri3_2.hpp"
 #include "UniformRefinerPattern_Hex8_Tet4_24.hpp"
 #include "UniformRefinerPattern_Hex8_Tet4_6_12.hpp"
+
+// local refinement - for testing only right now
+#include "RefinerPattern_Tri3_Tri3_2.hpp"
+#include "RefinerPattern_Tri3_Tri3_N.hpp"
 
 
 namespace stk {
@@ -2711,7 +2751,8 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<8>, 1, SierraPort >            Quad4_Quad8_1;
     typedef  UniformRefinerPattern<shards::Beam<2>,          shards::Beam<3>,          1, SierraPort >            Beam2_Beam3_1;
 
-    typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<8>, 1, SierraPort >            ShellQuad4_ShellQuad8_1;
+    typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<8>, 1, SierraPort >  ShellQuad4_ShellQuad8_1;
+    typedef  UniformRefinerPattern<shards::ShellQuadrilateral<4>, shards::ShellQuadrilateral<9>, 1, SierraPort >  ShellQuad4_ShellQuad9_1;
     typedef  UniformRefinerPattern<shards::Triangle<3>,      shards::Triangle<6>,      1, SierraPort >            Tri3_Tri6_1;
     typedef  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<10>,  1, SierraPort >            Tet4_Tet10_1;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<27>,   1, SierraPort >            Hex8_Hex27_1;
@@ -2725,6 +2766,11 @@ namespace stk {
     typedef  UniformRefinerPattern<shards::Quadrilateral<4>, shards::Triangle<3>,      6 >                        Quad4_Tri3_6;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Tetrahedron<4>,  24 >                        Hex8_Tet4_24;
     typedef  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Tetrahedron<4>,   6 >                        Hex8_Tet4_6_12;
+
+    // local refinement - for testing only right now
+
+    typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      2  >            Local_Tri3_Tri3_2;
+    typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,     -1  >            Local_Tri3_Tri3_N;
 
   }
 }

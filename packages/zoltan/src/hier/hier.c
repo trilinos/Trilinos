@@ -285,6 +285,23 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 				       ZOLTAN_ID_TYPE * export_lids,
 				       int *export_procs, int *export_parts,
 				       int *ierr);
+
+/* For better performance during migration */
+static void Zoltan_Hier_Obj_Size_Multi_Fn(void *data, 
+     int num_gid_entries, int num_lid_entries, int num_ids,                 
+     ZOLTAN_ID_TYPE * global_id, ZOLTAN_ID_TYPE  * local_id, 
+     int *sizes, int *ierr) ;
+static void Zoltan_Hier_Pack_Obj_Multi_Fn(void *data, 
+    int num_gid_entries, int num_lid_entries, int num_ids,
+    ZOLTAN_ID_TYPE *global_id, 
+    ZOLTAN_ID_TYPE *local_id, int *dest_proc,
+    int *sizes, int *idx, char *buf, int *ierr);
+static void Zoltan_Hier_Unpack_Obj_Multi_Fn(void *data, 
+      int num_gid_entries, int num_ids,
+      ZOLTAN_ID_TYPE * global_id, 
+      int *sizes, int *idx, char *buf, int *ierr);
+
+
 static void free_hier_mig_data(void *);
 static void Zoltan_Hier_Check_Data(HierPartParams *, int *);
 
@@ -840,6 +857,8 @@ int Zoltan_Hier(
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
         ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
       }
+
+#ifndef HIER_MULTI_CALL_BACKS
   
       ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_OBJ_SIZE_FN_TYPE,
   			 (void (*)()) Zoltan_Hier_Obj_Size_Fn,
@@ -861,6 +880,29 @@ int Zoltan_Hier(
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
         ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
       }
+#else
+
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Obj_Size_Multi_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_PACK_OBJ_MULTI_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Pack_Obj_Multi_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Unpack_Obj_Multi_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+#endif
   
       ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_MID_MIGRATE_PP_FN_TYPE,
   			 (void (*)()) Zoltan_Hier_Mid_Migrate_Fn,
@@ -1195,6 +1237,11 @@ div_t result;
     hpp->spec = 
       (zoltan_platform_specification *)ZOLTAN_CALLOC(sizeof(zoltan_platform_specification), 1);
 
+    if (!hpp->spec){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
+      return ZOLTAN_MEMERR;
+    }
+
     hpp->spec->platform_name = NULL; 
 
     if (topology[0]){
@@ -1238,8 +1285,16 @@ div_t result;
   if (!hpp->spec){
     if (zz->Proc == 0){
       pnames = make_platform_name_string();
+      if (pnames == NULL){
+        ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
+        return ZOLTAN_MEMERR;
+      }
       i = strlen(pnames) + 2048;
       msg = (char *)ZOLTAN_MALLOC(i);
+      if (!msg){
+        ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
+        return ZOLTAN_MEMERR;
+      }
       strcpy(msg,"Error:\n");
       strcat(msg, "HIER_ASSIST requested but insufficient topology information provided.\n\n" 
         "Specify PLATFORM_NAME or TOPOLOGY.\n\n");
@@ -1465,9 +1520,10 @@ static int is_gno_local(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno) {
 /* insert a gid uniquely into the (ordered) gnos_of_interest array */
 /* it might be more efficient to make a big unsorted array with duplicates 
    then remove duplicates and sort */
-static void insert_unique_gnos_of_interest(HierPartParams *hpp,
+static int insert_unique_gnos_of_interest(HierPartParams *hpp,
 					   ZOLTAN_GNO_TYPE gno) {
   int low, mid, high, index;
+  char *yo = "insert_unique_gnos_of_interest";
 
   HIER_CHECK_GNO_RANGE(gno);
 
@@ -1478,6 +1534,11 @@ static void insert_unique_gnos_of_interest(HierPartParams *hpp,
     hpp->gnos_of_interest = 
       (ZOLTAN_GNO_TYPE *)ZOLTAN_REALLOC(hpp->gnos_of_interest, 
           sizeof(ZOLTAN_GNO_TYPE)* hpp->allocsize_gnos_of_interest);
+
+    if (!hpp->gnos_of_interest){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory");
+      return ZOLTAN_MEMERR;
+    }
   }
 
   /* find it (or not) */
@@ -1495,7 +1556,7 @@ static void insert_unique_gnos_of_interest(HierPartParams *hpp,
       mid = (high+low)/2;
     }
     /* did we find it? */
-    if (hpp->gnos_of_interest[mid] == gno) return;
+    if (hpp->gnos_of_interest[mid] == gno) return ZOLTAN_OK;
   }
 
   /* no, insert it */
@@ -1506,6 +1567,8 @@ static void insert_unique_gnos_of_interest(HierPartParams *hpp,
   }
   hpp->gnos_of_interest[index] = gno;
   hpp->num_gnos_of_interest++;
+
+  return ZOLTAN_OK;
 }
 
 /* request locations of migrated gids of interest to graph callbacks */
@@ -1539,7 +1602,9 @@ static int find_needed_gno_procs(HierPartParams *hpp) {
 	  adjgid = hpp->adjncy[adjindex];
 	  HIER_CHECK_GNO_RANGE(adjgid);
 	  if (!is_gno_local(hpp, adjgid)) {
-	    insert_unique_gnos_of_interest(hpp, adjgid);
+	    ierr = insert_unique_gnos_of_interest(hpp, adjgid);
+            if (ierr != ZOLTAN_OK)
+              goto End;
 	  }
 	}
       }
@@ -1560,7 +1625,9 @@ static int find_needed_gno_procs(HierPartParams *hpp) {
 	adjgid = adjlist[adjindex];
 	HIER_CHECK_GNO_RANGE(adjgid);
 	if (!is_gno_local(hpp, adjgid)) {
-	  insert_unique_gnos_of_interest(hpp, adjgid);
+	  ierr = insert_unique_gnos_of_interest(hpp, adjgid);
+          if (ierr != ZOLTAN_OK)
+            goto End;
 	}
       }
     }
@@ -2066,6 +2133,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   /* first populate a proclist to create a communication plan */
   if (hpp->num_migrated_in_gnos) {
     proclist = (int *)ZOLTAN_MALLOC(hpp->num_migrated_in_gnos*sizeof(int));
+    if (!proclist){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "out of memory");
+      *ierr=ZOLTAN_MEMERR;
+    }
     for (i=0; i<hpp->num_migrated_in_gnos; i++) {
       for (proc=0; proc<hpp->origzz->Num_Proc; proc++) {
 	if ((hpp->migrated_in_gnos[i] >= hpp->vtxdist[proc]) && 
@@ -2084,6 +2155,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   /* allocate space for the information we'll send and receive */
   if (hpp->num_migrated_in_gnos) {
     sendbuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(2*hpp->num_migrated_in_gnos*sizeof(ZOLTAN_GNO_TYPE));
+    if (!sendbuf){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "out of memory");
+      *ierr=ZOLTAN_MEMERR;
+    }
     for (i=0; i<hpp->num_migrated_in_gnos; i++) {
       sendbuf[2*i] = hpp->migrated_in_gnos[i];
       sendbuf[2*i+1] = (ZOLTAN_GNO_TYPE)hpp->origzz->Proc;  /* assumes proc ID can fit in an ZOLTAN_GNO_TYPE */
@@ -2092,6 +2167,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
 
   if (nreturn) {
     recvbuf = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(2*nreturn*sizeof(ZOLTAN_GNO_TYPE));
+    if (!recvbuf){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "out of memory");
+      *ierr=ZOLTAN_MEMERR;
+    }
   }
 
   /* do the communication */
@@ -2140,6 +2219,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   if (nreturn) {
     ddlookup = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(nreturn*sizeof(ZOLTAN_GNO_TYPE));   
     owners = (int *)ZOLTAN_MALLOC(nreturn*sizeof(int));
+    if (!ddlookup || !owners){
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "out of memory");
+      *ierr=ZOLTAN_MEMERR;
+    }
     for (i=0; i<nreturn; i++) {
       ddlookup[i]=(ZOLTAN_ID_TYPE)recvbuf[2*i];
     }
@@ -2212,6 +2295,53 @@ static int Zoltan_Hier_Obj_Size_Fn(void *data,
 
   return num_bytes;
 }
+
+/* The same function, but it answers multiple requests in one call */
+static void Zoltan_Hier_Obj_Size_Multi_Fn(void *data, 
+     int num_gid_entries, int num_lid_entries, int num_ids,                 
+     ZOLTAN_ID_TYPE * global_id, ZOLTAN_ID_TYPE  * local_id, 
+     int *sizes, int *ierr) 
+{
+  HierPartParams *hpp = (HierPartParams *)data;
+  ZOLTAN_GNO_TYPE gno;
+  char *yo = "Zoltan_Hier_Obj_Size_Multi_Fn";
+  int num_bytes, num_edges;
+  int basic_bytes, edge_bytes=0;
+  int i;
+  int *next_size = sizes;
+
+  basic_bytes = 
+    hpp->obj_wgt_dim*sizeof(float) +   /* obj weights */
+    hpp->ndims*sizeof(double);         /* coords */
+
+  if (hpp->use_graph){
+    basic_bytes += sizeof(int);        /* count of edges */
+    edge_bytes = sizeof(ZOLTAN_GNO_TYPE)+ hpp->edge_wgt_dim*sizeof(float);
+  }
+
+  for (i=0; i < num_ids; i++){
+  
+    gno = (ZOLTAN_GNO_TYPE)global_id[i];
+    HIER_CHECK_GNO_RANGE(gno);
+  
+    *ierr = ZOLTAN_OK;
+    num_bytes = basic_bytes;
+  
+    if (hpp->use_graph) {
+      *ierr = num_graph_edges_of_gno(hpp, gno, &num_edges);
+      if (*ierr == ZOLTAN_FATAL) {
+        ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, 
+  			 "num_graph_edges_of_gno returned error");
+        return;
+      }
+      num_bytes += num_edges*edge_bytes;
+    }
+    *next_size++ = num_bytes;
+  }
+  
+  return;
+}
+
 
 /* callback to pack the buffer with needed information */
 /* note that we could avoid all object migration when the object is
@@ -2353,6 +2483,129 @@ static void Zoltan_Hier_Pack_Obj_Fn(void *data,
     
   } else {
     ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "GID not found");
+  }
+}
+
+/* A version that takes a list of IDs to pack. */
+
+static void Zoltan_Hier_Pack_Obj_Multi_Fn(void *data, 
+    int num_gid_entries, int num_lid_entries, int num_ids,
+    ZOLTAN_ID_TYPE *global_id, 
+    ZOLTAN_ID_TYPE *local_id, int *dest_proc,
+    int *sizes, int *idx, char *buf, int *ierr) {
+
+  HierPartParams *hpp = (HierPartParams *)data;
+  char *yo = "Zoltan_Hier_Pack_Obj_Multi_Fn";
+  int local_index;
+  /* pointers to data in local structures */
+  float *vwgts = NULL;
+  double *coords = NULL;
+  int num_adj = 0;
+  ZOLTAN_GNO_TYPE *adj = NULL;
+  ZOLTAN_GNO_TYPE gno;
+  float *ewgts = NULL;
+  float *buf_float_ptr;
+  ZOLTAN_GNO_TYPE * buf_gno_ptr;
+  double *buf_double_ptr;
+  int *buf_int_ptr;
+  int buf_index, i, id;
+
+  *ierr = ZOLTAN_FATAL;
+
+  for (id = 0; id < num_ids; id++){
+ 
+    gno = (ZOLTAN_GNO_TYPE)global_id[id];
+    HIER_CHECK_GNO_RANGE(gno);
+
+    vwgts = ewgts = NULL;
+    coords = NULL;
+    adj = NULL;
+    num_adj = 0;
+
+    /* check for an object that started locally */
+    local_index = get_local_index(hpp, gno);
+    if (local_index != -1) {
+      *ierr = ZOLTAN_OK;
+      if (hpp->obj_wgt_dim) {
+        vwgts = &(hpp->vwgt[local_index*hpp->obj_wgt_dim]);
+      }
+      if (hpp->use_geom) {
+        coords = &(hpp->geom_vec[local_index*hpp->ndims]);
+      }
+      if (hpp->use_graph) {
+        num_adj = hpp->xadj[local_index+1] - hpp->xadj[local_index];
+        adj = &(hpp->adjncy[hpp->xadj[local_index]]);
+        if (hpp->edge_wgt_dim) {
+  	ewgts = &(hpp->ewgts[hpp->xadj[local_index]*hpp->edge_wgt_dim]);
+        }
+      }
+    }
+    else {
+      /* check for an object that has been migrated in in a previous step */
+      local_index = migrated_in_index_of_gno(hpp, gno);
+      if (local_index != -1) {
+        *ierr = ZOLTAN_OK;
+        if (hpp->obj_wgt_dim) {
+  	  vwgts = get_hier_mig_vwgts(hpp->migrated_in_data[local_index]);
+        }
+        if (hpp->use_geom) {
+  	  coords = get_hier_mig_coords(hpp->migrated_in_data[local_index], hpp);
+        }
+        if (hpp->use_graph) {
+  	  num_adj = get_hier_mig_num_adj(hpp->migrated_in_data[local_index]);
+  	  adj = get_hier_mig_adj(hpp->migrated_in_data[local_index]);
+    	  if (hpp->edge_wgt_dim) {
+  	    ewgts = get_hier_mig_adj_wgts(hpp->migrated_in_data[local_index],
+  					hpp);
+  	  }
+        }
+      }
+    }
+
+    if (*ierr == ZOLTAN_OK) {
+      if (hpp->use_graph) {
+        buf_int_ptr = (int *)(buf + idx[id]);
+        buf_int_ptr[0] = num_adj;
+        
+        buf_float_ptr = (float *)&buf_int_ptr[1];
+      }
+      else {
+        buf_float_ptr = (float *)(buf + idx[id]);
+      }
+      buf_index = 0;
+  
+      /* pack in object weights */
+      for (i=0; i<hpp->obj_wgt_dim; i++) {
+        buf_float_ptr[buf_index++] = vwgts[i];
+      }
+  
+      /* pack in edge weights */
+      for (i=0; i<hpp->edge_wgt_dim*num_adj; i++) {
+        buf_float_ptr[buf_index++] = ewgts[i];
+      }
+  
+      /* pack in coordinates */
+      buf_double_ptr = (double *)&buf_float_ptr[buf_index];
+      buf_index = 0;
+      for (i=0; i<hpp->ndims; i++) {
+        buf_double_ptr[buf_index++] = coords[i];
+      }
+  
+      if (hpp->use_graph) {
+        buf_gno_ptr = (ZOLTAN_GNO_TYPE *)&buf_double_ptr[buf_index];
+        buf_index = 0;
+  
+        /* pack in adjacent GIDs */
+        for (i=0; i<num_adj; i++) {
+    	  HIER_CHECK_GNO_RANGE(adj[i]);
+  	  buf_gno_ptr[buf_index++] = adj[i];
+        }
+      }
+    } else {
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "GID not found");
+      *ierr = ZOLTAN_FATAL;
+      return;
+    }
   }
 }
 
@@ -2504,6 +2757,139 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
   *ierr = ZOLTAN_FATAL;
   ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Unexpected GID to unpack");
 End:
+  if (info) free_hier_mig_data(info);
+}
+
+/* A version that unpacks more than one object */
+/* TODO instead of so many small mallocs and frees, lets keep all
+weights in a big array, all adjacencies, etc.
+ */
+static void Zoltan_Hier_Unpack_Obj_Multi_Fn(void *data, 
+      int num_gid_entries, int num_ids,
+      ZOLTAN_ID_TYPE * global_id, 
+      int *sizes, int *idx, char *buf, int *ierr) {
+
+  HierPartParams *hpp = (HierPartParams *)data;
+  int local_index;
+  float *buf_float_ptr;
+  ZOLTAN_GNO_TYPE * buf_gno_ptr;
+  ZOLTAN_GNO_TYPE gno;
+  double *buf_double_ptr;
+  int *buf_int_ptr;
+  int buf_index, i, id;
+  struct HierGNOInfo *info = NULL;
+  char *yo = "Zoltan_Hier_Unpack_Obj_Multi_Fn";
+
+  *ierr = ZOLTAN_OK;
+
+  for (id=0; id < num_ids; id++){
+
+    gno = (ZOLTAN_GNO_TYPE)global_id[id];
+    
+    if (get_starting_local_index(hpp, gno) != -1) {
+      /* originally ours, no need to unpack */
+      continue;
+    }
+
+    info = NULL;
+  
+    local_index = migrated_in_index_of_gno(hpp, gno);
+    if (local_index != -1) {
+      if (hpp->migrated_in_data[local_index]) {
+        *ierr = ZOLTAN_FATAL;
+        ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo,
+  			 "Data slot for unpack GID occupied!");
+        break;
+      }
+  
+      info = (struct HierGNOInfo *)ZOLTAN_CALLOC(sizeof(struct HierGNOInfo),1);
+      if (!info) {
+        *ierr = ZOLTAN_MEMERR;
+        ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory.");
+        return;
+      }
+
+      hpp->migrated_in_data[local_index] = (void *)info;
+      
+      if (hpp->use_graph) {
+        buf_int_ptr = (int *)(buf + idx[id]);
+        info->num_adj = buf_int_ptr[0];
+  
+        buf_float_ptr = (float *)&buf_int_ptr[1];
+      }
+      else {
+        info->num_adj = 0;
+        buf_float_ptr = (float *)(buf + idx[id]);
+      }
+  
+      /* float array */
+      buf_index = 0;
+  
+      if (hpp->obj_wgt_dim+hpp->edge_wgt_dim*info->num_adj) {
+        info->wgts = 
+  	(float *)ZOLTAN_MALLOC((hpp->obj_wgt_dim+
+  				hpp->edge_wgt_dim*info->num_adj)*
+  			       sizeof(float));
+        if (!info->wgts) {
+  	  *ierr = ZOLTAN_MEMERR;
+  	  ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory.");
+  	  break;
+        }
+  
+        for (i=0; i<hpp->obj_wgt_dim; i++) {
+  	  info->wgts[i] = buf_float_ptr[buf_index++];
+        }
+        for (i=0; i<hpp->edge_wgt_dim*info->num_adj; i++) {
+  	  info->wgts[i+hpp->obj_wgt_dim] = buf_float_ptr[buf_index++];
+        }
+      }
+      else 
+        info->wgts = NULL;
+      
+      /* coordinates? */
+      buf_double_ptr = (double *)&buf_float_ptr[buf_index];
+      buf_index = 0;
+      if (hpp->ndims) {
+        info->coords = (double *)ZOLTAN_MALLOC(hpp->ndims*sizeof(double));
+        if (!info->coords) {
+    	  *ierr = ZOLTAN_MEMERR;
+  	  ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory.");
+  	  break;
+        }
+  
+        for (i=0; i<hpp->ndims; i++) {
+  	  info->coords[i] = buf_double_ptr[buf_index++];
+        }
+      }
+      else 
+        info->coords = NULL;
+  
+      /* adjacent gids? */
+      buf_gno_ptr = (ZOLTAN_GNO_TYPE *)&buf_double_ptr[buf_index];
+      buf_index = 0;
+      if (info->num_adj) {
+        info->adj = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(
+           info->num_adj*sizeof(ZOLTAN_GNO_TYPE));
+        if (!info->adj) {
+  	  *ierr = ZOLTAN_MEMERR;
+  	  ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Out of memory.");
+  	  break;
+        }
+  
+        for (i=0; i<info->num_adj; i++) {
+  	  info->adj[i] = buf_gno_ptr[buf_index++];
+  	  HIER_CHECK_GNO_RANGE(info->adj[i]);
+        }
+      }
+      else 
+        info->adj = NULL;
+    }
+    else{
+      *ierr = ZOLTAN_FATAL;
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, "Unexpected GID to unpack");
+      break;
+    }
+  }
   if (info) free_hier_mig_data(info);
 }
 
@@ -2910,6 +3296,7 @@ static char *make_platform_name_string()
 int i;
 int len;
 char *msg;
+char *yo = "make_platform_name_string";
 
 
   for (i=0, len=0; i < ZOLTAN_HIER_LAST_PLATFORM; i++){
@@ -2919,6 +3306,10 @@ char *msg;
   len += ((ZOLTAN_HIER_LAST_PLATFORM * 3) + 64);
 
   msg = (char *)ZOLTAN_MALLOC(len);
+  if (!msg){
+    ZOLTAN_PRINT_ERROR(-1, yo, "Out of memory");
+    return NULL;
+  }
   msg[0] = 0;
 
   for (i=1; i <= ZOLTAN_HIER_LAST_PLATFORM; i++){

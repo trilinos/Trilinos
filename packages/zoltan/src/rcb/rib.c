@@ -93,7 +93,8 @@ int Zoltan_RIB_Set_Param(
 int Zoltan_RIB(
   ZZ *zz,                       /* The Zoltan structure with info for
                                 the RIB balancer.                       */
-  float *part_sizes,            /* Input:  Array of size zz->Num_Global_Parts
+  float *part_sizes,            /* Input:  Array of size 
+                                zz->Num_Global_Parts * max(zz->Obj_Weight_Dim, 1)
                                 containing the percentage of work to be
                                 assigned to each partition.               */
   int *num_import,              /* Returned value: Number of non-local 
@@ -200,7 +201,8 @@ static int rib_fn(
   int gen_tree,                 /* (0) do not (1) do generate full treept */
   int average_cuts,             /* (0) don't (1) compute the cut to be the
                                 average of the closest dots. */
-  float *part_sizes            /* Input:  Array of size zz->Num_Global_Parts
+  float *part_sizes            /* Input:  Array of size
+                                zz->Num_Global_Parts * max(zz->Obj_Weight_Dim, 1)
                                 containing the percentage of work to be
                                 assigned to each partition.               */
 )
@@ -226,7 +228,6 @@ static int rib_fn(
   double *value = NULL;       /* temp array for median_find */
   double *wgts;
   double  valuehalf;          /* median cut position */
-  double  fractionlo;         /* desired wt in lower half */
   double  cm[3];              /* Center of mass of objects */
   double  evec[3];            /* Eigenvector defining direction */
   int     first_guess = 0;    /* flag if first guess for median search */
@@ -271,6 +272,7 @@ static int rib_fn(
   double weight[RB_MAX_WGTS]; /* weight for current set */
   double weightlo[RB_MAX_WGTS]; /* weight of lower side of cut */
   double weighthi[RB_MAX_WGTS]; /* weight of upper side of cut */
+  double fractionlo[RB_MAX_WGTS]; /* desired wt in lower half */
   int *dotlist = NULL;        /* list of dots for find_median.
                                  allocated above find_median for
                                  better efficiency (don't necessarily
@@ -438,7 +440,7 @@ static int rib_fn(
                                  proc, local_comm, &set, 
                                  &proclower, &procmid, &num_procs, 
                                  &partlower, &partmid, &num_parts, 
-                                 &fractionlo);
+                                 fractionlo);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error in Zoltan_Divide_Machine.");
       goto End;
@@ -993,7 +995,7 @@ double valuelo;            /* smallest value of value[i] */
 double valuehi;            /* largest value of value[i] */
 int partmid;
 int new_nparts;
-double fractionlo;
+double fractionlo[RB_MAX_WGTS];
 double valuehalf;
 double weightlo, weighthi;
 double cm[3];                 /* Center of mass of objects */
@@ -1008,7 +1010,7 @@ int i;
   }
   else {
     ierr = Zoltan_Divide_Parts(zz, zz->Obj_Weight_Dim, part_sizes, num_parts,
-                               &partlower, &partmid, &fractionlo);
+                               &partlower, &partmid, fractionlo);
 
     ierr = compute_rib_direction(zz, 0, num_geom, &valuelo, &valuehi, 
                                  dotpt, dindx, dotnum, wgtflag, cm, evec, value,

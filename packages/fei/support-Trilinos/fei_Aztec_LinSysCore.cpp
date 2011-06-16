@@ -1233,11 +1233,11 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
 
   if (len == 0) return(0);
 
-  std::vector<int> bcEqns(len);
-  std::vector<int> indirect(len);
+  std::vector<int> bcEqns; bcEqns.reserve(len);
+  std::vector<int> indirect; indirect.reserve(len);
   for(int i=0; i<len; ++i) {
-    bcEqns[i] = globalEqn[i];
-    indirect[i] = i;
+    bcEqns.push_back(globalEqn[i]);
+    indirect.push_back(i);
   }
 
   fei::insertion_sort_with_companions<int>(len, &bcEqns[0], &indirect[0]);

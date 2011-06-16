@@ -64,16 +64,12 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalRowAllocLengths_(NULL),
     nonlocalCols_(NULL),
     nonlocalCoefs_(NULL),
-    workData_(NULL),
-    workDataLength_(0),
+    workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
 {
   myFirstRow_ = rowMap.MinMyGID();
   myNumRows_ = rowMap.NumMyElements();
-
-  workData_ = new double[128];
-  workDataLength_ = 128;
 }
 
 //----------------------------------------------------------------------------
@@ -91,16 +87,12 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalRowAllocLengths_(NULL),
     nonlocalCols_(NULL),
     nonlocalCoefs_(NULL),
-    workData_(NULL),
-    workDataLength_(0),
+    workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
 {
   myFirstRow_ = rowMap.MinMyGID();
   myNumRows_ = rowMap.NumMyElements();
-
-  workData_ = new double[128];
-  workDataLength_ = 128;
 }
 
 //----------------------------------------------------------------------------
@@ -119,16 +111,12 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalRowAllocLengths_(NULL),
     nonlocalCols_(NULL),
     nonlocalCoefs_(NULL),
-    workData_(NULL),
-    workDataLength_(0),
+    workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
 {
   myFirstRow_ = rowMap.MinMyGID();
   myNumRows_ = rowMap.NumMyElements();
-
-  workData_ = new double[128];
-  workDataLength_ = 128;
 }
 
 //----------------------------------------------------------------------------
@@ -147,16 +135,12 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalRowAllocLengths_(NULL),
     nonlocalCols_(NULL),
     nonlocalCoefs_(NULL),
-    workData_(NULL),
-    workDataLength_(0),
+    workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
 {
   myFirstRow_ = rowMap.MinMyGID();
   myNumRows_ = rowMap.NumMyElements();
-
-  workData_ = new double[128];
-  workDataLength_ = 128;
 }
 
 //----------------------------------------------------------------------------
@@ -173,16 +157,12 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalRowAllocLengths_(NULL),
     nonlocalCols_(NULL),
     nonlocalCoefs_(NULL),
-    workData_(NULL),
-    workDataLength_(0),
+    workData_(128),
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
 {
   myFirstRow_ = RowMap().MinMyGID();
   myNumRows_ = RowMap().NumMyElements();
-
-  workData_ = new double[128];
-  workDataLength_ = 128;
 }
    
 //----------------------------------------------------------------------------
@@ -199,17 +179,13 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalRowAllocLengths_(NULL),
     nonlocalCols_(NULL),
     nonlocalCoefs_(NULL),
-    workData_(NULL),
-    workDataLength_(0),
+    workData_(128),
     useNonlocalMatrix_ (graph.UseNonlocalGraph() && graph.nonlocalGraph_ != 0),
     nonlocalMatrix_ (useNonlocalMatrix_ ? 
         new Epetra_CrsMatrix(Copy,*graph.nonlocalGraph_) : NULL)
 {
   myFirstRow_ = RowMap().MinMyGID();
   myNumRows_ = RowMap().NumMyElements();
-
-  workData_ = new double[128];
-  workDataLength_ = 128;
 }
    
 //----------------------------------------------------------------------------
@@ -224,8 +200,7 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src)
    nonlocalRowAllocLengths_(NULL),
    nonlocalCols_(NULL),
    nonlocalCoefs_(NULL),
-   workData_(NULL),
-   workDataLength_(0),
+   workData_(128),
    nonlocalMatrix_ (NULL)
 {
   operator=(src);
@@ -248,9 +223,6 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
   myNumRows_ = src.myNumRows_;
   ignoreNonLocalEntries_ = src.ignoreNonLocalEntries_;
   numNonlocalRows_ = src.numNonlocalRows_;
-
-  workDataLength_ = 128;
-  workData_ = new double[workDataLength_];
 
   if (numNonlocalRows_ < 1) {
     return( *this );
@@ -308,9 +280,6 @@ void Epetra_FECrsMatrix::DeleteMemory()
 
   if (nonlocalMatrix_ != 0)
     delete nonlocalMatrix_;
-
-  delete [] workData_;
-  workDataLength_ = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -684,43 +653,20 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
+int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
+            int numRows, const int* rows,
 					  int numCols, const int* cols,
-					  const double*const* values,
-					  int format, int mode)
+					  const double* values,
+					  int mode)
 {
-  if (format != Epetra_FECrsMatrix::ROW_MAJOR &&
-      format != Epetra_FECrsMatrix::COLUMN_MAJOR) {
-    cerr << "Epetra_FECrsMatrix: unrecognized format specifier."<<endl;
-    return(-1);
-  }
-
-  if (format == Epetra_FECrsMatrix::COLUMN_MAJOR) {
-    if (numCols > workDataLength_) {
-      delete [] workData_;
-      workDataLength_ = numCols*2;
-      workData_ = new double[workDataLength_];
-    }
-  }
-
   int returncode = 0;
   int err = 0;
 
   for(int i=0; i<numRows; ++i) {
-    double* valuesptr = (double*)values[i];
+    double* valuesptr = (double*)values + i*numRows;
 
-    if (format == Epetra_FECrsMatrix::COLUMN_MAJOR) {
-      //if the data is in column-major order, then we need to copy the i-th
-      //column of the values table into workData_, and that will be the i-th
-      //row. ... Is that clear?
-
-      for(int j=0; j<numCols; ++j) {
-        workData_[j] = values[j][i];
-      }
-      valuesptr = workData_;
-    }
-
-    if (Map().MyGID(rows[i])) {
+    int local_row_id = Map().LID(rows[i]);
+    if (local_row_id >= 0) {
       switch(mode) {
         case Epetra_FECrsMatrix::SUMINTO:
           err = this->Epetra_CrsMatrix::SumIntoGlobalValues(rows[i], numCols,
@@ -746,8 +692,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
       }
     }
     else {
-      err = InputNonlocalGlobalValues(rows[i],
-          numCols, cols,
+      err = InputNonlocalGlobalValues(rows[i], numCols, cols,
           valuesptr, mode);
       if (err<0) return(err);
       if (err>0) returncode = err;
@@ -760,24 +705,74 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
 					  int numCols, const int* cols,
+					  const double*const* values,
+					  int format, int mode)
+{
+  if (format != Epetra_FECrsMatrix::ROW_MAJOR &&
+      format != Epetra_FECrsMatrix::COLUMN_MAJOR) {
+    cerr << "Epetra_FECrsMatrix: unrecognized format specifier."<<endl;
+    return(-1);
+  }
+
+  if (format == Epetra_FECrsMatrix::COLUMN_MAJOR) {
+    workData_.resize(numCols);
+  }
+
+  int returncode = 0;
+
+  for(int i=0; i<numRows; ++i) {
+    if (format == Epetra_FECrsMatrix::ROW_MAJOR) {
+      returncode += InputGlobalValues_RowMajor(1, &rows[i], numCols, cols,
+                                          values[i], mode);
+      if (returncode < 0) return returncode;
+      continue;
+    }
+
+    //If we get to here, the data is in column-major order.
+
+    double* valuesptr = &workData_[0];
+
+    //Since the data is in column-major order, then we copy the i-th row
+    //of the values table into workData_, in order to have the row in
+    //contiguous memory.
+    //This is slow and not thread-safe.
+
+    for(int j=0; j<numCols; ++j) {
+      valuesptr[j] = values[i][j];
+    }
+
+    returncode += InputGlobalValues_RowMajor(1, &rows[i], numCols, cols, valuesptr, mode);
+    if (returncode < 0) return returncode;
+  }
+
+  return(returncode);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
+					  int numCols, const int* cols,
 					  const double* values,
 					  int format, int mode)
 {
-  int first_dim = format==COLUMN_MAJOR ? numCols : numRows;
-  int second_dim = format==COLUMN_MAJOR ? numRows : numCols;
-
-  const double** values_2d = new const double*[first_dim];
-  int offset = 0;
-  for(int i=0; i<first_dim; ++i) {
-    values_2d[i] = &(values[offset]);
-    offset += second_dim;
+  if (format == Epetra_FECrsMatrix::ROW_MAJOR) {
+    return InputGlobalValues_RowMajor(numRows, rows, numCols, cols, values, mode);
   }
 
-  int err = InputGlobalValues(numRows, rows, numCols, cols,
-			      values_2d, format, mode);
-  delete [] values_2d;
+  workData_.resize(numCols);
 
-  return(err);
+  int returncode = 0;
+  for(int i=0; i<numRows; ++i) {
+    //copy each row out of the column-major values array, so we can pass it
+    //to a row-major input function.
+    for(int j=0; j<numCols; ++j) {
+      workData_[j] = values[i+j*numRows];
+    }
+    int err = InputGlobalValues_RowMajor(1, &rows[i], numCols, cols, &workData_[0], mode);
+    if (err < 0) return err;
+    returncode += err;
+  }
+
+  return(returncode);
 }
 
 //----------------------------------------------------------------------------

@@ -1,0 +1,12 @@
+#BANNER @copydoc stk_percept_banner
+#HOWTO @copydoc stk_percept_howto
+
+INPUT += ../../stk_percept/doc/index.dox \
+         ../../stk_percept/stk_percept \
+         ../../stk_percept/unit_tests
+
+# The RECURSIVE tag can be used to turn specify whether or not subdirectories 
+# should be searched for input files as well. Possible values are YES and NO. 
+# If left blank NO is used.
+
+RECURSIVE              = YES

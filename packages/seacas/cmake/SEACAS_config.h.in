@@ -1,0 +1,5 @@
+
+/* Define to indicate that SEACAS is in Trilinos (rather than in Sierra) */
+#cmakedefine HAVE_SEACAS_Trilinos
+
+#cmakedefine HAVE_MPI

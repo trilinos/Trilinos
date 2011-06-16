@@ -37,10 +37,10 @@
 #include "Teuchos_Array.hpp"
 
 #ifdef HAVE_PYTRILINOS
-#undef HAVE_INTTYPES_H
-#undef HAVE_STDINT_H
-#undef HAVE_SYS_TIME_H
-#include "Python.h"
+#ifndef PyObject_HEAD
+struct _object;
+typedef _object PyObject;
+#endif
 #endif
 
 class Epetra_Map;

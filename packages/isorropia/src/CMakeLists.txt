@@ -9,7 +9,7 @@ SET(HAVE_EPETRA ON)
 SET(HAVE_ISORROPIA_TPETRA OFF)
 SET(HAVE_ISORROPIA_ZOLTAN ON)
 SET(HAVE_EPETRAEXT ${PACKAGE_NAME}_ENABLE_EpetraExt)
-
+SET(ISORROPIA_HAVE_OMP ${Trilinos_ENABLE_OpenMP})
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
@@ -68,6 +68,7 @@ SET(HEADERS ${HEADERS}
   epetra/Isorropia_EpetraRedistributor.hpp
   epetra/Isorropia_EpetraLibrary.hpp
   epetra/Isorropia_EpetraLevelScheduler.hpp
+  epetra/Isorropia_EpetraMatcher.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -81,6 +82,7 @@ SET(SOURCES ${SOURCES}
   epetra/Isorropia_EpetraRedistributor.cpp
   epetra/Isorropia_EpetraLibrary.cpp
   epetra/Isorropia_EpetraLevelScheduler.cpp
+  epetra/Isorropia_EpetraMatcher.cpp
   )
 
 #

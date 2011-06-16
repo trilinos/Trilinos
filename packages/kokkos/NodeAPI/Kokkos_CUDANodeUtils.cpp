@@ -1,6 +1,6 @@
 #include "Kokkos_CUDANodeUtils.hpp"
-#include "Kokkos_CUDA_util_inline_runtime.h"
 #include <iostream>
+#include <cuda_runtime.h>
 
 namespace Kokkos {
 
@@ -15,7 +15,11 @@ namespace Kokkos {
   }
 
   void CUDANodeDeallocator::free(void *ptr) {
-    cutilSafeCallNoSync( cudaFree(ptr) );
+    cudaError_t err = cudaFree(ptr);
+    TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error, 
+        "Kokkos::CUDANodeDeallocator::free(): cudaFree() returned error:\n"
+        << cudaGetErrorString(err) 
+      );
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     node_->allocSize_ -= allocSize_;
 #endif

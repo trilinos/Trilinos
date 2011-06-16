@@ -41,42 +41,52 @@ namespace TSQR {
 
   /// \class DistTsqr
   /// \brief Internode part of TSQR
+  /// \author Mark Hoemmen
   ///
-  /// This class combines the ncols by ncols R factors computed by the
-  /// intranode TSQR factorization on individual MPI processes.  It is
-  /// a model as well as the default for Tsqr's DistTsqrType template
-  /// parameter.
+  /// This class combines the square R factors computed by the
+  /// intranode TSQR factorization (\c NodeTsqr subclass) on
+  /// individual MPI processes.
   ///
-  /// LocalOrdinal: index type for dense matrices of Scalar. Known to
-  /// work with int.
+  /// Template parameters:
+  /// - LocalOrdinal: index type for dense matrices of Scalar. 
+  /// - Scalar: value type for matrices to factor. 
   ///
-  /// Scalar: value type for matrices to factor. Known to work with
-  /// float, double, std::complex<float>, std::complex<double>.
-  template< class LocalOrdinal, class Scalar >
+  /// DistTsqr<LocalOrdinal,Scalar> should be instantiable for any
+  /// LocalOrdinal and Scalar types for which Combine<LocalOrdinal,
+  /// Scalar> and LAPACK<LocalOrdinal, Scalar> can be instantiated.
+  /// Currently that means LocalOrdinal = int, and Scalar = float,
+  /// double, std::complex<float>, or std::complex<double>.
+  template<class LocalOrdinal, class Scalar>
   class DistTsqr {
   public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
     typedef MatView< ordinal_type, scalar_type > matview_type;
-    typedef std::vector< std::vector< scalar_type > > VecVec;
-    typedef std::pair< VecVec, VecVec > FactorOutput;
+    typedef std::vector<std::vector<scalar_type> > VecVec;
+    typedef std::pair<VecVec, VecVec> FactorOutput;
     typedef int rank_type;
 
-    /// Constructor
+    /// \brief Constructor
     ///
     /// \param messenger [in/out] Wrapper of communication operations
     ///   between MPI processes.
-    DistTsqr (const Teuchos::RCP< MessengerBase< scalar_type > >& messenger) :
+    DistTsqr (const Teuchos::RCP<MessengerBase<scalar_type> >& messenger) :
       messenger_ (messenger),
       reduceBroadcastImpl_ (messenger)
     {}
 
-    /// Rank of this MPI process (via MPI_Comm_rank())
-    ///
+    /// \brief Rank of this (MPI) process.
+    /// 
+    /// Rank is computed via MPI_Comm_rank() on the underlying
+    /// communicator, if the latter is an MPI communicator.  If it's a
+    /// serial "communicator," the rank is always zero.
     rank_type rank() const { return messenger_->rank(); }
 
-    /// Total number of MPI processes in this communicator (via
-    /// MPI_Comm_size())
+    /// \brief Total number of MPI processes in this communicator.
+    ///
+    /// The size is communicated via MPI_Comm_size() on the underlying
+    /// communicator, if the latter is an MPI communicator.  If it's a
+    /// serial "communicator," the size is always one.
     rank_type size() const { return messenger_->size(); }
 
     /// \brief Destructor

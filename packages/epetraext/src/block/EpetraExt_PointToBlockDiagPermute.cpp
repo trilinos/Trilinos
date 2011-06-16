@@ -271,7 +271,8 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     /*******************************************************/      
     // Do the import to grab matrix entries
     // Allocate temporaries for import
-    Epetra_Map TmpMap(-1,ExtSize, &ExtRows[0],0,Matrix_->Comm());; 
+    int* ExtRowsPtr = ExtRows.size()>0 ? &ExtRows[0] : NULL;
+    Epetra_Map TmpMap(-1,ExtSize, ExtRowsPtr,0,Matrix_->Comm());; 
     Epetra_CrsMatrix TmpMatrix(Copy,TmpMap,0);
     Epetra_Import TmpImporter(TmpMap,RowMap);
 

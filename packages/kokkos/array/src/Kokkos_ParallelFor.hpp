@@ -41,24 +41,61 @@
 #define KOKKOS_PARALLELFOR_HPP
 
 #include <cstddef>
+#include <Kokkos_ArrayForwardDeclarations.hpp>
+#include <impl/Kokkos_Timer.hpp>
 
 namespace Kokkos {
 
-template< class FunctorType , class DeviceType >
+//----------------------------------------------------------------------------
+
+namespace Impl {
+
+/** \brief Implementation of ParallelFor operator that has a
+ *         partial specialization for the device.
+ */
+template< class FunctorType ,
+          class DeviceType = typename FunctorType::device_type >
 class ParallelFor {
 public:
-  typedef DeviceType                      device_type ;
-  typedef typename device_type::size_type size_type ;
-
-  static void run( const size_type      work_count ,
-                   const FunctorType &  functor );
+  static
+  void execute( const size_t        work_count ,
+                const FunctorType & functor );
 };
 
+} // namespace Impl
+
+//----------------------------------------------------------------------------
+
+/** \brief  Call the functor in parallel 'work_count' times. */
 template< class FunctorType >
-void parallel_for( size_t work_count , const FunctorType & functor )
+inline
+void parallel_for( const size_t work_count ,
+                   const FunctorType & functor )
 {
-  ParallelFor< FunctorType , typename FunctorType::device_type >
-    ::run( work_count , functor );
+  Impl::ParallelFor< FunctorType >::execute( work_count , functor );
+}
+
+/** \brief  Call the functor in parallel 'work_count' times,
+ *          wait for all calls to complete and then
+ *          output the wall-clock time spent in execution.
+ */
+template< class FunctorType >
+inline
+void parallel_for( const size_t work_count ,
+                   const FunctorType & functor ,
+                   double & seconds )
+{
+  typedef typename FunctorType::device_type device_type ;
+
+  Impl::Timer timer ; // Construct and initialize the timer
+
+  Impl::ParallelFor< FunctorType >::execute( work_count , functor );
+
+  // The ParallelFor may launch the functor and return immediately.
+  // Must wait for functor to complete to get correct timing data.
+  device_type::wait_functor_completion();
+
+  seconds = timer.seconds(); // Time since construction
 }
 
 } // namespace Kokkos
@@ -75,6 +112,7 @@ void parallel_for( size_t work_count , const FunctorType & functor )
 #endif
 
 #if defined( KOKKOS_DEVICE_CUDA )
+#include <DeviceCuda/Kokkos_DeviceCuda_ParallelFor.hpp>
 #endif
 
 //----------------------------------------------------------------------------

@@ -667,6 +667,11 @@ const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr);
 const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
                                      const ModifiableLinearOp & destOp);
 
+/** Build an explicit transpose of a linear operator. (Concrete data
+  * underneath.
+  */
+const LinearOp explicitTranspose(const LinearOp & op);
+
 /** \brief Take the first column of a multivector and build a
   *        diagonal linear operator
   */

@@ -3,6 +3,8 @@ INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib/)
+
 
 # This is needed to compile codes with dakota headers.
 ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})

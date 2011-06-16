@@ -29,6 +29,34 @@ namespace fixtures {
 
 class Gear;
 
+struct GearParams {
+  GearParams()
+    : element_size(0.1),
+      radius_min(0.6),
+      radius_max(1.05),
+      height_min(-0.4),
+      height_max(0.4)
+  {}
+
+  GearParams(double input_element_size,
+             double input_radius_min,
+             double input_radius_max,
+             double input_height_min,
+             double input_height_max)
+    : element_size(input_element_size),
+      radius_min(input_radius_min),
+      radius_max(input_radius_max),
+      height_min(input_height_min),
+      height_max(input_height_max)
+  {}
+
+  double element_size;
+  double radius_min;
+  double radius_max;
+  double height_min;
+  double height_max;
+};
+
 class GearsFixture{
  public:
 
@@ -37,7 +65,8 @@ class GearsFixture{
 
   enum { SpatialDimension = 3 };
 
-  GearsFixture( stk::ParallelMachine pm, size_t num_gears);
+  GearsFixture( stk::ParallelMachine pm, size_t num_gears,
+                GearParams gear_params=GearParams());
   ~GearsFixture();
 
   void generate_mesh();

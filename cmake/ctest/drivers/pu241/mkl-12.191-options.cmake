@@ -1,8 +1,0 @@
-SET(INTEL_12191_ROOT /opt/intel/Compiler/composerxe-2011.4.191)
-
-SET(MKLROOT ${INTEL_12191_ROOT}/mkl)
-
-SET(BLAS_LIBRARY_NAMES "mkl_intel_lp64;mkl_blas95_lp64;mkl_core;mkl_sequential" CACHE STRING "")
-SET(BLAS_LIBRARY_DIRS "${MKLROOT}/lib/intel64" CACHE STRING "")
-SET(LAPACK_LIBRARY_NAMES "mkl_lapack95_lp64" CACHE STRING "")
-SET(LAPACK_LIBRARY_DIRS "${MKLROOT}/lib/intel64" CACHE FILEPATH "")

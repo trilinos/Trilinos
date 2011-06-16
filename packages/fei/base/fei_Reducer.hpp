@@ -125,8 +125,7 @@ namespace fei {
     void assembleReducedGraph(fei::SparseRowGraph* srgraph);
     void assembleReducedMatrix(fei::Matrix& matrix);
     void assembleReducedVector(bool soln_vector,
-                               fei::Vector& feivec,
-                               bool sum_into=true);
+                               fei::Vector& feivec);
 
     std::vector<int>& getLocalReducedEqns();
 

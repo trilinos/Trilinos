@@ -1,0 +1,145 @@
+PARSING RESULTS: $ Test program for Aprepro
+$
+Test number reprsentations
+1	1	1	1	1
+1	1	1	1	1
+	
+Test assign statements:
+5	5	$ Should print 5 5
+10	10 	$ Should print 10 10
+5	5	$ Should print 5 5
+25	25	$ Should print 25 25
+5	5	$ Should print 5 5
+3125	3125	$ Should print 3125 3125
+5	3125	3125	$ Should print 5 3125 3125
+
+Test trigonometric functions (radians)
+3.141592654 3.141592654 3.141592654 $ Three values of pi
+0.7071067812	4.440892099e-16	$ sin(pi/4)
+0.7071067812	0	$ cos(pi/4)
+1	0	$ tan(pi/4)
+
+Test trigonometric functions (degrees)
+180	180	180
+0.7071067812	2.842170943e-14	$ sin(180/4)
+0.7071067812	0	$ cos(180/4)
+1	0	$ tan(180/4)
+
+Test max, min, sign, dim, abs
+0.5	-1 $ Should be 0.5, -1
+1	-0.5 $ Should be 1.0, -0.5
+0 1	$ Should be 0 1
+1 0 $ Should be 1 0
+1	0	$ Should be 1 0
+
+$ Test ifdef lines
+1 0
+This line should be echoed. (a)
+ This line should be echoed. (b)
+This line should be echoed. (c)
+This line should be echoed. (d)
+
+$ Test if - else lines
+This line should be echoed. (1)
+			This line should be echoed (4)
+   
+$ Test if - else lines
+This line should be echoed (6)
+   This line should be echoed. (7)
+ $ Lines a, b, c, d, 1, 4, 6, 7 should be echoed
+$ Check line counting -- should be on line 74: 
+
+$ Test int and [] (shortcut for int)
+5	-5
+5	-5
+
+$ Test looping - print sin, cos from 0 to 90 by 5
+-5
+0	0	1 1 
+5	0.08715574275	0.9961946981 1 
+10	0.1736481777	0.984807753 1 
+15	0.2588190451	0.9659258263 1 
+20	0.3420201433	0.9396926208 1 
+25	0.4226182617	0.906307787 1 
+30	0.5	0.8660254038 1 
+35	0.5735764364	0.8191520443 1 
+40	0.6427876097	0.7660444431 1 
+45	0.7071067812	0.7071067812 1 
+50	0.7660444431	0.6427876097 1 
+55	0.8191520443	0.5735764364 1 
+60	0.8660254038	0.5 1 
+65	0.906307787	0.4226182617 1 
+70	0.9396926208	0.3420201433 1 
+75	0.9659258263	0.2588190451 1 
+80	0.984807753	0.1736481777 1 
+85	0.9961946981	0.08715574275 1 
+90	1	6.123233996e-17 1 
+
+$$$$ Test formatting and string concatenation
+0 %.10g
+1 Using the format %.1g,	PI = 3
+2 Using the format %.2g,	PI = 3.1
+3 Using the format %.3g,	PI = 3.14
+4 Using the format %.4g,	PI = 3.142
+5 Using the format %.5g,	PI = 3.1416
+6 Using the format %.6g,	PI = 3.14159
+7 Using the format %.7g,	PI = 3.141593
+8 Using the format %.8g,	PI = 3.1415927
+9 Using the format %.9g,	PI = 3.14159265
+10 Using the format %.10g,	PI = 3.141592654
+11 Using the format %.11g,	PI = 3.1415926536
+12 Using the format %.12g,	PI = 3.14159265359
+13 Using the format %.13g,	PI = 3.14159265359
+14 Using the format %.14g,	PI = 3.1415926535898
+15 Using the format %.15g,	PI = 3.14159265358979
+16 Using the format %.16g,	PI = 3.141592653589793
+17 Using the format %.17g,	PI = 3.1415926535897931
+18 Using the format %.18g,	PI = 3.14159265358979312
+19 Using the format %.19g,	PI = 3.141592653589793116
+20 Using the format %.20g,	PI = 3.141592653589793116
+Reset format to default: %.10g
+
+$$$$ Test string rescanning and executing
+
+Original String:
+	This is line 1: {a = atan2(0,-1)}
+        This is line 2: {sin(a/4)}
+	This is line 3: {cos(a/4)}
+Rescanned String:
+	This is line 1: 3.141592654
+        This is line 2: 0.7071067812
+	This is line 3: 0.7071067812 
+Original String:
+This has an embedded string: {T = "This is a string"}
+Print Value of variable T = 0
+Rescanned String:
+This has an embedded string: This is a string 
+Print Value of variable T = This is a string
+
+Original String: atan2(0,-1)
+Executed String: 3.141592654
+
+string =  one two, three
+delimiter " ,"
+word count = 3
+second word = "two"
+
+string =  (one two, three * four - five
+delimiter " ,(*-"
+word count = 5
+second word = "two"
+
+
+string =  one two, three
+delimiter " ,"
+word count = 3
+
+0
+word 1 = "one"
+word 2 = "two"
+word 3 = "three"
+
+$ Check parsing of escaped braces...
+{ int a = b + 1.570796327 }
+{ }
+

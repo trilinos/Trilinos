@@ -54,10 +54,10 @@ namespace {
 template< class > class UnitTestValueView ;
 
 template<>
-class UnitTestValueView< Kokkos :: KOKKOS_MACRO_DEVICE >
+class UnitTestValueView< KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef Kokkos:: KOKKOS_MACRO_DEVICE device ;
+  typedef KOKKOS_MACRO_DEVICE device ;
 
   typedef Kokkos::ValueView< double , device > dView ;
   typedef Kokkos::ValueView< int ,    device > iView ;
@@ -80,47 +80,42 @@ public:
 
   UnitTestValueView()
   {
-    std::ostringstream s_empty ;
-    std::ostringstream s_alloc ;
-    std::ostringstream s_assign ;
-    std::ostringstream s_clear1 ;
-  
+    double host_dx = 20 , host_dy = 0 ;
+    int    host_ix = 10 , host_iy = 0 ;
+
     dView dx , dy ;
     iView ix , iy ;
 
     dx = Kokkos::create_labeled_value<double,device> ( "dx" );
     ix = Kokkos::create_labeled_value<int,device> ( "ix" );
   
-    *dx = 20 ;
-    *ix = 10 ;
+    Kokkos::deep_copy( dx , host_dx );
+    Kokkos::deep_copy( ix , host_ix );
+    Kokkos::deep_copy( host_dy , dx );
+    Kokkos::deep_copy( host_iy , ix );
   
+    if ( host_dy != host_dx || host_iy != host_ix ) {
+      error("FAILED copy view value");
+    }
+
     dView dz = dy = dx ;
     iView iz = iy = ix ;
   
-    if ( & *dx != & *dy ||
-         & *dx != & *dz ||
-         & *ix != & *iy ||
-         & *ix != & *iz ) {
+    if ( dx != dy || dx != dz || ix != iy || ix != iz ) {
       error("FAILED Assign view");
     }
 
     dx = dView();
     iy = iView();
   
-    if ( & *dx != 0 ||
-         & *dy != & *dz ||
-         & *ix != & *iz ||
-         & *iy != 0 ||
-         *dy != 20 ||
-         *iz != 10 ) {
+    if ( dx || dy != dz || ix != iz || iy ) {
       error("FAILED Clear view");
     }
 
     dz = dy = dView();
     iz = ix = iView();
 
-    if ( & *dx != 0 || & *dy != 0 || & *dz != 0 ||
-         & *ix != 0 || & *iy != 0 || & *iz != 0 ) {
+    if ( dx || dy || dz || ix || iy || iz ) {
       error("FAILED Clear all view");
     }
   }

@@ -11,14 +11,22 @@
 # 3. Type "make" should build the examples
 #
 
-TRILINOS_HOME = /Users/hansga/root/usr/local/trilinos-10.2/OSX_BIN
+TRILINOS_HOME = /Users/hansga/root/usr/local/trilinos-10.6/OSX_BIN
 
 ## Put all macros needed below are found in Makefile.export.Moertel
 ## Note some of these may be defined
 ## in environment variables.
 
+#use_seacas = yes
 
-include $(TRILINOS_HOME)/Makefile.export.Moertel
+
+include $(TRILINOS_HOME)/include/Makefile.export.Moertel
+include $(TRILINOS_HOME)/include/Makefile.export.Ifpack
+
+# if using SEACAS for ExodusII support
+ifeq ($(use_seacas),yes)
+include $(TRILINOS_HOME)/include/Makefile.export.seacas
+endif
 
 #MOERTEL_CXX_FLAGS = -g 
 #MOERTEL_CXX_FLAGS = -O3 
@@ -29,13 +37,35 @@ include $(TRILINOS_HOME)/Makefile.export.Moertel
 #
 #
 #
-COMPILE_FLAGS = $(Moertel_CXX_FLAGS) $(Moertel_TPL_INCLUDE_DIRS) \
-	$(Moertel_INCLUDE_DIRS) -I.. -DHAVE_MOERTEL_EXODUS
+# ExodusII / Nemesis TPLs
+#COMPILE_FLAGS = $(Moertel_CXX_FLAGS) $(Moertel_TPL_INCLUDE_DIRS) \
+#	$(Moertel_INCLUDE_DIRS) -I.. -DHAVE_MOERTEL_EXODUS
+#
+#
+# Using seacas
+ifeq ($(use_seacas),yes)
+COMPILE_FLAGS = $(Moertel_CXX_FLAGS) $(SEACAS_TPL_INCLUDE_DIRS) \
+	$(Moertel_INCLUDE_DIRS) $(SEACAS_TPL_LIBRARIES) $(Ifpack_TPL_INCLUDE_DIRS) -I.. -DHAVE_MOERTEL_EXODUS
+else
+COMPILE_FLAGS = $(Moertel_CXX_FLAGS)  $(Moertel_INCLUDE_DIRS) $(Ifpack_TPL_INCLUDE_DIRS) -I..
+endif
 
 ##
 ## Build linker flags
 
-LINK_FLAGS = $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) $(Moertel_TPL_LIBRARIES) -lifpack -lgaleri
+# ExodusII / Nemesis TPLs
+#LINK_FLAGS = $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) $(Moertel_TPL_LIBRARIES) -lifpack -lgaleri
+
+
+
+# Using seacas
+ifeq ($(use_seacas),yes)
+LINK_FLAGS = $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) $(SEACAS_LIBRARIES) $(SEACAS_TPL_LIBRARIES) \
+			 $(Ifpack_TPL_LIBRARY_DIRS) $(Ifpack_TPL_LIBRARIES) -lgaleri
+else
+LINK_FLAGS = $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) \
+			 $(Ifpack_TPL_LIBRARY_DIRS) $(Ifpack_TPL_LIBRARIES) -lgaleri
+endif
 
 
 

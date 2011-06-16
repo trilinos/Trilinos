@@ -135,7 +135,7 @@ namespace Tpetra {
 
 
   void Distributor::doWaits() {
-    if (getNumReceives() > 0) {
+    if (requests_.size() > 0) {
       Teuchos::waitAll(*comm_,requests_());
       // Requests should all be null, clear them
 #ifdef HAVE_TEUCHOS_DEBUG

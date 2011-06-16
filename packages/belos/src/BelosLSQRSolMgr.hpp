@@ -816,8 +816,17 @@ Belos::ReturnType LSQRSolMgr<ScalarType,MV,OP>::solve() {
   problem_->setCurrLS();
   // print final summary
   sTest_->print( printer_->stream(Belos::FinalSummary) );
-  // print timing information
-  Teuchos::TimeMonitor::summarize( printer_->stream(Belos::TimingDetails) );
+
+  // Print timing information, if the corresponding compile-time and
+  // run-time options are enabled.
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+  // Calling summarize() can be expensive, so don't call unless the
+  // user wants to print out timing details.  summarize() will do all
+  // the work even if it's passed a "black hole" output stream.
+  if (verbosity_ & TimingDetails)
+    Teuchos::TimeMonitor::summarize( printer_->stream(Belos::TimingDetails) );
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
  

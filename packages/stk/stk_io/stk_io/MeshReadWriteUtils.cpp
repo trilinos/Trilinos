@@ -843,5 +843,18 @@ namespace stk {
 	std::exit(EXIT_FAILURE);
       }
     }
+    // ========================================================================
+    void get_element_block_sizes(MeshData &mesh_data,
+                                 std::vector<int>& el_blocks) 
+    {
+      Ioss::Region *io = mesh_data.m_input_region;
+      const Ioss::ElementBlockContainer& elem_blocks = io->get_element_blocks();
+      for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin(); it != elem_blocks.end(); ++it) {
+        Ioss::ElementBlock *entity = *it;
+        if (stk::io::include_entity(entity)) {
+          el_blocks.push_back(entity->get_property("entity_count").get_int());
+        }
+      }
+    }
   } // namespace io
 } // namespace stk

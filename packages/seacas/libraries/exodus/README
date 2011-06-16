@@ -1,0 +1,89 @@
+========================================================================
+CONTACT:
+
+Greg Sjaardema,
+Sandia National Laboratories,
+gdsjaar@sandia.gov
+
+========================================================================
+LICENSE:
+The ExodusII library is licensed under the terms of the BSD License. 
+
+Legal stuff (copyright, licensing restrictions, etc.) can be found in
+the file COPYRIGHT which contains:
+
+1. The Sandia Corporation Copyright Notice.
+2. The BSD License.
+
+We appreciate feedback from users of this package.  Please send
+comments, suggestions, and bug reports to Greg Sjaardema
+<gdsjaar@sandia.gov>.
+
+Please identify the version of the package.
+
+========================================================================
+BUILDING
+
+There are 4 methods for building exodusII.
+
+1. SEAMS/SEACAS Build system which is based on imake.  If you have a
+SEAMS or SEACAS installation, you can use its build system.  In the
+top-level exodusii directory, do 'accmkmf' followed by 'make
+Makefiles' and then 'make'
+
+2. CMAKE: type 'cmake .' or 'cmake -i' to generate the Makefiles
+followed by 'make'.  Cmake will search for the netcdf include file in
+the directories:
+	${ACCESS}/inc,
+	${NETCDF_DIR}/inc,
+	${NETCDF_DIR}/libsrc
+
+and the netcdf library in the directories:
+	${ACCESS}/lib, 
+	${NETCDF_DIR}/lib,
+	${NETCDF_DIR}/libsrc/.libs
+
+You should one of the environment variables ACCESS or NETCDF_DIR to
+point to the location of your netcdf installation.
+
+3. Makefile.standalone.  Edit the top-level Makefile.standalone file
+and specify the compiler and other options as detailed in the
+file. Then, do "make -f Makefile.standalone".
+
+4. Building in the Trilinos system as part of the seacas package. 
+See the Trilinos documentation for more details.
+
+Once you have built the library, you can test it by typing "make
+check"
+
+
+========================================================================
+NETCDF
+
+The exodusII library uses the netcdf library for low-level data
+storage.
+
+ExodusII requires NetCDF version 3.6.0 or later with the "large-model
+modifications".  NetCDF version 4.1 or later is highly recommended.
+
+The netcdf library must be modified slightly in order to handle the
+exodusII datamodel. The specific changes are:
+
+1. libsrc/netcdf.h -- Modify the following defines:
+   libsrc4/netcdf_base.h (netcdf-4.X only)
+   libsrc4/netcdf.h      (netcdf-4.X only if it exists)
+
+#define NC_MAX_DIMS	65536	 /* max dimensions per file */
+#define NC_MAX_VARS	524288	 /* max variables per file */
+#define NC_MAX_VAR_DIMS	8        /* max per variable dimensions */
+
+If these changes are not made, the exodus library will still function
+for "normal" size models, but it will fail for "large" models. The
+error message from exodus/netcdf should be somewhat clear when this
+happens... 
+
+2. When running the netcdf tests, you may have to do "unlimit
+stacksize" (csh/tcsh) to avoid some failures due to the increased define sizes
+above.
+
+========================================================================

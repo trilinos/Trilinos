@@ -1,0 +1,27 @@
+There is a problem with duplicate elements that needs to be handled. 
+
+They can arise if someone uses conjoin to join all files on each
+specific processor and then uses epu to join the resulting files into
+a single file.  If there is load-balancing, then an element can appear
+on multiple processors over time.
+
+Note that the element should only be active on 1 processor at any one
+time and its element variables are only valid on the processor on
+which it is active.  Because of this, can't do a simple 'last one in'
+for the element values; need to pick which instance of the duplicate
+element is active at a specific timestep and then use that element's
+values for the output value at that step.
+
+Need something like "-remove_duplicate_elements"
+                    "-status_var <variable>"
+                    "-alive_value <value>"
+
+This means to eliminate duplicate elements and use the element where
+<variable> has value <value> as the "canonical" element at that time
+step. 
+
+Probably throw an error if more than 1 of the duplicate elements has
+the value <value>...
+
+Note that this issue can be avoided if user epu's individual files
+first and then uses conjoin...

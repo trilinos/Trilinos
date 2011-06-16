@@ -35,7 +35,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MMHelpers.hpp"
 
-/*! \file Tpetra_MMMultiply_decl.hpp 
+/*! \file Tpetra_MatrixMatrix_decl.hpp 
 
     The declarations for the class Tpetra::MMMultiMultiply and related non-member constructors.
  */
@@ -152,6 +152,18 @@ void Add(
 
 namespace MMdetails{
 
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
+void
+getGlobalRowFromLocalIndex(
+  LocalOrdinal localRow,
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview, 
+  Array<GlobalOrdinal>& indices,
+  ArrayView<Scalar>& values);
+
 template<class Scalar, 
          class LocalOrdinal, 
          class GlobalOrdinal, 
@@ -243,12 +255,12 @@ RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > form_map_union(
    * sparsely-populated 'vectors'.
    * Important assumption: assumes the indices in u_ind and v_ind are sorted.
    */
-  template <class Scalar, class LocalOrdinal>
+  template <class Scalar, class GlobalOrdinal>
   Scalar sparsedot(
     const Teuchos::ArrayView<Scalar> &u, 
-    const Teuchos::ArrayView<LocalOrdinal> &u_ind, 
+    const Teuchos::ArrayView<GlobalOrdinal> &u_ind, 
     const Teuchos::ArrayView<Scalar> &v, 
-    const Teuchos::ArrayView<LocalOrdinal> &v_ind);
+    const Teuchos::ArrayView<GlobalOrdinal> &v_ind);
   
 }//end namespace MMdetails
 

@@ -83,7 +83,13 @@ template< class FieldType > struct BucketArray ;
 template< class FieldType > struct FieldTraits ;
 
 
-typedef unsigned EntityRank ;
+typedef unsigned Ordinal;
+typedef Ordinal EntityRank ;
+typedef Ordinal PartOrdinal;
+typedef Ordinal FieldOrdinal;
+typedef Ordinal RelationIdentifier;
+typedef Ordinal FieldArrayRank;
+
 typedef uint64_t EntityId ;
 
 // Base Entity Rank
@@ -91,13 +97,7 @@ typedef uint64_t EntityId ;
 // represents the furthest out you can go in downward relations.
 static const EntityRank BaseEntityRank = 0;
 static const EntityRank InvalidEntityRank = static_cast<EntityRank>(-1); // std::numeric_limits<EntityRank>::max();
-
-
-typedef unsigned Ordinal;
-typedef Ordinal PartOrdinal;
-typedef Ordinal FieldOrdinal;
-typedef Ordinal RelationIdentifier;
-typedef Ordinal FieldArrayRank;
+static const PartOrdinal InvalidPartOrdinal = static_cast<PartOrdinal>(-1); // std::numeric_limits<PartOrdinal>::max();
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel

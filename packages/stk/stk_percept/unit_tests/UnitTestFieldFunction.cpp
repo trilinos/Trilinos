@@ -78,10 +78,10 @@ STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
     Ioss::Utils::to_string(num_x) + "x" +
     Ioss::Utils::to_string(num_y) + "x" +
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
-	
+
   PerceptMesh eMesh(3u);
   eMesh.newMeshReadOnly(PerceptMesh::GMeshSpec(config_mesh));
-	
+
   mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
 
   const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
@@ -108,9 +108,9 @@ STKUNIT_UNIT_TEST(function, fieldFunction_read_print)
       for (unsigned ifr = 0; ifr < nfr; ifr++)
       {
         const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-        mesh::Part& frpart = metaData.get_part(fr.ordinal());
+        mesh::Part& frpart = metaData.get_part(fr.part_ordinal());
         if (printInfo) std::cout << " field restriction " << ifr << " stride[0] = " << fr.dimension() <<
-                         " type= " << fr.rank() << " ord= " << fr.ordinal() <<
+                         " type= " << fr.entity_rank() << " ord= " << fr.part_ordinal() <<
                          " which corresponds to Part= " << frpart.name() << std::endl;
       }
     }
@@ -157,7 +157,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_1)
 {
   EXCEPTWATCH;
 
-  
+
   {
     stk::io::util::Gmesh_STKmesh_Fixture gms(MPI_COMM_WORLD, "3x3x3|bbox:0,0,0,1,1,1");
     std::cout << "gms= " << &gms << std::endl;
@@ -247,7 +247,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
     Ioss::Utils::to_string(num_x) + "x" +
     Ioss::Utils::to_string(num_y) + "x" +
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
-	
+
   PerceptMesh eMesh(3u);
   eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
   int vectorDimension = 0;  // signifies a scalar field
@@ -358,7 +358,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_multiplePoints)
     Ioss::Utils::to_string(num_x) + "x" +
     Ioss::Utils::to_string(num_y) + "x" +
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
-	
+
   PerceptMesh eMesh(3u);
   eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
   int vectorDimension = 0;  // signifies a scalar field
@@ -427,7 +427,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_verify)
     Ioss::Utils::to_string(num_x) + "x" +
     Ioss::Utils::to_string(num_y) + "x" +
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
-	
+
   PerceptMesh eMesh(3u);
   eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
 
@@ -494,7 +494,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_timing)
     Ioss::Utils::to_string(num_x) + "x" +
     Ioss::Utils::to_string(num_y) + "x" +
     Ioss::Utils::to_string(num_z) + "|bbox:0,0,0,1,1,1";
-	
+
   PerceptMesh eMesh(3u);
   eMesh.newMesh(PerceptMesh::GMeshSpec(config_mesh));
 

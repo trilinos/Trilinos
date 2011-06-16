@@ -10,11 +10,20 @@ doxygen_objdb_*.tmp
 /CHECKIN
 /flat_headers/
 /TAGS
+
+# Trilinos extra repos
 /preCopyrightTrilinos/
 /Panzer/
 /LIMEExt/
 /PSSDriversExt/
+/CASLBOA/
+/CASLRAVE/
 /TerminalApplication/
+
+# CASL-related extra repos
+/DeCARTExt/
+/PSSDriversExt/
+/StarCCMExt/
 
 # Ignore gtags generated files
 /GPATH
@@ -57,3 +66,4 @@ XPETRA_THREADED_GCC/
 XPETRA_THREADED/
 
 /build
+packages/tpetra/test/MatrixMatrix/matrices/*.m

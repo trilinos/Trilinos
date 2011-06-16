@@ -103,8 +103,8 @@ use_case_3_driver(stk::ParallelMachine  comm,
   stk::mesh::Part & block_quad       = domain_meta_data.declare_part("block_2", side_rank);
   stk::mesh::fem::CellTopology hex_top (shards::getCellTopologyData<shards::Hexahedron<> >());
   stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<> >());
-  stk::mesh::fem::set_cell_topology( domain_meta_data, block_hex,  hex_top );
-  stk::mesh::fem::set_cell_topology( domain_meta_data, block_quad, quad_top );
+  stk::mesh::fem::set_cell_topology( block_hex,  hex_top );
+  stk::mesh::fem::set_cell_topology( block_quad, quad_top );
 
   stk::io::MeshData domain_mesh_data;
   filename = working_directory + domain_mesh_filename;
@@ -112,7 +112,7 @@ use_case_3_driver(stk::ParallelMachine  comm,
 			     domain_meta_data, domain_mesh_data);
 
   stk::mesh::Part & block_skin       = domain_meta_data.declare_part("skin", side_rank);
-  stk::mesh::fem::set_cell_topology( domain_meta_data, block_skin, quad_top );
+  stk::mesh::fem::set_cell_topology( block_skin, quad_top );
   domain_meta_data.commit();
 
   stk::mesh::BulkData domain_bulk_data(domain_meta_data.get_meta_data(domain_meta_data) , comm);

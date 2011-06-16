@@ -66,19 +66,19 @@ void use_case_5_generate_mesh_meta_data(
   stk::io::put_io_part_attribute(block_quad_shell);
   stk::io::put_io_part_attribute(block_tri_shell);
 
-  stk::mesh::fem::set_cell_topology(meta_data,  block_hex            , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8>         >()));
-  stk::mesh::fem::set_cell_topology(meta_data,  block_wedge          , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Wedge<6>              >()));
-  stk::mesh::fem::set_cell_topology(meta_data,  block_tet            , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4>        >()));
-  stk::mesh::fem::set_cell_topology(meta_data,  block_pyramid        , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Pyramid<5>            >()));
-  stk::mesh::fem::set_cell_topology(meta_data,  block_quad_shell     , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()));
-  stk::mesh::fem::set_cell_topology(meta_data,  block_tri_shell      , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<3>      >()));
+  stk::mesh::fem::set_cell_topology(block_hex            , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8>         >()));
+  stk::mesh::fem::set_cell_topology(block_wedge          , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Wedge<6>              >()));
+  stk::mesh::fem::set_cell_topology(block_tet            , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4>        >()));
+  stk::mesh::fem::set_cell_topology(block_pyramid        , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Pyramid<5>            >()));
+  stk::mesh::fem::set_cell_topology(block_quad_shell     , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()));
+  stk::mesh::fem::set_cell_topology(block_tri_shell      , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<3>      >()));
 
   const mesh::FieldBase::Restriction & res =
     node_coord.restriction( mesh::fem::FEMMetaData::NODE_RANK , universal );
 
-  if ( res.dimension() != 3 ) {
+  if ( res.stride(0) != 3 ) {
     std::ostringstream msg ;
-    msg << "stk_examples::use_case_5_generate_mesh_meta_data FAILED, coordinate dimension must be 3 != " << res.dimension() ;
+    msg << "stk_examples::use_case_5_generate_mesh_meta_data FAILED, coordinate dimension must be 3 != " << res.stride(0) ;
     throw std::runtime_error( msg.str() );
   }
 }

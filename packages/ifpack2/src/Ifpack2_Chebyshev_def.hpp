@@ -251,7 +251,6 @@ void Chebyshev<MatrixType>::apply(
   Scalar beta_cheby = 1.1 * LambdaMax_;
   Scalar delta = 2.0 / (beta_cheby - alpha_cheby);
   Scalar theta = 0.5 * (beta_cheby + alpha_cheby);
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
   Scalar s1 = theta * delta;
 
   //--- Define vectors

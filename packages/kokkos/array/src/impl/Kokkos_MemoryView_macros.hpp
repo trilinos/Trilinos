@@ -37,42 +37,40 @@
  *************************************************************************
  */
 
-#if ! defined(KOKKOS_MACRO_IMPL_TEMPLATE_SPECIALIZATION) || \
+#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
-    ! defined(KOKKOS_MACRO_HOST_FUNCTION)           || \
-    ! defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
-
-#error "Including " ## KOKKOS_MACRO_TO_STRING( __FILE__ ) ## " without macros defined"
+#error "Including <impl/Kokkos_MemoryView_macros.hpp> without macros defined"
 
 #else
 
 namespace Kokkos {
-namespace Impl {
 
 template< typename ValueType >
 class MemoryView< ValueType , KOKKOS_MACRO_DEVICE > {
 private:
 
-  MemoryViewTracker m_tracker ;
   ValueType       * m_ptr_on_device ;
+  Impl::ViewTracker m_tracker ;
 
   friend class KOKKOS_MACRO_DEVICE ;
 
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MemoryView( const MemoryView & rhs );
 
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MemoryView & operator = ( const MemoryView & rhs );
 
 public:
 
+  typedef ValueType           value_type ;
   typedef KOKKOS_MACRO_DEVICE device_type ;
 
   /*------------------------------------------------------------------*/
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+
   /** \brief  Query value at offset */
   template< typename iType >
   inline
@@ -80,32 +78,53 @@ public:
   value_type & operator[]( const iType & i ) const
   { return m_ptr_on_device[ i ]; }
 
+#endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
+
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   value_type * ptr_on_device() const
   { return m_ptr_on_device ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  operator bool() const
+  { return 0 != m_ptr_on_device ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator == ( const MemoryView & rhs ) const
+  { return m_ptr_on_device == rhs.m_ptr_on_device ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator != ( const MemoryView & rhs ) const
+  { return m_ptr_on_device != rhs.m_ptr_on_device ; }
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  MemoryView() : m_tracker(), m_ptr_on_device(0) {}
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  MemoryView() : m_ptr_on_device(0) { m_tracker.next = 0 ; }
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
   inline
-  KOKKOS_MACRO_HOST_FUNCTION
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ~MemoryView()
   { device_type::clear_memory_view( *this ); }
+
+  /*------------------------------------------------------------------*/
+  /** \brief  On the host for testing purposes only
+   *          can get a count of number of views on the host.
+   */
+  size_t test_support_view_count() const
+    { return m_tracker.test_support_view_count(); }
 };
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
-} // namespace Impl
 } // namespace Kokkos
 
 #endif

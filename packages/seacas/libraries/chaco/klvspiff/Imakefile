@@ -1,0 +1,14 @@
+XCOMM $Id: Imakefile,v 1.4 2004/12/14 19:08:43 gdsjaar Exp $
+
+EXTRA_INCLUDES = -I../main -I../util
+
+SRCS = \
+bpm_improve.c      countup_vtx_sep.c  klv_init.c         matching.c \
+bucketsv.c         find_bndy.c        klvspiff.c         nway_klv.c \
+clear_dvals.c      flatten.c          make_bpgraph.c \
+coarsen_klv.c      flow.c             make_sep_list.c
+
+OBJS = ${SRCS:.c=.o}
+
+LibraryTargetSubdirs(libchaco.a,$(OBJS),../)
+

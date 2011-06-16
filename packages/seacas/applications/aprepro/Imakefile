@@ -1,0 +1,107 @@
+XCOMM Copyright 2006 Sandia Corporation. Under the terms of Contract
+XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+XCOMM retains certain rights in this software.
+XCOMM
+XCOMM Redistribution and use in source and binary forms, with or without
+XCOMM modification, are permitted provided that the following conditions are
+XCOMM met:
+XCOMM
+XCOMM     * Redistributions of source code must retain the above copyright
+XCOMM       notice, this list of conditions and the following disclaimer.
+XCOMM
+XCOMM     * Redistributions in binary form must reproduce the above
+XCOMM       copyright notice, this list of conditions and the following
+XCOMM       disclaimer in the documentation and/or other materials provided
+XCOMM       with the distribution.
+XCOMM
+XCOMM     * Neither the name of Sandia Corporation nor the names of its
+XCOMM       contributors may be used to endorse or promote products derived
+XCOMM       from this software without specific prior written permission.
+XCOMM
+XCOMM THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+XCOMM "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+XCOMM LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+XCOMM A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+XCOMM OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+XCOMM SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+XCOMM LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+XCOMM DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+XCOMM THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+XCOMM (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+XCOMM OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+XCOMM
+
+#if defined(__CYGWIN__) && defined(__NO_CYGWIN_OPTION__)
+#define LOCAL_LDFLAGS -liberty
+#endif
+
+#if HasFlexBison
+BISON = bison --yacc --defines
+FLEX = flex
+
+SRCS = \
+builtin.c  main.c     stat.c     alloca.c  getopt.c  getopt1.c \
+util.c     init.c     hash.c     liballoc.c units.c exodus.c add_to_log.c
+OSRCS = \
+aprepro.l  aprepro.y  my_aprepro.h  getopt.h 
+
+#else
+
+SRCS = \
+builtin.c  main.c     stat.c     alloca.c  getopt.c  getopt1.c \
+y.tab.c    lex.yy.c   util.c     init.c    hash.c    liballoc.c \
+exodus.c   add_to_log.c  units.c
+
+OSRCS = \
+aprepro.l  aprepro.y  my_aprepro.h  getopt.h
+
+#endif
+
+LIBS=$(NEMESISC) $(EXOIIV2C) $(NETCDF) -lm 
+
+OBJS = \
+y.tab.o    builtin.o  main.o     stat.o    alloca.o  getopt.o  \
+getopt1.o  util.o     init.o     hash.o    liballoc.o  exodus.o \
+add_to_log.o  units.o  getline.o getdelim.o
+
+DEFINES = $(ALLOCA_DEFINES)
+
+NormalCTarget(aprepro,$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallProgram(aprepro,$(BINDIR))
+
+CleanTarget()
+
+y.tab.o: y.tab.c my_aprepro.h lex.yy.c
+
+#if HasFlexBison
+BISON = bison --yacc --defines
+FLEX = flex
+
+y.tab.c y.tab.h: aprepro.y
+	$(BISON) aprepro.y
+
+lex.yy.c: aprepro.l
+	$(FLEX) aprepro.l
+
+ExtraStuffToClean(lex.yy.c y.tab.c y.tab.h)
+#endif
+
+test: check
+
+check: aprepro
+	@echo "****Test should produce the following 4 lines of output to stderr:"
+	@echo "	Aprepro: WARN: Variable \`b' redefined (test.inp_app, line 19)"
+	@echo "	Aprepro: WARN: Undefined variable \`Parse' (test.inp_app, line 74)"
+	@echo "	Aprepro: ERR:  syntax error (test.inp_app, line 74)"
+	@echo "	Aprepro: WARN: Undefined variable \`T' (test.inp_app, line 106)"
+	@echo " "
+	rm -f distribution.out
+	./aprepro test.inp_app | grep -v Revision > distribution.out
+	@echo " "
+	@echo "****'<' denotes standard, '>' denotes current output"
+	@echo "****Differences should be limited to small differences in"
+	@echo "	numerical precision only."
+	-spiff test_standard.out distribution.out
+
+DependTarget()

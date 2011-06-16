@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010 - 2011 Sandia Corporation.              */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -12,6 +12,10 @@
 #if __GNUC__ == 3 || __GNUC__ == 4
 #include <cxxabi.h>
 #endif
+
+// #if defined __xlC__
+// #include <demangle.h>
+// #endif
 
 namespace stk {
 
@@ -69,9 +73,31 @@ demangle(
   return s;
 #endif
 }
+
 #endif // (__GNUC__ == 3)
 
-#endif // defined(__GNUC__)
+#elif defined __xlC__
+std::string
+demangle(
+  const char *	symbol)
+{
+  return symbol;
+// #ifdef PURIFY_BUILD
+//   return symbol;
+// #else
+//   char *rest;
+
+//   Name *name = Demangle(symbol, rest) ;
+
+//   std::string s(name ? name->Text() : symbol);
+
+//   delete name;
+
+//   return s;
+// #endif
+}
+
+#endif // defined __GNUC__
 
 #else
 const char *demangle(const char *symbol) {

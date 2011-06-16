@@ -153,7 +153,7 @@ After the local CTest processes are working, just to make sure the
 submit works, you can run a final trial build with:
 
   $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
-     CTEST_TEST_TYPE=Experimental CTEST_DO_UPDATES=FASLE \
+     CTEST_TEST_TYPE=Experimental CTEST_DO_UPDATES=FALSE \
      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
      CTEST_DO_SUBMIT=ON CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
      CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
@@ -162,6 +162,25 @@ submit works, you can run a final trial build with:
 If this submits to the 'Experimental' CDash dashbaord, you should be
 in good shape for the nightly test.  If you can't find you
 experimental build on the CDash dashboard, then something is wrong.
+
+NOTES:
+
+a) Different Trilinos git repos: When CTEST_TEST_TYPE=Experimental or
+CTEST_TEST_TYPE=Continuous then Trilinos is initially cloned from form the
+main development repo.  However, when CTEST_TEST_TYPE=Nightly then Trilinos
+will be initially cloned from a specially maintained 'nightly' repo.  (The
+purpose of the 'nightly' repo is to ensure that all Nightly builds use exactly
+the same version of the sources and report consistent results in case someone
+pushes in between the first Nightly pull and later Nightly pulls.)  Therefore,
+if you use CTEST_TEST_TYPE=Experimental when first testing in the actually
+final directory location for the Nightly dashboard (such as will occur when
+testing the cron_driver.sh script described below) then subsequent pulls will
+occur from the main development repo *NOT* the special 'nightly' repo.  To get
+back to the 'nightly' repo, you must delete the locally cloned Trilinos repo
+so that when the script runs with CTEST_TEST_TYPE=Nightly, it will clone from
+the 'nightly' repo and do subsequent updates form the 'nightly' repo.  If you
+want to totally override which repo gets pulled form, you can set that with
+the variable Trilinos_REPOSITORY_LOCATION.
 
 
 D.2) Testing the outer cron driver script:
@@ -203,7 +222,7 @@ Once you are done with the initial run, you can test it out
 interactively in a rapid, iterative process by setting up the
 following additionial environment variables:
 
-  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_UPDATES=FASLE \
+  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_UPDATES=FALSE \
       CTEST_DO_SUBMIT=FALSE \
       TDD_DO_SUBMIT=FALSE TDD_IN_TESTING_MODE=ON \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \

@@ -77,8 +77,11 @@ namespace Tpetra {
 
       /// Test Tpetra::MatrixMarket::Reader::readSparseFile()
       ///
-      /// \param filename [in] Name of the Matrix Market format sparse
-      ///   matrix file to read (on MPI Rank 0 only).
+      /// \param inputFilename [in] Name of the Matrix Market format
+      ///   sparse matrix file to read (on MPI Rank 0 only).
+      /// \param outputFilename [in] Name of the Matrix Market format
+      ///   sparse matrix file to write (on MPI Rank 0 only).  Ignored
+      ///   if testWrite==false.
       /// \param pComm [in] Communicator, over whose MPI ranks to
       ///   distribute the returned Tpetra::CrsMatrix.
       /// \param echo [in] Whether or not to echo the resulting 
@@ -89,12 +92,14 @@ namespace Tpetra {
       /// \param debug [in] Whether to print debugging output.
       ///
       void
-      testReadSparseFile (const std::string& filename, 
-			  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-			  const bool echo,
-			  const bool tolerant, 
-			  const bool verbose,
-			  const bool debug)
+      testReadAndWriteSparseFile (const std::string& inputFilename, 
+				  const std::string& outputFilename, 
+				  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+				  const bool testWrite,
+				  const bool echo,
+				  const bool tolerant, 
+				  const bool verbose,
+				  const bool debug)
       {
 	using Teuchos::RCP;
 	using std::cerr;
@@ -110,44 +115,46 @@ namespace Tpetra {
 	// #else
 	typedef Kokkos::SerialNode node_type;
 	// #endif // defined(HAVE_KOKKOS_TBB)
-
 	typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+	const bool callFillComplete = true;
 
 	// Get a Kokkos Node instance for the particular Node type.
 	RCP<node_type> pNode = getNode<node_type>();
 	const int myRank = Teuchos::rank (*pComm);
 
 	if (verbose && myRank == 0)
-	  cout << "About to read Matrix Market file \"" << filename 
-	       << "\":" << endl;
+	  cout << "About to read Matrix Market file \"" << inputFilename 
+	       << "\""
+	       << (callFillComplete ? " (calling fillComplete())" : "")
+	       << ":" << endl;
 
 	// Read the sparse matrix from the given Matrix Market file.
 	// This routine acts like an MPI barrier.
-	const bool callFillComplete = true;
 	typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
 	  global_ordinal_type, node_type> sparse_matrix_type;
 	typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 	RCP<sparse_matrix_type> pMatrix =
-	  reader_type::readSparseFile (filename, pComm, pNode, 
+	  reader_type::readSparseFile (inputFilename, pComm, pNode, 
 				       callFillComplete, tolerant, debug);
-	if (! pMatrix.is_null())
-	  {
-	    if (verbose && myRank == 0)
-	      cout << "Successfully read Matrix Market file \"" << filename 
-		   << "\"." << endl;
-	  }
-	else 
-	  {
-	    if (verbose && myRank == 0)
-	      cout << "Failed to read Matrix Market file \"" << filename 
-		   << "\"." << endl;
-	  }
+	TEST_FOR_EXCEPTION(pMatrix.is_null(), std::runtime_error,
+			   "The Tpetra::CrsMatrix returned from "
+			   "readSparseFile() is null.");
+	TEST_FOR_EXCEPTION(callFillComplete && ! pMatrix->isFillComplete(), 
+			   std::logic_error,
+			   "We asked readSparseFile() to call fillComplete() "
+			   "on the Tpetra::CrsMatrix before returning it, but"
+			   " it did not.");
+
+	if (! pMatrix.is_null() && verbose && myRank == 0)
+	  cout << "Successfully read Matrix Market file \"" << inputFilename 
+	       << "\"." << endl;
+
+	typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
+	if (testWrite && outputFilename != "")
+	  writer_type::writeSparseFile (outputFilename, pMatrix);
 	if (echo)
-	  {
-	    using Tpetra::MatrixMarket::Writer;
-	    typedef Writer<sparse_matrix_type> writer_type;
-	    writer_type::writeSparse (cout, pMatrix);
-	  }
+	  writer_type::writeSparse (cout, pMatrix);
       }
     } // namespace Test
   } // namespace MatrixMarket
@@ -170,19 +177,28 @@ main (int argc, char *argv[])
   RCP<const Comm<int> > pComm = 
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
-  std::string filename;  // Matrix Market file to read
+  std::string inputFilename;  // Matrix Market file to read
+  std::string outputFilename; // Matrix Market file to write (if applicable)
+  bool testWrite = false; // Test Matrix Market output?
   bool tolerant = false; // Parse the file tolerantly?
   bool echo = false;     // Echo the read-in matrix back?
   bool verbose = false;  // Verbosity of output
   bool debug = false;    // Print debugging info?
 
+
+
   CommandLineProcessor cmdp (false, true);
-  cmdp.setOption ("verbose", "quiet", &verbose,
-		  "Print messages and results.");
-  cmdp.setOption ("debug", "nodebug", &debug,
-  		  "Print debugging information.");
-  cmdp.setOption ("filename", &filename,
+  cmdp.setOption ("inputFilename", &inputFilename,
 		  "Name of the Matrix Market sparse matrix file to read.");
+  cmdp.setOption ("outputFilename", &outputFilename,
+		  "If --testWrite is true, then write the read-in matrix to "
+		  "the given file in Matrix Market format on (MPI) Proc 0.  "
+		  "Otherwise, this argument is ignored.  Note that symmetric"
+		  " storage will have been expanded and comments will have "
+		  "been stripped, so the output file may not be identical to"
+		  " the input file.");
+  cmdp.setOption ("testWrite", "noTestWrite", &testWrite,
+		  "Whether to test Matrix Market file output.");
   cmdp.setOption ("tolerant", "strict", &tolerant, 
 		  "Whether to parse the Matrix Market file tolerantly.");
   cmdp.setOption ("echo", "noecho", &echo,
@@ -190,6 +206,10 @@ main (int argc, char *argv[])
 		  "in Matrix Market format.  Symmetric storage will have been "
 		  "expanded, so the result will not be identical to the input "
 		  "file, though the matrix represented will be the same.");
+  cmdp.setOption ("verbose", "quiet", &verbose,
+		  "Print messages and results.");
+  cmdp.setOption ("debug", "nodebug", &debug,
+  		  "Print debugging information.");
 
   // Parse the command-line arguments.
   {
@@ -212,10 +232,11 @@ main (int argc, char *argv[])
   // Test reading in the sparse matrix.  If no filename or an empty
   // filename is specified, we don't invoke the test and report a
   // "TEST PASSED" message.
-  if (filename != "")
+  if (inputFilename != "")
     {
-      using Tpetra::MatrixMarket::Test::testReadSparseFile;
-      testReadSparseFile (filename, pComm, echo, tolerant, verbose, debug);
+      using Tpetra::MatrixMarket::Test::testReadAndWriteSparseFile;
+      testReadAndWriteSparseFile (inputFilename, outputFilename, pComm, 
+				  testWrite, echo, tolerant, verbose, debug);
     }
 
   // Only Rank 0 gets to write to cout.

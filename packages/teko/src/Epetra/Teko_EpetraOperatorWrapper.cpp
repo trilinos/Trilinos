@@ -60,6 +60,7 @@
 // #include "Thyra_LinearOperator.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
 
 #include "Teko_EpetraThyraConverter.hpp"
 #include "Teuchos_Ptr.hpp"
@@ -290,6 +291,13 @@ int EpetraOperatorWrapper::GetBlockColCount()
    return blkOp->productDomain()->numBlocks();
 }
 
+Teuchos::RCP<const Epetra_Operator> EpetraOperatorWrapper::GetBlock(int i,int j) const
+{
+   const RCP<const Thyra::BlockedLinearOpBase<double> > blkOp 
+         = Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<double> >(getThyraOp());
+
+   return Thyra::get_Epetra_Operator(*blkOp->getBlock(i,j));
+}
 
 } // namespace Epetra
 } // namespace Teko

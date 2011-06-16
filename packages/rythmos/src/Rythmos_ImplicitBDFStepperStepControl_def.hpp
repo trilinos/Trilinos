@@ -399,7 +399,6 @@ void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scala
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-
   numberOfSteps_ ++;
   nef_ = 0;
   time_ += hh_;

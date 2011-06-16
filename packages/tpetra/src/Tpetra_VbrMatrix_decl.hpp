@@ -483,18 +483,19 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
 
   Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> lclMatrix_;
 
-  //It takes 6 arrays to represent a variable-block-row matrix
+  //A variable-block-row matrix is represented by 6 arrays 
   //in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
   //(2 of those arrays, rptr and cptr, are represented by arrays in the
   //getBlockRowMap() and getBlockColMap() objects, and
-  //another two of those arrays, bptr and bindx, are represented by arrays in the
-  //BlockCrsGraph object.)
+  //another two of those arrays, bptr and bindx, are represented by arrays in
+  //the BlockCrsGraph object.)
   //This is noted in the comments for rptr,cptr,bptr,bindx below.
   //
   //These arrays are handled as if they may point to memory that resides on
   //a separate device (e.g., a GPU). In other words, when the contents of these
-  //arrays are manipulated, we use views or buffers obtained from the Node object.
+  //arrays are manipulated, we use views or buffers obtained from the Node
+  //object.
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;
 
@@ -517,6 +518,9 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   //arrays are allocated on the device and matrix data is copied into them.
   Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > col_ind_2D_global_;
   Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > values2D_;
+
+  Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > nonlocal_col_ind_2D_global_;
+  Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > nonlocal_values2D_;
 
   bool is_fill_completed_;
   bool is_storage_optimized_;

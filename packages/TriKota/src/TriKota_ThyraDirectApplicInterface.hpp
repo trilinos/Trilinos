@@ -31,6 +31,9 @@
 #ifndef TRIKOTA_DIRECTAPPLICINTERFACE
 #define TRIKOTA_DIRECTAPPLICINTERFACE
 
+// Have to do this first to pull in all of Dakota's #define's
+#include "TriKota_ConfigDefs.hpp"
+
 #include "DirectApplicInterface.H"
 #include "CommandLineHandler.H"
 #include "DakotaStrategy.H"

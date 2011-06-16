@@ -253,7 +253,7 @@ namespace Tpetra {
 
       The Map is configured to use zero-based indexing.
 
-      \relates Map
+      \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
@@ -263,7 +263,7 @@ namespace Tpetra {
 
       The Map is configured to use zero-based indexing.
 
-      \relates Map
+      \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -275,7 +275,7 @@ namespace Tpetra {
 
       The Map is configured to use zero-based indexing.
 
-      \relates Map
+      \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
@@ -285,7 +285,7 @@ namespace Tpetra {
 
       The Map is configured to use zero-based indexing.
 
-      \relates Map
+      \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -298,7 +298,7 @@ namespace Tpetra {
 
       The Map is configured to use zero-based indexing.
 
-      \relates Map
+      \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
@@ -308,7 +308,7 @@ namespace Tpetra {
 
       The Map is configured to use zero-based indexing.
 
-      \relates Map
+      \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -321,7 +321,7 @@ namespace Tpetra {
 
       The Map is configured to use zero-based indexing.
 
-      \relates Map
+      \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
@@ -332,7 +332,7 @@ namespace Tpetra {
 
       The Map is configured to use zero-based indexing.
 
-      \relates Map
+      \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -344,7 +344,7 @@ namespace Tpetra {
 
       The Map is configured to use zero-based indexing.
 
-      \relates Map
+      \relatesalso Map
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
@@ -354,13 +354,13 @@ namespace Tpetra {
 } // Tpetra namespace
 
 /** \brief  Returns true if \c map is identical to this map. Implemented in Tpetra::Map::isSameAs().
-    \relates Tpetra::Map */
+    \relatesalso Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return map1.isSameAs(map2); }
 
 /** \brief Returns true if \c map is not identical to this map. Implemented in Tpetra::Map::isSameAs().
-    \relates Tpetra::Map */
+    \relatesalso Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return !map1.isSameAs(map2); }

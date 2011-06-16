@@ -2,7 +2,7 @@
 #
 # Package options
 #
-PROJECT_NAME           = "STK Encore"
+PROJECT_NAME           = "STK Percept"
 #OUTPUT_DIRECTORY       = ../..
 OUTPUT_DIRECTORY       = .
 
