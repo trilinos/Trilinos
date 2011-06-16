@@ -9,22 +9,19 @@ cmake \
       -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
       -D Trios_ENABLE_XDMF:BOOL=OFF \
       -D Trilinos_ENABLE_TESTS:BOOL=OFF \
-      -D Trilinos_ENABLE_Trios:BOOL=ON \
+      -D Trilinos_ENABLE_Teko:BOOL=ON \
       -D Trilinos_ENABLE_Panzer:BOOL=ON \
-      -D Trilinos_ENABLE_Panzer_STK:BOOL=ON \
       -D Trilinos_ENABLE_STK:BOOL=ON \
+      -D Trilinos_ENABLE_SEACAS:BOOL=ON \
       -D Panzer_ENABLE_TESTS:BOOL=ON \
       -D Panzer_ENABLE_EXAMPLES:BOOL=ON \
-      -D Panzer_STK_ENABLE_TESTS:BOOL=ON \
-      -D Panzer_STK_ENABLE_EXAMPLES:BOOL=ON \
       -D TPL_ENABLE_MPI:BOOL=ON \
       -D MPI_BASE_DIR:PATH="/home/rppawlo/local" \
-      -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
       -D TPL_ENABLE_Boost:BOOL=ON \
       -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Libs/Boost/boost_1_44_0" \
       -D TPL_ENABLE_Netcdf:BOOL=ON \
-      -D Netcdf_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Charon/Alegra_TPL/TPL20100206/netcdf/3.6.1-snl2/include" \
-      -D Netcdf_LIB_DIRS:FILEPATH="/home/rppawlo/Charon/Alegra_TPL/TPL20100206/netcdf/3.6.1-snl2/lib/64BITgnu4_opt" \
+      -D Netcdf_INCLUDE_DIRS:FILEPATH="/home/rppawlo/install_netcdf/include" \
+      -D Netcdf_LIBRARY_DIRS:FILEPATH="/home/rppawlo/install_netcdf/lib" \
       -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpiCC" \
       -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpicc" \
       -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpif77" \
@@ -39,6 +36,8 @@ cmake \
       -D CMAKE_BUILD_TYPE:STRING=NONE \
        ../Trilinos
 
+##      -D Netcdf_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Charon/Alegra_TPL/TPL20100206/netcdf/3.6.1-snl2/include" \
+##      -D Netcdf_LIBRARY_DIRS:FILEPATH="/home/rppawlo/Charon/Alegra_TPL/TPL20100206/netcdf/3.6.1-snl2/lib/64BITgnu4_opt" \
 ##      -D CMAKE_EXE_LINKER_FLAGS:STRING="-L/usr/lib -lgfortran" \
 
 ##      -D TPL_ENABLE_CppUnit:BOOL=ON \

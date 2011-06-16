@@ -14,7 +14,7 @@ cmake \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
 -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_Panzer:BOOL=ON \
--D Trilinos_ENABLE_Trios:BOOL=ON \
+-D Trilinos_ENABLE_SEACAS:BOOL=ON \
 -D Trilinos_ENABLE_Shards:BOOL=ON \
 -D Trilinos_ENABLE_STK:BOOL=ON \
 -D Trilinos_ENABLE_Stratimikos:BOOL=ON \
