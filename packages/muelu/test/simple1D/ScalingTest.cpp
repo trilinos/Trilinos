@@ -34,7 +34,13 @@
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
-#include "MueLu_UseDefaultTypes.hpp"
+//#include "MueLu_UseDefaultTypes.hpp"
+typedef double Scalar;
+typedef int    LocalOrdinal;
+typedef long long int    GlobalOrdinal;
+typedef Kokkos::DefaultNode::DefaultNodeType Node;
+typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+
 #include "MueLu_UseShortNames.hpp"
 #include <unistd.h>
 /**********************************************************************************/
@@ -91,16 +97,21 @@ int main(int argc, char *argv[]) {
     // TODO: print custom parameters
   }
 
+/*
   if (cthulhuParameters.GetLib() != Cthulhu::UseTpetra) {
     *out << "This example is Tpetra only" << std::endl;
     return EXIT_FAILURE;
   }
+*/
 
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
   const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+
+
+  return EXIT_SUCCESS;
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
