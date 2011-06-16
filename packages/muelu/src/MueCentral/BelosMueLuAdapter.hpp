@@ -232,8 +232,8 @@ namespace Belos {
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
   class MueLuOp : 
     public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ,
-    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >, // mainly for debug: allow to skip the code of Cthulhu::MultiVectorTraits
-    public OperatorT<Epetra_MultiVector> 
+    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  // mainly for debug: allow to skip the code of Cthulhu::MultiVectorTraits
+    //,public OperatorT<Epetra_MultiVector>  jglonglong
   {  
     
     typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
@@ -327,8 +327,8 @@ namespace Belos {
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
   class MueLuPrecOp : 
     public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >,
-    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ,
-    public OperatorT<Epetra_MultiVector> 
+    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+    //,public OperatorT<Epetra_MultiVector>  jglonglong
   { 
     
     typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Hierarchy;

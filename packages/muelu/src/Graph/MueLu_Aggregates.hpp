@@ -83,7 +83,7 @@ namespace MueLu {
 
          @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
      */
-     void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<GO> > &aggToRowMap) const {
+     void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const {
        using Teuchos::ArrayRCP;
 
        int myPid = vertex2AggId_->getMap()->getComm()->getRank();
@@ -92,12 +92,12 @@ namespace MueLu {
 
        ArrayRCP<int> aggSizes = ComputeAggregateSizes();
        LO t=0;
-       for (typename ArrayRCP<ArrayRCP<GO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r)
+       for (typename ArrayRCP<ArrayRCP<LO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r)
          *a2r = ArrayRCP<LO>(aggSizes[t++]);
        ArrayRCP< LO > numDofs(nAggregates_,0);  //Track how many DOFS have been recorded so far
                                            //for each each aggregate in aggToRowMap.
-       int size = procWinner.size();
-       for (int k = 0; k < size; ++k ) {
+       LO size = procWinner.size();
+       for (LO k = 0; k < size; ++k ) {
          LO myAgg = vertex2AggId[k];
          if (procWinner[k] == myPid) {
            aggToRowMap[ myAgg ][ numDofs[myAgg] ] = k;

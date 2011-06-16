@@ -172,12 +172,12 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       const size_t NSDim = fineNullspace->getNumVectors();
       GO nCoarseDofs = numAggs*NSDim;
       // Compute array of aggregate sizes.
-      ArrayRCP<GO> aggSizes  = aggregates->ComputeAggregateSizes();
+      ArrayRCP<LO> aggSizes  = aggregates->ComputeAggregateSizes();
 
       // Calculate total #dofs in local aggregates, find size of the largest aggregate.
       LO maxAggSize=0;
       LO numDofsInLocalAggs=0;
-      for (typename Teuchos::ArrayRCP<GO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i) {
+      for (typename Teuchos::ArrayRCP<LO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i) {
         if (*i > maxAggSize) maxAggSize = *i;
         numDofsInLocalAggs += *i;
       }

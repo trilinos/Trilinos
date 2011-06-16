@@ -51,9 +51,12 @@ namespace Cthulhu {
         return rcp( new TpetraMultiVector(map, NumVectors, zeroOut) );
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
+/*
+FIXME jglonglong
       const RCP<const EpetraMap> &eMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(map);
       if (eMap != null)
         return rcp( new EpetraMultiVector(map, NumVectors, zeroOut) );
+*/
 #endif
 
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map. The exact type of the Map 'map' is unknown.");
