@@ -37,7 +37,7 @@ namespace Teuchos{
 /**
  * Serialization Tests for subtraction functions
  */
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, SubtractionTests){
+TEUCHOS_UNIT_TEST(Teuchos_Functions, SubtractionTests){
   RCP<SubtractionFunction<int> > intTester = rcp(
     new SubtractionFunction<int>(10));
 
@@ -62,7 +62,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, SubtractionTests){
     intTester->getModifiyingOperand());
 }
 
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, AdditionTests){
+TEUCHOS_UNIT_TEST(Teuchos_Functions, AdditionTests){
   RCP<AdditionFunction<int> > intTester = rcp(
     new AdditionFunction<int>(10));
 
@@ -87,7 +87,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, AdditionTests){
     intTester->getModifiyingOperand());
 }
 
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, MultiplicationTests){
+TEUCHOS_UNIT_TEST(Teuchos_Functions, MultiplicationTests){
   RCP<MultiplicationFunction<int> > intTester = rcp(
     new MultiplicationFunction<int>(10));
 
@@ -112,7 +112,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, MultiplicationTests){
     intTester->getModifiyingOperand());
 }
 
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, DivisionTests){
+TEUCHOS_UNIT_TEST(Teuchos_Functions, DivisionTests){
   RCP<DivisionFunction<int> > intTester = rcp(
     new DivisionFunction<int>(10));
 

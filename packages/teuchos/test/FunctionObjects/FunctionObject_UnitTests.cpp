@@ -36,7 +36,7 @@ namespace Teuchos{
 /**
  * Tests for subtraction functions
  */
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, SubtractionTests){
+TEUCHOS_UNIT_TEST(Teuchos_Functions, SubtractionTests){
   SubtractionFunction<int> intTester(10);
   TEST_ASSERT(intTester.runFunction(10) == 0);
   TEST_ASSERT(intTester.runFunction(-10) == -20);
@@ -48,7 +48,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, SubtractionTests){
 /**
  * Tests for addition functions
  */
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, AdditionTests){
+TEUCHOS_UNIT_TEST(Teuchos_Functions, AdditionTests){
   AdditionFunction<int> intTester(10);
   TEST_ASSERT(intTester.runFunction(10) == 20);
   TEST_ASSERT(intTester.runFunction(-10) == 0);
@@ -60,7 +60,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, AdditionTests){
 /**
  * Tests for multiplication functions
  */
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, MultiplicationTests){
+TEUCHOS_UNIT_TEST(Teuchos_Functions, MultiplicationTests){
   MultiplicationFunction<int> intTester(10);
   TEST_ASSERT(intTester.runFunction(10) == 100);
   TEST_ASSERT(intTester.runFunction(-10) == -100);
@@ -72,7 +72,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, MultiplicationTests){
 /**
  * Tests for division functions
  */
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, DivisionTests){
+TEUCHOS_UNIT_TEST(Teuchos_Functions, DivisionTests){
   DivisionFunction<int> intTester(10);
   TEST_ASSERT(intTester.runFunction(100) == 10);
   TEST_ASSERT(intTester.runFunction(-10) == -1);
