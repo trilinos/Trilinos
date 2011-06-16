@@ -53,7 +53,7 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-// I/O for Harwell-Boeing files
+// I/O for Matrix-Market files
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_Import.hpp>
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
   std::string filename("arc130.mtx");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("filename",&filename,"Filename for Matrix-Market test matrix.");
   cmdp.setOption("print-matrix","no-print-matrix",&printMatrix,"Print the full matrix after reading it.");
   cmdp.setOption("print-solution","no-print-solution",&printSolution,"Print solution vector after solve.");
   cmdp.setOption("print-timing","no-print-timing",&printTiming,"Print solver timing statistics");

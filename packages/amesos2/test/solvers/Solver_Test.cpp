@@ -130,7 +130,7 @@ int main(int argc, char*argv[])
   Tpetra::DefaultPlatform::DefaultPlatformType& platform
     = Tpetra::DefaultPlatform::getDefaultPlatform();
   Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-  int rank = comm->getRank();
+
   int root = 0;
 
   string xml_file("solvers_test.xml"); // default xml file
@@ -160,6 +160,17 @@ int main(int argc, char*argv[])
   }
   ParameterList test_params =
     Teuchos::ParameterXMLFileReader(xml_file).getParameters();
+
+  // Check the parameterlist for the presence of any of the other params
+  if( test_params.isParameter("all-print") ){
+    allprint = test_params.get<bool>("all-print");
+  }
+  if( test_params.isParameter("filedir") ){
+    filedir = test_params.get<string>("filedir");
+  }
+  if( test_params.isParameter("verbosity") ){
+    verbosity = test_params.get<int>("verbosity");
+  }
 
   // Go through the input parameters and execute tests accordingly.
   bool success = true;
@@ -234,13 +245,16 @@ bool do_mat_test(const ParameterList& parameters)
 	if( Amesos::query(solver_name) ){
 	  // then we have support for this solver
 
-	  if( verbosity > 1) *fos << "  - with " << solver_name << " : " << std::endl;
+	  if( verbosity > 1) *fos << "  | with " << solver_name << " : " << std::endl;
 
 	  ParameterList test_params = Teuchos::getValue<ParameterList>(parameters.entry(solver_it));
 	  bool solver_success = test_mat_with_solver(mm_file, solver_name, test_params, solve_params);
 
 	  if( verbosity > 1 ){
-	    *fos << "  - Testing with " << solver_name << " ";
+	    *fos << "  ";
+	    if( solver_success ) *fos << "+ ";
+	    else *fos << "- ";
+	    *fos << "Testing with " << solver_name << " ";
 	    if( solver_success ) *fos << "passed";
 	    else *fos << "failed";
 	    *fos << std::endl;
@@ -313,10 +327,6 @@ bool do_epetra_test(const string& mm_file,
 {
   using Teuchos::ScalarTraits;
 
-  if( verbosity > 1 ){
-    *fos << "    Doing epetra test... " << std::endl;
-  }
-
   typedef Epetra_CrsMatrix MAT;
   typedef Epetra_MultiVector MV;
   typedef ScalarTraits<double> ST;
@@ -388,7 +398,7 @@ bool do_epetra_test(const string& mm_file,
     return( false );
   }
   if( verbosity > 2 ){
-    *fos << "    Solution achieved. Checking solution ... ";
+    *fos << "      Solution achieved. Checking solution ... ";
   }
 
   Teuchos::Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
@@ -434,6 +444,11 @@ bool test_epetra(const string& mm_file,
     if( epetra_runs.entry(run_it).isList() ){
       ParameterList run_list = Teuchos::getValue<ParameterList>(epetra_runs.entry(run_it));
       if( run_list.isSublist("run_params") ){
+	string run_name = epetra_runs.name(run_it);
+	if( verbosity > 1 ){
+	  *fos << "    Doing epetra test run '" << run_name << "' ... " << std::endl;
+	}
+
 	solve_params.setParameters( run_list.sublist("run_params") );
 	success &= do_epetra_test(mm_file, solver_name, solve_params);
       } else {
@@ -537,7 +552,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
     return( false );
   }
   if( verbosity > 2 ){
-    *fos << "    Solution achieved. Checking solution ... ";
+    *fos << "      Solution achieved. Checking solution ... ";
   }
 
   Teuchos::Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
@@ -620,9 +635,11 @@ bool test_tpetra(const string& mm_file,
 	node = "default";
       }
 
+      string run_name = tpetra_runs.name(run_it);
       if( verbosity > 1 ){
-	*fos << "    Doing tpetra test with"
-	     << " scalar=" << scalar;
+	*fos << "    Doing tpetra test run '"
+	     << run_name << "' with"
+	     << " s=" << scalar;
 	if( scalar == "complex" ){
 	  *fos << "(" << mag << ")";
 	}

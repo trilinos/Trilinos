@@ -22,11 +22,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Solver_Test
   SOURCES
     Solver_Test
+  ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/"
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
 
-# PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyFiles
-#   SOURCE_FILES ./solvers/solver_tests.xml
-#   EXEDEPS Solver_Test
-#   )
+PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyFiles
+  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers
+  SOURCE_FILES solvers_test.xml
+  EXEDEPS Solver_Test
+  )
