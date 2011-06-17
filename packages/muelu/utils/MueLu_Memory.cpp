@@ -12,6 +12,10 @@ namespace MueLu {
       std::ostringstream mem;
       std::ifstream proc("/proc/self/status");
       std::string s;
+
+      //      std::cout << "Free memory of the node:" << PrintMemoryInfo() << std::endl; //TODO: remove
+      mem << PrintMemoryInfo() << " ";
+
       while(getline(proc, s), !proc.fail()) {
 	if(s.substr(0, 6) == "VmSize") {
 	  mem << s;
@@ -19,8 +23,6 @@ namespace MueLu {
 	}
       }
       
-      std::cout << "Free memory of the node:" << PrintMemoryInfo() << std::endl; //TODO: remove
-
       return mem.str();
     }
 
