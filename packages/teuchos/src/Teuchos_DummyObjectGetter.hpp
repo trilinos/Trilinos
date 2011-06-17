@@ -52,7 +52,7 @@ namespace Teuchos{
 
 /** \brief Class for retrieving a dummy object of type T.*/
 template<class T>
-class DummyObjectGetter{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter{
 
 public:
 
