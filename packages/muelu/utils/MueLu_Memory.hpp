@@ -8,6 +8,7 @@ namespace MueLu {
   namespace MemUtils {
     
     std::string PrintMemoryUsage();
+    std::string PrintMemoryInfo();
     
   } //namespace MemUtils
   
