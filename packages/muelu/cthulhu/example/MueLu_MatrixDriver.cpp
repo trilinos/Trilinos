@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
       std::cout << "\n================ MAP =====================================================\n" << std::endl;
     map->describe(*out, Teuchos::VERB_EXTREME);
     comm->barrier();
-    sleep(1);
+    //    sleep(1);
     
     if (comm->getRank() == 0)
       std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
