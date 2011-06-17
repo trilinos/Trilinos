@@ -140,12 +140,21 @@ namespace MueLu {
       LocalOrdinal NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
 
+      RCP<const Teuchos::Comm<int> > comm = map->getComm();
+
       GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
 
       GlobalOrdinal NumEntries;
       LocalOrdinal nnz=2;
       std::vector<Scalar> Values(nnz);
       std::vector<GlobalOrdinal> Indices(nnz);
+
+      comm->barrier();
+      if (comm->getRank() == 0)
+        std::cout << "starting global insert" << std::endl;
+
+      double t0 = MPI_Wtime();
+      double t1,t2;
 
       for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
         {
@@ -183,9 +192,28 @@ namespace MueLu {
           mtx->insertGlobalValues(MyGlobalElements[i],
                                   Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                                   Teuchos::tuple<Scalar>(a) );
+
+        if (comm->getRank() == 0 &&  i % (NumMyElements / 10) == 0) {
+            int percDone = floor((((double)i)/NumMyElements)*100);
+            t1 = MPI_Wtime() - t0;
+            std::cout << percDone << "% done (" << i << " rows) in " << t1 << " seconds, [pid 0]" << std::endl;
+          }
         } //for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
 
+      t1 = MPI_Wtime() - t0;
+      if (comm->getRank() == 0)
+        std::cout << "100% done in " << t1 << " seconds [pid 0]" << std::endl;
+      if (comm->getRank() == 0)
+        std::cout << "starting fill complete" << std::endl;
+
+      t2 = MPI_Wtime();
       mtx->fillComplete();
+      t2 = MPI_Wtime() - t2;
+      t1 = MPI_Wtime() - t0;
+      if (comm->getRank() == 0) {
+        std::cout << "time to FillComplete = " << t2 << " seconds [pid 0]" << std::endl;
+        std::cout << "total time = " << t1 << " seconds [pid 0]" << std::endl;
+      }
 
       return mtx;
     } //TriDiag
