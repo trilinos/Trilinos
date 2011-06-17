@@ -20,6 +20,7 @@
 #include "Cthulhu_Operator.hpp"
 #include "Cthulhu_OperatorFactory.hpp"
 #endif
+#include "MueLu_Memory.hpp"
 
 namespace MueLu {
   
@@ -150,8 +151,10 @@ namespace MueLu {
       std::vector<GlobalOrdinal> Indices(nnz);
 
       comm->barrier();
-      if (comm->getRank() == 0)
+      if (comm->getRank() == 0) {
         std::cout << "starting global insert" << std::endl;
+        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
+      }
 
       double t0 = MPI_Wtime();
       double t1,t2;
@@ -193,18 +196,23 @@ namespace MueLu {
                                   Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                                   Teuchos::tuple<Scalar>(a) );
 
-        if (comm->getRank() == 0 &&  i % (NumMyElements / 10) == 0) {
-            int percDone = floor((((double)i)/NumMyElements)*100);
+        if ( (comm->getRank() == 0) && (NumMyElements >= 10) &&  (i % (NumMyElements / 10) == 0) ) {
+            int percDone = (int) floor((((double)i)/NumMyElements)*100);
             t1 = MPI_Wtime() - t0;
             std::cout << percDone << "% done (" << i << " rows) in " << t1 << " seconds, [pid 0]" << std::endl;
+            std::cout << MemUtils::PrintMemoryUsage() << std::endl;
           }
         } //for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
 
       t1 = MPI_Wtime() - t0;
-      if (comm->getRank() == 0)
+      if (comm->getRank() == 0) {
         std::cout << "100% done in " << t1 << " seconds [pid 0]" << std::endl;
-      if (comm->getRank() == 0)
+        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
+      }
+      if (comm->getRank() == 0) {
         std::cout << "starting fill complete" << std::endl;
+        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
+      }
 
       t2 = MPI_Wtime();
       mtx->fillComplete();
@@ -213,6 +221,7 @@ namespace MueLu {
       if (comm->getRank() == 0) {
         std::cout << "time to FillComplete = " << t2 << " seconds [pid 0]" << std::endl;
         std::cout << "total time = " << t1 << " seconds [pid 0]" << std::endl;
+        std::cout << MemUtils::PrintMemoryUsage() << std::endl;
       }
 
       return mtx;
@@ -316,6 +325,8 @@ namespace MueLu {
       for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i) 
         {
           GlobalOrdinal NumEntries = 0;
+          left = right = lower = upper = -1;  //FIXME JJH: I don't remember why the next lines are commented out....
+                                              //FIXME but this is just to get rid of an annoying compiler warning
           /*
             GetNeighboursCartesian2d(MyGlobalElements[i], nx, ny, 
             left, right, lower, upper);
