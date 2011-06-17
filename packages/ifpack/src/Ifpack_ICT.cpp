@@ -167,7 +167,9 @@ int Ifpack_ICT::Compute()
     SerialMap_ = Teuchos::rcp(const_cast<Epetra_Map*>(&A_.RowMatrixRowMap()), false);
 
   int RowNnz;
+#ifdef IFPACK_FLOPCOUNTERS
   double flops = 0.0;
+#endif
 
   H_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*SerialMap_,0));
   if (H_.get() == 0)
@@ -285,7 +287,9 @@ int Ifpack_ICT::Compute()
           if (xxx != 0.0)
           {
             h_ij -= ColValues[k] * xxx;
+#ifdef IFPACK_FLOPCOUNTERS
             flops += 2.0;
+#endif
           }
         }
       }
@@ -297,8 +301,10 @@ int Ifpack_ICT::Compute()
         Hash.set(col_j, h_ij);
       }
     
+#ifdef IFPACK_FLOPCOUNTERS
       // only approx
       ComputeFlops_ += 2.0 * flops + 1.0;
+#endif
     }
 
     int size = Hash.getNumEntries();
@@ -334,8 +340,10 @@ int Ifpack_ICT::Compute()
 
     h_ii = sqrt(h_ii);
 
+#ifdef IFPACK_FLOPCOUNTERS
     // only approx, + 1 == sqrt
     ComputeFlops_ += 2 * size + 1;
+#endif
 
     double DiscardedElements = 0.0;
 
@@ -388,9 +396,11 @@ int Ifpack_ICT::Compute()
   Comm().SumAll(&MyNonzeros, &GlobalNonzeros_, 1);
 
   IsComputed_ = true;
+#ifdef IFPACK_FLOPCOUNTERS
   double TotalFlops; // sum across all the processors
   A_.Comm().SumAll(&flops, &TotalFlops, 1);
   ComputeFlops_ += TotalFlops;
+#endif
   ++NumCompute_;
   ComputeTime_ += Time_.ElapsedTime();
 
@@ -426,8 +436,10 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
   EPETRA_CHK_ERR(H_->Solve(false,false,false,*Xcopy,Y));
   EPETRA_CHK_ERR(H_->Solve(false,true,false,Y,Y));
 
+#ifdef IFPACK_FLOPCOUNTERS
   // these are global flop count
   ApplyInverseFlops_ += 4.0 * GlobalNonzeros_;
+#endif
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_.ElapsedTime();

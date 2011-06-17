@@ -260,6 +260,7 @@ public:
   //! Returns the number of flops in the initialization phase.
   virtual double InitializeFlops() const
   {
+#ifdef IFPACK_FLOPCOUNTERS
     if (Containers_.size() == 0)
       return(0.0);
 
@@ -270,10 +271,14 @@ public:
     for (unsigned int i = 0 ; i < Containers_.size() ; ++i)
       total += Containers_[i]->InitializeFlops();
     return(total);
+#else
+    return(0.0);
+#endif
   }
 
   virtual double ComputeFlops() const
   {
+#ifdef IFPACK_FLOPCOUNTERS
     if (Containers_.size() == 0)
       return(0.0);
     
@@ -281,10 +286,14 @@ public:
     for (unsigned int i = 0 ; i < Containers_.size() ; ++i)
       total += Containers_[i]->ComputeFlops();
     return(total);
+#else
+    return(0.0);
+#endif
   }
 
   virtual double ApplyInverseFlops() const
   {
+#ifdef IFPACK_FLOPCOUNTERS
     if (Containers_.size() == 0)
       return(0.0);
 
@@ -293,6 +302,9 @@ public:
       total += Containers_[i]->ApplyInverseFlops();
     }
     return(total);
+#else
+    return(0.0);
+#endif
   }
 
 private:
@@ -650,7 +662,9 @@ DoJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     }
     // NOTE: flops for ApplyInverse() of each block are summed up
     // in method ApplyInverseFlops()
+#ifdef IFPACK_FLOPCOUNTERS
     ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalRows();
+#endif
 
   }
   else {
@@ -686,7 +700,9 @@ DoJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     // NOTE: flops for ApplyInverse() of each block are summed up
     // in method ApplyInverseFlops()
     // NOTE: do not count for simplicity the flops due to overlapping rows
+#ifdef IFPACK_FLOPCOUNTERS
     ApplyInverseFlops_ += NumVectors * 4 * Matrix_->NumGlobalRows();
+#endif
   }
 
   return(0);
@@ -782,7 +798,9 @@ DoGaussSeidel(Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     }
 
     IFPACK_CHK_ERR(Containers_[i]->ApplyInverse());
+#ifdef IFPACK_FLOPCOUNTERS
     ApplyInverseFlops_ += Containers_[i]->ApplyInverseFlops();
+#endif
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
@@ -796,8 +814,10 @@ DoGaussSeidel(Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // operations for all getrow()'s
   // NOTE: flops for ApplyInverse() of each block are summed up
   // in method ApplyInverseFlops()
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalNonzeros();
   ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalRows();
+#endif
 
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (tough for ML it should be ok)
@@ -897,7 +917,9 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
     }
 
     IFPACK_CHK_ERR(Containers_[i]->ApplyInverse());
+#ifdef IFPACK_FLOPCOUNTERS
     ApplyInverseFlops_ += Containers_[i]->ApplyInverseFlops();
+#endif
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
@@ -907,9 +929,11 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
     }
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   // operations for all getrow()'s
   ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalNonzeros();
   ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalRows();
+#endif
 
   Xcopy = X;
 
@@ -948,7 +972,9 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
     }
 
     IFPACK_CHK_ERR(Containers_[i]->ApplyInverse());
+#ifdef IFPACK_FLOPCOUNTERS
     ApplyInverseFlops_ += Containers_[i]->ApplyInverseFlops();
+#endif
 
     for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
       LID = Containers_[i]->ID(j);
@@ -958,9 +984,11 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
     }
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   // operations for all getrow()'s
   ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalNonzeros();
   ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalRows();
+#endif
 
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (tough for ML it should be ok)

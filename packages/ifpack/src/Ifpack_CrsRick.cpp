@@ -248,7 +248,9 @@ int Ifpack_CrsRick::Factor() {
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal
 
+#ifdef IFPACK_FLOPCOUNTERS
   int current_madds = 0; // We will count multiply-add as they happen
+#endif
 
   // Now start the factorization.
 
@@ -293,7 +295,10 @@ int Ifpack_CrsRick::Factor() {
 	  int kk = colflag[UUI[k]];
 	  if (kk>-1) {
 	    InV[kk] -= multiplier*UUV[k];
+#ifdef IFPACK_FLOPCOUNTERS
 	    current_madds++;
+#endif
+#endif
 	  }
 	}
       }
@@ -302,7 +307,9 @@ int Ifpack_CrsRick::Factor() {
 	  int kk = colflag[UUI[k]];
 	  if (kk>-1) InV[kk] -= multiplier*UUV[k];
 	  else diagmod -= multiplier*UUV[k];
+#ifdef IFPACK_FLOPCOUNTERS
 	  current_madds++;
+#endif
 	}
       }
      }
@@ -334,6 +341,7 @@ int Ifpack_CrsRick::Factor() {
   }
 
   
+#ifdef IFPACK_FLOPCOUNTERS
   // Add up flops
  
   double current_flops = 2 * current_madds;
@@ -347,6 +355,7 @@ int Ifpack_CrsRick::Factor() {
   if (RelaxValue_!=0.0) total_flops += 2 * (double)D_->GlobalLength(); // Accounts for relax update of diag
 
   UpdateFlops(total_flops); // Update flop count
+#endif
 
   delete [] InI;
   delete [] InV;
@@ -382,12 +391,14 @@ int Ifpack_CrsRick::Solve(bool Trans, const Epetra_Vector& X,
     Y1 = (Epetra_Vector *) OverlapY_; // Set pointers for X1 and Y1 to point to overlap space
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   Epetra_Flops * counter = this->GetFlopCounter();
   if (counter!=0) {
     L_->SetFlopCounter(*counter);
     Y1->SetFlopCounter(*counter);
     U_->SetFlopCounter(*counter);
   }
+#endif
 
   if (!Trans) {
 
@@ -443,12 +454,14 @@ int Ifpack_CrsRick::Solve(bool Trans, const Epetra_MultiVector& X,
     Y1 = OverlapY_; // Set pointers for X1 and Y1 to point to overlap space
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   Epetra_Flops * counter = this->GetFlopCounter();
   if (counter!=0) {
     L_->SetFlopCounter(*counter);
     Y1->SetFlopCounter(*counter);
     U_->SetFlopCounter(*counter);
   }
+#endif
 
   if (!Trans) {
 
@@ -502,12 +515,14 @@ int Ifpack_CrsRick::Multiply(bool Trans, const Epetra_MultiVector& X,
     Y1 = OverlapY_; // Set pointers for X1 and Y1 to point to overlap space
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   Epetra_Flops * counter = this->GetFlopCounter();
   if (counter!=0) {
     L_->SetFlopCounter(*counter);
     Y1->SetFlopCounter(*counter);
     U_->SetFlopCounter(*counter);
   }
+#endif
 
   if (Trans) {
 

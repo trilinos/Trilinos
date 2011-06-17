@@ -291,6 +291,7 @@ int Ifpack_CrsIct::Factor() {
   U_->FillComplete(A_.OperatorDomainMap(), A_.OperatorRangeMap());
   
   D_->Reciprocal(*D_); // Put reciprocal of diagonal in this vector
+#ifdef IFPACK_FLOPCOUNTERS
   // Add up flops
  
   double current_flops = 2 * nz; // Just an estimate
@@ -303,6 +304,7 @@ int Ifpack_CrsIct::Factor() {
   total_flops += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
 
   UpdateFlops(total_flops); // Update flop count
+#endif
 
   SetFactored(true);
 

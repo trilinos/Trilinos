@@ -195,7 +195,9 @@ int Ifpack_PointRelaxation::Compute()
     if (diag != 0.0)
       diag = 1.0 / diag;
   }
+#ifdef IFPACK_FLOPCOUNTERS
   ComputeFlops_ += NumMyRows_;
+#endif
 
 #if 0
   // some methods require the inverse of the diagonal, compute it
@@ -406,7 +408,9 @@ ApplyInverseJacobi(const Epetra_MultiVector& RHS, Epetra_MultiVector& LHS) const
   //   - Diagonal                 (NumGlobalRows_)
   //   - A + B                    (NumGlobalRows_)
   //   - 1.0                      (NumGlobalRows_)
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += NumVectors * (6 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
+#endif
 
   return(0);
 }
@@ -564,7 +568,9 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
     }
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += NumVectors * (4 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
+#endif
 
   return(0);
 } //ApplyInverseGS_RowMatrix()
@@ -652,7 +658,9 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
           y_ptr[m][i] = y2_ptr[m][i];
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+#endif
   return(0);
 } //ApplyInverseGS_CrsMatrix()
 
@@ -739,7 +747,9 @@ ApplyInverseGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector
           y_ptr[m][i] = y2_ptr[m][i];
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+#endif
   return(0);
 } //ApplyInverseGS_FastCrsMatrix()
 
@@ -841,7 +851,9 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
           y_ptr[m][i] = y2_ptr[m][i];
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+#endif
   return(0);
 }
 
@@ -923,7 +935,9 @@ ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X
           y_ptr[m][i] = y2_ptr[m][i];
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+#endif
   return(0);
 }
 
@@ -1008,6 +1022,8 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
           y_ptr[m][i] = y2_ptr[m][i];
   }
 
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+#endif
   return(0);
 }

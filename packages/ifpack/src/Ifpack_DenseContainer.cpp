@@ -118,7 +118,9 @@ int Ifpack_DenseContainer::ApplyInverse()
   if (NumRows_ != 0)
     IFPACK_CHK_ERR(Solver_.Solve());
 
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += 2.0 * NumVectors_ * NumRows_ * NumRows_;
+#endif
   return(0);
 }
 
@@ -209,7 +211,9 @@ int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix_in)
   Label_ = "Ifpack_DenseContainer";
 
   // not sure of count
+#ifdef IFPACK_FLOPCOUNTERS
   ComputeFlops_ += 4.0 * NumRows_ * NumRows_ * NumRows_ / 3;
+#endif
   IsComputed_ = true;
 
   return(0);
@@ -227,7 +231,9 @@ int Ifpack_DenseContainer::Apply()
   else
     IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,Matrix_,LHS_,0.0));
 
+#ifdef IFPACK_FLOPCOUNTERS
   ApplyFlops_ += 2 * NumRows_ * NumRows_;
+#endif
   return(0);
 }
 
@@ -240,8 +246,10 @@ ostream& Ifpack_DenseContainer::Print(ostream & os) const
   os << "Number of vectors       = " << NumVectors() << endl;
   os << "IsInitialized()         = " << IsInitialized() << endl;
   os << "IsComputed()            = " << IsComputed() << endl;
+#ifdef IFPACK_FLOPCOUNTERS
   os << "Flops in Compute()      = " << ComputeFlops() << endl; 
   os << "Flops in ApplyInverse() = " << ApplyInverseFlops() << endl; 
+#endif
   os << "================================================================================" << endl;
   os << endl;
 
