@@ -54,7 +54,12 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
+
+// How many timers do we need?
+#define ntimers 3
+
 
 int main(int argc, char *argv[]) {
 
@@ -63,8 +68,16 @@ int main(int argc, char *argv[]) {
  
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
+  // Timing
+  Teuchos::Time myTime("global");
+  Teuchos::TimeMonitor M(myTime);
+  int ctime=0;
+  Teuchos::RCP<Teuchos::Time> mtime[ntimers];
+
   //out->setOutputToRootOnly(-1);
   //out->precision(12);
 
@@ -73,18 +86,29 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
-  
+
+  // custom parameters
+  LO maxLevels = 5;
+  int nx=100,ny=0,nz=0;
+  std::string matrixType("Laplace1D");
+
+  clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
+  clp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Laplace3D");
+  clp.setOption("nx",&nx,"mesh points in x-direction.");
+  clp.setOption("ny",&ny,"mesh points in y-direction.");
+  clp.setOption("nz",&nz,"mesh points in z-direction.");
+
+  GlobalOrdinal numGlobalElements = nx; 
+  if (matrixType == "Laplace2D") numGlobalElements*=ny;
+  else if (matrixType == "Laplace2D") numGlobalElements*=ny*nz;
+
+
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  MueLu::Gallery::Parameters matrixParameters(clp, 8748); // manage parameters of the test case
+  MueLu::Gallery::Parameters matrixParameters(clp, numGlobalElements); // manage parameters of the test case
   Cthulhu::Parameters cthulhuParameters(clp);             // manage parameters of cthulhu
 
-  // custom parameters
-  LO maxLevels = 1;
-  LO its=20;
-  clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
-  clp.setOption("its",&its,"number of multigrid cycles");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -112,11 +136,14 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
+  mtime[ctime]=M.getNewTimer("Matrix Build");
+  mtime[ctime]->start();
   const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
+  mtime[ctime]->stop();
+  ctime++;
 
-
-  return EXIT_SUCCESS;
+  //  return EXIT_SUCCESS;
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
@@ -125,6 +152,8 @@ int main(int argc, char *argv[]) {
   nullSpace->putScalar( (SC) 1.0);
   Teuchos::Array<ST::magnitudeType> norms(1);
 
+  mtime[ctime]=M.getNewTimer("MueLu Setup");
+  mtime[ctime]->start();
   RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   RCP<MueLu::Level<SC,LO,GO,NO,LMO> > Finest = rcp( new MueLu::Level<SC,LO,GO,NO,LMO>() );
@@ -170,18 +199,24 @@ int main(int argc, char *argv[]) {
     throw(MueLu::Exceptions::RuntimeError("main: smoother error"));
   }
 
-  //RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
-  RCP<SmootherFactory> SmooFact;
+  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
+  //  RCP<SmootherFactory> SmooFact;
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+
+  RCP<SmootherPrototype> coarseProto;
+  SmootherFactory coarseSolveFact(smooProto);  // **** smoother for the coarse solver!
+  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
   Teuchos::ParameterList status;
   status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  mtime[ctime]->stop();
+  ctime++;
   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
 
-  RCP<SmootherPrototype> coarseProto;
 /*
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_AMESOS
@@ -205,8 +240,7 @@ int main(int argc, char *argv[]) {
   }
 */
 
-  SmootherFactory coarseSolveFact(smooProto);  // **** smoother for the coarse solver!
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
@@ -215,6 +249,11 @@ int main(int argc, char *argv[]) {
   X->setSeed(846930886);
   X->randomize();
   X->norm2(norms);
+  
+  RHS->setSeed(8675309);
+  RHS->randomize();
+
+#ifdef AMG_SOLVER
   *out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
   Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
@@ -230,8 +269,10 @@ int main(int argc, char *argv[]) {
     *out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   }
 
-#define JG_TODO
-#ifdef JG_TODO
+#endif
+
+#define BELOS_SOLVER
+#ifdef BELOS_SOLVER
   // Use AMG as a preconditioner in Belos
   {
     X->putScalar( (SC) 0.0);
@@ -268,14 +309,21 @@ int main(int argc, char *argv[]) {
     double tol = 1e-7;
     Teuchos::ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+    belosList.set("Output Frequency",10);
+    belosList.set("Output Style",Belos::Brief);
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
+    //belosList.set( "Verbosity", Belos::TimingDetails + Belos::StatusTestDetails);
 
     RCP< Belos::SolverManager<SC,MV,OP> > solver = rcp( new Belos::BlockCGSolMgr<SC,MV,OP>(problem, rcp(&belosList,false)) );
     
     // Perform solve
+    mtime[ctime]=M.getNewTimer("Belos Solve");
+    mtime[ctime]->start();
     Belos::ReturnType ret = solver->solve();
-    
+    mtime[ctime]->stop();
+    ctime++;
+
     // Get the number of iterations for this solve.
     int numIters = solver->getNumIters();
     *out << "Number of iterations performed for this solve: " << numIters << std::endl;
@@ -298,6 +346,29 @@ int main(int argc, char *argv[]) {
       *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
       if (actRes > tol) { badRes = true; }
     }
+
+
+
+    // Final summaries - this eats memory like a hot dog eating contest
+    // M.summarize();
+    
+    double lTime[ntimers];
+    double gTime[ntimers];
+
+    for(int i=0;i<ntimers;i++) lTime[i]=mtime[i]->totalElapsedTime();
+
+    // Allreduce is my friend.
+    MPI_Allreduce(&lTime,&gTime,ntimers,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+
+    for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<"\t"<<gTime[i]<<endl;
+
+
+
+
+
+
+
+
 
     // Check convergence
     if (ret!=Belos::Converged || badRes) {
