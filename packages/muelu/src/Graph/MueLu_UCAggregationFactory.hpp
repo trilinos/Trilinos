@@ -405,8 +405,8 @@ typedef int my_size_t; //TODO
           }
           
           {
-            int localSelected=0, globalSelected;
-            int globalNRows;
+            int localSelected=0;
+            GO  globalSelected, globalNRows;
             
             // Compute 'localSelected'
             for ( int i = 0; i < nRows; ++i ) 
