@@ -24,7 +24,7 @@ namespace MueLu {
       RCP<Matrix> returnMatrix;
       if (MatrixType == "Laplace1D") {
 
-        GlobalOrdinal nx = list.get("nx", -1);
+        GlobalOrdinal nx = list.get("nx", (GlobalOrdinal) -1);
         if (nx == -1)
           {
             nx = map->getGlobalNumElements();
@@ -34,8 +34,8 @@ namespace MueLu {
 
       } else if (MatrixType == "Laplace2D") {
 
-        GlobalOrdinal nx = list.get("nx", -1);
-        GlobalOrdinal ny = list.get("ny", -1);
+        GlobalOrdinal nx = list.get("nx", (GlobalOrdinal) -1);
+        GlobalOrdinal ny = list.get("ny", (GlobalOrdinal) -1);
         if (nx == -1 || ny == -1)
           {
             GlobalOrdinal n = map->getGlobalNumElements();
@@ -48,8 +48,8 @@ namespace MueLu {
 
       } else if (MatrixType == "Star2D") {
 
-        GlobalOrdinal nx = list.get("nx", -1);
-        GlobalOrdinal ny = list.get("ny", -1);
+        GlobalOrdinal nx = list.get("nx", (GlobalOrdinal) -1);
+        GlobalOrdinal ny = list.get("ny", (GlobalOrdinal) -1);
 
         Scalar a = list.get("a", 8.0);
         Scalar b = list.get("b", -1.0);
@@ -65,8 +65,8 @@ namespace MueLu {
 
       } else if (MatrixType == "BigStar2D") {
 
-        GlobalOrdinal nx = list.get("nx", -1);
-        GlobalOrdinal ny = list.get("ny", -1);
+        GlobalOrdinal nx = list.get("nx", (GlobalOrdinal) -1);
+        GlobalOrdinal ny = list.get("ny", (GlobalOrdinal) -1);
 
         Scalar a = list.get("a", 20.0);
         Scalar b = list.get("b", -8.0);
@@ -86,9 +86,9 @@ namespace MueLu {
 
       } else if (MatrixType == "Laplace3D") {
 
-        GlobalOrdinal nx = list.get("nx", -1);
-        GlobalOrdinal ny = list.get("ny", -1);
-        GlobalOrdinal nz = list.get("nz", -1);
+        GlobalOrdinal nx = list.get("nx", (GlobalOrdinal) -1);
+        GlobalOrdinal ny = list.get("ny", (GlobalOrdinal) -1);
+        GlobalOrdinal nz = list.get("nz", (GlobalOrdinal) -1);
         if (nx == -1 || ny == -1 || nz == -1)
           {
             GlobalOrdinal n = map->getGlobalNumElements();
@@ -101,9 +101,9 @@ namespace MueLu {
 
       } else if (MatrixType == "Brick3D") {
 
-        GlobalOrdinal nx = list.get("nx", -1);
-        GlobalOrdinal ny = list.get("ny", -1);
-        GlobalOrdinal nz = list.get("nz", -1);
+        GlobalOrdinal nx = list.get("nx", (GlobalOrdinal) -1);
+        GlobalOrdinal ny = list.get("ny", (GlobalOrdinal) -1);
+        GlobalOrdinal nz = list.get("nz", (GlobalOrdinal) -1);
         if (nx == -1 || ny == -1 || nz == -1)
           {
             GlobalOrdinal n = map->getGlobalNumElements();
