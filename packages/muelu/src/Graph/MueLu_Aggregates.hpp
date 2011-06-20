@@ -60,18 +60,18 @@ namespace MueLu {
 
         - FIXME Is this dangerous, i.e., could the user change this?
      */
-     Teuchos::ArrayRCP<int> ComputeAggregateSizes() const
+     Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const
      {
        if (aggregateSizes_ == Teuchos::null)
        {
-         aggregateSizes_ = Teuchos::ArrayRCP<int>(nAggregates_);
+         aggregateSizes_ = Teuchos::ArrayRCP<LO>(nAggregates_);
          int myPid = vertex2AggId_->getMap()->getComm()->getRank();
          Teuchos::ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
          Teuchos::ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
-         int size = procWinner.size();
+         LO size = procWinner.size();
 
-         for (int i = 0; i < nAggregates_; ++i) aggregateSizes_[i] = 0;
-         for (int k = 0; k < size; ++k ) {
+         for (LO i = 0; i < nAggregates_; ++i) aggregateSizes_[i] = 0;
+         for (LO k = 0; k < size; ++k ) {
            if (procWinner[k] == myPid) aggregateSizes_[vertex2AggId[k]]++;
          }
        }
