@@ -91,28 +91,18 @@ int main(int argc, char *argv[]) {
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
 
-  // custom parameters
-  LO maxLevels = 5;
-  GO nx=100,ny=0,nz=0;
-  std::string matrixType("Laplace1D");
-
-  clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
-  clp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Laplace3D");
-  clp.setOption("nx",&nx,"mesh points in x-direction.");
-  clp.setOption("ny",&ny,"mesh points in y-direction.");
-  clp.setOption("nz",&nz,"mesh points in z-direction.");
-
-  GlobalOrdinal numGlobalElements = nx; 
-  if (matrixType == "Laplace2D") numGlobalElements*=ny;
-  else if (matrixType == "Laplace2D") numGlobalElements*=ny*nz;
-
-
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp, numGlobalElements); // manage parameters of the test case
+  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
   Cthulhu::Parameters cthulhuParameters(clp);             // manage parameters of cthulhu
 
+  // custom parameters
+  // custom parameters
+  LO maxLevels = 3;
+  LO its=10;
+  clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
+  clp.setOption("its",&its,"number of multigrid cycles");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
