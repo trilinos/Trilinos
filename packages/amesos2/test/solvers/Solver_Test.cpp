@@ -195,7 +195,7 @@ int main(int argc, char*argv[])
 
   // This output is used to indicate a passed test, the test framework
   // will parse for it.
-  *fos << "End Result: ";
+  *fos << std::endl << "End Result: ";
   if( success ){
     *fos << "TEST PASSED";
   } else {
@@ -241,12 +241,6 @@ bool do_mat_test(const ParameterList& parameters)
 	     << "Ignoring the " << solver_name << " solver..."
 	     << std::endl;
       } else {
-	/* The <int,int> template parameters for the Factory is a kludge;
-	 * we shouldn't have to provide template parameters if we're just
-	 * asking for support of a solver.  This will be fixed when we
-	 * move to nonmember constructors
-	 * (i.e. Amesos::create<MAT,MV>("solver"); )
-	 */
 	if( Amesos::query(solver_name) ){
 	  // then we have support for this solver
 
@@ -353,7 +347,7 @@ bool do_epetra_test(const string& mm_file,
 #endif
 
   if( verbosity > 2 ){
-    *fos << "      Reading matrix from " << mm_file << " ... ";
+    *fos << std::endl << "      Reading matrix from " << mm_file << " ... ";
   }
   std::string path = filedir + mm_file;
   MAT* A;
@@ -419,12 +413,12 @@ bool do_epetra_test(const string& mm_file,
 						     xnorms, "xnorms",
 						     0.005, *compare_fos);
   if (!result) {
-    if( verbosity > 2 ){
+    if( verbosity > 1 ){
       *fos << "failed!" << std::endl;
     }
     return( false );
   } else {
-    if( verbosity > 2 ){
+    if( verbosity > 1 ){
       *fos << "passed" << std::endl;
     }
     return( true );
@@ -447,7 +441,7 @@ bool test_epetra(const string& mm_file,
       if( run_list.isSublist("run_params") ){
 	string run_name = epetra_runs.name(run_it);
 	if( verbosity > 1 ){
-	  *fos << "    Doing epetra test run '" << run_name << "' ... " << std::endl;
+	  *fos << "    Doing epetra test run '" << run_name << "' ... ";
 	}
 
 	ParameterList solve_params_copy(solve_params);
@@ -463,6 +457,9 @@ bool test_epetra(const string& mm_file,
 
   // only do one default run
   if( do_default ){
+    if( verbosity > 1 ){
+      *fos << "    Doing epetra test default test run .. ";
+    }
     success &= do_epetra_test(mm_file, solver_name, solve_params);
   }
 
@@ -503,14 +500,14 @@ bool do_tpetra_test_with_types(const string& mm_file,
   RCP<Node>             node = platform.getNode();
 
   if( verbosity > 2 ){
-    *fos << "      Reading matrix from " << mm_file << " ... ";
+    *fos << std::endl << "      Reading matrix from " << mm_file << " ... ";
   }
   std::string path = filedir + mm_file;
   RCP<MAT> A =
     Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path, comm, node);
 
   if( verbosity > 2 ){
-    *fos << " done" << std::endl;
+    *fos << "done" << std::endl;
     switch( verbosity ){
     case 6:
       A->describe(*fos, Teuchos::VERB_EXTREME); break;
@@ -574,12 +571,12 @@ bool do_tpetra_test_with_types(const string& mm_file,
 						     xnorms, "xnorms",
 						     0.005, *compare_fos);
   if (!result) {
-    if( verbosity > 2 ){
+    if( verbosity > 1 ){
       *fos << "failed!" << std::endl;
     }
     return( false );
   } else {
-    if( verbosity > 2 ){
+    if( verbosity > 1 ){
       *fos << "passed" << std::endl;
     }
     return( true );
@@ -648,7 +645,7 @@ bool test_tpetra(const string& mm_file,
 	}
 	*fos << " lo=" << lo
 	     << " go=" << go
-	     << std::endl;
+	     << " ... ";
       }
 
       string timer_name = mm_file + "_" + scalar + "_" + lo + "_" + go;
