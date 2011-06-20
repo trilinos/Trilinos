@@ -41,6 +41,8 @@ APPEND_SET(HEADERS
   Panzer_BCStrategy_Factory.hpp
   Panzer_BCStrategy_Factory_Defines.hpp
   Panzer_BCStrategy_TemplateManager.hpp
+  Panzer_BCStrategy_Dirichlet_DefaultImpl.hpp
+  Panzer_BCStrategy_Dirichlet_DefaultImplT.hpp
   Panzer_CellData.hpp
   Panzer_CloneableEvaluator.hpp
   Panzer_ClosureModel_Factory.hpp

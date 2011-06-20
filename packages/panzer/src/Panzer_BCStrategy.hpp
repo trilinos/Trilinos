@@ -7,23 +7,35 @@
 namespace panzer {
 
   template <typename EvalT>
-    class BCStrategy : public panzer::BCStrategyBase {
+  class BCStrategy : public panzer::BCStrategyBase {
     
   public:    
     
     BCStrategy(const panzer::BC& bc);
     
+    virtual ~BCStrategy();
+    
+    /** Must be called before this->buildAndRegisterEvaluators() and
+	this->buildAndRegisterGatherScatterEvaluators().
+    */
+    virtual void setup(const panzer::PhysicsBlock& side_pb,
+		       const Teuchos::ParameterList& user_data) = 0;
+    
     virtual void 
-      buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				 const panzer::PhysicsBlock& pb) const = 0;
-
+    buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+			       const panzer::PhysicsBlock& side_pb,
+			       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+			       const Teuchos::ParameterList& models,
+			       const Teuchos::ParameterList& user_data) const = 0;
+      
     virtual void 
-      buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-  				              const panzer::PhysicsBlock& pb,
-                                              const LinearObjFactory<panzer::Traits> & lof) const = 0;
-
+    buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					    const panzer::PhysicsBlock& side_pb,
+					    const LinearObjFactory<panzer::Traits> & lof,
+					    const Teuchos::ParameterList& user_data) const = 0;
+    
   protected:
-
+    
     const panzer::BC m_bc;
 
   };

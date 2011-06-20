@@ -7,4 +7,8 @@ BCStrategy(const panzer::BC& bc) :
   m_bc(bc) 
 { }
 
+template <typename EvalT>
+panzer::BCStrategy<EvalT>::~BCStrategy()
+{ }
+
 #endif

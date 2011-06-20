@@ -210,9 +210,9 @@ void panzer::FieldManagerBuilder<LO,GO>::setupBCFieldManagers(
       // Iterate over evaluation types
       for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator 
 	     bcs_type = bcs->begin(); bcs_type != bcs->end(); ++bcs_type) {
-	bcs_type->buildAndRegisterEvaluators(fm,*side_pb);
-	bcs_type->buildAndRegisterGatherScatterEvaluators(fm,*side_pb,lo_factory);
-	//bcs_type->buildAndRegisterClosureModelEvaluators(fm, cm_factory, closure_models);
+	bcs_type->setup(*side_pb,user_data);
+	bcs_type->buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
+	bcs_type->buildAndRegisterGatherScatterEvaluators(fm,*side_pb,lo_factory,user_data);
       }
 
       // Setup the fieldmanager

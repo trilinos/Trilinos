@@ -21,7 +21,7 @@
 template <typename EvalT>
 user_app::BCStrategy_Dirichlet_Constant<EvalT>::
 BCStrategy_Dirichlet_Constant(const panzer::BC& bc) :
-  panzer::BCStrategy<EvalT>(bc)
+  panzer::BCStrategy_Dirichlet_DefaultImpl<EvalT>(bc)
 {
   TEUCHOS_ASSERT(this->m_bc.strategy() == "Constant");
 }
@@ -29,53 +29,57 @@ BCStrategy_Dirichlet_Constant(const panzer::BC& bc) :
 // ***********************************************************************
 template <typename EvalT>
 void user_app::BCStrategy_Dirichlet_Constant<EvalT>::
-buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-			   const panzer::PhysicsBlock& pb) const
+setup(const panzer::PhysicsBlock& side_pb,
+      const Teuchos::ParameterList& user_data)
 {
-  using Teuchos::ParameterList;
   using Teuchos::RCP;
-  using Teuchos::rcp;
   using std::vector;
-  using std::map;
   using std::string;
   using std::pair;
 
-  // ********************
-  // DOFs (unknowns)
-  // ********************
+  // need the dof value to form the residual
+  this->required_dof_names.push_back(this->m_bc.equationSetName());
 
-  RCP<vector<string> > field_names = rcp(new vector<string>);
-  field_names->push_back(this->m_bc.equationSetName());
+  // unique residual name
+  this->residual_name = "Residual_" + this->m_bc.identifier();
 
-  const vector<pair<string,RCP<panzer::Basis> > >& dofs = pb.getProvidedDOFs();
+  // map residual to dof 
+  this->residual_to_dof_names_map[residual_name] = this->m_bc.equationSetName();
 
-  RCP<panzer::Basis> basis;
+  // find the basis for this dof 
+  const vector<pair<string,RCP<panzer::Basis> > >& dofs = side_pb.getProvidedDOFs();
+
   for (vector<pair<string,RCP<panzer::Basis> > >::const_iterator dof_it = 
 	 dofs.begin(); dof_it != dofs.end(); ++dof_it) {
     if (dof_it->first == this->m_bc.equationSetName())
-      basis = dof_it->second;
+      this->basis = dof_it->second;
   }
 
-  TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
+  TEST_FOR_EXCEPTION(Teuchos::is_null(this->basis), std::runtime_error,
 		     "Error the name \"" << this->m_bc.equationSetName()
 		     << "\" is not a valid DOF for the boundary condition:\n"
 		     << this->m_bc << "\n");
 
-  string bc_name = this->m_bc.identifier();
+}
 
-  RCP<map<string,string> > names_map = rcp(new map<string,string>);
-  RCP<vector<string> > residual_names = rcp(new vector<string>);
-  for (vector<string>::iterator i=field_names->begin();
-       i != field_names->end(); ++i) {
-    residual_names->push_back(bc_name + *i);
-    names_map->insert(std::make_pair(bc_name + *i,*i));
-  }
+// ***********************************************************************
+template <typename EvalT>
+void user_app::BCStrategy_Dirichlet_Constant<EvalT>::
+buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+			   const panzer::PhysicsBlock& pb,
+			   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+			   const Teuchos::ParameterList& models,
+			   const Teuchos::ParameterList& user_data) const
+{
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
   // Evaluator for Constant dirichlet BCs
   {
     ParameterList p("BC Constant Dirichlet");
-    p.set("Residual Name", (*residual_names)[0]);
-    p.set("DOF Name", (*names_map)[(*residual_names)[0]]);
+    p.set("Residual Name", residual_name);
+    p.set("DOF Name", (this->residual_to_dof_names_map.find(residual_name))->second);
     p.set("Data Layout", basis->functional);
     p.set("Value", this->m_bc.params()->template get<double>("Value"));
     
@@ -85,94 +89,4 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     fm.template registerEvaluator<EvalT>(op);
   }
 
-}
-
-template <typename EvalT>
-void user_app::BCStrategy_Dirichlet_Constant<EvalT>::
-buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-			                const panzer::PhysicsBlock& pb,
-				        const panzer::LinearObjFactory<panzer::Traits> & lof) const
-{
-  using Teuchos::ParameterList;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using std::vector;
-  using std::map;
-  using std::string;
-  using std::pair;
-
-  // ********************
-  // DOFs (unknowns)
-  // ********************
-
-  RCP<vector<string> > field_names = rcp(new vector<string>);
-  field_names->push_back(this->m_bc.equationSetName());
-
-  const vector<pair<string,RCP<panzer::Basis> > >& dofs = pb.getProvidedDOFs();
-
-  RCP<panzer::Basis> basis;
-  for (vector<pair<string,RCP<panzer::Basis> > >::const_iterator dof_it = 
-	 dofs.begin(); dof_it != dofs.end(); ++dof_it) {
-    if (dof_it->first == this->m_bc.equationSetName())
-      basis = dof_it->second;
-  }
-
-  TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
-		     "Error the name \"" << this->m_bc.equationSetName()
-		     << "\" is not a valid DOF for the boundary condition:\n"
-		     << this->m_bc << "\n");
-
-  // Gather
-  {
-    ParameterList p("BC Gather");
-    p.set("Basis", basis);
-    p.set("DOF Names", field_names);
-    p.set("Indexer Names", field_names);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
-      // rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));
-    
-    fm.template registerEvaluator<EvalT>(op);
-  }
-  
-  string bc_name = this->m_bc.identifier();
-
-  // Scatter
-  RCP<map<string,string> > names_map = rcp(new map<string,string>);
-  RCP<vector<string> > residual_names = rcp(new vector<string>);
-  for (vector<string>::iterator i=field_names->begin();
-       i != field_names->end(); ++i) {
-    residual_names->push_back(bc_name + *i);
-    names_map->insert(std::make_pair(bc_name + *i,*i));
-  }
-
-  string scatter_field_name = "Dummy Scatter: " + bc_name;  
-  {
-    ParameterList p("Scatter");
-    p.set("Scatter Name", scatter_field_name);
-    p.set("Basis", basis);
-    p.set("Dependent Names", residual_names);
-    p.set("Dependent Map", names_map);
-    
-    TEST_FOR_EXCEPTION(!pb.cellData().isSide(), std::logic_error,
-		       "Error - physics block is not a side set!");
-    
-    p.set<int>("Side Subcell Dimension", 
-	       pb.getBaseCellTopology().getDimension() - 1);
-    p.set<int>("Local Side ID", pb.cellData().side());
-
-    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
-      // rcp(new panzer::ScatterDirichletResidual_Epetra<EvalT,panzer::Traits>(p));
-    
-    fm.template registerEvaluator<EvalT>(op);
-  }
-
-  // Require variables
-  {
-    using panzer::Dummy;
-    PHX::Tag<typename EvalT::ScalarT> tag(scatter_field_name, 
-					  rcp(new PHX::MDALayout<Dummy>(0)));
-    fm.template requireField<EvalT>(tag);
-  }
-  
 }
