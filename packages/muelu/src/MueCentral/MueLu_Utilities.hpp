@@ -6,6 +6,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_TypeTraits.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
@@ -534,6 +535,34 @@ namespace MueLu {
     }
 
    } //Write
+
+   static void PauseForDebugger()
+   {
+     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+   
+     int mypid = comm->getRank();
+   
+     for (int i = 0; i <comm->getSize() ; i++) {
+       if (i == mypid ) {
+         char buf[80];
+         char hostname[80];
+         gethostname(hostname, sizeof(hostname));
+         int pid = getpid();
+         sprintf(buf, "Host: %s\tMPI rank: %d,\tPID: %d\n\tattach %d\n\tcontinue\n",
+             hostname, mypid, pid, pid);
+         printf("%s\n",buf);
+         fflush(stdout);
+         sleep(1);
+       }
+     }
+   
+     if (mypid == 0) {
+       printf( "** Enter a character to continue > "); fflush(stdout);
+       char go = ' ';
+       scanf("%c",&go);
+     }
+     comm->barrier();
+   } //PauseForDebugger
 
   }; // class
 
