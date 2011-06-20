@@ -68,8 +68,8 @@ private:
 public:
 
   /** \brief  On the host device use size_t for indexing */
-  typedef size_t               size_type ;
-  typedef MDArrayIndexMapLeft  default_mdarray_map ;
+  typedef size_t                size_type ;
+  typedef MDArrayIndexMapRight  default_mdarray_map ;
 
   /*--------------------------------*/
   /** \brief  Clear the memory view setting it to the NULL view.
