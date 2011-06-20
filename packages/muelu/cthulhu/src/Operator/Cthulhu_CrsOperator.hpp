@@ -63,6 +63,20 @@ public:
     this->currentViewLabel_ = this->GetDefaultViewLabel();
     this->SwitchToDefaultView(); // JG: this line is useless (for the moment).
   }
+
+  CrsOperator(RCP<CrsMatrix> &matrix)
+  {
+    // Set matrix data
+    matrixData_ = matrix;
+
+    // Create default view
+    this->defaultViewLabel_ = "point";
+    CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());    
+    
+    // Set current view
+    this->currentViewLabel_ = this->GetDefaultViewLabel();
+    this->SwitchToDefaultView(); // JG: this line is useless (for the moment).
+  }
   
   //! Destructor
   virtual ~CrsOperator() {}
