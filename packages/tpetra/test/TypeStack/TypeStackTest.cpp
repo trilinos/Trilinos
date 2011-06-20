@@ -26,7 +26,7 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack4 ) {
                        float,
                        int,
                        short)
-  TEST_EQUALITY_CONST( FullStack::height, 4 );
+  TEST_EQUALITY_CONST( (int)FullStack::height, 4 );
   recurseTypes<FullStack>(out);
   // test that the macro is equivalent to the manual instantiation
   using Tpetra::Ext::TypeStack;
@@ -44,7 +44,7 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack3 ) {
   TPETRAEXT_TYPESTACK3(FullStack,double,
                        float,
                        int)
-  TEST_EQUALITY_CONST( FullStack::height, 3 );
+  TEST_EQUALITY_CONST( (int)FullStack::height, 3 );
   recurseTypes<FullStack>(out);
   // test that the macro is equivalent to the manual instantiation
   using Tpetra::Ext::TypeStack;
@@ -60,7 +60,7 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack2 ) {
   // test the type stack
   TPETRAEXT_TYPESTACK2(FullStack,double,
                        float)
-  TEST_EQUALITY_CONST( FullStack::height, 2 );
+  TEST_EQUALITY_CONST( (int)FullStack::height, 2 );
   recurseTypes<FullStack>(out);
   // test that the macro is equivalent to the manual instantiation
   using Tpetra::Ext::TypeStack;
@@ -75,7 +75,7 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack1 ) {
   // test a boring type stack of one type
   // unlike above, this isn't actually a TypeStack object
   TPETRAEXT_TYPESTACK1(FullStack, int)
-  TEST_EQUALITY_CONST( FullStack::height, 1 );
+  TEST_EQUALITY_CONST( (int)FullStack::height, 1 );
   recurseTypes<FullStack>(out);
   // test that the macro is equivalent to the manual instantiation
   using Tpetra::Ext::TypeStackBottom;
