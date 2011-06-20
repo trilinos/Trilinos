@@ -346,7 +346,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
       double sqrtminprocs = ((double)n / INT_MAX) + .5;
       int minprocs = (int)sqrtminprocs * (int)sqrtminprocs;
       sprintf(msg,
-       "At least %d processes are required to acheive the 2D deposition of the problem matrix\n",
+       "At least %d processes are required to achieve the 2D distribution of the problem matrix\n",
        minprocs);
     }
 
