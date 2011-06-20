@@ -61,7 +61,7 @@ namespace Cthulhu {
   };
 
   template <>
-  class MultiVectorFactory<int, int, Kokkos::DefaultNode::DefaultNodeType> {
+  class MultiVectorFactory<double, int, int, Kokkos::DefaultNode::DefaultNodeType> {
   
     typedef Map<int, int> Map;
     typedef MultiVector<double, int, int> MultiVector;

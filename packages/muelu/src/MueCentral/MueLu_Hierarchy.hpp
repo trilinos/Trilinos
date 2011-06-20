@@ -120,25 +120,12 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          PRFact = rcp( new GenericPRFactory(SaPFact));
        }
        if (AcFact == Teuchos::null) AcFact = rcp( new RAPFactory());
-       if (SmooFact == Teuchos::null) { //FIXME from JG: how to do a run without any smoother ?
-//FIXME #ifdef we're using tpetra
-//FIXME    throw(Exceptions::NotImplemented("No default smoother is defined"));
-//FIXME #else we're using epetra
-#ifdef HAVE_MUELU_IFPACK
-         Teuchos::ParameterList  ifpackList;
-         ifpackList.set("relaxation: type", "Gauss-Seidel");
-         ifpackList.set("relaxation: sweeps", (int) 1);
-         ifpackList.set("relaxation: damping factor", (double) 1.0);
-         ifpackList.set("relaxation: zero starting solution", false);
-         RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-         SmooFact = rcp( new SmootherFactory(smoother) );
-#endif
-//FIXME #endif
-       }
 
        Teuchos::ParameterList status;
        status = FillHierarchy(*PRFact,*AcFact,startLevel,numDesiredLevels /*,status*/);
-       SetSmoothers(*SmooFact,startLevel,numDesiredLevels);
+       if (SmooFact != Teuchos::null) {
+         SetSmoothers(*SmooFact,startLevel,numDesiredLevels);
+       }
        return status;
 
      } //FullPopulate()
