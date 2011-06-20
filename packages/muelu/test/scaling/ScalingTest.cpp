@@ -98,16 +98,21 @@ int main(int argc, char *argv[]) {
   Cthulhu::Parameters cthulhuParameters(clp);             // manage parameters of cthulhu
 
   // custom parameters
-  // custom parameters
   LO maxLevels = 3;
   LO its=10;
+  int pauseForDebugger=0;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
+  clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
   case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+  }
+
+  if (pauseForDebugger) {
+    Utils::PauseForDebugger();
   }
   
   matrixParameters.check();
@@ -177,15 +182,16 @@ int main(int argc, char *argv[]) {
 
   RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
+    ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
     smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 #endif
   } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
+    ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
     smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
 #endif
   }
@@ -193,14 +199,11 @@ int main(int argc, char *argv[]) {
     throw(MueLu::Exceptions::RuntimeError("main: smoother error"));
   }
 
-  RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
-  //  RCP<SmootherFactory> SmooFact;
+  RCP<SmootherFactory> SmooFact;
+  if (maxLevels > 1) 
+    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-
-  RCP<SmootherPrototype> coarseProto;
-  SmootherFactory coarseSolveFact(smooProto);  // **** smoother for the coarse solver!
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
   Teuchos::ParameterList status;
   status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
@@ -209,9 +212,10 @@ int main(int argc, char *argv[]) {
   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
+  RCP<SmootherPrototype> coarseProto;
+
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
 
-/*
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_AMESOS
     Teuchos::ParameterList amesosList;
@@ -232,7 +236,9 @@ int main(int argc, char *argv[]) {
   if (coarseProto == Teuchos::null) {
     throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
   }
-*/
+  SmootherFactory coarseSolveFact(coarseProto);
+  //SmootherFactory coarseSolveFact(smooProto);    //JJH lazy man's way to have a one-level method with smoother
+  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
 
 
@@ -247,6 +253,7 @@ int main(int argc, char *argv[]) {
   RHS->setSeed(8675309);
   RHS->randomize();
 
+#define AMG_SOLVER
 #ifdef AMG_SOLVER
   *out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
