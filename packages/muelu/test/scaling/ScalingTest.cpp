@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 
   // custom parameters
   LO maxLevels = 5;
-  int nx=100,ny=0,nz=0;
+  GO nx=100,ny=0,nz=0;
   std::string matrixType("Laplace1D");
 
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
