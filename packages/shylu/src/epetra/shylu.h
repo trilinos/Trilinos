@@ -28,6 +28,8 @@ typedef struct
                                 // but required for Amesos_Pardiso
     Teuchos::RCP<Epetra_CrsMatrix> Sbar; // Approx Schur complement
     AztecOO *innersolver;            // inner solver
+    Epetra_LinearProblem *LP2;   // Local problem to solve
+    Amesos_BaseSolver *dsolver;  // Local Subdomain solver
 } shylu_data;
 
 typedef struct
@@ -43,6 +45,7 @@ typedef struct
     int inner_maxiters;         // maximum iterations for inner solver
     double inner_tolerance;     // relative residual tolerance for inner solver
     string libName;             // library for the outer solver
+    string schurSolver;         // Solver for the Schur complement
     int sep_type;
 } shylu_config;
 

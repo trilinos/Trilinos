@@ -35,7 +35,12 @@ void Ifpack_ShyLU::Destroy()
     {
         delete slu_data_.LP;
         delete slu_data_.Solver;
-        if (slu_config_.libName == "Belos")
+        if (slu_config_.schurSolver == "Amesos")
+        {
+            delete slu_data_.LP2;
+            delete slu_data_.dsolver;
+        }
+        else if (slu_config_.libName == "Belos")
             delete slu_data_.innersolver;
         //delete slu_data_.D;
         delete slu_data_.Cptr;
@@ -82,6 +87,8 @@ int Ifpack_ShyLU::Initialize()
                                                 "Outer Solver Library");
     string schurApproxMethod = Teuchos::getParameter<string>(List_,
                                                 "Schur Approximation Method");
+    slu_config_.schurSolver = Teuchos::getParameter<string>(List_,
+                                                "Schur Complement Solver");
     slu_config_.relative_threshold =  0.0;
     slu_config_.Sdiagfactor =  0.05;
     if (schurApproxMethod == "A22AndBlockDiagonals")
@@ -123,40 +130,72 @@ int Ifpack_ShyLU::SetParameters(Teuchos::ParameterList& parameterlist)
 int Ifpack_ShyLU::Compute()
 {
     AztecOO *solver;
+    Amesos_BaseSolver *dsolver;
+    Epetra_LinearProblem *schurLP;
     Teuchos::Time ftime("setup time");
     ftime.start();
 
     slu_config_.libName = Teuchos::getParameter<string>(List_,
                                                 "Outer Solver Library");
-    if (slu_config_.libName == "Belos")
+    if (slu_config_.schurSolver == "Amesos")
     {
-        solver  = new AztecOO() ;
-        int err = solver->SetUserMatrix(slu_data_.Sbar.get());
-        assert (err == 0);
-        solver->SetAztecOption(AZ_solver, AZ_gmres);
-        solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
-        solver->SetAztecOption(AZ_keep_info, 1);
-        //solver->SetAztecOption(AZ_overlap, 3);
-        //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
-        solver->SetMatrixName(999);
+        Amesos Factory;
+        char* SolverType = "Amesos_Klu";
+        bool IsAvailable = Factory.Query(SolverType);
+        assert(IsAvailable == true);
+        Teuchos::ParameterList aList;
+        aList.set("Reindex", true);
 
-        double condest;
-        err = solver->ConstructPreconditioner(condest);
-        assert (err == 0);
-        //cout << "Condition number of inner Sbar" << condest << endl;
+        schurLP = new Epetra_LinearProblem();
+        schurLP->SetOperator(slu_data_.Sbar.get());
+        dsolver = Factory.Create(SolverType, *schurLP);
+        dsolver->SetParameters(aList);
+        cout << "Created the direct Schur  Solver" << endl;
+
+        dsolver->SymbolicFactorization();
+        cout << "Symbolic Factorization done for schur complement" << endl;
+
+        cout << "In Numeric Factorization of Schur complement" << endl;
+        dsolver->NumericFactorization();
+        cout << "Numeric Factorization done for schur complement" << endl;
+
     }
     else
     {
-        // I suspect there is a bug in AztecOO. Doing what we do in the if case
-        // here will cause an error when we use the solver in ApplyInverse
-        // The error will not happen when we call the dummy JustTryIt() below
-        solver = NULL;
+        if (slu_config_.libName == "Belos")
+        {
+            solver  = new AztecOO() ;
+            int err = solver->SetUserMatrix(slu_data_.Sbar.get());
+            assert (err == 0);
+            solver->SetAztecOption(AZ_solver, AZ_gmres);
+            solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
+            solver->SetAztecOption(AZ_keep_info, 1);
+            //solver->SetAztecOption(AZ_overlap, 3);
+            //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
+            solver->SetMatrixName(999);
+
+            double condest;
+            err = solver->ConstructPreconditioner(condest);
+            assert (err == 0);
+            //cout << "Condition number of inner Sbar" << condest << endl;
+        }
+        else
+        {
+            // I suspect there is a bug in AztecOO. Doing what we do in the if
+            // case
+            // here will cause an error when we use the solver in ApplyInverse
+            // The error will not happen when we call the dummy JustTryIt()
+            // below
+            solver = NULL;
+        }
     }
 
     ftime.stop();
     //cout << "Time to ConstructPreconditioner" << ftime.totalElapsedTime() 
             //<< endl;
     slu_data_.innersolver = solver;
+    slu_data_.dsolver = dsolver;
+    slu_data_.LP2 = schurLP;
     IsComputed_ = true;
     //cout << " Done with the compute" << endl ;
     return 0;

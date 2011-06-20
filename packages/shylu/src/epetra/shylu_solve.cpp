@@ -91,34 +91,45 @@ int shylu_solve(shylu_data *data, shylu_config *config,
     Xs.PutScalar(0.0);
 
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
-
-    if (config->libName == "Belos")
+    if (config->schurSolver == "Amesos")
     {
-        solver = data->innersolver;
-        solver->SetLHS(&Xs);
-        solver->SetRHS(&Bs);
+        Amesos_BaseSolver *solver = data->dsolver;
+        data->LP2->SetLHS(&Xs);
+        data->LP2->SetRHS(&Bs);
+        //cout << "Calling solve *****************************" << endl;
+        solver->Solve();
+        //cout << "Out of solve *****************************" << endl;
     }
     else
     {
-        // See the comment above on why we are not able to reuse the solver
-        // when outer solve is AztecOO as well.
-        solver = new AztecOO();
-        //solver.SetPrecOperator(precop_);
-        solver->SetAztecOption(AZ_solver, AZ_gmres);
-        // Do not use AZ_none
-        solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
-        //solver->SetAztecOption(AZ_precond, AZ_none);
-        //solver->SetAztecOption(AZ_precond, AZ_Jacobi);
-        ////solver->SetAztecOption(AZ_precond, AZ_Neumann);
-        //solver->SetAztecOption(AZ_overlap, 3);
-        //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
-        //solver->SetAztecOption(AZ_output, AZ_all);
-        //solver->SetAztecOption(AZ_diagnostics, AZ_all);
-        solver->SetProblem(Problem);
-    }
+        if (config->libName == "Belos")
+        {
+            solver = data->innersolver;
+            solver->SetLHS(&Xs);
+            solver->SetRHS(&Bs);
+        }
+        else
+        {
+            // See the comment above on why we are not able to reuse the solver
+            // when outer solve is AztecOO as well.
+            solver = new AztecOO();
+            //solver.SetPrecOperator(precop_);
+            solver->SetAztecOption(AZ_solver, AZ_gmres);
+            // Do not use AZ_none
+            solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
+            //solver->SetAztecOption(AZ_precond, AZ_none);
+            //solver->SetAztecOption(AZ_precond, AZ_Jacobi);
+            ////solver->SetAztecOption(AZ_precond, AZ_Neumann);
+            //solver->SetAztecOption(AZ_overlap, 3);
+            //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
+            //solver->SetAztecOption(AZ_output, AZ_all);
+            //solver->SetAztecOption(AZ_diagnostics, AZ_all);
+            solver->SetProblem(Problem);
+        }
 
-    // What should be a good inner_tolerance :-) ?
-    solver->Iterate(config->inner_maxiters, config->inner_tolerance);
+        // What should be a good inner_tolerance :-) ?
+        solver->Iterate(config->inner_maxiters, config->inner_tolerance);
+    }
 
     Epetra_MultiVector temp(BdMap, nvectors);
     data->Cptr->Multiply(false, Xs, temp);
@@ -173,7 +184,7 @@ int shylu_solve(shylu_data *data, shylu_config *config,
     Epetra_Export XsExporter(BsMap, Y.Map());
     Y.Export(Xs, XsExporter, Insert);
 
-    if (config->libName == "Belos")
+    if (config->libName == "Belos" || config->schurSolver == "Amesos")
     {
         // clean up
     }

@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
     Epetra_MultiVector x(vecMap, 1);
     Epetra_MultiVector b(vecMap, 1, false);
     b.PutScalar(1.0); // TODO : Accept it as input
+    //b1->PutScalar(1.0); // TODO : Accept it as input
     //cout << "Created the vectors" << endl;
 
     // Partition the matrix with hypergraph partitioning and redisstribute
