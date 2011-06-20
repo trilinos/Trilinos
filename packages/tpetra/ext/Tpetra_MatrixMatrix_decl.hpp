@@ -49,14 +49,7 @@ namespace Tpetra {
 // class CrsMatrix;
 // #endif
 
-  /** Collection of matrix-matrix operations. This class basically
-      functions as a namespace, containing only static methods.
-      See the program epetraext/test/MatrixMatrix/cxx_main.cpp for
-      a usage example.
-   */
-  
 namespace MatrixMatrix {
-
 
     /** Given CrsMatrix objects A, B and C, form the product C = A*B.
   In a parallel setting, A and B need not have matching distributions,
