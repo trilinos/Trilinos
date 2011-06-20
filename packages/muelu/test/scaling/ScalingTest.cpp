@@ -347,8 +347,6 @@ int main(int argc, char *argv[]) {
       if (actRes > tol) { badRes = true; }
     }
 
-
-
     // Final summaries - this eats memory like a hot dog eating contest
     // M.summarize();
     
@@ -360,15 +358,7 @@ int main(int argc, char *argv[]) {
     // Allreduce is my friend.
     MPI_Allreduce(&lTime,&gTime,ntimers,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
 
-    for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<"\t"<<gTime[i]<<endl;
-
-
-
-
-
-
-
-
+    for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<": \t"<<gTime[i]<<endl;
 
     // Check convergence
     if (ret!=Belos::Converged || badRes) {
