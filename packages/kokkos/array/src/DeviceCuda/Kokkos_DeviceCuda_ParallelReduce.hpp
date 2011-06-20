@@ -154,20 +154,21 @@ void cuda_reduce_global( const DriverType & driver )
   // Phase A: Output block's results to global memory
   //          and then input results into last block.
   //
-  // ** REQUIRED: gridDim.x <= blockDim.x * blockDim.y **
-
-  // Coalesced global memory write, wait for write to complete
-  // Write by blockIdx.x and
-  // Read  by blockIdx.x == ( threadIdx.x + blockDim.x * threadIdx.y )
-  // Determine correct location into scratch memory.
+  // ** REQUIRED: driver.m_grid_size <= blockDim.x * blockDim.y **
 
   if ( thread_of_block < ValueWordCount ) {
+    // Coalesced global memory write, wait for write to complete
+    // Write by multiblock_id and
+    // Read  by ( threadIdx.x + blockDim.x * threadIdx.y ) == multiblock_id
+    // Determine correct location into scratch memory.
+
+    const size_type multiblock_id = driver.m_grid_offset + blockIdx.x ;
     const size_type thread_stride = blockDim.x * blockDim.y ;
 
     size_type * const scratch = driver.m_scratch_space +
       DriverType::shared_data_offset(
-        blockIdx.x &  WarpIndexMask  /* for threadIdx.x */ ,
-        blockIdx.x >> WarpIndexShift /* for threadIdx.y */ );
+        multiblock_id &  WarpIndexMask  /* for threadIdx.x */ ,
+        multiblock_id >> WarpIndexShift /* for threadIdx.y */ );
 
     for ( i = thread_of_block ; i < ValueWordCount ; i += thread_stride ) {
       scratch[i] = shared_data[i] ;
@@ -182,7 +183,7 @@ void cuda_reduce_global( const DriverType & driver )
     // atomicInc returns value prior to increment.
 
     shared_data[ DriverType::shared_flag_offset() ] =
-      gridDim.x == 1 + atomicInc( driver.m_scratch_flag , gridDim.x + 1 );
+      driver.m_grid_size == 1 + atomicInc( driver.m_scratch_flag , driver.m_grid_size + 1 );
   }
   __syncthreads();
 
@@ -276,7 +277,7 @@ static void cuda_parallel_reduce( const DriverType driver )
 
   // Phase 3: Reduce contributions from multiple blocks
 
-  int last_block = 1 == gridDim.x ;
+  int last_block = 1 == driver.m_grid_size ;
 
   if ( ! last_block ) {
 
@@ -327,15 +328,17 @@ public:
   const FinalizeType m_work_finalize ;
   const size_type    m_work_count ;
   const size_type    m_work_stride ;
+  const size_type    m_grid_size ;
+  const size_type    m_grid_offset ; /// to be used for multi-functor / multi-block reduction 
 
   // Scratch space for multi-block reduction
   // m_scratch_warp  == number of warps required
   // m_scratch_upper == upper bound of reduction scratch space used.
 
-  size_type * m_scratch_space ;
-  size_type * m_scratch_flag ;
-  size_type   m_scratch_warp ;
-  size_type   m_scratch_upper ;
+  size_type * const m_scratch_space ;
+  size_type * const m_scratch_flag ;
+  const size_type   m_scratch_warp ;
+  const size_type   m_scratch_upper ;
   
   //----------------------------------------------------------------------
 
@@ -378,6 +381,8 @@ private:
     , m_work_finalize( finalize )
     , m_work_count(    work_count )
     , m_work_stride(   work_stride )
+    , m_grid_size(     grid_size )
+    , m_grid_offset(   0 )
     , m_scratch_space( device_type::reduce_multiblock_scratch_space() )
     , m_scratch_flag(  device_type::reduce_multiblock_scratch_flag() )
     , m_scratch_warp( ( grid_size >> WarpIndexShift ) +

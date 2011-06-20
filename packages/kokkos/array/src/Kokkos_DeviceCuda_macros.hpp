@@ -74,9 +74,12 @@
 #if defined( __CUDA_ARCH__ )
 #define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  /* */
 #define KOKKOS_MACRO_CHECK( expr )             /* */
+#elif ! defined( KOKKOS_ARRAY_BOUNDS_CHECK )
+#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
+#define KOKKOS_MACRO_CHECK( expr )             /* */
 #else
-#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr ) expr
-#define KOKKOS_MACRO_CHECK( expr )  expr
+#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
+#define KOKKOS_MACRO_CHECK( expr )             expr
 #endif
 
 #endif
