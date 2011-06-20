@@ -5,7 +5,7 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/equation_set)
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/closure_model)
-INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/bcstrategy)
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/adapters/stk/test/bcstrategy)
 
 SET(main_driver_SOURCES
   main_driver.cpp

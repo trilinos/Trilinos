@@ -2,9 +2,9 @@ INCLUDE(PackageAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-INCLUDE_DIRECTORIES(${TRILINOS_HOME_DIR}/Panzer/panzer/test/equation_set)
-INCLUDE_DIRECTORIES(${TRILINOS_HOME_DIR}/Panzer/panzer/test/closure_model)
-INCLUDE_DIRECTORIES(${TRILINOS_HOME_DIR}/Panzer/panzer/test/bcstrategy)
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/equation_set)
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/closure_model)
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/adapters/stk/test/bcstrategy)
   
 SET(ASSEMBLY_EXAMPLE_SOURCES
   assembly_driver.cpp
