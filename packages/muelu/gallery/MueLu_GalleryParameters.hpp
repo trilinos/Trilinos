@@ -4,6 +4,8 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#include "MueLu_Exceptions.hpp"
+
 namespace MueLu {
   
   namespace Gallery {
@@ -25,7 +27,7 @@ namespace MueLu {
       
       void check() {
         
-        // if (nx < 0) ...
+        //if (nx < 0) ...
 
       }
       
@@ -40,6 +42,8 @@ namespace MueLu {
         else if (matrixType_ == "Laplace3D")
           numGlobalElements = static_cast<GO>(nx_*ny_*nz_);
         //TODO else throw
+
+        if (numGlobalElements < 0) throw MueLu::Exceptions::Overflow("Gallery: numGlobalElements < 0");
 
         return numGlobalElements;
       }

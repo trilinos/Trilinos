@@ -31,6 +31,13 @@ namespace MueLu {
       RuntimeError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
 
+    //! Exception throws to report overflows.
+    class Overflow : public Teuchos::ExceptionBase
+    {
+    public:
+      Overflow(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
+    };
+
   }
 }
 

@@ -81,6 +81,10 @@ int main(int argc, char *argv[]) {
   //out->setOutputToRootOnly(-1);
   //out->precision(12);
 
+#ifndef HAVE_TEUCHOS_LONG_LONG_INT
+  *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
+#endif
+
   /**********************************************************************************/
   /* SET TEST PARAMETERS                                                            */
   /**********************************************************************************/
