@@ -87,8 +87,23 @@ namespace Tpetra {
       enum { height = 1 + next::height };
     };
 
+    template <class TS,class Init>
+    RCP<Teuchos::ParameterList>
+    initStackDB(Teuchos::ParameterList &pl, Init &init)
+    {
+      using Teuchos::ParameterList;
+      typedef typename TS::type T;
+      RCP<ParameterList> db = init.template initDB<T>(pl);
+      if (! TS::bottom) {
+        RCP<ParameterList> subdb = initStackDB<typename TS::next>(pl.sublist("child"),init);
+        db->set("child", *subdb);
+      }
+      return db;
+    }
+
   } // namespace Tpetra::Ext
 } // namespace Tpetra
+
 
 /** 
   \example TypeStackTest.cpp

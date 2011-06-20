@@ -1,8 +1,15 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_TypeTraits.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "TpetraExt_TypeStack.hpp"
+
+namespace {
+
+using Teuchos::ParameterList;
+using Teuchos::RCP;
 
 template <class TS>
 void recurseTypes(Teuchos::FancyOStream &os) 
@@ -83,4 +90,34 @@ TEUCHOS_UNIT_TEST( TypeStack, FullStack1 ) {
                           FullStackManual;
   const bool same = Teuchos::TypeTraits::is_same<FullStack,FullStackManual>::value;
   TEST_EQUALITY_CONST( same, true );
+}
+
+struct TestDBInit {
+  template <class T>
+  RCP<ParameterList> initDB(ParameterList &params) {
+    RCP<ParameterList> db = Teuchos::parameterList();
+    db->set<std::string>("type",Teuchos::TypeNameTraits<T>::name());
+    return db;
+  }
+};
+
+TEUCHOS_UNIT_TEST( StackBuilder, DBBuilder ) {
+  std::string xmlString("\
+    <ParameterList>\
+      <ParameterList name=\"child\">\
+        <ParameterList name=\"child\">\
+        </ParameterList>\
+      </ParameterList>\
+    </ParameterList>\
+  ");
+  ParameterList stackPL;
+  Teuchos::updateParametersFromXmlString(xmlString,&stackPL);
+
+  TPETRAEXT_TYPESTACK3( TestStack, double, float, int );
+  TestDBInit testInit;
+  RCP<ParameterList> stackDB = Tpetra::Ext::initStackDB<TestStack>(stackPL,testInit);
+  TEST_EQUALITY_CONST( stackDB == Teuchos::null, false );
+  out << *stackDB << std::endl;
+}
+
 }
