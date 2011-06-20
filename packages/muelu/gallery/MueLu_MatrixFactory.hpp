@@ -27,9 +27,7 @@ namespace MueLu {
         GlobalOrdinal nx = list.get("nx", -1);
         if (nx == -1)
           {
-            GlobalOrdinal n = map->getGlobalNumElements();
-            nx = (GlobalOrdinal)sqrt((Scalar)n);
-            TEST_FOR_EXCEPTION(nx*nx != n, std::logic_error, "You need to specify nx.");
+            nx = map->getGlobalNumElements();
           }
 
         returnMatrix = TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, 2.0, -1.0, -1.0);
