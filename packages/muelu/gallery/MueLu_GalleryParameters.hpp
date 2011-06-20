@@ -8,16 +8,15 @@ namespace MueLu {
   
   namespace Gallery {
     
+    // TODO nx/ny/nz == GO or global_size_t ? But what is the best to do?
+
+    template<typename GO>
     class Parameters
     {
 
     public:
     
-      Parameters(Teuchos::CommandLineProcessor& clp, int nx=16, int ny=-1, int nz=-1, const std::string & matrixType="Laplace1D"): nx_(nx), ny_(ny), nz_(nz), matrixType_(matrixType) {
-        setCLP(clp, nx, ny, nz, matrixType);
-      }
-      
-      void setCLP(Teuchos::CommandLineProcessor& clp, int nx=16, int ny=-1, int nz=-1, const std::string & matrixType="Laplace1D") {
+      Parameters(Teuchos::CommandLineProcessor& clp, GO nx=16, GO ny=-1, GO nz=-1, const std::string & matrixType="Laplace1D"): nx_(nx), ny_(ny), nz_(nz), matrixType_(matrixType) {
         clp.setOption("nx", &nx_, "mesh points in x-direction.");
         clp.setOption("ny", &ny_, "mesh points in y-direction.");
         clp.setOption("nz", &nz_, "mesh points in z-direction.");
@@ -30,16 +29,16 @@ namespace MueLu {
 
       }
       
-      int GetNumGlobalElements() {
+      GO GetNumGlobalElements() {
         check();
 
-        int numGlobalElements;
+        GO numGlobalElements;
         if (matrixType_ == "Laplace1D")
-          numGlobalElements = nx_;
+          numGlobalElements = static_cast<GO>(nx_);
         else if (matrixType_ == "Laplace2D")
-          numGlobalElements = nx_*ny_;
+          numGlobalElements = static_cast<GO>(nx_*ny_);
         else if (matrixType_ == "Laplace3D")
-          numGlobalElements = nx_*ny_*nz_;
+          numGlobalElements = static_cast<GO>(nx_*ny_*nz_);
         //TODO else throw
 
         return numGlobalElements;
@@ -53,9 +52,9 @@ namespace MueLu {
       Teuchos::ParameterList & GetParameterList() {
         check();
         //TODO: check if already on it...
-        paramList.set("nx", nx_);
-        paramList.set("ny", ny_);
-        paramList.set("nz", nz_);
+        paramList.set("nx", static_cast<GO>(nx_));
+        paramList.set("ny", static_cast<GO>(ny_));
+        paramList.set("nz", static_cast<GO>(nz_));
 
         return paramList;
       }
@@ -71,9 +70,14 @@ namespace MueLu {
     private:
       Teuchos::ParameterList paramList;
 
-      int nx_;
-      int ny_;
-      int nz_;
+      // See Teuchos BUG 5249: https://software.sandia.gov/bugzilla/show_bug.cgi?id=5249
+      double nx_;
+      double ny_;
+      double nz_;
+      // GO nx_;
+      // GO ny_;
+      // GO nz_;
+
       std::string matrixType_;
     };
   

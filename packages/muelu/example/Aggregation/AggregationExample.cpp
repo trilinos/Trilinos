@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   // Note: use --help to list available options.
   Teuchos::CommandLineProcessor clp(false);
   
-  MueLu::Gallery::Parameters matrixParameters(clp); // manage parameters of the test case
+  MueLu::Gallery::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
   Cthulhu::Parameters cthulhuParameters(clp);       // manage parameters of cthulhu
   
   switch (clp.parse(argc,argv)) {
