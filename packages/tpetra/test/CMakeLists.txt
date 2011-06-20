@@ -18,6 +18,7 @@ ADD_SUBDIRECTORIES(
   VbrMatrix
   RowMatrixTransposer
   MatrixMatrix
+  TypeStack
   inout
   )
 
