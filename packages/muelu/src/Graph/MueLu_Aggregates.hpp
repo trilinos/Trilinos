@@ -90,7 +90,7 @@ namespace MueLu {
        ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
        ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
 
-       ArrayRCP<int> aggSizes = ComputeAggregateSizes();
+       ArrayRCP<LO> aggSizes = ComputeAggregateSizes();
        LO t=0;
        for (typename ArrayRCP<ArrayRCP<LO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r)
          *a2r = ArrayRCP<LO>(aggSizes[t++]);
@@ -123,7 +123,7 @@ namespace MueLu {
                                     /* is a root node.                       */
 
     //! Array of sizes of each local aggregate.
-    mutable Teuchos::ArrayRCP<int> aggregateSizes_;
+    mutable Teuchos::ArrayRCP<LO> aggregateSizes_;
 
   }; //class Aggregates
 

@@ -1209,30 +1209,30 @@ typedef int my_size_t; //TODO
       {
         int myPid = aggregates.GetMap()->getComm()->getRank();
         
-        int nAggregates = aggregates.GetNumAggregates();
+        LO nAggregates = aggregates.GetNumAggregates();
 
         ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
         ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-        int size = procWinner.size();
+        LO size = procWinner.size();
 
         //ArrayRCP<int> AggInfo = Teuchos::arcp<int>(nAggregates+1);
         //aggregates.ComputeAggSizes(AggInfo);
-        ArrayRCP<int> AggInfo = aggregates.ComputeAggregateSizes();
+        ArrayRCP<LO> AggInfo = aggregates.ComputeAggregateSizes();
 
         ArrayRCP<double> weights = distWeights->getDataNonConst(0);
 
         // Make a list of all aggregates indicating New AggId
         // Use AggInfo array for this.
 
-        int NewNAggs = 0; 
-        for (int i = 0; i < nAggregates; i++) {
+        LO NewNAggs = 0; 
+        for (LO i = 0; i < nAggregates; i++) {
           if ( AggInfo[i] < min_size) { 
             AggInfo[i] =  MUELU_UNAGGREGATED;
           }
           else AggInfo[i] = NewNAggs++;
         }
 
-        for (int k = 0; k < size; k++ ) {
+        for (LO k = 0; k < size; k++ ) {
           if (procWinner[k] == myPid) {
             if (vertex2AggId[k] !=  MUELU_UNAGGREGATED) {
               vertex2AggId[k] = AggInfo[vertex2AggId[k]];
@@ -1249,7 +1249,7 @@ typedef int my_size_t; //TODO
 
         // procWinner is not set correctly for aggregates which have 
         // been eliminated
-        for (int i = 0; i < size; i++) {
+        for (LO i = 0; i < size; i++) {
           if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
             procWinner[i] = MUELU_UNASSIGNED;
         }
