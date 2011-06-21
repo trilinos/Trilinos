@@ -21,12 +21,12 @@ using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
 
 // MPI helper
-#define sumAll(rcpComm, in, out) \
-  Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-#define minAll(rcpComm, in, out) \
-  Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
-#define maxAll(rcpComm, in, out) \
-  Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
+#define sumAll(rcpComm, in, out)                                \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+#define minAll(rcpComm, in, out)                                \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
+#define maxAll(rcpComm, in, out)                                \
+  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
 
 /* ************************************************************************* */
 /* definition of the structure from ML for holding aggregate information     */
@@ -74,8 +74,8 @@ class UCAggregationFactory : public Teuchos::Describable {
   //#include "MueLu_UseShortNamesOrdinal.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-typedef int global_size_t; //TODO
-typedef int my_size_t; //TODO
+typedef GO global_size_t; //TODO
+typedef LO my_size_t; //TODO
 
   public:
     //! @name Constructors/Destructors.
@@ -176,7 +176,7 @@ typedef int my_size_t; //TODO
       {
         /* Create Aggregation object */
         const std::string name = "Uncoupled";
-        int nAggregates = 0;
+        my_size_t nAggregates = 0;
         RCP<Aggregates> aggregates = Teuchos::rcp(new Aggregates(graph, name));
 
         /* ============================================================= */
@@ -186,13 +186,9 @@ typedef int my_size_t; //TODO
         /* ============================================================= */
 
         Teuchos::ArrayRCP<NodeState> aggStat;
-        const int nRows = graph.GetNodeNumVertices();
+        const my_size_t nRows = graph.GetNodeNumVertices();
         if (nRows > 0) aggStat = Teuchos::arcp<NodeState>(nRows);
-        for ( int i = 0; i < nRows; ++i ) aggStat[i] = READY;
-
-        /* unused */
-        // Teuchos::ArrayRCP<int> aggCntArray = Teuchos::arcp<int>(nRows+1);
-        // for ( int i = 0; i <= nRows; ++i ) aggCntArray[i] = 0;
+        for ( my_size_t i = 0; i < nRows; ++i ) aggStat[i] = READY;
 
         /* ============================================================= */
         /* Phase 1  :                                                    */
@@ -204,7 +200,7 @@ typedef int my_size_t; //TODO
 
         /* some general variable declarations */   
         const MueLu::AggOptions::Ordering ordering = aggOptions.GetOrdering();
-        Teuchos::ArrayRCP<int> randomVector;
+        Teuchos::ArrayRCP<LO> randomVector;
         RCP<MueLu::LinkedList> nodeList; /* list storing the next node to pick as a root point for ordering == GRAPH */
         MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
         /**/
@@ -214,7 +210,7 @@ typedef int my_size_t; //TODO
           //TODO: could be stored in a class that respect interface of LinkedList
 
           randomVector = Teuchos::arcp<int>(nRows); //size_t or int ?-> to be propagated
-          for (int i = 0; i < nRows; ++i) randomVector[i] = i;
+          for (my_size_t i = 0; i < nRows; ++i) randomVector[i] = i;
           RandomReorder(randomVector);
         } 
         else if ( ordering == GRAPH )  /* graph ordering */
@@ -225,8 +221,8 @@ typedef int my_size_t; //TODO
 
         /* main loop */
         {
-          int iNode  = 0;
-          int iNode2 = 0;
+          LO iNode  = 0;
+          LO iNode2 = 0;
           
           Teuchos::ArrayRCP<LO> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0); // output only: contents ignored
           
@@ -391,40 +387,39 @@ typedef int my_size_t; //TODO
           int myPid = comm->getRank();
           
           {
-            int localReady=0, globalReady;
+            GO localReady=0, globalReady;
             
             // Compute 'localReady'
-            for ( int i = 0; i < nRows; ++i ) 
+            for ( my_size_t i = 0; i < nRows; ++i ) 
               if ( aggStat[i] == READY ) localReady++;
             
             // Compute 'globalReady'
             sumAll(comm, localReady, globalReady);
             
             if (myPid == 0 && globalReady > 0)
-              printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",globalReady);
+              std::cout << "Aggregation(UC) : Phase 1 (WARNING) - " << globalReady << " READY nodes left\n" << std::endl;
           }
           
           {
-            int localSelected=0, globalSelected;
-            int globalNRows;
-            
             // Compute 'localSelected'
-            for ( int i = 0; i < nRows; ++i ) 
+            LO localSelected=0;
+            for ( my_size_t i = 0; i < nRows; ++i ) 
                 if ( aggStat[i] == SELECTED ) localSelected++;
             
-            // Compute 'globalSelected' and 'globalNRows'
-            sumAll(comm, localSelected, globalSelected);
-            sumAll(comm, nRows, globalNRows);
+            // Compute 'globalSelected'
+            GO globalSelected; sumAll(comm, (GO)localSelected, globalSelected);
+
+            // Compute 'globalNRows'
+            GO globalNRows; sumAll(comm, (GO)nRows, globalNRows);
             
             if (myPid == 0)
-              printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",globalSelected, globalNRows);
+              std::cout << "Aggregation(UC) : Phase 1 - nodes aggregated = " << globalSelected << " (" << globalNRows << ")" << std::endl;
           }
           
           {
-            int nAggregatesGlobal; 
-            sumAll(comm, nAggregates, nAggregatesGlobal);
+            GO nAggregatesGlobal; sumAll(comm, (GO)nAggregates, nAggregatesGlobal);
             if (myPid == 0)
-              printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",nAggregatesGlobal);
+              std::cout << "Aggregation(UC) : Phase 1 - total aggregates = " << nAggregatesGlobal << std::endl;
           }
           
         } // if myPid == 0 ...
@@ -698,11 +693,11 @@ typedef int my_size_t; //TODO
         distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
 
         // Record the number of aggregated vertices
-        int total_phase_one_aggregated = 0;
+        GO total_phase_one_aggregated = 0;
         {
           ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
             
-          int phase_one_aggregated = 0;
+          GO phase_one_aggregated = 0;
           for (my_size_t i = 0; i < nVertices; i++) {
             if (vertex2AggId[i] != MUELU_UNAGGREGATED)
               phase_one_aggregated++;
@@ -710,8 +705,8 @@ typedef int my_size_t; //TODO
           
           sumAll(graph.GetComm(), phase_one_aggregated, total_phase_one_aggregated);
 
-          global_size_t total_nVertices = 0;
-          sumAll(graph.GetComm(), nVertices, total_nVertices);
+          GO local_nVertices = nVertices, total_nVertices = 0;
+          sumAll(graph.GetComm(), local_nVertices, total_nVertices);
           
           /* Among unaggregated points, see if we can make a reasonable size    */
           /* aggregate out of it. We do this by looking at neighbors and seeing */
@@ -764,20 +759,20 @@ typedef int my_size_t; //TODO
         distWeights->putScalar(0.);//All tentatively assigned vertices are now definitive
 
         if ( printFlag < 7) { //FIXME
-          int Nphase1_agg = nAggregates;
-          int total_aggs;
+          GO Nphase1_agg = nAggregates;
+          GO total_aggs;
 
           sumAll(graph.GetComm(), Nphase1_agg, total_aggs);
 
           if (myPid == 0) {
-            printf("Aggregation(%s) : Phase 1 - nodes aggregated = %d \n",label.c_str(), total_phase_one_aggregated);
-            printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n", label.c_str(), total_aggs);
+            std::cout << "Aggregation(" << label << ") : Phase 1 - nodes aggregated = " << total_phase_one_aggregated << std::endl;
+            std::cout << "Aggregation(" << label << ") : Phase 1 - total aggregates = " << total_aggs << std::endl;
           }
-          int i = nAggregates - Nphase1_agg;
+          GO i = nAggregates - Nphase1_agg;
 
-          { int ii; sumAll(graph.GetComm(),i,ii); i = ii; }
+          { GO ii; sumAll(graph.GetComm(),i,ii); i = ii; }
           if ( myPid == 0 ) {
-            printf("Aggregation(%s) : Phase 3 - additional aggregates = %d\n",label.c_str(), i);
+            std::cout << "Aggregation(" << label << ") : Phase 3 - additional aggregates = " << i << std::endl;
           }
         }
 
@@ -802,7 +797,13 @@ typedef int my_size_t; //TODO
         }
 
         // Phase 4. 
-  double nAggregatesTarget; int    nAggregatesGlobal, minNAggs, maxNAggs; nAggregatesTarget = ((double)  uniqueMap->getGlobalNumElements())* (((double) uniqueMap->getGlobalNumElements())/ ((double) graph.GetGlobalNumEdges())); sumAll(graph.GetComm(), nAggregates, nAggregatesGlobal); minAll(graph.GetComm(), nAggregates, minNAggs); maxAll(graph.GetComm(), nAggregates, maxNAggs);
+        double nAggregatesTarget; 
+        nAggregatesTarget = ((double)  uniqueMap->getGlobalNumElements())* (((double) uniqueMap->getGlobalNumElements())/ ((double) graph.GetGlobalNumEdges())); 
+        
+        GO nAggregatesLocal=nAggregates, nAggregatesGlobal; sumAll(graph.GetComm(), nAggregatesLocal, nAggregatesGlobal); 
+
+        LO minNAggs; minAll(graph.GetComm(), nAggregates, minNAggs); 
+        LO maxNAggs; maxAll(graph.GetComm(), nAggregates, maxNAggs);
 
         //
         // Only do this phase if things look really bad. THIS
@@ -895,7 +896,8 @@ typedef int my_size_t; //TODO
             }
             myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, true);
             distWeights->putScalar(0.); // All tentatively assigned vertices are now definitive
-            sumAll(graph.GetComm(), nAggregates, nAggregatesGlobal);
+            nAggregatesLocal=nAggregates;
+            sumAll(graph.GetComm(), nAggregatesLocal, nAggregatesGlobal);
 
             // check that there are no aggregates sizes below minNodesPerAggregate
            
@@ -1154,13 +1156,12 @@ typedef int my_size_t; //TODO
         myWidget.ArbitrateAndCommunicate(*distWeights, aggregates, false);
 
         if (printFlag < 7) { //FIXME
-          { int total_Nsingle=0;   sumAll(graph.GetComm(), Nsingle, total_Nsingle);     Nsingle = total_Nsingle; }
-          { int total_Nleftover=0; sumAll(graph.GetComm(), Nleftover, total_Nleftover); Nleftover = total_Nleftover; }
-          int total_aggs;
-          sumAll(graph.GetComm(), nAggregates, total_aggs);
+          GO total_Nsingle=0;   sumAll(graph.GetComm(), (GO)Nsingle,     total_Nsingle);    
+          GO total_Nleftover=0; sumAll(graph.GetComm(), (GO)Nleftover,   total_Nleftover);
+          GO total_aggs;        sumAll(graph.GetComm(), (GO)nAggregates, total_aggs);
           if ( myPid == 0 ) {
-            printf("Aggregation(%s) : Phase 3 - total aggregates = %d\n",label.c_str(), total_aggs);
-            printf("Aggregation(%s) : Phase 6 - leftovers = %d and singletons = %d\n",label.c_str() ,Nleftover, Nsingle);
+            std::cout << "Aggregation(" << label << ") : Phase 3 - total aggregates = " << total_aggs << std::endl;
+            std::cout << "Aggregation(" << label << ") : Phase 6 - leftovers = " <<  total_Nleftover << " and singletons = " << total_Nsingle << std::endl;
           }
         }
 
@@ -1199,7 +1200,7 @@ typedef int my_size_t; //TODO
           }
         }
 
-        sumAll(graph.GetComm(), nCandidates, nCandidatesGlobal);
+        sumAll(graph.GetComm(), (GO)nCandidates, nCandidatesGlobal);
 
       } //RootCandidates
 
