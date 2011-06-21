@@ -188,8 +188,10 @@ namespace stk {
                     }
                   //stk::mesh::EntityId bit = 1;  // just to avoid having to use a hard-coded constant which may be platform dependent
                   //family_tree_id = family_tree_id | (bit << 60);  // actual
+                  //std::cout << "FAMILY_TREE_MAX_ENTITY_FOR_SHIFT= " << FAMILY_TREE_MAX_ENTITY_FOR_SHIFT << std::endl;
+                  //exit(123);
                   // tmp for readability
-                  family_tree_id = family_tree_id + FAMILY_TREE_MAX_ENTITY_FOR_SHIFT; //1 000 000 000u;
+                  family_tree_id = family_tree_id + FAMILY_TREE_MAX_ENTITY_FOR_SHIFT; //1e15
                   
 #if DEBUG_MULTI_LEVEL
                   std::cout << "tmp family_tree_id = " << family_tree_id << " parent_id= " << parent_id << std::endl;

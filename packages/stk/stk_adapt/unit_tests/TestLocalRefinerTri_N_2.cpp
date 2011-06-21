@@ -135,7 +135,7 @@ namespace stk {
                 
                 const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-                if (elem_nodes.size() && m_eMesh.isChildElement(element, false))
+                if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false) )
                   {
                     bool found = true;
                     for (unsigned inode=0; inode < elem_nodes.size(); inode++)

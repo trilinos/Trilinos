@@ -154,14 +154,15 @@ namespace stk {
                 
                 const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-                if (elem_nodes.size() && m_eMesh.isChildElement(element, false))
+                if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
                   {
                     bool found = true;
                     for (unsigned inode=0; inode < elem_nodes.size(); inode++)
                       {
                         stk::mesh::Entity *node = elem_nodes[inode].entity();
                         double *coord = stk::mesh::field_data( *m_eMesh.getCoordinatesField(), *node );
-                        if (coord[0] > 2.1 || coord[1] > 2.1)
+                        //if (coord[0] > 2.1 || coord[1] > 2.1)
+                        if (coord[0] > 1.1 || coord[1] > 1.1)
                           {
                             found = false;
                             break;
@@ -170,7 +171,7 @@ namespace stk {
                     if (found)
                       {
                         elements_to_unref.insert(&element);
-                        std::cout << "tmp unref element id= " << element.identifier() << std::endl;
+                        //std::cout << "tmp unref element id= " << element.identifier() << std::endl;
                         //m_eMesh.printEntity(std::cout, element);
                       }
                   }

@@ -336,14 +336,23 @@ namespace stk {
       }
 
       ~NodeRegistry() {
-        delete m_comm_all;
+        if (m_comm_all)
+          delete m_comm_all;
+      }
+
+      void init_comm_all()
+      {
+        //std::cout << "tmp &m_eMesh = " << &m_eMesh << std::endl;
+        if (m_comm_all)
+          delete m_comm_all;
+        m_comm_all = new stk::CommAll(m_eMesh.getBulkData()->parallel());
       }
 
       void initialize()
       {
         //std::cout << "tmp &m_eMesh = " << &m_eMesh << std::endl;
-        delete m_comm_all;
-        m_comm_all = new stk::CommAll(m_eMesh.getBulkData()->parallel());
+        //delete m_comm_all;
+        //m_comm_all = new stk::CommAll(m_eMesh.getBulkData()->parallel());
         m_cell_2_data_map.clear();
         for (unsigned i = 0; i < stk::percept::EntityRankEnd; i++) m_entity_repo[i].clear();
       }
@@ -1925,17 +1934,20 @@ namespace stk {
             
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
 
+            unsigned jj = 0; 
             bool found = false;
             for (unsigned ii = 0; ii < nodeIds_onSE.size(); ii++)
               {
                 if (deleted_nodes.find(nodeIds_onSE[ii]) != deleted_nodes.end())
                   {
                     found = true;
+                    jj = ii;
                     break;
                   }
               }
             if (found)
               {
+                //std::cout << "tmp cleanDeletedNodes:: removing node id= " << nodeIds_onSE[jj]->identifier() << std::endl;
                 nodeIds_onSE.resize(0);
               }
           }
