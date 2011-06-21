@@ -352,7 +352,7 @@ Superlu<Matrix,Vector>::solve_impl()
   {
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
     // broadcast solution to everyone
-    Teuchos::broadcast(*(this->matrixA_->getComm()),0,xValues());
+    Teuchos::broadcast(*(this->getComm()),0,xValues());
 
     this->multiVecX_->globalize(xValues()); // operator() does conversion from ArrayRCP to ArrayView
   }

@@ -53,7 +53,9 @@
 #ifndef AMESOS2_SUPERLU_FUNCTIONMAP_HPP
 #define AMESOS2_SUPERLU_FUNCTIONMAP_HPP
 
+#ifdef HAVE_TEUCHOS_COMPLEX
 #include <complex>
+#endif
 
 #include "Amesos2_FunctionMap.hpp"
 // #include "Amesos2_MatrixAdapter.hpp"
@@ -77,100 +79,102 @@ namespace SLU {
 #include "slu_util.h"
 
     namespace S {               // single-precision real definitions
-      extern void
-      sgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
-             char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             float *, float *, float *, float *,
-             SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
-      extern void
-      sgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
-              int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
-      extern void
-      sCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, float *,
-                             int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      extern void
-      sCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, float *,
-                             int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      extern void
-      sCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, float *, int,
-                           SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // sgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
+      //        char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
+      //        void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
+      //        float *, float *, float *, float *,
+      //        SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+      // extern void
+      // sgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
+      //         int, int, int*, void *, int, int *, int *,
+      //         SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+      // extern void
+      // sCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, float *,
+      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // sCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, float *,
+      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // sCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, float *, int,
+      //                      SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
 
-      //#include "slu_sdefs.h"
+      #include "slu_sdefs.h"
     }
 
     namespace D {               // double-precision real definitions
-      extern void
-      dgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
-             char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             double *, double *, double *, double *,
-             SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
-      extern void
-      dgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
-              int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
-      extern void
-      dCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, double *,
-                             int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      extern void
-      dCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, double *,
-                             int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      extern void
-      dCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, double *, int,
-                           SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // dgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
+      //        char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
+      //        void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
+      //        double *, double *, double *, double *,
+      //        SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+      // extern void
+      // dgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
+      //         int, int, int*, void *, int, int *, int *,
+      //         SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+      // extern void
+      // dCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, double *,
+      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // dCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, double *,
+      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // dCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, double *, int,
+      //                      SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
 
-      //#include "slu_ddefs.h"
+      #include "slu_ddefs.h"
     }
 
+#ifdef HAVE_TEUCHOS_COMPLEX
     namespace C {              // single-precision complex definitions
-      extern void
-      cgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
-             char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             float *, float *, float *, float *,
-             SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
-      extern void
-      cgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
-              int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
-      extern void
-      cCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, complex *,
-                             int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      extern void
-      cCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, complex *,
-                             int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      extern void
-      cCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, complex *, int,
-                           SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // cgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
+      //        char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
+      //        void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
+      //        float *, float *, float *, float *,
+      //        SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+      // extern void
+      // cgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
+      //         int, int, int*, void *, int, int *, int *,
+      //         SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+      // extern void
+      // cCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, complex *,
+      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // cCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, complex *,
+      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // cCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, complex *, int,
+      //                      SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
 
-      //#include "slu_cdefs.h"
+      #include "slu_cdefs.h"
     }
 
     namespace Z {              // double-precision complex definitions
-      extern void
-      zgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
-             char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-             double *, double *, double *, double *,
-             SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
-      extern void
-      zgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
-              int, int, int*, void *, int, int *, int *,
-              SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
-      extern void
-      zCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, doublecomplex *,
-                             int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      extern void
-      zCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, doublecomplex *,
-                             int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      extern void
-      zCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, doublecomplex *, int,
-                           SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // zgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
+      //        char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
+      //        void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
+      //        double *, double *, double *, double *,
+      //        SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
+      // extern void
+      // zgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
+      //         int, int, int*, void *, int, int *, int *,
+      //         SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
+      // extern void
+      // zCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, doublecomplex *,
+      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // zCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, doublecomplex *,
+      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
+      // extern void
+      // zCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, doublecomplex *, int,
+      //                      SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
 
-      //#include "slu_zdefs.h"
+      #include "slu_zdefs.h"
     }
+#endif  // HAVE_TEUCHOS_COMPLEX
 
   } // end extern "C"
 
@@ -495,6 +499,8 @@ struct FunctionMap<Superlu,double>
 };
 
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
 /* The specializations for Teuchos::as<> for SLU::complex and
  * SLU::doublecomplex are provided in Amesos2_Superlu_Type.hpp
  */
@@ -609,6 +615,7 @@ struct FunctionMap<Superlu,std::complex<double> >
       SLU::Z::zCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
     }
 };
+#endif	// HAVE_TEUCHOS_COMPLEX
 
 /* \endcond Superlu_function_specializations */
 

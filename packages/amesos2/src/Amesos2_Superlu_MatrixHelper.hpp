@@ -135,7 +135,7 @@ namespace Amesos {
 							      Util::Arbitrary);
       }
 
-      TEST_FOR_EXCEPTION( nnz_ret != Teuchos::as<size_t>(nnz),
+      TEST_FOR_EXCEPTION( nnz_ret != nnz,
                           std::runtime_error,
                           "Number of nonzeros returned by getCrs() different from getGlobalNNZ()");
 

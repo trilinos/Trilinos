@@ -60,21 +60,31 @@
 
 #include "Amesos2_TypeMap.hpp"
 
+
+/* The SuperLU comples headers file only need to be included if
+   complex has been enabled in Teuchos.  In addition we only need to
+   define the conversion and printing functions if complex has been
+   enabled. */
+#ifdef HAVE_TEUCHOS_COMPLEX
+
 namespace SLU {
 
 typedef int int_t;
 
 extern "C" {
 
-  //#include "slu_Cnames.h"
+#undef __SUPERLU_SUPERMATRIX
 #include "supermatrix.h"	// for Dtype_t declaration
-  //#include "slu_util.h"
 
 namespace C {
+#undef __SUPERLU_SCOMPLEX
+#undef SCOMPLEX_INCLUDE
 #include "slu_scomplex.h"     // single-precision complex data type definitions
 }
 
 namespace Z {
+#undef __SUPERLU_DCOMPLEX
+#undef DCOMPLEX_INCLUDE
 #include "slu_dcomplex.h"     // double-precision complex data type definitions
 }
 
@@ -210,6 +220,9 @@ namespace std {
   }
 }
 
+#endif	// HAVE_TEUCHOS_COMPLEX
+
+
 namespace Amesos {
 
 template <class, class> class Superlu;
@@ -239,6 +252,8 @@ struct TypeMap<Superlu,double>
 
 SLU::Dtype_t TypeMap<Superlu,double>::dtype = SLU::SLU_D;
 
+  
+#ifdef HAVE_TEUCHOS_COMPLEX
 
 template <>
 struct TypeMap<Superlu,std::complex<float> >
@@ -282,6 +297,8 @@ struct TypeMap<Superlu,SLU::Z::doublecomplex>
 };
 
 SLU::Dtype_t TypeMap<Superlu,SLU::Z::doublecomplex>::dtype = SLU::SLU_Z;
+
+#endif  // HAVE_TEUCHOS_COMPLEX
 
 /* \endcond Superlu_type_specializations */
 
