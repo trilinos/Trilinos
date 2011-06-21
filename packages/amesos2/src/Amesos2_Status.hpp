@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,7 +45,7 @@
   \file   Amesos2_Status.hpp
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Thu Jan 14 08:52:04 2010
-  
+
   \brief  Container class for status variables.
 */
 
@@ -63,9 +63,7 @@ class Status {
 public:
   /// Default constructor.
   Status()
-    : isSymbolicFactorizationOK_(false)
-    , isNumericFactorizationOK_(false)
-    , printTiming_(false)
+    : printTiming_(false)
     , printStatus_(false)
     , computeVectorNorms_(false)
     , computeTrueResidual_(false)
@@ -73,9 +71,15 @@ public:
     , verbose_(0)
     , debug_(0)
 
+    , numPreOrder_(0)
     , numSymbolicFact_(0)
     , numNumericFact_(0)
     , numSolve_(0)
+
+    , preOrderingDone_(false)
+    , symbolicFactorizationDone_(false)
+    , numericFactorizationDone_(false)
+
     , threshold_(0.0)
 
     , myPID_(0)
@@ -86,9 +90,7 @@ public:
 
 
   Status(const Teuchos::RCP<const Teuchos::Comm<int> > comm)
-    : isSymbolicFactorizationOK_(false)
-    , isNumericFactorizationOK_(false)
-    , printTiming_(false)
+    : printTiming_(false)
     , printStatus_(false)
     , computeVectorNorms_(false)
     , computeTrueResidual_(false)
@@ -96,9 +98,15 @@ public:
     , verbose_(0)
     , debug_(0)
 
+    , numPreOrder_(0)
     , numSymbolicFact_(0)
     , numNumericFact_(0)
     , numSolve_(0)
+
+    , preOrderingDone_(false)
+    , symbolicFactorizationDone_(false)
+    , numericFactorizationDone_(false)
+
     , threshold_(0.0)
 
     , myPID_(comm->getRank())
@@ -120,12 +128,6 @@ public:
   void setStatusParameters(
     const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
 
-  /// If \c true, symbolicFactorization() has been successfully called.
-  bool isSymbolicFactorizationOK_;
-
-  /// If \c true, numericFactorization() has been successfully called.
-  bool isNumericFactorizationOK_;
-
   /// If \c true, prints timing information in the destructor.
   bool printTiming_;
 
@@ -138,13 +140,15 @@ public:
   /// If \c true, computes the true residual in solve().
   bool computeTrueResidual_;
 
-  
+
   /// Toggles the output level.
   int verbose_;
 
   /// Sets the level of debug_ output
   int debug_;
 
+  /// Number of pre-ordering phases
+  int numPreOrder_;
 
   /// Number of symbolic factorization phases.
   int numSymbolicFact_;
@@ -153,7 +157,16 @@ public:
   int numNumericFact_;
 
   /// Number of solves.
-  int numSolve_;  
+  int numSolve_;
+
+  /// If \c true, preOrdering() has been successfully called.
+  bool preOrderingDone_;
+
+  /// If \c true, symbolicFactorization() has been successfully called.
+  bool symbolicFactorizationDone_;
+
+  /// If \c true, numericFactorization() has been successfully called.
+  bool numericFactorizationDone_;
 
 
   double threshold_;

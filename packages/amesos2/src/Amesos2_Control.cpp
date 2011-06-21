@@ -145,7 +145,7 @@ void Control::setControlParameters(
 
     // If true, the Amesos2 class should reindex the matrix to
     // standard indexing (i.e. 0-(n-1)).  At present, only
-    // Amesos2::Klu supports this option.
+    // Amesos::Klu supports this option.
     if( parameterList->isParameter("Reindex") ){
       reindex_ = parameterList->get<bool>("Reindex");
     }

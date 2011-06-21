@@ -395,6 +395,12 @@ public:
 
 protected:
 
+  bool preOrderingDone(){ return status_.preOrderingDone_; }
+
+  bool symbolicFactorizationDone(){ return status_.symbolicFactorizationDone_; }
+
+  bool numericFactorizationDone(){ return status_.numericFactorizationDone_; }
+
   /// The LHS operator
   Teuchos::RCP<MatrixAdapter<Matrix> >   matrixA_;
 

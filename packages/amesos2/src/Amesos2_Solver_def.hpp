@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -75,7 +75,7 @@ Solver<ConcreteSolver,Matrix,Vector>::Solver(
   TEST_FOR_EXCEPTION(
     !matrixShapeOK(),
     std::invalid_argument,
-    "Matrix shape inappropriate for the underlying solver");
+    "Matrix shape inappropriate for this solver");
 
   TEST_FOR_EXCEPTION(
     multiVecX_->getGlobalLength() != matrixA_->getGlobalNumCols(),
@@ -116,6 +116,11 @@ Solver<ConcreteSolver,Matrix,Vector>::preOrdering()
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
   static_cast<solver_type*>(this)->preOrdering_impl();
+  ++status_.numPreOrder_;
+  status_.preOrderingDone_ = true;
+  status_.symbolicFactorizationDone_ = false;
+  status_.numericFactorizationDone_  = false;
+
 
   return *this;
 }
@@ -126,8 +131,15 @@ SolverBase&
 Solver<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+
+  if( !preOrderingDone() ){
+    preOrdering();
+  }
+
   static_cast<solver_type*>(this)->symbolicFactorization_impl();
   ++status_.numSymbolicFact_;
+  status_.symbolicFactorizationDone_ = true;
+  status_.numericFactorizationDone_  = false;
 
   return *this;
 }
@@ -138,8 +150,14 @@ SolverBase&
 Solver<ConcreteSolver,Matrix,Vector>::numericFactorization()
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+
+  if( !symbolicFactorizationDone() ){
+    symbolicFactorization();
+  }
+
   static_cast<solver_type*>(this)->numericFactorization_impl();
   ++status_.numNumericFact_;
+  status_.numericFactorizationDone_ = true;
 
   return *this;
 }
@@ -150,6 +168,11 @@ void
 Solver<ConcreteSolver,Matrix,Vector>::solve()
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+
+  if( !numericFactorizationDone() ){
+    numericFactorization();
+  }
+
   static_cast<solver_type*>(this)->solve_impl();
   ++status_.numSolve_;
 }
@@ -176,7 +199,13 @@ Solver<ConcreteSolver,Matrix,Vector>::setParameters(
   status_.setStatusParameters(parameterList);
 
   // Finally, hook to the implementation's parameter list parser
-  static_cast<solver_type*>(this)->setParameters_impl(parameterList);
+  // First check if there is a dedicated sublist for this solver and use that if there is
+  if( parameterList->isSublist(name()) ){
+    static_cast<solver_type*>(this)->setParameters_impl(Teuchos::sublist(parameterList, name()));
+  } else {
+    // Just see if there is anything in the parent sublist that the solver recognizes
+    static_cast<solver_type*>(this)->setParameters_impl(parameterList);
+  }
 
   return *this;
 }
@@ -189,27 +218,31 @@ Solver<ConcreteSolver,Matrix,Vector>::getValidParameters() const
   Teuchos::TimeMonitor LocalTimer1( const_cast<Teuchos::Time&>(timers_.totalTime_) );
 
   using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
-  ParameterList control_params, status_params, solver_params, all_params;
+  RCP<ParameterList> control_params = rcp(new ParameterList());
+  control_params->set("Transpose",false);
+  control_params->set("AddToDiag","");
+  control_params->set("AddZeroToDiag",false);
+  control_params->set("MatrixProperty","general");
+  control_params->set("ScaleMethod",0);
 
-  control_params.set("Transpose",false);
-  control_params.set("AddToDiag","");
-  control_params.set("AddZeroToDiag",false);
-  control_params.set("MatrixProperty",0);
-  control_params.set("ScalarMethod",0);
+  Teuchos::RCP<ParameterList> status_params = rcp(new ParameterList());
+  status_params->set("PrintTiming",false);
+  status_params->set("PrintStatus",false);
+  status_params->set("ComputeVectorNorms",false);
+  status_params->set("ComputeTrueResidual",false);
 
-  status_params.set("PrintTiming",false);
-  status_params.set("PrintStatus",false);
-  status_params.set("ComputeVectorNorms",false);
-  status_params.set("ComputeTrueResidual",false);
+  RCP<const ParameterList>
+    solver_params = static_cast<const solver_type*>(this)->getValidParameters_impl();
 
-  solver_params = *(static_cast<const solver_type*>(this)->getValidParameters_impl());
+  RCP<ParameterList> all_params = rcp(new ParameterList());
+  all_params->setParameters(*control_params);
+  all_params->setParameters(*status_params);
+  all_params->set(name(), *solver_params);
 
-  all_params.setParameters(control_params);
-  all_params.setParameters(status_params);
-  all_params.set(name(), solver_params);
-
-  return Teuchos::rcpFromRef( all_params );
+  return all_params;
 }
 
 
@@ -218,7 +251,7 @@ std::string
 Solver<ConcreteSolver,Matrix,Vector>::description() const
 {
   std::ostringstream oss;
-  oss << name() << "solver interface";
+  oss << name() << " solver interface";
   return oss.str();
 }
 
