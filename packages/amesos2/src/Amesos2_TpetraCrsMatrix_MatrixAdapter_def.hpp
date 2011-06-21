@@ -40,7 +40,7 @@ namespace Amesos {
       o_map = this->getRowMap();
       global_size_t numrows = this->getGlobalNumRows();
       
-      if( d == Rooted ){
+      if( d == Util::Rooted ){
 	if( Teuchos::size(*(this->comm_)) == 1 ){ // then mat_ (and this adapter) is already "rooted"
 	  return( rcpFromRef(*this) );
 	}
@@ -56,7 +56,7 @@ namespace Amesos {
 									       o_map->getIndexBase(),
 									       this->getComm(),
 									       o_map->getNode()));
-      } else if( d == Globally_Replicated ){
+      } else if( d == Util::Globally_Replicated ){
 	l_map = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>( numrows,
 									       o_map->getIndexBase(),
 									       this->getComm(),

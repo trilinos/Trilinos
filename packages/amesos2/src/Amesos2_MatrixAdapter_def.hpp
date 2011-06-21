@@ -20,8 +20,8 @@ namespace Amesos {
 				const Teuchos::ArrayView<global_ordinal_t> colind,
 				const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				EDistribution distribution,
-				EStorage_Ordering ordering) const
+				Util::EDistribution distribution,
+				Util::EStorage_Ordering ordering) const
   {
     help_getCrs(nzval, colind, rowptr,
 		nnz, distribution, ordering,
@@ -34,8 +34,8 @@ namespace Amesos {
 				const Teuchos::ArrayView<global_ordinal_t> colind,
 				const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				EDistribution distribution,
-				EStorage_Ordering ordering) const
+				Util::EDistribution distribution,
+				Util::EStorage_Ordering ordering) const
   {
     help_getCcs(nzval, colind, rowptr,
 		nnz, distribution, ordering,
@@ -92,8 +92,8 @@ namespace Amesos {
 				     const Teuchos::ArrayView<global_ordinal_t> colind,
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				     EDistribution distribution,
-				     EStorage_Ordering ordering,
+				     Util::EDistribution distribution,
+				     Util::EStorage_Ordering ordering,
 				     has_special_impl hsi) const
   {
     static_cast<const adapter_t*>(this)->getCrs_spec(nzval, colind, rowptr,
@@ -106,8 +106,8 @@ namespace Amesos {
 				     const Teuchos::ArrayView<global_ordinal_t> colind,
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				     EDistribution distribution,
-				     EStorage_Ordering ordering,
+				     Util::EDistribution distribution,
+				     Util::EStorage_Ordering ordering,
 				     no_special_impl nsi) const
   {
     do_getCrs(nzval, colind, rowptr,
@@ -121,8 +121,8 @@ namespace Amesos {
 				   const Teuchos::ArrayView<global_ordinal_t> colind,
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				   EDistribution distribution,
-				   EStorage_Ordering ordering,
+				   Util::EDistribution distribution,
+				   Util::EStorage_Ordering ordering,
 				   row_access ra) const
   {
     using Teuchos::RCP;
@@ -148,7 +148,7 @@ namespace Amesos {
       
       get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet);
       
-      if( ordering == Sorted_Indices ){
+      if( ordering == Util::Sorted_Indices ){
 	Tpetra::sort2(colind_view.begin(), colind_view.end(), nzval_view.begin());
       }
       
@@ -171,19 +171,19 @@ namespace Amesos {
 				   const Teuchos::ArrayView<global_ordinal_t> colind,
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				   EDistribution distribution,
-				   EStorage_Ordering ordering,
+				   Util::EDistribution distribution,
+				   Util::EStorage_Ordering ordering,
 				   col_access ca) const
   {
+    using Teuchos::Array;
     // get the ccs and transpose
-    Teuchos::Array<typename MatrixAdapter<Matrix>::global_size_t> rowptr_tmp(this->getGlobalNumCols() + 1); // in case ncols > nrows
-    do_getCcs(nzval, colind, rowptr_tmp(), nnz, distribution, ordering, ca);
-    Util::transpose(nzval, colind, rowptr_tmp()); // will resize rowptr_tmp
-    TEST_FOR_EXCEPTION( rowptr_tmp.size() != rowptr.size(),
-			std::runtime_error,
-			"Transpose function did not create a rowptr array of correct size.  "
-			"Please contact the Amesos2 developers." );
-    rowptr.assign(rowptr_tmp());
+
+    Array<scalar_t> nzval_tmp(nzval.size(), 0);
+    Array<global_ordinal_t> rowind(colind.size(), 0);
+    Array<global_size_t> colptr(this->getGlobalNumCols() + 1);
+    this->getCcs(nzval_tmp(), rowind(), colptr(), nnz, distribution, ordering);
+    
+    Util::transpose(nzval_tmp(), rowind(), colptr(), nzval, colind, rowptr);
   }
 
   template < class Matrix >
@@ -192,8 +192,8 @@ namespace Amesos {
 				     const Teuchos::ArrayView<global_ordinal_t> rowind,
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				     EDistribution distribution,
-				     EStorage_Ordering ordering,
+				     Util::EDistribution distribution,
+				     Util::EStorage_Ordering ordering,
 				     has_special_impl hsi) const
   {
     static_cast<const adapter_t*>(this)->getCcs_spec(nzval, rowind, colptr,
@@ -206,8 +206,8 @@ namespace Amesos {
 				     const Teuchos::ArrayView<global_ordinal_t> rowind,
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				     EDistribution distribution,
-				     EStorage_Ordering ordering,
+				     Util::EDistribution distribution,
+				     Util::EStorage_Ordering ordering,
 				     no_special_impl nsi) const
   {
     do_getCcs(nzval, rowind, colptr,
@@ -221,19 +221,19 @@ namespace Amesos {
 				   const Teuchos::ArrayView<global_ordinal_t> rowind,
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				   EDistribution distribution,
-				   EStorage_Ordering ordering,
+				   Util::EDistribution distribution,
+				   Util::EStorage_Ordering ordering,
 				   row_access ra) const
   {
+    using Teuchos::Array;
     // get the crs and transpose
-    Teuchos::Array<typename MatrixAdapter<Matrix>::global_size_t> colptr_tmp(this->getGlobalNumRows() + 1); // in case nrows > ncols
-    do_getCcs(nzval, rowind, colptr_tmp(), nnz, distribution, ordering, ra);
-    Util::transpose(nzval, rowind, colptr_tmp()); // will resize colptr_tmp
-    TEST_FOR_EXCEPTION( colptr_tmp.size() != colptr.size(),
-			std::runtime_error,
-			"Transpose function did not create a colptr array of correct size.  "
-			"Please contact the Amesos2 developers." );
-    colptr.assign(colptr_tmp());
+
+    Array<scalar_t> nzval_tmp(nzval.size(), 0);
+    Array<global_ordinal_t> colind(rowind.size(), 0);
+    Array<global_size_t> rowptr(this->getGlobalNumRows() + 1);
+    this->getCrs(nzval_tmp(), colind(), rowptr(), nnz, distribution, ordering);
+    
+    Util::transpose(nzval_tmp(), colind(), rowptr(), nzval, rowind, colptr);
   }
 
   template < class Matrix >
@@ -242,8 +242,8 @@ namespace Amesos {
 				   const Teuchos::ArrayView<global_ordinal_t> rowind,
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				   EDistribution distribution,
-				   EStorage_Ordering ordering,
+				   Util::EDistribution distribution,
+				   Util::EStorage_Ordering ordering,
 				   col_access ca) const
   {
     using Teuchos::RCP;
@@ -268,7 +268,7 @@ namespace Amesos {
       ArrayView<scalar_t> nzval_view = nzval.view(colInd,colNNZ);
       getGlobalColCopy(*col_it, rowind_view, nzval_view, nnzRet);
       
-      if( ordering == Sorted_Indices ){
+      if( ordering == Util::Sorted_Indices ){
 	Tpetra::sort2(rowind_view.begin(), rowind_view.end(), nzval_view.begin());
       }
       
@@ -361,7 +361,7 @@ namespace Amesos {
   
   template < class Matrix >
   RCP<const MatrixAdapter<Matrix> >
-  MatrixAdapter<Matrix>::get(EDistribution d) const
+  MatrixAdapter<Matrix>::get(Util::EDistribution d) const
   {
     return static_cast<const adapter_t*>(this)->get_impl(d);
   }

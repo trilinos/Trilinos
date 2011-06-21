@@ -20,21 +20,10 @@ namespace Amesos {
   using Amesos::Util::no_special_impl;
   using Amesos::Util::row_access;
   using Amesos::Util::col_access;
+  using Amesos::Util::EDistribution;
+  using Amesos::Util::EStorage_Ordering;
   
   using Teuchos::RCP;
-
-  typedef enum {
-    Distributed,                /**< no processor has a view of the entire matrix, only local pieces */
-    Distributed_No_Overlap,     /**< no row or column may be present on more than one processor */
-    Globally_Replicated,        /**< each processor has a view of the entire matrix */
-    Rooted                     /**< only \c rank=0 has a full view, all others have nothing. */
-    // SameDistribution            /**< Use whatever distribution the matrix adapter currently has */
-  } EDistribution;
-
-  typedef enum {
-    Sorted_Indices,             /**< row/col indices need to appear in sorted order */
-    Arbitrary                   /**< index order can be arbitrary */
-  } EStorage_Ordering;
 
   /**
    * \brief A Matrix adapter interface for Amesos2.

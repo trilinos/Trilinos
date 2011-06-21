@@ -21,7 +21,7 @@ namespace Amesos {
       o_map = rcpFromRef(this->mat_->RowMap());
       int numrows = as<int>(this->getGlobalNumRows());
       
-      if( d == Rooted ){
+      if( d == Util::Rooted ){
 	if( Teuchos::size(*comm_) == 1 ){ // then mat_ (and this adapter) is already "rooted"
 	  return( rcpFromRef(*this) );
 	}
@@ -36,7 +36,7 @@ namespace Amesos {
 				    num_my_elements,
 				    o_map->IndexBase(),
 				    this->mat_->Comm() ));
-      } else if( d == Globally_Replicated ){
+      } else if( d == Util::Globally_Replicated ){
 	l_map = rcp(new Epetra_LocalMap( numrows,
 					 o_map->IndexBase(),
 					 this->mat_->Comm() ));

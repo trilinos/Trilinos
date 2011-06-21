@@ -48,6 +48,7 @@
 
 #include "Amesos2_MatrixHelper.hpp"
 #include "Amesos2_Superlu_FunctionMap.hpp"
+#include "Amesos2_Util.hpp"
 #include "Amesos2_Util_is_same.hpp"
 
 namespace SLU {
@@ -121,59 +122,22 @@ namespace Amesos {
                           std::runtime_error,
                           "rowptr array not large enough to hold data");
 
-      Array<scalar_type> nzval_tmp(nzval.size());
-      Array<go_type>   colind_tmp(colind.size());
-      Array<gs_type>   rowptr_tmp(rowptr.size());
-      size_t nnz_ret = 0;
+      int nnz_ret = 0;
 
       // Actually uses the compressed-row-store format, and tells Superlu this
       // while creating a compressed-column store.
       {
         Teuchos::TimeMonitor mtxRedistTimer( mtxRedistTime );
 
-        mat->getCrs(nzval_tmp(),
-                    colind_tmp(),
-		    rowptr_tmp(),
-		    nnz_ret,
-		    Rooted,
-		    Arbitrary);
+	Util::get_crs_helper<Matrix,slu_type,int,int>::do_get(mat, nzval, colind,
+							      rowptr, nnz_ret,
+							      Util::Rooted,
+							      Util::Arbitrary);
       }
 
       TEST_FOR_EXCEPTION( nnz_ret != Teuchos::as<size_t>(nnz),
                           std::runtime_error,
                           "Number of nonzeros returned by getCrs() different from getGlobalNNZ()");
-
-      /* Convert types
-       *
-       * Note: We cannot simply convert when necessary.  That is, we
-       * cannot check whether the matrix types are double, int, and
-       * int, and then do a simple ArrayView::assign if they are the
-       * same, since the compiler still has to do the static linking
-       * and cannot find an appropriate function call in the case that
-       * the types are not double, int, and int
-       */
-      {
-        typename Array<scalar_type>::size_type i, size;
-        size = nzval_tmp.size();
-        for ( i = 0; i < size; ++i ){
-          nzval[i] = Teuchos::as<slu_type>(nzval_tmp[i]);
-        }
-      }
-      {
-        typename Array<go_type>::size_type i, size;
-        size = colind_tmp.size();
-        for ( i = 0; i < size; ++i ){
-          colind[i] = Teuchos::as<int>(colind_tmp[i]);
-        }
-      }
-      {
-        typename Array<gs_type>::size_type i, size;
-        size = rowptr_tmp.size();
-        for ( i = 0; i < size; ++i ){
-          rowptr[i] = Teuchos::as<int>(rowptr_tmp[i]);
-        }
-      }
-      // end conversions
 
       FunctionMap<Superlu,scalar_type>::create_CompRow_Matrix(A.getRawPtr(), rows, cols, nnz, nzval.getRawPtr(),
                                                               colind.getRawPtr(), rowptr.getRawPtr(), SLU::SLU_NR,

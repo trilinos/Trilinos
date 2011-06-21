@@ -54,6 +54,9 @@
 
 #include "Amesos2_config.h"
 
+#include <Teuchos_Array.hpp>
+#include <Teuchos_ArrayView.hpp>
+
 #include <Teuchos_DefaultSerialComm.hpp>
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
@@ -94,6 +97,128 @@ Amesos::Util::to_teuchos_comm(Teuchos::RCP<const Epetra_Comm> c){
 }
 
 #endif	// HAVE_AMESOS2_EPETRA
+
+template <typename Scalar,
+	  typename GlobalOrdinal,
+	  typename GlobalSizeT>
+void Amesos::Util::transpose(Teuchos::ArrayView<Scalar> vals,
+	       Teuchos::ArrayView<GlobalOrdinal> indices,
+	       Teuchos::ArrayView<GlobalSizeT> ptr,
+	       Teuchos::ArrayView<Scalar> trans_vals,
+	       Teuchos::ArrayView<GlobalOrdinal> trans_indices,
+	       Teuchos::ArrayView<GlobalSizeT> trans_ptr)
+{
+  /* We have a compressed-row storage format of this matrix.  We
+   * transform this into a compressed-column format using a
+   * distribution-counting sort algorithm, which is described by
+   * D.E. Knuth in TAOCP Vol 3, 2nd ed pg 78.
+   */
+
+#ifdef HAVE_AMESOS2_DEBUG
+  typename Teuchos::ArrayView<GlobalOrdinal>::iterator ind_it, ind_begin, ind_end;
+  ind_begin = indices.begin();
+  ind_end = indices.end();
+  size_t min_trans_ptr_size = *std::max_element(ind_begin, ind_end) + 1;
+  TEST_FOR_EXCEPTION( trans_ptr.size() < min_trans_ptr_size,
+		      std::invalid_argument,
+		      "Transpose pointer size not large enough." );
+  TEST_FOR_EXCEPTION( trans_vals.size() < vals.size(),
+		      std::invalid_argument,
+		      "Transpose values array not large enough." );
+  TEST_FOR_EXCEPTION( trans_indices.size() < indices.size(),
+		      std::invalid_argument,
+		      "Transpose indices array not large enough." );
+#else
+  typename Teuchos::ArrayView<GlobalOrdinal>::iterator ind_it, ind_end;
+#endif
+  
+  // Count the number of entries in each column
+  Teuchos::Array<GlobalSizeT> count(trans_ptr.size(), 0);
+  ind_end = indices.end();
+  for( ind_it = indices.begin(); ind_it != ind_end; ++ind_it ){
+    ++(count[(*ind_it) + 1]);
+  }
+
+  // Accumulate
+  typename Teuchos::Array<GlobalSizeT>::iterator cnt_it, cnt_end;
+  cnt_end = count.end();
+  for( cnt_it = count.begin() + 1; cnt_it != cnt_end; ++cnt_it ){
+    *cnt_it = *cnt_it + *(cnt_it - 1);
+  }
+  // This becomes the array of column pointers
+  trans_ptr.assign(count);
+
+  /* Move the nonzero values into their final place in nzval, based on the
+   * counts found previously.
+   *
+   * This sequence deviates from Knuth's algorithm a bit, following more
+   * closely the description presented in Gustavson, Fred G. "Two Fast
+   * Algorithms for Sparse Matrices: Multiplication and Permuted
+   * Transposition" ACM Trans. Math. Softw. volume 4, number 3, 1978, pages
+   * 250--269, http://doi.acm.org/10.1145/355791.355796.
+   *
+   * The output indices end up in sorted order
+   */
+
+  GlobalSizeT size = ptr.size();
+  for( GlobalSizeT i = 0; i < size - 1; ++i ){
+    GlobalOrdinal u = ptr[i];
+    GlobalOrdinal v = ptr[i + 1];
+    for( GlobalOrdinal j = u; j < v; ++j ){
+      GlobalOrdinal k = count[indices[j]];
+      trans_vals[k] = vals[j];
+      trans_indices[k] = i;
+      ++(count[indices[j]]);
+    }
+  }
+}
+
+
+template <typename Scalar1, typename Scalar2>
+void
+Amesos::Util::scale(Teuchos::ArrayView<Scalar1> vals, size_t l,
+		    size_t ld, Teuchos::ArrayView<Scalar2> s){
+  size_t vals_size = vals.size();
+#ifdef HAVE_AMESOS2_DEBUG
+  size_t s_size = s.size();
+  TEST_FOR_EXCEPTION( s_size < l,
+		      std::invalid_argument,
+		      "Scale vector must have length at least that of the vector" );
+#endif
+  size_t i, s_i;
+  for( i = 0, s_i = 0; i < vals_size; ++i, ++s_i ){
+    if( s_i == l ){
+      // bring i to the next multiple of ld
+      i += ld - s_i;
+      s_i = 0;
+    }
+    vals[i] *= s[s_i];
+  }
+}
+
+template <typename Scalar1, typename Scalar2, class BinaryOp>
+void
+Amesos::Util::scale(Teuchos::ArrayView<Scalar1> vals, size_t l,
+		    size_t ld, Teuchos::ArrayView<Scalar2> s,
+		    BinaryOp binary_op){
+  size_t vals_size = vals.size();
+#ifdef HAVE_AMESOS2_DEBUG
+  size_t s_size = s.size();
+  TEST_FOR_EXCEPTION( s_size < l,
+		      std::invalid_argument,
+		      "Scale vector must have length at least that of the vector" );
+#endif
+  size_t i, s_i;
+  for( i = 0, s_i = 0; i < vals_size; ++i, ++s_i ){
+    if( s_i == l ){
+      // bring i to the next multiple of ld
+      i += ld - s_i;
+      s_i = 0;
+    }
+    vals[i] = binary_op(vals[i], s[s_i]);
+  }
+}
+
 
 /*
  * TODO: Use Matrix and MultiVecAdapters instead of strait matrix and
