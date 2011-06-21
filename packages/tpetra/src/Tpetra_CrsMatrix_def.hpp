@@ -1575,6 +1575,35 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class T>
+  RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node> > 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::convert() const
+  {
+    const std::string tfecfFuncName("convert()");
+    // FINISH: we have a problem here: converted matrices will be statically allocated, and therefore will not benefit from first touch 
+    // allocation. must address this in the future.
+    TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, ": fill must be complete.");
+    RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > newmat;
+    newmat = rcp(new CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(getCrsGraph()));
+    const Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap = *getRowMap();
+    Array<T> newvals;
+    for (LocalOrdinal li=rowMap.getMinLocalIndex(); li <= rowMap.getMaxLocalIndex(); ++li)
+    {
+      ArrayView<const LocalOrdinal> rowinds;
+      ArrayView<const Scalar>       rowvals;
+      this->getLocalRowView(li,rowinds,rowvals);
+      if (rowvals.size() > 0) {
+        newvals.resize(rowvals.size());
+        std::copy( rowvals.begin(), rowvals.end(), newvals.begin() );
+        newmat->insertLocalValues(li, rowinds, newvals());
+      }
+    }
+    // we don't choose here; we have to abide by the existing graph
+    const OptimizeOption oo = (this->isStorageOptimized() == true ? DoOptimizeStorage : DoNotOptimizeStorage);    
+    newmat->fillComplete(this->getDomainMap(), this->getRangeMap(), oo);
+    return newmat;
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////

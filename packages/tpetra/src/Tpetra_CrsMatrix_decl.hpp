@@ -482,7 +482,7 @@ namespace Tpetra {
 
       //@}
 
-      //! @name Advanced Matrix-vector multiplication and solve methods
+      //! @name Advanced templated methods
       //@{
 
       //! Multiplies this matrix by a MultiVector.
@@ -507,6 +507,12 @@ namespace Tpetra {
        */
       template <class DomainScalar, class RangeScalar>
       void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+          
+      //@}
+
+      //! Returns another CrsMatrix with the same entries, but represented as a different scalar type.
+      template <class T>
+      RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node> > convert() const;
           
       //@}
 
