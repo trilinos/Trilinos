@@ -211,7 +211,7 @@ namespace Tpetra {
     ArrayView<T2> array2)
   {
     typedef typename ArrayView<T1>::size_type st;
-    st ST0 = Teuchos::OrdinalTraits<st>::zero();
+    st ST0 = OrdinalTraits<st>::zero();
     for(st i = ST0; i < a1size; ++i){
       st n = a1size;
       st m = n/2;

@@ -554,11 +554,15 @@ getGlobalRowFromLocalIndex(
   ArrayView<const LocalOrdinal> localIndices = Mview.indices[localRow];
   ArrayView<const Scalar> constValues = Mview.values[localRow];
   values = Array<Scalar>(constValues);
+  indices.resize(localIndices.size());
   
-  for(typename ArrayView<const LocalOrdinal>::iterator it=localIndices.begin(); it!=localIndices.end(); ++it){
-    indices.push_back(colMap->getGlobalElement(*it));
+  for(
+    LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero();
+    i < localIndices.size();
+    ++i)
+  {
+    indices[i] = colMap->getGlobalElement(localIndices[i]);
   }
-  //sort2(indices.begin(), indices.end(), values.begin());
   sort2Shell(indices(), indices.size(), values());
 }
 
