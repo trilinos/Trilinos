@@ -565,7 +565,7 @@ namespace MueLu {
      comm->barrier();
    } //PauseForDebugger
 
-   static void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<GO> const &Comm)
+   static void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm)
    {
      double maxTime=0,minTime=0,avgTime=0;
      double localTime = timer.totalElapsedTime();
