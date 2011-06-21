@@ -103,13 +103,7 @@ the packages.
 
 If you are (in effect) wrapping Package 2, and Package 1 is Epetra,
 then there are some additional SWIG macros you should know.  If the
-Epetra class derives from Epetra_Object, then use
-``%teuchos_rcp_epetra()``.  This ensures that ``Print()`` and
-``__str__()`` methods will work properly without having to invoke
-``%teuchos_rcp(Epetra_Object)``, which would then require almost all
-Epetra classes to be treated.
-
-If the Epetra class is an array storage class implemented as a hybrid
-numpy array, then you should use the ``%teuchos_rcp_epetra_numpy()``
-macro.  This should never be necessary, however, because all of these
-classes have already been treated.
+Epetra class is an array storage class implemented as a hybrid numpy
+array, then you should use the ``%teuchos_rcp_epetra_numpy()`` macro.
+This should never be necessary, however, because all of these classes
+have already been treated.

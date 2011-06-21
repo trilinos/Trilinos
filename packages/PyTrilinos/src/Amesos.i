@@ -101,6 +101,10 @@ exAmesos_Factory.py.
 #include "Epetra_LinearProblem.h"
 #include "Epetra_DataAccess.h"
 #include "Epetra_FEVbrMatrix.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_SerialDistributor.h"
 #endif
 
 // Teuchos includes

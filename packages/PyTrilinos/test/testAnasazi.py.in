@@ -74,22 +74,32 @@ class AnasaziTestCase(unittest.TestCase):
 if __name__ == "__main__":
 
     # Create the test suite object
+    print "Defining suite"
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
+    print "Adding test"
     suite.addTest(unittest.makeSuite(AnasaziTestCase))
 
     # Create a communicator
+    print "Constructing communicator"
     comm    = Epetra.PyComm()
+    print "Computing iAmRoot"
     iAmRoot = comm.MyPID() == 0
 
     # Run the test suite
     if iAmRoot: print >>sys.stderr, \
        "\n***************\nTesting Anasazi\n***************\n"
     verbosity = options.verbosity * int(comm.MyPID() == 0)
+    print "Running tests"
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
-    # Exit with a code that indicates the total number of errors and failures
+    # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)

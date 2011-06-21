@@ -176,12 +176,17 @@ if __name__ == "__main__":
     
     # Run the test suite
     #if comm.MyPID() == 0:
-    print >>sys.stderr, \
-          "\n****************************\nTesting Isorropia.Partitioner\n****************************\n"
+    print >>sys.stderr, "\n****************************", \
+          "\nTesting Isorropia.Partitioner\n****************************\n"
     verbosity = 2 #* int(comm.MyPID() == 0)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
-    
-    # Exit with a code that indicates the total number of errors and failures
+
+    # Compute the total number of errors and failures
     errsPlusFails = len(result.errors) + len(result.failures)
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)

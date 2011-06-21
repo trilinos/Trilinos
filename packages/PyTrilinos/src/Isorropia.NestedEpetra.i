@@ -51,9 +51,6 @@ The purpose of Isorropia.Epetra is to ....
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
-// Epetra Necessities 
-#include "Epetra_Import.h"
-
 // Epetra includes
 #include "Epetra_LocalMap.h"
 #include "Epetra_MapColoring.h"
@@ -66,6 +63,16 @@ The purpose of Isorropia.Epetra is to ....
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDenseSolver.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_Time.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 
 // Isorropia includes
 #include "Isorropia_EpetraOperator.hpp"

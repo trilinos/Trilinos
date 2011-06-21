@@ -71,16 +71,18 @@ class EpetraIntSerialDenseMatrixTestCase(unittest.TestCase):
     def testConstructor00(self):
         "Test Epetra.IntSerialDenseMatrix default constructor"
         isdm = Epetra.IntSerialDenseMatrix()
-        self.assertEqual(isdm.CV(), Epetra.Copy)
-        self.assertEqual(isdm.M() , 0          )
-        self.assertEqual(isdm.N() , 0          )
+        self.assertEqual(isdm.Label(), "Epetra::IntSerialDenseMatrix")
+        self.assertEqual(isdm.CV(),    Epetra.Copy                   )
+        self.assertEqual(isdm.M() ,    0                             )
+        self.assertEqual(isdm.N() ,    0                             )
 
     def testConstructor01(self):
         "Test Epetra.IntSerialDenseMatrix (int,int) constructor"
         isdm = Epetra.IntSerialDenseMatrix(self.rows,self.cols)
-        self.assertEqual(isdm.CV(), Epetra.Copy)
-        self.assertEqual(isdm.M() , self.rows  )
-        self.assertEqual(isdm.N() , self.cols  )
+        self.assertEqual(isdm.Label(), "Epetra::IntSerialDenseMatrix")
+        self.assertEqual(isdm.CV(),    Epetra.Copy                   )
+        self.assertEqual(isdm.M(),     self.rows                     )
+        self.assertEqual(isdm.N(),     self.cols                     )
         self.failUnless((isdm == zeros((self.rows,self.cols),'i')).all())
 
     def testConstructor02(self):
@@ -101,9 +103,10 @@ class EpetraIntSerialDenseMatrixTestCase(unittest.TestCase):
     def testConstructor05(self):
         "Test Epetra.IntSerialDenseMatrix (2D-array) constructor"
         isdm = Epetra.IntSerialDenseMatrix(self.array)
-        self.assertEqual(isdm.CV(), Epetra.View)
-        self.assertEqual(isdm.M(), self.rows)
-        self.assertEqual(isdm.N(), self.cols)
+        self.assertEqual(isdm.Label(), "Epetra::IntSerialDenseMatrix")
+        self.assertEqual(isdm.CV(),    Epetra.View                   )
+        self.assertEqual(isdm.M(),     self.rows                     )
+        self.assertEqual(isdm.N(),     self.cols                     )
 
     def testConstructor06(self):
         "Test Epetra.IntSerialDenseMatrix (3D-array) constructor"
@@ -121,30 +124,33 @@ class EpetraIntSerialDenseMatrixTestCase(unittest.TestCase):
         "Test Epetra.IntSerialDenseMatrix copy constructor for default"
         isdm1 = Epetra.IntSerialDenseMatrix()
         isdm2 = Epetra.IntSerialDenseMatrix(isdm1)
-        self.assertEqual(isdm2.CV() ,isdm1.CV() )
-        self.assertEqual(isdm2.M()  ,isdm1.M()  )
-        self.assertEqual(isdm2.N()  ,isdm1.N()  )
-        self.assertEqual(isdm2.LDA(),isdm1.LDA())
+        self.assertEqual(isdm2.Label(), "Epetra::IntSerialDenseMatrix")
+        self.assertEqual(isdm2.CV(),    isdm1.CV()                    )
+        self.assertEqual(isdm2.M(),     isdm1.M()                     )
+        self.assertEqual(isdm2.N(),     isdm1.N()                     )
+        self.assertEqual(isdm2.LDA(),   isdm1.LDA()                   )
 
     def testConstructor09(self):
         "Test Epetra.IntSerialDenseMatrix copy constructor for (int,int)"
         isdm1 = Epetra.IntSerialDenseMatrix(self.rows,self.cols)
         isdm1.Random()
         isdm2 = Epetra.IntSerialDenseMatrix(isdm1)
-        self.assertEqual(isdm2.CV() ,isdm1.CV() )
-        self.assertEqual(isdm2.M()  ,isdm1.M()  )
-        self.assertEqual(isdm2.N()  ,isdm1.N()  )
-        self.assertEqual(isdm2.LDA(),isdm1.LDA())
+        self.assertEqual(isdm2.Label(), isdm1.Label())
+        self.assertEqual(isdm2.CV(),    isdm1.CV()   )
+        self.assertEqual(isdm2.M(),     isdm1.M()    )
+        self.assertEqual(isdm2.N(),     isdm1.N()    )
+        self.assertEqual(isdm2.LDA(),   isdm1.LDA()  )
         self.failUnless((isdm1 == isdm2).all())
 
     def testConstructor10(self):
         "Test Epetra.IntSerialDenseMatrix copy constructor for (2D-array)"
         isdm1 = Epetra.IntSerialDenseMatrix(self.array)
         isdm2 = Epetra.IntSerialDenseMatrix(isdm1)
-        self.assertEqual(isdm2.CV() ,isdm1.CV() )
-        self.assertEqual(isdm2.M()  ,isdm1.M()  )
-        self.assertEqual(isdm2.N()  ,isdm1.N()  )
-        self.assertEqual(isdm2.LDA(),isdm1.LDA())
+        self.assertEqual(isdm2.Label(), isdm1.Label())
+        self.assertEqual(isdm2.CV(),    isdm1.CV()   )
+        self.assertEqual(isdm2.M(),     isdm1.M()    )
+        self.assertEqual(isdm2.N(),     isdm1.N()    )
+        self.assertEqual(isdm2.LDA(),   isdm1.LDA()  )
         self.failUnless((isdm1 == isdm2).all())
 
     def testShape1(self):
@@ -577,7 +583,12 @@ if __name__ == "__main__":
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
-    # Exit with a code that indicates the total number of errors and failures
+    # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)
