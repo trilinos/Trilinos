@@ -101,9 +101,13 @@ int main(int argc, char *argv[]) {
   LO maxLevels = 3;
   LO its=10;
   int pauseForDebugger=0;
+  int amgAsSolver=1;
+  int amgAsPrecond=1;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
   clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
+  clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
+  clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -255,26 +259,29 @@ int main(int argc, char *argv[]) {
 
 #define AMG_SOLVER
 #ifdef AMG_SOLVER
-  *out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-
-  Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-
   // Use AMG directly as an iterative method
-  {
-    X->putScalar( (SC) 0.0);
+  if (amgAsSolver) {
+    *out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+  
+    Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  
+    {
+      X->putScalar( (SC) 0.0);
+  
+      H->PrintResidualHistory(true);
+      H->Iterate(*RHS,its,*X);
+  
+      X->norm2(norms);
+      *out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+    }
+  } //if (fixedPt)
+#endif //ifdef AMG_SOLVER
 
-    H->PrintResidualHistory(true);
-    H->Iterate(*RHS,its,*X);
-
-    X->norm2(norms);
-    *out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-  }
-
-#endif
 
 #define BELOS_SOLVER
 #ifdef BELOS_SOLVER
   // Use AMG as a preconditioner in Belos
+  if (amgAsPrecond)
   {
     X->putScalar( (SC) 0.0);
 
@@ -368,7 +375,7 @@ int main(int argc, char *argv[]) {
     }
     *out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 
-  } // end of Belos
+  } // if (precond)
 #endif // JG_TODO
 
   return EXIT_SUCCESS;
