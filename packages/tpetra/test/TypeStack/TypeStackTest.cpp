@@ -101,14 +101,14 @@ struct TestDBInit {
 };
 
 TEUCHOS_UNIT_TEST( StackBuilder, DBBuilder ) {
-  std::string xmlString("\
-    <ParameterList>\
-      <ParameterList name=\"child\">\
-        <ParameterList name=\"child\">\
-        </ParameterList>\
-      </ParameterList>\
-    </ParameterList>\
-  ");
+  std::string xmlString(
+    " <ParameterList>                   \n"
+    "   <ParameterList name='child'>    \n"
+    "     <ParameterList name='child'>  \n"
+    "     </ParameterList>              \n"
+    "   </ParameterList>                \n"
+    " </ParameterList>                  \n"
+  );
   ParameterList stackPL;
   Teuchos::updateParametersFromXmlString(xmlString,&stackPL);
 
