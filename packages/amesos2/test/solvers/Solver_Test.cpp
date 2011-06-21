@@ -458,7 +458,7 @@ bool test_epetra(const string& mm_file,
   // only do one default run
   if( do_default ){
     if( verbosity > 1 ){
-      *fos << "    Doing epetra test default test run .. ";
+      *fos << "    Doing epetra test default test run ... ";
     }
     success &= do_epetra_test(mm_file, solver_name, solve_params);
   }

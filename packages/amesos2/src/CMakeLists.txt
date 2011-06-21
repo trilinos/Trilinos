@@ -111,12 +111,6 @@ APPEND_SET(HEADERS
   Amesos2_Solver_decl.hpp
   Amesos2_Solver_def.hpp
   Amesos2_Status.hpp
-  Amesos2_Superlu.hpp
-  Amesos2_Superlu_FunctionMap.hpp
-  Amesos2_Superlu_MatrixHelper.hpp
-  Amesos2_Superlu_TypeMap.hpp
-  Amesos2_Superlu_decl.hpp
-  Amesos2_Superlu_def.hpp
   Amesos2_Timers.hpp
   Amesos2_TpetraMultiVecAdapter.hpp
   Amesos2_TpetraMultiVecAdapter_decl.hpp
@@ -138,7 +132,6 @@ APPEND_SET(SOURCES
   Amesos2_Solver.cpp
   Amesos2_SolverBase.cpp
   Amesos2_Status.cpp
-  Amesos2_Superlu.cpp
 #  Amesos2_TpetraCrsMatrixAdapter.cpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.cpp
   Amesos2_TpetraCrsMatrix_MatrixAdapter.cpp
@@ -151,10 +144,27 @@ APPEND_SET(SOURCES
 # configuration options.  In Amesos2, each solver interface should be
 # added only if that solver has been enabled by the user.
 
+IF (${PACKAGE_NAME}_ENABLE_SuperLU)
+  APPEND_SET(HEADERS
+    Amesos2_Superlu.hpp
+    Amesos2_Superlu_FunctionMap.hpp
+    Amesos2_Superlu_MatrixHelper.hpp
+    Amesos2_Superlu_TypeMap.hpp
+    Amesos2_Superlu_decl.hpp
+    Amesos2_Superlu_def.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_Superlu.cpp
+    )
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
   APPEND_SET(HEADERS
     Amesos2_Superlumt.hpp
     Amesos2_Superlumt_FunctionMap.hpp
+    Amesos2_Superlumt_MatrixHelper.hpp
+    Amesos2_Superlumt_TypeMap.hpp
     Amesos2_Superlumt_decl.hpp
     Amesos2_Superlumt_def.hpp
     )
