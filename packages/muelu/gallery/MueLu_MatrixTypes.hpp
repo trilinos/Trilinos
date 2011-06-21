@@ -21,6 +21,7 @@
 #include "Cthulhu_OperatorFactory.hpp"
 #endif
 #include "MueLu_Memory.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
   
@@ -156,8 +157,13 @@ namespace MueLu {
         std::cout << MemUtils::PrintMemoryUsage() << std::endl;
       }
 
+/*
       double t0 = MPI_Wtime();
       double t1,t2;
+*/
+
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
+      timer->start(true);
 
       for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
         {
@@ -196,14 +202,20 @@ namespace MueLu {
                                   Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
                                   Teuchos::tuple<Scalar>(a) );
 
+/*
         if ( (comm->getRank() == 0) && (NumMyElements >= 10) &&  (i % (NumMyElements / 10) == 0) ) {
             int percDone = (int) floor((((double)i)/NumMyElements)*100);
             t1 = MPI_Wtime() - t0;
             std::cout << percDone << "% done (" << i << " rows) in " << t1 << " seconds, [pid 0]" << std::endl;
             std::cout << MemUtils::PrintMemoryUsage() << std::endl;
           }
+*/
         } //for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)
 
+        timer->stop();
+        Utils::ReportTimeAndMemory(*timer, *comm);
+
+/*
       t1 = MPI_Wtime() - t0;
       if (comm->getRank() == 0) {
         std::cout << "100% done in " << t1 << " seconds [pid 0]" << std::endl;
@@ -213,9 +225,17 @@ namespace MueLu {
         std::cout << "starting fill complete" << std::endl;
         std::cout << MemUtils::PrintMemoryUsage() << std::endl;
       }
+*/
 
-      t2 = MPI_Wtime();
+      //t2 = MPI_Wtime();
+      timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
+      timer->start(true);
+
       mtx->fillComplete();
+
+      timer->stop();
+      Utils::ReportTimeAndMemory(*timer, *comm);
+      /*
       t2 = MPI_Wtime() - t2;
       t1 = MPI_Wtime() - t0;
       if (comm->getRank() == 0) {
@@ -223,6 +243,7 @@ namespace MueLu {
         std::cout << "total time = " << t1 << " seconds [pid 0]" << std::endl;
         std::cout << MemUtils::PrintMemoryUsage() << std::endl;
       }
+      */
 
       return mtx;
     } //TriDiag

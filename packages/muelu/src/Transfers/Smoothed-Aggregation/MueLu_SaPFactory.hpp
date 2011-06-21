@@ -103,6 +103,9 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
     bool BuildP(Level &fineLevel, Level &coarseLevel) const {
       Teuchos::OSTab tab(this->out_);
 
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("SaPFactory::BuildP"));
+      timer->start(true);
+
       RCP<Operator> finalP;
 
       if (reUseP_) {
@@ -164,6 +167,9 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       //coarseLevel.Save("Nullspace",coarseNullspace);
 
       //Utils::MatrixPrint(finalP);
+
+      timer->stop();
+      Utils::ReportTimeAndMemory(*timer, *(finalP->getRowMap()->getComm()));
 
       return true;
     } //Build()

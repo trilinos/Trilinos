@@ -4,6 +4,7 @@
 #include <iostream>
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 /*!
@@ -29,6 +30,10 @@ class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,
 
     //@{ Build methods.
     bool Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
+
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("RAP::Build"));
+      timer->start(true);
+
       Teuchos::OSTab tab(this->getOStream());
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
       RCP<Operator> P = coarseLevel.GetP();
@@ -37,6 +42,9 @@ class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,
       RCP<Operator> R = coarseLevel.GetR();
       RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,AP);
       coarseLevel.SetA(RAP);
+
+      timer->stop();
+      Utils::ReportTimeAndMemory(*timer, *(RAP->getRowMap()->getComm()));
 
       return true;
     }

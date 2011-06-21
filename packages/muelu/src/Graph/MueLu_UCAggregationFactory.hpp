@@ -130,6 +130,9 @@ typedef LO my_size_t; //TODO
       //TODO check for reuse of aggregates here
       //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
       //FIXME there ever be more than one graph?
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("UCAggregationFactory::Build"));
+      timer->start(true);
+
       currentLevel.Request("Graph");
       if (coalesceDropFact_ != Teuchos::null)
         coalesceDropFact_->Build(currentLevel);
@@ -137,6 +140,9 @@ typedef LO my_size_t; //TODO
       currentLevel.CheckOut("Graph",graph);
       RCP<Aggregates> aggregates = Build(*graph);
       currentLevel.Save("Aggregates",aggregates);
+
+      timer->stop();
+      Utils::ReportTimeAndMemory(*timer, *(graph->GetComm()));
     }
 
   /*! @brief Build aggregates. */

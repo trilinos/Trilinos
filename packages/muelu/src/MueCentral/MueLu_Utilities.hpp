@@ -22,6 +22,7 @@
 
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_Memory.hpp"
 
 #ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
@@ -563,6 +564,23 @@ namespace MueLu {
      }
      comm->barrier();
    } //PauseForDebugger
+
+   static void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<GO> const &Comm)
+   {
+     double maxTime=0,minTime=0,avgTime=0;
+     double localTime = timer.totalElapsedTime();
+     int ntimers=1, root=0;
+     MPI_Reduce(&localTime,&maxTime,ntimers,MPI_DOUBLE,MPI_MAX,root,MPI_COMM_WORLD);
+     MPI_Reduce(&localTime,&minTime,ntimers,MPI_DOUBLE,MPI_MIN,root,MPI_COMM_WORLD);
+     MPI_Reduce(&localTime,&avgTime,ntimers,MPI_DOUBLE,MPI_SUM,root,MPI_COMM_WORLD);
+     avgTime /= Comm.getSize();
+     //std::cout << "(" << Comm.getRank() << ") " << localTime << std::endl; 
+     if (Comm.getRank()==0) {
+       std::cout << "&&& " << timer.name() << " time    &&& "
+                 << "max=" << maxTime << "   min=" << minTime << "  avg=" << avgTime << std::endl;
+       std::cout << "&&& " << timer.name() << " memory  &&& " << MemUtils::PrintMemoryUsage() << std::endl;
+     }
+   } //ReportTimeAndMemory
 
   }; // class
 

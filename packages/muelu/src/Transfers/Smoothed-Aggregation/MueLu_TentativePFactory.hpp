@@ -151,6 +151,9 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     {
       using Teuchos::ArrayRCP;
 
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("MakeTentative"));
+      timer->start(true);
+
       Teuchos::RCP< Operator > fineA = fineLevel.GetA();
       RCP<const Teuchos::Comm<int> > comm = fineA->getRowMap()->getComm();
 
@@ -458,6 +461,9 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
       coarseLevel.Save("Nullspace",coarseNullspace);
       coarseLevel.Save("Ptent",Ptentative);
+
+      timer->stop();
+      Utils::ReportTimeAndMemory(*timer, *(fineA->getRowMap()->getComm()));
 
     } //MakeTentativeWithQR()
 
