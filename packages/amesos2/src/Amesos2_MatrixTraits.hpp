@@ -106,6 +106,6 @@ namespace Amesos {
 
 #endif
 
-};
+}
 
 #endif	// AMESOS2_MATRIXTRAITS_HPP

@@ -32,11 +32,11 @@ namespace Amesos {
 					  Epetra_CrsMatrix> super_t;
   public:
     // 'import' superclass types
-    typedef typename super_t::scalar_t                     scalar_t;
-    typedef typename super_t::local_ordinal_t       local_ordinal_t;
-    typedef typename super_t::global_ordinal_t     global_ordinal_t;
-    typedef typename super_t::node_t                         node_t;
-    typedef typename super_t::global_size_t           global_size_t;
+    typedef super_t::scalar_t                     scalar_t;
+    typedef super_t::local_ordinal_t       local_ordinal_t;
+    typedef super_t::global_ordinal_t     global_ordinal_t;
+    typedef super_t::node_t                         node_t;
+    typedef super_t::global_size_t           global_size_t;
     
     typedef ConcreteMatrixAdapter<matrix_t>                    type;
     

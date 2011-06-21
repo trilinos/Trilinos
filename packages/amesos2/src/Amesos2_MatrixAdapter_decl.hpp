@@ -27,7 +27,7 @@ namespace Amesos {
     Distributed,                /**< no processor has a view of the entire matrix, only local pieces */
     Distributed_No_Overlap,     /**< no row or column may be present on more than one processor */
     Globally_Replicated,        /**< each processor has a view of the entire matrix */
-    Rooted,                     /**< only \c rank=0 has a full view, all others have nothing. */
+    Rooted                     /**< only \c rank=0 has a full view, all others have nothing. */
     // SameDistribution            /**< Use whatever distribution the matrix adapter currently has */
   } EDistribution;
 
