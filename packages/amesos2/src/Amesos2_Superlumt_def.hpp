@@ -65,7 +65,9 @@ namespace SLUMT {
    * functions. Instead, all other SuperLU_MT function just call
    * "sp_colorder", which is defined within the SuperLU_MT library.
    */
-  extern int sp_colorder(SuperMatrix*,int*,superlumt_options_t*,SuperMatrix*);
+  extern "C" {
+    int sp_colorder(SuperMatrix*,int*,superlumt_options_t*,SuperMatrix*);
+  }
 } // end namespace SLUMT
 
 
