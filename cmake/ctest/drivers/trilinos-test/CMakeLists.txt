@@ -62,6 +62,14 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     TIMEOUT_MINUTES 300
   )
 
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_DEBUG_DEV2
+    ctest_linux_nightly_serial_development_debug_gcc_4.6.0_trilinos-test.cmake
+    CTEST_INSTALLER_TYPE dev
+    RUN_SERIAL
+    TIMEOUT_MINUTES 210
+  )
+
 #Only run this build once a week
 if(${DAYOFWEEK} MATCHES "Saturday")
   TRILINOS_DRIVER_ADD_DASHBOARD(
