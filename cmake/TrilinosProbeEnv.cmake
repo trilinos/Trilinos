@@ -76,6 +76,14 @@ INCLUDE(TrilinosFortranMangling)
  
 INCLUDE(TrilinosBLASMangling)
 
+# Determine C++-0x supported features
+
+IF (Trilinos_ENABLE_CXX11)
+  INCLUDE(TrilinosCXX11Support)
+  CHECK_CXX11_SUPPORT(Trilinos_ENABLE_CXX11)
+  MESSAGE("-- Trilinos_ENABLE_CXX11=${Trilinos_ENABLE_CXX11}")
+ENDIF()
+
 # Set up some MPI info
 
 IF (TPL_ENABLE_MPI)
