@@ -8,14 +8,14 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Basis.hpp"
 
-// Evaluators
-#include "Panzer_DOF.hpp"
-#include "Panzer_DOFGradient.hpp"
-#include "Panzer_Dirichlet_Constant.hpp"
-
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
+
+// Evaluators
+#include "Panzer_Dirichlet_Residual.hpp"
+#include "Panzer_GatherSolution_Epetra.hpp"
+#include "Panzer_ScatterDirichletResidual_Epetra.hpp"
 
 // ***********************************************************************
 template <typename EvalT>
@@ -82,6 +82,38 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     fm.template registerEvaluator<EvalT>(op);
   }
   
+  // Dirichlet Residual: residual = dof_value - target_value
+  map<string,string>::const_iterator res_to_target = residual_to_target_field_map.begin();
+  for (map<string,string>::const_iterator res_to_dof = residual_to_dof_names_map.begin();
+       res_to_dof != residual_to_dof_names_map.end(); ++res_to_dof, ++res_to_target) {
+
+    ParameterList p("Dirichlet Residual: "+res_to_dof->first + " to " + res_to_dof->second);
+    p.set("Residual Name", res_to_dof->first);
+    p.set("DOF Name", res_to_dof->second);
+    p.set("Value Name", res_to_target->second);
+
+    const vector<pair<string,RCP<panzer::Basis> > >& dofBasisPair = pb.getProvidedDOFs();
+    RCP<panzer::Basis> basis;
+    for (vector<pair<string,RCP<panzer::Basis> > >::const_iterator it = 
+	   dofBasisPair.begin(); it != dofBasisPair.end(); ++it) {
+      if (it->first == res_to_dof->second)
+	basis = it->second;
+    }
+    
+    TEST_FOR_EXCEPTION(Teuchos::is_null(basis), std::runtime_error,
+		       "Error the name \"" << res_to_dof->second
+		       << "\" is not a valid DOF for the boundary condition:\n"
+		       << this->m_bc << "\n");
+    
+    p.set("Data Layout", basis->functional);
+
+    RCP< PHX::Evaluator<panzer::Traits> > op = 
+      rcp(new panzer::DirichletResidual<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
+
+  }
+
   // Scatter
  
   for (map<string,string>::const_iterator res_to_dof = residual_to_dof_names_map.begin();

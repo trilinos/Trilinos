@@ -42,6 +42,7 @@ namespace panzer {
       std::vector<std::string> required_dof_names;
 
       std::map<std::string,std::string> residual_to_dof_names_map;
+      std::map<std::string,std::string> residual_to_target_field_map;
   };
 
 }

@@ -105,6 +105,8 @@ APPEND_SET(HEADERS
   evaluators/Panzer_ConstantT.hpp
   evaluators/Panzer_Dirichlet_Constant.hpp
   evaluators/Panzer_Dirichlet_ConstantT.hpp
+  evaluators/Panzer_Dirichlet_Residual.hpp
+  evaluators/Panzer_Dirichlet_ResidualT.hpp
   evaluators/Panzer_DOF.hpp
   evaluators/Panzer_DOFT.hpp
   evaluators/Panzer_DOFGradient.hpp

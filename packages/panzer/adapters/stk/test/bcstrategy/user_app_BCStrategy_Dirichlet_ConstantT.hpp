@@ -9,9 +9,7 @@
 #include "Panzer_Basis.hpp"
 
 // Evaluators
-#include "Panzer_DOF.hpp"
-#include "Panzer_DOFGradient.hpp"
-#include "Panzer_Dirichlet_Constant.hpp"
+#include "Panzer_Constant.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -46,6 +44,9 @@ setup(const panzer::PhysicsBlock& side_pb,
   // map residual to dof 
   this->residual_to_dof_names_map[residual_name] = this->m_bc.equationSetName();
 
+  // map residual to target field
+  this->residual_to_target_field_map[residual_name] = "Constant_" + this->m_bc.equationSetName();
+
   // find the basis for this dof 
   const vector<pair<string,RCP<panzer::Basis> > >& dofs = side_pb.getProvidedDOFs();
 
@@ -75,16 +76,15 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  // Evaluator for Constant dirichlet BCs
+  // provide a constant target value to map into residual
   {
     ParameterList p("BC Constant Dirichlet");
-    p.set("Residual Name", residual_name);
-    p.set("DOF Name", (this->residual_to_dof_names_map.find(residual_name))->second);
+    p.set("Name", "Constant_" + this->m_bc.equationSetName());
     p.set("Data Layout", basis->functional);
     p.set("Value", this->m_bc.params()->template get<double>("Value"));
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::DirichletConstant<EvalT,panzer::Traits>(p));
+      rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }
