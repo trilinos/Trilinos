@@ -802,8 +802,8 @@ typedef LO my_size_t; //TODO
         
         GO nAggregatesLocal=nAggregates, nAggregatesGlobal; sumAll(graph.GetComm(), nAggregatesLocal, nAggregatesGlobal); 
 
-        LO minNAggs; minAll(graph.GetComm(), nAggregates, minNAggs); 
-        LO maxNAggs; maxAll(graph.GetComm(), nAggregates, maxNAggs);
+        LO minNAggs; minAll(graph.GetComm(), (GO)nAggregates, minNAggs); 
+        LO maxNAggs; maxAll(graph.GetComm(), (GO)nAggregates, maxNAggs);
 
         //
         // Only do this phase if things look really bad. THIS
