@@ -6,10 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef STK_MESH_TRACE_ENABLED
-#define STK_MESH_TRACE_ENABLED
-#define DISABLE_TRACE_AFTER_TEST
-#endif
+#ifdef STK_MESH_TRACE_ENABLED
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
@@ -141,7 +138,6 @@ STKUNIT_UNIT_TEST(UnitTestTrace, testTrace)
   // Check validity of output
   //
 
-#ifndef __PGI
   const std::string trace_output_str = trace_output.str();
 
   // The not-trace tagged output should not be in the trace output
@@ -151,11 +147,9 @@ STKUNIT_UNIT_TEST(UnitTestTrace, testTrace)
   for (unsigned i = 0; i < SHOULD_SEE_COUNTER; ++i) {
     STKUNIT_ASSERT_NE(trace_output_str.find(create_should_see_str(i)), std::string::npos);
   }
-#endif
 }
 
-#ifdef DISABLE_TRACE_AFTER_TEST
-#undef STK_MESH_TRACE_ENABLED
-#endif
 
 } // empty namespace
+
+#endif
