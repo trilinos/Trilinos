@@ -1,7 +1,6 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_Tuple.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
@@ -14,6 +13,7 @@
 #include <iostream>
 #include <iomanip>
 #include <functional>
+#include <utility>
 
 /** \file RTIExample.cpp
     \brief An example of the Tpetra Vector/MultiVector Reduction-Transformation Interface.
@@ -28,9 +28,40 @@ namespace TpetraExamples {
   class mprec_mult : public std::binary_function<Arg1,Arg2,MultPrec> {
   public:
     mprec_mult() {}
-    MultPrec operator()(const Arg1& x, const Arg2& y) const {return (MultPrec)(x) * (MultPrec)(y);}
+    inline MultPrec operator()(const Arg1& x, const Arg2& y) const {return (MultPrec)(x) * (MultPrec)(y);}
   };
 
+  /** \class pair_op 
+    \brief pair_op is a reduction function object that takes two arguments of a specified precision and multiplies them using a different precision.
+   */
+  template <class T1, class T2, class Op>
+  class pair_op : public std::binary_function<std::pair<T1,T2>,std::pair<T1,T2>,std::pair<T1,T2>> {
+  private:
+    Op op_;
+  public:
+    pair_op(Op op) : op_(op) {}
+    inline std::pair<T1,T2> operator()(const std::pair<T1,T2>& a, const std::pair<T1,T2>& b) const {
+      return std::make_pair(op_(a.first,b.first),op_(a.second,b.second));
+    }
+  };
+
+  template <class T1, class T2, class Op>
+  pair_op<T1,T2,Op> make_pair_op(Op op) { return pair_op<T1,T2,Op>(op); }
+
+}
+
+namespace Tpetra {
+  namespace RTI {
+    // specialization for pair
+    template <class T1, class T2>
+    class ZeroOp<std::pair<T1,T2>> {
+      public:
+      static inline std::pair<T1,T2> identity() {
+        return std::make_pair( Teuchos::ScalarTraits<T1>::zero(), 
+                               Teuchos::ScalarTraits<T2>::zero() );
+      }
+    };
+  }
 }
 
 int main(int argc, char *argv[])
@@ -42,6 +73,8 @@ int main(int argc, char *argv[])
   using Tpetra::RTI::ZeroOp;
   using Tpetra::RTI::reductionGlob;
   using TpetraExamples::mprec_mult;
+  using std::make_pair;
+  using std::pair;
 
   // 
   // Get the default communicator and node
@@ -85,7 +118,8 @@ int main(int argc, char *argv[])
   auto x = Tpetra::createVector<float>(map),
        y = Tpetra::createVector<float>(map);
   auto z = Tpetra::createVector<double>(map),
-       w = Tpetra::createVector<double>(map);
+       w = Tpetra::createVector<double>(map),
+       v = Tpetra::createVector<double>(map);
 
   //
   // Initialization and simple reduction
@@ -183,6 +217,39 @@ int main(int argc, char *argv[])
   // Compute z = alpha*x, where z is double precision and x is single precision
   //
   Tpetra::RTI::binary_transform( *z, *x, [](double /*zi*/, float xi) -> double {return 2.0*xi;} );
+
+  // 
+  // Two simultaneous dot products: z'*w and z'*v at the same time, saves a pass through z
+  // 
+  Tpetra::RTI::unary_transform( *z, [](double xi){return 1.0f;} );
+  Tpetra::RTI::unary_transform( *w, [](double xi){return 2.0f;} );
+  Tpetra::RTI::unary_transform( *v, [](double xi){return 3.0f;} );
+  auto timeTwoDotInd = TimeMonitor::getNewTimer("dot(z,w) and dot(z,v) independently");
+  {
+    TimeMonitor lcltimer(*timeTwoDotInd);
+    for (int l=0; l != numTimeTrials; ++l) 
+    {
+       dresult = Tpetra::RTI::reduce(*z, *w, reductionGlob< ZeroOp<double>>(
+                                                            std::multiplies<double>(), 
+                                                            std::plus<double>()) );
+       dresult = Tpetra::RTI::reduce(*z, *v, reductionGlob< ZeroOp<double>>(
+                                                            std::multiplies<double>(), 
+                                                            std::plus<double>()) );
+    }
+  }
+  auto timeTwoDotSim = TimeMonitor::getNewTimer("dot(z,w) and dot(z,v) simultaneously");
+  {
+    TimeMonitor lcltimer(*timeTwoDotSim);
+    pair<double,double> tdres;
+    for (int l=0; l != numTimeTrials; ++l) 
+    {
+      tdres = Tpetra::RTI::reduce(*z, *w, *v, 
+                                  reductionGlob<ZeroOp<pair<double,double>>>(
+                                                [](double zi, double wi, double vi) { return make_pair(zi*wi, zi*vi); },
+                                                TpetraExamples::make_pair_op<double,double>(std::plus<double>()))
+                                 );
+    }
+  }
 
   //
   // Print timings

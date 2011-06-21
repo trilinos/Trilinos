@@ -119,6 +119,28 @@ namespace Tpetra {
           inline ReductionType reduce(ReductionType a, ReductionType b) { return _redop(a, b);                     }
       };
 
+      //! adapter class between kernels for Tpetra::RTI::binary_transform and Tpetra::RTI::detail::binary_transform for three vectors
+      template <class Glob, class S1, class S2, class S3>
+      class RTIReductionAdapter3 {
+        public:
+          typedef typename Glob::GenOP                GenOP;
+          typedef typename Glob::RedOP                RedOP;
+          typedef typename Glob::IdOP                  IdOP;
+          typedef typename RedOP::result_type ReductionType;
+        protected:
+          GenOP      _genop;
+          RedOP      _redop;
+          const S1 * _vec_in1;
+          const S2 * _vec_in2;
+          const S3 * _vec_in3;
+        public:
+          RTIReductionAdapter3(Glob glob)                                              : _genop(glob.genop), _redop(glob.redop)                     {}
+          inline void setData(const S1 *vec_in1, const S2 *vec_in2, const S3 *vec_in3) { _vec_in1 = vec_in1; _vec_in2 = vec_in2; _vec_in3 = vec_in3; }
+          static inline ReductionType identity()                                       { return IdOP::identity();                                    }
+          inline ReductionType generate(int i)                                         { return _genop(_vec_in1[i], _vec_in2[i], _vec_in3[i]);       }
+          inline ReductionType reduce(ReductionType a, ReductionType b)                { return _redop(a, b);                                        }
+      };
+
       //! adapter class between kernels for Tpetra::RTI::binary_pre_transform_reduce and Tpetra::RTI::detail::binary_transform
       template <class Glob, class S1, class S2>
       class RTIPreTransformReductionAdapter {
@@ -220,7 +242,39 @@ namespace Tpetra {
         const size_t N = mv_in1.getNumRows();
 #ifdef HAVE_TPETRA_DEBUG
         TEST_FOR_EXCEPTION( mv_in1.getNode() != mv_in2.getNode(), std::runtime_error, 
-            "Tpetra::RTI::detail::binary_transform(): multivectors must share the same node.");
+            "Tpetra::RTI::detail::reduce(): multivectors must share the same node.");
+#endif
+        // compute local reduction
+        typename OP::ReductionType gbl_res, lcl_res;
+        lcl_res = node->template parallel_reduce(0, N, op);
+        // compute global reduction
+        TeuchosValueTypeReductionOpAdapter<OP> vtrop(op);
+        Teuchos::reduceAll(*comm, vtrop, 1, &lcl_res, &gbl_res);
+        return gbl_res;
+      }
+
+      //! pass \c vec_in1, \c vec_in2 and \c vec_in3 data pointers to \ op, then execute via node parallel_reduce.
+      template <class S1, class S2, class S3, class LO, class GO, class Node, class OP>
+      typename OP::ReductionType 
+      reduce(const Vector<S1,LO,GO,Node> &vec_in1, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, OP op) 
+      {
+        const Kokkos::MultiVector<S1,Node> &mv_in1 = vec_in1.getLocalMV();
+        const Kokkos::MultiVector<S2,Node> &mv_in2 = vec_in2.getLocalMV();
+        const Kokkos::MultiVector<S3,Node> &mv_in3 = vec_in3.getLocalMV();
+        const RCP<Node> node = mv_in1.getNode();
+        const RCP<const Teuchos::Comm<int> > comm = vec_in1.getMap()->getComm();
+        // ready data
+        Kokkos::ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        const S1 * in_ptr1 = rbh.addConstBuffer(mv_in1.getValues());
+        const S2 * in_ptr2 = rbh.addConstBuffer(mv_in2.getValues());
+        const S3 * in_ptr3 = rbh.addConstBuffer(mv_in3.getValues());
+        rbh.end();
+        op.setData( in_ptr1, in_ptr2, in_ptr3 );
+        const size_t N = mv_in1.getNumRows();
+#ifdef HAVE_TPETRA_DEBUG
+        TEST_FOR_EXCEPTION( mv_in1.getNode() != mv_in2.getNode() || mv_in2.getNode() != mv_in3.getNode(), std::runtime_error, 
+            "Tpetra::RTI::detail::reduce(): multivectors must share the same node.");
 #endif
         // compute local reduction
         typename OP::ReductionType gbl_res, lcl_res;

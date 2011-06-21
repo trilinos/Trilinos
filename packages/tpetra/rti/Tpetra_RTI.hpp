@@ -144,11 +144,30 @@ namespace Tpetra {
       return Tpetra::RTI::detail::reduce(vec_in1, vec_in2, adapter_op);
     }
 
+    //! \brief Reduce values of \c vec_in1, \c vec_in2  and \c vec_in3 using the operators instantiated in \c glob.
+    /** For each element triplet <tt>vec_in1[i]</tt>, <tt>vec_in2[i]</tt> and <tt>vec_in3[i]</tt>, generates reduction elements via 
+        <tt>glob.genop( vec_in1[i], vec_in2[i], vec_in3[i] )</tt> and reduces them via 
+        the <tt>glob.redop</tt> binary functor. 
+
+        Calls Tpetra::RTI::detail::reduce via the Tpetra::RTI::detail::RTIReductionAdapter.
+      */
+    template <class S1, class S2, class S3, class LO, class GO, class Node, class Glob>
+    typename Glob::RedOP::result_type 
+    reduce(const Vector<S1,LO,GO,Node> &vec_in1, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, Glob glob)
+    {
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION( vec_in1.getLocalLength() != vec_in2.getLocalLength() || vec_in2.getLocalLength() != vec_in3.getLocalLength(), 
+          std::runtime_error, "Tpetra::RTI::binary_transform(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
+#endif
+      Tpetra::RTI::detail::RTIReductionAdapter3<Glob,S1,S2,S3> adapter_op(glob);
+      return Tpetra::RTI::detail::reduce(vec_in1, vec_in2, vec_in3, adapter_op);
+    }
+
     //! \brief Transforms values of \c vec_inout while simultaneously performing a parallel reduction.
     /** For each element pair <tt>vec_inout[i]</tt> and <tt>vec_in2[i]</tt>, 
         assigns <tt>vec_inout[i] = glob.top( vec_inout[i], vec_in2[i] )</tt>. Simultaneously, generates reduction elements via <tt>glob.genop( vec_inout[i], vec_in2[i] )</tt> (using the transformed values) and reduces them via 
         the <tt>glob.redop</tt> binary functor. 
-
+        
         Calls Tpetra::RTI::detail::transform_reduce via the Tpetra::RTI::detail::RTIPreTransformReductionAdapter.
       */
     template <class S, class LO, class GO, class Node,class Glob>
