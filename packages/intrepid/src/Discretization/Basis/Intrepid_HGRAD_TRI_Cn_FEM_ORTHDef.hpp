@@ -38,37 +38,6 @@
 
 namespace Intrepid {
   
-/** \brief file-scope function for indexing from orthogonal expansion indices into linear space
-           p+q = the degree of the polynomial.
-      \param p [in] - the first index
-      \param q [in] - the second index
-*/
-static int idx(int p, int q);
-
-/** \brief file-scope function for computing the Jacobi recurrence coefficients so that
-      
-      \param alpha [in] - the first Jacobi weight
-      \param beta  [in] - the second Jacobi weight
-      \param n     [n]  - the polynomial degree
-      \param an    [out] - the a weight for recurrence
-      \param bn    [out] - the b weight for recurrence
-      \param cn    [out] - the c weight for recurrence
-
-      The recurrence is
-      \f[
-      P^{\alpha,\beta}_{n+1} = \left( a_n + b_n x\right) P^{\alpha,\beta}_n - c_n P^{\alpha,\beta}_{n-1}
-      \f],
-      where
-      \f[
-      P^{\alpha,\beta}_0 = 1
-      \f]
-*/
-template<typename Scalar>
-static void jrc(const Scalar &alpha , const Scalar &beta , 
-                const int &n ,
-                Scalar &an , Scalar &bn, Scalar &cn );
-
-
 template<class Scalar, class ArrayScalar>
 Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar,ArrayScalar>::Basis_HGRAD_TRI_Cn_FEM_ORTH( int degree )
 {
@@ -182,7 +151,7 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate(ArrayScalar &outputValues ,
   // z(i,1) --> (2.0 * z(i,1) - 1.0)
   
   // set up constant term
-  int idx_cur = idx(0,0);
+  int idx_cur = TabulatorTri<Scalar,ArrayScalar,0>::idx(0,0);
   int idx_curp1,idx_curm1;
   
   // set D^{0,0} = 1.0
@@ -201,16 +170,16 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate(ArrayScalar &outputValues ,
     }
     
     // set D^{1,0} = f1
-    idx_cur =idx(1,0);
+    idx_cur = TabulatorTri<Scalar,ArrayScalar,0>::idx(1,0);
     for (int i=0;i<np;i++) {
       outputValues(idx_cur,i) = f1[i];
     }
     
     // recurrence in p
     for (int p=1;p<deg;p++) {
-      idx_cur = idx(p,0);
-      idx_curp1 = idx(p+1,0);
-      idx_curm1 = idx(p-1,0);
+      idx_cur = TabulatorTri<Scalar,ArrayScalar,0>::idx(p,0);
+      idx_curp1 = TabulatorTri<Scalar,ArrayScalar,0>::idx(p+1,0);
+      idx_curm1 = TabulatorTri<Scalar,ArrayScalar,0>::idx(p-1,0);
       Scalar a = (2.0*p+1.0)/(1.0+p);
       Scalar b = p / (p+1.0);
       
@@ -222,8 +191,8 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate(ArrayScalar &outputValues ,
     
     // D^{p,1}
     for (int p=0;p<deg;p++) {
-      int idxp0 = idx(p,0);
-      int idxp1 = idx(p,1);
+      int idxp0 = TabulatorTri<Scalar,ArrayScalar,0>::idx(p,0);
+      int idxp1 = TabulatorTri<Scalar,ArrayScalar,0>::idx(p,1);
       for (int i=0;i<np;i++) {
         outputValues(idxp1,i) = outputValues(idxp0,i)
           *0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
@@ -234,11 +203,11 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate(ArrayScalar &outputValues ,
     // recurrence in q
     for (int p=0;p<deg-1;p++) {
       for (int q=1;q<deg-p;q++) {
-        int idxpqp1=idx(p,q+1);
-        int idxpq=idx(p,q);
-        int idxpqm1=idx(p,q-1);
+        int idxpqp1=TabulatorTri<Scalar,ArrayScalar,0>::idx(p,q+1);
+        int idxpq=TabulatorTri<Scalar,ArrayScalar,0>::idx(p,q);
+        int idxpqm1=TabulatorTri<Scalar,ArrayScalar,0>::idx(p,q-1);
         Scalar a,b,c;
-        jrc<Scalar>((Scalar)(2*p+1),(Scalar)0,q,a,b,c);
+        TabulatorTri<Scalar,ArrayScalar,0>::jrc((Scalar)(2*p+1),(Scalar)0,q,a,b,c);
         for (int i=0;i<np;i++) {
           outputValues(idxpqp1,i)
             = (a*(2.0*z(i,1)-1.0)+b)*outputValues(idxpq,i)
@@ -252,7 +221,7 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate(ArrayScalar &outputValues ,
   for (int p=0;p<=deg;p++) {
     for (int q=0;q<=deg-p;q++) {
       for (int i=0;i<np;i++) {
-        outputValues(idx(p,q),i) *= sqrt( (p+0.5)*(p+q+1.0));
+        outputValues(TabulatorTri<Scalar,ArrayScalar,0>::idx(p,q),i) *= sqrt( (p+0.5)*(p+q+1.0));
       }
     }
   }
@@ -328,30 +297,6 @@ void TabulatorTri<Scalar,ArrayScalar,derivOrder>::tabulate( ArrayScalar &outputV
   return;
 
 
-}
-
-
-
-int idx(int p , int q)
-{
-  return (p+q)*(p+q+1)/2+q;
-}
-
-
-
-template<typename Scalar>
-void jrc( const Scalar &alpha , const Scalar &beta , 
-          const int &n ,
-          Scalar &an , Scalar &bn, Scalar &cn )
-{
-  an = (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) 
-    / ( 2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) );
-  bn = (alpha*alpha-beta*beta)*(2.0*n+1.0+alpha+beta) 
-    / ( 2.0*(n+1.0)*(2.0*n+alpha+beta)*(n+1.0+alpha+beta) );
-  cn = (n+alpha)*(n+beta)*(2.0*n+2.0+alpha+beta) 
-    / ( (n+1.0)*(n+1.0+alpha+beta)*(2.0*n+alpha+beta) );
-  
-  return;
 }
 
 

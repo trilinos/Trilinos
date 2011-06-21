@@ -67,3 +67,11 @@ XPETRA_THREADED/
 
 /build
 packages/tpetra/test/MatrixMatrix/matrices/*.m
+
+packages/Sundance/Playa/doc/Doxygen/html/
+packages/Sundance/doc/Sundance.tag
+packages/Sundance/doc/html/
+packages/Sundance/doc/latex/
+linux-intrepid-debug
+linux-sundance-opt
+linux-sundance-debug
