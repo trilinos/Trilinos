@@ -107,7 +107,11 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
 
     DoubleVector double_vector;
 
+#ifdef _GLIBCXX_DEBUG
+    std::string linux_name("__gnu_debug_def::vector<double, std::allocator<double> >");
+#else
     std::string linux_name("std::vector<double, std::allocator<double> >");
+#endif
     std::string demangled_name = stk::demangle(typeid(double_vector).name());
     STKUNIT_ASSERT_EQUAL((linux_name == demangled_name), true);
   }
