@@ -230,7 +230,7 @@ namespace MueLu {
       }
 */
 
-      //t2 = MPI_Wtime();
+      t2 = MPI_Wtime();
 /*
       timer = rcp(new Teuchos::Time("TriDiag fillComplete"));
       timer->start(true);
