@@ -463,7 +463,7 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       coarseLevel.Save("Ptent",Ptentative);
 
       timer->stop();
-      Utils::ReportTimeAndMemory(*timer, *(fineA->getRowMap()->getComm()));
+      MemUtils::ReportTimeAndMemory(*timer, *(fineA->getRowMap()->getComm()));
 
     } //MakeTentativeWithQR()
 

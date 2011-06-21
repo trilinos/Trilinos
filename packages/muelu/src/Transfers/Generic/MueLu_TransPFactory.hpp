@@ -70,7 +70,7 @@ namespace MueLu {
       //std::cout << "MueLu::TransPFactory()::BuildR(...) - end" << std::endl;
 
       timer->stop();
-      Utils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
+      MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
       return true;
     }

@@ -240,7 +240,7 @@ namespace MueLu {
 
 /*
       timer->stop();
-      Utils::ReportTimeAndMemory(*timer, *comm);
+      MemUtils::ReportTimeAndMemory(*timer, *comm);
 */
       t2 = MPI_Wtime() - t2;
       t1 = MPI_Wtime() - t0;

@@ -142,7 +142,7 @@ typedef LO my_size_t; //TODO
       currentLevel.Save("Aggregates",aggregates);
 
       timer->stop();
-      Utils::ReportTimeAndMemory(*timer, *(graph->GetComm()));
+      MemUtils::ReportTimeAndMemory(*timer, *(graph->GetComm()));
     }
 
   /*! @brief Build aggregates. */

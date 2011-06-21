@@ -3,12 +3,16 @@
 
 #include <string>
 
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_Time.hpp>
+
 namespace MueLu {
   
   namespace MemUtils {
     
     std::string PrintMemoryUsage();
     std::string PrintMemoryInfo();
+    void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm);
     
   } //namespace MemUtils
   

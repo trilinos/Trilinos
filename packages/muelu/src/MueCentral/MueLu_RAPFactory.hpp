@@ -44,7 +44,7 @@ class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,
       coarseLevel.SetA(RAP);
 
       timer->stop();
-      Utils::ReportTimeAndMemory(*timer, *(RAP->getRowMap()->getComm()));
+      MemUtils::ReportTimeAndMemory(*timer, *(RAP->getRowMap()->getComm()));
 
       return true;
     }

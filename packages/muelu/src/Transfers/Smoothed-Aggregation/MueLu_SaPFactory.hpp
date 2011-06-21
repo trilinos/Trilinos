@@ -169,7 +169,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       //Utils::MatrixPrint(finalP);
 
       timer->stop();
-      Utils::ReportTimeAndMemory(*timer, *(finalP->getRowMap()->getComm()));
+      MemUtils::ReportTimeAndMemory(*timer, *(finalP->getRowMap()->getComm()));
 
       return true;
     } //Build()
