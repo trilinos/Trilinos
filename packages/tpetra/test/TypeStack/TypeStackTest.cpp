@@ -1,7 +1,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_TypeTraits.hpp>
-#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "TpetraExt_TypeStack.hpp"

@@ -30,6 +30,7 @@
 #define TPETRAEXT_TYPE_STACK_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
+#include <Teuchos_ParameterList.hpp>
 
 //! Macro to create a Tpetra::Ext::TypeStack of height 1
 #define TPETRAEXT_TYPESTACK1(lbl,T1)              \
