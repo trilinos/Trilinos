@@ -558,7 +558,8 @@ getGlobalRowFromLocalIndex(
   for(typename ArrayView<const LocalOrdinal>::iterator it=localIndices.begin(); it!=localIndices.end(); ++it){
     indices.push_back(colMap->getGlobalElement(*it));
   }
-  sort2(indices.begin(), indices.end(), values.begin());
+  //sort2(indices.begin(), indices.end(), values.begin());
+  sort2Shell(indices(), indices.size(), values());
 }
 
 //kernel method for computing the local portion of C = A*B^T
