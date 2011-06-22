@@ -50,6 +50,7 @@
  *         and B vectors are known, then solving once they are available.
  */
 
+#include <Teuchos_Array.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -91,6 +92,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::tuple;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::Array;
 
 
   // 
@@ -135,6 +137,7 @@ int main(int argc, char *argv[]) {
   RCP<Amesos::Solver<MAT,MV> > solver;
   try{
     solver = Amesos::create<MAT,MV>("Superlu", A);
+    solver->symbolicFactorization();
     solver->numericFactorization();
   } catch(std::invalid_argument e){
     // This solver is not supported/enable
@@ -149,7 +152,11 @@ int main(int argc, char *argv[]) {
 
   // Create random X
   RCP<MV> X = rcp( new MV(dmnmap,numVectors) );
+  RCP<MV> Xhat = rcp(new MV(dmnmap, numVectors));
   X->randomize();
+
+  // Initialize Xhat[0..n] = 10
+  Xhat->putScalar(10);
 
   /* Create B
    *
@@ -175,9 +182,10 @@ int main(int argc, char *argv[]) {
       X->describe(*fos,Teuchos::VERB_EXTREME);
     }
 
-    // Create a new B vector, and solve with it.
+    // Create a new B vector from a give Xhat, and solve with it.
     RCP<MV> B_new = rcp(new MV(rngmap,numVectors));
-    B_new->randomize();
+    A->apply(*Xhat, *B_new);
+
     if( verbose ){
       if( myRank == 0) *fos << "New RHS vector:" << std::endl;
       B_new->describe(*fos,Teuchos::VERB_EXTREME);
@@ -194,6 +202,13 @@ int main(int argc, char *argv[]) {
     if( printTiming ){
       // Print some timing statistics
       solver->printTiming(*fos);
+    }
+
+    if( verbose ){
+      Array<Magnitude> xhatnorms(numVectors);
+      Xhat->update(-1.0, *X, 1.0);
+      Xhat->norm2(xhatnorms());
+      *fos << "Norm of Ax - b = " << xhatnorms << endl;
     }
 
   } catch (std::invalid_argument e){
