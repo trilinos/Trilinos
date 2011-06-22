@@ -21,7 +21,10 @@ class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,N
 
   //! @name Constructors/Destructors
   //@{
-  GaussSeidel(LO sweeps=1, SC omega=1.0) : nIts_(sweeps), omega_(omega) {}
+  GaussSeidel(LO sweeps=1, SC omega=1.0) : nIts_(sweeps), omega_(omega) {
+    // TODO SmootherBase::SetType(type);
+    SmootherPrototype::IsSetup(false);
+  }
 
   virtual ~GaussSeidel() {}
   //@}
@@ -33,6 +36,7 @@ class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,N
   void Setup(Teuchos::RCP<Level> const level)
   {
     A_ = level.GetA();
+    SmootherPrototype::IsSetup(true);
   }
 
   /*! Solve A*x=b approximately with the smoother.

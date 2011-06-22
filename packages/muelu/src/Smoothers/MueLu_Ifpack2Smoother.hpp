@@ -152,7 +152,6 @@ class Level;
     */
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
-      SmootherPrototype::IsSetup(true);
       A_ = level.GetA();
 
       //      Ifpack2::Factory factory;
@@ -161,6 +160,8 @@ class Level;
       prec_->setParameters(list_);
       prec_->initialize();
       prec_->compute();
+
+      SmootherPrototype::IsSetup(true);
     }
 
     /*! @brief Apply the preconditioner.

@@ -110,7 +110,7 @@ class Level;
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
       //MueLu_cout(Teuchos::VERB_HIGH) << "AmesosSmoother::Setup()" << std::endl;
-      SmootherPrototype::IsSetup(true);
+
       A_ = level.GetA();
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       AmesosLinearProblem_ = rcp(new Epetra_LinearProblem());
@@ -130,6 +130,8 @@ class Level;
         std::string msg = "Amesos_BaseSolver::NumericFactorization return value of " + buf.str(); //TODO: BaseSolver or ... ?
         throw(Exceptions::RuntimeError(msg));
       }
+
+      SmootherPrototype::IsSetup(true);
     }
 
     /*! @brief Apply the direct solver.
@@ -173,13 +175,14 @@ class Level;
       return rcp(new AmesosSmoother(*this) );
     }
 
+    //FIXME JG: I think that the implementation of this method is wrong !!!!
     void CopyParameters(RCP<SmootherPrototype> source)
     {
       RCP<AmesosSmoother> amesosSmoo = rcp_dynamic_cast<AmesosSmoother>(source);
       //TODO check if dynamic cast fails
       amesosType_ = amesosSmoo->amesosType_;
       prec_ = amesosSmoo->prec_;
-      A_ = amesosSmoo->A_;
+      A_ = amesosSmoo->A_; 
       list_ = amesosSmoo->list_;
     }
     //@}

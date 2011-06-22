@@ -149,13 +149,15 @@ class Level;
     */
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
-      SmootherPrototype::IsSetup(true);
+
       A_ = level.GetA();
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       Ifpack factory;
       prec_ = rcp(factory.Create(ifpackType_, &(*epA), overlap_));
       prec_->SetParameters(list_);
       prec_->Compute();
+
+      SmootherPrototype::IsSetup(true);
     }
 
 
