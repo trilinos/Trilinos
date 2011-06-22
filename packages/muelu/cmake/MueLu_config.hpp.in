@@ -5,14 +5,16 @@
 
 #cmakedefine HAVE_MUELU_EPETRA
 
+#cmakedefine HAVE_MUELU_EPETRAEXT
+
 #cmakedefine HAVE_MUELU_TPETRA
 
 #cmakedefine HAVE_MUELU_IFPACK
 
 #cmakedefine HAVE_MUELU_IFPACK2
 
-#cmakedefine HAVE_MUELU_EPETRAEXT
-
 #cmakedefine HAVE_MUELU_AMESOS
+
+#cmakedefine HAVE_MUELU_AMESOS2
 
 #cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@

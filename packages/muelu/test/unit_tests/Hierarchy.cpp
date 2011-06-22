@@ -322,6 +322,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
 
 #ifdef HAVE_MUELU_IFPACK
+#ifdef HAVE_MUELU_AMESOS
   Teuchos::ParameterList  ifpackList;
   ifpackList.set("relaxation: type", "Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 2);
@@ -369,6 +370,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
   TEUCHOS_TEST_EQUALITY(norms[0]<1e-10, true, out, success);
 
+#endif
 #endif
     }
 } //Iterate
