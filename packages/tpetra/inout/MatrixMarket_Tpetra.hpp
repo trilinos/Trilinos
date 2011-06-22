@@ -2248,6 +2248,15 @@ namespace Tpetra {
       /// file, using the Matrix Market "coordinate" format.  MPI Proc
       /// 0 is the only MPI process that opens or writes to the file.
       ///
+      /// \param filename [in] Name of the file to which to write the
+      ///   given sparse matrix.  The matrix is distributed, but only
+      ///   Proc 0 opens the file and writes to it.
+      ///
+      /// \param pMatrix [in] The sparse matrix to write to the file.
+      ///
+      /// \param debug [in] Whether to print possibly copious
+      ///   debugging output to stderr on Proc 0.
+      ///
       /// \warning The current implementation gathers the whole matrix
       ///   onto MPI Proc 0.  This will cause out-of-memory errors if
       ///   the matrix is too big to fit on one process.  This will be
@@ -2255,8 +2264,8 @@ namespace Tpetra {
       ///
       static void
       writeSparseFile (const std::string& filename,
-		       const Teuchos::RCP<const sparse_matrix_type>& pMatrix
-           )
+		       const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+		       const bool debug=false)
       {
 	const int myRank = Teuchos::rank (*(pMatrix->getComm()));
 	std::ofstream out;	
@@ -2264,7 +2273,7 @@ namespace Tpetra {
 	// Only open the file on Rank 0.
 	if (myRank == 0)
 	  out.open (filename.c_str());
-	writeSparse (out, pMatrix);
+	writeSparse (out, pMatrix, debug);
 	// We can rely on the destructor of the output stream to close
 	// the file on scope exit, even if writeSparse() throws an
 	// exception.
@@ -2277,6 +2286,16 @@ namespace Tpetra {
       /// Proc 0 is the only MPI process that writes to the output
       /// stream.
       ///
+      /// \param out [out] Name of the output stream to which to write
+      ///   the given sparse matrix.  The matrix is distributed, but
+      ///   only Proc 0 writes to the output stream.
+      ///
+      /// \param pMatrix [in] The sparse matrix to write to the given
+      ///   output stream.
+      ///
+      /// \param debug [in] Whether to print possibly copious
+      ///   debugging output to stderr on Proc 0.
+      ///
       /// \warning The current implementation gathers the whole matrix
       ///   onto MPI Proc 0.  This will cause out-of-memory errors if
       ///   the matrix is too big to fit on one process.  This will be
@@ -2284,17 +2303,22 @@ namespace Tpetra {
       ///
       static void
       writeSparse (std::ostream& out,
-		   const Teuchos::RCP<const sparse_matrix_type>& pMatrix
-       )
+		   const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+		   const bool debug=false)
       {
 	using Teuchos::Comm;
 	using Teuchos::RCP;
+	using std::cerr;
 	using std::endl;
 	typedef typename Teuchos::ScalarTraits<scalar_type> STS;
 	typedef typename STS::magnitudeType magnitude_type;
 	typedef typename Teuchos::ScalarTraits<magnitude_type> STM;
 	typedef typename ArrayView<scalar_type>::size_type size_type;
 
+	// Convenient abbreviations.
+	typedef local_ordinal_type LO;
+	typedef global_ordinal_type GO;
+	
 	// Make the output stream write floating-point numbers in
 	// scientific notation.  It will politely put the output
 	// stream back to its state on input, when this scope
@@ -2303,29 +2327,95 @@ namespace Tpetra {
 
 	RCP<const Comm<int> > pComm = pMatrix->getComm();
 	const int myRank = Teuchos::rank (*pComm);
+	// Whether to print debugging output to stderr.
+	const bool debugPrint = debug && myRank == 0;
+
+	if (debugPrint)
+	  {
+	    cerr << "writeSparse:" << endl
+		 << "-- Input sparse matrix is:" 
+		 << "---- " << pMatrix->getGlobalNumRows() << " x " 
+		 << pMatrix->getGlobalNumCols() << " with " 
+		 << pMatrix->getGlobalNumEntries() << " entries;" << endl
+		 << "---- " 
+		 << (pMatrix->isGloballyIndexed() ? "Globally" : "Locally")
+		 << " indexed." << endl;
+	  }
 	RCP<const map_type> pRowMap = pMatrix->getRowMap();
+	RCP<const map_type> pColMap = pMatrix->getColMap();
+	if (debugPrint)
+	  {
+	    cerr << "---- Its row map has " << pRowMap->getGlobalNumElements() 
+		 << " elements." << endl
+		 << "---- Its col map has " << pColMap->getGlobalNumElements() 
+		 << " elements." << endl;
+	  }
 	const global_size_t globalNumElements = pRowMap->getGlobalNumElements ();
 
 	// Make the "gather" row map, where Proc 0 owns all rows and
 	// the other procs own no rows.
 	const size_t localNumElements = (myRank == 0) ? globalNumElements : 0;
 	RCP<node_type> pNode = pRowMap->getNode();
-	RCP<const map_type> pGatherRowMap = createContigMapWithNode<local_ordinal_type, global_ordinal_type, node_type> (globalNumElements, localNumElements, pComm, pNode);
-	
+	RCP<const map_type> pGatherRowMap = 
+	  createContigMapWithNode<LO, GO, node_type> (globalNumElements, 
+						      localNumElements, 
+						      pComm, pNode);
+	// Since the matrix may in general be non-square, we need to
+	// make a column map as well.  In this case, the column map
+	// contains all the (global) elements of the original matrix's
+	// column map, because we are gathering the whole matrix onto
+	// Proc 0.
+	RCP<const map_type> pGatherColMap = 
+	  createContigMapWithNode<LO, GO, node_type> (pColMap->getGlobalNumElements(),
+						      (myRank == 0) ? pColMap->getGlobalNumElements() : 0,
+						      pComm, pNode);
+
 	// Current map is the source map, gather map is the target map.
-	typedef Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+	typedef Import<LO, GO, node_type> import_type;
 	import_type importer (pRowMap, pGatherRowMap);
 
 	// Create a new CrsMatrix to hold the result of the import.
-	RCP<sparse_matrix_type> newMatrix = createCrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> (pGatherRowMap);
+	// The constructor needs a column map as well as a row map,
+	// for the case that the matrix is not square.
+	RCP<sparse_matrix_type> newMatrix = 
+	  rcp (new sparse_matrix_type (pGatherRowMap, pGatherColMap, size_t(0)));
 
 	// Import the sparse matrix onto Proc 0.
 	newMatrix->doImport (*pMatrix, importer, INSERT);
-	newMatrix->fillComplete ();
-	// Now newMatrix is globally indexed.
+
+	// fillComplete() needs the domain and range maps for the case
+	// that the matrix is not square.
+	{
+	  const global_size_t numRows = pMatrix->getRangeMap()->getGlobalNumElements();
+	  const global_size_t numCols = pMatrix->getDomainMap()->getGlobalNumElements();
+	  RCP<const map_type> pGatherDomainMap = 
+	    createContigMapWithNode<LO, GO, node_type> (numCols, 
+							(myRank == 0) ? numCols : 0, 
+							pComm, pNode);
+	  RCP<const map_type> pGatherRangeMap = 
+	    createContigMapWithNode<LO, GO, node_type> (numRows, 
+							(myRank == 0) ? numRows : 0, 
+							pComm, pNode);
+	  newMatrix->fillComplete (pGatherDomainMap, pGatherRangeMap);
+	}
+
+	if (debugPrint)
+	  {
+	    cerr << "-- Output sparse matrix is:" 
+		 << "---- " << newMatrix->getGlobalNumRows() << " x " 
+		 << newMatrix->getGlobalNumCols() << " with " 
+		 << newMatrix->getGlobalNumEntries() << " entries;" << endl
+		 << "---- " 
+		 << (newMatrix->isGloballyIndexed() ? "Globally" : "Locally")
+		 << " indexed." << endl
+		 << "---- Its row map has " << newMatrix->getRowMap()->getGlobalNumElements() 
+		 << " elements." << endl
+		 << "---- Its col map has " << newMatrix->getColMap()->getGlobalNumElements() 
+		 << " elements." << endl;
+	  }
 
 	//
-	// Print the metadata on Rank 0.
+	// Print the metadata and the matrix entries on Rank 0.
 	//
 	if (myRank == 0)
 	  {
@@ -2335,7 +2425,13 @@ namespace Tpetra {
 		<< (STS::isComplex ? "complex" : "real") 
 		<< " general" << endl;
 	
-	    // Print the Matrix Market header (# rows, # columns, # nonzeros).
+	    // Print the Matrix Market header (# rows, # columns, #
+	    // nonzeros).  Use the range resp. domain map for the
+	    // number of rows resp. columns, since Tpetra::CrsMatrix
+	    // uses the column map for the number of columns.  That
+	    // only corresponds to the "linear-algebraic" number of
+	    // columns when the column map is 1-1, which only happens
+	    // if the matrix is (block) diagonal.
 	    out << newMatrix->getRangeMap()->getGlobalNumElements() 
 		<< " "
 		<< newMatrix->getDomainMap()->getGlobalNumElements() 
