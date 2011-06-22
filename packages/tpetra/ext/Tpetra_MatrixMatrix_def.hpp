@@ -554,7 +554,12 @@ getGlobalRowFromLocalIndex(
 {
   ArrayView<const LocalOrdinal> localIndices = Mview.indices[localRow];
   ArrayView<const Scalar> constValues = Mview.values[localRow];
-  values = Array<Scalar>(constValues);
+  for(LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero(); 
+    i< constValues.size();
+    ++i)
+  {
+    values[i] = constValues[i];
+  }
   
   for(
     LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero();
