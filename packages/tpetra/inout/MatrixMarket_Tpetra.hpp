@@ -2395,16 +2395,22 @@ namespace Tpetra {
 	if (debugPrint)
 	  {
 	    cerr << "-- Output sparse matrix is:" 
-		 << "---- " << newMatrix->getRangeMap()->getGlobalNumElements() << " x " 
-		 << newMatrix->getDomainMap()->getGlobalNumElements() << " with " 
+		 << "---- " << newMatrix->getRangeMap()->getGlobalNumElements() 
+		 << " x " 
+		 << newMatrix->getDomainMap()->getGlobalNumElements() 
+		 << " with " 
 		 << newMatrix->getGlobalNumEntries() << " entries;" << endl
 		 << "---- " 
 		 << (newMatrix->isGloballyIndexed() ? "Globally" : "Locally")
 		 << " indexed." << endl
-		 << "---- Its row map has " << newMatrix->getRowMap()->getGlobalNumElements() 
+		 << "---- Its row map has " 
+		 << newMatrix->getRowMap()->getGlobalNumElements() 
 		 << " elements." << endl
-		 << "---- Its col map has " << newMatrix->getColMap()->getGlobalNumElements() 
-		 << " elements." << endl;
+		 << "---- Its col map has " 
+		 << newMatrix->getColMap()->getGlobalNumElements() 
+		 << " elements (may be different than the input matrix's column"
+		 << " map, if some columns of the matrix contain no entries)." 
+		 << endl;
 	  }
 
 	//
