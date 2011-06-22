@@ -15,16 +15,7 @@
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"
-
-#ifdef HAVE_MUELU_AMESOS2
-#include "Amesos2.hpp"
-#include "Amesos2_Version.hpp"
-//#include "Amesos2_Util_decl.hpp"
-#endif
-
 #include "MueLu_AmesosSmoother.hpp"
-
-#include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_AggregationOptions.hpp"
 
@@ -218,19 +209,13 @@ int main(int argc, char *argv[]) {
   RCP<SmootherPrototype> coarseProto;
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_AMESOS
-    if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
     Teuchos::ParameterList amesosList;
     amesosList.set("PrintTiming",true);
     coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
     //#elif HAVE_MUELU_IFPACK...
 #endif
   } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
-#ifdef HAVE_MUELU_AMESOS2
-    if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
-    Teuchos::ParameterList paramList; //unused
-    coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
-#elif defined(HAVE_MUELU_IFPACK2)
-    if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
+#ifdef HAVE_MUELU_IFPACK2
     Teuchos::ParameterList ifpack2List;
     ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
     ifpack2List.set("fact: drop tolerance", 0);

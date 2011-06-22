@@ -157,13 +157,6 @@ namespace MueLu {
       return *tpVec;
     } //MV2TpetraMV
 
-    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Cthulhu::MultiVector.
-    static RCP<Tpetra::MultiVector<SC,LO,GO,NO> > MV2NonConstTpetraMV2(MultiVector &Vec) {
-      TpetraMultiVector const &tmpVec = dynamic_cast<TpetraMultiVector const&>(Vec);
-      RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec.getTpetra_MultiVector();
-      return tpVec;
-    } //MV2TpetraMV
-
     static Tpetra::MultiVector<SC,LO,GO,NO>  const& MV2TpetraMV(MultiVector const &Vec) {
       TpetraMultiVector const &tmpVec = dynamic_cast<TpetraMultiVector const&>(Vec);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO>  const> tpVec = tmpVec.getTpetra_MultiVector();
