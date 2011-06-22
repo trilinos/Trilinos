@@ -7,6 +7,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
+#include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaLevel.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -71,6 +72,7 @@ int main(int argc, char *argv[]) {
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
   // Timing
   Teuchos::Time myTime("global");
@@ -103,11 +105,13 @@ int main(int argc, char *argv[]) {
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
+  Scalar SADampingFactor=4./3;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
   clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
   clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
   clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
+  clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -181,6 +185,7 @@ int main(int argc, char *argv[]) {
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
+  Pfact->SetDampingFactor(SADampingFactor);
   RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
@@ -377,6 +382,8 @@ int main(int argc, char *argv[]) {
 
   } // if (precond)
 #endif // JG_TODO
+
+  *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
   return EXIT_SUCCESS;
 
