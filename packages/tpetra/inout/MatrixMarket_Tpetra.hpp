@@ -2330,12 +2330,13 @@ namespace Tpetra {
 	// Whether to print debugging output to stderr.
 	const bool debugPrint = debug && myRank == 0;
 
+	const global_size_t numRows = pMatrix->getRangeMap()->getGlobalNumElements();
+	const global_size_t numCols = pMatrix->getDomainMap()->getGlobalNumElements();
 	if (debugPrint)
 	  {
 	    cerr << "writeSparse:" << endl
 		 << "-- Input sparse matrix is:" 
-		 << "---- " << pMatrix->getGlobalNumRows() << " x " 
-		 << pMatrix->getGlobalNumCols() << " with " 
+		 << "---- " << numRows << " x " << numCols << " with "
 		 << pMatrix->getGlobalNumEntries() << " entries;" << endl
 		 << "---- " 
 		 << (pMatrix->isGloballyIndexed() ? "Globally" : "Locally")
@@ -2350,24 +2351,20 @@ namespace Tpetra {
 		 << "---- Its col map has " << pColMap->getGlobalNumElements() 
 		 << " elements." << endl;
 	  }
-	const global_size_t globalNumElements = pRowMap->getGlobalNumElements ();
-
 	// Make the "gather" row map, where Proc 0 owns all rows and
 	// the other procs own no rows.
-	const size_t localNumElements = (myRank == 0) ? globalNumElements : 0;
+	const size_t localNumRows = (myRank == 0) ? numRows : 0;
 	RCP<node_type> pNode = pRowMap->getNode();
 	RCP<const map_type> pGatherRowMap = 
-	  createContigMapWithNode<LO, GO, node_type> (globalNumElements, 
-						      localNumElements, 
+	  createContigMapWithNode<LO, GO, node_type> (numRows, localNumRows,
 						      pComm, pNode);
 	// Since the matrix may in general be non-square, we need to
 	// make a column map as well.  In this case, the column map
-	// contains all the (global) elements of the original matrix's
-	// column map, because we are gathering the whole matrix onto
-	// Proc 0.
+	// contains all the columns of the original matrix, because we
+	// are gathering the whole matrix onto Proc 0.
+	const size_t localNumCols = (myRank == 0) ? numCols : 0;
 	RCP<const map_type> pGatherColMap = 
-	  createContigMapWithNode<LO, GO, node_type> (pColMap->getGlobalNumElements(),
-						      (myRank == 0) ? pColMap->getGlobalNumElements() : 0,
+	  createContigMapWithNode<LO, GO, node_type> (numCols, localNumCols,
 						      pComm, pNode);
 
 	// Current map is the source map, gather map is the target map.
@@ -2386,15 +2383,11 @@ namespace Tpetra {
 	// fillComplete() needs the domain and range maps for the case
 	// that the matrix is not square.
 	{
-	  const global_size_t numRows = pMatrix->getRangeMap()->getGlobalNumElements();
-	  const global_size_t numCols = pMatrix->getDomainMap()->getGlobalNumElements();
 	  RCP<const map_type> pGatherDomainMap = 
-	    createContigMapWithNode<LO, GO, node_type> (numCols, 
-							(myRank == 0) ? numCols : 0, 
+	    createContigMapWithNode<LO, GO, node_type> (numCols, localNumCols,
 							pComm, pNode);
 	  RCP<const map_type> pGatherRangeMap = 
-	    createContigMapWithNode<LO, GO, node_type> (numRows, 
-							(myRank == 0) ? numRows : 0, 
+	    createContigMapWithNode<LO, GO, node_type> (numRows, localNumRows,
 							pComm, pNode);
 	  newMatrix->fillComplete (pGatherDomainMap, pGatherRangeMap);
 	}
@@ -2402,8 +2395,8 @@ namespace Tpetra {
 	if (debugPrint)
 	  {
 	    cerr << "-- Output sparse matrix is:" 
-		 << "---- " << newMatrix->getGlobalNumRows() << " x " 
-		 << newMatrix->getGlobalNumCols() << " with " 
+		 << "---- " << newMatrix->getRangeMap()->getGlobalNumElements() << " x " 
+		 << newMatrix->getDomainMap()->getGlobalNumElements() << " with " 
 		 << newMatrix->getGlobalNumEntries() << " entries;" << endl
 		 << "---- " 
 		 << (newMatrix->isGloballyIndexed() ? "Globally" : "Locally")
