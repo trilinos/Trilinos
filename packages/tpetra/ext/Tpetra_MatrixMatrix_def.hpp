@@ -575,8 +575,39 @@ void mult_A_Btrans(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
-  GlobalOrdinal go0 = OrdinalTraits<GlobalOrdinal>::zero();
   //Nieve implementation
+  const GlobalOrdinal max_all_b = Bview.colMap->getMaxAllGlobalIndex();
+  const GlobalOrdinal min_all_b = Bview.colMap->getMinAllGlobalIndex();
+
+  LocalOrdinal numBrows = Bview.indices.size();
+  Array<GlobalOrdinal> b_firstcol(numBrows);
+  Array<GlobalOrdinal> b_lastcol(numBrows);
+  GlobalOrdinal temp;
+  for(LocalOrdinal i=0; i<numBrows; ++i) {
+    b_firstcol[i] = max_all_b;
+    b_lastcol[i] = min_all_b;
+
+    size_t Blen_i = Bview.numEntriesPerRow[i];
+    if (Blen_i < 1) continue;
+    ArrayView<const LocalOrdinal> Bindices_i = Bview.indices[i];
+
+    if (Bview.remote[i]) {
+      for(size_t k=0; k<Blen_i; ++k) {
+        temp = Bview.importColMap->getGlobalElement(Bindices_i[k]);
+        if (temp < b_firstcol[i]) b_firstcol[i] = temp;
+        if (temp > b_lastcol[i]) b_lastcol[i] = temp;
+      }
+    }
+    else {
+      for(size_t k=0; k<Blen_i; ++k) {
+        temp = Bview.colMap->getGlobalElement(Bindices_i[k]);
+        if (temp < b_firstcol[i]) b_firstcol[i] = temp;
+        if (temp > b_lastcol[i]) b_lastcol[i] = temp;
+      }
+    }
+  }
+
+  GlobalOrdinal go0 = OrdinalTraits<GlobalOrdinal>::zero();
   Array<GlobalOrdinal> cIndices(Bview.rowMap->getNodeNumElements());
   Array<Scalar> cValues(Bview.rowMap->getNodeNumElements());
   Array<GlobalOrdinal> aIndices(Aview.maxNumRowEntries);
@@ -592,34 +623,51 @@ void mult_A_Btrans(
       continue;
     }
     getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
+    GlobalOrdinal mina = aIndices[0];
+    GlobalOrdinal maxa = aIndices[Aview.indices[localARow].size()-1];
+
+    if (mina > max_all_b || maxa < min_all_b) {
+      continue;
+    }
      
-  for(typename ArrayView<const GlobalOrdinal>::iterator it2 = Bview.rowMap->getNodeElementList().begin();
+    for(
+      /*typename ArrayView<const GlobalOrdinal>::iterator it2 = Bview.rowMap->getNodeElementList().begin();
       it2 != Bview.rowMap->getNodeElementList().end();
-      ++it2){
-      LocalOrdinal localBRow = Bview.rowMap->getLocalElement(*it2);
-      if(Bview.indices[localBRow].size() == 0){
+      ++it2)*/
+      LocalOrdinal j = 0;
+      j <= Bview.indices.size();
+      ++j)
+    {
+      //LocalOrdinal localBRow = Bview.rowMap->getLocalElement(*it2);
+      if(Bview.indices[j].size() == 0){
         continue;
       }
-      if(Bview.remote[localBRow]){
-        getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
+      if (b_firstcol[j] > maxa || b_lastcol[j] < mina) {
+        continue;
+      }
+
+      if(Bview.remote[j]){
+        getGlobalRowFromLocalIndex(j, Bview, bIndices, bValues, Bview.importColMap);
       }
       else{
-        getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.colMap);
+        getGlobalRowFromLocalIndex(j, Bview, bIndices, bValues, Bview.colMap);
       }
+
+
       Scalar product = 
         sparsedot(
           aValues(0,Aview.numEntriesPerRow[localARow]), 
           aIndices(0,Aview.numEntriesPerRow[localARow]), 
-          bValues(0,Bview.numEntriesPerRow[localBRow]), 
-          bIndices(0,Bview.numEntriesPerRow[localBRow]));
+          bValues(0,Bview.numEntriesPerRow[j]), 
+          bIndices(0,Bview.numEntriesPerRow[j]));
       if(product != ScalarTraits<Scalar>::zero()){
-        cIndices[currentCPos] = (*it2);
+        cIndices[currentCPos] = Bview.rowMap()->getGlobalElement(j);
         cValues[currentCPos++] = product;
       }
     }
     if(C.isFillComplete()){
       C.sumIntoGlobalValues(*it, cIndices(0, currentCPos), cValues(0, currentCPos));
-    } 
+    }   
     else{
       C.insertGlobalValues(*it, cIndices(0, currentCPos), cValues(0, currentCPos));
     }
