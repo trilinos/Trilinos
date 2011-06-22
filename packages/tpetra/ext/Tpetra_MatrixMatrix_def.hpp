@@ -559,13 +559,6 @@ getGlobalRowFromLocalIndex(
     ++i)
   {
     values[i] = constValues[i];
-  }
-  
-  for(
-    LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero();
-    i < localIndices.size();
-    ++i)
-  {
     indices[i] = colMap->getGlobalElement(localIndices[i]);
   }
   sort2Shell(indices(0, localIndices.size()), localIndices.size(), values(0, localIndices.size()));
