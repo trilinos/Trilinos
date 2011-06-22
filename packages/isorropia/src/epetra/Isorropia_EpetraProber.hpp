@@ -133,6 +133,13 @@ public:
 \ingroup probing_grp
     */
   void color();
+
+  /** Get the number of orthogonal vectors (or the number of colors from
+      coloring)
+   \return number of orthogonal vectors
+\ingroup probing_grp
+    */
+  int getNumOrthogonalVectors();
   
   /** @ingroup probing_grp  
       Perform the actual probing.
