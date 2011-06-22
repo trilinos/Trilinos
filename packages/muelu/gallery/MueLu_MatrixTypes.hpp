@@ -21,7 +21,6 @@
 #include "Cthulhu_OperatorFactory.hpp"
 #endif
 #include "MueLu_Memory.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
   
