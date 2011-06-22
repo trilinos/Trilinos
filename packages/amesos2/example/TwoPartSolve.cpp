@@ -41,6 +41,15 @@
 //
 // @HEADER
 
+/**
+ * \file   TwoPartSolve.cpp
+ * \author Eric Bavier <etbavie@sandia.gov>
+ * \date   Wed Jun 22 11:56:12 2011
+ * 
+ * \brief  An example of using Amesos2 to factor a matrix before the X
+ *         and B vectors are known, then solving once they are available.
+ */
+
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -122,7 +131,19 @@ int main(int argc, char *argv[]) {
     *fos << std::endl << A->description() << std::endl << std::endl;
   }
 
-  // get the maps
+  // We have our matrix, create our solver and factor
+  RCP<Amesos::Solver<MAT,MV> > solver;
+  try{
+    solver = Amesos::create<MAT,MV>("Superlu", A);
+    solver->numericFactorization();
+  } catch(std::invalid_argument e){
+    // This solver is not supported/enable
+    return EXIT_FAILURE;
+  }
+
+  // Now create X and B vectors
+  
+  // get the matrix maps
   RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();		
   RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
 
@@ -144,42 +165,25 @@ int main(int argc, char *argv[]) {
   RCP<MV> B = rcp(new MV(rngmap,numVectors));
   B->putScalar(10);
 
-  // Constructor from Factory
-  RCP<Amesos::Solver<MAT,MV> > solver;
   try{
-    solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
-
-    solver->symbolicFactorization().numericFactorization().solve();
-
-    if( printSolution ){
-      // Print the solution
-      X->describe(*fos,Teuchos::VERB_EXTREME);
-    }
-
-    // change one of the matrix values and re-solve.
-    //
-    // Replace the lowest column index and lowest row index entry with "20"
-    A->resumeFill();
-    A->replaceGlobalValues(
-      Teuchos::as<GO>(A->getRowMap()->getMinGlobalIndex()),
-      tuple<GO>(A->getColMap()->getMinGlobalIndex()),
-      tuple<Scalar>(20));
-    A->fillComplete();
-
-    solver->numericFactorization().solve();
+    solver->setX(X);
+    solver->setB(B);
+    solver->solve();
 
     if( printSolution ){
       // Print the solution
       X->describe(*fos,Teuchos::VERB_EXTREME);
     }
 
-    // change the RHS vector and re-solve.
-    B->randomize();
+    // Create a new B vector, and solve with it.
+    RCP<MV> B_new = rcp(new MV(rngmap,numVectors));
+    B_new->randomize();
     if( verbose ){
       if( myRank == 0) *fos << "New RHS vector:" << std::endl;
-      B->describe(*fos,Teuchos::VERB_EXTREME);
+      B_new->describe(*fos,Teuchos::VERB_EXTREME);
     }
 
+    solver->setB(B_new);
     solver->solve();
 
     if( printSolution ){

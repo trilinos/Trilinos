@@ -382,7 +382,7 @@ bool do_epetra_test(const string& mm_file,
   A->Multiply(transpose, *X, *B);
 
   RCP<MAT> A_rcp(A);
-  RCP<Amesos::SolverBase> solver
+  RCP<Amesos::Solver<MAT,MV> > solver
     = Amesos::create<MAT,MV>(solver_name, A_rcp, Xhat, B );
 
   solver->setParameters( rcpFromRef(solve_params) );
@@ -540,7 +540,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
   X->randomize();
   A->apply(*X,*B,trans);
 
-  RCP<Amesos::SolverBase> solver
+  RCP<Amesos::Solver<MAT,MV> > solver
     = Amesos::create<MAT,MV>(solver_name, A, Xhat, B );
 
   solver->setParameters( rcpFromRef(solve_params) );

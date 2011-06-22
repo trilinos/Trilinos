@@ -2,6 +2,7 @@ INCLUDE(PackageAddExecutableAndTest)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Solver_Test
+  NAME General_Solver_Test
   SOURCES
     Solver_Test
   ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/"
@@ -34,6 +35,13 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers
     SOURCE_FILES superlumt_test.xml
     EXEDEPS Solver_Test
+    )
+
+  PACKAGE_ADD_TEST(
+    Solver_Test
+    NAME SuperLU_MT_Solver_Test
+    ARGS "--xml-params=superlumt_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/"
+    STANDAR_PASS_OUTPUT
     )
 ENDIF()
 

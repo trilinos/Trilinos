@@ -70,7 +70,7 @@ namespace Amesos {
 
   template <class Matrix,
 	    class Vector >
-  RCP<SolverBase>
+  RCP<Solver<Matrix,Vector> >
   create(Matrix* A, Vector* X, Vector* B)
   {
     std::string solver = "Klu2";
@@ -81,7 +81,7 @@ namespace Amesos {
 
   template <class Matrix,
 	    class Vector >
-  RCP<SolverBase>
+  RCP<Solver<Matrix,Vector> >
   create(RCP<Matrix> A, RCP<Vector> X, RCP<Vector> B)
   {
     std::string solver = "Klu2";
@@ -91,7 +91,7 @@ namespace Amesos {
 
   template <class Matrix,
 	    class Vector >
-  RCP<SolverBase>
+  RCP<Solver<Matrix,Vector> >
   create(const char* solverName, Matrix* A, Vector* X, Vector* B)
   {
     std::string solver = solverName;
@@ -102,7 +102,7 @@ namespace Amesos {
 
   template <class Matrix,
 	    class Vector >
-  RCP<SolverBase>
+  RCP<Solver<Matrix,Vector> >
   create(const char* solverName,
 	 const RCP<Matrix> A,
 	 const RCP<Vector> X,
@@ -115,17 +115,25 @@ namespace Amesos {
 
   template <class Matrix,
 	    class Vector >
-  RCP<SolverBase>
+  RCP<Solver<Matrix,Vector> >
   create(const std::string solverName, Matrix* A, Vector* X, Vector* B)
   {
     // Pass non-owning RCP objects to other factory method
     return( create(solverName, rcp(A,false), rcp(X,false), rcp(B,false)) );
   }
 
+  
+  template <class Matrix,
+	    class Vector >
+  RCP<Solver<Matrix,Vector> >
+  create(const std::string solverName, const RCP<Matrix> A){
+    return( create(solverName, A, RCP<Vector>(), RCP<Vector>()) );
+  }
+
 
   template <class Matrix,
 	    class Vector >
-  RCP<SolverBase>
+  RCP<Solver<Matrix,Vector> >
   create(const std::string solver_name,
 	 const RCP<Matrix> A,
 	 const RCP<Vector> X,

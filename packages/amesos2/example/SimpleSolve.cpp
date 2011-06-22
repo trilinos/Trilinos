@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Create solver interface to Superlu through Amesos::Factory
-  RCP<Amesos::SolverBase> solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
+  RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
 
   solver->symbolicFactorization().numericFactorization().solve();
 

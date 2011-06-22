@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   
 
   // Constructor from Factory
-  RCP<Amesos::SolverBase> solver;
+  RCP<Amesos::Solver<MAT,MV> > solver;
   try {
     solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
 

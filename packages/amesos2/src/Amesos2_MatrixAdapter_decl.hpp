@@ -260,7 +260,7 @@ namespace Amesos {
 
 
   // Factory creation method
-  template<typename Matrix>
+  template <class Matrix>
   Teuchos::RCP<MatrixAdapter<Matrix> >
   createMatrixAdapter(Teuchos::RCP<Matrix> m){
     return( rcp(new ConcreteMatrixAdapter<Matrix>(m)) );

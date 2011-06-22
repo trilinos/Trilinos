@@ -147,7 +147,10 @@ namespace Amesos {
       ArrayView<scalar_t> nzval_view = nzval.view(rowInd,rowNNZ);
       
       get_mat->getGlobalRowCopy(*row_it, colind_view, nzval_view, nnzRet);
-      
+
+      // It was suggested that instead of sorting each row's indices
+      // individually, that we instead do a double-transpose at the
+      // end, which would also lead to the indices being sorted.
       if( ordering == Util::Sorted_Indices ){
 	Tpetra::sort2(colind_view.begin(), colind_view.end(), nzval_view.begin());
       }
@@ -268,6 +271,9 @@ namespace Amesos {
       ArrayView<scalar_t> nzval_view = nzval.view(colInd,colNNZ);
       getGlobalColCopy(*col_it, rowind_view, nzval_view, nnzRet);
       
+      // It was suggested that instead of sorting each row's indices
+      // individually, that we instead do a double-transpose at the
+      // end, which would also lead to the indices being sorted.
       if( ordering == Util::Sorted_Indices ){
 	Tpetra::sort2(rowind_view.begin(), rowind_view.end(), nzval_view.begin());
       }

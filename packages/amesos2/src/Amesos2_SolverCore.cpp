@@ -41,9 +41,9 @@
 //
 // @HEADER
 
-#ifndef AMESOS2_SOLVERBASE_HPP
-#define AMESOS2_SOLVERBASE_HPP
+#ifndef AMESOS2_SOLVERCORE_CPP
+#define AMESOS2_SOLVERCORE_CPP
 
-#include "Amesos2_SolverBase_decl.hpp"
+#include "Amesos2_SolverCore.hpp"
 
-#endif  // AMESOS2_SOLVERBASE_HPP
+#endif  // AMESOS2_SOLVERCORE_CPP

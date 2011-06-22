@@ -122,138 +122,138 @@ namespace {
   // I believe this method could return a false-positive.  What I have
   // done here is to instead compare the norm2 of X and Xhat directly,
   // with a reasonably small tolerance.  While this could also produce
-  // a false-positive, it is less likely.  
-#define TEST_WITH_MATRIX(MATNAME, transpose)				\
-  typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;				\
-  typedef MultiVector<SCALAR,LO,GO,Node> MV;				\
-  typedef ScalarTraits<SCALAR> ST;					\
-  typedef typename ST::magnitudeType Mag;				\
-  typedef ScalarTraits<Mag> MT;						\
-  const size_t numVecs = 5;						\
-  ETransp trans = ((transpose) ? CONJ_TRANS : NO_TRANS);		\
+  // a false-positive, it is less likely.
+#define TEST_WITH_MATRIX(MATNAME, transpose)                            \
+  typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;                             \
+  typedef MultiVector<SCALAR,LO,GO,Node> MV;                            \
+  typedef ScalarTraits<SCALAR> ST;                                      \
+  typedef typename ST::magnitudeType Mag;                               \
+  typedef ScalarTraits<Mag> MT;                                         \
+  const size_t numVecs = 5;                                             \
+  ETransp trans = ((transpose) ? CONJ_TRANS : NO_TRANS);                \
 									\
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();	\
-  RCP<const Comm<int> > comm = platform.getComm();			\
-  RCP<Node>             node = platform.getNode();			\
+  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();   \
+  RCP<const Comm<int> > comm = platform.getComm();                      \
+  RCP<Node>             node = platform.getNode();                      \
 									\
-  string path = string("../matrices/") + (MATNAME);			\
-  RCP<MAT> AMat =							\
-    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path,comm,node);	\
+  string path = string("../matrices/") + (MATNAME);                     \
+  RCP<MAT> AMat =                                                       \
+    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path,comm,node);  \
 									\
-  RCP<const Map<LO,GO,Node> > dmnmap = AMat->getDomainMap();		\
-  RCP<const Map<LO,GO,Node> > rngmap = AMat->getRangeMap();		\
+  RCP<const Map<LO,GO,Node> > dmnmap = AMat->getDomainMap();            \
+  RCP<const Map<LO,GO,Node> > rngmap = AMat->getRangeMap();             \
 									\
-  RCP<MV> X, B, Xhat;							\
-  if( transpose ){							\
-    X = rcp(new MV(dmnmap,numVecs));					\
-    B = rcp(new MV(rngmap,numVecs));					\
-    Xhat = rcp(new MV(dmnmap,numVecs));					\
-  } else {								\
-    X = rcp(new MV(rngmap,numVecs));					\
-    B = rcp(new MV(dmnmap,numVecs));					\
-    Xhat = rcp(new MV(rngmap,numVecs));					\
-  }									\
-  X->setObjectLabel("X");						\
-  B->setObjectLabel("B");						\
-  Xhat->setObjectLabel("Xhat");						\
-  X->randomize();							\
-  AMat->apply(*X,*B,trans);						\
+  RCP<MV> X, B, Xhat;                                                   \
+  if( transpose ){                                                      \
+    X = rcp(new MV(dmnmap,numVecs));                                    \
+    B = rcp(new MV(rngmap,numVecs));                                    \
+    Xhat = rcp(new MV(dmnmap,numVecs));                                 \
+  } else {                                                              \
+    X = rcp(new MV(rngmap,numVecs));                                    \
+    B = rcp(new MV(dmnmap,numVecs));                                    \
+    Xhat = rcp(new MV(rngmap,numVecs));                                 \
+  }                                                                     \
+  X->setObjectLabel("X");                                               \
+  B->setObjectLabel("B");                                               \
+  Xhat->setObjectLabel("Xhat");                                         \
+  X->randomize();                                                       \
+  AMat->apply(*X,*B,trans);                                             \
 									\
-  RCP<Amesos::SolverBase> solver					\
-  = Amesos::create<MAT,MV>("Superlu", AMat, Xhat, B );			\
+  RCP<Amesos::Solver<MAT,MV> > solver                                   \
+    = Amesos::create<MAT,MV>("Superlu", AMat, Xhat, B );                \
 									\
-  Teuchos::ParameterList params;					\
-  if( transpose ){							\
-    params.set("Trans","CONJ","Solve with transpose");			\
-  } else {								\
-    params.set("Trans","NOTRANS","Do not solve with transpose");	\
-  }									\
+  Teuchos::ParameterList params;                                        \
+  if( transpose ){                                                      \
+    params.set("Trans","CONJ","Solve with transpose");                  \
+  } else {                                                              \
+    params.set("Trans","NOTRANS","Do not solve with transpose");        \
+  }                                                                     \
 									\
-  solver->setParameters( rcpFromRef(params) );				\
-  solver->symbolicFactorization().numericFactorization().solve();	\
+  solver->setParameters( rcpFromRef(params) );                          \
+  solver->symbolicFactorization().numericFactorization().solve();       \
 									\
-  Array<Mag> xhatnorms(numVecs), xnorms(numVecs);			\
-  Xhat->norm2(xhatnorms());						\
-  X->norm2(xnorms());							\
+  Array<Mag> xhatnorms(numVecs), xnorms(numVecs);                       \
+  Xhat->norm2(xhatnorms());                                             \
+  X->norm2(xnorms());                                                   \
   TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
 
   /**************
    * UNIT TESTS *
    **************/
 
-#define SUPERLU_MATRIX_TEST_DECL(MATNAME)				\
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Superlu, MATNAME, LO, GO, SCALAR)	\
-  {									\
-    string matfile = #MATNAME + string(".mtx");				\
-    TEST_WITH_MATRIX(matfile, false);					\
-    Xhat->describe(out, Teuchos::VERB_EXTREME);				\
-    X->describe(out, Teuchos::VERB_EXTREME);				\
-  }									\
+#define SUPERLU_MATRIX_TEST_DECL(MATNAME)                               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Superlu, MATNAME, LO, GO, SCALAR)   \
+  {                                                                     \
+    string matfile = #MATNAME + string(".mtx");                         \
+    TEST_WITH_MATRIX(matfile, false);                                   \
+    Xhat->describe(out, Teuchos::VERB_EXTREME);                         \
+    X->describe(out, Teuchos::VERB_EXTREME);                            \
+  }                                                                     \
 									\
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Superlu, MATNAME##_trans, LO, GO, SCALAR) \
-  {									\
-    string matfile = #MATNAME + string(".mtx");				\
-    TEST_WITH_MATRIX(matfile, true);					\
-    Xhat->describe(out, Teuchos::VERB_EXTREME);				\
-    X->describe(out, Teuchos::VERB_EXTREME);				\
+  {                                                                     \
+    string matfile = #MATNAME + string(".mtx");                         \
+    TEST_WITH_MATRIX(matfile, true);                                    \
+    Xhat->describe(out, Teuchos::VERB_EXTREME);                         \
+    X->describe(out, Teuchos::VERB_EXTREME);                            \
   }
 
   /*************************************
    * Declarations for all the matrices *
    *************************************/
 
-  SUPERLU_MATRIX_TEST_DECL(arc130)		
-  SUPERLU_MATRIX_TEST_DECL(bcsstk01)		
-  SUPERLU_MATRIX_TEST_DECL(bcsstk18)		
-  SUPERLU_MATRIX_TEST_DECL(bcsstm01)		
-  SUPERLU_MATRIX_TEST_DECL(beacxc)		
-  SUPERLU_MATRIX_TEST_DECL(gemat12)		
+  SUPERLU_MATRIX_TEST_DECL(arc130)
+  SUPERLU_MATRIX_TEST_DECL(bcsstk01)
+  SUPERLU_MATRIX_TEST_DECL(bcsstk18)
+  SUPERLU_MATRIX_TEST_DECL(bcsstm01)
+  SUPERLU_MATRIX_TEST_DECL(beacxc)
+  SUPERLU_MATRIX_TEST_DECL(gemat12)
   SUPERLU_MATRIX_TEST_DECL(sherman3)
   SUPERLU_MATRIX_TEST_DECL(young1c)
 
-  
-#define SUPERLU_MATRIX_TEST(MATNAME, L, G, S)				\
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Superlu, MATNAME, L, G, S)	\
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Superlu, MATNAME##_trans, L, G, S)
-  
 
-#define ARC130_SOLVE(LO, GO, SCALAR)		\
+#define SUPERLU_MATRIX_TEST(MATNAME, L, G, S)                           \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Superlu, MATNAME, L, G, S)       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Superlu, MATNAME##_trans, L, G, S)
+
+
+#define ARC130_SOLVE(LO, GO, SCALAR)            \
   SUPERLU_MATRIX_TEST(arc130, LO, GO, SCALAR)
 
   // MatrixMarket read error? ::
   //
   // Cannot add entry A(37,18) = -2.08333e+06 to matrix; already have expected number of entries 224.
-#define BCSSTK01_SOLVE(LO, GO, SCALAR)			\
+#define BCSSTK01_SOLVE(LO, GO, SCALAR)                  \
   // SUPERLU_MATRIX_TEST(bcsstk01, LO, GO, SCALAR)
 
   // MatrixMarket read error? ::
   //
   // Cannot add entry A(6510,7637) = 328839 to matrix; already have expected number of entries 80519.
-#define BCSSTK18_SOLVE(LO, GO, SCALAR)			\
+#define BCSSTK18_SOLVE(LO, GO, SCALAR)                  \
   // SUPERLU_MATRIX_TEST(bcsstk18, LO, GO, SCALAR)
 
   // Integer matrices not yet supported
-#define BCSSTM01_SOLVE(LO, GO, SCALAR)			\
+#define BCSSTM01_SOLVE(LO, GO, SCALAR)                  \
   // SUPERLU_MATRIX_TEST(bcsstm01, LO, GO, SCALAR)
 
   // This is a rectangular matrix
   //
   //   Throw test that evaluated to true: *A.getMap() != *importer.getSourceMap()
   //   Source Maps don't match.
-#define BEACXC_SOLVE(LO, GO, SCALAR)			\
+#define BEACXC_SOLVE(LO, GO, SCALAR)                    \
   // SUPERLU_MATRIX_TEST(beacxc, LO, GO, SCALAR)
 
-#define GEMAT12_SOLVE(LO, GO, SCALAR)		\
+#define GEMAT12_SOLVE(LO, GO, SCALAR)           \
   SUPERLU_MATRIX_TEST(gemat12, LO, GO, SCALAR)
 
-#define SHERMAN3_SOLVE(LO, GO, SCALAR)		\
+#define SHERMAN3_SOLVE(LO, GO, SCALAR)          \
   SUPERLU_MATRIX_TEST(sherman3, LO, GO, SCALAR)
 
   // A complex valued matrix
   //
   // Currently, the transpose solve for complex problems is not
   // functioning, so we do just the standard solve
-#define YOUNG1C_SOLVE(LO, GO, COMPLEX)					\
+#define YOUNG1C_SOLVE(LO, GO, COMPLEX)                                  \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Superlu, young1c, LO, GO, COMPLEX)
   //  SUPERLU_MATRIX_TEST(young1c, LO, GO, COMPLEX)
 
@@ -264,22 +264,22 @@ namespace {
 
   // Note: The tolerances used here much be predeclared above
 
-#define UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, SCALAR)	\
-  ARC130_SOLVE(LO, GO, SCALAR)				\
-  BCSSTK01_SOLVE(LO, GO, SCALAR)			\
-  BCSSTK18_SOLVE(LO, GO, SCALAR)			\
-  BCSSTM01_SOLVE(LO, GO, SCALAR)			\
-  BEACXC_SOLVE(LO, GO, SCALAR)				\
-  GEMAT12_SOLVE(LO, GO, SCALAR)				\
-  SHERMAN3_SOLVE(LO, GO, SCALAR)			
+#define UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, SCALAR) \
+  ARC130_SOLVE(LO, GO, SCALAR)                          \
+  BCSSTK01_SOLVE(LO, GO, SCALAR)                        \
+  BCSSTK18_SOLVE(LO, GO, SCALAR)                        \
+  BCSSTM01_SOLVE(LO, GO, SCALAR)                        \
+  BEACXC_SOLVE(LO, GO, SCALAR)                          \
+  GEMAT12_SOLVE(LO, GO, SCALAR)                         \
+  SHERMAN3_SOLVE(LO, GO, SCALAR)
 
 #define UNIT_TEST_GROUP_ORDINALS_REALS(LO, GO)          \
-  UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, float)	\
+  UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, float)        \
   UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, double)
 
 #define UNIT_TEST_GROUP_ORDINALS_COMPLEX(LO, GO)        \
   typedef std::complex<float>  ComplexFloat;            \
-  YOUNG1C_SOLVE(LO, GO, ComplexFloat)			\
+  YOUNG1C_SOLVE(LO, GO, ComplexFloat)                   \
   typedef std::complex<double> ComplexDouble;           \
   YOUNG1C_SOLVE(LO, GO, ComplexDouble)
 

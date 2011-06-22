@@ -62,6 +62,7 @@
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 #include <complex>
+#endif
 
 namespace SLUMT {
 
@@ -72,6 +73,8 @@ extern "C" {
 #undef __SUPERLU_SUPERMATRIX
 #include "supermatrix.h"	// for Dtype_t declaration
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+  
 namespace C {
 #undef __SUPERLU_SCOMPLEX
 #undef SCOMPLEX_INCLUDE
@@ -82,6 +85,8 @@ namespace Z {
 #undef __SUPERLU_DCOMPLEX
 #undef DCOMPLEX_INCLUDE
 #include "slu_dcomplex.h"     // double-precision complex data type definitions
+
+#endif	// HAVE_TEUCHOS_COMPLEX
 }
 
 } // end extern "C"
@@ -96,6 +101,8 @@ namespace Z {
   template <typename T>
   struct slu_mt_mult<T,T> : std::multiplies<T> {};
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+  
   // For namespace/macro reasons, we prefix our variables with amesos_*
   template <>
   struct slu_mt_mult<C::complex,float>
@@ -136,8 +143,10 @@ namespace Z {
       return( amesos_zr );
     }
   };
-} // end namespace SLUMt
 
+#endif	// HAVE_TEUCHOS_COMPLEX
+} // end namespace SLUMt
+#ifdef HAVE_TEUCHOS_COMPLEX
 
 /* ==================== Conversion ==================== */
 namespace Teuchos {

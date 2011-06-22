@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Constructor from Factory
-  RCP<Amesos::SolverBase> solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
+  RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
 
   // Create a Teuchos::ParameterList to hold solver parameters
   Teuchos::ParameterList params;

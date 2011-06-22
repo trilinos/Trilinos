@@ -42,7 +42,7 @@
 // @HEADER
 
 /**
-   \file   Amesos2_Superlu_def.hpp
+   \file   Amesos2_Superlumt_def.hpp
    \author Eric Bavier <etbavie@sandia.gov>
    \date   Tue May 24 08:37:17 MDT 2011
 
@@ -91,7 +91,7 @@ Superlumt<Matrix,Vector>::Superlumt(
   Teuchos::RCP<Matrix> A,
   Teuchos::RCP<Vector> X,
   Teuchos::RCP<Vector> B)
-  : Solver<Amesos::Superlumt,Matrix,Vector>(A, X, B)
+  : SolverCore<Amesos::Superlumt,Matrix,Vector>(A, X, B)
   , nzvals_(this->globalNumNonZeros_)
   , rowind_(this->globalNumNonZeros_)
   , colptr_(this->globalNumRows_ + 1)

@@ -134,12 +134,12 @@ int main(int argc, char *argv[]){
   Xhat->randomize();
 
   // Solve A*Xhat = B for Xhat using the Superlu solver
-  RCP<Amesos::SolverBase> solver
+  RCP<Amesos::Solver<MAT,MV> > solver
     = Amesos::create<MAT,MV>("Superlu", A, Xhat, B );
 
   Teuchos::ParameterList params;
   // Setting the following will cause Amesos2 to complain
-  // params.set("Trans","CONJ","Solve with conjugate-transpose");
+  params.set("Trans","CONJ","Solve with conjugate-transpose");
 
   solver->setParameters( rcpFromRef(params) );
   solver->symbolicFactorization().numericFactorization().solve();

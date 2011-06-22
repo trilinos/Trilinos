@@ -62,7 +62,7 @@ Superlu<Matrix,Vector>::Superlu(
   Teuchos::RCP<Matrix> A,
   Teuchos::RCP<Vector> X,
   Teuchos::RCP<Vector> B)
-  : Solver<Amesos::Superlu,Matrix,Vector>(A, X, B)
+  : SolverCore<Amesos::Superlu,Matrix,Vector>(A, X, B)
   , nzvals_(this->globalNumNonZeros_)
   , rowind_(this->globalNumNonZeros_)
   , colptr_(this->globalNumRows_ + 1)

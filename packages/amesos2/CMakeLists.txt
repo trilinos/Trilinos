@@ -48,6 +48,10 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLUMT
   "Enable SuperLU_MT functionality.  Requires the SuperLUMT TPL"
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLUDist
+  HAVE_${PACKAGE_NAME_UC}_SUPERLUDIST
+  "Enable SuperLU_DIST functionality.  Requires the SuperLUDist TPL"
+  OFF )
 
 
 PACKAGE_ADD_DEBUG_OPTION()

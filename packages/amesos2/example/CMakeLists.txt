@@ -29,12 +29,17 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
 )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  ComplexSolveWithTranspose
-  SOURCES ComplexSolve_WithTranspose
-  ARGS
-  COMM serial mpi
-)
+# PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#   ComplexSolveWithTranspose
+#   SOURCES ComplexSolve_WithTranspose
+#   ARGS
+#   COMM serial mpi
+# )
+
+PACKAGE_ADD_EXECUTABLE(
+  TwoPartSolveExample
+  SOURCES TwoPartSolve
+  )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(Amesos2_SimpleSolve_File
   SOURCE_FILES arc130.mtx

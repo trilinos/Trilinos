@@ -53,7 +53,7 @@
 #ifndef AMESOS2_SUPERLU_DECL_HPP
 #define AMESOS2_SUPERLU_DECL_HPP
 
-#include "Amesos2_Solver.hpp"
+#include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Superlu_MatrixHelper.hpp"
 #include "Amesos2_Superlu_FunctionMap.hpp"
 #include "Amesos2_Superlu_TypeMap.hpp"
@@ -102,11 +102,11 @@ namespace Amesos {
  */
 template <class Matrix,
           class Vector>
-class Superlu : public Solver<Amesos::Superlu, Matrix, Vector>
+class Superlu : public SolverCore<Amesos::Superlu, Matrix, Vector>
 {
-  friend class Solver<Amesos::Superlu,Matrix,Vector>; // Give our base access
-                                                      // to our private
-                                                      // implementation funcs
+  friend class SolverCore<Amesos::Superlu,Matrix,Vector>; // Give our base access
+                                                          // to our private
+                                                          // implementation funcs
 public:
 
   /// Name of this solver interface.
@@ -189,7 +189,7 @@ private:
 
 
   /**
-   * This method is hooked in by our Amesos::Solver parent class, which
+   * This method is hooked in by our Amesos::SolverCore parent class, which
    * handles the status and control methods, and this method handles
    * solver-specific parameters.
    *
@@ -200,7 +200,7 @@ private:
 
 
   /**
-   * Hooked in by Amesos::Solver parent class.
+   * Hooked in by Amesos::SolverCore parent class.
    *
    * \return a const Teuchos::ParameterList of all valid parameters for this
    * solver.

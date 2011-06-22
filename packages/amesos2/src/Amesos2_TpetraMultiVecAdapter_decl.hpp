@@ -125,6 +125,10 @@ namespace Amesos {
       // user responsible for calling the updateValues method?
     }
 
+    /**
+     * \return An RCP to the matrix that is being adapted by this adapter
+     */
+    const Teuchos::RCP<multivec_type> getAdaptee(){ return mv_; }
 
     /**
      * \brief Scales values of \c this by a factor of \c alpha

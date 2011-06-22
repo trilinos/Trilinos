@@ -42,64 +42,47 @@
 // @HEADER
 
 /**
-  \file   Amesos2_Solver_def.hpp
-  \class  Amesos::Solver
-  \author Eric T Bavier <etbavier@sandia.gov>
+  \file   Amesos2_SolverCore_def.hpp
+  \class  Amesos::SolverCore
+  \author Eric T Bavier <etbavie@sandia.gov>
   \date   Thu May 27 14:02:35 CDT 2010
 
-  \brief  Templated class for Amesos2 solvers.  Definition.
+  \brief  Templated core-functionality class for Amesos2 solvers.  Definitions.
 */
 
-#ifndef AMESOS2_SOLVER_DEF_HPP
-#define AMESOS2_SOLVER_DEF_HPP
+#ifndef AMESOS2_SOLVERCORE_DEF_HPP
+#define AMESOS2_SOLVERCORE_DEF_HPP
 
 
 namespace Amesos {
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
-Solver<ConcreteSolver,Matrix,Vector>::Solver(
+SolverCore<ConcreteSolver,Matrix,Vector>::SolverCore(
   Teuchos::RCP<Matrix> A,
   Teuchos::RCP<Vector> X,
   Teuchos::RCP<Vector> B )
   : matrixA_(createMatrixAdapter<Matrix>(A))
-  , multiVecX_(new MultiVecAdapter<Vector>(X))
-  , multiVecB_(new MultiVecAdapter<Vector>(B))
+  , multiVecX_(createMultiVecAdapter<Vector>(X)) // may be null
+  , multiVecB_(createMultiVecAdapter<Vector>(B)) // may be null
+  , globalNumRows_(matrixA_->getGlobalNumRows())
+  , globalNumCols_(matrixA_->getGlobalNumCols())
   , globalNumNonZeros_(matrixA_->getGlobalNNZ())
   , status_(matrixA_->getComm())
 {
-  globalNumRows_     = matrixA_->getGlobalNumRows();
-  globalNumCols_     = matrixA_->getGlobalNumCols();
-  globalNumNonZeros_ = matrixA_->getGlobalNNZ();
-
-  TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION(
     !matrixShapeOK(),
     std::invalid_argument,
     "Matrix shape inappropriate for this solver");
-
-  TEST_FOR_EXCEPTION(
-    multiVecX_->getGlobalLength() != matrixA_->getGlobalNumCols(),
-    std::invalid_argument,
-    "LHS MultiVector must have length equal to the number of global columns in A");
-
-  TEST_FOR_EXCEPTION(
-    multiVecB_->getGlobalLength() != matrixA_->getGlobalNumRows(),
-    std::invalid_argument,
-    "RHS MultiVector must have length equal to the number of global rows in A");
-
-  TEST_FOR_EXCEPTION(
-    multiVecX_->getGlobalNumVectors() != multiVecB_->getGlobalNumVectors(),
-    std::invalid_argument,
-    "LHS and RHS MultiVectors must have the same number of vectors");
 }
 
 
 /// Destructor
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
-Solver<ConcreteSolver,Matrix,Vector>::~Solver( )
+SolverCore<ConcreteSolver,Matrix,Vector>::~SolverCore( )
 {
   // TODO: The below code is still dependent on there being some
-  // kind of status and control code available to Amesos2::Solver,
+  // kind of status and control code available to Amesos2::SolverCore,
   // either in the form of a shared library or private inheritance
   // of classes that provide that functionality.
 
@@ -111,8 +94,8 @@ Solver<ConcreteSolver,Matrix,Vector>::~Solver( )
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
-SolverBase&
-Solver<ConcreteSolver,Matrix,Vector>::preOrdering()
+Solver<Matrix,Vector>&
+SolverCore<ConcreteSolver,Matrix,Vector>::preOrdering()
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
   static_cast<solver_type*>(this)->preOrdering_impl();
@@ -127,8 +110,8 @@ Solver<ConcreteSolver,Matrix,Vector>::preOrdering()
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
-SolverBase&
-Solver<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
+Solver<Matrix,Vector>&
+SolverCore<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 
@@ -146,8 +129,8 @@ Solver<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
-SolverBase&
-Solver<ConcreteSolver,Matrix,Vector>::numericFactorization()
+Solver<Matrix,Vector>&
+SolverCore<ConcreteSolver,Matrix,Vector>::numericFactorization()
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 
@@ -165,8 +148,28 @@ Solver<ConcreteSolver,Matrix,Vector>::numericFactorization()
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 void
-Solver<ConcreteSolver,Matrix,Vector>::solve()
+SolverCore<ConcreteSolver,Matrix,Vector>::solve()
 {
+  TEST_FOR_EXCEPTION( multiVecX_.is_null() || multiVecB_.is_null(),
+		      std::runtime_error,
+		      "LHS and RHS must be set before attempting solve" );
+
+  // Check some required properties of X and B
+  TEST_FOR_EXCEPTION(
+    multiVecX_->getGlobalLength() != matrixA_->getGlobalNumCols(),
+    std::invalid_argument,
+    "LHS MultiVector must have length equal to the number of global columns in A");
+
+  TEST_FOR_EXCEPTION(
+    multiVecB_->getGlobalLength() != matrixA_->getGlobalNumRows(),
+    std::invalid_argument,
+    "RHS MultiVector must have length equal to the number of global rows in A");
+
+  TEST_FOR_EXCEPTION(
+    multiVecX_->getGlobalNumVectors() != multiVecB_->getGlobalNumVectors(),
+    std::invalid_argument,
+    "LHS and RHS MultiVectors must have the same number of vectors");
+  
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 
   if( !numericFactorizationDone() ){
@@ -180,7 +183,7 @@ Solver<ConcreteSolver,Matrix,Vector>::solve()
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 bool
-Solver<ConcreteSolver,Matrix,Vector>::matrixShapeOK()
+SolverCore<ConcreteSolver,Matrix,Vector>::matrixShapeOK()
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
   return( static_cast<solver_type*>(this)->matrixShapeOK_impl() );
@@ -188,8 +191,8 @@ Solver<ConcreteSolver,Matrix,Vector>::matrixShapeOK()
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
-SolverBase&
-Solver<ConcreteSolver,Matrix,Vector>::setParameters(
+Solver<Matrix,Vector>&
+SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
   const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
@@ -213,7 +216,7 @@ Solver<ConcreteSolver,Matrix,Vector>::setParameters(
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 Teuchos::RCP<const Teuchos::ParameterList>
-Solver<ConcreteSolver,Matrix,Vector>::getValidParameters() const
+SolverCore<ConcreteSolver,Matrix,Vector>::getValidParameters() const
 {
   Teuchos::TimeMonitor LocalTimer1( const_cast<Teuchos::Time&>(timers_.totalTime_) );
 
@@ -248,7 +251,7 @@ Solver<ConcreteSolver,Matrix,Vector>::getValidParameters() const
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 std::string
-Solver<ConcreteSolver,Matrix,Vector>::description() const
+SolverCore<ConcreteSolver,Matrix,Vector>::description() const
 {
   std::ostringstream oss;
   oss << name() << " solver interface";
@@ -258,7 +261,7 @@ Solver<ConcreteSolver,Matrix,Vector>::description() const
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 void
-Solver<ConcreteSolver,Matrix,Vector>::describe(
+SolverCore<ConcreteSolver,Matrix,Vector>::describe(
   Teuchos::FancyOStream &out,
   const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
 {
@@ -317,7 +320,7 @@ Solver<ConcreteSolver,Matrix,Vector>::describe(
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 void
-Solver<ConcreteSolver,Matrix,Vector>::printTiming(
+SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
   Teuchos::FancyOStream &out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -387,14 +390,14 @@ Solver<ConcreteSolver,Matrix,Vector>::printTiming(
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 void
-Solver<ConcreteSolver,Matrix,Vector>::getTiming(
+SolverCore<ConcreteSolver,Matrix,Vector>::getTiming(
   Teuchos::ParameterList& timingParameterList) const
 {}
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 std::string
-Solver<ConcreteSolver,Matrix,Vector>::name() const {
+SolverCore<ConcreteSolver,Matrix,Vector>::name() const {
   std::string solverName = solver_type::name;
   return solverName;
 }
@@ -402,4 +405,4 @@ Solver<ConcreteSolver,Matrix,Vector>::name() const {
 
 } // end namespace Amesos
 
-#endif  // AMESOS2_SOLVER_DEF_HPP
+#endif  // AMESOS2_SOLVERCORE_DEF_HPP

@@ -69,7 +69,7 @@
  * typedef Tpetra::CrsMatrix<double,int> MAT;
  * typedef Tpetra::MultiVector<double,int> VEC;
  * // ... Create A of type RCP<MAT>, and X and B of type RCP<VEC> ...
- * RCP<Amesos::SolverBase> solver = Amesos::create<MAT,VEC>("Superlu", A, X, B);
+ * RCP<Amesos::Solver<MAT,VEC> > solver = Amesos::create<MAT,VEC>("Superlu", A, X, B);
  * \endcode
  */
 
@@ -115,7 +115,7 @@ using Teuchos::rcp;
 
 namespace Amesos {
 
-  class SolverBase;
+  template <class,class> class Solver;
 
   /**
    * \brief Creates an Amesos2 Solver interface with Matrix A, LHS vector X,
@@ -128,10 +128,12 @@ namespace Amesos {
    * \param [in] B pointer to RHS vector
    *
    * \return A <tt>Teuchos::RCP</tt> to a KLU2 solver interface.
+   *
+   * \deprecated
    */
-  template <typename Matrix,
-	    typename Vector >
-  Teuchos::RCP<SolverBase>
+  template <class Matrix,
+	    class Vector >
+  Teuchos::RCP<Solver<Matrix,Vector> >
   create(Matrix* A, Vector* X, Vector* B);
 
 
@@ -147,9 +149,9 @@ namespace Amesos {
    *
    * \return A <tt>Teuchos::RCP</tt> to a KLU2 solver interface.
    */
-  template <typename Matrix,
-	    typename Vector >
-  Teuchos::RCP<SolverBase>
+  template <class Matrix,
+	    class Vector >
+  Teuchos::RCP<Solver<Matrix,Vector> >
   create(Teuchos::RCP<Matrix> A,
 	 Teuchos::RCP<Vector> X,
 	 Teuchos::RCP<Vector> B);
@@ -165,14 +167,16 @@ namespace Amesos {
    * \param [in] X pointer to LHS solution vector
    * \param [in] B pointer to RHS vector
    *
-   * \return A <tt>Teuchos::RCP</tt> to a Amesos2 solver interface.
+   * \return A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
    *
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
+   *
+   * \deprecated
    */
-  template <typename Matrix,
-	    typename Vector >
-  Teuchos::RCP<SolverBase>
+  template <class Matrix,
+	    class Vector >
+  Teuchos::RCP<Solver<Matrix,Vector> >
   create(const char* solverName, Matrix* A, Vector* X, Vector* B);
 
 
@@ -185,14 +189,14 @@ namespace Amesos {
    * \param [in] X pointer to LHS solution vector
    * \param [in] B pointer to RHS vector
    *
-   * \return A <tt>Teuchos::RCP</tt> to a Amesos2 solver interface.
+   * \return A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
    *
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    */
-  template <typename Matrix,
-	    typename Vector >
-  Teuchos::RCP<SolverBase>
+  template <class Matrix,
+	    class Vector >
+  Teuchos::RCP<Solver<Matrix,Vector> >
   create(const char* solverName,
 	 const Teuchos::RCP<Matrix> A,
 	 const Teuchos::RCP<Vector> X,
@@ -208,14 +212,14 @@ namespace Amesos {
    * \param [in] X <tt>Teuchos::RCP</tt> to LHS solution vector
    * \param [in] B <tt>Teuchos::RCP</tt> to RHS vector
    *
-   * \return A <tt>Teuchos::RCP</tt> to a Amesos2 solver interface.
+   * \return A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
    *
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    */
-  template <typename Matrix,
-	    typename Vector >
-  Teuchos::RCP<SolverBase>
+  template <class Matrix,
+	    class Vector >
+  Teuchos::RCP<Solver<Matrix,Vector> >
   create(const std::string solverName, Matrix* A, Vector* X, Vector* B);
 
 
@@ -228,18 +232,40 @@ namespace Amesos {
    * \param [in] X <tt>Teuchos::RCP</tt> to LHS solution vector
    * \param [in] B <tt>Teuchos::RCP</tt> to RHS vector
    *
-   * \return A <tt>Teuchos::RCP</tt> to a Amesos2 solver interface.
+   * \return A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
    *
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    */
-  template <typename Matrix,
-	    typename Vector >
-  Teuchos::RCP<SolverBase>
+  template <class Matrix,
+	    class Vector >
+  Teuchos::RCP<Solver<Matrix,Vector> >
   create(const std::string solverName,
 	 const Teuchos::RCP<Matrix> A,
 	 const Teuchos::RCP<Vector> X,
 	 const Teuchos::RCP<Vector> B);
+
+
+  /**
+   * \bried Creates an Amesos2 Solver interface with Matrix A.
+   *
+   * Suitable for cases where numeric factorization must be performed
+   * before the X and B vectors are known.  Before a solve, the \c
+   * setX() and \c setB() functions should be used to set X and B.
+   *
+   * \param [in] solverName The name of the desired third-party solver
+   * \param [in] A <tt>Teuchos::RCP</tt> to the coefficient matrix
+   *
+   * \retrun A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
+   * 
+   * \throw std::invalid_argument The third-party solver named by \c
+   * solverName is not supported.
+   */
+  template <class Matrix,
+	    class Vector >
+  Teuchos::RCP<Solver<Matrix,Vector> >
+  create(const std::string solverName,
+	 const Teuchos::RCP<Matrix> A);
 
 
   /**

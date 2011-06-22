@@ -106,10 +106,10 @@ APPEND_SET(HEADERS
   Amesos2_MultiVecAdapter.hpp
   Amesos2_MultiVecAdapter_decl.hpp
   Amesos2_Solver.hpp
-  Amesos2_SolverBase.hpp
-  Amesos2_SolverBase_decl.hpp
   Amesos2_Solver_decl.hpp
-  Amesos2_Solver_def.hpp
+  Amesos2_SolverCore.hpp
+  Amesos2_SolverCore_decl.hpp
+  Amesos2_SolverCore_def.hpp
   Amesos2_Status.hpp
   Amesos2_Timers.hpp
   Amesos2_TpetraMultiVecAdapter.hpp
@@ -129,8 +129,8 @@ APPEND_SET(SOURCES
   Amesos2_Factory.cpp
   Amesos2_MatrixAdapter.cpp
   Amesos2_MultiVecAdapter.cpp
+  Amesos2_SolverCore.cpp
   Amesos2_Solver.cpp
-  Amesos2_SolverBase.cpp
   Amesos2_Status.cpp
 #  Amesos2_TpetraCrsMatrixAdapter.cpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.cpp
@@ -171,6 +171,21 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
 
   APPEND_SET(SOURCES
     Amesos2_Superlumt.cpp
+    )
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_SuperLUDist) # This naming syntax is consistent with Trilinos
+  APPEND_SET(HEADERS
+    Amesos2_Superludist.hpp
+    Amesos2_Superludist_FunctionMap.hpp
+    Amesos2_Superludist_MatrixHelper.hpp
+    Amesos2_Superludist_TypeMap.hpp
+    Amesos2_Superludist_decl.hpp
+    Amesos2_Superludist_def.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_Superludist.cpp
     )
 ENDIF()
 

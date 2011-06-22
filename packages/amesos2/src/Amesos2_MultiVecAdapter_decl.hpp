@@ -55,6 +55,7 @@
 #ifndef AMESOS2_MULTIVEC_ADAPTER_DECL_HPP
 #define AMESOS2_MULTIVEC_ADAPTER_DECL_HPP
 
+#include <Teuchos_RCP.hpp>
 
 namespace Amesos {
 
@@ -236,6 +237,13 @@ struct MultiVecAdapter {
   //   }
 };
 
+  // Factory creation method for MultiVecAdapters
+  template <class MV>
+  Teuchos::RCP<MultiVecAdapter<MV> >
+  createMultiVecAdapter(Teuchos::RCP<MV> mv){
+    if(mv.is_null()) return Teuchos::null;
+    return( rcp(new MultiVecAdapter<MV>(mv)) );
+  }
 
 } // end namespace Amesos
 
