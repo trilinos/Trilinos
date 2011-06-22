@@ -132,7 +132,33 @@ void cuda_reduce_shared( const DeviceCuda::size_type used_warp_count )
 }
 
 //----------------------------------------------------------------------------
-// Output this block's results to global memory
+// Warp #0 of this block read this block's previous reduction value from global memory
+// This will be the initial reduction value for Warp #0 Thread #0.
+
+template< class DriverType >
+__device__
+void cuda_reduce_global_initialize( const DriverType & driver )
+{
+  typedef          DeviceCuda::size_type  size_type ;
+  typedef typename DriverType::value_type value_type ;
+
+  enum { WarpSize       = Impl::DeviceCudaTraits::WarpSize };
+  enum { ValueWordCount = DriverType::ValueWordCount };
+
+  extern __shared__ size_type shared_data[];
+
+  if ( 0 == threadIdx.y ) {
+    // Coalesced global memory read
+
+    size_type * const scratch = driver.scratch_data_for_block();
+
+    for ( size_type i = threadIdx.x ; i < ValueWordCount ; i += WarpSize ) {
+      shared_data[i] = scratch[i] ;
+    }
+  }
+}
+
+// Warp #0 of this block write this block's reduction value to global memory
 
 template< class DriverType >
 __device__
@@ -142,47 +168,42 @@ void cuda_reduce_global_contribute( const DriverType & driver )
   typedef typename DriverType::value_type value_type ;
 
   enum { WarpSize       = Impl::DeviceCudaTraits::WarpSize };
-  enum { WarpIndexMask  = Impl::DeviceCudaTraits::WarpIndexMask };
-  enum { WarpIndexShift = Impl::DeviceCudaTraits::WarpIndexShift };
   enum { ValueWordCount = DriverType::ValueWordCount };
-  enum { WordsPerWarp   = DriverType::WordsPerWarp };
 
   extern __shared__ size_type shared_data[];
 
-  const size_type thread_of_block = threadIdx.x + blockDim.x * threadIdx.y ;
-  const size_type thread_stride   = blockDim.x * blockDim.y ;
+  if ( 0 == threadIdx.y ) {
 
-  const size_type multiblock_id = driver.m_grid_offset + blockIdx.x ;
+    // Coalesced global memory write
 
-  size_type * const scratch = driver.m_scratch_space +
-    DriverType::shared_data_offset(
-      multiblock_id &  WarpIndexMask  /* for threadIdx.x */ ,
-      multiblock_id >> WarpIndexShift /* for threadIdx.y */ );
+    size_type * const scratch = driver.scratch_data_for_block();
 
-  // ** REQUIRED: driver.m_grid_size <= blockDim.x * blockDim.y **
-
-  if ( thread_of_block < ValueWordCount ) {
-    // Coalesced global memory write, wait for write to complete
-    // Write by multiblock_id and
-    // Read  by ( threadIdx.x + blockDim.x * threadIdx.y ) == multiblock_id
-    // Determine correct location into scratch memory.
-
-    for ( size_type i = thread_of_block ; i < ValueWordCount ; i += thread_stride ) {
+    for ( size_type i = threadIdx.x ; i < ValueWordCount ; i += WarpSize ) {
       scratch[i] = shared_data[i] ;
     }
 
     __threadfence(); // Wait for write to complete
+
+    //----------------------------------
+    // Warp #0 Thread #0 : Check if this is the last block to finish:
+
+    if ( 0 == threadIdx.x ) {
+      // atomicInc returns value prior to increment.
+
+      const size_type last_block_flag =
+        driver.m_global_block_count ==
+        1 + atomicInc( driver.m_scratch_flag , driver.m_global_block_count + 1 );
+
+      // Inform the entire block of the last_bock status:
+      shared_data[ DriverType::shared_flag_offset() ] = last_block_flag ;
+
+      if ( last_block_flag ) {
+        // Reinitialize the flag for the next reduction operation
+        *(driver.m_scratch_flag) = 0 ;
+      }
+    }
   }
-
-  // Check if this is the last block to finish:
-
-  if ( 0 == thread_of_block ) {
-    // atomicInc returns value prior to increment.
-
-    shared_data[ DriverType::shared_flag_offset() ] =
-      driver.m_grid_size == 1 + atomicInc( driver.m_scratch_flag , driver.m_grid_size + 1 );
-  }
-  __syncthreads();
+  __syncthreads(); // All threads of block wait for last_block flag to be set.
 }
 
 // The last block to finish reduces the results from all blocks.
@@ -194,19 +215,10 @@ void cuda_reduce_global_complete( const DriverType & driver )
   typedef          DeviceCuda::size_type  size_type ;
   typedef typename DriverType::value_type value_type ;
 
-  enum { WarpSize       = Impl::DeviceCudaTraits::WarpSize };
-  enum { WordsPerWarp   = DriverType::WordsPerWarp };
+  enum { WarpSize     = Impl::DeviceCudaTraits::WarpSize };
+  enum { WordsPerWarp = DriverType::WordsPerWarp };
 
   extern __shared__ size_type shared_data[];
-
-  // Let the last thread of the last warp reinitialize the flag
-  // for the next reduce operation.
-  // This warp is least likely to be doing any more work.
-
-  if ( blockDim.y == threadIdx.y + 1 &&
-       blockDim.x == threadIdx.x + 1 ) {
-    *(driver.m_scratch_flag) = 0 ;
-  }
 
   // Each warp does a coalesced read of its own data.
 
@@ -234,6 +246,7 @@ void cuda_reduce_global_complete( const DriverType & driver )
   cuda_reduce_shared< DriverType >( driver.m_scratch_warp );
 }
 
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 template< class DriverType >
@@ -265,6 +278,14 @@ static void cuda_parallel_reduce( const DriverType driver )
 
   DriverType::init( value );
 
+  // If this block is not the first block in the stream
+  // then must read the previous value into
+  // the to-be-updated thread #0 value.
+
+  if ( driver.m_global_block_update ) {
+    cuda_reduce_global_initialize< DriverType >( driver );
+  }
+
   // Phase 1: Reduce to per-thread contributions
   {
     const size_type work_count  = driver.m_work_count ;
@@ -284,7 +305,7 @@ static void cuda_parallel_reduce( const DriverType driver )
 
   // Phase 3: Reduce contributions from multiple blocks
 
-  int last_block = 1 == driver.m_grid_size ;
+  int last_block = 1 == driver.m_global_block_count ;
 
   if ( ! last_block ) {
 
@@ -302,7 +323,7 @@ static void cuda_parallel_reduce( const DriverType driver )
     }
   }
 
-  // Phase 4: Thread #0 of last block performs serial finalization
+  // Phase 4: Last block Warp #0 Thread #0 performs serial finalization
   if ( last_block && 0 == threadIdx.x && 0 == threadIdx.y ) {
     driver.m_work_finalize( value );
   }
@@ -344,8 +365,9 @@ public:
   const FinalizeType m_work_finalize ;
   const size_type    m_work_count ;
   const size_type    m_work_stride ;
-  const size_type    m_grid_size ;
-  const size_type    m_grid_offset ; /// to be used for multi-functor / multi-block reduction 
+  const size_type    m_stream_block_offset ; /// to be used for multi-functor / multi-block reduction 
+  const size_type    m_global_block_count ;
+  const size_type    m_global_block_update ;
 
   // Scratch space for multi-block reduction
   // m_scratch_warp  == number of warps required
@@ -357,6 +379,17 @@ public:
   const size_type   m_scratch_upper ;
   
   //----------------------------------------------------------------------
+
+  static inline
+  __device__
+  void join( volatile       value_type & update ,
+             volatile const value_type & input )
+    { FunctorType::join( update , input ); }
+
+  static inline
+  __device__
+  void init( value_type & update )
+    { FunctorType::init( update ); }
 
   static inline
   __device__
@@ -373,18 +406,18 @@ public:
   size_type shared_flag_offset()
   { return ValueWordStride * ( WarpStride * blockDim.y - 1 ); }
 
-  static inline
+  inline
   __device__
-  void join( volatile       value_type & update ,
-             volatile const value_type & input )
-    { FunctorType::join( update , input ); }
+  size_type * scratch_data_for_block() const
+  {
+    const size_type stream_block_id = m_stream_block_offset + blockIdx.x ;
 
-  static inline
-  __device__
-  void init( value_type & update )
-    { FunctorType::init( update ); }
+    return m_scratch_space +
+      shared_data_offset(
+        stream_block_id &  WarpIndexMask  /* for threadIdx.x */ ,
+        stream_block_id >> WarpIndexShift /* for threadIdx.y */ );
+  }
 
-  //----------------------------------------------------------------------
 
 private:
 
@@ -397,8 +430,9 @@ private:
     , m_work_finalize( finalize )
     , m_work_count(    work_count )
     , m_work_stride(   work_stride )
-    , m_grid_size(     grid_size )
-    , m_grid_offset(   0 )
+    , m_stream_block_offset(   0 )
+    , m_global_block_count( grid_size )
+    , m_global_block_update( 0 )
     , m_scratch_space( device_type::reduce_multiblock_scratch_space() )
     , m_scratch_flag(  device_type::reduce_multiblock_scratch_flag() )
     , m_scratch_warp( ( grid_size >> WarpIndexShift ) +
@@ -407,6 +441,7 @@ private:
   {}
 
 public:
+
   //----------------------------------------------------------------------
 
   static

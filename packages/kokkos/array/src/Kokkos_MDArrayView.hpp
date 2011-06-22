@@ -432,6 +432,53 @@ public:
   }
 };
 
+/** \brief  Deep copy between different devices, different maps,
+ *          and no assumption of contiguity.
+ *          Force remap to occur on the host.
+ */
+template< typename ValueType , class DeviceDst , class MapDst , bool ContigDst ,
+                               class MapSrc , bool ContigSrc >
+class MDArrayDeepCopy< ValueType , DeviceDst ,  MapDst , ContigDst ,
+                                   DeviceHost , MapSrc , ContigSrc > {
+private:
+  enum { okD = StaticAssert< ! SameType<DeviceDst,DeviceHost>::value >::value };
+  enum { okM = StaticAssert< ! SameType<MapDst,MapSrc>::value >::value };
+public:
+
+  typedef MDArrayView<ValueType,DeviceDst, MapDst> dst_type ;
+  typedef MDArrayView<ValueType,DeviceHost,MapDst> src_dstmap_type ;
+  typedef MDArrayView<ValueType,DeviceHost,MapSrc> src_type ;
+
+  typedef MDArrayDeepCopy< ValueType,
+                           DeviceHost,MapDst, src_dstmap_type::Contiguous,
+                           DeviceHost,MapSrc, src_type::Contiguous >
+    remap_operator ;
+
+  typedef MDArrayDeepCopy< ValueType,
+                           DeviceDst, MapDst,dst_type::Contiguous,
+                           DeviceHost,MapDst,src_dstmap_type::Contiguous >
+    relocate_operator ;
+
+  // Both the devices and the maps are different.
+  // Copy to a temporary on the destination with the source map
+  // and then remap the temporary to the final array.
+  static
+  void run( const dst_type & dst , const src_type & src )
+  {
+    size_t dims[ MDArrayMaxRank ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+    dst.dimensions( dims );
+
+    src_dstmap_type tmp_src = create_labeled_mdarray<src_dstmap_type>(
+                                "temporary" ,
+                                dims[0] , dims[1] , dims[2] , dims[3] ,
+                                dims[4] , dims[5] , dims[6] , dims[7] );
+
+    remap_operator   ::run( tmp_src , src );
+    relocate_operator::run( dst , tmp_src );
+  }
+};
+
 //----------------------------------------------------------------------------
 
 } // namespace Impl
