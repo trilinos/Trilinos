@@ -535,6 +535,25 @@ namespace stk {
           (element.identifier()  < stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()))
           || (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
 
+#define DEBUG_NR_UNREF 0
+            if (DEBUG_NR_UNREF)
+              {
+                std::cout << "registerNeedNewNode:: is_empty= " << is_empty << " should_put_in= " << should_put_in << " needed_entity_rank= " 
+                          << needed_entity_rank.first << " subDimEntity= ";
+                          
+                for (unsigned k=0; k < subDimEntity.size(); k++)
+                  {
+                    std::cout << " " << subDimEntity[k]->identifier() << " ";
+                  }
+#if 0
+                for (unsigned k=0; k < subDimEntity.size(); k++)
+                  {
+                    std::cout << " " << (stk::mesh::EntityId) subDimEntity[k] << " ";
+                  }
+#endif
+                std::cout << std::endl;
+              }
+
         /// once it's in, the assertion should be:
         ///   owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
         ///
@@ -542,8 +561,27 @@ namespace stk {
           {
             // new SubDimCellData SDC_DATA_OWNING_ELEMENT_KEY
             // CHECK
+
             SubDimCellData data(NodeIdsOnSubDimEntityType(needed_entity_rank.second, 0u), stk::mesh::EntityKey(element.entity_rank(), element.identifier()) );
             putInMap(subDimEntity,  data);
+
+
+            if (0 && DEBUG_NR_UNREF)
+              {
+                std::cout << "registerNeedNewNode:: is_empty= " << is_empty << " should_put_in= " << should_put_in << " subDimEntity= ";
+                for (unsigned k=0; k < subDimEntity.size(); k++)
+                  {
+                    std::cout << " " << subDimEntity[k]->identifier() << " ";
+                  }
+#if 0
+                for (unsigned k=0; k < subDimEntity.size(); k++)
+                  {
+                    std::cout << " " << (stk::mesh::EntityId) subDimEntity[k] << " ";
+                  }
+#endif
+                std::cout << std::endl;
+              }
+
             // new_SubDimCellData.get<0>().init(needed_entity_rank.second, 0u);
             // new_SubDimCellData.get<1>() = newEntityKey;
             //m_cell_2_data_map.insert(std::pair<SubDimCell_SDSEntityType, SubDimCellData>(subDimEntity, new_SubDimCellData) );
@@ -1839,8 +1877,30 @@ namespace stk {
                 for (unsigned ii = 0; ii < nodeIds_onSE.size(); ii++)
                   {
                     //nodeIds_onSE[ii] = new_nodes[inode]->identifier();
-                    nodeIds_onSE[ii] = new_nodes[inode];
-                    nodeIds_onSE.m_entity_id_vector[ii] = new_nodes[inode]->identifier();
+
+                    if ( DEBUG_NR_UNREF)
+                      {
+                        std::cout << "tmp createNewNodesInParallel: old node id= " << (nodeIds_onSE[ii] ? toString(nodeIds_onSE[ii]->identifier()) : std::string("null")) << std::endl;
+                        std::cout << "tmp createNewNodesInParallel: new node=";
+                        m_eMesh.printEntity(std::cout, *new_nodes[inode]);
+                      }
+
+                    // if already exists from a previous iteration/call to doBreak, don't reset it and just use the old node
+                    if (nodeIds_onSE[ii])
+                      {
+                        if (DEBUG_NR_UNREF)
+                          {
+                            std::cout << "tmp createNewNodesInParallel: old node id is no-null, re-using it= " << (nodeIds_onSE[ii] ? toString(nodeIds_onSE[ii]->identifier()) : std::string("null")) << std::endl;
+                            std::cout << "tmp createNewNodesInParallel: new node=";
+                            m_eMesh.printEntity(std::cout, *new_nodes[inode]);
+                          }
+                      }
+                    else
+                      {
+                        nodeIds_onSE[ii] = new_nodes[inode];
+                        nodeIds_onSE.m_entity_id_vector[ii] = new_nodes[inode]->identifier();
+                      }
+
                     //nodeIds_onSE.m_entity_vector[ii] = new_nodes[inode];
                     inode++;
                   }
@@ -1915,17 +1975,20 @@ namespace stk {
       }
 
     public:
-      SubDimCellToDataMap& getMap() { return  m_cell_2_data_map; }
+      //SubDimCellToDataMap& getMap() { return  m_cell_2_data_map; }
 
       // remove any sub-dim entities from the map that have a node in deleted_nodes
-      void cleanDeletedNodes(std::set<stk::mesh::Entity *>& deleted_nodes)
+      void cleanDeletedNodes(std::set<stk::mesh::Entity *>& deleted_nodes, bool debug=false)
       {
+        std::set<stk::mesh::Entity *> deleted_nodes_copy = deleted_nodes;
+
+        if (DEBUG_NR_UNREF)
+          std::cout << "tmp cleanDeletedNodes deleted_nodes size: " << deleted_nodes_copy.size() << std::endl;
+
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = m_cell_2_data_map;
-        //std::set<const SubDimCell_SDSEntityType *> subDimEntitySet;
-        //  subDimEntitySet.insert(&subDimEntity);
-
-        //SubDimCellData& getNewNodeAndOwningElement(SubDimCell_SDSEntityType& subDimEntity)
+        if (DEBUG_NR_UNREF)
+          std::cout << "tmp cleanDeletedNodes map size: " << map.size() << std::endl;
 
         for (iter = map.begin(); iter != map.end(); ++iter)
           {
@@ -1942,16 +2005,63 @@ namespace stk {
                   {
                     found = true;
                     jj = ii;
+                    deleted_nodes_copy.erase(nodeIds_onSE[ii]);
                     break;
                   }
               }
             if (found)
               {
-                //std::cout << "tmp cleanDeletedNodes:: removing node id= " << nodeIds_onSE[jj]->identifier() << std::endl;
-                nodeIds_onSE.resize(0);
+                if (DEBUG_NR_UNREF)
+                  {
+                    std::cout << "tmp cleanDeletedNodes:: removing node id= " << nodeIds_onSE[jj]->identifier() << std::endl;
+                    std::cout << "Node: ";
+                    m_eMesh.printEntity(std::cout, *nodeIds_onSE[jj]);
+                  }
+                if (!debug)
+                  nodeIds_onSE.resize(0);
               }
           }
 
+        if (DEBUG_NR_UNREF && deleted_nodes_copy.size())
+          {
+            std::cout << "tmp cleanDeletedNodes some deleted nodes not found, size()=: " << deleted_nodes_copy.size() << " nodes= " << std::endl;
+            std::set<stk::mesh::Entity *>::iterator it;
+            for (it = deleted_nodes_copy.begin(); it != deleted_nodes_copy.end(); ++it)
+              {
+                stk::mesh::Entity *node = *it;
+                std::cout << "Node: ";
+                m_eMesh.printEntity(std::cout, *node);
+              }
+            
+          }
+      }
+
+      void dumpDB(std::string msg="")
+      {
+        if (!DEBUG_NR_UNREF) return;
+        SubDimCellToDataMap::iterator iter;
+        SubDimCellToDataMap& map = m_cell_2_data_map;
+        std::cout << msg << " tmp dumpDB map size: " << map.size() << std::endl;
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+
+            for (unsigned ii = 0; ii < nodeIds_onSE.size(); ii++)
+              {
+                std::cout << "tmp ddb:: node id= " << nodeIds_onSE[ii]->identifier() << std::endl;
+                std::cout << "subDimEntity= ";
+                for (unsigned k=0; k < subDimEntity.size(); k++)
+                  {
+                    std::cout << " " << subDimEntity[k]->identifier() << " ";
+                  }
+                std::cout << "Node: ";
+                m_eMesh.printEntity(std::cout, *nodeIds_onSE[ii]);
+              }
+          }
       }
 
     private:

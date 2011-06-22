@@ -121,11 +121,28 @@ namespace stk {
       getDoProgressMeter();
 
 
+      typedef std::set<stk::mesh::Entity *> NodeSetType;
+
+      void 
+      filterUnrefSet(ElementUnrefineCollection& elements_to_unref);
+
+      void
+      getKeptNodes(NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
+
+      void
+      getDeletedNodes(NodeSetType& deleted_nodes, const NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
+
       void
       unrefineTheseElements(ElementUnrefineCollection& elements_to_unref);
 
       void
       unrefineAll();
+
+      void
+      setAlwaysInitializeNodeRegistry(bool do_init) { m_alwaysInitNodeRegistry = do_init; }
+
+      bool
+      getAlwaysInitializeNodeRegistry() { return m_alwaysInitNodeRegistry; }
 
     protected:
 
@@ -251,6 +268,8 @@ namespace stk {
 
       int m_progress_meter_frequency;
       bool m_doProgress;
+
+      bool m_alwaysInitNodeRegistry;
     };
 
 

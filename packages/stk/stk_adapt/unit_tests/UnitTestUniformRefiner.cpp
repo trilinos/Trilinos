@@ -468,7 +468,7 @@ namespace stk {
 
         //const unsigned p_rank = stk::parallel_machine_rank( pm );
         const unsigned p_size = stk::parallel_machine_size( pm );
-        if (p_size <= 1)
+        if (p_size <= 3)
           {
             std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
@@ -496,7 +496,8 @@ namespace stk {
 
             TestLocalRefinerTri_N_3 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
-            for (int ipass=0; ipass < 2; ipass++)
+            breaker.setAlwaysInitializeNodeRegistry(false);
+            for (int ipass=0; ipass < 4; ipass++)
               {
                 std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
                 breaker.doBreak();
@@ -510,10 +511,9 @@ namespace stk {
             eMesh.saveAs(output_files_loc+"local_tri_N_3_1_1_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
-            //exit(123);
 #if 1
 
-            for (int iunref_pass=0; iunref_pass < 2; iunref_pass++)
+            for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)
               {
                 std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
                 ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
