@@ -634,7 +634,7 @@ typedef LO my_size_t; //TODO
         int exp_nRows    = nVertices + graph.GetNodeNumGhost();
         int myPid        = graph.GetComm()->getRank();
         double printFlag = aggOptions.GetPrintFlag();
-        int nAggregates  = aggregates.GetNumAggregates();
+        my_size_t nAggregates  = aggregates.GetNumAggregates();
 
         int minNodesPerAggregate = aggOptions.GetMinNodesPerAggregate();
 
