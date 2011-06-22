@@ -83,5 +83,61 @@ namespace {
     TEUCHOS_TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12, out, success);
   } //Correctness test
 
+  TEUCHOS_UNIT_TEST(RAPFactory, ImplicitTranspose)
+  {
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+    RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
+    Level fineLevel;
+    fineLevel.SetA(Op);
+    Level coarseLevel;
+
+    SaPFactory sapFactory;
+    sapFactory.BuildP(fineLevel,coarseLevel);
+
+    RCP<Operator> P = coarseLevel.GetP();
+    RCP<Operator> A = fineLevel.GetA();
+
+    //std::string filename = "A.dat";
+    //Utils::Write(filename,Op);
+    //filename = "P.dat";
+    //Utils::Write(filename,P);
+
+    RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
+    RCP<MultiVector> workVec2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
+    RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
+    RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(),1);
+    X->randomize();
+    out.precision(12);
+    out.setOutputToRootOnly(-1);
+    X->describe(out,Teuchos::VERB_EXTREME);
+
+    //Calculate result1 = P^T*(A*(P*X))
+    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    P->apply(*workVec2,*result1,Teuchos::TRANS,(SC)1.0,(SC)0.0);
+
+    RAPFactory rap;
+    rap.SetImplicitTranspose(true);
+    rap.Build(fineLevel,coarseLevel);
+
+    RCP<Operator> coarseOp = coarseLevel.GetA();
+
+    //Calculate result2 = (R*A*P)*X
+    RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
+    coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  
+    Teuchos::Array<ST::magnitudeType> normX(1), normResult1(1),normResult2(1);
+    X->norm2(normX);
+    out << "This test checks the correctness of the Galerkin triple "
+        << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit tranpose of P." << std::endl;
+    out << "||X||_2 = " << normX << std::endl; 
+    result1->norm2(normResult1);
+    result2->norm2(normResult2);
+    TEUCHOS_TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12, out, success);
+  } //Correctness test
+
 }//namespace <anonymous>
 
