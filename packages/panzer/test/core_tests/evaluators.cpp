@@ -16,7 +16,7 @@
 
 // Evaluators to test
 #include "Panzer_Constant.hpp"
-#include "Panzer_Dirichlet_Constant.hpp"
+#include "Panzer_Dirichlet_Residual.hpp"
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOFGradient.hpp"
 #include "Panzer_Integrator_BasisTimesScalar.hpp"
@@ -109,18 +109,18 @@ namespace panzer {
     panzer::VectorToScalar<panzer::Traits::Jacobian,panzer::Traits> e_J(p);
   }
 
-  TEUCHOS_UNIT_TEST(evaluators, DirichletConstant)
+  TEUCHOS_UNIT_TEST(evaluators, DirichletResidual)
   {
 
-    ParameterList p("DirichletConstant Test");
+    ParameterList p("DirichletResidual Test");
     p.set("Residual Name", "Residual_TEMP");
     p.set("DOF Name", "TEMP");
+    p.set("Value Name", "CONSTANT TEMP");
     RCP<PHX::DataLayout> dl = rcp(new PHX::MDALayout<Cell,Point>(10,8));
     p.set("Data Layout", dl);
-    p.set<double>("Value", 1.04);
 
-    panzer::DirichletConstant<panzer::Traits::Residual,panzer::Traits> e_r(p);
-    panzer::DirichletConstant<panzer::Traits::Jacobian,panzer::Traits> e_J(p);
+    panzer::DirichletResidual<panzer::Traits::Residual,panzer::Traits> e_r(p);
+    panzer::DirichletResidual<panzer::Traits::Jacobian,panzer::Traits> e_J(p);
   }
 
   TEUCHOS_UNIT_TEST(evaluators, DOF)

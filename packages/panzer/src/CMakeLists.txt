@@ -103,8 +103,6 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_LinearObjFactory.hpp
   evaluators/Panzer_Constant.hpp
   evaluators/Panzer_ConstantT.hpp
-  evaluators/Panzer_Dirichlet_Constant.hpp
-  evaluators/Panzer_Dirichlet_ConstantT.hpp
   evaluators/Panzer_Dirichlet_Residual.hpp
   evaluators/Panzer_Dirichlet_ResidualT.hpp
   evaluators/Panzer_DOF.hpp
