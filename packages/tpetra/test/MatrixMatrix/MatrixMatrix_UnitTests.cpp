@@ -395,11 +395,17 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
   }
   TEST_COMPARE(results.epsilon, <, defaultEpsilon)
 
-  RCP<CrsMatrix<double,int,int,SerialNode> > identity2 = Tpetra::createCrsMatrix<double,int,int,SerialNode>(bDomainMap,1);
+
+
+  RCP<const Map<int,int,SerialNode> > identity2RowMap = 
+    Tpetra::createUniformContigMapWithNode<int, int, SerialNode>(
+      globalNumRows/2, comm,node);
+  RCP<CrsMatrix<double,int,int,SerialNode> > identity2 = 
+    Tpetra::createCrsMatrix<double,int,int,SerialNode>(identity2RowMap,1);
   for(
     ArrayView<const int>::iterator it = 
-      bMatrix->getDomainMap()->getNodeElementList().begin();
-    it != bMatrix->getDomainMap()->getNodeElementList().end();
+      identity2RowMap->getNodeElementList().begin();
+    it != identity2RowMap->getNodeElementList().end();
     ++it)
   {
     Array<int> col(1,*it);
@@ -416,25 +422,37 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
     Tpetra::createCrsMatrix<double,int,int,SerialNode>(bTransRowMap, 1);
   Array<int> bTransRangeElements;
   if(rank == 0){
-    rangeElements = tuple<int>(
+    bTransRangeElements = tuple<int>(
       (numProcs-1)*(numRowsPerProc/2)+1,
       (numProcs-1)*(numRowsPerProc/2));
   }
   else{
-    rangeElements = tuple<int>(
+    bTransRangeElements = tuple<int>(
       (rank-1)*(numRowsPerProc/2)+1,
       (rank-1)*(numRowsPerProc/2));
   }
+  out << bTransRangeElements << std::endl;
   RCP<const Map<int,int,SerialNode> > bTransRangeMap = 
     Tpetra::createNonContigMapWithNode<int,int,SerialNode>(bTransRangeElements, comm, node);
   RCP<const Map<int,int,SerialNode> > bTransDomainMap =
     Tpetra::createUniformContigMapWithNode<int,int,SerialNode>(globalNumRows,comm,node);
   Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
-  bTrans->fillComplete(bTransDomainMap, bDomainMap);
+  bTrans->fillComplete(bTransDomainMap, bTransRangeMap);
 
-  RowMatrixTransposer<double,int,int,SerialNode> transposer(*bMatrix);
-  RCP<CrsMatrix<double,int,int,SerialNode> > bTransTest = transposer.createTranspose(Tpetra::DoOptimizeStorage); //, bTransTest);
+  RCP<CrsMatrix<double,int,int,SerialNode> > bTransTest = 
+    Tpetra::createCrsMatrix<double,int,int,SerialNode>(bTransRowMap, 1);
 
+  for(
+    ArrayView<const int>::iterator it = 
+      bRowMap->getNodeElementList().begin();
+    it != bRowMap->getNodeElementList().end();
+    ++it)
+  {
+    Array<int> col(1,*it);
+    Array<double> val(1,3.0);
+    bTransTest->insertGlobalValues((*it)/2, col(), val());
+  }
+  bTransTest->fillComplete(bTransDomainMap, bTransRangeMap);
 
 
   out << "Regular I*P^T" << std::endl;
@@ -446,6 +464,8 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
   double realNorm = getNorm(bTransTest);
   double calcEpsilon = diffNorm/realNorm;
     
+  out << "B" << std::endl;
+
 
   if(verbose){
     out << "Results:" <<std::endl;

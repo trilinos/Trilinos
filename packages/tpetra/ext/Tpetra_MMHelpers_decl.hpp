@@ -67,6 +67,9 @@ public:
   virtual ~CrsMatrixStruct();
 
   void deleteContents();
+
+  //The maximum number of row entries a.k.a. the longest of the indice arrays.
+  typename Array<ArrayView<const LocalOrdinal> >::size_type maxNumRowEntries;
   
   /** \brief Number of local rows that the imported version of the matrix has */
   size_t numRows;

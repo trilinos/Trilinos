@@ -159,6 +159,7 @@ void Multiply(
   }
   //Now import any needed remote rows and populate the Aview struct.
   MMdetails::import_and_extract_views(A, targetMap_A, Aview);
+ 
 
   //We will also need local access to all rows of B that correspond to the
   //column-map of op(A).
@@ -554,7 +555,6 @@ getGlobalRowFromLocalIndex(
   ArrayView<const LocalOrdinal> localIndices = Mview.indices[localRow];
   ArrayView<const Scalar> constValues = Mview.values[localRow];
   values = Array<Scalar>(constValues);
-  indices.resize(localIndices.size());
   
   for(
     LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero();
@@ -563,7 +563,7 @@ getGlobalRowFromLocalIndex(
   {
     indices[i] = colMap->getGlobalElement(localIndices[i]);
   }
-  sort2Shell(indices(), indices.size(), values());
+  sort2Shell(indices(0, localIndices.size()), localIndices.size(), values(0, localIndices.size()));
 }
 
 //kernel method for computing the local portion of C = A*B^T
@@ -577,7 +577,15 @@ void mult_A_Btrans(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
 {
+  GlobalOrdinal go0 = OrdinalTraits<GlobalOrdinal>::zero();
   //Nieve implementation
+  Array<GlobalOrdinal> cIndices(Bview.rowMap->getNodeNumElements());
+  Array<Scalar> cValues(Bview.rowMap->getNodeNumElements());
+  Array<GlobalOrdinal> aIndices(Aview.maxNumRowEntries);
+  Array<Scalar> aValues(Aview.maxNumRowEntries);
+  Array<GlobalOrdinal> bIndices(Bview.maxNumRowEntries);
+  Array<Scalar> bValues(Bview.maxNumRowEntries);
+  GlobalOrdinal currentCPos = go0;
   for(typename ArrayView<const GlobalOrdinal>::iterator it = Aview.rowMap->getNodeElementList().begin();
       it != Aview.rowMap->getNodeElementList().end();
       ++it){
@@ -585,12 +593,8 @@ void mult_A_Btrans(
     if(Aview.indices[localARow].size() == 0){
       continue;
     }
-    Array<GlobalOrdinal> cIndices;
-    Array<Scalar> cValues;
-    Array<GlobalOrdinal> aIndices;
-    Array<Scalar> aValues;
     getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
-    
+     
   for(typename ArrayView<const GlobalOrdinal>::iterator it2 = Bview.rowMap->getNodeElementList().begin();
       it2 != Bview.rowMap->getNodeElementList().end();
       ++it2){
@@ -598,8 +602,6 @@ void mult_A_Btrans(
       if(Bview.indices[localBRow].size() == 0){
         continue;
       }
-      Array<GlobalOrdinal> bIndices;
-      Array<Scalar> bValues;
       if(Bview.remote[localBRow]){
         getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
       }
@@ -607,18 +609,23 @@ void mult_A_Btrans(
         getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.colMap);
       }
       Scalar product = 
-        sparsedot(aValues(), aIndices(), bValues(), bIndices());
+        sparsedot(
+          aValues(0,Aview.numEntriesPerRow[localARow]), 
+          aIndices(0,Aview.numEntriesPerRow[localARow]), 
+          bValues(0,Bview.numEntriesPerRow[localBRow]), 
+          bIndices(0,Bview.numEntriesPerRow[localBRow]));
       if(product != ScalarTraits<Scalar>::zero()){
-        cIndices.push_back(*it2);
-        cValues.push_back(product);
+        cIndices[currentCPos] = (*it2);
+        cValues[currentCPos++] = product;
       }
     }
     if(C.isFillComplete()){
-      C.sumIntoGlobalValues(*it, cIndices(), cValues());
+      C.sumIntoGlobalValues(*it, cIndices(0, currentCPos), cValues(0, currentCPos));
     } 
     else{
-      C.insertGlobalValues(*it, cIndices(), cValues());
+      C.insertGlobalValues(*it, cIndices(0, currentCPos), cValues(0, currentCPos));
     }
+    currentCPos = 0;
   }
   //Real optimized version, not working.
   /*size_t maxlen = 0;
@@ -1052,6 +1059,26 @@ template<class Scalar,
          class GlobalOrdinal, 
          class Node,
          class SpMatOps>
+void setMaxNumEntriesPerRow(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview)
+{
+  typedef typename Array<ArrayView<const LocalOrdinal> >::size_type  local_length_size;
+  Mview.maxNumRowEntries = OrdinalTraits<local_length_size>::zero();
+  if(Mview.indices.size() > OrdinalTraits<local_length_size>::zero() ){
+    Mview.maxNumRowEntries = Mview.indices[0].size();
+    for(local_length_size i = 1; i<Mview.indices.size(); ++i){
+      if(Mview.indices[i].size() > Mview.maxNumRowEntries){
+        Mview.maxNumRowEntries = Mview.indices[i].size();
+      }
+    }
+  }
+}
+
+template<class Scalar,
+         class LocalOrdinal, 
+         class GlobalOrdinal, 
+         class Node,
+         class SpMatOps>
 void import_and_extract_views(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
@@ -1119,6 +1146,7 @@ void import_and_extract_views(
   if (numProcs < 2) {
     TEST_FOR_EXCEPTION(Mview.numRemote > 0, std::runtime_error,
       "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows." <<std::endl);
+    setMaxNumEntriesPerRow(Mview);
     //If only one processor we don't need to import any remote rows, so return.
     //return(0);
     return;
@@ -1180,6 +1208,7 @@ void import_and_extract_views(
       }
     }
   }
+  setMaxNumEntriesPerRow(Mview);
 }
 
 // CGB: check this...
