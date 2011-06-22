@@ -34,7 +34,7 @@ namespace MueLu {
       GO GetNumGlobalElements() {
         check();
 
-        GO numGlobalElements;
+        GO numGlobalElements=-1;
         if (matrixType_ == "Laplace1D")
           numGlobalElements = static_cast<GO>(nx_);
         else if (matrixType_ == "Laplace2D")
