@@ -635,7 +635,7 @@ void mult_A_Btrans(
       it2 != Bview.rowMap->getNodeElementList().end();
       ++it2)*/
       LocalOrdinal j = 0;
-      j <= Bview.indices.size();
+      j < Bview.indices.size();
       ++j)
     {
       //LocalOrdinal localBRow = Bview.rowMap->getLocalElement(*it2);
