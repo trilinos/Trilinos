@@ -147,21 +147,9 @@ namespace Amesos {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_LAPACK
-    if((solverName == "amesos2_lapack") || (solverName == "lapack")){
-      return( rcp(new Lapack<Matrix,Vector>(A, X, B)) );
-    }
-#endif
-
 #ifdef HAVE_AMESOS2_MUMPS
     if((solverName == "amesos2_mumps") || (solverName == "mumps")){
       return( rcp(new Mumps<Matrix,Vector>(A, X, B)) );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_SCALAPACK
-    if((solverName == "amesos2_scalapack") || (solverName == "scalapack")){
-      return( rcp(new Scalapack<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
@@ -214,12 +202,6 @@ namespace Amesos {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_PARAKLETE
-    if((solverName == "amesos2_paraklete") || (solverName == "paraklete")){
-      return( rcp(new Paraklete<Matrix,Vector>(A, X, B)) );
-    }
-#endif
-
     /* If none of the above conditionals are satisfied, then the solver
      * requested is not yet supported.  We throw a runtime exception stating
      * this, and return null.
@@ -253,20 +235,8 @@ namespace Amesos {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_LAPACK
-    if((solverName == "amesos2_lapack") || (solverName == "lapack")){
-      return( true );
-    }
-#endif
-
 #ifdef HAVE_AMESOS2_MUMPS
     if((solverName == "amesos2_mumps") || (solverName == "mumps")){
-      return( true );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_SCALAPACK
-    if((solverName == "amesos2_scalapack") || (solverName == "scalapack")){
       return( true );
     }
 #endif
@@ -316,12 +286,6 @@ namespace Amesos {
 
 #ifdef HAVE_AMESOS2_TAUCS
     if((solverName == "amesos2_taucs") || (solverName == "taucs")){
-      return( true );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_PARAKLETE
-    if((solverName == "amesos2_paraklete") || (solverName == "paraklete")){
       return( true );
     }
 #endif

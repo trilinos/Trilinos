@@ -81,18 +81,12 @@
 #ifdef HAVE_AMESOS2_KLU2
 #include "Amesos2_Klu2.hpp"
 #endif
-#ifdef HAVE_AMESOS2_LAPACK
-#include "Amesos2_Lapack.hpp"
-#endif
-#ifdef HAVE_AMESOS2_MUMPS
-#include "Amesos2_Mumps.hpp"
-#endif
-#ifdef HAVE_AMESOS2_SCALAPACK
-#include "Amesos2_Scalapack.hpp"
-#endif
-#ifdef HAVE_AMESOS2_UMFPACK
-#include "Amesos2_Umfpack.hpp"
-#endif
+// #ifdef HAVE_AMESOS2_MUMPS
+// #include "Amesos2_Mumps.hpp"
+// #endif
+// #ifdef HAVE_AMESOS2_UMFPACK
+// #include "Amesos2_Umfpack.hpp"
+// #endif
 #ifdef HAVE_AMESOS2_SUPERLUDIST	// Distributed-memory SuperLU
 #include "Amesos2_Superludist.hpp"
 #endif
@@ -106,18 +100,15 @@
 #ifdef HAVE_AMESOS2_SUPERLU
 #include "Amesos2_Superlu.hpp"
 #endif
-#ifdef HAVE_AMESOS2_DSCPACK
-#include "Amesos2_Dscpack.hpp"
-#endif
-#ifdef HAVE_AMESOS2_PARDISO
-#include "Amesos2_Pardiso.hpp"
-#endif
-#ifdef HAVE_AMESOS2_TAUCS
-#include "Amesos2_Taucs.hpp"
-#endif
-#ifdef HAVE_AMESOS2_PARAKLETE
-#include "Amesos2_Paraklete.hpp"
-#endif
+// #ifdef HAVE_AMESOS2_DSCPACK
+// #include "Amesos2_Dscpack.hpp"
+// #endif
+// #ifdef HAVE_AMESOS2_PARDISO
+// #include "Amesos2_Pardiso.hpp"
+// #endif
+// #ifdef HAVE_AMESOS2_TAUCS
+// #include "Amesos2_Taucs.hpp"
+// #endif
 
 
 using Teuchos::rcp;
