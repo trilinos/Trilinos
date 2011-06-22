@@ -66,7 +66,6 @@ struct Control {
     , matrixProperty_(0)
     , rcond_threshold_(1e-12)
     , refactorize_(false)
-    , maxProcesses_(-1)
     , scaleMethod_(0)
     , reindex_(false)
     { }
@@ -128,9 +127,6 @@ struct Control {
   // attempt to "refactorize" (factor the matrix
   // with no changes to the pivot order since the
   // last call the klu_btf_factor).
-
-  int maxProcesses_;     // default is -1 ; If positive, distribute
-  // problem over MaxProcesses
 
 
   int scaleMethod_; // Most methods (klu, UMFPACK, Mumps, ...) can

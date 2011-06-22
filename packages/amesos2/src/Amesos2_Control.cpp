@@ -130,13 +130,6 @@ void Control::setControlParameters(
         oss.str());
     }
 
-    // Define how many processes to use in the ScaLAPACK factor and
-    // solve.  If (-1), a heuristic is used to determine the number of
-    // processes to use
-    if( parameterList->isParameter("MaxProcs") ){
-      maxProcesses_ = parameterList->get<int>("MaxProcs");
-    }
-
     // Scaling method: 0: none, 1: use method's default, 2: use
     // the method's 1st alternative, 3: etc.
     if( parameterList->isParameter("ScaleMethod") ){
