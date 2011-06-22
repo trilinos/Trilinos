@@ -56,10 +56,9 @@
 #include <Teuchos_Ptr.hpp>
 
 
-using Tpetra::CrsMatrix;
-
 namespace Amesos {
-
+  
+  using Tpetra::CrsMatrix;
 
   template< typename Scalar,
 	    typename LocalOrdinal,

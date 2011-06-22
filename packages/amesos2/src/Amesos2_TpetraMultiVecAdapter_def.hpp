@@ -53,10 +53,9 @@
 #ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 #define AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 
-using Tpetra::MultiVector;
-
 namespace Amesos {
 
+  using Tpetra::MultiVector;
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   void
