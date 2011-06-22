@@ -132,10 +132,11 @@ void cuda_reduce_shared( const DeviceCuda::size_type used_warp_count )
 }
 
 //----------------------------------------------------------------------------
+// Output this block's results to global memory
 
 template< class DriverType >
 __device__
-void cuda_reduce_global( const DriverType & driver )
+void cuda_reduce_global_contribute( const DriverType & driver )
 {
   typedef          DeviceCuda::size_type  size_type ;
   typedef typename DriverType::value_type value_type ;
@@ -149,11 +150,15 @@ void cuda_reduce_global( const DriverType & driver )
   extern __shared__ size_type shared_data[];
 
   const size_type thread_of_block = threadIdx.x + blockDim.x * threadIdx.y ;
-  size_type i , j ;
+  const size_type thread_stride   = blockDim.x * blockDim.y ;
 
-  // Phase A: Output block's results to global memory
-  //          and then input results into last block.
-  //
+  const size_type multiblock_id = driver.m_grid_offset + blockIdx.x ;
+
+  size_type * const scratch = driver.m_scratch_space +
+    DriverType::shared_data_offset(
+      multiblock_id &  WarpIndexMask  /* for threadIdx.x */ ,
+      multiblock_id >> WarpIndexShift /* for threadIdx.y */ );
+
   // ** REQUIRED: driver.m_grid_size <= blockDim.x * blockDim.y **
 
   if ( thread_of_block < ValueWordCount ) {
@@ -162,15 +167,7 @@ void cuda_reduce_global( const DriverType & driver )
     // Read  by ( threadIdx.x + blockDim.x * threadIdx.y ) == multiblock_id
     // Determine correct location into scratch memory.
 
-    const size_type multiblock_id = driver.m_grid_offset + blockIdx.x ;
-    const size_type thread_stride = blockDim.x * blockDim.y ;
-
-    size_type * const scratch = driver.m_scratch_space +
-      DriverType::shared_data_offset(
-        multiblock_id &  WarpIndexMask  /* for threadIdx.x */ ,
-        multiblock_id >> WarpIndexShift /* for threadIdx.y */ );
-
-    for ( i = thread_of_block ; i < ValueWordCount ; i += thread_stride ) {
+    for ( size_type i = thread_of_block ; i < ValueWordCount ; i += thread_stride ) {
       scratch[i] = shared_data[i] ;
     }
 
@@ -186,45 +183,55 @@ void cuda_reduce_global( const DriverType & driver )
       driver.m_grid_size == 1 + atomicInc( driver.m_scratch_flag , driver.m_grid_size + 1 );
   }
   __syncthreads();
+}
 
-  // The last block to finish reduces the results from all blocks.
+// The last block to finish reduces the results from all blocks.
 
-  if ( shared_data[ DriverType::shared_flag_offset() ] ) {
+template< class DriverType >
+__device__
+void cuda_reduce_global_complete( const DriverType & driver )
+{
+  typedef          DeviceCuda::size_type  size_type ;
+  typedef typename DriverType::value_type value_type ;
 
-    // Let the last thread of the last warp reinitialize the flag
-    // for the next reduce operation.
-    // This warp is least likely to be doing any more work.
+  enum { WarpSize       = Impl::DeviceCudaTraits::WarpSize };
+  enum { WordsPerWarp   = DriverType::WordsPerWarp };
 
-    if ( blockDim.y == threadIdx.y + 1 &&
-         blockDim.x == threadIdx.x + 1 ) {
-      *(driver.m_scratch_flag) = 0 ;
-    }
+  extern __shared__ size_type shared_data[];
 
-    // Each warp does a coalesced read of its own data.
+  // Let the last thread of the last warp reinitialize the flag
+  // for the next reduce operation.
+  // This warp is least likely to be doing any more work.
 
-    if ( threadIdx.y < driver.m_scratch_warp ) {
-
-      // Coalesced global memory read for this warp's data.
-
-      i = DriverType::shared_data_offset( 0 , threadIdx.y );
-      j = i + WordsPerWarp ;
-
-      if ( driver.m_scratch_upper < j ) {
-        j = driver.m_scratch_upper ;
-
-        // Only partial data will be read by this warp
-        // so initialize the values before reading.
-        DriverType::init( *((value_type *)( shared_data + DriverType::shared_data_offset() )) );
-      }
-
-      for ( i += threadIdx.x ; i < j ; i += WarpSize ) {
-        shared_data[i] = driver.m_scratch_space[i] ;
-      }
-    }
-
-    // Phase B: Reduce these contributions
-    cuda_reduce_shared< DriverType >( driver.m_scratch_warp );
+  if ( blockDim.y == threadIdx.y + 1 &&
+       blockDim.x == threadIdx.x + 1 ) {
+    *(driver.m_scratch_flag) = 0 ;
   }
+
+  // Each warp does a coalesced read of its own data.
+
+  if ( threadIdx.y < driver.m_scratch_warp ) {
+
+    // Coalesced global memory read for this warp's data.
+
+    size_type i = DriverType::shared_data_offset( 0 , threadIdx.y );
+    size_type j = i + WordsPerWarp ;
+
+    if ( driver.m_scratch_upper < j ) {
+      j = driver.m_scratch_upper ;
+
+      // Only partial data will be read by this warp
+      // so initialize the values before reading.
+      DriverType::init( *((value_type *)( shared_data + DriverType::shared_data_offset() )) );
+    }
+
+    for ( i += threadIdx.x ; i < j ; i += WarpSize ) {
+      shared_data[i] = driver.m_scratch_space[i] ;
+    }
+  }
+
+  // Reduce these contributions
+  cuda_reduce_shared< DriverType >( driver.m_scratch_warp );
 }
 
 //----------------------------------------------------------------------------
@@ -281,9 +288,18 @@ static void cuda_parallel_reduce( const DriverType driver )
 
   if ( ! last_block ) {
 
-    cuda_reduce_global< DriverType >( driver );
+    // This block contribute its partial result
+    // and determine if it is the last block.
+
+    cuda_reduce_global_contribute< DriverType >( driver );
 
     last_block = shared_data[ DriverType::shared_flag_offset() ];
+
+    // If the last block then reduce partial result
+    // contributions from all blocks to a single result.
+    if ( last_block ) {
+      cuda_reduce_global_complete< DriverType >( driver );
+    }
   }
 
   // Phase 4: Thread #0 of last block performs serial finalization
@@ -477,11 +493,27 @@ public:
   }
 };
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if 0
+namespace Kokkos {
+
+template < class FinalizeType >
+class MultiFunctorParallelReduce< DeviceCuda , FinalizeType > {
+public:
+};
+
+} // namespace Kokkos
+#endif
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 

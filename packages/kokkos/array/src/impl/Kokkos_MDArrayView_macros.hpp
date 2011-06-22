@@ -47,6 +47,12 @@
 
 namespace Kokkos {
 
+namespace Impl {
+template< typename ValueType , class DeviceType ,
+          class MapDst , class MapSrc , unsigned Rank >
+class MDArrayDeepCopyFunctor ;
+}
+
 // Assumes the MapOption is a composition.
 
 template< typename ValueType , class MapOption >
@@ -117,7 +123,7 @@ public:
   value_type & operator()( const iTypeP & iP , const iType1 & i1 ,
                            const iType2 & i2 , const iType3 & i3 ,
                            const iType4 & i4 , const iType5 & i5 ,
-                           const iTypeP & i6 ) const
+                           const iType6 & i6 ) const
   { return m_memory.ptr_on_device()[ m_map.offset(iP,i1,i2,i3,i4,i5,i6) ]; }
 
   /** \brief  Query value of a rank 6 array */
@@ -251,6 +257,10 @@ private:
                          class DeviceSrc , class MapSrc , bool >
   friend
   class Impl::MDArrayDeepCopy ;
+
+  template< typename V , class D , class MapDst , class MapSrc , unsigned R >
+  friend
+  class Impl::MDArrayDeepCopyFunctor ;
 };
 
 } // namespace Kokkos
@@ -260,10 +270,6 @@ private:
 
 namespace Kokkos {
 namespace Impl {
-
-template< typename ValueType , class DeviceType ,
-          class MapDst , class MapSrc , unsigned Rank >
-class MDArrayDeepCopyFunctor ;
 
 //----------------------------------------------------------------------------
 // Deep copy functors for same device and different maps.
@@ -295,7 +301,7 @@ public:
   {
     size_type indices[ RANK ];
 
-    dst.inverse_map( iwork , indices );
+    dst.m_map.reverse_index( iwork , indices );
 
     dst( indices[0] , indices[1] , indices[2] , indices[3] ,
          indices[4] , indices[5] , indices[6] , indices[7] ) =
@@ -330,7 +336,7 @@ public:
   {
     size_type indices[ RANK ];
 
-    dst.inverse_map( iwork , indices );
+    dst.m_map.reverse_index( iwork , indices );
 
     dst( indices[0] , indices[1] , indices[2] , indices[3] ,
          indices[4] , indices[5] , indices[6] ) =
@@ -365,7 +371,7 @@ public:
   {
     size_type indices[ RANK ];
 
-    dst.inverse_map( iwork , indices );
+    dst.m_map.reverse_index( iwork , indices );
 
     dst( indices[0] , indices[1] , indices[2] , indices[3] ,
          indices[4] , indices[5] ) =
@@ -400,7 +406,7 @@ public:
   {
     size_type indices[ RANK ];
 
-    dst.inverse_map( iwork , indices );
+    dst.m_map.reverse_index( iwork , indices );
 
     dst( indices[0] , indices[1] , indices[2] , indices[3] , indices[4] ) =
     src( indices[0] , indices[1] , indices[2] , indices[3] , indices[4] );
@@ -432,7 +438,7 @@ public:
   {
     size_type indices[ RANK ];
 
-    dst.inverse_map( iwork , indices );
+    dst.m_map.reverse_index( iwork , indices );
 
     dst( indices[0] , indices[1] , indices[2] , indices[3] ) =
     src( indices[0] , indices[1] , indices[2] , indices[3] );
@@ -464,7 +470,7 @@ public:
   {
     size_type indices[ RANK ];
 
-    dst.inverse_map( iwork , indices );
+    dst.m_map.reverse_index( iwork , indices );
 
     dst( indices[0] , indices[1] , indices[2] ) =
     src( indices[0] , indices[1] , indices[2] );
@@ -496,7 +502,7 @@ public:
   {
     size_type indices[ RANK ];
 
-    dst.inverse_map( iwork , indices );
+    dst.m_map.reverse_index( iwork , indices );
 
     dst( indices[0] , indices[1] ) = src( indices[0] , indices[1] );
   }
