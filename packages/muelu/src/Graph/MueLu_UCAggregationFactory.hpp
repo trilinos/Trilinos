@@ -215,7 +215,7 @@ typedef LO my_size_t; //TODO
         {
           //TODO: could be stored in a class that respect interface of LinkedList
 
-          randomVector = Teuchos::arcp<int>(nRows); //size_t or int ?-> to be propagated
+          randomVector = Teuchos::arcp<LO>(nRows); //size_t or int ?-> to be propagated
           for (my_size_t i = 0; i < nRows; ++i) randomVector[i] = i;
           RandomReorder(randomVector);
         } 
@@ -1269,8 +1269,8 @@ typedef LO my_size_t; //TODO
          @param list On input, a bunch of integers. On output, the same integers in a different order
                      that is determined randomly.
       */
-      void RandomReorder(Teuchos::ArrayRCP<int> list) const
-      {
+      void RandomReorder(Teuchos::ArrayRCP<LO> list) const
+      { //TODO: replace int
         int n = list.size();
         for(int i=0; i<n-1; i++) {
           std::swap(list[i], list[RandomOrdinal(i,n-1)]);
