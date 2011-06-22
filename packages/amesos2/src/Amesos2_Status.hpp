@@ -65,8 +65,8 @@ public:
   Status()
     : printTiming_(false)
     , printStatus_(false)
-    , computeVectorNorms_(false)
-    , computeTrueResidual_(false)
+    // , computeVectorNorms_(false)
+    // , computeTrueResidual_(false)
       // Will use the Teuchos::VerboseObject for verbosity settings
     , verbose_(0)
     , debug_(0)
@@ -80,20 +80,17 @@ public:
     , symbolicFactorizationDone_(false)
     , numericFactorizationDone_(false)
 
-    , threshold_(0.0)
-
     , myPID_(0)
     , root_(true)
     , numProcs_(1)
-    , maxProcs_(1)
     { }
 
 
   Status(const Teuchos::RCP<const Teuchos::Comm<int> > comm)
     : printTiming_(false)
     , printStatus_(false)
-    , computeVectorNorms_(false)
-    , computeTrueResidual_(false)
+    // , computeVectorNorms_(false)
+    // , computeTrueResidual_(false)
       // Will use the Teuchos::VerboseObject for verbosity settings
     , verbose_(0)
     , debug_(0)
@@ -107,12 +104,9 @@ public:
     , symbolicFactorizationDone_(false)
     , numericFactorizationDone_(false)
 
-    , threshold_(0.0)
-
     , myPID_(comm->getRank())
     , root_( myPID_ == 0 )
     , numProcs_(comm->getSize())
-    , maxProcs_(1)
     { }
 
 
@@ -134,11 +128,11 @@ public:
   /// If \c true, print additional information in the destructor.
   bool printStatus_;
 
-  /// If \c true, prints the norms of X and B in solve().
-  bool computeVectorNorms_;
+  // /// If \c true, prints the norms of X and B in solve().
+  // bool computeVectorNorms_;
 
-  /// If \c true, computes the true residual in solve().
-  bool computeTrueResidual_;
+  // /// If \c true, computes the true residual in solve().
+  // bool computeTrueResidual_;
 
 
   /// Toggles the output level.
@@ -169,9 +163,6 @@ public:
   bool numericFactorizationDone_;
 
 
-  double threshold_;
-
-
   /// My process ID in this MPI communicator
   int myPID_;
 
@@ -181,8 +172,6 @@ public:
   /// The number of processors in this MPI communicator
   int numProcs_;
 
-  /// The maximum number of processes allowed
-  int maxProcs_;
 };                              // end class Amesos::Status
 
 

@@ -85,15 +85,15 @@ void Status::setStatusParameters(
     printStatus_ = parameterList->get<bool>("PrintStatus");
   }
 
-  // compute norms of some vectors
-  if( parameterList->isParameter("ComputeVectorNorms") ){
-    computeVectorNorms_ = parameterList->get<bool>("ComputeVectorNorms");
-  }
+  // // compute norms of some vectors
+  // if( parameterList->isParameter("ComputeVectorNorms") ){
+  //   computeVectorNorms_ = parameterList->get<bool>("ComputeVectorNorms");
+  // }
 
-  // compute the true residual Ax-b after solution
-  if( parameterList->isParameter("ComputeTrueResidual") ){
-    computeTrueResidual_ = parameterList->get<bool>("ComputeTrueResidual");
-  }
+  // // compute the true residual Ax-b after solution
+  // if( parameterList->isParameter("ComputeTrueResidual") ){
+  //   computeTrueResidual_ = parameterList->get<bool>("ComputeTrueResidual");
+  // }
 
 }
 
