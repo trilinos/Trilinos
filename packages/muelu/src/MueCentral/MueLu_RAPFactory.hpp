@@ -21,9 +21,12 @@ class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,
   template<class AA, class BB, class CC, class DD, class EE>
   inline friend std::ostream& operator<<(std::ostream& os, RAPFactory<AA,BB,CC,DD,EE> &factory);
 
+  private:
+    bool implicitTranspose_;
+
   public:
     //@{ Constructors/Destructors.
-    RAPFactory() {}
+    RAPFactory() : implicitTranspose_(false) {}
 
     virtual ~RAPFactory() {}
     //@}
@@ -39,17 +42,31 @@ class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,
       RCP<Operator> P = coarseLevel.GetP();
       RCP<Operator> A = fineLevel.GetA();
       RCP<Operator> AP = Utils::TwoMatrixMultiply(A,P);
-      RCP<Operator> R = coarseLevel.GetR();
-      RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,AP);
-      coarseLevel.SetA(RAP);
+      //std::string filename="AP.dat";
+      //Utils::Write(filename,AP);
+
+      if (implicitTranspose_) {
+        //RCP<Operator> RA = Utils::TwoMatrixMultiply(P,A,true);
+        //filename = "PtA.dat";
+        //Utils::Write(filename,AP);
+        RCP<Operator> RAP = Utils::TwoMatrixMultiply(P,AP,true);
+        coarseLevel.SetA(RAP);
+      } else {
+        RCP<Operator> R = coarseLevel.GetR();
+        RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,AP);
+        coarseLevel.SetA(RAP);
+      }
 
       timer->stop();
-      MemUtils::ReportTimeAndMemory(*timer, *(RAP->getRowMap()->getComm()));
+      MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
       return true;
     }
     //@}
 
+    void SetImplicitTranspose(bool const &implicit) {
+      implicitTranspose_ = implicit;
+    }
 
 }; //class RAPFactory
 
