@@ -25,6 +25,17 @@ void UniqueGlobalIndexer::getElementBlockIds(std::vector<std::string> & elementB
    elementBlockIds.push_back("block_0");
 }
 
+bool UniqueGlobalIndexer::fieldInBlock(const std::string & field, const std::string & block) const
+{
+   if(block!="block_0") 
+      return false;
+ 
+   if(field=="U" || field=="T")
+      return true;
+
+   return false;
+}
+
 const std::vector<short> & UniqueGlobalIndexer::getElementBlock(const std::string & blockId) const
 {
    TEST_FOR_EXCEPTION(blockId!="block_0",std::runtime_error,

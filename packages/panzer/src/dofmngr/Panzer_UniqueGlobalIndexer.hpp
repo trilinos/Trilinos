@@ -34,6 +34,10 @@ public:
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
 
+   /** Is the specified field in the element block? 
+     */
+   virtual bool fieldInBlock(const std::string & field, const std::string & block) const = 0;
+
    /** Get the local element IDs for a paricular element
      * block.
      *

@@ -223,6 +223,11 @@ public:
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
    { getConnManager()->getElementBlockIds(elementBlockIds); }
 
+   /** Is the specified field in the element block? 
+     */
+   virtual bool fieldInBlock(const std::string & field, const std::string & block) const
+   { return fieldAggPattern_.find(block)->second != Teuchos::null; }
+
    /** Get the local element IDs for a paricular element
      * block.
      *

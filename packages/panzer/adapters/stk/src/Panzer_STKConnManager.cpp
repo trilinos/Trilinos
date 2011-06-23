@@ -14,8 +14,6 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-#include <boost/unordered_set.hpp>
-
 using Teuchos::RCP;
 using Teuchos::rcp;
 
