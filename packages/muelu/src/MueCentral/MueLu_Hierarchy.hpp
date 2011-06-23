@@ -340,6 +340,18 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          RCP<SmootherPrototype> postSmoo = Fine->GetPostSmoother();
 
          //X.norm2(norms);
+         if (Fine->GetA()->getDomainMap()->isCompatible(*(X.getMap())) == false) {
+           std::ostringstream buf;
+           buf << startLevel;
+           std::string msg = "Level " + buf.str() + ": level A's domain map is not compatible with X";
+           throw(Exceptions::Incompatible(msg));
+         }
+         if (Fine->GetA()->getRangeMap()->isCompatible(*(B.getMap())) == false) {
+           std::ostringstream buf;
+           buf << startLevel;
+           std::string msg = "Level " + buf.str() + ": level A's range map is not compatible with B";
+           throw(Exceptions::Incompatible(msg));
+         }
 
          //If on the coarse level, do either smoothing (if defined) or a direct solve.
          if (startLevel == ((LO)Levels_.size())-1) //FIXME is this right?
