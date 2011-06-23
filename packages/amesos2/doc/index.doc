@@ -27,7 +27,8 @@ The following people have contributed to the development of Amesos2:
 
 <ul>
   <li> Eric Bavier, St John's University and the University of Iowa,
-  ebavier@uiowa.edu</li>
+  <a href="mailto:bavier@member.fsf.org?subject=Amesos2">bavier at member dot fsf.org</a> </li>
+  <li> Siva Rajamanickam, Sandia National Laboratories</li>
 </ul>
 
 \section Amesos2_startup Overview of Amesos2
@@ -37,24 +38,46 @@ small examples of usage -->
 
 \subsection Amesos2_sclasses Amesos2 Solver-interface Classes
 
+There is currently Amesos2 support for the following list of
+third-party solver libraries.
+
 <!-- List of supported solvers -->
 <ul>
-  <li> Amesos::Superlu</li>
+  <li> SuperLU</li>
+  <li> SuperLU_MT</li>
 </ul>
 
+In order to enable a solver's use in Amesos2 you must also enable the
+solver's third-party library in Trilinos.
+
 \subsection Amesos2_aclasses Amesos2 Adapter Classes
+
+The Amesos2 adapter classes allow Amesos2 to be flexible to its users
+needs.  The existence of a matrix adapter for a particular linear
+algebra object means that it can be used by Amesos2 as the matrix
+<tt>A</tt>.  Similarly for the multivector adapters.  If a multivector
+adapter exists, then Amesos2 can use it as the left-hand-side
+multivector <tt>X</tt> or the right-hand-side multivector <tt>B</tt>.
+
+The list of supported linear algebra objects is flexible.  If you need
+to give Amesos2 a particular type of object, and it is not currently
+supported, please ask the Amesos2 developers about adding support.
 
 <!-- List of Amesos2 adapters and supported methods -->
 <ul>
   <li> Matrix adapters exist for the following matrix classes
     <ul>
-      <li> Tpetra::CrsMatrix</li>
+      <li> Tpetra::RowMatrix implementing classes:
+        <ul>
+	  <li> Tpetra::CrsMatrix</li>
+	</ul>
+      </li>
       <li> Epetra_RowMatrix implementing classes:
 	<ul>
 	  <li> Epetra_CrsMatrix</li>
-	  <li> Epetra_JadMatrix</li>
+<!--	  <li> Epetra_JadMatrix</li>
 	  <li> Epetra_MsrMatrix</li>
-	  <li> Epetra_VbrMatrix</li>
+	  <li> Epetra_VbrMatrix</li> -->
 	</ul>
       </li>
     </ul>
@@ -62,6 +85,7 @@ small examples of usage -->
   <li> MultiVector adapters exist for the following multi-vector classes
     <ul>
       <li> Tpetra::MultiVector</li>
+      <li> Epetra_MultiVector</li>
     </ul>
   </li>
 </ul>

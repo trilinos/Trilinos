@@ -58,7 +58,10 @@ namespace Amesos {
 				       const ArrayView<scalar_t>& vals,
 				       size_t& nnz) const
   {
-    // not used for right now
+    TEST_FOR_EXCEPTION( true,
+			std::runtime_error,
+			"Column access to row-based object not yet supported.  "
+			"Please contact the Amesos2 developers." );
   }
 
 
@@ -88,7 +91,11 @@ namespace Amesos {
     Epetra_RowMatrix,
     DerivedMat>::getMaxColNNZ_impl() const
   {
-    // not used
+    TEST_FOR_EXCEPTION( true,
+			std::runtime_error,
+			"Column access to row-based object not yet supported.  "
+			"Please contact the Amesos2 developers." );
+    return 0;
   }
 
   template <class DerivedMat>
@@ -131,7 +138,11 @@ namespace Amesos {
     Epetra_RowMatrix,
     DerivedMat>::getGlobalColNNZ_impl(global_ordinal_t col) const
   {
-    // not used
+    TEST_FOR_EXCEPTION( true,
+			std::runtime_error,
+			"Column access to row-based object not yet supported.  "
+			"Please contact the Amesos2 developers." );
+    return 0;
   }
 
   template <class DerivedMat>
@@ -140,7 +151,11 @@ namespace Amesos {
     Epetra_RowMatrix,
     DerivedMat>::getLocalColNNZ_impl(local_ordinal_t col) const
   {
-    // not used
+    TEST_FOR_EXCEPTION( true,
+			std::runtime_error,
+			"Column access to row-based object not yet supported.  "
+			"Please contact the Amesos2 developers." );
+    return 0;
   }
 
   template <class DerivedMat>

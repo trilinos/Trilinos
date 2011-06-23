@@ -200,9 +200,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     # Amesos2_EpetraMsrMatrixAdapter_decl.hpp
     # Amesos2_EpetraMsrMatrixAdapter_def.hpp
     # Amesos2_EpetraMsrMatrixAdapter.hpp
-    # Amesos2_EpetraMultiVecAdapter_decl.hpp
-    # Amesos2_EpetraMultiVecAdapter_def.hpp
-    # Amesos2_EpetraMultiVecAdapter.hpp
     # Amesos2_EpetraRowMatrixAdapter_decl.hpp
     # Amesos2_EpetraRowMatrixAdapter_def.hpp
     # Amesos2_EpetraRowMatrixAdapter.hpp

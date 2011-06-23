@@ -128,7 +128,7 @@ public:
    * \brief Initialize from Teuchos::RCP.
    *
    * \warning Should not be called directly!  Use instead
-   * Amesos::Factory::create() to initialize a Superlu interface.
+   * Amesos::create() to initialize a Superlu interface.
    */
   Superlu(
     Teuchos::RCP<Matrix> A,

@@ -58,7 +58,10 @@ namespace Amesos {
 			     const ArrayView<scalar_t>& vals,
 			     size_t& nnz) const
   {
-    // not necessary for right now
+    TEST_FOR_EXCEPTION( true,
+			std::runtime_error,
+			"Column access to row-based object not yet supported.  "
+			"Please contact the Amesos2 developers." );
   }
 
 
@@ -112,7 +115,11 @@ namespace Amesos {
 		      Node>,
     DerivedMat>::getMaxColNNZ_impl() const
   {
-    // not necessary
+    TEST_FOR_EXCEPTION( true,
+			std::runtime_error,
+			"Column access to row-based object not yet supported.  "
+			"Please contact the Amesos2 developers." );
+    return 0;
   }
 
   template <typename Scalar,
@@ -160,7 +167,11 @@ namespace Amesos {
 		      Node>,
     DerivedMat>::getGlobalColNNZ_impl(global_ordinal_t col) const
   {
-    // not necessary
+    TEST_FOR_EXCEPTION( true,
+			std::runtime_error,
+			"Column access to row-based object not yet supported.  "
+			"Please contact the Amesos2 developers." );
+    return 0;
   }
 
   template <typename Scalar,
@@ -176,7 +187,11 @@ namespace Amesos {
 		      Node>,
     DerivedMat>::getLocalColNNZ_impl(local_ordinal_t col) const
   {
-    // not necessary
+    TEST_FOR_EXCEPTION( true,
+			std::runtime_error,
+			"Column access to row-based object not yet supported.  "
+			"Please contact the Amesos2 developers." );
+    return 0;
   }
 
   template <typename Scalar,

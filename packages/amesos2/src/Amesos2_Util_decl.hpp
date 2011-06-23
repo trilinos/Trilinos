@@ -79,12 +79,27 @@ namespace Amesos {
     using Teuchos::RCP;
     using Teuchos::ArrayView;
 
+    /** \brief Indicates that the concrete class has a special
+     * implementation that should be called.
+     *
+     * Matrix Adapters \c typedef this as \c {get_ccs|get_crs}_spec
+     * indicating that the concrete adapter has a special
+     * implementation for either the \c getCrs or \c getCcs functions.
+     */
     struct has_special_impl {};
     struct no_special_impl {};
 
+    /// Indicates that the object of an adapter provides row access to its data.
     struct row_access {};
+    /// Indicates that the object of an adapter provides column access to its data.
     struct col_access {};
 
+    /** \enum EDistribution
+     *
+     * An enum of this type is expected by the Matrix adapters' getCrs
+     * and getCcs functions to describe the layout of the
+     * representation on the calling processors.
+     */
     typedef enum {
       Distributed,                /**< no processor has a view of the entire matrix, only local pieces */
       Distributed_No_Overlap,     /**< no row or column may be present on more than one processor */
@@ -92,30 +107,36 @@ namespace Amesos {
       Rooted                      /**< only \c rank=0 has a full view, all others have nothing. */
     } EDistribution;
 
+    /** \enum EStorage_Ordering
+     *
+     * This enum also used by the matrix adapters to indicate whether
+     * the indices of the representation must be in sorted order or
+     * can have an arbitrary order.
+     */
     typedef enum {
       Sorted_Indices,             /**< row/col indices need to appear in sorted order */
       Arbitrary                   /**< index order can be arbitrary */
     } EStorage_Ordering;
 
 #ifdef HAVE_AMESOS2_EPETRA
+    /**
+     * \brief Transform an Epetra_Map object into a Tpetra::Map
+     */
     template <typename LO,
 	      typename GO,
 	      typename Node>
     RCP<Tpetra::Map<LO,GO,Node> >
     epetra_map_to_tpetra_map(Epetra_BlockMap map);
 
+    /**
+     * \brief Transform an Epetra_Comm object into a Teuchos::Comm object
+     */
     const RCP<const Teuchos::Comm<int> > to_teuchos_comm(RCP<const Epetra_Comm> c);
-
-    //     const RCP<const Teuchos::Comm<int> > to_teuchos_comm(RCP<const Epetra_SerialComm> c);
-
-    // #ifdef HAVE_MPI
-    //     const RCP<const Teuchos::Comm<int> > to_teuchos_comm(RCP<const Epetra_MpiComm> c);
-    // #endif
 
 #endif	// HAVE_AMESOS2_EPETRA
 
     /**
-     * Transposes the compressed sparse matrix.
+     * Transposes the compressed sparse matrix representation.
      */
     template <typename Scalar,
 	      typename GlobalOrdinal,
@@ -128,21 +149,35 @@ namespace Amesos {
 		   ArrayView<GlobalSizeT> trans_ptr);
 
     /**
-     * Vals being a 1-dimensional multivector having leading dimension
-     * ld and length l.
+     * \brief Scales a 1-D representation of a multivector.
      *
-     * Scales each vector by diag(s).
+     * \param [in/out] vals The values of the multi-vector.  On exit will contain the scaled values.
+     * \param [in] l The length of each vector in the multivector
+     * \param [in] ld The leading dimension of the multivector
+     * \param [in] s Contains the scaling factors of the diagonal scaling matrix
+     *
+     * The first vector will be scaled by \c s[0] , the second vector
+     * by \c s[1] , etc.
      */
     template <typename Scalar1, typename Scalar2>
     void scale(ArrayView<Scalar1> vals, size_t l,
 	       size_t ld, ArrayView<Scalar2> s);
 
     /**
-     * Vals being a 1-dimensional multivector having leading dimension
-     * ld and length l.
+     * \brief Scales a 1-D representation of a multivector.
+     *
+     * \param [in/out] vals The values of the multi-vector.  On exit will contain the scaled values.
+     * \param [in] l The length of each vector in the multivector
+     * \param [in] ld The leading dimension of the multivector
+     * \param [in] s Contains the scaling factors of the diagonal scaling matrix
      *
      * Scales each vector by diag(s), with the scaling multiplication
-     * being performed by `binary_op'
+     * being performed by the `binary_op' parameter.  BinaryOp is some
+     * class that defines a \c operator() method as
+     *
+     * \code
+     * Scalar1 operator()(Scalar1 x, Scalar2 y){  }
+     * \endcode
      */
     template <typename Scalar1, typename Scalar2, class BinaryOp>
     void scale(ArrayView<Scalar1> vals, size_t l,
@@ -190,6 +225,7 @@ namespace Amesos {
     /// Prints a line of 70 "-"s on std::cout.
     void printLine( Teuchos::FancyOStream &out );
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
     /*
      * The following represents a general way of getting a CRS or CCS
      * representation of a matrix with implicit type conversions.  The
@@ -341,7 +377,7 @@ namespace Amesos {
 	}
       }
     };
-
+#endif	// DOXYGEN_SHOULD_SKIP_THIS
 
     /* This is our generic base class for the CRS and CCS helpers.
      *
@@ -359,7 +395,7 @@ namespace Amesos {
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
 			 GS& nnz, EDistribution distribution,
-			 EStorage_Ordering ordering)
+			 EStorage_Ordering ordering=Arbitrary)
       {
 	typedef typename Matrix::scalar_t mat_scalar;
 	if_then_else<is_same<mat_scalar,S>::value,
@@ -372,6 +408,7 @@ namespace Amesos {
       }
     };
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
     /*
      * These two function-like classes are meant to be used as the \c
      * Op template parameter for the \c get_cxs_helper template class.
@@ -405,7 +442,7 @@ namespace Amesos {
 	mat->getCrs(nzvals, colind, rowptr, nnz, distribution, ordering);
       }
     };
-
+#endif	// DOXYGEN_SHOULD_SKIP_THIS
 
     /*
      * These derivations of get_cxs_helper should be the entry points.
@@ -423,6 +460,41 @@ namespace Amesos {
      *   long int nnz;
      *   get_ccs_helper<mat_t,float,int,long int>::do_get(
      *     m, nzvals, indices, pointers, nnz, Rooted, Arbitrary);
+     */
+    /**
+     * A generic helper class for getting a CCS representation of a Matrix.
+     *
+     * The template types \c S , \c GO , and \c GS (scalar, global
+     * ordinal, and global size type, respectively) are the types that
+     * you would like to get from the Matrix, regardless of what types
+     * are actually housed in the matrix.  Type conversions will be
+     * performed when necessary.
+     *
+     * \subsection get_ccs_helper_example Example:
+     *
+     * Say for example that you have a matrix that has \c
+     * complex<double> scalar values, \c int global ordinals, and
+     * unsigned long size type, but your solver has a special complex
+     * data type that it defines and has size type \c int.  As long as
+     * the Teuchos::ValueTypeConversionTraits class is specialized for
+     * conversion between the \c complex<double> and the solver's
+     * complex double type, then you can use this helper to help with
+     * this conversion.  We assume that we want the global matrix
+     * representation at the root processor (\c Rooted), and the row
+     * indices can be in an arbitrary order (\c Arbitrary):
+     *
+     * \code
+     * // with unsigned long size_t
+     * typedef Tpetra::CrsMatrix<std::complex<double>, int, int> mat_t;
+     * mat_t my_mat;
+     * // initialize mt_mat
+     * Array<solver_complex> nzvals(nnz);
+     * Array<int> rowind(nnz);
+     * Array<int> rowptr(numcols+1);
+     * get_ccs_helper<mat_t,solver_complex,int,int>::do_get(mat,nzvals,rowind,rowptr,nnz,Rooted,Arbitrary);
+     * \endcode
+     * 
+     * \sa get_crs_helper
      */
     template<class Matrix, typename S, typename GO, typename GS>
     struct get_ccs_helper : get_cxs_helper<Matrix,S,GO,GS,get_ccs_func<Matrix> >

@@ -80,7 +80,7 @@ namespace Amesos {
 		const Teuchos::ArrayView<global_size_t> rowptr,
 		global_size_t& nnz,
 		EDistribution distribution,
-		EStorage_Ordering ordering) const;
+		EStorage_Ordering ordering=Util::Arbitrary) const;
 
     /**
      * \brief Gets a compressed-column storage summary of \c this
@@ -112,7 +112,7 @@ namespace Amesos {
 		const Teuchos::ArrayView<global_size_t> colptr,
 		global_size_t& nnz,
 		EDistribution distribution,
-		EStorage_Ordering ordering) const;
+		EStorage_Ordering ordering=Util::Arbitrary) const;
 
 
     /// Returns the Teuchos::Comm object associated with this matrix.
