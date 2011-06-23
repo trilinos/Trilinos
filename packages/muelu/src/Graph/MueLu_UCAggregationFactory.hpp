@@ -631,7 +631,7 @@ typedef LO my_size_t; //TODO
                              Graph const &graph) const
       {
         my_size_t nVertices = graph.GetNodeNumVertices();
-        int exp_nRows    = nVertices + graph.GetNodeNumGhost();
+        int exp_nRows    = aggregates.GetMap()->getNodeNumElements(); // Tentative fix... // nVertices + graph.GetNodeNumGhost();
         int myPid        = graph.GetComm()->getRank();
         double printFlag = aggOptions.GetPrintFlag();
         my_size_t nAggregates  = aggregates.GetNumAggregates();
@@ -786,20 +786,26 @@ typedef LO my_size_t; //TODO
         // and doing NonUnique2NonUnique(..., ADD). This sums values of all
         // local copies associated with each Gid. Thus, sums > 1 are shared.
 
+//         std::cout << "exp_nrows=" << exp_nRows << " (nVertices= " << nVertices << ", numGhost=" << graph.GetNodeNumGhost() << ")" << std::endl;
+//         std::cout << "nonUniqueMap=" << nonUniqueMap->getNodeNumElements() << std::endl;
+
         RCP<Cthulhu::Vector<double,LO,GO,NO> > temp_ = Cthulhu::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
+        temp_->putScalar(1.);  
 
         RCP<Cthulhu::Vector<double,LO,GO,NO> > tempOutput_ = Cthulhu::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
-        ArrayRCP<double> tempOutput = tempOutput_->getDataNonConst(0);
-
-        temp_->putScalar(1.);  
         tempOutput_->putScalar(0.); 
 
         myWidget.NonUnique2NonUnique(*temp_, *tempOutput_, Cthulhu::ADD);
-         
+
         std::vector<bool> gidNotShared(exp_nRows);
-        for (int i = 0; i < exp_nRows; i++) {
-          if (tempOutput[i] > 1.) gidNotShared[i] = false; 
-          else  gidNotShared[i] = true; 
+        {
+          ArrayRCP<const double> tempOutput = tempOutput_->getData(0);
+          for (int i = 0; i < exp_nRows; i++) {
+            if (tempOutput[i] > 1.) 
+              gidNotShared[i] = false; 
+            else 
+              gidNotShared[i] = true; 
+          }
         }
 
         // Phase 4. 
