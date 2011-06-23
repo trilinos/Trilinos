@@ -110,9 +110,9 @@ namespace {
     RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
     RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(),1);
     X->randomize();
-    out.precision(12);
-    out.setOutputToRootOnly(-1);
-    X->describe(out,Teuchos::VERB_EXTREME);
+    //out.precision(12);
+    //out.setOutputToRootOnly(-1);
+    //X->describe(out,Teuchos::VERB_EXTREME);
 
     //Calculate result1 = P^T*(A*(P*X))
     P->apply(*X,*workVec1,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);

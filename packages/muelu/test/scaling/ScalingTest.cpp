@@ -278,6 +278,7 @@ int main(int argc, char *argv[]) {
   
       X->norm2(norms);
       *out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+      H->PrintResidualHistory(false);
     }
   } //if (fixedPt)
 #endif //ifdef AMG_SOLVER
