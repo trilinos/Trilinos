@@ -195,12 +195,14 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            Levels_.push_back( Levels_[i]->Build(*out_) );
          }
          Levels_[i+1]->SetLevelID(i+1);
+         *out_ << "starting build of P's and R's"  << std::endl;
          goodBuild = PRFact.Build(*(Levels_[i]),*(Levels_[i+1]));
          if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
          if (!goodBuild) {
            Levels_.resize(i+1); //keep only entries 0..i
            break;
          }
+         *out_ << "starting build of RAP"  << std::endl;
          if ( !AcFact.Build(*(Levels_[i]),*(Levels_[i+1])) ) {
            Levels_.resize(i+1); //keep only entries 0..i
            break;
