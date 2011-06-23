@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#SBATCH --time=00:30:00            # WALLTIME
+#SBATCH --account=FY115672         # WC ID
+#SBATCH -N _NODES_                 # Number of nodes 
+
+nodes=$SLURM_JOB_NUM_NODES
+cores=_CPN_
+tcores=`expr $nodes \* $cores`
+
+echo "Start Time: " `date`
+
+mpiexec --npernode $cores -np $tcores numa_wrapper --ppn $cores _BINARY_ --nx=_NX_ --ny=_NX_ --nz=_NX_ --linAlgebra=1 --matrixType=_MTYPE_ >& screen.out.${SLURM_JOB_ID}
+
+echo "Stop Time: " `date`
