@@ -439,7 +439,7 @@ namespace MueLu {
      //  throw(Exceptions::RuntimeError("Number of solution vectors != number of right-hand sides"));
      //const size_t numVecs = X.getNumVectors();
      const size_t numVecs = 1;
-     RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRowMap(),numVecs);
+     RCP<MultiVector> RES = MultiVectorFactory::Build(Op.getRangeMap(),numVecs);
      Op.apply(X,*RES,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
      RES->update(one,RHS,negone);
      return RES;
