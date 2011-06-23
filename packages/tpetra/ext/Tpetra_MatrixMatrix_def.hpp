@@ -302,6 +302,7 @@ void Add(
     B.scale(scalarB);
   }
 
+  bool bFilled = B.isFillComplete();
   size_t numMyRows = B.getNodeNumRows();
   if(scalarA != ScalarTraits<Scalar>::zero()){
     for(LocalOrdinal i = 0; (size_t)i < numMyRows; ++i){
@@ -312,7 +313,13 @@ void Add(
           a_vals[j] *= scalarA;
         }
       }
-      B.insertGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+      if(bFilled){
+        B.sumIntoGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+      }
+      else{
+        B.insertGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+      }
+
     }
   }
 }
@@ -388,7 +395,7 @@ void Add(
   Array<Scalar> scalar = Teuchos::tuple<Scalar>(scalarA, scalarB);
 
   // do a loop over each matrix to add: A reordering might be more efficient
-  for(int k=0;k<2;k++) {
+  for(int k=0;k<2;++k) {
     size_t NumEntries;
     Array<GlobalOrdinal> Indices;
     Array<Scalar> Values;
@@ -400,6 +407,10 @@ void Add(
      for( size_t i = OrdinalTraits<size_t>::zero(); i < NumMyRows; ++i ) {
         Row = Mat[k]->getRowMap()->getGlobalElement(i);
         NumEntries = Mat[k]->getNumEntriesInGlobalRow(Row);
+        if(NumEntries == OrdinalTraits<global_size_t>::zero()){
+          continue;
+        }
+
         Indices.resize(NumEntries);
         Values.resize(NumEntries);
 		    Mat[k]->getGlobalRowCopy(Row, Indices(), Values(), NumEntries);
