@@ -30,3 +30,5 @@
 
 #include "MueLu_UseShortNamesOrdinal.hpp"
 #include "MueLu_UseShortNamesScalar.hpp"
+
+//TODO / NOTE: This file should not be included at the global scope (to avoid name collision)
