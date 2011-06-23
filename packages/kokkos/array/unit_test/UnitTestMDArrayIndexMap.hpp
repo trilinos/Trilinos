@@ -59,8 +59,9 @@ class UnitTestMDArrayIndexMap< KOKKOS_MACRO_DEVICE >
 public:
   typedef KOKKOS_MACRO_DEVICE device_type ;
 
-  typedef Kokkos::MDArrayView< int , device_type , Kokkos::MDArrayIndexMapLeft > array_left_type ;
-  typedef Kokkos::MDArrayView< int , device_type , Kokkos::MDArrayIndexMapRight > array_right_type ;
+  typedef Kokkos::MDArrayView< int , device_type > array_type ;
+  typedef Kokkos::Impl::MDArrayIndexMap< device_type , Kokkos::MDArrayIndexMapRight > map_right_type ;
+  typedef Kokkos::Impl::MDArrayIndexMap< device_type , Kokkos::MDArrayIndexMapLeft > map_left_type ;
 
   enum { NP = 1000 , N1 = 10 , N2 = 20 };
 
@@ -80,34 +81,37 @@ public:
     throw std::runtime_error( tmp );
   }
 
-  array_left_type  m_left ;
-  array_right_type m_right ;
+  array_type     m_left ;
+  array_type     m_right ;
+  map_left_type  m_map_left ;
+  map_right_type m_map_right ;
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( int iwork ) const
   {
     for ( int i = 0 ; i < N1 ; ++i ) {
       for ( int j = 0 ; j < N2 ; ++j ) {
-        m_left(iwork,i,j)  = & m_left(iwork,i,j)  - & m_left(0,0,0);
-        m_right(iwork,i,j) = & m_right(iwork,i,j) - & m_right(0,0,0);
+        m_left( iwork,i,j) = m_map_left.offset( iwork,i,j);
+        m_right(iwork,i,j) = m_map_right.offset(iwork,i,j);
       }
     }
   }
 
-  UnitTestMDArrayIndexMap() : m_left(), m_right()
+  UnitTestMDArrayIndexMap()
+    : m_left(  Kokkos::create_mdarray< array_type >( NP , N1 , N2 ) )
+    , m_right( Kokkos::create_mdarray< array_type >( NP , N1 , N2 ) )
+    , m_map_left(  NP , N1 , N2 , 0 , 0 , 0 , 0 , 0 )
+    , m_map_right( NP , N1 , N2 , 0 , 0 , 0 , 0 , 0 )
   {
     typedef Kokkos::MDArrayView< int , Kokkos::DeviceHost , Kokkos::MDArrayIndexMapLeft >  h_array_left_type ;
     typedef Kokkos::MDArrayView< int , Kokkos::DeviceHost , Kokkos::MDArrayIndexMapRight >  h_array_right_type ;
-
-    m_left  = Kokkos::create_mdarray< array_left_type >(  NP , N1 , N2 );
-    m_right = Kokkos::create_mdarray< array_right_type >( NP , N1 , N2 );
 
     h_array_left_type  h_left  = Kokkos::create_mdarray< h_array_left_type >(  NP , N1 , N2 );
     h_array_right_type h_right = Kokkos::create_mdarray< h_array_right_type >( NP , N1 , N2 );
 
     Kokkos::parallel_for( NP , *this );
 
-    Kokkos::deep_copy( h_left , m_left );
+    Kokkos::deep_copy( h_left ,  m_left );
     Kokkos::deep_copy( h_right , m_right );
 
     int verify = 0 ;
