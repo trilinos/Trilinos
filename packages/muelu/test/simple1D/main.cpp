@@ -78,8 +78,10 @@ int main(int argc, char *argv[]) {
   // custom parameters
   LO maxLevels = 3;
   LO its=10;
+  std::string coarseSolver="ifpack2";
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
+  clp.setOption("coarseSolver",&coarseSolver,"amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -225,19 +227,33 @@ int main(int argc, char *argv[]) {
     //#elif HAVE_MUELU_IFPACK...
 #endif
   } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
+    if (coarseSolver=="amesos2") {
 #ifdef HAVE_MUELU_AMESOS2
-    if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
-    Teuchos::ParameterList paramList; //unused
-    coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
-#elif defined(HAVE_MUELU_IFPACK2)
-    if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
-    Teuchos::ParameterList ifpack2List;
-    ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
-    ifpack2List.set("fact: drop tolerance", 0);
-    ifpack2List.set("fact: absolute threshold", 0);
-    ifpack2List.set("fact: relative threshold", 0);
-    coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
+      if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
+      Teuchos::ParameterList paramList; //unused
+      coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
+#else
+      std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
+      return EXIT_FAILURE;
+#endif // HAVE_MUELU_AMESOS2
+    } else if(coarseSolver=="ifpack2") {
+#if defined(HAVE_MUELU_IFPACK2)
+        if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
+        Teuchos::ParameterList ifpack2List;
+        ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
+        ifpack2List.set("fact: drop tolerance", 0);
+        ifpack2List.set("fact: absolute threshold", 0);
+        ifpack2List.set("fact: relative threshold", 0);
+        coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
+#else
+        std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
+        return EXIT_FAILURE;
 #endif
+    } else {
+      std::cout  << "Unknow coarse grid solver (try  --coarseSolver=ifpack2 or --coarseSolver=amesos2)" << std::endl;
+      return EXIT_FAILURE;
+    }
+
   }
   if (coarseProto == Teuchos::null) {
     throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
