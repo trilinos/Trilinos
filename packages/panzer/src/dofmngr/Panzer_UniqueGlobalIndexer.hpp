@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Comm.hpp"
 
 namespace panzer {
 
@@ -13,6 +14,10 @@ class UniqueGlobalIndexer {
 public:
    //! Pure virtual destructor: prevents warnings with inline empty implementation 
    virtual ~UniqueGlobalIndexer() = 0;
+
+   /** Get communicator associated with this global indexer.
+     */
+   virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const = 0;
 
    /** \brief Get the number used for access to this
      *        field
@@ -47,10 +52,15 @@ public:
      */
    virtual const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const = 0;
 
+   /** Get field numbers associated with a particular element block.
+     */
+   virtual const std::vector<int> & getBlockFieldNumbers(const std::string & blockId) const = 0;
+
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
    virtual void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids) const = 0;
+
 
    /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.
      */

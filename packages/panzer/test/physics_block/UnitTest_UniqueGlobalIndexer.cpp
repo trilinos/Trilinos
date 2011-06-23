@@ -135,5 +135,22 @@ void UniqueGlobalIndexer::ownedIndices(const std::vector<int> & indices,std::vec
       isOwned[i] = (std::find(owned.begin(),owned.end(),indices[i])!=owned.end());
 }
 
+/** Get field numbers associated with a particular element block.
+  */
+const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::string & blockId) const
+{
+   static std::vector<int> fieldNums;
+   if(fieldNums.size()==0) {
+      fieldNums.resize(8);
+
+      fieldNums[0] = getFieldNum("U"); fieldNums[1] = getFieldNum("T");
+      fieldNums[2] = getFieldNum("U"); fieldNums[3] = getFieldNum("T");
+      fieldNums[4] = getFieldNum("U"); fieldNums[5] = getFieldNum("T");
+      fieldNums[6] = getFieldNum("U"); fieldNums[7] = getFieldNum("T");
+   }
+
+   return fieldNums;
+}
+
 } // end unit test
 } // end panzer

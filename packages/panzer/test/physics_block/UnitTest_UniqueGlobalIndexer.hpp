@@ -8,6 +8,13 @@
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
+#ifdef HAVE_MPI
+   #include "Teuchos_DefaultMpiComm.hpp"
+   #include "mpi.h"
+#else
+   #include "Teuchos_DefaultSerialComm.hpp"
+#endif
+
 namespace panzer {
 namespace unit_test {
 
@@ -38,6 +45,15 @@ public:
      */
    virtual int getFieldNum(const std::string & str) const;
 
+   virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const
+   { 
+      #ifdef HAVE_MPI
+         return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+      #else
+         return Teuchos::rcp(Teuchos::SerialComm<int>());
+      #endif
+   }
+
    /** What are the blockIds included in this connection manager?
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const; 
@@ -54,6 +70,10 @@ public:
      * \returns Vector of local element IDs.
      */
    virtual const std::vector<short> & getElementBlock(const std::string & blockId) const;
+
+   /** Get field numbers associated with a particular element block.
+     */
+   virtual const std::vector<int> & getBlockFieldNumbers(const std::string & blockId) const;
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.

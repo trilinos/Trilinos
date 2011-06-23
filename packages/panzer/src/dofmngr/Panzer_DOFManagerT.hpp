@@ -5,6 +5,8 @@
 
 #include "Panzer_GeometricAggFieldPattern.hpp"
 
+#include "Teuchos_DefaultMpiComm.hpp"
+
 using Teuchos::RCP;
 
 namespace panzer {
@@ -56,6 +58,8 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP
    vectorSpace_->defineIDTypes(1,&nodeType_);
    edgeType_ = 1; 
    vectorSpace_->defineIDTypes(1,&edgeType_);
+
+   communicator_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm)));
 }
 
 /** \brief Reset the indicies for this DOF manager.

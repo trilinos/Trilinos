@@ -53,6 +53,11 @@ public:
      */
    void setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
 
+   /** Get communicator associated with this manager.
+     */
+   virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const
+   { return communicator_; }
+
    /** Get the FieldPattern describing the geometry used for this problem.
      * If it has not been constructed then null is returned.
      */
@@ -223,6 +228,11 @@ public:
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
    { getConnManager()->getElementBlockIds(elementBlockIds); }
 
+   /** Get field numbers associated with a particular element block.
+     */
+   virtual const std::vector<int> & getBlockFieldNumbers(const std::string & block) const
+   { return fieldAggPattern_.find(block)->second->fieldIds(); }
+
    /** Is the specified field in the element block? 
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const
@@ -386,6 +396,7 @@ protected:
    bool fieldsRegistered_;
 
    Teuchos::RCP<const FieldPattern> geomPattern_;
+   Teuchos::RCP<Teuchos::Comm<int> > communicator_;
 };
 
 }
