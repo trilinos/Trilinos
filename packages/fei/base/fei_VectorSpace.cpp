@@ -1625,7 +1625,14 @@ int fei::VectorSpace::synchronizeSharedRecords()
     fei::comm_map* sharerPattern = 
             new fei::comm_map(1, numProcs);
 
-    sharerPatterns_[idTypes_[i]] = sharerPattern;
+    std::map<int,fei::comm_map*>::iterator iter = sharerPatterns_.find(idTypes_[i]);
+    if (iter == sharerPatterns_.end()) {
+      sharerPatterns_.insert(std::make_pair(idTypes_[i], sharerPattern));
+    }
+    else {
+      delete iter->second;
+      iter->second = sharerPattern;
+    }
 
     std::vector<int>& owningProcs = shared.getOwningProcs();
 
