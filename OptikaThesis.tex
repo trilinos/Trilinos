@@ -680,7 +680,7 @@ included in the ``type'' XML attribute of the dependency. In Figure~\ref{RangeVa
   <Parameter name="Fondue Pot Temperature" type="int" value="100"
     id="1" docString="The number of dimensions being used"/>
   <Parameter name="Fondue Food" type="string" value="Cheese"
-    id="2" docString="The surface type"/>
+    id="2" docString="The food we're fonduing"/>
   <Validators>
     <Validator type="StringValidator" validatorId="1">
       <String value="Cheese"/>
@@ -698,7 +698,7 @@ included in the ``type'' XML attribute of the dependency. In Figure~\ref{RangeVa
       <RangesAndValidators>
         <Pair min="80" max="120" validatorId="1"/>
         <Pair min="120" max="180" validatorId="2"/>
-      </ValuesAndValidators>
+      </RangesAndValidators>
     </Dependency>
   </Dependencies>
 </ParameterList>
