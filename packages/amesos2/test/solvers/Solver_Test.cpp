@@ -149,7 +149,7 @@ int main(int argc, char*argv[])
   cmdp.setOption("filedir", &filedir, "Directory to search for matrix files");
   cmdp.setOption("verbosity", &verbosity, "Set verbosity level of output");
   try{
-    Teuchos::CommandLineProcessor::EParseCommandLineReturn ret = cmdp.parse(argc,argv);
+    cmdp.parse(argc,argv);
   } catch (Teuchos::CommandLineProcessor::HelpPrinted hp) {
     return EXIT_SUCCESS;	// help was printed, exit gracefully.
   }
@@ -441,7 +441,7 @@ bool test_epetra(const string& mm_file,
       if( run_list.isSublist("run_params") ){
 	string run_name = epetra_runs.name(run_it);
 	if( verbosity > 1 ){
-	  *fos << "    Doing epetra test run '" << run_name << "' ... ";
+	  *fos << "    Doing epetra test run `" << run_name << "' ... ";
 	}
 
 	ParameterList solve_params_copy(solve_params);
@@ -606,23 +606,34 @@ bool test_tpetra(const string& mm_file,
       if( run_list.isParameter("Scalar") ){
 	scalar = run_list.get<string>("Scalar");
 	if( scalar == "complex" ){
+#ifdef HAVE_TEUCHOS_COMPLEX
 	  // get the magnitude parameter
 	  if( run_list.isParameter("Magnitude") ){
 	    mag = run_list.get<string>("Magnitude");
 	  } else {
-	    *fos << "Must provide a type for `Magnitude' when Scalar='complex', aborting run `"
+	    *fos << "    Must provide a type for `Magnitude' when Scalar='complex', aborting run `"
+		 << run_list.name() << "'..." << std::endl;
+	    continue;
+	  }
+#else
+	  if( verbosity > 1 ){
+	    *fos << "    Complex support not enabled, aborting run `"
 		 << run_list.name() << "'..." << std::endl;
 	  }
+	  continue;
+#endif	// HAVE_TEUCHOS_COMPLEX
 	}
       } else {
-	*fos << "Must provide a type for `Scalar', aborting run `"
+	*fos << "    Must provide a type for `Scalar', aborting run `"
 	     << run_list.name() << "'..." << std::endl;
+	continue;
       }
       if( run_list.isParameter("LocalOrdinal") ){
 	lo = run_list.get<string>("LocalOrdinal");
       } else {
-	*fos << "Must provide a type for `LocalOrdinal', aborting run `"
+	*fos << "    Must provide a type for `LocalOrdinal', aborting run `"
 	     << run_list.name() << "'..." << std::endl;
+	continue;
       }
       if( run_list.isParameter("GlobalOrdinal") ){
 	go = run_list.get<string>("GlobalOrdinal");
@@ -637,7 +648,7 @@ bool test_tpetra(const string& mm_file,
 
       string run_name = tpetra_runs.name(run_it);
       if( verbosity > 1 ){
-	*fos << "    Doing tpetra test run '"
+	*fos << "    Doing tpetra test run `"
 	     << run_name << "' with"
 	     << " s=" << scalar;
 	if( scalar == "complex" ){

@@ -85,9 +85,9 @@ namespace Z {
 #undef __SUPERLU_DCOMPLEX
 #undef DCOMPLEX_INCLUDE
 #include "slu_dcomplex.h"     // double-precision complex data type definitions
+}
 
 #endif	// HAVE_TEUCHOS_COMPLEX
-}
 
 } // end extern "C"
 

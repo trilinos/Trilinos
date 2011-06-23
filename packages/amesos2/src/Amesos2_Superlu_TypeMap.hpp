@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -47,7 +47,7 @@
    \date   Mon May 31 23:12:32 2010
 
    \brief Provides definition of SuperLU types as well as conversions and type
-          traits.
+	  traits.
 
 */
 
@@ -65,8 +65,6 @@
    complex has been enabled in Teuchos.  In addition we only need to
    define the conversion and printing functions if complex has been
    enabled. */
-#ifdef HAVE_TEUCHOS_COMPLEX
-
 namespace SLU {
 
 typedef int int_t;
@@ -76,6 +74,7 @@ extern "C" {
 #undef __SUPERLU_SUPERMATRIX
 #include "supermatrix.h"	// for Dtype_t declaration
 
+#ifdef HAVE_TEUCHOS_COMPLEX
 namespace C {
 #undef __SUPERLU_SCOMPLEX
 #undef SCOMPLEX_INCLUDE
@@ -87,10 +86,14 @@ namespace Z {
 #undef DCOMPLEX_INCLUDE
 #include "slu_dcomplex.h"     // double-precision complex data type definitions
 }
+#endif	// HAVE_TEUCHOS_COMPLEX
 
 } // end extern "C"
+
 } // end namespace SLU
 
+
+#ifdef HAVE_TEUCHOS_COMPLEX
 
 /* ==================== Conversion ==================== */
 namespace Teuchos {
@@ -229,7 +232,7 @@ template <class, class> class Superlu;
 
 /* Specialize the Amesos::TypeMap struct for Superlu types
  *
- * \cond Superlu_type_specializations 
+ * \cond Superlu_type_specializations
  */
 template <>
 struct TypeMap<Superlu,float>
@@ -252,7 +255,7 @@ struct TypeMap<Superlu,double>
 
 SLU::Dtype_t TypeMap<Superlu,double>::dtype = SLU::SLU_D;
 
-  
+
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 template <>

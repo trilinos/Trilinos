@@ -277,13 +277,17 @@ namespace {
   UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, float)        \
   UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, double)
 
-#define UNIT_TEST_GROUP_ORDINALS_COMPLEX(LO, GO)        \
-  typedef std::complex<float>  ComplexFloat;            \
-  YOUNG1C_SOLVE(LO, GO, ComplexFloat)                   \
-  typedef std::complex<double> ComplexDouble;           \
+#ifdef HAVE_TEUCHOS_COMPLEX
+#  define UNIT_TEST_GROUP_ORDINALS_COMPLEX(LO, GO)      \
+  typedef std::complex<float>  ComplexFloat;		\
+  YOUNG1C_SOLVE(LO, GO, ComplexFloat)			\
+  typedef std::complex<double> ComplexDouble;		\
   YOUNG1C_SOLVE(LO, GO, ComplexDouble)
+#else
+#  define UNIT_TEST_GROUP_ORDINALS_COMPLEX(LO, GO)
+#endif
 
-#define UNIT_TEST_GROUP_ORDINALS(LO, GO)        \
+#define UNIT_TEST_GROUP_ORDINALS(LO, GO)	\
   UNIT_TEST_GROUP_ORDINALS_REALS(LO, GO)        \
   UNIT_TEST_GROUP_ORDINALS_COMPLEX(LO, GO)
 
