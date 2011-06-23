@@ -141,16 +141,16 @@ mult_test_results multiply_test(
 {
 
   typedef Map<int, int, SerialNode> Map_t;
-  RCP<const Map_t> map = A->getRowMap();
+  RCP<const Map_t> map = C->getRowMap();
 
   RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 1));
 
   Tpetra::MatrixMatrix::Multiply(*A, AT, *B, BT, *computedC, false);
   computedC->fillComplete(C->getDomainMap(), C->getRangeMap());
-  /*Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_calculated.mtx",computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-    name+"_real.mtx",C);*/
+    name+"_real.mtx",C);
    
   double cNorm = getNorm(C);
   RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<double, int, int, SerialNode>(C->getRowMap());

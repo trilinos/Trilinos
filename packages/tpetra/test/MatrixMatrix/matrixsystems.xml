@@ -155,5 +155,13 @@ A*B
 		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
+	<ParameterList name="Small Rectangular A transpose time I">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/smallRectAIa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/smallRectAIb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/smallRectAIc.mtx" type="string"/>
+		<Parameter name="TransA" value="true" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
   
 </ParameterList>
