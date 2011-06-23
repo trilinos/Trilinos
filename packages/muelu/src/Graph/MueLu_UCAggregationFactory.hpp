@@ -639,7 +639,7 @@ typedef LO my_size_t; //TODO
         int minNodesPerAggregate = aggOptions.GetMinNodesPerAggregate();
 
         const RCP<const Map> nonUniqueMap = aggregates.GetMap();
-        const RCP<const Map> uniqueMap = graph.GetDomainMap();
+        const RCP<const Map> uniqueMap = graph.GetDomainMap(); // Q: DomainMap or RowMap??
 
         MueLu::UCAggregationCommHelper<double,LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
 
