@@ -170,7 +170,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, "Jacobi");
-	sprintf(parameter,"smoother: damping (level %d)", LevelID_[ilevel]);
+	sprintf(parameter,"smoother: damping factor (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, omega);
 	sprintf(parameter,"smoother: sweeps (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, sweeps);
@@ -218,7 +218,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, "Gauss-Seidel");
-	sprintf(parameter,"smoother: damping (level %d)", LevelID_[ilevel]);
+	sprintf(parameter,"smoother: damping factor (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, omega);
 	sprintf(parameter,"smoother: sweeps (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, sweeps);
@@ -265,7 +265,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, "symmetric Gauss-Seidel");
-	sprintf(parameter,"smoother: damping (level %d)", LevelID_[ilevel]);
+	sprintf(parameter,"smoother: damping factor (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, omega);
 	sprintf(parameter,"smoother: sweeps (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, sweeps);
@@ -312,7 +312,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, "block Gauss-Seidel");
-	sprintf(parameter,"smoother: damping (level %d)", LevelID_[ilevel]);
+	sprintf(parameter,"smoother: damping factor (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, omega);
 	sprintf(parameter,"smoother: sweeps (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, sweeps);
@@ -351,8 +351,12 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
     for( int fillin=0 ; fillin<3 ; ++fillin ) {
 
-      int options[AZ_OPTIONS_SIZE];
-      double params[AZ_PARAMS_SIZE];
+      Teuchos::RCP<std::vector<int> > aztecOptions = Teuchos::rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
+      Teuchos::RCP<std::vector<double> > aztecParams  = Teuchos::rcp(new std::vector<double>(AZ_PARAMS_SIZE));
+
+      int* options=  &(*aztecOptions)[0];
+      double* params =  &(*aztecParams)[0];
+
       AZ_defaults(options,params);
       options[AZ_graph_fill] = fillin;
       options[AZ_precond] = AZ_dom_decomp;
@@ -368,9 +372,9 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 	sprintf(parameter,"smoother: sweeps (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, sweeps);
 	sprintf(parameter,"smoother: Aztec options (level %d)", LevelID_[ilevel]);
-	NewList.set(parameter, options);
+	NewList.set(parameter, aztecOptions);
 	sprintf(parameter,"smoother: Aztec params (level %d)", LevelID_[ilevel]);
-	NewList.set(parameter, params);
+	NewList.set(parameter, aztecParams);
       }
 
       yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
