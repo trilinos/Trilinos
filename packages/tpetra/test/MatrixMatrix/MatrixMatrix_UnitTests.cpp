@@ -469,6 +469,115 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
 
 }
 
+/**
+ * This test was written at the request of Chris Siefert
+ * in order to verity that A^T * I produces correct results
+ * when A's rowmap and rangemap are differnt.
+ * KLN 23/06/2011
+ */
+TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
+  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  ParameterList defaultParameters;
+  RCP<SerialNode> node = rcp(new SerialNode(defaultParameters));
+  int numProcs = comm->getSize();
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  //THIS NUMBER MUST BE EVEN SO THAT WHEN I CALCULATE THE NUMBER
+  //OF ROWS IN THE DOMAIN MAP I DON'T ENCOUNTER ANY 
+  //WEIRD RESULTS DUE TO INTEGER DIVISION
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  int numRowsPerProc = 4;
+  int rank = comm->getRank();
+  global_size_t globalNumRows = numRowsPerProc*numProcs;
+
+//Create identity matrix
+  RCP<const Map<int,int,SerialNode> > identityRowMap = 
+    Tpetra::createUniformContigMapWithNode<int,int,SerialNode>(
+      globalNumRows, comm, node);
+  RCP<CrsMatrix<double,int,int,SerialNode> > identityMatrix = 
+    Tpetra::createCrsMatrix<double,int,int,SerialNode>(identityRowMap, 1);
+  for(
+    ArrayView<const int>::iterator it = 
+      identityRowMap->getNodeElementList().begin();
+    it != identityRowMap->getNodeElementList().end();
+    ++it)
+  {
+    Array<int> col(1,*it);
+    Array<double> val(1,1.0);
+    identityMatrix->insertGlobalValues(*it, col(), val());
+  }
+  identityMatrix->fillComplete();
+
+
+  //Create A
+  Array<int> aMyRows = tuple<int>(
+    rank*numRowsPerProc,
+    rank*numRowsPerProc+1,
+    rank*numRowsPerProc+2,
+    rank*numRowsPerProc+3);
+  RCP<const Map<int,int,SerialNode> > aRowMap = 
+    Tpetra::createNonContigMapWithNode<int,int,SerialNode>(
+      aMyRows, comm, node);
+  RCP<const Map<int,int,SerialNode> > aDomainMap = 
+    Tpetra::createUniformContigMapWithNode<int,int,SerialNode>(
+      globalNumRows/2, comm, node);
+  Array<int> aRangeElements;
+  if(rank == 0){
+    aRangeElements = tuple<int>(
+      (numProcs-1)*numRowsPerProc+1,
+      (numProcs-1)*numRowsPerProc+2,
+      (numProcs-1)*numRowsPerProc,
+      (numProcs-1)*numRowsPerProc+3);
+  }
+  else{
+    aRangeElements = tuple<int>(
+      (rank-1)*numRowsPerProc+1,
+      (rank-1)*numRowsPerProc+2,
+      (rank-1)*numRowsPerProc,
+      (rank-1)*numRowsPerProc+3);
+  }
+  RCP<const Map<int,int,SerialNode> > aRangeMap = 
+    Tpetra::createNonContigMapWithNode<int,int,SerialNode>(
+      aRangeElements, comm, node);
+
+  RCP<CrsMatrix<double,int,int,SerialNode> > aMat = 
+    Tpetra::createCrsMatrix<double,int,int,SerialNode>(aRowMap, 1);
+  for(
+    ArrayView<const int>::iterator it = 
+      aRowMap->getNodeElementList().begin();
+    it != aRowMap->getNodeElementList().end();
+    ++it)
+  {
+    Array<int> col(1,(*it)/2);
+    Array<double> val(1,3.0);
+    aMat->insertGlobalValues(*it, col(), val());
+  }
+  aMat->fillComplete(aDomainMap, aRangeMap); 
+
+  RowMatrixTransposer<double,int,int,SerialNode> transposer(*aMat);
+  RCP<CrsMatrix<double, int, int, SerialNode> > knownAMat = 
+    transposer.createTranspose();
+    
+
+  out << "Regular I*P" << std::endl;
+  mult_test_results results = multiply_test(
+    "Different Range and Row Maps", 
+    aMat,
+    identityMatrix,
+    true,
+    false,
+    knownAMat,
+    comm,
+    out);
+  if(verbose){
+    out << "Results:" <<std::endl;
+    out << "\tEpsilon: " << results.epsilon << std::endl;
+    out << "\tcNorm: " << results.cNorm << std::endl;
+    out << "\tcompNorm: " << results.compNorm << std::endl;
+  }
+  TEST_COMPARE(results.epsilon, <, defaultEpsilon)
+
+}
+
 
 } //namespace Tpetra
 
