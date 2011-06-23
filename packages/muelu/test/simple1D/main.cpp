@@ -16,21 +16,11 @@
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"
 
-#ifdef HAVE_MUELU_AMESOS2
-#include "Amesos2.hpp"
-#include "Amesos2_Version.hpp"
-//#include "Amesos2_Util_decl.hpp"
-#endif
-
 #include "MueLu_AmesosSmoother.hpp"
-
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_AggregationOptions.hpp"
 
-/**********************************************************************************/
-/* CREATE INITAL MATRIX                                                           */
-/**********************************************************************************/
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsOperator.hpp>
 #include <Cthulhu_Vector.hpp>

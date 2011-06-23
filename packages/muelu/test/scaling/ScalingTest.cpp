@@ -16,13 +16,12 @@
 #include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"
+
 #include "MueLu_AmesosSmoother.hpp"
+#include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_AggregationOptions.hpp"
 
-/**********************************************************************************/
-/* CREATE INITAL MATRIX                                                           */
-/**********************************************************************************/
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsOperator.hpp>
 #include <Cthulhu_Vector.hpp>
@@ -102,12 +101,14 @@ int main(int argc, char *argv[]) {
   // custom parameters
   LO maxLevels = 3;
   LO its=10;
+  std::string coarseSolver="ifpack2";
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
   Scalar SADampingFactor=4./3;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
+  clp.setOption("coarseSolver",&coarseSolver,"amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
   clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
   clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
   clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
@@ -233,14 +234,32 @@ int main(int argc, char *argv[]) {
     //#elif HAVE_MUELU_IFPACK...
 #endif
   } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
-#ifdef HAVE_MUELU_IFPACK2
-    Teuchos::ParameterList ifpack2List;
-    ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
-    ifpack2List.set("fact: drop tolerance", 0);
-    ifpack2List.set("fact: absolute threshold", 0);
-    ifpack2List.set("fact: relative threshold", 0);
-    coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
+    if (coarseSolver=="amesos2") {
+#ifdef HAVE_MUELU_AMESOS2
+      if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
+      Teuchos::ParameterList paramList; //unused
+      coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
+#else
+      std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
+      return EXIT_FAILURE;
+#endif // HAVE_MUELU_AMESOS2
+    } else if(coarseSolver=="ifpack2") {
+#if defined(HAVE_MUELU_IFPACK2)
+        if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
+        Teuchos::ParameterList ifpack2List;
+        ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
+        ifpack2List.set("fact: drop tolerance", 0);
+        ifpack2List.set("fact: absolute threshold", 0);
+        ifpack2List.set("fact: relative threshold", 0);
+        coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
+#else
+        std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
+        return EXIT_FAILURE;
 #endif
+    } else {
+      std::cout  << "Unknow coarse grid solver (try  --coarseSolver=ifpack2 or --coarseSolver=amesos2)" << std::endl;
+      return EXIT_FAILURE;
+    }
   }
   if (coarseProto == Teuchos::null) {
     throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
@@ -278,7 +297,6 @@ int main(int argc, char *argv[]) {
   
       X->norm2(norms);
       *out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-      H->PrintResidualHistory(false);
     }
   } //if (fixedPt)
 #endif //ifdef AMG_SOLVER
