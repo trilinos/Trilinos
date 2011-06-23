@@ -216,7 +216,9 @@ namespace MueLu {
                                           bool transposeA=false, bool transposeB=false) //TODO: modify definition to respect definition of Epetra/Tpetra::MatrixMatrix::Multiply (order of input args)
     {
       //FIXME 30 is likely a big overestimate
-      RCP<Operator> C = OperatorFactory::Build(A->getRowMap(), 30);
+      RCP<Operator> C;
+      if(transposeA) C = OperatorFactory::Build(A->getDomainMap(), 30);
+      else C = OperatorFactory::Build(A->getRowMap(), 30);
 
       if (!A->isFillComplete())
         throw(Exceptions::RuntimeError("A is not fill-completed"));
