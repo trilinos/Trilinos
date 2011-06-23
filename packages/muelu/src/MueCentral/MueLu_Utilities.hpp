@@ -35,6 +35,8 @@
 #include <Cthulhu_TpetraMultiVector.hpp>
 #include "Tpetra_MatrixMatrix.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_RowMatrixTransposer_decl.hpp"
+#include "Tpetra_RowMatrixTransposer_def.hpp"
 #endif
 
 namespace MueLu {
@@ -434,75 +436,6 @@ namespace MueLu {
      return RES;
    }
 
-#include <unistd.h>
-   /*@brief Utility for pausing execution to attach debugger.
-   
-     WARNING -- This utility checks for the existence of a file.  This could be *very* expensive
-                if there are many simultaneous processes doing this.
-   */
-   static void BreakForDebugger(const Teuchos::Comm<GO> &Comm)
-   {
-     // Pulled directly from ML.
-     // print out some junk for debugging
-     // LAM/MPI has some difficulties related to environmental variables.
-     // The problem is that LAM/MPI uses ssh to log in, and on some
-     // machine "export ML_BREAK_FOR_DEBUGGER" does not work. So, we
-     // allow two options:
-     // 1.) export MUELU_BREAK_FOR_DEBUGGER=1
-     // 2.) create a file in the executable directory, called MueLu_debug_now
-   
-     char * str = (char *) getenv("MUELU_BREAK_FOR_DEBUGGER");
-     GO i = 0, j = 0;
-     char buf[80];
-     char go = ' ';
-     char hostname[80];
-     if (str != NULL) i++;
-   
-     int mypid = Comm.getRank();
-     int root = 0;
-     char buff;
-     FILE * MueLu_capture_flag=0;
-
-     if (mypid == 0) {
-       MueLu_capture_flag = fopen("MueLu_debug_now","r");
-       if (MueLu_capture_flag) {
-         buff = 'T';
-         fclose(MueLu_capture_flag);
-       } else 
-         buff = 'F';
-     }
-     //Comm.broadcast(root,1,buff); //FIXME
-
-     if (buff == 'T')
-     {
-       if (mypid  == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
-       for (i = 0; i <Comm.getSize() ; i++) {
-         if (i == mypid ) {
-       gethostname(hostname, sizeof(hostname));
-       LO pid = getpid();
-       sprintf(buf, "Host: %s\tMPI rank: %d\tPID: %d\n\tattach %d\n\tcontinue\n",
-           hostname, mypid, pid, pid);
-       printf("%s\n",buf);
-       fflush(stdout);
-       sleep(1);
-         }
-       }
-        if(mypid == 0) {
-          printf("\n");
-          printf("** Pausing because environment variable MUELU_BREAK_FOR_DEBUGGER has been set,\n");
-          puts("** or file MueLu_debug_now has been created");
-          printf("**\n");
-          printf("** You may now attach debugger to the processes listed above.\n");
-          printf( "**\n");
-          printf( "** Enter a character to continue > "); fflush(stdout);
-          scanf("%c",&go);
-        }
-        Comm.barrier();
-      }
-   
-   } //BreakForDebugger()
-
-
    /*! @brief Save matrix to file in Matrix Market format.
 
      TODO Move this to Cthulhu?
@@ -537,6 +470,8 @@ namespace MueLu {
 
    } //Write
 
+#include <unistd.h>
+
    static void PauseForDebugger()
    {
      RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -564,6 +499,18 @@ namespace MueLu {
      }
      comm->barrier();
    } //PauseForDebugger
+
+    //! @brief Transpose a Cthulhu::Operator
+   static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
+   {
+     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp = Op2TpetraCrs(Op); //TODO JJH try/catch this
+     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
+     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
+     RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
+     RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
+     RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
+     return AAAA;
+   } //Transpose
 
   }; // class
 

@@ -31,6 +31,7 @@ APPEND_SET(SOURCES
   Aggregates.cpp
   UCAggregationFactory.cpp
   CoalesceDropFactory.cpp
+  Transpose.cpp
 )
 
 PACKAGE_ADD_EXECUTABLE(
