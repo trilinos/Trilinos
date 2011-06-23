@@ -130,9 +130,9 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
     transposeMatrix_->insertGlobalValues(transRowMap->getGlobalElement(c), transIndices[c](), transValues[c]());
   }
 
-  // const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > domain_map = origMatrix_->getDomainMap();
-  // const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > range_map  = origMatrix_->getRangeMap();
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > origRowMap = origMatrix_.getRowMap();
+  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > domain_map = origMatrix_.getDomainMap();
+  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > range_map  = origMatrix_.getRangeMap();
+  //const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > origRowMap = origMatrix_.getRowMap();
 
   RCP<Teuchos::FancyOStream> out_all = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out_all->setOutputToRootOnly(-1);
@@ -145,7 +145,8 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
 
   // for now, we don't care about the domain/range maps, as we won't be applying this matrix as an operator
   //transposeMatrix_->fillComplete(transRowMap, origRowMap, optimizeTranspose_);
-  transposeMatrix_->fillComplete(origRowMap, transRowMap, optimizeTranspose_);
+  //transposeMatrix_->fillComplete(origRowMap, transRowMap, optimizeTranspose_);
+  transposeMatrix_->fillComplete(range_map, domain_map, optimizeTranspose_);
 
   return transposeMatrix_;
 }
