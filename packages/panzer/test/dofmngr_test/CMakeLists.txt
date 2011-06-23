@@ -35,3 +35,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES tDOFManager_SimpleTests.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  tUniqueGlobalIndexerUtilities
+  SOURCES tUniqueGlobalIndexerUtilities.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM mpi
+  )
