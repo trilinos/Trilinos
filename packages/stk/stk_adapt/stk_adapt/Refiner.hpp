@@ -18,6 +18,10 @@
 #undef STK_ADAPT_HAS_GEOMETRY
 #endif
 
+#if defined( STK_ADAPT_HAS_GEOMETRY )
+#include <stk_adapt/geometry/MeshGeometry.hpp>
+#endif
+
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
@@ -104,6 +108,11 @@ namespace stk {
       setGeometryFile(std::string file_name);
 
       void
+      setSmoothGeometry(bool do_smooth) { m_doSmoothGeometry = do_smooth; }
+      bool
+      getSmoothGeometry() { return m_doSmoothGeometry; }
+
+      void
       setIgnoreSideSets(bool ignore_sidesets) ;
 
       bool
@@ -143,6 +152,9 @@ namespace stk {
 
       bool
       getAlwaysInitializeNodeRegistry() { return m_alwaysInitNodeRegistry; }
+
+      void smoothGeometry(MeshGeometry& mesh_geometry);
+
 
     protected:
 
@@ -216,6 +228,9 @@ namespace stk {
       void
       addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);
 
+      void 
+      removeFromOldPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
+
       void
       renameNewParts(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
 
@@ -270,6 +285,7 @@ namespace stk {
       bool m_doProgress;
 
       bool m_alwaysInitNodeRegistry;
+      bool m_doSmoothGeometry;
     };
 
 

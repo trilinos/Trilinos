@@ -382,8 +382,8 @@ namespace stk {
         return isParent;
       }
 
-      /// is element a parent at the leaf level (either there is only one level, or if more than one, the
-      ///   element is a child and a parent and its children have no children)
+      /// is element a parent at the leaf level (either there is only one level, and it's a parent, or
+      ///    if more than one, the element is a child and a parent and its children have no children)
       bool isParentElementLeaf( const stk::mesh::Entity& element, bool check_for_family_tree=true)
       {
         const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
@@ -405,14 +405,21 @@ namespace stk {
         if (element_to_family_tree_relations.size() > 2)
           throw std::logic_error(std::string("isParentElementLeaf:: too many relations = ")+toString(element_to_family_tree_relations.size()));
 
+        if (!isParentElement(element, check_for_family_tree))
+          return false;
+
+        unsigned element_ft_level = 0;
         if (element_to_family_tree_relations.size() == 1)
-          return isParentElement(element, check_for_family_tree);
+          {
+            //return isParentElement(element, check_for_family_tree);
+            element_ft_level = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
+          }
+        else
+          {
+            element_ft_level = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
+          }
 
-        //bool isParent = false;
-
-
-        unsigned element_ft_level_1 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_1].entity();
+        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level].entity();
         stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
         if (family_tree_relations.size() == 0)
           {
@@ -423,6 +430,7 @@ namespace stk {
             stk::mesh::Entity *child = family_tree_relations[ichild].entity();
             if (isParentElement(*child, check_for_family_tree))
               {
+                // means this element is a grandparent
                 return false;
               }
           }
@@ -514,6 +522,59 @@ namespace stk {
               }
           }
         return true;
+      }
+
+      void printParentChildInfo(const stk::mesh::Entity& element, bool check_for_family_tree=true)
+      {
+        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+        std::cout << "printParentChildInfo:: element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
+        if (element_to_family_tree_relations.size() == 0)
+          {
+            return;
+          }
+
+        if (element_to_family_tree_relations.size() > 2)
+          throw std::logic_error(std::string("printParentChildInfo:: too many relations = ")+toString(element_to_family_tree_relations.size()));
+
+        bool b_isChildElement = isChildElement(element, check_for_family_tree);
+        bool b_isParentElement = isParentElement(element, check_for_family_tree);
+        bool b_isChildWithoutNieces = isChildWithoutNieces(element, check_for_family_tree);
+        bool b_isParentElementLeaf = isParentElementLeaf(element, check_for_family_tree);
+
+        for (unsigned i_ft_rel = 0; i_ft_rel < element_to_family_tree_relations.size(); i_ft_rel++)
+          {
+            stk::mesh::Entity *family_tree = element_to_family_tree_relations[i_ft_rel].entity();
+            stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
+            if (family_tree_relations.size() == 0)
+              {
+                std::cout << "printParentChildInfo:: family_tree_relations size=0, i_ft_rel= " << i_ft_rel 
+                          << " family_tree_relations.size() = " << family_tree_relations.size()
+                          << std::endl;
+                throw std::logic_error(std::string("printParentChildInfo:: family_tree_relations size=0 = "));
+              }
+            unsigned ft_index = 0;
+            if (i_ft_rel==0) 
+              ft_index = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
+            else
+              ft_index = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
+
+            stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
+            std::cout << "printParentChildInfo: tree level {0,1} = " << i_ft_rel << " parent= " << parent->identifier() << " children= ";
+            for (unsigned ichild = 1; ichild < family_tree_relations.size(); ichild++)
+              {
+                stk::mesh::Entity *child = family_tree_relations[ichild].entity();
+                std::cout << child->identifier() << " ";
+              }
+            std::cout << std::endl;
+          }
+        std::cout << "printParentChildInfo: "
+                  << " b_isChildElement= " << b_isChildElement
+                  << " b_isParentElement= " << b_isParentElement
+                  << " b_isChildWithoutNieces= " << b_isChildWithoutNieces
+                  << " b_isParentElementLeaf= " << b_isParentElementLeaf;
+        std::cout << std::endl;
+
       }
 
       static inline

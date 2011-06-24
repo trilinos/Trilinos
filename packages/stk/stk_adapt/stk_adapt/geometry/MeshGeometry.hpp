@@ -28,6 +28,8 @@ public:
 
     void snap_points_to_geometry(PerceptMesh* mesh_data);
 
+    const std::vector<GeometryEvaluator*>& getGeomEvaluators();
+
 protected:
     std::vector<GeometryEvaluator*> geomEvaluators;
     GeometryKernel* geomKernel;
