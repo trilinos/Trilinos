@@ -54,8 +54,8 @@ int read_chaco_file(int Proc,
   char   cmesg[256];
   char   chaco_fname[FILENAME_MAX + 8];
 
-  int    nvtxs;
-  int    vwgt_dim=0, ewgt_dim=0;
+  int    i, nvtxs;
+  int    vwgt_dim=0, ewgt_dim=0, base=0;
   int    ndim = 0;
   int   *start = NULL, *adj = NULL;
   int    no_geom = FALSE;
@@ -99,6 +99,14 @@ int read_chaco_file(int Proc,
                            &vwgt_dim, &vwgts, &ewgt_dim, &ewgts) != 0) {
       Gen_Error(0, "fatal: Error returned from chaco_input_graph");
       return 0;
+    }
+
+    if (nvtxs > 0)
+      base = adj[0];
+
+    for (i=1; i < start[nvtxs]; i++){
+      if (adj[i] < base)
+        base = adj[i];
     }
 
     /* Read Chaco geometry file, if provided. */
@@ -207,9 +215,11 @@ for (i=0; i<nvtxs; i++) { /* move 2/3 of points much closer to "a" */
     return 0;
   }
 
+  MPI_Bcast(&base, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
   if (!chaco_setup_mesh_struct(Proc, Num_Proc, prob, mesh, pio_info, gnvtxs, nvtxs,
                      start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
-                     ndim, x, y, z, assignments, 1, no_geom)) {
+                     ndim, x, y, z, assignments, base, no_geom)) {
     Gen_Error(0, "fatal: Error returned from chaco_setup_mesh_struct");
     return 0;
   }
@@ -335,17 +345,10 @@ int i;
   /*
    * now fill the element structure array with the
    * information from the Chaco file
-   *  TODO - shouldn't we be passing in "base" instead of "1"
    */
-#if 0
-  if (!chaco_fill_elements(Proc, Num_Proc, prob, mesh, pio_info, gnvtxs, nvtxs,
-                     start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
-                     ndim, x, y, z, assignments, 1)) 
-#else
   if (!chaco_fill_elements(Proc, Num_Proc, prob, mesh, pio_info, gnvtxs, nvtxs,
                      start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
                      ndim, x, y, z, assignments, base)) 
-#endif
   {
     Gen_Error(0, "fatal: Error returned from chaco_fill_elements");
     return 0;
@@ -378,9 +381,7 @@ int chaco_fill_elements(
   float     *y,                  /* y-coordinates of the vertices */
   float     *z,                  /* z-coordinates of the vertices */
   short     *assignments,        /* assignments from Chaco file; may be NULL */
-  int       base                 /* smallest vertex number to use; 
-                                    base == 1 for Chaco; 
-                                    may be 0 or 1 for HG files. */
+  int       base                 /* smallest vertex number to use; */
 )
 {
   /* Local declarations. */
