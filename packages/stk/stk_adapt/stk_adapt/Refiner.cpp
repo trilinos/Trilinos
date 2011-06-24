@@ -263,7 +263,7 @@ namespace stk {
                   throw std::logic_error("m_breakPattern: must be in decreasing order of rank");
                 }
               ranks.push_back(irank);
-              //if (m_doRemove)
+              if (m_doRemove)
                 {
                   unsigned elementType = m_breakPattern[ibp]->getFromTypeKey();
                   addOldElementsToPart(irank, m_breakPattern[ibp], &elementType);
@@ -826,7 +826,7 @@ namespace stk {
         }
       else  // m_doRemove
         {
-          if (1)
+          if (0)
             {
               for (unsigned irank = 0; irank < ranks.size(); irank++)
                 removeFromOldPart(ranks[irank], m_breakPattern[irank]);
