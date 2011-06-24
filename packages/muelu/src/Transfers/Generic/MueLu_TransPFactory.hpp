@@ -54,7 +54,41 @@ namespace MueLu {
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
 
       return true;
-    }
+    } //BuildR
+
+    bool OldBuildR(Level & fineLevel, Level & coarseLevel) {
+
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR"));
+      timer->start(true);
+      //std::cout << "MueLu::TransPFactory()::BuildR(...) - start" << std::endl;
+
+      Teuchos::OSTab tab(this->out_);
+      Teuchos::ParameterList matrixList;
+      RCP<Operator> P = coarseLevel.GetP();
+      //doesn't work -- bug in EpetraExt?
+      //RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
+
+      //std::cout << "MueLu::TransPFactory()::BuildR(...) - CheckPoint 1" << std::endl;
+
+      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);
+
+      //std::cout << "MueLu::TransPFactory()::BuildR(...) - CheckPoint 2" << std::endl;
+
+      //RCP<Operator> R = Utils::TwoMatrixMultiply(P,I,true); //doesn't work -- bug in EpetraExt?
+      RCP<Operator> R = Utils::TwoMatrixMultiply(I,P,false,true);
+
+      //std::cout << "MueLu::TransPFactory()::BuildR(...) - CheckPoint 3" << std::endl;
+
+      coarseLevel.SetR(R);
+
+      //std::cout << "MueLu::TransPFactory()::BuildR(...) - end" << std::endl;
+
+      timer->stop();
+      MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
+
+      return true;
+    } //OldBuildR
+
     //@}
 
     //! @name Set methods.
