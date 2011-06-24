@@ -69,9 +69,11 @@ int main(int argc, char *argv[]) {
   LO maxLevels = 3;
   LO its=10;
   std::string coarseSolver="ifpack2";
+  int pauseForDebugger=0;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
   clp.setOption("coarseSolver",&coarseSolver,"amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
+  clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -89,34 +91,9 @@ int main(int argc, char *argv[]) {
     // TODO: print custom parameters
   }
 
-
-#ifdef FOR_PARALLEL_DEBUGGING
-  //Utils::BreakForDebugger(*comm);
-
-  LO mypid = comm->getRank();
-
-  if (mypid  == 0) std::cout << "Host and Process Ids for tasks" << std::endl;
-  for (LO i = 0; i <comm->getSize() ; i++) {
-    if (i == mypid ) {
-      char buf[80];
-      char hostname[80];
-      gethostname(hostname, sizeof(hostname));
-      LO pid = getpid();
-      sprintf(buf, "Host: %s\tMPI rank: %d,\tPID: %d\n\tattach %d\n\tcontinue\n",
-              hostname, mypid, pid, pid);
-      printf("%s\n",buf);
-      fflush(stdout);
-      sleep(1);
-    }
+  if (pauseForDebugger) {
+    Utils::PauseForDebugger();
   }
-
-  if (mypid == 0) {
-    printf( "** Enter a character to continue > "); fflush(stdout);
-    char go = ' ';
-    scanf("%c",&go);
-  }
-  comm->barrier();
-#endif
 
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
