@@ -1,4 +1,5 @@
 #include <vector>
+#include <map>
 
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ArrayView.hpp"
@@ -172,6 +173,122 @@ getFieldMap(int fieldNum,const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Nod
                                 Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), origMap->getComm()));
 
    return finalMap;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
+   ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi)
+      : ugi_(ugi)
+{
+   gh_reducedFieldVector_ = buildGhostedFieldReducedVector<LocalOrdinalT,GlobalOrdinalT,Node>(*ugi_);
+   gh_fieldVector_ = buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>(*ugi_,gh_reducedFieldVector_);
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+template <typename ScalarT,typename ArrayT>
+Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
+   getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
+{
+   int fieldNum = ugi_->getFieldNum(fieldName);
+   std::vector<std::string> blockIds;
+   ugi_->getElementBlockIds(blockIds);
+
+   // first build and fill in final reduced field vector
+   /////////////////////////////////////////////////////////////////
+
+   // build field maps as needed
+   Teuchos::RCP<const Map> reducedMap = gh_reducedFieldMaps_[fieldNum];
+   if(gh_reducedFieldMaps_[fieldNum]==Teuchos::null) {
+      reducedMap = getFieldMap(fieldNum,*gh_reducedFieldVector_);
+      gh_reducedFieldMaps_[fieldNum] = reducedMap;
+   }
+
+   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> > finalReducedVec
+      = Teuchos::rcp(new Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node>(reducedMap));
+   for(std::size_t b=0;b<blockIds.size();b++) {
+      std::string block = blockIds[b];
+
+      // make sure field is in correct block
+      if(!ugi_->fieldInBlock(fieldName,block))
+         continue; 
+
+      // extract data vector
+      typename std::map<std::string,ArrayT>::const_iterator blockItr = data.find(block);
+     TEST_FOR_EXCEPTION(blockItr==data.end(),std::runtime_error,
+                        "ArrayToFieldVector::getDataVector: can not find block \""+block+"\".");
+
+     const ArrayT & d = blockItr->second;
+     updateGhostedDataReducedVector<ScalarT,ArrayT,LocalOrdinalT,GlobalOrdinalT,Node>(fieldName,block,*ugi_,d,*finalReducedVec); 
+   }
+
+   // build final (not reduced vector)
+   /////////////////////////////////////////////
+
+   Teuchos::RCP<const Map> map = gh_fieldMaps_[fieldNum];
+   if(gh_fieldMaps_[fieldNum]==Teuchos::null) {
+      map = getFieldMap(fieldNum,*gh_fieldVector_);
+      gh_fieldMaps_[fieldNum] = map;
+   }
+
+   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> > finalVec
+      = Teuchos::rcp(new Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node>(map));
+
+   // do import from finalReducedVec
+   Tpetra::Import<std::size_t,GlobalOrdinalT,Node> importer(reducedMap,map);
+   finalVec->doImport(*finalReducedVec,importer,Tpetra::INSERT);
+
+   return finalVec;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+template <typename ScalarT,typename ArrayT>
+Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
+   getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
+{
+   // if neccessary build field vector
+   if(fieldVector_==Teuchos::null)
+      buildFieldVector(*gh_fieldVector_);
+
+   Teuchos::RCP<const Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> > sourceVec
+         = getGhostedDataVector<ScalarT,ArrayT>(fieldName,data);
+
+   // use lazy construction for each field
+   int fieldNum = ugi_->getFieldNum(fieldName);
+   Teuchos::RCP<const Map> destMap = fieldMaps_[fieldNum];
+   if(fieldMaps_[fieldNum]==Teuchos::null) {
+      destMap = getFieldMap(fieldNum,*fieldVector_);
+      fieldMaps_[fieldNum] = destMap;
+   }
+
+   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> > destVec
+         = Teuchos::rcp(new Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node>(destMap));
+   
+   // do import
+   Tpetra::Import<std::size_t,GlobalOrdinalT> importer(sourceVec->getMap(),destMap);
+   destVec->doImport(*sourceVec,importer,Tpetra::INSERT); 
+
+   return destVec;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+void ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
+        buildFieldVector(const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> & source) const
+{
+   // build (unghosted) vector and map
+   std::vector<GlobalOrdinalT> indices;
+   ugi_->getOwnedIndices(indices);
+
+   Teuchos::RCP<const Map> destMap
+         = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(indices),
+                                Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), ugi_->getComm()));
+   Teuchos::RCP<IntVector> localFieldVector = Teuchos::rcp(new IntVector(destMap));
+
+   Tpetra::Import<std::size_t,GlobalOrdinalT> importer(source.getMap(),destMap);
+   localFieldVector->doImport(source,importer,Tpetra::INSERT);
+
+   fieldVector_ = localFieldVector;
 }
                                    
 } // end namspace panzer

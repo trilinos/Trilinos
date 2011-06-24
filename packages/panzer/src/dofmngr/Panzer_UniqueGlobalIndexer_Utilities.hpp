@@ -108,6 +108,65 @@ Teuchos::RCP<const Tpetra::Map<std::size_t,GlobalOrdinalT,Node> >
 getFieldMap(int fieldNum,const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> & fieldVector);
 
 
+/** This class assists in mapping arrays of field data to field vectors.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+class ArrayToFieldVector {
+public:
+   ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
+
+   /** Get a Tpetra vector containing the data ordered according to 
+     * the ordering from <code>UGI::getOwnedAndSharedIndices</code>.
+     *
+     * \param[in] fieldName Name of field this data is from
+     * \param[in] data Array of data
+     *
+     * \returns Returns a vector populated with the data. This vector
+     *          is related to the <code>UGI::getOwnedAndSharedIndices</code>.
+     */
+   template <typename ScalarT,typename ArrayT>
+   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+   getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
+
+   /** Get a Tpetra vector containing the data ordered according to 
+     * the ordering from <code>UGI::getOwnedIndices</code>.
+     *
+     * \param[in] fieldName Name of field this data is from
+     * \param[in] data Array of data
+     *
+     * \returns Returns a vector populated with the data. This vector
+     *          is related to the <code>UGI::getOwnedIndices</code>.
+     */
+   template <typename ScalarT,typename ArrayT>
+   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+   getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
+
+protected:
+   typedef Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> IntVector;
+   typedef Tpetra::Map<std::size_t,GlobalOrdinalT,Node> Map;
+
+   //! build unghosted field vector from ghosted field vector
+   void buildFieldVector(const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> & source) const;
+
+   //! DOF mapping
+   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi_;
+
+   Teuchos::RCP<const IntVector> gh_reducedFieldVector_; //! ghosted reduced field vector
+   Teuchos::RCP<const IntVector> gh_fieldVector_;        //! ghosted field vector
+
+   mutable std::map<int,Teuchos::RCP<const Map> > gh_reducedFieldMaps_; //! Maps for each field (as needed)
+   mutable std::map<int,Teuchos::RCP<const Map> > gh_fieldMaps_;        //! Maps for each field (as needed)
+
+   mutable Teuchos::RCP<const IntVector> fieldVector_;        //! (unghosted) field vector
+   mutable std::map<int,Teuchos::RCP<const Map> > fieldMaps_;        //! Maps for each field (as needed)
+
+private:
+   // hide some constructors
+   ArrayToFieldVector();
+   ArrayToFieldVector(const ArrayToFieldVector &);
+};
+
+
 } // end namspace panzer
 
 #include "Panzer_UniqueGlobalIndexer_UtilitiesT.hpp"
