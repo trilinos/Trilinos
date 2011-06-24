@@ -34,8 +34,9 @@ a = ZOLTAN_ID_CONSTANT(99)
 
 ZOLTAN_GNO_TYPE:
 ===============
+ZOLTAN_GNO_TYPE is a new typedef which Zoltan uses for global counts and for internal global IDs regardless of the definition of ZOLTAN_ID_TYPE.  It is defined to be ssize_t, so it is signed and it will be 64 bits on a 64-bit architecture and 32 bits on a 32-bit architecture.  
 
-ZOLTAN_GNO_TYPE is a new typedef which Zoltan uses for global counts and for internal global IDs regardless of the definition of ZOLTAN_ID_TYPE.  It is defined to be ssize_t, so it is signed and it will be 64 bits on a 64-bit architecture and 32 bits on a 32-bit architecture.  You send it in an MPI message with ZOLTAN_GNO_MPI_TYPE and you print it with a ZOLTAN_GNO_SPEC.
+The MPI_Datatype for ZOLTAN_GNO_TYPE is returned by Zoltan_mpi_gno_type().
 
 Any time that Zoltan creates a new problem from the application supplied problem it uses ZOLTAN_GNO_TYPE for the object IDs.
 
