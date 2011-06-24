@@ -375,6 +375,105 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
     }
 } //Iterate
 
+TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
+{
+  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    {
+
+  out << "version: " << MueLu::Version() << std::endl;
+
+  //matrix
+  RCP<const Teuchos::Comm<int> > comm = MueLu::TestHelpers::Parameters::getDefaultComm();
+  RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(6561*comm->getSize());  //=8*3^6
+  RCP<const Map > map = Op->getRowMap();
+
+  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
+  nullSpace->putScalar( (SC) 1.0);
+  Teuchos::Array<ST::magnitudeType> norms(1);
+  nullSpace->norm1(norms);
+
+  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
+  H.SetImplicitTranspose(true);
+  H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  RCP<MueLu::Level<SC,LO,GO,NO,LMO> > Finest = rcp( new MueLu::Level<SC,LO,GO,NO,LMO>() );
+  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
+  Finest->SetA(Op);
+  Finest->Save("Nullspace",nullSpace);
+  Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
+                                          //FIXME is implemented
+
+  Finest->Save("NullSpace",nullSpace);
+  H.SetLevel(Finest);
+
+  MueLu::AggregationOptions aggOptions;
+  aggOptions.SetMinNodesPerAggregate(3);
+  aggOptions.SetMaxNeighAlreadySelected(0);
+  aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
+  aggOptions.SetPhase3AggCreation(0.5);
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(aggOptions));
+  RCP<CoalesceDropFactory> cdFact;
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
+
+  RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
+  RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));
+  RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
+  Acfact->SetImplicitTranspose(true);
+
+#ifdef HAVE_MUELU_IFPACK
+#ifdef HAVE_MUELU_AMESOS
+  Teuchos::ParameterList  ifpackList;
+  ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackList.set("relaxation: sweeps", (LO) 2);
+  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  RCP<SmootherPrototype>  smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+
+  RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
+  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+  Teuchos::ParameterList status;
+  int maxLevels = 5;
+  status = H.FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
+  out  << "======================\n Multigrid statistics \n======================" << std::endl;
+  status.print(out,Teuchos::ParameterList::PrintOptions().indent(2));
+
+  //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
+  Teuchos::ParameterList amesosList;
+  RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
+  SmootherFactory coarseSolveFact(coarseProto);
+  H.SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+
+  RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
+
+  X->setSeed(846930886);
+  X->randomize();
+  //Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+
+  X->norm2(norms);
+  X->scale(1/norms[0]);
+  X->norm2(norms);
+  out << "||X_initial|| = " << std::setiosflags(ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+
+  RHS->putScalar( (SC) 0.0);
+
+  H.PrintResidualHistory(false);
+  int iterations=10;
+  H.Iterate(*RHS,iterations,*X);
+
+  X->norm2(norms);
+  out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(ios::fixed) <<
+    std::setprecision(10) << norms[0] << std::endl;
+
+  norms = Utils::ResidualNorm(*Op,*X,*RHS);
+  out << "||res_" << std::setprecision(2) << iterations << "|| = " << std::setprecision(15) << norms[0] << std::endl;
+  TEUCHOS_TEST_EQUALITY(norms[0]<1e-10, true, out, success);
+
+#endif
+#endif
+    }
+} //Iterate
+
 }//namespace <anonymous>
 
 //Note from JG:

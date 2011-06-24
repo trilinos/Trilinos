@@ -42,6 +42,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
     std::vector<Teuchos::RCP<Level> > Levels_;
     //! print residual history during iteration
     bool printResidualHistory_;
+    bool implicitTranspose_;
 
   protected:
     Teuchos::RCP<Teuchos::FancyOStream> out_;
@@ -52,7 +53,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
   //@{
 
     //! Default constructor.
-    Hierarchy() : printResidualHistory_(false), out_(this->getOStream()) {}
+    Hierarchy() : printResidualHistory_(false), implicitTranspose_(false), out_(this->getOStream()) {}
 
     //! Copy constructor.
     Hierarchy(Hierarchy const &inHierarchy) {
@@ -83,6 +84,16 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
      LO GetNumberOfLevels() {
        return Levels_.size();
+     }
+
+     //! Indicate that Iterate should use tranpose of prolongator for restriction operations.
+     void SetImplicitTranspose(bool const &implicit) {
+       implicitTranspose_ = implicit;
+     }
+
+     //! If true is returned, iterate will use tranpose of prolongator for restriction operations.
+     bool GetImplicitTranspose() {
+       return implicitTranspose_;
      }
 
      //! Indicate whether to print residual history to a FancyOStream.
@@ -368,11 +379,20 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
              preSmoo->Apply(X, B, false);
 
            RCP<MultiVector> residual = Utils::Residual(*(Fine->GetA()),X,B);
-           RCP<Operator> R = Coarse->GetR();
-           RCP<MultiVector> coarseRhs = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
-           R->apply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
 
-           RCP<MultiVector> coarseX = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
+           RCP<Operator> P = Coarse->GetP();
+           RCP<Operator> R;
+           RCP<MultiVector> coarseRhs, coarseX;
+           if (implicitTranspose_) {
+             coarseRhs = MultiVectorFactory::Build(P->getDomainMap(),X.getNumVectors());
+             coarseX = MultiVectorFactory::Build(P->getDomainMap(),X.getNumVectors());
+             P->apply(*residual,*coarseRhs,Teuchos::TRANS,1.0,0.0);
+           } else {
+             R = Coarse->GetR();
+             coarseRhs = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
+             coarseX = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
+             R->apply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
+           }
            coarseX->putScalar(0.);
 
            Iterate(*coarseRhs,1,*coarseX,true,Cycle,startLevel+1);
@@ -381,7 +401,6 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
              Iterate(*coarseRhs,1,*coarseX,false,Cycle,startLevel+1);
                                      // ^^ nonzero initial guess
      
-           RCP<Operator> P = Coarse->GetP();
            RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(),X.getNumVectors());
            P->apply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
            //correction->norm2(norms);
