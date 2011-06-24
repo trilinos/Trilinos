@@ -926,6 +926,44 @@ namespace stk {
       return selector;
     }
 
+    // orthogonal corrections
+    static void move_quad_centroid_node_method1(int spatialDim, double *centroid_node_orig_pos, double *centroid_node_new_pos, double *edge_centroids[4])
+    {
+      double *edges[2][2] = {{edge_centroids[0], edge_centroids[2]}, {edge_centroids[1], edge_centroids[3]} };
+      double proposed_delta[3] = {0,0,0};
+
+      for (int idim=0; idim < spatialDim; idim++)
+        {
+          centroid_node_new_pos[idim] = centroid_node_orig_pos[idim];
+        }
+
+      for (int iedge=0; iedge < 2; iedge++)
+        {
+          double dxyz[3]={0,0,0};
+          double d=0;
+          for (int idim=0; idim < spatialDim; idim++)
+            {
+              //proposed_delta[idim] = (centroid_node_new_pos[idim] - centroid_node_orig_pos[idim]);
+              double midpoint= 0.5*(edges[iedge][1][idim] + edges[iedge][0][idim]);
+              proposed_delta[idim] = (midpoint - centroid_node_orig_pos[idim]);
+              
+              dxyz[idim] = edges[iedge][1][idim] - edges[iedge][0][idim];
+              d += dxyz[idim]*dxyz[idim];
+            }
+          double proj=0;
+          if (d<1.e-10) d=1;
+          d = std::sqrt(d);
+          for (int idim=0; idim < spatialDim; idim++)
+            {
+              dxyz[idim] /= d;
+              proj += dxyz[idim]*proposed_delta[idim];
+            }
+          for (int idim=0; idim < spatialDim; idim++)
+            {
+              centroid_node_new_pos[idim] += proj*dxyz[idim];
+            }
+        }
+    }
 
     void Refiner::smoothGeometry(MeshGeometry& mesh_geometry)
     {
@@ -1128,6 +1166,7 @@ namespace stk {
 
                               const CellTopologyData *  face_topo_data = (topoDim == 2 ? cell_topo_data : cell_topo_data->side[iSubDimOrd].topology);
                               if (debug > 3) std::cout << "tmp debug face_topo_data->edge_count = " << face_topo_data->edge_count << std::endl;
+                              double *edge_centroids[4];
                               for (unsigned ie=0; ie < face_topo_data->edge_count; ie++)
                                 {
                                   SubDimCell_SDSEntityType edgeSubDim;
@@ -1153,6 +1192,7 @@ namespace stk {
 
                                   stk::mesh::Entity *edge_node = nodeIds_onSE_edge[0]; // FIXME for quadratic elements
                                   double *fdata = stk::mesh::field_data( *m_eMesh.getCoordinatesField() , *edge_node );
+                                  edge_centroids[ie] = fdata;
                                   if (debug > 3) 
                                     {
                                       std::cout << "tmp debug found edge node: " ; 
@@ -1169,7 +1209,13 @@ namespace stk {
                                   centroid[idim] /= ((double)face_topo_data->edge_count);
                                 }
                               double *fdata = stk::mesh::field_data( *m_eMesh.getCoordinatesField() , *node_at_centroid );
+
                               double dist_moved = 0.0;
+
+                              // this can be commented out, which gives the original behavior (simple average all 4 edge nodes)
+                              if (1)
+                                move_quad_centroid_node_method1(spatialDim, fdata, centroid, edge_centroids);
+                              
                               if (debug)
                                 std::cout << "tmp debug moving face node with coords: ";
                               for (int idim=0; idim < m_eMesh.getSpatialDim(); idim++)
@@ -1182,6 +1228,7 @@ namespace stk {
                               dist_moved = std::sqrt(dist_moved);
                               if (debug)
                                 std::cout << " : a distance of " << dist_moved << std::endl;
+                              
                             }
                           }
 
