@@ -1464,7 +1464,7 @@ namespace Tpetra {
     if (myGraph_->isSorted() == false) {
       for (size_t row=0; row < getNodeNumRows(); ++row) {
         RowInfo rowInfo = myGraph_->getRowInfo(row);
-        myGraph_->template sortRowIndicesAndValues<typename ArrayRCP<Scalar>::iterator>(rowInfo,this->getViewNonConst(rowInfo).begin());
+        myGraph_->template sortRowIndicesAndValues<Scalar>(rowInfo,this->getViewNonConst(rowInfo));
       }
       // we just sorted every row
       myGraph_->setSorted(true);

@@ -531,7 +531,7 @@ namespace Tpetra {
       void                       setMerged(bool merged);
       void                       sortAllIndices();
       void                       sortRowIndices(RowInfo rowinfo);
-      template <class Iter> void sortRowIndicesAndValues(RowInfo rowinfo, Iter rowValueIter);
+      template <class Scalar> void sortRowIndicesAndValues(RowInfo rowinfo, ArrayView<Scalar> values);
       void                                             mergeAllIndices();
       void                                             mergeRowIndices(RowInfo rowinfo);
       template <class Iter, class BinaryFunction> void mergeRowIndicesAndValues(RowInfo rowinfo, Iter rowValueIter, BinaryFunction f);

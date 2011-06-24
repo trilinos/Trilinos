@@ -816,7 +816,13 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
 
   if inOptions.sendEmailTo and buildTestCase.skippedConfigureDueToNoEnables:
 
-    print buildTestCaseName + ": Skipping sending build/test case email because there were no enables and --abort-gracefully-if-no-enables was set!"
+    print buildTestCaseName + ": Skipping sending build/test case email because" \
+      +" there were no enables and --abort-gracefully-if-no-enables was set!"
+
+  elif inOptions.sendEmailTo and inOptions.sendEmailOnlyOnFailure and success:
+
+    print buildTestCaseName + ": Skipping sending build/test case email because" \
+     + " it passed and --send-email-only-on-failure was set!"
 
   elif inOptions.sendEmailTo:
 
@@ -2283,6 +2289,19 @@ def checkinTest(inOptions):
       #
     
       subjectLine += ": Trilinos: "+getHostname()
+    
+      emailBodyStr = subjectLine + "\n\n"
+      emailBodyStr += getCmndOutput("date", True) + "\n\n"
+      emailBodyStr += commitEmailBodyExtra + "\n"
+      emailBodyStr += allLocalCommitSummariesStr + "\n"
+      emailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
+    
+      print "\nCommit status email being sent:\n" \
+        "--------------------------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
+  
+      summaryCommitEmailBodyFileName = getCommitStatusEmailBodyFileName()
+    
+      writeStrToFile(summaryCommitEmailBodyFileName, emailBodyStr)
 
       if inOptions.sendEmailTo and abortGracefullyDueToNoUpdates:
 
@@ -2293,21 +2312,13 @@ def checkinTest(inOptions):
 
         print "\nSkipping sending final email because there were no enables" \
           " and --abort-gracefully-if-no-enables was set!"
+
+      elif inOptions.sendEmailTo and inOptions.sendEmailOnlyOnFailure and success:
+
+        print "\nSkipping sending final email because it passed" \
+          " and --send-email-only-on-failure was set!"
   
       elif inOptions.sendEmailTo:
-    
-        emailBodyStr = subjectLine + "\n\n"
-        emailBodyStr += getCmndOutput("date", True) + "\n\n"
-        emailBodyStr += commitEmailBodyExtra + "\n"
-        emailBodyStr += allLocalCommitSummariesStr + "\n"
-        emailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
-    
-        print "\nCommit status email being sent:\n" \
-          "--------------------------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
-  
-        summaryCommitEmailBodyFileName = getCommitStatusEmailBodyFileName()
-    
-        writeStrToFile(summaryCommitEmailBodyFileName, emailBodyStr)
   
         emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
         if inOptions.sendEmailToOnPush and didPush:
