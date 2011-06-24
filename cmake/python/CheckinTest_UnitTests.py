@@ -973,6 +973,38 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
+  def test_send_email_only_on_failure_do_all_push_pass(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "send_email_only_on_failure_do_all_push_pass",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --abort-gracefully-if-no-updates --do-all --push" \
+      +" --send-email-only-on-failure" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsFinalPushPasses \
+      ,
+      \
+      True,
+      \
+      g_expectedRegexUpdateWithBuildCasePasses \
+      +g_expectedRegexConfigPasses \
+      +g_expectedRegexBuildPasses \
+      +g_expectedRegexTestPasses \
+      +g_expectedCommonOptionsSummary \
+      +"MPI_DEBUG: Skipping sending build/test case email because it passed and --send-email-only-on-failure was set!\n" \
+      +"SERIAL_RELEASE: Skipping sending build/test case email because it passed and --send-email-only-on-failure was set!\n" \
+      +"Skipping sending final email because it passed and --send-email-only-on-failure was set!\n" \
+      )
+
+
   def test_abort_gracefully_if_no_enables(self):
     checkin_test_run_case(
       \
@@ -1002,7 +1034,7 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  # ToDo: Add a test case where PS has not enables but SS does!
+  # ToDo: Add a test case where PS has no enables but SS does!
 
 
   def test_do_all_no_append_test_results_push_pass(self):
@@ -2616,6 +2648,44 @@ class test_checkin_test(unittest.TestCase):
       ,
       \
       envVars = [ "CHECKIN_TEST_DEPS_XML_FILE_OVERRIDE="+trilinosDepsXmlFileOverride ]
+      )
+
+
+  def test_send_email_only_on_failure_do_all_mpi_debug_build_configure_fail(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "send_email_only_on_failure_do_all_mpi_debug_build_configure_fail",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --send-email-only-on-failure" \
+      +" --do-all --push" \
+      ,
+      \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +"IT: \./do-configure; 1; 'do-configure failed'\n" \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      g_expectedRegexUpdateWithBuildCasePasses \
+      +"Configure failed returning 1!\n" \
+      +"The configure FAILED!\n" \
+      +"The build was never attempted!\n" \
+      +"The tests where never even run!\n" \
+      +"FAILED: configure failed\n" \
+      +g_expectedRegexConfigPasses \
+      +g_expectedRegexBuildPasses \
+      +g_expectedRegexTestPasses \
+      +g_expectedCommonOptionsSummary \
+      +"Running: mailx -s .FAILED: Trilinos/MPI_DEBUG: configure failed. bogous@somwhere.com\n" \
+      +"SERIAL_RELEASE: Skipping sending build/test case email because it passed and --send-email-only-on-failure was set!\n" \
+      +"Running: mailx -s .FAILED CONFIGURE/BUILD/TEST: Trilinos: brain.sandia.gov. bogous@somwhere.com\n" \
       )
 
 
