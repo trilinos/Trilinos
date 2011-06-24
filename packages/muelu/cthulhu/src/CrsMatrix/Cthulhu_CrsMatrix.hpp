@@ -145,10 +145,8 @@ namespace Cthulhu {
     virtual void setAllToScalar(const Scalar &alpha) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Scale the current values of a matrix, this = alpha*this. 
     virtual void scale(const Scalar &alpha) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@}
 

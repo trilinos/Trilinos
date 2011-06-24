@@ -186,10 +186,8 @@ namespace Cthulhu {
     inline void setAllTodouble(const double &alpha) { CTHULHU_DEBUG_ME; mtx_->setAllTodouble(alpha); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Scale the current values of a matrix, this = alpha*this. 
-    inline void scale(const double &alpha) { CTHULHU_DEBUG_ME; mtx_->scale(alpha); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void scale(const double &alpha) { CTHULHU_DEBUG_ME; mtx_->Scale(alpha); }
 
     //@}
 
