@@ -153,7 +153,8 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      */
      Teuchos::ParameterList FillHierarchy() {
        RCP<SaPFactory> PFact = rcp(new SaPFactory());
-       RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact));
+       RCP<TransPFactory> RFact = rcp(new TransPFactory());
+       RCP<GenericPRFactory>  PRFact = rcp(new GenericPRFactory(PFact,RFact));
        RCP<RAPFactory> AcFact = rcp(new RAPFactory());
        Teuchos::ParameterList status;
        status = FillHierarchy(*PRFact,*AcFact);

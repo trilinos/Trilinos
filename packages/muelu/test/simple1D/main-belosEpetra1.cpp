@@ -164,7 +164,8 @@ int main(int argc, char *argv[]) {
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
-  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact));
+  RCP<RFactory>         Rfact = rcp( new TransPFactory() );
+  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
   RCP<SmootherPrototype> smooProto;

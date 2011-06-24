@@ -140,7 +140,8 @@ int main(int argc, char *argv[]) {
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   //Pfact->SetDampingFactor(0.);
-  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact));
+  RCP<RFactory>         Rfact = rcp( new TransPFactory() );
+  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
   RCP<SmootherPrototype> smooProto;

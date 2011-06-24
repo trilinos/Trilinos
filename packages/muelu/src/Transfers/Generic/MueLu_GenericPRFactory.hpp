@@ -52,10 +52,7 @@ class GenericPRFactory : public PRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       else
         PFact_ = rcp(new TentativePFactory());
 
-      if (RFact != Teuchos::null)
-        RFact_ = RFact;
-      else
-        RFact_ = rcp(new TransPFactory());
+      RFact_ = RFact;
 
       PRFactory::reUseAggregates_ = PFact_->ReUseAggregates();
       PRFactory::reUseGraph_      = PFact_->ReUseGraph();
@@ -83,7 +80,8 @@ class GenericPRFactory : public PRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       //FIXME cache output level here
 
       PFact_->BuildP(fineLevel,coarseLevel);
-      RFact_->BuildR(fineLevel,coarseLevel);
+      if (RFact_ != Teuchos::null)
+        RFact_->BuildR(fineLevel,coarseLevel);
 
       //FIXME restore output level here
       return true;

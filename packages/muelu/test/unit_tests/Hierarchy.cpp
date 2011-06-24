@@ -129,7 +129,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
   H.SetLevel(levelOne);
 
   RCP<SaPFactory>  PFact = rcp(new SaPFactory());
-  GenericPRFactory PRFact(PFact);
+  RCP<TransPFactory>  RFact = rcp(new TransPFactory());
+  GenericPRFactory PRFact(PFact,RFact);
   RAPFactory    AcFact;
 
   out << "Providing both factories to FillHierarchy." << std::endl;

@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
+  int useImplicitR=0;
   Scalar SADampingFactor=4./3;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
@@ -113,6 +114,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
   clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
   clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
+  clp.setOption("implicitR",&useImplicitR,"restriction will be implicit tranpose of prolongator");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -187,8 +189,18 @@ int main(int argc, char *argv[]) {
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   Pfact->SetDampingFactor(SADampingFactor);
-  RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
+  RCP<RFactory>         Rfact;
+  RCP<GenericPRFactory> PRfact;
+  if (useImplicitR) {
+    PRfact = rcp( new GenericPRFactory(Pfact));
+    H->SetImplicitTranspose(true);
+    Acfact->SetImplicitTranspose(true);
+    if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
+  } else {
+    Rfact = rcp( new TransPFactory() );
+    PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
+  }
 
   RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
