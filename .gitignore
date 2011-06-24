@@ -23,6 +23,7 @@ doxygen_objdb_*.tmp
 # CASL-related extra repos
 /DeCARTExt/
 /PSSDriversExt/
+/RELAP5Ext/
 /StarCCMExt/
 
 # Ignore gtags generated files
