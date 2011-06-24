@@ -107,6 +107,7 @@ int main(int argc, char *argv[]) {
   int amgAsSolver=1;
   int amgAsPrecond=1;
   int useExplicitR=0;
+  int coarseSweeps=50;
   Scalar SADampingFactor=4./3;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
@@ -116,6 +117,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
   clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
   clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as tranpose of prolongator");
+  clp.setOption("coarseSweeps",&coarseSweeps,"sweeps to be used in SGS on the coarsest level");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -261,7 +263,7 @@ int main(int argc, char *argv[]) {
         if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
         if (comm->getRank() == 0) std::cout << "            symmetric Gauss-Seidel" << std::endl;
         Teuchos::ParameterList coarseIfpackList;
-        coarseIfpackList.set("relaxation: sweeps", (LO) 50);
+        coarseIfpackList.set("relaxation: sweeps", (LO) coarseSweeps);
         coarseIfpackList.set("relaxation: damping factor", (SC) 1.0);
         coarseIfpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
         coarseProto = rcp( new Ifpack2Smoother("RELAXATION",coarseIfpackList) );
