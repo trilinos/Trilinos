@@ -71,6 +71,7 @@ int main(int argc, char *argv[]) {
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
   // Timing
@@ -99,13 +100,13 @@ int main(int argc, char *argv[]) {
   Cthulhu::Parameters cthulhuParameters(clp);             // manage parameters of cthulhu
 
   // custom parameters
-  LO maxLevels = 3;
+  LO maxLevels = 10;
   LO its=10;
   std::string coarseSolver="ifpack2";
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
-  int useImplicitR=0;
+  int useExplicitR=0;
   Scalar SADampingFactor=4./3;
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
   clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
   clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
-  clp.setOption("implicitR",&useImplicitR,"restriction will be implicit tranpose of prolongator");
+  clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as tranpose of prolongator");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -192,14 +193,14 @@ int main(int argc, char *argv[]) {
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
   RCP<RFactory>         Rfact;
   RCP<GenericPRFactory> PRfact;
-  if (useImplicitR) {
+  if (useExplicitR) {
+    Rfact = rcp( new TransPFactory() );
+    PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
+  } else {
     PRfact = rcp( new GenericPRFactory(Pfact));
     H->SetImplicitTranspose(true);
     Acfact->SetImplicitTranspose(true);
     if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
-  } else {
-    Rfact = rcp( new TransPFactory() );
-    PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   }
 
   RCP<SmootherPrototype> smooProto;
@@ -257,16 +258,17 @@ int main(int argc, char *argv[]) {
 #endif // HAVE_MUELU_AMESOS2
     } else if(coarseSolver=="ifpack2") {
 #if defined(HAVE_MUELU_IFPACK2)
-
-        std::cout << "I AM HERE, HEAR ME ROAR" << std::endl;
-
         if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
+        if (comm->getRank() == 0) std::cout << "            symmetric Gauss-Seidel" << std::endl;
         Teuchos::ParameterList coarseIfpackList;
-        coarseIfpackList.set("relaxation: sweeps", (LO) 500);
+        coarseIfpackList.set("relaxation: sweeps", (LO) 50);
         coarseIfpackList.set("relaxation: damping factor", (SC) 1.0);
         coarseIfpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
         coarseProto = rcp( new Ifpack2Smoother("RELAXATION",coarseIfpackList) );
 /*
+        FIXME this causes problems in parallel
+        FIXME our best guess is that the import/export stuff in Ifpack2's ILUT is wrong
+
         if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
         Teuchos::ParameterList ifpack2List;
         ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
