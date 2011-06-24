@@ -101,12 +101,12 @@ int read_chaco_file(int Proc,
       return 0;
     }
 
-    if (nvtxs > 0)
+    if (start){
       base = adj[0];
-
-    for (i=1; i < start[nvtxs]; i++){
-      if (adj[i] < base)
-        base = adj[i];
+      for (i=1; i < start[nvtxs]; i++){
+        if (adj[i] < base)
+          base = adj[i];
+      }
     }
 
     /* Read Chaco geometry file, if provided. */
