@@ -1,6 +1,6 @@
 #!/bin/sh
-#MULTX="1 2 3 4 5 6 7 8 9 10"
-MULTX="1"
+MULTX="1 2 5 10 20 40 80 160 320 480 540"
+#
 TEMPLATE=muelu.slurm.template
 SPREF=muelu
 DPREF=run
@@ -10,8 +10,9 @@ CPN=8
 #NXBASE=60
 #MULTIPLIES=100
 
-MATRIX=Laplace2D
+MATRIX=Laplace1D
 
+# Redsky
 if [ $MATRIX == "Laplace1D" ]; then
   NXBASE=4000000
 elif [ $MATRIX == "Laplace2D" ]; then
@@ -95,7 +96,7 @@ ocoee_analyze(){
    for ((M=0;M<${#TIMELINES[@]};M++)); do
      T=${TIMELINES[${M}]}
      #TIME[$M]=`grep $T screen.out.* | cut -f3 -d')' | cut -f1 -d'(' | awk '{printf "%11.1f", $1 }'`
-     TIME[$M]=`grep $T screen.out.* | cut -f2 -d':' | awk '{printf "%11.1f", $1 }'`
+     TIME[$M]=`grep "$T" screen.out.* | cut -f2 -d':' | awk '{printf "%11.1f", $1 }'`
    done
 
    NORM=`grep Problem screen.out.* | cut -f2 -d':' | awk '{printf "%6.4e", $1}'`
