@@ -10,7 +10,7 @@
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> >
+Teuchos::RCP<Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> >
 buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
 {
    typedef Tpetra::Map<std::size_t,GlobalOrdinalT,Node> Map;
@@ -92,12 +92,10 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
    // contain the full field number vector
    ///////////////////////////////////////////////////////////////////////////////
 
-   std::size_t indicesSz = 0;
    Teuchos::RCP<Map> destMap;
    {
       std::vector<GlobalOrdinalT> indices;
       ugi.getOwnedAndSharedIndices(indices);
-      indicesSz = indices.size();
       destMap = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(indices),
                                      Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), ugi.getComm()));
    }
@@ -117,6 +115,63 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
    dest->doImport(*source,importer,Tpetra::INSERT);
 
    return dest;
+}
+
+template <typename ScalarT,typename ArrayT,typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+void updateGhostedDataReducedVector(const std::string & fieldName,const std::string blockId,
+                                    const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
+                                    const ArrayT & data,Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> & dataVector)
+{
+   typedef Tpetra::Map<std::size_t,GlobalOrdinalT,Node> Map;
+   typedef Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> IntVector;
+   typedef Tpetra::Import<std::size_t,GlobalOrdinalT,Node> Importer;
+
+   TEST_FOR_EXCEPTION(!ugi.fieldInBlock(fieldName,blockId),std::runtime_error,
+                      "panzer::buildGhostedDataReducedVector: field name = \""+fieldName+"\" is not in element block = \"" +blockId +"\"!");
+
+   Teuchos::RCP<const Map> dataMap = dataVector.getMap();
+
+   int fieldNum = ugi.getFieldNum(fieldName);
+   const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(blockId);
+   const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
+   
+   TEST_FOR_EXCEPTION(data.dimension(0)!=(int) elements.size(),std::runtime_error,
+                      "panzer::buildGhostedDataReducedVector: data cell dimension does not match up with block cell count");
+
+   // loop over elements distributing relevent data to vector
+   std::vector<GlobalOrdinalT> gids;
+   for(std::size_t e=0;e<elements.size();e++) { 
+      ugi.getElementGIDs(elements[e],gids);
+
+      for(std::size_t f=0;f<fieldOffsets.size();f++) {
+         std::size_t localIndex = dataMap->getLocalElement(gids[fieldOffsets[f]]); // hash table lookup
+         dataVector.replaceLocalValue(localIndex,data(e,f));
+      }
+   }
+}
+
+/** Construct a map that only uses a certain field.
+ */
+template <typename GlobalOrdinalT,typename Node>
+Teuchos::RCP<const Tpetra::Map<std::size_t,GlobalOrdinalT,Node> >
+getFieldMap(int fieldNum,const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> & fieldTVector)
+{
+   Teuchos::RCP<const Tpetra::Map<std::size_t,GlobalOrdinalT,Node> > origMap = fieldTVector.getMap();
+   std::vector<int> fieldVector(fieldTVector.getLocalLength());
+   fieldTVector.get1dCopy(Teuchos::arrayViewFromVector(fieldVector));
+
+   std::vector<GlobalOrdinalT> mapVector;
+   for(std::size_t i=0;i<fieldVector.size();i++) { 
+      if(fieldVector[i]==fieldNum)
+         mapVector.push_back(origMap->getGlobalElement(i));
+   }
+
+   Teuchos::RCP<Tpetra::Map<std::size_t,GlobalOrdinalT,Node> > finalMap 
+      = Teuchos::rcp(new Tpetra::Map<std::size_t,GlobalOrdinalT,Node>(
+                                Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(), Teuchos::arrayViewFromVector(mapVector),
+                                Teuchos::OrdinalTraits<GlobalOrdinalT>::zero(), origMap->getComm()));
+
+   return finalMap;
 }
                                    
 } // end namspace panzer

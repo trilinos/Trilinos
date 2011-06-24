@@ -26,8 +26,13 @@ namespace panzer {
   * \note The description and use of this function are equally confusing...
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> >
+Teuchos::RCP<Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> >
 buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi);
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+Teuchos::RCP<Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType> >
+buildGhostedFieldReducedVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
+{ return buildGhostedFieldReducedVector<LocalOrdinalT,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType>(ugi); }
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -43,6 +48,14 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> >
 buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
                         const Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> > & reducedVec=Teuchos::null);
+
+/** Convenience function default to the basic Kokkos node type.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType> >
+buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
+                        const Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType> > & reducedVec=Teuchos::null)
+{ return buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType>(ugi,reducedVec); }
 
 /** This function builds a vector that defines fields for each global unknown.
   * Notice that requires global communication and uses (underneath) the <code>Tpetra</code>
@@ -69,6 +82,31 @@ void buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdin
                              std::vector<int> & fieldNumbers,
                              const Teuchos::RCP<const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType> > & reducedVec=Teuchos::null)
 { buildGhostedFieldVector<LocalOrdinalT,GlobalOrdinalT,Kokkos::DefaultNode::DefaultNodeType>(ugi,fieldNumbers,reducedVec); }
+
+/** Build a reduced data vector using the reduced field vector. Here reduced is meant in the
+  * exact same context as for the field vectors.
+  *
+  * \param[in] fieldName Name of field data should be ordered as
+  * \param[in] ugi Unique global indexer object that defines the ordering, global ids and field numbers.
+  * \param[in] reducedFieldVec A reduced vector containing the correctly ordered field numbers.
+  *                            Likely computed by <code>buildGhostedFieldReducedVector</code>.
+  * \param[in] data Data to put in vector
+  * \param[out] A Tpetra vector containing the data in the reduced format.  This is
+  *             now available for an import to construct the true ghosted data vector. This
+  *             map must match the reducedFieldVec map.
+  */
+template <typename ScalarT,typename ArrayT,typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+void updateGhostedDataReducedVector(const std::string & fieldName,const std::string blockId,
+                                    const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
+                                    const ArrayT & data,
+                                    Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> & dataVector);
+
+/** Construct a map that only uses a certain field.
+ */
+template <typename GlobalOrdinalT,typename Node>
+Teuchos::RCP<const Tpetra::Map<std::size_t,GlobalOrdinalT,Node> >
+getFieldMap(int fieldNum,const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> & fieldVector);
+
 
 } // end namspace panzer
 

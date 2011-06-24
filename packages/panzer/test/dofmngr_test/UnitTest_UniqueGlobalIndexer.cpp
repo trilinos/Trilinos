@@ -265,6 +265,8 @@ const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::st
 
       return *block1Fields_;
    }
+   else 
+      TEUCHOS_ASSERT(false);
 }
 
 Teuchos::RCP<Teuchos::Comm<int> > UniqueGlobalIndexer::getComm() const
