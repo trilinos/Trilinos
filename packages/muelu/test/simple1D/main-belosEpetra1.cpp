@@ -50,6 +50,7 @@
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 
 int main(int argc, char *argv[]) {
+#ifdef HAVE_MUELU_AMESOS
 
   using Teuchos::RCP;
  
@@ -340,6 +341,7 @@ int main(int argc, char *argv[]) {
 
   }
 
+#endif // #ifdef HAVE_MUELU_AMESOS
   return EXIT_SUCCESS;
 
 }
