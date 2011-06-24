@@ -458,7 +458,11 @@ Superlu<Matrix,Vector>::setParameters_impl(
   }
 
   if( parameterList->isParameter("DiagPivotThresh") ){
-    data_.options.DiagPivotThresh = parameterList->template get<double>("DiagPivotThresh");
+    double diag_pivot_thresh = parameterList->template get<double>("DiagPivotThresh");
+    data_.options.DiagPivotThresh = diag_pivot_thresh;
+    TEST_FOR_EXCEPTION( diag_pivot_thresh < 0 || diag_pivot_thresh > 1,
+			std::invalid_argument,
+			"Invalid value given for 'DiagPivotThresh' parameter" );
   }
 
   if( parameterList->isParameter("ColPerm") ){

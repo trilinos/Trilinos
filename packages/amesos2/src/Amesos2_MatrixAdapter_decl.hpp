@@ -63,7 +63,8 @@ namespace Amesos {
      *              row \c j of \c this.  <tt>rowptr[nrow] = nnz</tt>, where \c
      *              nrow is the number of rows in this matrix.
      * \param [out] nnz is the number of nonzero entries in this matrix.
-     * \param [in]  distribution
+     * \param [in]  rowmap A Tpetra::Map describing the desired distribution of
+     *              the rows of the CRS representation on the calling processors.
      * \param [in]  ordering
      *
      * \exception std::length_error Thrown if \c nzval or \c colind is not
@@ -74,6 +75,18 @@ namespace Amesos {
      *
      * \exception std::runtime_error Thrown if there is an error while extracting
      * row values from the underlying matrix.
+     */
+    void getCrs(const Teuchos::ArrayView<scalar_t> nzval,
+		const Teuchos::ArrayView<global_ordinal_t> colind,
+		const Teuchos::ArrayView<global_size_t> rowptr,
+		global_size_t& nnz,
+		const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+		EStorage_Ordering ordering=Util::Arbitrary) const;
+
+    /**
+     * Convenience overload for the getCrs function that uses an enum
+     * to describe some of the most basic distributions that could be
+     * desired.
      */
     void getCrs(const Teuchos::ArrayView<scalar_t> nzval,
 		const Teuchos::ArrayView<global_ordinal_t> colind,
@@ -95,7 +108,8 @@ namespace Amesos {
      *              column \c j of \c this.  <tt>colptr[ncol] = nnz</tt>, where \c
      *              ncol is the number of columns in this matrix.
      * \param [out] nnz is the number of nonzero entries in this matrix.
-     * \param [in]  distribution
+     * \param [in]  colmap A Tpetra::Map describing the desired distribution of
+     *              the columns of the CCS representation on the calling processors.
      * \param [in]  ordering
      *
      * \exception std::length_error Thrown if \c nzval or \c rowind is not
@@ -106,6 +120,18 @@ namespace Amesos {
      *
      * \exception std::runtime_error Thrown if there is an error while extracting
      * row values from the underlying matrix.
+     */
+    void getCcs(const Teuchos::ArrayView<scalar_t> nzval,
+		const Teuchos::ArrayView<global_ordinal_t> rowind,
+		const Teuchos::ArrayView<global_size_t> colptr,
+		global_size_t& nnz,
+		const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+		EStorage_Ordering ordering=Util::Arbitrary) const;
+
+    /**
+     * Convenience overload for the getCcs function that uses an enum
+     * to describe some of the most basic distributions that could be
+     * desired.
      */
     void getCcs(const Teuchos::ArrayView<scalar_t> nzval,
 		const Teuchos::ArrayView<global_ordinal_t> rowind,
@@ -144,7 +170,7 @@ namespace Amesos {
 		     const Teuchos::ArrayView<global_ordinal_t> colind,
 		     const Teuchos::ArrayView<global_size_t> rowptr,
 		     global_size_t& nnz,
-		     EDistribution distribution,
+		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 		     EStorage_Ordering ordering,
 		     has_special_impl hsi) const;
 
@@ -152,7 +178,7 @@ namespace Amesos {
 		     const Teuchos::ArrayView<global_ordinal_t> colind,
 		     const Teuchos::ArrayView<global_size_t> rowptr,
 		     global_size_t& nnz,
-		     EDistribution distribution,
+		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 		     EStorage_Ordering ordering,
 		     no_special_impl nsi) const;
 
@@ -160,7 +186,7 @@ namespace Amesos {
 		   const Teuchos::ArrayView<global_ordinal_t> colind,
 		   const Teuchos::ArrayView<global_size_t> rowptr,
 		   global_size_t& nnz,
-		   EDistribution distribution,
+		   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 		   EStorage_Ordering ordering,
 		   row_access ra) const;
 
@@ -168,7 +194,7 @@ namespace Amesos {
 		   const Teuchos::ArrayView<global_ordinal_t> colind,
 		   const Teuchos::ArrayView<global_size_t> rowptr,
 		   global_size_t& nnz,
-		   EDistribution distribution,
+		   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 		   EStorage_Ordering ordering,
 		   col_access ca) const;
 
@@ -176,7 +202,7 @@ namespace Amesos {
 		     const Teuchos::ArrayView<global_ordinal_t> rowind,
 		     const Teuchos::ArrayView<global_size_t> colptr,
 		     global_size_t& nnz,
-		     EDistribution distribution,
+		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 		     EStorage_Ordering ordering,
 		     has_special_impl hsi) const;
 
@@ -184,7 +210,7 @@ namespace Amesos {
 		     const Teuchos::ArrayView<global_ordinal_t> rowind,
 		     const Teuchos::ArrayView<global_size_t> colptr,
 		     global_size_t& nnz,
-		     EDistribution distribution,
+		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 		     EStorage_Ordering ordering,
 		     no_special_impl nsi) const;
 
@@ -192,7 +218,7 @@ namespace Amesos {
 		   const Teuchos::ArrayView<global_ordinal_t> rowind,
 		   const Teuchos::ArrayView<global_size_t> colptr,
 		   global_size_t& nnz,
-		   EDistribution distribution,
+		   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 		   EStorage_Ordering ordering,
 		   row_access ra) const;
 
@@ -200,7 +226,7 @@ namespace Amesos {
 		   const Teuchos::ArrayView<global_ordinal_t> rowind,
 		   const Teuchos::ArrayView<global_size_t> colptr,
 		   global_size_t& nnz,
-		   EDistribution distribution,
+		   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 		   EStorage_Ordering ordering,
 		   col_access ca) const;
 
@@ -243,7 +269,7 @@ namespace Amesos {
 
     bool isGloballyIndexed() const;
 
-    RCP<const type> get(EDistribution d) const;
+    RCP<const type> get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
 
   protected:
     const RCP<const Matrix> mat_;

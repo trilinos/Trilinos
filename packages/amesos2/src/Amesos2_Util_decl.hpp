@@ -60,6 +60,7 @@
 #include <Teuchos_FancyOStream.hpp>
 
 #ifdef HAVE_AMESOS2_EPETRA
+#  include <Epetra_Map.h>
 #  include <Epetra_Comm.h>
 #  include <Epetra_SerialComm.h>
 #  ifdef HAVE_MPI
@@ -122,16 +123,26 @@ namespace Amesos {
     /**
      * \brief Transform an Epetra_Map object into a Tpetra::Map
      */
-    template <typename LO,
-	      typename GO,
-	      typename Node>
+    template <typename LO, typename GO, typename GS, typename Node>
     RCP<Tpetra::Map<LO,GO,Node> >
-    epetra_map_to_tpetra_map(Epetra_BlockMap map);
+    epetra_map_to_tpetra_map(const Epetra_BlockMap& map);
+
+    /**
+     * \brief Transform a Tpetra::Map object into an Epetra_Map
+     */
+    template <typename LO, typename GO, typename GS, typename Node>
+    RCP<Epetra_Map>
+    tpetra_map_to_epetra_map(const Tpetra::Map<LO,GO,Node>& map);
 
     /**
      * \brief Transform an Epetra_Comm object into a Teuchos::Comm object
      */
     const RCP<const Teuchos::Comm<int> > to_teuchos_comm(RCP<const Epetra_Comm> c);
+
+    /**
+     * \brief Transfrom a Teuchos::Comm object into an Epetra_Comm object
+     */
+    const RCP<const Epetra_Comm> to_epetra_comm(RCP<const Teuchos::Comm<int> > c);
 
 #endif	// HAVE_AMESOS2_EPETRA
 

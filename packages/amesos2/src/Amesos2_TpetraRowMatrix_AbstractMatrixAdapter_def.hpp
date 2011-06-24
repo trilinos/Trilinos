@@ -278,9 +278,9 @@ namespace Amesos {
   RCP<const MatrixAdapter<DerivedMat> >
   AbstractConcreteMatrixAdapter<
     Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat
-    >::get_impl(EDistribution d) const
+    >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
   {
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(d);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
   }
 
 } // end namespace Amesos

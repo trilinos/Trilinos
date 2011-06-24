@@ -165,19 +165,8 @@ namespace Amesos {
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getRowMap_impl() const
   {
     // Must transform to a Tpetra::Map
-    Epetra_Map rowmap = this->mat_->RowMatrixRowMap();
-
-    int num_my_elements = rowmap.NumMyElements();
-    Teuchos::Array<int> my_global_elements(num_my_elements);
-    rowmap.MyGlobalElements(my_global_elements.getRawPtr());
-
-    using Teuchos::as;
-    typedef Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> map_t;
-    RCP<map_t> tmap = rcp(new map_t(Teuchos::OrdinalTraits<global_size_t>::invalid(),
-				    my_global_elements(),
-				    as<global_ordinal_t>(rowmap.IndexBase()),
-				    this->getComm()));
-    return tmap;
+    const Epetra_Map rowmap = this->mat_->RowMatrixRowMap();
+    return( Util::epetra_map_to_tpetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(rowmap) );
   }
 
   template <class DerivedMat>
@@ -187,19 +176,8 @@ namespace Amesos {
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getColMap_impl() const
   {
     // Must transform this matrix' Epetra_Map to a Tpetra::Map
-    Epetra_Map colmap = this->mat_->RowMatrixColMap();
-
-    int num_my_elements = colmap.NumMyElements();
-    Teuchos::Array<int> my_global_elements(num_my_elements);
-    colmap.MyGlobalElements(my_global_elements.getRawPtr());
-
-    using Teuchos::as;
-    typedef Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> map_t;
-    RCP<map_t> tmap = rcp(new map_t(Teuchos::OrdinalTraits<global_size_t>::invalid(),
-				    my_global_elements(),
-				    as<global_ordinal_t>(colmap.IndexBase()),
-				    this->getComm()));
-    return tmap;
+    const Epetra_Map colmap = this->mat_->RowMatrixColMap();
+    return( Util::epetra_map_to_tpetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(colmap) );
   }
 
   template <class DerivedMat>
@@ -225,10 +203,10 @@ namespace Amesos {
 
   template <class DerivedMat>
   RCP<const MatrixAdapter<DerivedMat> >
-  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::get_impl(EDistribution d) const
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
   {
     // Delegate implementation to subclass
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(d);
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
   }
 
 } // end namespace Amesos

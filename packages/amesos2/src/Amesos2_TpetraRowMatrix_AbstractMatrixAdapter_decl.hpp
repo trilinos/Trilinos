@@ -100,7 +100,7 @@ namespace Amesos {
     // Because instantiation of the subclasses could be wildly
     // different (cf subclasses of Epetra_RowMatrix), this method
     // hands off implementation to the adapter for the subclass
-    RCP<const super_t> get_impl(EDistribution d) const;
+    RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
 
   };
 

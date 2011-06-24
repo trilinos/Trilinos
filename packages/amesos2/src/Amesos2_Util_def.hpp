@@ -65,6 +65,44 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #ifdef HAVE_AMESOS2_EPETRA
+template <typename LO, typename GO, typename GS, typename Node>
+Teuchos::RCP<Tpetra::Map<LO,GO,Node> >
+Amesos::Util::epetra_map_to_tpetra_map(const Epetra_BlockMap& map){
+  int num_my_elements = map.NumMyElements();
+  Teuchos::Array<int> my_global_elements(num_my_elements);
+  map.MyGlobalElements(my_global_elements.getRawPtr());
+
+  using Teuchos::as;
+  using Teuchos::rcp;
+  typedef Tpetra::Map<LO,GO,Node> map_t;
+  RCP<map_t> tmap = rcp(new map_t(Teuchos::OrdinalTraits<GS>::invalid(),
+				  my_global_elements(),
+				  as<GO>(map.IndexBase()),
+				  to_teuchos_comm(Teuchos::rcpFromRef(map.Comm()))));
+  return tmap;
+}
+
+template <typename LO, typename GO, typename GS, typename Node>
+Teuchos::RCP<Epetra_Map>
+Amesos::Util::tpetra_map_to_epetra_map(const Tpetra::Map<LO,GO,Node>& map){
+  using Teuchos::as;
+  Teuchos::Array<GO> elements_tmp;
+  elements_tmp = map.getNodeElementList();
+  int num_my_elements = elements_tmp.size();
+  Teuchos::Array<int> my_global_elements(num_my_elements);
+  for (int i = 0; i < num_my_elements; ++i){
+    my_global_elements[i] = as<int>(elements_tmp[i]);
+  }
+
+  using Teuchos::rcp;
+  RCP<Epetra_Map> emap = rcp(new Epetra_Map(-1,
+					    num_my_elements,
+					    my_global_elements.getRawPtr(),
+					    as<GO>(map.getIndexBase()),
+					    *to_epetra_comm(map.getComm())));
+  return emap;
+}
+
 const Teuchos::RCP<const Teuchos::Comm<int> >
 Amesos::Util::to_teuchos_comm(Teuchos::RCP<const Epetra_Comm> c){
   using Teuchos::rcp;
@@ -96,7 +134,38 @@ Amesos::Util::to_teuchos_comm(Teuchos::RCP<const Epetra_Comm> c){
   return(Teuchos::null);
 }
 
+const Teuchos::RCP<const Epetra_Comm>
+Amesos::Util::to_epetra_comm(Teuchos::RCP<const Teuchos::Comm<int> > c){
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::set_extra_data;
+
+  Teuchos::RCP<const Teuchos::SerialComm<int> >
+    serialTeuchosComm = rcp_dynamic_cast<const Teuchos::SerialComm<int> >(c);
+  if( serialTeuchosComm.get() ){
+    Teuchos::RCP<const Epetra_SerialComm> serialComm = rcp(new Epetra_SerialComm());
+    set_extra_data( serialTeuchosComm, "serialTeuchosComm", Teuchos::inOutArg(serialComm) );
+    return serialComm;
+  }
+
+#ifdef HAVE_MPI
+  Teuchos::RCP<const Teuchos::MpiComm<int> >
+    mpiTeuchosComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(c);
+  if( mpiTeuchosComm.get() ){
+    Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
+      rawMpiComm = mpiTeuchosComm->getRawMpiComm();
+    set_extra_data( mpiTeuchosComm, "mpiTeuchosComm", Teuchos::inOutArg(rawMpiComm) );
+    Teuchos::RCP<const Epetra_MpiComm>
+      mpiComm = rcp(new Epetra_MpiComm(*rawMpiComm()));
+    return mpiComm;
+  }
+#endif
+
+  return Teuchos::null;
+}
+
 #endif	// HAVE_AMESOS2_EPETRA
+
 
 template <typename Scalar,
 	  typename GlobalOrdinal,
@@ -221,7 +290,7 @@ Amesos::Util::scale(Teuchos::ArrayView<Scalar1> vals, size_t l,
 
 
 /*
- * TODO: Use Matrix and MultiVecAdapters instead of strait matrix and
+ * TODO: Use Matrix and MultiVecAdapters instead of straight-up matrix and
  * vector arguments
  */
 template <typename Matrix,

@@ -11,46 +11,25 @@ namespace Amesos {
     {}
 
   Teuchos::RCP<const MatrixAdapter<Epetra_CrsMatrix> >
-  ConcreteMatrixAdapter<Epetra_CrsMatrix>::get_impl(EDistribution d) const
+  ConcreteMatrixAdapter<Epetra_CrsMatrix>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
     {
       using Teuchos::as;
       using Teuchos::rcp;
       using Teuchos::rcpFromRef;
       
-      RCP<const Epetra_Map> o_map, l_map;
+      RCP<const Epetra_Map> o_map, t_map;
       o_map = rcpFromRef(this->mat_->RowMap());
-      int numrows = as<int>(this->getGlobalNumRows());
+      t_map = Util::tpetra_map_to_epetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(*map);
       
-      if( d == Util::Rooted ){
-	if( Teuchos::size(*comm_) == 1 ){ // then mat_ (and this adapter) is already "rooted"
-	  return( rcpFromRef(*this) );
-	}
+      RCP<Epetra_CrsMatrix> t_mat = rcp(new Epetra_CrsMatrix(Copy, *t_map, this->getMaxRowNNZ()));
+      
+      Epetra_Import importer(*t_map, *o_map);
+      
+      t_mat->Import(*(this->mat_), importer, Insert);
 
-	int num_my_elements;
-	if( this->getComm()->getRank() == 0 ){
-	  num_my_elements = numrows;
-	} else {
-	  num_my_elements = Teuchos::OrdinalTraits<int>::zero();
-	}
-	l_map = rcp(new Epetra_Map( -1,	// do not create a locally replicated map but compute numglobal 
-				    num_my_elements,
-				    o_map->IndexBase(),
-				    this->mat_->Comm() ));
-      } else if( d == Util::Globally_Replicated ){
-	l_map = rcp(new Epetra_LocalMap( numrows,
-					 o_map->IndexBase(),
-					 this->mat_->Comm() ));
-      }
+      t_mat->FillComplete();	// Must be in local form for later extraction of rows
       
-      RCP<Epetra_CrsMatrix> l_mat = rcp(new Epetra_CrsMatrix(Copy, *l_map, this->getMaxRowNNZ()));
-      
-      Epetra_Import importer(*l_map, *o_map);
-      
-      l_mat->Import(*(this->mat_), importer, Insert);
-
-      l_mat->FillComplete();	// Must be in local form for later extraction of rows
-      
-      return( rcp(new ConcreteMatrixAdapter<Epetra_CrsMatrix>(l_mat)) );
+      return( rcp(new ConcreteMatrixAdapter<Epetra_CrsMatrix>(t_mat)) );
     }
 
 } // end namespace Amesos

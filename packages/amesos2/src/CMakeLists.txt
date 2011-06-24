@@ -220,9 +220,9 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     # Amesos2_EpetraJadMatrixAdapter.cpp
     # Amesos2_EpetraMsrMatrixAdapter.cpp
     # Amesos2_EpetraRowMatrixAdapter.cpp
+    # Amesos2_EpetraVbrMatrixAdapter.cpp
     Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.cpp
     Amesos2_EpetraCrsMatrix_MatrixAdapter.cpp
-    Amesos2_EpetraVbrMatrixAdapter.cpp
     )
 ENDIF()
 
