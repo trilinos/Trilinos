@@ -26,6 +26,10 @@
 (global-set-key [kp-delete] 'delete-char)
 (global-set-key "\C-v" 'yank)
 
+;; Fix Ctrl+RightArrow and Ctrl+LeftArrow 
+(global-set-key "\M-[1;5C"    'forward-word)      ; Ctrl+right   => forward word 
+(global-set-key "\M-[1;5D"    'backward-word)     ; Ctrl+left    => backward word 
+
 ;;; Set up other customizations
 (custom-set-variables
  '(case-fold-search t)

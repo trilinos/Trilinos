@@ -54,14 +54,16 @@ A) Getting set up to use CMake
 ------------------------------
 
 
-(*) Installing a binary release of CMake [Recommended for Trilinos users]:
+(*) Installing a binary release of CMake [Recommended for casual Trilinos
+    users]:
 
   Download and install the binary (currently version 2.8 is required) from:
 
     http://www.cmake.org/cmake/resources/software.html
 
 
-(*) Installing CMake from source [Recommended for Trilinos developers]:
+(*) Installing CMake from source [Recommended for Trilinos developers and
+    experienced Trilinos users]:
 
   If you have access to the Trilinos CVS repository, then install CMake with:
 
@@ -118,7 +120,7 @@ C) Configuring (Makefile Generator)
 
 (*) Basic configuration of Trilinos:
 
-  a) [Recommended] Create a 'do-configure' script like:
+  a) [Recommended] Create a 'do-configure' script such as:
 
         EXTRA_ARGS=$@
         
@@ -149,27 +151,36 @@ C) Configuring (Makefile Generator)
           $EXTRA_ARGS \
           ${TRILINOS_HOME}
        
-   where MyConfigureOptions.cmake might look like:
+    where MyConfigureOptions.cmake might look like:
 
-     SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "")
-     SET(Trilinos_ENABLE_CHECKED_STL ON CACHE BOOL "")
-     SET(BUILD_SHARED_LIBS ON CACHE BOOL "")
-     ...
+      SET(CMAKE_BUILD_TYPE DEBUG CACHE STRING "" FORCE)
+      SET(Trilinos_ENABLE_CHECKED_STL ON CACHE BOOL "" FORCE)
+      SET(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+      ...
 
-   Using a configuration fragement file allows for better reuse of configure
-   options across different configure scripts and better version control of
-   configure options.
+    Using a configuration fragment file allows for better reuse of configure
+    options across different configure scripts and better version control of
+    configure options.
+
+    NOTE: You can actually pass in a list of configuration fragement files
+    which will be read in the order they are given.
+
+    NOTE: If you do not use 'FORCE' shown above, then the option can be
+    overridden on the cmake command line with -D options.  Also, if you don't
+    use 'FORCE' then the option will not be set if it is already set in the
+    case (e.g. by another configuration fragment file prior in the list).
 
   c) Using ccmake to configure:
 
     $ ccmake $TRILINOS_HOME
 
-  d) Using the QT CMake configuration GUI
+  d) Using the QT CMake configuration GUI:
 
     On systems whre the QT CMake GUI is installed (e.g. Windows) the CMake GUI
     can be a nice way to configure Trilinos if you are a user.  To make your
     configuration easily repeatable, you might want to create a fragement file
-    and just load it by setting Trilinos_CONFIGURE_OPTIONS_FILE in the GUI.
+    and just load it by setting Trilinos_CONFIGURE_OPTIONS_FILE (see above) in
+    the GUI.
 
 
 (*) Selecting the list of packages to enable:

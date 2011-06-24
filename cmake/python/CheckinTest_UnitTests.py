@@ -2685,7 +2685,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedCommonOptionsSummary \
       +"Running: mailx -s .FAILED: Trilinos/MPI_DEBUG: configure failed. bogous@somwhere.com\n" \
       +"SERIAL_RELEASE: Skipping sending build/test case email because it passed and --send-email-only-on-failure was set!\n" \
-      +"Running: mailx -s .FAILED CONFIGURE/BUILD/TEST: Trilinos: brain.sandia.gov. bogous@somwhere.com\n" \
+      +"Running: mailx -s .FAILED CONFIGURE/BUILD/TEST: Trilinos: .* bogous@somwhere.com\n" \
       )
 
 
