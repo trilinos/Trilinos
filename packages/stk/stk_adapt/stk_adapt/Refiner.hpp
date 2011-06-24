@@ -155,6 +155,8 @@ namespace stk {
 
       void smoothGeometry(MeshGeometry& mesh_geometry);
 
+      void deleteParentElements();
+
 
     protected:
 

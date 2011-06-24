@@ -843,14 +843,21 @@ namespace stk {
 #if defined( STK_ADAPT_HAS_GEOMETRY )
       if (m_geomSnap)
         {
-          GeometryKernelOpenNURBS gk;
-          MeshGeometry mesh_geometry(&gk);
-          GeometryFactory factory(&gk, &mesh_geometry);
-          factory.read_file(m_geomFile, &m_eMesh);
-          mesh_geometry.snap_points_to_geometry(&m_eMesh);
 
-          if (m_doSmoothGeometry)
-            smoothGeometry(mesh_geometry);
+            GeometryKernelOpenNURBS gk;
+            MeshGeometry mesh_geometry(&gk);
+            GeometryFactory factory(&gk, &mesh_geometry);
+            factory.read_file(m_geomFile, &m_eMesh);
+            mesh_geometry.snap_points_to_geometry(&m_eMesh);
+
+            if (m_doSmoothGeometry)
+              {
+                smoothGeometry(mesh_geometry);
+                mesh_geometry.snap_points_to_geometry(&m_eMesh);
+              }
+
+
+
         }
 #endif
 
@@ -862,6 +869,50 @@ namespace stk {
       //std::cout << "tmp m_nodeRegistry.m_gen_cnt= " << m_nodeRegistry->m_gen_cnt << std::endl;
 
     } // doBreak
+
+    
+    // FIXME - temp until we figure out what to do with parent/child, persistence, etc.
+    // FIXME - just deletes elements, not family trees for now
+
+    /// Delete all elements that aren't child elements
+    void Refiner::deleteParentElements()
+    {
+
+      elements_to_be_destroyed_type parents;
+
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        {
+          stk::mesh::Bucket & bucket = **k ;
+
+          // only do "old" elements
+          //if (!oldPartSelector(bucket))
+          //  continue;
+
+          const unsigned num_elements_in_bucket = bucket.size();
+          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+            {
+              stk::mesh::Entity& element = bucket[iElement];
+              if (m_eMesh.isParentElement(element, false))
+                {
+#if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
+                      parents.push_back(&element);
+#else
+                      parents.insert(&element);
+#endif
+                }
+            }
+        }
+
+      m_eMesh.getBulkData()->modification_begin();
+#if PERCEPT_USE_FAMILY_TREE
+      removeFamilyTrees();
+#endif
+      removeOldElements(parents);
+      m_eMesh.getBulkData()->modification_end();
+
+    }
 
     static stk::mesh::Selector getNodeWasSnappedSelector(MeshGeometry& mesh_geometry)
     {
@@ -1064,7 +1115,7 @@ namespace stk {
                             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
                             node_at_centroid = nodeIds_onSE[0]; // FIXME for quadratic elements
 
-                            if (on_geometry_selector(*node_at_centroid))
+                            if (0 && on_geometry_selector(*node_at_centroid))
                               {
                                 if (debug) std::cout << "tmp debug face centroid node is on geometry so we won't be moving it" << std::endl;
                                 continue;
