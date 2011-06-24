@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
   if (comm->getRank() == 0)
     std::cout << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
 
-  Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
 
   // Use AMG directly as an iterative method
   {

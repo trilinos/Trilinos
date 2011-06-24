@@ -293,9 +293,9 @@ public:
   will be accumulated into \c Y.
   */
   //TODO virtual=0 // TODO: Add default parameters ?
-  inline void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
-     matrixData_->multiply(X, Y, trans, alpha, beta);
-  }
+//   inline void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
+//      matrixData_->multiply(X, Y, trans, alpha, beta);
+//   }
 
   //@}
 

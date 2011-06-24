@@ -466,13 +466,13 @@ namespace Cthulhu {
 
     // TODO : templated type
 
-    inline void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
-      CTHULHU_DEBUG_ME; 
+//     inline void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
+//       CTHULHU_DEBUG_ME; 
 
-      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, X, tX, "Cthulhu::TpetraCrsMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
-      CTHULHU_DYNAMIC_CAST(      TpetraMultiVector, Y, tY, "Cthulhu::TpetraCrsMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
-      mtx_->template multiply<Scalar,Scalar>(*tX.getTpetra_MultiVector(), *tY.getTpetra_MultiVector(), trans, alpha, beta);
-    }
+//       CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, X, tX, "Cthulhu::TpetraCrsMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+//       CTHULHU_DYNAMIC_CAST(      TpetraMultiVector, Y, tY, "Cthulhu::TpetraCrsMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+//       mtx_->template multiply<Scalar,Scalar>(*tX.getTpetra_MultiVector(), *tY.getTpetra_MultiVector(), trans, alpha, beta);
+//     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
      //! Solves a linear system when the underlying matrix is triangular.

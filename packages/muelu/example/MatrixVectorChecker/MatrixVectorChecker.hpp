@@ -66,7 +66,7 @@ int MatrixVectorChecker(const Teuchos::RCP<const Cthulhu::Operator<Scalar, Local
   }
 
   // y <-- mat*v via standard multiply
-  mat->multiply(*vv,*yy, Teuchos::NO_TRANS, 1, 0);
+  mat->apply(*vv,*yy, Teuchos::NO_TRANS, 1, 0);
 
   // TODO ??
   // Copy v and add ghost stuff imported from other processors
