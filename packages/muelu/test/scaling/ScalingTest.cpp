@@ -257,6 +257,16 @@ int main(int argc, char *argv[]) {
 #endif // HAVE_MUELU_AMESOS2
     } else if(coarseSolver=="ifpack2") {
 #if defined(HAVE_MUELU_IFPACK2)
+
+        std::cout << "I AM HERE, HEAR ME ROAR" << std::endl;
+
+        if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
+        Teuchos::ParameterList coarseIfpackList;
+        coarseIfpackList.set("relaxation: sweeps", (LO) 500);
+        coarseIfpackList.set("relaxation: damping factor", (SC) 1.0);
+        coarseIfpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+        coarseProto = rcp( new Ifpack2Smoother("RELAXATION",coarseIfpackList) );
+/*
         if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
         Teuchos::ParameterList ifpack2List;
         ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
@@ -264,6 +274,7 @@ int main(int argc, char *argv[]) {
         ifpack2List.set("fact: absolute threshold", 0);
         ifpack2List.set("fact: relative threshold", 0);
         coarseProto = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
+*/
 #else
         std::cout  << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
         return EXIT_FAILURE;
@@ -276,7 +287,9 @@ int main(int argc, char *argv[]) {
   if (coarseProto == Teuchos::null) {
     throw(MueLu::Exceptions::RuntimeError("main: coarse smoother error"));
   }
+
   SmootherFactory coarseSolveFact(coarseProto);
+
   //SmootherFactory coarseSolveFact(smooProto);    //JJH lazy man's way to have a one-level method with smoother
   H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
 
@@ -299,7 +312,7 @@ int main(int argc, char *argv[]) {
   if (amgAsSolver) {
     *out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   
-    Op->multiply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
   
     {
       X->putScalar( (SC) 0.0);
