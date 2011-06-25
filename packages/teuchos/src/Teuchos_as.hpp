@@ -31,6 +31,10 @@
 
 #include "Teuchos_TestForException.hpp"
 
+#ifdef HAVE_TEUCHOS_QD
+#include <qd/qd_real.h>
+#include <qd/dd_real.h>
+#endif
 
 namespace Teuchos {
 
@@ -81,7 +85,6 @@ public:
       // meaningful and portable runtime checks of conversions.
     }
 };
-
 
 /** \brief Perform an debug-enabled checked conversion from one value type
  * object to another.
@@ -161,6 +164,18 @@ inline TypeTo asSafe( const TypeFrom& t )
 }
 
 
+template <class TypeTo> 
+class asFunc {
+  public:
+  asFunc() {}
+
+  template <class TypeFrom>
+  inline TypeTo operator()(const TypeFrom &t) {
+    return as<TypeTo>(t);
+  }
+};
+
+
 //
 // Standard specializations of ValueTypeConversionTraits
 //
@@ -176,6 +191,59 @@ public:
     { return std::string(t); }
 };
 
+#ifdef HAVE_TEUCHOS_QD
+
+/** \brief Convert qd_real to double. */
+template <>
+class ValueTypeConversionTraits<double, qd_real> {
+public:
+  inline static double convert( const qd_real t )
+    { return to_double(t); }
+  inline static double safeConvert( const qd_real t )
+    { return to_double(t); }
+};
+
+/** \brief Convert qd_real to float. */
+template <>
+class ValueTypeConversionTraits<float, qd_real> {
+public:
+  inline static float convert( const qd_real t )
+    { return (float)to_double(t); }
+  inline static float safeConvert( const qd_real t )
+    { return (float)to_double(t); }
+};
+
+/** \brief Convert qd_real to dd_real. */
+template <>
+class ValueTypeConversionTraits<dd_real, qd_real> {
+public:
+  inline static dd_real convert( const qd_real t )
+    { return to_dd_real(t); }
+  inline static dd_real safeConvert( const qd_real t )
+    { return to_dd_real(t); }
+};
+
+/** \brief Convert dd_real to double. */
+template <>
+class ValueTypeConversionTraits<double, dd_real> {
+public:
+  inline static double convert( const dd_real t )
+    { return to_double(t); }
+  inline static double safeConvert( const dd_real t )
+    { return to_double(t); }
+};
+
+/** \brief Convert dd_real to float. */
+template <>
+class ValueTypeConversionTraits<float, dd_real> {
+public:
+  inline static float convert( const dd_real t )
+    { return (float)to_double(t); }
+  inline static float safeConvert( const dd_real t )
+    { return (float)to_double(t); }
+};
+
+#endif
 
 // ToDo: Add more specializations as needed!
 
