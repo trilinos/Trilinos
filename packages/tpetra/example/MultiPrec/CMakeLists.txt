@@ -1,13 +1,35 @@
 INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
-# IF (Trilinos_ENABLE_CXX11)
-#   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#     MultiPrecFPCG
-#     SOURCES MultiPrecFPCG
-#     ARGS 
-#     COMM serial mpi
-#     STANDARD_PASS_OUTPUT
-#   )
-# ENDIF()
-# 
+IF (Trilinos_ENABLE_CXX11)
+  PACKAGE_ADD_EXECUTABLE(
+    MultiPrecFPCG
+    SOURCES MultiPrecFPCG
+  )
+
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(MultiPrecInputMatrix
+      SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
+      SOURCE_FILES bcsstk14.hb
+      )
+
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(MultiPrecInputStack
+      SOURCE_FILES double.xml double_float.xml qd_dd.xml qd_dd_double.xml
+      EXEDEPS MultiPrecFPCG
+      )
+
+  IF (Tpetra_ENABLE_QD) 
+    PACKAGE_ADD_TEST(MultiPrecFPCG
+      NAME MultiPrecFPCG_qd_dd_double
+      ARGS "--matrix-file=bcsstk14.hb --param-file=qd_dd_double.xml"
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+    )
+  ELSE()
+    PACKAGE_ADD_TEST(MultiPrecFPCG
+      NAME MultiPrecFPCG_qd_dd_double
+      ARGS "--matrix-file=bcsstk14.hb --param-file=double_float.xml"
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
+ENDIF()
