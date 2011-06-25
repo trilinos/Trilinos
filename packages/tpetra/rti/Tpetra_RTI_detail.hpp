@@ -98,6 +98,20 @@ namespace Tpetra {
           }
       };
 
+      //! adapter class between kernels for Tpetra::RTI::tertiary_transform and Tpetra::RTI::detail::tertiary_transform
+      template <class OP, class S1, class S2, class S3>
+      class TertiaryFunctorAdapter {
+        protected:
+          OP         _op;
+          S1       * _vec_inout;
+          const S2 * _vec_in2;
+          const S3 * _vec_in3;
+        public:
+          TertiaryFunctorAdapter(OP op) : _op(op)    {}
+          inline void setData(S1 *vec_inout, const S2 *vec_in2, const S3 *vec_in3) { _vec_inout = vec_inout; _vec_in2 = vec_in2; _vec_in3 = vec_in3;  }
+          inline void execute(int i)                            { _vec_inout[i] = _op(_vec_inout[i], _vec_in2[i], _vec_in3[i]); }
+      };
+
       //! adapter class between kernels for Tpetra::RTI::binary_transform and Tpetra::RTI::detail::binary_transform
       template <class Glob, class S1, class S2>
       class RTIReductionAdapter {
@@ -219,6 +233,30 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
         TEST_FOR_EXCEPTION( mv_in2.getNode() != mv_inout.getNode(), std::runtime_error, 
             "Tpetra::RTI::detail::binary_transform(): multivectors must share the same node.");
+#endif
+        node->template parallel_for(0, N, op);
+      }
+
+      //! pass \c vec_inout, \c vec_in2 and \c vec_in3 data pointers to \c op, then execute via node parallel_for
+      template <class S1, class S2, class S3, class LO, class GO, class Node, class OP>
+      void tertiary_transform(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, OP op) 
+      {
+        Kokkos::MultiVector<S1,Node>       &mv_inout = vec_inout.getLocalMVNonConst();
+        const Kokkos::MultiVector<S2,Node> &mv_in2   = vec_in2.getLocalMV();
+        const Kokkos::MultiVector<S3,Node> &mv_in3   = vec_in3.getLocalMV();
+        const RCP<Node> node = mv_inout.getNode();
+        // ready data
+        Kokkos::ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        S1       * out_ptr = rbh.addNonConstBuffer(mv_inout.getValuesNonConst());
+        const S2 * in_ptr2 = rbh.addConstBuffer(mv_in2.getValues());
+        const S3 * in_ptr3 = rbh.addConstBuffer(mv_in3.getValues());
+        rbh.end();
+        op.setData(out_ptr, in_ptr2, in_ptr3);
+        const size_t N = mv_inout.getNumRows();
+#ifdef HAVE_TPETRA_DEBUG
+        TEST_FOR_EXCEPTION( mv_in2.getNode() != mv_inout.getNode() || mv_in3.getNode() != mv_in2.getNode(), std::runtime_error, 
+            "Tpetra::RTI::detail::tertiary_transform(): multivectors must share the same node.");
 #endif
         node->template parallel_for(0, N, op);
       }

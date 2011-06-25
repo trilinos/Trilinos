@@ -58,7 +58,7 @@ namespace Tpetra {
       static inline T identity() {return Teuchos::ScalarTraits<T>::one();}
     };
 
-    //! A type glob containing the types needed for calling Tpetra::RTI::binary_pre_transform_reduce() with individual functors.
+    //! A type glob containing the types needed for calling Tpetra::RTI::reduce() with individual functors.
     template <class GOP, class ROP, class IOP> 
     class ReductionGlob {
       public:
@@ -70,7 +70,7 @@ namespace Tpetra {
         ReductionGlob(GenOP gop, RedOP rop) : genop(gop), redop(rop) {}
     };
 
-    //! A type glob containing the types needed for calling Tpetra::RTI::reduce() with individual functors.
+    //! A type glob containing the types needed for calling Tpetra::RTI::binary_pre_transform_reduce() with individual functors.
     template <class TxOP, class GOP, class ROP, class IOP> 
     class TransformReductionGlob {
       public:
@@ -126,6 +126,22 @@ namespace Tpetra {
       Tpetra::RTI::detail::binary_transform(vec_inout, vec_in2, adapter_op);
     }
 
+    //! \brief Transform values of \c vec_inout using \c vec_inout, \c vec_in2, \c vec_in3 and operator \c op.
+    /** For each element <tt>vec_inout[i]</tt>, assign <tt>vec_inout[i] = op( vec_inout[i], vec_in2[i], vec_in3[i] )</tt>
+        
+        Calls Tpetra::RTI::detail::tertiary_transform via the Tpetra::RTI::detail::TertiaryFunctorAdapter.
+      */
+    template <class S1, class S2, class S3, class LO, class GO, class Node, class OP>
+    void tertiary_transform(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, OP op) 
+    {
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength() || vec_in2.getLocalLength() != vec_in3.getLocalLength(), std::runtime_error,
+          "Tpetra::RTI::tertiary_transform(vec_inout,vec_in2,vec_in3): vec_inout, vec_in2 and vec_in3 must have the same local length.");
+#endif
+      Tpetra::RTI::detail::TertiaryFunctorAdapter<OP,S1,S2,S3> adapter_op(op);
+      Tpetra::RTI::detail::tertiary_transform(vec_inout, vec_in2, vec_in3, adapter_op);
+    }
+
     //! \brief Reduce values of \c vec_in1 and \c vec_in2 using the operators instantiated in \c glob.
     /** For each element pair <tt>vec_in1[i]</tt> and <tt>vec_in2[i]</tt>, generates reduction elements via <tt>glob.genop( vec_in1[i], vec_in2[i] )</tt> and reduces them via 
         the <tt>glob.redop</tt> binary functor. 
@@ -138,7 +154,7 @@ namespace Tpetra {
     {
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( vec_in1.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
-          "Tpetra::RTI::binary_transform(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
+          "Tpetra::RTI::reduce(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
 #endif
       Tpetra::RTI::detail::RTIReductionAdapter<Glob,S1,S2> adapter_op(glob);
       return Tpetra::RTI::detail::reduce(vec_in1, vec_in2, adapter_op);
@@ -157,7 +173,7 @@ namespace Tpetra {
     {
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( vec_in1.getLocalLength() != vec_in2.getLocalLength() || vec_in2.getLocalLength() != vec_in3.getLocalLength(), 
-          std::runtime_error, "Tpetra::RTI::binary_transform(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
+          std::runtime_error, "Tpetra::RTI::reduce(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
 #endif
       Tpetra::RTI::detail::RTIReductionAdapter3<Glob,S1,S2,S3> adapter_op(glob);
       return Tpetra::RTI::detail::reduce(vec_in1, vec_in2, vec_in3, adapter_op);
@@ -176,7 +192,7 @@ namespace Tpetra {
     {
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
-          "Tpetra::RTI::binary_transform_reduce(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
+          "Tpetra::RTI::binary_pre_transform_reduce(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
 #endif
       Tpetra::RTI::detail::RTIPreTransformReductionAdapter<Glob,S,S> adapter_op(glob);
       return Tpetra::RTI::detail::transform_reduce(vec_inout, vec_in2, adapter_op);
