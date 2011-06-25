@@ -536,6 +536,7 @@ namespace Tpetra {
   {
     const std::string tfecfFuncName("insertLocalValues()");
     TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false,                            std::runtime_error, " requires that fill is active.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( isStaticGraph() == true,                            std::runtime_error, " cannot insert indices with static graph; use replaceLocalValues() instead.");
     TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_->isGloballyIndexed() == true,              std::runtime_error, ": graph indices are global; use insertGlobalValues().");
     TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false,                               std::runtime_error, " cannot insert local indices without a column map.");
     TEST_FOR_EXCEPTION_CLASS_FUNC( values.size() != indices.size(),                    std::runtime_error, ": values.size() must equal indices.size().");
@@ -1595,8 +1596,8 @@ namespace Tpetra {
       this->getLocalRowView(li,rowinds,rowvals);
       if (rowvals.size() > 0) {
         newvals.resize(rowvals.size());
-        std::copy( rowvals.begin(), rowvals.end(), newvals.begin() );
-        newmat->insertLocalValues(li, rowinds, newvals());
+        std::transform( rowvals.begin(), rowvals.end(), newvals.begin(), Teuchos::asFunc<T>() );
+        newmat->replaceLocalValues(li, rowinds, newvals());
       }
     }
     // we don't choose here; we have to abide by the existing graph
