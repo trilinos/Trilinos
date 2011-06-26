@@ -513,18 +513,41 @@ namespace MueLu {
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
    {
      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp = Op2TpetraCrs(Op); //TODO JJH try/catch this
-     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
-     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
+     //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
+     //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
+     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=simple_Transpose(tpetraOp);
      RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
      RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
      RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
      return AAAA;
    } //Transpose
 
+
+    static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > simple_Transpose(RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > const &A){      
+      LocalOrdinal N=A->getNodeNumRows();
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > AT=rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>(A->getDomainMap(),0));
+      const RCP<const Tpetra::Map<LO,GO,NO> > & rowMap=A->getRowMap();
+      const RCP<const Tpetra::Map<LO,GO,NO> > & colMap=A->getColMap();
+
+      std::cout<<"CMS Transpose called"<<std::endl;
+
+      for(LO i=0;i<N;i++){
+	GO grid= rowMap->getGlobalElement(i);
+	Teuchos::ArrayRCP<const LO> indices;
+	Teuchos::ArrayRCP<const SC> vals;
+	A->getLocalRowView(i,indices,vals);
+	for(LO j=0;j<indices.size();j++){
+	  GO gcid=colMap->getGlobalElement(indices[j]);
+	  AT->insertGlobalValues(gcid,Teuchos::tuple(grid),Teuchos::tuple(vals[j]));
+	}
+      }
+      AT->fillComplete(A->getRangeMap(),A->getDomainMap());
+      
+      return AT;
+    }
   }; // class
 
 } //namespace MueLu
-
 #define MUELU_UTILITIES_SHORT
 
 #endif //ifndef MUELU_UTILITIES_HPP
