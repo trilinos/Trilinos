@@ -529,8 +529,6 @@ namespace MueLu {
       const RCP<const Tpetra::Map<LO,GO,NO> > & rowMap=A->getRowMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > & colMap=A->getColMap();
 
-      std::cout<<"CMS Transpose called"<<std::endl;
-
       for(LO i=0;i<N;i++){
 	GO grid= rowMap->getGlobalElement(i);
 	Teuchos::ArrayRCP<const LO> indices;
