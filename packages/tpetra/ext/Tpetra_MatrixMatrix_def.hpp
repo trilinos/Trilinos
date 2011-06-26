@@ -572,7 +572,7 @@ getGlobalRowFromLocalIndex(
     values[i] = constValues[i];
     indices[i] = colMap->getGlobalElement(localIndices[i]);
   }
-  sort2Shell(indices(0, localIndices.size()), localIndices.size(), values(0, localIndices.size()));
+  sort2(indices.begin(), indices.begin()+localIndices.size(), values.begin());
 }
 
 //kernel method for computing the local portion of C = A*B^T

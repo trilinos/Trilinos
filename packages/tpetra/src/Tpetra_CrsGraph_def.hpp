@@ -990,7 +990,7 @@ namespace Tpetra {
   {
     if (rowinfo.numEntries > 0) {
       ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
-      sort2Shell(inds_view(), rowinfo.numEntries, values); 
+      sort2(inds_view.begin(), inds_view.begin()+rowinfo.numEntries, values.begin());
     }
   }
 
