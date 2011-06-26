@@ -1,25 +1,34 @@
 #!/bin/sh
-MULTX="1 2 5 10 20 40 80 160 320 480 540"
-#
+#MULTX="1 2 3 4 5 6 7 8 9 10"
+MULTX="1 2 5 10 20 40 80 100"
 TEMPLATE=muelu.slurm.template
 SPREF=muelu
 DPREF=run
 CDIR=`pwd`
 BINARY_EXE="MueLu_ScalingTest.exe"
-CPN=8
+CPN=16
 #NXBASE=60
 #MULTIPLIES=100
-
 MATRIX=Laplace1D
 
-# Redsky
+# Glory
 if [ $MATRIX == "Laplace1D" ]; then
-  NXBASE=4000000
+  NXBASE=22000000
 elif [ $MATRIX == "Laplace2D" ]; then
   NXBASE=2000
 else
   NXBASE=150
 fi
+
+# Redsky
+#if [ $MATRIX == "Laplace1D" ]; then
+#  NXBASE=4000000
+#elif [ $MATRIX == "Laplace2D" ]; then
+#  NXBASE=2000
+#else
+#  NXBASE=150
+#fi
+      
 
 
 # What timing info am I extracting?
