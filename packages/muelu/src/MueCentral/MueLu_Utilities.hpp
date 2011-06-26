@@ -217,8 +217,8 @@ namespace MueLu {
     {
       //FIXME 30 is likely a big overestimate
       RCP<Operator> C;
-      if(transposeA) C = OperatorFactory::Build(A->getDomainMap(), 30);
-      else C = OperatorFactory::Build(A->getRowMap(), 30);
+      if(transposeA) C = OperatorFactory::Build(A->getDomainMap(), 1);
+      else C = OperatorFactory::Build(A->getRowMap(), 1);
 
       if (!A->isFillComplete())
         throw(Exceptions::RuntimeError("A is not fill-completed"));
