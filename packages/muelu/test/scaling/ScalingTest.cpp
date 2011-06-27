@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
   clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
   clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
-  clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as tranpose of prolongator");
+  clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as transpose of prolongator");
   clp.setOption("coarseSweeps",&coarseSweeps,"sweeps to be used in SGS on the coarsest level");
   
   switch (clp.parse(argc,argv)) {
