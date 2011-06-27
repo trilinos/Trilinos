@@ -180,7 +180,7 @@ namespace panzer_stk {
 	fieldNames.insert(blockFields.begin(),blockFields.end());
 	
 	// add basis to DOF manager: block specific
-	std::set<panzer::StrBasisPair>::const_iterator fieldItr;
+	std::set<panzer::StrBasisPair,panzer::StrBasisComp>::const_iterator fieldItr;
 	for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
 	  mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
       }

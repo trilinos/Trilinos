@@ -153,7 +153,7 @@ int main(int argc,char * argv[])
          fieldNames.insert(blockFields.begin(),blockFields.end());
 
          // add basis to DOF manager: block specific
-         std::set<StrBasisPair>::const_iterator fieldItr;
+         std::set<StrBasisPair,StrBasisComp>::const_iterator fieldItr;
          for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
 
             mesh->addSolutionField(fieldItr->first,pb->elementBlockID());

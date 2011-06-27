@@ -27,7 +27,7 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(MPI_Comm mpiComm,
       fieldNames.insert(blockFields.begin(),blockFields.end()); 
 
       // add basis to DOF manager: block specific
-      std::set<StrBasisPair>::const_iterator fieldItr; 
+      std::set<StrBasisPair,StrBasisComp>::const_iterator fieldItr; 
       for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
          Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepidBasis 
                = fieldItr->second->getIntrepidBasis();
