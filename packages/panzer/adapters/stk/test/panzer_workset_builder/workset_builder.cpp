@@ -184,7 +184,7 @@ namespace panzer {
     for (std::size_t i=43; i < 49; i++)
       TEST_ASSERT(std::find(workset_bc2[2].cell_local_ids.begin(),
 			    workset_bc2[2].cell_local_ids.end(), mesh->elementLocalId(i)) != 
-		  workset_bc0[2].cell_local_ids.end());
+		  workset_bc2[2].cell_local_ids.end());
 
     std::size_t cell_index = 
       std::distance(workset_bc0[3].cell_local_ids.begin(), 
