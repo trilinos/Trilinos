@@ -1,17 +1,17 @@
 #!/bin/sh
 #MULTX="1 2 3 4 5 6 7 8 9 10"
 MULTX="1 2 5 10 20 40 80 100"
-TEMPLATE=muelu.slurm.template
+TEMPLATE=muelu.pbs.template
 SPREF=muelu
 DPREF=run
 CDIR=`pwd`
 BINARY_EXE="MueLu_ScalingTest.exe"
-CPN=16
+CPN=24
 #NXBASE=60
 #MULTIPLIES=100
 MATRIX=Laplace1D
 
-# Glory
+# Glory / Hopper
 if [ $MATRIX == "Laplace1D" ]; then
   NXBASE=22000000
 elif [ $MATRIX == "Laplace2D" ]; then
@@ -32,8 +32,8 @@ fi
 
 
 # What timing info am I extracting?
-declare -a LABELS=(build setup solve)
-declare -a TIMELINES=("Matrix Build" "MueLu Setup" "Belos Solve")
+declare -a LABELS=(build setup solve, its)
+declare -a TIMELINES=("Matrix Build" "MueLu Setup" "Belos Solve" "Number of iterations")
 
 ###############################
 calc(){
@@ -56,6 +56,7 @@ template_nodes(){
 ocoee_build(){
   NODES=$1; DIR=$2; BINARY=$3; CPN=$4 NX=$5
   echo "Building $DIR..."
+  CORES=`expr $CPN \* $NODES`   
 
   # Make directory, if needed
   if [ -d $DIR ]; then :
@@ -68,9 +69,10 @@ ocoee_build(){
   # Build SLURM script
   cat $TEMPLATE | sed "s/_NODES_/$NODES/" | sed "s/_NX_/$NX/g" \
       | sed "s/_CPN_/$CPN/" \
+      | sed "s/_CORES_/$CORES/" \
       | sed "s/_MTYPE_/$MATRIX/" \
       | sed "s#_BINARY_#./$BINARY#" \
-      > $DIR/$SPREF-$NODES.slurm
+      > $DIR/$SPREF-$NODES.pbs
 
 }
 
@@ -86,7 +88,7 @@ ocoee_run(){
   echo "Running $DIR..." 
 
   cd $DIR
-  sbatch $SPREF-$NODES.slurm
+  qsub $SPREF-$NODES.pbs
   cd $CDIR
 }
 
@@ -146,15 +148,6 @@ if [ "$OPT" == "a" ]; then
     OUTSTR="$OUTSTR $TL"
   done
     echo "% file              :       norm$OUTSTR"
-fi
-
-
-# Pull hostname to handle manual vs. batch runs
-HOST=`hostname`
-if [ "${HOST:0:5}" == "glory" ]; then 
-  CPN=16
-else 
-  CPN=8
 fi
 
 
