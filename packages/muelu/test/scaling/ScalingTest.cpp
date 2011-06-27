@@ -39,8 +39,8 @@
 typedef double Scalar;
 typedef int    LocalOrdinal;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-//typedef long long int    GlobalOrdinal;
-typedef int    GlobalOrdinal;
+typedef long long int    GlobalOrdinal;
+//typedef int    GlobalOrdinal;
 #else
 typedef int GlobalOrdinal;
 #warning Teuchos support for long long not enabled.
