@@ -3,6 +3,11 @@
 #include "MueLu_Memory.hpp"
 
 #include <iostream> // TODO: remove
+#include <unistd.h>
+#include <time.h>
+#include <malloc.h>
+
+//#define MUELU_USE_MALLINFO
 
 namespace MueLu {
   
@@ -15,18 +20,40 @@ namespace MueLu {
 
       mem << PrintMemoryInfo() << " ";
 
+#ifdef MUELU_USE_MALLINFO
+      struct mallinfo mem_stats = mallinfo();
+      double memory = mem_stats.hblkhd + mem_stats.usmblks + mem_stats.uordblks;
+      std::string mem;
+      mem.resize(80);
+
+      sprintf(mem.c_str(),"%12.1f MB",memory/1048576.0);
+
+      return mem;
+#else
       while(getline(proc, s), !proc.fail()) {
 	if(s.substr(0, 6) == "VmSize") {
 	  mem << s;
 	  return mem.str();
 	}
-      }
-      
+      }      
       return mem.str();
+#endif
+
     }
 
     std::string PrintMemoryInfo() {
-      std::ostringstream mem;
+
+#ifdef MUELU_USE_MALLINFO
+      struct mallinfo mem_stats = mallinfo();
+      double memory = mem_stats.hblkhd + mem_stats.usmblks + mem_stats.uordblks;
+      std::string mem;
+      mem.resize(80);
+
+      sprintf(mem.c_str(),"%12.1f MB",memory/1048576.0);
+
+      return mem;
+#else
+    std::ostringstream mem;
       std::ifstream proc("/proc/meminfo");
       std::string s;
       while(getline(proc, s), !proc.fail()) {
@@ -34,8 +61,9 @@ namespace MueLu {
 	  mem << s;
 	  return mem.str();
 	}
-      }
-      return mem.str();
+	
+	}
+#endif
     }
 
     void ReportTimeAndMemory(Teuchos::Time const &timer, Teuchos::Comm<int> const &Comm)
@@ -51,7 +79,7 @@ namespace MueLu {
       if (Comm.getRank()==0) {
         std::cout << "&&& " << timer.name() << " time    &&& "
                  << "max=" << maxTime << "   min=" << minTime << "  avg=" << avgTime << std::endl;
-        std::cout << "&&& " << timer.name() << " memory  &&& " << MemUtils::PrintMemoryUsage() << std::endl;
+	std::cout << "&&& " << timer.name() << " memory  &&& " << MemUtils::PrintMemoryUsage() << std::endl;
       }
     } //ReportTimeAndMemory
     
