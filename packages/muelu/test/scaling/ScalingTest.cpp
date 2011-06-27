@@ -102,13 +102,21 @@ int main(int argc, char *argv[]) {
   // custom parameters
   LO maxLevels = 10;
   LO its=10;
-  std::string coarseSolver="ifpack2";
+  std::string coarseSolver;
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
   int useExplicitR=0;
   int coarseSweeps=50;
   Scalar SADampingFactor=4./3;
+
+#if   defined(HAVE_MUELU_AMESOS2)
+  coarseSolver="amesos2";
+#elif defined(HAVE_MUELU_IFPACK2)
+  coarseSolver="ifpack2";
+#else
+  throw(Exceptions::RuntimeError("Either Amesos2 or Ifpack2 must be enabled."));
+#endif
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
   clp.setOption("coarseSolver",&coarseSolver,"amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
@@ -284,7 +292,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
 #endif
     } else {
-      std::cout  << "Unknow coarse grid solver (try  --coarseSolver=ifpack2 or --coarseSolver=amesos2)" << std::endl;
+      std::cout  << "Unknown coarse grid solver """ << coarseSolver << """.  Try  --coarseSolver=ifpack2 or --coarseSolver=amesos2." << std::endl;
       return EXIT_FAILURE;
     }
   }
