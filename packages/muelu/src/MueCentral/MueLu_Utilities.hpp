@@ -373,6 +373,127 @@ namespace MueLu {
 
     } //BuildMatrixDiagonal()
 
+    /*! @brief Extract Operator Diagonal
+
+        Returns Operator diagonal in ArrayRCP.
+    */
+    static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(RCP<Operator> const &A)
+    {
+      const RCP<const Map> rowmap = A->getRowMap();
+      size_t locSize = rowmap->getNodeNumElements();
+      Teuchos::ArrayRCP<SC> diag(locSize);
+      Teuchos::ArrayView<const LO> cols;
+      Teuchos::ArrayView<const SC> vals;
+      for (size_t i=0; i<locSize; ++i) {
+        A->getLocalRowView(i,cols,vals);
+        for (size_t j=0; j<cols.size(); j++) {
+          //TODO this will break down if diagonal entry is not present
+          //if (!(cols[j] > i))   //JG says this will work ... maybe
+          if (cols[j] == i) {
+            diag[i] = vals[j];
+            break;
+          }
+        }
+      }
+      //for (int i=0; i<locSize; ++i) std::cout << "diag[" << i << "] = " << diag[i] << std::endl;
+      return diag;
+    } //GetMatrixDiagonal
+
+    /*! @brief Scale matrix by its diagonal
+
+        Performs the operation A = D \ A, where D is the diagonal of A.
+     */
+   static void ScaleMatrixByDiagonal(RCP<Operator> &Op)
+   {
+     Teuchos::ArrayRCP<SC> diag = GetMatrixDiagonal(Op);
+     ScaleMatrix(Op,diag);
+#ifdef THIS_CODE_WORKS
+      //std::cout << "********************\nBEFORE\n*********************" << std::endl;
+      //RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      //Op->describe(*fos,Teuchos::VERB_EXTREME);
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpOp = Op2NonConstTpetraCrs(Op);
+      const RCP<const Tpetra::Map<LO,GO,NO> > rowMap = tpOp->getRowMap();
+      const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp->getDomainMap();
+      const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap = tpOp->getRangeMap();
+      SC diag;
+      Teuchos::ArrayView<const LO> cols;
+      Teuchos::ArrayView<const SC> vals;
+      LO maxRowSize = tpOp->getNodeMaxNumRowEntries();
+      std::vector<SC> scaledVals(maxRowSize);
+      tpOp->resumeFill();
+      for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
+        tpOp->getLocalRowView(i,cols,vals);
+        size_t nnz = tpOp->getNumEntriesInLocalRow(i);
+        for (size_t j=0; j<nnz; j++) {
+          //TODO this will break down if diagonal entry is not present
+          //if (!(cols[j] > i))   //JG says this will work ... maybe
+          if (cols[j] == i) {
+            diag = vals[j];
+            break;
+          }
+        }
+        for (size_t j=0; j<nnz; j++) {
+          scaledVals[j] = vals[j]/diag;
+        }
+        Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
+        tpOp->replaceLocalValues(i,cols,valview);
+      } //for (size_t i=0; ...
+
+      tpOp->fillComplete(domainMap,rangeMap);
+      //std::cout << "********************\nAFTER\n*********************" << std::endl;
+      //Op->describe(*fos,Teuchos::VERB_EXTREME);
+#endif
+   } //ScaleMatrixByDiagonal()
+
+    /*! @brief Left scale matrix by an arbitrary vector.
+
+       Algorithmically, this left scales a matrix by a diagonal matrix.
+       The inverse of a diagonal matrix can also be applied.
+
+       @param Op matrix to be scaled
+       @param scalingVector vector that represents diagonal matrix
+       @doInverse Indicates whether the inverse of the diagonal matrix should be applied.  (Default is to use inverse.)
+     */
+   static void ScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true)
+   {
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpOp;
+      try {
+        tpOp = Op2NonConstTpetraCrs(Op);
+      }
+      catch(...) {
+        throw(Exceptions::RuntimeError("Sorry, haven't implemented matrix scaling for epetra"));
+      }
+      const RCP<const Tpetra::Map<LO,GO,NO> > rowMap = tpOp->getRowMap();
+      const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp->getDomainMap();
+      const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap = tpOp->getRangeMap();
+      Teuchos::ArrayView<const LO> cols;
+      Teuchos::ArrayView<const SC> vals;
+      LO maxRowSize = tpOp->getNodeMaxNumRowEntries();
+      std::vector<SC> scaledVals(maxRowSize);
+      tpOp->resumeFill();
+
+      Teuchos::ArrayRCP<SC> sv(scalingVector.size());
+      if (doInverse) {
+        for (int i=0; i<scalingVector.size(); ++i)
+          sv[i] = 1.0 / scalingVector[i];
+      } else {
+        for (int i=0; i<scalingVector.size(); ++i)
+          sv[i] = scalingVector[i];
+      }
+
+      for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
+        tpOp->getLocalRowView(i,cols,vals);
+        LO nnz = tpOp->getNumEntriesInLocalRow(i);
+        for (size_t j=0; j<nnz; j++) {
+          scaledVals[j] = vals[j]*sv[i];
+        }
+        Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
+        tpOp->replaceLocalValues(i,cols,valview);
+      } //for (size_t i=0; ...
+
+      tpOp->fillComplete(domainMap,rangeMap);
+   } //ScaleMatrix()
+
     /*! @brief Get reciprocal of Operator diagonal
      */
 

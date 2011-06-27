@@ -154,24 +154,22 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
       if (dampingFactor_ != 0) {
         Teuchos::RCP< Operator > Op = fineLevel.GetA();
-        Teuchos::RCP<Teuchos::Time> sapTimer = rcp(new Teuchos::Time("SaPFactory: build diag"));
-        sapTimer->start(true);
-        RCP<Operator> D = Utils::BuildMatrixInverseDiagonal(Op);
-        sapTimer->stop();
-        MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
+        Teuchos::RCP<Teuchos::Time> sapTimer;
         sapTimer = rcp(new Teuchos::Time("SaPFactory: AP"));
         sapTimer->start(true);
         RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,Ptent);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
-        sapTimer = rcp(new Teuchos::Time("SaPFactory: DAP"));
+
+        sapTimer = rcp(new Teuchos::Time("SaPFactory: D^{-1}*AP"));
         sapTimer->start(true);
-        RCP<Operator> DAP = Utils::TwoMatrixMultiply(D,AP);
+        Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(Op);
+        Utils::ScaleMatrix(AP,diag);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
         sapTimer = rcp(new Teuchos::Time("SaPFactory: final P"));
         sapTimer->start(true);
-        finalP = Utils::TwoMatrixAdd(Ptent,DAP,1.0,-dampingFactor_/lambdaMax);
+        finalP = Utils::TwoMatrixAdd(Ptent,AP,1.0,-dampingFactor_/lambdaMax);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
       }
