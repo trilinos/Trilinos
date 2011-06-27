@@ -20,7 +20,7 @@ namespace MueLu {
       struct mallinfo mem_stats = mallinfo();
       double memory = mem_stats.hblkhd + mem_stats.usmblks + mem_stats.uordblks;
       std::string mem;
-      mem.resize(80);
+      mem.resize(15);
 
       sprintf(mem.c_str(),"%12.1f MB",memory/1048576.0);
 
@@ -48,7 +48,7 @@ namespace MueLu {
       struct mallinfo mem_stats = mallinfo();
       double memory = mem_stats.hblkhd + mem_stats.usmblks + mem_stats.uordblks;
       std::string mem;
-      mem.resize(80);
+      mem.resize(15);
 
       sprintf(mem.c_str(),"%12.1f MB",memory/1048576.0);
 
