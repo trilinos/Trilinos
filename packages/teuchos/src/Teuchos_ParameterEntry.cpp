@@ -29,6 +29,7 @@
 
 #include "Teuchos_ParameterEntry.hpp" // class definition
 #include "Teuchos_ParameterList.hpp"	 // for sublists
+#include "Teuchos_TwoDArray.hpp"
 
 
 namespace Teuchos {
@@ -115,6 +116,18 @@ std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const
   }
 
   return os;
+}
+
+bool ParameterEntry::isTwoDArray() const{ 
+  std::string formatString = getTwoDArrayTypeNameTraitsFormat();
+  size_t starPos = formatString.find("*");
+  std::string prefix = formatString.substr(0,starPos);
+  std::string postfix = formatString.substr(starPos+1);
+  std::string valueTypeName = val_.typeName();
+  size_t prePos = valueTypeName.find(prefix);
+  size_t postPos = valueTypeName.find(postfix);
+  return (prePos != std::string::npos) 
+    && (postPos != std::string::npos) && (prePos < postPos);
 }
 
 bool ParameterEntry::isArray() const{ 

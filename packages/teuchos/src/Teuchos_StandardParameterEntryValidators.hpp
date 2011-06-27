@@ -1541,6 +1541,50 @@ public:
   
 };
 
+template<class ValidatorType, class EntryType>
+class AbstractArrayValidator : public ParameterEntryValidator {
+
+public:
+
+  AbstractArrayValidator(RCP<const ValidatorType> prototypeValidator):
+    ParameterEntryValidator(),
+    prototypeValidator_(prototypeValidator){}
+
+  /** \name Getter Functions */
+  //@{
+
+  /** \brief Returns the prototype validator for this Array Validator */
+  RCP<const ValidatorType> getPrototype() const{
+    return prototypeValidator_;
+  }
+
+  //@}
+
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
+
+  /** \brief . */
+  ValidStringsList validStringValues() const {
+    return prototypeValidator_->validStringValues();
+  }
+
+  //@}
+
+private:
+
+  /** \name Private Members */
+  //@{
+
+  /** \brief The prototype validator to be applied to each entry in the Array.
+   */
+  RCP<const ValidatorType> prototypeValidator_;
+
+  /** \brief Hidden default constructor. */
+  AbstractArrayValidator<ValidatorType, EntryType>();
+  
+  //@}
+
+};
 
 /** \brief Takes a validator, wraps it, and applies it to an array.
  *
@@ -1552,7 +1596,7 @@ public:
  * regarding the XML representation of this validator.
  */
 template<class ValidatorType, class EntryType>
-class ArrayValidator : public ParameterEntryValidator {
+class ArrayValidator : public AbstractArrayValidator<ValidatorType, EntryType>{
 
 public:
 
@@ -1565,28 +1609,12 @@ public:
    * entry in the array.
    */
   ArrayValidator(RCP<const ValidatorType> prototypeValidator):
-    ParameterEntryValidator(),
-      prototypeValidator_(prototypeValidator){}
-  
-  //@}
-
-  /** \name Getter Functions */
-  //@{
-
-  /** \brief Returns the protorype validator for this Array Validator */
-  RCP<const ValidatorType> getPrototype() const{
-    return prototypeValidator_;
-  }
+    AbstractArrayValidator<ValidatorType, EntryType>(prototypeValidator){}
   
   //@}
 
   /** \name Overridden from ParameterEntryValidator */
   //@{
-
-  /** \brief . */
-  ValidStringsList validStringValues() const {
-    return prototypeValidator_->validStringValues();
-  }
 
   /** \brief . */
   virtual void validate(ParameterEntry const &entry, std::string const &paramName,
@@ -1595,7 +1623,7 @@ public:
   /** \brief . */
   const std::string getXMLTypeName() const{
     return "ArrayValidator(" + 
-      prototypeValidator_->getXMLTypeName() + ", " +
+      this->getPrototype()->getXMLTypeName() + ", " +
       TypeNameTraits<EntryType>::name() + ")";
   }
 
@@ -1606,22 +1634,8 @@ public:
     std::string toPrint;
     toPrint += "ArrayValidator:\n";
     toPrint += "Prototype Validator:\n";
-    prototypeValidator_->printDoc(toPrint, out);
+    this->getPrototype()->printDoc(toPrint, out);
   }
-  
-  //@}
-
-private:
-
-  /** \name Private Members */
-  //@{
-  
-  /** \brief The prototype validator to be applied to each entry in the Array.
-   */
-  RCP<const ValidatorType> prototypeValidator_;
-
-  /** \brief Hidden default constructor. */
-  ArrayValidator<ValidatorType, EntryType>();
   
   //@}
 
@@ -1651,11 +1665,12 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
 
   Array<EntryType> extracted = 
     getValue<Teuchos::Array<EntryType> >(entry);
+  RCP<const ParameterEntryValidator> prototype = this->getPrototype();
   for(int i = 0; i<extracted.size(); ++i){
     ParameterEntry dummyParameter;
     dummyParameter.setValue(extracted[i]);
     try{
-      prototypeValidator_->validate(
+      prototype->validate(
         dummyParameter, paramName, sublistName);
     }
     catch(Exceptions::InvalidParameterValue& e){
@@ -1768,6 +1783,7 @@ public:
   //@}
   
 };
+
 
 
 // ///////////////////////////

@@ -173,6 +173,9 @@ public:
 
   //! Test if the type of data being contained is a Teuchos::Array.
   bool isArray() const;
+  //
+  //! Test if the type of data being contained is a Teuchos::TwoDArray.
+  bool isTwoDArray() const;
 
   //! Indicate whether this entry takes on the default value.
   inline
