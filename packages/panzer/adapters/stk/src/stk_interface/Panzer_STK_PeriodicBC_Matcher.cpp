@@ -41,8 +41,14 @@ getGlobalPairing(const std::vector<std::size_t> & locallyRequiredIds,
       providedInts[i] = locallyMatchedIds[i].first;
 
    // maps and communciation all set up
-   Epetra_Map requiredMap(-1,requiredInts.size(),&requiredInts[0],0,Comm);
-   Epetra_Map providedMap(-1,providedInts.size(),&providedInts[0],0,Comm);
+   int* requiredIntsPtr = NULL;
+   if (requiredInts.size() > 0)
+     requiredIntsPtr = &requiredInts[0];
+   int* providedIntsPtr = NULL;
+   if (providedInts.size() > 0)
+     providedIntsPtr = &providedInts[0];
+   Epetra_Map requiredMap(-1,requiredInts.size(),requiredIntsPtr,0,Comm);
+   Epetra_Map providedMap(-1,providedInts.size(),providedIntsPtr,0,Comm);
    Epetra_Import importer(requiredMap,providedMap); 
    
    // this is what to distribute
