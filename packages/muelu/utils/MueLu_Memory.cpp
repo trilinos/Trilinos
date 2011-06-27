@@ -7,18 +7,14 @@
 #include <time.h>
 #include <malloc.h>
 
-//#define MUELU_USE_MALLINFO
+#define MUELU_USE_MALLINFO
 
 namespace MueLu {
   
   namespace MemUtils {
     
     std::string PrintMemoryUsage() {
-      std::ostringstream mem;
-      std::ifstream proc("/proc/self/status");
-      std::string s;
 
-      mem << PrintMemoryInfo() << " ";
 
 #ifdef MUELU_USE_MALLINFO
       struct mallinfo mem_stats = mallinfo();
@@ -30,6 +26,11 @@ namespace MueLu {
 
       return mem;
 #else
+      std::ostringstream mem;
+      std::ifstream proc("/proc/self/status");
+      std::string s;
+
+      mem << PrintMemoryInfo() << " ";
       while(getline(proc, s), !proc.fail()) {
 	if(s.substr(0, 6) == "VmSize") {
 	  mem << s;
