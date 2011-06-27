@@ -54,7 +54,7 @@
 
 #include <Tpetra_DefaultPlatform.hpp>
 
-#include "Amesos2_TpetraCrsMatrixAdapter.hpp"
+#include "Amesos2_MatrixAdapter.hpp"
 #include "Amesos2_Util_is_same.hpp"
 
 namespace {
@@ -63,6 +63,7 @@ namespace {
   using std::endl;
   using std::string;
 
+  using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -84,6 +85,8 @@ namespace {
   using Amesos::MatrixAdapter;
 
   using Amesos::Util::is_same;
+  using Amesos::Util::Rooted;
+  using Amesos::Util::Globally_Replicated;
 
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
@@ -171,18 +174,16 @@ namespace {
       eye->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
     }
     eye->fillComplete();
-    // Constructor from RCP
-    RCP<ADAPT> adapter  = rcp(new MatrixAdapter<MAT>(eye));
-    // Copy constructor
-    RCP<ADAPT> adapter2 = rcp(new MatrixAdapter<MAT>(*adapter));
+    // Create using non-member function
+    RCP<ADAPT> adapter  = Amesos::createMatrixAdapter<MAT>(eye);
 
     // The following should all pass at compile time
-    TEST_ASSERT( (is_same<Scalar,typename ADAPT::scalar_type>::value) );
-    TEST_ASSERT( (is_same<LO,typename ADAPT::local_ordinal_type>::value) );
-    TEST_ASSERT( (is_same<GO,typename ADAPT::global_ordinal_type>::value) );
-    TEST_ASSERT( (is_same<Node,typename ADAPT::node_type>::value) );
-    TEST_ASSERT( (is_same<global_size_t,typename ADAPT::global_size_type>::value) );
-    TEST_ASSERT( (is_same<MAT,typename ADAPT::matrix_type>::value) );
+    TEST_ASSERT( (is_same<Scalar,typename ADAPT::scalar_t>::value) );
+    TEST_ASSERT( (is_same<LO,typename ADAPT::local_ordinal_t>::value) );
+    TEST_ASSERT( (is_same<GO,typename ADAPT::global_ordinal_t>::value) );
+    TEST_ASSERT( (is_same<Node,typename ADAPT::node_t>::value) );
+    TEST_ASSERT( (is_same<global_size_t,typename ADAPT::global_size_t>::value) );
+    TEST_ASSERT( (is_same<MAT,typename ADAPT::matrix_t>::value) );
   
   }
 
@@ -208,18 +209,15 @@ namespace {
     eye->fillComplete();
 
     // Constructor from RCP
-    RCP<MatrixAdapter<MAT> > adapter  = rcp(new MatrixAdapter<MAT>(eye));
+    RCP<MatrixAdapter<MAT> > adapter  = Amesos::createMatrixAdapter<MAT>(eye);
 
+    // Check the adapters (limited) set of accessor funcs
     TEST_EQUALITY(eye->getGlobalNumEntries(), adapter->getGlobalNNZ());
-    TEST_EQUALITY(eye->getNodeNumEntries(), adapter->getLocalNNZ());
     TEST_EQUALITY(eye->getGlobalNumRows(), adapter->getGlobalNumRows());
-    TEST_EQUALITY(eye->getNodeNumRows(), adapter->getLocalNumRows());
-    TEST_EQUALITY(eye->getNodeNumCols(), adapter->getLocalNumCols());
     TEST_EQUALITY(eye->getGlobalNumCols(), adapter->getGlobalNumCols());
-    TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), adapter->getMaxNNZ());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, CRS, Scalar, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, CRS_Serial, Scalar, LO, GO )
   {
     /* Test the getCrs() method of MatrixAdapter.  We check against a simple
      * test matrix that we construct on the fly.
@@ -256,7 +254,7 @@ namespace {
     }
     mat->fillComplete();
 
-    RCP<ADAPT> adapter = rcp(new ADAPT(mat));
+    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
 
     Array<Scalar> nzvals_test(tuple<Scalar>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
     Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
@@ -267,19 +265,23 @@ namespace {
     Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz);
+    ///////////////////////////////////////////
+    // Check getting a rooted representation //
+    ///////////////////////////////////////////
+    
+    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted);
 
     if ( rank == 0 ){
       // getCrs() does not guarantee a permutation of the non-zero
-      // values and the column indices, we just know that they need to
-      // match up with what is expected.
+      // values and the column indices in the Arbitrary case, we just
+      // know that they need to match up with what is expected.
       GO maxRow = map->getMaxAllGlobalIndex();
       for ( GO row = map->getMinAllGlobalIndex(); row <= maxRow; ++row ){
 	global_size_t rp  = rowptr[row];
 	global_size_t nrp = rowptr[row+1];
 	global_size_t row_nnz = nrp - rp;
-	TEST_ASSERT( rp < nzvals.size() );
-	TEST_ASSERT( rp < colind.size() );
+	TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
+	TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
 	const RCP<Array<my_pair_t> > expected_pairs
 	  = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
 	const RCP<Array<my_pair_t> > got_pairs
@@ -288,10 +290,202 @@ namespace {
 	  TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
 	}
       }
-      TEST_COMPARE_ARRAYS(rowptr,rowptr_test);
-      TEST_EQUALITY(nnz,12);
+      TEST_COMPARE_ARRAYS(rowptr, rowptr_test);
+      TEST_EQUALITY_CONST(nnz, 12);
+    }
+
+    /////////////////////////////////////////////
+    // Check now a rooted, sorted-indices repr //
+    /////////////////////////////////////////////
+
+    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted,Amesos::Util::Sorted_Indices);
+
+    if ( rank == 0 ){
+      // Now the arrays should compare directly
+      TEST_COMPARE_ARRAYS(nzvals, nzvals_test);
+      TEST_COMPARE_ARRAYS(colind, colind_test);
+      TEST_COMPARE_ARRAYS(rowptr, rowptr_test);
+      TEST_EQUALITY_CONST(nnz, 12);
     }
   }
+
+  
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, CRS_Replicated, Scalar, LO, GO )
+  {
+    /* Test the getCrs() method of MatrixAdapter.  We check against a simple
+     * test matrix that we construct on the fly.
+     */
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MatrixAdapter<MAT> ADAPT;
+    typedef std::pair<Scalar,GO> my_pair_t;
+    RCP<const Comm<int> > comm = getDefaultComm();
+    //const size_t numprocs = comm->getSize();
+    const size_t rank     = comm->getRank();
+    // create a Map for our matrix
+    global_size_t nrows = 6;
+    RCP<const Map<LO,GO,Node> > map = createUniformContigMap<LO,GO>(nrows,comm);
+    RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
+
+    /* We will be using the following matrix for this test:
+     * 
+     * [ [ 7,  0,  -3, 0,  -1, 0 ]
+     *   [ 2,  8,  0,  0,  0,  0 ]
+     *   [ 0,  0,  1,  0,  0,  0 ]
+     *   [ -3, 0,  0,  5,  0,  0 ]
+     *   [ 0,  -1, 0,  0,  4,  0 ]
+     *   [ 0,  0,  0,  -2, 0,  6 ] ]
+     */
+    // Construct matrix
+    if( rank == 0 ){
+      mat->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<Scalar>(7,-3,-1));
+      mat->insertGlobalValues(1,tuple<GO>(0,1),tuple<Scalar>(2,8));
+      mat->insertGlobalValues(2,tuple<GO>(2),tuple<Scalar>(1));
+      mat->insertGlobalValues(3,tuple<GO>(0,3),tuple<Scalar>(-3,5));
+      mat->insertGlobalValues(4,tuple<GO>(1,4),tuple<Scalar>(-1,4));
+      mat->insertGlobalValues(5,tuple<GO>(3,5),tuple<Scalar>(-2,6));
+    }
+    mat->fillComplete();
+
+    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+
+    Array<Scalar> nzvals_test(tuple<Scalar>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
+    Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
+    Array<global_size_t> rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
+
+    Array<Scalar> nzvals(adapter->getGlobalNNZ());
+    Array<GO> colind(adapter->getGlobalNNZ());
+    Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
+    size_t nnz;
+
+    ////////////////////////////////////////////////////
+    // Now check a globally replicated representation //
+    ////////////////////////////////////////////////////
+
+    adapter->getCrs(nzvals,colind,rowptr,nnz,Globally_Replicated);
+
+    // All processes check
+    
+    // getCrs() does not guarantee a permutation of the non-zero
+    // values and the column indices in the Arbitrary case, we just
+    // know that they need to match up with what is expected.
+    GO maxRow = map->getMaxAllGlobalIndex();
+    for ( GO row = map->getMinAllGlobalIndex(); row <= maxRow; ++row ){
+      global_size_t rp  = rowptr[row];
+      global_size_t nrp = rowptr[row+1];
+      global_size_t row_nnz = nrp - rp;
+      TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
+      TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
+      const RCP<Array<my_pair_t> > expected_pairs
+	= zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
+      const RCP<Array<my_pair_t> > got_pairs
+	= zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
+      for ( global_size_t i = 0; i < row_nnz; ++i ){
+	TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
+      }
+    }
+    TEST_COMPARE_ARRAYS(rowptr, rowptr_test);
+    TEST_EQUALITY_CONST(nnz, 12);
+
+    ///////////////////////////////////////////
+    // Check globally-repl, with sorted indx //
+    ///////////////////////////////////////////
+
+    adapter->getCrs(nzvals,colind,rowptr,nnz,
+		    Globally_Replicated,Amesos::Util::Sorted_Indices);
+
+    TEST_COMPARE_ARRAYS(nzvals, nzvals_test);
+    TEST_COMPARE_ARRAYS(colind, colind_test);
+    TEST_COMPARE_ARRAYS(rowptr, rowptr_test);
+    TEST_EQUALITY_CONST(nnz, 12);
+  }
+
+  
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, CRS_Map, Scalar, LO, GO )
+  {
+    /* Test the getCrs() method of MatrixAdapter.  We check against a simple
+     * test matrix that we construct on the fly.
+     */
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MatrixAdapter<MAT> ADAPT;
+    typedef std::pair<Scalar,GO> my_pair_t;
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const size_t numprocs = comm->getSize();
+    const size_t rank     = comm->getRank();
+    // create a Map for our matrix
+    global_size_t nrows = 6;
+    RCP<const Map<LO,GO,Node> > map = createUniformContigMap<LO,GO>(nrows,comm);
+    RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
+
+    /* We will be using the following matrix for this test:
+     * 
+     * [ [ 7,  0,  -3, 0,  -1, 0 ]
+     *   [ 2,  8,  0,  0,  0,  0 ]
+     *   [ 0,  0,  1,  0,  0,  0 ]
+     *   [ -3, 0,  0,  5,  0,  0 ]
+     *   [ 0,  -1, 0,  0,  4,  0 ]
+     *   [ 0,  0,  0,  -2, 0,  6 ] ]
+     */
+    // Construct matrix
+    if( rank == 0 ){
+      mat->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<Scalar>(7,-3,-1));
+      mat->insertGlobalValues(1,tuple<GO>(0,1),tuple<Scalar>(2,8));
+      mat->insertGlobalValues(2,tuple<GO>(2),tuple<Scalar>(1));
+      mat->insertGlobalValues(3,tuple<GO>(0,3),tuple<Scalar>(-3,5));
+      mat->insertGlobalValues(4,tuple<GO>(1,4),tuple<Scalar>(-1,4));
+      mat->insertGlobalValues(5,tuple<GO>(3,5),tuple<Scalar>(-2,6));
+    }
+    mat->fillComplete();
+
+    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+
+    Array<Scalar> nzvals_test(tuple<Scalar>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
+    Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
+    Array<global_size_t> rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
+
+    Array<Scalar> nzvals(adapter->getGlobalNNZ());
+    Array<GO> colind(adapter->getGlobalNNZ());
+    Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
+    size_t nnz;
+
+    /**
+     * Check the getCrs overload that accepts a row-distribution map
+     * as input.  Divide the 6-row matrix in two, give the top half to
+     * rank 0, and the bottom half to rank 1.  Then check the results.
+     */
+    size_t my_num_rows = OrdinalTraits<size_t>::zero();
+    if ( numprocs > 1 ){
+      if ( rank < 2 ){
+	my_num_rows = 3;		// total num_rows is 6
+      }
+    } else {			// We only have 1 proc, then she just takes it all
+      my_num_rows = 6;
+    }
+    const Map<LO,GO,Node> half_map(6, my_num_rows, 0, comm);
+
+    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos::Util::Sorted_Indices);
+
+    /*
+     * Check that you got the entries you'd expect
+     *
+     * It's convenient that exactly half of the non-zero entries are
+     * found in the top half of the rows, and the other half are found
+     * in the bottom half of the rows.
+     */
+    if ( rank == 0 ){
+      TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(0,6));
+      TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(0,6));
+      TEST_COMPARE_ARRAYS(rowptr.view(0,3), rowptr_test.view(0,3));
+      TEST_EQUALITY_CONST(rowptr[3], 6);
+    } else if ( rank == 1 ){
+      TEST_COMPARE_ARRAYS(nzvals.view(6,6), nzvals_test.view(6,6));
+      TEST_COMPARE_ARRAYS(colind.view(6,6), colind_test.view(6,6));
+      TEST_COMPARE_ARRAYS(rowptr.view(3,3), rowptr_test.view(3,3));
+      TEST_EQUALITY_CONST(rowptr[3], 6);
+    }
+  }
+  
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, CCS, Scalar, LO, GO )
   {
@@ -334,7 +528,7 @@ namespace {
     // RCP<FancyOStream> os = getDefaultOStream();
     // mat->describe(*os,Teuchos::VERB_EXTREME);
 
-    RCP<ADAPT> adapter = rcp(new ADAPT(mat));
+    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
 
     Array<Scalar> nzvals_test(tuple<Scalar>(7,2,-3,8,-1,-3,1,5,-2,-1,4,6));
     Array<GO> rowind_test(tuple<GO>(0,1,3,1,4,0,2,3,5,0,4,5));
@@ -345,7 +539,7 @@ namespace {
     Array<global_size_t> colptr(adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
-    adapter->getCcs(nzvals,rowind,colptr,nnz);
+    adapter->getCcs(nzvals,rowind,colptr,nnz,Rooted);
 
     // Only rank 0 gets the CRS representation
     if( rank == 0 ){
@@ -355,7 +549,7 @@ namespace {
       TEST_COMPARE_ARRAYS(nzvals,nzvals_test);
       TEST_COMPARE_ARRAYS(rowind,rowind_test);
       TEST_COMPARE_ARRAYS(colptr,colptr_test);
-      TEST_EQUALITY(nnz,12);
+      TEST_EQUALITY_CONST(nnz,12);
     }
   }
 
@@ -386,7 +580,9 @@ namespace {
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )		\
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, Dimensions, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CRS, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CRS_Serial, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CRS_Replicated, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CRS_Map, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CCS, SCALAR, LO, GO ) 
   
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )		\
