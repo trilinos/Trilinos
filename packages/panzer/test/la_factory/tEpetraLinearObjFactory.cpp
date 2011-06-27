@@ -56,7 +56,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, vector_constr)
          = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
  
    // setup factory
-   panzer::EpetraLinearObjFactory<panzer::Traits,short> la_factory(eComm,indexer);
+   panzer::EpetraLinearObjFactory<panzer::Traits,short> la_factory(eComm.getConst(),indexer);
 
    // build vectors from factory
    RCP<Thyra::MultiVectorBase<double> > ghostedVec = la_factory.getGhostedVector();
@@ -145,7 +145,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
  
    // setup factory
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > la_factory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm,indexer));
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
 
    // build parameter lists for gather and scatters
    //////////////////////////////////////////////////////////////////

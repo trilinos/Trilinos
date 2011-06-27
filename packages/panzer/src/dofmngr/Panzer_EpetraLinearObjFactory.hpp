@@ -21,6 +21,7 @@
 #include "Panzer_CloneableEvaluator.hpp"
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 namespace panzer {
 
@@ -28,7 +29,10 @@ template <typename Traits,typename LocalOrdinalT>
 class EpetraLinearObjFactory : public LinearObjFactory<Traits> {
 public:
 
-   EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
+   EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
+                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
+   EpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
+                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
 
    virtual ~EpetraLinearObjFactory();
 

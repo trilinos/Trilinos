@@ -84,6 +84,10 @@ namespace panzer_stk {
 
     Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
     fout.setOutputToRootOnly(0); 
+
+    // for convience cast to an MPI comm
+    const Teuchos::RCP<const Teuchos::MpiComm<int> > mpi_comm = 
+      Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
    
     // this function will need to be broken up eventually and probably
     // have parts moved back into panzer.  Just need to get something
@@ -91,76 +95,49 @@ namespace panzer_stk {
  
     Teuchos::ParameterList& p = *this->getNonconstParameterList();
 
-    // Build mesh
-    Teuchos::ParameterList& mesh_params = p.sublist("Mesh");
-    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh;
-    if (mesh_params.get<std::string>("Source") ==  "Exodus File") {
-      TEUCHOS_ASSERT(true);
-      // mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory(mesh_params.sublist("Exodus File").get<std::string>("File Name")));
-      mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory());
-      mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(mesh_params.sublist("Exodus File"))));
-    }
-    else if (mesh_params.get<std::string>("Source") ==  "Inline Mesh") {
+    // "parse" parameter list
+    Teuchos::ParameterList & mesh_params     = p.sublist("Mesh");
+    Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
+    Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
 
-      int dimension = mesh_params.sublist("Inline Mesh").get<int>("Mesh Dimension");
-      
-      if (dimension == 2) {
-	mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
-	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
-	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
-	mesh_factory->setParameterList(in_mesh);
-      }
-      else if(dimension == 3) {
-	mesh_factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory);
-	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
-	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
-	mesh_factory->setParameterList(in_mesh);
-      }
-      else if(dimension==4) {
-	mesh_factory = Teuchos::rcp(new panzer_stk::MultiBlockMeshFactory);
-	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
-	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
-	mesh_factory->setParameterList(in_mesh);
-      }
+    Teuchos::ParameterList & user_data_params = p.sublist("User Data");
+    Teuchos::ParameterList & panzer_data_params = user_data_params.sublist("Panzer Data");
 
-    }
-   
-    const Teuchos::RCP<const Teuchos::MpiComm<int> > mpi_comm = 
-      Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    mesh = mesh_factory->buildUncommitedMesh(*(mpi_comm->getRawMpiComm()));
+    // Build mesh factory and uncommitted mesh
+    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory = this->buildSTKMeshFactory(mesh_params);
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(*(mpi_comm->getRawMpiComm()));
     
-    Teuchos::RCP<std::map<std::string,std::string> > block_ids_to_physics_ids = 
-      Teuchos::rcp(new std::map<std::string,std::string>);
-    panzer::buildBlockIdToPhysicsIdMap(*block_ids_to_physics_ids, p.sublist("Block ID to Physics ID Mapping"));
+    // setup physical mappings and boundary conditions
+    std::map<std::string,std::string> block_ids_to_physics_ids;
+    panzer::buildBlockIdToPhysicsIdMap(block_ids_to_physics_ids, p.sublist("Block ID to Physics ID Mapping"));
     
-    Teuchos::RCP<std::map<std::string,panzer::InputPhysicsBlock> > physics_id_to_input_physics_blocks = 
-      Teuchos::rcp(new std::map<std::string,panzer::InputPhysicsBlock>);
-    panzer::buildInputPhysicsBlocks(*physics_id_to_input_physics_blocks, p.sublist("Physics Blocks"));
+    std::map<std::string,panzer::InputPhysicsBlock> physics_id_to_input_physics_blocks; 
+    panzer::buildInputPhysicsBlocks(physics_id_to_input_physics_blocks, p.sublist("Physics Blocks"));
 
-    Teuchos::RCP<std::vector<panzer::BC> > bcs = 
-      Teuchos::rcp(new std::vector<panzer::BC>);
-    panzer::buildBCs(*bcs, p.sublist("Boundary Conditions"));
+    std::vector<panzer::BC> bcs;
+    panzer::buildBCs(bcs, p.sublist("Boundary Conditions"));
     
-    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = 
-      Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
-
-    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-
-    std::size_t workset_size = p.sublist("Assembly").get<std::size_t>("Workset Size");
-    std::string field_order = p.sublist("Assembly").get<std::string>("Field Order",""); // control nodal ordering of unknown
-                                                                                        // global IDs in linear system
+    // extract assembly information
+    std::size_t workset_size = assembly_params.get<std::size_t>("Workset Size");
+    std::string field_order  = assembly_params.get<std::string>("Field Order",""); // control nodal ordering of unknown
+                                                                                   // global IDs in linear system
 
     Teuchos::RCP<const panzer::EquationSetFactory> eqset_factory = 
-      p.sublist("Assembly").get<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory");
+      assembly_params.get<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory");
 
     Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > cm_factory = 
-      p.sublist("Assembly").get<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory");
+      assembly_params.get<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory");
       
-    bool is_transient  = p.sublist("Solution Control").get<std::string>("Piro Solver") == "Rythmos" ? true : false;
-    
-    fmb->buildPhysicsBlocks(*block_ids_to_physics_ids,
-			    *physics_id_to_input_physics_blocks,
+    // this is weird...we are accessing the solution control to determine if things are transient
+    // it is backwards!
+    bool is_transient  = solncntl_params.get<std::string>("Piro Solver") == "Rythmos" ? true : false;
+ 
+    // build physics blocks
+
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
+    Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb = Teuchos::rcp(new panzer::FieldManagerBuilder<int,int>);
+    fmb->buildPhysicsBlocks(block_ids_to_physics_ids,
+			    physics_id_to_input_physics_blocks,
 			    Teuchos::as<int>(mesh->getDimension()),
 			    workset_size,
 			    *eqset_factory,
@@ -169,62 +146,43 @@ namespace panzer_stk {
 
     // finish building mesh, set required field variables and mesh bulk data
     ////////////////////////////////////////////////////////////////////////
-    {
-      std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
-      for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
-	Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
-	const std::vector<panzer::StrBasisPair> & blockFields = pb->getProvidedDOFs();
-	
-	// insert all fields into a set
-	std::set<panzer::StrBasisPair,panzer::StrBasisComp> fieldNames;
-	fieldNames.insert(blockFields.begin(),blockFields.end());
-	
-	// add basis to DOF manager: block specific
-	std::set<panzer::StrBasisPair,panzer::StrBasisComp>::const_iterator fieldItr;
-	for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
-	  mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
-      }
-   
-      mesh_factory->completeMeshConstruction(*mesh,*(mpi_comm->getRawMpiComm()));
-    }
-      
+    this->finalizeMeshConstruction(*mesh_factory,physicsBlocks,*mpi_comm,*mesh);
+
     mesh->print(fout);
     mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name")); 
 
     // build worksets
     //////////////////////////////////////////////////////////////
     std::map<std::string,panzer::InputPhysicsBlock> eb_id_to_ipb;
-    for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids->begin();
-	 block != block_ids_to_physics_ids->end(); ++block)
-      eb_id_to_ipb[block->first] = (*physics_id_to_input_physics_blocks)[block->second];
+    for (std::map<std::string,std::string>::iterator block = block_ids_to_physics_ids.begin();
+	 block != block_ids_to_physics_ids.end(); ++block)
+      eb_id_to_ipb[block->first] = physics_id_to_input_physics_blocks[block->second];
 
     std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
       volume_worksets = panzer_stk::buildWorksets(*mesh, eb_id_to_ipb, workset_size);
 
     const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets  = 
-      panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,*bcs);
+      panzer_stk::buildBCWorksets(*mesh,eb_id_to_ipb,bcs);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
  
     // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer_stk::STKConnManager> stkConn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = stkConn_manager;
 
     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
       = globalIndexerFactory.buildUniqueGlobalIndexer(*(mpi_comm->getRawMpiComm()),physicsBlocks,conn_manager,field_order);
     
-    Teuchos::RCP<const Epetra_Comm> ep_comm = Teuchos::rcp(new Epetra_MpiComm(*(mpi_comm->getRawMpiComm())));
-
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-      = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(ep_comm,dofManager));
+      = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,dofManager));
 
     // Add mesh objects to user data to make available to user ctors
     /////////////////////////////////////////////////////////////
-    p.sublist("User Data").sublist("Panzer Data").set("STK Mesh", mesh);
-    p.sublist("User Data").sublist("Panzer Data").set("DOF Manager", dofManager);
-    p.sublist("User Data").sublist("Panzer Data").set("Linear Object Factory", linObjFactory);
+    panzer_data_params.set("STK Mesh", mesh);
+    panzer_data_params.set("DOF Manager", dofManager);
+    panzer_data_params.set("Linear Object Factory", linObjFactory);
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
@@ -232,8 +190,8 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer::BCStrategyFactory> bc_factory = 
       p.sublist("Assembly").get<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory");
 
-    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,p.sublist("Closure Models"),dofManager,*linObjFactory,p.sublist("User Data"));
-    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,*eqset_factory,*cm_factory,*bc_factory,p.sublist("Closure Models"),*linObjFactory, p.sublist("User Data"));
+    fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,p.sublist("Closure Models"),dofManager,*linObjFactory,user_data_params);
+    fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,*eqset_factory,*cm_factory,*bc_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params);
 
     // Print Phalanx DAGs
     {
@@ -305,9 +263,9 @@ namespace panzer_stk {
    
     // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
     RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
-    std::string solver = p.sublist("Solution Control").get<std::string>("Piro Solver");
+    std::string solver = solncntl_params.get<std::string>("Piro Solver");
     {
-      *strat_params = p.sublist("Solution Control").sublist("NOX").sublist("Direction").
+      *strat_params = solncntl_params.sublist("NOX").sublist("Direction").
 	sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos");
     }
 
@@ -324,8 +282,7 @@ namespace panzer_stk {
     
     m_physics_me = thyra_me;
 
-    RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList);
-    *piro_params = p.sublist("Solution Control");
+    RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params));
     RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
     if (solver=="NOX") {
       Teuchos::RCP<const panzer_stk::NOXObserverFactory_Epetra> observer_factory = 
@@ -347,6 +304,72 @@ namespace panzer_stk {
     m_rome_me = piro;
 
   }
+
+  //! build STK mesh from a mesh parameter list
+  template<typename ScalarT>
+  Teuchos::RCP<panzer_stk::STK_MeshFactory> ModelEvaluatorFactory_Epetra<ScalarT>::buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const
+  {
+    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
+
+    // first contruct the mesh factory
+    if (mesh_params.get<std::string>("Source") ==  "Exodus File") {
+      mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory());
+      mesh_factory->setParameterList(Teuchos::rcp(new Teuchos::ParameterList(mesh_params.sublist("Exodus File"))));
+    }
+    else if (mesh_params.get<std::string>("Source") ==  "Inline Mesh") {
+
+      int dimension = mesh_params.sublist("Inline Mesh").get<int>("Mesh Dimension");
+      
+      if (dimension == 2) {
+	mesh_factory = Teuchos::rcp(new panzer_stk::SquareQuadMeshFactory);
+	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
+	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
+	mesh_factory->setParameterList(in_mesh);
+      }
+      else if(dimension == 3) {
+	mesh_factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory);
+	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
+	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
+	mesh_factory->setParameterList(in_mesh);
+      }
+      else if(dimension==4) { // not really "dimension==4" simply a flag to try this other mesh for testing
+	mesh_factory = Teuchos::rcp(new panzer_stk::MultiBlockMeshFactory);
+	Teuchos::RCP<Teuchos::ParameterList> in_mesh = Teuchos::rcp(new Teuchos::ParameterList);
+	*in_mesh = mesh_params.sublist("Inline Mesh").sublist("Mesh Factory Parameter List");
+	mesh_factory->setParameterList(in_mesh);
+      }
+    }
+
+    return mesh_factory;
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory_Epetra<ScalarT>::finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
+                                                                       const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                                                                       const Teuchos::MpiComm<int> mpi_comm, 
+                                                                       STK_Interface & mesh) const
+  {
+    // finish building mesh, set required field variables and mesh bulk data
+    {
+      std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
+      for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
+	Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
+	const std::vector<panzer::StrBasisPair> & blockFields = pb->getProvidedDOFs();
+	
+	// insert all fields into a set
+	std::set<panzer::StrBasisPair,panzer::StrBasisComp> fieldNames;
+	fieldNames.insert(blockFields.begin(),blockFields.end());
+	
+	// add basis to DOF manager: block specific
+	std::set<panzer::StrBasisPair>::const_iterator fieldItr;
+	for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
+	  mesh.addSolutionField(fieldItr->first,pb->elementBlockID());
+      }
+   
+      mesh_factory.completeMeshConstruction(mesh,*(mpi_comm.getRawMpiComm()));
+    }
+  }
+
 
   template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::getPhysicsModelEvaluator()

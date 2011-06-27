@@ -3,6 +3,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_MpiComm.h"
 
 using Teuchos::RCP;
 
@@ -14,9 +15,21 @@ namespace panzer {
 
 template <typename Traits,typename LocalOrdinalT>
 EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                                                              const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider)
+                                                                     const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider)
    : comm_(comm), gidProvider_(gidProvider)
 { 
+   // build and register the gather/scatter evaluators with 
+   // the base class.
+   buildGatherScatterEvaluators(*this);
+}
+
+template <typename Traits,typename LocalOrdinalT>
+EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
+                                                                     const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider)
+   : comm_(Teuchos::null), gidProvider_(gidProvider)
+{ 
+   comm_ = Teuchos::rcp(new Epetra_MpiComm(*(comm->getRawMpiComm())));
+
    // build and register the gather/scatter evaluators with 
    // the base class.
    buildGatherScatterEvaluators(*this);

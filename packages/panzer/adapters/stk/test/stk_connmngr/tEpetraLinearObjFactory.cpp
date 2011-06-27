@@ -82,7 +82,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
 
-   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(eComm,dofManager);
+   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(eComm.getConst(),dofManager);
    Teuchos::RCP<Epetra_Map> map = laFactory.getMap();
    Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap();
    Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph();

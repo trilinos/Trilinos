@@ -107,7 +107,9 @@ namespace panzer {
           = indexerFactory->buildUniqueGlobalIndexer(MPI_COMM_WORLD,physics_blocks,conn_manager);
 
     // and linear object factory
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > elof = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD)),dofManager));
+    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > elof 
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 

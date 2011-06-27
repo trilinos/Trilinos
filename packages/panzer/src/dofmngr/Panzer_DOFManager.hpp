@@ -212,6 +212,10 @@ public:
      * geometric pattern. Note this requires that
      * ConnManager::buildConnectivity has already
      * been called.
+     *
+     * \note It might be useful (and fun!) to add a listener on to this function
+     *       to notify interested parties of possible changes to the unknown structure
+     *       and CRS matrix graph.
      */
    virtual void buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern);
 

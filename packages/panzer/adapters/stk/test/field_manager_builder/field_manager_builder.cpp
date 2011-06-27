@@ -105,7 +105,8 @@ namespace panzer {
           = indexerFactory->buildUniqueGlobalIndexer(MPI_COMM_WORLD,physics_blocks,conn_manager);
 
     // and linear object factory
-    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD)),dofManager);
+    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm.getConst(),dofManager);
 
     // setup field manager builder
     /////////////////////////////////////////////

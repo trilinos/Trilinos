@@ -113,6 +113,9 @@ getFieldMap(int fieldNum,const Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Nod
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 class ArrayToFieldVector {
 public:
+   /** Construct information for the unique global indexer. Notice that this
+     * requires global communication.
+     */
    ArrayToFieldVector(const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & ugi);
 
    /** Get a Tpetra vector containing the data ordered according to 
@@ -157,7 +160,7 @@ protected:
    mutable std::map<int,Teuchos::RCP<const Map> > gh_reducedFieldMaps_; //! Maps for each field (as needed)
    mutable std::map<int,Teuchos::RCP<const Map> > gh_fieldMaps_;        //! Maps for each field (as needed)
 
-   mutable Teuchos::RCP<const IntVector> fieldVector_;        //! (unghosted) field vector
+   mutable Teuchos::RCP<const IntVector> fieldVector_;               //! (unghosted) field vector (as needed)
    mutable std::map<int,Teuchos::RCP<const Map> > fieldMaps_;        //! Maps for each field (as needed)
 
 private:

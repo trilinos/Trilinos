@@ -53,7 +53,7 @@ TEUCHOS_UNIT_TEST(tSolutionReader, test)
    dofManager->addField("dog",linPattern);
    dofManager->buildGlobalUnknowns();
 
-   panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm,dofManager);
+   panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm.getConst(),dofManager);
    RCP<Epetra_Vector> vec = rcp(new Epetra_Vector(*elof.getGhostedMap()));
 
    read_solution_data(*dofManager,*mesh,*vec);
