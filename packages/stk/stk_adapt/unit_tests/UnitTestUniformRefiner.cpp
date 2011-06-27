@@ -603,18 +603,22 @@ namespace stk {
             eMesh.saveAs( output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
 
-            for (int ipass=8; ipass < 16; ipass++)
+            if (p_size == 1)
               {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
-                breaker.doBreak();
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+                for (int ipass=8; ipass < 16; ipass++)
+                  {
+                    std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                    breaker.doBreak();
+                    eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+                  }
+
+                //eMesh.dumpElementsCompact();
+
+                //eMesh.printInfo("local tri mesh refined", 2);
+                //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
+                eMesh.saveAs(output_files_loc+"local_tri_N_3_2_16_"+post_fix[p_size]+".e");
               }
 
-            //eMesh.dumpElementsCompact();
-
-            //eMesh.printInfo("local tri mesh refined", 2);
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_3_2_16_"+post_fix[p_size]+".e");
 
             //exit(123);
 #endif
