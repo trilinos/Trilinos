@@ -603,7 +603,7 @@ namespace stk {
             eMesh.saveAs( output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
 
-            if (p_size == 1)
+            if (0 && p_size == 1)
               {
                 for (int ipass=8; ipass < 16; ipass++)
                   {

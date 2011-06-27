@@ -282,7 +282,7 @@ namespace stk {
       int proc_rank_field = 0;
       int query_only = 0;
       int progress_meter = 0;
-      int smooth_geometry = 1;
+      int smooth_geometry = 0;
       int delete_parents = 1;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
