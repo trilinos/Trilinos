@@ -135,9 +135,9 @@ namespace Amesos {
 							      Util::Arbitrary);
       }
 
-      TEST_FOR_EXCEPTION( nnz_ret != nnz,
-                          std::runtime_error,
-                          "Number of nonzeros returned by getCrs() different from getGlobalNNZ()");
+      TEST_FOR_EXCEPTION( mat->getComm()->getRank() == 0 && nnz_ret != nnz,
+			  std::runtime_error,
+			  "Root rank failed to get all non-zero values in getCrs()");
 
       FunctionMap<Superlu,scalar_type>::create_CompRow_Matrix(A.getRawPtr(), rows, cols, nnz, nzval.getRawPtr(),
                                                               colind.getRawPtr(), rowptr.getRawPtr(), SLU::SLU_NR,

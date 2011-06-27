@@ -273,7 +273,7 @@ Superlu<Matrix,Vector>::solve_impl()
   }
   // root sets up for Solve and calls SuperLU
 
-  typedef typename MatrixTraits<Matrix>::scalar_t scalar_type;
+  // typedef typename MatrixTraits<Matrix>::scalar_t scalar_type;
   typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
 
   global_size_type len_rhs = this->multiVecX_->getGlobalLength();
@@ -320,7 +320,8 @@ Superlu<Matrix,Vector>::solve_impl()
   }         // end block for conversion time
   int ierr = 0; // returned error code
 
-  typedef typename TypeMap<Amesos::Superlu,scalar_type>::magnitude_type magnitude_type;
+  // typedef typename TypeMap<Amesos::Superlu,scalar_type>::magnitude_type magnitude_type
+    ;
   magnitude_type rpg, rcond;
   if ( this->status_.root_ ) {
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);

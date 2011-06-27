@@ -44,8 +44,9 @@ namespace Amesos {
     // typedef typename MatrixTraits<Matrix>::local_mat_ops_t   local_mat_ops_t;
     typedef Tpetra::global_size_t                              global_size_t;
 
-    typedef MatrixAdapter<Matrix> type;
-    typedef ConcreteMatrixAdapter<Matrix> adapter_t;
+    typedef Matrix                                                  matrix_t;
+    typedef MatrixAdapter<Matrix>                                       type;
+    typedef ConcreteMatrixAdapter<Matrix>                          adapter_t;
 
     MatrixAdapter(RCP<Matrix> m);
 
@@ -62,7 +63,10 @@ namespace Amesos {
      *              stores the location in \c nzval and \c colind which starts
      *              row \c j of \c this.  <tt>rowptr[nrow] = nnz</tt>, where \c
      *              nrow is the number of rows in this matrix.
-     * \param [out] nnz is the number of nonzero entries in this matrix.
+     * \param [out] nnz is the local number of nonzero entries in the
+     *              representation of this matrix.  For example, if this
+     *              processor has 12 of the 23 nzvals in its rows, then \c nnz
+     *              will be 12 on exit.
      * \param [in]  rowmap A Tpetra::Map describing the desired distribution of
      *              the rows of the CRS representation on the calling processors.
      * \param [in]  ordering

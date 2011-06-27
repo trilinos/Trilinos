@@ -135,9 +135,9 @@ namespace Amesos {
 							      Util::Arbitrary);
       }
 
-      TEST_FOR_EXCEPTION( nnz_ret != nnz,
+      TEST_FOR_EXCEPTION( mat->getComm()->getRank() == 0 && nnz_ret != nnz,
                           std::runtime_error,
-                          "Number of nonzeros returned by getCrs() different from getGlobalNNZ()");
+                          "rank=0 failed to get all nonzero values in getCcs()");
 
       FunctionMap<Superlumt,scalar_type>::create_CompCol_Matrix(A.getRawPtr(), rows,
 								cols, nnz,

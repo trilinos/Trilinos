@@ -196,10 +196,18 @@ namespace Amesos {
     using Teuchos::ArrayView;
     using Teuchos::OrdinalTraits;
     
-    RCP<const type> get_mat = get(rowmap);
+    RCP<const type> get_mat;
+    if( *rowmap == *this->row_map_ ){
+      // No need to redistribute
+      get_mat = rcp(this,false); // non-owning
+    } else {
+      get_mat = get(rowmap);
+    }
+    // RCP<const type> get_mat = get(rowmap);
 
     // technically, if all is well and good, then rowmap == rmap
     RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
+    TEUCHOS_ASSERT( *rowmap == *rmap );
 
     ArrayView<const global_ordinal_t> node_elements = rmap->getNodeElementList();
     typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;
@@ -229,11 +237,7 @@ namespace Amesos {
                           "number of values reported");
       rowInd += rowNNZ;
     }
-    rowptr[rowptr_ind] = rowInd;
-    Teuchos::reduceAll(*comm_,
-		       Teuchos::REDUCE_SUM,
-		       Teuchos::as<global_size_t>(rowInd),
-		       Teuchos::ptrFromRef(nnz));
+    rowptr[rowptr_ind] = nnz = rowInd;
   }
 
   // TODO: This may not work with distributed matrices.
@@ -322,10 +326,17 @@ namespace Amesos {
     using Teuchos::ArrayView;
     using Teuchos::OrdinalTraits;
     
-    RCP<const type> get_mat = get(colmap);
+    RCP<const type> get_mat;
+    if( *colmap == *this->col_map_ ){
+      // No need to redistribute
+      get_mat = rcp(this,false); // non-owning
+    } else {
+      get_mat = get(colmap);
+    }
 
     // If all is well and good, then colmap == cmap
     RCP<const Tpetra::Map<scalar_t,local_ordinal_t,global_ordinal_t> > cmap = get_mat->getColMap();
+    TEUCHOS_ASSERT( *colmap == *cmap );
 
     ArrayView<global_ordinal_t> node_elements = cmap->getNodeElementList();
     typename ArrayView<global_ordinal_t>::iterator col_it, col_end;
@@ -354,7 +365,7 @@ namespace Amesos {
                           "number of values reported");
       colInd += colNNZ;
     }
-    colptr[colptr_ind] = colInd;
+    colptr[colptr_ind] = nnz = colInd;
   }
 
   

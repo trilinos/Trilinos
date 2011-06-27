@@ -116,6 +116,7 @@ public:
   typedef Matrix                                                matrix_type;
   typedef Vector                                                vector_type;
   typedef typename MatrixTraits<matrix_type>::scalar_t          scalar_type;
+  typedef typename TypeMap<Amesos::Superlu,scalar_type>::magnitude_type magnitude_type;
   typedef typename MatrixTraits<matrix_type>::local_ordinal_t   local_ordinal_type;
   typedef typename MatrixTraits<matrix_type>::global_ordinal_t  global_ordinal_type;
   typedef typename MatrixAdapter<matrix_type>::global_size_t    global_size_type;
@@ -207,8 +208,6 @@ private:
    */
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters_impl() const;
 
-
-  typedef typename TypeMap<Amesos::Superlu,scalar_type>::magnitude_type magnitude_type;
 
   // struct holds all data necessary to make a superlu factorization or solve call
   struct SLUData {

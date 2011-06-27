@@ -92,7 +92,7 @@ namespace Amesos {
       l_map = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal>( global_length,
 									num_my_elements,
 									o_map->getIndexBase(),
-									getComm(),
+									o_map->getComm(),
 									o_map->getNode()));
     } else {
       l_map = o_map;
