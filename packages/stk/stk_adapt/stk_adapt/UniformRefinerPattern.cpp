@@ -286,7 +286,7 @@ namespace stk {
       eMesh.getBulkData()->declare_relation(*family_tree, newElement, ordinal + 1);  // the + 1 here is to give space for the parent
 
       // add all the nodes for ghosting purposes
-      if (1)
+      if (0)
         {
           
           mesh::PairIterRelation elem_nodes = parent_elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
