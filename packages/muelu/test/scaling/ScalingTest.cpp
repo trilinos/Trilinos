@@ -34,11 +34,13 @@
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
+
 //#include "MueLu_UseDefaultTypes.hpp"
 typedef double Scalar;
 typedef int    LocalOrdinal;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-typedef long long int    GlobalOrdinal;
+//typedef long long int    GlobalOrdinal;
+typedef int    GlobalOrdinal;
 #else
 typedef int GlobalOrdinal;
 #warning Teuchos support for long long not enabled.
@@ -146,13 +148,6 @@ int main(int argc, char *argv[]) {
     cthulhuParameters.print();
     // TODO: print custom parameters
   }
-
-/*
-  if (cthulhuParameters.GetLib() != Cthulhu::UseTpetra) {
-    *out << "This example is Tpetra only" << std::endl;
-    return EXIT_FAILURE;
-  }
-*/
 
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
@@ -338,12 +333,12 @@ int main(int argc, char *argv[]) {
   } //if (fixedPt)
 #endif //ifdef AMG_SOLVER
 
-
-#define BELOS_SOLVER
-#ifdef BELOS_SOLVER
   // Use AMG as a preconditioner in Belos
   if (amgAsPrecond)
   {
+#define BELOS_SOLVER
+#ifdef BELOS_SOLVER
+
     X->putScalar( (SC) 0.0);
 
     int numrhs=1;  
@@ -363,6 +358,7 @@ int main(int argc, char *argv[]) {
     RCP<OP> belosPrec = rcp( new Belos::MueLuPrecOp<SC,LO,GO,NO,LMO>(H) ); // Turns a MueLu::Hierarchy  object into a Belos 'OP'
 
     RCP<Belos::LinearProblem<double,MV,OP> > problem = rcp( new Belos::LinearProblem<double,MV,OP>( belosOp, belosX, belosRHS ) );
+
     problem->setLeftPrec( belosPrec );
     
     bool set = problem->setProblem();
@@ -415,6 +411,7 @@ int main(int argc, char *argv[]) {
       *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
       if (actRes > tol) { badRes = true; }
     }
+#endif 
 
     // Final summaries - this eats memory like a hot dog eating contest
     // M.summarize();
@@ -429,15 +426,15 @@ int main(int argc, char *argv[]) {
 
     for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<": \t"<<gTime[i]<<endl;
 
+#ifdef BELOS_SOLVER
     // Check convergence
     if (ret!=Belos::Converged || badRes) {
       *out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
       return EXIT_FAILURE;
     }
     *out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-
-  } // if (precond)
-#endif // JG_TODO
+#endif 
+  }
 
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
