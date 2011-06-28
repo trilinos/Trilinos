@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   int maxCoarseSize=50;  //FIXME clp doesn't like long long int
   Scalar SADampingFactor=4./3;
   double tol = 1e-7;
-  int aggOrdering = 0; //NATURAL
+  std::string aggOrdering = "natural";
   int minPerAgg=2;
   int maxNbrAlreadySelected=0;
 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("fineSweeps",&fineSweeps,"sweeps to be used in SGS on the finer levels");
   clp.setOption("maxCoarseSize",&maxCoarseSize,"maximum #dofs in coarse operator");
   clp.setOption("tol",&tol,"stopping tolerance for Krylov method");
-  clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (0=NATURAL,1=RANDOM,2=GRAPH)");
+  clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
   clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
   clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
   
@@ -202,19 +202,19 @@ int main(int argc, char *argv[]) {
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
   aggOptions.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
   aggOptions.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
-  switch (aggOrdering) {
-    case 0:
+  std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
+  if (aggOrdering == "natural") {
        *out << "aggregate ordering :                    NATURAL" << std::endl;
        aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
-       break;
-    case 1:
+  } else if (aggOrdering == "random") {
        *out << "aggregate ordering :                    RANDOM" << std::endl;
        aggOptions.SetOrdering(MueLu::AggOptions::RANDOM);
-       break;
-    case 2:
+  } else if (aggOrdering == "graph") {
        *out << "aggregate ordering :                    GRAPH" << std::endl;
        aggOptions.SetOrdering(MueLu::AggOptions::GRAPH);
-       break;
+  } else {
+    std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
+    throw(MueLu::Exceptions::RuntimeError(msg));
   }
   aggOptions.SetPhase3AggCreation(0.5);
   *out << "=============================================================================" << std::endl;
