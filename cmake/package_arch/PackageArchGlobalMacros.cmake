@@ -122,6 +122,12 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   
   ADVANCED_SET(TPL_FIND_SHARED_LIBS ON CACHE BOOL
     "If ON, then the TPL system will find shared libs if the exist, otherwise will only find static libs." )
+
+  IF ("${CMAKE_VERSION}" VERSION_GREATER "2.8.4")
+    #MESSAGE("This is CMake 2.8.5!")
+    ADVANCED_SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC OFF CACHE BOOL
+      "If on, then the properter LINK_SEARCH_START_STATIC will be added to all executables." )
+  ENDIF()
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
     CACHE PATH
