@@ -153,7 +153,9 @@ namespace stk {
       bool
       getAlwaysInitializeNodeRegistry() { return m_alwaysInitNodeRegistry; }
 
+#if defined( STK_ADAPT_HAS_GEOMETRY )
       void smoothGeometry(MeshGeometry& mesh_geometry);
+#endif
 
       void deleteParentElements();
 
