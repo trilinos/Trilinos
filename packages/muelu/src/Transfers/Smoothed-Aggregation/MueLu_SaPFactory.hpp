@@ -153,6 +153,12 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       //FIXME SC lambdaMax = Op->GetDinvALambda();
 
       if (dampingFactor_ != 0) {
+
+        Teuchos::ParameterList matrixList;
+        RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.GetA()->getRowMap(),matrixList);
+        RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,Ptent);
+        Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
+
         Teuchos::RCP< Operator > Op = fineLevel.GetA();
         Teuchos::RCP<Teuchos::Time> sapTimer;
         sapTimer = rcp(new Teuchos::Time("SaPFactory: AP"));
