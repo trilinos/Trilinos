@@ -110,7 +110,9 @@ int main(int argc, char *argv[]) {
   int amgAsPrecond=1;
   int useExplicitR=0;
   int coarseSweeps=50;
+  int maxCoarseSize=50;  //FIXME clp doesn't like long long int
   Scalar SADampingFactor=4./3;
+  double tol = 1e-7;
 
 #if   defined(HAVE_MUELU_AMESOS2)
   coarseSolver="amesos2";
@@ -128,6 +130,8 @@ int main(int argc, char *argv[]) {
   clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
   clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as transpose of prolongator");
   clp.setOption("coarseSweeps",&coarseSweeps,"sweeps to be used in SGS on the coarsest level");
+  clp.setOption("maxCoarseSize",&maxCoarseSize,"maximum #dofs in coarse operator");
+  clp.setOption("tol",&tol,"stopping tolerance for Krylov method");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -207,6 +211,7 @@ int main(int argc, char *argv[]) {
     Acfact->SetImplicitTranspose(true);
     if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
   }
+  PRfact->SetMaxCoarseSize((GO) maxCoarseSize);
 
   RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
@@ -371,7 +376,6 @@ int main(int argc, char *argv[]) {
 
     // Belos parameter list
     int maxiters = 100;
-    double tol = 1e-7;
     Teuchos::ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set("Output Frequency",10);
