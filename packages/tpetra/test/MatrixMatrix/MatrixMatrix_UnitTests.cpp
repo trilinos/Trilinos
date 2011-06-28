@@ -563,7 +563,11 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
 
 /*
  * This test was added at the request of Chris Siefert
- * KLN 24/06/2011
+ * Turns out it fails because the original algorithm in 
+ * EpetraExt doesn't try to handle the case where
+ * A has non-unique rows in it's row map. Perhaps I will
+ * come back and address that some day.
+ * KLN 28/06/2011
  */
 TEUCHOS_UNIT_TEST(Tpetra_MatMat, Multiple_row_owners){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
