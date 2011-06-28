@@ -20,7 +20,7 @@
 #
 #-----------------------------------------------------------------------------
 
-# Decide whether to build the seacas mesh IO package.
+# Decide whether to build the SEACAS mesh IO package.
 # Default is yes. 
 #
 ENABLE_SEACAS=ON
@@ -189,12 +189,13 @@ ${ECHO} cmake \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=${EXPLICIT_TEMPLATES} \
 -D Trilinos_ENABLE_Sundance:BOOL=ON \
 -D Sundance_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
+-D Trilinos_ENABLE_SEACAS:BOOL=${ENABLE_SEACAS} \
 -D Trilinos_ENABLE_Sacado:BOOL=${ENABLE_SACADO} \
 -D Trilinos_ENABLE_Stokhos:BOOL=${ENABLE_STOKHOS} \
 -D Stokhos_ENABLE_TESTS:BOOL=OFF \
 -D Stokhos_ENABLE_EXAMPLES:BOOL=OFF \
 -D SEACAS_ENABLE_TESTS:BOOL=OFF \
--D SEACAS_ENABLE_EXODUS:BOOL=ON \
+-D SEACAS_ENABLE_EXAMPLES:BOOL=OFF \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
 -D Sundance_ENABLE_SEACAS:BOOL=${ENABLE_SEACAS} \

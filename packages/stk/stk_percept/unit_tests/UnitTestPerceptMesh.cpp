@@ -46,6 +46,7 @@ namespace stk
     {
 
 #define EXTRA_PRINT 0
+      static int printInfoLevel = 0;
 
       //the following defines where to put the input and output files created by this set of functions
 #if 0
@@ -115,7 +116,7 @@ namespace stk
             fixture.generate_mesh();
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-            eMesh.printInfo("quad fixture", 2);
+            eMesh.printInfo("quad fixture",  printInfoLevel);
             eMesh.saveAs(input_files_loc+"quad_fixture.e");
           }
 
@@ -133,7 +134,7 @@ namespace stk
             fixture.generate_mesh();
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-            eMesh.printInfo("quad fixture no sidesets", 2);
+            eMesh.printInfo("quad fixture no sidesets",  printInfoLevel);
             eMesh.saveAs(input_files_loc+"quad_fixture_no_sidesets.e");
           }
       }
@@ -206,7 +207,7 @@ namespace stk
             fixture.generate_mesh();
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-            eMesh.printInfo("quad fixture", 2);
+            eMesh.printInfo("quad fixture",  printInfoLevel);
             //eMesh.saveAs("./output_files/quad_fixture.e");
 
             stk::mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();

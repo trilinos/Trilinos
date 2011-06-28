@@ -282,6 +282,8 @@ namespace stk {
       int proc_rank_field = 0;
       int query_only = 0;
       int progress_meter = 0;
+      int smooth_geometry = 0;
+      int delete_parents = 1;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -322,6 +324,8 @@ namespace stk {
 
       run_environment.clp.setOption("query_only"               , &query_only               , "query only, no refinement done");
       run_environment.clp.setOption("progress_meter"           , &progress_meter           , "progress meter on or off");
+      run_environment.clp.setOption("smooth_geometry"          , &smooth_geometry          , "smooth geometry - applies to Hex - moves nodes after geometry snap to try to avoid bad meshes");
+      run_environment.clp.setOption("delete_parents"           , &delete_parents           , "DEBUG: delete parents from a nested, multi-refine mesh - used for debugging");
 
       run_environment.clp.setOption("number_refines"           , &number_refines           , "number of refinement passes");
       run_environment.clp.setOption("block_name"               , &block_name_inc           , block_name_desc_inc.c_str());
@@ -476,7 +480,10 @@ namespace stk {
             //std::cout << "P[" << p_rank << ", " << p_size << "] input_geometry = " << input_geometry << std::endl; 
 
             if (input_geometry != "")
+              {
                 breaker.setGeometryFile(input_geometry);
+                breaker.setSmoothGeometry(smooth_geometry == 1);
+              }
             breaker.setRemoveOldElements(remove_original_elements);
             breaker.setQueryPassOnly(query_only == 1);
             breaker.setDoProgressMeter(progress_meter == 1);
@@ -500,6 +507,9 @@ namespace stk {
                   }
                 
               }
+            if (delete_parents)
+              breaker.deleteParentElements();
+
             t1 =  stk::wall_time(); 
             cpu1 = stk::cpu_time();
 

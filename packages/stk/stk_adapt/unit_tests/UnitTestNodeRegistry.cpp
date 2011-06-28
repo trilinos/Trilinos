@@ -511,6 +511,8 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
 //=============================================================================
 //=============================================================================
 
+#ifdef STK_BUILT_IN_SIERRA
+
 STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
 {
   EXCEPTWATCH;
@@ -643,6 +645,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
     // end_demo
   }
 }
+#endif
 
 } // namespace unit_tests
 } // namespace adapt

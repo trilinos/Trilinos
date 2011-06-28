@@ -242,8 +242,30 @@ get_parts(
     Mesh & mesh
     );
 
+// Generic API:  Begin modification cycle. Returns true if cycle was not already in progress
+template <typename Mesh>
+inline
+bool
+modification_begin( Mesh & mesh );
+
+// Generic API:  End modification cycle. Returns true if cycle was in progress.
+template <typename Mesh>
+inline
+bool
+modification_end( Mesh & mesh );
+
+// Generic API:  Query if we are in a modification cycle
+template <typename Mesh>
+inline
+bool
+is_modifiable( const Mesh & mesh );
+
+// Generic API:  Rotate the field data of multistate fields.
+template <typename Mesh>
+inline
+void
+rotate_multistate_fields( Mesh & mesh );
 
 } // namespace stk
 
 #endif // STK_UTIL_GENERIC_MESH_FUNCTIONS_HPP
-

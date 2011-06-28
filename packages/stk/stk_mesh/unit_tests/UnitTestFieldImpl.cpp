@@ -86,7 +86,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( DTAG )
 
 void UnitTestFieldImpl::testField()
 {
-  MetaData * const meta_null = NULL ;
+  MetaData meta_data;
 
   // Declaration of a field allocates one field object
   // per state of the field.  These fields are inserted
@@ -105,7 +105,7 @@ void UnitTestFieldImpl::testField()
                               0     /* # Ranks */ ,
                               NULL  /* dimension tags */ ,
                               1     /* # States */ ,
-                              meta_null );
+                              &meta_data );
 
   STKUNIT_ASSERT( allocated_fields.size() == 1 );
   STKUNIT_ASSERT( fA != NULL );
@@ -127,7 +127,7 @@ void UnitTestFieldImpl::testField()
                                 0     /* # Ranks */ ,
                                 NULL  /* dimension tags */ ,
                                 1     /* # States */ ,
-                                meta_null ),
+                                &meta_data ),
       std::runtime_error);
     STKUNIT_ASSERT( allocated_fields.size() == 1 );
   }
@@ -144,7 +144,7 @@ void UnitTestFieldImpl::testField()
                               0     /* # Ranks */ ,
                               NULL  /* dimension tags */ ,
                               2     /* # States */ ,
-                              meta_null );
+                              &meta_data );
 
   STKUNIT_ASSERT( allocated_fields.size() == 3 );
   STKUNIT_ASSERT( fB != NULL );
@@ -169,7 +169,7 @@ void UnitTestFieldImpl::testField()
                               0     /* # Ranks */ ,
                               NULL  /* dimension tags */ ,
                               2     /* # States */ ,
-                              meta_null );
+                              &meta_data );
 
   STKUNIT_ASSERT( allocated_fields.size() == 3 );
   STKUNIT_ASSERT( fB == fB_redundant );
@@ -188,7 +188,7 @@ void UnitTestFieldImpl::testField()
                               3         /* # Ranks */ ,
                               dim_tags  /* dimension tags */ ,
                               4         /* # States */ ,
-                              meta_null );
+                              &meta_data );
 
   STKUNIT_ASSERT( allocated_fields.size() == 7 );
   STKUNIT_ASSERT( fC != NULL );
@@ -275,7 +275,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     stride[i] = ( i + 1 ) * stride[i-1] ;
   }
 
-  MetaData * const meta_null = NULL ;
+  MetaData meta_data;
 
   impl::FieldRepository field_repo;
   const FieldVector  & allocated_fields = field_repo.get_fields();
@@ -289,7 +289,7 @@ void UnitTestFieldImpl::testFieldRestriction()
                               2         /* # ranks */ ,
                               dim_tags  /* dimension tags */ ,
                               1         /* # states */ ,
-                              meta_null );
+                              &meta_data );
 
   //------------------------------
   // Declare a rank three and two states:
@@ -300,7 +300,7 @@ void UnitTestFieldImpl::testFieldRestriction()
                               3         /* # ranks */ ,
                               dim_tags  /* dimension tags */ ,
                               2         /* # states */ ,
-                              meta_null );
+                              &meta_data );
 
   FieldBase * const f3_old = f3->m_impl.field_state( StateOld ) ;
 

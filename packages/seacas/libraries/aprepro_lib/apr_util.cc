@@ -5,7 +5,11 @@
 #include <unistd.h>
 #include <errno.h>
 
+<<<<<<< HEAD
 #include "aprepro.h"
+=======
+#include <aprepro.h>
+>>>>>>> SierraToTrilinosBranch
 
 namespace SEAMS {
 extern Aprepro *aprepro;

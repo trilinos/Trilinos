@@ -9,7 +9,9 @@
 // certain objects/values while tracing and this capability is not supported
 // natively in the stk_util interface.
 //
-// No tracing will occur unless STK_MESH_TRACE_ENABLED is defined.
+// No tracing will occur unless STK_MESH_TRACE_ENABLED is defined. You rebuild
+// with tracing with: 'bake -c ; bake <product> cxxflags=-DSTK_MESH_TRACE_ENABLED'
+// You'll need to be sure you link with stk_util/use_cases.
 //
 // (Diag|Trace)If will produce diag/trace output if the given PrintMask is
 // activated.
@@ -17,12 +19,17 @@
 // (Diag|Trace)IfWatching will produce diag/trace output if the given key is in
 // the watch list AND the given PrintMask is activated.
 //
-// A common idiom for code that wants tracing:
+// A common idiom for code that wants tracing (put this code in your main):
+//   stk::mesh::setStream(use_case::dwout().rdbuf());
 //   meshlog.setPrintMask(stk::mesh::LOG_ENTITY | stk::mesh::LOG_TRACE | stk::mesh::LOG_TRACE_SUB_CALLS);
 //   stk::mesh::watch(stk::mesh::EntityKey(0, 11));
 //   stk::diag::Trace::addTraceFunction("stk::mesh::");
 //
 // Other common items to watch are Parts, Buckets, and Fields
+//
+// For unit-testing, all trace-related libraries should be header-only so that
+// we can define STK_MESH_TRACE_ENABLED and #include the necessary headers and
+// be able to trace.
 //
 // TODO
 // * Describe the tracing/diagnostic command-line interface
@@ -106,6 +113,11 @@ void watch(const T& watch_item)
 
 #ifdef STK_MESH_TRACE_ENABLED
 
+inline void setStream(std::ostream& stream)
+{
+  initDiagWriter(stream);
+}
+
 #define Trace_(location) stk::mesh::Trace trace__(location)
 
 #define TraceIf(location, mask) stk::mesh::Trace trace__(location, mask)
@@ -129,6 +141,8 @@ meshlog.m(mask) << message << stk::diag::dendl
 /////////////////////////////////////////////////
 
 #else
+
+inline void setStream(std::ostream& stream) { }
 
 #define Trace_(location)                              ((void) (0))
 #define TraceIf(location, mask)                       ((void) (0))
