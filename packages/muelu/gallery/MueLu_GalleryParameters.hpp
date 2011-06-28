@@ -43,7 +43,7 @@ namespace MueLu {
           numGlobalElements = static_cast<GO>(nx_*ny_*nz_);
         //TODO else throw
 
-        if (numGlobalElements < 0) throw Exceptions::Overflow("Gallery: numGlobalElements < 0");
+        if (numGlobalElements < 0) throw Exceptions::Overflow("Gallery: numGlobalElements < 0 (did you forget --nx for 2D problems?)");
 
         return numGlobalElements;
       }
