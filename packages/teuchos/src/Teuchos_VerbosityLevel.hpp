@@ -36,6 +36,7 @@
 
 
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_iostream_helpers.hpp"
 
 
 namespace Teuchos {
@@ -54,14 +55,9 @@ enum EVerbosityLevel {
 	VERB_EXTREME=4    ///< Generate the most output possible
 };
 
-/** Needed for serialization KLN 23/09/2010 */
-inline std::istream& operator>>(std::istream& std_is, EVerbosityLevel& prec){
-  int intval;
-  std_is >> intval;
-  prec = (EVerbosityLevel)intval;
-  return std_is;
-}
 
+/** Needed for serialization KLN 23/09/2010 */
+TEUCHOS_ENUM_INPUT_STERAM_OPERATOR(EVerbosityLevel)
 
 
 /** \brief Return a std::string representation of the verbosity level.
