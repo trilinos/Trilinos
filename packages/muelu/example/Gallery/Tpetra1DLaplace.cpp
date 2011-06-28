@@ -16,18 +16,6 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-std::string PrintMemoryUsage() {
-  std::ostringstream mem;
-  std::ifstream proc("/proc/self/status");
-  std::string s;
-  while(getline(proc, s), !proc.fail()) {
-    if(s.substr(0, 6) == "VmSize") {
-      mem << s;
-      return mem.str();
-    }
-  }
-  return mem.str();
-}
 
 int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
@@ -48,7 +36,7 @@ int main(int argc, char *argv[]) {
   RCP<Node>                      node = platform.getNode();
   const int myRank = comm->getRank();
 
-  int numGlobalElements = 10000000;
+  int numGlobalElements = 100;
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("numGlobalElements",&numGlobalElements,"Global problem size.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -59,11 +47,7 @@ int main(int argc, char *argv[]) {
   const size_t numMyElements = map->getNodeNumElements();
   Teuchos::ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
 
-  std::cout << myRank << ": " << "Inital memory usage: " << PrintMemoryUsage() << std::endl;
-
   RCP<CrsMatrix> A = Tpetra::createCrsMatrix<Scalar>(map,3);
-
-  std::cout << myRank << ": " << "Memory after CrsMatrix constructor: " << PrintMemoryUsage() << std::endl;
 
   for (size_t i=0; i<numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
@@ -83,11 +67,15 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cout << myRank << ": " << "Memory after InsertGlobalValues(): " << PrintMemoryUsage() << std::endl;
-
   A->fillComplete(Tpetra::DoOptimizeStorage);
 
-  std::cout << myRank << ": " << "Memory after FillComplete(): " << PrintMemoryUsage() << std::endl;
+  A->resumeFill();
+  A->scale(-1);  
+  A->fillComplete();
+
+  A->resumeFill();
+  A->setAllToScalar(-1);
+  A->fillComplete();
 
   return 0;
 }
