@@ -20,6 +20,7 @@ Section C: Configuring Trilinos
   --  Runtime Debug support
   --  Configuring MPI support
   --  Building shared libraries
+  --  Building static libraries and executables
   --  Configuring with third party libraries (TPLS)
   --  Disabling tentatively enabled TPLs
   --  Getting verbose output
@@ -573,13 +574,39 @@ C) Configuring (Makefile Generator)
         argument.  The default is empty "".
 
 
-(*) Enabling shared libraries:
+(*) Building shared libraries:
 
     -D BUILD_SHARED_LIBS:BOOL=ON
 
   NOTE: The above option will result in all shared libraries to be build on
   all systems (i.e. *.so on Unix/Linux systems, *.dylib on Mac OS X,
   and *.dll on Windows systems).
+
+
+(*) Building static libraries and exectables:
+
+   To build static libraries, turn off the shared library support:
+  
+    -D BUILD_SHARED_LIBS:BOOL=OFF
+
+   Some machines, such as the Cray XT5, require static executables.
+   To build trilinos package executabes as static objects, a number of
+   flags must be set:
+
+    -D BUILD_SHARED_LIBS:BOOL=OFF
+    -D TPL_FIND_SHARED_LIBS:BOOL=OFF
+    -D Trilinos_LINK_SEARCH_START_STATIC:BOOL=ON
+  
+   The first flag tells cmake to build static versions of the Trilinos
+   libraries.  The second flag tells the build system to locate static
+   library versions of any required TPLs.  The third flag tells the
+   autodetection routines that search for extra required libraries
+   (such as the mpi library and the gfortran library for gnu
+   compilers) to locate static versions.
+
+   NOTE: The flag Trilinos_LINK_SEARCH_START_STATIC is only supported
+   in cmake version 2.8.5 or higher.  The variable will be ignored in
+   prior releases of cmake.
 
 
 (*) Enabling support for optional Third-Party Libraries (TPLs):
