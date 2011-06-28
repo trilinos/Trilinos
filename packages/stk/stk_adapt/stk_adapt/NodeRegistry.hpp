@@ -1,3 +1,32 @@
+/**
+   1. class/struct for the data type stored on a sub-dim entity (value)
+   2. key (subDimEntity) gives value& 
+        2a. getDefaultValueFromKeyIfKeyNotPresent
+        2b. value * isKeyInMap(key) [returns 0 if not present]
+        2c. insert (key,value) pair, with overwrite
+        2d. for a given key, reset the data (value type) to "empty"
+
+        is_value_null, is_value_cleared, is_value_null_or_cleared
+        insert(key,value)
+        getValueWithDefaultIfNotPresent(key)
+
+        Paradigm: avoid determining if it's null - just ask for is_value_null_or_cleared, if it is,
+           then getValueWithDefaultIfNotPresent(key), else
+
+        Or, always do is_value_null, then insertAndReturnDefaultValue(), else getValue().  This is needed
+           for performance since we don't want to always construct a default value, as the operator[] does.
+
+        
+
+
+   3. we treat key,value as value-types, but we need to be aware of performance
+        and pass/return references as needed
+   4. notify delete a node: find subDimEntity containing the node and remove from the value
+   5. notify delete an element: if an element is about to be deleted from stk_mesh, notify
+        the DB so the appropriate owning element flags can be reset
+   6.
+ */
+
 #ifndef stk_adapt_NodeRegistry_hpp
 #define stk_adapt_NodeRegistry_hpp
 
@@ -348,13 +377,37 @@ namespace stk {
         m_comm_all = new stk::CommAll(m_eMesh.getBulkData()->parallel());
       }
 
+      void init_entity_repo()
+      {
+        for (unsigned i = 0; i < stk::percept::EntityRankEnd; i++) m_entity_repo[i].clear();
+      }
+      
+      void clear_element_owner_data()
+      {
+        SubDimCellToDataMap::iterator iter;
+
+        SubDimCellToDataMap& map = m_cell_2_data_map;
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            
+            //NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            //unsigned owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+            unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+            nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>() = stk::mesh::EntityKey(owning_elementRank, 0u);
+          }
+
+      }
+
       void initialize()
       {
         //std::cout << "tmp &m_eMesh = " << &m_eMesh << std::endl;
         //delete m_comm_all;
         //m_comm_all = new stk::CommAll(m_eMesh.getBulkData()->parallel());
         m_cell_2_data_map.clear();
-        for (unsigned i = 0; i < stk::percept::EntityRankEnd; i++) m_entity_repo[i].clear();
+        init_entity_repo();
       }
 
       void //NodeRegistry::
@@ -529,6 +582,7 @@ namespace stk {
         SubDimCellData* nodeId_elementOwnderId_ptr = getFromMapPtr(subDimEntity);
         SubDimCellData& nodeId_elementOwnderId = (nodeId_elementOwnderId_ptr ? *nodeId_elementOwnderId_ptr : empty_SubDimCellData);
         bool is_empty = nodeId_elementOwnderId_ptr == 0;
+        bool is_not_empty_but_data_cleared = (!is_empty && nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().size() == 0);
 
         // if empty or if my id is the smallest, make this element the owner
         bool should_put_in =
@@ -557,7 +611,7 @@ namespace stk {
         /// once it's in, the assertion should be:
         ///   owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
         ///
-        if (is_empty || should_put_in)
+        if (is_empty || is_not_empty_but_data_cleared || should_put_in)
           {
             // new SubDimCellData SDC_DATA_OWNING_ELEMENT_KEY
             // CHECK

@@ -499,6 +499,11 @@ namespace stk {
             {
               m_nodeRegistry->initialize();
             }
+          else
+            {
+              //m_nodeRegistry->clear_element_owner_data();
+              m_nodeRegistry->init_entity_repo();
+            }
 
           m_nodeRegistry->init_comm_all();                           
 
