@@ -121,14 +121,14 @@ buildGhostedFieldVector(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> 
 template <typename ScalarT,typename ArrayT,typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void updateGhostedDataReducedVector(const std::string & fieldName,const std::string blockId,
                                     const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
-                                    const ArrayT & data,Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> & dataVector)
+                                    const ArrayT & data,Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> & dataVector)
 {
    typedef Tpetra::Map<std::size_t,GlobalOrdinalT,Node> Map;
    typedef Tpetra::Vector<int,std::size_t,GlobalOrdinalT,Node> IntVector;
    typedef Tpetra::Import<std::size_t,GlobalOrdinalT,Node> Importer;
 
    TEST_FOR_EXCEPTION(!ugi.fieldInBlock(fieldName,blockId),std::runtime_error,
-                      "panzer::buildGhostedDataReducedVector: field name = \""+fieldName+"\" is not in element block = \"" +blockId +"\"!");
+                      "panzer::updateGhostedDataReducedVector: field name = \""+fieldName+"\" is not in element block = \"" +blockId +"\"!");
 
    Teuchos::RCP<const Map> dataMap = dataVector.getMap();
 
@@ -137,18 +137,43 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
    
    TEST_FOR_EXCEPTION(data.dimension(0)!=(int) elements.size(),std::runtime_error,
-                      "panzer::buildGhostedDataReducedVector: data cell dimension does not match up with block cell count");
+                      "panzer::updateGhostedDataReducedVector: data cell dimension does not match up with block cell count");
 
-   // loop over elements distributing relevent data to vector
-   std::vector<GlobalOrdinalT> gids;
-   for(std::size_t e=0;e<elements.size();e++) { 
-      ugi.getElementGIDs(elements[e],gids);
+   int rank = data.rank();
 
-      for(std::size_t f=0;f<fieldOffsets.size();f++) {
-         std::size_t localIndex = dataMap->getLocalElement(gids[fieldOffsets[f]]); // hash table lookup
-         dataVector.replaceLocalValue(localIndex,data(e,f));
+   if(rank==2) {
+      // loop over elements distributing relevent data to vector
+      std::vector<GlobalOrdinalT> gids;
+      for(std::size_t e=0;e<elements.size();e++) { 
+         ugi.getElementGIDs(elements[e],gids);
+   
+         for(std::size_t f=0;f<fieldOffsets.size();f++) {
+            std::size_t localIndex = dataMap->getLocalElement(gids[fieldOffsets[f]]); // hash table lookup
+            dataVector.replaceLocalValue(localIndex,0,data(e,f));
+         }
       }
    }
+   else if(rank==3) {
+      std::size_t entries = data.dimension(2);
+ 
+      TEST_FOR_EXCEPTION(dataVector.getNumVectors()!=entries,std::runtime_error,
+                      "panzer::updateGhostedDataReducedVector: number of columns in data vector inconsistent with data array");
+
+      // loop over elements distributing relevent data to vector
+      std::vector<GlobalOrdinalT> gids;
+      for(std::size_t e=0;e<elements.size();e++) { 
+         ugi.getElementGIDs(elements[e],gids);
+   
+         for(std::size_t f=0;f<fieldOffsets.size();f++) {
+            std::size_t localIndex = dataMap->getLocalElement(gids[fieldOffsets[f]]); // hash table lookup
+            for(std::size_t v=0;v<entries;v++)
+               dataVector.replaceLocalValue(localIndex,v,data(e,f,v));
+         }
+      }
+   }
+   else
+      TEST_FOR_EXCEPTION(true,std::runtime_error,
+                      "panzer::updateGhostedDataReducedVector: data array rank must be 2 or 3");
 }
 
 /** Construct a map that only uses a certain field.
@@ -186,13 +211,25 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 template <typename ScalarT,typename ArrayT>
-Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
 {
    int fieldNum = ugi_->getFieldNum(fieldName);
    std::vector<std::string> blockIds;
    ugi_->getElementBlockIds(blockIds);
+
+   // get rank of first data array, determine column count
+   int rank = data.begin()->second.rank();
+   int numCols = 0;
+   if(rank==2)
+      numCols = 1;
+   else if(rank==3)
+      numCols = data.begin()->second.dimension(2);
+   else
+      TEST_FOR_EXCEPTION(true,std::runtime_error,
+                          "ArrayToFieldVector::getGhostedDataVector: data array must have rank 2 or 3");
+
 
    // first build and fill in final reduced field vector
    /////////////////////////////////////////////////////////////////
@@ -204,8 +241,8 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
       gh_reducedFieldMaps_[fieldNum] = reducedMap;
    }
 
-   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> > finalReducedVec
-      = Teuchos::rcp(new Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node>(reducedMap));
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> > finalReducedVec
+      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node>(reducedMap,numCols));
    for(std::size_t b=0;b<blockIds.size();b++) {
       std::string block = blockIds[b];
 
@@ -231,8 +268,8 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
       gh_fieldMaps_[fieldNum] = map;
    }
 
-   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> > finalVec
-      = Teuchos::rcp(new Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node>(map));
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> > finalVec
+      = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node>(map,numCols));
 
    // do import from finalReducedVec
    Tpetra::Import<std::size_t,GlobalOrdinalT,Node> importer(reducedMap,map);
@@ -243,7 +280,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 template <typename ScalarT,typename ArrayT>
-Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
 ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const
 {
@@ -251,7 +288,7 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
    if(fieldVector_==Teuchos::null)
       buildFieldVector(*gh_fieldVector_);
 
-   Teuchos::RCP<const Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> > sourceVec
+   Teuchos::RCP<const Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> > sourceVec
          = getGhostedDataVector<ScalarT,ArrayT>(fieldName,data);
 
    // use lazy construction for each field
@@ -262,8 +299,8 @@ ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>::
       fieldMaps_[fieldNum] = destMap;
    }
 
-   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> > destVec
-         = Teuchos::rcp(new Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node>(destMap));
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> > destVec
+         = Teuchos::rcp(new Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node>(destMap,sourceVec->getNumVectors()));
    
    // do import
    Tpetra::Import<std::size_t,GlobalOrdinalT> importer(sourceVec->getMap(),destMap);

@@ -8,6 +8,7 @@
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_MultiVector.hpp>
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
@@ -99,7 +100,7 @@ template <typename ScalarT,typename ArrayT,typename LocalOrdinalT,typename Globa
 void updateGhostedDataReducedVector(const std::string & fieldName,const std::string blockId,
                                     const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi,
                                     const ArrayT & data,
-                                    Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> & dataVector);
+                                    Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> & dataVector);
 
 /** Construct a map that only uses a certain field.
  */
@@ -128,7 +129,7 @@ public:
      *          is related to the <code>UGI::getOwnedAndSharedIndices</code>.
      */
    template <typename ScalarT,typename ArrayT>
-   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
    getGhostedDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
 
    /** Get a Tpetra vector containing the data ordered according to 
@@ -141,7 +142,7 @@ public:
      *          is related to the <code>UGI::getOwnedIndices</code>.
      */
    template <typename ScalarT,typename ArrayT>
-   Teuchos::RCP<Tpetra::Vector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
+   Teuchos::RCP<Tpetra::MultiVector<ScalarT,std::size_t,GlobalOrdinalT,Node> >
    getDataVector(const std::string & fieldName,const std::map<std::string,ArrayT> & data) const;
 
 protected:
