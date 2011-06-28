@@ -4,10 +4,7 @@
 #include <sstream>
 #include <climits>
 #include <iostream>
-<<<<<<< HEAD
 #include <ctime>
-=======
->>>>>>> SierraToTrilinosBranch
 
 #include "aprepro.h"
 #include "aprepro_parser.h"
@@ -42,11 +39,7 @@ namespace SEAMS {
     aprepro = this;
 
     // See the random number generator...
-<<<<<<< HEAD
     time_t time_val = std::time ((time_t*)NULL);
-=======
-    time_t time_val = time ((time_t*)NULL);
->>>>>>> SierraToTrilinosBranch
     srand((unsigned)time_val);
   }
 
