@@ -109,26 +109,6 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::addField(const std::string & bloc
                       "buildGlobalUnknowns has been called"); 
 
    fieldStringToPattern_[std::make_pair(blockId,str)] = pattern;
-
-/*
-   std::map<std::string,int>::const_iterator itr = fieldStrToInt_.find(str);
-   if(itr!=fieldStrToInt_.end()) {
-      // field already exists!
-      blockToField_[blockId].insert(itr->second); 
-      fieldIntToPattern_[std::make_pair(blockId,itr->second)] = pattern;
-   }
-   else {
-      // field doesn't exist...add it
-      int fieldNum = numFields_;
-      int size = 1; // fields are always size 1
-      vectorSpace_->defineFields(1,&fieldNum,&size);
-      fieldStrToInt_[str] = fieldNum;
-      intToFieldStr_[fieldNum] = str;
-      fieldIntToPattern_[std::make_pair(blockId,fieldNum)] = pattern;
-      blockToField_[blockId].insert(fieldNum); 
-      numFields_++;
-   }
-*/
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>

@@ -27,6 +27,7 @@
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_STK_NOXObserverFactory_Epetra.hpp"
 #include "Panzer_STK_RythmosObserverFactory_Epetra.hpp"
+#include "Panzer_STK_ParameterListCallback.hpp"
 #include <vector>
 
 // Piro solver objects
@@ -270,8 +271,23 @@ namespace panzer_stk {
     }
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-    #ifdef HAVE_TEKO
-       Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
+    #ifdef HAVE_TEKO 
+    {
+       std::string fieldName;
+
+       Teuchos::RCP<Teko::RequestHandler> reqHandler = Teuchos::rcp(new Teko::RequestHandler);
+       Teuchos::RCP<const panzer::DOFManager<int,int> > dofs =
+          Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(dofManager);
+       if(determineCoordinateField(*dofs,fieldName)) {
+          std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
+          fillFieldPatternMap(*dofs,fieldName,fieldPatterns);
+          reqHandler->addRequestCallback(Teuchos::rcp(new 
+                panzer_stk::ParameterListCallback<int,int>(fieldName,fieldPatterns,stkConn_manager,dofManager)));
+       }
+       // else write_out_the_mesg("Warning: No unique field determines the coordinates, coordinates unavailable!")   
+
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
+    }
     #endif
     linearSolverBuilder.setParameterList(strat_params);
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
@@ -385,6 +401,53 @@ namespace panzer_stk {
     TEST_FOR_EXCEPTION(Teuchos::is_null(m_rome_me), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
     return m_rome_me;
+  }
+
+  template<typename ScalarT>
+  bool ModelEvaluatorFactory_Epetra<ScalarT>::determineCoordinateField(
+                                   const panzer::DOFManager<int,int> & dofManager,std::string & fieldName) const
+  {
+     std::vector<string> elementBlocks;
+     dofManager.getElementBlockIds(elementBlocks);
+ 
+     // grab fields for first block
+     std::set<int> runningFields(dofManager.getFields(elementBlocks[0]));
+
+     // loop over all element blocks intersecting the fields 
+     for(std::size_t b=1;b<elementBlocks.size();b++) {
+        std::string blockId = elementBlocks[b];
+
+        const std::set<int> & fields = dofManager.getFields(blockId);
+
+        std::set<int> currentFields(runningFields);
+        runningFields.clear();
+        std::set_intersection(fields.begin(),fields.end(),
+                              currentFields.begin(),currentFields.end(),
+                              std::inserter(runningFields,runningFields.begin()));
+     }
+
+     if(runningFields.size()<1) 
+        return false;
+
+     fieldName = dofManager.getFieldString(*runningFields.begin());
+     return true;
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory_Epetra<ScalarT>::fillFieldPatternMap(const panzer::DOFManager<int,int> & dofManager,
+                                                                  const std::string & fieldName, 
+                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
+  {
+     std::vector<string> elementBlocks;
+     dofManager.getElementBlockIds(elementBlocks);
+
+     for(std::size_t e=0;e<elementBlocks.size();e++) {
+        std::string blockId = elementBlocks[e];
+        
+        if(dofManager.fieldInBlock(fieldName,blockId))
+           fieldPatterns[blockId] =
+              Teuchos::rcp_dynamic_cast<const panzer::IntrepidFieldPattern>(dofManager.getFieldPattern(blockId,fieldName),true);
+     }
   }
 
 }
