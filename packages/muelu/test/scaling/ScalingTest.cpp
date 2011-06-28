@@ -338,18 +338,16 @@ int main(int argc, char *argv[]) {
 
   X->setSeed(846930886);
   X->randomize();
-  X->norm2(norms);
+  Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+  RHS->norm2(norms);
+  RHS->scale(1.0/norms[0]);
   
-  RHS->setSeed(8675309);
-  RHS->randomize();
-
 #define AMG_SOLVER
 #ifdef AMG_SOLVER
   // Use AMG directly as an iterative method
   if (amgAsSolver) {
-    *out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+    //*out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   
-    Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
   
     {
       X->putScalar( (SC) 0.0);
@@ -357,8 +355,8 @@ int main(int argc, char *argv[]) {
       H->PrintResidualHistory(true);
       H->Iterate(*RHS,its,*X);
   
-      X->norm2(norms);
-      *out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+      //X->norm2(norms);
+      //*out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
     }
   } //if (fixedPt)
 #endif //ifdef AMG_SOLVER
@@ -385,6 +383,7 @@ int main(int argc, char *argv[]) {
 
     // Construct a Belos LinearProblem object
     RCP<OP> belosOp   = rcp (new Belos::MueLuOp<SC,LO,GO,NO,LMO>(Op) );    // Turns a Cthulhu::Operator object into a Belos 'OP'
+    H->PrintResidualHistory(false);
     RCP<OP> belosPrec = rcp( new Belos::MueLuPrecOp<SC,LO,GO,NO,LMO>(H) ); // Turns a MueLu::Hierarchy  object into a Belos 'OP'
 
     RCP<Belos::LinearProblem<double,MV,OP> > problem = rcp( new Belos::LinearProblem<double,MV,OP>( belosOp, belosX, belosRHS ) );
