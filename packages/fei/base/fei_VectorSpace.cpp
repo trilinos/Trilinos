@@ -1620,12 +1620,18 @@ int fei::VectorSpace::synchronizeSharedRecords()
     //processors to lists of ids that are owned locally.
     fei::comm_map* ownerPattern = new fei::comm_map(1, numProcs);
 
-    ownerPatterns_[idTypes_[i]] = ownerPattern;
+    std::map<int,fei::comm_map*>::iterator iter = ownerPatterns_.find(idTypes_[i]);
+    if (iter == ownerPatterns_.end()) {
+      ownerPatterns_.insert(std::make_pair(idTypes_[i], ownerPattern));
+    }
+    else {
+      delete iter->second;
+      iter->second = ownerPattern;
+    }
 
-    fei::comm_map* sharerPattern = 
-            new fei::comm_map(1, numProcs);
+    fei::comm_map* sharerPattern = new fei::comm_map(1, numProcs);
 
-    std::map<int,fei::comm_map*>::iterator iter = sharerPatterns_.find(idTypes_[i]);
+    iter = sharerPatterns_.find(idTypes_[i]);
     if (iter == sharerPatterns_.end()) {
       sharerPatterns_.insert(std::make_pair(idTypes_[i], sharerPattern));
     }
