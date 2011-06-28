@@ -37,6 +37,8 @@
 #include "Piro_NOXSolver.hpp"
 #include "Piro_RythmosSolver.hpp"
 
+#include "EpetraExt_VectorOut.h"
+
 #ifdef HAVE_TEKO
 #include "Teko_StratimikosFactory.hpp"
 #endif
@@ -278,11 +280,48 @@ namespace panzer_stk {
        Teuchos::RCP<Teko::RequestHandler> reqHandler = Teuchos::rcp(new Teko::RequestHandler);
        Teuchos::RCP<const panzer::DOFManager<int,int> > dofs =
           Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(dofManager);
+
+       // add in the coordinate parameter list callback handler
        if(determineCoordinateField(*dofs,fieldName)) {
           std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
           fillFieldPatternMap(*dofs,fieldName,fieldPatterns);
           reqHandler->addRequestCallback(Teuchos::rcp(new 
                 panzer_stk::ParameterListCallback<int,int>(fieldName,fieldPatterns,stkConn_manager,dofManager)));
+
+          Teuchos::RCP<panzer_stk::ParameterListCallback<int,int> > callback = Teuchos::rcp(new 
+                panzer_stk::ParameterListCallback<int,int>(fieldName,fieldPatterns,stkConn_manager,dofManager));
+          reqHandler->addRequestCallback(callback);
+
+          bool writeCoordinates = p.sublist("Options").get("Write Coordinates",false);
+          if(writeCoordinates) {
+             // force parameterlistcallback to build coordinates
+             callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
+             
+             // extract coordinate vectors
+             const std::vector<double> & xcoords = callback->getXCoordsVector();
+             const std::vector<double> & ycoords = callback->getYCoordsVector();
+             const std::vector<double> & zcoords = callback->getZCoordsVector();
+
+             // use epetra to write coordinates to matrix market files
+             Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm());
+             Epetra_Map map(-1,xcoords.size(),0,ep_comm);
+
+             Teuchos::RCP<Epetra_Vector> vec;
+             switch(mesh->getDimension()) {
+             case 3:
+                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
+                EpetraExt::VectorToMatrixMarketFile("zcoords.mm",*vec);
+             case 2:
+                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
+                EpetraExt::VectorToMatrixMarketFile("ycoords.mm",*vec);
+             case 1:
+                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
+                EpetraExt::VectorToMatrixMarketFile("xcoords.mm",*vec);
+                break;
+             default:
+                TEUCHOS_ASSERT(false);
+             }
+          }
        }
        // else write_out_the_mesg("Warning: No unique field determines the coordinates, coordinates unavailable!")   
 

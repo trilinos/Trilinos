@@ -44,9 +44,10 @@ public:
    { return arrayToVector_; }
 
 private:
-   void setFieldByKey(const std::string & key,Teuchos::ParameterList & pl) const;
-   void buildArrayToVector();
    void buildCoordinates();
+   void buildArrayToVector();
+
+   void setFieldByKey(const std::string & key,Teuchos::ParameterList & pl) const;
 
    std::string coordFieldName_;
    std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns_;
