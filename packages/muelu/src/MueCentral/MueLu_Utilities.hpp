@@ -269,9 +269,12 @@ namespace MueLu {
       Note that the returned matrix is fill-complete'd.
     */
    static RCP<Operator> TwoMatrixAdd(RCP<Operator> const &A, RCP<Operator> const &B, SC alpha=1.0, SC beta=1.0)
-    {
-      //FIXME 30 is a complete guess as to the #nonzeros per row
-      RCP<Operator> C = rcp( new CrsOperator(A->getRowMap(), 30) );
+   {
+      if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
+        throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
+      }
+      //FIXME 5 is a complete guess as to the #nonzeros per row
+      RCP<Operator> C = rcp( new CrsOperator(A->getRowMap(), 5) );
 
       if (C->getRowMap()->lib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRAEXT
@@ -306,7 +309,7 @@ namespace MueLu {
 
       C->fillComplete(A->getDomainMap(),A->getRangeMap()); //TODO: should be done outside or well documented
       return C;
-    } //TwoMatrixAdd()
+   } //TwoMatrixAdd()
 
     static void MatrixPrint(RCP<Operator> const &Op) {
       std::string label = "unlabeled operator";
@@ -386,7 +389,7 @@ namespace MueLu {
       Teuchos::ArrayView<const SC> vals;
       for (size_t i=0; i<locSize; ++i) {
         A->getLocalRowView(i,cols,vals);
-        for (size_t j=0; j<cols.size(); j++) {
+        for (LO j=0; j<cols.size(); ++j) {
           //TODO this will break down if diagonal entry is not present
           //if (!(cols[j] > i))   //JG says this will work ... maybe
           if (cols[j] == i) {
