@@ -110,9 +110,13 @@ int main(int argc, char *argv[]) {
   int amgAsPrecond=1;
   int useExplicitR=0;
   int coarseSweeps=50;
+  int fineSweeps=1;
   int maxCoarseSize=50;  //FIXME clp doesn't like long long int
   Scalar SADampingFactor=4./3;
   double tol = 1e-7;
+  int aggOrdering = 0; //NATURAL
+  int minPerAgg=2;
+  int maxNbrAlreadySelected=0;
 
 #if   defined(HAVE_MUELU_AMESOS2)
   coarseSolver="amesos2";
@@ -130,8 +134,12 @@ int main(int argc, char *argv[]) {
   clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
   clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as transpose of prolongator");
   clp.setOption("coarseSweeps",&coarseSweeps,"sweeps to be used in SGS on the coarsest level");
+  clp.setOption("fineSweeps",&fineSweeps,"sweeps to be used in SGS on the finer levels");
   clp.setOption("maxCoarseSize",&maxCoarseSize,"maximum #dofs in coarse operator");
   clp.setOption("tol",&tol,"stopping tolerance for Krylov method");
+  clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (0=NATURAL,1=RANDOM,2=GRAPH)");
+  clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
+  clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -189,10 +197,27 @@ int main(int argc, char *argv[]) {
 
   MueLu::AggregationOptions aggOptions;
   aggOptions.SetPrintFlag(6);
-  aggOptions.SetMinNodesPerAggregate(3);  //TODO should increase if run anything other than 1D
-  aggOptions.SetMaxNeighAlreadySelected(0);
-  aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
+  *out << "========================= Aggregate option summary  =========================" << std::endl;
+  *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
+  *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
+  aggOptions.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
+  aggOptions.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  switch (aggOrdering) {
+    case 0:
+       *out << "aggregate ordering :                    NATURAL" << std::endl;
+       aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
+       break;
+    case 1:
+       *out << "aggregate ordering :                    RANDOM" << std::endl;
+       aggOptions.SetOrdering(MueLu::AggOptions::RANDOM);
+       break;
+    case 2:
+       *out << "aggregate ordering :                    GRAPH" << std::endl;
+       aggOptions.SetOrdering(MueLu::AggOptions::GRAPH);
+       break;
+  }
   aggOptions.SetPhase3AggCreation(0.5);
+  *out << "=============================================================================" << std::endl;
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(aggOptions));
   RCP<CoalesceDropFactory> cdFact;
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
@@ -215,7 +240,7 @@ int main(int argc, char *argv[]) {
 
   RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: sweeps", (LO) 1);
+  ifpackList.set("relaxation: sweeps", (LO) fineSweeps);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
