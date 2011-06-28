@@ -78,7 +78,7 @@ bool use_case_3_driver( MPI_Comm comm ,
                         const std::string& mesh_options )
 {
   if ( 0 == stk::parallel_machine_rank( comm ) ) {
-    std::cout << "stk_linsys use case 1" << std::endl
+    std::cout << "stk_linsys use case 3" << std::endl
               << "  Number Processes = " << stk::parallel_machine_size( comm )
               << std::endl ;
   }
@@ -178,9 +178,8 @@ bool use_case_3_driver( MPI_Comm comm ,
 
     //------------------------------------------------------------------
 
-    int numProcs=1, myProc=0;
-    MPI_Comm_size(comm, &numProcs);
-    MPI_Comm_rank(comm, &myProc);
+    const unsigned numProcs = mesh_bulk_data.parallel_size();
+    const unsigned myProc = mesh_bulk_data.parallel_rank();
 
     stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
 
