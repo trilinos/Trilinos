@@ -582,21 +582,33 @@ namespace stk {
     {
       if (!field) field = getCoordinatesField();
 
-      if (entity.entity_rank() != stk::mesh::fem::FEMMetaData::NODE_RANK)
-        {
-          std::ostringstream out;
-          int fieldStride = 3;
+      std::ostringstream out;
+      int fieldStride = 3;
+      {
+        unsigned nfr = field->restrictions().size();
+        //if (printInfo) std::cout << "P[" << p_rank << "] info>    number of field restrictions= " << nfr << std::endl;
+        for (unsigned ifr = 0; ifr < nfr; ifr++)
           {
-            unsigned nfr = field->restrictions().size();
-            //if (printInfo) std::cout << "P[" << p_rank << "] info>    number of field restrictions= " << nfr << std::endl;
-            for (unsigned ifr = 0; ifr < nfr; ifr++)
-              {
-                const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-                //mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
-                fieldStride = fr.dimension() ;
-              }
+            const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
+            //mesh::Part& frpart = eMesh.getFEM_meta_data()->get_part(fr.ordinal());
+            fieldStride = fr.dimension() ;
           }
+      }
 
+      if (entity.entity_rank() == stk::mesh::fem::FEMMetaData::NODE_RANK)
+        {
+          out << "Node: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: \n";
+
+          double *f_data = PerceptMesh::field_data(field, entity);
+          out << " data = " ;
+          for (int ifd=0; ifd < fieldStride; ifd++)
+            {
+              out << f_data[ifd] << " ";
+            }
+          out << "\n";
+        }
+      else
+        {
           out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: \n";
 
           const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
@@ -625,9 +637,9 @@ namespace stk {
               max[ifd] = max[ifd] - min[ifd];
             }
           out << " max-min= " << max << "\n";
-          out1 << out.str() << std::endl;
-          
-        }
+        }          
+      out1 << out.str() << std::endl;
+
     }
 
     std::string PerceptMesh::printEntityCompact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field)
@@ -1016,7 +1028,7 @@ namespace stk {
     void PerceptMesh::
     createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity *>& requested_entities)
     {
-      std::vector<size_t> requests(  m_metaData->entity_rank_count(), 0 );
+      std::vector<size_t> requests(  m_metaData->entity_rank_count() , 0 );
       requests[entityRank] = count;
       getBulkData()->generate_new_entities( requests, requested_entities );
     }
@@ -1712,9 +1724,9 @@ namespace stk {
               std::ostringstream out;
               out << "\nP[" << getRank() << "]= \n";
 
-              for (unsigned irank = 0; irank < 2u; irank++)
+              for (unsigned jrank = 0; jrank < 2u; jrank++)
                 {
-                  const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() + irank );
+                  const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() + jrank );
 
                   for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
                     {

@@ -94,16 +94,7 @@ namespace stk {
               }
           }
 
-        //         if (num_edges_marked > 1)
-        //           {
-        //             throw std::runtime_error("RefinerPattern_Tri3_Tri3_2 can only refine element with one marked edge");
-        //           }
-
-//         if (num_edges_marked == 0)
-//           return;
-        
-        // if (num_edges_marked == 2)
-        //  return;
+        //std::cout << "tmp RefinerPattern_Tri3_Tri3_N::num_edges_marked= " << num_edges_marked << std::endl;
 
         if (num_edges_marked == 3)
           {
@@ -273,8 +264,13 @@ namespace stk {
           }
         else if (num_edges_marked == 0)
           {
+#if 0
+            // this allows each level to be at the same hierarchical level by having a single parent to single child
             elems.resize(1);
             elems[0] = tri_tuple_type(VERT_N(0), VERT_N(1), VERT_N(2) );
+#else
+            return;
+#endif
           }
 
         //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);

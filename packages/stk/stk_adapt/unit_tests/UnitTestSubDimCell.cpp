@@ -222,6 +222,9 @@ STKUNIT_UNIT_TEST(SubDimCell, test1)
   set3.insert(4);  set3.insert(1);  set3.insert(2);
   typedef pair<SubDimCell<int>::iterator, bool> result_type;
 
+
+  std::cout << "tmp srk set1= " << set1[0] << " " << set1[1] << " " << set1[2] << std::endl;
+
   std::ostringstream strs1;
   strs1 << set1;
 

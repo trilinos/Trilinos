@@ -39,7 +39,7 @@ include $(TRILINOS_HOME)/include/Makefile.export.Ifpack
 #COMPILE_FLAGS = $(Moertel_CXX_FLAGS) $(Moertel_TPL_INCLUDE_DIRS) \
 #	$(Moertel_INCLUDE_DIRS) -I.. -DHAVE_MOERTEL_EXODUS
 #
-# Using seacas
+# Using SEACAS
 COMPILE_FLAGS = $(Moertel_CXX_FLAGS) $(SEACAS_TPL_INCLUDE_DIRS) \
 	$(Moertel_INCLUDE_DIRS) $(SEACAS_TPL_LIBRARIES) $(Ifpack_TPL_INCLUDE_DIRS) -I.. -DHAVE_MOERTEL_EXODUS
 
@@ -50,7 +50,7 @@ COMPILE_FLAGS = $(Moertel_CXX_FLAGS) $(SEACAS_TPL_INCLUDE_DIRS) \
 # ExodusII / Nemesis TPLs
 #LINK_FLAGS =  $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) $(Moertel_TPL_LIBRARIES) -lifpack -lgaleri
 #
-# Using seacas
+# Using SEACAS
 LINK_FLAGS = $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) $(SEACAS_LIBRARIES) $(SEACAS_TPL_LIBRARIES) \
 			 $(Ifpack_TPL_LIBRARY_DIRS) $(Ifpack_TPL_LIBRARIES) -lgaleri
 

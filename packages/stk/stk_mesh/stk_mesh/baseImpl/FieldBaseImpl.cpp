@@ -128,17 +128,22 @@ void FieldBaseImpl::insert_restriction(
   {
     FieldRestrictionVector & rMap = restrictions();
 
-    FieldRestrictionVector::iterator i = rMap.begin(), j = rMap.end();
+    FieldRestrictionVector::iterator restr = rMap.begin();
+    FieldRestrictionVector::iterator last_restriction = rMap.end();
 
-    i = std::lower_bound(i,j,tmp);
+    restr = std::lower_bound(restr,last_restriction,tmp);
 
-    if ( i == j || !(*i == tmp) ) {
-      rMap.insert( i , tmp );
+    const bool new_restriction = ( ( restr == last_restriction ) || !(*restr == tmp) );
+
+    if ( new_restriction ) {
+      // New field restriction, verify we are not committed:
+      ThrowRequireMsg(!m_meta_data->is_commit(), "mesh MetaData has been committed.");
+      rMap.insert( restr , tmp );
     }
     else {
-      ThrowErrorMsgIf( i->not_equal_stride(tmp),
+      ThrowErrorMsgIf( restr->not_equal_stride(tmp),
           arg_method << " FAILED for " << *this << " " <<
-          print_restriction( *i, arg_entity_rank, arg_part, m_rank ) <<
+          print_restriction( *restr, arg_entity_rank, arg_part, m_rank ) <<
           " WITH INCOMPATIBLE REDECLARATION " <<
           print_restriction( tmp, arg_entity_rank, arg_part, m_rank ));
     }

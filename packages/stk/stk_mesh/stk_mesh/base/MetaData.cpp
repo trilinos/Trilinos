@@ -296,7 +296,7 @@ void MetaData::declare_field_restriction(
   static const char method[] =
     "std::mesh::MetaData::declare_field_restriction" ;
 
-  require_not_committed();
+  //require_not_committed(); // Moved to FieldBaseImpl::declare_field_restriction
   require_same_mesh_meta_data( MetaData::get(arg_field) );
   require_same_mesh_meta_data( MetaData::get(arg_part) );
 
