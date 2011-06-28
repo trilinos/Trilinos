@@ -335,6 +335,17 @@ namespace stk {
           }
       }
 
+      bool hasFamilyTree(const stk::mesh::Entity& element)
+      {
+        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+        if (element_to_family_tree_relations.size()==0 )
+          {
+            return false;
+          }
+        return true;
+      }
+
       /// if the element is a parent at any level, return true
       bool isParentElement( const stk::mesh::Entity& element, bool check_for_family_tree=true)
       {

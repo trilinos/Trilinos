@@ -157,8 +157,12 @@ namespace stk {
 
       void deleteParentElements();
 
+      void check_db(std::string msg="") ;
 
     protected:
+
+      void check_db_ownership_consistency();
+      void check_db_hanging_nodes();
 
       /**  Overrides start =======>
        */

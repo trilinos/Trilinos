@@ -1657,7 +1657,6 @@ namespace stk {
 
             stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
 
-            NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
 
             //!
             unsigned erank = m_eMesh.element_rank();
@@ -1668,13 +1667,14 @@ namespace stk {
             if (!owning_element)
               {
                 std::cout << "tmp owning_element = null, owning_elementId= " << owning_elementId
-                          << " nodeIds_onSE= " << nodeIds_onSE
+                  //<< " nodeIds_onSE= " << nodeIds_onSE
                           << std::endl;
                 throw std::logic_error("logic: hmmm #5.2");
               }
             if (!m_eMesh.isGhostElement(*owning_element))
               {
                 //sz += 1;
+                NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
                 sz += nodeIds_onSE.size();
               }
           }
@@ -1840,7 +1840,10 @@ namespace stk {
       void createNewNodesInParallel()
       {
         unsigned num_nodes_needed = local_size();
-        //std::cout << "P["<< m_eMesh.getRank() << "] num_nodes_needed= " << num_nodes_needed << std::endl;
+        std::cout << "P["<< m_eMesh.getRank() << "] num_nodes_needed= " << num_nodes_needed << std::endl;
+        num_nodes_needed = local_size();
+        std::cout << "P["<< m_eMesh.getRank() << "] num_nodes_needed= " << num_nodes_needed << std::endl;
+
         // FIXME
         // assert( bulk data is in modifiable mode)
         // create new entities on this proc
@@ -1867,7 +1870,38 @@ namespace stk {
               }
             if (!m_eMesh.isGhostElement(*owning_element))
               {
-                VERIFY_OP(inode, < , num_nodes_needed, "UniformRefiner::doBreak() too many nodes");
+                NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
+                if (nodeIds_onSE.m_entity_id_vector.size() != nodeIds_onSE.size())
+                  {
+                    throw std::logic_error("NodeRegistry:: createNewNodesInParallel logic err #0.0");
+                  }
+
+                for (unsigned ii = 0; ii < nodeIds_onSE.size(); ii++)
+                  {
+                    ++inode;
+                  }
+              }
+          }
+        std::cout << "inode= " << inode << std::endl;
+
+        inode=0;
+        for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
+          {
+            SubDimCellData& data = (*cell_iter).second;
+            stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+
+            //!
+            unsigned erank = m_eMesh.element_rank();
+            erank = stk::mesh::entity_rank(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+            stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), erank, owning_elementId);
+            //!
+
+            if (!owning_element)
+              {
+                throw std::logic_error("logic: hmmm #5.4");
+              }
+            if (!m_eMesh.isGhostElement(*owning_element))
+              {
                 NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
                 if (nodeIds_onSE.m_entity_id_vector.size() != nodeIds_onSE.size())
                   {
@@ -1878,6 +1912,7 @@ namespace stk {
                   {
                     //nodeIds_onSE[ii] = new_nodes[inode]->identifier();
 
+                    VERIFY_OP(inode, < , num_nodes_needed, "UniformRefiner::doBreak() too many nodes");
                     if ( DEBUG_NR_UNREF)
                       {
                         std::cout << "tmp createNewNodesInParallel: old node id= " << (nodeIds_onSE[ii] ? toString(nodeIds_onSE[ii]->identifier()) : std::string("null")) << std::endl;
@@ -1907,7 +1942,6 @@ namespace stk {
                 //data.get<SDC_DATA_GLOBAL_NODE_IDS>()[0] = new_nodes[inode]->identifier();
               }
           }
-
       }
 
 
@@ -1975,7 +2009,7 @@ namespace stk {
       }
 
     public:
-      //SubDimCellToDataMap& getMap() { return  m_cell_2_data_map; }
+      SubDimCellToDataMap& getMap() { return  m_cell_2_data_map; }
 
       // remove any sub-dim entities from the map that have a node in deleted_nodes
       void cleanDeletedNodes(std::set<stk::mesh::Entity *>& deleted_nodes, bool debug=false)
@@ -1986,6 +2020,8 @@ namespace stk {
           std::cout << "tmp cleanDeletedNodes deleted_nodes size: " << deleted_nodes_copy.size() << std::endl;
 
         SubDimCellToDataMap::iterator iter;
+        std::vector<SubDimCellToDataMap::iterator> to_delete;
+
         SubDimCellToDataMap& map = m_cell_2_data_map;
         if (DEBUG_NR_UNREF)
           std::cout << "tmp cleanDeletedNodes map size: " << map.size() << std::endl;
@@ -2018,8 +2054,20 @@ namespace stk {
                     m_eMesh.printEntity(std::cout, *nodeIds_onSE[jj]);
                   }
                 if (!debug)
-                  nodeIds_onSE.resize(0);
+                  {
+                    //unsigned owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+                    //unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+                    //nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>() = stk::mesh::EntityKey(0u, 0u);
+                    //nodeIds_onSE.resize(0);
+                    to_delete.push_back(iter);
+                  }
               }
+          }
+
+        std::cout << "tmp cleanDeletedNodes to_delete.size()= " << to_delete.size() << " map.size()= " << map.size() << std::endl;
+        for (unsigned itd=0; itd < to_delete.size(); itd++)
+          {
+            map.erase(to_delete[itd]);
           }
 
         if (DEBUG_NR_UNREF && deleted_nodes_copy.size())
@@ -2063,6 +2111,7 @@ namespace stk {
               }
           }
       }
+
 
     private:
       percept::PerceptMesh& m_eMesh;

@@ -599,6 +599,10 @@ namespace stk {
                 //breaker.unrefineAll();
               }
 
+            // FIXME FIXME FIXME
+            //breaker.deleteParentElements();
+
+
             // FIXME
             eMesh.saveAs( output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
