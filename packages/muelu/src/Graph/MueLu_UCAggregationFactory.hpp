@@ -926,13 +926,25 @@ typedef LO my_size_t; //TODO
         // ghost vertices. Further, the transpose is only a local transpose. 
         // Nonzero edges which exist on other processors are not represented.
 
+
+        int observedNAgg=-1; //number of aggregates that contain vertices on this process
+
+        {
+        ArrayRCP<LO>       vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+        ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
+        for(LO k = 0; k < vertex2AggId.size(); ++k )
+          if(vertex2AggId[k]>observedNAgg)
+            observedNAgg=vertex2AggId[k];
+        observedNAgg++; 
+        }
+
         ArrayRCP<int> Mark = Teuchos::arcp<int>(exp_nRows+1);
-        ArrayRCP<int> agg_incremented = Teuchos::arcp<int>(nAggregates+1);
-        ArrayRCP<int> SumOfMarks = Teuchos::arcp<int>(nAggregates+1);
+        ArrayRCP<int> agg_incremented = Teuchos::arcp<int>(observedNAgg);
+        ArrayRCP<int> SumOfMarks = Teuchos::arcp<int>(observedNAgg);
 
         for (int i = 0; i < exp_nRows; i++)   Mark[i] = MUELU_DISTONE_VERTEX_WEIGHT;
-        for (int i = 0; i < nAggregates; i++) agg_incremented[i] = 0;
-        for (int i = 0; i < nAggregates; i++) SumOfMarks[i] = 0;
+        for (int i = 0; i < agg_incremented.size(); i++) agg_incremented[i] = 0;
+        for (int i = 0; i < SumOfMarks.size(); i++) SumOfMarks[i] = 0;
 
         // Grab the transpose matrix graph for unaggregated ghost vertices.
         //     a) count the number of nonzeros per row in the transpose
