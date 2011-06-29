@@ -616,13 +616,15 @@ namespace stk {
 
                 //eMesh.dumpElementsCompact();
 
+                // FIXME FIXME FIXME
+                breaker.deleteParentElements();
+
                 //eMesh.printInfo("local tri mesh refined", 2);
+
                 //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
                 eMesh.saveAs(output_files_loc+"local_tri_N_3_2_16_"+post_fix[p_size]+".e");
               }
 
-            // FIXME FIXME FIXME
-            breaker.deleteParentElements();
 
             //exit(123);
 #endif
