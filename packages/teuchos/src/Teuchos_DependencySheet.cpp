@@ -82,6 +82,17 @@ void DependencySheet::printDeps(std::ostream& out) const {
   }
 }
 
+void DependencySheet::addDependencies(RCP<DependencySheet> otherSheet){
+  for(  
+    DepSet::iterator it = otherSheet->depBegin();
+    it != otherSheet->depEnd();
+    ++it
+  )
+  {
+    addDependency(*it);
+  }
+}
+
 
 } //namespace Teuchos
 

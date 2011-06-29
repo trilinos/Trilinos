@@ -93,6 +93,15 @@ public:
   void addDependency(RCP<Dependency> dependency);
 
   /**
+   * \brief Adds a dependencies from another she 
+   * to this sheet.
+   * 
+   * @param otherSheet The other sheet from which
+   * to add dependencies.
+   */
+  void addDependencies(RCP<DependencySheet> otherSheet);
+
+  /**
    * \brief Removes a particular dependency between two parameters.
    *
    * @param dependency The dependency to be removed.
@@ -183,6 +192,17 @@ public:
    */
   inline DepSet::const_iterator depEnd() const{
     return dependencies_.end();
+  }
+
+  /**
+   * \brief Returns the number of Dependencies in this
+   * DependencySheet.
+   *
+   * @return The number of Depenedencies in this
+   * DependencySheet.
+   */
+  inline DepSet::size_type size(){
+    return dependencies_.size();
   }
   
   //@}

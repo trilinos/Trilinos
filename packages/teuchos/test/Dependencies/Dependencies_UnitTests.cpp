@@ -878,12 +878,45 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
  */
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, DepSheetTest){
 	RCP<DependencySheet> depSheet1 = rcp(new DependencySheet);
+  RCP<BoolVisualDependency> boolDep1 =
+    DummyObjectGetter<BoolVisualDependency>::getDummyObject();
   TEST_ASSERT(depSheet1->empty());
-  depSheet1->addDependency(
-    DummyObjectGetter<BoolVisualDependency>::getDummyObject());
+  depSheet1->addDependency(boolDep1);
   TEST_ASSERT(!depSheet1->empty());
 
 
+  RCP<DependencySheet> depSheet2 = rcp(new DependencySheet);
+  RCP<StringVisualDependency> stringDep1 =
+    DummyObjectGetter<StringVisualDependency>::getDummyObject();
+  depSheet1->addDependency(stringDep1); 
+  RCP<StringValidatorDependency> stringValiDep1 =
+    DummyObjectGetter<StringValidatorDependency>::getDummyObject();
+  depSheet1->addDependency(stringValiDep1); 
+
+  depSheet1->addDependencies(depSheet2);
+  TEST_EQUALITY_CONST(depSheet1->size(), 3);
+  bool found1 = false;
+  bool found2 = false;
+  bool found3 = false;
+  for(
+    DependencySheet::DepSet::iterator it = depSheet1->depBegin();
+    it != depSheet1->depEnd();
+    ++it
+  )
+  {
+    if(*it == boolDep1){
+      found1 = true;
+    }
+    else if(*it == stringDep1){
+      found2 = true;
+    }
+    else if(*it == stringValiDep1){
+      found3 = true;
+    }
+  }
+  TEST_ASSERT(found1);
+  TEST_ASSERT(found2);
+  TEST_ASSERT(found3);
 }
 
 
