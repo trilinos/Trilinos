@@ -4,7 +4,7 @@ dimensions:
 	len_line = 81 ;
 	four = 4 ;
 	time_step = UNLIMITED ; // (10 currently)
-	len_name = 33 ;
+	len_name = 128 ;
 	num_dim = 3 ;
 	num_nodes = 33 ;
 	num_elem = 7 ;
@@ -189,7 +189,7 @@ variables:
 		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
 		:title = "This is a test" ;
-		:maximum_name_length = 32 ;
+		:maximum_name_length = 64 ;
 data:
 
  time_whole = 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ;
@@ -216,13 +216,13 @@ data:
     6, 0, 0, 6, 2, 0, 2.7, 3.3, 1.7, 2.3, 0, 0, 10 ;
 
  eb_names =
-  "block_1",
-  "block_2",
-  "block_3",
-  "block_4",
-  "block_5",
-  "block_6",
-  "block_7" ;
+  "Very long name for block_1 that exceeds 32 characters",
+  "Very long name for block_2 that exceeds 32 characters",
+  "Very long name for block_3 that exceeds 32 characters",
+  "Very long name for block_4 that exceeds 32 characters",
+  "Very long name for block_5 that exceeds 32 characters",
+  "Very long name for block_6 that exceeds 32 characters",
+  "Very long name for block_7 that exceeds 32 characters" ;
 
  ns_names =
   "nset_1",
@@ -236,9 +236,9 @@ data:
   "sset_5" ;
 
  coor_names =
-  "xcoor",
-  "ycoor",
-  "zcoor" ;
+  "X coordinate name that is padded to be longer than 32 characters",
+  "Y coordinate name that is padded to be longer than 32 characters",
+  "Z coordinate name that is padded to be longer than 32 characters" ;
 
  nattrb =
   0, 0,
@@ -285,7 +285,7 @@ data:
   3.1416 ;
 
  attrib_name1 =
-  "THICKNESS" ;
+  "The name for the attribute representing the shell thickness" ;
 
  connect1 =
   1, 2, 3, 4 ;
@@ -294,7 +294,7 @@ data:
   6.1416 ;
 
  attrib_name2 =
-  "THICKNESS" ;
+  "The name for the attribute representing the shell thickness" ;
 
  connect2 =
   5, 6, 7, 8 ;
@@ -303,7 +303,7 @@ data:
   6.1416 ;
 
  attrib_name3 =
-  "THICKNESS" ;
+  "The name for the attribute representing the shell thickness" ;
 
  connect3 =
   9, 10, 11, 12, 13, 14, 15, 16 ;
@@ -312,7 +312,7 @@ data:
   6.1416 ;
 
  attrib_name4 =
-  "THICKNESS" ;
+  "The name for the attribute representing the shell thickness" ;
 
  connect4 =
   17, 18, 19, 20 ;
@@ -321,7 +321,7 @@ data:
   6.1416 ;
 
  attrib_name5 =
-  "THICKNESS" ;
+  "The name for the attribute representing the shell thickness" ;
 
  connect5 =
   21, 22, 23, 24, 25, 26 ;
@@ -330,7 +330,7 @@ data:
   6.1416 ;
 
  attrib_name6 =
-  "THICKNESS" ;
+  "The name for the attribute representing the shell thickness" ;
 
  connect6 =
   17, 18, 19, 20, 27, 28, 30, 29 ;
@@ -339,7 +339,7 @@ data:
   6.1416 ;
 
  attrib_name7 =
-  "THICKNESS" ;
+  "The name for the attribute representing the shell thickness" ;
 
  connect7 =
   31, 32, 33 ;
@@ -491,13 +491,13 @@ data:
     5.1, 5.2, 5.3 ;
 
  name_nod_var =
-  "node_variable_a_very_long_name_0",
-  "nod_var1" ;
+  "node_variable_a_somewhat_long_name_0",
+  "node_variable_a_much_longer_name_that_is_not_too_long_name" ;
 
  name_elem_var =
-  "this_variable_name_is_short",
-  "this_variable_name_is_just_right",
-  "this_variable_name_is_tooooo_lon" ;
+  "the_stress_on_the_elements_in_this_block_that_are_active_now",
+  "ele_var1",
+  "ele_var2" ;
 
  name_nset_var =
   "ns_var0",

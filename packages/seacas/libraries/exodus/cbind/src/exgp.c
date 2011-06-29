@@ -52,7 +52,7 @@ include:
 \param[in] exoid      exodus file ID returned from a previous call to ex_create() or ex_open().
 \param[in] obj_type   Type of object; use one of the options in the table below.
 \param[in] obj_id     The element block, node set, or side set ID.
-\param[in]  prop_name The name of the property (maximum length is \p MAX_STR_LENGTH ) for
+\param[in] prop_name  The name of the property (maximum length is \p MAX_STR_LENGTH ) for
                       which the value is desired.
 \param[out]  value    Returned value of the property.
 
@@ -94,8 +94,7 @@ int ex_get_prop (int   exoid,
 
    exerrval  = 0; /* clear error code */
 
-/* open appropriate variable, depending on obj_type and prop_name */
-
+   /* open appropriate variable, depending on obj_type and prop_name */
    num_props = ex_get_num_props(exoid,obj_type);
 
    for (i=1; i<=num_props; i++) {
@@ -169,8 +168,7 @@ int ex_get_prop (int   exoid,
      }
    }
 
-/* if property is not found, return warning */
-
+   /* if property is not found, return warning */
    if (!found) {
      exerrval = EX_BADPARAM;
      sprintf(errmsg,
@@ -180,10 +178,9 @@ int ex_get_prop (int   exoid,
      return (EX_WARN);
    }
 
-/* find index into property array using obj_id; read value from property */
-/* array at proper index; ex_id_lkup returns an index that is 1-based,   */
-/* but netcdf expects 0-based arrays so subtract 1                       */
-
+   /* find index into property array using obj_id; read value from property */
+   /* array at proper index; ex_id_lkup returns an index that is 1-based,   */
+   /* but netcdf expects 0-based arrays so subtract 1                       */
    start[0] = ex_id_lkup (exoid, obj_type, obj_id);
    if (exerrval != 0)  {
      if (exerrval == EX_NULLENTITY) {

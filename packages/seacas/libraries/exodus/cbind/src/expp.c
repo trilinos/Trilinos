@@ -111,6 +111,7 @@ int ex_put_prop (int   exoid,
   int found = FALSE;
   int num_props, i, dimid, propid, dims[1];
   size_t start[1]; 
+  size_t prop_name_len, name_length;
   int ldum;
   char name[MAX_VAR_NAME_LENGTH+1];
   char tmpstr[MAX_STR_LENGTH+1];
@@ -201,8 +202,10 @@ int ex_put_prop (int   exoid,
 
   /* if property array has not been created, create it */
   if (!found) {
-    /* put netcdf file into define mode  */
 
+    name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH)+1;
+
+    /* put netcdf file into define mode  */
     if ((status = nc_redef (exoid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,"Error: failed to place file id %d into define mode",exoid);
@@ -303,9 +306,18 @@ int ex_put_prop (int   exoid,
       goto error_ret;  /* Exit define mode and return */
     }
 
+    /*   Check that the property name length is less than MAX_NAME_LENGTH */
+    prop_name_len = strlen(prop_name)+1;
+    if (prop_name_len > name_length) {
+      fprintf(stderr,
+	      "Warning: The property name '%s' is too long.\n\tIt will be truncated from %d to %d characters\n",
+	      prop_name, (int)prop_name_len-1, (int)name_length-1);
+      prop_name_len = name_length;
+    }
+
     /*   store property name as attribute of property array variable */
     if ((status = nc_put_att_text(exoid, propid, ATT_PROP_NAME, 
-				  strlen(prop_name)+1, (void*)prop_name)) != NC_NOERR) {
+				  prop_name_len, (void*)prop_name)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
 	      "Error: failed to store property name %s in file id %d",
@@ -314,6 +326,8 @@ int ex_put_prop (int   exoid,
       goto error_ret;  /* Exit define mode and return */
     }
 
+    ex_update_max_name_length(exoid, prop_name_len-1);
+    
     /* leave define mode  */
     if ((status = nc_enddef (exoid)) != NC_NOERR) {
       exerrval = status;

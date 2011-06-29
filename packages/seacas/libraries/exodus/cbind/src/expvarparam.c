@@ -58,7 +58,7 @@
         } \
       /* Now define TNAME variable name variable */ \
       dims[0] = dimid; \
-      dims[1] = strdim; \
+      dims[1] = dim_str_name; \
   if ((status = nc_def_var (exoid, VARNAMEVAR, NC_CHAR, 2, dims, &varid)) != NC_NOERR) { \
           if (status == NC_ENAMEINUSE) { \
               exerrval = status; \
@@ -132,7 +132,7 @@ int ex_put_variable_param (int exoid,
 			   ex_entity_type obj_type,
 			   int num_vars)
 {
-  int time_dim, num_nod_dim, dimid, strdim, varid;
+  int time_dim, num_nod_dim, dimid, dim_str_name, varid;
   int dims[3];
   char errmsg[MAX_ERR_LENGTH];
   int status;
@@ -187,10 +187,10 @@ int ex_put_variable_param (int exoid,
     }
   }
 
-  if ((status = nc_inq_dimid (exoid, DIM_STR, &strdim)) < 0) {
+  if ((status = nc_inq_dimid (exoid, DIM_STR_NAME, &dim_str_name)) < 0) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to get string length in file id %d",exoid);
+	    "Error: failed to get name string length in file id %d",exoid);
     ex_err("ex_put_variable_param",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -286,7 +286,7 @@ int ex_put_variable_param (int exoid,
 
     /* Now define nodal variable name variable */
     dims[0] = dimid;
-    dims[1] = strdim;
+    dims[1] = dim_str_name;
     if ((status = nc_def_var(exoid, VAR_NAME_NOD_VAR, NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
       if (status == NC_ENAMEINUSE) {
 	exerrval = status;

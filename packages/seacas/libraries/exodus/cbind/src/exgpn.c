@@ -106,6 +106,8 @@ int ex_get_prop_names (int    exoid,
   int status;
   int i, num_props, propid;
   char var_name[12];
+  size_t att_len;
+  nc_type att_type;
 
   char errmsg[MAX_ERR_LENGTH];
 
@@ -171,10 +173,29 @@ int ex_get_prop_names (int    exoid,
     }
 
     /*   for each property, read the "name" attribute of property array variable */
-    if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, prop_names[i])) != NC_NOERR) {
+    if ((status = nc_inq_att(exoid, propid, ATT_PROP_NAME, &att_type, &att_len)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get property name in file id %d", exoid);
+	      "Error: failed to get property attributes (type, len) in file id %d", exoid);
+      ex_err("ex_get_prop_names",errmsg,exerrval);
+      return (EX_FATAL);
+    }
+
+    if (att_len-1 <= ex_max_name_length) {
+      /* Client has large enough char string to hold text... */
+      if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, prop_names[i])) != NC_NOERR) {
+	exerrval = status;
+	sprintf(errmsg,
+		"Error: failed to get property name in file id %d", exoid);
+	ex_err("ex_get_prop_names",errmsg,exerrval);
+	return (EX_FATAL);
+      }
+    }
+    else {
+      /* FIXME */
+      exerrval = NC_ESTS;
+      sprintf(errmsg,
+	      "Error: property name length exceeds space available to store it in file id %d", exoid);
       ex_err("ex_get_prop_names",errmsg,exerrval);
       return (EX_FATAL);
     }

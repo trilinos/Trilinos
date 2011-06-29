@@ -32,30 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* testwt - test write an ExodusII database file
-*
-* author - Sandia National Laboratories
-*          Larry A. Schoof - Original
-*          Vic Yarberry    - Added headers and error logging
-*               7/7/93          Modified for use with Exodus 2.00
-*
-*          
-* environment - UNIX
-*
-* entry conditions - 
-*
-* exit conditions - 
-*
-* revision history - 
-*
-*  This is a test program for the C binding of the EXODUS II 
-*  database write routines.
-*
-*
-*****************************************************************************/
-
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -83,7 +59,7 @@ int main (int argc, char **argv)
    float time_value;
    float x[100], y[100], z[100];
    float attrib[1], dist_fact[100];
-   char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+   char *coord_names[3], *qa_record[2][4], *info[3], *variable_names[3];
    char *block_names[10], *nset_names[10], *sset_names[10];
    char *prop_names[2], *attrib_names[2];
    char *title = "This is a test";
@@ -96,6 +72,7 @@ int main (int argc, char **argv)
 
 /* create EXODUS II file */
 
+   
    exoid = ex_create ("test.exo",       /* filename path */
                        EX_CLOBBER,      /* create mode */
                        &CPU_word_size,  /* CPU float word size in bytes */
@@ -103,9 +80,9 @@ int main (int argc, char **argv)
    printf ("after ex_create for test.exo, exoid = %d\n", exoid);
    printf (" cpu word size: %d io word size: %d\n",CPU_word_size,IO_word_size);
 
-   /* ncopts = NC_VERBOSE; */
+   ex_set_max_name_length(exoid, 127); /* Using long names */
 
-/* initialize file with parameters */
+   /* initialize file with parameters */
 
    num_dim = 3;
    num_nodes = 33;
@@ -181,10 +158,11 @@ int main (int argc, char **argv)
      ex_close (exoid);
      exit(-1);
    }
-
-   coord_names[0] = "xcoor";
-   coord_names[1] = "ycoor";
-   coord_names[2] = "zcoor";
+   /*                0        1         2         3         4         5         6     */
+   /*                1234567890123456789012345678901234567890123456789012345678901234 */
+   coord_names[0] = "X coordinate name that is padded to be longer than 32 characters";
+   coord_names[1] = "Y coordinate name that is padded to be longer than 32 characters";
+   coord_names[2] = "Z coordinate name that is padded to be longer than 32 characters";
 
    error = ex_put_coord_names (exoid, coord_names);
    printf ("after ex_put_coord_names, error = %d\n", error);
@@ -247,14 +225,15 @@ int main (int argc, char **argv)
 
 /* write element block parameters */
 
-   block_names[0] = "block_1";
-   block_names[1] = "block_2";
-   block_names[2] = "block_3";
-   block_names[3] = "block_4";
-   block_names[4] = "block_5";
-   block_names[5] = "block_6";
-   block_names[6] = "block_7";
-
+   /*                0        1         2         3         4         5         6     */
+   /*                1234567890123456789012345678901234567890123456789012345678901234 */
+   block_names[0] = "Very long name for block_1 that exceeds 32 characters";
+   block_names[1] = "Very long name for block_2 that exceeds 32 characters";
+   block_names[2] = "Very long name for block_3 that exceeds 32 characters";
+   block_names[3] = "Very long name for block_4 that exceeds 32 characters";
+   block_names[4] = "Very long name for block_5 that exceeds 32 characters";
+   block_names[5] = "Very long name for block_6 that exceeds 32 characters";
+   block_names[6] = "Very long name for block_7 that exceeds 32 characters";
    num_elem_in_block[0] = 1;
    num_elem_in_block[1] = 1;
    num_elem_in_block[2] = 1;
@@ -353,7 +332,8 @@ int main (int argc, char **argv)
    
 /* write element block properties */
 
-   /*               12345678901234567890123456789012 */
+   /*               0        1         2         3         4         5         6     */
+   /*               1234567890123456789012345678901234567890123456789012345678901234 */
    prop_names[0] = "MATERIAL_PROPERTY_LONG_NAME_32CH";
    prop_names[1] = "DENSITY";
    error = ex_put_prop_names(exoid,EX_ELEM_BLOCK,2,prop_names);
@@ -559,7 +539,9 @@ int main (int argc, char **argv)
      exit(-1);
    }
 
-   attrib_names[0] = "THICKNESS";
+   /*                 0        1         2         3         4         5         6     */
+   /*                 1234567890123456789012345678901234567890123456789012345678901234 */
+   attrib_names[0] = "The name for the attribute representing the shell thickness";
    for (i=0; i < 7; i++) {
      error = ex_put_elem_attr_names (exoid, ebids[i], attrib_names);
      printf ("after ex_put_elem_attr_names, error = %d\n", error);
@@ -942,17 +924,17 @@ int main (int argc, char **argv)
 
    num_glo_vars = 1;
 
-   var_names[0] = "glo_vars";
+   variable_names[0] = "glo_vars";
 
-   error = ex_put_var_param (exoid, "g", num_glo_vars);
-   printf ("after ex_put_var_param, error = %d\n", error);
+   error = ex_put_variable_param (exoid, EX_GLOBAL, num_glo_vars);
+   printf ("after ex_put_variable_param, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_var_names (exoid, "g", num_glo_vars, var_names);
-   printf ("after ex_put_var_names, error = %d\n", error);
+   error = ex_put_variable_names (exoid, EX_GLOBAL, num_glo_vars, variable_names);
+   printf ("after ex_put_variable_names, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
@@ -961,19 +943,20 @@ int main (int argc, char **argv)
 
 
    num_nod_vars = 2;
-   /*              12345678901234567890123456789012 */
-   var_names[0] = "node_variable_a_very_long_name_0";
-   var_names[1] = "nod_var1";
+   /*              0        1         2         3         4         5         6     */
+   /*              1234567890123456789012345678901234567890123456789012345678901234 */
+   variable_names[0] = "node_variable_a_somewhat_long_name_0";
+   variable_names[1] = "node_variable_a_much_longer_name_that_is_not_too_long_name";
 
-   error = ex_put_var_param (exoid, "n", num_nod_vars);
-   printf ("after ex_put_var_param, error = %d\n", error);
+   error = ex_put_variable_param (exoid, EX_NODAL, num_nod_vars);
+   printf ("after ex_put_variable_param, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_var_names (exoid, "n", num_nod_vars, var_names);
-   printf ("after ex_put_var_names, error = %d\n", error);
+   error = ex_put_variable_names (exoid, EX_NODAL, num_nod_vars, variable_names);
+   printf ("after ex_put_variable_names, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
@@ -981,21 +964,22 @@ int main (int argc, char **argv)
 
 
    num_ele_vars = 3;
-   /*              0        1         2         3 
-   /*              12345678901234567890123456789012 */
-   var_names[0] = "this_variable_name_is_short";
-   var_names[1] = "this_variable_name_is_just_right";
-   var_names[2] = "this_variable_name_is_tooooo_long";
 
-   error = ex_put_var_param (exoid, "e", num_ele_vars);
-   printf ("after ex_put_var_param, error = %d\n", error);
+   /*              0        1         2         3         4         5         6     */
+   /*              1234567890123456789012345678901234567890123456789012345678901234 */
+   variable_names[0] = "the_stress_on_the_elements_in_this_block_that_are_active_now";
+   variable_names[1] = "ele_var1";
+   variable_names[2] = "ele_var2";
+
+   error = ex_put_variable_param (exoid, EX_ELEM_BLOCK, num_ele_vars);
+   printf ("after ex_put_variable_param, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
    }
 
-   error = ex_put_var_names (exoid, "e", num_ele_vars, var_names);
-   printf ("after ex_put_var_names, error = %d\n", error);
+   error = ex_put_variable_names (exoid, EX_ELEM_BLOCK, num_ele_vars, variable_names);
+   printf ("after ex_put_variable_names, error = %d\n", error);
    if (error) {
      ex_close (exoid);
      exit(-1);
@@ -1004,19 +988,19 @@ int main (int argc, char **argv)
    {
      num_nset_vars = 3;
      
-     var_names[0] = "ns_var0";
-     var_names[1] = "ns_var1";
-     var_names[2] = "ns_var2";
+     variable_names[0] = "ns_var0";
+     variable_names[1] = "ns_var1";
+     variable_names[2] = "ns_var2";
      
-     error = ex_put_var_param (exoid, "m", num_nset_vars);
-     printf ("after ex_put_var_param, error = %d\n", error);
+     error = ex_put_variable_param (exoid, EX_NODE_SET, num_nset_vars);
+     printf ("after ex_put_variable_param, error = %d\n", error);
      if (error) {
        ex_close (exoid);
        exit(-1);
      }
      
-     error = ex_put_var_names (exoid, "m", num_nset_vars, var_names);
-     printf ("after ex_put_var_names, error = %d\n", error);
+     error = ex_put_variable_names (exoid, EX_NODE_SET, num_nset_vars, variable_names);
+     printf ("after ex_put_variable_names, error = %d\n", error);
      if (error) {
        ex_close (exoid);
        exit(-1);
@@ -1026,19 +1010,19 @@ int main (int argc, char **argv)
    {
      num_sset_vars = 3;
 
-     var_names[0] = "ss_var0";
-     var_names[1] = "ss_var1";
-     var_names[2] = "ss_var2";
+     variable_names[0] = "ss_var0";
+     variable_names[1] = "ss_var1";
+     variable_names[2] = "ss_var2";
      
-     error = ex_put_var_param (exoid, "s", num_sset_vars);
-     printf ("after ex_put_var_param, error = %d\n", error);
+     error = ex_put_variable_param (exoid, EX_SIDE_SET, num_sset_vars);
+     printf ("after ex_put_variable_param, error = %d\n", error);
      if (error) {
        ex_close (exoid);
        exit(-1);
      }
      
-     error = ex_put_var_names (exoid, "s", num_sset_vars, var_names);
-     printf ("after ex_put_var_names, error = %d\n", error);
+     error = ex_put_variable_names (exoid, EX_SIDE_SET, num_sset_vars, variable_names);
+     printf ("after ex_put_variable_names, error = %d\n", error);
      if (error) {
        ex_close (exoid);
        exit(-1);

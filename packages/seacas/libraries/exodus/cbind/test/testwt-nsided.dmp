@@ -4,6 +4,7 @@ dimensions:
 	len_line = 81 ;
 	four = 4 ;
 	time_step = UNLIMITED ; // (10 currently)
+	len_name = 33 ;
 	num_dim = 3 ;
 	num_nodes = 33 ;
 	num_elem = 7 ;
@@ -44,12 +45,12 @@ variables:
 	float coordx(num_nodes) ;
 	float coordy(num_nodes) ;
 	float coordz(num_nodes) ;
-	char eb_names(num_el_blk, len_string) ;
-	char ns_names(num_node_sets, len_string) ;
-	char ss_names(num_side_sets, len_string) ;
-	char coor_names(num_dim, len_string) ;
+	char eb_names(num_el_blk, len_name) ;
+	char ns_names(num_node_sets, len_name) ;
+	char ss_names(num_side_sets, len_name) ;
+	char coor_names(num_dim, len_name) ;
 	float nattrb(num_nodes, num_att_in_nblk) ;
-	char nattrib_name(num_att_in_nblk, len_string) ;
+	char nattrib_name(num_att_in_nblk, len_name) ;
 	int elem_map(num_elem) ;
 	int connect1(num_nod_per_el1) ;
 		connect1:elem_type = "nsided" ;
@@ -66,7 +67,7 @@ variables:
 	int ns_prop3(num_node_sets) ;
 		ns_prop3:name = "VELOCITY" ;
 	float nsattrb1(num_nod_ns1, num_att_in_ns1) ;
-	char nsattrib_name1(num_att_in_ns1, len_string) ;
+	char nsattrib_name1(num_att_in_ns1, len_name) ;
 	int elem_ss1(num_side_ss1) ;
 	int side_ss1(num_side_ss1) ;
 	float dist_fact_ss1(num_df_ss1) ;
@@ -84,14 +85,14 @@ variables:
 		ss_prop2:name = "COLOR" ;
 	char qa_records(num_qa_rec, four, len_string) ;
 	char info_records(num_info, len_line) ;
-	char name_glo_var(num_glo_var, len_string) ;
+	char name_glo_var(num_glo_var, len_name) ;
 	float vals_glo_var(time_step, num_glo_var) ;
 	float vals_nod_var1(time_step, num_nodes) ;
 	float vals_nod_var2(time_step, num_nodes) ;
-	char name_nod_var(num_nod_var, len_string) ;
-	char name_elem_var(num_elem_var, len_string) ;
-	char name_nset_var(num_nset_var, len_string) ;
-	char name_sset_var(num_sset_var, len_string) ;
+	char name_nod_var(num_nod_var, len_name) ;
+	char name_elem_var(num_elem_var, len_name) ;
+	char name_nset_var(num_nset_var, len_name) ;
+	char name_sset_var(num_sset_var, len_name) ;
 	float vals_elem_var1eb1(time_step, num_el_in_blk1) ;
 	float vals_elem_var2eb1(time_step, num_el_in_blk1) ;
 	float vals_elem_var3eb1(time_step, num_el_in_blk1) ;
@@ -122,6 +123,7 @@ variables:
 		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
 		:title = "This is a test" ;
+		:maximum_name_length = 32 ;
 data:
 
  time_whole = 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ;

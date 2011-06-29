@@ -77,12 +77,11 @@ int ex_put_coord_names (int   exoid,
   int status;
   size_t i;
   int ndimdim, varid;
-  size_t num_dim, start[2], count[2];
+  size_t num_dim;
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
 
-  /* inquire previously defined dimensions  */
   if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
@@ -110,24 +109,9 @@ int ex_put_coord_names (int   exoid,
     return (EX_FATAL);
   }
 
-
   /* write out coordinate names */
+  status = ex_put_names_internal(exoid, varid, num_dim, coord_names, EX_COORDINATE,
+				 "", "ex_put_coord_names");
 
-  for (i=0; i<num_dim; i++) {
-    start[0] = i;
-    start[1] = 0;
-
-    count[0] = 1;
-    count[1] = strlen(coord_names[i]) + 1;
-
-    if ((status = nc_put_vara_text(exoid, varid, start, count, coord_names[i])) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-	      "Error: failed to store coordinate name %d in file id %d",
-	      (int)i,exoid);
-      ex_err("ex_put_coord_names",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-  }
-  return (EX_NOERR);
+  return (status);
 }

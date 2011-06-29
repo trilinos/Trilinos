@@ -85,7 +85,7 @@ int ex_put_map_param (int   exoid,
   if ( (num_node_maps > 0) || (num_elem_maps > 0) ) {
 
       /* inquire previously defined dimensions  */
-      if ((status = nc_inq_dimid (exoid, DIM_STR, &strdim)) != NC_NOERR)
+      if ((status = nc_inq_dimid (exoid, DIM_STR_NAME, &strdim)) != NC_NOERR)
 	{
 	  exerrval = status;
 	  sprintf(errmsg,

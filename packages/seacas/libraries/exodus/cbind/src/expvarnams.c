@@ -197,21 +197,8 @@ int ex_put_variable_names (int   exoid,
   }
 
   /* write EXODUS variable names */
-  for (i=0; i<num_vars; i++) {
-    start[0] = i;
-    start[1] = 0;
-
-    count[0] = 1;
-    count[1] = strlen(var_names[i]) + 1;
-
-    if ((status = nc_put_vara_text(exoid, varid, start, count, var_names[i])) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-	      "Error: failed to store variable names in file id %d",
-	      exoid);
-      ex_err("ex_put_var_names",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-  }
-  return(EX_NOERR);
+  status = ex_put_names_internal(exoid, varid, num_vars, var_names, obj_type,
+				 "variable", "ex_put_var_names");
+  
+  return(status);
 }

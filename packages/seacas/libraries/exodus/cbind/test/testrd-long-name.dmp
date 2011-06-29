@@ -1,6 +1,8 @@
 
 after ex_open
          I/O word size 4
+This file can use at most 127-character names
+This maximum name length used is 64-character names
 after ex_get_init, error =   0
 database parameters:
 title =  'This is a test'
@@ -116,9 +118,9 @@ z coords =
  10.0
 
 after ex_get_coord_names, error =   0
-x coord name = 'xcoor'
-y coord name = 'ycoor'
-z coord name = 'zcoor'
+x coord name = 'X coordinate name that is padded to be longer than 32 characters'
+y coord name = 'Y coordinate name that is padded to be longer than 32 characters'
+z coord name = 'Z coordinate name that is padded to be longer than 32 characters'
 num nodal attributes = 2
  after ex_get_attr_names, error = 0
 nodal attribute 0 = 'Node_attr_1'
@@ -209,7 +211,7 @@ element type = 'quad'
 num_elem_in_block =  1
 num_nodes_per_elem =  4
 num_attr =  1
-name = 'block_1'
+name = 'Very long name for block_1 that exceeds 32 characters'
 
 after ex_get_elem_block, error = 0
 element block id = 11
@@ -217,7 +219,7 @@ element type = 'quad'
 num_elem_in_block =  1
 num_nodes_per_elem =  4
 num_attr =  1
-name = 'block_2'
+name = 'Very long name for block_2 that exceeds 32 characters'
 
 after ex_get_elem_block, error = 0
 element block id = 12
@@ -225,7 +227,7 @@ element type = 'hex'
 num_elem_in_block =  1
 num_nodes_per_elem =  8
 num_attr =  1
-name = 'block_3'
+name = 'Very long name for block_3 that exceeds 32 characters'
 
 after ex_get_elem_block, error = 0
 element block id = 13
@@ -233,7 +235,7 @@ element type = 'tetra'
 num_elem_in_block =  1
 num_nodes_per_elem =  4
 num_attr =  1
-name = 'block_4'
+name = 'Very long name for block_4 that exceeds 32 characters'
 
 after ex_get_elem_block, error = 0
 element block id = 14
@@ -241,7 +243,7 @@ element type = 'wedge'
 num_elem_in_block =  1
 num_nodes_per_elem =  6
 num_attr =  1
-name = 'block_5'
+name = 'Very long name for block_5 that exceeds 32 characters'
 
 after ex_get_elem_block, error = 0
 element block id = 15
@@ -249,7 +251,7 @@ element type = 'tetra'
 num_elem_in_block =  1
 num_nodes_per_elem =  8
 num_attr =  1
-name = 'block_6'
+name = 'Very long name for block_6 that exceeds 32 characters'
 
 after ex_get_elem_block, error = 0
 element block id = 16
@@ -257,7 +259,7 @@ element type = 'tri'
 num_elem_in_block =  1
 num_nodes_per_elem =  3
 num_attr =  1
-name = 'block_7'
+name = 'Very long name for block_7 that exceeds 32 characters'
 
 after ex_inquire, error = 0
 
@@ -338,31 +340,31 @@ connect array for elem block 16
 
  after ex_get_elem_attr, error = 0
  after ex_get_elem_attr_names, error = 0
-element block 10 attribute 'THICKNESS' = 3.1416
+element block 10 attribute 'The name for the attribute representing the shell thickness' = 3.1416
 
  after ex_get_elem_attr, error = 0
  after ex_get_elem_attr_names, error = 0
-element block 11 attribute 'THICKNESS' = 6.1416
+element block 11 attribute 'The name for the attribute representing the shell thickness' = 6.1416
 
  after ex_get_elem_attr, error = 0
  after ex_get_elem_attr_names, error = 0
-element block 12 attribute 'THICKNESS' = 6.1416
+element block 12 attribute 'The name for the attribute representing the shell thickness' = 6.1416
 
  after ex_get_elem_attr, error = 0
  after ex_get_elem_attr_names, error = 0
-element block 13 attribute 'THICKNESS' = 6.1416
+element block 13 attribute 'The name for the attribute representing the shell thickness' = 6.1416
 
  after ex_get_elem_attr, error = 0
  after ex_get_elem_attr_names, error = 0
-element block 14 attribute 'THICKNESS' = 6.1416
+element block 14 attribute 'The name for the attribute representing the shell thickness' = 6.1416
 
  after ex_get_elem_attr, error = 0
  after ex_get_elem_attr_names, error = 0
-element block 15 attribute 'THICKNESS' = 6.1416
+element block 15 attribute 'The name for the attribute representing the shell thickness' = 6.1416
 
  after ex_get_elem_attr, error = 0
  after ex_get_elem_attr_names, error = 0
-element block 16 attribute 'THICKNESS' = 6.1416
+element block 16 attribute 'The name for the attribute representing the shell thickness' = 6.1416
 
 after ex_get_node_set_ids, error =   0
 
@@ -859,16 +861,16 @@ after ex_get_var_param, error =   0
 
 after ex_get_var_names, error =   0
 There are  2 nodal variables; their names are :
- 'node_variable_a_very_long_name_0'
- 'nod_var1'
+ 'node_variable_a_somewhat_long_name_0'
+ 'node_variable_a_much_longer_name_that_is_not_too_long_name'
 
 after ex_get_var_param, error =   0
 
 after ex_get_var_names, error =   0
 There are  3 element variables; their names are :
- 'this_variable_name_is_short'
- 'this_variable_name_is_just_right'
- 'this_variable_name_is_tooooo_lon'
+ 'the_stress_on_the_elements_in_this_block_that_are_active_now'
+ 'ele_var1'
+ 'ele_var2'
 
 after ex_get_elem_var_tab, error =   0
 This is the element variable truth table:
