@@ -1876,9 +1876,6 @@ namespace stk {
       void createNewNodesInParallel()
       {
         unsigned num_nodes_needed = local_size();
-        std::cout << "P["<< m_eMesh.getRank() << "] num_nodes_needed= " << num_nodes_needed << std::endl;
-        num_nodes_needed = local_size();
-        std::cout << "P["<< m_eMesh.getRank() << "] num_nodes_needed= " << num_nodes_needed << std::endl;
 
         // FIXME
         // assert( bulk data is in modifiable mode)
@@ -1889,38 +1886,6 @@ namespace stk {
         // set map values to new node id's
         unsigned inode=0;
 
-        for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
-          {
-            SubDimCellData& data = (*cell_iter).second;
-            stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
-
-            //!
-            unsigned erank = m_eMesh.element_rank();
-            erank = stk::mesh::entity_rank(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
-            stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), erank, owning_elementId);
-            //!
-
-            if (!owning_element)
-              {
-                throw std::logic_error("logic: hmmm #5.4");
-              }
-            if (!m_eMesh.isGhostElement(*owning_element))
-              {
-                NodeIdsOnSubDimEntityType& nodeIds_onSE = data.get<SDC_DATA_GLOBAL_NODE_IDS>();
-                if (nodeIds_onSE.m_entity_id_vector.size() != nodeIds_onSE.size())
-                  {
-                    throw std::logic_error("NodeRegistry:: createNewNodesInParallel logic err #0.0");
-                  }
-
-                for (unsigned ii = 0; ii < nodeIds_onSE.size(); ii++)
-                  {
-                    ++inode;
-                  }
-              }
-          }
-        std::cout << "inode= " << inode << std::endl;
-
-        inode=0;
         for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
           {
             SubDimCellData& data = (*cell_iter).second;
@@ -2100,7 +2065,7 @@ namespace stk {
               }
           }
 
-        std::cout << "tmp cleanDeletedNodes to_delete.size()= " << to_delete.size() << " map.size()= " << map.size() << std::endl;
+        //std::cout << "tmp cleanDeletedNodes to_delete.size()= " << to_delete.size() << " map.size()= " << map.size() << std::endl;
         for (unsigned itd=0; itd < to_delete.size(); itd++)
           {
             map.erase(to_delete[itd]);
