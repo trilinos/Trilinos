@@ -34,6 +34,7 @@
 namespace Teuchos {
 
 class ParameterList;
+class DependencySheet;
 template<class T> class RCP;
 
 /** \brief Base class objects that can accept a parameter list.
@@ -117,6 +118,15 @@ public:
    * The default implementation returns <tt>Teuchos::null</tt>.
    */
   virtual RCP<const ParameterList> getValidParameters() const;
+
+  /**
+   * \brief Rreturn a const Dependency Sheet of all the 
+   * dependencies that should be applied to the parameter
+   * list return by <tt>this->getValidParameters()</tt>.
+   *
+   * The default implementation returns <tt>Teuchos::null</tt>.
+   */
+  virtual RCP<const DependencySheet> getDependencies() const;
 
   //@}
 

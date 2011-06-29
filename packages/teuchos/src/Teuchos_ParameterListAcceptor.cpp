@@ -29,6 +29,7 @@
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_DependencySheet.hpp"
 
 
 namespace Teuchos {
@@ -49,6 +50,12 @@ Teuchos::RCP<const Teuchos::ParameterList>
 ParameterListAcceptor::getValidParameters() const
 {
   return Teuchos::null;
+}
+
+RCP<const DependencySheet>
+ParameterListAcceptor::getDependencies() const
+{
+  return null;
 }
 
 
