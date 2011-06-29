@@ -25,7 +25,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} PyTrilinos TriKota)
   
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DCMAKE_BUILD_TYPE:STRING=RELEASE"
     "-DCOVERAGE_COMMAND:FILEPATH=/usr/bin/gcov"
     "-DMEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind"
     "-DTPL_ENABLE_Netcdf:BOOL=ON"
@@ -37,9 +36,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.1"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
-     "-DMesquite_ENABLE_TESTS:BOOL=ON"
-     "-DCPPUNIT_LIBRARY:STRING=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/lib/libcppunit.a"
-     "-DCPPUNIT_INCLUDES:STRING=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/include"
+    "-DMesquite_ENABLE_TESTS:BOOL=ON"
+    "-DCPPUNIT_LIBRARY:STRING=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/lib/libcppunit.a"
+    "-DCPPUNIT_INCLUDES:STRING=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/include"
     )
 
   IF (BUILD_TYPE STREQUAL "DEBUG")
