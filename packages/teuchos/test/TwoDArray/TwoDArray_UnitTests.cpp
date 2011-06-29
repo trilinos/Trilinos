@@ -94,7 +94,7 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, emptyTest){
   TEST_EQUALITY_CONST(emptyArray.getNumRows(), 0)
   TEST_EQUALITY_CONST(emptyArray.getNumCols(), 0)
   TEST_EQUALITY_CONST(emptyArray.getDataArray().size(), 0)
-
+  TEST_ASSERT(emptyArray.isEmpty());
 }
 
 TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, streamTests){
@@ -109,6 +109,19 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, streamTests){
   std::istringstream instream(ss.str()); 
   instream >> readArray;
   TEST_EQUALITY(simpleArray, readArray);
+}
+
+TEUCHOS_UNIT_TEST(Teuchos_TwoDArray, clearTest){
+  TwoDArray<int> simpleArray(2,2);
+  simpleArray[0][0] =1;
+  simpleArray[0][1] =2;
+  simpleArray[1][0] =3;
+  simpleArray[1][1] =4;
+
+  simpleArray.clear();
+  TEST_ASSERT(simpleArray.isEmpty());
+
+
 }
 
 

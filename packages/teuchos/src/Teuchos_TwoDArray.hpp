@@ -124,6 +124,19 @@ public:
     return _data[(i*_numCols)+j];
   }
 
+  /** \brief delets all the entries from the TwoDArray */
+  inline void clear(){
+    _data.clear();
+    _numRows =0;
+    _numCols =0;
+  }
+
+  inline bool isEmpty(){
+    return _numRows == 0 &&
+      _numCols == 0 &&
+      _data.size() == 0;
+  }
+
   //@}
 
   /** \name String conversion functions */
