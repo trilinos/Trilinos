@@ -537,6 +537,19 @@ namespace stk {
         }
         m_nodeRegistry->dumpDB("after registration");
 
+#define CHECK_DEBUG 1
+        if (CHECK_DEBUG)
+          {
+            MPI_Barrier( MPI_COMM_WORLD );
+            std::cout << "P["<< m_eMesh.getRank()
+                      <<"] ========================================================================================================================" << std::endl;
+            m_nodeRegistry->checkDB();
+            check_db("after registerNeedNewNode");
+            MPI_Barrier( MPI_COMM_WORLD );
+            std::cout << "P["<< m_eMesh.getRank()
+                      <<"] ========================================================================================================================" << std::endl;
+          }
+
         ///////////////////////////////////////////////////////////
         /////  Check for remote
         ///////////////////////////////////////////////////////////
@@ -568,8 +581,7 @@ namespace stk {
             }
           m_nodeRegistry->endCheckForRemote();                /**/   TRACE_PRINT("Refiner: endCheckForRemote (top-level rank)... ");
 
-#define CHECK_DEBUG 0
-          if (CHECK_DEBUG)
+          if (1 && CHECK_DEBUG)
             {
               std::cout << "num_elem= " << num_elem << std::endl;
               MPI_Barrier( MPI_COMM_WORLD );
@@ -2449,6 +2461,10 @@ namespace stk {
       m_doQueryOnly = doQueryOnly;
     }
 
+    // ====================================================================================================
+    // ====================================================================================================
+    // ====================================================================================================
+
     void
     Refiner::
     unrefineAll()
@@ -2497,7 +2513,55 @@ namespace stk {
     void Refiner::
     filterUnrefSet(ElementUnrefineCollection& elements_to_unref)
     {
+      const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+      ElementUnrefineCollection elements_to_unref_copy;
 
+      for (ElementUnrefineCollection::iterator u_iter = elements_to_unref.begin();
+           u_iter != elements_to_unref.end(); ++u_iter)
+        {
+          //stk::mesh::Entity * element_ptr = *u_iter;
+          stk::mesh::Entity& element = **u_iter;
+          
+          const bool check_for_family_tree = false;  
+          bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
+              
+          if (isParent)
+            continue;
+
+          const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+
+          if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false) )
+            {
+              //bool elementIsGhost = m_eMesh.isGhostElement(element);
+
+              //std::vector<stk::mesh::Entity *> siblings;
+              stk::mesh::PairIterRelation child_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+
+              // look for level 0 only - these are children with no children
+              unsigned child_ft_level_0 = m_eMesh.getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
+
+              stk::mesh::Entity *family_tree = child_to_family_tree_relations[child_ft_level_0].entity();
+              stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(m_eMesh.element_rank());
+              if (family_tree_relations.size() == 0)
+                {
+                  throw std::logic_error("Refiner::filterUnrefSet family_tree_relations.size() == 0");
+                }
+
+              for (unsigned ichild=1; ichild < family_tree_relations.size(); ichild++)
+                {
+                  stk::mesh::Entity *child = family_tree_relations[ichild].entity();
+                  if (m_eMesh.isParentElement(*child))
+                    {
+                      throw std::logic_error("Refiner::filterUnrefSet isParentElement not expected");
+                    }
+              
+                  elements_to_unref_copy.insert(child);
+                }
+            }
+        }
+      std::cout << "tmp filterUnrefSet::elements_to_unref.size = " << elements_to_unref.size() << 
+        " filtered size= " << elements_to_unref_copy.size() << std::endl;
+      elements_to_unref = elements_to_unref_copy;
     }
 
     void Refiner::
@@ -2922,23 +2986,27 @@ namespace stk {
 
           if (!owning_element)
             throw std::logic_error("check_db_ownership_consistency:: error #2");
-                
-          for (unsigned inode = 0; inode < nodeIds_onSE.size(); inode++)
+
+          if (!m_eMesh.isGhostElement(*owning_element))
             {
-              stk::mesh::Entity *node = nodeIds_onSE[inode];
-              if (!node)
-                throw std::logic_error("check_db_ownership_consistency:: error #3");
+                
+              for (unsigned inode = 0; inode < nodeIds_onSE.size(); inode++)
+                {
+                  stk::mesh::Entity *node = nodeIds_onSE[inode];
+                  if (!node)
+                    throw std::logic_error("check_db_ownership_consistency:: error #3");
 
-              stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[inode]);
-              if (!node1)
-                throw std::logic_error("check_db_ownership_consistency:: error #3a");
+                  stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[inode]);
+                  if (!node1)
+                    throw std::logic_error("check_db_ownership_consistency:: error #3a");
 
-              stk::mesh::Entity * node2 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node->identifier() );
-              if (!node2)
-                throw std::logic_error("check_db_ownership_consistency:: error #3b");
-              if (node != node2)
-                throw std::logic_error("check_db_ownership_consistency:: error #3c");
+                  stk::mesh::Entity * node2 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node->identifier() );
+                  if (!node2)
+                    throw std::logic_error("check_db_ownership_consistency:: error #3b");
+                  if (node != node2)
+                    throw std::logic_error("check_db_ownership_consistency:: error #3c");
               
+                }
             }
         }
     }
