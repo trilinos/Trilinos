@@ -82,10 +82,9 @@ static char* cur_string = &ret_string[0];
 int ex_set_max_name_length(int exoid, int length)
 {
   char errmsg[MAX_ERR_LENGTH];
-  if (length < 32) {
-    /* Don't allow setting to less than 32 which is the old maximum */
+  if (length <= 0) {
     exerrval = NC_EMAXNAME;
-    sprintf(errmsg, "Error: Max name length must be >= 32.");
+    sprintf(errmsg, "Error: Max name length must be positive.");
     ex_err("ex_set_max_name_length",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -114,7 +113,6 @@ void ex_update_max_name_length(int exoid, int length)
 	    "Error: failed to update 'max_name_length' attribute in file id %d",
 	    exoid);
 	ex_err("ex_update_max_name_length",errmsg,exerrval);
-	return (EX_FATAL);
   }
 
   if (length > db_length) {

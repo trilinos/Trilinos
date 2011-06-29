@@ -279,12 +279,15 @@ int ex_put_init_ext (int   exoid,
   /* ...and some dimensions... */
 
   /* create name string length dimension */
-  if ((status=nc_def_dim (exoid, DIM_STR_NAME, ex_max_name_length+1, &dim_str_name)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: failed to define name string length in file id %d",exoid);
-    ex_err("ex_put_init_ext",errmsg,exerrval);
-    goto error_ret;
+  {
+    int max_name = ex_max_name_length < 32 ? 32 : ex_max_name_length;
+    if ((status=nc_def_dim (exoid, DIM_STR_NAME, max_name+1, &dim_str_name)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to define name string length in file id %d",exoid);
+      ex_err("ex_put_init_ext",errmsg,exerrval);
+      goto error_ret;
+    }
   }
 
   {
