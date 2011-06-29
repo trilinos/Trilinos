@@ -382,24 +382,6 @@ namespace stk {
         for (unsigned i = 0; i < stk::percept::EntityRankEnd; i++) m_entity_repo[i].clear();
       }
       
-      void clear_element_owner_data()
-      {
-        SubDimCellToDataMap::iterator iter;
-
-        SubDimCellToDataMap& map = m_cell_2_data_map;
-
-        for (iter = map.begin(); iter != map.end(); ++iter)
-          {
-            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
-            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
-            
-            //NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-            //unsigned owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
-            unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
-            nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>() = stk::mesh::EntityKey(owning_elementRank, 0u);
-          }
-
-      }
 
       void initialize()
       {
@@ -2135,6 +2117,38 @@ namespace stk {
                 m_eMesh.printEntity(std::cout, *node);
               }
             
+          }
+      }
+
+      // remove/zero any data that points to a deleted element
+      void clear_element_owner_data( std::set<stk::mesh::Entity *>& elems_to_be_deleted)
+      {
+        SubDimCellToDataMap::iterator iter;
+
+        SubDimCellToDataMap& map = m_cell_2_data_map;
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            
+            //NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            unsigned owning_elementId = stk::mesh::entity_id(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+            unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+
+            if (owning_elementId)
+              {
+                stk::mesh::Entity * owning_element = get_entity_element(*m_eMesh.getBulkData(), owning_elementRank, owning_elementId);
+                if (owning_element)
+                  {
+                    if (elems_to_be_deleted.find(owning_element) != elems_to_be_deleted.end())
+                      {
+                        std::cout << "clear_element_owner_data: owning_elementId = " << owning_elementId << std::endl;
+
+                        nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>() = stk::mesh::EntityKey(owning_elementRank, 0u);
+                      }
+                  }
+              }
           }
       }
 

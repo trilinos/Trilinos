@@ -2755,6 +2755,8 @@ namespace stk {
       std::cout << "tmp nchild_removed=: " << nchild_removed << std::endl;
 #endif
 
+      m_nodeRegistry->clear_element_owner_data(children_to_be_removed);
+
       for(SetOfEntities::iterator family_tree_it = family_trees_to_be_removed.begin();
           family_tree_it != family_trees_to_be_removed.end(); ++family_tree_it)
         {
