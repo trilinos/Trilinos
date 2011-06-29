@@ -151,7 +151,7 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     {
       using Teuchos::ArrayRCP;
 
-      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("MakeTentative"));
+      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TentativePFactory::MakeTentative"));
       timer->start(true);
 
       Teuchos::RCP< Operator > fineA = fineLevel.GetA();

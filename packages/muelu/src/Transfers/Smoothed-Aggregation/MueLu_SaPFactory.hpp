@@ -161,19 +161,19 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
         Teuchos::RCP< Operator > Op = fineLevel.GetA();
         Teuchos::RCP<Teuchos::Time> sapTimer;
-        sapTimer = rcp(new Teuchos::Time("SaPFactory: AP"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:AP"));
         sapTimer->start(true);
         RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,Ptent);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
-        sapTimer = rcp(new Teuchos::Time("SaPFactory: D^{-1}*AP"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_times_AP"));
         sapTimer->start(true);
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(Op);
         Utils::ScaleMatrix(AP,diag);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
-        sapTimer = rcp(new Teuchos::Time("SaPFactory: final P"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:finalP"));
         sapTimer->start(true);
         finalP = Utils::TwoMatrixAdd(Ptent,AP,1.0,-dampingFactor_/lambdaMax);
         sapTimer->stop();

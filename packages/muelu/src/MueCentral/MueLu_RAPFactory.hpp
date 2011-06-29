@@ -41,7 +41,7 @@ class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
       RCP<Operator> P = coarseLevel.GetP();
       RCP<Operator> A = fineLevel.GetA();
-Teuchos::RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A*P"));
+Teuchos::RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P"));
 apTimer->start(true);
       RCP<Operator> AP = Utils::TwoMatrixMultiply(A,P);
 apTimer->stop();
@@ -57,7 +57,7 @@ MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
         coarseLevel.SetA(RAP);
       } else {
         RCP<Operator> R = coarseLevel.GetR();
-Teuchos::RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R*AP"));
+Teuchos::RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP"));
 rapTimer->start(true);
         RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,AP);
 rapTimer->stop();
