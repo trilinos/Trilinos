@@ -1,15 +1,26 @@
 #!/bin/bash
 
-#SBATCH --time=00:45:00            # WALLTIME
+#SBATCH --time=01:00:00            # WALLTIME
 #SBATCH --account=FY115672         # WC ID
 #SBATCH -N _NODES_                 # Number of nodes 
 
 nodes=$SLURM_JOB_NUM_NODES
 cores=_CPN_
 tcores=`expr $nodes \* $cores`
+tol=1e-7
+its=15
+maxCoarseSize=3000
+maxLevels=15
 
-echo "Start Time: " `date`
+outfile="screen.out.$SLURM_JOB_ID"
+touch outfile
 
-mpiexec --npernode $cores -np $tcores _BINARY_ --nx=_NX_ --ny=_NX_ --nz=_NX_ --linAlgebra=1 --explicitR=1 --matrixType=_MTYPE_ >& screen.out.${SLURM_JOB_ID}
+echo "===========================================" >> $outfile
+echo "Start Time: " `date` >> $outfile
+echo "===========================================" >> $outfile
 
-echo "Stop Time: " `date`
+mpiexec -np $tcores /apps/contrib/numa_wrapper-16ppn _BINARY_ --nx=_NX_ --ny=_NX_ --nz=_NX_ --linAlgebra=1 --explicitR=1 --matrixType=_MTYPE_ --maxLevels=$maxLevels --maxCoarseSize=$maxCoarseSize --its=$its --tol=$tol 2>&1 >> $outfile
+
+echo "===========================================" >> $outfile
+echo "Stop Time: " `date` >>$outfile
+echo "===========================================" >> $outfile
