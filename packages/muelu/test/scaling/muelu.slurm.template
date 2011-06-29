@@ -7,10 +7,10 @@
 nodes=$SLURM_JOB_NUM_NODES
 cores=_CPN_
 tcores=`expr $nodes \* $cores`
-tol=1e-7
-its=15
-maxCoarseSize=3000
-maxLevels=15
+tol=1e-7                            # Krylov stopping tolerance
+its=15                              # max number of fixed point iterations
+maxCoarseSize=3000                  # max number of DOFs allowed in coarsest level
+maxLevels=15                        # max number of levels allowed in AMG hierarchy
 
 outfile="screen.out.$SLURM_JOB_ID"
 touch outfile
