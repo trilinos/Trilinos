@@ -139,7 +139,7 @@ bool ParameterEntry::isTwoDArray() const{
   std::string valueTypeName = val_.typeName();
   size_t prePos = valueTypeName.find(prefix);
   size_t postPos = valueTypeName.find(postfix);
-  return (prePos != std::string::npos) 
+  return (prePos != std::string::npos) && (prePos==0)
     && (postPos != std::string::npos) && (prePos < postPos);
 }
 
@@ -151,7 +151,7 @@ bool ParameterEntry::isArray() const{
   std::string valueTypeName = val_.typeName();
   size_t prePos = valueTypeName.find(prefix);
   size_t postPos = valueTypeName.find(postfix);
-  return (prePos != std::string::npos) 
+  return (prePos != std::string::npos) && (prePos==0)
     && (postPos != std::string::npos) && (prePos < postPos);
 }
 

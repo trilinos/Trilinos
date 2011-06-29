@@ -41,7 +41,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
-#include "TwoDArray.hpp"
+#include "Teuchos_TwoDArray.hpp"
 
 namespace Teuchos {
 
@@ -51,21 +51,27 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterEntry, testTypeFunctions )
   ParameterEntry intEntry;
   intEntry.setValue(1);
   TEST_ASSERT(intEntry.isType<int>());
+  TEST_ASSERT(!intEntry.isArray());
+  TEST_ASSERT(!intEntry.isTwoDArray());
 
   ParameterEntry doubleEntry;
-  intEntry.setValue(1.0);
-  TEST_ASSERT(intEntry.isType<double>());
+  doubleEntry.setValue(1.0);
+  TEST_ASSERT(doubleEntry.isType<double>());
+  TEST_ASSERT(!doubleEntry.isArray());
+  TEST_ASSERT(!doubleEntry.isTwoDArray());
 
   Array<int> intArray = tuple<int>(1,2,3);
   ParameterEntry arrayEntry;
   arrayEntry.setValue(intArray);
   TEST_ASSERT(arrayEntry.isType<Array<int> >());
   TEST_ASSERT(arrayEntry.isArray());
+  TEST_ASSERT(!arrayEntry.isTwoDArray());
 
   TwoDArray<double> twoDArray(3,3.0);
   ParameterEntry twoDEntry(twoDArray);
   TEST_ASSERT(twoDEntry.isType<TwoDArray<double> >());
-  TEST_ASSERT(twoDEntry.isTwoDArray(();
+  TEST_ASSERT(twoDEntry.isTwoDArray());
+  TEST_ASSERT(!twoDEntry.isArray());
 }
 
 
