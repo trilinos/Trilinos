@@ -472,7 +472,7 @@ int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
   int i, j, k, w, ierr;
   int rank, size;
   int nextRank, nextSize, nextGroup;
-  int gnos_per_gid, keySize;
+  int gnos_per_gid, keySize, hashTableSize;
   int nVtx, nEdge;
   int numUniqueNbors;
   int start, edim, vdim, gdim;
@@ -559,9 +559,10 @@ int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
   /* A map of neighbor vertices to their new owners in current group. */
 
   keySize = sizeof(ZOLTAN_GNO_TYPE);
+  hashTableSize = Zoltan_Recommended_Hash_Size(hpp->num_obj * 1.1);
 
   nborMap = Zoltan_Map_Create(zz, 
-            0,  /* let Zoltan_Map choose max hash value */
+            hashTableSize,
             keySize,
             1,  /* save value of the key, not a pointer to it */
             0); /* don't know number of keys, so allocate dynamically */
