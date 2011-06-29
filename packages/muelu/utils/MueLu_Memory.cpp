@@ -7,7 +7,7 @@
 #include <time.h>
 #include <malloc.h>
 
-#define MUELU_USE_MALLINFO
+//#define MUELU_USE_MALLINFO
 
 namespace MueLu {
   
