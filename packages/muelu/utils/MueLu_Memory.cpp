@@ -32,10 +32,10 @@ namespace MueLu {
 
       mem << PrintMemoryInfo() << " ";
       while(getline(proc, s), !proc.fail()) {
-	if(s.substr(0, 6) == "VmSize") {
-	  mem << s;
-	  return mem.str();
-	}
+        if(s.substr(0, 6) == "VmSize") {
+          mem << s;
+          return mem.str();
+        }
       }      
       return mem.str();
 #endif
@@ -54,16 +54,17 @@ namespace MueLu {
 
       return mem;
 #else
-    std::ostringstream mem;
+      std::ostringstream mem;
       std::ifstream proc("/proc/meminfo");
       std::string s;
       while(getline(proc, s), !proc.fail()) {
-	if(s.substr(0, 7) == "MemFree") {
-	  mem << s;
-	  return mem.str();
-	}
-	
-	}
+        if(s.substr(0, 7) == "MemFree") {
+          mem << s;
+          return mem.str();
+        }
+    
+      }
+      return mem.str();
 #endif
     }
 
@@ -80,7 +81,7 @@ namespace MueLu {
       if (Comm.getRank()==0) {
         std::cout << "&&& " << timer.name() << " time    &&& "
                  << "max=" << maxTime << "   min=" << minTime << "  avg=" << avgTime << std::endl;
-	std::cout << "&&& " << timer.name() << " memory  &&& " << MemUtils::PrintMemoryUsage() << std::endl;
+        std::cout << "&&& " << timer.name() << " memory  &&& " << MemUtils::PrintMemoryUsage() << std::endl;
       }
     } //ReportTimeAndMemory
     
