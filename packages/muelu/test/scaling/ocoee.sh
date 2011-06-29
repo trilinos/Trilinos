@@ -1,39 +1,69 @@
 #!/bin/sh
-#MULTX="1 2 3 4 5 6 7 8 9 10"
-MULTX="1 2 4 6 8 10"
-TEMPLATE=muelu.slurm.template
+# Laplace1D or Laplace2D
+MATRIX=Laplace2D
+
+# glory, hopper or redsky
+MACHINE=hopper
+
+###################################
+if [ $MATRIX == "Laplace1D" ]; then
+  MULTX="1 2 3 4 5 6 7 8 9 10"
+elif [ $MATRIX == "Laplace2D" ]; then
+  MULTX="1 2 4 6 8 10"
+fi
 SPREF=muelu
 DPREF=run
 CDIR=`pwd`
 BINARY_EXE="MueLu_ScalingTest.exe"
-CPN=16
-#NXBASE=60
-#MULTIPLIES=100
-MATRIX=Laplace2D
 
-# Glory
-if [ $MATRIX == "Laplace1D" ]; then
-  NXBASE=22000000
-elif [ $MATRIX == "Laplace2D" ]; then
-  NXBASE=4650
-else
-  NXBASE=150
+if [ $MACHINE == "hopper" ]; then
+############# Hopper ##############
+  TEMPLATE=muelu.pbs.template
+  EXT=pbs
+  SUB=qsub
+  CPN=24
+  if [ $MATRIX == "Laplace1D" ]; then
+    NXBASE=22000000
+  elif [ $MATRIX == "Laplace2D" ]; then
+    NXBASE=4650
+  else
+    NXBASE=150
+  fi
+elif [ $MACHINE == "glory" ]; then
+############# Glory ##############
+  TEMPLATE=muelu.slurm.template
+  EXT=slurm
+  SUB=sbatch
+  CPN=16
+  if [ $MATRIX == "Laplace1D" ]; then
+    NXBASE=22000000
+  elif [ $MATRIX == "Laplace2D" ]; then
+    NXBASE=4650
+  else
+    NXBASE=150
+  fi
+elif [ $MACHINE == "redsky" ]; then
+############# Redsky ##############
+  TEMPLATE=muelu.slurm.template
+  EXT=slurm
+  SUB=sbatch
+  CPN=8
+  if [ $MATRIX == "Laplace1D" ]; then
+    NXBASE=4000000
+  elif [ $MATRIX == "Laplace2D" ]; then
+    NXBASE=2000
+  else
+    NXBASE=150
+  fi
+else	
+  echo "Unknown Machine!"
+  exit 1;
 fi
-
-# Redsky
-#if [ $MATRIX == "Laplace1D" ]; then
-#  NXBASE=4000000
-#elif [ $MATRIX == "Laplace2D" ]; then
-#  NXBASE=2000
-#else
-#  NXBASE=150
-#fi
-      
 
 
 # What timing info am I extracting?
-declare -a LABELS=(build setup solve)
-declare -a TIMELINES=("Matrix Build" "MueLu Setup" "Belos Solve")
+declare -a LABELS=(build setup solve its)
+declare -a TIMELINES=("Matrix Build" "MueLu Setup" "Belos Solve" "Number of iterations")
 
 ###############################
 calc(){
@@ -57,6 +87,8 @@ ocoee_build(){
   NODES=$1; DIR=$2; BINARY=$3; CPN=$4 NX=$5
   echo "Building $DIR..."
 
+  CORES=`expr $CPN \* $NODES`
+
   # Make directory, if needed
   if [ -d $DIR ]; then :
   else mkdir $DIR; fi
@@ -65,12 +97,13 @@ ocoee_build(){
   if [ -e $DIR/$BINARY ]; then :
   else cd $DIR; ln -s $CDIR/$BINARY .; cd $CDIR; fi
 
-  # Build SLURM script
+  # Build SLURM/PBS script
   cat $TEMPLATE | sed "s/_NODES_/$NODES/" | sed "s/_NX_/$NX/g" \
       | sed "s/_CPN_/$CPN/" \
+      | sed "s/_CORES_/$CORES/" \
       | sed "s/_MTYPE_/$MATRIX/" \
       | sed "s#_BINARY_#./$BINARY#" \
-      > $DIR/$SPREF-$NODES.slurm
+      > $DIR/$SPREF-$NODES.$EXT
 
 }
 
@@ -86,7 +119,7 @@ ocoee_run(){
   echo "Running $DIR..." 
 
   cd $DIR
-  sbatch $SPREF-$NODES.slurm
+  $SUB $SPREF-$NODES.$EXT
   cd $CDIR
 }
 
@@ -146,15 +179,6 @@ if [ "$OPT" == "a" ]; then
     OUTSTR="$OUTSTR $TL"
   done
     echo "% file              :       norm$OUTSTR"
-fi
-
-
-# Pull hostname to handle manual vs. batch runs
-HOST=`hostname`
-if [ "${HOST:0:5}" == "glory" ]; then 
-  CPN=16
-else 
-  CPN=8
 fi
 
 
