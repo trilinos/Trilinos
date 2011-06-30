@@ -153,13 +153,17 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
       if (dampingFactor_ != 0) {
 
-        Teuchos::ParameterList matrixList;
-        RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.GetA()->getRowMap(),matrixList);
-        RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,Ptent);
-        Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
+        Teuchos::RCP<Teuchos::Time> sapTimer;
+        //sapTimer = rcp(new Teuchos::Time("SaPFactory:I * Ptent"));
+        //sapTimer->start(true);
+        //Teuchos::ParameterList matrixList;
+        //RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.GetA()->getRowMap(),matrixList);
+        //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,Ptent);
+        //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
+        //sapTimer->stop();
+        //MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
         Teuchos::RCP< Operator > Op = fineLevel.GetA();
-        Teuchos::RCP<Teuchos::Time> sapTimer;
         sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_A_P"));
         sapTimer->start(true);
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(Op);
@@ -170,10 +174,14 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
         sapTimer = rcp(new Teuchos::Time("SaPFactory:eigen_estimate"));
         sapTimer->start(true);
-        Scalar lambdaMax = Utils::PowerMethod(*Op,(LO) 20,(Scalar)1e-4);
+        Scalar lambdaMax = Utils::PowerMethod(*Op,(LO) 10,(Scalar)1e-4);
         Utils::ScaleMatrix(Op,diag,false); //unscale matrix
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
+        RCP<const Teuchos::Comm<int> > comm = Op->getRowMap()->getComm();
+        if (comm->getRank() == 0)
+          std::cout << "damping factor = " << dampingFactor_/lambdaMax << " ("
+                    << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
 
 /*
         sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_times_AP"));

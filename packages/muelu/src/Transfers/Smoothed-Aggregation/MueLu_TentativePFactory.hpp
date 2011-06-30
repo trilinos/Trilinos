@@ -279,7 +279,9 @@ class TentativePFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
       // Ptentative's row map is such that all DoF's in an aggregate
       // are local and consecutive.  Use fineA's domain map to FillComplete.
-      RCP<Operator> Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim));
+      //FIXME this won't work for Epetra, b/c we can't insert into off-processor rows
+      //RCP<Operator> Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim));
+      RCP<Operator> Ptentative = rcp(new CrsOperator(fineA->getRowMap(), NSDim));
 
       //used in the case of just one nullspace vector
       Teuchos::Array<Magnitude> norms(NSDim);
