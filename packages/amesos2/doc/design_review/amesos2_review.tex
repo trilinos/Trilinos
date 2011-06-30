@@ -1,0 +1,64 @@
+%\documentclass{beamer}
+\documentclass[xcolor=dvipsnames]{beamer}
+
+\usecolortheme[named=brown]{structure}
+\useoutertheme{infolines}
+%\usefonttheme{serif}
+\usefonttheme[stillsansseriftext]{serif}
+%\usetheme{Singapore}
+\usetheme[height=7mm]{Madrid}
+\setbeamertemplate{navigation symbols}{}
+
+%-------------------------------------------------------------------------------
+% get epsf.tex file, for encapsulated postscript files:
+\input epsf
+%-------------------------------------------------------------------------------
+% macro for Postscript figures the easy way
+% usage:  \postscript{file.ps}{scale}
+% where scale is 1.0 for 100%, 0.5 for 50% reduction, etc.
+%
+
+\newcommand{\postscript}[2]
+{\setlength{\epsfxsize}{#2\hsize}
+\centerline{\epsfbox{#1}}}
+%-------------------------------------------------------------------------------
+
+\usepackage{graphics}
+\usepackage{color}
+\usepackage{epsfig}
+\renewcommand{\thefootnote}{}
+
+\title[Amesos2]{Amesos2: Common Interface to Direct Solvers}
+\author[Bavier, Boman, Rajamanickam]{Eric Bavier and Erik Boman and Siva Rajamanickam}
+\institute[]{
+Sandia National Laboratories
+}
+\date[]{July 6, 2011}
+
+
+\begin{document}
+
+\begin{frame}[plain]
+    \titlepage
+\footnote{\tiny{Sandia is a multiprogram laboratory operated by Sandia Corporation, a wholly owned subsidiary of Lockheed Martin, for the United States Department of Energy'’s National Nuclear Security Administration under contract DE-AC04-94AL85000.}}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Amesos2 Motivation}
+
+\begin{itemize}
+\item Common Interface for direct solvers.
+\medskip
+\item Support 32-bit and 64-bit global ids.
+\medskip
+\item Support Epetra and Tpetra data structures and allow a design that can
+      extend to other matrix types (for eg.: PetSc matrix, compressed column
+       matrix)
+\medskip
+\item Revisit Amesos design choices and redesign to easily support more
+      solvers and matrix types.
+\end{itemize}
+
+\end{frame}
+
+\end{document}
