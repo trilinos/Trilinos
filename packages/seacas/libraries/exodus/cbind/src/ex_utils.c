@@ -271,17 +271,21 @@ int ex_get_name_internal(int exoid, int varid, size_t index, char *name,
 void ex_trim_internal(char *name)
 {
   /* Trim trailing spaces... */
-  size_t i;
-  if (name == NULL || (i=strlen(name)) == 0)
+  size_t size;
+  char *end;
+  
+  if (name == NULL)
     return;
   
-  --i;
-  for (; i>=0; i--) {
-    if (name[i] != ' ')
-      break;
-    else
-      name[i] = '\0';
-  }
+  size = strlen(name);
+  if (size==0)
+    return;
+  
+  end = name + size - 1;
+  while (end >= name && isspace(*end))
+    end--;
+
+  *(end+1) = '\0';
 }
 
 /** ex_catstr  - concatenate  string/number (where number is converted to ASCII) */
