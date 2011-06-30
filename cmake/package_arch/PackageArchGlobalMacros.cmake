@@ -645,49 +645,66 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   # by the unit test driver code
   SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
+  SET(EXTRAREPO_IDX 0)
   FOREACH(EXTRA_REPO ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
 
     #PRINT_VAR(EXTRA_REPO)
 
-    # Read in the add-on packages from the extra repo
+    LIST(GET Trilinos_EXTRA_REPOSITORIES_PACKSTATS ${EXTRAREPO_IDX}
+      EXTRAREPO_PACKSTAT )
 
-    SET(EXTRAREPO_PACKAGES_FILE
-      "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
 
-    MESSAGE("")
-    MESSAGE("Reading a list of extra packages from ${EXTRAREPO_PACKAGES_FILE} ... ")
-    MESSAGE("")
-
-    IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
-      MESSAGE(
-        "\n***"
-        "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_PACKAGES_FILE}' on request!"
-        "\n***\n")
+    IF (EXTRAREPO_PACKSTAT STREQUAL NOPACKAGES)
+        
+      MESSAGE("")
+      MESSAGE("Skipping reading packages and TPLs for extra repo ${EXTRA_REPO} because marked NOPACKAGES ... ")
+      MESSAGE("")
+  
     ELSE()
-      INCLUDE("${EXTRAREPO_PACKAGES_FILE}")  # Writes the variable ???
-      SET(APPEND_TO_PACKAGES_LIST TRUE)
-      PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()  # Reads the variable ???
+
+      # Read in the add-on packages from the extra repo
+  
+      SET(EXTRAREPO_PACKAGES_FILE
+        "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
+  
+      MESSAGE("")
+      MESSAGE("Reading a list of extra packages from ${EXTRAREPO_PACKAGES_FILE} ... ")
+      MESSAGE("")
+  
+      IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+        MESSAGE(
+          "\n***"
+          "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_PACKAGES_FILE}' on request!"
+          "\n***\n")
+      ELSE()
+        INCLUDE("${EXTRAREPO_PACKAGES_FILE}")  # Writes the variable ???
+        SET(APPEND_TO_PACKAGES_LIST TRUE)
+        PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()  # Reads the variable ???
+      ENDIF()
+  
+      # Read in the add-on TPLs from the extra repo
+  
+      SET(EXTRAREPO_TPLS_FILE
+        "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
+  
+      MESSAGE("")
+      MESSAGE("Reading a list of extra TPLs from ${EXTRAREPO_TPLS_FILE} ... ")
+      MESSAGE("")
+  
+      IF (NOT EXISTS "${EXTRAREPO_TPLS_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+        MESSAGE(
+          "\n***"
+          "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_TPLS_FILE}' on request!"
+          "\n***\n")
+      ELSE()
+        INCLUDE("${EXTRAREPO_TPLS_FILE}")  # Writes the varaible ???
+        SET(APPEND_TO_TPLS_LIST TRUE)
+        PACKAGE_ARCH_PROCESS_TPLS_LISTS()  # Reads the variable ???
+      ENDIF()
+
     ENDIF()
-
-    # Read in the add-on TPLs from the extra repo
-
-    SET(EXTRAREPO_TPLS_FILE
-      "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
-
-    MESSAGE("")
-    MESSAGE("Reading a list of extra TPLs from ${EXTRAREPO_TPLS_FILE} ... ")
-    MESSAGE("")
-
-    IF (NOT EXISTS "${EXTRAREPO_TPLS_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
-      MESSAGE(
-        "\n***"
-        "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_TPLS_FILE}' on request!"
-        "\n***\n")
-    ELSE()
-      INCLUDE("${EXTRAREPO_TPLS_FILE}")  # Writes the varaible ???
-      SET(APPEND_TO_TPLS_LIST TRUE)
-      PACKAGE_ARCH_PROCESS_TPLS_LISTS()  # Reads the variable ???
-    ENDIF()
+  
+    MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
 
   ENDFOREACH()
 

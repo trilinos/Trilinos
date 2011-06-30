@@ -67,6 +67,7 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
       ARGS
         Trilinos_PACKAGES_FILE=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake/TrilinosPackages.cmake
         Trilinos_EXTRAREPOS_FILE=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake/ExtraExternalRepositories.cmake
+        Trilinos_SOURCE_DIRECTORY=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos
         CTEST_DEPENDENCY_HANDLING_UNIT_TESTING=ON
         #CTEST_DO_UPDATES=OFF
         CTEST_DO_SUBMIT=OFF
@@ -230,11 +231,24 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   )
 
 
+# Check with an extra repo enabled and assert all of the internal logic
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   CI_EnableAllSecondaryStable_EnableStalix
   ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
     Trilinos_ADDITIONAL_PACKAGES=Stalix
   PASS_REGULAR_EXPRESSION_ALL
+    "preCopyrightTrilinos: Doing GIT update from URL 'url1:/git/preCopyrightTrilinos' to dir '.*/cmake/DependencyUnitTests/MockTrilinos/preCopyrightTrilinos'"
+    "EXECUTE_PROCESS.COMMAND..*git.pull.WORKING_DIRECTORY..*/cmake/DependencyUnitTests/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/cmake/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/preCopyrightTrilinos.update.out."
+    "Dakota: Doing initial SVN clone/checkout from URL 'url3/somedirpath/trunk' to dir 'packages/TriKota/Dakota'"
+    "EXECUTE_PROCESS.COMMAND..*svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/cmake/DependencyUnitTests/MockTrilinos.OUTPUT_FILE..*/cmake/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/Dakota.update.out."
+    "Adding extra Continuous repository preCopyrightTrilinos"
+    "Adding extra Continuous repository Dakota"
+    "Trilinos_NUM_PACKAGES='22'"
+    "Trilinos_NUM_TPLS='19'"
+    "Reading a list of extra packages from .*/cmake/ctest/UnitTests/../../../cmake/DependencyUnitTests/MockTrilinos/preCopyrightTrilinos/ExtraTrilinosPackages.cmake"
+    "Trilinos_NUM_PACKAGES='24'"
+    "Trilinos_NUM_TPLS='20'"
+    "Skipping reading packages and TPLs for extra repo Dakota because marked NOPACKAGES"
     "Explicitly enabled packages on input .*  Stalix 1"
     "Explicitly disabled packages on input .*  Stokhos 1"
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
