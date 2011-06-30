@@ -19,7 +19,7 @@
 \section Amesos2_intro Introduction
 
 Amesos2 provides a uniform interface to common third-party
-direct sparse solver libraries, such as SuperLU and KLU. 
+direct sparse solver libraries, such as SuperLU and KLU.
 Amesos2 is intended to supersede Amesos. While Amesos
 only supports Epetra double precision data types, Amesos2 allows
 a variety of data types through templating.
@@ -77,7 +77,7 @@ supported, please ask the Amesos2 developers about adding support.
   <li> Matrix adapters exist for the following matrix classes
     <ul>
       <li> Tpetra::RowMatrix implementing classes:
-        <ul>
+	<ul>
 	  <li> Tpetra::CrsMatrix</li>
 	</ul>
       </li>
@@ -100,4 +100,3 @@ supported, please ask the Amesos2 developers about adding support.
 </ul>
 
 */
-

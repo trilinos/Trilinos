@@ -104,7 +104,6 @@ SolverCore<ConcreteSolver,Matrix,Vector>::preOrdering()
   status_.symbolicFactorizationDone_ = false;
   status_.numericFactorizationDone_  = false;
 
-
   return *this;
 }
 
@@ -347,10 +346,10 @@ SolverCore<ConcreteSolver,Matrix,Vector>::describe(
         << std::endl;
     if( vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME ){
       out << p << "Nonzero elements per row = "
-          << double(globalNumNonZeros_)/globalNumRows_
+          << globalNumNonZeros_ / globalNumRows_
           << std::endl;
       out << p << "Percentage of nonzero elements = "
-          << 100.0 * globalNumNonZeros_ / pow(double(globalNumRows_),double(2.0))
+          << 100.0 * globalNumNonZeros_ / (globalNumRows_ * globalNumCols_)
           << std::endl;
     }
     if( vl == VERB_HIGH || vl == VERB_EXTREME ){

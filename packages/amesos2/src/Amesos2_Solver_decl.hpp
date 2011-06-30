@@ -46,8 +46,7 @@
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Thu Dec 31 10:32:08 2009
 
-  \brief  Pure virtual base class used by all other concrete solver
-	  classes.
+  \brief  Interface to Amesos2 solver objects
 */
 
 #ifndef AMESOS2_SOLVER_DECL_HPP
@@ -66,23 +65,24 @@ namespace Amesos {
 
 
   /**
-   * \brief Base class used by all other concrete solver classes.
+   * \brief Interface to Amesos2 solver objects
    *
    * Specifies a uniform interface for interaction with Amesos2 solver wrappers
    * to third-party libraries.
    *
-   * This class holds no definitions itself; it is pure virtual.
+   * This class holds no definitions itself; it is a contract for
+   * concrete solver interfaces only.
    *
    * \ingroup amesos2_solver_framework
    */
   template <class Matrix, class Vector>
-  class Solver : Teuchos::ParameterListAcceptor {
+  class Solver : {
 
   public:
 
     typedef Solver<Matrix,Vector> type;
 
-    /// \name Solver-dependent methods
+    /// \name Mathematical Functions
     //@{
 
     /** \brief Pre-orders the matrix.
@@ -149,9 +149,12 @@ namespace Amesos {
      */
     virtual void solve(const Teuchos::RCP<Vector> X, const Teuchos::RCP<const Vector> B) const = 0;
 
-    /// Returns \c true if the solver can handle the matrix shape
-    virtual bool matrixShapeOK( void ) = 0;
+    //@} End Mathematical Functions
 
+
+    /** \name Parameter Methods
+     * @{
+     */
 
     /** \brief Set/update internal variables and solver options.
      *
@@ -174,8 +177,12 @@ namespace Amesos {
      */
     virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters( void ) const = 0;
 
-    //@} End solver-dependent methods
+    /// @} End Parameter Methods
 
+
+    /** \name Accessor Methods
+     * @{
+     */
 
     /** \brief Sets the matrix A of this solver
      *
@@ -200,6 +207,10 @@ namespace Amesos {
      */
     virtual void setA( const Teuchos::RCP<Matrix> a ) = 0;
     
+
+    /// Returns \c true if the solver can handle the matrix shape
+    virtual bool matrixShapeOK( void ) = 0;
+
 
     /// Sets the LHS vector X
     virtual void setX( const Teuchos::RCP<Vector> x ) = 0;
@@ -233,6 +244,16 @@ namespace Amesos {
     virtual int getNumSolve( void ) const = 0;
 
 
+    /// Return the name of this solver.
+    virtual std::string name( void ) const = 0;
+
+    /// @} End Accessor Methods
+
+
+    /** \name Methods implementing Describable
+     * @{
+     */
+
     /// Returns a short description of this Solver
     virtual std::string description( void ) const = 0;
 
@@ -242,30 +263,16 @@ namespace Amesos {
     virtual void describe( Teuchos::FancyOStream &out,
 			   const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default ) const = 0;
 
+    /// @} End Methods implementing Describable
 
+
+    /** \name Performance and Timing
+     * @{
+     */
+    
     /// Prints timing information about the current solver.
     virtual void printTiming( Teuchos::FancyOStream &out,
 			      const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default ) const = 0;
-
-
-    /**
-     * Redefined from Teuchos::ParameterListAcceptor
-     *
-     * \param parameterList
-     */
-    virtual void setParameterList( Teuchos::RCP<Teuchos::ParameterList> const& parameterlist ) = 0;
-
-
-    /**
-     * \brief This is an empty stub
-     */
-    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList( void ) = 0;
-
-
-    /**
-     * \brief This is an empty stub
-     */
-    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList( void ) = 0;
 
 
     /**
@@ -278,10 +285,7 @@ namespace Amesos {
      */
     virtual void getTiming( Teuchos::ParameterList& timingParameterList ) const = 0;
 
-
-    /// Return the name of this solver.
-    virtual std::string name( void ) const = 0;
-
+    /// @} End Performance and Timing
 
   };                              // End class Solver
 

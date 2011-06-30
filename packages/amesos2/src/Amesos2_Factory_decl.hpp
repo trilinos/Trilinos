@@ -261,7 +261,8 @@ namespace Amesos {
    *
    * Suitable for cases where numeric factorization must be performed
    * before the X and B vectors are known.  Before a solve, the \c
-   * setX() and \c setB() functions should be used to set X and B.
+   * setX() and \c setB() functions should be used to set X and B, or
+   * the overloaded solve(X,B) method should be used.
    *
    * \param [in] solverName The name of the desired third-party solver
    * \param [in] A \c C pointer to the coefficient matrix
@@ -284,7 +285,8 @@ namespace Amesos {
    *
    * Suitable for cases where numeric factorization must be performed
    * before the X and B vectors are known.  Before a solve, the \c
-   * setX() and \c setB() functions should be used to set X and B.
+   * setX() and \c setB() functions should be used to set X and B, or
+   * the overloaded solve(X,B) method should be used.
    *
    * \param [in] solverName The name of the desired third-party solver
    * \param [in] A <tt>Teuchos::RCP</tt> to the coefficient matrix

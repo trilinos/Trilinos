@@ -13,101 +13,210 @@
   </compound>
   <compound kind="file">
     <name>Amesos2_Control.cpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Control_8cpp</filename>
     <includes id="Amesos2__Control_8hpp" name="Amesos2_Control.hpp" local="yes" imported="no">Amesos2_Control.hpp</includes>
   </compound>
   <compound kind="file">
     <name>Amesos2_Control.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Control_8hpp</filename>
-    <class kind="struct">Amesos::Control</class>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_EpetraCrsMatrix_MatrixAdapter_decl.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__EpetraCrsMatrix__MatrixAdapter__decl_8hpp</filename>
+    <class kind="class">Amesos::ConcreteMatrixAdapter&lt; Epetra_CrsMatrix &gt;</class>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_EpetraMultiVecAdapter_decl.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__EpetraMultiVecAdapter__decl_8hpp</filename>
+    <class kind="class">Amesos::MultiVecAdapter&lt; Epetra_MultiVector &gt;</class>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_EpetraMultiVecAdapter_def.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__EpetraMultiVecAdapter__def_8hpp</filename>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_decl.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__EpetraRowMatrix__AbstractMatrixAdapter__decl_8hpp</filename>
+    <class kind="class">Amesos::AbstractConcreteMatrixAdapter&lt; Epetra_RowMatrix, DerivedMat &gt;</class>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_def.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__EpetraRowMatrix__AbstractMatrixAdapter__def_8hpp</filename>
   </compound>
   <compound kind="file">
     <name>Amesos2_Factory_decl.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Factory__decl_8hpp</filename>
-    <class kind="class">Amesos::Factory</class>
+    <member kind="function">
+      <type>bool</type>
+      <name>query</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>a1bfd24259d3d02f48d770f39663a1416</anchor>
+      <arglist>(const char *solverName)</arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>query</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>afcec03d38bbe79c3170ef377cd0db841</anchor>
+      <arglist>(const std::string solverName)</arglist>
+    </member>
+    <docanchor file="Amesos2__Factory__decl_8hpp">usage</docanchor>
   </compound>
   <compound kind="file">
     <name>Amesos2_Factory_def.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Factory__def_8hpp</filename>
+    <member kind="function">
+      <type>std::string</type>
+      <name>tolower</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>a77f0e3a2a428dc8416850e8f46f241c8</anchor>
+      <arglist>(const std::string &amp;s)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>a0d5ff6f140807099a30e6a7f050039e0</anchor>
+      <arglist>(Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>a9093713df97505f28528b80feecec3ba</anchor>
+      <arglist>(RCP&lt; Matrix &gt; A, RCP&lt; Vector &gt; X, RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>a0415713b95269067132218d80225973a</anchor>
+      <arglist>(const char *solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>aec1fc3fa8691356a9e3f3d22a159d3e3</anchor>
+      <arglist>(const char *solverName, const RCP&lt; Matrix &gt; A, const RCP&lt; Vector &gt; X, const RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>a18abf3bcfa605087216d8c98f74b5d47</anchor>
+      <arglist>(const std::string solverName, Matrix *A)</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>ad75304da50137ecefca16143e4d0b4ce</anchor>
+      <arglist>(const std::string solverName, const RCP&lt; Matrix &gt; A)</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>afac0e3332344c53172545fc7baa57499</anchor>
+      <arglist>(const std::string solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>afc97da118080236a3665fc0621be20a6</anchor>
+      <arglist>(const std::string solver_name, const RCP&lt; Matrix &gt; A, const RCP&lt; Vector &gt; X, const RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>query</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>a1bfd24259d3d02f48d770f39663a1416</anchor>
+      <arglist>(const char *solverName)</arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>query</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>afcec03d38bbe79c3170ef377cd0db841</anchor>
+      <arglist>(const std::string solverName)</arglist>
+    </member>
   </compound>
   <compound kind="file">
     <name>Amesos2_FunctionMap.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__FunctionMap_8hpp</filename>
     <class kind="struct">Amesos::FunctionMap</class>
   </compound>
   <compound kind="file">
-    <name>Amesos2_MatrixAdapter.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
-    <filename>Amesos2__MatrixAdapter_8hpp</filename>
-    <includes id="Amesos2__TpetraCrsMatrixAdapter__decl_8hpp" name="Amesos2_TpetraCrsMatrixAdapter_decl.hpp" local="yes" imported="no">Amesos2_TpetraCrsMatrixAdapter_decl.hpp</includes>
-    <includes id="Amesos2__TpetraCrsMatrixAdapter__def_8hpp" name="Amesos2_TpetraCrsMatrixAdapter_def.hpp" local="yes" imported="no">Amesos2_TpetraCrsMatrixAdapter_def.hpp</includes>
-  </compound>
-  <compound kind="file">
     <name>Amesos2_MultiVecAdapter.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__MultiVecAdapter_8hpp</filename>
     <includes id="Amesos2__TpetraMultiVecAdapter__decl_8hpp" name="Amesos2_TpetraMultiVecAdapter_decl.hpp" local="yes" imported="no">Amesos2_TpetraMultiVecAdapter_decl.hpp</includes>
+    <includes id="Amesos2__EpetraMultiVecAdapter__decl_8hpp" name="Amesos2_EpetraMultiVecAdapter_decl.hpp" local="yes" imported="no">Amesos2_EpetraMultiVecAdapter_decl.hpp</includes>
     <includes id="Amesos2__TpetraMultiVecAdapter__def_8hpp" name="Amesos2_TpetraMultiVecAdapter_def.hpp" local="yes" imported="no">Amesos2_TpetraMultiVecAdapter_def.hpp</includes>
+    <includes id="Amesos2__EpetraMultiVecAdapter__def_8hpp" name="Amesos2_EpetraMultiVecAdapter_def.hpp" local="yes" imported="no">Amesos2_EpetraMultiVecAdapter_def.hpp</includes>
   </compound>
   <compound kind="file">
     <name>Amesos2_Solver_decl.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Solver__decl_8hpp</filename>
-    <includes id="Amesos2__MatrixAdapter_8hpp" name="Amesos2_MatrixAdapter.hpp" local="yes" imported="no">Amesos2_MatrixAdapter.hpp</includes>
-    <includes id="Amesos2__MultiVecAdapter_8hpp" name="Amesos2_MultiVecAdapter.hpp" local="yes" imported="no">Amesos2_MultiVecAdapter.hpp</includes>
-    <class kind="class">Amesos::Solver</class>
-  </compound>
-  <compound kind="file">
-    <name>Amesos2_Solver_def.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
-    <filename>Amesos2__Solver__def_8hpp</filename>
-  </compound>
-  <compound kind="file">
-    <name>Amesos2_SolverBase_decl.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
-    <filename>Amesos2__SolverBase__decl_8hpp</filename>
     <includes id="Amesos2__Control_8hpp" name="Amesos2_Control.hpp" local="yes" imported="no">Amesos2_Control.hpp</includes>
     <includes id="Amesos2__Status_8hpp" name="Amesos2_Status.hpp" local="yes" imported="no">Amesos2_Status.hpp</includes>
     <includes id="Amesos2__Timers_8hpp" name="Amesos2_Timers.hpp" local="yes" imported="no">Amesos2_Timers.hpp</includes>
-    <class kind="class">Amesos::SolverBase</class>
+    <class kind="class">Amesos::Solver</class>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_SolverCore_decl.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__SolverCore__decl_8hpp</filename>
+    <includes id="Amesos2__MultiVecAdapter_8hpp" name="Amesos2_MultiVecAdapter.hpp" local="yes" imported="no">Amesos2_MultiVecAdapter.hpp</includes>
+    <class kind="class">Amesos::SolverCore</class>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_SolverCore_def.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__SolverCore__def_8hpp</filename>
   </compound>
   <compound kind="file">
     <name>Amesos2_Status.cpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Status_8cpp</filename>
     <includes id="Amesos2__Status_8hpp" name="Amesos2_Status.hpp" local="yes" imported="no">Amesos2_Status.hpp</includes>
   </compound>
   <compound kind="file">
     <name>Amesos2_Status.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Status_8hpp</filename>
-    <class kind="class">Amesos::Status</class>
   </compound>
   <compound kind="file">
     <name>Amesos2_Superlu_decl.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Superlu__decl_8hpp</filename>
     <includes id="Amesos2__Superlu__FunctionMap_8hpp" name="Amesos2_Superlu_FunctionMap.hpp" local="yes" imported="no">Amesos2_Superlu_FunctionMap.hpp</includes>
     <includes id="Amesos2__Superlu__TypeMap_8hpp" name="Amesos2_Superlu_TypeMap.hpp" local="yes" imported="no">Amesos2_Superlu_TypeMap.hpp</includes>
     <class kind="class">Amesos::Superlu</class>
-    <class kind="struct">Amesos::Superlu::SLUData</class>
   </compound>
   <compound kind="file">
     <name>Amesos2_Superlu_def.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Superlu__def_8hpp</filename>
   </compound>
   <compound kind="file">
     <name>Amesos2_Superlu_FunctionMap.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Superlu__FunctionMap_8hpp</filename>
     <includes id="Amesos2__FunctionMap_8hpp" name="Amesos2_FunctionMap.hpp" local="yes" imported="no">Amesos2_FunctionMap.hpp</includes>
-    <includes id="Amesos2__MatrixAdapter_8hpp" name="Amesos2_MatrixAdapter.hpp" local="yes" imported="no">Amesos2_MatrixAdapter.hpp</includes>
     <includes id="Amesos2__Superlu__TypeMap_8hpp" name="Amesos2_Superlu_TypeMap.hpp" local="yes" imported="no">Amesos2_Superlu_TypeMap.hpp</includes>
     <class kind="struct">Amesos::FunctionMap&lt; Superlu, Scalar &gt;</class>
     <member kind="typedef">
@@ -134,46 +243,286 @@
   </compound>
   <compound kind="file">
     <name>Amesos2_Superlu_TypeMap.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Superlu__TypeMap_8hpp</filename>
-    <class kind="class">Teuchos::ValueTypeConversionTraits&lt; SLU::C::complex, TypeFrom &gt;</class>
-    <class kind="class">Teuchos::ValueTypeConversionTraits&lt; SLU::Z::doublecomplex, TypeFrom &gt;</class>
-    <class kind="class">Teuchos::ValueTypeConversionTraits&lt; TypeTo, SLU::C::complex &gt;</class>
-    <class kind="class">Teuchos::ValueTypeConversionTraits&lt; TypeTo, SLU::Z::doublecomplex &gt;</class>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_Superludist_decl.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__Superludist__decl_8hpp</filename>
+    <includes id="Amesos2__Superludist__FunctionMap_8hpp" name="Amesos2_Superludist_FunctionMap.hpp" local="yes" imported="no">Amesos2_Superludist_FunctionMap.hpp</includes>
+    <class kind="class">Amesos::Superludist</class>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_Superludist_def.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__Superludist__def_8hpp</filename>
+    <member kind="function">
+      <type>int</type>
+      <name>sp_colorder</name>
+      <anchorfile>namespaceSLUD.html</anchorfile>
+      <anchor>a0e0667a5a4a7c7d5edf5b0a5a1a0f46f</anchor>
+      <arglist>(SuperMatrix *, int *, superludist_options_t *, SuperMatrix *)</arglist>
+    </member>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_Superludist_FunctionMap.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__Superludist__FunctionMap_8hpp</filename>
+    <includes id="Amesos2__FunctionMap_8hpp" name="Amesos2_FunctionMap.hpp" local="yes" imported="no">Amesos2_FunctionMap.hpp</includes>
+    <includes id="Amesos2__Superludist__TypeMap_8hpp" name="Amesos2_Superludist_TypeMap.hpp" local="yes" imported="no">Amesos2_Superludist_TypeMap.hpp</includes>
+    <class kind="struct">Amesos::FunctionMap&lt; Superludist, Scalar &gt;</class>
+    <member kind="function">
+      <type>SLUD::DiagScale_t</type>
+      <name>get_diag_scale</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>ad37e7830fcfa9ab9354ff0ae3b64f6bf</anchor>
+      <arglist>(char eq)</arglist>
+    </member>
+    <member kind="function">
+      <type>char</type>
+      <name>get_equed</name>
+      <anchorfile>namespaceAmesos.html</anchorfile>
+      <anchor>aa354aab097b75818dc67471a0850f599</anchor>
+      <arglist>(SLUD::DiagScale_t ds)</arglist>
+    </member>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_Superludist_TypeMap.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__Superludist__TypeMap_8hpp</filename>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_Superlumt_decl.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__Superlumt__decl_8hpp</filename>
+    <includes id="Amesos2__Superlumt__FunctionMap_8hpp" name="Amesos2_Superlumt_FunctionMap.hpp" local="yes" imported="no">Amesos2_Superlumt_FunctionMap.hpp</includes>
+    <class kind="class">Amesos::Superlumt</class>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_Superlumt_def.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__Superlumt__def_8hpp</filename>
+    <member kind="function">
+      <type>int</type>
+      <name>sp_colorder</name>
+      <anchorfile>namespaceSLUMT.html</anchorfile>
+      <anchor>ae5643a218ce061424cb3ae4534697045</anchor>
+      <arglist>(SuperMatrix *, int *, superlumt_options_t *, SuperMatrix *)</arglist>
+    </member>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_Superlumt_FunctionMap.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__Superlumt__FunctionMap_8hpp</filename>
+    <includes id="Amesos2__FunctionMap_8hpp" name="Amesos2_FunctionMap.hpp" local="yes" imported="no">Amesos2_FunctionMap.hpp</includes>
+    <includes id="Amesos2__Superlumt__TypeMap_8hpp" name="Amesos2_Superlumt_TypeMap.hpp" local="yes" imported="no">Amesos2_Superlumt_TypeMap.hpp</includes>
+    <class kind="struct">Amesos::FunctionMap&lt; Superlumt, Scalar &gt;</class>
+    <member kind="typedef">
+      <type>int</type>
+      <name>int_t</name>
+      <anchorfile>namespaceSLUMT.html</anchorfile>
+      <anchor>ade29f670d027f9d24d1dc29ec09d3eca</anchor>
+      <arglist></arglist>
+    </member>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_Superlumt_TypeMap.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__Superlumt__TypeMap_8hpp</filename>
   </compound>
   <compound kind="file">
     <name>Amesos2_Timers.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Timers_8hpp</filename>
-    <class kind="struct">Amesos::Timers</class>
   </compound>
   <compound kind="file">
-    <name>Amesos2_TpetraCrsMatrixAdapter_decl.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
-    <filename>Amesos2__TpetraCrsMatrixAdapter__decl_8hpp</filename>
-    <class kind="class">Amesos::MatrixAdapter&lt; Tpetra::CrsMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps &gt; &gt;</class>
-  </compound>
-  <compound kind="file">
-    <name>Amesos2_TpetraCrsMatrixAdapter_def.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
-    <filename>Amesos2__TpetraCrsMatrixAdapter__def_8hpp</filename>
-    <includes id="Amesos2__MatrixAdapter_8hpp" name="Amesos2_MatrixAdapter.hpp" local="yes" imported="no">Amesos2_MatrixAdapter.hpp</includes>
+    <name>Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__TpetraCrsMatrix__MatrixAdapter__decl_8hpp</filename>
+    <class kind="class">Amesos::ConcreteMatrixAdapter&lt; Tpetra::CrsMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps &gt; &gt;</class>
   </compound>
   <compound kind="file">
     <name>Amesos2_TpetraMultiVecAdapter_decl.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__TpetraMultiVecAdapter__decl_8hpp</filename>
     <class kind="class">Amesos::MultiVecAdapter&lt; Tpetra::MultiVector&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node &gt; &gt;</class>
   </compound>
   <compound kind="file">
     <name>Amesos2_TpetraMultiVecAdapter_def.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__TpetraMultiVecAdapter__def_8hpp</filename>
   </compound>
   <compound kind="file">
     <name>Amesos2_Util_decl.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
     <filename>Amesos2__Util__decl_8hpp</filename>
+    <class kind="struct">Amesos::Util::has_special_impl</class>
+    <class kind="struct">Amesos::Util::row_access</class>
+    <class kind="struct">Amesos::Util::col_access</class>
+    <class kind="struct">Amesos::Util::get_cxs_helper</class>
+    <class kind="struct">Amesos::Util::get_ccs_helper</class>
+    <class kind="struct">Amesos::Util::get_crs_helper</class>
+    <member kind="enumvalue">
+      <name>Distributed</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>aad35f806a27308be6fa12ea9acbaaa88a4343856a900ea33811ed7e3c49fe8c54</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="enumvalue">
+      <name>Distributed_No_Overlap</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>aad35f806a27308be6fa12ea9acbaaa88a68fc183f38d9d4791403a1b7e99d8599</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="enumvalue">
+      <name>Globally_Replicated</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>aad35f806a27308be6fa12ea9acbaaa88af10754c1b1f6de9ba1248441ec06ffb3</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="enumvalue">
+      <name>Rooted</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>aad35f806a27308be6fa12ea9acbaaa88acf2b74303756800e4f337d8dccd54643</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="enumvalue">
+      <name>Sorted_Indices</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>ab4b7c1000135b83dd295aae5989072bda758a1e31d43985250b31e58dcf9093d9</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="enumvalue">
+      <name>Arbitrary</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>ab4b7c1000135b83dd295aae5989072bda2c668209535846ba0fc51bab4452d2b7</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; Tpetra::Map&lt; LO, GO, Node &gt; &gt;</type>
+      <name>epetra_map_to_tpetra_map</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>aed570a2f70ea3395c64a75f1c27bcdca</anchor>
+      <arglist>(const Epetra_BlockMap &amp;map)</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; Epetra_Map &gt;</type>
+      <name>tpetra_map_to_epetra_map</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a93e07b55ec4d21a1f9e72e2c2ef30d7b</anchor>
+      <arglist>(const Tpetra::Map&lt; LO, GO, Node &gt; &amp;map)</arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>to_teuchos_comm</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a12090631546a38cf01e3f2a1b7f19aa0</anchor>
+      <arglist>(RCP&lt; const Epetra_Comm &gt; c)</arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Epetra_Comm &gt;</type>
+      <name>to_epetra_comm</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a8c3a8f5b260a9ee1c8869d857e838f63</anchor>
+      <arglist>(RCP&lt; const Teuchos::Comm&lt; int &gt; &gt; c)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>transpose</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>ad1b59ab1d2ed7ddb1a4e2cc23167e3f7</anchor>
+      <arglist>(ArrayView&lt; Scalar &gt; vals, ArrayView&lt; GlobalOrdinal &gt; indices, ArrayView&lt; GlobalSizeT &gt; ptr, ArrayView&lt; Scalar &gt; trans_vals, ArrayView&lt; GlobalOrdinal &gt; trans_indices, ArrayView&lt; GlobalSizeT &gt; trans_ptr)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>scale</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a8e72c92cd7c3935d1ed8f7224486396b</anchor>
+      <arglist>(ArrayView&lt; Scalar1 &gt; vals, size_t l, size_t ld, ArrayView&lt; Scalar2 &gt; s)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>scale</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a43449c000c2761790f50353837945479</anchor>
+      <arglist>(ArrayView&lt; Scalar1 &gt; vals, size_t l, size_t ld, ArrayView&lt; Scalar2 &gt; s, BinaryOp binary_op)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>computeTrueResidual</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a264cdfa2318fd49c83041158fd4af1cf</anchor>
+      <arglist>(const RCP&lt; Matrix &gt; &amp;A, const RCP&lt; Vector &gt; &amp;X, const RCP&lt; Vector &gt; &amp;B, const Teuchos::ETransp trans=Teuchos::NO_TRANS, const std::string prefix=&quot;&quot;)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>computeVectorNorms</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>acb2b90901fcf3b898e045efa50b3d5bf</anchor>
+      <arglist>(const RCP&lt; Matrix &gt; X, const RCP&lt; Vector &gt; B, std::string prefix=&quot;&quot;)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>printLine</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a68278fd71c063772d61aaa863871ddcf</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out)</arglist>
+    </member>
+  </compound>
+  <compound kind="file">
+    <name>Amesos2_Util_def.hpp</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>Amesos2__Util__def_8hpp</filename>
+    <member kind="function">
+      <type>RCP&lt; Tpetra::Map&lt; LO, GO, Node &gt; &gt;</type>
+      <name>epetra_map_to_tpetra_map</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>aed570a2f70ea3395c64a75f1c27bcdca</anchor>
+      <arglist>(const Epetra_BlockMap &amp;map)</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; Epetra_Map &gt;</type>
+      <name>tpetra_map_to_epetra_map</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a93e07b55ec4d21a1f9e72e2c2ef30d7b</anchor>
+      <arglist>(const Tpetra::Map&lt; LO, GO, Node &gt; &amp;map)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>to_teuchos_comm</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a10fd40490abfa5ee7f80d0b05f7805b3</anchor>
+      <arglist>(Teuchos::RCP&lt; const Epetra_Comm &gt; c)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; const Epetra_Comm &gt;</type>
+      <name>to_epetra_comm</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a87a8a9d612ba535b85857cb9969f8344</anchor>
+      <arglist>(Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt; c)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>transpose</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>aa99673c67895b46c076bf36ea9ef746c</anchor>
+      <arglist>(Teuchos::ArrayView&lt; Scalar &gt; vals, Teuchos::ArrayView&lt; GlobalOrdinal &gt; indices, Teuchos::ArrayView&lt; GlobalSizeT &gt; ptr, Teuchos::ArrayView&lt; Scalar &gt; trans_vals, Teuchos::ArrayView&lt; GlobalOrdinal &gt; trans_indices, Teuchos::ArrayView&lt; GlobalSizeT &gt; trans_ptr)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>scale</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>ad6d975ce99679e335eee7553ced30259</anchor>
+      <arglist>(Teuchos::ArrayView&lt; Scalar1 &gt; vals, size_t l, size_t ld, Teuchos::ArrayView&lt; Scalar2 &gt; s)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>scale</name>
+      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
+      <anchor>a8a5d61e1c5036f91680465532e3e14cb</anchor>
+      <arglist>(Teuchos::ArrayView&lt; Scalar1 &gt; vals, size_t l, size_t ld, Teuchos::ArrayView&lt; Scalar2 &gt; s, BinaryOp binary_op)</arglist>
+    </member>
     <member kind="function">
       <type>void</type>
       <name>computeTrueResidual</name>
@@ -190,1159 +539,881 @@
     </member>
     <member kind="function">
       <type>void</type>
-      <name>setMaxProcesses</name>
-      <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
-      <anchor>a21c55341a74aa6d769b6f1042437ee19</anchor>
-      <arglist>(const Teuchos::RCP&lt; Matrix &gt; &amp;A, int &amp;maxProcesses)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
       <name>printLine</name>
       <anchorfile>namespaceAmesos_1_1Util.html</anchorfile>
       <anchor>a68278fd71c063772d61aaa863871ddcf</anchor>
       <arglist>(Teuchos::FancyOStream &amp;out)</arglist>
     </member>
   </compound>
-  <compound kind="file">
-    <name>Amesos2_Util_def.hpp</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
-    <filename>Amesos2__Util__def_8hpp</filename>
+  <compound kind="group">
+    <name>amesos2_adapters</name>
+    <title>Amesos2 Linear Algebra Object Adapters</title>
+    <filename>group__amesos2__adapters.html</filename>
+    <subgroup>amesos2_matrix_adapters</subgroup>
+    <subgroup>amesos2_multivec_adapters</subgroup>
   </compound>
   <compound kind="group">
-    <name>slu_conversion</name>
-    <title>Conversion definitions for SLU types.</title>
-    <filename>group__slu__conversion.html</filename>
-    <class kind="class">Teuchos::ValueTypeConversionTraits&lt; SLU::C::complex, TypeFrom &gt;</class>
-    <class kind="class">Teuchos::ValueTypeConversionTraits&lt; SLU::Z::doublecomplex, TypeFrom &gt;</class>
-    <class kind="class">Teuchos::ValueTypeConversionTraits&lt; TypeTo, SLU::C::complex &gt;</class>
-    <class kind="class">Teuchos::ValueTypeConversionTraits&lt; TypeTo, SLU::Z::doublecomplex &gt;</class>
+    <name>amesos2_matrix_adapters</name>
+    <title>Amesos2 Matrix Adapters</title>
+    <filename>group__amesos2__matrix__adapters.html</filename>
+    <class kind="class">Amesos::ConcreteMatrixAdapter&lt; Epetra_CrsMatrix &gt;</class>
+    <class kind="class">Amesos::AbstractConcreteMatrixAdapter&lt; Epetra_RowMatrix, DerivedMat &gt;</class>
+    <class kind="class">Amesos::MatrixAdapter</class>
+    <class kind="class">Amesos::ConcreteMatrixAdapter&lt; Tpetra::CrsMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps &gt; &gt;</class>
+    <class kind="class">Amesos::AbstractConcreteMatrixAdapter&lt; Tpetra::RowMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node &gt;, DerivedMat &gt;</class>
   </compound>
-  <compound kind="struct">
-    <name>klu_common_struct</name>
-    <filename>structklu__common__struct.html</filename>
-    <member kind="variable">
-      <type>double</type>
-      <name>tol</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a37fce3a2c210b57c08ba83f3f9ade714</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>memgrow</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>ae27a6b98b4024ec2756cddcf125494f0</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>initmem_amd</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>afb648336a62b607ecad920a1799d26eb</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>initmem</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a6d1ba6f12fe04855acc2fc9ae2fc0af7</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>maxwork</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>ad37834c04f5547a14e3135d4d6f8fad2</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>btf</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a4aa9cd5cba3eae67c84b494223067569</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>ordering</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a48247b9154793b08150f62306c57a5f3</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>scale</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a14dd0d21506631ce88cc158d881a967c</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *(*</type>
-      <name>malloc_memory</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a2dd847e827f875c754516163c8fd6183</anchor>
-      <arglist>)(size_t)</arglist>
-    </member>
-    <member kind="variable">
-      <type>void *(*</type>
-      <name>realloc_memory</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a716ba89fa00a789a4c2331ece6822dc2</anchor>
-      <arglist>)(void *, size_t)</arglist>
-    </member>
-    <member kind="variable">
-      <type>void(*</type>
-      <name>free_memory</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a5a345bff600692f7f70e3f45b138be59</anchor>
-      <arglist>)(void *)</arglist>
-    </member>
-    <member kind="variable">
-      <type>void *(*</type>
-      <name>calloc_memory</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a5d232db5520c704d37919cff04102802</anchor>
-      <arglist>)(size_t, size_t)</arglist>
-    </member>
-    <member kind="variable">
-      <type>int(*</type>
-      <name>user_order</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>ac3ed47dca102680d2e1223e7fcd810f5</anchor>
-      <arglist>)(int, int *, int *, int *, struct klu_common_struct *)</arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>user_data</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a9a9e64c4ae1a0d648f21fe193dfd8d88</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>halt_if_singular</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>ab875a04ac2af7d41346d22b905079090</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>status</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a0646799a16c8d4203af475cade474ea5</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>nrealloc</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>abfeb0f28d70fa736aed40dae4538e605</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>structural_rank</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a888c82824b8fa1a1064f0584e33f2a51</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>numerical_rank</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>adc832a6d5040b7fb50c1cb209fef5878</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>singular_col</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a323c8f7e1487604c58c09866c1e2882c</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>noffdiag</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>aa958c27a8bcb59d48c70d70828a39a8e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>flops</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a63ba488812c98fb38d3b43fa205dd4f7</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>rcond</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a49e31dacb4720908a38e381f35f3355c</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>condest</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a9e2617636b861c91eea7d7b1715e7643</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>rgrowth</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>ab5c1be96d1ac8c54af3c7759cc0bbc8d</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>work</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a66e73b5b7bef87f66322e39eba2b5db0</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>size_t</type>
-      <name>memusage</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>aca7c23c5d7194c0e8a83a0495d089661</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>size_t</type>
-      <name>mempeak</name>
-      <anchorfile>structklu__common__struct.html</anchorfile>
-      <anchor>a0c788a860c90e958d0f294e5072a28f9</anchor>
-      <arglist></arglist>
-    </member>
+  <compound kind="group">
+    <name>amesos2_multivec_adapters</name>
+    <title>Amesos2 MultiVector Adapters</title>
+    <filename>group__amesos2__multivec__adapters.html</filename>
+    <class kind="class">Amesos::MultiVecAdapter&lt; Epetra_MultiVector &gt;</class>
+    <class kind="struct">Amesos::MultiVecAdapter</class>
+    <class kind="class">Amesos::MultiVecAdapter&lt; Tpetra::MultiVector&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node &gt; &gt;</class>
   </compound>
-  <compound kind="struct">
-    <name>klu_l_common_struct</name>
-    <filename>structklu__l__common__struct.html</filename>
-    <member kind="variable">
-      <type>double</type>
-      <name>tol</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a79b99101a2000a7a7c7e00e13f8ce66f</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>memgrow</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a2f3871c8f554247583a88f990791ad60</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>initmem_amd</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a3352e1e6e1b06f431008995c60ff2bdf</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>initmem</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a83549856a80da71350f35c5a9664081d</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>maxwork</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>ae237d0ccf7a5dd2ae44773744710f4e8</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>btf</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a6dae5be1384caed7d4c8c7387941e122</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>ordering</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>ad9a7403fe75d2099b0bbf62bc1db2070</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>scale</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>aa34c83fe1568b797e394ccd9bc7f0785</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *(*</type>
-      <name>malloc_memory</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>ac446586e193e0cc7fc4fb9f039eda39d</anchor>
-      <arglist>)(size_t)</arglist>
-    </member>
-    <member kind="variable">
-      <type>void *(*</type>
-      <name>realloc_memory</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>af38cca6b4c5c4a4321d3eb9557594cd4</anchor>
-      <arglist>)(void *, size_t)</arglist>
-    </member>
-    <member kind="variable">
-      <type>void(*</type>
-      <name>free_memory</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a485d25f66dafecca7ccb95ee1bed67b1</anchor>
-      <arglist>)(void *)</arglist>
-    </member>
-    <member kind="variable">
-      <type>void *(*</type>
-      <name>calloc_memory</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a36ef3fe01b3051bf7366fcdff0813751</anchor>
-      <arglist>)(size_t, size_t)</arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long(*</type>
-      <name>user_order</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a220752c785653c8a8d0f1e66dbbb7f26</anchor>
-      <arglist>)(UF_long, UF_long *, UF_long *, UF_long *, struct klu_l_common_struct *)</arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>user_data</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a5a28a74b4ab6e600d88ab12f87f97855</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>halt_if_singular</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a3d32d1667e0467af40cd84076b98b252</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>status</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a24c0a88ec1ccc40b4bc2eec37f8b4888</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>nrealloc</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a6e32ce45047d0f4ef4b3fd63cf137d27</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>structural_rank</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>ab1e0afacccf9d1ad75efdd78d4cabf3f</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>numerical_rank</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a0865a3bd8b1008c46949517440296e0e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>singular_col</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a9afa05f9dac37f7d2e200edc3e6dcd02</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>noffdiag</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>aeee54159e86280d554f8e5ba0d67198e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>flops</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a5a30a96354b866278b655d139bb7fa65</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>rcond</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a0df8bd02a3a4bab45355492284f7baf1</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>condest</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a524034a28cd9aef6c2cfebc072508285</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>rgrowth</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a20d6db39a691699617f163b1e2e51340</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>work</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>ac3e69c200dcbb03ade55f868ae3f897d</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>size_t</type>
-      <name>memusage</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a2f12abf0b37fab1678a01e96db26dc29</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>size_t</type>
-      <name>mempeak</name>
-      <anchorfile>structklu__l__common__struct.html</anchorfile>
-      <anchor>a662b7b90c356dc8cc0ca5554d92cef13</anchor>
-      <arglist></arglist>
-    </member>
+  <compound kind="group">
+    <name>amesos2_solvers</name>
+    <title>Amesos2 Solvers</title>
+    <filename>group__amesos2__solvers.html</filename>
+    <subgroup>amesos2_solver_framework</subgroup>
+    <subgroup>amesos2_solver_interfaces</subgroup>
+    <subgroup>amesos2_solver_parameters</subgroup>
   </compound>
-  <compound kind="struct">
-    <name>klu_l_numeric</name>
-    <filename>structklu__l__numeric.html</filename>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>n</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a49d550f0ea237f844d183e0e9e1b1300</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>nblocks</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a18da5425fc5b6df22c3956ac4f04a9a8</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>lnz</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>af3fe2fba86087af615e184c4a5318f93</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>unz</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a99d17819cf742c4cb98d870385ce28f2</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>max_lnz_block</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>afcd8166718a67e9e2765675dc6b56365</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>max_unz_block</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a2788787a6a03c840afe65b22524dfea0</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Pnum</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a1aca9bca704af2207bc6405eb8dcf6c4</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Pinv</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a0984dc9aff8a12ce68ae66c38390f4b4</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Lip</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>aa8f34f878607326aa4abec3d1146ec02</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Uip</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a2bd385e3d0b76ab89847f02ce2db2ee5</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Llen</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a63d6913533826bdd80d8eb94857a6a29</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Ulen</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>adfb700881b3400b2005a5b5f9f1db334</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void **</type>
-      <name>LUbx</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a4059274130fb91be35953f41d0440ea3</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>size_t *</type>
-      <name>LUsize</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a595cbac6d8d89f28034fd4af669051de</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>Udiag</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>acc234c6626664156efe58c5559689c44</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double *</type>
-      <name>Rs</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a3a14713ad371046c3db02bc76fb7cdc9</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>size_t</type>
-      <name>worksize</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a9a1b2bbdb864704eef6ed85bbfa49c53</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>Work</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>abe5c023aaa84ed1047e75a8bd1c19b15</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>Xwork</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>abe547de31efd5643ac9f645457944357</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Iwork</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a7aa26fd61d3e81210d113743e8898498</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Offp</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a56e8440fe3096889a89c48cf3e3abd56</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Offi</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a5bb68c9bf9797b97c369e26f332601ee</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>Offx</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a7df0e6ef68d457b8ac719e40b534835f</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>nzoff</name>
-      <anchorfile>structklu__l__numeric.html</anchorfile>
-      <anchor>a1cf6bf4a468a38003837e7af24a20bb0</anchor>
-      <arglist></arglist>
-    </member>
+  <compound kind="group">
+    <name>amesos2_solver_framework</name>
+    <title>Amesos2 Solver Framework</title>
+    <filename>group__amesos2__solver__framework.html</filename>
+    <class kind="class">Amesos::Solver</class>
+    <class kind="class">Amesos::SolverCore</class>
+    <file>Amesos2_Factory_decl.hpp</file>
   </compound>
-  <compound kind="struct">
-    <name>klu_l_symbolic</name>
-    <filename>structklu__l__symbolic.html</filename>
-    <member kind="variable">
-      <type>double</type>
-      <name>symmetry</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>ae6c23afa5bad2aa066a1f9ebacace94e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>est_flops</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>a5d30067aadda912776a48d3e6d66ccfe</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>lnz</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>a5557782ba2a3f2d72910847ad510c295</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>unz</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>a27425e2ec29e3c85d8c70c78056ee694</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double *</type>
-      <name>Lnz</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>abc083bd00167bb1ceaed8221828d8a36</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>n</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>ad642b54f1371b3acf21bbb73ba191a46</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>nz</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>a80fcbde499c895e49430cbf6a4d0affd</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>P</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>abee799a091610cc1e4d3a6db007c86e2</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>Q</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>a70c7bacb35051212e929fd21363dca0c</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long *</type>
-      <name>R</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>a5e3f1e2c700351d20039952f748b5130</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>nzoff</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>abc1d431033939bb5ea3b0be6ece6802e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>nblocks</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>a34c4a63661c82cccd1394cab6d632510</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>maxblock</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>a5e52587af79b48faca4fdb4fcba5888d</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>ordering</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>a0b7ec8ef13666b0e7b8bcc925d186f00</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>do_btf</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>ac212f17da6c07aa917f93aed4dd3f168</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>UF_long</type>
-      <name>structural_rank</name>
-      <anchorfile>structklu__l__symbolic.html</anchorfile>
-      <anchor>ae37ceb69e9415adf079afd3f05a293c5</anchor>
-      <arglist></arglist>
-    </member>
+  <compound kind="group">
+    <name>amesos2_solver_interfaces</name>
+    <title>Amesos2 Solver Interfaces</title>
+    <filename>group__amesos2__solver__interfaces.html</filename>
+    <class kind="class">Amesos::Superlu</class>
+    <class kind="class">Amesos::Superlumt</class>
   </compound>
-  <compound kind="struct">
-    <name>klu_numeric</name>
-    <filename>structklu__numeric.html</filename>
-    <member kind="variable">
-      <type>int</type>
-      <name>n</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a3fcd56ed8534c7e313f7d5d14da19d3a</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>nblocks</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a75ceea17285c7bb5999ac5cd1eab4f21</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>lnz</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>aa59420d350d1a1eb48262fefd0071556</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>unz</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a3b98a1ff7ab93eda6fb17ca5a595fcd0</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>max_lnz_block</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a81fc7dfaf85f72309959e422b5779d84</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>max_unz_block</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a3a7c6e94351d48fec0b88e6b1b6ddf37</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Pnum</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>ae4f9b9de195fb1a4e34354c91882ece2</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Pinv</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>acff15ca1d2d21c0572a48fd3b10dbb88</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Lip</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a4c936bc382b8817988a25008f67ba210</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Uip</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>ad0fc8713c8a4658353bf6fcb5da82dc9</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Llen</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>ad89ead40f840f1d0db27fb614585b667</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Ulen</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>af415a56c19c1c8d718b565aa2bb9ad55</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void **</type>
-      <name>LUbx</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>ae57f3ca86846db941223b422bd3ef5c1</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>size_t *</type>
-      <name>LUsize</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a8ab693163e38121f1c8baa3b98eb03d6</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>Udiag</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a720dfa51ab9b4b7aa8fb721e58285c4c</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double *</type>
-      <name>Rs</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a6080907adb2aa9f85091df3c82f21b3e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>size_t</type>
-      <name>worksize</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a907b72abb68dd81e4f7f35a0ffcc9942</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>Work</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>acf4f863a9eec97e70e830a7b1b237477</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>Xwork</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a2375727cbb0352ac0d0f10c05a3a3813</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Iwork</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a2f03c0e29801b146a59b613710d8108a</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Offp</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>ada296f797f05adcfd8173e928110b057</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Offi</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a78176cfd27e4e4906ab5f19f097ae732</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>void *</type>
-      <name>Offx</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a400bc0467a9a5313bf7b54f9c8e9426f</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>nzoff</name>
-      <anchorfile>structklu__numeric.html</anchorfile>
-      <anchor>a01ff44df4f1b68a5583bae45e8681575</anchor>
-      <arglist></arglist>
-    </member>
+  <compound kind="group">
+    <name>amesos2_solver_parameters</name>
+    <title>Supported Solver Parameters</title>
+    <filename>group__amesos2__solver__parameters.html</filename>
+    <docanchor file="group__amesos2__solver__parameters">superlu_parameters</docanchor>
+    <docanchor file="group__amesos2__solver__parameters">amesos2_solver_parameters</docanchor>
+    <docanchor file="group__amesos2__solver__parameters">amesos2_parameters</docanchor>
+    <docanchor file="group__amesos2__solver__parameters">superlu_mt_parameters</docanchor>
   </compound>
-  <compound kind="struct">
-    <name>klu_symbolic</name>
-    <filename>structklu__symbolic.html</filename>
-    <member kind="variable">
-      <type>double</type>
-      <name>symmetry</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>ae342ab0f8cee713ad13c1660d5775e41</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>est_flops</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>ac65b5b33b35aa4ffad905d435ce962e8</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>lnz</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>ab5a587030dc5b9665b94c08f83750eb4</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>unz</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>aae025d0b195c803417ffb52e97b064f4</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double *</type>
-      <name>Lnz</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>aaceff802760fb04e663467cff347b6d6</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>n</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>ae65615dbfa650aa17cc4d576daec5f6a</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>nz</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>a54b00f67f53cb2995714db36c5cc8186</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>P</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>a0be543e08cd8dca75cbab1b7d777ead5</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>Q</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>a1520045d3bc130e3444c3efd71e58d01</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int *</type>
-      <name>R</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>aa4989c643b7c3d612243d71c82462a6e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>nzoff</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>a9ca92e8de779905237dacdb65d527607</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>nblocks</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>a8756588ff2b8f893dc307b29b49b6e2d</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>maxblock</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>a3a56b60da684297a3b99c3455d276bde</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>ordering</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>a7b7e30df16868072173da3671c4ba56e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>do_btf</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>addc980e335809b15cd12ce8ead537b14</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>structural_rank</name>
-      <anchorfile>structklu__symbolic.html</anchorfile>
-      <anchor>a8db8dbd4b477ac421934e89c8ce49860</anchor>
-      <arglist></arglist>
-    </member>
+  <compound kind="group">
+    <name>amesos2_util</name>
+    <title>Amesos2 Utilities</title>
+    <filename>group__amesos2__util.html</filename>
+    <class kind="struct">Amesos::Util::get_cxs_helper</class>
+    <class kind="struct">Amesos::Util::get_ccs_helper</class>
+    <class kind="struct">Amesos::Util::get_crs_helper</class>
   </compound>
-  <compound kind="struct">
-    <name>Amesos::Control</name>
-    <filename>structAmesos_1_1Control.html</filename>
-    <member kind="function">
-      <type></type>
-      <name>Control</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a0aeeb3c61dbccf003688c6dc965f1f6d</anchor>
-      <arglist>()</arglist>
+  <compound kind="class">
+    <name>Amesos::AbstractConcreteMatrixAdapter</name>
+    <filename>classAmesos_1_1AbstractConcreteMatrixAdapter.html</filename>
+    <templarg></templarg>
+    <templarg></templarg>
+  </compound>
+  <compound kind="class">
+    <name>Amesos::ConcreteMatrixAdapter&lt; Epetra_CrsMatrix &gt;</name>
+    <filename>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</filename>
+    <base>AbstractConcreteMatrixAdapter&lt; Epetra_RowMatrix, Epetra_CrsMatrix &gt;</base>
+    <member kind="typedef">
+      <type>Epetra_CrsMatrix</type>
+      <name>matrix_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>a685bed98cd31188329b4b5afc546d3e0</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::scalar_t</type>
+      <name>scalar_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>a88e2fa80d21933e7d9af74c6525eb6c9</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::local_ordinal_t</type>
+      <name>local_ordinal_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>a59e6daf7ebf45ebaf22fe42e2d5a93b5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::global_ordinal_t</type>
+      <name>global_ordinal_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>a4d7743178e60baab81cf99416275e79b</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::node_t</type>
+      <name>node_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>a3071c59f6ddb968522a50b88f486f721</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::global_size_t</type>
+      <name>global_size_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>a093d45e64f4f901b63548aa5dbe89b6c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>ConcreteMatrixAdapter&lt; matrix_t &gt;</type>
+      <name>type</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>ac10bf2cfa03713732f31daff8cfcd94c</anchor>
+      <arglist></arglist>
     </member>
     <member kind="function">
       <type></type>
-      <name>~Control</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a6821c773f9d026e1f5fcdeb459358729</anchor>
-      <arglist>()</arglist>
+      <name>ConcreteMatrixAdapter</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>a44008b452ad8127a62e458eba897074f</anchor>
+      <arglist>(RCP&lt; matrix_t &gt; m)</arglist>
     </member>
     <member kind="function">
-      <type>void</type>
-      <name>setControlParameters</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a2456dd541b6d77c6a4ea722634e10b08</anchor>
-      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+      <type>RCP&lt; const MatrixAdapter&lt; matrix_t &gt; &gt;</type>
+      <name>get_impl</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>a7a808e4fda6f69586a62ae3d1a828faa</anchor>
+      <arglist>(const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; map) const </arglist>
     </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>useTranspose_</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a7c338f4703c29698c56483f66ff9be49</anchor>
+    <member kind="typedef" protection="private">
+      <type>AbstractConcreteMatrixAdapter&lt; Epetra_RowMatrix, Epetra_CrsMatrix &gt;</type>
+      <name>super_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>ad146411a9e1d57dd5b8c6fab2e4ca32b</anchor>
       <arglist></arglist>
     </member>
-    <member kind="variable">
-      <type>std::string</type>
-      <name>addToDiag_</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a60b897d7f54afa5138dce2990f69da5d</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>addZeroToDiag_</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a77378f72c33d393333054b709fa1ca8b</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>matrixProperty_</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a487d38afaa3d07edcbceb989c4a7ed11</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>rcond_threshold_</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>afa8b49f86b5b888233fcfbc35ca884af</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>refactorize_</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a63bd38ead5689eae3f77af2e464d46d5</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>maxProcesses_</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a34debce5c7a9c08804616bacd20cc11c</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>scaleMethod_</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>adfffb7fde2e1060aac217b8692072b5e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>reindex_</name>
-      <anchorfile>structAmesos_1_1Control.html</anchorfile>
-      <anchor>a4135fc39426d58c18e7f8d3c0ebee9e6</anchor>
+    <member kind="friend" protection="private">
+      <type>friend class</type>
+      <name>MatrixAdapter&lt; Epetra_RowMatrix &gt;</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Epetra__CrsMatrix_01_4.html</anchorfile>
+      <anchor>a2774c14861cd340b9aee7c56e3a57a15</anchor>
       <arglist></arglist>
     </member>
   </compound>
   <compound kind="class">
-    <name>Amesos::Factory</name>
-    <filename>classAmesos_1_1Factory.html</filename>
+    <name>Amesos::MultiVecAdapter&lt; Epetra_MultiVector &gt;</name>
+    <filename>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</filename>
+    <member kind="typedef">
+      <type>double</type>
+      <name>scalar_type</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a99abff6d59d8b6171c507f57dea80b71</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>int</type>
+      <name>local_ordinal_type</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>aee1c62eeae6a5f9b934e92a23e304c53</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>int</type>
+      <name>global_ordinal_type</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a1e590c8b072d2638e72461083042d51c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>size_t</type>
+      <name>global_size_type</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a6f445c00fedf9c310784106b8ea97479</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Tpetra::DefaultPlatform::DefaultPlatformType::NodeType</type>
+      <name>node_type</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>ac837afbdb3cebb9ccf2b4b4cadea14c9</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Epetra_MultiVector</type>
+      <name>multivec_type</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a48b1f3e648f59fdfe3b4fe062b1aae78</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>MultiVecAdapter</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a316c884859a8ecf2643cf82beeb6f392</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>MultiVecAdapter</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>acb3e78f5560bf3c51a7e9c140f22656b</anchor>
+      <arglist>(const MultiVecAdapter&lt; multivec_type &gt; &amp;adapter)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>MultiVecAdapter</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a5ba697693b39ea867fae048e01f2b666</anchor>
+      <arglist>(const Teuchos::RCP&lt; multivec_type &gt; &amp;m)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; multivec_type &gt;</type>
+      <name>getAdaptee</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>aca38eee6991e56abc35a16754a12699e</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>MultiVecAdapter&lt; multivec_type &gt; &amp;</type>
+      <name>scale</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>aa55606898e80fbba2d0b170f49e28f7e</anchor>
+      <arglist>(const scalar_type alpha)</arglist>
+    </member>
+    <member kind="function">
+      <type>MultiVecAdapter&lt; multivec_type &gt; &amp;</type>
+      <name>update</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>abbc37d7ce559cd86d2641cb0ec7d8b7a</anchor>
+      <arglist>(const scalar_type beta, const MultiVecAdapter&lt; multivec_type &gt; &amp;B, const scalar_type alpha)</arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>isLocal</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>acc1312788158ef21e72975c9dc393e85</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>ab39e02be6eb072cb3e01e6961b663e74</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalLength</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a9d36a7e62ab093171f5f48f024d87478</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNumVectors</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>aabd89d3d4805d384c365110cd64e16e2</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_type</type>
+      <name>getGlobalLength</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>afe85534858698846e34fa7c3c75f4ea4</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getGlobalNumVectors</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a614a00c332793799f14c3b01064569bc</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getStride</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a3e2d1b2b944598ec45bbbc9303699a2b</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>isConstantStride</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a4e855f61b54b51264142aee2577c873a</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; const Tpetra::Vector&lt; scalar_type, local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>getVector</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a0605dc5de54885e2f0bdf38c8039c2fb</anchor>
+      <arglist>(size_t j) const </arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Tpetra::Vector&lt; scalar_type, local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>getVectorNonConst</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a74ed7666f236b92b5428b1da46d59a68</anchor>
+      <arglist>(size_t j)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>get1dCopy</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>ae4401c9411b2ad7d89fd30e6319f4523</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_type &gt; &amp;A, size_t lda, bool global_copy) const </arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::ArrayRCP&lt; scalar_type &gt;</type>
+      <name>get1dViewNonConst</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>abbb87b03e54e45c587c00a43bd4d7d7c</anchor>
+      <arglist>(bool local=false)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>get2dCopy</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>ad2c59a3308c90ce07a932e823c987bc1</anchor>
+      <arglist>(Teuchos::ArrayView&lt; const Teuchos::ArrayView&lt; scalar_type &gt; &gt; A)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::ArrayRCP&lt; Teuchos::ArrayRCP&lt; scalar_type &gt; &gt;</type>
+      <name>get2dViewNonConst</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>aedabfc314c389bc354a20e9e3245a95c</anchor>
+      <arglist>(bool local=false)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>globalize</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a6094863621a9be6b16912235498651f7</anchor>
+      <arglist>(int root=0)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>globalize</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a3854190e2454115fb12b5d1a51e1b132</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; Value_t &gt; &amp;newVals, int root=0)</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>description</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>ab407d2d5cbaf71ef8197227279834d78</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>describe</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a28bba365e0d9d6ed1cdac7158070564b</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;os, const Teuchos::EVerbosityLevel verbLevel) const </arglist>
+    </member>
+    <member kind="variable" static="yes">
+      <type>static const char *</type>
+      <name>name</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>ac3636cf08be452a47b8708a94916359f</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>localize</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a6c4570daffa3c98da032de0e18401267</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>Teuchos::RCP&lt; const Tpetra::Map&lt; local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>getMap</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a711960b7d88e2bca4fa7e1a06f3fd335</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; multivec_type &gt;</type>
+      <name>mv_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a584f8ea2b9d8be22849836fa12c6c8e5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; multivec_type &gt;</type>
+      <name>l_mv_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a6e54815ead43181d43c22cf51a33fe75</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; multivec_type &gt;</type>
+      <name>l_l_mv_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a8228cd2f44451a855dd10ba5e4a827c6</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; Epetra_BlockMap &gt;</type>
+      <name>o_map_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a89e11abb2f07a140c1a557c4cf723b7f</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; Epetra_BlockMap &gt;</type>
+      <name>l_map_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>ab03c72fc0f3f52b6c5abcea4400e231e</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; Epetra_Import &gt;</type>
+      <name>importer_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>afb5b0fdc6138156ae2068d263ac94b00</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; Epetra_Export &gt;</type>
+      <name>exporter_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Epetra__MultiVector_01_4.html</anchorfile>
+      <anchor>a0ee52974ca6d994263186d3a7aba3512</anchor>
+      <arglist></arglist>
+    </member>
+  </compound>
+  <compound kind="class">
+    <name>Amesos::AbstractConcreteMatrixAdapter&lt; Epetra_RowMatrix, DerivedMat &gt;</name>
+    <filename>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</filename>
     <templarg></templarg>
-    <templarg></templarg>
-    <member kind="function" static="yes">
-      <type>static Teuchos::RCP&lt; SolverBase &gt;</type>
-      <name>create</name>
-      <anchorfile>classAmesos_1_1Factory.html</anchorfile>
-      <anchor>a67d66038e196d69ddef6628c644d4e80</anchor>
-      <arglist>(Matrix *A, Vector *X, Vector *B)</arglist>
+    <base>MatrixAdapter&lt; DerivedMat &gt;</base>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; Epetra_RowMatrix &gt;::scalar_t</type>
+      <name>scalar_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>affddce1920a772c3b8229a0a4ced0d8e</anchor>
+      <arglist></arglist>
     </member>
-    <member kind="function" static="yes">
-      <type>static Teuchos::RCP&lt; SolverBase &gt;</type>
-      <name>create</name>
-      <anchorfile>classAmesos_1_1Factory.html</anchorfile>
-      <anchor>a64abd04e4dd126471b2b92fbf066f9a5</anchor>
-      <arglist>(Teuchos::RCP&lt; Matrix &gt; A, Teuchos::RCP&lt; Vector &gt; X, Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; Epetra_RowMatrix &gt;::local_ordinal_t</type>
+      <name>local_ordinal_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>ae009b0b3f9913d96ab47a173970d7090</anchor>
+      <arglist></arglist>
     </member>
-    <member kind="function" static="yes">
-      <type>static Teuchos::RCP&lt; SolverBase &gt;</type>
-      <name>create</name>
-      <anchorfile>classAmesos_1_1Factory.html</anchorfile>
-      <anchor>a0dbc3e0bfdbd0041c987344a1044e570</anchor>
-      <arglist>(const char *solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; Epetra_RowMatrix &gt;::global_ordinal_t</type>
+      <name>global_ordinal_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a223c1fd684c762a5f2c2f8cba5d34b65</anchor>
+      <arglist></arglist>
     </member>
-    <member kind="function" static="yes">
-      <type>static Teuchos::RCP&lt; SolverBase &gt;</type>
-      <name>create</name>
-      <anchorfile>classAmesos_1_1Factory.html</anchorfile>
-      <anchor>ab04610d7fc11903f3b6255d59a40ca24</anchor>
-      <arglist>(const char *solverName, const Teuchos::RCP&lt; Matrix &gt; A, const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; Epetra_RowMatrix &gt;::node_t</type>
+      <name>node_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>adbe7a699eeebb39e3cdd20f38d03cf65</anchor>
+      <arglist></arglist>
     </member>
-    <member kind="function" static="yes">
-      <type>static Teuchos::RCP&lt; SolverBase &gt;</type>
-      <name>create</name>
-      <anchorfile>classAmesos_1_1Factory.html</anchorfile>
-      <anchor>ae77a2df92e133960de3f39a03d45bc16</anchor>
-      <arglist>(const std::string solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    <member kind="typedef">
+      <type>DerivedMat</type>
+      <name>matrix_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a525d2cedc9f348b1f4640e50882a35b3</anchor>
+      <arglist></arglist>
     </member>
-    <member kind="function" static="yes">
-      <type>static Teuchos::RCP&lt; SolverBase &gt;</type>
-      <name>create</name>
-      <anchorfile>classAmesos_1_1Factory.html</anchorfile>
-      <anchor>a73dd6525ce3bb6e22eb130ac08eb3724</anchor>
-      <arglist>(const std::string solverName, const Teuchos::RCP&lt; Matrix &gt; A, const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    <member kind="typedef">
+      <type>super_t::global_size_t</type>
+      <name>global_size_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a584a40f6c7a3b3ddd6844531b6490086</anchor>
+      <arglist></arglist>
     </member>
-    <member kind="function" static="yes">
-      <type>static bool</type>
-      <name>query</name>
-      <anchorfile>classAmesos_1_1Factory.html</anchorfile>
-      <anchor>a15f24c0b566dd2f2ed0182594d2a3f93</anchor>
-      <arglist>(const char *solverName)</arglist>
+    <member kind="typedef">
+      <type>AbstractConcreteMatrixAdapter&lt; matrix_t, DerivedMat &gt;</type>
+      <name>type</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>ad309903f8ef1e93182011d90de5fd020</anchor>
+      <arglist></arglist>
     </member>
-    <member kind="function" static="yes">
-      <type>static bool</type>
-      <name>query</name>
-      <anchorfile>classAmesos_1_1Factory.html</anchorfile>
-      <anchor>a93c87f95a082b81a3c78ec7d1982a8af</anchor>
-      <arglist>(const std::string solverName)</arglist>
+    <member kind="typedef">
+      <type>Util::no_special_impl</type>
+      <name>get_crs_spec</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>ad477ed334bd099f71d17d9b8eb3183dc</anchor>
+      <arglist></arglist>
     </member>
-    <docanchor file="classAmesos_1_1Factory">usage</docanchor>
+    <member kind="typedef">
+      <type>Util::no_special_impl</type>
+      <name>get_ccs_spec</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a298f743d18de12fb71bd84f2363fc80c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; Epetra_RowMatrix &gt;::major_access</type>
+      <name>major_access</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>ab4830bbfa6b189298808e35e69daf544</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>ConcreteMatrixAdapter&lt; DerivedMat &gt;</type>
+      <name>adapter_t</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a3bfa635f15a7ee77ba78dc64f5822e9c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>AbstractConcreteMatrixAdapter</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>ab178b95ed4f9e2385cdd39bc17cc1d66</anchor>
+      <arglist>(RCP&lt; matrix_t &gt; m)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getGlobalRowCopy_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a99e7efa2197a9433662d9355248f1ba0</anchor>
+      <arglist>(global_ordinal_t row, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getGlobalColCopy_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a0c28244bac0481602c1b3433e2285f2f</anchor>
+      <arglist>(global_ordinal_t col, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const </arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a5265fa69aec138d473f79147e86c6193</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>ab47c9560145f47f2026394c11d3f4545</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getMaxRowNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a58b31425bc1b98b230a4b56a9ee79e17</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getMaxColNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a7168892e0791cf587ae443f40c7adb69</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getGlobalRowNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a6e97df991c83a3e7dabbdfb20aeaae62</anchor>
+      <arglist>(global_ordinal_t row) const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalRowNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a920f297d72689dc7bdd6049f9fa62f01</anchor>
+      <arglist>(local_ordinal_t row) const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getGlobalColNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>adbf1390ae0f9fcdc0b31afcab57fa80f</anchor>
+      <arglist>(global_ordinal_t col) const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalColNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a41b6838a4f7d8ca4349f9e6a00be88f6</anchor>
+      <arglist>(local_ordinal_t col) const </arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>getRowMap_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>aa7a85aad361aaf0dbecd679cee8b7fe2</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>getColMap_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a075ff46c1cca66abda570323c7d10d23</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a719631507055da6bbc6da9e40493b5a6</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>isLocallyIndexed_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>abdde9fd45e5d9ef5479902020fd12b36</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>isGloballyIndexed_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a6fd983c3e9429dfccdb210c8bffb808e</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; const super_t &gt;</type>
+      <name>get_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>ac1d3a20e1706792602544e498d455fbf</anchor>
+      <arglist>(const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; map) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a7da98dde7decdcd4006c4203193a1edb</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; rowmap, EStorage_Ordering ordering=Util::Arbitrary) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a9b9abaec0efdf184ac502bcf0ef08b3c</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, EDistribution distribution, EStorage_Ordering ordering=Util::Arbitrary) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a54a1fb9c3f9203c6a7ec4ba9c87dae25</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; colmap, EStorage_Ordering ordering=Util::Arbitrary) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ad85223e6476499e4ab135661bf8339aa</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, EDistribution distribution, EStorage_Ordering ordering=Util::Arbitrary) const</arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aae644193c73b59c573720132be955431</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNumRows</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ac729469ca361ac261590f143624fa6b4</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNumCols</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a2c1f4eed533cf858db94067149c70c0b</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aa144b89709fd20ed4627d5966997132e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNumRows</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aa72c5a28011f01c5f09f1be50df5de2e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNumCols</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ada217a4504703e97a0ed2e165ec9b766</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ac1fcfa87de3617bc6fee93f884ca6bf7</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t &gt; &gt;</type>
+      <name>getRowMap</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a079a384379ea6ba42f82f254ec322ab2</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t &gt; &gt;</type>
+      <name>getColMap</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ad095ea1b4a87c53258bc95344540d369</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>description</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aac6aec881feab1fa3d30c4c3a7d3a2f1</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>describe</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a0e6d8d17887b32364e946403a2617365</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>void</type>
+      <name>getGlobalRowCopy</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a82a04efccdb9fc4c677f6971b0f2a9ff</anchor>
+      <arglist>(global_ordinal_t row, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>void</type>
+      <name>getGlobalColCopy</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a1930fc8e940fa82ae8933c8fbd61c58d</anchor>
+      <arglist>(global_ordinal_t col, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getMaxRowNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aec3505d353a2b1bfac631222aa6e582d</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getMaxColNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>af4fca7c867756723a39d7251eb5e214e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getGlobalRowNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a8d5fb3fc6c2db1015f75399f880d8e1e</anchor>
+      <arglist>(global_ordinal_t row) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getLocalRowNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a6286f7e449913ec698831cbe9f855ed0</anchor>
+      <arglist>(local_ordinal_t row) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getGlobalColNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a139320c33a3e6954e1263ac083c56fe9</anchor>
+      <arglist>(global_ordinal_t col) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getLocalColNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a59b1d89868a0044cdb5d6442c505ba21</anchor>
+      <arglist>(local_ordinal_t col) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>isLocallyIndexed</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a37bec34548dee2f1bfb9ab42f5c872a6</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>isGloballyIndexed</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a760657acc1d3e7abfcb35b689ed7c3a5</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>RCP&lt; const type &gt;</type>
+      <name>get</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ab2e42b619d1ecc2796bce408615bd15d</anchor>
+      <arglist>(const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; map) const</arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>const RCP&lt; const DerivedMat &gt;</type>
+      <name>mat_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aaa7c67b31929c0252ceb73e3a5fc8abf</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>row_map_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a91680cc808fdc40b64a01ab7ca6ca554</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>col_map_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a06617c51632049ccc3dee8fe7cdcf4f0</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>comm_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a898d99aef23d15a31a92fc54ea9a5116</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef" protection="private">
+      <type>MatrixAdapter&lt; DerivedMat &gt;</type>
+      <name>super_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>aebcc1559a498de5a058aeb592d26936c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>MatrixAdapter&lt; DerivedMat &gt;</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Epetra__RowMatrix_00_01DerivedMat_01_4.html</anchorfile>
+      <anchor>a0a0a3629b22324189309040873178be5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>Util::get_cxs_helper</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ad17a6004ba9322d05cb84067e15a3016</anchor>
+      <arglist></arglist>
+    </member>
   </compound>
   <compound kind="struct">
     <name>Amesos::FunctionMap</name>
@@ -1350,10 +1421,353 @@
     <templarg>ConcreteSolver</templarg>
     <templarg></templarg>
   </compound>
-  <compound kind="struct">
+  <compound kind="class">
     <name>Amesos::MatrixAdapter</name>
-    <filename>structAmesos_1_1MatrixAdapter.html</filename>
-    <templarg></templarg>
+    <filename>classAmesos_1_1MatrixAdapter.html</filename>
+    <templarg>Matrix</templarg>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; Matrix &gt;::scalar_t</type>
+      <name>scalar_t</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a37e717815af215fdd76eb3c8b9af2888</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; Matrix &gt;::local_ordinal_t</type>
+      <name>local_ordinal_t</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aaec907ef5173c4fa3fd096c2f1563ec9</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; Matrix &gt;::global_ordinal_t</type>
+      <name>global_ordinal_t</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a2e387c76fc0fc760deb7ac4030bd820a</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; Matrix &gt;::node_t</type>
+      <name>node_t</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aac35e7fe67eeddbc7fd9ce5237f19746</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Tpetra::global_size_t</type>
+      <name>global_size_t</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a998e3af52656ac6c583043a3be7f9b65</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Matrix</type>
+      <name>matrix_t</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a08c8937cfff1d1c1420d99063c86c7e9</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixAdapter&lt; Matrix &gt;</type>
+      <name>type</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a4ae7efbcc781289cb68af408e5f19160</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>ConcreteMatrixAdapter&lt; Matrix &gt;</type>
+      <name>adapter_t</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a3bfa635f15a7ee77ba78dc64f5822e9c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>MatrixAdapter</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ab3d7d119a1beeccfe22490a4791e4d0a</anchor>
+      <arglist>(RCP&lt; Matrix &gt; m)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a7da98dde7decdcd4006c4203193a1edb</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; rowmap, EStorage_Ordering ordering=Util::Arbitrary) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a9b9abaec0efdf184ac502bcf0ef08b3c</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, EDistribution distribution, EStorage_Ordering ordering=Util::Arbitrary) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a54a1fb9c3f9203c6a7ec4ba9c87dae25</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; colmap, EStorage_Ordering ordering=Util::Arbitrary) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ad85223e6476499e4ab135661bf8339aa</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, EDistribution distribution, EStorage_Ordering ordering=Util::Arbitrary) const </arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aae644193c73b59c573720132be955431</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNumRows</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ac729469ca361ac261590f143624fa6b4</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNumCols</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a2c1f4eed533cf858db94067149c70c0b</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aa144b89709fd20ed4627d5966997132e</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNumRows</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aa72c5a28011f01c5f09f1be50df5de2e</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNumCols</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ada217a4504703e97a0ed2e165ec9b766</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ac1fcfa87de3617bc6fee93f884ca6bf7</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t &gt; &gt;</type>
+      <name>getRowMap</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a079a384379ea6ba42f82f254ec322ab2</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t &gt; &gt;</type>
+      <name>getColMap</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ad095ea1b4a87c53258bc95344540d369</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>description</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aac6aec881feab1fa3d30c4c3a7d3a2f1</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>describe</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a0e6d8d17887b32364e946403a2617365</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>void</type>
+      <name>getGlobalRowCopy</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a82a04efccdb9fc4c677f6971b0f2a9ff</anchor>
+      <arglist>(global_ordinal_t row, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>void</type>
+      <name>getGlobalColCopy</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a1930fc8e940fa82ae8933c8fbd61c58d</anchor>
+      <arglist>(global_ordinal_t col, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getMaxRowNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aec3505d353a2b1bfac631222aa6e582d</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getMaxColNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>af4fca7c867756723a39d7251eb5e214e</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getGlobalRowNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a8d5fb3fc6c2db1015f75399f880d8e1e</anchor>
+      <arglist>(global_ordinal_t row) const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getLocalRowNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a6286f7e449913ec698831cbe9f855ed0</anchor>
+      <arglist>(local_ordinal_t row) const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getGlobalColNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a139320c33a3e6954e1263ac083c56fe9</anchor>
+      <arglist>(global_ordinal_t col) const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getLocalColNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a59b1d89868a0044cdb5d6442c505ba21</anchor>
+      <arglist>(local_ordinal_t col) const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>isLocallyIndexed</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a37bec34548dee2f1bfb9ab42f5c872a6</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>isGloballyIndexed</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a760657acc1d3e7abfcb35b689ed7c3a5</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>RCP&lt; const type &gt;</type>
+      <name>get</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ab2e42b619d1ecc2796bce408615bd15d</anchor>
+      <arglist>(const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; map) const </arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>const RCP&lt; const Matrix &gt;</type>
+      <name>mat_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aaa7c67b31929c0252ceb73e3a5fc8abf</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>row_map_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a91680cc808fdc40b64a01ab7ca6ca554</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>col_map_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a06617c51632049ccc3dee8fe7cdcf4f0</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>comm_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a898d99aef23d15a31a92fc54ea9a5116</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>help_getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a516319c4eaf1fe77a80e8aee76a86ae1</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; rowmap, EStorage_Ordering ordering, has_special_impl hsi) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>help_getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>af78df62595bc621c7b0b3f01061f1846</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; rowmap, EStorage_Ordering ordering, no_special_impl nsi) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>do_getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a9bc0fa6fda56e9b8b9243b768bc294ce</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; rowmap, EStorage_Ordering ordering, row_access ra) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>do_getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a71c4e15fae62d88416aa0a29220b0fb5</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; rowmap, EStorage_Ordering ordering, col_access ca) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>help_getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>af3b897379ed6ab2db8dcaa67ab8804c5</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; colmap, EStorage_Ordering ordering, has_special_impl hsi) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>help_getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a335456d757f8a2d6cebcfbb792cded4a</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; colmap, EStorage_Ordering ordering, no_special_impl nsi) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>do_getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a46b37e798269d77885cded85de493c60</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; colmap, EStorage_Ordering ordering, row_access ra) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>do_getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a517096171045f2c97409f4902aee04d5</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; colmap, EStorage_Ordering ordering, col_access ca) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>const Teuchos::RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>getDistributionMap</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a339df63c80cb78a004417574164d1f0c</anchor>
+      <arglist>(Util::EDistribution distribution) const </arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>Util::get_cxs_helper</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ad17a6004ba9322d05cb84067e15a3016</anchor>
+      <arglist></arglist>
+    </member>
   </compound>
   <compound kind="struct">
     <name>Amesos::MatrixHelper</name>
@@ -1363,560 +1777,607 @@
   <compound kind="struct">
     <name>Amesos::MultiVecAdapter</name>
     <filename>structAmesos_1_1MultiVecAdapter.html</filename>
-    <templarg></templarg>
+    <templarg>MultiVecType</templarg>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; MultiVecAdapter&lt; MV &gt; &gt;</type>
+      <name>createMultiVecAdapter</name>
+      <anchorfile>structAmesos_1_1MultiVecAdapter.html</anchorfile>
+      <anchor>aeb4d8aaf14a2b2b2eb8c0cf8ce67d28f</anchor>
+      <arglist>(Teuchos::RCP&lt; MV &gt; mv)</arglist>
+    </member>
   </compound>
   <compound kind="class">
     <name>Amesos::Solver</name>
     <filename>classAmesos_1_1Solver.html</filename>
-    <templarg>ConcreteSolver</templarg>
     <templarg>Matrix</templarg>
     <templarg>Vector</templarg>
-    <base>Amesos::SolverBase</base>
     <member kind="typedef">
-      <type>ConcreteSolver&lt; Matrix, Vector &gt;</type>
-      <name>solver_type</name>
+      <type>Solver&lt; Matrix, Vector &gt;</type>
+      <name>type</name>
       <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ab54e5a132dc28ca72d54d5c352bc01fc</anchor>
+      <anchor>a8cdf7660b04fbef2ab7e67254e70bfa5</anchor>
       <arglist></arglist>
     </member>
-    <member kind="typedef">
-      <type>Matrix</type>
-      <name>matrix_type</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a8232d4863dec6960a55fb720bb0acb99</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>Vector</type>
-      <name>vector_type</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a12a9fc9de479a8bff4ca772f0ff43efe</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::scalar_type</type>
-      <name>scalar_type</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a19308714bd206e574967df852112451c</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::local_ordinal_type</type>
-      <name>local_ordinal_type</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a543d0d2f210273d92a90faa667fa168a</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::global_ordinal_type</type>
-      <name>global_ordinal_type</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a1dac62a9b6d2d4df0c00e423bbf2477f</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::global_size_type</type>
-      <name>global_size_type</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a5ecfe5a85a700722fb22e5645b146458</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::node_type</type>
-      <name>node_type</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a6131b4fa8828a37359344381a0e2bbd7</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="function">
-      <type>std::string</type>
-      <name>description</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ad5895a15bbf9a8ed58145c7f6273d60e</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>describe</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a7f940355bf1c7ec40af249e578cd7796</anchor>
-      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const </arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>printTiming</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ad11201452425f00e9861e719f3879cac</anchor>
-      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const </arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>getTiming</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a78f8fda9051a1cd676cabe061f262e7d</anchor>
-      <arglist>(Teuchos::ParameterList &amp;timingParameterList) const </arglist>
-    </member>
-    <member kind="function">
-      <type>std::string</type>
-      <name>name</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>aeba9fd1e0773006c6f4f4847c3433e0a</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type></type>
-      <name>Solver</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a406a3acce6390e6bba2aeb61896e919d</anchor>
-      <arglist>(Teuchos::RCP&lt; Matrix &gt; A, Teuchos::RCP&lt; Vector &gt; X, Teuchos::RCP&lt; Vector &gt; B)</arglist>
-    </member>
-    <member kind="function">
-      <type></type>
-      <name>~Solver</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ac2fd37ecef0aa99377b50bd9a458234d</anchor>
-      <arglist>()</arglist>
-    </member>
-    <member kind="function">
-      <type></type>
-      <name>Solver</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ab22d60478f2059c8ef7179f870da1f81</anchor>
-      <arglist>(const solver_type &amp;rhs)</arglist>
-    </member>
-    <member kind="function">
-      <type>SolverBase &amp;</type>
-      <name>operator=</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a52d94658c845bb620f9b5611a9ff630e</anchor>
-      <arglist>(const solver_type *rhs)</arglist>
-    </member>
-    <member kind="function">
-      <type>SolverBase &amp;</type>
+    <member kind="function" virtualness="pure">
+      <type>virtual type &amp;</type>
       <name>preOrdering</name>
       <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a6d4b742604306fa7f466ceb6674c3b7e</anchor>
-      <arglist>()</arglist>
+      <anchor>acd253d0f641b84ec92920492ec83dcaf</anchor>
+      <arglist>(void)=0</arglist>
     </member>
-    <member kind="function">
-      <type>SolverBase &amp;</type>
+    <member kind="function" virtualness="pure">
+      <type>virtual type &amp;</type>
       <name>symbolicFactorization</name>
       <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>aa8f7f0bfbf4976dc5782f44ba7de737b</anchor>
-      <arglist>()</arglist>
+      <anchor>a20c17edc5bb2cc59afd29d4fcd23c119</anchor>
+      <arglist>(void)=0</arglist>
     </member>
-    <member kind="function">
-      <type>SolverBase &amp;</type>
+    <member kind="function" virtualness="pure">
+      <type>virtual type &amp;</type>
       <name>numericFactorization</name>
       <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>acb5f554ec113d91c5157b1049743cda0</anchor>
-      <arglist>()</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>solve</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a8e3fec9d67f79e41baee46c6af7609e1</anchor>
-      <arglist>()</arglist>
-    </member>
-    <member kind="function">
-      <type>bool</type>
-      <name>matrixShapeOK</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a6221bfb247e4fefe5dfc7e06274c4e05</anchor>
-      <arglist>()</arglist>
-    </member>
-    <member kind="function">
-      <type>SolverBase &amp;</type>
-      <name>setParameters</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>af80564debe6deb91185ab5eb6d8604f8</anchor>
-      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
-    </member>
-    <member kind="function">
-      <type>Teuchos::RCP&lt; const Teuchos::ParameterList &gt;</type>
-      <name>getValidParameters</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a9748134890939a04f8b72fe1640cb78c</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>setParameterList</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a1aa4e0527112c86c9565bfe381ef924d</anchor>
-      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
-    </member>
-    <member kind="function">
-      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
-      <name>getNonconstParameterList</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a74d1daa629ab139cfa12eb8787006e86</anchor>
-      <arglist>()</arglist>
-    </member>
-    <member kind="function">
-      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
-      <name>unsetParameterList</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>af5501c5aff8cc3a41d6ec54fbaba5499</anchor>
-      <arglist>()</arglist>
-    </member>
-    <member kind="function">
-      <type>Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
-      <name>getComm</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>aa8ed6bcc774aa352551baf27694fd4f9</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>int</type>
-      <name>getNumSymbolicFact</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ae7a52c6416e9c618ce80e6f87b5a8e9c</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>int</type>
-      <name>getNumNumericFact</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a95dfeb07ac37384e7542a0fb18e593fd</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>int</type>
-      <name>getNumSolve</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a2727aadec209785dca7511157c196faf</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>Teuchos::RCP&lt; MatrixAdapter&lt; Matrix &gt; &gt;</type>
-      <name>matrixA_</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ac8ff3301ec2333711b1659833762b153</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>Teuchos::RCP&lt; MultiVecAdapter&lt; Vector &gt; &gt;</type>
-      <name>multiVecX_</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ab25ad0142cc278d87e92423bce3e3761</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>Teuchos::RCP&lt; MultiVecAdapter&lt; Vector &gt; &gt;</type>
-      <name>multiVecB_</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a37570c871b6bf7a0427faa339e00a47e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>global_size_type</type>
-      <name>globalNumRows_</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ac847290e0d475e8f645b523c1ecb10b4</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>global_size_type</type>
-      <name>globalNumCols_</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>a7ddc7813b3070cc024fe9c78aa8c4bb9</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>global_size_type</type>
-      <name>globalNumNonZeros_</name>
-      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
-      <anchor>ac99e594d4307d953434eb99a6552ef66</anchor>
-      <arglist></arglist>
-    </member>
-  </compound>
-  <compound kind="class">
-    <name>Amesos::SolverBase</name>
-    <filename>classAmesos_1_1SolverBase.html</filename>
-    <member kind="function" virtualness="pure">
-      <type>virtual Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
-      <name>getComm</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>aae3e04251b62574a261c1c705dbac353</anchor>
-      <arglist>(void) const =0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual int</type>
-      <name>getNumSymbolicFact</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a51c675b4ae34855c66f8447584f09f3e</anchor>
-      <arglist>(void) const =0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual int</type>
-      <name>getNumNumericFact</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>aff0ddff3508c6b7b397756858a6fabe1</anchor>
-      <arglist>(void) const =0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual int</type>
-      <name>getNumSolve</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a1c586c8bc7ba6754ee5c5032304c61d6</anchor>
-      <arglist>(void) const =0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual std::string</type>
-      <name>description</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>ae56316b058fbf813381fa8a20ab619a3</anchor>
-      <arglist>() const =0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual void</type>
-      <name>describe</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a2daaac73804938d2602ed69e54f1d14d</anchor>
-      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual void</type>
-      <name>printTiming</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a1a4942b0f5f2fb7f13e1be97de527a2d</anchor>
-      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual void</type>
-      <name>setParameterList</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a9ed318e3254f333a16812d798aa3b740</anchor>
-      <arglist>(Teuchos::RCP&lt; Teuchos::ParameterList &gt; const &amp;parameterlist)=0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
-      <name>getNonconstParameterList</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>adf5acd483cc00f36d35eff78f794fda8</anchor>
-      <arglist>(void)=0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
-      <name>unsetParameterList</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>ac9ee1ff764e90298749c46fece865026</anchor>
-      <arglist>(void)=0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual void</type>
-      <name>getTiming</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>aa734be3b254fc3f5d6fc1ba64acdc62e</anchor>
-      <arglist>(Teuchos::ParameterList &amp;timingParameterList) const =0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual std::string</type>
-      <name>name</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a5a1e62d742d7f9f291d4b0820abfc4ce</anchor>
-      <arglist>() const =0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual SolverBase &amp;</type>
-      <name>preOrdering</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a083a019c3fa2f805ef2e3502b4bb0f22</anchor>
-      <arglist>(void)=0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual SolverBase &amp;</type>
-      <name>symbolicFactorization</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>af5f0927a15501ba5413376d11f58d00d</anchor>
-      <arglist>(void)=0</arglist>
-    </member>
-    <member kind="function" virtualness="pure">
-      <type>virtual SolverBase &amp;</type>
-      <name>numericFactorization</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a002b05602fb76fe22bb43bd3ee708440</anchor>
+      <anchor>a758cfc703a91de4d5d0d7599de0c429e</anchor>
       <arglist>(void)=0</arglist>
     </member>
     <member kind="function" virtualness="pure">
       <type>virtual void</type>
       <name>solve</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>af14dadee55703a9e76186e804d2b6ebb</anchor>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>ad5055ac72f596931984160a8f6c83d3d</anchor>
       <arglist>(void)=0</arglist>
     </member>
     <member kind="function" virtualness="pure">
-      <type>virtual bool</type>
-      <name>matrixShapeOK</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a3d30684add6a74010e278c859eb696a5</anchor>
-      <arglist>(void)=0</arglist>
+      <type>virtual void</type>
+      <name>solve</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a1ef4c6ede05860d16811094bc64844b3</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; const Vector &gt; B) const =0</arglist>
     </member>
     <member kind="function" virtualness="pure">
-      <type>virtual SolverBase &amp;</type>
+      <type>virtual type &amp;</type>
       <name>setParameters</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a88a854c05da0323280f28cf867cd538d</anchor>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a82af5cf1d5624c19d94ca8ed8ebc5a6e</anchor>
       <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)=0</arglist>
     </member>
     <member kind="function" virtualness="pure">
       <type>virtual Teuchos::RCP&lt; const Teuchos::ParameterList &gt;</type>
       <name>getValidParameters</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a5a6717c5f42a1df9511aae33aa8fc919</anchor>
-      <arglist>() const =0</arglist>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a8a1923bc53a3e78585d9878075eaa490</anchor>
+      <arglist>(void) const =0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual void</type>
+      <name>setA</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>adfc219139987f8a17133186ebb748617</anchor>
+      <arglist>(const Teuchos::RCP&lt; Matrix &gt; a)=0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual bool</type>
+      <name>matrixShapeOK</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a8d031d5530cb0387cb5b76a621cb226b</anchor>
+      <arglist>(void)=0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual void</type>
+      <name>setX</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a3fbf70e39fabe035c4564f5cc5caf448</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; x)=0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual const Teuchos::RCP&lt; Vector &gt;</type>
+      <name>getX</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a066fc8d9963f874c384420fa09c2f3e5</anchor>
+      <arglist>(void)=0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual void</type>
+      <name>setB</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a0b805f4759a96a0d8e39a463cce04da0</anchor>
+      <arglist>(const Teuchos::RCP&lt; const Vector &gt; b)=0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual const Teuchos::RCP&lt; const Vector &gt;</type>
+      <name>getB</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a6e42153b106323f98c31e5684101c4c4</anchor>
+      <arglist>(void)=0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>ae47f7c19ded1827114b3791ccbd650d0</anchor>
+      <arglist>(void) const =0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual int</type>
+      <name>getNumSymbolicFact</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a21b281e1147ae78b6f171c5ec1633401</anchor>
+      <arglist>(void) const =0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual int</type>
+      <name>getNumNumericFact</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>ac8c9615752ca229033625a429bcfbded</anchor>
+      <arglist>(void) const =0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual int</type>
+      <name>getNumSolve</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a78a3c4c88d792f702179a27407bd87a3</anchor>
+      <arglist>(void) const =0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual std::string</type>
+      <name>name</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>afdfaf68e6c49c92c6451936503c6e294</anchor>
+      <arglist>(void) const =0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual std::string</type>
+      <name>description</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a95460337927b17ea14852803ec9d5a80</anchor>
+      <arglist>(void) const =0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual void</type>
+      <name>describe</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>acd201473e99e7210946067f6f9e62ed2</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual void</type>
+      <name>printTiming</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a49d43c33ef101053bc204a40e398ce81</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0</arglist>
+    </member>
+    <member kind="function" virtualness="pure">
+      <type>virtual void</type>
+      <name>getTiming</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a661eec947d0e688ce14afbdd95ef55df</anchor>
+      <arglist>(Teuchos::ParameterList &amp;timingParameterList) const =0</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a415501e885f7e753298fa2cf61793932</anchor>
+      <arglist>(Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a479b23341a0b171d241cffc87a92bcf0</anchor>
+      <arglist>(Teuchos::RCP&lt; Matrix &gt; A, Teuchos::RCP&lt; Vector &gt; X, Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>ad8aa0892d3a641a41d18884185d31ab6</anchor>
+      <arglist>(const char *solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a53132a9d360914a443142b7101294a07</anchor>
+      <arglist>(const char *solverName, const Teuchos::RCP&lt; Matrix &gt; A, const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>abb8acb7cceac1ce640a41dd05cc6024b</anchor>
+      <arglist>(const std::string solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>aea67ca5c343fc0f248abb8bd59423098</anchor>
+      <arglist>(const std::string solverName, const Teuchos::RCP&lt; Matrix &gt; A, const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>ab239b521c543b7cbed4f8823bb84c23f</anchor>
+      <arglist>(const std::string solverName, Matrix *A)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>afed8390a758da6367f4f28c1602df807</anchor>
+      <arglist>(const std::string solverName, const Teuchos::RCP&lt; Matrix &gt; A)</arglist>
+    </member>
+  </compound>
+  <compound kind="class">
+    <name>Amesos::SolverCore</name>
+    <filename>classAmesos_1_1SolverCore.html</filename>
+    <templarg>ConcreteSolver</templarg>
+    <templarg>Matrix</templarg>
+    <templarg>Vector</templarg>
+    <base>Solver&lt; Matrix, Vector &gt;</base>
+    <member kind="typedef">
+      <type>SolverCore&lt; ConcreteSolver, Matrix, Vector &gt;</type>
+      <name>type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a1e3660d3adce807015ae6b1490fedb16</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Solver&lt; Matrix, Vector &gt;</type>
+      <name>super_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ae0a58e56723c5dd02253c8e7ea2b05fa</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>ConcreteSolver&lt; Matrix, Vector &gt;</type>
+      <name>solver_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a6dacca606d92777840246d455c94f335</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Matrix</type>
+      <name>matrix_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>af1cdac3715d3b1d826483444c5a42743</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Vector</type>
+      <name>vector_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a68e5678b5631e357bf2102c91e2b9bad</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixAdapter&lt; matrix_type &gt;::scalar_t</type>
+      <name>scalar_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a2813db55d915edf1cea4377f8408c40b</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixAdapter&lt; matrix_type &gt;::local_ordinal_t</type>
+      <name>local_ordinal_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a06f1f172d073fc8530219aa5ff3ccca3</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixAdapter&lt; matrix_type &gt;::global_ordinal_t</type>
+      <name>global_ordinal_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a6595e103e535d53a15125a4340e46bb0</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixAdapter&lt; matrix_type &gt;::global_size_t</type>
+      <name>global_size_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a8e96cb999e58dbbd0527bced160f69cb</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>matrixShapeOK</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a99a5d733412d7b9f8e7ff692e6c27c2a</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setA</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a72d655870f183deb536d126fe161a3a6</anchor>
+      <arglist>(const Teuchos::RCP&lt; Matrix &gt; a)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setX</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ac36fe794be11b6d03547e71dd8f89ac4</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; x)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; Vector &gt;</type>
+      <name>getX</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aeee7773536622735fe0f2b3242521e05</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setB</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>afc887943fe97b8bbc16809606692ac0f</anchor>
+      <arglist>(const Teuchos::RCP&lt; const Vector &gt; b)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; const Vector &gt;</type>
+      <name>getB</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aeb10617c7d0feab6bfab5c8d4240ac9b</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>description</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a28df22e8d7ea6c53d4f38fe08c253b5b</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>describe</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9ffe894f7d3973a9081b43eb2cd3b974</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>printTiming</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a35f2e143409f7fcbf6e1b3c610f4a676</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getTiming</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a684fc9ecf86f1dc99462faa7aece791b</anchor>
+      <arglist>(Teuchos::ParameterList &amp;timingParameterList) const </arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>name</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aade60205a3b6ece6bdc76f5d1555184e</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>SolverCore</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a67e4c02187489d7c57c8f0621a003863</anchor>
+      <arglist>(Teuchos::RCP&lt; Matrix &gt; A, Teuchos::RCP&lt; Vector &gt; X, Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>~SolverCore</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a56fdd2b797e376c8572b8c51322812da</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>SolverCore</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a463a303468c55cf33364f5b759e2d60b</anchor>
+      <arglist>(const solver_type &amp;rhs)</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>operator=</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a1535500c05cddba86a0c915be4bc7c5a</anchor>
+      <arglist>(const solver_type *rhs)</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>preOrdering</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ace48a1882df1a866f7fba00e321d1abe</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>symbolicFactorization</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ab0602bd80f5ba358adf710423c013186</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>numericFactorization</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a00d8910072b4ff26abbb71e81ed30ef9</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>solve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a89ed4e401b4836bee75de516b6de12cd</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>solve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a7ab43f4fd19cb4f3e7b9c1068d78f381</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; const Vector &gt; B) const </arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>setParameters</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a2f812b0093f7491cf86574eb5f5d1117</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; const Teuchos::ParameterList &gt;</type>
+      <name>getValidParameters</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ac42d1a2b4c037065b2637c06b23b06bd</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a53d48aa613aca50ed957272aeeeb9485</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
+      <name>getNonconstParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a3bf21b207f1e9eb860fe326e3fb6dcbc</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
+      <name>unsetParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a4a62e2cbe4d173534302af0f93088a05</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a6b805f6cab10b90c0843f908e00e0344</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumSymbolicFact</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a559b355352ff76b91d7ce2cc94b6242e</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumNumericFact</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a32637ffd666f7af4726811eb7fdaa47a</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumSolve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a942a1be951a2bb725aef7039219e6381</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>preOrderingDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9f679ee04f9db29ac263dead626a6c76</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>symbolicFactorizationDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a3bb9fc2c4313ba09f8b74b3c190f1704</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>numericFactorizationDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a549a2117cc7b78842f55627be58cffe2</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; MatrixAdapter&lt; Matrix &gt; &gt;</type>
+      <name>matrixA_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a73862ad4870aaad942cf1d85910e035e</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; Vector &gt;</type>
+      <name>multiVecX_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a57e4fe1d6563e004f933a390d89f5d6f</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; const Vector &gt;</type>
+      <name>multiVecB_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a8948ea996ec300e9423b3c6977197b0b</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumRows_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a4f98ce6a877b2f6ece913c05adef6fc4</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumCols_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9c9458f37c6bfe6aa23be99213265ebf</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumNonZeros_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a1e824badc831fc6cd4627ea834b3782d</anchor>
+      <arglist></arglist>
     </member>
     <member kind="variable" protection="protected">
       <type>Status</type>
       <name>status_</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>af11f05d024e9c37fa9387b5836c71276</anchor>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>af688193f21876bb4a209738d2bfeae3e</anchor>
       <arglist></arglist>
     </member>
     <member kind="variable" protection="protected">
       <type>Control</type>
       <name>control_</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a46a42173e7c21b4031ee3ef3ea9f4f1b</anchor>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ae9cc6813b5540966424eaab3cd9b0e15</anchor>
       <arglist></arglist>
     </member>
     <member kind="variable" protection="protected">
       <type>Timers</type>
       <name>timers_</name>
-      <anchorfile>classAmesos_1_1SolverBase.html</anchorfile>
-      <anchor>a1302f29e30e851b8e49f7e31fecc246d</anchor>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aa6a15406034089ec343445003db0a276</anchor>
       <arglist></arglist>
     </member>
-  </compound>
-  <compound kind="class">
-    <name>Amesos::Status</name>
-    <filename>classAmesos_1_1Status.html</filename>
-    <member kind="function">
-      <type></type>
-      <name>Status</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a51538412eb92e6d45446aeebedc4b759</anchor>
-      <arglist>()</arglist>
-    </member>
-    <member kind="function">
-      <type></type>
-      <name>~Status</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a3eee9722ca2e2842ab241ea0cbd222b1</anchor>
-      <arglist>()</arglist>
-    </member>
-    <member kind="function">
+    <member kind="function" protection="private">
       <type>void</type>
-      <name>setStatusParameters</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a39f0957740f0a3c4593582fc5c78de29</anchor>
-      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+      <name>refreshA</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a73d94a5327526b05c8b6032d7dddfa44</anchor>
+      <arglist>()</arglist>
     </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>isSymbolicFactorizationOK_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>af7fb1a1b06f21fa4be545d9836054a55</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>isNumericFactorizationOK_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a4e57c5929434e9ae6b70a0abe0f7b8f7</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>printTiming_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>ae4657da0de9bdc85d2fd58e32bdaff6a</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>printStatus_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a798769c509bb24fff6f0dcecb1c18985</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>computeVectorNorms_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a3f20e6178c39fc8d78e14c298ccaf99b</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>bool</type>
-      <name>computeTrueResidual_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>ab76cbdd1e9fd6450d1c4b24ed452fa17</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>verbose_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a772cb52f6abf1478d0801277ec62224e</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>debug_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a25aa2c36772a8dc461e65c2bafd69d53</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>numSymbolicFact_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>ae064413bda0a278c5f8357c168ed7569</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>numNumericFact_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>ab0c902fe06985c57ac13d93fa7a5b5fd</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>numSolve_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a16e2ce49bae9a4b4b6ed00d1073b512b</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>double</type>
-      <name>threshold_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>ac378e7980b7f5ec5730619618ceadf38</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>myPID_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a39d0c7d93ba5cf45e65c9e34322d7453</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>numProcs_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>af6cb2a3628a3c39c542d23640cecd6b7</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>int</type>
-      <name>maxProcs_</name>
-      <anchorfile>classAmesos_1_1Status.html</anchorfile>
-      <anchor>a9b8bc8d20d06ef548dadec8e17ba2405</anchor>
+    <member kind="variable" protection="private">
+      <type>EPhase</type>
+      <name>last_phase_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a5083cf9c3b368b22f6ff42a996a9d93a</anchor>
       <arglist></arglist>
     </member>
   </compound>
@@ -1925,8 +2386,7 @@
     <filename>classAmesos_1_1Superlu.html</filename>
     <templarg></templarg>
     <templarg></templarg>
-    <base>Solver&lt; Amesos::Superlu, Matrix, Vector &gt;</base>
-    <class kind="struct">Amesos::Superlu::SLUData</class>
+    <base>Amesos::SolverCore</base>
     <member kind="typedef">
       <type>Superlu&lt; Matrix, Vector &gt;</type>
       <name>solver_type</name>
@@ -1949,39 +2409,130 @@
       <arglist></arglist>
     </member>
     <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::scalar_type</type>
+      <type>MatrixTraits&lt; matrix_type &gt;::scalar_t</type>
       <name>scalar_type</name>
       <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
-      <anchor>af65ded626bf17b4d4cd487ef2a1bea1f</anchor>
+      <anchor>a3c783b4c6b2fa475195be19cb7d7f089</anchor>
       <arglist></arglist>
     </member>
     <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::local_ordinal_type</type>
+      <type>TypeMap&lt; Amesos::Superlu, scalar_type &gt;::magnitude_type</type>
+      <name>magnitude_type</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a6ee3035b363c06389c316e0f1142c205</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; matrix_type &gt;::local_ordinal_t</type>
       <name>local_ordinal_type</name>
       <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
-      <anchor>a941e4aaaffe9f1723ed4fde6bdc2c69f</anchor>
+      <anchor>ac29c9c5d05b92e89b707913488c653dd</anchor>
       <arglist></arglist>
     </member>
     <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::global_ordinal_type</type>
+      <type>MatrixTraits&lt; matrix_type &gt;::global_ordinal_t</type>
       <name>global_ordinal_type</name>
       <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
-      <anchor>a1d14251a681067a0c3c2d1026b0dc680</anchor>
+      <anchor>ae29b80b4387cbc7b635efc6497b9d234</anchor>
       <arglist></arglist>
     </member>
     <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::global_size_type</type>
+      <type>MatrixAdapter&lt; matrix_type &gt;::global_size_t</type>
       <name>global_size_type</name>
       <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
-      <anchor>a945e25db97635c7121d1d1ce043da567</anchor>
+      <anchor>ad64bf151d92cc5867d2ad550016b5a26</anchor>
       <arglist></arglist>
     </member>
     <member kind="typedef">
-      <type>MatrixAdapter&lt; matrix_type &gt;::node_type</type>
-      <name>node_type</name>
-      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
-      <anchor>a1248fa9d913ed9dc0e79f5983619a4be</anchor>
+      <type>SolverCore&lt; ConcreteSolver, Matrix, Vector &gt;</type>
+      <name>type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a1e3660d3adce807015ae6b1490fedb16</anchor>
       <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Solver&lt; Matrix, Vector &gt;</type>
+      <name>super_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ae0a58e56723c5dd02253c8e7ea2b05fa</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>matrixShapeOK</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a99a5d733412d7b9f8e7ff692e6c27c2a</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setA</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a72d655870f183deb536d126fe161a3a6</anchor>
+      <arglist>(const Teuchos::RCP&lt; Matrix &gt; a)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setX</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ac36fe794be11b6d03547e71dd8f89ac4</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; x)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; Vector &gt;</type>
+      <name>getX</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aeee7773536622735fe0f2b3242521e05</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setB</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>afc887943fe97b8bbc16809606692ac0f</anchor>
+      <arglist>(const Teuchos::RCP&lt; const Vector &gt; b)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; const Vector &gt;</type>
+      <name>getB</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aeb10617c7d0feab6bfab5c8d4240ac9b</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>description</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a28df22e8d7ea6c53d4f38fe08c253b5b</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>describe</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9ffe894f7d3973a9081b43eb2cd3b974</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>printTiming</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a35f2e143409f7fcbf6e1b3c610f4a676</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getTiming</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a684fc9ecf86f1dc99462faa7aece791b</anchor>
+      <arglist>(Teuchos::ParameterList &amp;timingParameterList) const </arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>name</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aade60205a3b6ece6bdc76f5d1555184e</anchor>
+      <arglist>() const </arglist>
     </member>
     <member kind="function">
       <type></type>
@@ -1997,6 +2548,104 @@
       <anchor>ad58105d7f8f4c2a25aff0a97dd4a74b5</anchor>
       <arglist>()</arglist>
     </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>preOrdering</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ace48a1882df1a866f7fba00e321d1abe</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>symbolicFactorization</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ab0602bd80f5ba358adf710423c013186</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>numericFactorization</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a00d8910072b4ff26abbb71e81ed30ef9</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>solve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a89ed4e401b4836bee75de516b6de12cd</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>solve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a7ab43f4fd19cb4f3e7b9c1068d78f381</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; const Vector &gt; B) const </arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>setParameters</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a2f812b0093f7491cf86574eb5f5d1117</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; const Teuchos::ParameterList &gt;</type>
+      <name>getValidParameters</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ac42d1a2b4c037065b2637c06b23b06bd</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a53d48aa613aca50ed957272aeeeb9485</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
+      <name>getNonconstParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a3bf21b207f1e9eb860fe326e3fb6dcbc</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
+      <name>unsetParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a4a62e2cbe4d173534302af0f93088a05</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a6b805f6cab10b90c0843f908e00e0344</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumSymbolicFact</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a559b355352ff76b91d7ce2cc94b6242e</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumNumericFact</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a32637ffd666f7af4726811eb7fdaa47a</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumSolve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a942a1be951a2bb725aef7039219e6381</anchor>
+      <arglist>() const </arglist>
+    </member>
     <member kind="variable" static="yes">
       <type>static const char *</type>
       <name>name</name>
@@ -2004,14 +2653,209 @@
       <anchor>add86bcb019c5e5957ac99a62ac9dfa0f</anchor>
       <arglist></arglist>
     </member>
-    <member kind="friend">
-      <type>friend class</type>
-      <name>Solver&lt; Amesos::Superlu, Matrix, Vector &gt;</name>
-      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
-      <anchor>a6279b4296c6bdd3c6ec865267547aaa8</anchor>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>preOrderingDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9f679ee04f9db29ac263dead626a6c76</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>symbolicFactorizationDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a3bb9fc2c4313ba09f8b74b3c190f1704</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>numericFactorizationDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a549a2117cc7b78842f55627be58cffe2</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; MatrixAdapter&lt; Matrix &gt; &gt;</type>
+      <name>matrixA_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a73862ad4870aaad942cf1d85910e035e</anchor>
       <arglist></arglist>
     </member>
-    <docanchor file="classAmesos_1_1Superlu">slu_options</docanchor>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; Vector &gt;</type>
+      <name>multiVecX_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a57e4fe1d6563e004f933a390d89f5d6f</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; const Vector &gt;</type>
+      <name>multiVecB_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a8948ea996ec300e9423b3c6977197b0b</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumRows_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a4f98ce6a877b2f6ece913c05adef6fc4</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumCols_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9c9458f37c6bfe6aa23be99213265ebf</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumNonZeros_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a1e824badc831fc6cd4627ea834b3782d</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Status</type>
+      <name>status_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>af688193f21876bb4a209738d2bfeae3e</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Control</type>
+      <name>control_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ae9cc6813b5540966424eaab3cd9b0e15</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Timers</type>
+      <name>timers_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aa6a15406034089ec343445003db0a276</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>preOrdering_impl</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a216162041a294344d6f63e6b9143c93b</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>symbolicFactorization_impl</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>ae9de591b55f71ee19ae74af52020384d</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>numericFactorization_impl</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a145e984feb3a8dcaed65abf2bb021f6d</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>solve_impl</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a1b299a6e81b41b54969392f773e0a9e8</anchor>
+      <arglist>(const Teuchos::Ptr&lt; MultiVecAdapter&lt; Vector &gt; &gt; X, const Teuchos::Ptr&lt; MultiVecAdapter&lt; Vector &gt; &gt; B) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>bool</type>
+      <name>matrixShapeOK_impl</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a611ac3d50741005c3c737e24b0107944</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>setParameters_impl</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a3958e48e255671b7f2a717538d1ddfe5</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>Teuchos::RCP&lt; const Teuchos::ParameterList &gt;</type>
+      <name>getValidParameters_impl</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a18651c0b1cbc0de69074de8545132547</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>struct Amesos::Superlu::SLUData</type>
+      <name>data_</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a7f69e41669b5b6124e721ec3b33acc32</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; typename TypeMap&lt; Amesos::Superlu, scalar_type &gt;::type &gt;</type>
+      <name>nzvals_</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>abf2abc87874f9d312a9b7fb184e10857</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; int &gt;</type>
+      <name>rowind_</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a344e8a3fb495f6b01b096fa1e9e3189c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; int &gt;</type>
+      <name>colptr_</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>af6954a800f57d694d9eed245ce7b3cfc</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; typename TypeMap&lt; Amesos::Superlu, scalar_type &gt;::type &gt;</type>
+      <name>xvals_</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>ad5c2edfa805189416a8abe33bed72f70</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>int</type>
+      <name>ldx_</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a6329763e564cc4f037a141fe13b82884</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; typename TypeMap&lt; Amesos::Superlu, scalar_type &gt;::type &gt;</type>
+      <name>bvals_</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>af9ed7ae4329d7e28f23d76e806fefc65</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>int</type>
+      <name>ldb_</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>ae70d0f73b6cb97f2bb7a73676d19dfb7</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>bool</type>
+      <name>factorizationDone_</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a6c046eab00755a4fc5853aedb153a338</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>SolverCore&lt; Amesos::Superlu, Matrix, Vector &gt;</name>
+      <anchorfile>classAmesos_1_1Superlu.html</anchorfile>
+      <anchor>a15859bd317c4ce5564416b53b3d05b7d</anchor>
+      <arglist></arglist>
+    </member>
   </compound>
   <compound kind="struct">
     <name>Amesos::FunctionMap&lt; Superlu, Scalar &gt;</name>
@@ -2053,293 +2897,1326 @@
       <arglist>(SLU::SuperMatrix *X, int numrows, int numcols, typename TypeMap&lt; Superlu, Scalar &gt;::type *x, int ldx, SLU::Stype_t storage_t, SLU::Dtype_t data_t, SLU::Mtype_t mat_t)</arglist>
     </member>
   </compound>
-  <compound kind="struct">
-    <name>Amesos::MatrixHelper&lt; Superlu &gt;</name>
-    <filename>structAmesos_1_1MatrixHelper_3_01Superlu_01_4.html</filename>
-    <member kind="function" static="yes">
-      <type>static void</type>
-      <name>createCRSMatrix</name>
-      <anchorfile>structAmesos_1_1MatrixHelper_3_01Superlu_01_4.html</anchorfile>
-      <anchor>a32ac598e9870a94e16d3873cc8c266e7</anchor>
-      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; &amp;mat, const Teuchos::ArrayView&lt; typename TypeMap&lt; Superlu, typename Matrix::scalar_type &gt;::type &gt; &amp;nzval, const Teuchos::ArrayView&lt; int &gt; &amp;colind, const Teuchos::ArrayView&lt; int &gt; &amp;rowptr, const Teuchos::Ptr&lt; SLU::SuperMatrix &gt; &amp;A, Teuchos::Time &amp;mtxRedistTime)</arglist>
-    </member>
-    <member kind="function" static="yes">
-      <type>static void</type>
-      <name>createMVDenseMatrix</name>
-      <anchorfile>structAmesos_1_1MatrixHelper_3_01Superlu_01_4.html</anchorfile>
-      <anchor>a2a46c0a2e27d2386aa51355e5d7a77f6</anchor>
-      <arglist>(const Teuchos::Ptr&lt; MV &gt; &amp;mv, const Teuchos::ArrayView&lt; typename TypeMap&lt; Superlu, typename MV::scalar_type &gt;::type &gt; &amp;vals, int &amp;ldx, const Teuchos::Ptr&lt; SLU::SuperMatrix &gt; &amp;X, Teuchos::Time &amp;vecRedistTime)</arglist>
-    </member>
-    <member kind="function" static="yes">
-      <type>static Teuchos::ArrayRCP&lt; typename TypeMap&lt; Superlu, typename MV::scalar_type &gt;::type &gt;</type>
-      <name>createMVDenseMatrix</name>
-      <anchorfile>structAmesos_1_1MatrixHelper_3_01Superlu_01_4.html</anchorfile>
-      <anchor>ae267293c199f0dcdabe72305be1a54c8</anchor>
-      <arglist>(const Teuchos::Ptr&lt; MV &gt; &amp;mv, const Teuchos::Ptr&lt; SLU::SuperMatrix &gt; &amp;X, Teuchos::Time &amp;vecRedistTime)</arglist>
-    </member>
-  </compound>
-  <compound kind="struct">
-    <name>Amesos::Timers</name>
-    <filename>structAmesos_1_1Timers.html</filename>
-    <member kind="variable">
-      <type>Time</type>
-      <name>mtxRedistTime_</name>
-      <anchorfile>structAmesos_1_1Timers.html</anchorfile>
-      <anchor>a726080e443514039e42d1a901a43fe81</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>Time</type>
-      <name>mtxConvTime_</name>
-      <anchorfile>structAmesos_1_1Timers.html</anchorfile>
-      <anchor>a599c37c0617632bd566b1dc23456ac37</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>Time</type>
-      <name>vecRedistTime_</name>
-      <anchorfile>structAmesos_1_1Timers.html</anchorfile>
-      <anchor>a2e33720b499b39b700d85fc33b670796</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>Time</type>
-      <name>vecConvTime_</name>
-      <anchorfile>structAmesos_1_1Timers.html</anchorfile>
-      <anchor>a0bc2a5b234cdd885ae1e72ff27b5d4b6</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>Time</type>
-      <name>symFactTime_</name>
-      <anchorfile>structAmesos_1_1Timers.html</anchorfile>
-      <anchor>af31ffea43342f878dc18a2862e9bcd3b</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>Time</type>
-      <name>numFactTime_</name>
-      <anchorfile>structAmesos_1_1Timers.html</anchorfile>
-      <anchor>a4334f4130dda9c29875e3994b203e26b</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>Time</type>
-      <name>solveTime_</name>
-      <anchorfile>structAmesos_1_1Timers.html</anchorfile>
-      <anchor>ad6931b2b5e2e2c63d6fff59b48b56835</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable">
-      <type>Time</type>
-      <name>totalTime_</name>
-      <anchorfile>structAmesos_1_1Timers.html</anchorfile>
-      <anchor>a5a9573d3173ba142598f660c924f92c0</anchor>
-      <arglist></arglist>
-    </member>
-  </compound>
   <compound kind="class">
-    <name>Amesos::MatrixAdapter&lt; Tpetra::CrsMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps &gt; &gt;</name>
-    <filename>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</filename>
+    <name>Amesos::Superludist</name>
+    <filename>classAmesos_1_1Superludist.html</filename>
     <templarg></templarg>
     <templarg></templarg>
-    <templarg></templarg>
-    <templarg></templarg>
-    <templarg></templarg>
+    <base>SolverCore&lt; Amesos::Superludist, Matrix, Vector &gt;</base>
     <member kind="typedef">
-      <type>Scalar</type>
-      <name>scalar_type</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a6c05904e4799c8cb8bc899661ee62fc8</anchor>
+      <type>Superludist&lt; Matrix, Vector &gt;</type>
+      <name>solver_type</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a7f5aed1a08636edf84dc16e15ab0c2c8</anchor>
       <arglist></arglist>
     </member>
     <member kind="typedef">
-      <type>LocalOrdinal</type>
-      <name>local_ordinal_type</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>ae41474c77d4d1fe26e6faa39cd71b523</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>GlobalOrdinal</type>
-      <name>global_ordinal_type</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a735c6826a153ce6790a691406cf455bd</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>Node</type>
-      <name>node_type</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a605b60d7e773ec4234fd8fb9ee2b18c5</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>Tpetra::global_size_t</type>
-      <name>global_size_type</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a387f70fa60dc7789be1bfdb5462211b8</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>Tpetra::CrsMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps &gt;</type>
+      <type>Matrix</type>
       <name>matrix_type</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a1fe3cc39c5d0224db25e52e2db1d6342</anchor>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>aa58959fecaa9d94ef3b92b461f9fb8da</anchor>
       <arglist></arglist>
     </member>
-    <member kind="function">
-      <type></type>
-      <name>MatrixAdapter</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a1575d6be5b22a92bc1378b176b1258e6</anchor>
-      <arglist>(const MatrixAdapter&lt; matrix_type &gt; &amp;adapter)</arglist>
+    <member kind="typedef">
+      <type>Vector</type>
+      <name>vector_type</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a7a7d9ad803ffea25096d7086569fb23c</anchor>
+      <arglist></arglist>
     </member>
-    <member kind="function">
-      <type></type>
-      <name>MatrixAdapter</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>ab0bc96acb9bd4906d947ef145457609b</anchor>
-      <arglist>(const Teuchos::RCP&lt; matrix_type &gt; &amp;m)</arglist>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; matrix_type &gt;::scalar_t</type>
+      <name>scalar_type</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a23619367c18783cea452050a2803fce5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; matrix_type &gt;::local_ordinal_t</type>
+      <name>local_ordinal_type</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a2b413cd40b4972b1c65658b45ba43bce</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; matrix_type &gt;::global_ordinal_t</type>
+      <name>global_ordinal_type</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a00f0b854066259fb29419340206667bf</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; matrix_type &gt;::node_t</type>
+      <name>node_type</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a76874516d072c886b799d178f31f1339</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixAdapter&lt; matrix_type &gt;::global_size_t</type>
+      <name>global_size_type</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a7d6f804b00253f990930569eb3df4330</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>TypeMap&lt; Amesos::Superludist, scalar_type &gt;::type</type>
+      <name>slu_dist_type</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>ab1b9cae603a405e96183b9cc18d2037b</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>FunctionMap&lt; Amesos::Superludist, scalar_type &gt;</type>
+      <name>function_map</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a2bcc44a82bb705e9dd126be6261e8e13</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixHelper&lt; Amesos::Superludist &gt;</type>
+      <name>matrix_helper</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a813b421329df18c05edf15f0b06d3f47</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>SolverCore&lt; Amesos::Superludist, Matrix, Vector &gt;</type>
+      <name>type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a1e3660d3adce807015ae6b1490fedb16</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Solver&lt; Matrix, Vector &gt;</type>
+      <name>super_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ae0a58e56723c5dd02253c8e7ea2b05fa</anchor>
+      <arglist></arglist>
     </member>
     <member kind="function">
       <type>bool</type>
-      <name>isLocal</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a6b777319a194bb9c286faa8dfa45222b</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>const Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
-      <name>getComm</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>af0a3c2f09c6d60cd2c0c1cbdaf629dba</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>size_t</type>
-      <name>getLocalNumRows</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a97687edecffa9797cb3743fb2ba8c90c</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>size_t</type>
-      <name>getLocalNumCols</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a84735c07e019f2c3f037e75f7f3a7a3d</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>global_size_type</type>
-      <name>getGlobalNumRows</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>aa9eb907c38cc67ce3e9904d4560d468c</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>global_size_type</type>
-      <name>getGlobalNumCols</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a4f31d7d1d76f98e01f1291dad447fe37</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>size_t</type>
-      <name>getLocalNNZ</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>af421a3db432ae7f7c26c5ba5d7d8e860</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>global_size_type</type>
-      <name>getGlobalNNZ</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>ab2f54a8247f0738853de5b51b3b1fa3a</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>size_t</type>
-      <name>getMaxNNZ</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a7f445699d59ac940834d706455df1420</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>Teuchos::RCP&lt; const Tpetra::Map&lt; LocalOrdinal, GlobalOrdinal, Node &gt; &gt;</type>
-      <name>getRowMap</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a1387d342dcfd6784203d8a67f612522a</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>Teuchos::RCP&lt; const Tpetra::Map&lt; LocalOrdinal, GlobalOrdinal, Node &gt; &gt;</type>
-      <name>getColMap</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>abbd91e2574b7badad890ec3446a28d20</anchor>
-      <arglist>() const </arglist>
+      <name>matrixShapeOK</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a99a5d733412d7b9f8e7ff692e6c27c2a</anchor>
+      <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>void</type>
-      <name>getCrs</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>aa8d2ee58bf12f71946c930583015a258</anchor>
-      <arglist>(const Teuchos::ArrayView&lt; Scalar &gt; nzval, const Teuchos::ArrayView&lt; GlobalOrdinal &gt; colind, const Teuchos::ArrayView&lt; global_size_type &gt; rowptr, size_t &amp;nnz, bool local=false, int root=0)</arglist>
+      <name>setA</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a72d655870f183deb536d126fe161a3a6</anchor>
+      <arglist>(const Teuchos::RCP&lt; Matrix &gt; a)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
-      <name>getCcs</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a6d4e1c9abc52ba1f93e6fa9186be30ca</anchor>
-      <arglist>(const Teuchos::ArrayView&lt; Scalar &gt; nzval, const Teuchos::ArrayView&lt; GlobalOrdinal &gt; rowind, const Teuchos::ArrayView&lt; global_size_type &gt; colptr, size_t &amp;nnz, bool local=false, int root=0)</arglist>
+      <name>setX</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ac36fe794be11b6d03547e71dd8f89ac4</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; x)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; Vector &gt;</type>
+      <name>getX</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aeee7773536622735fe0f2b3242521e05</anchor>
+      <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>void</type>
-      <name>getCrsAll</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>ae36b1819cf3c885e2df4dca034c0b8ca</anchor>
-      <arglist>(const Teuchos::ArrayView&lt; Scalar &gt; nzval, const Teuchos::ArrayView&lt; GlobalOrdinal &gt; colind, const Teuchos::ArrayView&lt; global_size_type &gt; rowptr, size_t &amp;nnz, int root=0)</arglist>
+      <name>setB</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>afc887943fe97b8bbc16809606692ac0f</anchor>
+      <arglist>(const Teuchos::RCP&lt; const Vector &gt; b)</arglist>
     </member>
     <member kind="function">
-      <type>void</type>
-      <name>getCcsAll</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a053da092e3cb8f8a5ebd7ccc7d7d1e3e</anchor>
-      <arglist>(const Teuchos::ArrayView&lt; Scalar &gt; nzval, const Teuchos::ArrayView&lt; GlobalOrdinal &gt; rowind, const Teuchos::ArrayView&lt; global_size_type &gt; colptr, size_t &amp;nnz, int root=0)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>updateValuesCrs</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a96d00bd077e2cdf7e5a73aa792879729</anchor>
-      <arglist>(const Teuchos::ArrayView&lt; Scalar &gt; nzval, const Teuchos::ArrayView&lt; GlobalOrdinal &gt; colind, const Teuchos::ArrayView&lt; global_size_type &gt; rowptr)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>updateValuesCcs</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>ab0421280c0b8c461621b70bfa8d49df7</anchor>
-      <arglist>(const Teuchos::ArrayView&lt; Scalar &gt; nzval, const Teuchos::ArrayView&lt; GlobalOrdinal &gt; rowind, const Teuchos::ArrayView&lt; global_size_type &gt; colptr)</arglist>
+      <type>const Teuchos::RCP&lt; const Vector &gt;</type>
+      <name>getB</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aeb10617c7d0feab6bfab5c8d4240ac9b</anchor>
+      <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>std::string</type>
       <name>description</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a6b131cbea4714814f74b5e0115863418</anchor>
-      <arglist>() const </arglist>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a28df22e8d7ea6c53d4f38fe08c253b5b</anchor>
+      <arglist>() const</arglist>
     </member>
     <member kind="function">
       <type>void</type>
       <name>describe</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a5a92b8a7f04500082293245fe0d3a381</anchor>
-      <arglist>(Teuchos::FancyOStream &amp;os, const Teuchos::EVerbosityLevel verbLevel) const </arglist>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9ffe894f7d3973a9081b43eb2cd3b974</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>printTiming</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a35f2e143409f7fcbf6e1b3c610f4a676</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getTiming</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a684fc9ecf86f1dc99462faa7aece791b</anchor>
+      <arglist>(Teuchos::ParameterList &amp;timingParameterList) const</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>name</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aade60205a3b6ece6bdc76f5d1555184e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>Superludist</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a73ffe10366949086d5c43e9cdebd1915</anchor>
+      <arglist>(Teuchos::RCP&lt; Matrix &gt; A, Teuchos::RCP&lt; Vector &gt; X, Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>~Superludist</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a8a5b2d3aeb58029d97f7ca548de36cf7</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>preOrdering</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ace48a1882df1a866f7fba00e321d1abe</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>symbolicFactorization</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ab0602bd80f5ba358adf710423c013186</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>numericFactorization</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a00d8910072b4ff26abbb71e81ed30ef9</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>solve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a89ed4e401b4836bee75de516b6de12cd</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>solve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a7ab43f4fd19cb4f3e7b9c1068d78f381</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; const Vector &gt; B) const</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>setParameters</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a2f812b0093f7491cf86574eb5f5d1117</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; const Teuchos::ParameterList &gt;</type>
+      <name>getValidParameters</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ac42d1a2b4c037065b2637c06b23b06bd</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a53d48aa613aca50ed957272aeeeb9485</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
+      <name>getNonconstParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a3bf21b207f1e9eb860fe326e3fb6dcbc</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
+      <name>unsetParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a4a62e2cbe4d173534302af0f93088a05</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a6b805f6cab10b90c0843f908e00e0344</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumSymbolicFact</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a559b355352ff76b91d7ce2cc94b6242e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumNumericFact</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a32637ffd666f7af4726811eb7fdaa47a</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumSolve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a942a1be951a2bb725aef7039219e6381</anchor>
+      <arglist>() const</arglist>
     </member>
     <member kind="variable" static="yes">
       <type>static const char *</type>
       <name>name</name>
-      <anchorfile>classAmesos_1_1MatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdfc7dbcdc90eb6ed6de42f13cddb16630.html</anchorfile>
-      <anchor>a7a6bfd4a3fb36e8f62866f64f469320b</anchor>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>ae66e66d962f94727d9b7545d8fe7daa8</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>preOrderingDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9f679ee04f9db29ac263dead626a6c76</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>symbolicFactorizationDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a3bb9fc2c4313ba09f8b74b3c190f1704</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>numericFactorizationDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a549a2117cc7b78842f55627be58cffe2</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; MatrixAdapter&lt; Matrix &gt; &gt;</type>
+      <name>matrixA_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a73862ad4870aaad942cf1d85910e035e</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; Vector &gt;</type>
+      <name>multiVecX_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a57e4fe1d6563e004f933a390d89f5d6f</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; const Vector &gt;</type>
+      <name>multiVecB_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a8948ea996ec300e9423b3c6977197b0b</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumRows_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a4f98ce6a877b2f6ece913c05adef6fc4</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumCols_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9c9458f37c6bfe6aa23be99213265ebf</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumNonZeros_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a1e824badc831fc6cd4627ea834b3782d</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Status</type>
+      <name>status_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>af688193f21876bb4a209738d2bfeae3e</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Control</type>
+      <name>control_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ae9cc6813b5540966424eaab3cd9b0e15</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Timers</type>
+      <name>timers_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aa6a15406034089ec343445003db0a276</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef" protection="private">
+      <type>TypeMap&lt; Amesos::Superludist, scalar_type &gt;::magnitude_type</type>
+      <name>magnitude_type</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a567ca0120342e36a673d9523a4bbb693</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>preOrdering_impl</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>acb7c22de662b13e6e242c7a5c37fb5c4</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>symbolicFactorization_impl</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a5978f915f8569b0814d6659d7b89d6d0</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>numericFactorization_impl</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>aaaf3f59d1f6ffdee5ec098c5215083fc</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>solve_impl</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>abfdfba9fc1c9caa1df8c383c608bda21</anchor>
+      <arglist>(const Teuchos::Ptr&lt; MultiVecAdapter&lt; Vector &gt; &gt; X, const Teuchos::Ptr&lt; const MultiVecAdapter&lt; Vector &gt; &gt; B)</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>bool</type>
+      <name>matrixShapeOK_impl</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>ab823edbb4ad2c26ec6e754ed46c63123</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>setParameters_impl</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a7ba4b666a671e960a84ac5ba20aede3e</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>Teuchos::RCP&lt; const Teuchos::ParameterList &gt;</type>
+      <name>getValidParameters_impl</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>aba72ca535646011f0b96b9a36da6b40b</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>get_default_grid_size</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>ab566386bc63131028e72ce0433633653</anchor>
+      <arglist>(int nprocs, SLUD::int_t &amp;nprow, SLUD::int_t &amp;npcol) const </arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>struct Amesos::Superludist::SLUData</type>
+      <name>data_</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a125b8b0589514cbe241c687ae75f5e65</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; slu_dist_type &gt;</type>
+      <name>nzvals_</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>af65d767b320e2ad7468c588b2ead7dc6</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; int &gt;</type>
+      <name>rowind_</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>ad9aece372dd1be6810e89cda107c43cb</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; int &gt;</type>
+      <name>colptr_</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a6a04ff115f1171ee0e52d534f09f679a</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; slu_dist_type &gt;</type>
+      <name>bxvals_</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a77d1730ec10baccaa1490f18748978d8</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>size_t</type>
+      <name>ldbx_</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a3cfb3f69390a04b6d0eab8bf136a3f32</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>bool</type>
+      <name>in_grid</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>a6f15074ad903d84e03fede9009c150bf</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; const Tpetra::Map&lt; local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>superlu_rowmap_</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>ad85e9237d848f421be6b7e82eafe4df5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; const MatrixAdapter&lt; matrix_type &gt; &gt;</type>
+      <name>redist_A_</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>ae78230a30d9ad8d2f2d94a42af50bfbd</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>SolverCore&lt; Amesos::Superludist, Matrix, Vector &gt;</name>
+      <anchorfile>classAmesos_1_1Superludist.html</anchorfile>
+      <anchor>ad28e9f9b31e39feeb0c58d15d7fdf934</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a415501e885f7e753298fa2cf61793932</anchor>
+      <arglist>(Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a479b23341a0b171d241cffc87a92bcf0</anchor>
+      <arglist>(Teuchos::RCP&lt; Matrix &gt; A, Teuchos::RCP&lt; Vector &gt; X, Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>ad8aa0892d3a641a41d18884185d31ab6</anchor>
+      <arglist>(const char *solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a53132a9d360914a443142b7101294a07</anchor>
+      <arglist>(const char *solverName, const Teuchos::RCP&lt; Matrix &gt; A, const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>abb8acb7cceac1ce640a41dd05cc6024b</anchor>
+      <arglist>(const std::string solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>aea67ca5c343fc0f248abb8bd59423098</anchor>
+      <arglist>(const std::string solverName, const Teuchos::RCP&lt; Matrix &gt; A, const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>ab239b521c543b7cbed4f8823bb84c23f</anchor>
+      <arglist>(const std::string solverName, Matrix *A)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>afed8390a758da6367f4f28c1602df807</anchor>
+      <arglist>(const std::string solverName, const Teuchos::RCP&lt; Matrix &gt; A)</arglist>
+    </member>
+    <docanchor file="classAmesos_1_1Superludist">slu_dist_options</docanchor>
+  </compound>
+  <compound kind="struct">
+    <name>Amesos::FunctionMap&lt; Superludist, Scalar &gt;</name>
+    <filename>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</filename>
+    <templarg></templarg>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>distribute</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a284a45002dfa75d1f661f12d9b4c9ca6</anchor>
+      <arglist>(SLUD::fact_t fact, SLUD::int_t n, SLUD::SuperMatrix *A, SLUD::Glu_freeable_t *glu_freeable, SLUD::LUstruct_t *lu, SLUD::gridinfo_t *grid)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>distribute_loc</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a7a40ff3df17d75ca1ed340c0fecb3a8d</anchor>
+      <arglist>(SLUD::fact_t fact, SLUD::int_t n, SLUD::SuperMatrix *A, SLUD::ScalePermstruct *scale_perm, SLUD::Glu_freeable_t *glu_freeable, SLUD::LUstruct_t *lu, SLUD::gridinfo_t *grid)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gstrf</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>ad56c74fa9d61e2daf669d37a0c97f296</anchor>
+      <arglist>(SLUD::superlu_options_t *options, int m, int n, double anorm, SLUD::LUstruct_t *LU, SLUD::gridinfo_t *grid, SLUD::SuperLUStat_t *stat, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gstrs</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>ac5753c3badcadb36650415b9bbaffcba</anchor>
+      <arglist>(SLUD::int_t n, SLUD::LUStruct_t *lu_struct, SLUD::ScalePermstruct_t *scale_perm_struct, SLUD::gridinfo_t *grid, typename TypeMap&lt; Superludist, Scalar &gt;::type *B, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, SLUD::int_t ldb, int nrhs, SLUD::SOLVEstruct_t *solve_struct, SLUD::SuperLUStat_t *stat, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gstrs_Bglobal</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>ae80c40d0739b064e0f2247d64ff8d39c</anchor>
+      <arglist>(SLUD::int_t n, SLUD::LUStruct_t *lu_struct, SLUD::gridinfo_t *grid, typename TypeMap&lt; Superludist, Scalar &gt;::type *B, SLUD::int_t ldb, int nrhs, SLUD::SuperLUStat_t *stat, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gsrfs</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a9e606dbd27896d8cb852998d97450428</anchor>
+      <arglist>(SLUD::int_t n, SLUD::SuperMatrix *A, double anorm, SLUD::LUStruct_t *lu_struct, SLUD::ScalePermstruct_t *scale_perm, SLUD::gridinfo_t *grid, typename TypeMap&lt; Superludist, Scalar &gt;::type *B, SLUD::int_t ldb, typename TypeMap&lt; Superludist, Scalar &gt;::type *X, SLUD::int_t ldx, int nrhs, SLUD::SOLVEstruct_t *solve_struct, double *berr, SLUD::SuperLUStat_t *stat, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gsrfs_AXBglobal</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a59b20565434519ba1db6deb29a8918b2</anchor>
+      <arglist>(SLUD::int_t n, SLUD::SuperMatrix *A, double anorm, SLUD::LUStruct_t *lu_struct, SLUD::gridinfo_t *grid, typename TypeMap&lt; Superludist, Scalar &gt;::type *B, SLUD::int_t ldb, typename TypeMap&lt; Superludist, Scalar &gt;::type *X, SLUD::int_t ldx, int nrhs, double *berr, SLUD::SuperLUStat_t *stat, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>create_CompRowLoc_Matrix</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>aae20f0ea68db2609325f8f428decb886</anchor>
+      <arglist>(SLUD::SuperMatrix *A, SLUD::int_t g_numrows, SLUD::int_t g_numcols, SLUD::int_t l_nnz, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, typename TypeMap&lt; Superludist, Scalar &gt;::type *nzval, SLUD::int_t *colind, SLUD::int_t *rowptr, SLUD::Stype_t storage_t, SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>create_CompCol_Matrix</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>ae9bb33c0c534f0f1b4a8f02255f8e5e3</anchor>
+      <arglist>(SLUD::SuperMatrix *A, SLUD::int_t numrows, SLUD::int_t numcols, SLUD::int_t nnz, typename TypeMap&lt; Superludist, Scalar &gt;::type *nzval, SLUD::int_t *rowind, SLUD::int_t *colptr, SLUD::Stype_t storage_t, SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>create_Dense_Matrix</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a7e9d06ffd32c4adbae9edd4d3e56c0ab</anchor>
+      <arglist>(SLUD::SuperMatrix *X, int numrows, int numcols, typename TypeMap&lt; Superludist, Scalar &gt;::type *x, int ldx, SLUD::Stype_t storage_t, SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gsequ_loc</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a6d78858eb9678637cd4f974cedcbb062</anchor>
+      <arglist>(SLUD::SuperMatrix *A, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *r, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *c, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *rowcnd, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *colcnd, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *amax, int *info, SLUD::gridinfo_t *grid)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gsequ</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a8cd73c22f4aeadb5a780e92957ee50f9</anchor>
+      <arglist>(SLUD::SuperMatrix *A, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *r, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *c, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *rowcnd, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *colcnd, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *amax, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>laqgs_loc</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>abb5a24d6025950e15cf5b2239a097a59</anchor>
+      <arglist>(SLUD::SuperMatrix *A, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *r, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *c, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type rowcnd, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type colcnd, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type amax, SLUD::DiagScale_t *equed)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>laqgs_loc</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superludist_00_01Scalar_01_4.html</anchorfile>
+      <anchor>abb5a24d6025950e15cf5b2239a097a59</anchor>
+      <arglist>(SLUD::SuperMatrix *A, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *r, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type *c, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type rowcnd, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type colcnd, typename TypeMap&lt; Superludist, Scalar &gt;::magnitude_type amax, SLUD::DiagScale_t *equed)</arglist>
+    </member>
+  </compound>
+  <compound kind="class">
+    <name>Amesos::Superlumt</name>
+    <filename>classAmesos_1_1Superlumt.html</filename>
+    <templarg></templarg>
+    <templarg></templarg>
+    <base>SolverCore&lt; Amesos::Superlumt, Matrix, Vector &gt;</base>
+    <member kind="typedef">
+      <type>Superlumt&lt; Matrix, Vector &gt;</type>
+      <name>solver_type</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>aa72d6585621e28544c189ce66fcd08d8</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Matrix</type>
+      <name>matrix_type</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a765b2daf180a22faae9bf9ea75da1281</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Vector</type>
+      <name>vector_type</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a447270e7a37e14e72e32529f8dbd6d05</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; matrix_type &gt;::scalar_t</type>
+      <name>scalar_type</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a66f90d82aa46d1d563dc7e83fa710265</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; matrix_type &gt;::local_ordinal_t</type>
+      <name>local_ordinal_type</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>ad6e7c39c3b37e2b484d83c62d992720f</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; matrix_type &gt;::global_ordinal_t</type>
+      <name>global_ordinal_type</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>aa89f626d1e8afa7d7800c9bbbecba712</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixTraits&lt; matrix_type &gt;::node_t</type>
+      <name>node_type</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a9cb38937dd1d8a394ff7d97076279b99</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>MatrixAdapter&lt; matrix_type &gt;::global_size_t</type>
+      <name>global_size_type</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>ad7d60fbebe2ad63bf59ed36f9edfe6c3</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>SolverCore&lt; Amesos::Superlumt, Matrix, Vector &gt;</type>
+      <name>type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a1e3660d3adce807015ae6b1490fedb16</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Solver&lt; Matrix, Vector &gt;</type>
+      <name>super_type</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ae0a58e56723c5dd02253c8e7ea2b05fa</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>matrixShapeOK</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a99a5d733412d7b9f8e7ff692e6c27c2a</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setA</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a72d655870f183deb536d126fe161a3a6</anchor>
+      <arglist>(const Teuchos::RCP&lt; Matrix &gt; a)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setX</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ac36fe794be11b6d03547e71dd8f89ac4</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; x)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; Vector &gt;</type>
+      <name>getX</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aeee7773536622735fe0f2b3242521e05</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setB</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>afc887943fe97b8bbc16809606692ac0f</anchor>
+      <arglist>(const Teuchos::RCP&lt; const Vector &gt; b)</arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; const Vector &gt;</type>
+      <name>getB</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aeb10617c7d0feab6bfab5c8d4240ac9b</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>description</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a28df22e8d7ea6c53d4f38fe08c253b5b</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>describe</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9ffe894f7d3973a9081b43eb2cd3b974</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>printTiming</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a35f2e143409f7fcbf6e1b3c610f4a676</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getTiming</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a684fc9ecf86f1dc99462faa7aece791b</anchor>
+      <arglist>(Teuchos::ParameterList &amp;timingParameterList) const</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>name</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aade60205a3b6ece6bdc76f5d1555184e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>Superlumt</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a8287f6cf7afd882cdc56ef879c9c19ad</anchor>
+      <arglist>(Teuchos::RCP&lt; Matrix &gt; A, Teuchos::RCP&lt; Vector &gt; X, Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>~Superlumt</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>aef7a5948be3ad71804402c1c5cb0e46e</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>preOrdering</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ace48a1882df1a866f7fba00e321d1abe</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>symbolicFactorization</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ab0602bd80f5ba358adf710423c013186</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>numericFactorization</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a00d8910072b4ff26abbb71e81ed30ef9</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>solve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a89ed4e401b4836bee75de516b6de12cd</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>solve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a7ab43f4fd19cb4f3e7b9c1068d78f381</anchor>
+      <arglist>(const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; const Vector &gt; B) const</arglist>
+    </member>
+    <member kind="function">
+      <type>super_type &amp;</type>
+      <name>setParameters</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a2f812b0093f7491cf86574eb5f5d1117</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; const Teuchos::ParameterList &gt;</type>
+      <name>getValidParameters</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ac42d1a2b4c037065b2637c06b23b06bd</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>setParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a53d48aa613aca50ed957272aeeeb9485</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
+      <name>getNonconstParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a3bf21b207f1e9eb860fe326e3fb6dcbc</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Teuchos::ParameterList &gt;</type>
+      <name>unsetParameterList</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a4a62e2cbe4d173534302af0f93088a05</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a6b805f6cab10b90c0843f908e00e0344</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumSymbolicFact</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a559b355352ff76b91d7ce2cc94b6242e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumNumericFact</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a32637ffd666f7af4726811eb7fdaa47a</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>getNumSolve</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a942a1be951a2bb725aef7039219e6381</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="variable" static="yes">
+      <type>static const char *</type>
+      <name>name</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a04d5cf1ab860dff836a2f3f059ac7563</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>preOrderingDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9f679ee04f9db29ac263dead626a6c76</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>symbolicFactorizationDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a3bb9fc2c4313ba09f8b74b3c190f1704</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>numericFactorizationDone</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a549a2117cc7b78842f55627be58cffe2</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; MatrixAdapter&lt; Matrix &gt; &gt;</type>
+      <name>matrixA_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a73862ad4870aaad942cf1d85910e035e</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; Vector &gt;</type>
+      <name>multiVecX_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a57e4fe1d6563e004f933a390d89f5d6f</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Teuchos::RCP&lt; const Vector &gt;</type>
+      <name>multiVecB_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a8948ea996ec300e9423b3c6977197b0b</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumRows_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a4f98ce6a877b2f6ece913c05adef6fc4</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumCols_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a9c9458f37c6bfe6aa23be99213265ebf</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>global_size_type</type>
+      <name>globalNumNonZeros_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>a1e824badc831fc6cd4627ea834b3782d</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Status</type>
+      <name>status_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>af688193f21876bb4a209738d2bfeae3e</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Control</type>
+      <name>control_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>ae9cc6813b5540966424eaab3cd9b0e15</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>Timers</type>
+      <name>timers_</name>
+      <anchorfile>classAmesos_1_1SolverCore.html</anchorfile>
+      <anchor>aa6a15406034089ec343445003db0a276</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef" protection="private">
+      <type>TypeMap&lt; Amesos::Superlumt, scalar_type &gt;::magnitude_type</type>
+      <name>magnitude_type</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a35e2a94313ba2582db3a85b6deae631a</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>preOrdering_impl</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>ad62d2a3bb7d8984c99aafe48626bf63e</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>symbolicFactorization_impl</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a70d29c43e206a87766b2849c8e77ff2c</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>numericFactorization_impl</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a1610f79bf3b34ae9d8ad04c746bbb4f8</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>int</type>
+      <name>solve_impl</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a6a104a2dbb4e280a4a9df82cec51d821</anchor>
+      <arglist>(const Teuchos::Ptr&lt; MultiVecAdapter&lt; Vector &gt; &gt; X, const Teuchos::Ptr&lt; MultiVecAdapter&lt; Vector &gt; &gt; B) const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>bool</type>
+      <name>matrixShapeOK_impl</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a46d87d71c92e1409bc4dbcafb0da322d</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>setParameters_impl</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a3f626a55a7a166f0ed7881846c202531</anchor>
+      <arglist>(const Teuchos::RCP&lt; Teuchos::ParameterList &gt; &amp;parameterList)</arglist>
+    </member>
+    <member kind="function" protection="private">
+      <type>Teuchos::RCP&lt; const Teuchos::ParameterList &gt;</type>
+      <name>getValidParameters_impl</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>af0fabaf93d9d15c078660be7f67bb117</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>struct Amesos::Superlumt::SLUData</type>
+      <name>data_</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a7335b8921db86343baa06233f99a9dd0</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; typename TypeMap&lt; Amesos::Superlumt, scalar_type &gt;::type &gt;</type>
+      <name>nzvals_</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a95c4e4cf9ba3fcda93eea04f3c8a816c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; int &gt;</type>
+      <name>rowind_</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>ad2e63c87f259163e5dad00b8bebce2b0</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::Array&lt; int &gt;</type>
+      <name>colptr_</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>af39a59034242ff1c24cef8fbb9efa3ed</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>SolverCore&lt; Amesos::Superlumt, Matrix, Vector &gt;</name>
+      <anchorfile>classAmesos_1_1Superlumt.html</anchorfile>
+      <anchor>a248935705fdcc5bf341c3cdd2d926ee0</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a415501e885f7e753298fa2cf61793932</anchor>
+      <arglist>(Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a479b23341a0b171d241cffc87a92bcf0</anchor>
+      <arglist>(Teuchos::RCP&lt; Matrix &gt; A, Teuchos::RCP&lt; Vector &gt; X, Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>ad8aa0892d3a641a41d18884185d31ab6</anchor>
+      <arglist>(const char *solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>a53132a9d360914a443142b7101294a07</anchor>
+      <arglist>(const char *solverName, const Teuchos::RCP&lt; Matrix &gt; A, const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>abb8acb7cceac1ce640a41dd05cc6024b</anchor>
+      <arglist>(const std::string solverName, Matrix *A, Vector *X, Vector *B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>aea67ca5c343fc0f248abb8bd59423098</anchor>
+      <arglist>(const std::string solverName, const Teuchos::RCP&lt; Matrix &gt; A, const Teuchos::RCP&lt; Vector &gt; X, const Teuchos::RCP&lt; Vector &gt; B)</arglist>
+    </member>
+    <member kind="function">
+      <type>Solver&lt; Matrix, Vector &gt; *</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>ab239b521c543b7cbed4f8823bb84c23f</anchor>
+      <arglist>(const std::string solverName, Matrix *A)</arglist>
+    </member>
+    <member kind="function">
+      <type>Teuchos::RCP&lt; Solver&lt; Matrix, Vector &gt; &gt;</type>
+      <name>create</name>
+      <anchorfile>classAmesos_1_1Solver.html</anchorfile>
+      <anchor>afed8390a758da6367f4f28c1602df807</anchor>
+      <arglist>(const std::string solverName, const Teuchos::RCP&lt; Matrix &gt; A)</arglist>
+    </member>
+  </compound>
+  <compound kind="struct">
+    <name>Amesos::FunctionMap&lt; Superlumt, Scalar &gt;</name>
+    <filename>structAmesos_1_1FunctionMap_3_01Superlumt_00_01Scalar_01_4.html</filename>
+    <templarg></templarg>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gssvx</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superlumt_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a878288e7256c0243625c2b3550ddfb53</anchor>
+      <arglist>(SLUMT::superlumt_options_t *options, SLUMT::SuperMatrix *A, int *perm_c, int *perm_r, int *etree, SLUMT::equed_t *equed, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *R, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *C, SLUMT::SuperMatrix *L, SLUMT::SuperMatrix *U, void *work, int lwork, SLUMT::SuperMatrix *B, SLUMT::SuperMatrix *X, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *recip_pivot_growth, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *rcond, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *ferr, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *berr, SLUMT::superlu_memusage_t *mem_usage, SLUMT::Gstat_t *stat, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gstrs</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superlumt_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a1db42f9b033a4977ee5dde68e740f8e7</anchor>
+      <arglist>(SLUMT::trans_t trans, SLUMT::SuperMatrix *L, SLUMT::SuperMatrix *U, int *perm_r, int *perm_c, SLUMT::SuperMatrix *B, SLUMT::Gstat_t *Gstat, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gstrf</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superlumt_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a8ce194a9ca2fb0e0254d0f27516ab565</anchor>
+      <arglist>(SLUMT::superlumt_options_t *options, SLUMT::SuperMatrix *A, int *perm_r, SLUMT::SuperMatrix *L, SLUMT::SuperMatrix *U, SLUMT::Gstat_t *stat, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>create_CompCol_Matrix</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superlumt_00_01Scalar_01_4.html</anchorfile>
+      <anchor>ab9319a70b3476203a728d9a4426dd02a</anchor>
+      <arglist>(SLUMT::SuperMatrix *A, int numrows, int numcols, int nnz, typename TypeMap&lt; Superlumt, Scalar &gt;::type *nzval, int *rowind, int *colptr, SLUMT::Stype_t storage_t, SLUMT::Dtype_t data_t, SLUMT::Mtype_t mat_t)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>create_Dense_Matrix</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superlumt_00_01Scalar_01_4.html</anchorfile>
+      <anchor>a9f89d29a4897a3a9dac42418aceb5898</anchor>
+      <arglist>(SLUMT::SuperMatrix *X, int numrows, int numcols, typename TypeMap&lt; Superlumt, Scalar &gt;::type *x, int ldx, SLUMT::Stype_t storage_t, SLUMT::Dtype_t data_t, SLUMT::Mtype_t mat_t)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>gsequ</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superlumt_00_01Scalar_01_4.html</anchorfile>
+      <anchor>abb1ed911ecbb96843720571eb7aa2441</anchor>
+      <arglist>(SLUMT::SuperMatrix *A, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *r, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *c, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *rowcnd, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *colcnd, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *amax, int *info)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>laqgs</name>
+      <anchorfile>structAmesos_1_1FunctionMap_3_01Superlumt_00_01Scalar_01_4.html</anchorfile>
+      <anchor>ade5db113efe89e4f71d3c1493f6f1e54</anchor>
+      <arglist>(SLUMT::SuperMatrix *A, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *r, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type *c, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type rowcnd, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type colcnd, typename TypeMap&lt; Superlumt, Scalar &gt;::magnitude_type amax, SLUMT::equed_t *equed)</arglist>
+    </member>
+  </compound>
+  <compound kind="class">
+    <name>Amesos::ConcreteMatrixAdapter&lt; Tpetra::CrsMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps &gt; &gt;</name>
+    <filename>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</filename>
+    <templarg></templarg>
+    <templarg></templarg>
+    <templarg></templarg>
+    <templarg></templarg>
+    <templarg></templarg>
+    <base>AbstractConcreteMatrixAdapter&lt; Tpetra::RowMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node &gt;, Tpetra::CrsMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps &gt; &gt;</base>
+    <member kind="typedef">
+      <type>Tpetra::CrsMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps &gt;</type>
+      <name>matrix_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>a7b1a382f0dbb1e0aa138068a69e21e2a</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::scalar_t</type>
+      <name>scalar_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>a152c8c1c25a000693db287bf3f63b2bd</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::local_ordinal_t</type>
+      <name>local_ordinal_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>a31b3858647e9ea52d1567fa555a5782c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::global_ordinal_t</type>
+      <name>global_ordinal_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>a6a93c8f9fe29d1ae568004a327c451f3</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::node_t</type>
+      <name>node_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>aebb20994cbd1b694488b8e1bd3b234db</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::global_size_t</type>
+      <name>global_size_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>a9105bbf0291c528505f9a3795415a9fc</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>LocalMatOps</type>
+      <name>local_mat_ops_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>a247011aa0c827302fb74d5ce06fc00c4</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>ConcreteMatrixAdapter&lt; matrix_t &gt;</type>
+      <name>type</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>aac4d0910ae0c697cc5db42bc4d8ddaa9</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>ConcreteMatrixAdapter</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>a4969e1b53d8c19c1cb3f526cb7fe669f</anchor>
+      <arglist>(RCP&lt; matrix_t &gt; m)</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; const MatrixAdapter&lt; matrix_t &gt; &gt;</type>
+      <name>get_impl</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>a881fc4befded1ee7b19f0d6597fee4e1</anchor>
+      <arglist>(const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; map) const </arglist>
+    </member>
+    <member kind="typedef" protection="private">
+      <type>AbstractConcreteMatrixAdapter&lt; Tpetra::RowMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node &gt;, matrix_t &gt;</type>
+      <name>super_t</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>a61364cd49f25aa375a652972f77a2552</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>MatrixAdapter&lt; Tpetra::RowMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node &gt; &gt;</name>
+      <anchorfile>classAmesos_1_1ConcreteMatrixAdapter_3_01Tpetra_1_1CrsMatrix_3_01Scalar_00_01LocalOrdinal_00_01Gf4979c56a0bdb61ece67db1bf2d7fa55.html</anchorfile>
+      <anchor>aa937545c52ba529b494370bda6c35e49</anchor>
       <arglist></arglist>
     </member>
   </compound>
@@ -2414,6 +4291,13 @@
       <arglist>(const Teuchos::RCP&lt; multivec_type &gt; &amp;m)</arglist>
     </member>
     <member kind="function">
+      <type>const Teuchos::RCP&lt; multivec_type &gt;</type>
+      <name>getAdaptee</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>aac3ab9947f7d3b040465daef9ccd96a4</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
       <type>MultiVecAdapter&lt; multivec_type &gt; &amp;</type>
       <name>scale</name>
       <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
@@ -2432,6 +4316,13 @@
       <name>isLocal</name>
       <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
       <anchor>a5a2191800c2440d04dc9b80b68534340</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const Teuchos::RCP&lt; const Tpetra::Map&lt; local_ordinal_type, global_ordinal_type, node_type &gt; &gt; &amp;</type>
+      <name>getMap</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>ac303e6e711fd55019a60dada723b13f0</anchor>
       <arglist>() const </arglist>
     </member>
     <member kind="function">
@@ -2501,8 +4392,8 @@
       <type>void</type>
       <name>get1dCopy</name>
       <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
-      <anchor>af03b02cb6b44b0184dae6856f7cf9f8b</anchor>
-      <arglist>(const Teuchos::ArrayView&lt; scalar_type &gt; &amp;A, size_t lda) const </arglist>
+      <anchor>a43e0417ee91006a8173d15ddf067b073</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_type &gt; &amp;A, size_t lda, bool global_copy) const </arglist>
     </member>
     <member kind="function">
       <type>Teuchos::ArrayRCP&lt; scalar_type &gt;</type>
@@ -2522,22 +4413,22 @@
       <type>Teuchos::ArrayRCP&lt; Teuchos::ArrayRCP&lt; scalar_type &gt; &gt;</type>
       <name>get2dViewNonConst</name>
       <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
-      <anchor>acfba5949f7a3e02f52d7b575a5b03a33</anchor>
-      <arglist>(bool local=false) const </arglist>
+      <anchor>aa98ef24e8e9c18250b1dc82cc44a7f5c</anchor>
+      <arglist>(bool local=false)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
       <name>globalize</name>
       <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
-      <anchor>a9c2cbc9485594756056b0a3047c9a0ff</anchor>
-      <arglist>()</arglist>
+      <anchor>ab01ac4ce8a6571a694eccca504a3afe5</anchor>
+      <arglist>(int root=0)</arglist>
     </member>
     <member kind="function">
       <type>void</type>
       <name>globalize</name>
       <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
-      <anchor>af9cdbd0583c8f52eea1e4ba57917d666</anchor>
-      <arglist>(const Teuchos::ArrayView&lt; Value_t &gt; &amp;newVals)</arglist>
+      <anchor>a9c8580f7b32f9d45b4cf5fca2bd2ab21</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; Value_t &gt; &amp;newVals, int root=0)</arglist>
     </member>
     <member kind="function">
       <type>std::string</type>
@@ -2560,6 +4451,499 @@
       <anchor>a8ca8cc5a38fe566499782846eaf772c8</anchor>
       <arglist></arglist>
     </member>
+    <member kind="function" protection="private">
+      <type>void</type>
+      <name>localize</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>a0714342928c104056d86a7e8b406eed6</anchor>
+      <arglist>(bool root) const </arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; Tpetra::MultiVector&lt; scalar_type, local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>mv_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>ad8f2c794f494044456eaf91d6e07c8c2</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; Tpetra::MultiVector&lt; scalar_type, local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>l_mv_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>aec5c7763f26be14a9dbb565a51acdbb1</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; Tpetra::MultiVector&lt; scalar_type, local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>l_l_mv_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>a49cf65e22c6c0f8dd749dfb44aaa2f09</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; Tpetra::Import&lt; local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>importer_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>a0f27587798cc46697f6a0a2b66a19399</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; Tpetra::Export&lt; local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>exporter_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>a8aba0b9104f71c479e444b32c42d60e5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; const Tpetra::Map&lt; local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>l_map_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>a75f526cd1b9277393957427b10306579</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="private">
+      <type>Teuchos::RCP&lt; const Tpetra::Map&lt; local_ordinal_type, global_ordinal_type, node_type &gt; &gt;</type>
+      <name>o_map_</name>
+      <anchorfile>classAmesos_1_1MultiVecAdapter_3_01Tpetra_1_1MultiVector_3_01Scalar_00_01LocalOrdinal_00_01GlobalOrdinal_00_01Node_01_4_01_4.html</anchorfile>
+      <anchor>a6ef6004c5a4e08b8d03b03e6c65edd93</anchor>
+      <arglist></arglist>
+    </member>
+  </compound>
+  <compound kind="class">
+    <name>Amesos::AbstractConcreteMatrixAdapter&lt; Tpetra::RowMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node &gt;, DerivedMat &gt;</name>
+    <filename>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</filename>
+    <templarg></templarg>
+    <templarg></templarg>
+    <templarg></templarg>
+    <templarg></templarg>
+    <templarg></templarg>
+    <base>MatrixAdapter&lt; DerivedMat &gt;</base>
+    <member kind="typedef">
+      <type>Tpetra::RowMatrix&lt; Scalar, LocalOrdinal, GlobalOrdinal, Node &gt;</type>
+      <name>matrix_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a60d8eabc29c12cc9413544e20a663053</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Scalar</type>
+      <name>scalar_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a01091a7f22a60f08b44cb18f8da68559</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>LocalOrdinal</type>
+      <name>local_ordinal_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a77c78ea19be050c401685ae3b27a804c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>GlobalOrdinal</type>
+      <name>global_ordinal_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a151184b3a2f5a906971697deac16e391</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Node</type>
+      <name>node_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>aa6aeced853d3234269b22dbf70b0a354</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>super_t::global_size_t</type>
+      <name>global_size_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>abf7a417c6e40df87c1677de474d6907b</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>AbstractConcreteMatrixAdapter&lt; matrix_t, DerivedMat &gt;</type>
+      <name>type</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>ac2de87006c2613c4c0c7954d92314171</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Util::no_special_impl</type>
+      <name>get_crs_spec</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>aaedf677389f092d1a5b3ed92e98ca598</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Util::no_special_impl</type>
+      <name>get_ccs_spec</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>ada9cf38bda2a809ea95a2508c52b8195</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>Util::row_access</type>
+      <name>major_access</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>ab2b1e9a14289d118f4de04144152ce82</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>ConcreteMatrixAdapter&lt; DerivedMat &gt;</type>
+      <name>adapter_t</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a3bfa635f15a7ee77ba78dc64f5822e9c</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>AbstractConcreteMatrixAdapter</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a4d35a94ba18a68f78e5ebe992baca0e5</anchor>
+      <arglist>(RCP&lt; matrix_t &gt; m)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getGlobalRowCopy_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a3cd0d7da520b2bb8cbf6ce0edfa20a0b</anchor>
+      <arglist>(global_ordinal_t row, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getGlobalColCopy_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a5f3daa31a5004e04b589968f0de0b8bd</anchor>
+      <arglist>(global_ordinal_t col, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const </arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a1a69b62f70c99487b1c6c3d903ede46f</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a65281fe0d3f255c3d92b25e8f91af78d</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getMaxRowNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>afebde8bc3eecca42708a57822101a501</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getMaxColNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a3734101273fa4a88ff8659225721d939</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getGlobalRowNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>aa391900e4586fee8c1370d46e1a3d9c6</anchor>
+      <arglist>(global_ordinal_t row) const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalRowNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a57587adb86365c8c9abe1f556f5437d8</anchor>
+      <arglist>(local_ordinal_t row) const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getGlobalColNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a4fe1179ce04db43dad17ce2520ee8a6d</anchor>
+      <arglist>(global_ordinal_t col) const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalColNNZ_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>aad9186ecdd22763f44daea143d330937</anchor>
+      <arglist>(local_ordinal_t col) const </arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>getRowMap_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>add5404f4abe4d48dc3eea59de8f9776d</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>getColMap_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a4652898e083b80b9b2e566fe24845c96</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a0352a08791fe2a88334d737a44329457</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>isLocallyIndexed_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>aea49903ec1cdbd791b1ececf47f29a1a</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>isGloballyIndexed_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a4a70de2e4acb97caa3ade99ceed7b6ef</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; const super_t &gt;</type>
+      <name>get_impl</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>adc8d456018fad3474ae8e78f28acd6b7</anchor>
+      <arglist>(const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; map) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a7da98dde7decdcd4006c4203193a1edb</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; rowmap, EStorage_Ordering ordering=Util::Arbitrary) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCrs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a9b9abaec0efdf184ac502bcf0ef08b3c</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; colind, const Teuchos::ArrayView&lt; global_size_t &gt; rowptr, global_size_t &amp;nnz, EDistribution distribution, EStorage_Ordering ordering=Util::Arbitrary) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a54a1fb9c3f9203c6a7ec4ba9c87dae25</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; colmap, EStorage_Ordering ordering=Util::Arbitrary) const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getCcs</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ad85223e6476499e4ab135661bf8339aa</anchor>
+      <arglist>(const Teuchos::ArrayView&lt; scalar_t &gt; nzval, const Teuchos::ArrayView&lt; global_ordinal_t &gt; rowind, const Teuchos::ArrayView&lt; global_size_t &gt; colptr, global_size_t &amp;nnz, EDistribution distribution, EStorage_Ordering ordering=Util::Arbitrary) const</arglist>
+    </member>
+    <member kind="function">
+      <type>const RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>getComm</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aae644193c73b59c573720132be955431</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNumRows</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ac729469ca361ac261590f143624fa6b4</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNumCols</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a2c1f4eed533cf858db94067149c70c0b</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>global_size_t</type>
+      <name>getGlobalNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aa144b89709fd20ed4627d5966997132e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNumRows</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aa72c5a28011f01c5f09f1be50df5de2e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNumCols</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ada217a4504703e97a0ed2e165ec9b766</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>size_t</type>
+      <name>getLocalNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ac1fcfa87de3617bc6fee93f884ca6bf7</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t &gt; &gt;</type>
+      <name>getRowMap</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a079a384379ea6ba42f82f254ec322ab2</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t &gt; &gt;</type>
+      <name>getColMap</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ad095ea1b4a87c53258bc95344540d369</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>description</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aac6aec881feab1fa3d30c4c3a7d3a2f1</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>describe</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a0e6d8d17887b32364e946403a2617365</anchor>
+      <arglist>(Teuchos::FancyOStream &amp;out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>void</type>
+      <name>getGlobalRowCopy</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a82a04efccdb9fc4c677f6971b0f2a9ff</anchor>
+      <arglist>(global_ordinal_t row, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>void</type>
+      <name>getGlobalColCopy</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a1930fc8e940fa82ae8933c8fbd61c58d</anchor>
+      <arglist>(global_ordinal_t col, const Teuchos::ArrayView&lt; global_ordinal_t &gt; &amp;indices, const Teuchos::ArrayView&lt; scalar_t &gt; &amp;vals, size_t &amp;nnz) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getMaxRowNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aec3505d353a2b1bfac631222aa6e582d</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getMaxColNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>af4fca7c867756723a39d7251eb5e214e</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getGlobalRowNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a8d5fb3fc6c2db1015f75399f880d8e1e</anchor>
+      <arglist>(global_ordinal_t row) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getLocalRowNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a6286f7e449913ec698831cbe9f855ed0</anchor>
+      <arglist>(local_ordinal_t row) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getGlobalColNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a139320c33a3e6954e1263ac083c56fe9</anchor>
+      <arglist>(global_ordinal_t col) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>size_t</type>
+      <name>getLocalColNNZ</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a59b1d89868a0044cdb5d6442c505ba21</anchor>
+      <arglist>(local_ordinal_t col) const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>isLocallyIndexed</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a37bec34548dee2f1bfb9ab42f5c872a6</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>bool</type>
+      <name>isGloballyIndexed</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a760657acc1d3e7abfcb35b689ed7c3a5</anchor>
+      <arglist>() const</arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type>RCP&lt; const type &gt;</type>
+      <name>get</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ab2e42b619d1ecc2796bce408615bd15d</anchor>
+      <arglist>(const Teuchos::Ptr&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt; map) const</arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>const RCP&lt; const DerivedMat &gt;</type>
+      <name>mat_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>aaa7c67b31929c0252ceb73e3a5fc8abf</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>row_map_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a91680cc808fdc40b64a01ab7ca6ca554</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>RCP&lt; const Tpetra::Map&lt; local_ordinal_t, global_ordinal_t, node_t &gt; &gt;</type>
+      <name>col_map_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a06617c51632049ccc3dee8fe7cdcf4f0</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>RCP&lt; const Teuchos::Comm&lt; int &gt; &gt;</type>
+      <name>comm_</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>a898d99aef23d15a31a92fc54ea9a5116</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef" protection="private">
+      <type>MatrixAdapter&lt; DerivedMat &gt;</type>
+      <name>super_t</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>aaec0928265733ba5daf74cb5c171f41d</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>MatrixAdapter&lt; DerivedMat &gt;</name>
+      <anchorfile>classAmesos_1_1AbstractConcreteMatrixAdapter_3_01Tpetra_1_1RowMatrix_3_01Scalar_00_01LocalOrdinadbc14e7d1b871e5aa0964a7a23b8b63d.html</anchorfile>
+      <anchor>a0a0a3629b22324189309040873178be5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>Util::get_cxs_helper</name>
+      <anchorfile>classAmesos_1_1MatrixAdapter.html</anchorfile>
+      <anchor>ad17a6004ba9322d05cb84067e15a3016</anchor>
+      <arglist></arglist>
+    </member>
   </compound>
   <compound kind="struct">
     <name>Amesos::TypeMap</name>
@@ -2568,159 +4952,129 @@
     <templarg></templarg>
   </compound>
   <compound kind="struct">
-    <name>Amesos::Util::integral_constant</name>
-    <filename>structAmesos_1_1Util_1_1integral__constant.html</filename>
-    <templarg>T</templarg>
-    <templarg>val</templarg>
-    <member kind="typedef">
-      <type>integral_constant&lt; T, val &gt;</type>
-      <name>type</name>
-      <anchorfile>structAmesos_1_1Util_1_1integral__constant.html</anchorfile>
-      <anchor>a5bdde389e338a25569289b2c07bdf7a5</anchor>
-      <arglist></arglist>
+    <name>Amesos::Util::has_special_impl</name>
+    <filename>structAmesos_1_1Util_1_1has__special__impl.html</filename>
+  </compound>
+  <compound kind="struct">
+    <name>Amesos::Util::row_access</name>
+    <filename>structAmesos_1_1Util_1_1row__access.html</filename>
+  </compound>
+  <compound kind="struct">
+    <name>Amesos::Util::col_access</name>
+    <filename>structAmesos_1_1Util_1_1col__access.html</filename>
+  </compound>
+  <compound kind="struct">
+    <name>Amesos::Util::get_cxs_helper</name>
+    <filename>structAmesos_1_1Util_1_1get__cxs__helper.html</filename>
+    <templarg>Matrix</templarg>
+    <templarg>S</templarg>
+    <templarg>GO</templarg>
+    <templarg>GS</templarg>
+    <templarg>Op</templarg>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>do_get</name>
+      <anchorfile>structAmesos_1_1Util_1_1get__cxs__helper.html</anchorfile>
+      <anchor>a5b13e00632fce03633bdff1db8db5cfa</anchor>
+      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; mat, const ArrayView&lt; S &gt; nzvals, const ArrayView&lt; GO &gt; indices, const ArrayView&lt; GS &gt; pointers, GS &amp;nnz, EDistribution distribution, EStorage_Ordering ordering=Arbitrary)</arglist>
     </member>
-    <member kind="typedef">
-      <type>T</type>
-      <name>value_type</name>
-      <anchorfile>structAmesos_1_1Util_1_1integral__constant.html</anchorfile>
-      <anchor>a221b59db01e2f8923347017699d74c8d</anchor>
-      <arglist></arglist>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>do_get</name>
+      <anchorfile>structAmesos_1_1Util_1_1get__cxs__helper.html</anchorfile>
+      <anchor>a175f9f8006d3c767a225ca1881f4bbcf</anchor>
+      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; mat, const ArrayView&lt; S &gt; nzvals, const ArrayView&lt; GO &gt; indices, const ArrayView&lt; GS &gt; pointers, GS &amp;nnz, EStorage_Ordering ordering=Arbitrary)</arglist>
     </member>
-    <member kind="variable" static="yes">
-      <type>static const T</type>
-      <name>value</name>
-      <anchorfile>structAmesos_1_1Util_1_1integral__constant.html</anchorfile>
-      <anchor>ac257064e310f68eb18da37db700f84fc</anchor>
-      <arglist></arglist>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>do_get</name>
+      <anchorfile>structAmesos_1_1Util_1_1get__cxs__helper.html</anchorfile>
+      <anchor>af8f35e2282d630a52668a16d7136ee94</anchor>
+      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; mat, const ArrayView&lt; S &gt; nzvals, const ArrayView&lt; GO &gt; indices, const ArrayView&lt; GS &gt; pointers, GS &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; typename Matrix::local_ordinal_t, typename Matrix::global_ordinal_t, typename Matrix::node_t &gt; &gt; map, EStorage_Ordering ordering=Arbitrary)</arglist>
     </member>
   </compound>
   <compound kind="struct">
-    <name>Amesos::Util::is_same</name>
-    <filename>structAmesos_1_1Util_1_1is__same.html</filename>
+    <name>Amesos::Util::get_ccs_helper</name>
+    <filename>structAmesos_1_1Util_1_1get__ccs__helper.html</filename>
     <templarg></templarg>
     <templarg></templarg>
-    <base>integral_constant&lt; bool, false &gt;</base>
+    <templarg></templarg>
+    <templarg></templarg>
+    <base>get_cxs_helper&lt; Matrix, S, GO, GS, get_ccs_func&lt; Matrix &gt; &gt;</base>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>do_get</name>
+      <anchorfile>structAmesos_1_1Util_1_1get__cxs__helper.html</anchorfile>
+      <anchor>a5b13e00632fce03633bdff1db8db5cfa</anchor>
+      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; mat, const ArrayView&lt; S &gt; nzvals, const ArrayView&lt; GO &gt; indices, const ArrayView&lt; GS &gt; pointers, GS &amp;nnz, EDistribution distribution, EStorage_Ordering ordering=Arbitrary)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>do_get</name>
+      <anchorfile>structAmesos_1_1Util_1_1get__cxs__helper.html</anchorfile>
+      <anchor>a175f9f8006d3c767a225ca1881f4bbcf</anchor>
+      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; mat, const ArrayView&lt; S &gt; nzvals, const ArrayView&lt; GO &gt; indices, const ArrayView&lt; GS &gt; pointers, GS &amp;nnz, EStorage_Ordering ordering=Arbitrary)</arglist>
+    </member>
+    <member kind="function" static="yes">
+      <type>static void</type>
+      <name>do_get</name>
+      <anchorfile>structAmesos_1_1Util_1_1get__cxs__helper.html</anchorfile>
+      <anchor>af8f35e2282d630a52668a16d7136ee94</anchor>
+      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; mat, const ArrayView&lt; S &gt; nzvals, const ArrayView&lt; GO &gt; indices, const ArrayView&lt; GS &gt; pointers, GS &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; typename Matrix::local_ordinal_t, typename Matrix::global_ordinal_t, typename Matrix::node_t &gt; &gt; map, EStorage_Ordering ordering=Arbitrary)</arglist>
+    </member>
+    <docanchor file="structAmesos_1_1Util_1_1get__ccs__helper">get_ccs_helper_example</docanchor>
   </compound>
   <compound kind="struct">
-    <name>Amesos::Util::is_same&lt; T, T &gt;</name>
-    <filename>structAmesos_1_1Util_1_1is__same_3_01T_00_01T_01_4.html</filename>
+    <name>Amesos::Util::get_crs_helper</name>
+    <filename>structAmesos_1_1Util_1_1get__crs__helper.html</filename>
     <templarg></templarg>
-    <base>integral_constant&lt; bool, true &gt;</base>
-  </compound>
-  <compound kind="class">
-    <name>Teuchos::ValueTypeConversionTraits&lt; SLU::C::complex, TypeFrom &gt;</name>
-    <filename>classTeuchos_1_1ValueTypeConversionTraits_3_01SLU_1_1C_1_1complex_00_01TypeFrom_01_4.html</filename>
     <templarg></templarg>
-    <member kind="function" static="yes">
-      <type>static SLU::C::complex</type>
-      <name>convert</name>
-      <anchorfile>classTeuchos_1_1ValueTypeConversionTraits_3_01SLU_1_1C_1_1complex_00_01TypeFrom_01_4.html</anchorfile>
-      <anchor>a449dc00ec388472aa00d314a64e71daf</anchor>
-      <arglist>(const TypeFrom t)</arglist>
-    </member>
-    <member kind="function" static="yes">
-      <type>static SLU::C::complex</type>
-      <name>safeConvert</name>
-      <anchorfile>classTeuchos_1_1ValueTypeConversionTraits_3_01SLU_1_1C_1_1complex_00_01TypeFrom_01_4.html</anchorfile>
-      <anchor>a1dbffa14628e76338c41cc49d4df28e0</anchor>
-      <arglist>(const TypeFrom t)</arglist>
-    </member>
-  </compound>
-  <compound kind="class">
-    <name>Teuchos::ValueTypeConversionTraits&lt; SLU::Z::doublecomplex, TypeFrom &gt;</name>
-    <filename>classTeuchos_1_1ValueTypeConversionTraits_3_01SLU_1_1Z_1_1doublecomplex_00_01TypeFrom_01_4.html</filename>
     <templarg></templarg>
-    <member kind="function" static="yes">
-      <type>static SLU::Z::doublecomplex</type>
-      <name>convert</name>
-      <anchorfile>classTeuchos_1_1ValueTypeConversionTraits_3_01SLU_1_1Z_1_1doublecomplex_00_01TypeFrom_01_4.html</anchorfile>
-      <anchor>a4608bc70b654f311c0ca402688cd00a3</anchor>
-      <arglist>(const TypeFrom t)</arglist>
-    </member>
-    <member kind="function" static="yes">
-      <type>static SLU::Z::doublecomplex</type>
-      <name>safeConvert</name>
-      <anchorfile>classTeuchos_1_1ValueTypeConversionTraits_3_01SLU_1_1Z_1_1doublecomplex_00_01TypeFrom_01_4.html</anchorfile>
-      <anchor>a11facc4259af427c21e642f8a182fc5c</anchor>
-      <arglist>(const TypeFrom t)</arglist>
-    </member>
-  </compound>
-  <compound kind="class">
-    <name>Teuchos::ValueTypeConversionTraits&lt; TypeTo, SLU::C::complex &gt;</name>
-    <filename>classTeuchos_1_1ValueTypeConversionTraits_3_01TypeTo_00_01SLU_1_1C_1_1complex_01_4.html</filename>
     <templarg></templarg>
+    <base>get_cxs_helper&lt; Matrix, S, GO, GS, get_crs_func&lt; Matrix &gt; &gt;</base>
     <member kind="function" static="yes">
-      <type>static TypeTo</type>
-      <name>convert</name>
-      <anchorfile>classTeuchos_1_1ValueTypeConversionTraits_3_01TypeTo_00_01SLU_1_1C_1_1complex_01_4.html</anchorfile>
-      <anchor>a568bb09a04b7dd8fe32c82fc822f7ab7</anchor>
-      <arglist>(const SLU::C::complex t)</arglist>
+      <type>static void</type>
+      <name>do_get</name>
+      <anchorfile>structAmesos_1_1Util_1_1get__cxs__helper.html</anchorfile>
+      <anchor>a5b13e00632fce03633bdff1db8db5cfa</anchor>
+      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; mat, const ArrayView&lt; S &gt; nzvals, const ArrayView&lt; GO &gt; indices, const ArrayView&lt; GS &gt; pointers, GS &amp;nnz, EDistribution distribution, EStorage_Ordering ordering=Arbitrary)</arglist>
     </member>
     <member kind="function" static="yes">
-      <type>static TypeTo</type>
-      <name>safeConvert</name>
-      <anchorfile>classTeuchos_1_1ValueTypeConversionTraits_3_01TypeTo_00_01SLU_1_1C_1_1complex_01_4.html</anchorfile>
-      <anchor>a8f826569b452eea61807b70deca46249</anchor>
-      <arglist>(const SLU::C::complex t)</arglist>
-    </member>
-  </compound>
-  <compound kind="class">
-    <name>Teuchos::ValueTypeConversionTraits&lt; TypeTo, SLU::Z::doublecomplex &gt;</name>
-    <filename>classTeuchos_1_1ValueTypeConversionTraits_3_01TypeTo_00_01SLU_1_1Z_1_1doublecomplex_01_4.html</filename>
-    <templarg></templarg>
-    <member kind="function" static="yes">
-      <type>static TypeTo</type>
-      <name>convert</name>
-      <anchorfile>classTeuchos_1_1ValueTypeConversionTraits_3_01TypeTo_00_01SLU_1_1Z_1_1doublecomplex_01_4.html</anchorfile>
-      <anchor>af09753253cf729cc936d561e86527dae</anchor>
-      <arglist>(const SLU::Z::doublecomplex t)</arglist>
+      <type>static void</type>
+      <name>do_get</name>
+      <anchorfile>structAmesos_1_1Util_1_1get__cxs__helper.html</anchorfile>
+      <anchor>a175f9f8006d3c767a225ca1881f4bbcf</anchor>
+      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; mat, const ArrayView&lt; S &gt; nzvals, const ArrayView&lt; GO &gt; indices, const ArrayView&lt; GS &gt; pointers, GS &amp;nnz, EStorage_Ordering ordering=Arbitrary)</arglist>
     </member>
     <member kind="function" static="yes">
-      <type>static TypeTo</type>
-      <name>safeConvert</name>
-      <anchorfile>classTeuchos_1_1ValueTypeConversionTraits_3_01TypeTo_00_01SLU_1_1Z_1_1doublecomplex_01_4.html</anchorfile>
-      <anchor>ad3879f025422623883910ebf500808b3</anchor>
-      <arglist>(const SLU::Z::doublecomplex t)</arglist>
+      <type>static void</type>
+      <name>do_get</name>
+      <anchorfile>structAmesos_1_1Util_1_1get__cxs__helper.html</anchorfile>
+      <anchor>af8f35e2282d630a52668a16d7136ee94</anchor>
+      <arglist>(const Teuchos::Ptr&lt; Matrix &gt; mat, const ArrayView&lt; S &gt; nzvals, const ArrayView&lt; GO &gt; indices, const ArrayView&lt; GS &gt; pointers, GS &amp;nnz, const Teuchos::Ptr&lt; const Tpetra::Map&lt; typename Matrix::local_ordinal_t, typename Matrix::global_ordinal_t, typename Matrix::node_t &gt; &gt; map, EStorage_Ordering ordering=Arbitrary)</arglist>
     </member>
   </compound>
   <compound kind="dir">
-    <name>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/TKLU/Include/</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/TKLU/Include/</path>
-    <filename>dir_abc0e782a33bd1eae566a613a7b6e1f4.html</filename>
-    <file>tklu.h</file>
-    <file>tklu_internal.h</file>
-    <file>tklu_version.h</file>
-  </compound>
-  <compound kind="dir">
-    <name>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/TKLU/Source/</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/TKLU/Source/</path>
-    <filename>dir_c934b34d53c0016e1baa6e8f238239b0.html</filename>
-    <file>tklu.cpp</file>
-    <file>tklu_analyze.cpp</file>
-    <file>tklu_analyze_given.cpp</file>
-    <file>tklu_defaults.cpp</file>
-    <file>tklu_diagnostics.cpp</file>
-    <file>tklu_dump.cpp</file>
-    <file>tklu_extract.cpp</file>
-    <file>tklu_factor.cpp</file>
-    <file>tklu_free_numeric.cpp</file>
-    <file>tklu_free_symbolic.cpp</file>
-    <file>tklu_kernel.cpp</file>
-    <file>tklu_memory.cpp</file>
-    <file>tklu_refactor.cpp</file>
-    <file>tklu_scale.cpp</file>
-    <file>tklu_solve.cpp</file>
-    <file>tklu_sort.cpp</file>
-    <file>tklu_tsolve.cpp</file>
-  </compound>
-  <compound kind="dir">
-    <name>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
-    <filename>dir_3a1c32cf1ad6ae316e7afb2e8f4b8293.html</filename>
-    <dir>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/</dir>
+    <name>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</name>
+    <path>/home/etbavie/dev/Trilinos/preCopyrightTrilinos/amesos2/src/</path>
+    <filename>dir_a9f82e0d0a1fd3fb7ca2436fb62c836b.html</filename>
     <file>Amesos2.hpp</file>
+    <file>Amesos2_AbstractConcreteMatrixAdapter.hpp</file>
+    <file>Amesos2_ConcreteMatrixAdapter.hpp</file>
     <file>Amesos2_Control.cpp</file>
     <file>Amesos2_Control.hpp</file>
+    <file>Amesos2_EpetraCrsMatrix_MatrixAdapter.cpp</file>
+    <file>Amesos2_EpetraCrsMatrix_MatrixAdapter.hpp</file>
+    <file>Amesos2_EpetraCrsMatrix_MatrixAdapter_decl.hpp</file>
+    <file>Amesos2_EpetraCrsMatrix_MatrixAdapter_def.hpp</file>
+    <file>Amesos2_EpetraMultiVecAdapter.cpp</file>
+    <file>Amesos2_EpetraMultiVecAdapter.hpp</file>
+    <file>Amesos2_EpetraMultiVecAdapter_decl.hpp</file>
+    <file>Amesos2_EpetraMultiVecAdapter_def.hpp</file>
+    <file>Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.cpp</file>
+    <file>Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.hpp</file>
+    <file>Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_decl.hpp</file>
+    <file>Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_def.hpp</file>
     <file>Amesos2_Factory.cpp</file>
     <file>Amesos2_Factory.hpp</file>
     <file>Amesos2_Factory_decl.hpp</file>
@@ -2729,17 +5083,19 @@
     <file>Amesos2_MatrixAdapter.cpp</file>
     <file>Amesos2_MatrixAdapter.hpp</file>
     <file>Amesos2_MatrixAdapter_decl.hpp</file>
+    <file>Amesos2_MatrixAdapter_def.hpp</file>
     <file>Amesos2_MatrixHelper.hpp</file>
+    <file>Amesos2_MatrixTraits.hpp</file>
     <file>Amesos2_MultiVecAdapter.cpp</file>
     <file>Amesos2_MultiVecAdapter.hpp</file>
     <file>Amesos2_MultiVecAdapter_decl.hpp</file>
     <file>Amesos2_Solver.cpp</file>
     <file>Amesos2_Solver.hpp</file>
     <file>Amesos2_Solver_decl.hpp</file>
-    <file>Amesos2_Solver_def.hpp</file>
-    <file>Amesos2_SolverBase.cpp</file>
-    <file>Amesos2_SolverBase.hpp</file>
-    <file>Amesos2_SolverBase_decl.hpp</file>
+    <file>Amesos2_SolverCore.cpp</file>
+    <file>Amesos2_SolverCore.hpp</file>
+    <file>Amesos2_SolverCore_decl.hpp</file>
+    <file>Amesos2_SolverCore_def.hpp</file>
     <file>Amesos2_Status.cpp</file>
     <file>Amesos2_Status.hpp</file>
     <file>Amesos2_Superlu.cpp</file>
@@ -2749,15 +5105,33 @@
     <file>Amesos2_Superlu_FunctionMap.hpp</file>
     <file>Amesos2_Superlu_MatrixHelper.hpp</file>
     <file>Amesos2_Superlu_TypeMap.hpp</file>
+    <file>Amesos2_Superludist.cpp</file>
+    <file>Amesos2_Superludist.hpp</file>
+    <file>Amesos2_Superludist_decl.hpp</file>
+    <file>Amesos2_Superludist_def.hpp</file>
+    <file>Amesos2_Superludist_FunctionMap.hpp</file>
+    <file>Amesos2_Superludist_MatrixHelper.hpp</file>
+    <file>Amesos2_Superludist_TypeMap.hpp</file>
+    <file>Amesos2_Superlumt.cpp</file>
+    <file>Amesos2_Superlumt.hpp</file>
+    <file>Amesos2_Superlumt_decl.hpp</file>
+    <file>Amesos2_Superlumt_def.hpp</file>
+    <file>Amesos2_Superlumt_FunctionMap.hpp</file>
+    <file>Amesos2_Superlumt_MatrixHelper.hpp</file>
+    <file>Amesos2_Superlumt_TypeMap.hpp</file>
     <file>Amesos2_Timers.hpp</file>
-    <file>Amesos2_TpetraCrsMatrixAdapter.cpp</file>
-    <file>Amesos2_TpetraCrsMatrixAdapter.hpp</file>
-    <file>Amesos2_TpetraCrsMatrixAdapter_decl.hpp</file>
-    <file>Amesos2_TpetraCrsMatrixAdapter_def.hpp</file>
+    <file>Amesos2_TpetraCrsMatrix_MatrixAdapter.cpp</file>
+    <file>Amesos2_TpetraCrsMatrix_MatrixAdapter.hpp</file>
+    <file>Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp</file>
+    <file>Amesos2_TpetraCrsMatrix_MatrixAdapter_def.hpp</file>
     <file>Amesos2_TpetraMultiVecAdapter.cpp</file>
     <file>Amesos2_TpetraMultiVecAdapter.hpp</file>
     <file>Amesos2_TpetraMultiVecAdapter_decl.hpp</file>
     <file>Amesos2_TpetraMultiVecAdapter_def.hpp</file>
+    <file>Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.cpp</file>
+    <file>Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.hpp</file>
+    <file>Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_decl.hpp</file>
+    <file>Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_def.hpp</file>
     <file>Amesos2_TypeMap.hpp</file>
     <file>Amesos2_Util.cpp</file>
     <file>Amesos2_Util.hpp</file>
@@ -2766,18 +5140,5 @@
     <file>Amesos2_Util_is_same.hpp</file>
     <file>Amesos2_Version.cpp</file>
     <file>Amesos2_Version.hpp</file>
-  </compound>
-  <compound kind="dir">
-    <name>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/</path>
-    <filename>dir_5ed7228e2704928ef9757ed142501d95.html</filename>
-    <dir>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/TKLU/</dir>
-  </compound>
-  <compound kind="dir">
-    <name>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/TKLU/</name>
-    <path>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/TKLU/</path>
-    <filename>dir_304d115e2e25f2e182b3f75802fcb428.html</filename>
-    <dir>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/TKLU/Include/</dir>
-    <dir>/home/etbavier/dev/Trilinos/preCopyrightTrilinos/amesos2/src/SuiteSparse/TKLU/Source/</dir>
   </compound>
 </tagfile>

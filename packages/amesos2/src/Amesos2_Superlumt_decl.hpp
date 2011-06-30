@@ -67,44 +67,8 @@ namespace Amesos {
  * this Amesos2 interface.  Currently support is for the SuperLU_MT
  * 2.0 version.
  *
- * \section slu_mt_options Supported Options
- *
- * Currently, the following parameters/options are recognized:
- *
- * <ul>
- *   <li> \c "nprocs"(int) : Specifies the number of threads to be spawned.
- *     Default is 1.</li>
- *   <li> \c "trans" : { \c "NOTRANS" | \c "TRANS" |
- *     \c "CONJ" }.  Will also recognize the \c "Transpose" : { \c true
- *     | \c false } option which is equivalent to \c "TRANS" and
- *     \c "NOTRANS" , respectively.</li>
- *   <li> \c "panel_size" : Specifies the number of consecutive
- *     columns to be treated as a unit of task.</li>
- *   <li> \c "relax" : Specifies the number of columns to be grouped as a relaxed
- *     supernode.</li>
- *   <li> \c "Equil" : { \c "YES" | \c "NO" } or, equivalently, { \c true | \c false }.
- *     Specifies whether the solver to equilibrate the matrix before solving.</li>
- *   <li> \c "IterRefine" : { \c "NO" | \c "SINGLE" | \c "DOUBLE" | \c "EXTRA"
- *     }. Specifies whether to perform iterative refinement, and in
- *     what precision to compute the residual. (Not currently supported)</li>
- *   <li> \c "SymmetricMode" : { \c "Yes" | \c "NO" } or, equivalently,
- *     { \c true | \c false }.
- *   <li> \c "DiagPivotThresh" : \c double value. Specifies the threshold
- *     used for a diagonal to be considered an acceptable pivot.</li>
- *   <li> \c "ColPerm" which takes one of the following:
- *     <ul>
- *     <li> \c "NATURAL" : natural ordering.</li>
- *     <li> \c "MMD_AT_PLUS_A" : minimum degree ordering on the structure of
- *       \f$ A^T + A\f$ .</li>
- *     <li> \c "MMD_ATA" : minimum degree ordering on the structure of
- *       \f$ A T A \f$ .</li>
- *     <li> \c "COLAMD" : approximate minimum degree column ordering.
- *       (default)</li>
- *     </ul>
- * </ul>
- *
- * Note that the \c nprocs, \c panel_size, and \c relax options are
- * recognized by SuperLU_MT but not by SuperLU.
+ * See the \ref superlu_mt_parameters "summary of SuperLU_MT
+ * parameters" supported this Amesos2 interface
  *
  * \ingroup amesos2_solver_interfaces 
  */
@@ -206,15 +170,50 @@ private:
 
 
   /**
-   * This method is hooked in by our Amesos::SolverCore parent class, which
-   * handles the status and control methods, and this method handles
-   * solver-specific parameters.
+   * The following SuperLU_MT parameters/options are recognized:
    *
-   * See also: \ref slu_mt_options
+   * <ul>
+   *   <li> \c "nprocs"(int) : Specifies the number of threads to be spawned.
+   *     Default is 1.</li>
+   *   <li> \c "trans" : { \c "NOTRANS" | \c "TRANS" |
+   *     \c "CONJ" }.  Will also recognize the \c "Transpose" : { \c true
+   *     | \c false } option which is equivalent to \c "TRANS" and
+   *     \c "NOTRANS" , respectively.</li>
+   *   <li> \c "panel_size" : Specifies the number of consecutive
+   *     columns to be treated as a unit of task.</li>
+   *   <li> \c "relax" : Specifies the number of columns to be grouped as a relaxed
+   *     supernode.</li>
+   *   <li> \c "Equil" : { \c "YES" | \c "NO" } or, equivalently, { \c true | \c false }.
+   *     Specifies whether the solver to equilibrate the matrix before solving.</li>
+   *   <li> \c "SymmetricMode" : { \c "Yes" | \c "NO" } or, equivalently,
+   *     { \c true | \c false }.
+   *   <li> \c "DiagPivotThresh" : \c double value. Specifies the threshold
+   *     used for a diagonal to be considered an acceptable pivot.</li>
+   *   <li> \c "ColPerm" which takes one of the following:
+   *     <ul>
+   *     <li> \c "NATURAL" : natural ordering.</li>
+   *     <li> \c "MMD_AT_PLUS_A" : minimum degree ordering on the structure of
+   *       \f$ A^T + A\f$ .</li>
+   *     <li> \c "MMD_ATA" : minimum degree ordering on the structure of
+   *       \f$ A T A \f$ .</li>
+   *     <li> \c "COLAMD" : approximate minimum degree column ordering.
+   *       (default)</li>
+   *     </ul>
+   * </ul>
+   *
+   * Note that the \c nprocs, \c panel_size, and \c relax options are
+   * recognized by SuperLU_MT but not by SuperLU.  Note also that it
+   * is no typo in "trans", it really is lower-case (as opposed to
+   * upper-case in SuperLU)
    */
   void setParameters_impl(
     const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
-
+  /* Parameters to support in the future:
+   *  
+   *  <li> \c "IterRefine" : { \c "NO" | \c "SINGLE" | \c "DOUBLE" | \c "EXTRA"
+   *     }. Specifies whether to perform iterative refinement, and in
+   *     what precision to compute the residual. (Not currently supported)</li>
+   */
 
   /**
    * Hooked in by Amesos::SolverCore parent class.

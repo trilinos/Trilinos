@@ -80,7 +80,7 @@
  * 
  */
 
-///////////////////////////////////////////////////////////////////////////
+/////////////////////////// Solvers ////////////////////////////////////
 
 /**
  * \defgroup amesos2_solvers Amesos2 Solvers
@@ -91,6 +91,45 @@
  * two distinct but inter-related parts: The \ref
  * amesos2_solver_framework "solver framework", and the \ref
  * amesos2_solver_interfaces "solver interfaces".
+ *
+ * The Amesos::Solver class provides a uniform interface to the
+ * third-party library solvers.  The interface is designed to be both
+ * simple to use for novice users, as well as powerful enough for
+ * advanced users.  While a novice user might like to just give a
+ * linear system to Amesos2 and have it just solve it, an expert user
+ * might like to control how and when each step of the solution
+ * process is performed and do solves for multiple different RHS
+ * vectors.
+ *
+ * An example of solving a system with Amesos2 using it's most basic
+ * interface:
+ *
+ * \code
+ * RCP<MAT> A; RCP<MV> X; RCP<MV> B;
+ * // initialize A and B
+ * RCP<Solve<MAT,MV> > solver = Amesos::create(A, X, B); // use default solver
+ * solver->solve(); // solution placed in X
+ * \endcode
+ *
+ * Here is another more involved example:
+ *
+ * \code
+ * RCP<MAT> A;
+ * // Get A from somewhere
+ * RCP<Solve<MAT,MV> > solver = Amesos::create("SuperLU", A);
+ * Teuchos::ParameterList params;
+ * params.sublist("Amesos2").sublist("SuperLU").set("IterRefine","DOUBLE");
+ * params.sublist("Amesos2").sublist("SuperLU").set("ColPerm","MMD_AT_PLUS_A");
+ * solver->setParameters(params);
+ * solver->symbolicFactorization().numericFactorization();
+ * A = Teuchos::null;          // no longer need A
+ * solver.setA(Teuchos::null); // tell the solver to release A too
+ * RCP<MV> X; RCP<MV> B;
+ * // do some other work, finally get B's values
+ * solver->solve(X,B);	       // solution placed in X
+ * // do some more work and get new values in B
+ * solver->solve(X,B);
+ * \endcode
  */
 
 /**
@@ -103,7 +142,7 @@
  * fill-in-the-blank framework for solving a system of linear
  * equations that depends upon the solver-interfaces to fill in those
  * blanks.
- *
+ * 
  * Its purpose is to abstract all the solver-independent features in
  * order to reduce the burden on those developing new solver
  * interfaces.  In doing this it reduces the amount of maintained code
@@ -111,6 +150,14 @@
  * solver interface does not have to be bothered to recreate
  * infrastructure but can instead rely on the framework provided by
  * Amesos2.
+ *
+ * We could describe the framework in terms of the "Chain of
+ * Responsibility" pattern.  When a user requests for a solve to be
+ * done, the SolveCore class takes care of any work that would need to
+ * be done by any solver (such as starting some timers, checking
+ * for exceptions, updating internal state, etc.) and then passes of
+ * responsibility to the concrete solver interfaces, who in turn
+ * delegate the algorithmic work to our third-party libraries.
  *
  * \note In a way, the \ref amesos2_adapters "Amesos2 adapters" could
  * be viewed as part of the solver framework, but they are interesting
@@ -120,6 +167,43 @@
 /**
  * \defgroup amesos2_solver_interfaces Amesos2 Solver Interfaces
  * \ingroup amesos2_solvers
+ *
+ * The Amesos2 solver interfaces are responsible for distilling a
+ * third-party library's interface into an Amesos2-like interface.
+ * For the most part, the solver interfaces need only concern
+ * themselves with getting data to the TPL and storing results for
+ * later or sending solutions back to the user.
+ *
+ * \note 
+ * Users of Amesos2 do not need to concern themselves directly with
+ * the solver interface classes
+ */
+
+/**
+ * \defgroup amesos2_solver_parameters Supported Solver Parameters
+ * \ingroup amesos2_solvers
+ *
+ * Many third-party solvers support a vast amount of parameters to
+ * control factorization and solution.  An effort has been made in
+ * Amesos2 to expose to users as many of those parameters as
+ * reasonably possible.  Not all parameters may be supported, but if
+ * there is one that you would like to have exposed, then contact the
+ * Amesos2 developers and we may be able to work something out for
+ * you.
+ *
+ * \section amesos2_parameters
+ *
+ * Here is where we put some Amesos2 parameters
+ *
+ * \section amesos2_solver_parameters Solver-specific Parameters
+ *
+ * \subsection superlu_parameters SuperLU
+ *
+ * \copydoc Amesos::Superlu::setParameters_impl()
+ *
+ * \subsection superlu_mt_parameters SuperLU_MT
+ *
+ * \copydetails Amesos::Superlumt::setParameters_impl()
  */
 
 
