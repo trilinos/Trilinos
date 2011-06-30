@@ -52,6 +52,8 @@ IF(TriKota_ENABLE_DakotaCMake)
   
   # Configure Dakota and its packages
   MESSAGE("-->TriKota: Configuring Dakota using CMake")
+  SET(mpicxx mpicxx CACHE FILEPATH "" FORCE) # Make Dakota's check pass!
+  SET(MPIEXEC ${MPI_EXEC} CACHE FILEPATH "" FORCE) # Make FindMPI use this!
   ADD_SUBDIRECTORY(Dakota)
   MESSAGE("<--TriKota: Finished Dakota configure.")
 
