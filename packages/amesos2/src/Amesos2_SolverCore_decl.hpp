@@ -337,7 +337,7 @@ public:
   /// \name Accessor methods
   //@{
 
-  /// Returns a pointer to the Tpetra::Comm communicator with this operator.
+  /// Returns a pointer to the Teuchos::Comm communicator with this operator.
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
     {
       return matrixA_->getComm();

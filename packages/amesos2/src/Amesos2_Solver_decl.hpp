@@ -228,7 +228,7 @@ namespace Amesos {
     virtual const Teuchos::RCP<const Vector> getB( void ) = 0;
 
 
-    /// Returns a pointer to the Tpetra::Comm communicator with this matrix
+    /// Returns a pointer to the Teuchos::Comm communicator with this matrix
     virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm( void ) const = 0;
 
 
