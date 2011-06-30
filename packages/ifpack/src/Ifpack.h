@@ -245,7 +245,7 @@ public:
 };
 
 
-TEUCHOS_ENUM_INPUT_STERAM_OPERATOR(Ifpack::EPrecType)
+TEUCHOS_ENUM_INPUT_STREAM_OPERATOR(Ifpack::EPrecType)
 
 
 #endif

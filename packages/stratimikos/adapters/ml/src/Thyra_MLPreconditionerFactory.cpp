@@ -66,7 +66,7 @@ const Teuchos::Array<std::string> BaseMethodDefaults_valueNames
   );
 
 
-TEUCHOS_ENUM_INPUT_STERAM_OPERATOR(EMLProblemType)
+TEUCHOS_ENUM_INPUT_STREAM_OPERATOR(EMLProblemType)
 
 
 TEUCHOS_STATIC_SETUP()

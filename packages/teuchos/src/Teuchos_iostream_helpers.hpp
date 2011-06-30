@@ -54,7 +54,7 @@ std::istream& enumIstreamExtractor(std::istream& std_is, EnumType& enum_value)
 } // namespace Teuchos
 
 
-#define TEUCHOS_ENUM_INPUT_STERAM_OPERATOR(ENUMTYPE) \
+#define TEUCHOS_ENUM_INPUT_STREAM_OPERATOR(ENUMTYPE) \
 inline \
 std::istream& operator>>(std::istream& std_is, ENUMTYPE& enum_value) \
 { return Teuchos::enumIstreamExtractor(std_is, enum_value); }

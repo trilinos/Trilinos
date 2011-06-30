@@ -57,7 +57,7 @@ enum EVerbosityLevel {
 
 
 /** Needed for serialization KLN 23/09/2010 */
-TEUCHOS_ENUM_INPUT_STERAM_OPERATOR(EVerbosityLevel)
+TEUCHOS_ENUM_INPUT_STREAM_OPERATOR(EVerbosityLevel)
 
 
 /** \brief Return a std::string representation of the verbosity level.
