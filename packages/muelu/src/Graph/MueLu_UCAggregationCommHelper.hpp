@@ -275,15 +275,15 @@ namespace MueLu {
         std::cout << *weightMap << std::endl;
 #endif
 
-        // RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weightMap); VERSION1
+        RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weightMap); // VERSION1
         try
           {
-            // companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);   // VERSION1 Slow
-            if (weightMap->lib() == Cthulhu::UseEpetra)
-              justWinners->doExport(*companion, *winnerImport, Cthulhu::INSERT);  // VERSION2 Tpetra doc is wrong
-            else if (weightMap->lib() == Cthulhu::UseTpetra)
-              companion->doExport(*justWinners, *winnerImport, Cthulhu::INSERT);     // VERSION3 - TODO: will certainly not work with Epetra? (change Cthulhu?)
-            else throw "lib()";
+            companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);   // VERSION1 Slow
+//             if (weightMap->lib() == Cthulhu::UseEpetra)
+//               justWinners->doExport(*companion, *winnerImport, Cthulhu::INSERT);  // VERSION2 Tpetra doc is wrong
+//             else if (weightMap->lib() == Cthulhu::UseTpetra)
+//               companion->doExport(*justWinners, *winnerImport, Cthulhu::INSERT);     // VERSION3 - TODO: will certainly not work with Epetra? (change Cthulhu?)
+//             else throw "lib()";
           }
         catch(std::exception& e)
           {
