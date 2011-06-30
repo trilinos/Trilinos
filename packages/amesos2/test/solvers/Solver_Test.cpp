@@ -60,7 +60,7 @@ using Teuchos::TimeMonitor;
 RCP<Time> total_timer = TimeMonitor::getNewTimer("total time");
 RCP<Teuchos::FancyOStream> fos; // for global output
 int verbosity = 0;
-std::string filedir = "";
+std::string filedir = "../matrices/";
 
 /*
  * Takes the given parameter list and performs the test solves that it describes.
@@ -229,9 +229,9 @@ bool do_mat_test(const ParameterList& parameters)
     }
   }
 
-  ParameterList solve_params;
+  ParameterList solve_params("Amesos2");
   if( parameters.isSublist("all_solver_params") ){
-    solve_params = parameters.sublist("all_solver_params");
+    solve_params.setParameters( parameters.sublist("all_solver_params") );
   }
 
   ParameterList::ConstIterator solver_it;
@@ -291,7 +291,7 @@ bool test_mat_with_solver(const string& mm_file,
   bool success = true;
 
   if( test_params.isSublist("solver_params") ){
-    solve_params.setParameters( test_params.sublist("solver_params") );
+    solve_params.sublist(solver_name) = test_params.sublist("solver_params");
   }
 
   ParameterList::ConstIterator object_it;
@@ -336,12 +336,7 @@ bool do_epetra_test(const string& mm_file,
   typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 5;     // arbitrary number
 
-  bool transpose = false;
-  if( solve_params.isParameter("Transpose") ){
-    if( solve_params.get<bool>("Transpose") ){
-      transpose = true;
-    }
-  }
+  bool transpose = solve_params.get<bool>("Transpose", false);
 
 #ifdef HAVE_MPI
   const Epetra_MpiComm comm (MPI_COMM_WORLD);
@@ -388,9 +383,7 @@ bool do_epetra_test(const string& mm_file,
   RCP<Amesos::Solver<MAT,MV> > solver
     = Amesos::create<MAT,MV>(solver_name, A_rcp, Xhat, B );
 
-  ParameterList params;
-  params.set("Amesos2", solve_params);
-  solver->setParameters( rcpFromRef(params) );
+  solver->setParameters( rcpFromRef(solve_params) );
   try {
     solver->symbolicFactorization().numericFactorization().solve();
   } catch ( std::exception e ){
@@ -450,7 +443,7 @@ bool test_epetra(const string& mm_file,
 	}
 
 	ParameterList solve_params_copy(solve_params);
-	solve_params_copy.setParameters( run_list.sublist("run_params") );
+	solve_params_copy.sublist(solver_name).setParameters( run_list.sublist("run_params") );
 	success &= do_epetra_test(mm_file, solver_name, solve_params_copy);
       } else {
 	do_default = true;
@@ -493,12 +486,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
   typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 5;     // arbitrary number
 
-  bool transpose = false;
-  if( solve_params.isParameter("Transpose") ){
-    if( solve_params.get<bool>("Transpose") ){
-      transpose = true;
-    }
-  }
+  bool transpose = solve_params.get<bool>("Transpose", false);
 
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Comm<int> > comm = platform.getComm();
@@ -548,9 +536,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
   RCP<Amesos::Solver<MAT,MV> > solver
     = Amesos::create<MAT,MV>(solver_name, A, Xhat, B );
 
-  ParameterList params;
-  params.set("Amesos2", solve_params);
-  solver->setParameters( rcpFromRef(params) );
+  solver->setParameters( rcpFromRef(solve_params) );
   try {
     solver->symbolicFactorization().numericFactorization().solve();
   } catch ( std::exception e ){

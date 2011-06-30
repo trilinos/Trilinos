@@ -166,16 +166,14 @@ namespace {
   RCP<Amesos::Solver<MAT,MV> > solver                                   \
     = Amesos::create<MAT,MV>("Superlu", AMat, Xhat, B );                \
 									\
-  Teuchos::ParameterList amesos2_params;				\
+  Teuchos::ParameterList amesos2_params("Amesos2");			\
   if( transpose ){                                                      \
-    amesos2_params.set("Trans","CONJ","Solve with transpose");		\
+    amesos2_params.sublist("SuperLU").set("Trans","CONJ","Solve with transpose"); \
   } else {                                                              \
-    amesos2_params.set("Trans","NOTRANS","Do not solve with transpose"); \
+    amesos2_params.sublist("SuperLU"). set("Trans","NOTRANS","Do not solve with transpose"); \
   }                                                                     \
 									\
-  Teuchos::ParameterList params;					\
-  params.set("Amesos2", amesos2_params);				\
-  solver->setParameters( rcpFromRef(params) );                          \
+  solver->setParameters( rcpFromRef(amesos2_params) );			\
   solver->symbolicFactorization().numericFactorization().solve();       \
 									\
   Array<Mag> xhatnorms(numVecs), xnorms(numVecs);                       \

@@ -149,14 +149,13 @@ int main(int argc, char *argv[]) {
   RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
 
   // Create a Teuchos::ParameterList to hold solver parameters
-  Teuchos::ParameterList amesos2_params;
-  amesos2_params.set("Trans","TRANS","Whether to solve with A^T");
-  amesos2_params.set("Equil",false,"Whether to equilibrate the system before solve");
-  amesos2_params.set("ColPerm","NATURAL","Use 'natural' ordering of columns");
+  Teuchos::ParameterList amesos2_params("Amesos2");
+  Teuchos::ParameterList superlu_params = amesos2_params.sublist("SuperLU");
+  superlu_params.set("Trans","TRANS","Whether to solve with A^T");
+  superlu_params.set("Equil",false,"Whether to equilibrate the system before solve");
+  superlu_params.set("ColPerm","NATURAL","Use 'natural' ordering of columns");
 
-  Teuchos::ParameterList params;
-  params.set("Amesos2", amesos2_params);
-  solver->setParameters( Teuchos::rcpFromRef(params) );
+  solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
   solver->symbolicFactorization().numericFactorization().solve();
 
   /* Print the solution

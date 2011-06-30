@@ -364,12 +364,10 @@ namespace {
     RCP<Amesos::Solver<MAT,MV> > solver
       = Amesos::create<MAT,MV>("SuperLU", A, Xhat, B );
 
-    Teuchos::ParameterList amesos2_params;
+    Teuchos::ParameterList amesos2_params("Amesos2");
     amesos2_params.sublist("SuperLU").set("Trans","TRANS","Solve with transpose");
 
-    Teuchos::ParameterList params;
-    params.set("Amesos2", amesos2_params);
-    solver->setParameters( rcpFromRef(params) );
+    solver->setParameters( rcpFromRef(amesos2_params) );
     solver->symbolicFactorization().numericFactorization().solve();
 
     Xhat->describe(out, Teuchos::VERB_EXTREME);
@@ -540,12 +538,10 @@ namespace {
     RCP<Amesos::Solver<MAT,MV> > solver
       = Amesos::create<MAT,MV>("SuperLU", A, Xhat, B);
 
-    Teuchos::ParameterList amesos2_params;
+    Teuchos::ParameterList amesos2_params("Amesos2");
     amesos2_params.sublist("SuperLU").set("Trans","CONJ","Solve with conjugate-transpose");
 
-    Teuchos::ParameterList params;
-    params.set("Amesos2", amesos2_params);
-    solver->setParameters( rcpFromRef(params) );
+    solver->setParameters( rcpFromRef(amesos2_params) );
     solver->symbolicFactorization().numericFactorization().solve();
 
     Xhat->describe(out, Teuchos::VERB_EXTREME);

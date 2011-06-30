@@ -193,7 +193,24 @@
  *
  * \section amesos2_parameters
  *
- * Here is where we put some Amesos2 parameters
+ * The following parameters are currently acted upon by Amesos2
+ * solvers:
+ * 
+ * <ul>
+ *   <li> \c "Transpose" : { \c true | \c false }.  If \c true , tells
+ *   the solver to solve for \f$A^T X = B\f$</li>
+ * </ul>
+ *
+ * We plan in the future to support the following parameters:
+ *
+ * <ul>
+ *   <li> \c "Reindex" : { \c true | \c false }.  Put the matrix row
+ *     and column indices into the range [0..n].</li>
+ *   <li> \c "AddZeroToDiag" : { \c true | \c false }.</li>
+ *   <li> \c "AddToDiag" : \c string . Where the given string is a
+ *     representation of a scalar value to add to all diagonal
+ *     entries of the matrix before factorization.</li>
+ * </ul>
  *
  * \section amesos2_solver_parameters Solver-specific Parameters
  *
@@ -242,4 +259,12 @@
  * This example gives an example of how to re-solve a system after
  * having changed it, either changing the matrix itself, or changing
  * part of the RHS B.
+ */
+
+/**
+ * \example TwoPartSolve.cpp
+ *
+ * An example of how one can defer providing the X and B vectors to
+ * the Amesos2 solver until just before calling a solve using the setX
+ * and setB methods.
  */

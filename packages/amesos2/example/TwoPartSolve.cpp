@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
       Array<Magnitude> xhatnorms(numVectors);
       Xhat->update(-1.0, *X, 1.0);
       Xhat->norm2(xhatnorms());
-      *fos << "Norm of Ax - b = " << xhatnorms << endl;
+      *fos << "Norm2 of Ax - b = " << xhatnorms << endl;
     }
 
   } catch (std::invalid_argument e){

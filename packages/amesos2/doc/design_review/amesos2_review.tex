@@ -26,6 +26,8 @@
 \usepackage{graphics}
 \usepackage{color}
 \usepackage{epsfig}
+\usepackage{listings}
+
 \renewcommand{\thefootnote}{}
 
 \title[Amesos2]{Amesos2: Common Interface to Direct Solvers}
@@ -39,27 +41,46 @@ Sandia National Laboratories
 \begin{document}
 
 \begin{frame}[plain]
-    \titlepage
-\footnote{\tiny{Sandia is a multiprogram laboratory operated by Sandia Corporation, a wholly owned subsidiary of Lockheed Martin, for the United States Department of Energy'’s National Nuclear Security Administration under contract DE-AC04-94AL85000.}}
+  \titlepage
+  \footnote{\tiny{Sandia is a multiprogram laboratory operated by Sandia Corporation, a wholly owned subsidiary of Lockheed Martin, for the United States Department of Energy'’s National Nuclear Security Administration under contract DE-AC04-94AL85000.}}
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}
+  \frametitle{Amesos2 Motivation}
+  
+  \begin{itemize}
+  \item Common Interface for direct solvers.
+    \medskip
+  \item Support a variety of scalar and ordinal datatypes
+    \medskip
+  \item Support Epetra and Tpetra data structures and allow a design that can
+    extend to other matrix types (for eg.: PetSc matrix, compressed column
+    matrix)
+    \medskip
+  \item Revisit Amesos design choices and redesign to easily support more
+    solvers and matrix types.
+  \end{itemize}
+    
+\end{frame}
+
+\section{Design}
+
+\begin{frame}
+  \frametitle{Use-case Considerations}
+  %% - Multiple datatypes (scalar/ordinal as well as matrix/vector)
+  %% - Novice Users
+  %% - ``Expert'' Users
 \end{frame}
 
 \begin{frame}
-    \frametitle{Amesos2 Motivation}
-
-\begin{itemize}
-\item Common Interface to direct linear solvers.
-\medskip
-\item Support 32-bit and 64-bit global ids.
-\medskip
-\item Support Epetra and Tpetra data structures and allow a design that can
-      extend to other matrix types (for eg.: PetSc matrix, compressed column
-       matrix)
-\medskip
-\item Revisit Amesos design choices and redesign to easily support more
-      solvers and matrix types.
-\end{itemize}
-
+  \frametitle{Amesos2 Interface}
+  %% - create()
+  %% - main solver methods
 \end{frame}
+
+\section{Examples}
 
 \begin{frame}
     \frametitle{Use Case 1: Simple Solve.}

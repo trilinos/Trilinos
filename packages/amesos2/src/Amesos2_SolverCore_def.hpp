@@ -235,21 +235,18 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 
-  if( parameterList->isSublist("Amesos2") ){
-    Teuchos::RCP<Teuchos::ParameterList> amesos2_params
-      = Teuchos::sublist(parameterList, "Amesos2");
-    
+  if( parameterList->name() == "Amesos2" ){
     // Do everything here that is for generic status and control parameters
-    control_.setControlParameters(amesos2_params);
-    status_.setStatusParameters(amesos2_params);
+    control_.setControlParameters(parameterList);
+    status_.setStatusParameters(parameterList);
     
     // Finally, hook to the implementation's parameter list parser
     // First check if there is a dedicated sublist for this solver and use that if there is
-    if( amesos2_params->isSublist(name()) ){
-      static_cast<solver_type*>(this)->setParameters_impl(Teuchos::sublist(amesos2_params, name()));
+    if( parameterList->isSublist(name()) ){
+      static_cast<solver_type*>(this)->setParameters_impl(Teuchos::sublist(parameterList, name()));
     } else {
       // See if there is anything in the parent sublist that the solver recognizes
-      static_cast<solver_type*>(this)->setParameters_impl(amesos2_params);
+      static_cast<solver_type*>(this)->setParameters_impl(parameterList);
     }
   }
 
@@ -283,15 +280,12 @@ SolverCore<ConcreteSolver,Matrix,Vector>::getValidParameters() const
   RCP<const ParameterList>
     solver_params = static_cast<const solver_type*>(this)->getValidParameters_impl();
 
-  RCP<ParameterList> amesos2_params = rcp(new ParameterList());
+  RCP<ParameterList> amesos2_params = rcp(new ParameterList("Amesos2"));
   amesos2_params->setParameters(*control_params);
   amesos2_params->setParameters(*status_params);
   amesos2_params->set(name(), *solver_params);
 
-  RCP<ParameterList> params = rcp(new ParameterList());
-  params->set("Amesos2", *amesos2_params);
-
-  return params;
+  return amesos2_params;
 }
 
 

@@ -52,7 +52,6 @@
 #ifndef AMESOS2_SOLVER_DECL_HPP
 #define AMESOS2_SOLVER_DECL_HPP
 
-#include <Teuchos_ParameterListAcceptor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -76,7 +75,7 @@ namespace Amesos {
    * \ingroup amesos2_solver_framework
    */
   template <class Matrix, class Vector>
-  class Solver : {
+  class Solver {
 
   public:
 
@@ -158,12 +157,12 @@ namespace Amesos {
 
     /** \brief Set/update internal variables and solver options.
      *
-     * Expects that parameterList contains a sublist named "Amesos2".
-     * That list may contain Amesos2-specific parameters.  In
-     * addition, it may contain sublist for solver-specific
-     * parameters.  These sublists should be named according to what
-     * is returned by the name() function (i.e. The solver's name when
-     * enabling for Amesos2 during configuration).
+     * Expects that parameterList be named "Amesos2".  That list may
+     * contain Amesos2-specific parameters.  In addition, it may
+     * contain sublist for solver-specific parameters.  These sublists
+     * should be named according to what is returned by the name()
+     * function (i.e. The solver's name when enabling for Amesos2
+     * during configuration).
      *
      * See each solver interface directly for a list of the supported
      * parameters for that solver.
