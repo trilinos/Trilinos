@@ -27,8 +27,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
      CASLRAVE # Does not build with GCC yet
      )
   SET(EXTRA_CONFIGURE_OPTIONS
-    "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
-    "-DTrilinos_ENABLE_CASLRAVE=OFF"
+    -DTrilinos_ENABLE_TriKota:BOOL=OFF
+    -DTrilinos_ENABLE_CASLRAVE=OFF
+    # Allow user to override these by putting theirs at the bottom
+    ${EXTRA_CONFIGURE_OPTIONS}
     )
   
   SET_DEFAULT(COMPILER_VERSION "GCC-4.5.1")
