@@ -114,6 +114,7 @@ namespace MueLu {
     void ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const
     {
       const RCP<const Map> weightMap = weight_.getMap();
+      const size_t nodeNumElements = weightMap->getNodeNumElements();
 
       int MyPid = weightMap->getComm()->getRank(); // TODO:remove the getMap() step
 
@@ -135,11 +136,11 @@ namespace MueLu {
         ArrayRCP<SC> weight = weight_.getDataNonConst(0); // TODO: const?
         ArrayRCP<SC> perturbWt = perturbWt_->getDataNonConst(0);
 
-        for (size_t i=0; i < weightMap->getNodeNumElements(); i++) {
+        for (size_t i=0; i < nodeNumElements; i++) {
           if (weight[i] == 0.) perturbWt[i] = 0.;
           else perturbWt[i] = weight[i] + 1.0e-7*largestGlobalWeight*fabs(perturbWt[i]);
         }
-        for (size_t i=0; i < weightMap->getNodeNumElements(); i++) weight[i] = perturbWt[i]; //TODO: why we return a perturbed weight? Can weight be const on this func?
+        for (size_t i=0; i < nodeNumElements; i++) weight[i] = perturbWt[i]; //TODO: why we return a perturbed weight? Can weight be const on this func?
       }
   
       // Communicate weights and store results in PostComm (which will be copied
@@ -176,11 +177,11 @@ namespace MueLu {
       {
         ArrayRCP<SC> candidateWinners = candidateWinners_->getDataNonConst(0);
         ArrayRCP<SC> postComm = postComm_->getDataNonConst(0);
-        for (size_t i=0; i < weightMap->getNodeNumElements(); i++) {
+        for (size_t i=0; i < nodeNumElements; i++) {
           if (postComm[i] == weight[i]) candidateWinners[i] = (SC) MyPid+1;
         }
         
-        for (size_t i=0; i < weightMap->getNodeNumElements(); i++) weight[i]=postComm[i]; 
+        for (size_t i=0; i < nodeNumElements; i++) weight[i]=postComm[i]; 
       }
       NonUnique2NonUnique(*candidateWinners_, *postComm_, Cthulhu::ABSMAX);
 
@@ -192,7 +193,7 @@ namespace MueLu {
       ArrayRCP<LO> procWinner = procWinner_.getDataNonConst(0);
       {
         ArrayRCP<SC> postComm = postComm_->getDataNonConst(0);
-        for (size_t i=0; i < weightMap->getNodeNumElements(); i++)  {
+        for (size_t i=0; i < nodeNumElements; i++)  {
           if ( weight[i] != 0.) procWinner[i] = ((int) (postComm[i])) - 1;
         }
       }
@@ -207,24 +208,24 @@ namespace MueLu {
    
         //Teuchos::ArrayRCP<GO>::size_type numMyWinners = 0;
         int numMyWinners = 0;
-        for (size_t i = 0; i < weightMap->getNodeNumElements(); i++) {
+        for (size_t i = 0; i < nodeNumElements; i++) {
           if (procWinner[i] == MyPid) numMyWinners++;
         }
    
-        //    int *myGids    = new int[weightMap->getNodeNumElements()+1];
+        //    int *myGids    = new int[nodeNumElements+1];
         //    int *myWinners = new int[numMyWinners+1];
         ArrayView<const GO> myGids = weightMap->getNodeElementList(); //== weightMap->MyGlobalElements(myGids);
         ArrayRCP<GO> myWinners(numMyWinners);
 
 #ifdef JG_DEBUG
         procWinner = Teuchos::null;
-        std::cout << MyPid << ": weightMap->getNodeNumElements()=" << weightMap->getNodeNumElements() << std::endl;
+        std::cout << MyPid << ": nodeNumElements=" << nodeNumElements << std::endl;
         std::cout << MyPid << ": procWinner=" << procWinner_ << std::endl;
         procWinner = procWinner_.getDataNonConst(0);
 #endif
 
         numMyWinners = 0;
-        for (size_t i = 0; i < weightMap->getNodeNumElements(); i++) {
+        for (size_t i = 0; i < nodeNumElements; i++) {
           if (procWinner[i] == MyPid)
             myWinners[numMyWinners++] = myGids[i];
         }
