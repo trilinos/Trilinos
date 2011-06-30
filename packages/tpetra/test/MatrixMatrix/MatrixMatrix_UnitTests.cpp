@@ -569,7 +569,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
  * come back and address that some day.
  * KLN 28/06/2011
  */
-TEUCHOS_UNIT_TEST(Tpetra_MatMat, Multiple_row_owners){
+/*TEUCHOS_UNIT_TEST(Tpetra_MatMat, Multiple_row_owners){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
   ParameterList defaultParameters;
   RCP<SerialNode> node = rcp(new SerialNode(defaultParameters));
@@ -584,12 +584,6 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, Multiple_row_owners){
   importedC->doImport(*C, importer, Tpetra::REPLACE);
   importedC->fillComplete(AT->getDomainMap(), AT->getRangeMap());
 
-  out << "AT seen num rows: " << AT->getGlobalNumRows() << std::endl;
-  /*out << "AT num cols: " << AT->getDomainMap()->getGlobalNumElements() << std::endl;
-  out << "A num rows: " << A->getGlobalNumRows() << std::endl;
-  out << "A num cols: " << A->getDomainMap()->getGlobalNumElements() << std::endl;*/
-
-  out << "AT*A with multiple row owners" << std::endl;
   mult_test_results results = multiply_test(
     "AT*A with multipl row owners", 
     AT,
@@ -607,7 +601,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, Multiple_row_owners){
   }
   TEST_COMPARE(results.epsilon, <, defaultEpsilon)
 
-}
+}*/
 
 
 } //namespace Tpetra
