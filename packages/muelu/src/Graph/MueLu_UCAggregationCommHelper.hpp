@@ -113,10 +113,12 @@ namespace MueLu {
     //
     void ArbitrateAndCommunicate(Vector &weight_, LOVector &procWinner_, LOVector *companion, const bool perturb) const
     {
-      int MyPid = weight_.getMap()->getComm()->getRank(); // TODO:remove the getMap() step
+      const RCP<const Map> weightMap = weight_.getMap();
+
+      int MyPid = weightMap->getComm()->getRank(); // TODO:remove the getMap() step
 
       if (perturb) {
-        RCP<Vector> perturbWt_ = VectorFactory::Build(weight_.getMap());
+        RCP<Vector> perturbWt_ = VectorFactory::Build(weightMap);
 
         // Note: maxValue() not available for Tpetra
         //SC largestGlobalWeight = weight_.maxValue();
@@ -133,11 +135,11 @@ namespace MueLu {
         ArrayRCP<SC> weight = weight_.getDataNonConst(0); // TODO: const?
         ArrayRCP<SC> perturbWt = perturbWt_->getDataNonConst(0);
 
-        for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) {
+        for (size_t i=0; i < weightMap->getNodeNumElements(); i++) {
           if (weight[i] == 0.) perturbWt[i] = 0.;
           else perturbWt[i] = weight[i] + 1.0e-7*largestGlobalWeight*fabs(perturbWt[i]);
         }
-        for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) weight[i] = perturbWt[i]; //TODO: why we return a perturbed weight? Can weight be const on this func?
+        for (size_t i=0; i < weightMap->getNodeNumElements(); i++) weight[i] = perturbWt[i]; //TODO: why we return a perturbed weight? Can weight be const on this func?
       }
   
       // Communicate weights and store results in PostComm (which will be copied
@@ -146,7 +148,7 @@ namespace MueLu {
       // processor should have the same value for PostComm[] even when multiple
       // copies of the same Gid are involved.
 
-      RCP<Vector> postComm_ = VectorFactory::Build(weight_.getMap());
+      RCP<Vector> postComm_ = VectorFactory::Build(weightMap);
 
       postComm_->putScalar(0.0);
 
@@ -166,7 +168,7 @@ namespace MueLu {
       //      When all weight's for a GID are zero, the associated procWinner's
       //      are left untouched.
 
-      RCP<Vector> candidateWinners_ = VectorFactory::Build(weight_.getMap());
+      RCP<Vector> candidateWinners_ = VectorFactory::Build(weightMap);
       candidateWinners_->putScalar(0.0);
 
       ArrayRCP<SC> weight = weight_.getDataNonConst(0);
@@ -174,11 +176,11 @@ namespace MueLu {
       {
         ArrayRCP<SC> candidateWinners = candidateWinners_->getDataNonConst(0);
         ArrayRCP<SC> postComm = postComm_->getDataNonConst(0);
-        for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) {
+        for (size_t i=0; i < weightMap->getNodeNumElements(); i++) {
           if (postComm[i] == weight[i]) candidateWinners[i] = (SC) MyPid+1;
         }
         
-        for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) weight[i]=postComm[i]; 
+        for (size_t i=0; i < weightMap->getNodeNumElements(); i++) weight[i]=postComm[i]; 
       }
       NonUnique2NonUnique(*candidateWinners_, *postComm_, Cthulhu::ABSMAX);
 
@@ -190,7 +192,7 @@ namespace MueLu {
       ArrayRCP<LO> procWinner = procWinner_.getDataNonConst(0);
       {
         ArrayRCP<SC> postComm = postComm_->getDataNonConst(0);
-        for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++)  {
+        for (size_t i=0; i < weightMap->getNodeNumElements(); i++)  {
           if ( weight[i] != 0.) procWinner[i] = ((int) (postComm[i])) - 1;
         }
       }
@@ -205,24 +207,24 @@ namespace MueLu {
    
         //Teuchos::ArrayRCP<GO>::size_type numMyWinners = 0;
         int numMyWinners = 0;
-        for (size_t i = 0; i < weight_.getMap()->getNodeNumElements(); i++) {
+        for (size_t i = 0; i < weightMap->getNodeNumElements(); i++) {
           if (procWinner[i] == MyPid) numMyWinners++;
         }
    
-        //    int *myGids    = new int[weight_.getMap()->getNodeNumElements()+1];
+        //    int *myGids    = new int[weightMap->getNodeNumElements()+1];
         //    int *myWinners = new int[numMyWinners+1];
-        ArrayView<const GO> myGids = weight_.getMap()->getNodeElementList(); //== weight_.getMap()->MyGlobalElements(myGids);
+        ArrayView<const GO> myGids = weightMap->getNodeElementList(); //== weightMap->MyGlobalElements(myGids);
         ArrayRCP<GO> myWinners(numMyWinners);
 
 #ifdef JG_DEBUG
         procWinner = Teuchos::null;
-        std::cout << MyPid << ": weight_.getMap()->getNodeNumElements()=" << weight_.getMap()->getNodeNumElements() << std::endl;
+        std::cout << MyPid << ": weightMap->getNodeNumElements()=" << weightMap->getNodeNumElements() << std::endl;
         std::cout << MyPid << ": procWinner=" << procWinner_ << std::endl;
         procWinner = procWinner_.getDataNonConst(0);
 #endif
 
         numMyWinners = 0;
-        for (size_t i = 0; i < weight_.getMap()->getNodeNumElements(); i++) {
+        for (size_t i = 0; i < weightMap->getNodeNumElements(); i++) {
           if (procWinner[i] == MyPid)
             myWinners[numMyWinners++] = myGids[i];
         }
@@ -237,9 +239,9 @@ namespace MueLu {
 
 #endif
 
-        // Cthulhu::EpetraMap winnerMap(-1, numMyWinners, myWinners, 0, weight_.getMap()->getComm());    
+        // Cthulhu::EpetraMap winnerMap(-1, numMyWinners, myWinners, 0, weightMap->getComm());    
         Cthulhu::global_size_t g = -1; //TODO for Tpetra -1 == ??
-        RCP<Map> winnerMap = MapFactory::Build(weight_.getMap()->lib(), g, myWinners(), 0, weight_.getMap()->getComm());
+        RCP<Map> winnerMap = MapFactory::Build(weightMap->lib(), g, myWinners(), 0, weightMap->getComm());
        
         // Pull the Winners out of companion
         //     JustWinners <-- companion[Winners];
@@ -252,7 +254,7 @@ namespace MueLu {
         justWinners->describe(*out, Teuchos::VERB_EXTREME);
 #endif
 
-        RCP<const Import> winnerImport = ImportFactory::Build(weight_.getMap(), winnerMap);
+        RCP<const Import> winnerImport = ImportFactory::Build(weightMap, winnerMap);
         try
           {
             justWinners->doImport(*companion, *winnerImport, Cthulhu::INSERT);
@@ -269,10 +271,10 @@ namespace MueLu {
         //#define JG_DEBUG
 #ifdef JG_DEBUG
         std::cout << *winnerMap << std::endl;
-        std::cout << *weight_.getMap() << std::endl;
+        std::cout << *weightMap << std::endl;
 #endif
 
-        // RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weight_.getMap()); VERSION1
+        // RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weightMap); VERSION1
         try
           {
             // companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);   // VERSION1 Slow
@@ -300,7 +302,7 @@ namespace MueLu {
 
             // std::cout << MyPid << ": pushWinners(Import(winnerMap, weight_.Map))=" << *pushWinners << std::endl;
             std::cout << MyPid << ": winnerMap=" << *winnerMap << std::endl;
-            std::cout << MyPid << ": weight_.Map=" << *weight_.getMap() << std::endl;
+            std::cout << MyPid << ": weight_.Map=" << *weightMap << std::endl;
 #endif
             //  throw e;
             //}
