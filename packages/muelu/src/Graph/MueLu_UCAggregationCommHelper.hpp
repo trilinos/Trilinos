@@ -279,8 +279,11 @@ namespace MueLu {
         try
           {
             // companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);   // VERSION1 Slow
-            // justWinners->doExport(*companion, *winnerImport, Cthulhu::INSERT);  // VERSION2 Tpetra doc is wrong
-            companion->doExport(*justWinners, *winnerImport, Cthulhu::INSERT);     // VERSION3 - TODO: will certainly not work with Epetra? (change Cthulhu?)
+            if (weightMap->lib() == Cthulhu::UseEpetra)
+              justWinners->doExport(*companion, *winnerImport, Cthulhu::INSERT);  // VERSION2 Tpetra doc is wrong
+            else if (weightMap->lib() == Cthulhu::UseTpetra)
+              companion->doExport(*justWinners, *winnerImport, Cthulhu::INSERT);     // VERSION3 - TODO: will certainly not work with Epetra? (change Cthulhu?)
+            else throw "lib()";
           }
         catch(std::exception& e)
           {
