@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
   LO maxLevels = 10;
   LO its=10;
   std::string coarseSolver;
+  std::string smooType="SGS";
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
@@ -134,12 +135,13 @@ int main(int argc, char *argv[]) {
   clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
   clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as transpose of prolongator");
   clp.setOption("coarseSweeps",&coarseSweeps,"sweeps to be used in SGS on the coarsest level");
-  clp.setOption("fineSweeps",&fineSweeps,"sweeps to be used in SGS on the finer levels");
+  clp.setOption("fineSweeps",&fineSweeps,"sweeps to be used in SGS (or Chebyshev degree) on the finer levels");
   clp.setOption("maxCoarseSize",&maxCoarseSize,"maximum #dofs in coarse operator");
   clp.setOption("tol",&tol,"stopping tolerance for Krylov method");
   clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
   clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
   clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
+  clp.setOption("smooType",&smooType,"smoother type (SGS or Chebyshev)");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -243,14 +245,22 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: sweeps", (LO) fineSweeps);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
+  std::transform(smooType.begin(), smooType.end(), smooType.begin(), ::tolower);
 #ifdef HAVE_MUELU_IFPACK
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
     smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 #endif
   } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
-    ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
-    smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
+    if (smooType == "sgs") {
+      ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
+      smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
+    } else if (smooType == "cheby") {
+      ifpackList.set("chebyshev: degree", (LO) fineSweeps);
+      ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
+      ifpackList.set("chebyshev: zero starting solution", false);
+      smooProto = rcp( new Ifpack2Smoother("CHEBYSHEV",ifpackList) );
+    }
 #endif
   }
   if (smooProto == Teuchos::null) {
@@ -402,7 +412,7 @@ int main(int argc, char *argv[]) {
     int maxiters = 100;
     Teuchos::ParameterList belosList;
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
-    belosList.set("Output Frequency",10);
+    belosList.set("Output Frequency",1);
     belosList.set("Output Style",Belos::Brief);
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
