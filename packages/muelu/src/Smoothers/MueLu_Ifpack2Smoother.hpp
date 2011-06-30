@@ -156,7 +156,25 @@ class Level;
 
       //      Ifpack2::Factory factory;
       RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A_);
+      std::ostringstream buf; buf << level.GetLevelID();
+      std::string prefix = "Smoother (level " + buf.str() + ") : ";
+      LO rootRank = out_->getOutputToRootOnly();
+      out_->setOutputToRootOnly(0);
+      *out_ << prefix << "# global rows = " << A_->getGlobalNumRows()
+            << ", estim. global nnz = " << A_->getGlobalNumEntries() << std::endl;
+      *out_ << prefix << "Ifpack2 " << ifpack2Type_ << std::endl;
+      out_->setOutputToRootOnly(rootRank);
       prec_ = Ifpack2::Factory::create(ifpack2Type_, tpA, overlap_);
+      if (ifpack2Type_ == "CHEBYSHEV") {
+        Scalar maxEigenValue = list_.get("chebyshev: max eigenvalue",(Scalar)-1.0);
+        if (maxEigenValue == -1.0) {
+          Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(A_);
+          Utils::ScaleMatrix(A_,diag); //scale matrix
+          maxEigenValue = Utils::PowerMethod(*A_,10,1e-4);
+          list_.set("chebyshev: max eigenvalue",maxEigenValue);
+          Utils::ScaleMatrix(A_,diag,false); //undo scaling
+        }
+      }
       prec_->setParameters(list_);
       prec_->initialize();
       prec_->compute();
