@@ -490,8 +490,10 @@ namespace MueLu {
         for (size_t j=0; j<nnz; j++) {
           scaledVals[j] = vals[j]*sv[i];
         }
-        Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
-        tpOp->replaceLocalValues(i,cols,valview);
+        if (nnz>0) {
+          Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
+          tpOp->replaceLocalValues(i,cols,valview);
+        }
       } //for (size_t i=0; ...
 
       tpOp->fillComplete(domainMap,rangeMap);
