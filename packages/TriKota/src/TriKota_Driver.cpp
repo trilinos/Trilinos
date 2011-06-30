@@ -72,10 +72,15 @@ TriKota::Driver::Driver(const char* dakota_in,
 #endif
 }
 
+#ifdef HAVE_MPI
 MPI_Comm TriKota::Driver::getAnalysisComm()
 {
   return analysis_comm;
 }
+#else
+int TriKota::Driver::getAnalysisComm()
+{ return 0; }
+#endif
 
 ProblemDescDB& TriKota::Driver::getProblemDescDB()
 {

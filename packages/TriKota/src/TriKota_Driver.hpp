@@ -68,7 +68,11 @@ public:
      second step using this communicator. If the application is built 
      on MPI_COMM_WORLD, then this call can be used to verify that Dakota
      is running in that mode as well.*/
+#ifdef HAVE_MPI
   MPI_Comm getAnalysisComm(); 
+#else
+  int      getAnalysisComm(); 
+#endif
 
   /*! \brief Accessor to get problem description from Dakota. 
     This hook is used within TriKota::DirectApplicInterface to
@@ -94,7 +98,11 @@ private:
   Dakota::ParallelLibrary parallel_lib;
   Dakota::ProblemDescDB problem_db;
   Dakota::Strategy selected_strategy;
+#ifdef HAVE_MPI
   MPI_Comm analysis_comm;
+#else
+  int      analysis_comm;
+#endif
   bool rank_zero;
 
 }; // end of class Driver

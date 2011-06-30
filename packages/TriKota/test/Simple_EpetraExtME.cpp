@@ -37,7 +37,11 @@
 #endif // HAVE_MPI
 
 
+#ifdef HAVE_MPI
 Simple_ModelEval::Simple_ModelEval(const MPI_Comm appComm) 
+#else
+Simple_ModelEval::Simple_ModelEval(const int appComm) 
+#endif
 {
 
 #ifdef HAVE_MPI
