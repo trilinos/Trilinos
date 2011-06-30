@@ -16,3 +16,7 @@ SET(PVM_LIBRARY_DIRS /opt/intel-11.1.064/tpls/pvm3/lib/LINUX64                  
 SET(PVM_INCLUDE_DIRS /opt/intel-11.1.064/tpls/pvm3/include                        CACHE FILEPATH "")
 SET(Netcdf_LIBRARY_DIRS /opt/gcc-4.5.1/tpls/netcdf-4.1.1/lib CACHE FILEPATH "")
 SET(Netcdf_INCLUDE_DIRS /opt/gcc-4.5.1/tpls/netcdf-4.1.1/include CACHE FILEPATH "")
+SET(HDF5_LIBRARY_DIRS   /opt/gcc-4.5.1/tpls/hdf5/lib     CACHE FILEPATH "")
+SET(HDF5_INCLUDE_DIRS   /opt/gcc-4.5.1/tpls/hdf5/include CACHE FILEPATH "")
+SET(SILO_LIBRARY_DIRS   /opt/gcc-4.5.1/tpls/silo/lib     CACHE FILEPATH "")
+SET(SILO_INCLUDE_DIRS   /opt/gcc-4.5.1/tpls/silo/include CACHE FILEPATH "")
