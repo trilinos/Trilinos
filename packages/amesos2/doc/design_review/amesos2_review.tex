@@ -47,7 +47,7 @@ Sandia National Laboratories
     \frametitle{Amesos2 Motivation}
 
 \begin{itemize}
-\item Common Interface for direct solvers.
+\item Common Interface to direct linear solvers.
 \medskip
 \item Support 32-bit and 64-bit global ids.
 \medskip
@@ -59,6 +59,59 @@ Sandia National Laboratories
       solvers and matrix types.
 \end{itemize}
 
+\end{frame}
+
+\begin{frame}
+    \frametitle{Use Case 1: Simple Solve.}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Typical Usage: Preorder, Symbolic, Numeric, Solve}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Solver Interface and Creating Solver}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Amesos2 Parameters vs Solver Parameters}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Amesos2 Parameters vs Solver Parameters}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Support for New Solvers}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Support for New Matrices and Multivectors}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Expert Usage}
+\begin{itemize}
+    \item Releasing $A$ after symbolic and numeric factorization.(TBD: Eg)
+    \item Reusing the solver for a different matrix (TBD: Eg)
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Internal Design: Solver Hierarchy}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Internal Design: MatrixAdapter Hierarchy}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Future Work}
+\begin{itemize}
+    \item Need better support to do ordering: Zoltan2 will provide both
+    graph partitoning based and minimum degree based orderings.
+    \item Need to support more solvers and matrix types.
+\end{itemize}
 \end{frame}
 
 \end{document}
