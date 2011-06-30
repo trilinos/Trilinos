@@ -65,6 +65,8 @@ namespace Amesos {
 
   /**
    * \brief Amesos2 adapter for the Tpetra::MultiVector class.
+   *
+   * \ingroup amesos2_multivec_adapters
    */
   template< typename Scalar,
 	    typename LocalOrdinal,
@@ -300,9 +302,6 @@ namespace Amesos {
      * \param local if \c true , each node will get a view of the vectors it is
      * in possession of.  The default, \c false , will give each calling node a
      * view of the global multivector.
-     *
-     * \deprecated There is no good reason to use this function.  Use
-     * get1dCopy instead.
      */
     Teuchos::ArrayRCP<scalar_type> get1dViewNonConst( bool local = false );
 

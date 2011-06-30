@@ -21,12 +21,14 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_EXPERIMENTAL
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_EpetraExt
   HAVE_${PACKAGE_NAME_UC}_EPETRAEXT
   "Enable EpetraExt functionality (for examples and testing)"
-  ${Trilinos_ENABLE_EpetraExt} )
+# ${Trilinos_ENABLE_EpetraExt} )  # How to set to ON if enabled in Trilinos?
+  OFF )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Epetra
   HAVE_${PACKAGE_NAME_UC}_EPETRA
   "Enable support for Epetra matrix and multivector objects"
-  ${Trilinos_ENABLE_Epetra} )
+#  ${Trilinos_ENABLE_Epetra} )
+  OFF )
 
 
 #

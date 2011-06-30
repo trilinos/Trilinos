@@ -23,6 +23,19 @@
 
 namespace Amesos {
 
+  /**
+   * \brief Amesos::MatrixAdapter definitions for objects deriving from Epetra_RowMatrix.
+   *
+   * This class provides definitions for classes that derive
+   * from/implement the Epetra_RowMatrix interface.  Most methods
+   * required for compliance with the Amesos::MatrixAdapter interface
+   * are defined here.  The only method that derived class must define
+   * is the get() method, which relies on each derived object knowing
+   * how to construct an instance of itself (something which the
+   * abstract base class cannot know).
+   *
+   * \ingroup amesos2_matrix_adapters
+   */
   template < class DerivedMat >
   class AbstractConcreteMatrixAdapter< Epetra_RowMatrix, DerivedMat >
     : public MatrixAdapter< DerivedMat > {
@@ -67,6 +80,8 @@ namespace Amesos {
 			       size_t& nnz) const;
 
     global_size_t getGlobalNNZ_impl() const;
+
+    size_t getLocalNNZ_impl() const;
 
     size_t getMaxRowNNZ_impl() const;
 

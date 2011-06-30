@@ -69,6 +69,8 @@ namespace Amesos {
 
 /**
  * \brief Amesos2 adapter for the Epetra_MultiVector class.
+ *
+ * \ingroup amesos2_multivec_adapters
  */
 template <>
 class MultiVecAdapter<Epetra_MultiVector>

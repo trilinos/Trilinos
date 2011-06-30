@@ -20,6 +20,9 @@
 #include <Teuchos_Comm.hpp>
 
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 #include <MatrixMarket_Tpetra.hpp> // For reading matrix-market files
 
 #include "Amesos2.hpp"          // includes everything from Amesos2
@@ -385,7 +388,9 @@ bool do_epetra_test(const string& mm_file,
   RCP<Amesos::Solver<MAT,MV> > solver
     = Amesos::create<MAT,MV>(solver_name, A_rcp, Xhat, B );
 
-  solver->setParameters( rcpFromRef(solve_params) );
+  ParameterList params;
+  params.set("Amesos2", solve_params);
+  solver->setParameters( rcpFromRef(params) );
   try {
     solver->symbolicFactorization().numericFactorization().solve();
   } catch ( std::exception e ){
@@ -543,7 +548,9 @@ bool do_tpetra_test_with_types(const string& mm_file,
   RCP<Amesos::Solver<MAT,MV> > solver
     = Amesos::create<MAT,MV>(solver_name, A, Xhat, B );
 
-  solver->setParameters( rcpFromRef(solve_params) );
+  ParameterList params;
+  params.set("Amesos2", solve_params);
+  solver->setParameters( rcpFromRef(params) );
   try {
     solver->symbolicFactorization().numericFactorization().solve();
   } catch ( std::exception e ){

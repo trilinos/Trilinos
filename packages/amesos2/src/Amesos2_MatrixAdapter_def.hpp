@@ -36,28 +36,8 @@ namespace Amesos {
 				Util::EDistribution distribution,
 				Util::EStorage_Ordering ordering) const
   {
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap;
-    switch( distribution ){
-    case Util::Distributed:
-    case Util::Distributed_No_Overlap:
-      rowmap = Tpetra::createUniformContigMap<local_ordinal_t,global_ordinal_t>(this->getGlobalNumRows(),
-										this->getComm());
-      break;
-    case Util::Globally_Replicated:
-      rowmap = Tpetra::createLocalMap<local_ordinal_t,global_ordinal_t>(this->getGlobalNumRows(),
-									this->getComm());
-      break;
-    case Util::Rooted:
-      Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getComm();
-      int rank = Teuchos::rank(*comm);
-      size_t my_num_rows = Teuchos::OrdinalTraits<global_size_t>::zero();
-      global_size_t global_rows = this->getGlobalNumRows();
-      if( rank == 0 ) my_num_rows = global_rows;
-      rowmap = Tpetra::createContigMap<local_ordinal_t,global_ordinal_t>(global_rows,
-									 my_num_rows,
-									 comm);
-      break;
-    }
+    const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap
+      = this->getDistributionMap(distribution);
     this->getCrs(nzval, colind, rowptr, nnz, Teuchos::ptrInArg(*rowmap), ordering);
   }
 
@@ -84,28 +64,8 @@ namespace Amesos {
 				Util::EDistribution distribution,
 				Util::EStorage_Ordering ordering) const
   {
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap;
-    switch( distribution ){
-    case Util::Distributed:
-    case Util::Distributed_No_Overlap:
-      colmap = Tpetra::createUniformContigMap<local_ordinal_t,global_ordinal_t>(this->getGlobalNumCols(),
-										this->getComm());
-      break;
-    case Util::Globally_Replicated:
-      colmap = Tpetra::createLocalMap<local_ordinal_t,global_ordinal_t>(this->getGlobalNumCols(),
-									this->getComm());
-      break;
-    case Util::Rooted:
-      Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getComm();
-      int rank = Teuchos::rank(*comm);
-      size_t my_num_cols = Teuchos::OrdinalTraits<global_size_t>::zero();
-      global_size_t global_cols = this->getGlobalNumCols();
-      if( rank == 0 ) my_num_cols = global_cols;
-      colmap = Tpetra::createContigMap<local_ordinal_t,global_ordinal_t>(global_cols,
-									 my_num_cols,
-									 comm);
-      break;
-    }
+    const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap
+      = this->getDistributionMap(distribution);
     this->getCcs(nzval, rowind, colptr, nnz, Teuchos::ptrInArg(*colmap), ordering);
   }
 
@@ -131,6 +91,27 @@ namespace Amesos {
   }
   
   template < class Matrix >
+  size_t
+  MatrixAdapter<Matrix>::getLocalNumRows() const
+  {
+    return row_map_->getNodeNumElements(); // TODO: verify
+  }
+
+  template < class Matrix >
+  size_t
+  MatrixAdapter<Matrix>::getLocalNumCols() const
+  {
+    return col_map_->getNodeNumElements();
+  }
+  
+  template < class Matrix >
+  size_t
+  MatrixAdapter<Matrix>::getLocalNNZ() const
+  {
+    return static_cast<const adapter_t*>(this)->getLocalNNZ_impl();
+  }
+
+  template < class Matrix >
   std::string
   MatrixAdapter<Matrix>::description() const
   {
@@ -152,7 +133,6 @@ namespace Amesos {
    * Private method definitions *
    ******************************/
 
-  // Of course, all these helper functions have more parameters than this.
   template < class Matrix >
   void
   MatrixAdapter<Matrix>::help_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
@@ -366,6 +346,39 @@ namespace Amesos {
       colInd += colNNZ;
     }
     colptr[colptr_ind] = nnz = colInd;
+  }
+
+  template < class Matrix >
+  const Teuchos::RCP<
+    const Tpetra::Map<
+      typename MatrixAdapter<Matrix>::local_ordinal_t,
+      typename MatrixAdapter<Matrix>::global_ordinal_t,
+      typename MatrixAdapter<Matrix>::node_t> >
+  MatrixAdapter<Matrix>::getDistributionMap(Util::EDistribution distribution) const
+  {
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map;
+    switch( distribution ){
+    case Util::Distributed:
+    case Util::Distributed_No_Overlap:
+      map = Tpetra::createUniformContigMap<local_ordinal_t,global_ordinal_t>(this->getGlobalNumRows(),
+									     this->getComm());
+      break;
+    case Util::Globally_Replicated:
+      map = Tpetra::createLocalMap<local_ordinal_t,global_ordinal_t>(this->getGlobalNumRows(),
+								     this->getComm());
+      break;
+    case Util::Rooted:
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getComm();
+      int rank = Teuchos::rank(*comm);
+      size_t my_num_rows = Teuchos::OrdinalTraits<global_size_t>::zero();
+      global_size_t global_rows = this->getGlobalNumRows();
+      if( rank == 0 ) my_num_rows = global_rows;
+      map = Tpetra::createContigMap<local_ordinal_t,global_ordinal_t>(global_rows,
+								      my_num_rows,
+								      comm);
+      break;
+    }
+    return map;
   }
 
   

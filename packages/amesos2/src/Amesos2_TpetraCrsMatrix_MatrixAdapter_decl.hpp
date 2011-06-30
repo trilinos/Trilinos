@@ -18,43 +18,56 @@
 
 namespace Amesos {
 
+  /**
+   * \brief MatrixAdapter definitions for Tpetra::CrsMatrix objects.
+   *
+   * Defines only the get_impl() method, which returns an instance of
+   * a Amesos::MatrixAdapter whose underlying matrix has the given
+   * distribution based on the Tpetra::Map.
+   *
+   * All other significant functionality is inherited from this
+   * class's superclass.
+   *
+   * \ingroup amesos2_matrix_adapters
+   */
   template <typename Scalar,
-	    typename LocalOrdinal,
-	    typename GlobalOrdinal,
-	    typename Node,
-	    typename LocalMatOps >
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            typename LocalMatOps >
   class ConcreteMatrixAdapter<Tpetra::CrsMatrix<Scalar,
-						LocalOrdinal,
-						GlobalOrdinal,
-						Node,
-						LocalMatOps> >
+                                                LocalOrdinal,
+                                                GlobalOrdinal,
+                                                Node,
+                                                LocalMatOps> >
     : public AbstractConcreteMatrixAdapter<Tpetra::RowMatrix<Scalar,
-							     LocalOrdinal,
-							     GlobalOrdinal,
-							     Node>,
-					   Tpetra::CrsMatrix<Scalar,
-							     LocalOrdinal,
-							     GlobalOrdinal,
-							     Node,
-							     LocalMatOps> >
+                                                             LocalOrdinal,
+                                                             GlobalOrdinal,
+                                                             Node>,
+                                           Tpetra::CrsMatrix<Scalar,
+                                                             LocalOrdinal,
+                                                             GlobalOrdinal,
+                                                             Node,
+                                                             LocalMatOps> >
   {
     // Give our matrix adapter class access to our private
     // implementation functions
-    friend class MatrixAdapter<Tpetra::RowMatrix<Scalar,	
-						 LocalOrdinal,
-						 GlobalOrdinal,
-						 Node> >;
+    friend class MatrixAdapter<Tpetra::RowMatrix<Scalar,        
+                                                 LocalOrdinal,
+                                                 GlobalOrdinal,
+                                                 Node> >;
   public:
     typedef Tpetra::CrsMatrix<Scalar,
-			      LocalOrdinal,
-			      GlobalOrdinal,
-			      Node,
-			      LocalMatOps>            matrix_t;
+                              LocalOrdinal,
+                              GlobalOrdinal,
+                              Node,
+                              LocalMatOps>             matrix_t;
   private:
-    typedef AbstractConcreteMatrixAdapter<Tpetra::RowMatrix<Scalar,
-							    LocalOrdinal,
-							    GlobalOrdinal,
-							    Node>, matrix_t> super_t;
+    typedef AbstractConcreteMatrixAdapter<
+      Tpetra::RowMatrix<Scalar,
+                        LocalOrdinal,
+                        GlobalOrdinal,
+                        Node>, matrix_t>                super_t;
   public:
     // 'import' superclass types
     typedef typename super_t::scalar_t                 scalar_t;
@@ -75,4 +88,4 @@ namespace Amesos {
 
 } // end namespace Amesos
 
-#endif	// AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DECL_HPP
+#endif  // AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DECL_HPP

@@ -75,24 +75,26 @@ namespace Amesos {
  *
  * Each concrete solver will implement several private sub-functions
  * that will be called within the common code for each function.
- *
- * In addition, the Amesos2::SolverCore static base class provides a convenient
- * way to handle the template parameters and the private typedef-ing (with
- * help of the MatrixAdapter and MultiVecAdapter classes) of the ordinal and
- * scalar types that will be used elsewhere in the concrete solver code.
  */
 
 /**
- * \brief Amesos2::SolverCore: A templated interface for interaction with
- *        third-party direct sparse solvers.
+ * \brief Amesos2::SolverCore: A templated interface for interaction
+ *        with third-party direct sparse solvers.
  *
- * The Amesos2::SolverCore class is the statically polymorphic parent class of
- * each Amesos2 class named Amesos2_<i>SolverName</i> which interfaces with
- * the third-party solver named <i>SolverName</i>.
+ * The Amesos2::SolverCore class is the statically polymorphic parent
+ * class of each Amesos2 class named Amesos2_<i>SolverName</i> which
+ * interfaces with the third-party solver named <i>SolverName</i>.
  *
- * <h1>Usage Examples</h1>
+ * Each concrete solver interface implements several private
+ * "sub-functions" that are called within common code for that
+ * function.
  *
- * ...
+ * This static base class also provides a convenient way to handle the
+ * template parameters and private typedef'ing (with the help of the
+ * Matrix and MultiVector adapter classes) of the ordinal and scalar
+ * types that can be used elsewhere in the concrete solver code.
+ *
+ * \ingroup amesos2_solver_framework
  */
 template <template <class,class> class ConcreteSolver,
           class Matrix,
@@ -102,6 +104,7 @@ class SolverCore : public Amesos::Solver<Matrix,Vector>
 public:
 
   // Grant public access to contained types
+  typedef SolverCore<ConcreteSolver,Matrix,Vector>                       type;
   typedef Solver<Matrix,Vector>                                    super_type;
   typedef ConcreteSolver<Matrix,Vector>                           solver_type;
   typedef Matrix                                                  matrix_type;
@@ -226,6 +229,12 @@ public:
   void solve();
 
 
+  void solve(const Teuchos::RCP<Vector> X, const Teuchos::RCP<const Vector> B) const;
+  
+
+  //@}  End Mathematical Functions group
+
+
   /**
    * \brief Returns \c true if the solver can handle this matrix shape.
    *
@@ -237,15 +246,15 @@ public:
    */
   bool matrixShapeOK();
 
-  void setX(const Teuchos::RCP<Vector> x){ multiVecX_ = createMultiVecAdapter<Vector>(x); }
+  void setA( const Teuchos::RCP<Matrix> a );
+
+  void setX(const Teuchos::RCP<Vector> x){ multiVecX_ = x; }
   
-  const Teuchos::RCP<Vector> getX(){ return( multiVecX_->getAdaptee() ); }
+  const Teuchos::RCP<Vector> getX(){ return( multiVecX_ ); }
 
-  void setB(const Teuchos::RCP<Vector> b){ multiVecB_ = createMultiVecAdapter<Vector>(b); }
+  void setB(const Teuchos::RCP<const Vector> b){ multiVecB_ = b; }
 
-  const Teuchos::RCP<Vector> getB(){ return( multiVecB_->getAdaptee() ); }  
-
-  //@}  End Mathematical Functions group
+  const Teuchos::RCP<const Vector> getB(){ return( multiVecB_ ); }  
 
 
   /// \name Parameter methods
@@ -401,23 +410,56 @@ public:
    */
   std::string name() const;
 
+private:
+
+  /** \brief Refresh this solver's internal data about A
+   * 
+   * Called whenever it would be necessary to refresh a solver's
+   * internal storage of the matrix A, which is whenever a phase is
+   * called that is equal to or below the current call.
+   *
+   * For example, say a user has just previously called solve(), then
+   * calls numericFactorization().  Since the solve phase is greater
+   * than the numericFactorization phase, this is an indication that
+   * the internal store of A needs refreshing, since the user
+   * (assuming the user know what she's doing) wouldn't otherwise need
+   * to call numericFactorization following a solve.
+   */
+  void refreshA();
+
+  typedef enum {
+    PREORDERING = 0,
+    SYMB_FACT = 1,
+    NUM_FACT = 2,
+    SOLVE = 3
+  } EPhase;
+
+  /// Stores what the last phase was
+  EPhase last_phase_;
 
 protected:
 
-  bool preOrderingDone(){ return status_.preOrderingDone_; }
+  bool preOrderingDone() const
+  { return status_.preOrderingDone_; }
 
-  bool symbolicFactorizationDone(){ return status_.symbolicFactorizationDone_; }
+  bool symbolicFactorizationDone() const
+  { return status_.symbolicFactorizationDone_; }
 
-  bool numericFactorizationDone(){ return status_.numericFactorizationDone_; }
+  bool numericFactorizationDone() const
+  { return status_.numericFactorizationDone_; }
 
   /// The LHS operator
   Teuchos::RCP<MatrixAdapter<Matrix> >   matrixA_;
 
   /// The LHS vector/multi-vector
-  Teuchos::RCP<MultiVecAdapter<Vector> > multiVecX_;
+  Teuchos::RCP<Vector> multiVecX_;
 
-  /// The RHS vector/multi-vector
-  Teuchos::RCP<MultiVecAdapter<Vector> > multiVecB_;
+  /** \brief The RHS vector/multi-vector
+   * 
+   * We point to a const Vector because Amesos2 should never directly
+   * modify B.
+   */
+  Teuchos::RCP<const Vector> multiVecB_;
 
   /// Number of global rows in \c matrixA_
   global_size_type globalNumRows_;

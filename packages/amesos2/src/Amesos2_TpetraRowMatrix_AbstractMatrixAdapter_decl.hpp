@@ -12,6 +12,19 @@
 
 namespace Amesos {
 
+  /**
+   * \brief Amesos::MatrixAdapter definitions for objects deriving from Tpetra::RowMatrix.
+   *
+   * This class provides definitions for classes that derive
+   * from/implement the Tpetra::RowMatrix interface.  Most methods
+   * required for compliance with the Amesos::MatrixAdapter interface
+   * are defined here.  The only method that derived class must define
+   * is the get() method, which relies on each derived object knowing
+   * how to construct an instance of itself (something which the
+   * abstract base class cannot know).
+   *
+   * \ingroup amesos2_matrix_adapters
+   */
   template <typename Scalar,
 	    typename LocalOrdinal,
 	    typename GlobalOrdinal,
@@ -67,6 +80,8 @@ namespace Amesos {
 
     global_size_t getGlobalNNZ_impl() const;
 
+    size_t getLocalNNZ_impl() const;
+
     size_t getMaxRowNNZ_impl() const;
 
     size_t getMaxColNNZ_impl() const;
@@ -98,7 +113,7 @@ namespace Amesos {
     bool isGloballyIndexed_impl() const;
 
     // Because instantiation of the subclasses could be wildly
-    // different (cf subclasses of Epetra_RowMatrix), this method
+    // different (cf subclasses of Tpetra::CrsMatrix), this method
     // hands off implementation to the adapter for the subclass
     RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
 

@@ -80,6 +80,15 @@ namespace Amesos {
   size_t
   AbstractConcreteMatrixAdapter<
     Epetra_RowMatrix,
+    DerivedMat>::getLocalNNZ_impl() const
+  {
+    return Teuchos::as<size_t>(this->mat_->NumMyNonzeros());
+  }
+
+  template <class DerivedMat>
+  size_t
+  AbstractConcreteMatrixAdapter<
+    Epetra_RowMatrix,
     DerivedMat>::getMaxRowNNZ_impl() const
   {
     return Teuchos::as<size_t>(this->mat_->MaxNumEntries());

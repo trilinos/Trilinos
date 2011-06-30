@@ -75,6 +75,10 @@
 
 namespace Amesos {
 
+  /**
+   * \defgroup amesos2_util Amesos2 Utilities
+   */
+
   namespace Util {
 
     using Teuchos::RCP;
@@ -86,13 +90,22 @@ namespace Amesos {
      * Matrix Adapters \c typedef this as \c {get_ccs|get_crs}_spec
      * indicating that the concrete adapter has a special
      * implementation for either the \c getCrs or \c getCcs functions.
+     *
+     * \ingroup amesos2_utils
      */
     struct has_special_impl {};
     struct no_special_impl {};
 
-    /// Indicates that the object of an adapter provides row access to its data.
+    /** \brief Indicates that the object of an adapter provides row access to its data.
+     * 
+     * \ingroup amesos2_utils
+     */
     struct row_access {};
-    /// Indicates that the object of an adapter provides column access to its data.
+    
+    /** \brief Indicates that the object of an adapter provides column access to its data.
+     *
+     * \ingroup amesos2_utils
+     */
     struct col_access {};
 
     /** \enum EDistribution
@@ -100,6 +113,8 @@ namespace Amesos {
      * An enum of this type is expected by the Matrix adapters' getCrs
      * and getCcs functions to describe the layout of the
      * representation on the calling processors.
+     *
+     * \ingroup amesos2_utils
      */
     typedef enum {
       Distributed,                /**< no processor has a view of the entire matrix, only local pieces */
@@ -113,6 +128,8 @@ namespace Amesos {
      * This enum also used by the matrix adapters to indicate whether
      * the indices of the representation must be in sorted order or
      * can have an arbitrary order.
+     *
+     * \ingroup amesos2_utils
      */
     typedef enum {
       Sorted_Indices,             /**< row/col indices need to appear in sorted order */
@@ -122,6 +139,8 @@ namespace Amesos {
 #ifdef HAVE_AMESOS2_EPETRA
     /**
      * \brief Transform an Epetra_Map object into a Tpetra::Map
+     *
+     * \ingroup amesos2_utils
      */
     template <typename LO, typename GO, typename GS, typename Node>
     RCP<Tpetra::Map<LO,GO,Node> >
@@ -129,6 +148,8 @@ namespace Amesos {
 
     /**
      * \brief Transform a Tpetra::Map object into an Epetra_Map
+     *
+     * \ingroup amesos2_utils
      */
     template <typename LO, typename GO, typename GS, typename Node>
     RCP<Epetra_Map>
@@ -136,11 +157,15 @@ namespace Amesos {
 
     /**
      * \brief Transform an Epetra_Comm object into a Teuchos::Comm object
+     *
+     * \ingroup amesos2_utils
      */
     const RCP<const Teuchos::Comm<int> > to_teuchos_comm(RCP<const Epetra_Comm> c);
 
     /**
      * \brief Transfrom a Teuchos::Comm object into an Epetra_Comm object
+     *
+     * \ingroup amesos2_utils
      */
     const RCP<const Epetra_Comm> to_epetra_comm(RCP<const Teuchos::Comm<int> > c);
 
@@ -148,6 +173,8 @@ namespace Amesos {
 
     /**
      * Transposes the compressed sparse matrix representation.
+     *
+     * \ingroup amesos2_utils
      */
     template <typename Scalar,
 	      typename GlobalOrdinal,
@@ -169,6 +196,8 @@ namespace Amesos {
      *
      * The first vector will be scaled by \c s[0] , the second vector
      * by \c s[1] , etc.
+     *
+     * \ingroup amesos2_utils
      */
     template <typename Scalar1, typename Scalar2>
     void scale(ArrayView<Scalar1> vals, size_t l,
@@ -189,6 +218,8 @@ namespace Amesos {
      * \code
      * Scalar1 operator()(Scalar1 x, Scalar2 y){  }
      * \endcode
+     *
+     * \ingroup amesos2_utils
      */
     template <typename Scalar1, typename Scalar2, class BinaryOp>
     void scale(ArrayView<Scalar1> vals, size_t l,
@@ -206,6 +237,7 @@ namespace Amesos {
      * \param trans  \c true = use transpose for matrix-vector multiply
      * \param prefix string prefix to prints before rest of output
      *
+     * \ingroup amesos2_utils
      */
     template <typename Matrix,
 	      typename Vector>
@@ -225,12 +257,6 @@ namespace Amesos {
     void computeVectorNorms(const RCP<Matrix> X,
 			    const RCP<Vector> B,
 			    std::string prefix="");
-
-
-    /// Uses a heuristic to set the maximum number of processors
-    template <typename Matrix>
-    void setMaxProcesses(const RCP<Matrix>& A,
-			 int& maxProcesses);
 
 
     /// Prints a line of 70 "-"s on std::cout.
@@ -266,10 +292,14 @@ namespace Amesos {
 			 const ArrayView<typename M::scalar_t> nzvals,
 			 const ArrayView<typename M::global_ordinal_t> indices,
 			 const ArrayView<GS> pointers,
-			 GS& nnz, EDistribution distribution,
+			 GS& nnz,
+			 const Teuchos::Ptr<
+			   const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+			                     typename M::node_t> > map,
 			 EStorage_Ordering ordering)
       {
-	Op::apply(mat, nzvals, indices, pointers, nnz, distribution, ordering);
+	Op::apply(mat, nzvals, indices, pointers, nnz, map, ordering);
       }
     };
 
@@ -280,7 +310,11 @@ namespace Amesos {
 			 const ArrayView<typename M::scalar_t> nzvals,
 			 const ArrayView<typename M::global_ordinal_t> indices,
 			 const ArrayView<GS> pointers,
-			 GS& nnz, EDistribution distribution,
+			 GS& nnz,
+			 const Teuchos::Ptr<
+			   const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+			                     typename M::node_t> > map,
 			 EStorage_Ordering ordering)
       {
 	typedef typename M::global_size_t mat_gs_t;
@@ -288,7 +322,7 @@ namespace Amesos {
 	Teuchos::Array<mat_gs_t> pointers_tmp(size);
 	mat_gs_t nnz_tmp;
 
-	Op::apply(mat, nzvals, indices, pointers_tmp, nnz_tmp, distribution, ordering);
+	Op::apply(mat, nzvals, indices, pointers_tmp, nnz_tmp, map, ordering);
 
 	for (i = 0; i < size; ++i){
 	  pointers[i] = Teuchos::as<GS>(pointers_tmp[i]);
@@ -304,14 +338,18 @@ namespace Amesos {
 			 const ArrayView<typename M::scalar_t> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
-			 GS& nnz, EDistribution distribution,
+			 GS& nnz,
+			 const Teuchos::Ptr<
+			   const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+			                     typename M::node_t> > map,
 			 EStorage_Ordering ordering)
       {
 	typedef typename M::global_size_t mat_gs_t;
 	if_then_else<is_same<GS,mat_gs_t>::value,
 	  same_gs_helper<M,S,GO,GS,Op>,
 	  diff_gs_helper<M,S,GO,GS,Op> >::type::do_get(mat, nzvals, indices,
-						       pointers, nnz, distribution,
+						       pointers, nnz, map,
 						       ordering);
       }
     };
@@ -323,7 +361,11 @@ namespace Amesos {
 			 const ArrayView<typename M::scalar_t> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
-			 GS& nnz, EDistribution distribution,
+			 GS& nnz,
+			 const Teuchos::Ptr<
+			   const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+			                     typename M::node_t> > map,
 			 EStorage_Ordering ordering)
       {
 	typedef typename M::global_ordinal_t mat_go_t;
@@ -334,7 +376,7 @@ namespace Amesos {
 	if_then_else<is_same<GS,mat_gs_t>::value,
 	  same_gs_helper<M,S,GO,GS,Op>,
 	  diff_gs_helper<M,S,GO,GS,Op> >::type::do_get(mat, nzvals, indices_tmp,
-						       pointers, nnz, distribution,
+						       pointers, nnz, map,
 						       ordering);
 
 	for (i = 0; i < size; ++i){
@@ -350,14 +392,18 @@ namespace Amesos {
 			 const ArrayView<S> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
-			 GS& nnz, EDistribution distribution,
+			 GS& nnz,
+			 const Teuchos::Ptr<
+			   const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+			                     typename M::node_t> > map,
 			 EStorage_Ordering ordering)
       {
 	typedef typename M::global_ordinal_t mat_go_t;
 	if_then_else<is_same<GO,mat_go_t>::value,
 	  same_go_helper<M,S,GO,GS,Op>,
 	  diff_go_helper<M,S,GO,GS,Op> >::type::do_get(mat, nzvals, indices,
-						       pointers, nnz, distribution,
+						       pointers, nnz, map,
 						       ordering);
       }
     };
@@ -369,7 +415,11 @@ namespace Amesos {
 			 const ArrayView<S> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
-			 GS& nnz, EDistribution distribution,
+			 GS& nnz,
+			 const Teuchos::Ptr<
+			   const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+			                     typename M::node_t> > map,
 			 EStorage_Ordering ordering)
       {
 	typedef typename M::scalar_t mat_scalar_t;
@@ -380,7 +430,7 @@ namespace Amesos {
 	if_then_else<is_same<GO,mat_go_t>::value,
 	  same_go_helper<M,S,GO,GS,Op>,
 	  diff_go_helper<M,S,GO,GS,Op> >::type::do_get(mat, nzvals_tmp, indices,
-						       pointers, nnz, distribution,
+						       pointers, nnz, map,
 						       ordering);
 
 	for (i = 0; i < size; ++i){
@@ -390,13 +440,16 @@ namespace Amesos {
     };
 #endif	// DOXYGEN_SHOULD_SKIP_THIS
 
-    /* This is our generic base class for the CRS and CCS helpers.
+    /** \brief A generic base class for the CRS and CCS helpers.
      *
-     * S, GO, and GS are the desired types.  They are also the types of
-     * the respective input parameters.
+     * S, GO, and GS are the desired types.  They are also the types
+     * of the respective input parameters.  Matrix is expected to be
+     * an Amesos2 MatrixAdapter type.
      *
      * The \c Op template parameter is a function-like class that
      * provides a static \c apply() function.
+     *
+     * \ingroup amesos2_util
      */
     template<class Matrix, typename S, typename GO, typename GS, class Op>
     struct get_cxs_helper
@@ -408,14 +461,52 @@ namespace Amesos {
 			 GS& nnz, EDistribution distribution,
 			 EStorage_Ordering ordering=Arbitrary)
       {
+	const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
+	                                     typename Matrix::global_ordinal_t,
+	                                     typename Matrix::node_t> > map
+	  = mat->getDistributionMap(distribution); // access provided as friend class
+	do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), ordering);
+      }
+
+      /**
+       * Basic function overload that uses the matrix's row/col map as
+       * returned by Op::getMap().
+       */
+      static void do_get(const Teuchos::Ptr<Matrix> mat,
+			 const ArrayView<S> nzvals,
+			 const ArrayView<GO> indices,
+			 const ArrayView<GS> pointers,
+			 GS& nnz, EStorage_Ordering ordering=Arbitrary)
+      {
+	const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
+	                                     typename Matrix::global_ordinal_t,
+	                                     typename Matrix::node_t> > map
+	  = Op::getMap(mat);
+	do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), ordering);
+      }
+
+      /**
+       * Function overload that takes an explicit map to use for the
+       * representation's distribution.
+       */
+      static void do_get(const Teuchos::Ptr<Matrix> mat,
+			 const ArrayView<S> nzvals,
+			 const ArrayView<GO> indices,
+			 const ArrayView<GS> pointers,
+			 GS& nnz,
+			 const Teuchos::Ptr<
+			   const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                             typename Matrix::global_ordinal_t,
+			                     typename Matrix::node_t> > map,
+			 EStorage_Ordering ordering=Arbitrary)
+      {
 	typedef typename Matrix::scalar_t mat_scalar;
 	if_then_else<is_same<mat_scalar,S>::value,
 	  same_scalar_helper<Matrix,S,GO,GS,Op>,
-	  diff_scalar_helper<Matrix,S,GO,GS,Op> >::type::do_get(mat, nzvals,
-								indices,
+	  diff_scalar_helper<Matrix,S,GO,GS,Op> >::type::do_get(mat,
+								nzvals, indices,
 								pointers, nnz,
-								distribution,
-								ordering);
+								map, ordering);
       }
     };
 
@@ -432,10 +523,22 @@ namespace Amesos {
 			const ArrayView<typename Matrix::global_ordinal_t> rowind,
 			const ArrayView<typename Matrix::global_size_t> colptr,
 			typename Matrix::global_size_t& nnz,
-			EDistribution distribution,
+			const Teuchos::Ptr<
+			  const Tpetra::Map<typename Matrix::local_ordinal_t,
+                                            typename Matrix::global_ordinal_t,
+			                    typename Matrix::node_t> > map,
 			EStorage_Ordering ordering)
       {
-	mat->getCcs(nzvals, rowind, colptr, nnz, distribution, ordering);
+	mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering);
+      }
+
+      static
+      const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
+					   typename Matrix::global_ordinal_t,
+					   typename Matrix::node_t> >
+      getMap(const Teuchos::Ptr<Matrix> mat)
+      {
+	return mat->getColMap();
       }
     };
 
@@ -447,10 +550,22 @@ namespace Amesos {
 			const ArrayView<typename Matrix::global_ordinal_t> colind,
 			const ArrayView<typename Matrix::global_size_t> rowptr,
 			typename Matrix::global_size_t& nnz,
-			EDistribution distribution,
+			const Teuchos::Ptr<
+			  const Tpetra::Map<typename Matrix::local_ordinal_t,
+			                    typename Matrix::global_ordinal_t,
+			                    typename Matrix::node_t> > map,
 			EStorage_Ordering ordering)
       {
-	mat->getCrs(nzvals, colind, rowptr, nnz, distribution, ordering);
+	mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering);
+      }
+
+      static
+      const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
+					   typename Matrix::global_ordinal_t,
+					   typename Matrix::node_t> >
+      getMap(const Teuchos::Ptr<Matrix> mat)
+      {
+	return mat->getRowMap();
       }
     };
 #endif	// DOXYGEN_SHOULD_SKIP_THIS
@@ -501,16 +616,23 @@ namespace Amesos {
      * // initialize mt_mat
      * Array<solver_complex> nzvals(nnz);
      * Array<int> rowind(nnz);
-     * Array<int> rowptr(numcols+1);
+     * Array<int> colptr(numcols+1);
      * get_ccs_helper<mat_t,solver_complex,int,int>::do_get(mat,nzvals,rowind,rowptr,nnz,Rooted,Arbitrary);
      * \endcode
      * 
-     * \sa get_crs_helper
+     * \sa \ref get_crs_helper
+     * \ingroup amesos2_util
      */
     template<class Matrix, typename S, typename GO, typename GS>
     struct get_ccs_helper : get_cxs_helper<Matrix,S,GO,GS,get_ccs_func<Matrix> >
     {};
 
+    /**
+     * Similar to get_ccs_helper , but used to get a CRS
+     * representation of the given matrix.
+     *
+     * \ingroup amesos2_util
+     */
     template<class Matrix, typename S, typename GO, typename GS>
     struct get_crs_helper : get_cxs_helper<Matrix,S,GO,GS,get_crs_func<Matrix> >
     {};

@@ -142,25 +142,25 @@ public:
   int debug_;
 
   /// Number of pre-ordering phases
-  int numPreOrder_;
+  mutable int numPreOrder_;
 
   /// Number of symbolic factorization phases.
-  int numSymbolicFact_;
+  mutable int numSymbolicFact_;
 
   /// Number of numeric factorization phases.
-  int numNumericFact_;
+  mutable int numNumericFact_;
 
   /// Number of solves.
-  int numSolve_;
+  mutable int numSolve_;
 
   /// If \c true, preOrdering() has been successfully called.
-  bool preOrderingDone_;
+  mutable bool preOrderingDone_;
 
   /// If \c true, symbolicFactorization() has been successfully called.
-  bool symbolicFactorizationDone_;
+  mutable bool symbolicFactorizationDone_;
 
   /// If \c true, numericFactorization() has been successfully called.
-  bool numericFactorizationDone_;
+  mutable bool numericFactorizationDone_;
 
 
   /// My process ID in this MPI communicator

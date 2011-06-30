@@ -264,20 +264,16 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
 
 template <class Matrix, class Vector>
 int
-Superlu<Matrix,Vector>::solve_impl()
+Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
+				   const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const
 {
-  if( !factorizationDone_ ){
-    TEST_FOR_EXCEPTION( !numericFactorization_impl(),
-      std::runtime_error,
-      "Numeric Factorization failed!");
-  }
   // root sets up for Solve and calls SuperLU
 
   // typedef typename MatrixTraits<Matrix>::scalar_t scalar_type;
   typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
 
-  global_size_type len_rhs = this->multiVecX_->getGlobalLength();
-  size_t nrhs = this->multiVecX_->getGlobalNumVectors();
+  global_size_type len_rhs = X->getGlobalLength();
+  size_t nrhs = X->getGlobalNumVectors();
 
   data_.ferr.resize(nrhs);
   data_.berr.resize(nrhs);
@@ -302,14 +298,14 @@ Superlu<Matrix,Vector>::solve_impl()
     std::cout << "Creating LHS and RHS multivectors" << std::endl;
 #endif
     MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
-      this->multiVecX_.ptr(),
+      X,
       xValues(),                // pass as ArrayView
       ldx,
       Teuchos::ptrFromRef(data_.X),
       this->timers_.vecRedistTime_);
 
     MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
-      this->multiVecB_.ptr(),
+      B,
       bValues(),                // pass as ArrayView
       ldb,
       Teuchos::ptrFromRef(data_.B),
@@ -352,10 +348,8 @@ Superlu<Matrix,Vector>::solve_impl()
   /* Update X's global values */
   {
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
-    // broadcast solution to everyone
-    Teuchos::broadcast(*(this->getComm()),0,xValues());
 
-    this->multiVecX_->globalize(xValues()); // operator() does conversion from ArrayRCP to ArrayView
+    X->globalize(xValues()); // operator() does conversion from ArrayRCP to ArrayView
   }
 
   /* All processes should return the same error code */
@@ -533,7 +527,7 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
 
 
 template<class Matrix, class Vector>
-const char* Superlu<Matrix,Vector>::name = "Amesos2::SuperLU";
+const char* Superlu<Matrix,Vector>::name = "SuperLU";
 
 
 } // end namespace Amesos

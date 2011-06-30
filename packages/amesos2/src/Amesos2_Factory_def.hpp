@@ -57,10 +57,10 @@
 
 #include <Teuchos_RCP.hpp>
 
-using Teuchos::rcp;
-using Teuchos::RCP;
-
 namespace Amesos {
+
+  using Teuchos::rcp;
+  using Teuchos::RCP;
 
   /*
    * Utility function to transform a string into all lowercase
@@ -70,12 +70,12 @@ namespace Amesos {
 
   template <class Matrix,
 	    class Vector >
-  RCP<Solver<Matrix,Vector> >
+  Solver<Matrix,Vector>*
   create(Matrix* A, Vector* X, Vector* B)
   {
     std::string solver = "Klu2";
     // Pass non-owning RCP objects to other factory method
-    return( create(solver, rcp(A,false), rcp(X,false), rcp(B,false)) );
+    return( create(solver, rcp(A,false), rcp(X,false), rcp(B,false)).getRawPtr() );
   }
 
 
@@ -91,12 +91,12 @@ namespace Amesos {
 
   template <class Matrix,
 	    class Vector >
-  RCP<Solver<Matrix,Vector> >
+  Solver<Matrix,Vector>*
   create(const char* solverName, Matrix* A, Vector* X, Vector* B)
   {
     std::string solver = solverName;
     // Pass non-owning RCP objects to other factory method
-    return( create(solver, rcp(A,false), rcp(X,false), rcp(B,false)) );
+    return( create(solver, rcp(A,false), rcp(X,false), rcp(B,false)).getRawPtr() );
   }
 
 
@@ -104,12 +104,26 @@ namespace Amesos {
 	    class Vector >
   RCP<Solver<Matrix,Vector> >
   create(const char* solverName,
-	 const RCP<Matrix> A,
-	 const RCP<Vector> X,
-	 const RCP<Vector> B)
+	 const RCP<Matrix> A, const RCP<Vector> X, const RCP<Vector> B)
   {
     std::string solver = solverName;
     return( create(solver, A, X, B) );
+  }
+
+
+  template <class Matrix,
+	    class Vector >
+  Solver<Matrix,Vector>*
+  create(const std::string solverName, Matrix* A){
+    return( create(solverName, rcp(A,false), RCP<Vector>(), RCP<Vector>()).getRawPtr() );
+  }
+
+
+  template <class Matrix,
+	    class Vector >
+  RCP<Solver<Matrix,Vector> >
+  create(const std::string solverName, const RCP<Matrix> A){
+    return( create(solverName, A, RCP<Vector>(), RCP<Vector>()) );
   }
 
 
@@ -126,32 +140,18 @@ namespace Amesos {
   template <class Matrix,
 	    class Vector >
   RCP<Solver<Matrix,Vector> >
-  create(const std::string solverName, const RCP<Matrix> A){
-    return( create(solverName, A, RCP<Vector>(), RCP<Vector>()) );
-  }
-
-
-  template <class Matrix,
-	    class Vector >
-  RCP<Solver<Matrix,Vector> >
   create(const std::string solver_name,
-	 const RCP<Matrix> A,
-	 const RCP<Vector> X,
-	 const RCP<Vector> B)
+	 const RCP<Matrix> A, const RCP<Vector> X, const RCP<Vector> B)
   {
     std::string solverName = tolower(solver_name); // for easy string checking
-    // Check for our native solver first.
-    //
-    // Remove compiler guards once interface is finalized, since we will always include it?
-#ifdef HAVE_AMESOS2_KLU2
-    if((solverName == "amesos2_klu2") || (solverName == "klu2")){
-      return( rcp(new Klu2<Matrix,Vector>(A, X, B)) );
-    }
-#endif
 
-#ifdef HAVE_AMESOS2_KLU
-    if((solverName == "amesos2_klu") || (solverName == "klu")){
-      return( rcp(new Klu<Matrix,Vector>(A, X, B)) );
+    // Check for our native solver first.  Treat KLU and KLU2 as equals.
+    // 
+    // We use compiler guards in case a user does want to disable KLU2
+#ifdef HAVE_AMESOS2_KLU2
+    if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
+       (solverName == "amesos2_klu")  || (solverName == "klu")){
+      return( rcp(new Klu2<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
@@ -214,7 +214,7 @@ namespace Amesos {
      * requested is not yet supported.  We throw a runtime exception stating
      * this, and return null.
      */
-    std::string err_msg = solverName + " is not implemented";
+    std::string err_msg = solver_name + " is not enabled or is not supported";
     TEST_FOR_EXCEPTION(true, std::invalid_argument, err_msg);
     return( Teuchos::null );
   }

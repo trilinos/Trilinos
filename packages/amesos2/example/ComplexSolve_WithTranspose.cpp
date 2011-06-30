@@ -137,10 +137,12 @@ int main(int argc, char *argv[]){
   RCP<Amesos::Solver<MAT,MV> > solver
     = Amesos::create<MAT,MV>("Superlu", A, Xhat, B );
 
-  Teuchos::ParameterList params;
+  Teuchos::ParameterList amesos2_params;
   // Setting the following will cause Amesos2 to complain
-  params.set("Trans","CONJ","Solve with conjugate-transpose");
+  amesos2_params.set("Trans","CONJ","Solve with conjugate-transpose");
 
+  Teuchos::ParameterList params;
+  params.set("Amesos2", amesos2_params);
   solver->setParameters( rcpFromRef(params) );
   solver->symbolicFactorization().numericFactorization().solve();
 

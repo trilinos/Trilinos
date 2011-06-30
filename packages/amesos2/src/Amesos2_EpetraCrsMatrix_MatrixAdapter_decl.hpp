@@ -18,6 +18,18 @@
 
 namespace Amesos {
 
+  /**
+   * \brief MatrixAdapter definitions for Epetra_CrsMatrix objects.
+   *
+   * Defines only the get_impl() method, which returns an instance of
+   * a Amesos::MatrixAdapter whose underlying matrix has the given
+   * distribution based on the Tpetra::Map.
+   *
+   * All other significant functionality is inherited from this
+   * class's superclass.
+   *
+   * \ingroup amesos2_matrix_adapters
+   */
   template <>
   class ConcreteMatrixAdapter< Epetra_CrsMatrix >
     : public AbstractConcreteMatrixAdapter< Epetra_RowMatrix, Epetra_CrsMatrix >
@@ -32,11 +44,11 @@ namespace Amesos {
 					  Epetra_CrsMatrix> super_t;
   public:
     // 'import' superclass types
-    typedef super_t::scalar_t                     scalar_t;
-    typedef super_t::local_ordinal_t       local_ordinal_t;
-    typedef super_t::global_ordinal_t     global_ordinal_t;
-    typedef super_t::node_t                         node_t;
-    typedef super_t::global_size_t           global_size_t;
+    typedef super_t::scalar_t                              scalar_t;
+    typedef super_t::local_ordinal_t                local_ordinal_t;
+    typedef super_t::global_ordinal_t              global_ordinal_t;
+    typedef super_t::node_t                                  node_t;
+    typedef super_t::global_size_t                    global_size_t;
     
     typedef ConcreteMatrixAdapter<matrix_t>                    type;
     

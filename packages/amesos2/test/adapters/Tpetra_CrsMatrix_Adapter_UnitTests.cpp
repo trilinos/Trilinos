@@ -53,6 +53,8 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Map.hpp>
 
 #include "Amesos2_MatrixAdapter.hpp"
 #include "Amesos2_Util_is_same.hpp"

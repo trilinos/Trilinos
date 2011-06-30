@@ -63,8 +63,8 @@ SolverCore<ConcreteSolver,Matrix,Vector>::SolverCore(
   Teuchos::RCP<Vector> X,
   Teuchos::RCP<Vector> B )
   : matrixA_(createMatrixAdapter<Matrix>(A))
-  , multiVecX_(createMultiVecAdapter<Vector>(X)) // may be null
-  , multiVecB_(createMultiVecAdapter<Vector>(B)) // may be null
+  , multiVecX_(X) // may be null
+  , multiVecB_(B) // may be null
   , globalNumRows_(matrixA_->getGlobalNumRows())
   , globalNumCols_(matrixA_->getGlobalNumCols())
   , globalNumNonZeros_(matrixA_->getGlobalNNZ())
@@ -150,33 +150,46 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 void
 SolverCore<ConcreteSolver,Matrix,Vector>::solve()
 {
-  TEST_FOR_EXCEPTION( multiVecX_.is_null() || multiVecB_.is_null(),
-		      std::runtime_error,
-		      "LHS and RHS must be set before attempting solve" );
+  solve(multiVecX_, multiVecB_);
+}
 
+template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
+void
+SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::RCP<Vector> X,
+                                                const Teuchos::RCP<const Vector> B) const
+{
+  TEST_FOR_EXCEPTION( X.is_null() || B.is_null(),
+                      std::runtime_error,
+                      "X and B must be set before attempting solve" );
+  
+#ifdef HAVE_AMESOS2_DEBUG
   // Check some required properties of X and B
-  TEST_FOR_EXCEPTION(
-    multiVecX_->getGlobalLength() != matrixA_->getGlobalNumCols(),
-    std::invalid_argument,
-    "LHS MultiVector must have length equal to the number of global columns in A");
+  TEST_FOR_EXCEPTION(X->getGlobalLength() != matrixA_->getGlobalNumCols(),
+                     std::invalid_argument,
+                     "MultiVector X must have length equal to the number of "
+                     "global columns in A");
 
-  TEST_FOR_EXCEPTION(
-    multiVecB_->getGlobalLength() != matrixA_->getGlobalNumRows(),
-    std::invalid_argument,
-    "RHS MultiVector must have length equal to the number of global rows in A");
-
-  TEST_FOR_EXCEPTION(
-    multiVecX_->getGlobalNumVectors() != multiVecB_->getGlobalNumVectors(),
-    std::invalid_argument,
-    "LHS and RHS MultiVectors must have the same number of vectors");
+  TEST_FOR_EXCEPTION(B->getGlobalLength() != matrixA_->getGlobalNumRows(),
+                     std::invalid_argument,
+                     "MultiVector B must have length equal to the number of "
+                     "global rows in A");
+  
+  TEST_FOR_EXCEPTION(X->getGlobalNumVectors() != B->getGlobalNumVectors(),
+                     std::invalid_argument,
+                     "X and B MultiVectors must have the same number of vectors");
+#endif  // HAVE_AMESOS2_DEBUG
   
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
-
+  
   if( !numericFactorizationDone() ){
-    numericFactorization();
+    // This casting-away of constness is probably OK because this
+    // function is meant to be "logically const"
+    const_cast<type*>(this)->numericFactorization();
   }
-
-  static_cast<solver_type*>(this)->solve_impl();
+  
+  static_cast<const solver_type*>(this)->solve_impl(
+    Teuchos::outArg(*createMultiVecAdapter<Vector>(X)),
+    createMultiVecAdapter<Vector>(Teuchos::rcp_const_cast<Vector>(B)).ptr());
   ++status_.numSolve_;
 }
 
@@ -189,6 +202,32 @@ SolverCore<ConcreteSolver,Matrix,Vector>::matrixShapeOK()
   return( static_cast<solver_type*>(this)->matrixShapeOK_impl() );
 }
 
+  // The RCP should probably be to a const Matrix, but that throws a
+  // wrench in some of the traits mechanisms that aren't expecting
+  // const types
+template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
+void
+SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<Matrix> a )
+{
+  matrixA_ = createMatrixAdapter(a);
+  if( !matrixA_.is_null() ){
+    // The user passed a non-null rcp, reset state
+    //
+    // Resetting the done-ness of each phase will force each to be
+    // repeated from scratch.  The solver interface is responsible
+    // for assuring that no dependencies linger between one matrix
+    // and another.
+    
+    status_.preOrderingDone_ = false;
+    status_.symbolicFactorizationDone_ = false;
+    status_.numericFactorizationDone_  = false;
+
+    globalNumNonZeros_ = matrixA_->getGlobalNNZ();
+    globalNumCols_     = matrixA_->getGlobalNumCols();
+    globalNumRows_     = matrixA_->getGlobalNumRows();
+  }
+}
+
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 Solver<Matrix,Vector>&
@@ -197,17 +236,22 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
 {
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 
-  // Do everything here that is for generic status and control parameters
-  control_.setControlParameters(parameterList);
-  status_.setStatusParameters(parameterList);
-
-  // Finally, hook to the implementation's parameter list parser
-  // First check if there is a dedicated sublist for this solver and use that if there is
-  if( parameterList->isSublist(name()) ){
-    static_cast<solver_type*>(this)->setParameters_impl(Teuchos::sublist(parameterList, name()));
-  } else {
-    // Just see if there is anything in the parent sublist that the solver recognizes
-    static_cast<solver_type*>(this)->setParameters_impl(parameterList);
+  if( parameterList->isSublist("Amesos2") ){
+    Teuchos::RCP<Teuchos::ParameterList> amesos2_params
+      = Teuchos::sublist(parameterList, "Amesos2");
+    
+    // Do everything here that is for generic status and control parameters
+    control_.setControlParameters(amesos2_params);
+    status_.setStatusParameters(amesos2_params);
+    
+    // Finally, hook to the implementation's parameter list parser
+    // First check if there is a dedicated sublist for this solver and use that if there is
+    if( amesos2_params->isSublist(name()) ){
+      static_cast<solver_type*>(this)->setParameters_impl(Teuchos::sublist(amesos2_params, name()));
+    } else {
+      // See if there is anything in the parent sublist that the solver recognizes
+      static_cast<solver_type*>(this)->setParameters_impl(amesos2_params);
+    }
   }
 
   return *this;
@@ -218,20 +262,20 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 Teuchos::RCP<const Teuchos::ParameterList>
 SolverCore<ConcreteSolver,Matrix,Vector>::getValidParameters() const
 {
-  Teuchos::TimeMonitor LocalTimer1( const_cast<Teuchos::Time&>(timers_.totalTime_) );
+  Teuchos::TimeMonitor LocalTimer1( timers_.totalTime_ );
 
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  RCP<ParameterList> control_params = rcp(new ParameterList());
+  RCP<ParameterList> control_params = rcp(new ParameterList("Amesos2 Control"));
   control_params->set("Transpose",false);
   control_params->set("AddToDiag","");
   control_params->set("AddZeroToDiag",false);
   control_params->set("MatrixProperty","general");
   control_params->set("ScaleMethod",0);
 
-  Teuchos::RCP<ParameterList> status_params = rcp(new ParameterList());
+  Teuchos::RCP<ParameterList> status_params = rcp(new ParameterList("Amesos2 Status"));
   status_params->set("PrintTiming",false);
   status_params->set("PrintStatus",false);
   status_params->set("ComputeVectorNorms",false);
@@ -240,12 +284,15 @@ SolverCore<ConcreteSolver,Matrix,Vector>::getValidParameters() const
   RCP<const ParameterList>
     solver_params = static_cast<const solver_type*>(this)->getValidParameters_impl();
 
-  RCP<ParameterList> all_params = rcp(new ParameterList());
-  all_params->setParameters(*control_params);
-  all_params->setParameters(*status_params);
-  all_params->set(name(), *solver_params);
+  RCP<ParameterList> amesos2_params = rcp(new ParameterList());
+  amesos2_params->setParameters(*control_params);
+  amesos2_params->setParameters(*status_params);
+  amesos2_params->set(name(), *solver_params);
 
-  return all_params;
+  RCP<ParameterList> params = rcp(new ParameterList());
+  params->set("Amesos2", *amesos2_params);
+
+  return params;
 }
 
 

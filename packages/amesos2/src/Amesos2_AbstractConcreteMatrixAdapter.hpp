@@ -31,7 +31,7 @@ namespace Amesos {
    *
    *   // < ...common functions... >
    *
-   *   RCP<Epetra_RowMatrix> get_impl(){
+   *   RCP<MatrixAdapter<M> > get_impl(){
    *     return static_cast<ConcreteMatrixAdapter<M>*>(this)->get_impl();
    *   }
    * }

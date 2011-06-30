@@ -83,12 +83,18 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  // Before we do anything, check that SuperLU is enabled
+  if( !Amesos::query("SuperLU") ){
+    std::cerr << "SuperLU not enabled.  Aborting..." << std::endl;
+    return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
+				// failure, which it isn't really
+  }
+
   Teuchos::RCP<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   size_t myRank = comm->getRank();
 
-  Teuchos::oblackholestream blackhole;
   std::ostream &out = std::cout;
 
   out << Amesos::version() << std::endl << std::endl;

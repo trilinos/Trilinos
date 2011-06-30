@@ -49,10 +49,14 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_as.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
 #include <MatrixMarket_Tpetra.hpp> // for loading matrices from file
 
 #include "Amesos2.hpp"
@@ -177,7 +181,7 @@ namespace {
 
     // Constructor from Factory.  Every overloaded Factory method
     // eventually calls the same/only Solver constructor
-    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu",eye,X,B);
+    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("SuperLU",eye,X,B);
 
     TEST_ASSERT( solver->getNumSymbolicFact() == 0 );
     TEST_ASSERT( solver->getNumNumericFact() == 0 );
@@ -224,7 +228,7 @@ namespace {
     B->randomize();
 
     // Constructor from Factory
-    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu",eye,X,B);
+    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("SuperLU",eye,X,B);
 
     solver->symbolicFactorization();
   }
@@ -259,7 +263,7 @@ namespace {
     B->randomize();
 
     // Constructor from Factory
-    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu",eye,X,B);
+    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("SuperLU",eye,X,B);
 
     solver->symbolicFactorization().numericFactorization();
 
@@ -305,7 +309,7 @@ namespace {
 
     // Solve A*Xhat = B for Xhat using the Superlu solver
     RCP<Amesos::Solver<MAT,MV> > solver
-      = Amesos::create<MAT,MV>("Superlu", A, Xhat, B );
+      = Amesos::create<MAT,MV>("SuperLU", A, Xhat, B );
 
     out << "Done creating solver" << std::endl;
 
@@ -358,11 +362,13 @@ namespace {
 
     // Solve A*Xhat = B for Xhat using the Superlu solver
     RCP<Amesos::Solver<MAT,MV> > solver
-      = Amesos::create<MAT,MV>("Superlu", A, Xhat, B );
+      = Amesos::create<MAT,MV>("SuperLU", A, Xhat, B );
+
+    Teuchos::ParameterList amesos2_params;
+    amesos2_params.sublist("SuperLU").set("Trans","TRANS","Solve with transpose");
 
     Teuchos::ParameterList params;
-    params.set("Trans","TRANS","Solve with transpose");
-
+    params.set("Amesos2", amesos2_params);
     solver->setParameters( rcpFromRef(params) );
     solver->symbolicFactorization().numericFactorization().solve();
 
@@ -436,7 +442,7 @@ namespace {
     Xhat->setObjectLabel("Xhat");
 
     // Create solver interface to Superlu through Amesos::Factory
-    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu",A,Xhat,B);
+    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("SuperLU",A,Xhat,B);
 
     solver->symbolicFactorization().numericFactorization().solve();
 
@@ -484,7 +490,7 @@ namespace {
 
     // Solve A*Xhat = B for Xhat using the Superlu solver
     RCP<Amesos::Solver<MAT,MV> > solver
-      = Amesos::create<MAT,MV>("Superlu", A, Xhat, B);
+      = Amesos::create<MAT,MV>("SuperLU", A, Xhat, B);
 
     solver->symbolicFactorization().numericFactorization().solve();
 
@@ -532,11 +538,13 @@ namespace {
 
     // Solve A*Xhat = B for Xhat using the Superlu solver
     RCP<Amesos::Solver<MAT,MV> > solver
-      = Amesos::create<MAT,MV>("Superlu", A, Xhat, B);
+      = Amesos::create<MAT,MV>("SuperLU", A, Xhat, B);
+
+    Teuchos::ParameterList amesos2_params;
+    amesos2_params.sublist("SuperLU").set("Trans","CONJ","Solve with conjugate-transpose");
 
     Teuchos::ParameterList params;
-    params.set("Trans","CONJ","Solve with conjugate-transpose");
-
+    params.set("Amesos2", amesos2_params);
     solver->setParameters( rcpFromRef(params) );
     solver->symbolicFactorization().numericFactorization().solve();
 

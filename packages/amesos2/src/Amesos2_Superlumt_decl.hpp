@@ -100,22 +100,13 @@ namespace Amesos {
  *       \f$ A T A \f$ .</li>
  *     <li> \c "COLAMD" : approximate minimum degree column ordering.
  *       (default)</li>
- *     <li> \c "MY_PERMC" : use the ordering given in the "perm_c" parameter
- *       given by the user.  The value of the "perm_c" parameter should be a
- *       Teuchos::Array<int> with length equal to the number of global columns.
- *       </li>
  *     </ul>
- *   <li> \c "perm_c" : a Teuchos::Array<int> with length equal to the number
- *     of global columns.  Will assume <tt> ColPerm = MY_PERMC</tt>.</li>
  * </ul>
  *
  * Note that the \c nprocs, \c panel_size, and \c relax options are
  * recognized by SuperLU_MT but not by SuperLU.
  *
- * \warning The function declarations of \c xsp_colorder(...) in \c
- * pssp_defs.h, \c pdsp_defs.h, \c pzsp_defs.h, and \c pcsp_defs.h of
- * the SuperLU_MT distribution should be changed to just \c
- * sp_colorder(...) in order to properly link against this interface.
+ * \ingroup amesos2_solver_interfaces 
  */
 template <class Matrix,
           class Vector>
@@ -194,14 +185,16 @@ private:
   /**
    * \brief SuperLU_MT specific solve.
    *
-   * Uses the symbolic and numeric factorizations, along with the RHS vector
-   * \c B to solve the sparse system of equations.
+   * Uses the symbolic and numeric factorizations, along with the RHS
+   * vector \c B to solve the sparse system of equations.  The
+   * solution is placed in X.
    *
    * \throw std::runtime_error SuperLU_MT is not able to solve the system.
    *
    * \callgraph
    */
-  int solve_impl();
+  int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
+		 const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const;
 
 
   /**
@@ -235,7 +228,7 @@ private:
   typedef typename TypeMap<Amesos::Superlumt,scalar_type>::magnitude_type magnitude_type;
 
   // struct holds all data necessary to make a superlu factorization or solve call
-  struct SLUData {
+  mutable struct SLUData {
     SLUMT::SuperMatrix A, BX, L, U;
     SLUMT::SuperMatrix AC; ///< The column-permuted matrix which will be factored
 
@@ -264,8 +257,6 @@ private:
   Teuchos::Array<int> rowind_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
   Teuchos::Array<int> colptr_;
-  /// Persisting 1D store for B and X values
-  Teuchos::Array<typename TypeMap<Amesos::Superlumt,scalar_type>::type> bxvals_;  size_t ldbx_;
 
   /* Note: In the above, must use "Amesos::Superlumt" rather than "Superlumt"
    * because otherwise the compiler references the specialized type of the

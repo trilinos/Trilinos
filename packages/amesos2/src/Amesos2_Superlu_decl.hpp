@@ -91,14 +91,10 @@ namespace Amesos {
  *       \f$ A T A \f$ .</li>
  *     <li> \c "COLAMD" : approximate minimum degree column ordering.
  *       (default)</li>
- *     <li> \c "MY_PERMC" : use the ordering given in the "perm_c" parameter
- *       given by the user.  The value of the "perm_c" parameter should be a
- *       Teuchos::Array<int> with length equal to the number of global columns.
- *       </li>
  *     </ul>
- *   <li> \c "perm_c" : a Teuchos::Array<int> with length equal to the number
- *     of global columns.  Will assume <tt> ColPerm = MY_PERMC</tt>.</li>
  * </ul>
+ *
+ * \ingroup amesos2_solver_interfaces
  */
 template <class Matrix,
           class Vector>
@@ -173,14 +169,17 @@ private:
   /**
    * \brief Superlu specific solve.
    *
-   * Uses the symbolic and numeric factorizations, along with the RHS vector
-   * \c B to solve the sparse system of equations.
+   * Uses the symbolic and numeric factorizations, along with the RHS
+   * vector \c B to solve the sparse system of equations.  The
+   * solution is placed in X.
    *
    * \throw std::runtime_error Superlu is not able to solve the system.
    *
    * \callgraph
    */
-  int solve_impl();
+  int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
+		 const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const;
+  // TODO: B should technically be declared const across the board
 
 
   /**
@@ -210,7 +209,7 @@ private:
 
 
   // struct holds all data necessary to make a superlu factorization or solve call
-  struct SLUData {
+  mutable struct SLUData {
     SLU::SuperMatrix A, B, X, L, U;
 #ifdef USE_DGSTRF
     SLU::SuperMatrix AC;

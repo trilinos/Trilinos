@@ -71,6 +71,8 @@
  * // ... Create A of type RCP<MAT>, and X and B of type RCP<VEC> ...
  * RCP<Amesos::Solver<MAT,VEC> > solver = Amesos::create<MAT,VEC>("Superlu", A, X, B);
  * \endcode
+ *
+ * \ingroup amesos2_solver_framework
  */
 
 #ifndef AMESOS2_FACTORY_DECL_HPP
@@ -121,19 +123,19 @@ namespace Amesos {
    * \brief Creates an Amesos2 Solver interface with Matrix A, LHS vector X,
    * and RHS vector B.
    *
-   * Default option which interfaces with the native KLU2 solver.
+   * This is the default option which interfaces with the native KLU2 solver.
    *
    * \param [in] A pointer to a matrix of coefficients
    * \param [in] X pointer to LHS solution vector
    * \param [in] B pointer to RHS vector
    *
-   * \return A <tt>Teuchos::RCP</tt> to a KLU2 solver interface.
+   * \return A \c C pointer to a KLU2 solver interface.
    *
-   * \deprecated
+   * \relates Amesos::Solver
    */
   template <class Matrix,
 	    class Vector >
-  Teuchos::RCP<Solver<Matrix,Vector> >
+  Solver<Matrix,Vector>*
   create(Matrix* A, Vector* X, Vector* B);
 
 
@@ -141,13 +143,15 @@ namespace Amesos {
    * \brief Creates an Amesos2 Solver interface with Matrix A, LHS vector X,
    * and RHS vector B.
    *
-   * Default option which interfaces with the native KLU2 solver.
+   * This is the default option which interfaces with the native KLU2 solver.
    *
-   * \param [in] A pointer to a matrix of coefficients
-   * \param [in] X pointer to LHS solution vector
-   * \param [in] B pointer to RHS vector
-   *
+   * \param [in] A <tt>Teuchos::RCP</tt> to the coefficient matrix
+   * \param [in] X <tt>Teuchos::RCP</tt> to LHS solution vector
+   * \param [in] B <tt>Teuchos::RCP</tt> to RHS vector
+   * 
    * \return A <tt>Teuchos::RCP</tt> to a KLU2 solver interface.
+   *
+   * \relates Amesos::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -162,45 +166,22 @@ namespace Amesos {
    * and RHS vector B.
    *
    * \param [in] solverName A \c C character string with the name of the
-   * underlying third-party solver desired.
+   *                        underlying third-party solver desired.
    * \param [in] A pointer to a matrix of coefficients
    * \param [in] X pointer to LHS solution vector
    * \param [in] B pointer to RHS vector
    *
-   * \return A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
+   * \return A \c C pointer to an Amesos2 solver interface.
    *
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    *
-   * \deprecated
+   * \relates Amesos::Solver
    */
   template <class Matrix,
 	    class Vector >
-  Teuchos::RCP<Solver<Matrix,Vector> >
+  Solver<Matrix,Vector>*
   create(const char* solverName, Matrix* A, Vector* X, Vector* B);
-
-
-  /**
-   * \brief Creates an Amesos2 Solver interface with Matrix A, LHS vector X,
-   * and RHS vector B.
-   *
-   * \param [in] solverName The name of the desired third-party solver
-   * \param [in] A pointer to the coefficient matrix
-   * \param [in] X pointer to LHS solution vector
-   * \param [in] B pointer to RHS vector
-   *
-   * \return A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
-   *
-   * \throw std::invalid_argument The third-party solver named by \c
-   * solverName is not supported.
-   */
-  template <class Matrix,
-	    class Vector >
-  Teuchos::RCP<Solver<Matrix,Vector> >
-  create(const char* solverName,
-	 const Teuchos::RCP<Matrix> A,
-	 const Teuchos::RCP<Vector> X,
-	 const Teuchos::RCP<Vector> B);
 
 
   /**
@@ -216,10 +197,37 @@ namespace Amesos {
    *
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
+   *
+   * \relates Amesos::Solver
    */
   template <class Matrix,
 	    class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
+  create(const char* solverName,
+	 const Teuchos::RCP<Matrix> A,
+	 const Teuchos::RCP<Vector> X,
+	 const Teuchos::RCP<Vector> B);
+
+
+  /**
+   * \brief Creates an Amesos2 Solver interface with Matrix A, LHS vector X,
+   * and RHS vector B.
+   *
+   * \param [in] solverName The name of the desired third-party solver
+   * \param [in] A \c C pointer to the coefficient matrix
+   * \param [in] X \c C pointer to LHS solution vector
+   * \param [in] B \c C pointer to RHS vector
+   *
+   * \return A \c C pointer to an Amesos2 solver interface.
+   *
+   * \throw std::invalid_argument The third-party solver named by \c
+   * solverName is not supported.
+   *
+   * \relates Amesos::Solver
+   */
+  template <class Matrix,
+	    class Vector >
+  Solver<Matrix,Vector>*
   create(const std::string solverName, Matrix* A, Vector* X, Vector* B);
 
 
@@ -236,6 +244,8 @@ namespace Amesos {
    *
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
+   *
+   * \relates Amesos::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -245,9 +255,32 @@ namespace Amesos {
 	 const Teuchos::RCP<Vector> X,
 	 const Teuchos::RCP<Vector> B);
 
+  
+  /**
+   * \brief Creates an Amesos2 Solver interface with Matrix A.
+   *
+   * Suitable for cases where numeric factorization must be performed
+   * before the X and B vectors are known.  Before a solve, the \c
+   * setX() and \c setB() functions should be used to set X and B.
+   *
+   * \param [in] solverName The name of the desired third-party solver
+   * \param [in] A \c C pointer to the coefficient matrix
+   *
+   * \return A \c C pointer to an Amesos2 solver interface.
+   * 
+   * \throw std::invalid_argument The third-party solver named by \c
+   * solverName is not supported.
+   *
+   * \relates Amesos::Solver
+   */
+  template <class Matrix,
+	    class Vector >
+  Solver<Matrix,Vector>*
+  create(const std::string solverName, Matrix* A);
+
 
   /**
-   * \bried Creates an Amesos2 Solver interface with Matrix A.
+   * \brief Creates an Amesos2 Solver interface with Matrix A.
    *
    * Suitable for cases where numeric factorization must be performed
    * before the X and B vectors are known.  Before a solve, the \c
@@ -256,10 +289,12 @@ namespace Amesos {
    * \param [in] solverName The name of the desired third-party solver
    * \param [in] A <tt>Teuchos::RCP</tt> to the coefficient matrix
    *
-   * \retrun A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
+   * \return A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
    * 
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
+   *
+   * \relates Amesos::Solver
    */
   template <class Matrix,
 	    class Vector >

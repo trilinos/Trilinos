@@ -74,14 +74,14 @@ struct Timers {
     , totalTime_(*(TimeMonitor::getNewTimer("Total Time in Amesos2 interface")))
     {}
 
-  Time mtxRedistTime_;
-  Time mtxConvTime_;
-  Time vecRedistTime_;
-  Time vecConvTime_;
-  Time symFactTime_;
-  Time numFactTime_;
-  Time solveTime_;
-  Time totalTime_;
+  mutable Time mtxRedistTime_;
+  mutable Time mtxConvTime_;
+  mutable Time vecRedistTime_;
+  mutable Time vecConvTime_;
+  mutable Time symFactTime_;
+  mutable Time numFactTime_;
+  mutable Time solveTime_;
+  mutable Time totalTime_;
 };
 
 

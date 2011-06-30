@@ -32,6 +32,8 @@ namespace Amesos {
    * adapter interface to make their lives easier.  The methods have
    * been chosen to cater to a wide variety of third-party direct
    * sparse solvers' needs.
+   *
+   * \ingroup amesos2_matrix_adapters
    */
   template < class Matrix >
   class MatrixAdapter {
@@ -47,6 +49,11 @@ namespace Amesos {
     typedef Matrix                                                  matrix_t;
     typedef MatrixAdapter<Matrix>                                       type;
     typedef ConcreteMatrixAdapter<Matrix>                          adapter_t;
+
+    // template<typename S, typename GO, typename GS, typename Op>
+    // friend class Util::get_cxs_helper<MatrixAdapter<Matrix>,S,GO,GS,Op>;
+    template<class M, typename S, typename GO, typename GS, typename Op>
+    friend class Util::get_cxs_helper;
 
     MatrixAdapter(RCP<Matrix> m);
 
@@ -160,6 +167,25 @@ namespace Amesos {
     /// Get the global number of non-zeros in this sparse matrix
     global_size_t getGlobalNNZ() const;
 
+    /// Get the number of rows local to the calling process
+    size_t getLocalNumRows() const;
+
+    /// Get the number of columns local to the calling process
+    size_t getLocalNumCols() const;
+
+    /// Get the local number of non-zeros on this processor
+    size_t getLocalNNZ() const;
+
+    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    getRowMap() const {
+      return row_map_;
+    }
+
+    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    getColMap() const {
+      return col_map_;
+    }
+
     /// Returns a short description of this Solver
     std::string description() const;
 
@@ -234,6 +260,9 @@ namespace Amesos {
 		   EStorage_Ordering ordering,
 		   col_access ca) const;
 
+    const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
+    getDistributionMap(Util::EDistribution distribution) const;
+
   protected:
     // These methods will link to concrete implementations, and may
     // also be used by them
@@ -259,16 +288,6 @@ namespace Amesos {
 
     size_t getLocalColNNZ(local_ordinal_t col) const;
 
-    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
-    getRowMap() const {
-      return row_map_;
-    }
-
-    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
-    getColMap() const {
-      return col_map_;
-    }
-
     bool isLocallyIndexed() const;
 
     bool isGloballyIndexed() const;
@@ -293,6 +312,7 @@ namespace Amesos {
   template <class Matrix>
   Teuchos::RCP<MatrixAdapter<Matrix> >
   createMatrixAdapter(Teuchos::RCP<Matrix> m){
+    if(m.is_null()) return Teuchos::null;
     return( rcp(new ConcreteMatrixAdapter<Matrix>(m)) );
   }
 

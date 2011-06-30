@@ -95,7 +95,6 @@ Superlumt<Matrix,Vector>::Superlumt(
   , nzvals_(this->globalNumNonZeros_)
   , rowind_(this->globalNumNonZeros_)
   , colptr_(this->globalNumRows_ + 1)
-  , bxvals_(this->multiVecX_->getGlobalLength() * this->multiVecX_->getGlobalNumVectors())
 {
   // Set some default parameters
   Teuchos::RCP<Teuchos::ParameterList> default_params
@@ -180,6 +179,8 @@ Superlumt<Matrix,Vector>::preOrdering_impl()
   // Else the user's perm_c will be applied later
 
   // Ordering will be applied directly before numeric factorization
+
+  return(0);
 }
 
 
@@ -309,7 +310,8 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
 
 template <class Matrix, class Vector>
 int
-Superlumt<Matrix,Vector>::solve_impl()
+Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
+				     const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
   
@@ -319,11 +321,11 @@ Superlumt<Matrix,Vector>::solve_impl()
   typedef typename TypeMap<Amesos::Superlumt,scalar_type>::type slu_type;
   typedef typename TypeMap<Amesos::Superlumt,scalar_type>::magnitude_type magnitude_type;
 
-  global_size_type len_rhs = this->multiVecX_->getGlobalLength();
-  // size_t nrhs = this->multiVecX_->getGlobalNumVectors();
+  global_size_type len_rhs = X->getGlobalLength();
+  size_t nrhs = X->getGlobalNumVectors();
 
-  // data_.ferr.resize(nrhs);
-  // data_.berr.resize(nrhs);
+  Teuchos::Array<slu_type> bxvals_(len_rhs * nrhs);
+  size_t ldbx_;
 
   // We assume the global length of the two vectors have already been
   // checked for compatibility
@@ -337,9 +339,7 @@ Superlumt<Matrix,Vector>::solve_impl()
     Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
 
     MatrixHelper<Amesos::Superlumt>::createMVDenseMatrix(
-      this->multiVecB_.ptr(),
-      bxvals_(),
-      ldbx_,
+      B, bxvals_(), ldbx_,
       Teuchos::ptrFromRef(data_.BX),
       this->timers_.vecRedistTime_);
   }         // end block for conversion time
@@ -401,7 +401,7 @@ Superlumt<Matrix,Vector>::solve_impl()
   {
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 
-    this->multiVecX_->globalize(bxvals_()); // operator() does conversion from Array to ArrayView
+    X->globalize(bxvals_()); // operator() does conversion from Array to ArrayView
   }
 
   /* All processes should return the same error code */
@@ -562,6 +562,8 @@ Superlumt<Matrix,Vector>::setParameters_impl(
         std::invalid_argument,
         "Unrecognized value for 'ColPerm' key.");
     }
+  } else {
+    data_.options.ColPerm = SLUMT::COLAMD;
   }
 
   // We also recognize a lone 'perm_c' parameter, assuming that ColPerm = MY_PERMC
@@ -631,7 +633,7 @@ Superlumt<Matrix,Vector>::getValidParameters_impl() const
 
 
 template<class Matrix, class Vector>
-const char* Superlumt<Matrix,Vector>::name = "Amesos2::SuperLU_MT";
+const char* Superlumt<Matrix,Vector>::name = "SuperLU_MT";
 
 
 } // end namespace Amesos

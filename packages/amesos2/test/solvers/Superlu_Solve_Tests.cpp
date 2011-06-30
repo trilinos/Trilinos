@@ -57,10 +57,14 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
 #include <MatrixMarket_Tpetra.hpp> // for loading matrices from file
 
 #include "Amesos2.hpp"
@@ -162,13 +166,15 @@ namespace {
   RCP<Amesos::Solver<MAT,MV> > solver                                   \
     = Amesos::create<MAT,MV>("Superlu", AMat, Xhat, B );                \
 									\
-  Teuchos::ParameterList params;                                        \
+  Teuchos::ParameterList amesos2_params;				\
   if( transpose ){                                                      \
-    params.set("Trans","CONJ","Solve with transpose");                  \
+    amesos2_params.set("Trans","CONJ","Solve with transpose");		\
   } else {                                                              \
-    params.set("Trans","NOTRANS","Do not solve with transpose");        \
+    amesos2_params.set("Trans","NOTRANS","Do not solve with transpose"); \
   }                                                                     \
 									\
+  Teuchos::ParameterList params;					\
+  params.set("Amesos2", amesos2_params);				\
   solver->setParameters( rcpFromRef(params) );                          \
   solver->symbolicFactorization().numericFactorization().solve();       \
 									\
