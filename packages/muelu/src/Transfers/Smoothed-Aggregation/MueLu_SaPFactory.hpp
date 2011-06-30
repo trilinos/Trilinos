@@ -148,7 +148,6 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
       //Build final prolongator
 
-      SC lambdaMax = 2.0; //FIXME hard-coded for right now for 1D constant-coefficient Poisson
       //FIXME Cthulhu::Operator should calculate/stash max eigenvalue
       //FIXME SC lambdaMax = Op->GetDinvALambda();
 
@@ -161,20 +160,31 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
         Teuchos::RCP< Operator > Op = fineLevel.GetA();
         Teuchos::RCP<Teuchos::Time> sapTimer;
-        sapTimer = rcp(new Teuchos::Time("SaPFactory:AP"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_A_P"));
         sapTimer->start(true);
+        Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(Op);
+        Utils::ScaleMatrix(Op,diag); //scale matrix
         RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,Ptent);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:eigen_estimate"));
+        sapTimer->start(true);
+        Scalar lambdaMax = Utils::PowerMethod(*Op,(LO) 20,(Scalar)1e-4);
+        Utils::ScaleMatrix(Op,diag,false); //unscale matrix
+        sapTimer->stop();
+        MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
+
+/*
         sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_times_AP"));
         sapTimer->start(true);
-        Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(Op);
         Utils::ScaleMatrix(AP,diag);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
+*/
         sapTimer = rcp(new Teuchos::Time("SaPFactory:finalP"));
         sapTimer->start(true);
+
         finalP = Utils::TwoMatrixAdd(Ptent,AP,1.0,-dampingFactor_/lambdaMax);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));

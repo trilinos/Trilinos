@@ -647,26 +647,73 @@ namespace MueLu {
    } //Transpose
 
 
-    static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > simple_Transpose(RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > const &A){      
+   static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > simple_Transpose(RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > const &A)
+   {
       LocalOrdinal N=A->getNodeNumRows();
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > AT=rcp(new Tpetra::CrsMatrix<SC,LO,GO,NO,LMO>(A->getDomainMap(),0));
       const RCP<const Tpetra::Map<LO,GO,NO> > & rowMap=A->getRowMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > & colMap=A->getColMap();
 
       for(LO i=0;i<N;i++){
-	GO grid= rowMap->getGlobalElement(i);
-	Teuchos::ArrayRCP<const LO> indices;
-	Teuchos::ArrayRCP<const SC> vals;
-	A->getLocalRowView(i,indices,vals);
-	for(LO j=0;j<indices.size();j++){
-	  GO gcid=colMap->getGlobalElement(indices[j]);
-	  AT->insertGlobalValues(gcid,Teuchos::tuple(grid),Teuchos::tuple(vals[j]));
-	}
+        GO grid= rowMap->getGlobalElement(i);
+        Teuchos::ArrayRCP<const LO> indices;
+        Teuchos::ArrayRCP<const SC> vals;
+        A->getLocalRowView(i,indices,vals);
+        for(LO j=0;j<indices.size();j++){
+          GO gcid=colMap->getGlobalElement(indices[j]);
+          AT->insertGlobalValues(gcid,Teuchos::tuple(grid),Teuchos::tuple(vals[j]));
+        }
       }
       AT->fillComplete(A->getRangeMap(),A->getDomainMap());
       
       return AT;
-    }
+    } //simple_Tranpose
+
+    //! @brief Power method.  (Shamelessly grabbed from tpetra/examples.)
+    static Scalar PowerMethod(Operator const &A, LO niters=10, Magnitude tolerance=1e-2, bool verbose=false)
+    {
+      if ( !(A.getRangeMap()->isSameAs(*(A.getDomainMap()))) ) {
+        throw(Exceptions::Incompatible("Utils::PowerMethod: operator must have domain and range maps that are equivalent."));
+      }
+      // create three vectors, fill z with random numbers
+      RCP<MultiVector> q = MultiVectorFactory::Build(A.getRangeMap(),1);
+      RCP<MultiVector> r = MultiVectorFactory::Build(A.getRangeMap(),1);
+      RCP<MultiVector> z = MultiVectorFactory::Build(A.getRangeMap(),1);
+      z->randomize();
+      
+      // typedef Teuchos::ScalarTraits<SC> ST;
+
+      Teuchos::Array<Magnitude> norms(1);
+  
+      //std::vector<Scalar> lambda(1);
+      //lambda[0] = 0.0;
+      Scalar lambda=0.0;
+      Magnitude residual = 0.0;
+      // power iteration
+      Teuchos::ArrayView<Scalar> avLambda(&lambda,1);
+      for (int iter = 0; iter < niters; ++iter) {
+        z->norm2(norms);                               // Compute 2-norm of z
+        q->update(1.0/norms[0],*z,0.);                 // Set q = z / normz
+        A.apply(*q, *z);                               // Compute z = A*q
+        q->dot(*z,avLambda);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
+        if ( iter % 100 == 0 || iter + 1 == niters ) {
+          r->update(1.0, *z, -lambda, *q, 0.0);         // Compute A*q - lambda*q
+          r->norm2(norms);
+          residual = Teuchos::ScalarTraits<Scalar>::magnitude(norms[0] / lambda);
+          if (verbose) {
+            std::cout << "Iter = " << iter
+                      << "  Lambda = " << lambda
+                      << "  Residual of A*q - lambda*q = " << residual
+                      << std::endl;
+          }
+        }
+        if (residual < tolerance) {
+          break;
+        }
+      }
+      return lambda;
+    } //PowerMethod
+    
   }; // class
 
 } //namespace MueLu
