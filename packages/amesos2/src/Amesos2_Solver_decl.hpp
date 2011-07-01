@@ -52,6 +52,7 @@
 #ifndef AMESOS2_SOLVER_DECL_HPP
 #define AMESOS2_SOLVER_DECL_HPP
 
+#include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
@@ -75,7 +76,7 @@ namespace Amesos {
    * \ingroup amesos2_solver_framework
    */
   template <class Matrix, class Vector>
-  class Solver {
+  class Solver : public Teuchos::Describable {
 
   public:
 

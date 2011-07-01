@@ -35,6 +35,48 @@
   identifierstyle=\ttfamily,
   flexiblecolumns=true          % improve the letter kerning in listings
 }
+\usepackage{ifthen}
+\usepackage{tikz}
+\usetikzlibrary{shapes.multipart}
+\usetikzlibrary{arrows}
+\usetikzlibrary{calc}
+\usetikzlibrary{fit}
+\tikzset{
+  every text node part/.style={text centered},
+  rectangle split empty part height=0pt,
+  implementation/.style={>=open triangle 60,dashed,->},
+  generalization/.style={>=open triangle 60,->},
+  dependency/.style={>=angle 60,dashed,->},
+  association/.style={>=angle 60,->}
+}
+
+% For drawing UML classes
+% Parameters:
+% #1 => width of the box (defaults to 3.5cm)
+% #2 => position of the box (coordinate or relative)
+% #3 => name of the tikz node
+% #4 => class name
+% #5 => (optional) class template parameter
+% #6 => class members
+% #7 => class methods      
+\newcommand{\myclass}[7][3.5cm]
+{
+  \node[rectangle split,
+    rectangle split parts=3,
+    draw,
+    text width=#1] (#3) at #2
+       { \textbf{#4}
+         \nodepart{second}
+         #6
+         \nodepart{third}
+         #7
+       };
+       
+       \ifthenelse{\equal{#5}{}}{}{
+         \node[rectangle,dashed,draw,fill=white,anchor=base] at (#3.north east)
+              { #5 };
+       }
+}
 
 \renewcommand{\thefootnote}{}
 
@@ -259,56 +301,92 @@ solver->solve(); // refactorizes A2 first
 
 \begin{frame}[fragile,shrink]
   \frametitle{Internal Design: Solver Hierarchy}
-\begin{center}
-\begin{verbatim}
-                              +--------+
-                 +------------+ MAT,MV |
-                 | <Interface> +-------+
-                 |   Solver    |
-                 +-------------+
-                      | <MAT,MV>
-                      |     +-----------------------+
-               +------------+ ConcreteSolver,MAT,MV |
-               |  SolverCore +----------------------+
-               +-------------+ 
-   <Superlu,MAT,MV>   |      
-       +--------------+-----+ <Klu2,MAT,MV>
-       |                    |
-       |    +--------+      | +--------+
-   +---+----+ MAT,MV |  +---+-+ MAT,MV |
-   | SuperLU +-------+  | Klu2 +-------+
-   +---------+          +------+
-\end{verbatim}
-\end{center}
+
+%% \begin{verbatim}
+%%                               +--------+
+%%                  +------------+ MAT,MV |
+%%                  | <Interface> +-------+
+%%                  |   Solver    |
+%%                  +-------------+
+%%                       | <MAT,MV>
+%%                       |     +-----------------------+
+%%                +------------+ ConcreteSolver,MAT,MV |
+%%                |  SolverCore +----------------------+
+%%                +-------------+ 
+%%    <Superlu,MAT,MV>   |      
+%%        +--------------+-----+ <Klu2,MAT,MV>
+%%        |                    |
+%%        |    +--------+      | +--------+
+%%    +---+----+ MAT,MV |  +---+-+ MAT,MV |
+%%    | SuperLU +-------+  | Klu2 +-------+
+%%    +---------+          +------+
+%% \end{verbatim}
+
+\centering
+\begin{tikzpicture}
+  \myclass[3.7cm]{(6,1.3)}{solvercore}{SolverCore}{CS,M,V}{}{symbolicFactorization()\\numericFactorization()\\solve()}
+  \myclass[3.7cm]{($(solvercore) + (-6,0)$)}{solver}{\itshape $<<$Interface$>>$\\Solver}{M,V}{}{\itshape symbolicFactorization()\\numericFactorization()\\solve()}
+  \myclass[3.1cm]{(4,-2)}{superlu}{Amesos::SuperLU}{M,V}{}{solve\_impl($X$,$B$)}
+  \myclass[3cm]{(4,-4)}{tsuperlu}{TPL::SuperLU}{}{}{dgssvx(\ldots)\ldots}
+  \myclass[3cm]{(8,-2)}{klu2}{Amesos::Klu2}{M,V}{}{solve\_impl($X$,$B$)}
+  \myclass[3cm]{(8,-4)}{tklu2}{TPL::Klu2}{}{}{}
+  
+  \draw[implementation] (solvercore) -- node[above] {$<$M,V$>$} (solver);
+  \draw[generalization] (superlu) -- node[left] {$<$Superlu,M,V$>$} (solvercore);
+  \draw[generalization] (klu2) -- node[right] {$<$Klu2,M,V$>$} (solvercore);
+  \draw[association] (tsuperlu) -- (superlu);
+  \draw[association] (tklu2) -- (klu2);
+  
+%\node[rectangle, red, fit=(solver) (tsuperlu) (superlu) (tmumps) (mumps)] {};
+\end{tikzpicture}
 \end{frame}
 
-\begin{frame}[fragile,shrink]
+\begin{frame}[fragile,shrink,c]
   \frametitle{Internal Design: MatrixAdapter Hierarchy}
-\begin{center}
-\begin{verbatim}        
-                               +---+
-                +--------------+ M |
-                | MatrixAdapter +--+
-                +---------------+        
-                | RCP<M> mat_   |     +-------------------------+
-                +---------------+     | ...                     |
-                | getCrs()  ..........| getGlobalRowCopy(...)   |...
-                | getCcs()      |     | ...                     |  .
-                +---------------+     +-------------------------+  .
-             <Derived> ^                                           .
-                       |           +---------------+               .
-    +------------------------------+ Abstr,Derived |               .
-    | AbstractConcreteMatrixAdapter +--------------+               .
-    +-------------------------------+                              .
-    | getGlobalRowCopy_impl()       | <.............................
-    +-------------------------------+                    calls
-           <super_t,M> ^
-                       |            +---+
-             +----------------------+ M |
-             | ConcreteMatrixAdapter +--+
-             +-----------------------+
-\end{verbatim}
-\end{center}
+%% \begin{verbatim}        
+%%                                +---+
+%%                 +--------------+ M |
+%%                 | MatrixAdapter +--+
+%%                 +---------------+        
+%%                 | RCP<M> mat_   |     +-------------------------+
+%%                 +---------------+     | ...                     |
+%%                 | getCrs()  ..........| getGlobalRowCopy(...)   |...
+%%                 | getCcs()      |     | ...                     |  .
+%%                 +---------------+     +-------------------------+  .
+%%              <Derived> ^                                           .
+%%                        |           +---------------+               .
+%%     +------------------------------+ Abstr,Derived |               .
+%%     | AbstractConcreteMatrixAdapter +--------------+               .
+%%     +-------------------------------+                              .
+%%     | getGlobalRowCopy_impl()       | <.............................
+%%     +-------------------------------+                    calls
+%%            <super_t,M> ^
+%%                        |            +---+
+%%              +----------------------+ M |
+%%              | ConcreteMatrixAdapter +--+
+%%              +-----------------------+
+%% \end{verbatim}
+\begin{centering}
+\begin{tikzpicture}
+  \myclass[3.7cm]{(0,0)}{matrixadapter}{MatrixAdapter}{M}{RCP$<$M$>$ mat\_}{getCrs()\ldots}
+  \myclass[4cm]{($(matrixadapter) + (-3,-3.2)$)}{acmatadpte}{ACMatrixAdapter}{Epetra\_RM,Derived}{}{getGlobalRowCopy\_impl()}
+  \myclass[4cm]{($(matrixadapter) + (3,-3.2)$)}{acmatadptt}{ACMatrixAdapter}{Tpetra::RM,Derived}{}{getGlobalRowCopy\_impl()}
+  
+  \myclass[4cm]{($(acmatadptt) + (0,-3)$)}{cmatadpttcrs}{CMatrixAdapter}{Tpetra::CrsMat}{}{}
+  \myclass[4cm]{($(acmatadpte) + (0,-3)$)}{cmatadptecrs}{CMatrixAdapter}{Epetra\_CrsMat}{}{}
+
+  \draw[generalization] (acmatadptt) -- node[right]{$<$Derived$>$} (matrixadapter);
+  \draw[generalization] (cmatadpttcrs) -- node{$<$Tpetra::RM,Tpetra::CrsMat$>$} (acmatadptt);
+  \draw[generalization] (acmatadpte) -- node[left]{$<$Derived$>$} (matrixadapter);
+  \draw[generalization] (cmatadptecrs) -- node{$<$Epetra\_RM,Epetra\_CrsMat$>$} (acmatadpte);
+
+  \node[draw,densely dashed,rectangle,anchor=west] (method) at ($(matrixadapter.third east) + (0.5,0)$) {getGlobalRowCopy(\ldots);} ;
+
+  \draw[dotted,o-] ($(matrixadapter.third east) - (.4,0)$) -- (method);
+
+  \draw[->] (method.east) -- +(0.5,0) |- (cmatadpttcrs);
+\end{tikzpicture}
+\end{centering}
 \end{frame}
 
 \begin{frame}
