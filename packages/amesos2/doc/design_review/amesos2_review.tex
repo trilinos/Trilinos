@@ -26,7 +26,11 @@
 \usepackage{graphics}
 \usepackage{color}
 \usepackage{epsfig}
+\usepackage{microtype}
 \usepackage{listings}
+\lstset{
+  language=C++,
+  basicstyle=\small}
 
 \renewcommand{\thefootnote}{}
 
@@ -74,65 +78,102 @@ Sandia National Laboratories
   %% - ``Expert'' Users
 \end{frame}
 
-\begin{frame}
-  \frametitle{Amesos2 Interface}
-  %% - create()
-  %% - main solver methods
-\end{frame}
-
 \section{Examples}
 
-\begin{frame}
-    \frametitle{Use Case 1: Simple Solve.}
+\begin{frame}[fragile]          % ``fragile'' for slides with verbatim
+  \frametitle{Use Case 1: Simple Solve.}
+  \begin{lstlisting}
+RCP<MAT> A; RCP<MV> X; RCP<MV> B;
+// initialize A and B
+RCP<Solve<MAT,MV> > solver = Amesos::create(A,X,B);
+solver->solve(); // solution placed in X
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Typical Usage: Preorder, Symbolic, Numeric, Solve}
+  \begin{lstlisting}
+RCP<MAT> A; RCP<MV> X; RCP<MV> B;
+// initialize A and B
+RCP<Solve<MAT,MV> > solver = Amesos::create(A,X,B);
+solver->preOrdering();
+solver->symbolicFactorization();
+solver->numericFactorization();
+solver->solve();
+  \end{lstlisting}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Typical Usage: Preorder, Symbolic, Numeric, Solve}
+  \frametitle{Solver Interface and Creating Solver}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Solver Interface and Creating Solver}
+  \frametitle{Amesos2 Parameters vs Solver Parameters}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Amesos2 Parameters vs Solver Parameters}
+  \frametitle{Amesos2 Parameters vs Solver Parameters}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Amesos2 Parameters vs Solver Parameters}
+  \frametitle{Support for New Solvers}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Support for New Solvers}
+  \frametitle{Support for New Matrices and Multivectors}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Expert Usage}
+  \framesubtitle{Releasing $A$ after numeric factorization}
+  \begin{lstlisting}
+RCP<MAT> A;
+// Get A from somewhere
+RCP<Solver<MAT,MV> > solver = Amesos::create("SuperLU",A);
+Teuchos::ParameterList params("Amesos2");
+params.sublist("SuperLU").set("IterRefine","DOUBLE");
+params.sublist("SuperLU").set("ColPerm","MMD_AT_PLUS_A");
+solver->setParameters(params);
+solver->symbolicFactorization().numericFactorization();
+A = Teuchos::null;          // no longer need A
+solver.setA(Teuchos::null); // tell solver to release A
+RCP<MV> X; RCP<MV> B;
+// do some other work, finally get B's values
+solver->solve(X,B);         // solution placed in X
+// do some more work and get new values in B
+solver->solve(X,B);
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Expert Usage}
+  \framesubtitle{Reusing the solver for a different matrix}
+  \begin{lstlisting}
+RCP<MAT> A1, A2;
+// initialize A1, A2, and B
+RCP<Solver<MAT,MV> > solver = Amesos::create(A1,X,B);
+solver->solve(); // solution in X
+solver->setA(A2);
+solver->solve(); // refactorizes first
+  \end{lstlisting}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Internal Design: Solver Hierarchy}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Support for New Matrices and Multivectors}
+  \frametitle{Internal Design: MatrixAdapter Hierarchy}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Expert Usage}
-\begin{itemize}
-    \item Releasing $A$ after symbolic and numeric factorization.(TBD: Eg)
-    \item Reusing the solver for a different matrix (TBD: Eg)
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Internal Design: Solver Hierarchy}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Internal Design: MatrixAdapter Hierarchy}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Future Work}
-\begin{itemize}
-    \item Need better support to do ordering: Zoltan2 will provide both
+  \frametitle{Future Work}
+  \begin{itemize}
+  \item Need better support to do ordering: Zoltan2 will provide both
     graph partitoning based and minimum degree based orderings.
-    \item Need to support more solvers and matrix types.
-\end{itemize}
+  \item Need to support more solvers and matrix types.
+  \end{itemize}
 \end{frame}
 
 \end{document}

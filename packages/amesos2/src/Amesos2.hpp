@@ -107,7 +107,7 @@
  * \code
  * RCP<MAT> A; RCP<MV> X; RCP<MV> B;
  * // initialize A and B
- * RCP<Solve<MAT,MV> > solver = Amesos::create(A, X, B); // use default solver
+ * RCP<Solver<MAT,MV> > solver = Amesos::create(A, X, B); // use default solver
  * solver->solve(); // solution placed in X
  * \endcode
  *
@@ -116,10 +116,10 @@
  * \code
  * RCP<MAT> A;
  * // Get A from somewhere
- * RCP<Solve<MAT,MV> > solver = Amesos::create("SuperLU", A);
- * Teuchos::ParameterList params;
- * params.sublist("Amesos2").sublist("SuperLU").set("IterRefine","DOUBLE");
- * params.sublist("Amesos2").sublist("SuperLU").set("ColPerm","MMD_AT_PLUS_A");
+ * RCP<Solver<MAT,MV> > solver = Amesos::create("SuperLU", A);
+ * Teuchos::ParameterList params("Amesos2");
+ * params.sublist("SuperLU").set("IterRefine","DOUBLE");
+ * params.sublist("SuperLU").set("ColPerm","MMD_AT_PLUS_A");
  * solver->setParameters(params);
  * solver->symbolicFactorization().numericFactorization();
  * A = Teuchos::null;          // no longer need A
