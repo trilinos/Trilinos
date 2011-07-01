@@ -486,7 +486,8 @@ namespace Tpetra {
       //@{
 
       //! Multiplies this matrix by a MultiVector.
-      /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
+      /*! If \c trans is \c Teuchos::NO_TRANS, then  X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix. 
+          Otherwise, then  X is should be described by the row map of the matrix and \c Y should be described by the column map of the matrix. 
 
           Both are required to have constant stride, and they are not permitted to ocupy overlapping space. No runtime checking will be performed in a non-debug build.
 
