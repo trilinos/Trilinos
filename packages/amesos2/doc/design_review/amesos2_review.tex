@@ -129,7 +129,8 @@ solver->solve();
   \item SuperLU\_MT
   \item SuperLU\_dist (in progress)
   \end{itemize}
-We are also considering adding LAPACK and Pardiso.
+We are also considering adding LAPACK (for almost dense matrices in CrsMatrix 
+format) and Pardiso.
 \end{frame}
 
 \begin{frame}
@@ -192,6 +193,8 @@ solver->solve(); // refactorizes A2 first
   \begin{itemize}
   \item Need better support to do ordering: Zoltan2 will provide both
     graph partitoning based and minimum degree based orderings.
+  \item  Currently we use SuperLU's internal orderings. KLU2 uses the orderings
+    from Amesos.
   \item Need to support more solvers and matrix types.
   \end{itemize}
 \end{frame}
