@@ -45,7 +45,9 @@ small examples of usage -->
 
 \subsection Amesos2_sclasses Amesos2 Solver-interface Classes
 
-A templated version of KLU (KLU2) will be included in Amesos2.
+Amesos::Solver provides the uniform solver interface for all the supported third party solvers. Users can use the non-member functions 
+\c Amesos::query to query for a solver and 
+\c Amesos::create to create a solver. (Please see Amesos2_Factory_decl.hpp for details)
 
 There is currently Amesos2 support for the following list of
 third-party solver libraries.
@@ -56,8 +58,10 @@ third-party solver libraries.
   <li> SuperLU_MT</li>
 </ul>
 
+A templated version of KLU (KLU2) will be included in Amesos2.
+
 In order to enable a solver's use in Amesos2 you must also enable the
-solver's third-party library in Trilinos.
+solver's third-party library in Trilinos. 
 
 \subsection Amesos2_aclasses Amesos2 Adapter Classes
 
@@ -100,3 +104,4 @@ supported, please ask the Amesos2 developers about adding support.
 </ul>
 
 */
+
