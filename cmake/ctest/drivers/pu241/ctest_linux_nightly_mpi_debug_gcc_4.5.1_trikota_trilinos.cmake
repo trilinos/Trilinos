@@ -16,7 +16,11 @@ SET(BUILD_DIR_NAME MPI_DEBUG_GCC_TRIKOTA)
 SET(Trilinos_PACKAGES TriKota)
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 SET(EXTRA_CONFIGURE_OPTIONS
-  -DTrilinos_ENABLE_TriKota:BOOL=ON
+  -DTrilinos_ENABLE_TriKota:BOOL=
   )
+
+# Above, we override -DTrilinos_ENABLE_TriKota:BOOL=OFF in the default
+# extra configure options but now -DTrilinos_ENABLE_TriKota:BOOL=ON
+# will be set when processing the package TriKota
 
 TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
