@@ -139,9 +139,12 @@ public:
   static void wait_functor_completion();
 
   /*--------------------------------*/
-
   /** \brief  Initialize the selected cuda device */
   static void initialize( int cuda_device_id = 0 );
+
+  /*--------------------------------*/
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
 
   static size_type maximum_warp_count();
   static size_type maximum_grid_count();
@@ -150,8 +153,8 @@ public:
   static size_type * reduce_multiblock_scratch_space();
   static size_type * reduce_multiblock_scratch_flag();
 
-#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
   static const std::vector<cudaStream_t> & streams();
+
 #endif
 
   /*--------------------------------*/

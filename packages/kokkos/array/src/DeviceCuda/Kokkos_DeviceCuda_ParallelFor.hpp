@@ -50,7 +50,15 @@ namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
-
+// See section B.17 of Cuda C Programming Guide Version 3.2
+// for discussion of
+//   __launch_bounds__(maxThreadsPerBlock,minBlocksPerMultiprocessor)
+// function qualifier which could be used to improve performance.
+//----------------------------------------------------------------------------
+// Maximize L1 cache and minimize shared memory:
+//   cudaFuncSetCacheConfig(MyKernel, cudaFuncCachePreferL1 );
+// For 2.0 capability: 48 KB L1 and 16 KB shared
+//----------------------------------------------------------------------------
 
 template< class DriverType >
 __global__

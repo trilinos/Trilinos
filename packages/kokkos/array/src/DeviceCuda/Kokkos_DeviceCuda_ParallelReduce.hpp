@@ -40,6 +40,7 @@
 #ifndef KOKKOS_DEVICECUDA_PARALLELREDUCE_HPP
 #define KOKKOS_DEVICECUDA_PARALLELREDUCE_HPP
 
+#include <stdio.h>
 #include <iostream>
 
 #include <DeviceCuda/Kokkos_DeviceCuda_ParallelDriver.hpp>
@@ -48,19 +49,26 @@
 
 #if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-// Must have consistent '__shared__' statement across all device kernels.
-// Since there may be more than one kernel in a file then have to make this
-// a simple array of words.
-
 namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
+// See section B.17 of Cuda C Programming Guide Version 3.2
+// for discussion of
+//   __launch_bounds__(maxThreadsPerBlock,minBlocksPerMultiprocessor)
+// function qualifier which could be used to improve performance.
+//----------------------------------------------------------------------------
+// Maximize shared memory and minimize L1 cache:
+//   cudaFuncSetCacheConfig(MyKernel, cudaFuncCachePreferShared );
+// For 2.0 capability: 48 KB shared and 16 KB L1
+//----------------------------------------------------------------------------
+// Must have consistent '__shared__' statement across all device kernels.
+// Since there may be more than one kernel in a file then have to make this
+// a simple array of words.
+//----------------------------------------------------------------------------
 
 template< class DriverType >
-__device__
+__device__ __noinline__
 void cuda_reduce_shared( const DeviceCuda::size_type used_warp_count )
 {
   typedef          DeviceCuda::size_type  size_type ;
@@ -137,7 +145,7 @@ void cuda_reduce_shared( const DeviceCuda::size_type used_warp_count )
 
 template< class DriverType >
 __device__
-void cuda_reduce_global_initialize( const DriverType & driver )
+void cuda_reduce_global_recycle( const DriverType & driver )
 {
   typedef          DeviceCuda::size_type  size_type ;
   typedef typename DriverType::value_type value_type ;
@@ -161,8 +169,9 @@ void cuda_reduce_global_initialize( const DriverType & driver )
 // Warp #0 of this block write this block's reduction value to global memory
 
 template< class DriverType >
-__device__
-void cuda_reduce_global_contribute( const DriverType & driver )
+__device__ __noinline__
+DeviceCuda::size_type
+cuda_reduce_global_contribute( const DriverType & driver )
 {
   typedef          DeviceCuda::size_type  size_type ;
   typedef typename DriverType::value_type value_type ;
@@ -171,6 +180,8 @@ void cuda_reduce_global_contribute( const DriverType & driver )
   enum { ValueWordCount = DriverType::ValueWordCount };
 
   extern __shared__ size_type shared_data[];
+
+  const size_type shared_flag_offset = DriverType::shared_flag_offset();
 
   if ( 0 == threadIdx.y ) {
 
@@ -188,28 +199,32 @@ void cuda_reduce_global_contribute( const DriverType & driver )
     // Warp #0 Thread #0 : Check if this is the last block to finish:
 
     if ( 0 == threadIdx.x ) {
+
       // atomicInc returns value prior to increment.
 
       const size_type last_block_flag =
         driver.m_global_block_count ==
         1 + atomicInc( driver.m_scratch_flag , driver.m_global_block_count + 1 );
 
-      // Inform the entire block of the last_bock status:
-      shared_data[ DriverType::shared_flag_offset() ] = last_block_flag ;
+      // Inform the entire block of the last_block status:
+      shared_data[ shared_flag_offset ] = last_block_flag ;
 
       if ( last_block_flag ) {
-        // Reinitialize the flag for the next reduction operation
+        // Reset the flag for the next reduction operation
         *(driver.m_scratch_flag) = 0 ;
       }
     }
   }
+
   __syncthreads(); // All threads of block wait for last_block flag to be set.
+
+  return shared_data[ shared_flag_offset ];
 }
 
 // The last block to finish reduces the results from all blocks.
 
 template< class DriverType >
-__device__
+__device__ __noinline__
 void cuda_reduce_global_complete( const DriverType & driver )
 {
   typedef          DeviceCuda::size_type  size_type ;
@@ -282,8 +297,8 @@ static void cuda_parallel_reduce( const DriverType driver )
   // then must read the previous value into
   // the to-be-updated thread #0 value.
 
-  if ( driver.m_global_block_update ) {
-    cuda_reduce_global_initialize< DriverType >( driver );
+  if ( driver.m_mapped_block_recycle ) {
+    cuda_reduce_global_recycle< DriverType >( driver );
   }
 
   // Phase 1: Reduce to per-thread contributions
@@ -292,7 +307,9 @@ static void cuda_parallel_reduce( const DriverType driver )
     const size_type work_stride = driver.m_work_stride ;
 
     size_type iwork =
-      threadIdx.x + blockDim.x * ( threadIdx.y + blockDim.y * blockIdx.x );
+      threadIdx.x + blockDim.x * (
+      threadIdx.y + blockDim.y * (
+      blockIdx.x + driver.m_mapped_block_offset ) );
 
     for ( ; iwork < work_count ; iwork += work_stride ) {
       driver.m_work_functor( iwork , value );
@@ -312,9 +329,7 @@ static void cuda_parallel_reduce( const DriverType driver )
     // This block contribute its partial result
     // and determine if it is the last block.
 
-    cuda_reduce_global_contribute< DriverType >( driver );
-
-    last_block = shared_data[ DriverType::shared_flag_offset() ];
+    last_block = cuda_reduce_global_contribute< DriverType >( driver );
 
     // If the last block then reduce partial result
     // contributions from all blocks to a single result.
@@ -365,9 +380,9 @@ public:
   const FinalizeType m_work_finalize ;
   const size_type    m_work_count ;
   const size_type    m_work_stride ;
-  const size_type    m_stream_block_offset ; /// to be used for multi-functor / multi-block reduction 
   const size_type    m_global_block_count ;
-  const size_type    m_global_block_update ;
+  const size_type    m_mapped_block_offset ;
+  const size_type    m_mapped_block_recycle ;
 
   // Scratch space for multi-block reduction
   // m_scratch_warp  == number of warps required
@@ -410,12 +425,12 @@ public:
   __device__
   size_type * scratch_data_for_block() const
   {
-    const size_type stream_block_id = m_stream_block_offset + blockIdx.x ;
+    const size_type mapped_block_id = m_mapped_block_offset + blockIdx.x ;
 
     return m_scratch_space +
       shared_data_offset(
-        stream_block_id &  WarpIndexMask  /* for threadIdx.x */ ,
-        stream_block_id >> WarpIndexShift /* for threadIdx.y */ );
+        mapped_block_id &  WarpIndexMask  /* for threadIdx.x */ ,
+        mapped_block_id >> WarpIndexShift /* for threadIdx.y */ );
   }
 
 
@@ -425,19 +440,22 @@ private:
                   const FinalizeType & finalize ,
                   const size_type      work_count ,
                   const size_type      work_stride ,
-                  const size_type      grid_size )
+                  const size_type      grid_block_count ,
+                  const size_type      global_block_count ,
+                  const size_type      mapped_block_offset ,
+                  const size_type      mapped_block_recycle )
     : m_work_functor(  functor )
     , m_work_finalize( finalize )
     , m_work_count(    work_count )
     , m_work_stride(   work_stride )
-    , m_stream_block_offset(   0 )
-    , m_global_block_count( grid_size )
-    , m_global_block_update( 0 )
+    , m_global_block_count(   global_block_count )
+    , m_mapped_block_offset(  mapped_block_offset )
+    , m_mapped_block_recycle( mapped_block_recycle )
     , m_scratch_space( device_type::reduce_multiblock_scratch_space() )
     , m_scratch_flag(  device_type::reduce_multiblock_scratch_flag() )
-    , m_scratch_warp( ( grid_size >> WarpIndexShift ) +
-                      ( grid_size &  WarpIndexMask ? 1 : 0 ) )
-    , m_scratch_upper( ValueWordStride * ( grid_size + m_scratch_warp - 1 ) )
+    , m_scratch_warp( ( grid_block_count >> WarpIndexShift ) +
+                      ( grid_block_count &  WarpIndexMask ? 1 : 0 ) )
+    , m_scratch_upper( ValueWordStride * ( grid_block_count + m_scratch_warp - 1 ) )
   {}
 
 public:
@@ -478,12 +496,13 @@ public:
       if ( grid.x > threads_per_block ) { grid.x = threads_per_block ; }
     }
 
+    const size_type work_stride = block.x * block.y * grid.x ;
     const size_type shmem_size =
       sizeof(size_type) * ( ValueWordStride * (WarpStride * block.y - 1) + 1 );
 
     device_type::set_dispatch_functor();
 
-    self_type driver( functor , finalize , work_count , block.x * block.y * grid.x , grid.x );
+    self_type driver( functor , finalize , work_count , work_stride , grid.x , grid.x , 0 , 0 );
 
     device_type::clear_dispatch_functor();
 
@@ -536,14 +555,183 @@ public:
 //----------------------------------------------------------------------------
 
 #if 0
+
 namespace Kokkos {
+namespace Impl {
+
+template < class FunctorType , class FinalizeType >
+class CudaMultiFunctorParallelReduceMember ;
+
+template < class FinalizeType >
+class CudaMultiFunctorParallelReduceMember<void,FinalizeType> {
+protected:
+  CudaMultiFunctorParallelReduceMember() {}
+public:
+
+  typedef DeviceCuda::size_type size_type ;
+
+  virtual ~CudaMultiFunctorParallelReduceMember() {}
+
+  virtual void execute(
+    const FinalizeType & finalize ,
+    const dim3         & grid ,
+    const dim3         & block ,
+    const size_type      shmem_size ,
+    cudaStream_t       & cuda_stream ,
+    const size_type      global_block_count ) const = 0 ;
+};
+
+template < class FunctorType , class FinalizeType >
+class CudaMultiFunctorParallelReduceMember :
+  public CudaMultiFunctorParallelReduceMember<void,FinalizeType>
+{
+public:
+  typedef DeviceCuda::size_type size_type ;
+
+  FunctorType m_functor ;
+  size_type   m_work_count ;
+  size_type   m_stream_count ;
+
+  CudaMultiFunctorParallelReduceMember(
+    const FunctorType & functor ,
+    const size_type     work_count ,
+    const size_type     stream_count )
+  : m_functor( functor )
+  , m_work_count( work_count )
+  , m_stream_count( stream_count )
+  {}
+
+  virtual
+  void execute( const FinalizeType & finalize ,
+                const size_type      block_count ,
+                const size_type      warp_count ,
+                const size_type      shmem_size ,
+                cudaStream_t       & cuda_stream ,
+                const size_type      global_block_count ,
+                const size_type      mapped_block_offset ,
+                const size_type      mapped_block_recycle ) const
+  {
+    const dim3 grid( block_count , 1 , 1 );
+    const dim3 block( Impl::DeviceCudaTraits::WarpSize , warp_count , 1 );
+    const size_type work_stride = block.x * block.y * grid.x * m_stream_count ;
+
+    DeviceCuda::set_dispatch_functor();
+
+    ParallelReduce< FunctorType , FinalizeType , DeviceCuda >
+      driver( m_functor , finalize , m_work_count , work_stride ,
+              block_count , global_block_count ,
+              mapped_block_offset , mapped_block_recycle );
+
+    device_type::clear_dispatch_functor();
+
+    cuda_parallel_reduce< self_type ><<< grid , block , shmem_size , cuda_stream >>>( driver );
+  }
+};
+
+} // namespace Impl
+
+template < class DeviceType , class FinalizeType >
+class MultiFunctorParallelReduce ;
 
 template < class FinalizeType >
 class MultiFunctorParallelReduce< DeviceCuda , FinalizeType > {
 public:
+  typedef DeviceCuda::size_type size_type ;
+  typedef CudaMultiFunctorParallelReduceMember< void , FinalizeType > MemberType ;
+
+  std::vector< MemberType * > m_member_functors ;
+  size_type m_warp_count ;
+  size_type m_shmem ;
+  size_type m_threads_per_block ;
+  size_type m_blocks_per_stream ;
+
+  MultiFunctorParallelReduce()
+    : m_member_functors()
+    , m_warp_count( DeviceCuda::maximum_warp_count() )
+    , m_shmem( 0 )
+    , m_threads_per_block( 0 )
+    , m_blocks_per_stream( 0 )
+  {
+    typedef MultiFunctorParallelReduce< DeviceCuda , FinalizeType > self_type ;
+
+    // Consistent block sizes and shared memory so that any block
+    // can perform the final reduction.
+
+    const size_type maximum_shared_words = device_type::maximum_shared_words();
+
+    while ( maximum_shared_words < m_warp_count * WordsPerWarpStride ) {
+      m_warp_count >= 1 ;
+    }
+
+    m_shmem = sizeof(size_type) * ( ValueWordStride * (WarpStride * m_warp_count - 1) + 1 );
+
+    // Each stream has a range of block offsets
+
+    m_threads_per_block = WarpSize * m_warp_count ;
+    m_blocks_per_stream = m_threads_per_block / m_stream_count ;
+  }
+
+  template< class FunctorType >
+  void push_back( const size_type work_count , const FunctorType & f )
+  {
+    const size_type blocks_requested = ( work_count + m_threads_per_block - 1 ) / m_threads_per_block ;
+
+    size_type stream_count_requested = ( block_requested + m_blocks_per_stream - 1 ) / m_blocks_per_stream ;
+
+    if ( m_mapped_stream_count < stream_count_requested ) {
+      stream_count_requested = m_mapped_stream_count ;
+    }
+
+    // Functor will be executed on stream_count_requested streams
+
+    Impl::ParallelReduce< void , FinalizeType , DeviceCuda > * member =
+      new CudaMultiFunctorParallelReduceMember< FunctorType , FinalizeType >
+        ( f , work_count , stream_count_requested );
+
+    m_members.push_back( member );
+  }
+
+  static
+  void execute( const FinalizeType & finalize )
+  {
+    const std::vector< cudaStream_t > & streams = device_type::streams();
+
+    // Dispatch to streams, second and subsequent dispatches set the 
+    // recycling flag so previous reduction results will be read.
+
+    // Each dispatch has a fixed block count, dispatch the functor
+    // on up to all streams until the requested block count is met.
+    // When the stream_count * blocks_per_stream < blocks_requested
+    // then the functor will iterate within the dispatch.
+
+    std::vector< CudaMultiFunctorParallelReduceMember< void , FinalizeType > >::iterator m ;
+
+    for ( m = m_members.begin() ; m != m_members.end() ; ++m ) {
+      global_block_count += (*m)->m_stream_count ;
+    }
+    global_block_count *= m_blocks_per_stream ;
+
+    for ( size_type k = 0 ,
+          m = m_members.begin() ; m != m_members.end() ; ++m ) {
+
+      for ( size_type j = 0 ; j < (*m)->m_stream_count ; ++j , ++k ) {
+
+        const size_type work_block_offset  = m_blocks_per_stream * j ;
+        const size_type work_block_recycle = m_mapped_stream_count <= k ;
+
+        cudaStream_t & s = streams[ k % m_mapped_stream_count ];
+
+        (*m)->execute( m_finalize , m_blocks_per_stream , m_warps_per_block , m_shmemsize , s ,
+                       global_block_count , work_block_offset , block_recycle );
+      }
+    }
+  }
 };
 
+//----------------------------------------------------------------------------
+
 } // namespace Kokkos
+
 #endif
 
 //----------------------------------------------------------------------------

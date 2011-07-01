@@ -289,6 +289,7 @@ private:
       // For optimal global memory access performance align on the word * warp boundary.
       // Could use half warp size for slightly degraded performance.
       // Other memory alignments can result in severe performance degradation.
+      // See section 5.3.2.1.2 of the CUDA C Programming Guide, Version 3.2.
       enum { NP_SIZE_ALIGN = sizeof(size_type) * Impl::DeviceCudaTraits::WarpSize };
 
       // Round up nP for optimal global memory access alignment 
