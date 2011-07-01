@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
   clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
   clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
   clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
-  clp.setOption("smooType",&smooType,"smoother type (SGS or Chebyshev)");
+  clp.setOption("smooType",&smooType,"smoother type (SGS or Cheby)");
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -244,8 +244,8 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList ifpackList;
   ifpackList.set("relaxation: sweeps", (LO) fineSweeps);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
   std::transform(smooType.begin(), smooType.end(), smooType.begin(), ::tolower);
+  if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
     smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
