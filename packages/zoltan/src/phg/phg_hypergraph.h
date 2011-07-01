@@ -162,6 +162,9 @@ struct Zoltan_HGraph {
   int *AppObjSizes;         /* Object sizes for on-processor objects */
   int showMoveVol;          /* compute and show move (migration) volume */
 
+  double *coor;             /* Array of gathered coordinates returned from */
+                            /* Zoltan_Get_Coordinates */
+  
   /* This hyperedge list includes all hyperedges when LB_Eval uses ZHG, and
      it includes only removed edges when Zoltan_PHG uses ZHG.
    */
