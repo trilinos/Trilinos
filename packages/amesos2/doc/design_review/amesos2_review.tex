@@ -55,7 +55,7 @@ Sandia National Laboratories
   \frametitle{Amesos2 Motivation}
   
   \begin{itemize}
-  \item Common Interface for direct solvers.
+  \item Uniform Interface to common third-party direct solvers.
     \medskip
   \item Support a variety of scalar and ordinal datatypes
     \medskip
@@ -82,6 +82,8 @@ Sandia National Laboratories
 
 \begin{frame}[fragile]          % ``fragile'' for slides with verbatim
   \frametitle{Use Case 1: Simple Solve.}
+  A, X, B all known when creating the solver and the user requires one direct
+  solve.
   \begin{lstlisting}
 RCP<MAT> A; RCP<MV> X; RCP<MV> B;
 // initialize A and B
@@ -92,6 +94,9 @@ solver->solve(); // solution placed in X
 
 \begin{frame}[fragile]
   \frametitle{Typical Usage: Preorder, Symbolic, Numeric, Solve}
+  A, X, B all known when creating the solver and the user requires one or
+  multiple solves. Different steps of the factorization could be called in
+  different places.
   \begin{lstlisting}
 RCP<MAT> A; RCP<MV> X; RCP<MV> B;
 // initialize A and B
@@ -126,6 +131,8 @@ solver->solve();
 \begin{frame}[fragile]
   \frametitle{Expert Usage}
   \framesubtitle{Releasing $A$ after numeric factorization}
+  For preconditoners or smoothers when there is one symbolic factorization,
+  multiple numeric factorization and multiple solves.
   \begin{lstlisting}
 RCP<MAT> A;
 // Get A from somewhere
@@ -148,13 +155,14 @@ solver->solve(X,B);
 \begin{frame}[fragile]
   \frametitle{Expert Usage}
   \framesubtitle{Reusing the solver for a different matrix}
+  Amesos does not support this expert-only usecase: Use the same solver instance  for solving different linear systems.
   \begin{lstlisting}
 RCP<MAT> A1, A2;
 // initialize A1, A2, and B
 RCP<Solver<MAT,MV> > solver = Amesos::create(A1,X,B);
 solver->solve(); // solution in X
 solver->setA(A2);
-solver->solve(); // refactorizes first
+solver->solve(); // refactorizes A2 first
   \end{lstlisting}
 \end{frame}
 
