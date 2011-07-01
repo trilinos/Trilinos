@@ -15,6 +15,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Cthulhu_TpetraImport.hpp"
+#include "Cthulhu_TpetraExport.hpp"
 
 #include "Cthulhu_Exceptions.hpp"
 #include "Cthulhu_Debug.hpp"
@@ -411,6 +412,23 @@ namespace Cthulhu {
       RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_MultiVector();
 
       this->getTpetra_MultiVector()->doExport(*v, *tImporter.getTpetra_Import(), Cthulhu2Tpetra_CombineMode(CM)); 
+
+    }
+
+
+    void doExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
+                  const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      
+      typedef TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TTpetraMultiVector;      
+      CTHULHU_DYNAMIC_CAST(const TTpetraMultiVector, dest, tDest, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments.");
+      
+      typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TTpetraExport;
+      CTHULHU_DYNAMIC_CAST(const TTpetraExport, exporter, tExporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+
+      RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_MultiVector();
+
+      this->getTpetra_MultiVector()->doExport(*v, *tExporter.getTpetra_Export(), Cthulhu2Tpetra_CombineMode(CM)); 
 
     }
 

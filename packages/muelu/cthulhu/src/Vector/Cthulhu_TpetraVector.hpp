@@ -17,6 +17,7 @@
 #include "Cthulhu_TpetraMap.hpp"
 #include "Cthulhu_TpetraMultiVector.hpp"
 #include "Cthulhu_TpetraImport.hpp"
+#include "Cthulhu_TpetraExport.hpp"
 
 #include "Cthulhu_CombineMode.hpp"
 
@@ -201,6 +202,24 @@ namespace Cthulhu {
       this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->doExport(*v, *tImporter.getTpetra_Import(), Cthulhu2Tpetra_CombineMode(CM)); 
 
     }
+
+    //    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport; // overloading, not hiding
+    void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
+             const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      
+      typedef TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TTpetraVector;      
+      CTHULHU_DYNAMIC_CAST(const TTpetraVector, dest, tDest, "Cthulhu::TpetraVector::doImport only accept Cthulhu::TpetraVector as input arguments.");
+      
+      typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TTpetraExport;
+      CTHULHU_DYNAMIC_CAST(const TTpetraExport, exporter, tExporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+
+      RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_Vector();
+
+      this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->doExport(*v, *tExporter.getTpetra_Export(), Cthulhu2Tpetra_CombineMode(CM)); 
+
+    }
+
 
     
     RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { CTHULHU_DEBUG_ME; return this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->getVectorNonConst(0); }

@@ -10,7 +10,9 @@
 #include "Cthulhu_MultiVector.hpp"
 
 #include "Cthulhu_EpetraMap.hpp" 
+#include "Cthulhu_EpetraExport.hpp"
 #include "Epetra_MultiVector.h"
+
 
 #include "Cthulhu_Trans.hpp"
 
@@ -437,6 +439,19 @@ namespace Cthulhu {
 
       RCP<Epetra_MultiVector> v = tDest.getEpetra_MultiVector();
       int err = this->getEpetra_MultiVector()->Export(*v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    }
+
+
+    void doExport(const MultiVector<double, int, int> &dest,
+                  const Export<int, int>& exporter, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      RCP<Epetra_MultiVector> v = tDest.getEpetra_MultiVector();
+      int err = this->getEpetra_MultiVector()->Export(*v, *tExporter.getEpetra_Export(), Cthulhu2Epetra_CombineMode(CM)); 
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 

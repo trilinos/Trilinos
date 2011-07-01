@@ -522,6 +522,19 @@ namespace Cthulhu {
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
+    void doExport(const Vector<int, int, int> &dest,
+                  const Export<int, int>& exporter, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+
+      CTHULHU_DYNAMIC_CAST(const EpetraIntVector, dest, tDest, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
+      int err = vec_->Export(v, *tExporter.getEpetra_Export(), Cthulhu2Epetra_CombineMode(CM)); 
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    }
+
+
     inline void doImport(const MultiVector<int, int, int> &source, 
                          const Import<int, int> &importer, CombineMode CM) {
 
@@ -530,6 +543,13 @@ namespace Cthulhu {
 
     void doExport(const MultiVector<int, int, int> &dest,
                   const Import<int, int>& importer, CombineMode CM) {
+ 
+      TEST_FOR_EXCEPTION(1, std::runtime_error, "NOT IMPLEMENTED");
+    }
+
+
+    void doExport(const MultiVector<int, int, int> &dest,
+                  const Export<int, int>& exporter, CombineMode CM) {
  
       TEST_FOR_EXCEPTION(1, std::runtime_error, "NOT IMPLEMENTED");
     }

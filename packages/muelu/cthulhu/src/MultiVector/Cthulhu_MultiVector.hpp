@@ -15,6 +15,7 @@
 #include "Cthulhu_Map.hpp"
 
 #include "Cthulhu_Import.hpp"
+#include "Cthulhu_Export.hpp"
 #include "Cthulhu_CombineMode.hpp"
 
 #include "Cthulhu_Debug.hpp"
@@ -335,6 +336,10 @@ namespace Cthulhu {
     //! Export (using an Importer)
     virtual void doExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
+
+    //! Export (using an Exporter)
+    virtual void doExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
+                  const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) = 0;
 
     //@}
 

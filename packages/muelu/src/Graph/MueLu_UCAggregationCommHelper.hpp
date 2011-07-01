@@ -5,6 +5,7 @@
 
 #include <Cthulhu_VectorFactory.hpp>
 #include <Cthulhu_ImportFactory.hpp>
+#include <Cthulhu_ExportFactory.hpp>
 #include <Cthulhu_MapFactory.hpp>
 
 namespace MueLu {
@@ -275,14 +276,16 @@ namespace MueLu {
         std::cout << *weightMap << std::endl;
 #endif
 
-        RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weightMap); // VERSION1
+        //RCP<Import> pushWinners = ImportFactory::Build(winnerMap, weightMap); // VERSION1
+        RCP<Export> pushWinners = ExportFactory::Build(winnerMap, weightMap); // VERSION4
         try
           {
-            companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);   // VERSION1 Slow
+	    //            companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);   // VERSION1 Slow
 //             if (weightMap->lib() == Cthulhu::UseEpetra)
 //               justWinners->doExport(*companion, *winnerImport, Cthulhu::INSERT);  // VERSION2 Tpetra doc is wrong
 //             else if (weightMap->lib() == Cthulhu::UseTpetra)
 //               companion->doExport(*justWinners, *winnerImport, Cthulhu::INSERT);     // VERSION3 - TODO: will certainly not work with Epetra? (change Cthulhu?)
+	    companion->doExport(*justWinners, *pushWinners, Cthulhu::INSERT);     // VERSION4
 //             else throw "lib()";
           }
         catch(std::exception& e)

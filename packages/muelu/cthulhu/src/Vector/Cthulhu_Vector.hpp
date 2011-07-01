@@ -4,6 +4,7 @@
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_MultiVector.hpp"
 #include "Cthulhu_Import.hpp"
+#include "Cthulhu_Export.hpp"
 
 namespace Cthulhu {
 
@@ -143,6 +144,11 @@ namespace Cthulhu {
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport; // overloading, not hiding
     virtual void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
+
+    //! Export (using an Exporter)
+    //    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport; // overloading, not hiding
+    virtual void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
+                  const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) = 0;
 
     //@}
 
