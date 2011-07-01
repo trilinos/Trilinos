@@ -48,6 +48,12 @@ ELSE()
       TIMEOUT_MINUTES 240
       )
   
+    TRILINOS_DRIVER_ADD_DASHBOARD(
+      MPI_DEBUG_GCC_TRIKOTA
+      ctest_linux_nightly_mpi_debug_gcc_4.5.1_trikota_trilinos.cmake
+      TIMEOUT_MINUTES 240
+      )
+  
     #
     # Run the builds of CASL-specific add-on packages with GCC 4.5.1 and
     # send results to the CASL CDash server on casl-dev.  Upstream
