@@ -137,6 +137,8 @@ namespace Tpetra {
 
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
     /** 
+      \pre nodeIDList.size() == GIDList.size()
+      \pre LIDList.size() == GIDList.size()
       \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
                Otherwise, returns AllIDsPresent.
      */
@@ -146,6 +148,7 @@ namespace Tpetra {
 
     //! Returns the node IDs for a given list of global indices.
     /** 
+      \pre nodeIDList.size() == GIDList.size()
       \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
                Otherwise, returns AllIDsPresent.
      */
