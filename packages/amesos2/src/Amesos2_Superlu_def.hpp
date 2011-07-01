@@ -66,7 +66,6 @@ Superlu<Matrix,Vector>::Superlu(
   , nzvals_(this->globalNumNonZeros_)
   , rowind_(this->globalNumNonZeros_)
   , colptr_(this->globalNumRows_ + 1)
-  , factorizationDone_(false)
 {
   SLU::set_default_options(&(data_.options));
   // Override some default options
@@ -132,9 +131,20 @@ template <class Matrix, class Vector>
 int
 Superlu<Matrix,Vector>::symbolicFactorization_impl()
 {
-  // Nothing happens here, all is done in
-  // numericFactorization_impl()
-  factorizationDone_ = false;
+  /*
+   * SuperLU performs symbolic factorization and numeric factorization
+   * together, but does leave some options for reusing symbolic
+   * structures that have been created on previous factorizations.  If
+   * our Amesos2 user calls this function, that is an indication that
+   * the symbolic structure of the matrix is no longer valid, and
+   * SuperLU should do the factorization from scratch.
+   *
+   * This can be accomplished by setting the options.Fact flag to
+   * DOFACT, as well as setting our own internal flag to false.
+   */
+  same_symbolic_ = false;
+  data_.options.Fact = SLU::DOFACT;
+
   return(0);
 }
 
@@ -143,83 +153,33 @@ template <class Matrix, class Vector>
 int
 Superlu<Matrix,Vector>::numericFactorization_impl(){
   int info = 0;
-  if( !factorizationDone_ ){
-    // First time factorization, factor from scratch
-    data_.options.Fact = SLU::DOFACT;
-
-    typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
-    {                           // start matrix conversion block
-      Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-
-      MatrixHelper<Amesos::Superlu>::createCRSMatrix(
-	this->matrixA_.ptr(),
-	(Teuchos::ArrayView<slu_type>)nzvals_,
-	(Teuchos::ArrayView<int>)rowind_,
-	(Teuchos::ArrayView<int>)colptr_,
-	Teuchos::ptrFromRef(data_.A),
-	this->timers_.mtxRedistTime_);
-    } // end matrix conversion block
-  } else {                      // Factorization has been performed already
+  if( this->numericFactorizationDone() ){
     // Cleanup old SuperMatrix A's Store, will be allocated again when
     // new values are retrieved.
     SLU::Destroy_SuperMatrix_Store( &(data_.A) );
 
-    // We have factored once before, check new values for same pattern
-
-    // Get values from matrix in temporary storage
-    typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
-
-    /*
-     * Keep a copy of the old values for temporary safekeeping.  We will check
-     * later whether the new values have the same non-zero structure as the
-     * old.
-     */
-    // Temporary store for nonzero values
-    Teuchos::Array<slu_type> nzvals_tmp(nzvals_);
-    // Temporary store for row indices
-    Teuchos::Array<int> rowind_tmp(rowind_);
-    // Temporary store for column pointers
-    Teuchos::Array<int> colptr_tmp(colptr_);
-
-    {
-      Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-
-      MatrixHelper<Amesos::Superlu>::createCRSMatrix(
-	this->matrixA_.ptr(),
-	(Teuchos::ArrayView<slu_type>)nzvals_,
-	(Teuchos::ArrayView<int>)rowind_,
-	(Teuchos::ArrayView<int>)colptr_,
-	Teuchos::ptrFromRef(data_.A),
-	this->timers_.mtxRedistTime_);
-    }
-    // Test whether the structure of the matrix has changed
-    bool samePattern = (rowind_tmp == rowind_) && (colptr_tmp == colptr_);
-
-    if( samePattern ){
-      // If symbolic structure is the same, we can reuse the old pattern.  The
-      // existing L and U SuperMatrices will be accessed.
-      // SamePattern_SameRowPerm assumes that the non-zero structure is the
-      // same and that the numeric values themselves are similar.  If a
-      // pivoting threshold is exceeded, then gstrf may actually overwrite
-      // perm_c and perm_r in favour of a better permutation.
-      data_.options.Fact = SLU::SamePattern_SameRowPerm;
-    } else {
-      // If symbolic structure has been changed, then we must factor from
-      // scratch
-      data_.options.Fact = SLU::DOFACT;
-      // Cleanup old L and U, Stores and other data will be allocated in gstrf.
-      // Only rank 0 has valid pointers
-      if ( this->status_.root_ ){
-	SLU::Destroy_SuperNode_Matrix( &(data_.L) );
-	SLU::Destroy_CompCol_Matrix( &(data_.U) );
-      }
+    // Cleanup old L and U matrices if we are not reusing a symbolic
+    // factorization.  Stores and other data will be allocated in
+    // gstrf.  Only rank 0 has valid pointers
+    if ( !same_symbolic_ && this->status_.root_ ){
+      SLU::Destroy_SuperNode_Matrix( &(data_.L) );
+      SLU::Destroy_CompCol_Matrix( &(data_.U) );
     }
   }
 
+  if( same_symbolic_ ) data_.options.Fact = SLU::SamePattern_SameRowPerm;
+  
+  {                           // start matrix conversion block
+    Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+    
+    MatrixHelper<Amesos::Superlu>::createCRSMatrix(
+      this->matrixA_.ptr(),
+      nzvals_(), rowind_(), colptr_(),
+      Teuchos::outArg(data_.A),
+      this->timers_.mtxRedistTime_);
+  } // end matrix conversion block
+  
 #ifdef HAVE_AMESOS2_DEBUG
-  // TEST_FOR_EXCEPTION( (data_.A.Store)->nnz != this->globalNumNonZeros_,
-  // 		      std::runtime_error,
-  // 		      "Error in converting to SuperLU SuperMatrix: wrong number of non-zeros." );
   TEST_FOR_EXCEPTION( data_.A.ncol != this->globalNumCols_,
 		      std::runtime_error,
 		      "Error in converting to SuperLU SuperMatrix: wrong number of global columns." );
@@ -231,7 +191,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
   if ( this->status_.root_ ) { // Do factorization
     Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 
-#ifdef HAVE_AMESOS2_DEBUG
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
     std::cout << "Superlu:: Before numeric factorization" << std::endl;
     std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
     std::cout << "rowind_ : " << rowind_.toString() << std::endl;
@@ -253,8 +213,8 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
     std::runtime_error,
     "Memory allocation failure in Superlu factorization");
 
-  factorizationDone_ = true;
   data_.options.Fact = SLU::FACTORED;
+  same_symbolic_ = true;
 
   /* All processes should return the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
@@ -268,9 +228,6 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 				   const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const
 {
   // root sets up for Solve and calls SuperLU
-
-  // typedef typename MatrixTraits<Matrix>::scalar_t scalar_type;
-  typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
 
   global_size_type len_rhs = X->getGlobalLength();
   size_t nrhs = X->getGlobalNumVectors();
@@ -294,35 +251,28 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
 
     size_t ldx, ldb;
-#ifdef HAVE_AMESOS2_DEBUG
-    std::cout << "Creating LHS and RHS multivectors" << std::endl;
-#endif
+
     MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
       X,
       xValues(),                // pass as ArrayView
       ldx,
-      Teuchos::ptrFromRef(data_.X),
+      Teuchos::outArg(data_.X),
       this->timers_.vecRedistTime_);
 
     MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
       B,
       bValues(),                // pass as ArrayView
       ldb,
-      Teuchos::ptrFromRef(data_.B),
+      Teuchos::outArg(data_.B),
       this->timers_.vecRedistTime_);
-#ifdef HAVE_AMESOS2_DEBUG
-    std::cout << "Done creating LHS and RHS multivectors" << std::endl;
-#endif
   }         // end block for conversion time
   int ierr = 0; // returned error code
 
-  // typedef typename TypeMap<Amesos::Superlu,scalar_type>::magnitude_type magnitude_type
-    ;
   magnitude_type rpg, rcond;
   if ( this->status_.root_ ) {
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 
-#ifdef HAVE_AMESOS2_DEBUG
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
     std::cout << "Superlu:: Before solve" << std::endl;
     std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
     std::cout << "rowind_ : " << rowind_.toString() << std::endl;
@@ -338,7 +288,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
       data_.ferr.getRawPtr(), data_.berr.getRawPtr(), &(data_.mem_usage),
       &(data_.stat), &ierr);
 
-#ifdef HAVE_AMESOS2_DEBUG
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
     std::cout << "Superlu:: After solve" << std::endl;
     std::cout << "B : " << bValues().toString() << std::endl;
     std::cout << "X : " << xValues().toString() << std::endl;

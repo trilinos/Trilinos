@@ -81,15 +81,22 @@ public:
   /// Name of this solver interface.
   static const char* name;	// declaration. Initialization outside.
 
-  typedef Superlu<Matrix,Vector>                                solver_type;
-  typedef Matrix                                                matrix_type;
-  typedef Vector                                                vector_type;
-  typedef typename MatrixTraits<matrix_type>::scalar_t          scalar_type;
+  typedef Superlu<Matrix,Vector>                                       type;
+  typedef SolverCore<Amesos::Superlu,Matrix,Vector>              super_type;
+
+  // Since typedef's are not inheritted, go grab them
+  typedef typename super_type::scalar_type                      scalar_type;
+  typedef typename super_type::local_ordinal_type        local_ordinal_type;
+  typedef typename super_type::global_ordinal_type      global_ordinal_type;
+  typedef typename super_type::global_size_type            global_size_type;
+
+  /*
+   * The SuperLU interface will need two other typedef's, which are:
+   * - the superlu type that corresponds to scalar_type and
+   * - the corresponding type to use for magnitude
+   */
+  typedef typename TypeMap<Amesos::Superlu,scalar_type>::type           slu_type;
   typedef typename TypeMap<Amesos::Superlu,scalar_type>::magnitude_type magnitude_type;
-  typedef typename MatrixTraits<matrix_type>::local_ordinal_t   local_ordinal_type;
-  typedef typename MatrixTraits<matrix_type>::global_ordinal_t  global_ordinal_type;
-  typedef typename MatrixAdapter<matrix_type>::global_size_t    global_size_type;
-  // typedef typename MatrixTraits<matrix_type>::node_t           node_type;
 
   /// \name Constructor/Destructor methods
   //@{
@@ -230,7 +237,7 @@ private:
 
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for SuperLU
-  Teuchos::Array<typename TypeMap<Amesos::Superlu,scalar_type>::type> nzvals_;
+  Teuchos::Array<slu_type> nzvals_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
   Teuchos::Array<int> rowind_;
   /// Stores the row indices of the nonzero entries
@@ -250,8 +257,23 @@ private:
    * because that is the format Amesos used.
    */
 
-  /// Has factorization been performed yet?
-  bool factorizationDone_;
+  /*
+   * Internal flag that is used for the numericFactorization_impl
+   * routine.  If true, then the superlu gstrf routine should have
+   * SamePattern_SameRowPerm in its options.  Otherwise, it should
+   * factor from scratch.
+   *
+   * This is somewhat of a kludge to get around the fact that the
+   * superlu routines all expect something different from the options
+   * struct.  The big issue is that we don't want gstrf doing the
+   * symbolic factorization if it doesn't need to.  On the other hand,
+   * we can't leave options.Fact set to SamePattern_SameRowPerm
+   * because the solver driver needs it to be set at FACTORED.  But
+   * having it set at FACTORED upon re-entrance into
+   * numericFactorization prompts gstrf to redo the symbolic
+   * factorization.
+   */
+  bool same_symbolic_;
 
 };				// End class Superlu
 

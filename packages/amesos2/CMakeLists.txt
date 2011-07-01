@@ -18,6 +18,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_EXPERIMENTAL
   "Enable experimental features"
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_VERBOSE_DEBUG
+  HAVE_${PACKAGE_NAME_UC}_VERBOSE_DEBUG
+  "Enable output during debug-mode"
+  OFF )
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_EpetraExt
   HAVE_${PACKAGE_NAME_UC}_EPETRAEXT
   "Enable EpetraExt functionality (for examples and testing)"
