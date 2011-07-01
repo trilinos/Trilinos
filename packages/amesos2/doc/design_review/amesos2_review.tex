@@ -74,19 +74,14 @@ Sandia National Laboratories
 
 \section{Design}
 
-\begin{frame}
-  \frametitle{Use-case Considerations}
-  %% - Multiple datatypes (scalar/ordinal as well as matrix/vector)
-  %% - Novice Users
-  %% - ``Expert'' Users
-\end{frame}
-
 \section{Examples}
 
 \begin{frame}[fragile]          % ``fragile'' for slides with verbatim
   \frametitle{Use Case 1: Simple Solve.}
-  A, X, B all known when creating the solver and the user requires one direct
-  solve.
+
+  $A$, $X$, $B$ all known when creating the solver and the user
+  requires one direct solve.
+
   \begin{lstlisting}
 RCP<MAT> A; RCP<MV> X; RCP<MV> B;
 // initialize A and B
@@ -97,9 +92,11 @@ solver->solve(); // solution placed in X
 
 \begin{frame}[fragile]
   \frametitle{Typical Usage: Preorder, Symbolic, Numeric, Solve}
-  A, X, B all known when creating the solver and the user requires one or
-  multiple solves. Different steps of the factorization could be called in
-  different places.
+
+  $A$, $X$, $B$ all known when creating the solver and the user
+  requires one or multiple solves. Different steps of the
+  factorization could be called in different places.
+
   \begin{lstlisting}
 RCP<MAT> A; RCP<MV> X; RCP<MV> B;
 // initialize A and B
@@ -225,8 +222,10 @@ format) and Pardiso.
 \begin{frame}[fragile]
   \frametitle{Expert Usage}
   \framesubtitle{Releasing $A$ after numeric factorization}
-  For preconditoners or smoothers when there is one symbolic factorization,
-  multiple numeric factorization and multiple solves.
+  
+  For preconditoners or smoothers when there is one often one numeric
+  factorization and multiple solves.
+  
   \begin{lstlisting}
 RCP<MAT> A;
 // Get A from somewhere
@@ -243,7 +242,10 @@ solver->solve(X, B);         // solution placed in X
 \begin{frame}[fragile]
   \frametitle{Expert Usage}
   \framesubtitle{Reusing the solver for a different matrix}
-  Amesos does not support this expert-only usecase: Use the same solver instance  for solving different linear systems.
+  
+  Amesos does not support this expert-only usecase, but Amesos2 does:
+  Use the same solver instance for solving different linear systems.
+
   \begin{lstlisting}
 RCP<MAT> A1, A2;
 // initialize A1, A2, and B
@@ -255,21 +257,67 @@ solver->solve(); // refactorizes A2 first
 \end{frame}
 
 
-\begin{frame}
+\begin{frame}[fragile,shrink]
   \frametitle{Internal Design: Solver Hierarchy}
+\begin{center}
+\begin{verbatim}
+                              +--------+
+                 +------------+ MAT,MV |
+                 | <Interface> +-------+
+                 |   Solver    |
+                 +-------------+
+                      | <MAT,MV>
+                      |     +-----------------------+
+               +------------+ ConcreteSolver,MAT,MV |
+               |  SolverCore +----------------------+
+               +-------------+ 
+   <Superlu,MAT,MV>   |      
+       +--------------+-----+ <Klu2,MAT,MV>
+       |                    |
+       |    +--------+      | +--------+
+   +---+----+ MAT,MV |  +---+-+ MAT,MV |
+   | SuperLU +-------+  | Klu2 +-------+
+   +---------+          +------+
+\end{verbatim}
+\end{center}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile,shrink]
   \frametitle{Internal Design: MatrixAdapter Hierarchy}
+\begin{center}
+\begin{verbatim}        
+                               +---+
+                +--------------+ M |
+                | MatrixAdapter +--+
+                +---------------+        
+                | RCP<M> mat_   |     +-------------------------+
+                +---------------+     | ...                     |
+                | getCrs()  ..........| getGlobalRowCopy(...)   |...
+                | getCcs()      |     | ...                     |  .
+                +---------------+     +-------------------------+  .
+             <Derived> ^                                           .
+                       |           +---------------+               .
+    +------------------------------+ Abstr,Derived |               .
+    | AbstractConcreteMatrixAdapter +--------------+               .
+    +-------------------------------+                              .
+    | getGlobalRowCopy_impl()       | <.............................
+    +-------------------------------+                    calls
+           <super_t,M> ^
+                       |            +---+
+             +----------------------+ M |
+             | ConcreteMatrixAdapter +--+
+             +-----------------------+
+\end{verbatim}
+\end{center}
 \end{frame}
 
 \begin{frame}
   \frametitle{Future Work}
   \begin{itemize}
-  \item Need better support to do ordering: Zoltan2 will provide both
-    graph partitoning based and minimum degree based orderings.
-  \item  Currently we use SuperLU's internal orderings. KLU2 uses the orderings
-    from Amesos.
+  \item Need better support for pre-ordering: Zoltan2 will provide
+    both graph partitoning based and minimum degree based orderings.
+  \item Currently we use SuperLU's internal orderings. KLU2 uses the
+    orderings from Amesos.
   \item Need to support more solvers and matrix types.
   \end{itemize}
 \end{frame}
