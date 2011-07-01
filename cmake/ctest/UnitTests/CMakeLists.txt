@@ -124,7 +124,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of enabled packages:  Teuchos 1"
     "Final set of non-enabled packages:  RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 21"
     "Procesing current package Teuchos: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_Teuchos:BOOL=ON.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental'"
+    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
   )
 # NOTE: The above test pins down the form of the configure options passed to
 # different package configures to make sure everything in there.
@@ -137,10 +137,10 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra 7"
     "Final set of non-enabled packages:  Shards Tpetra Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 15"
     "Procesing current package Teuchos: libs='ON', tests=''"
-    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_Teuchos:BOOL=ON.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental'"
+    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
     "Procesing current package Epetra: libs='ON', tests=''"
     "Procesing current package Thyra: libs='ON', tests='ON'"
-    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_Thyra:BOOL=ON.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_EpetraExt:BOOL='"
+    "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_EpetraExt:BOOL=.-DTrilinos_ENABLE_Thyra:BOOL=ON'"
     "Procesing current package Stokhos: libs='OFF', tests=''"
     "Procesing current package Isorropia: libs='', tests=''"
   )
