@@ -70,44 +70,15 @@ namespace Amesos {
    * <br>
    * <b>Implementation Requirements:</b>
    * <ul>
-   * <li>Default constructor.
-   *
-   * \code
-   * MultiVecAdapter<MultiVecType>();
-   * \endcode
-   * </li>
-   *
    * <li>Wrapper constructor
    * \code MultiVecAdapter<MultiVecType>(const Teuchos::RCP<MultiVecType>& mat); \endcode
    * </li>
-   *
-   * <li>Copy constructor.
-   *
-   * \code
-   * MultiVecAdapter<MultiVecType>(const MultiVecAdapter<MultiVecType>& const);
-   * \endcode
-   * </li>
-   *
-   * <li> MultiVec scaling operation.  Scales each element by \c alpha .
-   *
-   * \code
-   * MultiVecAdapter<multivec_type>& scale(const scalar_type alpha);
-   * \endcode
-   * </li>
-   *
-   * <li>MultiVec update operation.  Replace each element in \c this with
-   * \f$alpha*this + beta*B\f$.
-   *
-   * \code
-   * MultiVecAdapter<multivec_type>&
-   * add(const scalar_type beta, MultiVecAdapter<multivec_type>& B, const scalar_type alpha);
-   * \endcode
-   * </li>
-   *
+   * 
    * <li> Method to get locality of multivec, either globally or locally indexed.
    *
    * \code
-   * bool isLocal() const;
+   * bool isLocallyIndexed() const;
+   * bool isGloballyIndexed() const;
    * \endcode
    * </li>
    *
@@ -163,19 +134,7 @@ namespace Amesos {
    * \code
    * void get1dCopy( const Teuchos::ArrayView<scalar_type>& A, size_t lda) const;
    *
-   * Teuchos::ArrayRCP<scalar_type> get1dViewNonConst( bool local = false ) const;
-   *
    * void get2dCopy( Teuchos::ArrayView<const Teuchos::ArrayView<scalar_type> > A ) const;
-   *
-   * Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> > get2dViewNonConst() const;
-   * \endcode
-   * </li>
-   *
-   * <li> Method to export any local changes to this multi-vector back to the
-   * global space.
-   *
-   * \code
-   * void globalize();
    * \endcode
    * </li>
    *
@@ -186,10 +145,7 @@ namespace Amesos {
    * void globalize( const Teuchos::ArrayView<Value_t>& newVals )
    * \endcode
    * </li>
-   *
-   * <li> Method to revert MultiVec back to distributed.  Should reverse the
-   * changes made to any method which localizes the MultiVec.
-   *
+   * 
    * <li> Get a description of this adapter.
    *
    * \code
@@ -206,19 +162,9 @@ namespace Amesos {
    * \endcode
    * </li>
    *
-   * <li> A \c private method to localize the multi-vector.  Solver interfaces
-   * themselves should not have to concern themselves with the details of how
-   * this localization process is performed.  The method should create and/or
-   * initialize private local variables as necessary.
-   *
-   * \code
-   * void localize();
-   * \endcode
-   * </li>
-   *
    * \ingroup amesos2_multivec_adapters 
    */
-  template <class MultiVecType>
+  template <class MV>
   struct MultiVecAdapter {};
 
   /** \brief Factory creation method for MultiVecAdapters

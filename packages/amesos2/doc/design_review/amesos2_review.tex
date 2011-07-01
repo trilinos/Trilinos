@@ -64,6 +64,7 @@
   \node[rectangle split,
     rectangle split parts=3,
     draw,
+    fill=white,
     text width=#1] (#3) at #2
        { \textbf{#4}
          \nodepart{second}
@@ -369,7 +370,9 @@ solver->solve(); // refactorizes A2 first
 \begin{centering}
 \begin{tikzpicture}
   \myclass[3.7cm]{(0,0)}{matrixadapter}{MatrixAdapter}{M}{RCP$<$M$>$ mat\_}{getCrs()\ldots}
-  \myclass[4cm]{($(matrixadapter) + (-3,-3.2)$)}{acmatadpte}{ACMatrixAdapter}{Epetra\_RM,Derived}{}{getGlobalRowCopy\_impl()}
+  \path ($(matrixadapter) + (-3,-3.2)$) coordinate(ghost) ;
+  \draw[generalization] (ghost) -- node[left,pos=.7]{$<$Derived$>$} (matrixadapter);
+  \myclass[4cm]{(ghost)}{acmatadpte}{ACMatrixAdapter}{Epetra\_RM,Derived}{}{getGlobalRowCopy\_impl()}
   \myclass[4cm]{($(matrixadapter) + (3,-3.2)$)}{acmatadptt}{ACMatrixAdapter}{Tpetra::RM,Derived}{}{getGlobalRowCopy\_impl()}
   
   \myclass[4cm]{($(acmatadptt) + (0,-3)$)}{cmatadpttcrs}{CMatrixAdapter}{Tpetra::CrsMat}{}{}
@@ -377,7 +380,6 @@ solver->solve(); // refactorizes A2 first
 
   \draw[generalization] (acmatadptt) -- node[right]{$<$Derived$>$} (matrixadapter);
   \draw[generalization] (cmatadpttcrs) -- node{$<$Tpetra::RM,Tpetra::CrsMat$>$} (acmatadptt);
-  \draw[generalization] (acmatadpte) -- node[left]{$<$Derived$>$} (matrixadapter);
   \draw[generalization] (cmatadptecrs) -- node{$<$Epetra\_RM,Epetra\_CrsMat$>$} (acmatadpte);
 
   \node[draw,densely dashed,rectangle,anchor=west] (method) at ($(matrixadapter.third east) + (0.5,0)$) {getGlobalRowCopy(\ldots);} ;

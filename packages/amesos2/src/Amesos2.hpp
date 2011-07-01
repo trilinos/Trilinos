@@ -71,13 +71,50 @@
 /**
  * \defgroup amesos2_matrix_adapters Amesos2 Matrix Adapters
  * \ingroup amesos2_adapters
- * 
+ *
+ * Amesos2 matrix adapters provide an interface that caters to many of
+ * the existing third-party sparse direct solver libraries.  Most (if
+ * not all) third-party libraries accept matrices in either the
+ * compressed sparse row format or the compressed sparse column
+ * format.  Retrieving such a representation from a matrix is the
+ * major task of the Amesos::MatrixAdapter class (along with providing
+ * other critical statistics about a matrix, such as row/column size,
+ * number of nonzero entries, etc).
+ *
+ * The Amesos::AbstractConcreteMatrixAdapter and
+ * Amesos::ConcreteMatrixAdapter, as a pair, exist to fully exploit
+ * inheritence in the adaptation.  The ConcreteMatrixAdapter is where
+ * the MatrixAdapter class goes to for much of its business.  For
+ * example, when getting a compressed sparse row representation of a
+ * matrix, MatrixAdapter will depend on the ConcreteMatrixAdapter's
+ * getGlobalRowCopy() method.  However, for both the Epetra and Tpetra
+ * matrices, there typically exists some sort of abstraction, such as
+ * the Epetra_RowMatrix interface.  The Amesos matrix adapters are
+ * able to exploit such interfaces (abstractions) through the
+ * AbstractConcreteMatrixAdapter template class.  The purpose of each
+ * specialization of this templated class is to adapt as many of the
+ * abstract methods (those methods specified in the abstract
+ * interface) as possible.  The ConcreteMatrixAdapter can then inherit
+ * much of the adapted functionality as possible.  Take for instance
+ * the Epetra_RowMatrix abstraction.  This abstraction specifies a set
+ * of methods that deriving classes must implement (or simply inherit
+ * the default implementations).  A number of Epetra matrices derive
+ * from this abstraction.  By adapting the abstraction, rather than
+ * the implementing classes, the Amesos2 adapters significantly reduce
+ * redundant code.
  */
 
 /**
  * \defgroup amesos2_multivec_adapters Amesos2 MultiVector Adapters
  * \ingroup amesos2_adapters
- * 
+ *
+ * Amesos2 solver interfaces are most interested in being able to
+ * access and update the values found in multivectors.  This is the
+ * primary goal of the Amesos2 multivector adapters.  They provide
+ * methods for querying properties of the multivector (number of
+ * vectors, length, etc), for getting copies of the values stored in
+ * the multivector, and for updating the values (e.g. once a solution
+ * vector has been found, put this solution in the multivector).
  */
 
 /////////////////////////// Solvers ////////////////////////////////////
