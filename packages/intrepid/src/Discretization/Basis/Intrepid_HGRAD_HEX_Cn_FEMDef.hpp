@@ -43,10 +43,13 @@ namespace Intrepid {
 								      const ArrayScalar &pts_x ,
 								      const ArrayScalar &pts_y ,
 								      const ArrayScalar &pts_z ):
-    xBasis_( orderx , pts_x ), 
-    yBasis_( ordery , pts_y ),
-    zBasis_( orderz , pts_z )
+    bases_( 3 )
   {
+
+    bases_[0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( orderx , pts_x ) );
+    bases_[1] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( ordery , pts_y ) );
+    bases_[2] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( orderz , pts_z ) );
+
     this->basisCardinality_ = (orderx+1)*(ordery+1)*(orderz+1);
     if (orderx >= ordery && orderx >= orderz ) {
       this->basisDegree_ = orderx;
@@ -66,10 +69,12 @@ namespace Intrepid {
   template<class Scalar, class ArrayScalar>
   Basis_HGRAD_HEX_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_HEX_Cn_FEM( const int order , 
 								      const EPointType & pointType ):
-    xBasis_( order , pointType ), 
-    yBasis_( order , pointType ),
-    zBasis_( order , pointType )
+    bases_( 3 )
   {
+    bases_[0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( order , pointType ) );
+    // basis is same in each direction, so I only need to instantiate it once!
+    bases_[1] = bases_[0];
+    bases_[2] = bases_[0];
     this->basisCardinality_ = (order+1)*(order+1)*(order+1);
     this->basisDegree_ = order;
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
@@ -98,6 +103,11 @@ namespace Intrepid {
        tags[tagSize*i+2] = i;
        tags[tagSize*i+3] = this->getCardinality();
      }
+
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &xBasis_ = *bases_[0];
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &yBasis_ = *bases_[1];
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &zBasis_ = *bases_[2];
+
 
     // now let's try to do it "right"
     // let's get the x, y, z bases and their dof
@@ -193,6 +203,11 @@ namespace Intrepid {
                                                       this -> getBaseCellTopology(),
                                                       this -> getCardinality() );
 #endif
+
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &xBasis_ = *bases_[0];
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &yBasis_ = *bases_[1];
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &zBasis_ = *bases_[2];
+
 
     FieldContainer<Scalar> xInputPoints(inputPoints.dimension(0),1);
     FieldContainer<Scalar> yInputPoints(inputPoints.dimension(0),1);

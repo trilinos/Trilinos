@@ -40,9 +40,11 @@ namespace Intrepid {
   Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_QUAD_Cn_FEM( const int orderx , const int ordery,
 									const ArrayScalar &pts_x ,
 									const ArrayScalar &pts_y ):
-    xBasis_( orderx , pts_x ), 
-    yBasis_( ordery , pts_y )
+    bases_(2)
   {
+    bases_[0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( orderx , pts_x ) );
+    bases_[1] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( ordery , pts_y ) );
+
     this->basisCardinality_ = (orderx+1)*(ordery+1);
     if (orderx > ordery) {
       this->basisDegree_ = orderx;
@@ -59,9 +61,10 @@ namespace Intrepid {
   template<class Scalar, class ArrayScalar>
   Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_QUAD_Cn_FEM( const int order,
 									const EPointType &pointType ):
-    xBasis_( order , pointType ), 
-    yBasis_( order , pointType )
+    bases_(2)
   {
+    bases_[0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( order , pointType ) );
+    bases_[1] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( order , pointType ) );
     this->basisCardinality_ = (order+1)*(order+1);
     this->basisDegree_ = order;
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
@@ -90,6 +93,9 @@ namespace Intrepid {
        tags[tagSize*i+2] = i;
        tags[tagSize*i+3] = this->getCardinality();
      }
+
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &xBasis_ = *bases_[0];
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &yBasis_ = *bases_[1];
 
     // now let's try to do it "right"
     // let's get the x and y bases and their dof
@@ -169,6 +175,9 @@ namespace Intrepid {
 
     FieldContainer<Scalar> xInputPoints(inputPoints.dimension(0),1);
     FieldContainer<Scalar> yInputPoints(inputPoints.dimension(0),1);
+
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &xBasis_ = *bases_[0];
+    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &yBasis_ = *bases_[1];
 
     for (int i=0;i<inputPoints.dimension(0);i++) {
       xInputPoints(i,0) = inputPoints(i,0);

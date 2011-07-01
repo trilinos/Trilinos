@@ -38,6 +38,7 @@
 #include "Intrepid_Basis.hpp"
 #include "Intrepid_ProductTopology.hpp"
 #include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
+#include "Teuchos_Array.hpp"
 
 namespace Intrepid {
   
@@ -54,9 +55,7 @@ private:
    */
   void initializeTags();
   
-  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> xBasis_;
-  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> yBasis_;
-  
+  Teuchos::Array<Teuchos::RCP<Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> > > bases_;
 
 public:
 
