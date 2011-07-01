@@ -1,4 +1,3 @@
-%\documentclass{beamer}
 \documentclass[xcolor=dvipsnames]{beamer}
 
 \usecolortheme[named=brown]{structure}
@@ -58,7 +57,7 @@ Sandia National Laboratories
 
 \begin{frame}
   \frametitle{Amesos2 Motivation}
-  
+
   \begin{itemize}
   \item Uniform Interface to common third-party direct solvers.
     \medskip
@@ -167,7 +166,7 @@ solver->solve();
   \item KLU2 (in progress)
   \item SuperLU
   \item SuperLU\_MT
-  \item SuperLU\_dist (in progress)
+  \item SuperLU\_DIST (in progress)
   \end{itemize}
 We are also considering adding LAPACK (for almost dense matrices in CrsMatrix 
 format) and Pardiso.
@@ -199,9 +198,9 @@ format) and Pardiso.
 
 \begin{frame}
   \frametitle{Support for New Matrices and Multivectors}
-  
+
   The amount of effort required depends on what object is being added.
-  
+
   \begin{itemize}
     \item Extends \texttt{Epetra\_RowMatrix} or
       \texttt{Tpetra::RowMatrix}?  Very little, only a method that
