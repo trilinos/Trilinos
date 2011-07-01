@@ -186,20 +186,95 @@ namespace Tpetra {
         
         Calls Tpetra::RTI::detail::transform_reduce via the Tpetra::RTI::detail::RTIPreTransformReductionAdapter.
       */
-    template <class S, class LO, class GO, class Node,class Glob>
+    template <class S1, class S2, class LO, class GO, class Node,class Glob>
     typename Glob::RedOP::result_type 
-    binary_pre_transform_reduce(Vector<S,LO,GO,Node> &vec_inout, const Vector<S,LO,GO,Node> &vec_in2, Glob glob)
+    binary_pre_transform_reduce(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, Glob glob)
     {
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength(), std::runtime_error,
           "Tpetra::RTI::binary_pre_transform_reduce(vec_in1,vec_in2): vec_in1 and vec_in2 must have the same local length.");
 #endif
-      Tpetra::RTI::detail::RTIPreTransformReductionAdapter<Glob,S,S> adapter_op(glob);
+      Tpetra::RTI::detail::RTIPreTransformReductionAdapter<Glob,S1,S2> adapter_op(glob);
       return Tpetra::RTI::detail::transform_reduce(vec_inout, vec_in2, adapter_op);
+    }
+
+    //! \brief Transforms values of \c vec_inout while simultaneously performing a parallel reduction.
+    /** For each element triplet <tt>vec_inout[i]</tt> and <tt>vec_in2[i]</tt> and <tt>vec_in3[i]</tt>, 
+        assigns <tt>vec_inout[i] = glob.top( vec_inout[i], vec_in2[i], vec_in3[i] )</tt>. Simultaneously, generates reduction 
+        elements via <tt>glob.genop( vec_inout[i], vec_in2[i], vec_in3[i] )</tt> (using the transformed values) and reduces them via 
+        the <tt>glob.redop</tt> tertiary functor. 
+        
+        Calls Tpetra::RTI::detail::transform_reduce via the Tpetra::RTI::detail::RTIPreTransformReductionAdapter3.
+      */
+    template <class S1, class S2, class S3, class LO, class GO, class Node,class Glob>
+    typename Glob::RedOP::result_type 
+    tertiary_pre_transform_reduce(Vector<S1,LO,GO,Node> &vec_inout, const Vector<S2,LO,GO,Node> &vec_in2, const Vector<S3,LO,GO,Node> &vec_in3, Glob glob)
+    {
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION( vec_inout.getLocalLength() != vec_in2.getLocalLength() && vec_in2.getLocalLength() != vec_in3.getLocalLength(), 
+          std::runtime_error, "Tpetra::RTI::tertiary_pre_transform_reduce(vec_in1,vec_in2,vec_in3): vec_in1, vec_in2 and vec_in3 must have the same local length.");
+#endif
+      Tpetra::RTI::detail::RTIPreTransformReductionAdapter3<Glob,S1,S2,S3> adapter_op(glob);
+      return Tpetra::RTI::detail::transform_reduce(vec_inout, vec_in2, vec_in3, adapter_op);
     }
 
   } // end of namespace RTI
 
 } // end of namespace Tpetra
+
+#define TPETRA_UNARY_TRANSFORM(out,expr) \
+  Tpetra::RTI::unary_transform( *out, [=](decltype((out)->meanValue()) out) \
+                                         {return expr;})
+
+#define TPETRA_BINARY_TRANSFORM(out,in,expr) \
+  Tpetra::RTI::binary_transform( *out, *in, [=](decltype((out)->meanValue()) out, \
+                                                    decltype((in)->meanValue()) in) \
+                                                    {return expr;})
+
+#define TPETRA_TERTIARY_TRANSFORM(out,in2,in3,expr) \
+  Tpetra::RTI::tertiary_transform( *out, *in2, *in3, \
+                                   [=](decltype((out)->meanValue()) out, \
+                                       decltype((in2)->meanValue()) in2, \
+                                       decltype((in3)->meanValue()) in3) \
+                                       {return expr;})
+
+
+#define TPETRA_REDUCE2(out,in, gexp, id, robj ) \
+  Tpetra::RTI::reduce( *out, *in,                                                \
+    Tpetra::RTI::reductionGlob<id>( [=]( decltype((out)->meanValue()) out,       \
+                                         decltype((in)->meanValue()) in )        \
+                                       { return gexp; },                         \
+                                       robj ) )
+
+#define TPETRA_REDUCE3(out,in2,in3, gexp, id, robj ) \
+  Tpetra::RTI::reduce( *out, *in2, *in3,                  \
+    Tpetra::RTI::reductionGlob<id>( [=]( decltype((out)->meanValue()) out,       \
+                                         decltype((in2)->meanValue()) in2,       \
+                                         decltype((in3)->meanValue()) in3 )      \
+                                       { return gexp; },                         \
+                                       robj ) )
+
+#define TPETRA_BINARY_PRETRANSFORM_REDUCE(out,in,  texp, gexp, id, robj ) \
+  Tpetra::RTI::binary_pre_transform_reduce( *out, *in,                     \
+    Tpetra::RTI::reductionGlob<id>( [=]( decltype((out)->meanValue()) out,  \
+                                         decltype((in)->meanValue()) in )   \
+                                       { return texp; },                    \
+                                    [=]( decltype((out)->meanValue()) out,  \
+                                         decltype((in)->meanValue()) in )   \
+                                       { return gexp; },                    \
+                                       robj ) )
+
+#define TPETRA_TERTIARY_PRETRANSFORM_REDUCE(out,in2,in3, texp, gexp, id, robj ) \
+  Tpetra::RTI::tertiary_pre_transform_reduce( *out, *in2, *in3,                  \
+    Tpetra::RTI::reductionGlob<id>( [=]( decltype((out)->meanValue()) out,       \
+                                         decltype((in2)->meanValue()) in2,       \
+                                         decltype((in3)->meanValue()) in3 )      \
+                                       { return texp; },                         \
+                                    [=]( decltype((out)->meanValue()) out,       \
+                                         decltype((in2)->meanValue()) in2,       \
+                                         decltype((in3)->meanValue()) in3 )      \
+                                       { return gexp; },                         \
+                                       robj ) )
+
 
 #endif // TPETRA_RTI_HPP
