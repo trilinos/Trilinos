@@ -8,6 +8,7 @@
 %\usetheme{Singapore}
 \usetheme[height=7mm]{Madrid}
 \setbeamertemplate{navigation symbols}{}
+\setbeamercovered{dynamic}
 
 %-------------------------------------------------------------------------------
 % get epsf.tex file, for encapsulated postscript files:
@@ -27,16 +28,20 @@
 \usepackage{color}
 \usepackage{epsfig}
 \usepackage{microtype}
+\usepackage{verbatim}
 \usepackage{listings}
 \lstset{
   language=C++,
-  basicstyle=\small}
+  basicstyle=\small,
+  identifierstyle=\ttfamily,
+  flexiblecolumns=true          % improve the letter kerning in listings
+}
 
 \renewcommand{\thefootnote}{}
 
 \title[Amesos2]{Amesos2: Common Interface to Direct Solvers}
-\author[Bavier, Boman, Rajamanickam]{Eric Bavier and Erik Boman and Siva Rajamanickam}
-\institute[]{
+\author[Bavier,Boman,Rajamanickam]{Eric Bavier and Erik Boman and Siva Rajamanickam}
+\institute[SNL]{
 Sandia National Laboratories
 }
 \date[]{July 6, 2011}
@@ -66,7 +71,6 @@ Sandia National Laboratories
   \item Revisit Amesos design choices and redesign to easily support more
     solvers and matrix types.
   \end{itemize}
-    
 \end{frame}
 
 \section{Design}
@@ -87,7 +91,7 @@ Sandia National Laboratories
   \begin{lstlisting}
 RCP<MAT> A; RCP<MV> X; RCP<MV> B;
 // initialize A and B
-RCP<Solve<MAT,MV> > solver = Amesos::create(A,X,B);
+RCP<Solve<MAT,MV> > solver = Amesos::create(A, X, B);
 solver->solve(); // solution placed in X
   \end{lstlisting}
 \end{frame}
@@ -100,7 +104,7 @@ solver->solve(); // solution placed in X
   \begin{lstlisting}
 RCP<MAT> A; RCP<MV> X; RCP<MV> B;
 // initialize A and B
-RCP<Solve<MAT,MV> > solver = Amesos::create(A,X,B);
+RCP<Solve<MAT,MV> > solver = Amesos::create(A, X, B);
 solver->preOrdering();
 solver->symbolicFactorization();
 solver->numericFactorization();
@@ -109,15 +113,51 @@ solver->solve();
 \end{frame}
 
 \begin{frame}
-  \frametitle{Solver Interface and Creating Solver}
+  \frametitle{Solver Interface and Creating a Solver}
+  \begin{itemize}
+  \item The basic solver interface
+    \begin{itemize}
+    \item \texttt{preOrdering()}
+    \item \texttt{symbolicFactorization()}
+    \item \texttt{numericFactorization()}
+    \item \texttt{solve()} or \texttt{solve(X,B)}
+    \end{itemize}
+  \item Creation of an Amesos2 solver
+    \begin{enumerate}
+    \item Solver name (optional, defaults to ``KLU2'')
+    \item The matrix A (RCP or pointer)
+    \item X and B (multi)vectors (optional if using \texttt{solve(X,B)} interface)
+    \end{enumerate}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Amesos2 Parameters vs Solver Parameters}
+  \frametitle{Solver Interface and Creating a Solver}
+  \framesubtitle{Summary of creation options}
+  \begin{itemize}
+  \item \texttt{create("SuperLU", A, X, B)}
+  \item \texttt{create("SuperLU", A)}
+  \item \texttt{create(A, X, B)}
+  \item \texttt{create(A)}
+  \end{itemize}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
   \frametitle{Amesos2 Parameters vs Solver Parameters}
+\small
+\texttt{<ParameterList name="Amesos2">}\\
+\texttt{~~<Parameter name="Tranpose" type="bool" value="true" />}\\
+\uncover<2->{
+\texttt{~~<ParameterList name="SuperLU\_MT">}\\
+\texttt{~~~~<Parameter name="nprocs" type="int" value="8" />}\\
+\texttt{~~</ParameterList>}\\
+}
+\uncover<3->{
+\texttt{~~<ParameterList name="SuperLU">}\\
+\texttt{~~~~<Parameter name="DiagPivotThresh" type="double" value=".1" />}\\
+\texttt{~~</ParameterList>}\\
+}
+\texttt{</ParameterList>}
 \end{frame}
 
 \begin{frame}
@@ -135,10 +175,52 @@ format) and Pardiso.
 
 \begin{frame}
   \frametitle{Support for New Solvers}
+  \begin{itemize}
+    \item Set up necessary internal data structures to interface with
+      the TPL
+    \item Implement
+      \begin{itemize}
+        \item \texttt{preOrdering\_impl()}
+        \item \texttt{symbolicFactorization\_impl()}
+        \item \texttt{numericFactorization\_impl()}
+        \item \texttt{solve\_impl(X, B)}
+        \item \texttt{matrixShapeOK\_impl()}
+        \item \texttt{setParameters\_impl()}
+        \item \texttt{getValidParameters\_impl()}
+      \end{itemize}
+    \item Do not need to worry about
+      \begin{itemize}
+        \item creating timers
+        \item checking compatibility of $A$, $X$, and $B$
+        \item keeping track of solver status
+      \end{itemize}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Support for New Matrices and Multivectors}
+  
+  The amount of effort required depends on what object is being added.
+  
+  \begin{itemize}
+    \item Extends \texttt{Epetra\_RowMatrix} or
+      \texttt{Tpetra::RowMatrix}?  Very little, only a method that
+      imports the object into a new object with a given map.
+    \item Otherwise, implement functions relating to
+      \begin{itemize}
+        \item getting a compressed row or column copy
+        \item getting global/local matrix statistics
+        \item getting row/col map
+        \item import method
+      \end{itemize}
+    \item Multivectors require methods for
+      \begin{itemize}
+        \item getting global/local statistics
+        \item getting the map
+        \item getting a contiguous 1-D copy
+        \item setting/globalizing a 1-D array
+      \end{itemize}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -149,19 +231,13 @@ format) and Pardiso.
   \begin{lstlisting}
 RCP<MAT> A;
 // Get A from somewhere
-RCP<Solver<MAT,MV> > solver = Amesos::create("SuperLU",A);
-Teuchos::ParameterList params("Amesos2");
-params.sublist("SuperLU").set("IterRefine","DOUBLE");
-params.sublist("SuperLU").set("ColPerm","MMD_AT_PLUS_A");
-solver->setParameters(params);
+RCP<Solver<MAT,MV> > solver = Amesos::create("SuperLU", A);
 solver->symbolicFactorization().numericFactorization();
 A = Teuchos::null;          // no longer need A
 solver.setA(Teuchos::null); // tell solver to release A
 RCP<MV> X; RCP<MV> B;
 // do some other work, finally get B's values
-solver->solve(X,B);         // solution placed in X
-// do some more work and get new values in B
-solver->solve(X,B);
+solver->solve(X, B);         // solution placed in X
   \end{lstlisting}
 \end{frame}
 
