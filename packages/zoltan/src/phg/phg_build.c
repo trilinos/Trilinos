@@ -18,6 +18,7 @@
 extern "C" {
 #endif
 
+#include <float.h>
 #include "phg.h"
 #include "phg_verbose.h"
 #include "zz_const.h"
@@ -104,6 +105,18 @@ char msg[128];
   phgraph = &(zhg->HG);
   Zoltan_HG_HGraph_Init(phgraph);
   phgraph->comm = &hgp->globalcomm;
+  
+  /* Obtain the coordinates with 2D distribution. */
+  if (zz->Get_Num_Geom != NULL &&
+      (zz->Get_Geom != NULL || zz->Get_Geom_Multi != NULL)) {
+     /* Geometric callbacks are registered;       */
+     /* get coordinates for hypergraph objects.   */
+
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Getting Coordinates.");
+
+     ierr = Zoltan_Get_Coordinates(zz, zhg->nObj, zhg->objGID,
+      zhg->objLID, &(phgraph->nDim), &(zhg->coor));
+  }
 
   /**************************************************************
    * Build the hypergraph for PHG from zhg.
@@ -115,18 +128,6 @@ char msg[128];
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     goto End;
   }
-
-#ifdef KDDKDD_NO_COORDINATES_FOR_NOW
-  /* KDDKDD DON'T KNOW WHAT TO DO WITH THE COORDINATES WITH 2D DISTRIB ANYWAY */
-  if (zz->Get_Num_Geom != NULL && 
-      (zz->Get_Geom != NULL || zz->Get_Geom_Multi != NULL)) {
-     /* Geometric callbacks are registered;       */
-     /* get coordinates for hypergraph objects.   */
-     ZOLTAN_TRACE_DETAIL(zz, yo, "Getting Coordinates.");
-     ierr = Zoltan_Get_Coordinates(zz, phgraph->nVtx, zhg->objGID,
-      zhg->objLID, &(phgraph->nDim), &(phgraph->coor));
-  }
-#endif
 
   if (hgp->check_graph) {
     ierr = Zoltan_HG_Check(zz, phgraph);
@@ -216,6 +217,9 @@ float edgeSizeThreshold;
 int randomizeInitDist;
 int final_output;
 
+int nCoords;
+double *tmpcoords = NULL;
+ 
 phg_GID_lookup  *lookup_myObjs = NULL;
 int GnFixed=0, nFixed=0;                                     
 int *tmpfixed = NULL, *fixedPart = NULL;              
@@ -538,8 +542,15 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   tmpwgts = (float *)ZOLTAN_CALLOC(sizeof(float), nwgt);
   phg->vwgt = (float *)ZOLTAN_MALLOC(sizeof(float) * nwgt);
-
   if (nwgt && (!tmpwgts || !phg->vwgt)) MEMORY_ERROR;
+
+  if (phg->nDim > 0) {
+    nCoords = phg->nVtx * phg->nDim;
+
+    tmpcoords = (double *)ZOLTAN_CALLOC(sizeof(double), nCoords);
+    phg->coor = (double *)ZOLTAN_MALLOC(sizeof(double) * nCoords);
+    if (nCoords && (!tmpcoords || !phg->coor)) MEMORY_ERROR;
+  }
   
   if (GnFixed) {                              
     tmpfixed   = (int*) ZOLTAN_MALLOC(phg->nVtx * sizeof(int));
@@ -556,8 +567,13 @@ int nRepartEdge = 0, nRepartVtx = 0;
     for (i = 0; i < zhg->nObj; i++) {
       idx = zhg->objGNO[i];
       tmpparts[idx] = zhg->Input_Parts[i];
-      for (j=0; j<dim; j++)
+      for (j = 0; j < dim; j++)
         tmpwgts[idx*dim + j] = zhg->objWeight[i*dim + j];
+      if (phg->nDim > 0)
+	for (j = 0; j < phg->nDim; j++){
+	  tmpcoords[idx*phg->nDim + j] = zhg->coor[i*phg->nDim + j];
+	  phg->coor[i*phg->nDim + j] = -DBL_MAX; /* defined in float.h */
+	}
       if (GnFixed)                                             
         tmpfixed[idx] = zhg->fixed[i];
     }
@@ -578,6 +594,16 @@ int nRepartEdge = 0, nRepartVtx = 0;
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       goto End;
     }
+
+    if (phg->nDim > 0) {
+      msg_tag++;
+      ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->coor,
+			    sizeof(double) * phg->nDim, (char *) phg->coor);
+
+      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+	goto End;
+      }
+    }
     
     if (GnFixed) {                                  
        msg_tag++;
@@ -590,16 +616,21 @@ int nRepartEdge = 0, nRepartVtx = 0;
     for (i = 0; i < nrecv; i++) {
       idx = VTX_GNO_TO_LNO(phg, recv_gno[i]);
       tmpparts[idx] = (*input_parts)[i];
-      for (j=0; j<dim; j++){
+      for (j=0; j<dim; j++)
         tmpwgts[idx*dim + j] = phg->vwgt[i*dim + j];  
       if (GnFixed)                                       
-        tmpfixed[idx] = phg->fixed_part[i];         
+	tmpfixed[idx] = phg->fixed_part[i];         
+      if (phg->nDim > 0) {
+	for (j = 0; j < phg->nDim; j++){
+	  tmpcoords[idx*phg->nDim + j] = phg->coor[i*phg->nDim + j];
+	  phg->coor[i*phg->nDim + j] = -DBL_MAX;
+	}
       }
     }
   }
 
-  /* Reduce partition assignments and weights for all vertices within column 
-   * to all processors within column.
+  /* Reduce partition assignments, weights and coordinates for all
+   * vertices within column to all processors within column.
    */
 
   if (phg->comm->col_comm != MPI_COMM_NULL){
@@ -611,16 +642,24 @@ int nRepartEdge = 0, nRepartVtx = 0;
                   phg->comm->col_comm);
     CHECK_FOR_MPI_ERROR(rc);
 
+    if (phg->nDim > 0) {
+      rc = MPI_Allreduce(tmpcoords, phg->coor, nCoords, MPI_DOUBLE, MPI_SUM,
+			 phg->comm->col_comm);
+      CHECK_FOR_MPI_ERROR(rc);
+    }
+    
     if (GnFixed) {                                          
        rc = MPI_Allreduce(tmpfixed, phg->fixed_part, phg->nVtx, MPI_INT, MPI_MAX,
             phg->comm->col_comm);
        CHECK_FOR_MPI_ERROR(rc);
-    }   
+    }
   }
+  
+  ZOLTAN_FREE(&tmpcoords);
   ZOLTAN_FREE(&tmpfixed);
   ZOLTAN_FREE(&tmpparts);
   ZOLTAN_FREE(&tmpwgts);
-
+  
   /*  Send edge weights, if any */
 
   dim = zhg->edgeWeightDim;
@@ -793,6 +832,7 @@ End:
     &tmpparts,
     &tmpwgts,
     &tmpfixed,
+    &tmpcoords,
     &gid_weights,
     &have_wgt);
 
@@ -815,6 +855,7 @@ End:
   }
 #endif
 
+      
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
