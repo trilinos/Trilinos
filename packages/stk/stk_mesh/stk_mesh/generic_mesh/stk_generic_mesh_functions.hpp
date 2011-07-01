@@ -70,27 +70,23 @@ add_entity( const EntityKey & entity_key,
 }
 
 
-
 // Get a const reference to the Entity from the entity_local_id.
 inline const STKGenericMesh::entity_value & get_entity(
-    STKGenericMesh::entity_local_id entity_lid,
-    const STKGenericMesh & mesh
+  STKGenericMesh::const_entity_local_id entity_lid,
+  const STKGenericMesh & mesh
     )
 {
   return *entity_lid;
 }
 
-
-// This function is exactly the same as the one above because of the typedefs.
-// Get a const reference to the Entity from the entity_descriptor.
-//inline const STKGenericMesh::entity_value & get_entity(
-//    STKGenericMesh::entity_descriptor entity_d,
-//    const STKGenericMesh & mesh
-//    )
-//{
-//  return *entity_d;
-//}
-
+// Get a reference to the Entity from the entity_local_id.
+inline STKGenericMesh::entity_value & get_entity(
+  STKGenericMesh::entity_local_id entity_lid,
+  const STKGenericMesh & mesh
+    )
+{
+  return *entity_lid;
+}
 
 // destroy_entity:
 inline void remove_entity( STKGenericMesh::entity_local_id entity_lid, STKGenericMesh & mesh )
@@ -262,8 +258,7 @@ inline std::pair<
 inline STKGenericMesh::bucket_descriptor
 get_bucket( STKGenericMesh::entity_descriptor entity, STKGenericMesh & mesh )
 {
-  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
-  return NULL;
+  return &entity->bucket();
 }
 
 
@@ -387,8 +382,14 @@ get_parts(
     STKGenericMesh::bucket_descriptor bucket_descriptor, STKGenericMesh & mesh
     )
 {
-  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
-  return std::pair<STKGenericMesh::bucket_part_descriptor_iterator,STKGenericMesh::bucket_part_descriptor_iterator>(NULL,NULL);
+  return bucket_descriptor->superset_part_ordinals();
+}
+
+inline
+STKGenericMesh::part_descriptor
+get_part_descriptor(STKGenericMesh::bucket_part_descriptor descriptor, STKGenericMesh & mesh)
+{
+  return &(mesh.m_bulk_data.mesh_meta_data().get_part(descriptor));
 }
 
 // Generic API:  Begin modification cycle. Returns true if cycle was not already in progress

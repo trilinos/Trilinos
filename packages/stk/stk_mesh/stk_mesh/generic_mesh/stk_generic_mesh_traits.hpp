@@ -30,6 +30,7 @@ struct Internal_STK_Generic_Mesh_Adapter
 
   // persistant through modifications (up to change owner):
   typedef Entity *     entity_local_id;
+  typedef const Entity * const_entity_local_id;
   // not-persistant through modifications (up to change owner):
   typedef Entity *     entity_descriptor;
   // entity_descriptor_iterator de-references to an entity_descriptor:
@@ -57,7 +58,8 @@ struct Internal_STK_Generic_Mesh_Adapter
   typedef Ordinal      part_bucket_size_type; // not used yet
 
   // potentially heavy part_descriptor_iterator:
-  typedef Part *       bucket_part_descriptor_iterator;
+  typedef const Ordinal *    bucket_part_descriptor_iterator;
+  typedef Ordinal      bucket_part_descriptor;
   typedef Ordinal      bucket_part_size_type; // not used yet
 
   // potentially heavy entity_descriptor_iterator:
