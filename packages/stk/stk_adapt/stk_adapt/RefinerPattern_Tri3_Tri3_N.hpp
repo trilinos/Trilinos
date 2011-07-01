@@ -95,8 +95,8 @@ namespace stk {
 #define T_VERT_N(i) (i)
 #define T_EDGE_N(i) ((i)+3)
 
-      void triangulate_face(PerceptMesh& eMesh, stk::mesh::Entity *elem_nodes[3], unsigned edge_marks[3], 
-                            vector<tri_tuple_type_local>& elems)
+      static void triangulate_face(PerceptMesh& eMesh, stk::mesh::Entity *elem_nodes[3], unsigned edge_marks[3], 
+                                   vector<tri_tuple_type_local>& elems)
       {
         const CellTopologyData * const cell_topo_data = shards::getCellTopologyData< shards::Triangle<6> >();
 
@@ -199,7 +199,7 @@ namespace stk {
                     edge_len_squared = 
                       (coord_0[0] - coord_1[0])*(coord_0[0] - coord_1[0])+
                       (coord_0[1] - coord_1[1])*(coord_0[1] - coord_1[1])+
-                      (m_eMesh.getSpatialDim() == 2 ? 0 : 
+                      (eMesh.getSpatialDim() == 2 ? 0 : 
                        (coord_0[2] - coord_1[2])*(coord_0[2] - coord_1[2]) );
 
                     if (edge_len_squared > max_edge_length)
