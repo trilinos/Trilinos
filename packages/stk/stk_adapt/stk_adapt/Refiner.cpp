@@ -537,7 +537,7 @@ namespace stk {
         }
         m_nodeRegistry->dumpDB("after registration");
 
-#define CHECK_DEBUG 1
+#define CHECK_DEBUG 0
         if (CHECK_DEBUG)
           {
             MPI_Barrier( MPI_COMM_WORLD );
@@ -581,7 +581,7 @@ namespace stk {
             }
           m_nodeRegistry->endCheckForRemote();                /**/   TRACE_PRINT("Refiner: endCheckForRemote (top-level rank)... ");
 
-          if (1 && CHECK_DEBUG)
+          if (CHECK_DEBUG)
             {
               std::cout << "num_elem= " << num_elem << std::endl;
               MPI_Barrier( MPI_COMM_WORLD );
@@ -2738,7 +2738,6 @@ namespace stk {
       typedef std::set<stk::mesh::Entity *> SetOfEntities;
       SetOfEntities family_trees_to_be_removed;
       SetOfEntities children_to_be_removed;
-      SetOfEntities children_to_be_removed_with_ghosts;
 
       ElementUnrefineCollection parent_elements;
       ElementUnrefineCollection parent_elements_copy;
@@ -2748,9 +2747,9 @@ namespace stk {
            u_iter != elements_to_unref.end(); ++u_iter)
         {
           stk::mesh::Entity * element_p = *u_iter;
-          bool isGhostElement = m_eMesh.isGhostElement(*element_p);
-          //if (isGhostElement)
-          //  continue;
+          bool elementIsGhost = m_eMesh.isGhostElement(*element_p);
+          if (elementIsGhost)
+            continue;
 
           if (!m_eMesh.isChildElement(*element_p))
             continue;
@@ -2811,11 +2810,7 @@ namespace stk {
                   ++nchild_removed;
                   
 
-                  if (!isGhostElement) 
-                    { 
-                      children_to_be_removed.insert( child );
-                    }
-                  children_to_be_removed_with_ghosts.insert( child );
+                  children_to_be_removed.insert( child );
                 }
 
             }
@@ -2824,7 +2819,7 @@ namespace stk {
       std::cout << "tmp nchild_removed=: " << nchild_removed << std::endl;
 #endif
 
-      m_nodeRegistry->clear_element_owner_data(children_to_be_removed_with_ghosts);
+      m_nodeRegistry->clear_element_owner_data(children_to_be_removed);
 
       for(SetOfEntities::iterator family_tree_it = family_trees_to_be_removed.begin();
           family_tree_it != family_trees_to_be_removed.end(); ++family_tree_it)
@@ -2959,9 +2954,6 @@ namespace stk {
 
       m_eMesh.getBulkData()->modification_end();
 
-#if CHECK_DEBUG
-      check_db("after unrefineTheseElements");
-#endif
     }
 
     //    ========================================================================================================================
@@ -2973,7 +2965,7 @@ namespace stk {
     {
       std::cout << "tmp check_db msg= " << msg << std::endl;
       check_db_ownership_consistency();
-      //check_db_hanging_nodes();
+      check_db_hanging_nodes();
     }
 
     void Refiner::check_db_ownership_consistency()
@@ -2987,37 +2979,33 @@ namespace stk {
           NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
           unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
 
-          if (nodeIds_onSE.size())
+          if (!owning_elementId)
+            throw std::logic_error("check_db_ownership_consistency:: error #1");
+
+          stk::mesh::Entity * owning_element = m_eMesh.getBulkData()->get_entity(owning_elementRank, owning_elementId);
+
+          if (!owning_element)
+            throw std::logic_error("check_db_ownership_consistency:: error #2");
+
+          if (!m_eMesh.isGhostElement(*owning_element))
             {
-
-              if (!owning_elementId)
-                throw std::logic_error("check_db_ownership_consistency:: error #1");
-
-              stk::mesh::Entity * owning_element = m_eMesh.getBulkData()->get_entity(owning_elementRank, owning_elementId);
-
-              if (!owning_element)
-                throw std::logic_error("check_db_ownership_consistency:: error #2");
-
-              if (!m_eMesh.isGhostElement(*owning_element))
-                {
                 
-                  for (unsigned inode = 0; inode < nodeIds_onSE.size(); inode++)
-                    {
-                      stk::mesh::Entity *node = nodeIds_onSE[inode];
-                      if (!node)
-                        throw std::logic_error("check_db_ownership_consistency:: error #3");
+              for (unsigned inode = 0; inode < nodeIds_onSE.size(); inode++)
+                {
+                  stk::mesh::Entity *node = nodeIds_onSE[inode];
+                  if (!node)
+                    throw std::logic_error("check_db_ownership_consistency:: error #3");
 
-                      stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[inode]);
-                      if (!node1)
-                        throw std::logic_error("check_db_ownership_consistency:: error #3a");
+                  stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[inode]);
+                  if (!node1)
+                    throw std::logic_error("check_db_ownership_consistency:: error #3a");
 
-                      stk::mesh::Entity * node2 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node->identifier() );
-                      if (!node2)
-                        throw std::logic_error("check_db_ownership_consistency:: error #3b");
-                      if (node != node2)
-                        throw std::logic_error("check_db_ownership_consistency:: error #3c");
+                  stk::mesh::Entity * node2 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node->identifier() );
+                  if (!node2)
+                    throw std::logic_error("check_db_ownership_consistency:: error #3b");
+                  if (node != node2)
+                    throw std::logic_error("check_db_ownership_consistency:: error #3c");
               
-                    }
                 }
             }
         }
