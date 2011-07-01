@@ -238,9 +238,9 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     Trilinos_ADDITIONAL_PACKAGES=Stalix
   PASS_REGULAR_EXPRESSION_ALL
     "preCopyrightTrilinos: Doing GIT update from URL 'url1:/git/preCopyrightTrilinos' to dir '.*/cmake/DependencyUnitTests/MockTrilinos/preCopyrightTrilinos'"
-    "EXECUTE_PROCESS.COMMAND..*git.pull.WORKING_DIRECTORY..*/cmake/DependencyUnitTests/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/cmake/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/preCopyrightTrilinos.update.out."
+    "EXECUTE_PROCESS.COMMAND./somebasedir/git.pull.WORKING_DIRECTORY..*/cmake/DependencyUnitTests/MockTrilinos/preCopyrightTrilinos.OUTPUT_FILE..*/cmake/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/preCopyrightTrilinos.update.out."
     "Dakota: Doing initial SVN clone/checkout from URL 'url3/somedirpath/trunk' to dir 'packages/TriKota/Dakota'"
-    "EXECUTE_PROCESS.COMMAND..*svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/cmake/DependencyUnitTests/MockTrilinos.OUTPUT_FILE..*/cmake/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/Dakota.update.out."
+    "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/cmake/DependencyUnitTests/MockTrilinos.OUTPUT_FILE..*/cmake/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/Dakota.update.out."
     "Adding extra Continuous repository preCopyrightTrilinos"
     "Adding extra Continuous repository Dakota"
     "Trilinos_NUM_PACKAGES='22'"
