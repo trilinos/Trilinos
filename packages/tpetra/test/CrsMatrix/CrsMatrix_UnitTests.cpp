@@ -309,10 +309,6 @@ namespace {
       TEST_THROW(zero->template multiply<Scalar>(mvbad,mvrow,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad input map
       TEST_THROW(zero->template multiply<Scalar>(mvbad,mvcol,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad output map
       TEST_THROW(zero->template multiply<Scalar>(mvrow,mvbad,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad input map
-      TEST_THROW(zero->template solve<Scalar>(mvcol,mvbad,  NO_TRANS), std::runtime_error); // bad output map
-      TEST_THROW(zero->template solve<Scalar>(mvbad,mvrow,  NO_TRANS), std::runtime_error); // bad input map
-      TEST_THROW(zero->template solve<Scalar>(mvbad,mvcol,CONJ_TRANS), std::runtime_error); // bad output map
-      TEST_THROW(zero->template solve<Scalar>(mvrow,mvbad,CONJ_TRANS), std::runtime_error); // bad input map
 #endif
     }
   }
