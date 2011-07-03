@@ -47,13 +47,20 @@ IF(TriKota_ENABLE_DakotaCMake)
     be untarred into the Trikota Directory before running cmake!")
   ENDIF()
   
+  # DAKOTA should follow Trilinos MPI configuration
+  IF(TPL_ENABLE_MPI)
+    SET(DAKOTA_HAVE_MPI ON CACHE BOOL "DAKOTA MPI set by Trilinos")
+  ENDIF()
+
+  # Tell DAKOTA (and all sub-packages) to use Trilinos for export targets
+  SET(ExportTarget Trilinos)
+
   # Tell Dakota it is building inside Trilinos
+  # (affects use of Teuchos and exported lists of includes and libs)
   SET(BUILD_IN_TRILINOS ON)
   
   # Configure Dakota and its packages
   MESSAGE("-->TriKota: Configuring Dakota using CMake")
-  SET(mpicxx mpicxx CACHE FILEPATH "" FORCE) # Make Dakota's check pass!
-  SET(MPIEXEC ${MPI_EXEC} CACHE FILEPATH "" FORCE) # Make FindMPI use this!
   ADD_SUBDIRECTORY(Dakota)
   MESSAGE("<--TriKota: Finished Dakota configure.")
 
