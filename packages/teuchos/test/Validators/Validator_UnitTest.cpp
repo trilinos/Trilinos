@@ -316,6 +316,125 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, arrayValidators)
     Exceptions::InvalidParameterType);
 }
 
+/*
+ * Testing TwoDArray Validators.
+ */
+TEUCHOS_UNIT_TEST(Teuchos_Validators, twoDArrayValidators)
+{
+
+	/*
+	 * Testing StringArrayValidator.
+	 */
+	RCP<ParameterList> stringList = rcp(new ParameterList("String List"));
+	Array<std::string> stringVals = tuple<std::string>("str1", "str2", "str3");
+	RCP<StringValidator> stringVali = rcp(new StringValidator(stringVals));
+	RCP<TwoDArrayValidator<StringValidator, std::string> > stringArrayVali = 
+    rcp(new TwoDArrayValidator<StringValidator, std::string>(stringVali));
+	TEST_ASSERT(stringVali.get() == stringArrayVali->getPrototype().get());
+	TwoDArray<std::string> stringArray(2,2);
+  stringArray(0,0) = "str2";
+  stringArray(0,1) = "str1";
+  stringArray(1,0) = "str3";
+  stringArray(1,1) = "str2";
+	TEST_NOTHROW(stringList->set("String Array Param", stringArray, "string array parameter", stringArrayVali));
+	TwoDArray<std::string> badStringArray(2,2);
+  badStringArray(0,0) = "str2";
+  badStringArray(0,1) = "str1";
+  badStringArray(1,0) = "str3";
+  badStringArray(1,1) = "not valid";
+	TEST_THROW(stringList->set("String Array Param", badStringArray, "string array parameter", stringArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Int param", 5, "int parameter", stringArrayVali),
+    Exceptions::InvalidParameterType);
+	TwoDArray<long> longArray(2,2);
+  longArray(0,0) = (long)5;
+  longArray(0,1) = (long)4;
+  longArray(1,0) = (long)9;
+  longArray(1,1) = (long)1;
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", stringArrayVali),
+    Exceptions::InvalidParameterType);
+	
+	/*
+	 * Testing Int ArrayValidator.
+	 */
+	/*RCP<ParameterList> intList = rcp(new ParameterList("Int List"));
+	RCP<EnhancedNumberValidator<int> > intVali = rcp(new EnhancedNumberValidator<int>(0, 10));
+	RCP<ArrayNumberValidator<int> > intArrayVali = rcp(new ArrayNumberValidator<int>(intVali));
+	TEST_ASSERT(intVali.get() == intArrayVali->getPrototype().get());
+	Array<int> intArray = tuple<int>(1,4,2,5);
+	TEST_NOTHROW(intList->set("int array param", intArray, "int array parameter", intArrayVali));
+	Array<int> intBadArray = tuple<int>(11,4,2,5);
+	TEST_THROW(intList->set("int bad array param", intBadArray, "int bad array parameter", intArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", intArrayVali),
+    Exceptions::InvalidParameterType);*/
+
+	/*
+	 * Testing Short ArrayValidator.
+	 */
+	/*RCP<ParameterList> shortList = rcp(new ParameterList("Short List"));
+	RCP<EnhancedNumberValidator<short> > shortVali =
+    rcp(new EnhancedNumberValidator<short>(0, 10));
+	RCP<ArrayNumberValidator<short> > shortArrayVali =
+    rcp(new ArrayNumberValidator<short>(shortVali));
+	TEST_ASSERT(shortVali.get() == shortArrayVali->getPrototype().get());
+	Array<short> shortArray = tuple<short>(1,4,2,5);
+	TEST_NOTHROW(shortList->set("short array param", shortArray, "short array parameter", shortArrayVali));
+	Array<short> shortBadArray = tuple<short>(11,4,2,5);
+	TEST_THROW(shortList->set("short bad array param", shortBadArray, "short bad array parameter", shortArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", shortArrayVali),
+    Exceptions::InvalidParameterType);*/
+
+	/*
+	 * Testing Float ArrayValidator.
+	 */
+	/*RCP<ParameterList> floatList = rcp(new ParameterList("Float List"));
+	RCP<EnhancedNumberValidator<float> > floatVali =
+    rcp(new EnhancedNumberValidator<float>(0.0, 10.0));
+	RCP<ArrayNumberValidator<float> > floatArrayVali =
+    rcp(new ArrayNumberValidator<float>(floatVali));
+	TEST_ASSERT(floatVali.get() == floatArrayVali->getPrototype().get());
+	Array<float> floatArray = tuple<float>(1.0,4.0,2.0,5.0);
+	TEST_NOTHROW(floatList->set("float array param", floatArray, "float array parameter", floatArrayVali));
+	Array<float> floatBadArray = tuple<float>(11.0,4.0,2.0,5.0);
+	TEST_THROW(floatList->set("float bad array param", floatBadArray, "float bad array parameter", floatArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", floatArrayVali),
+    Exceptions::InvalidParameterType);*/
+
+	/*
+	 * Testing Double ArrayValidator.
+	 */
+	/*RCP<ParameterList> doubleList = rcp(new ParameterList("Double List"));
+	RCP<EnhancedNumberValidator<double> > doubleVali =
+    rcp(new EnhancedNumberValidator<double>(0.0, 10.0));
+	RCP<ArrayNumberValidator<double> > doubleArrayVali =
+    rcp(new ArrayNumberValidator<double>(doubleVali));
+	TEST_ASSERT(doubleVali.get() == doubleArrayVali->getPrototype().get());
+	Array<double> doubleArray = tuple<double>(1.0,4.0,2.0,5.0);
+	TEST_NOTHROW(doubleList->set("double array param", doubleArray, "double array parameter", doubleArrayVali));
+	Array<double> doubleBadArray = tuple<double>(11.0,4.0,2.0,5.0);
+	TEST_THROW(doubleList->set("double bad array param", doubleBadArray, "double bad array parameter", doubleArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", doubleArrayVali),
+    Exceptions::InvalidParameterType);*/
+
+	/*
+	 * Testing FileName ArrayValidator.
+	 */
+	/*RCP<ParameterList> fileNameList = rcp(new ParameterList("Filename List"));
+	RCP<FileNameValidator> fileNameVali = rcp(new FileNameValidator(true));
+	RCP<ArrayFileNameValidator> arrayFileNameVali = rcp(new ArrayFileNameValidator(fileNameVali));
+	TEST_ASSERT(arrayFileNameVali->getPrototype().get() == fileNameVali.get());
+	Array<std::string> fileNameArray = tuple<std::string>("testFile.txt", "testFile2.txt", "testFile3.txt");
+	Array<std::string> fileNameBadArray = tuple<std::string>("doesnexist.txt", "testFile2.txt", "testFile3.txt");
+	TEST_NOTHROW(fileNameList->set("File name array", fileNameArray, "file name array parameter", arrayFileNameVali));
+	TEST_THROW(fileNameList->set("Bad File name array", fileNameBadArray, "bad file name array parameter", arrayFileNameVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", arrayFileNameVali),
+    Exceptions::InvalidParameterType);*/
+}
 
 } // namespace Teuchos
 
