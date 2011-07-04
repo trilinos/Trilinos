@@ -1745,6 +1745,64 @@ RCP<TwoDArrayValidator<ValidatorType, EntryType> >
     DummyObjectGetter<ValidatorType>::getDummyObject()));
 }
 
+/** \brief Convience class for StringValidators that are to be applied to
+ * TwoDArrays.
+ */
+class TEUCHOS_LIB_DLL_EXPORT TwoDArrayStringValidator : 
+  public TwoDArrayValidator<StringValidator, std::string>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief . */
+  TwoDArrayStringValidator(RCP<const StringValidator> prototypeValidator):
+    TwoDArrayValidator<StringValidator, std::string>(prototypeValidator){}
+  
+  //@}
+
+};
+
+
+/** \brief Convience class for FileNameValidators that are to be applied to
+ * TwoDArrays.
+ *
+ */
+class TEUCHOS_LIB_DLL_EXPORT TwoDArrayFileNameValidator : 
+  public TwoDArrayValidator<FileNameValidator, std::string>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief . */
+  TwoDArrayFileNameValidator(RCP<const FileNameValidator> prototypeValidator):
+    TwoDArrayValidator<FileNameValidator, std::string>(prototypeValidator){}
+  
+  //@}
+
+};
+
+
+/** \brief Convience class for EnhancedNumberValidators that are to be applied
+ * to TwoDArray.
+ */
+template<class T>
+class TwoDArrayNumberValidator : public TwoDArrayValidator<EnhancedNumberValidator<T>, T>{
+public:
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief . */
+  TwoDArrayNumberValidator(
+    RCP<const EnhancedNumberValidator<T> > prototypeValidator):
+    TwoDArrayValidator<EnhancedNumberValidator<T>, T>(prototypeValidator){}
+  
+  //@}
+  
+};
 
 
 /** \brief Takes a validator, wraps it, and applies it to an array.
@@ -1877,7 +1935,7 @@ RCP<ArrayValidator<ValidatorType, EntryType> >
 
 
 /** \brief Convience class for StringValidators that are to be applied to
- * arays.
+ * arrays.
  *
  * Also needed for maintaining backwards compatiblitiy with the earliest
  * versions of the Optika package.  This class would be a simple typedef,
@@ -1902,7 +1960,7 @@ public:
 
 
 /** \brief Convience class for FileNameValidators that are to be applied to
- * arays.
+ * arrays.
  *
  * Also needed for maintaining backwards compatiblitiy with the earliest
  * versions of the Optika package.  This class would be a simple typedef,
@@ -1926,7 +1984,7 @@ public:
 
 
 /** \brief Convience class for EnhancedNumberValidators that are to be applied
- * to arays.
+ * to arrays.
  *
  * Also needed for maintaining backwards compatiblitiy with the earliest
  * versions of the Optika package.  This class would be a simple typedef,
