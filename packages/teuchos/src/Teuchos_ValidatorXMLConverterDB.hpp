@@ -183,7 +183,7 @@ private:
 /** \brief Add StringToIntegralParameterEntryValidator<INTEGRAL_TYPE> to set of
  * supported parameter types.
  */
-#define TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(INTEGRALTYPE) \
+#define TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(INTEGRALTYPE) \
   \
   Teuchos::ValidatorXMLConverterDB::addConverter( \
     Teuchos::DummyObjectGetter< \
@@ -196,7 +196,7 @@ private:
 /** \brief Add EnhancedNumberValidator<T> to the set of supported parameter 
  * types.
  */
-#define TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(T) \
+#define TEUCHOS_ADD_ENHANCEDNUMBERVALIDATOR_CONVERTER(T) \
   \
   Teuchos::ValidatorXMLConverterDB::addConverter( \
     Teuchos::DummyObjectGetter< \
@@ -208,7 +208,7 @@ private:
 /** \brief Add ArrayValidator<VALIDATORTYPE, ENTRYTYPE> to set of supported
  * parameter types.
  */
-#define TEUCHOS_ADD_ARRAYCONVERTER(VALIDATORTYPE, ENTRYTYPE) \
+#define TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(VALIDATORTYPE, ENTRYTYPE) \
   \
   Teuchos::ValidatorXMLConverterDB::addConverter( \
     Teuchos::DummyObjectGetter< \
@@ -223,10 +223,10 @@ private:
 
 
 /** \brief Add numeric parameter types for type T. */
-#define TEUCHOS_ADD_NUMBERTYPECONVERTERS(T) \
-  TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(T); \
-  TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(T); \
-  TEUCHOS_ADD_ARRAYCONVERTER(Teuchos::EnhancedNumberValidator< T >, T );
+#define TEUCHOS_ADD_NUMBERTYPE_VALIDATOR_CONVERTERS(T) \
+  TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(T); \
+  TEUCHOS_ADD_ENHANCEDNUMBERVALIDATOR_CONVERTER(T); \
+  TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::EnhancedNumberValidator< T >, T );
 
 /** \brief Add a validator converter of type CONVERTER_TYPE which converts
  *  validators of VALIDATOR_TYPE to the map CONVERTER_MAP.

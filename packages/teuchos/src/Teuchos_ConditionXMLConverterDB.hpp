@@ -178,7 +178,7 @@ private:
 //
 
 /** \brief Adds a NumberCondition of type T */
-#define TEUCHOS_ADD_NUMBERCONVERTER(T) \
+#define TEUCHOS_ADD_NUMBERCONDITION_CONVERTER(T) \
   Teuchos::ConditionXMLConverterDB::addConverter( \
     Teuchos::DummyObjectGetter<Teuchos::NumberCondition< T > >:: \
       getDummyObject(), \
