@@ -46,7 +46,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
-#include "Teuchos_Array.hpp"
+#include "Teuchos_TwoDArray.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -1554,14 +1554,29 @@ public:
   
 };
 
+
+/**
+ * \brief An abstract base class for all ArrayValidators.
+ */
 template<class ValidatorType, class EntryType>
 class AbstractArrayValidator : public ParameterEntryValidator {
 
 public:
 
+  /** @name Constructors */
+  //@{
+
+  /**
+   * \brief Constructs an AbstractArrayValidator.
+   *
+   * @param prototypeValidator The prototype validator to be applied
+   * to each entry in the array.
+   */
   AbstractArrayValidator(RCP<const ValidatorType> prototypeValidator):
     ParameterEntryValidator(),
     prototypeValidator_(prototypeValidator){}
+
+  //@}
 
   /** \name Getter Functions */
   //@{
@@ -1599,6 +1614,139 @@ private:
 
 };
 
+/**
+ * \brief Takes a validator, wraps it, and applies it to a TwoDArray.
+ *
+ * This class is a wrapper, allowing you to apply a normal validator to a
+ * TwoDArray of values.  It is templated on both the validator type and the type
+ * of the entries contained within the array.
+ *
+ * Please see <tt>TwoDArrayValidatorXMLConverter</tt> for documenation 
+ * regarding the XML representation of this validator.
+ *
+ * \relates TwoDArray
+ */
+template<class ValidatorType, class EntryType>
+class TwoDArrayValidator : public AbstractArrayValidator<ValidatorType, EntryType>{
+public: 
+  /** @name Constructor */
+  //@{
+
+  /** \brief Constructs a ArrayValidator.
+   *
+   * @param prototypeValidator The validator to be used on each
+   * entry in the array.
+   */
+
+  TwoDArrayValidator(RCP<const ValidatorType> prototypeValidator):
+    AbstractArrayValidator<ValidatorType, EntryType>(prototypeValidator){}
+  
+  //@}
+
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
+
+  /** \brief . */
+  virtual void validate(ParameterEntry const &entry, std::string const &paramName,
+    std::string const &sublistName) const;
+
+  /** \brief . */
+  const std::string getXMLTypeName() const{
+    return "TwoDArrayValidator(" + 
+      this->getPrototype()->getXMLTypeName() + ", " +
+      TypeNameTraits<EntryType>::name() + ")";
+  }
+
+  /** \brief . */
+  virtual void printDoc(std::string const &docString, std::ostream &out) const
+  {
+    StrUtils::printLines(out,"# ",docString);
+    std::string toPrint;
+    toPrint += "TwoDArrayValidator:\n";
+    toPrint += "Prototype Validator:\n";
+    this->getPrototype()->printDoc(toPrint, out);
+  }
+  
+  //@}
+
+};
+
+template<class ValidatorType, class EntryType>
+void TwoDArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &entry, std::string const &paramName,
+  std::string const &sublistName) const
+{
+  any anyValue = entry.getAny(true);
+  const std::string &entryName = entry.getAny(false).typeName();
+  TEST_FOR_EXCEPTION(anyValue.type() != typeid(TwoDArray<EntryType>),
+    Exceptions::InvalidParameterType,
+    "Aww shoot! Sorry bud, but it looks like the \"" <<
+    paramName << "\"" <<
+    " parameter in the \"" << sublistName << 
+    "\" sublist didn't quite work out." << std::endl <<
+    "No need to fret though. I'm sure it's just a small mistake. "
+    "Maybe the information below "<<
+    "can help you figure out what went wrong." << std::endl << 
+    std::endl <<
+    "Error: The value you entered was the wrong type." << std::endl <<
+    "Parameter: " << paramName << std::endl <<
+    "Type specified: " << entryName << std::endl <<
+    "Type accepted: " << TypeNameTraits<TwoDArray<EntryType> >::name() <<
+    std::endl << std::endl);
+
+  TwoDArray<EntryType> extracted = 
+    getValue<Teuchos::TwoDArray<EntryType> >(entry);
+  RCP<const ParameterEntryValidator> prototype = this->getPrototype();
+  for(int i = 0; i<extracted.getNumRows(); ++i){
+    for(int j = 0; j<extracted.getNumCols(); ++j){
+      ParameterEntry dummyParameter;
+      dummyParameter.setValue(extracted(i,j));
+      try{
+        prototype->validate(
+          dummyParameter, paramName, sublistName);
+      }
+      catch(Exceptions::InvalidParameterValue& e){
+        std::stringstream oss;
+        oss << "TwoDArray Validator Exception:" << std::endl <<
+        "Bad Index: (" << i << "," << j << ")" << std::endl << e.what();
+        throw Exceptions::InvalidParameterValue(oss.str());
+      }
+    }
+  }
+}
+
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * TwoDArrayValidator.
+ *
+ * \relates TwoDArrayValidator
+ */
+template<class ValidatorType, class EntryType>
+class DummyObjectGetter<TwoDArrayValidator<ValidatorType, EntryType> >{
+
+public:
+
+  /** \name Getter Functions */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * TwoDArrayValidator<ValidatorType, EntryType>.
+  */
+  static RCP<TwoDArrayValidator<ValidatorType, EntryType> > getDummyObject();
+  
+  //@}
+  
+};
+
+template<class ValidatorType, class EntryType>
+RCP<TwoDArrayValidator<ValidatorType, EntryType> >
+  DummyObjectGetter<TwoDArrayValidator<ValidatorType, EntryType> >::getDummyObject()
+{
+  return rcp(new TwoDArrayValidator<ValidatorType, EntryType>(
+    DummyObjectGetter<ValidatorType>::getDummyObject()));
+}
+
+
+
 /** \brief Takes a validator, wraps it, and applies it to an array.
  *
  * This class is a wrapper, allowing you to apply a normal validator to an
@@ -1607,6 +1755,8 @@ private:
  *
  * Please see <tt>ArrayValidatorXMLConverter</tt> for documenation 
  * regarding the XML representation of this validator.
+ *
+ * \relates Array
  */
 template<class ValidatorType, class EntryType>
 class ArrayValidator : public AbstractArrayValidator<ValidatorType, EntryType>{
@@ -1673,7 +1823,7 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
     "Error: The value you entered was the wrong type." << std::endl <<
     "Parameter: " << paramName << std::endl <<
     "Type specified: " << entryName << std::endl <<
-    "Type accepted: " << TypeNameTraits<Array<std::string> >::name() <<
+    "Type accepted: " << TypeNameTraits<Array<EntryType> >::name() <<
     std::endl << std::endl);
 
   Array<EntryType> extracted = 
