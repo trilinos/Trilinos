@@ -697,6 +697,47 @@ class ArrayValidatorXMLConverter :
   }
 };
 
+/**
+ * \brief Converts TwoDArrayValidators to and from XML.
+ *
+ * TwoDArrayValidators can be represented in XML one of two ways.
+ * The first just creates the prototype validator as a child of
+ * the ArrayValidator. In this case, the prototype validator does
+ * NOT use a validatorId.
+ *\code
+  <Validator 
+   type="TwoDArrayValidator(PrototypeValidatorType,ParameterArrayType)"
+   validatorId="Validator id"
+  >
+     ...Prototype Validator Goes Here...
+  </Validator>
+ \endcode
+ *
+ * The second way to define an TwoDArrayValidator in XML is to just use
+ * the "prototypeId" attribute to specify the prototype validator as
+ * some other validator you've already defined.
+ * \code
+   <Validator 
+     type="TwoDArrayValidator(PrototypeValidatorType,ParameterArrayType)"
+     validatorId="Validator id"
+     prototypeId="Prototype Validator Id"
+   />
+ * \endcode
+ */
+template<class ValidatorType, class EntryType>
+class TwoDArrayValidatorXMLConverter : 
+  public AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>
+{
+  /** @name Overridden from AbstractArrayValidatorXMLConverter */
+  //@{
+
+  virtual RCP<AbstractArrayValidator<ValidatorType, EntryType> > getConcreteValidator(
+    RCP<ValidatorType> prototypeValidator) const
+  {
+    return rcp(new TwoDArrayValidator<ValidatorType, EntryType>(prototypeValidator));
+  }
+};
+
 
 
 } // namespace Teuchos

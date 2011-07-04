@@ -214,7 +214,12 @@ private:
     Teuchos::DummyObjectGetter< \
       Teuchos::ArrayValidator< VALIDATORTYPE, ENTRYTYPE > >:: \
         getDummyObject(), \
-    Teuchos::rcp(new Teuchos::ArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >));
+    Teuchos::rcp(new Teuchos::ArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >)); \
+  Teuchos::ValidatorXMLConverterDB::addConverter( \
+    Teuchos::DummyObjectGetter< \
+      Teuchos::TwoDArrayValidator< VALIDATORTYPE, ENTRYTYPE > >:: \
+        getDummyObject(), \
+    Teuchos::rcp(new Teuchos::TwoDArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >));
 
 
 /** \brief Add numeric parameter types for type T. */
