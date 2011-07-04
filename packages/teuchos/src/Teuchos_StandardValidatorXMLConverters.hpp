@@ -574,14 +574,6 @@ public:
     XMLObject& xmlObj,
     const ValidatortoIDMap& validatorIDsMap) const;
 
-#ifdef HAVE_TEUCHOS_DEBUG
-  /** \brief . */
-  RCP<const ParameterEntryValidator> getDummyValidator() const{
-    return DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >::
-      getDummyObject();
-  }
-#endif
-  
   //@}
   
   /** \name Pure Virtual Fuctions */
@@ -695,6 +687,17 @@ class ArrayValidatorXMLConverter :
   {
     return rcp(new ArrayValidator<ValidatorType, EntryType>(prototypeValidator));
   }
+
+#ifdef HAVE_TEUCHOS_DEBUG
+  /** @name Overridden ValidatorXMLConverter*/
+  //@{
+  /** \brief . */
+  RCP<const ParameterEntryValidator> getDummyValidator() const{
+    return DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >::
+      getDummyObject();
+  }
+  //@}
+#endif
 };
 
 /**
@@ -736,6 +739,20 @@ class TwoDArrayValidatorXMLConverter :
   {
     return rcp(new TwoDArrayValidator<ValidatorType, EntryType>(prototypeValidator));
   }
+
+  //@}
+  
+#ifdef HAVE_TEUCHOS_DEBUG
+  /** @name Overridden ValidatorXMLConverter*/
+  //@{
+  /** \brief . */
+  RCP<const ParameterEntryValidator> getDummyValidator() const{
+    return DummyObjectGetter<TwoDArrayValidator<ValidatorType, EntryType> >::
+      getDummyObject();
+  }
+  //@}
+#endif
+  
 };
 
 
