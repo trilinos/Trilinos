@@ -16,6 +16,8 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixSolveOp.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
+#include "Tpetra_MatrixMatrix.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
@@ -105,6 +107,8 @@ namespace {
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createCrsMatrixSolveOp;
   using Tpetra::createCrsMatrixMultiplyOp;
+  using Tpetra::createVector;
+  using Tpetra::createCrsMatrix;
   using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
@@ -1859,6 +1863,99 @@ namespace {
     }
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node > Scalar 
+    getNorm(RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > matrix)
+  {
+    Scalar mySum = ScalarTraits<Scalar>::zero();
+    Array<LocalOrdinal> inds(matrix->getNodeMaxNumRowEntries());
+    Array<Scalar> vals(matrix->getNodeMaxNumRowEntries());
+    for(LocalOrdinal i =0; ((size_t)i)<matrix->getNodeNumRows(); ++i){
+      size_t numRowEnts = matrix->getNumEntriesInLocalRow(i);
+      ArrayView<const LocalOrdinal> indsView = inds();
+      ArrayView<const Scalar> valsView = vals();
+      matrix->getLocalRowView(i, indsView, valsView);
+      for(size_t j=0; ((size_t)j)<numRowEnts; ++j){
+        mySum += valsView[j]*valsView[j];
+      }
+    }
+    Scalar totalSum = 0;
+    Teuchos::reduceAll(*(matrix->getComm()), Teuchos::REDUCE_SUM, 1, &mySum, &totalSum);
+    return ScalarTraits<Scalar>::squareroot(totalSum);
+
+  }
+
+  //Constructs to Tridiagonal Matricies and scales them by a vector.
+  //One on the left and one on the right. Then compares the result to the known
+  //correct matrix
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, LeftRightScale, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef OrdinalTraits<LO> LOT;
+    typedef Vector<Scalar,LO,GO,Node> VEC;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    int numProcs = comm->getSize();
+    int myRank = comm->getRank();
+
+    global_size_t numGlobal = 4*numProcs;
+    RCP<const Map<LO,GO,Node> > map = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,node);
+    RCP<VEC> vector = createVector<Scalar, LO, GO, Node>(map);
+    vector->putScalar(2);
+   
+    RCP<MAT> matrix = createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
+    RCP<MAT> matrix2= createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
+    RCP<MAT> answerMatrix = createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
+
+    Array<Scalar> vals = tuple<Scalar>(1,2,3);
+    Array<Scalar> answerVals = tuple<Scalar>(2,4,6);
+    Array<GO> cols(3,0);
+    for(
+      GO i = Teuchos::as<GO>(myRank)*4; 
+      i<(Teuchos::as<GO>(myRank)*4)+4; 
+      ++i)
+    {
+      if(i==0){
+        cols = tuple<GO>(0,1);
+        matrix->insertGlobalValues(i, cols(), vals(1,2));
+        matrix2->insertGlobalValues(i, cols(), vals(1,2));
+        answerMatrix->insertGlobalValues(i, cols(), answerVals(1,2));
+      }
+      else if(i==(Teuchos::as<GO>(numProcs-1)*4)+3){
+        cols = tuple<GO>(numGlobal-2, numGlobal-1);
+        matrix->insertGlobalValues(i, cols(), vals(0,2));
+        matrix2->insertGlobalValues(i, cols(), vals(0,2));
+        answerMatrix->insertGlobalValues(i, cols(), answerVals(0,2));
+      }
+      else{
+        cols = tuple<GO>(i-1,i,i+1);
+        matrix->insertGlobalValues(i, cols(), vals());
+        matrix2->insertGlobalValues(i, cols(), vals());
+        answerMatrix->insertGlobalValues(i, cols(), answerVals());
+      }
+    }
+
+    matrix->fillComplete();
+    matrix2->fillComplete();
+    answerMatrix->fillComplete();
+    matrix->leftScale(*vector);
+    matrix2->rightScale(*vector);
+
+    RCP<MAT> diffMat1 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
+    RCP<MAT> diffMat2 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
+    Tpetra::MatrixMatrix::Add(*matrix, false, -1.0, *answerMatrix, false, 1.0, diffMat1);
+    diffMat1->fillComplete();
+    Tpetra::MatrixMatrix::Add(*matrix2, false, -1.0, *answerMatrix, false, 1.0, diffMat2);
+    diffMat2->fillComplete();
+    Scalar epsilon1 = getNorm(diffMat1)/getNorm(answerMatrix);
+    TEST_COMPARE(epsilon1, <, 1e-10)
+    Scalar epsilon2 = getNorm(diffMat2)/getNorm(answerMatrix);
+    TEST_COMPARE(epsilon2, <, 1e-10)
+  }
+
+
+
 
 // 
 // INSTANTIATIONS
@@ -1892,7 +1989,8 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultiplyOp, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ActiveFill, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, LeftRightScale,      LO, GO, SCALAR, NODE ) 
 
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \

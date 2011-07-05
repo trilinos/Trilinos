@@ -48,6 +48,37 @@ TEUCHOS_STATIC_SETUP(){
     "Whether or not to use verbose output");
 }
 
+template<
+  class Scalar,
+  class LocalOrdinal,
+  class GlobalOrdinal,
+  class Ordinal>
+RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, SerialNode> >
+getIdentityMatrix(
+  global_size_t globalNumRows,
+  RCP<const Comm<Ordinal> > comm,
+  RCP<SerialNode> node)
+{
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,SerialNode> > identityRowMap = 
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,SerialNode>(
+      globalNumRows, comm, node);
+  RCP<CrsMatrix<Scalar, LocalOrdinal,GlobalOrdinal, SerialNode> > identityMatrix = 
+    Tpetra::createCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, SerialNode>(identityRowMap, 1);
+  for(
+    ArrayView<const int>::iterator it = 
+      identityRowMap->getNodeElementList().begin();
+    it != identityRowMap->getNodeElementList().end();
+    ++it)
+  {
+    Array<GlobalOrdinal> col(1,*it);
+    Array<Scalar> val(1,Teuchos::ScalarTraits<Scalar>::one());
+    identityMatrix->insertGlobalValues(*it, col(), val());
+  }
+  identityMatrix->fillComplete();
+  return identityMatrix;
+}
+
+
 
 
 typedef struct add_test_results_struct{
@@ -304,25 +335,8 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
   int rank = comm->getRank();
   global_size_t globalNumRows = numRowsPerProc*numProcs;
 
-
-
-//Create identity matrix
-  RCP<const Map<int,int,SerialNode> > identityRowMap = 
-    Tpetra::createUniformContigMapWithNode<int,int,SerialNode>(
-      globalNumRows, comm, node);
   RCP<CrsMatrix<double,int,int,SerialNode> > identityMatrix = 
-    Tpetra::createCrsMatrix<double,int,int,SerialNode>(identityRowMap, 1);
-  for(
-    ArrayView<const int>::iterator it = 
-      identityRowMap->getNodeElementList().begin();
-    it != identityRowMap->getNodeElementList().end();
-    ++it)
-  {
-    Array<int> col(1,*it);
-    Array<double> val(1,1.0);
-    identityMatrix->insertGlobalValues(*it, col(), val());
-  }
-  identityMatrix->fillComplete();
+    getIdentityMatrix<double,int,int,int>(globalNumRows, comm, node);
 
 
 //Create "B"
@@ -387,25 +401,8 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
   }
   TEST_COMPARE(results.epsilon, <, defaultEpsilon)
 
-
-
-  RCP<const Map<int,int,SerialNode> > identity2RowMap = 
-    Tpetra::createUniformContigMapWithNode<int, int, SerialNode>(
-      globalNumRows/2, comm,node);
   RCP<CrsMatrix<double,int,int,SerialNode> > identity2 = 
-    Tpetra::createCrsMatrix<double,int,int,SerialNode>(identity2RowMap,1);
-  for(
-    ArrayView<const int>::iterator it = 
-      identity2RowMap->getNodeElementList().begin();
-    it != identity2RowMap->getNodeElementList().end();
-    ++it)
-  {
-    Array<int> col(1,*it);
-    Array<double> val(1,1.0);
-    identity2->insertGlobalValues(*it, col(), val());
-  }
-  identity2->fillComplete();
-
+    getIdentityMatrix<double,int,int,int>(globalNumRows/2, comm, node);
 
   RCP<const Map<int,int,SerialNode> > bTransRowMap =
     Tpetra::createUniformContigMapWithNode<int,int,SerialNode>(globalNumRows/2,comm,node);
@@ -490,22 +487,8 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
   global_size_t globalNumRows = numRowsPerProc*numProcs;
 
 //Create identity matrix
-  RCP<const Map<int,int,SerialNode> > identityRowMap = 
-    Tpetra::createUniformContigMapWithNode<int,int,SerialNode>(
-      globalNumRows, comm, node);
   RCP<CrsMatrix<double,int,int,SerialNode> > identityMatrix = 
-    Tpetra::createCrsMatrix<double,int,int,SerialNode>(identityRowMap, 1);
-  for(
-    ArrayView<const int>::iterator it = 
-      identityRowMap->getNodeElementList().begin();
-    it != identityRowMap->getNodeElementList().end();
-    ++it)
-  {
-    Array<int> col(1,*it);
-    Array<double> val(1,1.0);
-    identityMatrix->insertGlobalValues(*it, col(), val());
-  }
-  identityMatrix->fillComplete();
+    getIdentityMatrix<double,int,int,int>(globalNumRows, comm, node);
 
 
   //Create A
@@ -577,6 +560,48 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
   TEST_COMPARE(results.epsilon, <, defaultEpsilon)
 
 }
+
+/*
+ * This test was added at the request of Chris Siefert
+ * Turns out it fails because the original algorithm in 
+ * EpetraExt doesn't try to handle the case where
+ * A has non-unique rows in it's row map. Perhaps I will
+ * come back and address that some day.
+ * KLN 28/06/2011
+ */
+/*TEUCHOS_UNIT_TEST(Tpetra_MatMat, Multiple_row_owners){
+  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  ParameterList defaultParameters;
+  RCP<SerialNode> node = rcp(new SerialNode(defaultParameters));
+  RCP<Matrix_t > A = Reader<Matrix_t >::readSparseFile("matrices/denserATa.mtx", comm, node);
+  RCP<Matrix_t > C = Reader<Matrix_t >::readSparseFile("matrices/denserATc.mtx", comm, node, true, true);
+  RowMatrixTransposer<double, int,int,SerialNode> transposer(*A);
+  RCP<Matrix_t> AT = transposer.createTranspose();
+
+  RCP<Matrix_t> importedC = 
+    Tpetra::createCrsMatrix<double, int, int, SerialNode>(AT->getRowMap());
+  Tpetra::Import<int,int,SerialNode> importer(C->getRowMap(), importedC->getRowMap());
+  importedC->doImport(*C, importer, Tpetra::REPLACE);
+  importedC->fillComplete(AT->getDomainMap(), AT->getRangeMap());
+
+  mult_test_results results = multiply_test(
+    "AT*A with multipl row owners", 
+    AT,
+    A,
+    false,
+    false,
+    importedC,
+    comm,
+    out);
+  if(verbose){
+    out << "Results:" <<std::endl;
+    out << "\tEpsilon: " << results.epsilon << std::endl;
+    out << "\tcNorm: " << results.cNorm << std::endl;
+    out << "\tcompNorm: " << results.compNorm << std::endl;
+  }
+  TEST_COMPARE(results.epsilon, <, defaultEpsilon)
+
+}*/
 
 
 } //namespace Tpetra
