@@ -926,7 +926,6 @@ namespace stk {
         }
       return selector;
     }
-#endif
 
     // orthogonal corrections
     static void move_quad_centroid_node_method1(int spatialDim, double *centroid_node_orig_pos, double *centroid_node_new_pos, double *edge_centroids[4])
@@ -966,6 +965,7 @@ namespace stk {
             }
         }
     }
+#endif
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
     void Refiner::smoothGeometry(MeshGeometry& mesh_geometry)
