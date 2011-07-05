@@ -589,8 +589,8 @@ public:
   typedef DeviceCuda::size_type size_type ;
 
   FunctorType m_functor ;
-  size_type   m_work_count ;
-  size_type   m_stream_count ;
+  size_type   m_work_count ;   ///< Parallel work items
+  size_type   m_stream_count ; ///< Number of streams
 
   CudaMultiFunctorParallelReduceMember(
     const FunctorType & functor ,
