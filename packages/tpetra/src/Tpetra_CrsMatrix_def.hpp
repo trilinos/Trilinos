@@ -1107,6 +1107,7 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::runtime_error, ": matrix must be fill complete.");
     RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xp = null;
     if(getRangeMap()->isSameAs(*(x.getMap()))){
+      // Take from Epetra:
       // If we have a non-trivial exporter, we must import elements that are 
       // permuted or are on other processors.  (We will use the exporter to
       // perform the import.)
@@ -1143,7 +1144,51 @@ namespace Tpetra {
   void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::rightScale(
     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
   {
-
+    const std::string tfecfFuncName("rightScale()");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::runtime_error, ": matrix must be fill complete.");
+    RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xp = null;
+    if(getDomainMap()->isSameAs(*(x.getMap()))){
+      // Take from Epetra:
+      // If we have a non-trivial exporter, we must import elements that are 
+      // permuted or are on other processors.  (We will use the exporter to
+      // perform the import.)
+      if(getCrsGraph()->getImporter() != null){
+        RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempVec
+          = rcp(new Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(getColMap()));
+        tempVec->doImport(x, *(getCrsGraph()->getImporter()), INSERT);
+        xp = tempVec;
+      }
+      else{
+        xp = rcpFromRef(x);
+      }
+    }
+    else if(getRowMap()->isSameAs(*(x.getMap()))){
+      xp = rcpFromRef(x);
+    }
+    else{
+      TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, ": The vector x must be the same as either the row map or the range map");
+    }
+      
+    ArrayRCP<const Scalar> vectorVals = xp->getData(0);
+    ArrayView<Scalar> rowValues = null;
+    for(
+      LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero();
+      Teuchos::as<size_t>(i) < getNodeNumRows();
+      ++i)
+    {
+      const RowInfo rowinfo = staticGraph_->getRowInfo(i);
+      rowValues = getViewNonConst(rowinfo);
+      ArrayView<const LocalOrdinal> colInices;
+      getCrsGraph()->getLocalRowView(i, colInices);
+      for(
+        LocalOrdinal j = OrdinalTraits<LocalOrdinal>::zero();
+        Teuchos::as<size_t>(j) < rowinfo.numEntries;
+        ++j
+      )
+      {
+        rowValues[j] *= vectorVals[colInices[j]];
+      }
+    }
   }
 
 

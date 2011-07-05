@@ -1884,7 +1884,10 @@ namespace {
 
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, LeftScale, LO, GO, Scalar, Node )
+  //Constructs to Tridiagonal Matricies and scales them by a vector.
+  //One on the left and one on the right. Then compares the result to the known
+  //correct matrix
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, LeftRightScale, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
@@ -1902,6 +1905,7 @@ namespace {
     vector->putScalar(2);
    
     RCP<MAT> matrix = createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
+    RCP<MAT> matrix2= createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
     RCP<MAT> answerMatrix = createCrsMatrix<Scalar, LO, GO, Node>(map, 3);
 
     Array<Scalar> vals = tuple<Scalar>(1,2,3);
@@ -1915,34 +1919,39 @@ namespace {
       if(i==0){
         cols = tuple<GO>(0,1);
         matrix->insertGlobalValues(i, cols(), vals(1,2));
+        matrix2->insertGlobalValues(i, cols(), vals(1,2));
         answerMatrix->insertGlobalValues(i, cols(), answerVals(1,2));
       }
       else if(i==(Teuchos::as<GO>(numProcs-1)*4)+3){
         cols = tuple<GO>(numGlobal-2, numGlobal-1);
         matrix->insertGlobalValues(i, cols(), vals(0,2));
+        matrix2->insertGlobalValues(i, cols(), vals(0,2));
         answerMatrix->insertGlobalValues(i, cols(), answerVals(0,2));
       }
       else{
         cols = tuple<GO>(i-1,i,i+1);
         matrix->insertGlobalValues(i, cols(), vals());
+        matrix2->insertGlobalValues(i, cols(), vals());
         answerMatrix->insertGlobalValues(i, cols(), answerVals());
       }
     }
 
     matrix->fillComplete();
+    matrix2->fillComplete();
     answerMatrix->fillComplete();
     matrix->leftScale(*vector);
+    matrix2->rightScale(*vector);
 
-    Tpetra::MatrixMarket::Writer<MAT>::writeSparseFile(
-      "calculated.mtx",matrix);
-     Tpetra::MatrixMarket::Writer<MAT>::writeSparseFile(
-      "real.mtx",answerMatrix);
-
-    RCP<MAT> diffMat = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
-    Tpetra::MatrixMatrix::Add(*matrix, false, -1.0, *answerMatrix, false, 1.0, diffMat);
-    diffMat->fillComplete();
-    Scalar epsilon = getNorm(diffMat)/getNorm(answerMatrix);
-    TEST_COMPARE(epsilon, <, 1e-10)
+    RCP<MAT> diffMat1 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
+    RCP<MAT> diffMat2 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
+    Tpetra::MatrixMatrix::Add(*matrix, false, -1.0, *answerMatrix, false, 1.0, diffMat1);
+    diffMat1->fillComplete();
+    Tpetra::MatrixMatrix::Add(*matrix2, false, -1.0, *answerMatrix, false, 1.0, diffMat2);
+    diffMat2->fillComplete();
+    Scalar epsilon1 = getNorm(diffMat1)/getNorm(answerMatrix);
+    TEST_COMPARE(epsilon1, <, 1e-10)
+    Scalar epsilon2 = getNorm(diffMat2)/getNorm(answerMatrix);
+    TEST_COMPARE(epsilon2, <, 1e-10)
   }
 
 
@@ -1981,7 +1990,7 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ActiveFill, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, LeftScale,      LO, GO, SCALAR, NODE ) 
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, LeftRightScale,      LO, GO, SCALAR, NODE ) 
 
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
