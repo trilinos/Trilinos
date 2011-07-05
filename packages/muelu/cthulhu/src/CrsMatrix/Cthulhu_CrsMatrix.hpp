@@ -199,10 +199,14 @@ namespace Cthulhu {
     //TODO : Get ride of "Tpetra"::OptimizeOption
     virtual void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) =0;
 
+    /** \brief Row-scale the matrix */
+    void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+
     //@}
 
     //! @name Methods implementing RowMatrix
     //@{ 
+
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the communicator.

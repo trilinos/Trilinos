@@ -245,6 +245,15 @@ namespace Cthulhu {
     // TODO: Cthulhu::OptimizeOption
     inline void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) { CTHULHU_DEBUG_ME; if (os == Cthulhu::DoOptimizeStorage) mtx_->FillComplete(true); else mtx_->FillComplete(false); }
 
+
+    //! leftScale
+    inline void leftScale(const Vector<double,int,int>& x){
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const EpetraVector, x, tX, "Cthulhu::EpetraCrsMatrix->leftScale() only accept Cthulhu::EpetraVector as input arguments.");
+      mtx_->LeftScale(*tX.getEpetra_Vector());
+    }
+
+
     //@}
 
     //! @name Methods implementing RowMatrix

@@ -240,6 +240,15 @@ namespace Cthulhu {
       else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::BadCast, "Cannot convert 'Cthulhu::OptimizeOption' to a 'Tpetra::OptimizeOption'. Cthulhu::OptimizeOption 'os' have a bad value.");
     }
 
+
+    //! leftScale
+    inline void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x){
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraVector, x, tX, "Cthulhu::TpetraCrsMatrix->leftScale() only accept Cthulhu::TpetraVector as input arguments.");
+      mtx_->leftScale(tX);
+    }
+
+
      //@}
 
      //! @name Methods implementing RowMatrix
