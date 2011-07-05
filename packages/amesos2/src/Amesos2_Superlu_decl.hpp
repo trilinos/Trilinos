@@ -98,6 +98,9 @@ public:
   typedef typename TypeMap<Amesos::Superlu,scalar_type>::type           slu_type;
   typedef typename TypeMap<Amesos::Superlu,scalar_type>::magnitude_type magnitude_type;
 
+  typedef FunctionMap<Amesos::Superlu,scalar_type>             function_map;
+  typedef MatrixHelper<Amesos::Superlu>                       matrix_helper;
+
   /// \name Constructor/Destructor methods
   //@{
 
@@ -213,10 +216,9 @@ private:
 
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
-    SLU::SuperMatrix A, B, X, L, U;
-#ifdef USE_DGSTRF
-    SLU::SuperMatrix AC;
-#endif
+    SLU::SuperMatrix A, B, X, L, U; // matrix A in NCformat
+    SLU::SuperMatrix AC;	// permuted matrix A in NCPformat
+
     SLU::superlu_options_t options;
     SLU::mem_usage_t mem_usage;
     SLU::SuperLUStat_t stat;
@@ -229,8 +231,10 @@ private:
     Teuchos::Array<magnitude_type> R;
     Teuchos::Array<magnitude_type> C;
 
-    char equed;                  // Flags whether to equilibrate the matrix
-                                 // before solve
+    char equed;
+    bool rowequ, colequ;	// flags what type of equilibration
+				// has been performed
+
     int relax;
     int panel_size;
   } data_;
@@ -242,19 +246,21 @@ private:
   Teuchos::Array<int> rowind_;
   /// Stores the row indices of the nonzero entries
   Teuchos::Array<int> colptr_;
+
   /// Persisting 1D store for X
   Teuchos::Array<typename TypeMap<Amesos::Superlu,scalar_type>::type> xvals_;  int ldx_;
   /// Persisting 1D store for B
   Teuchos::Array<typename TypeMap<Amesos::Superlu,scalar_type>::type> bvals_;  int ldb_;
 
-  /* Note: In the above, must use "Amesos::Superlu" rather than "Superlu"
-   * because otherwise the compiler references the specialized type of the
-   * class, and not the templated type that is required for Amesos::TypeMap
+  /* Note: In the above, must use "Amesos::Superlu" rather than
+   * "Superlu" because otherwise the compiler references the
+   * specialized type of the class, and not the templated type that is
+   * required for Amesos::TypeMap
    */
 
-  /* SuperLU can accept input in either compressed-row or compressed-column
-   * storage.  We will store and pass matrices in *compressed-row* format
-   * because that is the format Amesos used.
+  /* SuperLU can accept input in either compressed-row or
+   * compressed-column storage.  We will store and pass matrices in
+   * *compressed-column* format.
    */
 
   /*

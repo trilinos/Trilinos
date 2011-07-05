@@ -96,7 +96,6 @@ Superlu<Matrix,Vector>::~Superlu( )
    */
   SLU::StatFree( &(data_.stat) ) ;
 
-
   // Storage is initialized in numericFactorization_impl()
   if ( this->getNumNumericFact() > 0 ){
     SLU::Destroy_SuperMatrix_Store( &(data_.A) );
@@ -123,6 +122,36 @@ template<class Matrix, class Vector>
 int
 Superlu<Matrix,Vector>::preOrdering_impl()
 {
+  // We need a matrix before we can pre-order it
+  {
+    Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+    
+    matrix_helper::createCCSMatrix(
+      this->matrixA_.ptr(),
+      nzvals_(), rowind_(), colptr_(),
+      Teuchos::outArg(data_.A),
+      this->timers_.mtxRedistTime_);
+  } // end matrix conversion block
+
+  /*
+   * Get column permutation vector perm_c[], according to permc_spec:
+   *   permc_spec = NATURAL:  natural ordering
+   *   permc_spec = MMD_AT_PLUS_A: minimum degree on structure of A'+A
+   *   permc_spec = MMD_ATA:  minimum degree on structure of A'*A
+   *   permc_spec = COLAMD:   approximate minimum degree column ordering
+   *   permc_spec = MY_PERMC: the ordering already supplied in perm_c[]
+   */
+  int permc_spec = data_.options.ColPerm;
+  if ( permc_spec != SLU::MY_PERMC ){
+    Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
+    
+    SLU::get_perm_c(permc_spec, &(data_.A), data_.perm_c.getRawPtr());
+  }
+
+  // Cleanup SuperMatrix A's Store, will be allocated again when new
+  // values are retrieved in numericFactorization.
+  SLU::Destroy_SuperMatrix_Store( &(data_.A) );
+
   return(0);
 }
 
@@ -157,6 +186,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
     // Cleanup old SuperMatrix A's Store, will be allocated again when
     // new values are retrieved.
     SLU::Destroy_SuperMatrix_Store( &(data_.A) );
+    SLU::Destroy_CompCol_Permuted( &(data_.AC) );
 
     // Cleanup old L and U matrices if we are not reusing a symbolic
     // factorization.  Stores and other data will be allocated in
@@ -172,13 +202,13 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
   {                           // start matrix conversion block
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
     
-    MatrixHelper<Amesos::Superlu>::createCRSMatrix(
+    matrix_helper::createCCSMatrix(
       this->matrixA_.ptr(),
       nzvals_(), rowind_(), colptr_(),
       Teuchos::outArg(data_.A),
       this->timers_.mtxRedistTime_);
   } // end matrix conversion block
-  
+
 #ifdef HAVE_AMESOS2_DEBUG
   TEST_FOR_EXCEPTION( data_.A.ncol != this->globalNumCols_,
 		      std::runtime_error,
@@ -187,6 +217,33 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
 		      std::runtime_error,
 		      "Error in converting to SuperLU SuperMatrix: wrong number of global rows." );
 #endif
+
+  if( data_.options.Equil == SLU::YES ){
+    magnitude_type rowcnd, colcnd, amax;
+    int info;
+
+    // calculate row and column scalings
+    function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
+			data_.C.getRawPtr(), &rowcnd, &colcnd,
+			&amax, &info);
+    TEST_FOR_EXCEPTION( info != 0,
+			std::runtime_error,
+			"SuperLU gsequ returned with status " << info );
+
+    // apply row and column scalings if necessary
+    function_map::laqgs(&(data_.A), data_.R.getRawPtr(),
+			data_.C.getRawPtr(), rowcnd, colcnd,
+			amax, &(data_.equed));
+
+    // // check what types of equilibration was actually done
+    // data_.rowequ = (data_.equed == 'R') || (data_.equed == 'B');
+    // data_.colequ = (data_.equed == 'C') || (data_.equed == 'B');
+  }
+  
+  // Apply the column permutation computed in preOrdering.  Place the
+  // column-permuted matrix in AC
+  SLU::sp_preorder(&(data_.options), &(data_.A), data_.perm_c.getRawPtr(),
+		   data_.etree.getRawPtr(), &(data_.AC));
 
   if ( this->status_.root_ ) { // Do factorization
     Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
@@ -198,7 +255,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
     std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
 
-    FunctionMap<Amesos::Superlu,scalar_type>::gstrf(&(data_.options), &(data_.A),
+    function_map::gstrf(&(data_.options), &(data_.AC),
       data_.relax, data_.panel_size, data_.etree.getRawPtr(), NULL, 0,
       data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(), &(data_.L), &(data_.U),
       &(data_.stat), &info);
@@ -216,6 +273,9 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
   data_.options.Fact = SLU::FACTORED;
   same_symbolic_ = true;
 
+  // Cleanup. AC will be alloc'd again for next factorization (if at all)
+  SLU::Destroy_CompCol_Permuted( &(data_.AC) );
+
   /* All processes should return the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
   return(info);
@@ -227,17 +287,20 @@ int
 Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
 				   const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const
 {
+  using Teuchos::as;
   // root sets up for Solve and calls SuperLU
 
-  global_size_type len_rhs = X->getGlobalLength();
-  size_t nrhs = X->getGlobalNumVectors();
+  const global_size_type len_rhs = X->getGlobalLength();
+  const size_t nrhs = X->getGlobalNumVectors();
 
   data_.ferr.resize(nrhs);
   data_.berr.resize(nrhs);
 
-  size_t val_store_size = Teuchos::as<size_t>(len_rhs * nrhs);
+  const size_t val_store_size = as<size_t>(len_rhs * nrhs);
   Teuchos::Array<slu_type> xValues(val_store_size);
   Teuchos::Array<slu_type> bValues(val_store_size);
+  size_t ldx, ldb;
+
   // We assume the global length of the two vector has already been
   // checked for compatibility
 
@@ -250,22 +313,25 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   {                 // Convert: Get a SuperMatrix for the B and X multi-vectors
     Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
 
-    size_t ldx, ldb;
-
-    MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
+    matrix_helper::createMVDenseMatrix(
       X,
       xValues(),                // pass as ArrayView
       ldx,
       Teuchos::outArg(data_.X),
       this->timers_.vecRedistTime_);
 
-    MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
+    matrix_helper::createMVDenseMatrix(
       B,
       bValues(),                // pass as ArrayView
       ldb,
       Teuchos::outArg(data_.B),
       this->timers_.vecRedistTime_);
+
+    // Note: the values of B and X (after solution) are adjusted
+    // appropriately within gssvx for row and column scalings.
+    
   }         // end block for conversion time
+
   int ierr = 0; // returned error code
 
   magnitude_type rpg, rcond;
@@ -281,7 +347,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     std::cout << "X : " << xValues().toString() << std::endl;
 #endif
 
-    FunctionMap<Amesos::Superlu,scalar_type>::gssvx(&(data_.options), &(data_.A),
+    function_map::gssvx(&(data_.options), &(data_.A),
       data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(), data_.etree.getRawPtr(),
       &(data_.equed), data_.R.getRawPtr(), data_.C.getRawPtr(), &(data_.L),
       &(data_.U), NULL, 0, &(data_.B), &(data_.X), &rpg, &rcond,
@@ -294,6 +360,8 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     std::cout << "X : " << xValues().toString() << std::endl;
 #endif
   } // end block for solve time
+
+  // TODO: Check the value of ierr
 
   /* Update X's global values */
   {

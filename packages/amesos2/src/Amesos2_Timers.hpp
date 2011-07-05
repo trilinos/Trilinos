@@ -68,6 +68,7 @@ struct Timers {
     , mtxConvTime_(*(TimeMonitor::getNewTimer("Time to convert matrix to solver format")))
     , vecRedistTime_(*(TimeMonitor::getNewTimer("Time to redistribute vectors")))
     , vecConvTime_(*(TimeMonitor::getNewTimer("Time to convert vectors to solver format")))
+    , preOrderTime_(*(TimeMonitor::getNewTimer("Time for matrix pre-order")))
     , symFactTime_(*(TimeMonitor::getNewTimer("Time for symbolic factorization")))
     , numFactTime_(*(TimeMonitor::getNewTimer("Time for numeric factorization")))
     , solveTime_(*(TimeMonitor::getNewTimer("Time for solve")))
@@ -78,6 +79,7 @@ struct Timers {
   mutable Time mtxConvTime_;
   mutable Time vecRedistTime_;
   mutable Time vecConvTime_;
+  mutable Time preOrderTime_;
   mutable Time symFactTime_;
   mutable Time numFactTime_;
   mutable Time solveTime_;

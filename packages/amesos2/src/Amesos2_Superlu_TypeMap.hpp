@@ -54,7 +54,10 @@
 #ifndef AMESOS2_SUPERLU_TYPEMAP_HPP
 #define AMESOS2_SUPERLU_TYPEMAP_HPP
 
+#include <functional>
+#ifdef HAVE_TEUCHOS_COMPLEX
 #include <complex>
+#endif
 
 #include <Teuchos_as.hpp>
 
@@ -90,9 +93,61 @@ namespace Z {
 
 } // end extern "C"
 
+  // Declare and specialize a std::binary_funtion class for
+  // multiplication of SuperLU types
+  template <typename slu_scalar_t, typename slu_mag_t>
+  struct slu_mult {};
+
+  // This specialization handles the generic case were the scalar and
+  // magnitude types are double or float.
+  template <typename T>
+  struct slu_mult<T,T> : std::multiplies<T> {};
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+  
+  // For namespace/macro reasons, we prefix our variables with amesos_*
+  template <>
+  struct slu_mult<C::complex,float>
+    : std::binary_function<C::complex,float,C::complex> {
+    C::complex operator()(C::complex amesos_c, float amesos_f) {
+      C::complex amesos_cr;
+      cs_mult(&amesos_cr, &amesos_c, amesos_f);	// cs_mult is a macro, so no namespacing
+      return( amesos_cr );
+    }
+  };
+
+  template <>
+  struct slu_mult<C::complex,C::complex>
+    : std::binary_function<C::complex,C::complex,C::complex> {
+    C::complex operator()(C::complex amesos_c1, C::complex amesos_c2) {
+      C::complex amesos_cr;
+      cc_mult(&amesos_cr, &amesos_c1, &amesos_c2); // cc_mult is a macro, so no namespacing
+      return( amesos_cr );
+    }
+  };
+    
+  template <>
+  struct slu_mult<Z::doublecomplex,double>
+    : std::binary_function<Z::doublecomplex,double,Z::doublecomplex> {
+    Z::doublecomplex operator()(Z::doublecomplex amesos_z, double amesos_d) {
+      Z::doublecomplex amesos_zr;
+      zd_mult(&amesos_zr, &amesos_z, amesos_d);	// zd_mult is a macro, so no namespacing
+      return( amesos_zr );
+    }
+  };
+
+  template <>
+  struct slu_mult<Z::doublecomplex,Z::doublecomplex>
+    : std::binary_function<Z::doublecomplex,Z::doublecomplex,Z::doublecomplex> {
+    Z::doublecomplex operator()(Z::doublecomplex amesos_z1, Z::doublecomplex amesos_z2) {
+      Z::doublecomplex amesos_zr;
+      zz_mult(&amesos_zr, &amesos_z1, &amesos_z2);    // zz_mult is a macro, so no namespacing
+      return( amesos_zr );
+    }
+  };
+
+#endif	// HAVE_TEUCHOS_COMPLEX
 } // end namespace SLU
-
-
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 /* ==================== Conversion ==================== */

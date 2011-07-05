@@ -178,33 +178,6 @@ namespace SLU {
 
   } // end extern "C"
 
-
-/**
- * \brief Gets the permutation matrix \c perm_c for \c A based on \c options .
- *
- * \param options A Superlu options structure.  Should specify what type of
- *                permutation to use.
- * \param A       A Superlu \c SuperMatrix , with SLU::NRformat Store, that is
- *                to be permuted.
- * \param perm_c  A permutation vector
- * \param etree   An elimination tree for \c A
- *
- * \tparam Scalar the scalar data type of entries in \c A and the returned
- * matrix.
- *
- * \return A Teuchos::RCP pointing to a SLU::SuperMatrix which is the permuted
- * form of \c A .  This new permuted matrix will have a SLU::SLU_NCP
- * (non-supernodal, column, permuted) format, which is appropriate for use in
- * SLU::gstrf().
- */
-template <typename Scalar>
-Teuchos::RCP<SLU::SuperMatrix> getPermMatrix(
-  SLU::superlu_options_t* options,
-  SLU::SuperMatrix* A,          // A is in NRFormat
-  int* perm_c,
-  int* etree);
-
-
 } // end namespace SLU
 
 
@@ -290,7 +263,7 @@ struct FunctionMap<Superlu,Scalar>
    */
   static void gstrf(
     SLU::superlu_options_t*   options,
-    SLU::SuperMatrix*         A,
+    SLU::SuperMatrix*         AC, // in NCPformat
     int                       relax,
     int                       panel_size,
     int*                      etree,
@@ -385,6 +358,54 @@ struct FunctionMap<Superlu,Scalar>
         std::runtime_error,
         "Superlu does not support the data type");
     }
+
+
+  /**
+   * \brief compute row and column scaling for the matrix A
+   */
+  static void gsequ(
+    SLU::SuperMatrix*                                 A,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* R,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* C,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* rowcnd,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* colcnd,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* amax,
+    int*                                              info
+    )
+    {
+      TEST_FOR_EXCEPTION( true,
+        std::runtime_error,
+        "Superlu does not support the data type");
+    }
+
+  /**
+   * \brief Apply row and column scaling to the matrix A
+   *
+   * The row and column scaling in R and C are applied to A if its
+   * determined that such scalings would improce the condition of the
+   * matrix.
+   *
+   * On exit, equed says what type of equilibration were actually
+   * applied:
+   *  - 'N' no equilibration
+   *  - 'R' row equilibration
+   *  - 'C' column equilibration
+   *  - 'B' both row and column equilibration
+   */
+  static void laqgs(
+    SLU::SuperMatrix*                                 A,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* R,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* C,
+    typename TypeMap<Superlu,Scalar>::magnitude_type  rowcnd,
+    typename TypeMap<Superlu,Scalar>::magnitude_type  colcnd,
+    typename TypeMap<Superlu,Scalar>::magnitude_type  amax,
+    char*                                             equed
+    )
+    {
+      TEST_FOR_EXCEPTION( true,
+        std::runtime_error,
+        "Superlu does not support the data type");
+    }
 };
 
 
@@ -407,18 +428,13 @@ struct FunctionMap<Superlu,float>
         lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
 
-  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
     int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
     int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
     SLU::SuperLUStat_t* stat, int* info)
     {
-
-      Teuchos::RCP<SLU::SuperMatrix> AC = SLU::getPermMatrix<float>(options,A,perm_c,etree);
-
-      SLU::S::sgstrf(options, AC.getRawPtr(), relax, panel_size, etree,
+      SLU::S::sgstrf(options, AC, relax, panel_size, etree,
         work, lwork, perm_c, perm_r, L, U, stat, info);
-
-      SLU::Destroy_CompCol_Permuted(AC.getRawPtr());
     }
 
   static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
@@ -444,6 +460,18 @@ struct FunctionMap<Superlu,float>
     {
       SLU::S::sCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
     }
+
+  static void gsequ(SLU::SuperMatrix* A, float* R, float* C,
+    float* rowcnd, float* colcnd, float* amax, int* info)
+    {
+      SLU::S::sgsequ(A, R, C, rowcnd, colcnd, amax, info);
+    }
+
+  static void laqgs(SLU::SuperMatrix* A, float* R, float* C,
+    float rowcnd, float colcnd, float amax, char* equed)
+    {
+      SLU::S::slaqgs(A, R, C, rowcnd, colcnd, amax, equed);
+    }
 };
 
 
@@ -461,17 +489,13 @@ struct FunctionMap<Superlu,double>
         lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
 
-  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
     int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
     int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      Teuchos::RCP<SLU::SuperMatrix> AC = SLU::getPermMatrix<float>(options,A,perm_c,etree);
-
-      SLU::D::dgstrf(options, AC.getRawPtr(), relax, panel_size, etree,
+      SLU::D::dgstrf(options, AC, relax, panel_size, etree,
         work, lwork, perm_c, perm_r, L, U, stat, info);
-
-      SLU::Destroy_CompCol_Permuted(AC.getRawPtr());
     }
 
   static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
@@ -496,6 +520,19 @@ struct FunctionMap<Superlu,double>
     {
       SLU::D::dCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
     }
+
+  static void gsequ(SLU::SuperMatrix* A, double* R, double* C,
+    double* rowcnd, double* colcnd, double* amax, int* info)
+    {
+      SLU::D::dgsequ(A, R, C, rowcnd, colcnd, amax, info);
+    }
+
+  static void laqgs(SLU::SuperMatrix* A, double* R, double* C,
+    double rowcnd, double colcnd, double amax, char* equed)
+    {
+      SLU::D::dlaqgs(A, R, C, rowcnd, colcnd, amax, equed);
+    }
+
 };
 
 
@@ -518,17 +555,13 @@ struct FunctionMap<Superlu,std::complex<float> >
         lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
 
-  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
     int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
     int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      Teuchos::RCP<SLU::SuperMatrix> AC = SLU::getPermMatrix<float>(options,A,perm_c,etree);
-
-      SLU::C::cgstrf(options, AC.getRawPtr(), relax, panel_size, etree,
+      SLU::C::cgstrf(options, AC, relax, panel_size, etree,
         work, lwork, perm_c, perm_r, L, U, stat, info);
-
-      SLU::Destroy_CompCol_Permuted(AC.getRawPtr());
     }
 
   static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
@@ -553,6 +586,18 @@ struct FunctionMap<Superlu,std::complex<float> >
     {
       SLU::C::cCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
     }
+
+  static void gsequ(SLU::SuperMatrix* A, float* R, float* C,
+    float* rowcnd, float* colcnd, float* amax, int* info)
+    {
+      SLU::C::cgsequ(A, R, C, rowcnd, colcnd, amax, info);
+    }
+
+  static void laqgs(SLU::SuperMatrix* A, float* R, float* C,
+    float rowcnd, float colcnd, float amax, char* equed)
+    {
+      SLU::C::claqgs(A, R, C, rowcnd, colcnd, amax, equed);
+    }
 };
 
 
@@ -570,17 +615,13 @@ struct FunctionMap<Superlu,std::complex<double> >
         lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
 
-  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
     int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
     int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      Teuchos::RCP<SLU::SuperMatrix> AC = SLU::getPermMatrix<float>(options,A,perm_c,etree);
-
-      SLU::Z::zgstrf(options, AC.getRawPtr(), relax, panel_size, etree,
+      SLU::Z::zgstrf(options, AC, relax, panel_size, etree,
         work, lwork, perm_c, perm_r, L, U, stat, info);
-
-      SLU::Destroy_CompCol_Permuted(AC.getRawPtr());
     }
 
   static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
@@ -614,6 +655,18 @@ struct FunctionMap<Superlu,std::complex<double> >
     {
       SLU::Z::zCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
     }
+
+  static void gsequ(SLU::SuperMatrix* A, double* R, double* C,
+    double* rowcnd, double* colcnd, double* amax, int* info)
+    {
+      SLU::Z::zgsequ(A, R, C, rowcnd, colcnd, amax, info);
+    }
+
+  static void laqgs(SLU::SuperMatrix* A, double* R, double* C,
+    double rowcnd, double colcnd, double amax, char* equed)
+    {
+      SLU::Z::zlaqgs(A, R, C, rowcnd, colcnd, amax, equed);
+    }
 };
 #endif	// HAVE_TEUCHOS_COMPLEX
 
@@ -621,56 +674,5 @@ struct FunctionMap<Superlu,std::complex<double> >
 
 
 } // end namespace Amesos
-
-
-namespace SLU {
-
-template <typename Scalar>
-Teuchos::RCP<SLU::SuperMatrix> getPermMatrix(
-  superlu_options_t* options,
-  SuperMatrix* A,          // A is in NRFormat
-  int* perm_c,
-  int* etree)
-{
-  SuperMatrix AA;      // A in SLU_NC format
-
-  // AA in SLU_NCP format after preordering
-  Teuchos::RCP<SuperMatrix> AC = Teuchos::rcp(new SuperMatrix());
-
-  if( A->Stype == SLU_NR ){
-    NRformat* Astore = (NRformat*)A->Store;
-    // SLU::S::sCreate_CompCol_Matrix(&AA, A->ncol, A->nrow, Astore->nnz,
-    //   (typename TypeMap<Amesos::Superlu,Scalar>::type*)Astore->nzval,
-    //   Astore->colind, Astore->rowptr, SLU::SLU_NC, A->Dtype, A->Mtype);
-    Amesos::FunctionMap<Amesos::Superlu,Scalar>::create_CompCol_Matrix(
-      &AA, A->ncol, A->nrow, Astore->nnz,
-      (typename Amesos::TypeMap<Amesos::Superlu,Scalar>::type*)Astore->nzval,
-      Astore->colind, Astore->rowptr, SLU_NC, A->Dtype, A->Mtype);
-  } else {
-    AA = *A;
-  }
-
-  /*
-   * Get column permutation vector perm_c[], according to permc_spec:
-   *   permc_spec = NATURAL:  natural ordering
-   *   permc_spec = MMD_AT_PLUS_A: minimum degree on structure of A'+A
-   *   permc_spec = MMD_ATA:  minimum degree on structure of A'*A
-   *   permc_spec = COLAMD:   approximate minimum degree column ordering
-   *   permc_spec = MY_PERMC: the ordering already supplied in perm_c[]
-   */
-  int permc_spec = options->ColPerm;
-  if ( permc_spec != MY_PERMC ){
-    get_perm_c(permc_spec, &AA, perm_c);
-  }
-  sp_preorder(options, &AA, perm_c, etree, AC.getRawPtr());
-
-  // cleanup
-  Destroy_SuperMatrix_Store(&AA);
-
-  return(AC);
-}
-
-} // end namespace SLU
-
 
 #endif  // AMESOS2_SUPERLU_FUNCTIONMAP_HPP

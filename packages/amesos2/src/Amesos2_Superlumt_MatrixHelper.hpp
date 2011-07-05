@@ -98,7 +98,7 @@ namespace Amesos {
       typedef typename Matrix::scalar_t                          scalar_type;
       typedef typename Matrix::global_ordinal_t                      go_type;
       typedef typename Matrix::global_size_t                         gs_type;
-      typedef typename TypeMap<Superlumt,scalar_type>::type slu_type;
+      typedef typename TypeMap<Superlumt,scalar_type>::type         slu_type;
       // Get the SLU data type for this type of matrix
       SLUMT::Dtype_t dtype = TypeMap<Superlumt,scalar_type>::dtype;
 
@@ -123,8 +123,7 @@ namespace Amesos {
 
       int nnz_ret = 0;
 
-      // Actually uses the compressed-row-store format, and tells Superlumt this
-      // while creating a compressed-column store.
+      // Use compressed-column store for SuperLU_MT
       {
         Teuchos::TimeMonitor mtxRedistTimer( mtxRedistTime );
 
@@ -214,8 +213,8 @@ namespace Amesos {
         const Teuchos::Ptr<SLUMT::SuperMatrix>& X,
         Teuchos::Time& vecRedistTime)
     {
-      typedef typename MV::scalar_type scalar_type;
-      typedef typename TypeMap<Superlumt,scalar_type>::type slu_type;
+      typedef typename MV::scalar_type                         scalar_type;
+      typedef typename TypeMap<Superlumt,scalar_type>::type       slu_type;
       SLUMT::Dtype_t dtype = TypeMap<Superlumt,scalar_type>::dtype;
 
       int rows, cols;

@@ -344,6 +344,10 @@ public:
     }
 
 
+  /// Returns the number of pre-orderings performed by this object.
+  inline int getNumPreOrder() const { return( status_.numPreOrder_ ); }
+
+
   /// Returns the number of symbolic factorizations performed by this object.
   inline int getNumSymbolicFact() const { return( status_.numSymbolicFact_ ); }
 

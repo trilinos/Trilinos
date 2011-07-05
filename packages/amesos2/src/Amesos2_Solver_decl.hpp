@@ -232,6 +232,10 @@ namespace Amesos {
     virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm( void ) const = 0;
 
 
+    /// Returns the number of pre-orderings performed by this object.
+    virtual int getNumPreOrder( void ) const = 0;
+    
+
     /// Returns the number of symbolic factorizations performed by this object.
     virtual int getNumSymbolicFact( void ) const = 0;
 

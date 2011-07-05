@@ -70,28 +70,35 @@ namespace Amesos {
  * See the \ref superlu_mt_parameters "summary of SuperLU_MT
  * parameters" supported this Amesos2 interface
  *
- * \ingroup amesos2_solver_interfaces 
+ * \ingroup amesos2_solver_interfaces
  */
 template <class Matrix,
-          class Vector>
+	  class Vector>
 class Superlumt : public SolverCore<Amesos::Superlumt, Matrix, Vector>
 {
   friend class SolverCore<Amesos::Superlumt,Matrix,Vector>; // Give our base access
-                                                            // to our private
-                                                            // implementation funcs
+							    // to our private
+							    // implementation funcs
 public:
 
   /// Name of this solver interface.
   static const char* name;	// declaration. Initialization outside.
 
-  typedef Superlumt<Matrix,Vector>                             solver_type;
-  typedef Matrix                                               matrix_type;
-  typedef Vector                                               vector_type;
-  typedef typename MatrixTraits<matrix_type>::scalar_t         scalar_type;
-  typedef typename MatrixTraits<matrix_type>::local_ordinal_t  local_ordinal_type;
-  typedef typename MatrixTraits<matrix_type>::global_ordinal_t global_ordinal_type;
-  typedef typename MatrixTraits<matrix_type>::node_t           node_type;
-  typedef typename MatrixAdapter<matrix_type>::global_size_t   global_size_type;
+  typedef Superlumt<Matrix,Vector>                                     type;
+  typedef SolverCore<Amesos::Superlumt,Matrix,Vector>            super_type;
+
+  // Since typedef's are not inheritted, go grab them
+  typedef typename super_type::scalar_type                      scalar_type;
+  typedef typename super_type::local_ordinal_type        local_ordinal_type;
+  typedef typename super_type::global_ordinal_type      global_ordinal_type;
+  typedef typename super_type::global_size_type            global_size_type;
+
+  typedef typename TypeMap<Amesos::Superlumt,scalar_type>::type           slu_type;
+  typedef typename TypeMap<Amesos::Superlumt,scalar_type>::magnitude_type magnitude_type;
+
+  typedef FunctionMap<Amesos::Superlumt,scalar_type>           function_map;
+  typedef MatrixHelper<Amesos::Superlumt>                     matrix_helper;
+
 
   /// \name Constructor/Destructor methods
   //@{

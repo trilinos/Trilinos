@@ -366,6 +366,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
 {
   if( matrixA_.is_null() || (status_.myPID_ != 0) ){ return; }
 
+  double preTime  = timers_.preOrderTime_.totalElapsedTime();
   double symTime  = timers_.symFactTime_.totalElapsedTime();
   double numTime  = timers_.numFactTime_.totalElapsedTime();
   double solTime  = timers_.solveTime_.totalElapsedTime();
@@ -387,6 +388,14 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
       << std::endl;
   out << p << "Time to redistribute vectors = "
       << timers_.vecRedistTime_.totalElapsedTime() << " (s)"
+      << std::endl;
+
+  out << p << "Number of pre-orderings = "
+      << getNumPreOrder()
+      << std::endl;
+  out << p << "Time for pre-ordering = "
+      << preTime << " (s), avg = "
+      << preTime / getNumPreOrder() << " (s)"
       << std::endl;
 
   out << p << "Number of symbolic factorizations = "

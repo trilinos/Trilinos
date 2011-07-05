@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -109,7 +109,7 @@ Superlumt<Matrix,Vector>::Superlumt(
   data_.perm_c.resize(this->globalNumCols_);
   data_.options.perm_r = data_.perm_r.getRawPtr();
   data_.options.perm_c = data_.perm_c.getRawPtr();
-  
+
   // data_.etree.resize(this->globalNumRows_);
   data_.R.resize(this->globalNumRows_); // Actually, the sizes depend on whether we are doing a transpose solve or not
   data_.C.resize(this->globalNumCols_);
@@ -135,7 +135,7 @@ Superlumt<Matrix,Vector>::~Superlumt( )
   if ( this->getNumNumericFact() > 0 ){
     // Our Teuchos::Array's will destroy rowind, colptr, and nzval for us
     SLUMT::D::Destroy_SuperMatrix_Store( &(data_.A) );
-    
+
 
     if ( this->status_.root_ ){       // only root allocated these Objects.
       SLUMT::D::StatFree( &(data_.stat) ) ;
@@ -164,14 +164,13 @@ Superlumt<Matrix,Vector>::preOrdering_impl()
   int perm_spec = data_.options.ColPerm;
   if( perm_spec != SLUMT::MY_PERMC ){
     // In order to calculate a pre-order, we must first have a matrix!
-    typedef typename TypeMap<Amesos::Superlumt,scalar_type>::type slu_type;
     {                           // start matrix conversion block
       Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-      
-      MatrixHelper<Amesos::Superlumt>::createCcsMatrix(this->matrixA_.ptr(),
-						       nzvals_(), rowind_(), colptr_(),
-						       Teuchos::ptrFromRef(data_.A),
-						       this->timers_.mtxRedistTime_);
+
+      matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
+				     nzvals_(), rowind_(), colptr_(),
+				     Teuchos::outArg(data_.A),
+				     this->timers_.mtxRedistTime_);
     } // end matrix conversion block
 
     SLUMT::S::get_perm_c(perm_spec, &(data_.A), data_.perm_c.getRawPtr());
@@ -214,7 +213,7 @@ template <class Matrix, class Vector>
 int
 Superlumt<Matrix,Vector>::numericFactorization_impl(){
 #ifdef HAVE_AMESOS2_DEBUG
-  int nprocs = data_.options.nprocs;
+  const int nprocs = data_.options.nprocs;
   TEST_FOR_EXCEPTION( nprocs <= 0,
 		      std::invalid_argument,
 		      "The number of threads to spawn should be greater than 0." );
@@ -228,16 +227,15 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
       this->getNumNumericFact() > 0 ){
     SLUMT::D::Destroy_SuperMatrix_Store( &(data_.A) );
   }
-  
+
   // Get values from matrix in temporary storage
-  typedef typename TypeMap<Amesos::Superlumt,scalar_type>::type slu_type;
   {
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-    
-    MatrixHelper<Amesos::Superlumt>::createCcsMatrix(this->matrixA_.ptr(),
-						     nzvals_(), rowind_(), colptr_(),
-						     Teuchos::ptrFromRef(data_.A),
-						     this->timers_.mtxRedistTime_);
+
+    matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
+				   nzvals_(), rowind_(), colptr_(),
+				   Teuchos::ptrFromRef(data_.A),
+				   this->timers_.mtxRedistTime_);
   }
 
   if ( this->status_.root_ ) {
@@ -246,16 +244,16 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
       magnitude_type rowcnd, colcnd, amax;
       int info;
 
-      FunctionMap<Amesos::Superlumt,scalar_type>::gsequ(&(data_.A), data_.R.getRawPtr(),
-							data_.C.getRawPtr(), &rowcnd, &colcnd,
-							&amax, &info);
+      function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
+			  data_.C.getRawPtr(), &rowcnd, &colcnd,
+			  &amax, &info);
       TEST_FOR_EXCEPTION( info != 0,
 			  std::runtime_error,
 			  "SuperLU_MT gsequ returned with status " << info );
 
-      FunctionMap<Amesos::Superlumt,scalar_type>::laqgs(&(data_.A), data_.R.getRawPtr(),
-							data_.C.getRawPtr(), rowcnd, colcnd,
-							amax, &(data_.equed));
+      function_map::laqgs(&(data_.A), data_.R.getRawPtr(),
+			  data_.C.getRawPtr(), rowcnd, colcnd,
+			  amax, &(data_.equed));
 
       data_.rowequ = (data_.equed == SLUMT::ROW) || (data_.equed == SLUMT::BOTH);
       data_.colequ = (data_.equed == SLUMT::COL) || (data_.equed == SLUMT::BOTH);
@@ -264,32 +262,32 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
     }
 
     // Allocate and initialize status variable
-    int n = Teuchos::as<int>(this->globalNumCols_); // n is the number of columns in A
+    const int n = Teuchos::as<int>(this->globalNumCols_); // n is the number of columns in A
     SLUMT::D::StatAlloc(n, data_.options.nprocs, data_.options.panel_size, data_.options.relax, &(data_.stat));
     SLUMT::D::StatInit(n, data_.options.nprocs, &(data_.stat));
-    
+
     // Apply the column ordering, so that AC is the column-permuted A, and compute etree
     SLUMT::sp_colorder(&(data_.A), data_.perm_c.getRawPtr(),
 			  &(data_.options), &(data_.AC));
-    
+
     { // Do factorization
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 
-#ifdef HAVE_AMESOS2_DEBUG
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "SuperLU_MT:: Before numeric factorization" << std::endl;
       std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
 
-      FunctionMap<Amesos::Superlumt,scalar_type>::gstrf(&(data_.options), &(data_.AC),
-							data_.perm_r.getRawPtr(), &(data_.L), &(data_.U),
-							&(data_.stat), &info);
+      function_map::gstrf(&(data_.options), &(data_.AC),
+			  data_.perm_r.getRawPtr(), &(data_.L), &(data_.U),
+			  &(data_.stat), &info);
     }
   }
 
   // Check output
-  global_size_type info_st = Teuchos::as<global_size_type>(info);
+  const global_size_type info_st = Teuchos::as<global_size_type>(info);
   TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
 		      std::runtime_error,
 		      "Factorization complete, but matrix is singular. Division by zero eminent");
@@ -314,15 +312,9 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
 				     const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
-  
-  // root sets up for Solve and calls SuperLU
 
-  typedef typename MatrixTraits<Matrix>::scalar_t scalar_type;
-  typedef typename TypeMap<Amesos::Superlumt,scalar_type>::type slu_type;
-  typedef typename TypeMap<Amesos::Superlumt,scalar_type>::magnitude_type magnitude_type;
-
-  global_size_type len_rhs = X->getGlobalLength();
-  size_t nrhs = X->getGlobalNumVectors();
+  const global_size_type len_rhs = X->getGlobalLength();
+  const size_t nrhs = X->getGlobalNumVectors();
 
   Teuchos::Array<slu_type> bxvals_(len_rhs * nrhs);
   size_t ldbx_;
@@ -338,9 +330,9 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
   {                 // Convert: Get a SuperMatrix for the B multi-vectors
     Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
 
-    MatrixHelper<Amesos::Superlumt>::createMVDenseMatrix(
+    matrix_helper::createMVDenseMatrix(
       B, bxvals_(), ldbx_,
-      Teuchos::ptrFromRef(data_.BX),
+      Teuchos::outArg(data_.BX),
       this->timers_.vecRedistTime_);
   }         // end block for conversion time
 
@@ -355,14 +347,14 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
     Util::scale(bxvals_(), as<size_t>(len_rhs), ldbx_, data_.C(),
 		SLUMT::slu_mt_mult<slu_type,magnitude_type>());
   }
-  
-  int ierr = 0; // returned error code
+
+  int info = 0; // returned error code (0 = success)
 
   // magnitude_type rpg, rcond;
   if ( this->status_.root_ ) {
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 
-#ifdef HAVE_AMESOS2_DEBUG
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
     std::cout << "SuperLU_MT:: Before solve" << std::endl;
     std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
     std::cout << "rowind_ : " << rowind_.toString() << std::endl;
@@ -370,19 +362,20 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
     std::cout << "B : " << bValues().toString() << std::endl;
 #endif
 
-    FunctionMap<Amesos::Superlumt,scalar_type>::gstrs(data_.options.trans, &(data_.L),
-						      &(data_.U), data_.perm_r.getRawPtr(),
-						      data_.perm_c.getRawPtr(), &(data_.BX),
-						      &(data_.stat), &ierr);
-#ifdef HAVE_AMESOS2_DEBUG
+    function_map::gstrs(data_.options.trans, &(data_.L),
+			&(data_.U), data_.perm_r.getRawPtr(),
+			data_.perm_c.getRawPtr(), &(data_.BX),
+			&(data_.stat), &info);
+
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
     std::cout << "SuperLU_MT:: After solve" << std::endl;
     std::cout << "X : " << bxvals_().toString() << std::endl;
 #endif
   } // end block for solve time
 
-  TEST_FOR_EXCEPTION( ierr < 0,
+  TEST_FOR_EXCEPTION( info < 0,
 		      std::runtime_error,
-		      "Argument " << -ierr << " to gstrs had an illegal value" );
+		      "Argument " << -info << " to gstrs had an illegal value" );
 
   // "Un-scale" the solution so that it is a solution of the original system
   if( data_.options.trans == SLUMT::NOTRANS ){
@@ -405,8 +398,8 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
   }
 
   /* All processes should return the same error code */
-  Teuchos::broadcast(*(this->getComm()),0,&ierr);
-  return(ierr);
+  Teuchos::broadcast(*(this->getComm()),0,&info);
+  return(info);
 }
 
 
@@ -427,9 +420,9 @@ Superlumt<Matrix,Vector>::setParameters_impl(
   const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
 {
   using Teuchos::as;
-  
+
   if( parameterList->isParameter("nprocs") ){
-    int nprocs = parameterList->template get<int>("nprocs");
+    const int nprocs = parameterList->template get<int>("nprocs");
     data_.options.nprocs = nprocs;
   }
 
@@ -441,7 +434,7 @@ Superlumt<Matrix,Vector>::setParameters_impl(
   // Control class doesn't recognize this parameter, we check for it
   // ourselves.
   else if ( parameterList->isParameter("trans") ){
-    std::string fact = parameterList->template get<std::string>("trans");
+    const std::string fact = parameterList->template get<std::string>("trans");
     if( fact == "TRANS" ){
       data_.options.trans = SLUMT::TRANS;
     } else if ( fact == "NOTRANS" ){
@@ -459,65 +452,65 @@ Superlumt<Matrix,Vector>::setParameters_impl(
   }
 
   if( parameterList->isParameter("panel_size") ){
-    int panel_size = parameterList->template get<int>("panel_size");
+    const int panel_size = parameterList->template get<int>("panel_size");
     data_.options.panel_size = panel_size;
   }
 
   if( parameterList->isParameter("relax") ){
-    int relax = parameterList->template get<int>("relax");
-    data_.options.relax = relax;
+    const int relax = parameterList->template get<int>("relax");
+    data_.poptions.relax = relax;
   }
 
   if( parameterList->isParameter("Equil") ){
     if ( parameterList->template isType<bool>("Equil") ){
-      bool equil = parameterList->template get<bool>("Equil");
+      const bool equil = parameterList->template get<bool>("Equil");
       if( equil ){
-        data_.options.fact = SLUMT::EQUILIBRATE;
+	data_.options.fact = SLUMT::EQUILIBRATE;
       } else {
-        data_.options.fact = SLUMT::DOFACT;
+	data_.options.fact = SLUMT::DOFACT;
       }
     } else if ( parameterList->template isType<std::string>("Equil") ) {
-      std::string equil = parameterList->template get<std::string>("Equil");
+      const std::string equil = parameterList->template get<std::string>("Equil");
       if ( equil == "YES" || equil == "yes" ){
-        data_.options.fact = SLUMT::EQUILIBRATE;
+	data_.options.fact = SLUMT::EQUILIBRATE;
       } else if ( equil == "NO" || equil == "no" ) {
-        data_.options.fact = SLUMT::DOFACT;
+	data_.options.fact = SLUMT::DOFACT;
       }
     }
   }
 
   if( parameterList->isParameter("SymmetricMode") ){
     if ( parameterList->template isType<bool>("SymmetricMode") ){
-      bool sym = parameterList->template get<bool>("SymmetricMode");
+      const bool sym = parameterList->template get<bool>("SymmetricMode");
       if( sym ){
-        data_.options.SymmetricMode = SLUMT::YES;
+	data_.options.SymmetricMode = SLUMT::YES;
       } else {
-        data_.options.SymmetricMode = SLUMT::NO;
+	data_.options.SymmetricMode = SLUMT::NO;
       }
     } else if ( parameterList->template isType<std::string>("SymmetricMode") ) {
-      std::string sym = parameterList->template get<std::string>("SymmetricMode");
+      const std::string sym = parameterList->template get<std::string>("SymmetricMode");
       if ( sym == "YES" || sym == "yes" ){
-        data_.options.SymmetricMode = SLUMT::YES;
+	data_.options.SymmetricMode = SLUMT::YES;
       } else if ( sym == "NO" || sym == "no" ) {
-        data_.options.SymmetricMode = SLUMT::NO;
+	data_.options.SymmetricMode = SLUMT::NO;
       }
     }
   }
 
   if( parameterList->isParameter("PrintStat") ){
     if ( parameterList->template isType<bool>("PrintStat") ){
-      bool sym = parameterList->template get<bool>("PrintStat");
-      if( sym ){
-        data_.options.PrintStat = SLUMT::YES;
+      const bool ps = parameterList->template get<bool>("PrintStat");
+      if( ps ){
+	data_.options.PrintStat = SLUMT::YES;
       } else {
-        data_.options.PrintStat = SLUMT::NO;
+	data_.options.PrintStat = SLUMT::NO;
       }
     } else if ( parameterList->template isType<std::string>("PrintStat") ) {
-      std::string sym = parameterList->template get<std::string>("PrintStat");
-      if ( sym == "YES" || sym == "yes" ){
-        data_.options.PrintStat = SLUMT::YES;
-      } else if ( sym == "NO" || sym == "no" ) {
-        data_.options.PrintStat = SLUMT::NO;
+      std::string ps = parameterList->template get<std::string>("PrintStat");
+      if ( ps == "YES" || ps == "yes" ){
+	data_.options.PrintStat = SLUMT::YES;
+      } else if ( ps == "NO" || ps == "no" ) {
+	data_.options.PrintStat = SLUMT::NO;
       }
     }
   }
@@ -527,7 +520,7 @@ Superlumt<Matrix,Vector>::setParameters_impl(
   }
 
   if( parameterList->isParameter("ColPerm") ){
-    std::string method = parameterList->template get<std::string>("ColPerm");
+    const std::string method = parameterList->template get<std::string>("ColPerm");
     if( method == "NATURAL" ){
       data_.options.ColPerm = SLUMT::NATURAL;
     } else if ( method == "MMD_AT_PLUS_A" ) {
@@ -546,21 +539,21 @@ Superlumt<Matrix,Vector>::setParameters_impl(
       // Now we also expect to find a parameter in parameterList called
       // "perm_c"
       TEST_FOR_EXCEPTION(
-        !parameterList->isParameter("perm_c"),
-        std::invalid_argument,
-        "MY_PERMC option specified without accompanying 'perm_c' parameter.");
+	!parameterList->isParameter("perm_c"),
+	std::invalid_argument,
+	"MY_PERMC option specified without accompanying 'perm_c' parameter.");
 
       data_.perm_c = parameterList->template get<Teuchos::Array<int> >("perm_c");
 
       TEST_FOR_EXCEPTION(
-        as<global_size_type>(data_.perm_c.size()) != this->globalNumCols_,
-        std::length_error,
-        "'perm_c' parameter not of correct length.");
+	as<global_size_type>(data_.perm_c.size()) != this->globalNumCols_,
+	std::length_error,
+	"'perm_c' parameter not of correct length.");
     } else {
       TEST_FOR_EXCEPTION(
-        true,
-        std::invalid_argument,
-        "Unrecognized value for 'ColPerm' key.");
+	true,
+	std::invalid_argument,
+	"Unrecognized value for 'ColPerm' key.");
     }
   } else {
     data_.options.ColPerm = SLUMT::COLAMD;
@@ -579,18 +572,18 @@ Superlumt<Matrix,Vector>::setParameters_impl(
 
   if( parameterList->isParameter("usepr") ){
     if ( parameterList->template isType<bool>("usepr") ){
-      bool sym = parameterList->template get<bool>("usepr");
-      if( sym ){
-        data_.options.usepr = SLUMT::YES;
+      bool upr = parameterList->template get<bool>("usepr");
+      if( upr ){
+	data_.options.usepr = SLUMT::YES;
       } else {
-        data_.options.usepr = SLUMT::NO;
+	data_.options.usepr = SLUMT::NO;
       }
     } else if ( parameterList->template isType<std::string>("SymmetricMode") ) {
-      std::string sym = parameterList->template get<std::string>("SymmetricMode");
-      if ( sym == "YES" || sym == "yes" ){
-        data_.options.SymmetricMode = SLUMT::YES;
-      } else if ( sym == "NO" || sym == "no" ) {
-        data_.options.SymmetricMode = SLUMT::NO;
+      std::string upr = parameterList->template get<std::string>("SymmetricMode");
+      if ( upr == "YES" || upr == "yes" ){
+	data_.options.SymmetricMode = SLUMT::YES;
+      } else if ( upr == "NO" || upr == "no" ) {
+	data_.options.SymmetricMode = SLUMT::NO;
       }
     }
     // Now if usepr == YES, then there must also be a perm_r parameter
@@ -598,7 +591,7 @@ Superlumt<Matrix,Vector>::setParameters_impl(
       TEST_FOR_EXCEPTION( !parameterList->isParameter("perm_r"),
 			  std::invalid_argument,
 			  "Must provide a 'perm_r' parameter if 'usepr' is true");
-      
+
       data_.perm_r = parameterList->template get<Teuchos::Array<int> >("perm_r");
 
       TEST_FOR_EXCEPTION(

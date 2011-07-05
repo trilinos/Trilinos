@@ -69,7 +69,7 @@ namespace Amesos {
   struct MatrixHelper<Superlu>
   {
 
-    /** \brief Creates a Superlu compressed-row Matrix from the given Matrix
+    /** \brief Creates a Superlu compressed-column Matrix from the given Matrix
      *
      * \tparam Matrix A matrix type conforming to the interface, in particular
      *         an Amesos::MatrixAdapter<>.
@@ -78,9 +78,9 @@ namespace Amesos {
      * \param [in,out] nzval  A user-provided persisting store for the nonzero
      *                        values of the matrix.  The SuperLU matrix will expect
      *                        the array to persist throughout its existence.
-     * \param [in,out] colind A user-provided persisting store for the column
+     * \param [in,out] rowind A user-provided persisting store for the column
      *                        indices of the matrix.
-     * \param [in,out] rowptr User-provided persisting store for row pointers
+     * \param [in,out] colptr User-provided persisting store for row pointers
      * \param [out]    A      Pointer to the SuperLU SuperMatrix which is to be constructed
      * \param [out]    mtxRedistTime Will have additional time added to it for the
      *                        time to redistribute the \c mat matrix.
@@ -88,10 +88,10 @@ namespace Amesos {
      * \callgraph
      */
     template <class Matrix>
-    static void createCRSMatrix(const Teuchos::Ptr<Matrix>& mat,
+    static void createCCSMatrix(const Teuchos::Ptr<Matrix>& mat,
                                 const Teuchos::ArrayView<typename TypeMap<Superlu,typename Matrix::scalar_t>::type>& nzval,
-                                const Teuchos::ArrayView<int>& colind,
-                                const Teuchos::ArrayView<int>& rowptr,
+                                const Teuchos::ArrayView<int>& rowind,
+                                const Teuchos::ArrayView<int>& colptr,
                                 const Teuchos::Ptr<SLU::SuperMatrix>& A,
                                 Teuchos::Time& mtxRedistTime
                                 )
@@ -115,12 +115,12 @@ namespace Amesos {
       TEST_FOR_EXCEPTION( Teuchos::as<int>(nzval.size()) < nnz,
                           std::runtime_error,
                           "nzval array not large enough to hold data");
-      TEST_FOR_EXCEPTION( Teuchos::as<int>(colind.size()) < nnz,
+      TEST_FOR_EXCEPTION( Teuchos::as<int>(rowind.size()) < nnz,
                           std::runtime_error,
-                          "colind array not large enough to hold data");
-      TEST_FOR_EXCEPTION( Teuchos::as<int>(rowptr.size()) < rows + 1,
+                          "rowind array not large enough to hold data");
+      TEST_FOR_EXCEPTION( Teuchos::as<int>(colptr.size()) < rows + 1,
                           std::runtime_error,
-                          "rowptr array not large enough to hold data");
+                          "colptr array not large enough to hold data");
 
       int nnz_ret = 0;
 
@@ -129,8 +129,8 @@ namespace Amesos {
       {
         Teuchos::TimeMonitor mtxRedistTimer( mtxRedistTime );
 
-	Util::get_crs_helper<Matrix,slu_type,int,int>::do_get(mat, nzval, colind,
-							      rowptr, nnz_ret,
+	Util::get_ccs_helper<Matrix,slu_type,int,int>::do_get(mat, nzval, rowind,
+							      colptr, nnz_ret,
 							      Util::Rooted,
 							      Util::Arbitrary);
       }
@@ -139,9 +139,11 @@ namespace Amesos {
 			  std::runtime_error,
 			  "Root rank failed to get all non-zero values in getCrs()");
 
-      FunctionMap<Superlu,scalar_type>::create_CompRow_Matrix(A.getRawPtr(), rows, cols, nnz, nzval.getRawPtr(),
-                                                              colind.getRawPtr(), rowptr.getRawPtr(), SLU::SLU_NR,
-                                                              dtype, SLU::SLU_GE);
+      typedef FunctionMap<Superlu,scalar_type> function_map;
+      function_map::create_CompCol_Matrix(A.getRawPtr(), rows, cols, nnz,
+					  nzval.getRawPtr(), rowind.getRawPtr(),
+					  colptr.getRawPtr(), SLU::SLU_NC,
+					  dtype, SLU::SLU_GE);
     }
 
 
@@ -226,80 +228,14 @@ namespace Amesos {
         Util::if_then_else<Util::is_same<scalar_type,slu_type>::value,
           same_type_get_copy<MV>,
           diff_type_get_copy<MV> >::type::apply(mv, vals, ldx);
-      }
+    }
 
       FunctionMap<Superlu,scalar_type>::create_Dense_Matrix(
         X.getRawPtr(), rows, cols, vals.getRawPtr(), Teuchos::as<int>(ldx),
 	SLU::SLU_DN, dtype, SLU::SLU_GE);
     }
-
-
-    /** \brief Creates a Superlu Dense Matrix from the given MultiVector
-     *
-     * \tparam MV A multi-vector type conforming to the interface, in
-     *         particular an Amesos::MultiVecAdapter<>.
-     *
-     * \param [in]     mv   The MultiVector which will be converted to SuperLU format
-     * \param [out]    X    Pointer to the SuperLU Dense SuperMatrix which is to be
-     *                      constructed
-     * \param [out]    vecRedistTime Will have time added for redistribution of \c \mv
-     *
-     * \return A Teuchos::ArrayRCP pointing to the beginning of a
-     *         contiguous store of the values in \c X , which is
-     *         <b>not</b> necessarily the beginning of the contiguous
-     *         store of values in \c mv .
-     *
-     * \deprecated The other overloaded version of this function which
-     * asks for a persisting store for the matrix values should be the
-     * preferred function over this version.  This function uses the not-safe
-     * `get1dViewNonConst'.  In any case, we eventually have to convert
-     * the values into SuperLU's types, which makes a copy of the data
-     * anyhow.
-     */
-    template <class MV>
-    static
-    Teuchos::ArrayRCP<typename TypeMap<Superlu,typename MV::scalar_type>::type>
-    createMVDenseMatrix(
-			const Teuchos::Ptr<MV>& mv,
-			const Teuchos::Ptr<SLU::SuperMatrix>& X,
-			Teuchos::Time& vecRedistTime
-			)
-    {
-      typedef typename MV::scalar_type scalar_type;
-      typedef typename TypeMap<Superlu,scalar_type>::type slu_type;
-      SLU::Dtype_t dtype = TypeMap<Superlu,scalar_type>::dtype;
-
-      int rows, cols, ldx;
-      rows = Teuchos::as<int>(mv->getGlobalLength());
-      cols = Teuchos::as<int>(mv->getGlobalNumVectors());
-      // ldx  = Teuchos::as<int>(mv->getStride());
-      ldx  = rows;
-
-      Teuchos::ArrayRCP<scalar_type> vals_ptr;
-
-      {
-        Teuchos::TimeMonitor redistTimer( vecRedistTime );
-        vals_ptr = mv->get1dViewNonConst();
-      }
-      typedef typename Teuchos::ArrayRCP<scalar_type>::size_type size_type;
-      size_type vals_length = vals_ptr.size();
-
-      typedef typename Teuchos::ArrayRCP<slu_type>::size_type slu_size_type;
-      Teuchos::ArrayRCP<slu_type> slu_vals(Teuchos::as<slu_size_type>(vals_length));
-
-      // Convert value types
-      for ( size_type i = 0; i < vals_length; ++i ){
-        slu_vals[i] = Teuchos::as<slu_type>(vals_ptr[i]);
-      }
-
-      FunctionMap<Superlu,scalar_type>::create_Dense_Matrix(
-							    X.getRawPtr(), rows, cols, slu_vals.getRawPtr(), ldx,
-							    SLU::SLU_DN, dtype, SLU::SLU_GE);
-
-      return slu_vals;
-    }
-};                              // end struct MatrixHelper
-
+    
+  };				// end struct MatrixHelper
 
 } // end namespace Amesos
 
