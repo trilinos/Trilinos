@@ -16,21 +16,32 @@ namespace Cthulhu {
     }
       
     void setCLP(Teuchos::CommandLineProcessor& clp) {
-      // default
-#if defined(HAVE_CTHULHU_TPETRA)
-      lib_ = Cthulhu::UseTpetra;
-#elif defined(HAVE_CTHULHU_EPETRA)
-      lib_ = Cthulhu::UseEpetra;
-#else
-      //throw error ?
-#endif
+      int nOptions=0;                                  // Gives the number of possible option values to select 
+      const int maxOptions=2;                          // No ore than 2 libraries are supported right now
+      Cthulhu::UnderlyingLib optionValues[maxOptions]; // Array that gives the numeric values for each option.
+      const char*            optionNames [maxOptions]; // Array that gives the name used in the commandline for each option.
 
-      // add option --linAlgebra==
-#if defined(HAVE_CTHULHU_EPETRA) && defined (HAVE_CTHULHU_TPETRA)
-      std::stringstream description;
-      description << "use Tpetra (==" << Cthulhu::UseTpetra << ") or Epetra (==" << Cthulhu::UseEpetra << ")";
-      clp.setOption("linAlgebra",reinterpret_cast<int*>(&lib_),description.str().c_str()); //TODO: use templated method setOption<>
+      std::stringstream documentation; // documentation for the option
+      documentation << "linear algebra library (0=Epetra, 1=Tpetra)";
+
+      // Default is Tpetra if available. If not, default is Epetra
+#if defined(HAVE_CTHULHU_EPETRA)
+      lib_ = Cthulhu::UseEpetra; // set default (if Tpetra support is missing)
+      optionValues[nOptions] = Cthulhu::UseEpetra;
+      //optionValues[nOptions] = "epetra"; //TODO: do not break compatibility right now
+      optionNames[nOptions] = "0";            
+      nOptions++;
 #endif
+#if defined(HAVE_CTHULHU_TPETRA)
+      lib_ = Cthulhu::UseTpetra; // set default
+      optionValues[nOptions] = Cthulhu::UseTpetra;
+      //optionsValues[nOptions] = "tpetra"; //TODO: do not break compatibility right now
+      optionNames[nOptions] = "1";
+      nOptions++;
+#endif
+        
+      clp.setOption<Cthulhu::UnderlyingLib>("linAlgebra", &lib_, nOptions, optionValues, optionNames, documentation.str().c_str());
+
     }
 
     void check() {
@@ -42,7 +53,7 @@ namespace Cthulhu {
       return lib_;
     }
      
-    void print() { // TODO: Teuchos::Describale 
+    void print() { // TODO: Teuchos::Describable 
       check();
      
       std::cout << "Cthulhu parameters: " << std::endl;
