@@ -2343,9 +2343,9 @@ namespace Tpetra {
 		 << " indexed." << endl;
 	  }
 	RCP<const map_type> pRowMap = pMatrix->getRowMap();
-	RCP<const map_type> pColMap = pMatrix->getColMap();
 	if (debugPrint)
 	  {
+            RCP<const map_type> pColMap = pMatrix->getColMap();
 	    cerr << "---- Its row map has " << pRowMap->getGlobalNumElements() 
 		 << " elements." << endl
 		 << "---- Its col map has " << pColMap->getGlobalNumElements() 
