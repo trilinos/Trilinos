@@ -67,11 +67,11 @@ int ex_put_attr_names(int   exoid,
 		      int   blk_id,
 		      char* names[])
 {
-  int status;
   int varid, numattrdim, blk_id_ndx;
-  size_t num_attr, start[2], count[2];
+  size_t num_attr;
+
+  int status;
   char errmsg[MAX_ERR_LENGTH];
-  size_t i;
    
   exerrval = 0; /* clear error code */
 
@@ -197,24 +197,8 @@ int ex_put_attr_names(int   exoid,
   }
 
   /* write out the attributes  */
-  for (i = 0; i < num_attr; i++) {
-    char temp[33];
-    start[0] = i;
-    start[1] = 0;
+  status = ex_put_names_internal(exoid, varid, num_attr, names, blk_type,
+				 "attribute", "ex_put_attr_names");
 
-    count[0] = 1;
-    count[1] = 33;
-
-    strncpy(temp, names[i], 32);
-    temp[32] = '\0';
-    if ((status = nc_put_vara_text(exoid, varid, start, count, temp)) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-	      "Error: failed to put attribute namess for %s %d in file id %d",
-	      ex_name_of_object(blk_type),blk_id,exoid);
-      ex_err("ex_put_attr_names",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-  }
-  return(EX_NOERR);
+  return(status);
 }

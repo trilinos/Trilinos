@@ -197,6 +197,7 @@ Redefine::~Redefine()
 
 Block::Block(const Ioss::ElementBlock &other)
 {
+  name = other.name();
   id = other.get_property("id").get_int();
   elementCount = other.get_property("entity_count").get_int();
   nodesPerElement = other.get_property("topology_node_count").get_int();
@@ -217,53 +218,35 @@ Block::Block(const Ioss::ElementBlock &other)
   // Here, we need to map back to the 'triangle' name...
   if (std::strncmp(elType, "trishell", 8) == 0)
     std::strncpy(elType, "triangle", 8);
-
-  std::string io_name = other.name();
-  if (io_name.length() > max_string_length()) {
-    IOSS_WARNING << "Name for element block '" << io_name
-		 << "'\nexceeds maximum exodusII allowed size of 32 characters."
-		 << " It will be truncated.\n";
-  }
-  std::strncpy(name, io_name.c_str(), max_string_length());
-  name[max_string_length()] = 0;
 }
 
 Block& Block::operator=(const Block& other)
 {
+  name = other.name;
   id = other.id;
   elementCount = other.elementCount;
   nodesPerElement = other.nodesPerElement;
   attributeCount = other.attributeCount;
   offset_ = other.offset_;
   std::strcpy(elType, other.elType);
-  std::strcpy(name,   other.name);
   return *this;
 }
 
 bool Block::operator==(const Block& other) const
 {
-  return id == other.id &&
+  return name == other.name && id == other.id &&
     elementCount == other.elementCount &&
     nodesPerElement == other.nodesPerElement &&
     attributeCount == other.attributeCount &&
-    std::strcmp(elType, other.elType) == 0 &&
-    std::strcmp(name, other.name) == 0;
+    std::strcmp(elType, other.elType) == 0;
 }
 
 NodeSet::NodeSet(const Ioss::NodeSet &other)
 {
+  name = other.name();
   id = other.get_property("id").get_int();
   nodeCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
-
-  std::string io_name = other.name();
-  if (io_name.length() > max_string_length()) {
-    IOSS_WARNING << "Name for nodeset '" << io_name
-		 << "'\nexceeds maximum exodusII allowed size of 32 characters."
-		 << " It will be truncated.\n";
-  }
-  std::strncpy(name, io_name.c_str(), max_string_length());
-  name[max_string_length()] = 0;
 }
 
 bool NodeSet::operator==(const NodeSet& other) const
@@ -271,11 +254,12 @@ bool NodeSet::operator==(const NodeSet& other) const
   return id == other.id &&
     nodeCount == other.nodeCount &&
     dfCount == other.dfCount &&
-    std::strcmp(name, other.name) == 0;
+    name == other.name;
 }
 
 SideSet::SideSet(const Ioss::SideBlock &other)
 {
+  name = other.name();
   id = other.get_property("id").get_int();
   sideCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
@@ -284,19 +268,11 @@ SideSet::SideSet(const Ioss::SideBlock &other)
   // KLUGE: universal_sideset has side dfCount...
   if (io_name == "universal_sideset")
     dfCount = sideCount;
-
-  if (io_name.length() > max_string_length()) {
-    IOSS_WARNING << "Name for side block '" << io_name
-		 << "'\nexceeds maximum exodusII allowed size of 32 characters."
-		 << " It will be truncated.\n";
-  }
-
-  std::strncpy(name, io_name.c_str(), max_string_length());
-  name[max_string_length()] = 0;
 }
 
 SideSet::SideSet(const Ioss::SideSet &other)
 {
+  name = other.name();
   id = other.get_property("id").get_int();
   sideCount = other.get_property("entity_count").get_int();
   dfCount = other.get_property("distribution_factor_count").get_int();
@@ -305,15 +281,6 @@ SideSet::SideSet(const Ioss::SideSet &other)
   // KLUGE: universal_sideset has side dfCount...
   if (io_name == "universal_sideset")
     dfCount = sideCount;
-
-  if (io_name.length() > max_string_length()) {
-    IOSS_WARNING << "Name for side set '" << io_name
-		 << "'\nexceeds maximum exodusII allowed size of 32 characters."
-		 << " It will be truncated.\n";
-  }
-
-  std::strncpy(name, io_name.c_str(), max_string_length());
-  name[max_string_length()] = 0;
 }
 
 bool SideSet::operator==(const SideSet& other) const
@@ -321,7 +288,7 @@ bool SideSet::operator==(const SideSet& other) const
   return id == other.id &&
     sideCount == other.sideCount &&
     dfCount == other.dfCount &&
-    std::strcmp(name, other.name) == 0;
+    name == other.name;
 }
 
 bool CommunicationMap::operator==(const CommunicationMap& other) const
@@ -331,12 +298,13 @@ bool CommunicationMap::operator==(const CommunicationMap& other) const
     type == other.type;
 }
 
-Internals::Internals(int exoid)
+Internals::Internals(int exoid, int maximum_name_length)
   : exodusFilePtr(exoid),
     nodeMapVarID(),
     elementMapVarID(),
     commIndexVar(0),
-    elemCommIndexVar(0)
+    elemCommIndexVar(0),
+    maximumNameLength(maximum_name_length)
 {}
 
 int Internals::write_meta_data(const Mesh &mesh,
@@ -394,35 +362,27 @@ int Internals::write_meta_data(const Mesh &mesh,
       max_entity = mesh.sidesetCount;
 
     char **names = new char* [max_entity];
-    for (int i=0; i < max_entity; i++) {
-      names[i] = new char [max_string_length()+1];
-    }
 
     for (int i=0; i < mesh.blockCount; i++) {
-      std::strncpy(names[i], blocks[i].name, max_string_length());
-      names[i][max_string_length()] = 0;
+      names[i] = (char*)blocks[i].name.c_str();
     }
     ex_put_names(exodusFilePtr, EX_ELEM_BLOCK, names);
 
+
     if (mesh.nodesetCount > 0) {
       for (int i=0; i < mesh.nodesetCount; i++) {
-	std::strncpy(names[i], nodesets[i].name, max_string_length());
-	names[i][max_string_length()] = 0;
+	names[i] = (char*)nodesets[i].name.c_str();
       }
       ex_put_names(exodusFilePtr, EX_NODE_SET, names);
     }
 
     if (mesh.sidesetCount > 0) {
       for (int i=0; i < mesh.sidesetCount; i++) {
-	std::strncpy(names[i], sidesets[i].name, max_string_length());
-	names[i][max_string_length()] = 0;
+	names[i] = (char*)sidesets[i].name.c_str();
       }
       ex_put_names(exodusFilePtr, EX_SIDE_SET, names);
     }
 
-    for (int i=0; i < max_entity; i++) {
-      delete [] names[i];
-    }
     delete [] names;
   }
 
@@ -437,6 +397,7 @@ int Internals::put_metadata(const Mesh &mesh,
   int numelemdim = 0;
   int elblkdim   = 0;
   int strdim     = 0;
+  int namestrdim = 0;
   int dim[2];
   int dimid = 0;
   int varid = 0;
@@ -487,6 +448,21 @@ int Internals::put_metadata(const Mesh &mesh,
     }
   }
 
+  // For use later to help readers know how much memory to allocate
+  // for name storage, we define an attribute containing the maximum
+  // size of any name.
+  {
+    int current_len = 0;
+    status=nc_put_att_int(exodusFilePtr, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &current_len);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+	      "Error: failed to define ATT_MAX_NAME_LENGTH attribute to file id %d", exodusFilePtr);
+      ex_err(routine,errmsg,status);
+      return(EX_FATAL);
+    }
+  }
+
   // inquire previously defined dimensions
   status=nc_inq_dimid (exodusFilePtr, DIM_STR, &strdim);
   if (status != NC_NOERR) {
@@ -497,7 +473,18 @@ int Internals::put_metadata(const Mesh &mesh,
     return(EX_FATAL);
   }
 
-  // ...and some dimensions..
+  /* create name string length dimension */
+  if (maximumNameLength < 32)
+    maximumNameLength = 32;
+  status = nc_def_dim (exodusFilePtr, DIM_STR_NAME, maximumNameLength+1, &namestrdim);
+  if (status != NC_NOERR) {
+    ex_opts(EX_VERBOSE);
+    sprintf(errmsg,
+	    "Error: failed to define name string length in file id %d",exodusFilePtr);
+    ex_err(routine,errmsg,status);
+    return(EX_FATAL);
+  }
+
   status=nc_def_dim(exodusFilePtr, DIM_NUM_DIM, mesh.dimensionality, &numdimdim);
   if (status != NC_NOERR) {
     ex_opts(EX_VERBOSE);
@@ -615,7 +602,7 @@ int Internals::put_metadata(const Mesh &mesh,
     }
 
     dim[0] = elblkdim;
-    dim[1] = strdim;
+    dim[1] = namestrdim;
 
     status = nc_def_var (exodusFilePtr, VAR_NAME_EL_BLK, NC_CHAR, 2, dim, &varid);
     if (status != NC_NOERR) {
@@ -676,7 +663,7 @@ int Internals::put_metadata(const Mesh &mesh,
     }
 
     dim[0] = dimid;
-    dim[1] = strdim;
+    dim[1] = namestrdim;
 
     status=nc_def_var(exodusFilePtr, VAR_NAME_NS, NC_CHAR, 2, dim, &varid);
     if (status != NC_NOERR) {
@@ -734,7 +721,7 @@ int Internals::put_metadata(const Mesh &mesh,
     }
 
     dim[0] = dimid;
-    dim[1] = strdim;
+    dim[1] = namestrdim;
 
     status=nc_def_var(exodusFilePtr, VAR_NAME_SS, NC_CHAR, 2, dim, &varid);
     if (status != NC_NOERR) {
@@ -747,7 +734,7 @@ int Internals::put_metadata(const Mesh &mesh,
     }
   }
 
-  status = define_coordinate_vars(exodusFilePtr, mesh.nodeCount, numnoddim, mesh.dimensionality, numdimdim, strdim);
+  status = define_coordinate_vars(exodusFilePtr, mesh.nodeCount, numnoddim, mesh.dimensionality, numdimdim, namestrdim);
   if (status != EX_NOERR) return EX_FATAL;
 
   // Define dimension for the number of processors
@@ -983,8 +970,8 @@ int Internals::put_metadata(const std::vector<Block> &blocks)
     return (EX_FATAL);
   }
 
-  int strdim;
-  status=nc_inq_dimid (exodusFilePtr, DIM_STR, &strdim);
+  int namestrdim;
+  status=nc_inq_dimid (exodusFilePtr, DIM_STR_NAME, &namestrdim);
   if (status != NC_NOERR) {
     ex_opts(EX_VERBOSE);
     sprintf(errmsg,
@@ -1076,7 +1063,7 @@ int Internals::put_metadata(const std::vector<Block> &blocks)
 
       // Attribute name array...
       dims[0] = numattrdim;
-      dims[1] = strdim;
+      dims[1] = namestrdim;
 
       status = nc_def_var(exodusFilePtr, VAR_NAME_ATTRIB(iblk+1),
 			  NC_CHAR, 2, dims, &varid);
@@ -1356,18 +1343,18 @@ int Internals::put_non_define_data(const std::vector<Block> &blocks)
     if (put_int_array(exodusFilePtr, VAR_STAT_EL_BLK, elem_blk_status) != NC_NOERR)
       return(EX_FATAL);
 
+    size_t  start[2];
+    size_t  count[2];
+    std::string text("");
+    count[0] = 1;
+    start[1] = 0;
+    count[1] = text.size()+1;
+  
     for (int iblk = 0; iblk < num_elem_blk; iblk++) {
       if (blocks[iblk].attributeCount > 0 && blocks[iblk].elementCount > 0) {
 	int varid;
 	nc_inq_varid(exodusFilePtr, VAR_NAME_ATTRIB(iblk+1), &varid);
-	size_t  start[2];
-	size_t  count[2];
-	std::string text(max_string_length(), ' ');
-
-	count[0] = 1;
-	start[1] = 0;
-	count[1] = text.size()+1;
-  
+	
 	for (int i = 0; i < blocks[iblk].attributeCount; i++) {
 	  start[0] = i;
 	  nc_put_vara_text(exodusFilePtr, varid, start, count, text.c_str());

@@ -69,23 +69,13 @@ int ex_put_variable_name (int   exoid,
 			  const char *var_name)
 {
   int status;
-  int varid, dimid; 
-  size_t  start[2], count[2];
+  int varid; 
   char errmsg[MAX_ERR_LENGTH];
   const char* vname;
 
   exerrval = 0; /* clear error code */
 
-  /* inquire previously defined dimensions  */
-  if ((status = nc_inq_dimid(exoid, DIM_STR, &dimid)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-            "Error: failed to get string length in file id %d",exoid);
-    ex_err("ex_put_var_name",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  /* inquire previously defined variables  */
+ /* inquire previously defined variables  */
   switch (obj_type) {
   case EX_GLOBAL:
     vname = VAR_NAME_GLO_VAR;
@@ -134,20 +124,8 @@ int ex_put_variable_name (int   exoid,
   }
 
   /* write EXODUS variable name */
-  start[0] = var_num-1;
-  start[1] = 0;
+  status = ex_put_name_internal(exoid, varid, var_num-1, var_name, obj_type,
+				"variable", "ex_put_variable_name");
 
-  count[0] = 1;
-  count[1] = strlen(var_name) + 1;
-
-  if ((status = nc_put_vara_text(exoid, varid, start, count, var_name)) != NC_NOERR) {
-    exerrval = status;
-    sprintf(errmsg,
-	    "Error: failed to store %s variable name %d in file id %d",
-	    ex_name_of_object(obj_type), var_num, exoid);
-    ex_err("ex_put_variable_name",errmsg,exerrval);
-    return (EX_FATAL);
-  }
-
-  return(EX_NOERR);
+  return(status);
 }

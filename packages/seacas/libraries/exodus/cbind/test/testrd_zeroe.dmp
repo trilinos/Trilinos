@@ -118,6 +118,7 @@ z coords =
 after ex_get_coord_names, error =   0
 x coord name = 'xcoor'
 y coord name = 'ycoor'
+z coord name = 'zcoor'
 num nodal attributes = 0
 
 after ex_get_map, error =   0

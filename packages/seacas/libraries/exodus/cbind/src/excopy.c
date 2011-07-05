@@ -41,12 +41,12 @@
 
 /*! \cond INTERNAL */
 struct ncdim {                  /* dimension */
-    char name[MAX_STR_LENGTH];
+    char name[MAX_VAR_NAME_LENGTH];
     size_t size;
 };
 
 struct ncvar {                  /* variable */
-    char name[MAX_STR_LENGTH];
+    char name[MAX_VAR_NAME_LENGTH];
     nc_type type;
     int ndims;
     int dims[NC_MAX_VAR_DIMS];
@@ -55,7 +55,7 @@ struct ncvar {                  /* variable */
 
 struct ncatt {                  /* attribute */
     int var;
-    char name[MAX_STR_LENGTH];
+    char name[MAX_VAR_NAME_LENGTH];
     nc_type type;
     size_t len;
     void *val;
@@ -101,7 +101,7 @@ int ex_copy (int in_exoid, int out_exoid)
    size_t dim_sz;
    char dim_nm[NC_MAX_NAME];
    int in_large, out_large;
-   
+
    exerrval = 0; /* clear error code */
 
    /*
@@ -120,11 +120,9 @@ int ex_copy (int in_exoid, int out_exoid)
    nc_inq_dimlen(in_exoid, recdimid, &numrec);
 
    /* put output file into define mode */
-
    nc_redef(out_exoid);
 
    /* copy global attributes */
-
    for (i = 0; i < (size_t)ngatts; i++) {
 
      nc_inq_attname(in_exoid, NC_GLOBAL, i, att.name);
@@ -185,6 +183,16 @@ int ex_copy (int in_exoid, int out_exoid)
        } /* end if */
      } /* end if */
    } /* end loop over dim */
+
+   /* DIM_STR_NAME is a newly added dimension required by current API.
+    * If it doesn't exist on the source database, we need to add it to
+    * the target...
+    */
+   status = nc_inq_dimid(in_exoid, DIM_STR_NAME, &dim_out_id);
+   if(status != NC_NOERR) {
+     /* Not found; set to default value of 32+1. */
+     status = nc_def_dim(out_exoid, DIM_STR_NAME, 33, &dim_out_id);
+   }
 
    /* copy variable definitions and variable attributes */
    for (varid = 0; varid < nvars; varid++) {
@@ -350,7 +358,7 @@ int cpy_att(int in_id,int out_id,int var_in_id,int var_out_id)
 
   /* Get the attributes names, types, lengths, and values */
   for (idx=0; idx<nbr_att; idx++) {
-    char att_nm[MAX_STR_LENGTH];
+    char att_nm[MAX_VAR_NAME_LENGTH];
 
     nc_inq_attname(in_id, var_in_id, idx, att_nm);
     nc_copy_att(in_id, var_in_id, att_nm, out_id, var_out_id);

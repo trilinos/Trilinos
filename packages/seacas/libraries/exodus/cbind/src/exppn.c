@@ -128,12 +128,17 @@ int ex_put_prop_names (int   exoid,
   int status;
   int oldfill, temp;
   int i, propid, dimid, dims[1];
+  size_t name_length, prop_name_len;
   char name[MAX_VAR_NAME_LENGTH+1];
   int vals[1];
+  int max_name_len = 0;
 
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval  = 0; /* clear error code */
+
+  /* Get the name string length */
+  name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH)+1;
 
   /* inquire id of previously defined dimension (number of objects) */
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(obj_type), &dimid)) != NC_NOERR) {
@@ -226,9 +231,21 @@ int ex_put_prop_names (int   exoid,
       goto error_ret;  /* Exit define mode and return */
     }
 
+    /*   Check that the property name length is less than MAX_NAME_LENGTH */
+    prop_name_len = strlen(prop_names[i])+1;
+    if (prop_name_len > name_length) {
+      fprintf(stderr,
+	      "Warning: The property name '%s' is too long.\n\tIt will be truncated from %d to %d characters\n",
+	      prop_names[i], (int)prop_name_len-1, (int)name_length-1);
+      prop_name_len = name_length;
+    }
+
+    if (prop_name_len > max_name_len)
+      max_name_len = prop_name_len;
+
     /*   store property name as attribute of property array variable */
     if ((status = nc_put_att_text(exoid, propid, ATT_PROP_NAME,
-				  strlen(prop_names[i])+1, prop_names[i])) != NC_NOERR) {
+				  prop_name_len, prop_names[i])) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
               "Error: failed to store property name %s in file id %d",
@@ -247,6 +264,9 @@ int ex_put_prop_names (int   exoid,
     ex_err("ex_put_prop_names",errmsg,exerrval);
     return (EX_FATAL);
   }
+
+  /* Update the maximum_name_length attribute on the file. */
+  ex_update_max_name_length(exoid, max_name_len-1);
 
   nc_set_fill(exoid, oldfill, &temp); /* default: turn off fill */
   return (EX_NOERR);

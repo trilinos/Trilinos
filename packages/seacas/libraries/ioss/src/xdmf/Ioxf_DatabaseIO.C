@@ -1720,8 +1720,7 @@ namespace Ioxf {
     // Resolve count among all side blocks on all processors...
     // NOTE: This is a collective call.
     if (isParallel && !sset_entity_count.empty()) {
-      util().global_array_minmax(&sset_entity_count[0], sset_entity_count.size(),
-				 Ioss::ParallelUtils::DO_MAX);
+      util().global_array_minmax(sset_entity_count, Ioss::ParallelUtils::DO_MAX);
     }
 
     // If count > 0 on any processor, set the id if they have an id property.

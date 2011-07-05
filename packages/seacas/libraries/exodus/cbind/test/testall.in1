@@ -212,5 +212,21 @@ echo "begin testrd-nfaced" >> test.output
 ${PREFIX} ${SRCDIR}/testrd-nfaced | grep -v version | diff - ${SRCDIR}/testrd-nfaced.dmp | tee testrd-nfaced.res
 echo "end testrd-nfaced" >> test.output
 
+echo "testwt-long-name - write file with long (64-character) names..."
+echo "begin testwt-long-name" >> test.output
+${PREFIX} ${SRCDIR}/testwt-long-name >> test.output
+echo "end testwt-long-name" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | diff - ${SRCDIR}/testwt-long-name.dmp | tee testwt-long-name.res
+
+echo "testrd - read long name file truncating to 32 characters on read..."
+echo "begin testrd (truncate)" >> test.output
+${PREFIX} ${SRCDIR}/testrd | grep -v version | diff - ${SRCDIR}/testrd-nm32.dmp | tee testrd-nm32.res
+echo "end testrd (truncate)" >> test.output
+
+echo "testrd-long-name - read long name file..."
+echo "begin testrd-long-name" >> test.output
+${PREFIX} ${SRCDIR}/testrd-long-name | grep -v version | diff - ${SRCDIR}/testrd-long-name.dmp | tee testrd-long-name.res
+echo "end testrd-long-name" >> test.output
+
 echo "************************************************************************"
 echo "************************************************************************"

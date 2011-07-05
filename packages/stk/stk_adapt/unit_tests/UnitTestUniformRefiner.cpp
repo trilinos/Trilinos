@@ -599,11 +599,13 @@ namespace stk {
                 //breaker.unrefineAll();
               }
 
+
+
             // FIXME
             eMesh.saveAs( output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
 
-            if (0 && p_size == 1)
+            if (1)
               {
                 for (int ipass=8; ipass < 16; ipass++)
                   {
@@ -614,7 +616,11 @@ namespace stk {
 
                 //eMesh.dumpElementsCompact();
 
+                // FIXME FIXME FIXME
+                breaker.deleteParentElements();
+
                 //eMesh.printInfo("local tri mesh refined", 2);
+
                 //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
                 eMesh.saveAs(output_files_loc+"local_tri_N_3_2_16_"+post_fix[p_size]+".e");
               }

@@ -861,14 +861,14 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, const double * sr
 
       // Check whether the next added element is the subsequent element in
       // the graph indices.
-      if (Index == ColIndices[Loc] && Loc < NumColIndices)
- RowValues[Loc] += srcValues[j];
+      if (Loc < NumColIndices && Index == ColIndices[Loc])
+        RowValues[Loc] += srcValues[j];
       else {
- Loc = Epetra_Util_binary_search(Index, ColIndices, NumColIndices, insertPoint);
- if (Loc > -1)
-   RowValues[Loc] += srcValues[j];
- else 
-   ierr = 2; // Value Excluded
+        Loc = Epetra_Util_binary_search(Index, ColIndices, NumColIndices, insertPoint);
+        if (Loc > -1)
+          RowValues[Loc] += srcValues[j];
+        else 
+          ierr = 2; // Value Excluded
       }
       ++Loc;
     }
@@ -877,9 +877,9 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, const double * sr
     for (j=0; j<NumEntries; j++) {
       int Index = Indices[j];
       if (Graph_.FindMyIndexLoc(Row,Index,j,Loc)) 
- RowValues[Loc] += srcValues[j];
+        RowValues[Loc] += srcValues[j];
       else 
- ierr = 2; // Value Excluded
+        ierr = 2; // Value Excluded
     }
   }
 

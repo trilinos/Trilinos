@@ -124,7 +124,7 @@ namespace Ioex {
       int    element_block_count() const     {return elementBlockCount;}
       int    sideset_count()       const     {return sidesetCount;}
       int    nodeset_count()       const     {return nodesetCount;}
-      int    maximum_symbol_length() const {return 32;}
+      int    maximum_symbol_length() const   {return maximumNameLength;}
 
       void get_block_adjacencies(const Ioss::ElementBlock *eb,
 				 std::vector<std::string> &block_adjacency) const;
@@ -291,6 +291,7 @@ namespace Ioex {
       std::string databaseTitle;
       int exodusMode;
 
+      mutable int maximumNameLength;
       int spatialDimension;
       int nodeCount;
       int elementCount;
