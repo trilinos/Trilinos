@@ -11,6 +11,9 @@
 namespace stk {
   namespace adapt {
 
+    typedef boost::tuple<unsigned, unsigned, unsigned> tri_tuple_type_local;
+    typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
+
     /// general refinement pattern
     
     // the "-1" here signifies the number of elements created is not fixed, depends on the marking pattern
@@ -89,8 +92,6 @@ namespace stk {
       // Note: code below doesn't orient the face except for a rotation - we need a polarity flip check as
       //   well for the general, 3D face case
       //
-      typedef boost::tuple<unsigned, unsigned, unsigned> tri_tuple_type_local;
-      typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
 
 #define T_VERT_N(i) (i)
 #define T_EDGE_N(i) ((i)+3)
