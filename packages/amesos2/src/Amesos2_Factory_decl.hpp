@@ -54,7 +54,7 @@
  * solver is supported.
  * 
  * \attention
- * Users should favour these factory methods for creating Amesos2 solver
+ * Users should favor these factory methods for creating Amesos2 solver
  * instances over explicitly instantiating their own.
  *
  * \note A solver's third-party library must be enabled in the

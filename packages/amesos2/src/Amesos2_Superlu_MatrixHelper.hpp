@@ -250,8 +250,8 @@ namespace Amesos {
      *         store of values in \c mv .
      *
      * \deprecated The other overloaded version of this function which
-     * asks for a persisting store for the matrix values should be
-     * favoured over this version.  This function uses the not-safe
+     * asks for a persisting store for the matrix values should be the
+     * preferred function over this version.  This function uses the not-safe
      * `get1dViewNonConst'.  In any case, we eventually have to convert
      * the values into SuperLU's types, which makes a copy of the data
      * anyhow.
