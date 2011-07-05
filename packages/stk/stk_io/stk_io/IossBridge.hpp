@@ -303,7 +303,8 @@ void initialize_spatial_dimension(mesh::fem::FEMMetaData &fem_meta, size_t spati
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);
 
 void get_io_field_type(const stk::mesh::FieldBase *field,
-                       int num_comp, std::pair<std::string, Ioss::Field::BasicType> *result);
+                       const stk::mesh::FieldRestriction &res,
+		       std::pair<std::string, Ioss::Field::BasicType> *result);
 /**
  * \}
  */

@@ -443,30 +443,32 @@ namespace stk {
       initialize_spatial_dimension(fem_meta, spatial_dimension, entity_rank_names);
     }
 
-    void get_io_field_type(const stk::mesh::FieldBase *field, int num_comp, std::pair<std::string, Ioss::Field::BasicType> *result)
+    void get_io_field_type(const stk::mesh::FieldBase *field,
+			   const stk::mesh::FieldRestriction &res,
+			   std::pair<std::string, Ioss::Field::BasicType> *result)
     {
-      const std::string invalid("invalid");
-      const std::string scalar("scalar");
-      const std::string vector_2d("vector_2d");
-      const std::string vector_3d("vector_3d");
-      const std::string quaternion_2d("quaternion_2d");
-      const std::string quaternion_3d("quaternion_3d");
-      const std::string full_tensor_36("full_tensor_36");
-      const std::string full_tensor_32("full_tensor_32");
-      const std::string full_tensor_22("full_tensor_22");
-      const std::string full_tensor_16("full_tensor_16");
-      const std::string full_tensor_12("full_tensor_12");
-      const std::string sym_tensor_33("sym_tensor_33");
-      const std::string sym_tensor_31("sym_tensor_31");
-      const std::string sym_tensor_21("sym_tensor_21");
-      const std::string sym_tensor_13("sym_tensor_13");
-      const std::string sym_tensor_11("sym_tensor_11");
-      const std::string sym_tensor_10("sym_tensor_10");
-      const std::string asym_tensor_03("asym_tensor_03");
-      const std::string asym_tensor_02("asym_tensor_02");
-      const std::string asym_tensor_01("asym_tensor_01");
-      const std::string matrix_22("matrix_22");
-      const std::string matrix_33("matrix_33");
+      static const std::string invalid("invalid");
+      static const std::string scalar("scalar");
+      static const std::string vector_2d("vector_2d");
+      static const std::string vector_3d("vector_3d");
+      static const std::string quaternion_2d("quaternion_2d");
+      static const std::string quaternion_3d("quaternion_3d");
+      static const std::string full_tensor_36("full_tensor_36");
+      static const std::string full_tensor_32("full_tensor_32");
+      static const std::string full_tensor_22("full_tensor_22");
+      static const std::string full_tensor_16("full_tensor_16");
+      static const std::string full_tensor_12("full_tensor_12");
+      static const std::string sym_tensor_33("sym_tensor_33");
+      static const std::string sym_tensor_31("sym_tensor_31");
+      static const std::string sym_tensor_21("sym_tensor_21");
+      static const std::string sym_tensor_13("sym_tensor_13");
+      static const std::string sym_tensor_11("sym_tensor_11");
+      static const std::string sym_tensor_10("sym_tensor_10");
+      static const std::string asym_tensor_03("asym_tensor_03");
+      static const std::string asym_tensor_02("asym_tensor_02");
+      static const std::string asym_tensor_01("asym_tensor_01");
+      static const std::string matrix_22("matrix_22");
+      static const std::string matrix_33("matrix_33");
 
       const unsigned rank = field->rank();
       const shards::ArrayDimTag * const * const tags = field->dimension_tags();
@@ -484,6 +486,7 @@ namespace stk {
 	result->first = scalar ;
       }
       else if ( 1 == rank ) {
+	size_t num_comp = res.stride(0);
 	if ( tags[0] == & stk::mesh::Cartesian::tag() && 1 == num_comp ) {
 	  result->first = scalar ;
 	}
@@ -517,6 +520,7 @@ namespace stk {
       }
 
       if ( result->first.empty() ) {
+	size_t num_comp = res.stride(rank-1);
 	std::ostringstream tmp ;
 	tmp << "Real[" << num_comp << "]" ;
 	result->first = tmp.str();
@@ -821,7 +825,7 @@ namespace stk {
 	if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role, add_all)) {
 	  const stk::mesh::FieldBase::Restriction &res = f->restriction(part_type, part);
 	  std::pair<std::string, Ioss::Field::BasicType> field_type;
-	  get_io_field_type(f, res.dimension(), &field_type);
+	  get_io_field_type(f, res, &field_type);
 	  if (field_type.second != Ioss::Field::INVALID) {
 	    int entity_size = entity->get_property("entity_count").get_int();
 	    const std::string& name = f->name();
