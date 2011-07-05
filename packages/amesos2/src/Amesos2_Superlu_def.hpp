@@ -186,7 +186,6 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
     // Cleanup old SuperMatrix A's Store, will be allocated again when
     // new values are retrieved.
     SLU::Destroy_SuperMatrix_Store( &(data_.A) );
-    SLU::Destroy_CompCol_Permuted( &(data_.AC) );
 
     // Cleanup old L and U matrices if we are not reusing a symbolic
     // factorization.  Stores and other data will be allocated in
