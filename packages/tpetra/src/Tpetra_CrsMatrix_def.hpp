@@ -1099,6 +1099,53 @@ namespace Tpetra {
 #endif
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::leftScale(
+    const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+  {
+    const std::string tfecfFuncName("leftScale()");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::runtime_error, ": matrix must be fill complete.");
+    RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xp = null;
+    if(getRangeMap()->isSameAs(*(x.getMap()))){
+      // If we have a non-trivial exporter, we must import elements that are 
+      // permuted or are on other processors.  (We will use the exporter to
+      // perform the import.)
+      if(getCrsGraph()->getExporter() != null){
+        RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempVec
+          = rcp(new Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(getRowMap()));
+        tempVec->doImport(x, *(getCrsGraph()->getExporter()), INSERT);
+        xp = tempVec;
+      }
+      else{
+        xp = rcpFromRef(x);
+      }
+    }
+    else if(getRowMap()->isSameAs(*(x.getMap()))){
+      xp = rcpFromRef(x);
+    }
+    else{
+      TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, ": The vector x must be the same as either the row map or the range map");
+    }
+    ArrayRCP<const Scalar> vectorVals = xp->getData(0);
+    ArrayView<Scalar> rowValues = null;
+    for(LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero(); Teuchos::as<size_t>(i) < getNodeNumRows(); ++i){
+      const RowInfo rowinfo = staticGraph_->getRowInfo(i);
+      rowValues = getViewNonConst(rowinfo);
+      Scalar scale = vectorVals[i];
+      for(LocalOrdinal j=OrdinalTraits<LocalOrdinal>::zero(); Teuchos::as<size_t>(j)<rowinfo.numEntries; ++j){
+        rowValues[j] *= scale;
+      }
+      rowValues = null;
+    }
+  }
+  
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::rightScale(
+    const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+  {
+
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////

@@ -480,6 +480,12 @@ namespace Tpetra {
           the zero and non-zero diagonals owned by this node. */
       void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
 
+      /** \brief . */
+      void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+
+      /** \brief . */
+      void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+
       //@}
 
       //! @name Advanced templated methods
