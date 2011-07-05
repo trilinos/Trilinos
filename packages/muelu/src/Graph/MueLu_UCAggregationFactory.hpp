@@ -1004,8 +1004,6 @@ typedef LO my_size_t; //TODO
         int thresholds[10] = {300,200,100,50,25,13,7,4,2,0};
 
         // Stick unaggregated vertices into existing aggregates as described above. 
-        bool cannotLoseAllFriends; // Used to address possible loss of vertices in 
-        // arbitration of shared nodes discussed above.
         for (int kk = 0; kk < 10; kk += 2) {
           bestScoreCutoff = thresholds[kk];
           for (int i = 0; i < exp_nRows; i++) {
@@ -1044,8 +1042,10 @@ typedef LO my_size_t; //TODO
                 }
               }
               int best_score = MUELU_NOSCORE;
-              int best_agg; // TODO: init ?
-              int BestMark;
+              int best_agg = -1;
+              int BestMark = -1;
+              bool cannotLoseAllFriends=false; // Used to address possible loss of vertices in arbitration of shared nodes discussed above. (Initialized to false only to avoid a compiler warning).
+
               for (typename ArrayView<const LO>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                 int Adjacent    = *it;
                 int AdjacentAgg = vertex2AggId[Adjacent];
@@ -1097,6 +1097,9 @@ typedef LO my_size_t; //TODO
               }
               // Tentatively assign vertex to best_agg. 
               if ( (best_score >= bestScoreCutoff) && (cannotLoseAllFriends)) { 
+
+                TEST_FOR_EXCEPTION(best_agg == -1 || BestMark == -1, MueLu::Exceptions::RuntimeError, "MueLu::UCAggregationFactory internal error"); // should never happen
+
                 vertex2AggId[i] = best_agg;
                 weights[i] = best_score;
                 agg_incremented[best_agg]++;
