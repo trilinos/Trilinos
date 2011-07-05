@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Teuchos::Comm<int> > comm = platform.getComm();
   RCP<Node>                      node = platform.getNode();
-  const int myRank = comm->getRank();
+  //   const int myRank = comm->getRank();
 
   int numGlobalElements = 100;
   Teuchos::CommandLineProcessor cmdp(false,true);
