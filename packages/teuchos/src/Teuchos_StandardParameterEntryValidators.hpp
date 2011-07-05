@@ -1047,7 +1047,7 @@ public:
   static inline double min() { return -std::numeric_limits<double>::max(); }
   static inline double max() { return std::numeric_limits<double>::max(); }
   static inline double defaultStep() { return 1; }
-  static inline unsigned short defaultPrecision() { return 2; }
+  static inline unsigned short defaultPrecision() { return 100; }
 };
 
 
@@ -1057,7 +1057,7 @@ public:
   static inline float min() { return -std::numeric_limits<float>::max(); }
   static inline float max() { return std::numeric_limits<float>::max(); }
   static inline float defaultStep() { return 1; }
-  static inline unsigned short defaultPrecision() { return 2; }
+  static inline unsigned short defaultPrecision() { return 100; }
 };
 
  
