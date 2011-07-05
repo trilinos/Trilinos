@@ -105,7 +105,7 @@ void ex_update_max_name_length(int exoid, int length)
 {
   int status;
   int db_length;
-  // Get current value of the maximum_name_length attribute...
+  /* Get current value of the maximum_name_length attribute... */
   if ((status = nc_get_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &db_length)) != NC_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     exerrval = status;
@@ -116,7 +116,7 @@ void ex_update_max_name_length(int exoid, int length)
   }
 
   if (length > db_length) {
-    // Update with new value...
+    /* Update with new value... */
     nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &length);
   }
 }
