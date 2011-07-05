@@ -918,7 +918,7 @@ void SerialSymDenseMatrix<OrdinalType, ScalarType>::scale( const ScalarType alph
   }
   else {
     for (j=0; j<numRowCols_; j++) {
-      ptr = values_ + j*stride_;
+      ptr = values_ + j*stride_ + j;
       for (i=j; i<numRowCols_; i++) { *ptr = alpha * (*ptr); ptr++; }
     }
   }

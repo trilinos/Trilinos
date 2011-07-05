@@ -252,9 +252,10 @@ int main(int argc, char* argv[])
   SDMatrix ScalTest( 8 );
   ScalTest = Teuchos::ScalarTraits<STYPE>::one();
   //  Scale the entries by 8, it should be 8.
+  //  The matrix is lower triangular, by default, so check a lower triangular entry.
   if (verbose) std::cout << "operator*= -- scale matrix by some number ";
   ScalTest *= 8.0;
-  if (ScalTest(2, 3) == 8.0) {
+  if (ScalTest(7, 1) == 8.0) {
 	if (verbose) std::cout<< "successful." <<std::endl;
   } else {
 	if (verbose) std::cout<< "unsuccessful." <<std::endl;
