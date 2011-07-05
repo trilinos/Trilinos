@@ -392,7 +392,7 @@ namespace MueLu {
         for (LO j=0; j<cols.size(); ++j) {
           //TODO this will break down if diagonal entry is not present
           //if (!(cols[j] > i))   //JG says this will work ... maybe
-          if (cols[j] == i) {
+          if (Teuchos::as<size_t>(cols[j]) == i) {
             diag[i] = vals[j];
             break;
           }
@@ -486,7 +486,7 @@ namespace MueLu {
 
       for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
         tpOp->getLocalRowView(i,cols,vals);
-        LO nnz = tpOp->getNumEntriesInLocalRow(i);
+        size_t nnz = tpOp->getNumEntriesInLocalRow(i);
         for (size_t j=0; j<nnz; j++) {
           scaledVals[j] = vals[j]*sv[i];
         }
