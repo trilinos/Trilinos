@@ -1944,14 +1944,17 @@ namespace {
 
     RCP<MAT> diffMat1 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
     RCP<MAT> diffMat2 = createCrsMatrix<Scalar, LO, GO, Node>(map,3);
-    Tpetra::MatrixMatrix::Add(*matrix, false, -1.0, *answerMatrix, false, 1.0, diffMat1);
+    Scalar sOne = ScalarTraits<Scalar>::one();
+    Tpetra::MatrixMatrix::Add(*matrix, false, -sOne, *answerMatrix, false, sOne, diffMat1);
     diffMat1->fillComplete();
-    Tpetra::MatrixMatrix::Add(*matrix2, false, -1.0, *answerMatrix, false, 1.0, diffMat2);
+    Tpetra::MatrixMatrix::Add(*matrix2, false, -sOne, *answerMatrix, false, sOne, diffMat2);
     diffMat2->fillComplete();
     Scalar epsilon1 = getNorm(diffMat1)/getNorm(answerMatrix);
-    TEST_COMPARE(epsilon1, <, 1e-10)
     Scalar epsilon2 = getNorm(diffMat2)/getNorm(answerMatrix);
-    TEST_COMPARE(epsilon2, <, 1e-10)
+    TEST_COMPARE(ScalarTraits<Scalar>::real(epsilon1), <, 1e-10)
+    TEST_COMPARE(ScalarTraits<Scalar>::imag(epsilon1), <, 1e-10)
+    TEST_COMPARE(ScalarTraits<Scalar>::real(epsilon2), <, 1e-10)
+    TEST_COMPARE(ScalarTraits<Scalar>::imag(epsilon2), <, 1e-10)
   }
 
 
