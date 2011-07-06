@@ -335,6 +335,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
        //Teuchos::Array<Magnitude> norms(1);
        //Teuchos::OSTab tab(*out_);
+       bool zeroGuess=InitialGuessIsZero;
 
        for (LO i=0; i<nIts; i++) {
 
@@ -376,8 +377,9 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
          } else {
            //on an intermediate level
            RCP<Level> Coarse = Levels_[startLevel+1];
-           if (preSmoo != Teuchos::null)
-             preSmoo->Apply(X, B, false);
+           if (preSmoo != Teuchos::null) {
+             preSmoo->Apply(X, B, zeroGuess);
+           }
 
            RCP<MultiVector> residual = Utils::Residual(*(Fine->GetA()),X,B);
 
@@ -410,7 +412,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
              postSmoo->Apply(X, B, false);
            }
          }
-
+         zeroGuess=false;
        } //for (LO i=0; i<nIts; i++)
 
      } //Iterate()
