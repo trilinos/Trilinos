@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010 - 2011 Sandia Corporation.              */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -328,20 +328,21 @@ private:
   TimerImpl *addSubtimer(const std::string &name, TimerMask timer_mask, const TimerSet &timer_set);
 
 private:
-  std::string      m_name;      ///< Name of the timer
-  TimerMask      m_timerMask;    ///< Bit mask to enable timer
-  TimerImpl *      m_parentTimer;    ///< Parent timer
-  mutable double    m_subtimerLapCount;  ///< Sum of subtimer lap counts and m_lapCount
-  unsigned      m_lapStartCount;  ///< Number of pending lap stops
+  std::string           m_name;                 ///< Name of the timer
+  TimerMask             m_timerMask;            ///< Bit mask to enable timer
+  TimerImpl *           m_parentTimer;          ///< Parent timer
+  mutable double        m_subtimerLapCount;     ///< Sum of subtimer lap counts and m_lapCount
+  unsigned              m_lapStartCount;        ///< Number of pending lap stops
 
-  TimerList      m_subtimerList;    ///< List of subordinate timers
+  TimerList             m_subtimerList;         ///< List of subordinate timers
 
-  const TimerSet &              m_timerSet;             ///< Timer enabled mask
-  Timer::Metric<LapCount>       m_lapCount;    ///< Number of laps accumulated
-  Timer::Metric<CPUTime>        m_cpuTime;    ///< CPU time
-  Timer::Metric<WallTime>       m_wallTime;    ///< Wall time
-  Timer::Metric<MPICount>       m_MPICount;    ///< MPI call count
-  Timer::Metric<MPIByteCount>   m_MPIByteCount;    ///< MPI byte count
+  const TimerSet &              m_timerSet;     ///< Timer enabled mask
+  Timer::Metric<LapCount>       m_lapCount;     ///< Number of laps accumulated
+  Timer::Metric<CPUTime>        m_cpuTime;      ///< CPU time
+  Timer::Metric<WallTime>       m_wallTime;     ///< Wall time
+  Timer::Metric<MPICount>       m_MPICount;     ///< MPI call count
+  Timer::Metric<MPIByteCount>   m_MPIByteCount; ///< MPI byte count
+  Timer::Metric<HeapAlloc>      m_heapAlloc;    ///< Heap allocated
 };
 
 
@@ -453,6 +454,13 @@ TimerImpl::getMetric<MPIByteCount>() const {
 }
 
 
+template<>
+const Timer::Metric<HeapAlloc> &
+TimerImpl::getMetric<HeapAlloc>() const {
+  return m_heapAlloc;
+}
+
+
 void
 TimerImpl::reset()
 {
@@ -463,6 +471,7 @@ TimerImpl::reset()
   m_wallTime.reset();
   m_MPICount.reset();
   m_MPIByteCount.reset();
+  m_heapAlloc.reset();
 }
 
 
@@ -508,6 +517,7 @@ TimerImpl::start()
       m_wallTime.m_lapStop = m_wallTime.m_lapStart = value_now<WallTime>();
       m_MPICount.m_lapStop = m_MPICount.m_lapStart = value_now<MPICount>();
       m_MPIByteCount.m_lapStop = m_MPIByteCount.m_lapStart = value_now<MPIByteCount>();
+      m_heapAlloc.m_lapStop = m_heapAlloc.m_lapStart = value_now<HeapAlloc>();
     }
   }
 
@@ -524,6 +534,7 @@ TimerImpl::lap()
       m_wallTime.m_lapStop = value_now<WallTime>();
       m_MPICount.m_lapStop = value_now<MPICount>();
       m_MPIByteCount.m_lapStop = value_now<MPIByteCount>();
+      m_heapAlloc.m_lapStop = value_now<HeapAlloc>();
     }
   }
 
@@ -543,12 +554,14 @@ TimerImpl::stop()
       m_wallTime.m_lapStop = value_now<WallTime>();
       m_MPICount.m_lapStop = value_now<MPICount>();
       m_MPIByteCount.m_lapStop = value_now<MPIByteCount>();
+      m_heapAlloc.m_lapStop = value_now<HeapAlloc>();
 
       m_lapCount.addLap();
       m_cpuTime.addLap();
       m_wallTime.addLap();
       m_MPICount.addLap();
       m_MPIByteCount.addLap();
+      m_heapAlloc.addLap();
     }
   }
 
@@ -579,6 +592,7 @@ TimerImpl::checkpoint() const
   m_wallTime.checkpoint();
   m_MPICount.checkpoint();
   m_MPIByteCount.checkpoint();
+  m_heapAlloc.checkpoint();
 
   for (TimerList::const_iterator it = m_subtimerList.begin(); it != m_subtimerList.end(); ++it)
     (*it).m_timerImpl->checkpoint();
@@ -593,12 +607,14 @@ TimerImpl::updateRootTimer(TimerImpl *root_timer)
   root_timer->m_wallTime.m_lapStop = value_now<WallTime>();
   root_timer->m_MPICount.m_lapStop = value_now<MPICount>();
   root_timer->m_MPIByteCount.m_lapStop = value_now<MPIByteCount>();
+  root_timer->m_heapAlloc.m_lapStop = value_now<HeapAlloc>();
 
   root_timer->m_lapCount.m_accumulatedLap = root_timer->m_lapCount.m_lapStop - root_timer->m_lapCount.m_lapStart;
   root_timer->m_cpuTime.m_accumulatedLap = root_timer->m_cpuTime.m_lapStop - root_timer->m_cpuTime.m_lapStart;
   root_timer->m_wallTime.m_accumulatedLap = root_timer->m_wallTime.m_lapStop - root_timer->m_wallTime.m_lapStart;
   root_timer->m_MPICount.m_accumulatedLap = root_timer->m_MPICount.m_lapStop - root_timer->m_MPICount.m_lapStart;
   root_timer->m_MPIByteCount.m_accumulatedLap = root_timer->m_MPIByteCount.m_lapStop - root_timer->m_MPIByteCount.m_lapStart;
+  root_timer->m_heapAlloc.m_accumulatedLap = root_timer->m_heapAlloc.m_lapStop - root_timer->m_heapAlloc.m_lapStart;
 }
 
 
@@ -668,6 +684,7 @@ TimerImpl::dump(
     dout << "m_wallTime, " << m_wallTime << dendl;
     dout << "m_MPICount, " << m_MPICount << dendl;
     dout << "m_MPIByteCount, " << m_MPIByteCount << dendl;
+    dout << "m_heapAlloc, " << m_heapAlloc << dendl;
 
     dout << "m_subtimerList, " << m_subtimerList << dendl;
     dout << pop;
@@ -730,6 +747,7 @@ template const Timer::Metric<CPUTime> &Timer::getMetric<CPUTime>() const;
 template const Timer::Metric<WallTime> &Timer::getMetric<WallTime>() const;
 template const Timer::Metric<MPICount> &Timer::getMetric<MPICount>() const;
 template const Timer::Metric<MPIByteCount> &Timer::getMetric<MPIByteCount>() const;
+template const Timer::Metric<HeapAlloc> &Timer::getMetric<HeapAlloc>() const;
 
 
 bool
@@ -816,6 +834,7 @@ template Writer &Timer::Metric<CPUTime>::dump(Writer &) const;
 template Writer &Timer::Metric<WallTime>::dump(Writer &) const;
 template Writer &Timer::Metric<MPICount>::dump(Writer &) const;
 template Writer &Timer::Metric<MPIByteCount>::dump(Writer &) const;
+template Writer &Timer::Metric<HeapAlloc>::dump(Writer &) const;
 
 
 TimeBlockSynchronized::TimeBlockSynchronized(

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -41,6 +41,7 @@ enum Metrics {
   METRICS_WALL_TIME      = 0x0004,              ///< Wall clock time
   METRICS_MPI_COUNT      = 0x0008,              ///< MPI class count
   METRICS_MPI_BYTE_COUNT = 0x0010,              ///< MPI byte count
+  METRICS_HEAP_ALLOC     = 0x0020,              ///< Heap allocation
   METRICS_ALL            = 0x7FFF,
 
   METRICS_FORCE          = 0x8000               ///< Force metrics to be acquired
@@ -52,6 +53,7 @@ struct CPUTime {};                              ///< CPU runtime metric tag
 struct WallTime {};                             ///< Wall clock metric tag
 struct MPICount {};                             ///< MPI call count metric tag
 struct MPIByteCount {};                         ///< MPI byte count metric tag
+struct HeapAlloc {};                            ///< Heap allocation metric tag
 
 template <class T>
 struct MetricTraits;
@@ -106,6 +108,16 @@ struct MetricTraits<MPIByteCount>
   static std::string format(Type count);
 };
 
+
+template<>
+struct MetricTraits<HeapAlloc>
+{
+  typedef double Type;
+  enum {METRIC = METRICS_HEAP_ALLOC};
+  static Type value_now();
+  static std::string table_header();
+  static std::string format(Type count);
+};
 
 template <class T>
 typename MetricTraits<T>::Type now() {

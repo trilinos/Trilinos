@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010 - 2011 Sandia Corporation.              */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -161,6 +161,7 @@ struct ParallelTimer
       m_wallTime(),
       m_MPICount(),
       m_MPIByteCount(),
+      m_heapAlloc(),
       m_subtimerList()
   {}
 
@@ -173,6 +174,7 @@ struct ParallelTimer
       m_wallTime(parallel_timer.m_wallTime),
       m_MPICount(parallel_timer.m_MPICount),
       m_MPIByteCount(parallel_timer.m_MPIByteCount),
+      m_heapAlloc(parallel_timer.m_heapAlloc),
       m_subtimerList(parallel_timer.m_subtimerList)
   {}
 
@@ -184,7 +186,7 @@ struct ParallelTimer
     m_cpuTime = parallel_timer.m_cpuTime;
     m_wallTime = parallel_timer.m_wallTime;
     m_MPICount = parallel_timer.m_MPICount;
-    m_MPIByteCount = parallel_timer.m_MPIByteCount;
+    m_heapAlloc = parallel_timer.m_heapAlloc;
     m_subtimerList = parallel_timer.m_subtimerList;
 
     return *this;
@@ -193,15 +195,16 @@ struct ParallelTimer
   template <class T>
   const Metric<T> &getMetric() const;
 
-  std::string      m_name;      ///< Name of the timer
+  std::string                   m_name;                 ///< Name of the timer
   TimerMask                     m_timerMask;
-  double            m_subtimerLapCount;  ///< Sum of subtimer lap counts and m_lapCount
+  double                        m_subtimerLapCount;     ///< Sum of subtimer lap counts and m_lapCount
 
-  Metric<LapCount>              m_lapCount;    ///< Number of laps accumulated
-  Metric<CPUTime>               m_cpuTime;    ///< CPU time
-  Metric<WallTime>              m_wallTime;    ///< Wall time
-  Metric<MPICount>              m_MPICount;    ///< MPI call count
-  Metric<MPIByteCount>          m_MPIByteCount;    ///< MPI byte count
+  Metric<LapCount>              m_lapCount;             ///< Number of laps accumulated
+  Metric<CPUTime>               m_cpuTime;              ///< CPU time
+  Metric<WallTime>              m_wallTime;             ///< Wall time
+  Metric<MPICount>              m_MPICount;             ///< MPI call count
+  Metric<MPIByteCount>          m_MPIByteCount;	        ///< MPI byte count
+  Metric<HeapAlloc>             m_heapAlloc;            ///< MPI byte count
 
   std::list<ParallelTimer>      m_subtimerList;         ///< Sub timers
 
@@ -243,6 +246,13 @@ ParallelTimer::getMetric<MPIByteCount>() const {
 }
 
 
+template<>
+const ParallelTimer::Metric<HeapAlloc> &
+ParallelTimer::getMetric<HeapAlloc>() const {
+  return m_heapAlloc;
+}
+
+
 template <typename T>
 Writer &operator<<(Writer &dout, const ParallelTimer::Metric<T> &t) {
   return t.dump(dout);
@@ -264,6 +274,7 @@ ParallelTimer::dump(Writer &dout) const {
     dout << "m_wallTime " << m_wallTime << dendl;
     dout << "m_MPICount " << m_MPICount << dendl;
     dout << "m_MPIByteCount " << m_MPIByteCount << dendl;
+    dout << "m_heapAlloc " << m_heapAlloc << dendl;
     dout << "m_subtimerList " << m_subtimerList << dendl;
     dout << pop;
   }
@@ -306,6 +317,7 @@ merge_parallel_timer(
   p0.m_wallTime.accumulate(p1.m_wallTime, checkpoint);
   p0.m_MPICount.accumulate(p1.m_MPICount, checkpoint);
   p0.m_MPIByteCount.accumulate(p1.m_MPIByteCount, checkpoint);
+  p0.m_heapAlloc.accumulate(p1.m_heapAlloc, checkpoint);
 
 
   for (std::list<ParallelTimer>::const_iterator p1_it = p1.m_subtimerList.begin(); p1_it != p1.m_subtimerList.end(); ++p1_it) {
@@ -422,6 +434,9 @@ printSubtable(
         if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<MPIByteCount>::METRIC)
           table << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<MPIByteCount>::format(timer.getMetric<MPIByteCount>().getAccumulatedLap(timer_checkpoint))
                 << " " << std::setw(8) << Percent(timer.getMetric<MPIByteCount>().getAccumulatedLap(timer_checkpoint), root_timer.getMetric<MPIByteCount>().getAccumulatedLap(timer_checkpoint)) << end_col;
+        if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
+          table << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().getAccumulatedLap(timer_checkpoint))
+                << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().getAccumulatedLap(timer_checkpoint), root_timer.getMetric<HeapAlloc>().getAccumulatedLap(timer_checkpoint)) << end_col;
       }
       else
         table << justify(PrintTable::Cell::LEFT) << indent(depth) << span << timer.getName() << end_col;
@@ -480,6 +495,13 @@ printSubtable(
               << " " << std::setw(8) << Percent(timer.getMetric<MPIByteCount>().m_min, root_timer.getMetric<MPIByteCount>().m_sum) << end_col
               << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<MPIByteCount>::format(timer.getMetric<MPIByteCount>().m_max)
               << " " << std::setw(8) << Percent(timer.getMetric<MPIByteCount>().m_max, root_timer.getMetric<MPIByteCount>().m_sum) << end_col;
+      if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
+        table << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().m_sum)
+              << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().m_sum, root_timer.getMetric<HeapAlloc>().m_sum) << end_col
+              << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().m_min)
+              << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().m_min, root_timer.getMetric<HeapAlloc>().m_sum) << end_col
+              << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().m_max)
+              << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().m_max, root_timer.getMetric<HeapAlloc>().m_sum) << end_col;
     }
     else 
       table << justify(PrintTable::Cell::LEFT) << indent(depth) << span << timer.m_name << end_col;
@@ -521,6 +543,8 @@ printTable(
       table << justify(PrintTable::Cell::CENTER) << MetricTraits<MPICount>::table_header() << end_col;
     if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<MPIByteCount>::METRIC)
       table << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col;
+    if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
+      table << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col;
 
     table << end_header;
 
@@ -574,6 +598,10 @@ printTable(
         table << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col
               << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col
               << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col;
+      if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
+        table << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col
+              << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col
+              << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col;
 
       table << end_header;
       table << cell_width(name_width) << justify(PrintTable::Cell::CENTER) << "Timer" << (timer_checkpoint ? " (delta time)" : "") << end_col
@@ -592,6 +620,10 @@ printTable(
               << justify(PrintTable::Cell::CENTER) << "Min (% of System)" << end_col
               << justify(PrintTable::Cell::CENTER) << "Max (% of System)" << end_col;
       if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<MPIByteCount>::METRIC)
+        table << justify(PrintTable::Cell::CENTER) << "Sum (% of System)" << end_col
+              << justify(PrintTable::Cell::CENTER) << "Min (% of System)" << end_col
+              << justify(PrintTable::Cell::CENTER) << "Max (% of System)" << end_col;
+      if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
         table << justify(PrintTable::Cell::CENTER) << "Sum (% of System)" << end_col
               << justify(PrintTable::Cell::CENTER) << "Min (% of System)" << end_col
               << justify(PrintTable::Cell::CENTER) << "Max (% of System)" << end_col;
@@ -658,7 +690,7 @@ Marshal &operator<<(Marshal &mout, const diag::Timer::Metric<T> &t) {
 Marshal &operator<<(Marshal &mout, const diag::Timer &t) {
   mout << t.getName() << t.getTimerMask() << t.getSubtimerLapCount()
        << t.getMetric<diag::LapCount>() << t.getMetric<diag::CPUTime>() << t.getMetric<diag::WallTime>()
-       << t.getMetric<diag::MPICount>() << t.getMetric<diag::MPIByteCount>();
+       << t.getMetric<diag::MPICount>() << t.getMetric<diag::MPIByteCount>() << t.getMetric<diag::HeapAlloc>();
 
   mout << t.getTimerList();
 
@@ -676,7 +708,9 @@ Marshal &operator>>(Marshal &min, diag::ParallelTimer &t) {
       >> t.m_MPICount.m_value
       >> t.m_MPICount.m_checkpoint
       >> t.m_MPIByteCount.m_value
-      >> t.m_MPIByteCount.m_checkpoint;
+      >> t.m_MPIByteCount.m_checkpoint
+      >> t.m_heapAlloc.m_value
+      >> t.m_heapAlloc.m_checkpoint;
 
   min >> t.m_subtimerList;
 
