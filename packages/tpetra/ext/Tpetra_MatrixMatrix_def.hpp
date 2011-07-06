@@ -100,10 +100,39 @@ void Multiply(
   //We're going to refer to the different combinations of op(A) and op(B)
   //as scenario 1 through 4.
 
-  int scenario = 1;//A*B
-  if (transposeB && !transposeA) scenario = 2;//A*B^T
-  if (transposeA && !transposeB) scenario = 3;//A^T*B
-  if (transposeA && transposeB)  scenario = 4;//A^T*B^T
+  //int scenario = 1;//A*B
+  RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > Aprime = null;
+  RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > Bprime = null;
+  if(transposeA){
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  at(A);
+    RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > trans = at.createTranspose();
+    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > temp = 
+      rcp( new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(A.getDomainMap(), 0));
+    Import<LocalOrdinal,GlobalOrdinal,Node> importer(trans->getRowMap(), A.getDomainMap());
+    temp->doImport(*trans, importer, INSERT);
+    temp->fillComplete(A.getRangeMap(), A.getDomainMap());
+    Aprime = temp;
+  }
+  else{
+    Aprime = rcpFromRef(A);
+  }
+  if(transposeB){
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  bt(B);
+    RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > trans = bt.createTranspose();
+    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > temp = 
+      rcp( new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(B.getDomainMap(), 0));
+    Import<LocalOrdinal,GlobalOrdinal,Node> importer(trans->getRowMap(), B.getDomainMap());
+    temp->doImport(*(trans), importer, INSERT);
+    temp->fillComplete(B.getRangeMap(), B.getDomainMap());
+    Bprime=temp;
+  }
+  else{
+    Bprime = rcpFromRef(B);
+  }
+    
+  //if (transposeB && !transposeA) scenario = 2;//A*B^T
+  //if (transposeA && !transposeB) scenario = 3;//A^T*B
+  //if (transposeA && transposeB)  scenario = 4;//A^T*B^T
 
   //now check size compatibility
   global_size_t numACols = A.getDomainMap()->getGlobalNumElements();
@@ -146,46 +175,46 @@ void Multiply(
   //const Epetra_Map* targetMap_A = rowmap_A;
   //const Epetra_Map* targetMap_B = rowmap_B;
 
-  RCP<const Map_t > targetMap_A = A.getRowMap();
-  RCP<const Map_t > targetMap_B = B.getRowMap();
+  RCP<const Map_t > targetMap_A = Aprime->getRowMap();
+  RCP<const Map_t > targetMap_B = Bprime->getRowMap();
 
   if (numProcs > 1) {
     //If op(A) = A^T, find all rows of A that contain column-indices in the
     //local portion of the domain-map. (We'll import any remote rows
     //that fit this criteria onto the local processor.)
-    if (transposeA) {
+    /*if (transposeA) {
       targetMap_A = MMdetails::find_rows_containing_cols(A, A.getDomainMap());
-    }
+    }*/
   }
   //Now import any needed remote rows and populate the Aview struct.
-  MMdetails::import_and_extract_views(A, targetMap_A, Aview);
+  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview);
  
 
   //We will also need local access to all rows of B that correspond to the
   //column-map of op(A).
   if (numProcs > 1) {
-    RCP<const Map_t > colmap_op_A = null;
-    if (transposeA) {
+    //RCP<const Map_t > colmap_op_A = null;
+    /*if (transposeA) {
       colmap_op_A = targetMap_A;
     }
-    else {
-      colmap_op_A = A.getColMap(); 
-    }
+    else {*/
+     // colmap_op_A = A.getColMap(); 
+    //}
 
-    targetMap_B = colmap_op_A;
+    targetMap_B = Aprime->getColMap(); //colmap_op_A;
 
     //If op(B) = B^T, find all rows of B that contain column-indices in the
     //local-portion of the domain-map, or in the column-map of op(A).
     //We'll import any remote rows that fit this criteria onto the
     //local processor.
-    if (transposeB) {
+/*    if (transposeB) {
       RCP<const Map_t > mapunion1 = MMdetails::form_map_union(colmap_op_A, B.getDomainMap());
       targetMap_B = MMdetails::find_rows_containing_cols(B, mapunion1);
-    }
+    }*/
   }
 
   //Now import any needed remote rows and populate the Bview struct.
-  MMdetails::import_and_extract_views(B, targetMap_B, Bview);
+  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview);
 
 
   //If the result matrix C is not already FillComplete'd, we will do a
@@ -195,16 +224,16 @@ void Multiply(
 
     //pass the graph-builder object to the multiplication kernel to fill in all
     //the nonzero positions that will be used in the result matrix.
-    switch(scenario) {
-    case 1:    MMdetails::mult_A_B(Aview, Bview, crsgraphbuilder);
-      break;
+    //switch(scenario) {
+    /*case 1:*/    MMdetails::mult_A_B(Aview, Bview, crsgraphbuilder);
+      /*break;
     case 2:    MMdetails::mult_A_Btrans(Aview, Bview, crsgraphbuilder);
       break;
     case 3:    MMdetails::mult_Atrans_B(Aview, Bview, crsgraphbuilder);
       break;
     case 4:    MMdetails::mult_Atrans_Btrans(Aview, Bview, crsgraphbuilder);
       break;
-    }
+    }*/
 
     //now insert all of the nonzero positions into the result matrix.
     insert_matrix_locations(crsgraphbuilder, C);
@@ -228,16 +257,16 @@ void Multiply(
 
   CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
 
-  switch(scenario) {
-  case 1:    MMdetails::mult_A_B(Aview, Bview, crsmat);
-    break;
+  /*switch(scenario) {
+  case 1:*/    MMdetails::mult_A_B(Aview, Bview, crsmat);
+    /*break;
   case 2:    MMdetails::mult_A_Btrans(Aview, Bview, crsmat);
     break;
   case 3:    MMdetails::mult_Atrans_B(Aview, Bview, crsmat);
     break;
   case 4:    MMdetails::mult_Atrans_Btrans(Aview, Bview, crsmat);
     break;
-  }
+  }*/
 
   if (call_FillComplete_on_result) {
     //We'll call FillComplete on the C matrix before we exit, and give
@@ -247,10 +276,10 @@ void Multiply(
     //The range-map will be the range-map of A, unless
     //op(A)==transpose(A), in which case the domain-map of A will be used.
     if (!C.isFillComplete()) {
-      RCP<const Map_t > domainmap = transposeB ? B.getRangeMap() : B.getDomainMap();
+      /*RCP<const Map_t > domainmap = transposeB ? B.getRangeMap() : B.getDomainMap();
 
-      RCP<const Map_t > rangemap = transposeA ? A.getDomainMap() : A.getRangeMap();
-      C.fillComplete(domainmap, rangemap);
+      RCP<const Map_t > rangemap = transposeA ? A.getDomainMap() : A.getRangeMap();*/
+      C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
     }
   }
 
