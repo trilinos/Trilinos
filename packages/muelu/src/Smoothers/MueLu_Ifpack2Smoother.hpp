@@ -149,21 +149,22 @@ class Level;
 
         This creates the underlying Ifpack2 smoother object, copies any parameter list options
         supplied to the constructor to the Ifpack2 object, and computes the preconditioner.
+
+        TODO The eigenvalue estimate should come from A_, not the Ifpack2 parameter list.
     */
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
       A_ = level.GetA();
 
-      //      Ifpack2::Factory factory;
-      RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A_);
+      // output information
       std::ostringstream buf; buf << level.GetLevelID();
       std::string prefix = "Smoother (level " + buf.str() + ") : ";
       LO rootRank = out_->getOutputToRootOnly();
       out_->setOutputToRootOnly(0);
       *out_ << prefix << "# global rows = " << A_->getGlobalNumRows()
             << ", estim. global nnz = " << A_->getGlobalNumEntries() << std::endl;
-      *out_ << prefix << "Ifpack2 " << ifpack2Type_ << std::endl;
-      out_->setOutputToRootOnly(rootRank);
+
+      RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils::Op2NonConstTpetraCrs(A_);
       prec_ = Ifpack2::Factory::create(ifpack2Type_, tpA, overlap_);
       if (ifpack2Type_ == "CHEBYSHEV") {
         Scalar maxEigenValue = list_.get("chebyshev: max eigenvalue",(Scalar)-1.0);
@@ -174,7 +175,11 @@ class Level;
           list_.set("chebyshev: max eigenvalue",maxEigenValue);
           Utils::ScaleMatrix(A_,diag,false); //undo scaling
         }
+        *out_ << prefix << "Ifpack2 Chebyshev, degree " << list_.get("chebyshev degree",1) << std::endl;
+        *out_ << prefix << "lambda_min=" << list_.get("chebyshev: min eigenvalue",-1.0)
+              << ", lambda_max=" << list_.get("chebyshev: max eigenvalue",-1.0) << std::endl;
       }
+      out_->setOutputToRootOnly(rootRank);
       prec_->setParameters(list_);
       prec_->initialize();
       prec_->compute();
@@ -195,7 +200,15 @@ class Level;
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));
       Teuchos::ParameterList  ifpack2List;
-      ifpack2List.set("relaxation: zero starting solution", InitialGuessIsZero);
+      if (ifpack2Type_ == "CHEBYSHEV") {
+        ifpack2List.set("chebyshev: zero starting solution", InitialGuessIsZero);
+      }
+      else if (ifpack2Type_ == "RELAXATION") {
+        ifpack2List.set("relaxation: zero starting solution", InitialGuessIsZero);
+      }
+      else {
+        throw(Exceptions::RuntimeError("don't know this Ifpack2 type"));
+      }
       prec_->setParameters(ifpack2List);
 
       Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
