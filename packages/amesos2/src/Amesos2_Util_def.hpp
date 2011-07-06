@@ -54,6 +54,7 @@
 
 #include "Amesos2_config.h"
 
+#include <Teuchos_as.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 
@@ -73,12 +74,13 @@ namespace Amesos {
     Teuchos::RCP<Tpetra::Map<LO,GO,Node> >
     epetra_map_to_tpetra_map(const Epetra_BlockMap& map)
     {
+      using Teuchos::as;
+      using Teuchos::rcp;
+
       int num_my_elements = map.NumMyElements();
       Teuchos::Array<int> my_global_elements(num_my_elements);
       map.MyGlobalElements(my_global_elements.getRawPtr());
 
-      using Teuchos::as;
-      using Teuchos::rcp;
       typedef Tpetra::Map<LO,GO,Node> map_t;
       RCP<map_t> tmap = rcp(new map_t(Teuchos::OrdinalTraits<GS>::invalid(),
 				      my_global_elements(),
@@ -92,6 +94,7 @@ namespace Amesos {
     tpetra_map_to_epetra_map(const Tpetra::Map<LO,GO,Node>& map)
     {
       using Teuchos::as;
+      
       Teuchos::Array<GO> elements_tmp;
       elements_tmp = map.getNodeElementList();
       int num_my_elements = elements_tmp.size();
@@ -196,7 +199,7 @@ namespace Amesos {
       ind_begin = indices.begin();
       ind_end = indices.end();
       size_t min_trans_ptr_size = *std::max_element(ind_begin, ind_end) + 1;
-      TEST_FOR_EXCEPTION( trans_ptr.size() < min_trans_ptr_size,
+      TEST_FOR_EXCEPTION( Teuchos::as<size_t>(trans_ptr.size()) < min_trans_ptr_size,
 			  std::invalid_argument,
 			  "Transpose pointer size not large enough." );
       TEST_FOR_EXCEPTION( trans_vals.size() < vals.size(),

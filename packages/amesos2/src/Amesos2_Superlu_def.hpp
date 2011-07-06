@@ -180,7 +180,10 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
 
 template <class Matrix, class Vector>
 int
-Superlu<Matrix,Vector>::numericFactorization_impl(){
+Superlu<Matrix,Vector>::numericFactorization_impl()
+{
+  using Teuchos::as;
+  
   int info = 0;
   if( this->numericFactorizationDone() ){
     // Cleanup old SuperMatrix A's Store, will be allocated again when
@@ -209,10 +212,10 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
   } // end matrix conversion block
 
 #ifdef HAVE_AMESOS2_DEBUG
-  TEST_FOR_EXCEPTION( data_.A.ncol != this->globalNumCols_,
+  TEST_FOR_EXCEPTION( data_.A.ncol != as<int>(this->globalNumCols_),
 		      std::runtime_error,
 		      "Error in converting to SuperLU SuperMatrix: wrong number of global columns." );
-  TEST_FOR_EXCEPTION( data_.A.nrow != this->globalNumRows_,
+  TEST_FOR_EXCEPTION( data_.A.nrow != as<int>(this->globalNumRows_),
 		      std::runtime_error,
 		      "Error in converting to SuperLU SuperMatrix: wrong number of global rows." );
 #endif
@@ -261,7 +264,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
   }
 
   // Check output
-  global_size_type info_st = Teuchos::as<global_size_type>(info);
+  global_size_type info_st = as<global_size_type>(info);
   TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
     std::runtime_error,
     "Factorization complete, but matrix is singular. Division by zero eminent");

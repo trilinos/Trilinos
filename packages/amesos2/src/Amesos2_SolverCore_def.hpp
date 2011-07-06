@@ -160,20 +160,25 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::RCP<Vector> X,
   TEST_FOR_EXCEPTION( X.is_null() || B.is_null(),
                       std::runtime_error,
                       "X and B must be set before attempting solve" );
-  
+
+  const Teuchos::RCP<MultiVecAdapter<Vector> > x =
+    createMultiVecAdapter<Vector>(X);
+  const Teuchos::RCP<MultiVecAdapter<Vector> > b =
+    createMultiVecAdapter<Vector>(Teuchos::rcp_const_cast<Vector>(B));
+    
 #ifdef HAVE_AMESOS2_DEBUG
   // Check some required properties of X and B
-  TEST_FOR_EXCEPTION(X->getGlobalLength() != matrixA_->getGlobalNumCols(),
+  TEST_FOR_EXCEPTION(x->getGlobalLength() != matrixA_->getGlobalNumCols(),
                      std::invalid_argument,
                      "MultiVector X must have length equal to the number of "
                      "global columns in A");
 
-  TEST_FOR_EXCEPTION(B->getGlobalLength() != matrixA_->getGlobalNumRows(),
+  TEST_FOR_EXCEPTION(b->getGlobalLength() != matrixA_->getGlobalNumRows(),
                      std::invalid_argument,
                      "MultiVector B must have length equal to the number of "
                      "global rows in A");
   
-  TEST_FOR_EXCEPTION(X->getGlobalNumVectors() != B->getGlobalNumVectors(),
+  TEST_FOR_EXCEPTION(x->getGlobalNumVectors() != b->getGlobalNumVectors(),
                      std::invalid_argument,
                      "X and B MultiVectors must have the same number of vectors");
 #endif  // HAVE_AMESOS2_DEBUG
@@ -186,9 +191,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::RCP<Vector> X,
     const_cast<type*>(this)->numericFactorization();
   }
   
-  static_cast<const solver_type*>(this)->solve_impl(
-    Teuchos::outArg(*createMultiVecAdapter<Vector>(X)),
-    createMultiVecAdapter<Vector>(Teuchos::rcp_const_cast<Vector>(B)).ptr());
+  static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), b.ptr());
   ++status_.numSolve_;
 }
 
