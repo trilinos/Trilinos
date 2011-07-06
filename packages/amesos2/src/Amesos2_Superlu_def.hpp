@@ -224,15 +224,15 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 
     if( data_.options.Equil == SLU::YES ){
       magnitude_type rowcnd, colcnd, amax;
-      int info = 0;
+      int info2 = 0;
       
       // calculate row and column scalings
       function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
 			  data_.C.getRawPtr(), &rowcnd, &colcnd,
-			  &amax, &info);
-      TEST_FOR_EXCEPTION( info != 0,
+			  &amax, &info2);
+      TEST_FOR_EXCEPTION( info2 != 0,
 			  std::runtime_error,
-			  "SuperLU gsequ returned with status " << info );
+			  "SuperLU gsequ returned with status " << info2 );
       
       // apply row and column scalings if necessary
       function_map::laqgs(&(data_.A), data_.R.getRawPtr(),
