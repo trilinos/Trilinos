@@ -11,6 +11,13 @@ Priorities for 2011:
 - Add support for Pardiso (at least MKL version).
 - Wish list: SuiteSparseQR, MUMPS, Pastix
 
+General TODO
+============
+
+ - When refreshing the internal values of A, need to check that the
+   dimensions still line up, and if not, resize internal arrays and
+   variables.
+
 -------------------------------
  Some things worth considering
 -------------------------------
@@ -19,7 +26,7 @@ Priorities for 2011:
 Matrix Adapters
 ===============
 
-something small first
+something small first (DONE)
 ---------------------
 
 The Tpetra MatrixAdapters need to move to something more like how the
@@ -38,7 +45,7 @@ interpreted as a ``MatrixAdapter<Tpetra::RowMatrix>`` even though a
 completely different types.
 
 
-something more involved
+something more involved (DONE)
 -----------------------
 
 Currently, we have ``getCrs()`` and ``getCcs()`` defined entirely in
@@ -169,7 +176,7 @@ interfaces for MultiVector objects.  They would just need to define a
 access_type;``.
 
 
-Adapters in General
+Adapters in General (DONE)
 ===================
 
 It may be possible to define many of the more ``involved'' adapter

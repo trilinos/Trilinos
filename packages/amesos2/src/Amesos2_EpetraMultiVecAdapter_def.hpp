@@ -433,7 +433,7 @@ template <typename Value_t>
 void
 MultiVecAdapter<Epetra_MultiVector>::globalize(const Teuchos::ArrayView<Value_t>& newVals, int root)
 {
-#ifdef HAVE_AMESOS2_DEBUG
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
   std::cout << "globalizing : " << newVals.toString() << std::endl;
 #endif
   size_t num_vecs  = getGlobalNumVectors();
@@ -464,7 +464,7 @@ MultiVecAdapter<Epetra_MultiVector>::globalize(const Teuchos::ArrayView<Value_t>
       *it = Teuchos::as<scalar_type>(*val_it++);
     }
   
-#ifdef HAVE_AMESOS2_DEBUG			
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG			
   std::cout << "converted vals : " << converted_vals.toString() << std::endl;
 #endif
   

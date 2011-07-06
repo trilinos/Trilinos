@@ -277,7 +277,7 @@ namespace Amesos {
 		Node> >::globalize(const Teuchos::ArrayView<Value_t>& newVals,
 				   int root)
   {
-#ifdef HAVE_AMESOS2_DEBUG
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
     std::cout << "globalizing : " << newVals.toString() << std::endl;
 #endif
     size_t num_vecs  = getGlobalNumVectors();

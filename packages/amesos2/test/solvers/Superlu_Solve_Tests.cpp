@@ -179,7 +179,7 @@ namespace {
   Array<Mag> xhatnorms(numVecs), xnorms(numVecs);                       \
   Xhat->norm2(xhatnorms());                                             \
   X->norm2(xnorms());                                                   \
-  TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.001 );
+  TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
 
   /**************
    * UNIT TESTS *
