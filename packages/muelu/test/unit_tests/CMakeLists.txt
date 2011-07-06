@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
-#PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+#PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 
 SET(SOURCES "")
 
@@ -22,17 +22,41 @@ APPEND_SET(SOURCES
   SaPFactory.cpp
   TransPFactory.cpp
   SmootherFactory.cpp
-  IfpackSmoother.cpp
-  Ifpack2Smoother.cpp
   Needs.cpp
   GenericPRFactory.cpp
-  Amesos.cpp
   TentativePFactory.cpp
   Aggregates.cpp
   UCAggregationFactory.cpp
   CoalesceDropFactory.cpp
   Memory.cpp
 )
+
+### Tests that require other Trilinos packages
+
+# first ensure that these cmake boolean variables are defined
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_ENABLE_Amesos
+  ${PACKAGE_NAME}_ENABLE_Ifpack
+  ${PACKAGE_NAME}_ENABLE_Ifpack2
+  )
+
+IF (${PACKAGE_NAME}_ENABLE_Ifpack2)
+  APPEND_SET(SOURCES
+  Ifpack2Smoother.cpp
+  )
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Ifpack)
+  APPEND_SET(SOURCES
+  IfpackSmoother.cpp
+  )
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Amesos)
+  APPEND_SET(SOURCES
+  Amesos.cpp
+  )
+ENDIF()
 
 PACKAGE_ADD_EXECUTABLE(
   UnitTests

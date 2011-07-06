@@ -1,4 +1,3 @@
-#ifdef HAVE_MUELU_AMESOS
 #include "Teuchos_UnitTestHarness.hpp"
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
@@ -82,4 +81,3 @@ namespace {
   }
   
 } // namespace <anonymous>
-#endif // HAVE_MUELU_AMESOS

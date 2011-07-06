@@ -1,4 +1,3 @@
-#ifdef HAVE_MUELU_IFPACK
 #include "Teuchos_UnitTestHarness.hpp"
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
@@ -198,5 +197,3 @@ namespace {
   } //ILU
 
 }//namespace <anonymous>
-
-#endif // #ifdef HAVE_MUELU_IFPACK

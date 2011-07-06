@@ -1,4 +1,3 @@
-#ifdef HAVE_MUELU_IFPACK2
 #include "Teuchos_UnitTestHarness.hpp"
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
@@ -57,7 +56,7 @@ namespace {
         ifpack2List.set("relaxation: sweeps", (int) 1);
         ifpack2List.set("relaxation: damping factor", (double) 1.0);
         ifpack2List.set("relaxation: zero starting solution", false);
-        RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("point relaxation stand-alone",ifpack2List) );
+        RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("RELAXATION",ifpack2List) );
         Level aLevel;
         aLevel.SetA(Op);
 
@@ -105,7 +104,7 @@ namespace {
         ifpack2List.set("chebyshev: max eigenvalue", (double) 2.0);
         ifpack2List.set("chebyshev: min eigenvalue", (double) 1.0);
         ifpack2List.set("chebyshev: zero starting solution", false);
-        RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("Chebyshev",ifpack2List) );
+        RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("CHEBYSHEV",ifpack2List) );
         Level aLevel;
         aLevel.SetA(Op);
 
@@ -165,7 +164,7 @@ namespace {
         RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(125);
 
         Teuchos::ParameterList  ifpack2List;
-        RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("ILU",ifpack2List) );
+        RCP<Ifpack2Smoother>  smoother = rcp( new Ifpack2Smoother("ILUT",ifpack2List) );
         Level aLevel;
         aLevel.SetA(Op);
 
@@ -197,5 +196,3 @@ namespace {
   } //ILU
 
 }//namespace <anonymous>
-
-#endif // HAVE_MUELU_IFPACK2
