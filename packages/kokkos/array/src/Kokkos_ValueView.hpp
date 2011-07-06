@@ -42,9 +42,23 @@
 
 #include <cstddef>
 #include <string>
-#include <Kokkos_ArrayForwardDeclarations.hpp>
 
 namespace Kokkos {
+
+template< typename ValueType , class DeviceType >
+class ValueView ;
+
+template< typename ValueType , class DeviceType >
+void deep_copy( const ValueView< ValueType , DeviceType > & dst ,
+                const ValueType & src );
+
+template< typename ValueType , class DeviceType >
+void deep_copy( ValueType & dst ,
+                const ValueView< ValueType , DeviceType > & src );
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+void deep_copy( const ValueView< ValueType , DeviceDst > & dst ,
+                const ValueView< ValueType , DeviceSrc > & src );
 
 //----------------------------------------------------------------------------
 
@@ -77,7 +91,7 @@ public:
    *          then allocated memory is deallocated.
    */
   ValueView & operator = ( const ValueView & rhs );
-  
+
   /**  \brief  Destroy this view of the value.
    *           If the last view then allocated memory is deallocated.
    */
@@ -117,21 +131,21 @@ create_value()
 
 template< typename ViewType >
 inline
-ValueView< typename ViewType::value_type , 
+ValueView< typename ViewType::value_type ,
            typename ViewType::device_type >
 create_labeled_value( const std::string & label )
 {
-  return create_labeled_value< typename ViewType::value_type , 
+  return create_labeled_value< typename ViewType::value_type ,
                                typename ViewType::device_type >( label );
 }
 
 template< typename ViewType >
 inline
-ValueView< typename ViewType::value_type , 
+ValueView< typename ViewType::value_type ,
            typename ViewType::device_type >
 create_value( const std::string & label )
 {
-  return create_labeled_value< typename ViewType::value_type , 
+  return create_labeled_value< typename ViewType::value_type ,
                                typename ViewType::device_type >
     ( std::string() );
 }
@@ -189,34 +203,10 @@ public:
   { *dst = *src ; }
 };
 
-}
-}
+} //Impl
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-// Partial specializations for known devices
+} //Kokkos
 
-#if defined( KOKKOS_DEVICE_HOST )
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <impl/Kokkos_ValueView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_TPI )
-#include <Kokkos_DeviceTPI_macros.hpp>
-#include <impl/Kokkos_ValueView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-#include <DeviceTPI/Kokkos_DeviceTPI_ValueView.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_CUDA )
-#include <Kokkos_DeviceCuda_macros.hpp>
-#include <impl/Kokkos_ValueView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-#include <DeviceCuda/Kokkos_DeviceCuda_ValueView.hpp>
-#endif
-
-//----------------------------------------------------------------------------
 
 #endif /* KOKKOS_VALUEVIEW_HPP */
 

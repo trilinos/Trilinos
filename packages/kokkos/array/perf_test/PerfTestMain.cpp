@@ -5,8 +5,42 @@
 #include <Kokkos_DeviceHost.hpp>
 
 #include <Kokkos_MDArrayView.hpp>
+#if defined( KOKKOS_DEVICE_HOST )
+#include <Kokkos_DeviceHost_MDArrayView.hpp>
+#endif
+#if defined( KOKKOS_DEVICE_TPI )
+#include <Kokkos_DeviceTPI_MDArrayView.hpp>
+#endif
+#if defined( KOKKOS_DEVICE_CUDA )
+#include <Kokkos_DeviceCuda_MDArrayView.hpp>
+#endif
+
+
 #include <Kokkos_MultiVectorView.hpp>
+#if defined( KOKKOS_DEVICE_HOST )
+#include <Kokkos_DeviceHost_MultiVectorView.hpp>
+#endif
+#if defined( KOKKOS_DEVICE_TPI )
+#include <Kokkos_DeviceTPI_MultiVectorView.hpp>
+#endif
+#if defined( KOKKOS_DEVICE_CUDA )
+#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
+#endif
+
+
 #include <Kokkos_ValueView.hpp>
+#if defined( KOKKOS_DEVICE_HOST )
+#include <Kokkos_DeviceHost_ValueView.hpp>
+#endif
+#if defined( KOKKOS_DEVICE_TPI )
+#include <Kokkos_DeviceTPI_ValueView.hpp>
+#endif
+#if defined( KOKKOS_DEVICE_CUDA )
+#include <Kokkos_DeviceCuda_ValueView.hpp>
+#endif
+
+
+
 #include <Kokkos_ParallelFor.hpp>
 #include <Kokkos_ParallelReduce.hpp>
 

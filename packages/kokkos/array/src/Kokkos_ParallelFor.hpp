@@ -41,7 +41,6 @@
 #define KOKKOS_PARALLELFOR_HPP
 
 #include <cstddef>
-#include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 namespace Kokkos {
