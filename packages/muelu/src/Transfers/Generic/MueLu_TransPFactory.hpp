@@ -71,8 +71,8 @@ namespace MueLu {
       //doesn't work -- bug in EpetraExt?
       //RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
       //      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);
-      //RCP<Operator> R = Utils::TwoMatrixMultiply(P,I,true); //doesn't work -- bug in EpetraExt?
-      //      RCP<Operator> R = Utils::TwoMatrixMultiply(I,P,false,true);
+      //RCP<Operator> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
+      //      RCP<Operator> R = Utils::TwoMatrixMultiply(I,false,P,true);
 
       RCP<Operator> R= Utils::Transpose(P,true);
 

@@ -208,12 +208,14 @@ namespace MueLu {
       Returns RCP to non-constant Cthulhu::Operator.
 
       @param A left matrix
-      @param B right matrix
       @param transposeA if true, use the transpose of A
+      @param B right matrix
       @param transposeB if true, use the transpose of B
+      @param callFillCompleteOnResult if true, the resulting matrix should be fillComplete'd
     */
-   static RCP<Operator> TwoMatrixMultiply(RCP<Operator> const &A, RCP<Operator> const &B,
-                                          bool transposeA=false, bool transposeB=false) //TODO: modify definition to respect definition of Epetra/Tpetra::MatrixMatrix::Multiply (order of input args)
+   static RCP<Operator> TwoMatrixMultiply(RCP<Operator> const &A, bool transposeA,
+                                          RCP<Operator> const &B, bool transposeB,
+                                          bool callFillCompleteOnResult=true)
     {
       //FIXME 30 is likely a big overestimate
       RCP<Operator> C;
@@ -231,7 +233,7 @@ namespace MueLu {
         RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
         RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
         
-        int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC);
+        int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,callFillCompleteOnResult);
         
         if (i != 0) {
           std::ostringstream buf;
@@ -248,7 +250,7 @@ namespace MueLu {
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2TpetraCrs(B);
         RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >       tpC = Op2NonConstTpetraCrs(C);
         
-        Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC);
+        Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,callFillCompleteOnResult);
 #else
         throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
 #endif
@@ -257,24 +259,76 @@ namespace MueLu {
       return C;
     } //TwoMatrixMultiply()
 
-    /*! @brief Helper function to calculate alpha*A + beta*B.
+    /*! @brief Helper function to calculate B = alpha*A + beta*B.
 
-      @param A (required) left matrix operand
-      @param B (required) right matrix operand
-      @param alpha (optional) scalar multiplier for A, defaults to 1.0
-      @param beta  (optional) scalar multiplier for B, defaults to 1.0
+      @param A      left matrix operand
+      @param transposeA indicate whether to use transpose of A
+      @param alpha  scalar multiplier for A
+      @param B      right matrix operand
+      @param beta   scalar multiplier for B
 
-      @return Teuchos::RCP to non-constant Cthulhu::Operator.
+      @return sum in B.
 
-      Note that the returned matrix is fill-complete'd.
+      Note that B does not have to be fill-completed.
     */
-   static RCP<Operator> TwoMatrixAdd(RCP<Operator> const &A, RCP<Operator> const &B, SC alpha=1.0, SC beta=1.0)
+   static void TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta)
    {
       if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
         throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
       }
-      //FIXME 5 is a complete guess as to the #nonzeros per row
-      RCP<Operator> C = rcp( new CrsOperator(A->getRowMap(), 5) );
+
+      if (A->getRowMap()->lib() == Cthulhu::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRAEXT
+        RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
+        RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
+        
+        //FIXME is there a bug if beta=0?
+        int i = EpetraExt::MatrixMatrix::Add(*epA,transposeA,(double)alpha,*epB,(double)beta);
+
+        if (i != 0) {
+          std::ostringstream buf;
+          buf << i;
+          std::string msg = "EpetraExt::MatrixMatrix::Add return value of " + buf.str();
+          throw(Exceptions::RuntimeError(msg));
+        }
+#else
+      throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
+#endif
+      } else if(A->getRowMap()->lib() == Cthulhu::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+        RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = Op2TpetraCrs(A);
+        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2NonConstTpetraCrs(B);
+        
+        Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, beta);
+#else
+        throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
+#endif
+      }
+
+   } //TwoMatrixAdd()
+
+    /*! @brief Helper function to calculate C = alpha*A + beta*B.
+
+      @param A          left matrix operand
+      @param transposeA indicate whether to use transpose of A
+      @param alpha      scalar multiplier for A, defaults to 1.0
+      @param B          right matrix operand
+      @param transposeB indicate whether to use transpose of B
+      @param beta       scalar multiplier for B, defaults to 1.0
+      @param C          resulting sum
+
+      It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
+    */
+   static void TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
+                                     RCP<Operator> const &B, bool const &transposeB, SC const &beta,
+                                     RCP<Operator> &C)
+   {
+      if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
+        throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
+      }
+      if (C==Teuchos::null)
+        //FIXME 5 is a complete guess as to the #nonzeros per row
+        C = rcp( new CrsOperator(A->getRowMap(), 5) );
 
       if (C->getRowMap()->lib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRAEXT
@@ -282,9 +336,9 @@ namespace MueLu {
         RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
         RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
         Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
-        
+
         //FIXME is there a bug if beta=0?
-        int i = EpetraExt::MatrixMatrix::Add(*epA,false,(double)alpha,*epB,false,(double)beta,ref2epC);
+        int i = EpetraExt::MatrixMatrix::Add(*epA,transposeA,(double)alpha,*epB,transposeB,(double)beta,ref2epC);
 
         if (i != 0) {
           std::ostringstream buf;
@@ -300,14 +354,13 @@ namespace MueLu {
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = Op2TpetraCrs(A);
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2TpetraCrs(B);
         RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >       tpC = Op2NonConstTpetraCrs(C);
-        
-        Tpetra::MatrixMatrix::Add(*tpA, false, alpha, *tpB, false, beta, tpC);
+
+        Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, transposeB, beta, tpC);
 #else
         throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
 #endif
       }
 
-      C->fillComplete(A->getDomainMap(),A->getRangeMap()); //TODO: should be done outside or well documented
       return C;
    } //TwoMatrixAdd()
 

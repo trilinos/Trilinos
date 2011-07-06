@@ -43,23 +43,23 @@ class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,
       RCP<Operator> A = fineLevel.GetA();
 Teuchos::RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P"));
 apTimer->start(true);
-      RCP<Operator> AP = Utils::TwoMatrixMultiply(A,P);
+      RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,P,false);
 apTimer->stop();
 MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
       //std::string filename="AP.dat";
       //Utils::Write(filename,AP);
 
       if (implicitTranspose_) {
-        //RCP<Operator> RA = Utils::TwoMatrixMultiply(P,A,true);
+        //RCP<Operator> RA = Utils::TwoMatrixMultiply(P,true,A,false);
         //filename = "PtA.dat";
         //Utils::Write(filename,AP);
-        RCP<Operator> RAP = Utils::TwoMatrixMultiply(P,AP,true);
+        RCP<Operator> RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
         coarseLevel.SetA(RAP);
       } else {
         RCP<Operator> R = coarseLevel.GetR();
 Teuchos::RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP"));
 rapTimer->start(true);
-        RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,AP);
+        RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
 rapTimer->stop();
 MemUtils::ReportTimeAndMemory(*rapTimer, *(P->getRowMap()->getComm()));
         coarseLevel.SetA(RAP);

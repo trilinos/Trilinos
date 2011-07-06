@@ -158,7 +158,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         //sapTimer->start(true);
         //Teuchos::ParameterList matrixList;
         //RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.GetA()->getRowMap(),matrixList);
-        //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,Ptent);
+        //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
         //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
         //sapTimer->stop();
         //MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
@@ -168,7 +168,8 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         sapTimer->start(true);
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(Op);
         Utils::ScaleMatrix(Op,diag); //scale matrix
-        RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,Ptent);
+        bool doFillComplete=false;
+        RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,false,Ptent,false,doFillComplete);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
@@ -193,7 +194,10 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         sapTimer = rcp(new Teuchos::Time("SaPFactory:finalP"));
         sapTimer->start(true);
 
-        finalP = Utils::TwoMatrixAdd(Ptent,AP,1.0,-dampingFactor_/lambdaMax);
+        bool doTranspose=false; 
+        Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,-dampingFactor_/lambdaMax);
+        finalP = AP;
+        finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
       }
