@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
     int maxiters = Teuchos::getParameter<int>(pLUList, "Outer Solver MaxIters");
     double tol = Teuchos::getParameter<double>(pLUList, "Outer Solver Tolerance");
-    string rhsFileName = Teuchos::getParameter<string>(pLUList, "rhs_file");
+    string rhsFileName = pLUList.get<string>("rhs_file", "");
 
     if (myPID == 0)
     {
@@ -111,14 +111,19 @@ int main(int argc, char *argv[])
     int n = A->NumGlobalRows();
     //cout <<"n="<< n << endl;
     Epetra_Map vecMap(n, 0, Comm);
-    err = EpetraExt::MatrixMarketFileToMultiVector(rhsFileName.c_str(),
-                                     vecMap, b1);
+    if (rhsFileName != "")
+    {
+        err = EpetraExt::MatrixMarketFileToMultiVector(rhsFileName.c_str(),
+                                         vecMap, b1);
+    }
+    else
+    {
+        b1 = new Epetra_MultiVector(vecMap, 1, false);
+        b1->PutScalar(1.0);
+    }
 
     // Create input vectors
     Epetra_MultiVector x(vecMap, 1);
-    Epetra_MultiVector b(vecMap, 1, false);
-    b.PutScalar(1.0); // TODO : Accept it as input
-    //b1->PutScalar(1.0); // TODO : Accept it as input
     //cout << "Created the vectors" << endl;
 
     // Partition the matrix with hypergraph partitioning and redisstribute
@@ -211,6 +216,8 @@ int main(int argc, char *argv[])
     {
         delete prec;
     }
+
+    delete b1;
     delete newX;
     delete newB;
     delete A;
