@@ -3,10 +3,15 @@
 #include <iomanip>
 
 #include <Kokkos_DeviceHost.hpp>
+#include <Kokkos_DeviceHost_ValueView.hpp>
+#include <Kokkos_DeviceHost_MultiVectorView.hpp>
+#include <Kokkos_DeviceHost_MDArrayView.hpp>
+
 #include <Kokkos_DeviceTPI.hpp>
-#include <Kokkos_ValueView.hpp>
-#include <Kokkos_MultiVectorView.hpp>
-#include <Kokkos_MDArrayView.hpp>
+#include <Kokkos_DeviceTPI_ValueView.hpp>
+#include <Kokkos_DeviceTPI_MultiVectorView.hpp>
+#include <Kokkos_DeviceTPI_MDArrayView.hpp>
+
 #include <Kokkos_ParallelFor.hpp>
 #include <Kokkos_ParallelReduce.hpp>
 

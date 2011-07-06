@@ -2,11 +2,14 @@
 #include <iostream>
 
 #include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceCuda.hpp>
+#include <Kokkos_DeviceHost_ValueView.hpp>
+#include <Kokkos_DeviceHost_MultiVectorView.hpp>
+#include <Kokkos_DeviceHost_MDArrayView.hpp>
 
-#include <Kokkos_ValueView.hpp>
-#include <Kokkos_MultiVectorView.hpp>
-#include <Kokkos_MDArrayView.hpp>
+#include <Kokkos_DeviceCuda.hpp>
+#include <Kokkos_DeviceCuda_ValueView.hpp>
+#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
+#include <Kokkos_DeviceCuda_MDArrayView.hpp>
 
 #include <Kokkos_ParallelFor.hpp>
 #include <Kokkos_ParallelReduce.hpp>
