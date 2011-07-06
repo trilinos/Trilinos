@@ -427,6 +427,7 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   PyObject * classTupleOfVector = NULL;
   PyObject * inArgsObj   	= NULL;
   PyObject * obj         	= NULL;
+  PyObject * tupleOfVector      = NULL;
   int        res                = 0;
   int        Np                 = 0;
   Teuchos::RCP<const Epetra_Vector> xPtr;
@@ -494,8 +495,10 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_x))
   {
     xPtr = inArgs.get_x();
-    res  = PyObject_SetAttrString(inArgsObj, "x",
-				  convertEpetraVectorToPython(&xPtr));
+    obj  = convertEpetraVectorToPython(&xPtr);
+    res  = PyObject_SetAttrString(inArgsObj, "x", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res < 0) goto fail;
   }
 
@@ -503,8 +506,10 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot))
   {
     x_dotPtr = inArgs.get_x_dot();
-    res      = PyObject_SetAttrString(inArgsObj, "x_dot",
-				      convertEpetraVectorToPython(&x_dotPtr));
+    obj      = convertEpetraVectorToPython(&x_dotPtr);
+    res      = PyObject_SetAttrString(inArgsObj, "x_dot", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res < 0) goto fail;
   }
 
@@ -520,9 +525,11 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
 			     convertEpetraVectorToPython(&pPtr));
       if (res) goto fail;
     }
-    res = PyObject_SetAttrString(inArgsObj, "p",
-				 PyObject_CallObject(classTupleOfVector, obj));
+    tupleOfVector = PyObject_CallObject(classTupleOfVector, obj);
+    res = PyObject_SetAttrString(inArgsObj, "p", tupleOfVector);
+    Py_DECREF(tupleOfVector);
     Py_DECREF(obj);
+    obj = NULL;
     if (res) goto fail;
   }
 
@@ -565,8 +572,10 @@ PyObject * convertEvaluationToPython(
   if (vector)
   {
     smartarg = new Teuchos::RCP< Epetra_Vector>(vector, false);
-    res = PyObject_SetAttrString(evalObj, "vector",
-				 convertEpetraVectorToPython(smartarg));
+    obj = convertEpetraVectorToPython(smartarg);
+    res = PyObject_SetAttrString(evalObj, "vector", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     delete smartarg;
     if (res < 0) goto fail;
   }
@@ -689,8 +698,10 @@ PyObject * convertDerivativeMultiVectorToPython(
 
   // mutiVector attribute
   smartarg = new Teuchos::RCP< Epetra_MultiVector >(derivMV.getMultiVector());
-  res = PyObject_SetAttrString(derivMVObj, "multiVector",
-			       convertEpetraMultiVectorToPython(smartarg));
+  obj = convertEpetraMultiVectorToPython(smartarg);
+  res = PyObject_SetAttrString(derivMVObj, "multiVector", obj);
+  Py_DECREF(obj);
+  obj = NULL;
   delete smartarg;
   if (res < 0) goto fail;
 
@@ -709,8 +720,10 @@ PyObject * convertDerivativeMultiVectorToPython(
   if (res < 0) goto fail;
 
   // paramIndexes attribute
-  res = PyObject_SetAttrString(derivMVObj, "paramIndexes",
-			       convertArrayOfIntToPython(derivMV.getParamIndexes()));
+  obj = convertArrayOfIntToPython(derivMV.getParamIndexes());
+  res = PyObject_SetAttrString(derivMVObj, "paramIndexes", obj);
+  Py_DECREF(obj);
+  obj = NULL;
   if (res < 0) goto fail;
 
   return derivMVObj;
@@ -748,8 +761,10 @@ convertDerivativeToPython(const EpetraExt::ModelEvaluator::Derivative & deriv)
   eo = deriv.getLinearOp();
   if (!eo.is_null())
   {
-    res = PyObject_SetAttrString(derivObj, "operator",
-				 convertEpetraOperatorToPython(&eo));
+    obj = convertEpetraOperatorToPython(&eo);
+    res = PyObject_SetAttrString(derivObj, "operator", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res < 0) goto fail;
   }
 
@@ -757,8 +772,10 @@ convertDerivativeToPython(const EpetraExt::ModelEvaluator::Derivative & deriv)
   dmv = deriv.getDerivativeMultiVector();
   if (dmv.getMultiVector().get())
   {
-    res = PyObject_SetAttrString(derivObj, "derivativeMultiVector",
-				 convertDerivativeMultiVectorToPython(dmv));
+    obj = convertDerivativeMultiVectorToPython(dmv);
+    res = PyObject_SetAttrString(derivObj, "derivativeMultiVector", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res < 0) goto fail;
   }
 
@@ -779,6 +796,7 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   static
   PyObject * classTupleOfEvaluation = NULL;
   PyObject * obj          	    = NULL;
+  PyObject * tupleOfEval            = NULL;
   PyObject * outArgsObj   	    = NULL;
   int        res	            = 0;
   int        Ng 	            = 0;
@@ -820,8 +838,9 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
 			    convertEvaluationToPython(outArgs.get_g(i)));
       if (res) goto fail;
     }
-    res = PyObject_SetAttrString(outArgsObj, "g",
-				 PyObject_CallObject(classTupleOfEvaluation, obj));
+    tupleOfEval = PyObject_CallObject(classTupleOfEvaluation, obj);
+    res = PyObject_SetAttrString(outArgsObj, "g", tupleOfEval);
+    Py_DECREF(tupleOfEval);
     Py_DECREF(obj);
     obj = NULL;
     if (res) goto fail;
@@ -830,8 +849,10 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   // f attribute
   if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_f))
   {
-    res = PyObject_SetAttrString(outArgsObj, "f",
-				 convertEvaluationToPython(outArgs.get_f()));
+    obj = convertEvaluationToPython(outArgs.get_f());
+    res = PyObject_SetAttrString(outArgsObj, "f", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res) goto fail;
   }
 
@@ -841,8 +862,10 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
     WPtr = outArgs.get_W();
     if (!WPtr.is_null())
     {
-      res = PyObject_SetAttrString(outArgsObj, "W",
-				   convertEpetraOperatorToPython(&WPtr));
+      obj = convertEpetraOperatorToPython(&WPtr);
+      res = PyObject_SetAttrString(outArgsObj, "W", obj);
+      Py_DECREF(obj);
+      obj = NULL;
       if (res) goto fail;
     }
   }
@@ -852,8 +875,10 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   {
     if (!WPtr.is_null())
     {
-      res = PyObject_SetAttrString(outArgsObj, "W_properties",
-				   convertDerivativePropertiesToPython(outArgs.get_W_properties()));
+      obj = convertDerivativePropertiesToPython(outArgs.get_W_properties());
+      res = PyObject_SetAttrString(outArgsObj, "W_properties", obj);
+      Py_DECREF(obj);
+      obj = NULL;
       if (res) goto fail;
     }
   }  
