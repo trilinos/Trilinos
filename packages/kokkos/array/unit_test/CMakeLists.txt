@@ -1,7 +1,7 @@
 INCLUDE(PackageAddExecutableAndTest)   
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINRARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-IF(Kokkos_ENABLE_CUDA)
+IF(Kokkos_ENABLE_DeviceCuda)
   CUDA_ADD_LIBRARY(
     unit_cuda
     SOURCES UnitTestCuda.cu
@@ -13,7 +13,7 @@ ELSE()
     SOURCES UnitTestCudaStub.cpp
     )
 ENDIF()
-IF(Kokkos_ENABLE_TPI)
+IF(Kokkos_ENABLE_DeviceTPI)
   PACKAGE_ADD_LIBRARY(
     unit_tpi
     SOURCES UnitTestTPI.cpp
