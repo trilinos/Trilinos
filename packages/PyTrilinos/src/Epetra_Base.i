@@ -449,6 +449,7 @@ or it will hang your code."
 ///////////////////////////////
 // Epetra_CompObject support //
 ///////////////////////////////
+%teuchos_rcp(Epetra_CompObject)
 %rename(CompObject) Epetra_CompObject;
 %include "Epetra_CompObject.h"
 
@@ -459,6 +460,7 @@ or it will hang your code."
 // warnings for doing this.  Now I use %include, coupled with a bunch
 // of %ignores, because I want a simple python base class without the
 // C-style BLAS interface.
+%teuchos_rcp(Epetra_BLAS)
 %rename(BLAS) Epetra_BLAS;
 %ignore Epetra_BLAS::ASUM;
 %ignore Epetra_BLAS::AXPY;
