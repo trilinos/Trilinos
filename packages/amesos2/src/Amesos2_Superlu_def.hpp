@@ -211,56 +211,61 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
       this->timers_.mtxRedistTime_);
   } // end matrix conversion block
 
+  if ( this->status_.root_ ){
+    
 #ifdef HAVE_AMESOS2_DEBUG
-  TEST_FOR_EXCEPTION( data_.A.ncol != as<int>(this->globalNumCols_),
-		      std::runtime_error,
-		      "Error in converting to SuperLU SuperMatrix: wrong number of global columns." );
-  TEST_FOR_EXCEPTION( data_.A.nrow != as<int>(this->globalNumRows_),
-		      std::runtime_error,
-		      "Error in converting to SuperLU SuperMatrix: wrong number of global rows." );
-#endif
-
-  if( data_.options.Equil == SLU::YES ){
-    magnitude_type rowcnd, colcnd, amax;
-    int info;
-
-    // calculate row and column scalings
-    function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
-			data_.C.getRawPtr(), &rowcnd, &colcnd,
-			&amax, &info);
-    TEST_FOR_EXCEPTION( info != 0,
+    TEST_FOR_EXCEPTION( data_.A.ncol != as<int>(this->globalNumCols_),
 			std::runtime_error,
-			"SuperLU gsequ returned with status " << info );
-
-    // apply row and column scalings if necessary
-    function_map::laqgs(&(data_.A), data_.R.getRawPtr(),
-			data_.C.getRawPtr(), rowcnd, colcnd,
-			amax, &(data_.equed));
-
-    // // check what types of equilibration was actually done
-    // data_.rowequ = (data_.equed == 'R') || (data_.equed == 'B');
-    // data_.colequ = (data_.equed == 'C') || (data_.equed == 'B');
-  }
-  
-  // Apply the column permutation computed in preOrdering.  Place the
-  // column-permuted matrix in AC
-  SLU::sp_preorder(&(data_.options), &(data_.A), data_.perm_c.getRawPtr(),
-		   data_.etree.getRawPtr(), &(data_.AC));
-
-  if ( this->status_.root_ ) { // Do factorization
-    Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
-
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
-    std::cout << "Superlu:: Before numeric factorization" << std::endl;
-    std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
-    std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-    std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+			"Error in converting to SuperLU SuperMatrix: wrong number of global columns." );
+    TEST_FOR_EXCEPTION( data_.A.nrow != as<int>(this->globalNumRows_),
+			std::runtime_error,
+			"Error in converting to SuperLU SuperMatrix: wrong number of global rows." );
 #endif
 
-    function_map::gstrf(&(data_.options), &(data_.AC),
-      data_.relax, data_.panel_size, data_.etree.getRawPtr(), NULL, 0,
-      data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(), &(data_.L), &(data_.U),
-      &(data_.stat), &info);
+    if( data_.options.Equil == SLU::YES ){
+      magnitude_type rowcnd, colcnd, amax;
+      int info = 0;
+      
+      // calculate row and column scalings
+      function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
+			  data_.C.getRawPtr(), &rowcnd, &colcnd,
+			  &amax, &info);
+      TEST_FOR_EXCEPTION( info != 0,
+			  std::runtime_error,
+			  "SuperLU gsequ returned with status " << info );
+      
+      // apply row and column scalings if necessary
+      function_map::laqgs(&(data_.A), data_.R.getRawPtr(),
+			  data_.C.getRawPtr(), rowcnd, colcnd,
+			  amax, &(data_.equed));
+      
+      // // check what types of equilibration was actually done
+      // data_.rowequ = (data_.equed == 'R') || (data_.equed == 'B');
+      // data_.colequ = (data_.equed == 'C') || (data_.equed == 'B');
+    }
+    
+    // Apply the column permutation computed in preOrdering.  Place the
+    // column-permuted matrix in AC
+    SLU::sp_preorder(&(data_.options), &(data_.A), data_.perm_c.getRawPtr(),
+		     data_.etree.getRawPtr(), &(data_.AC));
+    
+    { // Do factorization
+      Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+      
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+      std::cout << "Superlu:: Before numeric factorization" << std::endl;
+      std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
+      std::cout << "rowind_ : " << rowind_.toString() << std::endl;
+      std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+#endif
+      
+      function_map::gstrf(&(data_.options), &(data_.AC),
+			  data_.relax, data_.panel_size, data_.etree.getRawPtr(),
+			  NULL, 0, data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(),
+			  &(data_.L), &(data_.U), &(data_.stat), &info);
+    }
+    // Cleanup. AC data will be alloc'd again for next factorization (if at all)
+    SLU::Destroy_CompCol_Permuted( &(data_.AC) );
   }
 
   // Check output
@@ -274,9 +279,6 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 
   data_.options.Fact = SLU::FACTORED;
   same_symbolic_ = true;
-
-  // Cleanup. AC will be alloc'd again for next factorization (if at all)
-  SLU::Destroy_CompCol_Permuted( &(data_.AC) );
 
   /* All processes should return the same error code */
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
