@@ -21,10 +21,10 @@
 namespace Test {
 
 void run_test_host_hexgrad( int beg , int end )
-{ Test::run_test_hexgrad< Kokkos::DeviceHost>( beg , end ); };
+{ Test::run_test_hexgrad< Kokkos::DeviceHost>( beg , end ); }
 
 void run_test_host_gramschmidt( int beg , int end )
-{ Test::run_test_gramschmidt< Kokkos::DeviceHost>( beg , end ); };
+{ Test::run_test_gramschmidt< Kokkos::DeviceHost>( beg , end ); }
 
 void run_test_tpi_hexgrad(int,int);
 void run_test_tpi_gramschmidt(int,int);
