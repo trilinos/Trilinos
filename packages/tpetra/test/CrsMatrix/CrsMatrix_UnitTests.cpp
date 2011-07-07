@@ -17,7 +17,6 @@
 #include "Tpetra_CrsMatrixSolveOp.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_MatrixMatrix.hpp"
-#include "MatrixMarket_Tpetra.hpp"
 
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB

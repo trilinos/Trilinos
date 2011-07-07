@@ -1191,6 +1191,35 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Scalar CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getFrobeniusNorm() const
+  {
+    //TODO Like the epetra norm functions, we should check to see if the matrix
+    //has changed since we last calculated the norm. If it hasn't we should short
+    //circuit and return what ever value we last calculated. The problem is,
+    //I don't know each and every method that could potentially modify the matrix
+    //in such a way that we'd need to recalculate the norm. This is an optimization 
+    //I should do at a later point when I have more time.
+    //KLN 07/07/2011
+
+    Scalar mySum = ScalarTraits<Scalar>::zero();
+    Array<LocalOrdinal> inds(getNodeMaxNumRowEntries());
+    Array<Scalar> vals(getNodeMaxNumRowEntries());
+    for(size_t i =0; i<getNodeNumRows(); ++i){
+      size_t numRowEnts = getNumEntriesInLocalRow(i);
+      ArrayView<const LocalOrdinal> indsView = inds();
+      ArrayView<const Scalar> valsView = vals();
+      getLocalRowView(i, indsView, valsView);
+      for(size_t j=0; j<numRowEnts; ++j){
+        mySum += valsView[j]*valsView[j];
+      }
+    }
+    Scalar totalSum = ScalarTraits<Scalar>::zero();
+    Teuchos::reduceAll(*(getComm()), Teuchos::REDUCE_SUM, 1, &mySum, &totalSum);
+    return ScalarTraits<Scalar>::squareroot(totalSum);
+  }
+  
+
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////

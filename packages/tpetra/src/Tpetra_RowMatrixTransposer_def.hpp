@@ -57,8 +57,35 @@ RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (const OptimizeOption optimizeTranspose
     /*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
 {
+  transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(origMatrix_.getDomainMap(), 0));
+  ArrayView<const LocalOrdinal> localIndicies;
+  ArrayView<const Scalar> localValues;
+  ArrayView<const GlobalOrdinal> myGlobalRows = origMatrix_.getRowMap()->getNodeElementList();
+  size_t numEntriesInRow;
+  Array<GlobalOrdinal> rowNum(1);
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > origColMap = origMatrix_.getColMap();
+  for(
+    size_t i = Teuchos::OrdinalTraits<size_t>::zero();
+    i < origMatrix_.getNodeNumRows();
+    ++i
+  )
+  {
+    rowNum[0] = origMatrix_.getRowMap()->getGlobalElement(i);
+    numEntriesInRow = origMatrix_.getNumEntriesInLocalRow(i);
+    origMatrix_.getLocalRowView(i, localIndicies, localValues);
+    for(size_t j=0; j<numEntriesInRow; ++j){
+      transposeMatrix_->insertGlobalValues(origColMap->getGlobalElement(localIndicies[j]), rowNum(0,1), localValues(j,1));
+    }
+  }
 
-  optimizeTranspose_ = optimizeTranspose;
+  transposeMatrix_->fillComplete(origMatrix_.getRangeMap(), origMatrix_.getDomainMap());
+
+  return transposeMatrix_;
+
+
+
+  
+/*  optimizeTranspose_ = optimizeTranspose;
   const size_t LST0 = Teuchos::OrdinalTraits<size_t>::zero();
   const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
   const LocalOrdinal LO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
@@ -148,7 +175,7 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create
   //transposeMatrix_->fillComplete(origRowMap, transRowMap, optimizeTranspose_);
   transposeMatrix_->fillComplete(range_map, domain_map, optimizeTranspose_);
 
-  return transposeMatrix_;
+  return transposeMatrix_;*/
 }
 
 //

@@ -135,6 +135,7 @@ namespace Tpetra {
       //! Returns \c true if fillComplete() has been called.
       virtual bool isFillComplete() const = 0;
 
+
       //@}
 
       //! @name Extraction Methods
@@ -231,6 +232,9 @@ namespace Tpetra {
        * \param x A vector to right scale this matrix.
        */
       virtual void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) =0;
+
+      /** \brief Returns the Frobenius norm of the matrix */
+      virtual Scalar getFrobeniusNorm() const = 0;
 
       //@}
 

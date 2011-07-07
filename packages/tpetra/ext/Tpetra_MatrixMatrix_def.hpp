@@ -41,6 +41,7 @@
 #include "Tpetra_Map.hpp"
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
   //#include "Tpetra_MMMultiply_decl.hpp"
@@ -70,6 +71,7 @@ void Multiply(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C,
   bool call_FillComplete_on_result)
 {
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> Matrix_t;
   //
   //This method forms the matrix-matrix product C = op(A) * op(B), where
   //op(A) == A   if transposeA is false,
@@ -101,26 +103,30 @@ void Multiply(
   //as scenario 1 through 4.
 
   //int scenario = 1;//A*B
-  RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > Aprime = null;
-  RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > Bprime = null;
+  RCP<const Matrix_t > Aprime = null;
+  RCP<const Matrix_t > Bprime = null;
   if(transposeA){
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  at(A);
-    RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > trans = at.createTranspose();
-    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > temp = 
-      rcp( new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(A.getDomainMap(), 0));
+    //RCP<const Matrix_t > trans = at.createTranspose();
+    Aprime = at.createTranspose();
+    Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+      "abefore.mtx",Aprime);
+    /*RCP<Matrix_t > temp = 
+      rcp( new Matrix_t(A.getDomainMap(), 0));
     Import<LocalOrdinal,GlobalOrdinal,Node> importer(trans->getRowMap(), A.getDomainMap());
     temp->doImport(*trans, importer, INSERT);
     temp->fillComplete(A.getRangeMap(), A.getDomainMap());
     Aprime = temp;
+    Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+      "aafter.mtx",temp);*/
   }
   else{
     Aprime = rcpFromRef(A);
   }
   if(transposeB){
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  bt(B);
-    RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > trans = bt.createTranspose();
-    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > temp = 
-      rcp( new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(B.getDomainMap(), 0));
+    RCP<const Matrix_t > trans = bt.createTranspose();
+    RCP<Matrix_t > temp = rcp( new Matrix_t(B.getDomainMap(), 0));
     Import<LocalOrdinal,GlobalOrdinal,Node> importer(trans->getRowMap(), B.getDomainMap());
     temp->doImport(*(trans), importer, INSERT);
     temp->fillComplete(B.getRangeMap(), B.getDomainMap());
