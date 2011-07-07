@@ -892,9 +892,16 @@ namespace {
     typedef typename GRAPH::local_ordinal_type  local_ordinal_type;
     typedef typename GRAPH::global_ordinal_type global_ordinal_type;
     typedef typename GRAPH::node_type           node_type;
-    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LO >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GO >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< node_type           , Node    >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LO  >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GO  >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< node_type           , Node>::value) == true, true );
+    typedef RowGraph<LO,GO,Node> RGRAPH;
+    typedef typename RGRAPH::local_ordinal_type  rgraph_local_ordinal_type;
+    typedef typename RGRAPH::global_ordinal_type rgraph_global_ordinal_type;
+    typedef typename RGRAPH::node_type           rgraph_node_type;
+    TEST_EQUALITY_CONST( (is_same< rgraph_local_ordinal_type  , LO  >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< rgraph_global_ordinal_type , GO  >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< rgraph_node_type           , Node>::value) == true, true );
   }
 
   // 

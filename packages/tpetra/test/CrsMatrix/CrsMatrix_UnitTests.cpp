@@ -1806,6 +1806,15 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LO     >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GO     >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< node_type           , Node   >::value) == true, true );
+    typedef RowMatrix<Scalar,LO,GO,Node> RMAT;
+    typedef typename RMAT::scalar_type         rmat_scalar_type;
+    typedef typename RMAT::local_ordinal_type  rmat_local_ordinal_type;
+    typedef typename RMAT::global_ordinal_type rmat_global_ordinal_type;
+    typedef typename RMAT::node_type           rmat_node_type;
+    TEST_EQUALITY_CONST( (is_same< rmat_scalar_type         , Scalar >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< rmat_local_ordinal_type  , LO     >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< rmat_global_ordinal_type , GO     >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< rmat_node_type           , Node   >::value) == true, true );
   }
 
   ////
