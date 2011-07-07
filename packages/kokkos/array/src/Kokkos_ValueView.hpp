@@ -143,7 +143,7 @@ template< typename ViewType >
 inline
 ValueView< typename ViewType::value_type ,
            typename ViewType::device_type >
-create_value( const std::string & label )
+create_value()
 {
   return create_labeled_value< typename ViewType::value_type ,
                                typename ViewType::device_type >

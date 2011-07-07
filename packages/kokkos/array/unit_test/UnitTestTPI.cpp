@@ -63,6 +63,7 @@
 #include <UnitTestMDArrayDeepCopy.hpp>
 #include <UnitTestMDArrayIndexMap.hpp>
 #include <UnitTestReduce.hpp>
+#include <UnitTestMultiReduce.hpp>
 
 #include <Kokkos_DeviceClear_macros.hpp>
 
@@ -83,6 +84,7 @@ void test_device_tpi()
 
     UnitTestReduce< long ,   Kokkos::DeviceTPI >( 1000000 );
     UnitTestReduce< double , Kokkos::DeviceTPI >( 1000000 );
+    UnitTestReduceMulti< long , Kokkos::DeviceTPI >( 1000000 , 7 );
 
     std::cout << "PASSED : UnitTestTPI" << std::endl ;
   }

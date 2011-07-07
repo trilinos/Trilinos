@@ -56,6 +56,7 @@
 #include <UnitTestMDArrayDeepCopy.hpp>
 #include <UnitTestMDArrayIndexMap.hpp>
 #include <UnitTestReduce.hpp>
+#include <UnitTestMultiReduce.hpp>
 
 #include <Kokkos_DeviceClear_macros.hpp>
 
@@ -74,6 +75,7 @@ void test_device_host()
 
     UnitTestReduce< long ,   Kokkos::DeviceHost >( 1000000 );
     UnitTestReduce< double , Kokkos::DeviceHost >( 1000000 );
+    UnitTestReduceMulti< long , Kokkos::DeviceHost >( 1000000 , 7 );
 
     std::cout << "PASSED : UnitTestHost" << std::endl ;
   }

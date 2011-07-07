@@ -41,6 +41,7 @@
 #define KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP
 
 #include <Kokkos_ParallelReduce.hpp>
+#include <vector>
 
 namespace Kokkos {
 namespace Impl {
@@ -131,6 +132,123 @@ public:
 };
 
 } // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template < class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduceMember< void , ReduceTraits , FinalizeType , DeviceHost > {
+public:
+
+  typedef typename ReduceTraits::value_type value_type ;
+
+  virtual ~MultiFunctorParallelReduceMember() {}
+
+  virtual void execute( value_type & update ) const = 0 ;
+};
+
+template < class FunctorType , class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduceMember< FunctorType , ReduceTraits , FinalizeType , DeviceHost >
+  : public MultiFunctorParallelReduceMember< void , ReduceTraits , FinalizeType , DeviceHost >
+{
+public:
+  typedef          DeviceHost  ::size_type  size_type ;
+  typedef typename ReduceTraits::value_type value_type ;
+
+  FunctorType m_functor ;
+  size_type   m_work_count ;
+
+  MultiFunctorParallelReduceMember( const size_type     work_count ,
+                                    const FunctorType & functor )
+    : m_functor( functor )
+    , m_work_count( work_count )
+    {}
+
+  void execute( value_type & update ) const
+  {
+    for ( size_type iwork = 0 ; iwork < m_work_count ; ++iwork ) {
+      m_functor( iwork , update );
+    }
+  }
+};
+
+} // namespace Impl
+
+template< class ReduceTraits >
+class MultiFunctorParallelReduce< ReduceTraits , typename ReduceTraits::value_type , DeviceHost > {
+private:
+  typedef          DeviceHost  ::size_type   size_type ;
+  typedef typename ReduceTraits::value_type value_type ;
+
+  typedef MultiFunctorParallelReduce< ReduceTraits , value_type , DeviceHost > self_type ;
+  typedef Impl::MultiFunctorParallelReduceMember<void,ReduceTraits,value_type,DeviceHost> MemberType ;
+  typedef std::vector< MemberType * > MemberContainer ;
+  typedef typename MemberContainer::const_iterator MemberIterator ;
+
+  MemberContainer m_member_functors ;
+
+public:
+
+  value_type result ;
+
+  ~MultiFunctorParallelReduce()
+    {
+      while ( ! m_member_functors.empty() ) {
+        delete m_member_functors.back();
+        m_member_functors.pop_back();
+      }
+    }
+
+  MultiFunctorParallelReduce()
+    : m_member_functors()
+    , result()
+    {}
+
+  template< class FunctorType >
+  void push_back( const size_type work_count , const FunctorType & functor )
+  {
+    MemberType * m = new Impl::MultiFunctorParallelReduceMember<FunctorType,ReduceTraits,value_type,DeviceHost>( work_count , functor );
+    m_member_functors.push_back( m );
+  }
+
+  void execute()
+  {
+    ReduceTraits::init( result );
+    for ( MemberIterator m  = m_member_functors.begin();
+                         m != m_member_functors.end(); ++m ) {
+      (*m)->execute( result );
+    }
+  }
+};
+
+template< class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceHost > {
+private:
+
+  MultiFunctorParallelReduce< ReduceTraits , typename ReduceTraits::value_type , DeviceHost > m_impl ;
+
+public:
+
+  FinalizeType result ;
+
+  MultiFunctorParallelReduce() : m_impl() {}
+
+  template< class FunctorType >
+  void push_back( const DeviceHost::size_type work_count ,
+                  const FunctorType & functor )
+  { m_impl.push_back( work_count , functor ); }
+
+  void execute()
+  {
+    m_impl.execute();
+    result( m_impl.result );
+  }
+};
+
 } // namespace Kokkos
 
 #endif /* KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP */

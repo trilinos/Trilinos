@@ -49,14 +49,13 @@
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , class ReduceTraits , class FinalizeType >
-class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , DeviceTPI > {
+template< class FunctorType , class ReduceTraits >
+class ParallelReduce< FunctorType , ReduceTraits , typename ReduceTraits::value_type , DeviceTPI > {
 public:
   typedef          DeviceTPI   ::size_type   size_type ;
   typedef typename ReduceTraits::value_type  value_type ;
 
   const FunctorType  m_work_functor ;
-  const FinalizeType m_work_finalize ;
   const size_type    m_work_count ;
 
 private:
@@ -92,26 +91,22 @@ private:
   }
 
   ParallelReduce( const size_type work_count ,
-                  const FunctorType & functor ,
-                  const FinalizeType & finalize )
+                  const FunctorType & functor )
     : m_work_functor( functor )
-    , m_work_finalize( finalize )
     , m_work_count( work_count )
     {}
 
 public:
 
-  static void execute( const size_type work_count ,
+  static void execute( const size_type     work_count ,
                        const FunctorType & functor ,
-                       const FinalizeType & finalize )
+                             value_type  & result )
   {
     DeviceTPI::set_dispatch_functor();
 
-    ParallelReduce driver( work_count , functor , finalize );
+    ParallelReduce driver( work_count , functor );
 
     DeviceTPI::clear_dispatch_functor();
-
-    value_type result ;
 
     ReduceTraits::init( result );
 
@@ -120,37 +115,27 @@ public:
                             & run_init_on_tpi ,
                             sizeof(value_type) ,
                             & result );
-
-    driver.m_work_finalize( result );
   }
 };
 
-//----------------------------------------------------------------------------
 
-template< class FunctorType , class ReduceTraits >
-class ParallelReduce< FunctorType , ReduceTraits , void , DeviceTPI > 
-{
+template< class FunctorType , class ReduceTraits , class FinalizeType >
+class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , DeviceTPI > {
 public:
-  typedef DeviceTPI::size_type               size_type ;
+
+  typedef          DeviceTPI   ::size_type   size_type ;
   typedef typename ReduceTraits::value_type  value_type ;
 
-  struct AssignValueFunctor {
-
-    value_type & ref ;
-
-    AssignValueFunctor( value_type & arg_ref ) : ref( arg_ref ) {}
-
-    AssignValueFunctor( const AssignValueFunctor & rhs ) : ref( rhs.ref ) {}
-
-    void operator()( const value_type & val ) const { ref = val ; }
-  };
-
-  static void execute( const size_type     work_count ,
-                       const FunctorType & functor ,
-                             value_type  & result )
+  static void execute( const size_type      work_count ,
+                       const FunctorType  & functor ,
+                       const FinalizeType & finalize )
   {
-    ParallelReduce< FunctorType, ReduceTraits, AssignValueFunctor, DeviceTPI >
-      ::execute( work_count , functor , AssignValueFunctor( result ) );
+    value_type result ;
+
+    ParallelReduce< FunctorType , ReduceTraits , value_type , DeviceTPI >
+      ::execute( work_count , functor , result );
+
+    finalize( result );
   }
 };
 
@@ -163,23 +148,22 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , class ReduceTraits >
-class TPIMultiFunctorParallelReduceMember ;
-
-template< class ReduceTraits >
-class TPIMultiFunctorParallelReduceMember<void,ReduceTraits> {
+template< class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduceMember<void,ReduceTraits,FinalizeType,DeviceTPI> {
 public:
   typedef          DeviceTPI   ::size_type   size_type ;
   typedef typename ReduceTraits::value_type  value_type ;
+
+  virtual ~MultiFunctorParallelReduceMember() {}
 
   virtual void execute( const size_type thread_count ,
                         const size_type thread_rank ,
                         value_type & update ) const = 0 ;
 };
 
-template< class FunctorType , class ReduceTraits >
-class TPIMultiFunctorParallelReduceMember
-  : public TPIMultiFunctorParallelReduceMember<void,ReduceTraits> {
+template< class FunctorType , class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduceMember< FunctorType , ReduceTraits , FinalizeType , DeviceTPI >
+  : public MultiFunctorParallelReduceMember<void,ReduceTraits,FinalizeType,DeviceTPI> {
 public:
   typedef          DeviceTPI   ::size_type   size_type ;
   typedef typename ReduceTraits::value_type  value_type ;
@@ -187,8 +171,8 @@ public:
   const FunctorType m_work_functor ;
   const size_type   m_work_count ;
 
-  TPIMultiFunctorParallelReduceMember( const size_type work_count ,
-                                       const FunctorType & work_functor )
+  MultiFunctorParallelReduceMember( const size_type work_count ,
+                                    const FunctorType & work_functor )
     : m_work_functor( work_functor )
     , m_work_count(   work_count )
     {}
@@ -209,14 +193,15 @@ public:
 
 } // namespace Impl
 
-template< class ReduceTraits , class FinalizeType >
-class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceTPI > {
+template< class ReduceTraits >
+class MultiFunctorParallelReduce< ReduceTraits , typename ReduceTraits::value_type , DeviceTPI > {
 private:
   typedef          DeviceTPI   ::size_type   size_type ;
   typedef typename ReduceTraits::value_type value_type ;
 
-  typedef MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceTPI > self_type ;
-  typedef Impl::TPIMultiFunctorParallelReduceMember<ReduceTraits,void> MemberType ;
+  typedef MultiFunctorParallelReduce< ReduceTraits , value_type , DeviceTPI > self_type ;
+  typedef Impl::MultiFunctorParallelReduceMember<void,ReduceTraits,value_type,DeviceTPI> MemberType ;
+
   typedef std::vector< MemberType * > MemberContainer ;
   typedef typename MemberContainer::const_iterator MemberIterator ;
 
@@ -252,7 +237,7 @@ private:
 
 public:
 
-  FinalizeType result ;
+  value_type result ;
 
   MultiFunctorParallelReduce()
     : m_member_functors()
@@ -262,12 +247,49 @@ public:
   template< class FunctorType >
   void push_back( const size_type work_count , const FunctorType & functor )
   {
-
+    MemberType * m = new Impl::MultiFunctorParallelReduceMember<FunctorType,ReduceTraits,value_type,DeviceTPI>( work_count , functor );
+    m_member_functors.push_back( m );
   }
 
+  void execute()
+  {
+    ReduceTraits::init( result );
 
+    TPI_Run_threads_reduce( & run_work_on_tpi , this  ,
+                            & run_join_on_tpi ,
+                            & run_init_on_tpi ,
+                            sizeof(value_type) ,
+                            & result );
+  }
 };
- 
+
+template< class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceTPI > {
+public:
+
+  typedef          DeviceTPI   ::size_type   size_type ;
+  typedef typename ReduceTraits::value_type value_type ;
+
+private:
+
+  MultiFunctorParallelReduce< ReduceTraits , value_type , DeviceTPI > m_impl ;
+
+public:
+
+  FinalizeType result ;
+
+  MultiFunctorParallelReduce() : m_impl() {} 
+
+  template< class FunctorType >
+  void push_back( const size_type work_count , const FunctorType & functor )
+  { m_impl.push_back( work_count , functor ); }
+
+  void execute()
+  {
+    m_impl.execute();
+    result( m_impl.result );
+  }
+};
 
 } // namespace Kokkos
 

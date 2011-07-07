@@ -167,6 +167,12 @@ public:
   void execute();
 };
 
+namespace Impl {
+
+template< class FunctorType , class ReduceTraits , class FinalizeType , class DeviceType >
+class MultiFunctorParallelReduceMember ;
+
+} // namespace Impl
 } // namespace Kokkos
 
 #endif /* KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP */
