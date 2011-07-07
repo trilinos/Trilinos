@@ -102,7 +102,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAllDefault
   PASS_REGULAR_EXPRESSION_ALL
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 18"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 19"
     "Final set of non-enabled packages:  Stokhos Sacado Belos Phalanx 4"
   )
 
@@ -112,7 +112,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 21"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
     "Final set of non-enabled packages:  Stokhos 1"
   )
 
@@ -122,7 +122,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS Trilinos_PACKAGES=Teuchos
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  Teuchos 1"
-    "Final set of non-enabled packages:  RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 21"
+    "Final set of non-enabled packages:  TrilinosFramework RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
     "Procesing current package Teuchos: libs='ON', tests='ON'"
     "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=ON.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
   )
@@ -134,8 +134,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableThyra
   ARGS Trilinos_PACKAGES=Thyra
   PASS_REGULAR_EXPRESSION_ALL
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra 7"
-    "Final set of non-enabled packages:  Shards Tpetra Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 15"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra 8"
+    "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 15"
     "Procesing current package Teuchos: libs='ON', tests=''"
     "CONFIGURE_OPTIONS = '-DCTEST_USE_LAUNCHERS:BOOL=1.-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON.-DTrilinos_ENABLE_TESTS:BOOL=.-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=-Werror.-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF.-DMPI_EXEC_MAX_NUMPROCS:STRING=4.-DTrilinos_EXTRAREPOS_FILE:STRING=${PROJECT_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos/cmake.ExtraExternalRepositories.cmake.-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Experimental.-DTrilinos_ENABLE_Teuchos:BOOL=ON'"
     "Procesing current package Epetra: libs='ON', tests=''"
@@ -154,8 +154,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* Thyra 1"
     "Explicitly disabled packages on input .*  Epetra Stokhos 2"
-    "Final set of enabled packages:  Teuchos RTOp Thyra 3"
-    "Final set of non-enabled packages:  Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 19"
+    "Final set of enabled packages:  Teuchos RTOp Tpetra Thyra 4"
+    "Final set of non-enabled packages:  TrilinosFramework Epetra Zoltan Shards Triutils EpetraExt Stokhos Sacado Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 19"
     "Procesing current package Teuchos: libs='ON', tests=''"
     "Procesing current package Epetra: libs='OFF', tests=''"
     "Procesing current package Zoltan: libs='', tests=''"
@@ -172,7 +172,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Explicitly enabled packages on input .*  Phalanx 1"
     "Explicitly disabled packages on input .*  Stokhos 1"
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen Phalanx 20"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen Phalanx 21"
     "Final set of non-enabled packages:  Stokhos Belos 2"
     "Procesing current package Stokhos: libs='OFF', tests=''"
     "Procesing current package RBGen: libs='ON', tests='ON'"
@@ -188,7 +188,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Explicitly enabled packages on input .*  Stokhos 1"
     "Explicitly disabled packages on input .*  0"
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 19"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 20"
     "Final set of non-enabled packages:  Sacado Belos Phalanx 3"
     "Procesing current package Stokhos: libs='ON', tests='ON'"
     "Procesing current package RBGen: libs='ON', tests='ON'"
@@ -204,7 +204,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Explicitly enabled packages on input .*  Stokhos 1"
     "Explicitly disabled packages on input .*  0"
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 23"
     "Final set of non-enabled packages:  0"
     "Procesing current package Stokhos: libs='ON', tests='ON'"
     "Procesing current package RBGen: libs='ON', tests='ON'"
@@ -220,7 +220,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Explicitly enabled packages on input .*  0"
     "Explicitly disabled packages on input .*  Stokhos Stalix 2"
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 22"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 23"
     "Final set of non-enabled packages:  Stokhos Stalix 2"
     "CONFIGURE_OPTIONS.+-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Continuous.+"
     "Procesing current package Teuchos: libs='ON', tests='ON'"
@@ -243,16 +243,16 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "EXECUTE_PROCESS.COMMAND./someotherbasedir/svn.checkout.url3/somedirpath/trunk.packages/TriKota/Dakota.WORKING_DIRECTORY..*/cmake/DependencyUnitTests/MockTrilinos.OUTPUT_FILE..*/cmake/ctest/UnitTests/TrilinosFramework_CTestDriver_CI_EnableAllSecondaryStable_EnableStalix/Dakota.update.out."
     "Adding extra Continuous repository preCopyrightTrilinos"
     "Adding extra Continuous repository Dakota"
-    "Trilinos_NUM_PACKAGES='22'"
+    "Trilinos_NUM_PACKAGES='23'"
     "Trilinos_NUM_TPLS='19'"
     "Reading a list of extra packages from .*/cmake/ctest/UnitTests/../../../cmake/DependencyUnitTests/MockTrilinos/preCopyrightTrilinos/ExtraTrilinosPackages.cmake"
-    "Trilinos_NUM_PACKAGES='24'"
+    "Trilinos_NUM_PACKAGES='25'"
     "Trilinos_NUM_TPLS='20'"
     "Skipping reading packages and TPLs for extra repo Dakota because marked NOPACKAGES"
     "Explicitly enabled packages on input .*  Stalix 1"
     "Explicitly disabled packages on input .*  Stokhos 1"
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 23"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
     "Final set of non-enabled packages:  Stokhos 1"
     "Procesing current package Phalanx: libs='ON', tests='ON'"
     "Procesing current package Stalix: libs='ON', tests='ON'"
@@ -268,9 +268,9 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Explicitly enabled packages on input .*  0"
     "Explicitly disabled packages on input .*  Stokhos Stalix 2"
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
-    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko ExtraPack 23"
+    "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko ExtraPack 24"
     "Final set of non-enabled packages:  Stokhos Stalix 2"
-    "Trilinos_NUM_ENABLED_PACKAGES=23:  Configuring packages!"
+    "Trilinos_NUM_ENABLED_PACKAGES=24:  Configuring packages!"
     "Procesing current package ExtraPack: libs='ON', tests='ON'"
     "Configuring PACKAGE='ExtraPack'"
   )
@@ -309,7 +309,7 @@ IF (PYTHON_EXECUTABLE)
       "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
       "Explicitly enabled packages on input .*  Teuchos 1"
       "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 22"
-      "Final set of non-enabled packages:  Stokhos Stalix 2"
+      "Final set of non-enabled packages:  TrilinosFramework Stokhos Stalix 3"
       "CTEST_UPDATE.+ returned '1'"
       "Procesing current package Teuchos: libs='ON', tests='ON'"
       "Procesing current package Teko: libs='ON', tests='ON'"
@@ -332,7 +332,7 @@ IF (PYTHON_EXECUTABLE)
       "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
       "Explicitly enabled packages on input .*  Teuchos 1"
       "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko ExtraPack 23"
-      "Final set of non-enabled packages:  Stokhos Stalix 2"
+      "Final set of non-enabled packages:  TrilinosFramework Stokhos Stalix 3"
       "CTEST_UPDATE.+ returned '1'"
       "Procesing current package Teuchos: libs='ON', tests='ON'"
       "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
@@ -357,7 +357,34 @@ IF (PYTHON_EXECUTABLE)
       "Directly modified or failing non-disabled packages that need to be tested:  Thyra 1"
       "Explicitly enabled packages on input .*  Thyra 1"
       "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos Teko 17"
-      "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 7"
+      "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 8"
+      "CTEST_UPDATE.+ returned '1'"
+      "Procesing current package Teuchos: libs='ON', tests=''"
+      "Not enabling implicitly enabled package Teuchos on request"
+      "Procesing current package Zoltan: libs='ON', tests=''"
+      "Not enabling implicitly enabled package Zoltan on request"
+      "Procesing current package Thyra: libs='ON', tests='ON'"
+      "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Thyra:BOOL=ON"
+      "Procesing current package Teko: libs='ON', tests='ON'"
+    )
+
+
+  CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
+    CI_EnableOnlyModified_ModifiedThyraCoreLibs_NoEnableImplictlyEnabled
+    COPY_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.ThyraCoreLibs.txt modifiedFiles.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
+      ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.extraTrilinosRepo.txt
+    ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+      CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
+      CTEST_UPDATE_RETURN_VAL=1
+    PASS_REGULAR_EXPRESSION_ALL
+      "Directly modified or failing non-disabled packages that need to be tested:  ThyraCoreLibs 1"
+      "Explicitly enabled packages on input .*  0"
+      "Explicitly enabled SE packages on input .*  ThyraCoreLibs 1"
+      "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos Teko 17"
+      "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 8"
       "CTEST_UPDATE.+ returned '1'"
       "Procesing current package Teuchos: libs='ON', tests=''"
       "Not enabling implicitly enabled package Teuchos on request"
@@ -382,7 +409,7 @@ IF (PYTHON_EXECUTABLE)
       "Directly modified or failing non-disabled packages that need to be tested:  Teko 1"
       "Explicitly enabled packages on input .*  Teko 1"
       "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos Teko 17"
-      "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 7"
+      "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 8"
       "CTEST_UPDATE.+ returned '0'"
       "Procesing current package Teuchos: libs='ON', tests=''"
       "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
@@ -411,7 +438,7 @@ IF (PYTHON_EXECUTABLE)
       "Directly modified or failing non-disabled packages that need to be tested:  Teuchos Teko 2"
       "Explicitly enabled packages on input .*  Teuchos Teko 2"
       "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 22"
-      "Final set of non-enabled packages:  Stokhos Stalix 2"
+      "Final set of non-enabled packages:  TrilinosFramework Stokhos Stalix 3"
       "CTEST_UPDATE.+ returned '2'"
       "Procesing current package Teuchos: libs='ON', tests='ON'"
       "CONFIGURE_OPTIONS.+Trilinos_ENABLE_Teuchos:BOOL=ON"
@@ -439,7 +466,7 @@ IF (PYTHON_EXECUTABLE)
       "Explicitly enabled packages on input .*  0"
       "Explicitly disabled packages on input .*  Stokhos Stalix 2"
       "Final set of enabled packages:  0"
-      "Final set of non-enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
+      "Final set of non-enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 25"
       "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
     )
 
@@ -463,7 +490,7 @@ IF (PYTHON_EXECUTABLE)
       "Explicitly enabled packages on input .*  Thyra RBGen Teko 3"
       "Explicitly disabled packages on input .*  Stokhos Stalix 2"
       "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos RBGen Teko 18"
-      "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid Phalanx Stalix 6"
+      "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid Phalanx Stalix 7"
       "CTEST_UPDATE.+ returned '0'"
       "Procesing current package Teuchos: libs='ON', tests=''"
       "Procesing current package Epetra: libs='ON', tests=''"
@@ -514,7 +541,7 @@ IF (PYTHON_EXECUTABLE)
       "Explicitly enabled packages on input .*  0"
       "Explicitly disabled packages on input .*  Stokhos Stalix 2"
       "Final set of enabled packages:  0"
-      "Final set of non-enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
+      "Final set of non-enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 25"
       "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
     )
 

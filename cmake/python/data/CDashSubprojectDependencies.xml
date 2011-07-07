@@ -80,15 +80,15 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="Thyra">
-    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Teuchos" type="ILR"/>
     <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="RTOp" type="LR"/>
+    <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Kokkos" type="ILO"/>
-    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="Tpetra" type="LO"/>
-    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
     <EmailAddresses>
       <Email address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -256,12 +256,11 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Kokkos" type="ILO"/>
-    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Epetra" type="ILR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Thyra" type="LR"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -535,16 +534,16 @@
   </SubProject>
   <SubProject name="Rythmos">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="Sacado" type="TO"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ILO"/>
-    <Dependency name="Epetra" type="ILO"/>
-    <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="Kokkos" type="ITO"/>
+    <Dependency name="Epetra" type="ITO"/>
+    <Dependency name="Zoltan" type="ITO"/>
+    <Dependency name="Triutils" type="ITO"/>
+    <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Thyra" type="LR"/>
+    <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="ITO"/>
     <Dependency name="Galeri" type="ITO"/>
@@ -561,15 +560,14 @@
   </SubProject>
   <SubProject name="MOOCHO">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="RTOp" type="LR"/>
-    <Dependency name="Kokkos" type="ILO"/>
-    <Dependency name="Epetra" type="ILO"/>
-    <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="Tpetra" type="ILO"/>
-    <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Thyra" type="LO"/>
+    <Dependency name="Kokkos" type="ITO"/>
+    <Dependency name="Epetra" type="ITO"/>
+    <Dependency name="Zoltan" type="ITO"/>
+    <Dependency name="Triutils" type="ITO"/>
+    <Dependency name="Tpetra" type="ITO"/>
+    <Dependency name="EpetraExt" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="ITO"/>
     <Dependency name="Galeri" type="ITO"/>

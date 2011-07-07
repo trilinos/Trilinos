@@ -38,7 +38,7 @@ class PackageDependencies:
   def __init__(self, packageName_in, packageDir_in,
     libRequiredDepPackages_in, libOptionalDepPackages_in,
     testRequiredDepPackages_in, testOptionalDepPackages_in,
-    emailAddresses_in
+    emailAddresses_in, parentPackage_in
     ):
     self.packageName = packageName_in
     self.packageDir = packageDir_in
@@ -48,6 +48,7 @@ class PackageDependencies:
     self.testRequiredDepPackages = testRequiredDepPackages_in
     self.testOptionalDepPackages = testOptionalDepPackages_in
     self.emailAddresses = emailAddresses_in
+    self.parentPackage = parentPackage_in
 
   def __str__(self):
     return "{\n"+\
@@ -59,6 +60,7 @@ class PackageDependencies:
       "  testRequiredDepPackages="+str(self.testRequiredDepPackages)+",\n"+\
       "  testOptionalDepPackages="+str(self.testOptionalDepPackages)+" \n"+\
       "  emailAddresses="+str(self.emailAddresses)+"\n"+\
+      "  parentPackage="+str(self.parentPackage)+"\n"+\
       "}\n"
 
 
@@ -199,12 +201,14 @@ class TrilinosDependencies:
     for packageDep in self.__packagesList:
       regexFilePath = regexPathPrefix+packageDep.packageDir+"/"
       ammendedFullPath = pathPrefix+fullPath 
-      #print "regexFilePath="+regexFilePath
+      #print "\nregexFilePath="+regexFilePath
       #print "ammendedFullPath="+ammendedFullPath
       if re.match(regexFilePath, ammendedFullPath):
         #print "MATCH!"
         return packageDep.packageName
     return u""
+    # NOTE: The above loop with match subpackages before it matches
+    # packages because subpackages are listed before packages!
 
 
   def __str__(self):
@@ -474,25 +478,53 @@ class TrilinosDependencies:
       packageDeps = self.__packagesList[package_i]
 
       packageName = packageDeps.packageName
-      xmlText += ("  <SubProject name=\""+packageName+"\">\n")
 
-      row = rawTable[package_i+1]
+      if packageDeps.parentPackage == "":
+        
+        xmlText += ("  <SubProject name=\""+packageName+"\">\n")
+  
+        row = rawTable[package_i+1]
+  
+        for dep_j in range(numPackages):
+          entry = row[dep_j+1]
+          if entry and entry != "X":
+            depPackageName = self.__packagesList[dep_j].packageName
+            depPackageStruct = self.getPackageByName(depPackageName)
+            if depPackageStruct.parentPackage == "":
+              xmlText += ("    <Dependency name=\""+depPackageName+"\"" + \
+                " type=\""+entry+"\"/>\n" )
+            else:
+              # Don't write subpackage depencencies because CDash should not
+              # know about this.  Such dependencies will just not appear but
+              # that only affects what CDash displays (and I don't ever look
+              # at the subproject dependencies list in CDash really and don't
+              # find it very useful given the large number of builds).
+              None
+  
+        xmlText += \
+          "    <EmailAddresses>\n"+\
+          "      <Email address=\""+packageDeps.emailAddresses.regression+"\"/>\n"+\
+          "    </EmailAddresses>\n"
 
-      for dep_j in range(numPackages):
-        entry = row[dep_j+1]
-        if entry and entry != "X":
-          depPackageName = self.__packagesList[dep_j].packageName
-          xmlText += ("    <Dependency name=\""+depPackageName+"\"" + \
-            " type=\""+entry+"\"/>\n" )
+        xmlText += ("  </SubProject>\n")
 
-      xmlText += \
-        "    <EmailAddresses>\n"+\
-        "      <Email address=\""+packageDeps.emailAddresses.regression+"\"/>\n"+\
-        "    </EmailAddresses>\n"
+      else:
 
-      xmlText += ("  </SubProject>\n")
+        # We don't want to bother CDash with subpackages.  We want CDash testing
+        # to operate on the package level!
+        None
+
+      # end if
+
+    # end for
 
     xmlText += "</Project>\n"
+
+    # rabartl: 2011/07/06: ToDo: Change tha above logic to only
+    # write'Dependency' elements for actual Trilinos packages in the place of
+    # subpackages.  This will be a little hard to implement and test but we
+    # need to do so at some point if we want CDash to know the correct
+    # dependencies (but I don't really care).
 
     return xmlText
   
@@ -533,6 +565,12 @@ def getPackageEmailAddresses(packageEle):
   return PackageEmailAddresses(checkinEmail, regressionEmail)
 
 
+def getParentPackage(packageEle):
+  parentPackageEle = packageEle.getElementsByTagName("ParentPackage")[0]
+  parentPackage = parentPackageEle.getAttribute('value');
+  return parentPackage
+
+
 def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
   #print "xmlFile =", xmlFile
   packageDepXmlDom = xml.dom.minidom.parse(xmlFile)
@@ -547,7 +585,8 @@ def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
         getDependenciesByType(ele, "LIB_OPTIONAL_DEP_PACKAGES"),
         getDependenciesByType(ele, "TEST_REQUIRED_DEP_PACKAGES"),
         getDependenciesByType(ele, "TEST_OPTIONAL_DEP_PACKAGES"),
-        getPackageEmailAddresses(ele)
+        getPackageEmailAddresses(ele),
+        getParentPackage(ele)
         )
       #print "\npackageDeps =", str(packageDeps)
       trilinosDependencies.addPackageDependencies(packageDeps)

@@ -12,6 +12,9 @@ class MockOptions:
     self.enableAllPackages = 'auto'
 
 
+scriptsDir = getScriptBaseDir()
+
+
 #
 # Test formatMinutesStr
 #
@@ -83,21 +86,22 @@ class test_getTimeInMinFromTotalTimeLine(unittest.TestCase):
 # Test extractPackageEnablesFromChangeStatus
 #
 
+
+trilinosDepsXmlFileDefaultOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.gold.xml"
+trilinosDependenciesDefault = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFileDefaultOverride)
+
+
 class test_extractPackageEnablesFromChangeStatus(unittest.TestCase):
 
 
-  def test_all_packages(self):
+  def test_enable_all_and_other_packages(self):
 
     updateOutputStr = """
-? packages/tpetra/doc/html
-? packages/trilinoscouplings/doc/html
-? packages/triutils/doc/html
-? sampleScripts/checkin-test-gabriel.sh
 M	CMakeLists.txt
 M	cmake/TrilinosPackages.cmake
 M	cmake/python/checkin-test.py
-M	 doc/Thyra/coding_guildlines/ThyraCodingGuideLines.tex
-P packages/thyra/dummy.blah
+M	doc/Thyra/coding_guildlines/ThyraCodingGuideLines.tex
+P	packages/thyra/dummy.blah
 A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
 """
 
@@ -105,33 +109,32 @@ A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
     enablePackagesList = []
 
     extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
-      enablePackagesList, False)
+      enablePackagesList, False, trilinosDependenciesDefault)
 
     self.assertEqual( options.enableAllPackages, 'on' )
     self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'Teuchos'] )
 
 
-  def test_not_all_packages(self):
+  def test_some_packages(self):
 
     updateOutputStr = """
 ? packages/triutils/doc/html
 M	cmake/python/checkin-test.py
 M	cmake/python/dump-cdash-deps-xml-file.py
-A	packages/nox/src/dummy.C
-P packages/stratimikos/dummy.blah
+A	packages/stratimikos/src/dummy.C
+P       packages/stratimikos/dummy.blah
 M	packages/thyra/src/Thyra_ConfigDefs.hpp
-M	packages/thyra/CMakeLists.txt
-D	packages/moocho/src/MoochoUtils/src/FSeconds.f
+D	packages/tpetra/FSeconds.f
 """
 
     options = MockOptions()
     enablePackagesList = []
 
     extractPackageEnablesFromChangeStatus(updateOutputStr, options, "",
-      enablePackagesList, False)
+      enablePackagesList, False, trilinosDependenciesDefault)
 
     self.assertEqual( options.enableAllPackages, 'auto' )
-    self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'NOX', u'Thyra', u'MOOCHO'] )
+    self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'Stratimikos', u'ThyraCoreLibs', u'Tpetra'] )
 
 
   def test_extra_repo(self):
@@ -140,7 +143,6 @@ D	packages/moocho/src/MoochoUtils/src/FSeconds.f
 M	ExtraTrilinosPackages.cmake
 M	stalix/README
 """
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     trilinosDependenciesLocal = getTrilinosDependenciesFromXmlFile(trilinosDepsXmlFileOverride)
 
@@ -494,7 +496,6 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
   failRegexStrList=None, fileFailRegexStrList=None, envVars=[], inPathEg=True, egVersion=True \
   ):
 
-  scriptsDir = getScriptBaseDir()
   verbose = g_verbose
 
   passRegexList = passRegexStrList.split('\n')
@@ -823,7 +824,6 @@ class test_checkin_test(unittest.TestCase):
   # entire workflow in order to make sure that raw 'eg' is not used anywhere
   # where it matters.
   def test_do_all_no_eg_installed(self):
-    scriptsDir = getScriptBaseDir()
     eg = scriptsDir+"/../DependencyUnitTests/MockTrilinos/commonTools/git/eg"
     checkin_test_run_case(
       \
@@ -1108,7 +1108,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_explicit_enable_configure_pass(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1143,7 +1142,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_implicit_enable_configure_pass(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1179,7 +1177,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_do_all_push_pass(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1222,7 +1219,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_pull_extra_pull_pass(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1258,7 +1254,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_trilinos_changes_do_all_push_pass(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1289,7 +1284,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_extra_repo_changes_do_all_push_pass(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1320,7 +1314,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_abort_gracefully_if_no_updates_no_updates_passes(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1355,7 +1348,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_no_updates_passes(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1394,7 +1386,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_update(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1430,7 +1421,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_update(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1466,7 +1456,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_main_repo_extra_update(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -1502,7 +1491,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_extra_pull_abort_gracefully_if_no_updates_extra_repo_extra_update(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2621,7 +2609,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_no_changes_do_all_push_fail(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2690,7 +2677,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_mispell_repo_fail(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2713,7 +2699,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_initial_trilinos_pull_fail(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2745,7 +2730,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_initial_extra_repo_pull_fail(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2779,7 +2763,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_extra_pull_trilinos_fail(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2815,7 +2798,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_extra_pull_extra_repo_fail(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2853,7 +2835,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_do_all_final_pull_trilinos_fails(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2883,7 +2864,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_do_all_final_pull_extra_repo_fails(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2916,7 +2896,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_do_all_final_amend_trilinos_fails(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2950,7 +2929,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_do_all_final_amend_extra_repo_fails(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -2987,7 +2965,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_do_all_final_push_trilinos_fails(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
@@ -3016,7 +2993,6 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_extra_repo_1_do_all_final_push_extra_repo_fails(self):
-    scriptsDir = getScriptBaseDir()
     trilinosDepsXmlFileOverride=scriptsDir+"/UnitTests/TrilinosPackageDependencies.preCopyrightTrilinos.gold.xml"
     checkin_test_run_case(
       \
