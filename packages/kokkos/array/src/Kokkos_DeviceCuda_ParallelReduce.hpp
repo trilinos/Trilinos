@@ -40,7 +40,9 @@
 #ifndef KOKKOS_DEVICECUDA_PARALLELREDUCE_HPP
 #define KOKKOS_DEVICECUDA_PARALLELREDUCE_HPP
 
-#include <stdio.h>
+#include <Kokkos_ParallelReduce.hpp>
+
+#include <vector>
 #include <iostream>
 
 #include <DeviceCuda/Kokkos_DeviceCuda_ParallelDriver.hpp>
@@ -347,12 +349,12 @@ static void cuda_parallel_reduce( const DriverType driver )
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class FunctorType , class FinalizeType >
-class ParallelReduce< FunctorType , FinalizeType , DeviceCuda > {
+template< class FunctorType , class ReduceTraits , class FinalizeType >
+class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , DeviceCuda > {
 public:
   typedef          DeviceCuda               device_type ;
   typedef          DeviceCuda::size_type    size_type ;
-  typedef typename FunctorType::value_type  value_type ;
+  typedef typename ReduceTraits::value_type value_type ;
 
   enum { WarpSize   = Impl::DeviceCudaTraits::WarpSize };
   enum { WarpStride = WarpSize + 1 };
@@ -399,12 +401,12 @@ public:
   __device__
   void join( volatile       value_type & update ,
              volatile const value_type & input )
-    { FunctorType::join( update , input ); }
+    { ReduceTraits::join( update , input ); }
 
   static inline
   __device__
   void init( value_type & update )
-    { FunctorType::init( update ); }
+    { ReduceTraits::init( update ); }
 
   static inline
   __device__
@@ -467,7 +469,7 @@ public:
                 const FunctorType  & functor ,
                 const FinalizeType & finalize )
   {
-    typedef ParallelReduce< FunctorType , FinalizeType , DeviceCuda > self_type ;
+    typedef ParallelReduce< FunctorType , ReduceTraits , FinalizeType , DeviceCuda > self_type ;
 
     const size_type maximum_shared_words = device_type::maximum_shared_words();
 
@@ -525,12 +527,12 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , void , DeviceCuda > 
+template< class FunctorType , class ReduceTraits >
+class ParallelReduce< FunctorType , ReduceTraits , void , DeviceCuda > 
 {
 public:
-  typedef typename FunctorType::value_type     value_type ;
-  typedef ValueView< value_type , DeviceCuda > view_type ;
+  typedef typename ReduceTraits::value_type     value_type ;
+  typedef ValueView< value_type , DeviceCuda >  view_type ;
 
   void execute( const size_t        work_count ,
                 const FunctorType & work_functor ,
@@ -540,7 +542,7 @@ public:
       create_labeled_value< value_type , DeviceCuda >(
         std::string("parallel_reduce_temporary_result") );
 
-    ParallelReduce< FunctorType , view_type , DeviceCuda >
+    ParallelReduce< FunctorType , ReduceTraits , view_type , DeviceCuda >
       ::execute( work_count , work_functor , tmp );
 
     deep_copy( result , tmp );
@@ -554,16 +556,16 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#if 0
+#if 1
 
 namespace Kokkos {
 namespace Impl {
 
-template < class FunctorType , class FinalizeType >
+template < class FunctorType , class ReduceTraits , class FinalizeType >
 class CudaMultiFunctorParallelReduceMember ;
 
-template < class FinalizeType >
-class CudaMultiFunctorParallelReduceMember<void,FinalizeType> {
+template < class ReduceTraits , class FinalizeType >
+class CudaMultiFunctorParallelReduceMember<void,ReduceTraits,FinalizeType> {
 protected:
   CudaMultiFunctorParallelReduceMember() {}
 public:
@@ -581,11 +583,12 @@ public:
     const size_type      global_block_count ) const = 0 ;
 };
 
-template < class FunctorType , class FinalizeType >
+template < class FunctorType , class ReduceTraits , class FinalizeType >
 class CudaMultiFunctorParallelReduceMember :
-  public CudaMultiFunctorParallelReduceMember<void,FinalizeType>
+  public CudaMultiFunctorParallelReduceMember<void,ReduceTraits,FinalizeType>
 {
 public:
+  typedef DeviceCuda            device_type ;
   typedef DeviceCuda::size_type size_type ;
 
   FunctorType m_functor ;
@@ -611,63 +614,102 @@ public:
                 const size_type      mapped_block_offset ,
                 const size_type      mapped_block_recycle ) const
   {
+    typedef ParallelReduce< FunctorType , ReduceTraits , FinalizeType , DeviceCuda >  driver_type ;
+
     const dim3 grid( block_count , 1 , 1 );
     const dim3 block( Impl::DeviceCudaTraits::WarpSize , warp_count , 1 );
     const size_type work_stride = block.x * block.y * grid.x * m_stream_count ;
 
     DeviceCuda::set_dispatch_functor();
 
-    ParallelReduce< FunctorType , FinalizeType , DeviceCuda >
-      driver( m_functor , finalize , m_work_count , work_stride ,
-              block_count , global_block_count ,
-              mapped_block_offset , mapped_block_recycle );
+    driver_type driver( m_functor , finalize , m_work_count , work_stride ,
+                        block_count , global_block_count ,
+                        mapped_block_offset , mapped_block_recycle );
 
     device_type::clear_dispatch_functor();
 
-    cuda_parallel_reduce< self_type ><<< grid , block , shmem_size , cuda_stream >>>( driver );
+    cuda_parallel_reduce< driver_type ><<< grid , block , shmem_size , cuda_stream >>>( driver );
   }
 };
 
 } // namespace Impl
 
-template < class DeviceType , class FinalizeType >
-class MultiFunctorParallelReduce ;
-
-template < class FinalizeType >
-class MultiFunctorParallelReduce< DeviceCuda , FinalizeType > {
+template < class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceCuda > {
 public:
-  typedef DeviceCuda::size_type size_type ;
-  typedef CudaMultiFunctorParallelReduceMember< void , FinalizeType > MemberType ;
+  typedef          DeviceCuda               device_type ;
+  typedef          DeviceCuda::size_type    size_type ;
+  typedef typename ReduceTraits::value_type value_type ;
 
-  std::vector< MemberType * > m_member_functors ;
-  size_type m_warp_count ;
-  size_type m_shmem ;
-  size_type m_threads_per_block ;
-  size_type m_blocks_per_stream ;
+  enum { WarpSize   = Impl::DeviceCudaTraits::WarpSize };
+  enum { WarpStride = WarpSize + 1 };
+  enum { WarpIndexMask  = Impl::DeviceCudaTraits::WarpIndexMask };
+  enum { WarpIndexShift = Impl::DeviceCudaTraits::WarpIndexShift };
+
+  enum { SharedMemoryBanks = Impl::DeviceCudaTraits::SharedMemoryBanks_13 };
+
+  enum { ValueWordCount = ( sizeof(value_type) + sizeof(size_type) - 1 )
+                          / sizeof(size_type) };
+
+  /** \brief  If the reduction value occupies an
+   *          exact multiple of shared memory banks
+   *          then it must be padded to avoid bank conflicts.
+   */
+  enum { ValueWordStride = ValueWordCount +
+          ( ValueWordCount % SharedMemoryBanks ? 0 : 2 ) };
+
+  enum { WordsPerWarp       = ValueWordStride * WarpSize };
+  enum { WordsPerWarpStride = ValueWordStride * WarpStride };
+
+private:
+
+  typedef Impl::CudaMultiFunctorParallelReduceMember< void , ReduceTraits , FinalizeType > MemberType ;
+  typedef std::vector< MemberType * > MemberVector ;
+
+  MemberVector m_member_functors ;
+  size_type    m_shmem_size ;
+  size_type    m_stream_count ;
+  size_type    m_warps_per_block ;
+  size_type    m_threads_per_block ;
+  size_type    m_blocks_per_stream ;
+
+public:
+
+  FinalizeType result ;
+
+  ~MultiFunctorParallelReduce()
+  {
+    while ( ! m_member_functors.empty() ) {
+      delete m_member_functors.back();
+      m_member_functors.pop_back();
+    }
+  }
 
   MultiFunctorParallelReduce()
     : m_member_functors()
-    , m_warp_count( DeviceCuda::maximum_warp_count() )
-    , m_shmem( 0 )
+    , m_shmem_size( 0 )
+    , m_warps_per_block( device_type::maximum_warp_count() )
+    , m_stream_count( device_type::streams().size() )
     , m_threads_per_block( 0 )
     , m_blocks_per_stream( 0 )
+    , result()
   {
-    typedef MultiFunctorParallelReduce< DeviceCuda , FinalizeType > self_type ;
+    typedef MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceCuda > self_type ;
 
     // Consistent block sizes and shared memory so that any block
     // can perform the final reduction.
 
     const size_type maximum_shared_words = device_type::maximum_shared_words();
 
-    while ( maximum_shared_words < m_warp_count * WordsPerWarpStride ) {
-      m_warp_count >= 1 ;
+    while ( maximum_shared_words < m_warps_per_block * WordsPerWarpStride ) {
+      m_warps_per_block >>= 1 ;
     }
 
-    m_shmem = sizeof(size_type) * ( ValueWordStride * (WarpStride * m_warp_count - 1) + 1 );
+    m_shmem_size = sizeof(size_type) * ( ValueWordStride * (WarpStride * m_warps_per_block - 1) + 1 );
 
     // Each stream has a range of block offsets
 
-    m_threads_per_block = WarpSize * m_warp_count ;
+    m_threads_per_block = WarpSize * m_warps_per_block ;
     m_blocks_per_stream = m_threads_per_block / m_stream_count ;
   }
 
@@ -676,23 +718,22 @@ public:
   {
     const size_type blocks_requested = ( work_count + m_threads_per_block - 1 ) / m_threads_per_block ;
 
-    size_type stream_count_requested = ( block_requested + m_blocks_per_stream - 1 ) / m_blocks_per_stream ;
+    size_type streams_requested = ( blocks_requested + m_blocks_per_stream - 1 ) / m_blocks_per_stream ;
 
-    if ( m_mapped_stream_count < stream_count_requested ) {
-      stream_count_requested = m_mapped_stream_count ;
+    if ( m_stream_count < streams_requested ) {
+      streams_requested = m_stream_count ;
     }
 
     // Functor will be executed on stream_count_requested streams
 
-    Impl::ParallelReduce< void , FinalizeType , DeviceCuda > * member =
-      new CudaMultiFunctorParallelReduceMember< FunctorType , FinalizeType >
-        ( f , work_count , stream_count_requested );
+    MemberType * member =
+      new Impl::CudaMultiFunctorParallelReduceMember< FunctorType , ReduceTraits , FinalizeType >
+        ( f , work_count , streams_requested );
 
-    m_members.push_back( member );
+    m_member_functors.push_back( member );
   }
 
-  static
-  void execute( const FinalizeType & finalize )
+  void execute()
   {
     const std::vector< cudaStream_t > & streams = device_type::streams();
 
@@ -704,31 +745,65 @@ public:
     // When the stream_count * blocks_per_stream < blocks_requested
     // then the functor will iterate within the dispatch.
 
-    std::vector< CudaMultiFunctorParallelReduceMember< void , FinalizeType > >::iterator m ;
+    typename MemberVector::iterator m ;
 
-    for ( m = m_members.begin() ; m != m_members.end() ; ++m ) {
+    size_type global_block_count = 0 ;
+
+    for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
       global_block_count += (*m)->m_stream_count ;
     }
     global_block_count *= m_blocks_per_stream ;
 
-    for ( size_type k = 0 ,
-          m = m_members.begin() ; m != m_members.end() ; ++m ) {
+    size_type k = 0 ;
+    for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
 
-      for ( size_type j = 0 ; j < (*m)->m_stream_count ; ++j , ++k ) {
+      MemberType & member = **m ;
+
+      for ( size_type j = 0 ; j < member.stream_count ; ++j , ++k ) {
 
         const size_type work_block_offset  = m_blocks_per_stream * j ;
-        const size_type work_block_recycle = m_mapped_stream_count <= k ;
+        const size_type work_block_recycle = m_stream_count <= k ;
 
-        cudaStream_t & s = streams[ k % m_mapped_stream_count ];
+        const cudaStream_t & s = streams[ k % m_stream_count ];
 
-        (*m)->execute( m_finalize , m_blocks_per_stream , m_warps_per_block , m_shmemsize , s ,
-                       global_block_count , work_block_offset , block_recycle );
+        member.execute( result , m_blocks_per_stream , m_warps_per_block , m_shmem_size , s ,
+                        global_block_count , work_block_offset , work_block_recycle );
       }
     }
   }
 };
 
 //----------------------------------------------------------------------------
+
+template < class ReduceTraits >
+class MultiFunctorParallelReduce< ReduceTraits , typename ReduceTraits::value_type , DeviceCuda > {
+private:
+  typedef typename ReduceTraits::value_type    value_type ;
+  typedef ValueView< value_type , DeviceCuda > view_type ;
+
+  MultiFunctorParallelReduce< ReduceTraits , view_type , DeviceCuda > m_reduce ;
+
+public:
+
+  typedef DeviceCuda::size_type size_type ;
+
+  value_type result ;
+
+  MultiFunctorParallelReduce()
+    : m_reduce()
+    , result()
+    { m_reduce.result = create_value< value_type , DeviceCuda >(); }
+
+  template< class FunctorType >
+  void push_back( const size_type work_count , const FunctorType & f )
+  { m_reduce.push_back< FunctorType>( work_count , f ); }
+
+  void execute()
+  {
+    m_reduce.execute();
+    deep_copy( result , m_reduce.result );
+  }
+};
 
 } // namespace Kokkos
 

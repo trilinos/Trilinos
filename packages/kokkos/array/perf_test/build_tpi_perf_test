@@ -12,22 +12,16 @@ set LIB=""
 
 #-----------------------------------------------------------------------------
 
-#set GCC_SOURCES="${GCC_SOURCES} ../../../ThreadPool/src/*.c ../src/DeviceTPI/*.cpp  PerfTestTPI.cpp"
+set GCC_SOURCES="${GCC_SOURCES} ../../../ThreadPool/src/*.c ../src/DeviceTPI/*.cpp  PerfTestTPI.cpp"
 
-#set LIB="${LIB} -lpthread"
+set LIB="${LIB} -lpthread"
 
-set GCC_SOURCES="${GCC_SOURCES} PerfTestTPIStub.cpp"
+#set GCC_SOURCES="${GCC_SOURCES} PerfTestTPIStub.cpp"
 
 #-----------------------------------------------------------------------------
+# Stub out CUDA tests
 
-# /usr/local/cuda/bin/nvcc -arch=sm_20 --keep
-
- /usr/local/cuda/bin/nvcc -arch=sm_20 ${INC_PATH} -lib -o libCuda.a \
-        ../src/DeviceCuda/*.cu PerfTestCuda.cu
-
-set LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda"
-
-#set GCC_SOURCES="${GCC_SOURCES} PerfTestCudaStub.cpp"
+set GCC_SOURCES="${GCC_SOURCES} PerfTestCudaStub.cpp"
 
 #-----------------------------------------------------------------------------
 

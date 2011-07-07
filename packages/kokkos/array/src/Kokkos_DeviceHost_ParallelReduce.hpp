@@ -40,15 +40,17 @@
 #ifndef KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP
 #define KOKKOS_DEVICEHOST_PARALLELREDUCE_HPP
 
+#include <Kokkos_ParallelReduce.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , void , DeviceHost > {
+template< class FunctorType , class ReduceTraits >
+class ParallelReduce< FunctorType , ReduceTraits , void , DeviceHost > {
 public:
-  typedef DeviceHost             device_type ;
-  typedef device_type::size_type size_type ;
-  typedef typename FunctorType::value_type value_type ;
+  typedef DeviceHost                         device_type ;
+  typedef device_type::size_type             size_type ;
+  typedef typename ReduceTraits::value_type  value_type ;
 
   const FunctorType  m_work_functor ;
   const size_type    m_work_count ;
@@ -82,12 +84,12 @@ public:
   }
 };
 
-template< class FunctorType , class FinalizeType >
-class ParallelReduce< FunctorType , FinalizeType , DeviceHost > {
+template< class FunctorType , class ReduceTraits , class FinalizeType >
+class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , DeviceHost > {
 public:
-  typedef DeviceHost                       device_type ;
-  typedef device_type::size_type           size_type ;
-  typedef typename FunctorType::value_type value_type ;
+  typedef DeviceHost                         device_type ;
+  typedef device_type::size_type             size_type ;
+  typedef typename ReduceTraits::value_type  value_type ;
 
   const FunctorType  m_work_functor ;
   const FinalizeType m_finalize ;

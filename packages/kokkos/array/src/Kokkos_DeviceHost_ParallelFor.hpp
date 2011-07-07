@@ -37,40 +37,49 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICEHOST_MDARRAYVIEW_HPP
-#define KOKKOS_DEVICEHOST_MDARRAYVIEW_HPP
+#ifndef KOKKOS_DEVICEHOST_PARALLELFOR_HPP
+#define KOKKOS_DEVICEHOST_PARALLELFOR_HPP
+
+#include <Kokkos_ParallelFor.hpp>
 
 namespace Kokkos {
+namespace Impl {
 
-/*------------------------------------------------------------------------*/
-
-/** \brief  Copy Host to Host specialization */
-template< typename ValueType , class MapOpt >
-class MDArrayDeepCopy< ValueType ,
-                       DeviceHost , MapOpt , true ,
-                       DeviceHost , MapOpt , true >
-{
+template< class FunctorType >
+class ParallelFor< FunctorType , DeviceHost > {
 public:
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
+  typedef DeviceHost             device_type ;
+  typedef device_type::size_type size_type ;
 
-  typedef Impl::CopyFunctor< ValueType , DeviceHost > functor_type ;
+  const FunctorType m_work_functor ;
+  const size_type   m_work_count ;
 
-  static void run( const dst_type & dst , const src_type & src )
+private:
+
+  ParallelFor( const size_type work_count , const FunctorType & functor )
+    : m_work_functor( functor )
+    , m_work_count( work_count )
+  {}
+
+public:
+
+  static
+  void execute( const size_type work_count , const FunctorType & functor )
   {
-    Impl::mdarray_require_equal_dimension( dst , src );
+    device_type::set_dispatch_functor();
 
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
+    const ParallelFor driver( work_count , functor );
+
+    device_type::clear_dispatch_functor();
+
+    for ( size_type iwork = 0 ; iwork < driver.m_work_count ; ++iwork ) {
+      driver.m_work_functor(iwork);
+    }
   }
 };
 
-/*------------------------------------------------------------------------*/
-
+} // namespace Impl
 } // namespace Kokkos
 
-
-#endif /* #ifndef KOKKOS_DEVICEHOST_MDARRAYVIEW_HPP */
-
+#endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */
 

@@ -40,6 +40,8 @@
 #ifndef KOKKOS_DEVICETPI_PARALLELFOR_HPP
 #define KOKKOS_DEVICETPI_PARALLELFOR_HPP
 
+#include <Kokkos_ParallelFor.hpp>
+
 #include <algorithm>
 #include <TPI.h>
 

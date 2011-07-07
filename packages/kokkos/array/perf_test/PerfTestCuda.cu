@@ -11,9 +11,8 @@
 #include <Kokkos_DeviceCuda_MDArrayView.hpp>
 #include <Kokkos_DeviceCuda_MultiVectorView.hpp>
 #include <Kokkos_DeviceCuda_ValueView.hpp>
-
-#include <Kokkos_ParallelFor.hpp>
-#include <Kokkos_ParallelReduce.hpp>
+#include <Kokkos_DeviceCuda_ParallelFor.hpp>
+#include <Kokkos_DeviceCuda_ParallelReduce.hpp>
 
 #include <Kokkos_DeviceCuda_macros.hpp>
 #include <PerfTestHexGrad.hpp>

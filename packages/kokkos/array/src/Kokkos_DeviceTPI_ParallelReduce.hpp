@@ -40,17 +40,20 @@
 #ifndef KOKKOS_DEVICETPI_PARALLELREDUCE_HPP
 #define KOKKOS_DEVICETPI_PARALLELREDUCE_HPP
 
+#include <Kokkos_ParallelReduce.hpp>
+
 #include <algorithm>
+#include <vector>
 #include <TPI.h>
 
 namespace Kokkos {
 namespace Impl {
 
-template< class FunctorType , class FinalizeType >
-class ParallelReduce< FunctorType , FinalizeType , DeviceTPI > {
+template< class FunctorType , class ReduceTraits , class FinalizeType >
+class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , DeviceTPI > {
 public:
-  typedef DeviceTPI::size_type size_type ;
-  typedef typename FunctorType::value_type value_type ;
+  typedef          DeviceTPI   ::size_type   size_type ;
+  typedef typename ReduceTraits::value_type  value_type ;
 
   const FunctorType  m_work_functor ;
   const FinalizeType m_work_finalize ;
@@ -78,14 +81,14 @@ private:
   static void run_init_on_tpi( TPI_Work * work )
   {
     value_type & dst = *((value_type *) work->reduce );
-    FunctorType::init( dst );
+    ReduceTraits::init( dst );
   }
 
   static void run_join_on_tpi( TPI_Work * work , const void * reduce )
   {
     volatile value_type & dst = *((value_type *) work->reduce );
     const volatile value_type & src = *((const value_type *) reduce );
-    FunctorType::join( dst , src );
+    ReduceTraits::join( dst , src );
   }
 
   ParallelReduce( const size_type work_count ,
@@ -110,7 +113,7 @@ public:
 
     value_type result ;
 
-    FunctorType::init( result );
+    ReduceTraits::init( result );
 
     TPI_Run_threads_reduce( & run_work_on_tpi , & driver ,
                             & run_join_on_tpi ,
@@ -124,12 +127,12 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class FunctorType >
-class ParallelReduce< FunctorType , void , DeviceTPI > 
+template< class FunctorType , class ReduceTraits >
+class ParallelReduce< FunctorType , ReduceTraits , void , DeviceTPI > 
 {
 public:
-  typedef DeviceTPI::size_type             size_type ;
-  typedef typename FunctorType::value_type value_type ;
+  typedef DeviceTPI::size_type               size_type ;
+  typedef typename ReduceTraits::value_type  value_type ;
 
   struct AssignValueFunctor {
 
@@ -146,12 +149,126 @@ public:
                        const FunctorType & functor ,
                              value_type  & result )
   {
-    ParallelReduce< FunctorType , AssignValueFunctor , DeviceTPI >
+    ParallelReduce< FunctorType, ReduceTraits, AssignValueFunctor, DeviceTPI >
       ::execute( work_count , functor , AssignValueFunctor( result ) );
   }
 };
 
 } // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< class FunctorType , class ReduceTraits >
+class TPIMultiFunctorParallelReduceMember ;
+
+template< class ReduceTraits >
+class TPIMultiFunctorParallelReduceMember<void,ReduceTraits> {
+public:
+  typedef          DeviceTPI   ::size_type   size_type ;
+  typedef typename ReduceTraits::value_type  value_type ;
+
+  virtual void execute( const size_type thread_count ,
+                        const size_type thread_rank ,
+                        value_type & update ) const = 0 ;
+};
+
+template< class FunctorType , class ReduceTraits >
+class TPIMultiFunctorParallelReduceMember
+  : public TPIMultiFunctorParallelReduceMember<void,ReduceTraits> {
+public:
+  typedef          DeviceTPI   ::size_type   size_type ;
+  typedef typename ReduceTraits::value_type  value_type ;
+
+  const FunctorType m_work_functor ;
+  const size_type   m_work_count ;
+
+  TPIMultiFunctorParallelReduceMember( const size_type work_count ,
+                                       const FunctorType & work_functor )
+    : m_work_functor( work_functor )
+    , m_work_count(   work_count )
+    {}
+
+  virtual void execute( const size_type thread_count ,
+                        const size_type thread_rank ,
+                        value_type & update ) const
+  {
+    const size_type work_inc   = (m_work_count + thread_count - 1) / thread_count ;
+    const size_type work_begin = work_inc * thread_rank ;
+    const size_type work_end   = std::min( work_begin + work_inc , m_work_count );
+
+    for ( size_type iwork = work_begin ; iwork < work_end ; ++iwork ) {
+      m_work_functor( iwork , update );
+    }
+  }
+};
+
+} // namespace Impl
+
+template< class ReduceTraits , class FinalizeType >
+class MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceTPI > {
+private:
+  typedef          DeviceTPI   ::size_type   size_type ;
+  typedef typename ReduceTraits::value_type value_type ;
+
+  typedef MultiFunctorParallelReduce< ReduceTraits , FinalizeType , DeviceTPI > self_type ;
+  typedef Impl::TPIMultiFunctorParallelReduceMember<ReduceTraits,void> MemberType ;
+  typedef std::vector< MemberType * > MemberContainer ;
+  typedef typename MemberContainer::const_iterator MemberIterator ;
+
+  MemberContainer m_member_functors ;
+
+  // self.m_work_count == total work count
+  // work->count       == number of threads
+
+  static void run_work_on_tpi( TPI_Work * work )
+  {
+    const self_type & self = *((const self_type *) work->info );
+    value_type      & dst  = *((value_type *) work->reduce );
+
+    for ( MemberIterator m  = self.m_member_functors.begin() ;
+                         m != self.m_member_functors.end() ; ++m ) {
+
+      (*m)->execute( work->count , work->rank , dst );
+    }
+  }
+
+  static void run_init_on_tpi( TPI_Work * work )
+  {
+    value_type & dst = *((value_type *) work->reduce );
+    ReduceTraits::init( dst );
+  }
+
+  static void run_join_on_tpi( TPI_Work * work , const void * reduce )
+  {
+    volatile value_type & dst = *((value_type *) work->reduce );
+    const volatile value_type & src = *((const value_type *) reduce );
+    ReduceTraits::join( dst , src );
+  }
+
+public:
+
+  FinalizeType result ;
+
+  MultiFunctorParallelReduce()
+    : m_member_functors()
+    , result()
+    {} 
+
+  template< class FunctorType >
+  void push_back( const size_type work_count , const FunctorType & functor )
+  {
+
+  }
+
+
+};
+ 
+
 } // namespace Kokkos
 
 #endif /* KOKKOS_DEVICETPI_PARALLELREDUCE_HPP */

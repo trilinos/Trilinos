@@ -40,6 +40,8 @@
 #ifndef KOKKOS_DEVICECUDA_PARALLELFOR_HPP
 #define KOKKOS_DEVICECUDA_PARALLELFOR_HPP
 
+#include <Kokkos_ParallelFor.hpp>
+
 #include <DeviceCuda/Kokkos_DeviceCuda_ParallelDriver.hpp>
 
 #include <Kokkos_DeviceCuda_macros.hpp>
