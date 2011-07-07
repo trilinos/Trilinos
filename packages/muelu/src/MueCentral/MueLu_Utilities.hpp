@@ -474,12 +474,12 @@ namespace MueLu {
       }
       Tpetra::Vector<SC,LO,GO,NO> x(tpOp->getRowMap(),scalingVector());
       if(doInverse){
-	Tpetra::Vector<SC,LO,GO,NO> xi(tpOp->getRowMap());
-	xi.reciprocal(x);
-	tpOp->leftScale(xi);
+        Tpetra::Vector<SC,LO,GO,NO> xi(tpOp->getRowMap());
+        xi.reciprocal(x);
+        tpOp->leftScale(xi);
       }
       else
-	tpOp->leftScale(x);
+        tpOp->leftScale(x);
    } //ScaleMatrix()
 
     /*! @brief Get reciprocal of Operator diagonal
@@ -558,10 +558,8 @@ namespace MueLu {
 
      TODO Move this to Cthulhu?
    */
-   static void Write(std::string const & fileName, RCP<Operator> const & Op) {
-    RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
-    if (crsOp == Teuchos::null)
-      throw(Exceptions::BadCast("Only Cthulhu::CrsOperator is supported in matrix writing"));
+   static void Write(std::string const & fileName, Operator const & Op) {
+    CrsOperator const & crsOp = dynamic_cast<CrsOperator const &>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
     const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
     const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
