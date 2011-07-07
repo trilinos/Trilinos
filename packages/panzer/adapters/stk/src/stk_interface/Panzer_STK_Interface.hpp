@@ -407,6 +407,10 @@ public:
      */
    void print(std::ostream & os) const;
 
+   /** Print a brief description of the STK mesh to a stream.
+     */
+   void printMetaData(std::ostream & os) const;
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;

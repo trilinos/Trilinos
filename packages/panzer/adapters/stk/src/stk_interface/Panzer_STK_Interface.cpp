@@ -517,7 +517,7 @@ void STK_Interface::getMySides(const std::string & sideName,const std::string & 
 
 void STK_Interface::getElementBlockNames(std::vector<std::string> & names) const
 {
-   TEUCHOS_ASSERT(initialized_); // all blocks must have been added
+   // TEUCHOS_ASSERT(initialized_); // all blocks must have been added
 
    names.clear();
 
@@ -529,7 +529,7 @@ void STK_Interface::getElementBlockNames(std::vector<std::string> & names) const
 
 void STK_Interface::getSidesetNames(std::vector<std::string> & names) const
 {
-   TEUCHOS_ASSERT(initialized_); // all blocks must have been added
+   // TEUCHOS_ASSERT(initialized_); // all blocks must have been added
 
    names.clear();
 
@@ -695,6 +695,34 @@ void STK_Interface::print(std::ostream & os) const
          << getEntityCounts(getNodeRank()) << ", "
          << getEntityCounts(getElementRank()) << " )\n";
 
+   os << "   Element blocks = ";
+   for(std::size_t i=0;i<blockNames.size();i++) 
+      os << "\"" << blockNames[i] << "\" ";
+   os << "\n";
+   os << "   Sidesets = ";
+   for(std::size_t i=0;i<sidesetNames.size();i++) 
+      os << "\"" << sidesetNames[i] << "\" ";
+   os << std::endl;
+
+   // print out periodic boundary conditions
+   const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > & bcVector 
+         = getPeriodicBCVector();
+   if(bcVector.size()!=0) {
+      os << "   Periodic BCs:\n";
+      for(std::size_t i=0;i<bcVector.size();i++)
+         os << "      " << bcVector[i]->getString() << "\n";
+      os << std::endl;
+   }
+}
+
+void STK_Interface::printMetaData(std::ostream & os) const
+{
+   std::vector<std::string> blockNames, sidesetNames;
+
+   getElementBlockNames(blockNames);
+   getSidesetNames(sidesetNames);
+
+   os << "STK Meta data:\n";
    os << "   Element blocks = ";
    for(std::size_t i=0;i<blockNames.size();i++) 
       os << "\"" << blockNames[i] << "\" ";

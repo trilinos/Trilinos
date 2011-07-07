@@ -149,7 +149,28 @@ namespace panzer_stk {
 
     // finish building mesh, set required field variables and mesh bulk data
     ////////////////////////////////////////////////////////////////////////
-    this->finalizeMeshConstruction(*mesh_factory,physicsBlocks,*mpi_comm,*mesh);
+    try {
+       // this throws some exceptions, catch them as neccessary
+       this->finalizeMeshConstruction(*mesh_factory,physicsBlocks,*mpi_comm,*mesh);
+    } catch(const panzer_stk::STK_Interface::ElementBlockException & ebexp) {
+       fout << "*****************************************\n\n";
+       fout << "Element block exception, could not finalize the mesh, printing block and sideset information:\n";
+       fout.pushTab(3);
+       mesh->printMetaData(fout);
+       fout.popTab();
+       fout << std::endl;
+
+       throw ebexp;
+    } catch(const panzer_stk::STK_Interface::SidesetException & ssexp) {
+       fout << "*****************************************\n\n";
+       fout << "Sideset exception, could not finalize the mesh, printing block and sideset information:\n";
+       fout.pushTab(3);
+       mesh->printMetaData(fout);
+       fout.popTab();
+       fout << std::endl;
+
+       throw ssexp;
+    }
 
     mesh->print(fout);
     mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name")); 
