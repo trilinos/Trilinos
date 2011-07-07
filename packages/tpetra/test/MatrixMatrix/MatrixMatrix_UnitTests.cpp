@@ -196,43 +196,6 @@ mult_test_results multiply_test(
 }
 
 
-TEUCHOS_UNIT_TEST(Tpetra_MatMat, test_find_rows){
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
-  int numprocs = comm->getSize();
-  int localproc = comm->getRank();
-  int numlocalrows = 2;
-  global_size_t numglobalrows = numprocs*numlocalrows;
-  RCP<const Map<int> > rowmap = Tpetra::createUniformContigMap<int,int>(numglobalrows,comm);
-  CrsMatrix<double, int> matrix(rowmap, numglobalrows);
-
-  Array<int> cols(numglobalrows);
-  Array<double> vals(numglobalrows);
-
-  for(size_t j=0; j<numglobalrows; ++j) {
-    cols[j] = j;
-    vals[j] = 1.0;
-  }
-
-  RCP<const Map<int> > colmap = Tpetra::createNonContigMap<int,int>(cols(), comm);
-
-  for(int i=0; i<numlocalrows; ++i) {
-    Array<int> row(1,localproc*numlocalrows+i);
-    matrix.insertGlobalValues(
-      row[0], row.view(0,1),  vals.view(i,1) );
-  }
-
-  matrix.fillComplete();
-
-  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
-  typedef Kokkos::DefaultKernels<double, int, DNode>::SparseOps SpMatOps;
-
-  RCP<const Map<int, int, DNode> > map_rows = 
-    Tpetra::MMdetails::find_rows_containing_cols<double, int, int, DNode, SpMatOps>(matrix, colmap);
-
-  TEST_EQUALITY(map_rows->getNodeNumElements(), numglobalrows);
-
-}
-
 TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
   ParameterList defaultParameters;
@@ -304,15 +267,6 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       }
     }
   }   
-}
-
-TEUCHOS_UNIT_TEST(Tpetra_MatMat, sparse_dot_test){
-  Array<double> uVal = tuple<double>(4,8,1,6);
-  Array<double> vVal = tuple<double>(3,2,4,50);
-  Array<int> uInd = tuple<int>(0,5,7,9);
-  Array<int> vInd = tuple<int>(0,9,10,11);
-  TEST_EQUALITY_CONST(
-    Tpetra::MMdetails::sparsedot(uVal(), uInd(), vVal(), vInd()), 24);
 }
 
 /*
