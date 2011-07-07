@@ -8,7 +8,6 @@
 #include <Teuchos_DefaultComm.hpp>
 
 #include "MueLu_Hierarchy.hpp"
-#include "MueLu_SaLevel.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 //#include "MueLu_GaussSeidel.hpp"
