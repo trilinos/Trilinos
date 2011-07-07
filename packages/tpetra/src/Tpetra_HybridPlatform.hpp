@@ -78,6 +78,10 @@ namespace Tpetra {
       template <template <class Node> class UserCode> 
       void runUserCode();
 
+      //! Run user code with the runtime-selected Node type.
+      template <class UserCode> 
+      void runUserCode(UserCode &code);
+
       //@}
 
     private:
@@ -259,7 +263,35 @@ namespace Tpetra {
     nodeCreated_ = true;
   }
 
-  template<template<class Node> class UserCode>
+  template <class UserCode>
+  void HybridPlatform::runUserCode(UserCode &codeobj) {
+    createNode();
+    switch (nodeType_) {
+      case SERIALNODE:
+        codeobj.template run<Kokkos::SerialNode>(instList_,comm_, serialNode_);
+        break;
+#ifdef HAVE_KOKKOS_TBB
+      case TBBNODE:
+        codeobj.template run<Kokkos::TBBNode>(instList_,comm_, tbbNode_);
+        break;
+#endif        
+#ifdef HAVE_KOKKOS_THREADPOOL
+      case TPINODE:
+        codeobj.template run<Kokkos::TPINode>(instList_,comm_, tpiNode_);
+        break;
+#endif        
+#ifdef HAVE_KOKKOS_THRUST
+      case THRUSTGPUNODE:
+        codeobj.template run<Kokkos::ThrustGPUNode>(instList_,comm_, thrustNode_);
+        break;
+#endif        
+      default:
+        TEST_FOR_EXCEPTION(true, std::runtime_error, 
+            Teuchos::typeName(*this) << "::runUserCode(): Invalid node type." << std::endl);
+    } // end of switch
+  }
+
+  template <template<class Node> class UserCode>
   void HybridPlatform::runUserCode() {
     createNode();
     switch (nodeType_) {
