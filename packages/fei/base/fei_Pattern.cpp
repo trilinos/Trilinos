@@ -9,12 +9,13 @@
 #include "fei_Pattern.hpp"
 
 //-----------------------------------------------------------------------------
-fei::Pattern::Pattern(int numIDs, int idType)
+fei::Pattern::Pattern(int numIDs, int idType, snl_fei::RecordCollection* recordCollection)
   : type_(Pattern::NO_FIELD),
     numIDs_(numIDs),
     totalNumFields_(0),
     numIndices_(numIDs),
-    data_()
+    data_(),
+    recordCollections_(numIDs, recordCollection)
 {
   int i, len = numIDs_*4;
   data_.resize(len);
@@ -47,13 +48,14 @@ fei::Pattern::Pattern(int numIDs, int idType)
 }
 
 //-----------------------------------------------------------------------------
-fei::Pattern::Pattern(int numIDs, int idType,
+fei::Pattern::Pattern(int numIDs, int idType, snl_fei::RecordCollection* recordCollection,
 			  int fieldID, int fieldSize)
   : type_(Pattern::SIMPLE),
     numIDs_(numIDs),
     totalNumFields_(numIDs),
     numIndices_(0), //numIndices_ to be calculated
-    data_()
+    data_(),
+    recordCollections_(numIDs, recordCollection)
 {
   int i, len = numIDs_*4;
   data_.resize(len);
@@ -88,7 +90,7 @@ fei::Pattern::Pattern(int numIDs, int idType,
 }
 
 //-----------------------------------------------------------------------------
-fei::Pattern::Pattern(int numIDs, int idType,
+fei::Pattern::Pattern(int numIDs, int idType, snl_fei::RecordCollection* recordCollection,
 			  const int* numFieldsPerID,
 			  const int* fieldIDs,
 			  const int* fieldSizes)
@@ -96,7 +98,8 @@ fei::Pattern::Pattern(int numIDs, int idType,
     numIDs_(numIDs),
     totalNumFields_(0), //totalNumFields_ to be calculated
     numIndices_(0), //numIndices_ to be calculated
-    data_()
+    data_(),
+    recordCollections_(numIDs, recordCollection)
 {
   int i, len = numIDs_*3;
   int maxNumFieldsPerID = 0;
@@ -148,7 +151,7 @@ fei::Pattern::Pattern(int numIDs, int idType,
 }
 
 //-----------------------------------------------------------------------------
-fei::Pattern::Pattern(int numIDs, const int* idTypes,
+fei::Pattern::Pattern(int numIDs, const int* idTypes, snl_fei::RecordCollection*const* recordCollections,
 			  const int* numFieldsPerID,
 			  const int* fieldIDs,
 			  const int* fieldSizes)
@@ -156,7 +159,8 @@ fei::Pattern::Pattern(int numIDs, const int* idTypes,
     numIDs_(numIDs),
     totalNumFields_(0), //totalNumFields_ to be calculated
     numIndices_(0), //numIndices_ to be calculated
-    data_()
+    data_(),
+    recordCollections_(recordCollections, recordCollections+numIDs)
 {
   int i, len = numIDs*3;
   int maxNumFieldsPerID = 0;

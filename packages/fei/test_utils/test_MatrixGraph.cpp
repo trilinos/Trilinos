@@ -213,11 +213,12 @@ int test_MatrixGraph::serialtest1()
 {
   int numIDs = 2;
   std::vector<int> idTypes(numIDs, 1);
+  std::vector<snl_fei::RecordCollection*> recColls(numIDs, NULL);
   std::vector<int> numFieldsPerID(numIDs, 1);
   std::vector<int> fieldIDs(numIDs, 0);
   std::vector<int> fieldSizes(numIDs, 1);
 
-  fei::Pattern pattern(numIDs, &idTypes[0],
+  fei::Pattern pattern(numIDs, &idTypes[0], &recColls[0],
 			   &numFieldsPerID[0], &fieldIDs[0], &fieldSizes[0]);
 
   fei::Pattern::PatternType pType = pattern.getPatternType();

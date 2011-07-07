@@ -489,7 +489,6 @@ int fei::Vector_core::copyOutFieldData(int fieldID,
     CHK_ERR( vecSpace_->getRecordCollection(idType, collection) );
     int nodeNumber;
     int dofOffset;
-    int numInstances;
     int foffset;
     std::vector<int>& eqnNums = vecSpace_->getEqnNumbers();
     int* vspcEqnPtr = eqnNums.size() > 0 ? &eqnNums[0] : NULL;
@@ -503,7 +502,7 @@ int fei::Vector_core::copyOutFieldData(int fieldID,
 
       nodeNumber = node->getNumber();
       int* eqnNumbers = vspcEqnPtr+node->getOffsetIntoEqnNumbers();
-      node->getFieldMask()->getFieldEqnOffset(fieldID, foffset, numInstances);
+      node->getFieldMask()->getFieldEqnOffset(fieldID, foffset);
       dofOffset = eqnNumbers[foffset] - eqnNumbers[0];
       for(int j=0; j<fieldSize; ++j) {
 	CHK_ERR( copyOut_FE(nodeNumber, dofOffset+j, data[offset++]));

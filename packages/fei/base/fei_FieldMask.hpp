@@ -37,8 +37,7 @@ namespace fei {
     /** Construct with initial fields */
     FieldMask(int numFields,
 	      const int* fieldIDs,
-	      const int* fieldSizes,
-	      const int* numInstancesOfThisFieldPerID);
+	      const int* fieldSizes);
 
     /** Destructor */
     virtual ~FieldMask();
@@ -48,27 +47,29 @@ namespace fei {
 
     /** Return the mask-id that corresponds to the specified data. */
     static int calculateMaskID(int numFields,
-			       const int* fieldIDs,
-			       const int* numInstancesPerID);
+			       const int* fieldIDs);
 
     /** Return the mask-id that corresponds to the specified data. */
     static int calculateMaskID(const FieldMask& fm,
-			       int fieldID,
-			       int numInstances);
+			       int fieldID);
 
     /** Add a field-id to this object. */
     void addField(int fieldID,
-		  int fieldSize,
-		  int numInstances=1);
+		  int fieldSize);
 
     /** Query whether the specified field is contained in this field-mask.*/
-    bool hasFieldID(int fieldID) const;
+    bool hasFieldID(int fieldID) const
+    {
+      for(size_t i=0; i<fieldIDs_.size(); ++i)
+        if (fieldIDs_[i] == fieldID) return true;
+      return false;
+    }
 
     /** Return the number of fields in this field-mask. */
     size_t getNumFields() const { return(fieldIDs_.size()); }
 
     /** Return the number of global indices corresponding to the set of fields
-	represented by this mask. This is sum(fieldSizes[i]*fieldInstances[i]).
+	represented by this mask. This is sum(fieldSizes[i]).
     */
     int getNumIndices() const { return( numIndices_ ); }
 
@@ -89,14 +90,10 @@ namespace fei {
     /** Return an array of the fieldSizes in this field-mask. */
     const std::vector<int>& getFieldSizes() const { return(fieldSizes_); }
 
-    /** Return an array of the number-of-field-instances for the fields
-        in this field-mask. */
-    std::vector<int>& getFieldInstances() { return(fieldInstances_); }
-
     /** Given a field-id, return the offset of the corresponding equation-
         number in a record's list of equation-numbers.
     */
-    void getFieldEqnOffset(int fieldID, int& offset, int& numInstancesPerID) const;
+    void getFieldEqnOffset(int fieldID, int& offset) const;
 
     /** Test equality of field-masks. */
     bool operator==(const FieldMask& fm) const
@@ -127,14 +124,10 @@ namespace fei {
 
     std::vector<int> fieldIDs_;
     std::vector<int> fieldSizes_;
-    std::vector<int> fieldInstances_;
     std::vector<int> fieldEqnOffsets_;
 
     int numFields_;
     int numIndices_;
-    int* fieldIDsPtr_;
-    int* fieldInstancesPtr_;
-    int* fieldEqnOffsetsPtr_;
   };
 
 } //namespace fei

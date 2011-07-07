@@ -13,6 +13,10 @@
 
 #include <vector>
 
+namespace snl_fei {
+  class RecordCollection;
+}
+
 namespace fei {
 
   /** Stencil-like pattern definition/description.
@@ -28,25 +32,25 @@ namespace fei {
     enum PatternType { NO_FIELD, SIMPLE, SINGLE_IDTYPE, GENERAL };
 
     /** Constructor, Pattern::PatternType == NO_FIELD */
-    Pattern(int numIDs, int idType);
+    Pattern(int numIDs, int idType, snl_fei::RecordCollection* records);
 
     /** Constructor, Pattern::PatternType == SIMPLE
 	There is only one id-type, and only one field.
      */
-    Pattern(int numIDs, int idType,
+    Pattern(int numIDs, int idType, snl_fei::RecordCollection* records,
 	    int fieldID, int fieldSize);
 
     /** Constructor, Pattern::PatternType == SINGLE_IDTYPE
 	There is only one id-type, but there may be multiple fields per id.
      */
-    Pattern(int numIDs, int idType,
+    Pattern(int numIDs, int idType, snl_fei::RecordCollection* records,
 	    const int* numFieldsPerID,
 	    const int* fieldIDs, const int* fieldSizes);
 
     /** Constructor, Pattern::PatternType == GENERAL
       There may be multiple id-types as well as multiple fields-per-id.
      */
-    Pattern(int numIDs, const int* idTypes,
+    Pattern(int numIDs, const int* idTypes, snl_fei::RecordCollection*const* records,
 	    const int* numFieldsPerID,
 	    const int* fieldIDs, const int* fieldSizes);
 
@@ -61,6 +65,9 @@ namespace fei {
 
     /** Return pointer to list of length getNumIDs() */
     const int* getIDTypes() const { return( idTypes_ ); }
+
+    /** Return pointer to list of length getNumIDs() */
+    snl_fei::RecordCollection*const* getRecordCollections() const { return &recordCollections_[0]; }
 
     /** Return list of length getNumIDs() */
     const int* getNumFieldsPerID() const { return( numFieldsPerID_ ); }
@@ -98,6 +105,7 @@ namespace fei {
     int totalNumFields_;
     int numIndices_;
     std::vector<int> data_;
+    std::vector<snl_fei::RecordCollection*> recordCollections_;
 
     const int* idTypes_;
     const int* numFieldsPerID_;

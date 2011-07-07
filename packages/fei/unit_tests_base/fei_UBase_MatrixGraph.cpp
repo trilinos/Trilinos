@@ -16,6 +16,7 @@ TEUCHOS_UNIT_TEST(MatGraph, MatGraph_test1)
 
   //two id-types: 0, 1:
   int idT[] = {0, 1};
+  snl_fei::RecordCollection* recColls[] = {NULL,NULL};
 
   //set up a pattern for an element that has 6 ids: 3 nodes and 3 edges.
   const int numIDs = 6;
@@ -32,7 +33,7 @@ TEUCHOS_UNIT_TEST(MatGraph, MatGraph_test1)
   int fieldIDs[] = {fieldID, fieldID, fieldID};
   int fieldSizes[] = {fieldSize, fieldSize, fieldSize};
 
-  fei::Pattern pattern1(numIDs, &idTypes[0], &fieldsPerID[0], &fieldIDs[0], &fieldSizes[0]);
+  fei::Pattern pattern1(numIDs, &idTypes[0], &recColls[0], &fieldsPerID[0], &fieldIDs[0], &fieldSizes[0]);
 
   //declare a vector-space, do some rudimentary initializations:
 
@@ -58,7 +59,7 @@ TEUCHOS_UNIT_TEST(MatGraph, MatGraph_test1)
   fieldsPerID[0] = 1; fieldsPerID[1] = 1; fieldsPerID[2] = 1;
   fieldsPerID[3] = 0; fieldsPerID[4] = 0; fieldsPerID[5] = 0;
 
-  fei::Pattern pattern2(numIDs, &idTypes[0], &fieldsPerID[0], &fieldIDs[0], &fieldSizes[0]);
+  fei::Pattern pattern2(numIDs, &idTypes[0], &recColls[0], &fieldsPerID[0], &fieldIDs[0], &fieldSizes[0]);
 
   int patternID2 = mgraph.definePattern(numIDs, &idTypes[0], &fieldsPerID[0], &fieldIDs[0]);
   fei::Pattern* pttn2 = mgraph.getPattern(patternID2);

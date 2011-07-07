@@ -73,9 +73,8 @@ int fei::Lookup_Impl::getEqnNumber(int nodeNumber, int fieldID)
     throw std::runtime_error("Fatal error in fei::Lookup_Impl::getEqnNumber");
   }
   eqnNumbers += node->getOffsetIntoEqnNumbers();
-  int numInstances = 1;
   int offset = -1;
-  node->getFieldMask()->getFieldEqnOffset(fieldID, offset, numInstances);
+  node->getFieldMask()->getFieldEqnOffset(fieldID, offset);
   return(eqnNumbers[offset]);
 }
 
@@ -194,14 +193,10 @@ int fei::Lookup_Impl::buildDatabases()
 
   std::vector<int>& vspcEqnNumbers = vspace_->getEqnNumbers();
 
-  snl_fei::RecordCollection::map_type& rmap = collection->getRecords();
+  std::vector<fei::Record<int> >& rvec = collection->getRecords();
 
-  snl_fei::RecordCollection::map_type::iterator
-    r_iter = rmap.begin(),
-    r_end = rmap.end();
-
-  for(; r_iter != r_end; ++r_iter) {
-    fei::Record<int>* node = (*r_iter).second;
+  for(size_t i=0; i<rvec.size(); ++i) {
+    fei::Record<int>* node = &rvec[i];
 
     std::pair<int,fei::Record<int>* > int_node_pair(node->getNumber(), node);
 

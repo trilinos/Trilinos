@@ -125,9 +125,6 @@ namespace fei {
 
         @param fieldID Input. The field-identifier to be added. Must be one of
         the fieldIDs defined previously via 'defineFields()'.
-        @param numInstancesOfThisFieldPerID Input. It is possible to have
-        multiple fields of the same fieldID at each mesh location. e.g., you
-        could have 2 pressure fields at each edge.
         @param idType Input. The identifier-type over which the active field is
         being initialized. Must be one of the idTypes defined previously via
         'defineIDTypes()'.
@@ -136,7 +133,6 @@ namespace fei {
         @return error-code 0 if successful
      */
     int addDOFs(int fieldID,
-                int numInstancesOfThisFieldPerID,
                 int idType,
                 int numIDs,
                 const int* IDs);
@@ -637,12 +633,25 @@ namespace fei {
                           const fei::Record<int>*const* records,
                           std::vector<int>& indices);
 
+    void getGlobalIndicesL(const fei::Pattern* pattern,
+                          const int* records,
+                          std::vector<int>& indices);
+
     void getGlobalBlkIndices(const fei::Pattern* pattern,
                              const fei::Record<int>*const* records,
                              std::vector<int>& indices);
 
     void getGlobalIndices(int numRecords,
                           const fei::Record<int>*const* records,
+                          int fieldID,
+                          int fieldSize,
+                          int indicesAllocLen,
+                          int* indices,
+                          int& numIndices);
+
+    void getGlobalIndicesL(int numRecords,
+                          const snl_fei::RecordCollection*const* recordCollections,
+                          const int* records,
                           int fieldID,
                           int fieldSize,
                           int indicesAllocLen,
@@ -658,23 +667,39 @@ namespace fei {
                           int* indices,
                           int& numIndices);
 
+    void getGlobalIndicesL(int numRecords,
+                          const snl_fei::RecordCollection*const* recordCollections,
+                          const int* records,
+                          const int* numFieldsPerID,
+                          const int* fieldIDs,
+                          const int* fieldSizes,
+                          int indicesAllocLen,
+                          int* indices,
+                          int& numIndices);
+
     void getGlobalBlkIndices(int numRecords,
                              const fei::Record<int>*const* records,
                              int indicesAllocLen,
                              int* indices,
                              int& numIndices);
 
+    void getGlobalBlkIndicesL(int numRecords,
+                             const snl_fei::RecordCollection*const* recordCollections,
+                             const int* records,
+                             int indicesAllocLen,
+                             int* indices,
+                             int& numIndices);
+
     int addDOFs(int fieldID,
-                            int numInstancesOfThisFieldPerID,
                             int idType,
                             int numIDs,
                             const int* IDs,
-                            fei::Record<int>** records);
+                            int* records);
 
     int addDOFs(int idType,
                             int numIDs,
                             const int* IDs,
-                            fei::Record<int>** records);
+                            int* records);
 
     std::vector<fei::FieldMask*> fieldMasks_;
 
