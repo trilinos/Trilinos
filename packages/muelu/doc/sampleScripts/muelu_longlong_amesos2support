@@ -1,0 +1,81 @@
+#!/bin/sh
+
+#
+# using long long int
+# amesos2 (which means you can't use amesos)
+# You must install Superlu 4.1
+#
+
+export TRILINOS_HOME=${PWD}/../Trilinos
+#BUILD_MODE="DEBUG"
+BUILD_MODE="RELEASE"
+SUPERLU_DIR=/home/jhu/Software/SuperLU_4.1
+
+rm -f CMakeCache.txt
+
+# cmake script for building ML with MPI on Linux 64 bit workstations with the Intel blas/lapack (aka mkl)
+source /usr/local/intel/Compiler/11.1/064/mkl/tools/environment/mklvarsem64t.sh
+
+EXTRA_ARGS=$@
+
+echo ""
+echo "Build mode = ${BUILD_MODE}"
+echo ""
+sleep 2
+
+# some useful cmake options
+#  -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+#  -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+#  -D CMAKE_C_FLAGS:STRING="-O0 -g" \
+#  -D CMAKE_CXX_FLAGS:STRING="-ansi -pedantic -Wall  -Wno-long-long -Wwrite-strings  -Wshadow -g -O0" \
+
+cmake \
+  -D CMAKE_INSTALL_PREFIX:PATH="${PWD}" \
+\
+  -D CMAKE_BUILD_TYPE:STRING=${BUILD_MODE} \
+  -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=ON \
+\
+  -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+  -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+  -D CMAKE_C_FLAGS:STRING="-g" \
+\
+  -D Trilinos_EXTRA_REPOSITORIES="preCopyrightTrilinos,MueLu" \
+  -D Trilinos_ENABLE_MueLu:BOOL=ON \
+  -D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON \
+\
+  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+  -D MueLu_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+\
+  -D Trilinos_ENABLE_Amesos2:BOOL=ON \
+  -D Amesos2_ENABLE_DEBUG:BOOL=OFF \
+  -D Trilinos_ENABLE_Belos:BOOL=ON \
+  -D Trilinos_ENABLE_Epetra:BOOL=ON \
+  -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+  -D Trilinos_ENABLE_Galeri:BOOL=ON \
+  -D Trilinos_ENABLE_Ifpack:BOOL=ON \
+  -D Trilinos_ENABLE_Ifpack2:BOOL=ON \
+  -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+\
+  -D Teuchos_ENABLE_STACKTRACE:BOOL=OFF \
+\
+  -D Trilinos_ENABLE_TrilinosCouplings:BOOL=ON \
+\
+  -D TPL_SuperLU_LIBRARY_DIRS="${SUPERLU_DIR}" \
+  -D TPL_SuperLU_INCLUDE_DIRS="${SUPERLU_DIR}/SRC" \
+  -D TPL_SuperLU_LIBRARIES="${SUPERLU_DIR}/lib/libsuperlu_4.1.a" \
+\
+  -D BLAS_LIBRARY_DIRS:STRING="/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t;/usr/local/intel/Compiler/11.1/064/lib/intel64;/usr/lib64" \
+  -D BLAS_LIBRARY_NAMES:STRING="mkl_intel_lp64; mkl_intel_thread; mkl_core; iomp5; pthread" \
+  -D LAPACK_LIBRARY_DIRS:STRING="/usr/local/intel/Compiler/11.1/064/mkl/lib/em64t;/usr/local/intel/Compiler/11.1/064/lib/intel64;/usr/lib64" \
+  -D LAPACK_LIBRARY_NAMES:STRING="mkl_intel_lp64; mkl_intel_thread; mkl_core; iomp5; pthread" \
+\
+  -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+\
+  -D MueLu_ENABLE_TESTS:STRING=ON \
+  -D MueLu_ENABLE_EXAMPLES:STRING=ON \
+\
+  -D DART_TESTING_TIMEOUT:STRING=30 \
+  -D TPL_ENABLE_MPI:BOOL=ON \
+\
+  $EXTRA_ARGS \
+  ${TRILINOS_HOME}
