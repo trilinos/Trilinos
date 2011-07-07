@@ -107,30 +107,14 @@ void Multiply(
   RCP<const Matrix_t > Bprime = null;
   if(transposeA){
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  at(A);
-    //RCP<const Matrix_t > trans = at.createTranspose();
     Aprime = at.createTranspose();
-    Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-      "abefore.mtx",Aprime);
-    /*RCP<Matrix_t > temp = 
-      rcp( new Matrix_t(A.getDomainMap(), 0));
-    Import<LocalOrdinal,GlobalOrdinal,Node> importer(trans->getRowMap(), A.getDomainMap());
-    temp->doImport(*trans, importer, INSERT);
-    temp->fillComplete(A.getRangeMap(), A.getDomainMap());
-    Aprime = temp;
-    Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
-      "aafter.mtx",temp);*/
   }
   else{
     Aprime = rcpFromRef(A);
   }
   if(transposeB){
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  bt(B);
-    RCP<const Matrix_t > trans = bt.createTranspose();
-    RCP<Matrix_t > temp = rcp( new Matrix_t(B.getDomainMap(), 0));
-    Import<LocalOrdinal,GlobalOrdinal,Node> importer(trans->getRowMap(), B.getDomainMap());
-    temp->doImport(*(trans), importer, INSERT);
-    temp->fillComplete(B.getRangeMap(), B.getDomainMap());
-    Bprime=temp;
+    Bprime=bt.createTranspose();
   }
   else{
     Bprime = rcpFromRef(B);
