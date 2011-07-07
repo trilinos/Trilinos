@@ -1035,12 +1035,12 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllToScalar(const Scalar &alpha) 
   {
-    const std::string tfecfFuncName("scale()");
+    const std::string tfecfFuncName("setAllToScalar()");
     TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false, std::runtime_error, " requires that fill is active.");
-    // scale all values in the matrix
-    // it is easiest to scale all allocated values, instead of scaling only the ones with valid entries
+    // replace all values in the matrix
+    // it is easiest to replace all allocated values, instead of replacing only the ones with valid entries
     // however, if there are no valid entries, we can short-circuit
-    // furthermore, if the values aren't allocated, we can short-circuit (unallocated values are zero, scaling to zero)
+    // furthermore, if the values aren't allocated, we can short-circuit (no entry have been inserted so far)
     const size_t     nlrs = staticGraph_->getNodeNumRows(),
                  numAlloc = staticGraph_->getNodeAllocationSize(),
                numEntries = staticGraph_->getNodeNumEntries();
