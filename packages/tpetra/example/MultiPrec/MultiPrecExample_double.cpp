@@ -1,24 +1,15 @@
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include <Tpetra_Version.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Vector.hpp>
-
-#include <Tpetra_MatrixIO.hpp>
-#include <Tpetra_RTI.hpp>
+#include <Tpetra_HybridPlatform.hpp>
 #include <TpetraExt_TypeStack.hpp>
 
 #include <iostream>
 
-#include "MultiPrecCG.hpp"
+#include "MultiPrecDriver.hpp"
 
 /** \file MultiPrecExample_double.cpp
     \brief An example of a multi-precision algorithm, using a flexible preconditioned CG with recursive precision.
@@ -26,163 +17,99 @@
 
 int main(int argc, char *argv[])
 {
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-
   using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::Comm;
   using Teuchos::ParameterList;
-  using std::pair;
-  using std::make_pair;
-  using std::plus;
-  using std::cout;
-  using std::endl;
-  using TpetraExamples::make_pair_op;
-  using Tpetra::RTI::reductionGlob;
-  using Tpetra::RTI::ZeroOp;
-  using Tpetra::RTI::binary_pre_transform_reduce;
-  using Tpetra::RTI::binary_transform;
-
-  TPETRAEXT_TYPESTACK1(MPStack, double)
 
   // 
-  // Get the default communicator and node
+  // Get the communicator
   //
-  auto &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  auto comm = platform.getComm();
-  auto node = platform.getNode();
+  Teuchos::oblackholestream blackhole;
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myImageID = comm->getRank();
-
-  // Static types
-  typedef typename MPStack::type   S;
-  typedef int                     LO;
-  typedef int                     GO;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
-  typedef Tpetra::CrsMatrix<S,LO,GO,Node> CrsMatrix;
-  typedef Tpetra::Vector<S,LO,GO,Node>       Vector;
 
   //
   // Get example parameters from command-line processor
   //  
   bool verbose = (myImageID==0);
+  bool unfused = false;
   std::string matfile;
   std::string xmlfile;
+  std::string machineFile;
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("matrix-file",&matfile,"Filename for matrix");
   cmdp.setOption("param-file", &xmlfile,"XML file for solver parameters");
+  cmdp.setOption("machine-file",&machineFile,"Filename for XML machine description file.");
+  cmdp.setOption("unfused","no-unfused",&unfused,"Test unfused iteration.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
 
-  Teuchos::RCP<Teuchos::FancyOStream> out; 
-  if (verbose) out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
-  else         out = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
+  // 
+  // read machine file and initialize platform
+  // 
+  RCP<Teuchos::ParameterList> machinePL = Teuchos::parameterList();
+  std::string defaultMachine(
+    " <ParameterList>                                                               "
+    "   <ParameterList name='%1=0'>                                                 "
+    "     <Parameter name='NodeType'     type='string' value='Kokkos::SerialNode'/> "
+    "   </ParameterList>                                                            "
+    " </ParameterList>                                                              "
+  );
+  Teuchos::updateParametersFromXmlString(defaultMachine,machinePL.getRawPtr());
+  if (machineFile != "") Teuchos::updateParametersFromXmlFile(machineFile,machinePL.getRawPtr());
 
   // 
-  // Say hello, print some communicator info
+  // create the platform object
+  // 
+  Tpetra::HybridPlatform platform(comm,*machinePL);
+
+  // 
+  // Define the type stack
+  // 
+  TPETRAEXT_TYPESTACK1(MPStack, double)
+
   //
-  *out << "\n" << Tpetra::version() << endl
-       << "Comm info: " << *comm
-       << "Node type: " << Teuchos::typeName(*node) << endl
-       << "Outermost scalar: " << Teuchos::TypeNameTraits<S>::name() << endl
-       << endl;
+  // instantiate a driver on the scalar stack
+  //
+  MultiPrecDriver<MPStack> driver;
+  // hand output stream to driver
+  if (verbose) driver.out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
+  else         driver.out = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
+  // hand matrix file to driver
+  driver.matrixFile = matfile;
+  // other params
+  driver.unfusedTest = unfused;
 
-  // read the matrix
-  RCP<CrsMatrix> A;
-  Tpetra::Utils::readHBMatrix(matfile,comm,node,A);
-
+  //
   // get the solver parameters
-  Teuchos::ParameterList stackPL;
+  // 
+  RCP<Teuchos::ParameterList> params = Teuchos::parameterList();
   // default solver stack parameters
   std::string xmlString(
     " <ParameterList>                                                  \n"
     "   <Parameter name='tolerance' value='5e-15' type='double'/>      \n"
-    "   <Parameter name='numIters' value='1800' type='int'/>           \n"
-    "   <Parameter name='verbose' value='2' type='int'/>               \n"
+    "   <Parameter name='verbose' value='1' type='int'/>               \n"
     "   <Parameter name='Extract Diagonal' value='true' type='bool'/>  \n"
     " </ParameterList>                                                 \n"
   );
-  Teuchos::updateParametersFromXmlString(xmlString,&stackPL);
-  if (xmlfile != "") Teuchos::updateParametersFromXmlFile(xmlfile,&stackPL);
-
-  // init the solver stack
-  TpetraExamples::RFPCGInit<S,LO,GO,Node> init(A);
-  RCP<ParameterList> db = Tpetra::Ext::initStackDB<MPStack>(stackPL,init);
-
-  bool testPassed = true;
-
-  // choose a solution, compute a right-hand-side
-  auto x = Tpetra::createVector<S>(A->getRowMap()),
-       b = Tpetra::createVector<S>(A->getRowMap());
-  x->randomize();
-  A->apply(*x,*b);
-
-  //
-  // solve
-  {
-    // init the rhs
-    auto bx = db->get<RCP<Vector>>("bx");
-    binary_transform( *bx, *b, [](S, S bi) {return bi;}); // bx = b
-    // call the solve
-    TpetraExamples::recursiveFPCG<MPStack,LO,GO,Node>(out,*db);
-    //
-    // test the result
-    auto xhat = db->get<RCP<Vector>>("bx"),
-         bhat = Tpetra::createVector<S>(A->getRowMap());
-    A->apply(*xhat,*bhat);
-    // compute bhat-b, while simultaneously computing |bhat-b|^2 and |b|^2
-    auto nrms = binary_pre_transform_reduce(*bhat, *b, 
-                                            reductionGlob<ZeroOp<pair<S,S>>>( 
-                                              [](S bhati, S bi){ return bi-bhati;}, // bhati = bi-bhat
-                                              [](S bhati, S bi){ return make_pair(bhati*bhati, bi*bi); },
-                                              make_pair_op<S,S>(plus<S>())) );
-    const S enrm = Teuchos::ScalarTraits<S>::squareroot(nrms.first),
-            bnrm = Teuchos::ScalarTraits<S>::squareroot(nrms.second);
-    // check that residual is as requested
-    *out << "|b - A*x|/|b|: " << enrm / bnrm << endl;
-    const double tolerance = db->get<double>("tolerance");
-    if (enrm / bnrm > tolerance) {
-      testPassed = false;
-    }
-  }
+  Teuchos::updateParametersFromXmlString(xmlString,params.getRawPtr());
+  if (xmlfile != "") Teuchos::updateParametersFromXmlFile(xmlfile,params.getRawPtr());
+  // hand solver parameters to driver
+  driver.params = params;
 
   // 
-  // solve again, with the unfused version, just for timings purposes
-  {
-    // init the rhs
-    auto bx = db->get<RCP<Vector>>("bx");
-    binary_transform( *bx, *b, [](S, S bi) {return bi;}); // bx = b
-    // call the solve
-    TpetraExamples::recursiveFPCGUnfused<MPStack,LO,GO,Node>(out,*db);
-    //
-    // test the result
-    auto xhat = db->get<RCP<Vector>>("bx"),
-         bhat = Tpetra::createVector<S>(A->getRowMap());
-    A->apply(*xhat,*bhat);
-    // compute bhat-b, while simultaneously computing |bhat-b|^2 and |b|^2
-    auto nrms = binary_pre_transform_reduce(*bhat, *b, 
-                                            reductionGlob<ZeroOp<pair<S,S>>>( 
-                                              [](S bhati, S bi){ return bi-bhati;}, // bhati = bi-bhat
-                                              [](S bhati, S bi){ return make_pair(bhati*bhati, bi*bi); },
-                                              make_pair_op<S,S>(plus<S>())) );
-    const S enrm = Teuchos::ScalarTraits<S>::squareroot(nrms.first),
-            bnrm = Teuchos::ScalarTraits<S>::squareroot(nrms.second);
-    // check that residual is as requested
-    *out << "|b - A*x|/|b|: " << enrm / bnrm << endl;
-    const double tolerance = db->get<double>("tolerance");
-    if (enrm / bnrm > tolerance) {
-      testPassed = false;
-    }
-  }
-
-  // Print timings
-  //
-  Teuchos::TimeMonitor::summarize( *out );
-
+  // run the driver
   // 
+  platform.runUserCode(driver);
+
+  //
   // Print result
-  if (testPassed) {
-    *out << "End Result: TEST PASSED" << endl;
+  if (driver.testPassed) {
+    *driver.out << "End Result: TEST PASSED" << std::endl;
   }
 
   return 0;

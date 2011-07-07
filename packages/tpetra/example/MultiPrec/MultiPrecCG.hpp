@@ -126,7 +126,7 @@ namespace TpetraExamples {
       RCP<const Mat> AT = convertHelp<T,S,LO,GO,Node>::doit(A);
       //
       db->set<RCP<const Op>>("A", AT                    );
-      db->set("numIters", params.get<int>("numIters",5) );
+      db->set("numIters", params.get<int>("numIters",A->getGlobalNumRows()) );
       db->set("tolerance",params.get<double>("tolerance",1e-7));
       db->set("verbose",  params.get<int>("verbose",0) );
       db->set("bx",       Tpetra::createVector<T>(map)  );

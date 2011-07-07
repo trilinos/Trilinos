@@ -11,7 +11,7 @@
 
 #include "MultiPrecDriver.hpp"
 
-/** \file MultiPrecExample_double_float.cpp
+/** \file MultiPrecExample_double_double.cpp
     \brief An example of a multi-precision algorithm, using a flexible preconditioned CG with recursive precision.
  */
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   // 
   // Define the type stack
   // 
-  TPETRAEXT_TYPESTACK2(MPStack, double, float)
+  TPETRAEXT_TYPESTACK2(MPStack, double, double)
 
   //
   // instantiate a driver on the scalar stack
@@ -90,15 +90,16 @@ int main(int argc, char *argv[])
   RCP<Teuchos::ParameterList> params = Teuchos::parameterList();
   // default solver stack parameters
   std::string xmlString(
-    " <ParameterList>                                                    \n"
-    "   <Parameter name='tolerance' value='1e-15' type='double'/>        \n"
-    "   <Parameter name='verbose' value='2' type='int'/>                 \n"
+    " <ParameterList>                                                  \n"
+    "   <Parameter name='tolerance' value='5e-15' type='double'/>      \n"
+    "   <Parameter name='verbose' value='2' type='int'/>               \n"
+    "   <Parameter name='Extract Diagonal' value='true' type='bool'/>  \n"
     "   <ParameterList name='child'>                                     \n"
     "     <Parameter name='tolerance' value='1e-7' type='double'/>       \n"
     "     <Parameter name='verbose' value='1' type='int'/>               \n"
     "     <Parameter name='Extract Diagonal' value='true' type='bool'/>  \n" 
     "   </ParameterList>                                                 \n"
-    " </ParameterList>                                                   \n"
+    " </ParameterList>                                                 \n"
   );
   Teuchos::updateParametersFromXmlString(xmlString,params.getRawPtr());
   if (xmlfile != "") Teuchos::updateParametersFromXmlFile(xmlfile,params.getRawPtr());
@@ -119,6 +120,6 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-/** \example MultiPrecExample_double_float.cpp 
+/** \example MultiPrecExample_double_double.cpp 
     Demonstrate using Tpetra::RTI and a multi-precision flexible preconditioned CG, Tpetra::TypeStack and related utilities.
   */
