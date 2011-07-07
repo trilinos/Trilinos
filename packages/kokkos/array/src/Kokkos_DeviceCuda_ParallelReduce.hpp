@@ -436,7 +436,7 @@ public:
   }
 
 
-private:
+public:
 
   ParallelReduce( const FunctorType  & functor ,
                   const FinalizeType & finalize ,
@@ -566,21 +566,29 @@ class CudaMultiFunctorParallelReduceMember ;
 
 template < class ReduceTraits , class FinalizeType >
 class CudaMultiFunctorParallelReduceMember<void,ReduceTraits,FinalizeType> {
-protected:
-  CudaMultiFunctorParallelReduceMember() {}
 public:
 
   typedef DeviceCuda::size_type size_type ;
 
+protected:
+  CudaMultiFunctorParallelReduceMember( size_type stream_count )
+    : m_stream_count( stream_count )
+    {}
+public:
+
+  const size_type m_stream_count ; ///< Number of streams needed
+
   virtual ~CudaMultiFunctorParallelReduceMember() {}
 
-  virtual void execute(
-    const FinalizeType & finalize ,
-    const dim3         & grid ,
-    const dim3         & block ,
-    const size_type      shmem_size ,
-    cudaStream_t       & cuda_stream ,
-    const size_type      global_block_count ) const = 0 ;
+  virtual
+  void execute( const FinalizeType & finalize ,
+                const size_type      block_count ,
+                const size_type      warp_count ,
+                const size_type      shmem_size ,
+                cudaStream_t       & cuda_stream ,
+                const size_type      global_block_count ,
+                const size_type      mapped_block_offset ,
+                const size_type      mapped_block_recycle ) const = 0 ;
 };
 
 template < class FunctorType , class ReduceTraits , class FinalizeType >
@@ -588,20 +596,21 @@ class CudaMultiFunctorParallelReduceMember :
   public CudaMultiFunctorParallelReduceMember<void,ReduceTraits,FinalizeType>
 {
 public:
+  typedef CudaMultiFunctorParallelReduceMember<void,ReduceTraits,FinalizeType> base_type ;
+  
   typedef DeviceCuda            device_type ;
   typedef DeviceCuda::size_type size_type ;
 
   FunctorType m_functor ;
   size_type   m_work_count ;   ///< Parallel work items
-  size_type   m_stream_count ; ///< Number of streams
 
   CudaMultiFunctorParallelReduceMember(
     const FunctorType & functor ,
     const size_type     work_count ,
     const size_type     stream_count )
-  : m_functor( functor )
+  : base_type( stream_count )
+  , m_functor( functor )
   , m_work_count( work_count )
-  , m_stream_count( stream_count )
   {}
 
   virtual
@@ -618,7 +627,7 @@ public:
 
     const dim3 grid( block_count , 1 , 1 );
     const dim3 block( Impl::DeviceCudaTraits::WarpSize , warp_count , 1 );
-    const size_type work_stride = block.x * block.y * grid.x * m_stream_count ;
+    const size_type work_stride = block.x * block.y * grid.x * base_type::m_stream_count ;
 
     DeviceCuda::set_dispatch_functor();
 
@@ -668,7 +677,7 @@ private:
 
   MemberVector m_member_functors ;
   size_type    m_shmem_size ;
-  size_type    m_stream_count ;
+  size_type    m_stream_count ; ///< Total number of streams
   size_type    m_warps_per_block ;
   size_type    m_threads_per_block ;
   size_type    m_blocks_per_stream ;
@@ -689,7 +698,7 @@ public:
     : m_member_functors()
     , m_shmem_size( 0 )
     , m_warps_per_block( device_type::maximum_warp_count() )
-    , m_stream_count( device_type::streams().size() )
+    , m_stream_count( device_type::stream_count() )
     , m_threads_per_block( 0 )
     , m_blocks_per_stream( 0 )
     , result()
@@ -735,8 +744,6 @@ public:
 
   void execute()
   {
-    const std::vector< cudaStream_t > & streams = device_type::streams();
-
     // Dispatch to streams, second and subsequent dispatches set the 
     // recycling flag so previous reduction results will be read.
 
@@ -759,12 +766,12 @@ public:
 
       MemberType & member = **m ;
 
-      for ( size_type j = 0 ; j < member.stream_count ; ++j , ++k ) {
+      for ( size_type j = 0 ; j < member.m_stream_count ; ++j , ++k ) {
 
         const size_type work_block_offset  = m_blocks_per_stream * j ;
         const size_type work_block_recycle = m_stream_count <= k ;
 
-        const cudaStream_t & s = streams[ k % m_stream_count ];
+        cudaStream_t & s = device_type::stream( k % m_stream_count );
 
         member.execute( result , m_blocks_per_stream , m_warps_per_block , m_shmem_size , s ,
                         global_block_count , work_block_offset , work_block_recycle );

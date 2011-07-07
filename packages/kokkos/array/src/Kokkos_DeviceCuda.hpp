@@ -153,7 +153,8 @@ public:
   static size_type * reduce_multiblock_scratch_space();
   static size_type * reduce_multiblock_scratch_flag();
 
-  static const std::vector<cudaStream_t> & streams();
+  static size_type      stream_count();
+  static cudaStream_t & stream( size_type );
 
 #endif
 

@@ -314,12 +314,27 @@ DeviceCuda::maximum_grid_count()
   return s.m_maxBlock ;
 }
 
-const std::vector<cudaStream_t> &
-DeviceCuda::streams()
+DeviceCuda::size_type
+DeviceCuda::stream_count()
 {
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
 
-  return s.m_streams ;
+  return s.m_streams.size();
+}
+
+cudaStream_t &
+DeviceCuda::stream( DeviceCuda::size_type i )
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+
+  if ( s.m_streams.size() <= i ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::DeviceCuda::streams( " << i << " ) ERROR "
+        << "stream_count = " << s.m_streams.size() ;
+    throw std::logic_error( msg.str() );
+  }
+
+  return s.m_streams[i] ;
 }
 
 /*--------------------------------------------------------------------------*/

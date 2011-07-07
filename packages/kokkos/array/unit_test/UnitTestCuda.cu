@@ -66,6 +66,7 @@
 #include <UnitTestMDArrayDeepCopy.hpp>
 #include <UnitTestMDArrayIndexMap.hpp>
 #include <UnitTestReduce.hpp>
+#include <UnitTestMultiReduce.hpp>
 
 namespace Test {
 
@@ -85,6 +86,7 @@ void test_device_cuda()
 
     UnitTestReduce< long ,   Kokkos::DeviceCuda >( 1000000 );
     UnitTestReduce< double , Kokkos::DeviceCuda >( 1000000 );
+    // UnitTestReduceMulti< long , Kokkos::DeviceCuda >( 1000000 , 7 );
 
     std::cout << "PASSED : UnitTestCuda" << std::endl ;
   }
