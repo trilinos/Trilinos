@@ -26,9 +26,9 @@
 #include <mpi.h>
 */
 
-static long malloc_initialized=-1;
-static long malloc_leng_log[MAX_MALLOC_LOG];
-static long malloc_addr_log[MAX_MALLOC_LOG];
+static ml_size_t malloc_initialized=-1;
+static ml_size_t malloc_leng_log[MAX_MALLOC_LOG];
+static ml_size_t malloc_addr_log[MAX_MALLOC_LOG];
 static char malloc_name_log[MAX_MALLOC_LOG][3];
 void *ml_void_mem_ptr;
 
@@ -109,14 +109,14 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
       {
          int_ptr    = (int *) var_ptr;
          (*int_ptr) = i + 1;
-         int_ptr    = (int*) ((long) var_ptr + nchunks*ndouble - ndouble);
+         int_ptr    = (int*) ((ml_size_t) var_ptr + nchunks*ndouble - ndouble);
          (*int_ptr) = i + 1;
-         malloc_addr_log[i] = (long) memptr;
+         malloc_addr_log[i] = (ml_size_t) memptr;
          malloc_leng_log[i] = nchunks * ndouble;
          malloc_name_log[i][0] = name[0];
          malloc_name_log[i][1] = name[1];
          malloc_name_log[i][2] = name[2];
-         var_ptr = (char*) ((long) var_ptr + ndouble);
+         var_ptr = (char*) ((ml_size_t) var_ptr + ndouble);
          (*memptr) = (void *) var_ptr; 
          return i;
 
@@ -136,9 +136,9 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
          malloc_initialized = 1;
          int_ptr    = (int*) var_ptr;
          (*int_ptr) = -1;
-         int_ptr    = (int*) ((long) var_ptr + nchunks*ndouble - ndouble);
+         int_ptr    = (int*) ((ml_size_t) var_ptr + nchunks*ndouble - ndouble);
          (*int_ptr) = -1;
-         var_ptr = (char*) ((long) var_ptr + ndouble);
+         var_ptr = (char*) ((ml_size_t) var_ptr + ndouble);
          (*memptr) = (void *) var_ptr; 
          return 0;
       }
@@ -166,7 +166,7 @@ int ML_memory_free(void ** var_ptr)
 
    if (char_ptr != NULL)
    {
-      int_ptr = (int *) ((long) char_ptr - ndouble);
+      int_ptr = (int *) ((ml_size_t) char_ptr - ndouble);
       index   = (*int_ptr) - 1;
       if ( index >= 0 )
       {
@@ -179,7 +179,7 @@ int ML_memory_free(void ** var_ptr)
                printf("ML_memory_free error : header invalid(%d).\n",index);
             exit(-1);
          }
-         int_ptr = (int *) ((long) char_ptr + malloc_leng_log[index] - 
+         int_ptr = (int *) ((ml_size_t) char_ptr + malloc_leng_log[index] - 
                                    2 * ndouble);
          index2   = (*int_ptr);
          if (index != index2-1)
@@ -195,7 +195,7 @@ int ML_memory_free(void ** var_ptr)
                                                    malloc_leng_log[index]);
          }
          /* ########## This check may be messed up by pointer exchanges
-         if ( ((long) var_ptr) != malloc_addr_log[index])
+         if ( ((ml_size_t) var_ptr) != malloc_addr_log[index])
          { 
             printf("ML_memory_free warning : \n");
             printf("    %.3s - header and log mismatch.\n",
@@ -210,7 +210,7 @@ int ML_memory_free(void ** var_ptr)
          printf("ML_memory_free : variable not found.\n");
 */
 
-      int_ptr = (int *) ((long) char_ptr - ndouble);
+      int_ptr = (int *) ((ml_size_t) char_ptr - ndouble);
 
       ML_free(int_ptr);
    }
@@ -238,11 +238,11 @@ int ML_memory_check_var(void* var_ptr)
    {
       if ( global_comm != NULL )
          printf("%d : ML_memory_check_var : %ld\n",global_comm->ML_mypid,
-                (long)var_ptr);
+                (ml_size_t)var_ptr);
       else
-         printf("ML_memory_check_var : %ld\n", (long)var_ptr);
+         printf("ML_memory_check_var : %ld\n", (ml_size_t)var_ptr);
 
-      int_ptr = (int *) ((long) char_ptr - ndouble);
+      int_ptr = (int *) ((ml_size_t) char_ptr - ndouble);
       index   = (*int_ptr) - 1;
       if ( index >= 0 && index < MAX_MALLOC_LOG)
       {
@@ -265,7 +265,7 @@ int ML_memory_check_var(void* var_ptr)
                printf("ML_memory_check_var error : header invalid(%d)\n",index);
             exit(-1);
          }
-         int_ptr = (int *) ((long) char_ptr + malloc_leng_log[index] - 
+         int_ptr = (int *) ((ml_size_t) char_ptr + malloc_leng_log[index] - 
                                    2 * ndouble);
          index2   = (*int_ptr);
          if (index != index2-1)
@@ -281,7 +281,7 @@ int ML_memory_check_var(void* var_ptr)
                                                    malloc_leng_log[index]);
          }
          /* ########## This check may be messed up by pointer exchanges
-         if ( ((long) var_ptr) != malloc_addr_log[index])
+         if ( ((ml_size_t) var_ptr) != malloc_addr_log[index])
          { 
             printf("ML_memory_check_var warning : \n");
             printf("    %.3s - header and log mismatch.\n",
