@@ -6,8 +6,8 @@ INCLUDE(PackageLibraryMacros)
 #
 
 # Enabling a define if the Thyra Epetra adapter is defined.
-ASSERT_DEFINED(Thyra_ENABLE_Epetra)
-IF(Thyra_ENABLE_Epetra)
+ASSERT_DEFINED(Thyra_ENABLE_ThyraEpetraAdapters)
+IF(Thyra_ENABLE_ThyraEpetraAdapters)
   SET(HAVE_EPETRA_THYRA 1)
 ENDIF()
 

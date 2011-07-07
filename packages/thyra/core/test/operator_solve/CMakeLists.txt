@@ -1,5 +1,6 @@
 INCLUDE(PackageAddExecutableAndTest)
 
+
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/example/operator_solve)
 
 
@@ -7,7 +8,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SolveStatus_UnitTests
   SOURCES
     SolveStatus_UnitTests.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -17,7 +18,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DefaultSerialDenseLinearOpWithSolveFactory_UnitTests
   SOURCES
     DefaultSerialDenseLinearOpWithSolveFactory_UnitTests.cpp
-    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -68,7 +69,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DelayedLinearOpWithSolveUnitTests
   SOURCES
     DelayedLinearOpWithSolve_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -78,7 +79,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DefaultMultiVectorLinearOpWithSolveUnitTests
   SOURCES
     DefaultMultiVectorLinearOpWithSolve_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -88,7 +89,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DefaultBlockedTriangularLinearOpWithSolveUnitTests
   SOURCES
     DefaultBlockedTriangularLinearOpWithSolve_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )

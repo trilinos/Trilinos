@@ -592,7 +592,7 @@ SolveStatus<Scalar> solve(
 /** \brief Call <tt>solveSupportsSolveMeasureType()</tt> as a non-member
  * function.
  *
- * \defgroup Thyra_deprecated_grp
+ * \ingroup Thyra_deprecated_grp
  */
 template<class Scalar>
 inline
@@ -608,7 +608,7 @@ bool solveSupportsSolveMeasureType(
 
 /** \brief Deprecated.
  *
- * \defgroup Thyra_deprecated_grp
+ * \ingroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -635,7 +635,7 @@ void solve(
 
 /** \brief Deprecated.
  *
- * \defgroup Thyra_deprecated_grp
+ * \ingroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -657,7 +657,7 @@ SolveStatus<Scalar> solve(
  *
  * See the implementation of this function for details.
  *
- * \defgroup Thyra_deprecated_grp
+ * \ingroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -693,7 +693,7 @@ solve(
  *
  * See the implementation of this function for details.
  *
- * \defgroup Thyra_deprecated_grp
+ * \ingroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -729,7 +729,7 @@ solveTranspose(
  *
  * See the implementation of this function for details.
  *
- * \defgroup Thyra_deprecated_grp
+ * \ingroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -752,7 +752,7 @@ void solve(
  *
  * See the implementation of this function for details.
  *
- * \defgroup Thyra_deprecated_grp
+ * \ingroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED

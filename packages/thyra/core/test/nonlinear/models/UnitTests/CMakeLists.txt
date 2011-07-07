@@ -5,7 +5,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Simple2DModelEvaluatorUnitTests
   SOURCES
     Simple2DModelEvaluator_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   DEPLIBS thyra_nonlinear_test_models
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -16,7 +16,7 @@ PACKAGE_ADD_EXECUTABLE(
   DiagonalQuadraticResponseOnlyModelEvaluatorUnitTests
   SOURCES
     DiagonalQuadraticResponseOnlyModelEvaluator_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   DEPLIBS thyra_nonlinear_test_models
   COMM serial mpi
   )

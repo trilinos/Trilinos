@@ -1,3 +1,6 @@
+INCLUDE(SubPackageMacros)
+
+SUBPACKAGE(EpetraExtAdapters)
 
 ADD_SUBDIRECTORY(src)
 
@@ -8,3 +11,5 @@ ADD_SUBDIRECTORY(src)
 # now!
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
+
+SUBPACKAGE_POSTPROCESS()

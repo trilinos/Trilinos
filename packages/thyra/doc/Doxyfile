@@ -21,29 +21,29 @@ INPUT                  = ./index.doc \
                          ./faq.doc \
                          ./groups.doc \
                          ./dirs.doc \
-                         ../src/interfaces/operator_vector/fundamental \
-                         ../src/interfaces/operator_vector/extended \
-                         ../src/interfaces/operator_solve/fundamental \
-                         ../src/interfaces/operator_solve/extended \
-                         ../src/interfaces/nonlinear/model_evaluator/fundamental \
-                         ../src/interfaces/nonlinear/solvers/fundamental \
-                         ../src/support/operator_vector/client_support \
-                         ../src/support/operator_vector/adapter_support \
-                         ../src/support/operator_solve/client_support \
-                         ../src/support/nonlinear/model_evaluator/client_support \
-                         ../src/support/nonlinear/solvers/client_support \
+                         ../core/src/interfaces/operator_vector/fundamental \
+                         ../core/src/interfaces/operator_vector/extended \
+                         ../core/src/interfaces/operator_solve/fundamental \
+                         ../core/src/interfaces/operator_solve/extended \
+                         ../core/src/interfaces/nonlinear/model_evaluator/fundamental \
+                         ../core/src/interfaces/nonlinear/solvers/fundamental \
+                         ../core/src/support/operator_vector/client_support \
+                         ../core/src/support/operator_vector/adapter_support \
+                         ../core/src/support/operator_solve/client_support \
+                         ../core/src/support/nonlinear/model_evaluator/client_support \
+                         ../core/src/support/nonlinear/solvers/client_support \
                          ../adapters/epetra/src \
                          ../adapters/epetraext/src/model_evaluator \
                          ../adapters/epetraext/src/transformer \
                          ../adapters/tpetra/src \
-                         ../example/operator_vector/exampleImplicitlyComposedLinearOperators.cpp \
-                         ../example/operator_vector/ExampleTridiagSerialLinearOp.hpp \
-                         ../example/operator_vector/ExampleTridiagSpmdLinearOp.hpp \
-                         ../example/operator_vector/sillyCgSolve.hpp \
-                         ../example/operator_vector/sillyPowerMethod.hpp \
-                         ../example/operator_vector/sillyModifiedGramSchmidt.hpp \
-                         ../example/operator_solve/Thyra_LinearOpWithSolveFactoryExamples.hpp \
-                         ../test/nonlinear/models/
+                         ../core/example/operator_vector/exampleImplicitlyComposedLinearOperators.cpp \
+                         ../core/example/operator_vector/ExampleTridiagSerialLinearOp.hpp \
+                         ../core/example/operator_vector/ExampleTridiagSpmdLinearOp.hpp \
+                         ../core/example/operator_vector/sillyCgSolve.hpp \
+                         ../core/example/operator_vector/sillyPowerMethod.hpp \
+                         ../core/example/operator_vector/sillyModifiedGramSchmidt.hpp \
+                         ../core/example/operator_solve/Thyra_LinearOpWithSolveFactoryExamples.hpp \
+                         ../core/test/nonlinear/models/
 
 # ToDo: Just include ../src/
 
@@ -51,11 +51,11 @@ FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = NO
 
 IMAGE_PATH             = ./images \
-                         ../src/support/operator_vector/doc/images \
-                         ../src/interfaces/operator_vector/fundamental/doc/images
-EXAMPLE_PATH           = ../example/operator_vector \
-                         ../test/operator_vector \
-                         ../test/operator_solve
+                         ../core/src/support/operator_vector/doc/images \
+                         ../core/src/interfaces/operator_vector/fundamental/doc/images
+EXAMPLE_PATH           = ../core/example/operator_vector \
+                         ../core/test/operator_vector \
+                         ../core/test/operator_solve
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATTERNS       =

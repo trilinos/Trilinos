@@ -60,7 +60,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DetachedSpmdVectorViewUnitTests
   SOURCES
     DetachedSpmdVectorView_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   )
 PACKAGE_ADD_TEST(
@@ -76,7 +76,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     DefaultSpmdVectorSpace_UnitTests.cpp
     DefaultSpmdMultiVector_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   )
 
@@ -85,7 +85,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DefaultProductVectorSpaceUnitTests
   SOURCES
     DefaultProductVectorSpace_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   )
 PACKAGE_ADD_TEST(
@@ -100,7 +100,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DefaultMultiVectorProductVectorSpaceUnitTests
   SOURCES
     DefaultMultiVectorProductVectorSpace_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   )
 PACKAGE_ADD_TEST(
@@ -114,7 +114,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DefaultBlockedLinearOpUnitTests
   SOURCES
     DefaultBlockedLinearOp_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   STANDARD_PASS_OUTPUT
   )
 
@@ -122,7 +122,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #  DefaultSpmdVectorSpace_ParallelUnitTest
 #  SOURCES
 #    DefaultSpmdVectorSpace_Parallel_UnitTest.cpp
-#    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+#    ${TEUCHOS_STD_UNIT_TEST_MAIN}
 #  STANDARD_PASS_OUTPUT
 #  )
 #PACKAGE_ADD_TEST(
