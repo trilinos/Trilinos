@@ -195,8 +195,12 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         sapTimer->start(true);
 
         bool doTranspose=false; 
-        Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,-dampingFactor_/lambdaMax);
-        finalP = AP;
+        if (AP->isFillComplete())
+          Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,doTranspose,-dampingFactor_/lambdaMax,finalP);
+        else {
+          Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,-dampingFactor_/lambdaMax);
+          finalP = AP;
+        }
         finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));

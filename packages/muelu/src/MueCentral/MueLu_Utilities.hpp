@@ -361,7 +361,6 @@ namespace MueLu {
 #endif
       }
 
-      return C;
    } //TwoMatrixAdd()
 
     static void MatrixPrint(RCP<Operator> const &Op) {
