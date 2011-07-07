@@ -560,7 +560,7 @@ namespace MueLu {
    */
    static void Write(std::string const & fileName, Operator const & Op) {
     CrsOperator const & crsOp = dynamic_cast<CrsOperator const &>(Op);
-    RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
+    RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
     const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
     const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx != Teuchos::null) {
@@ -696,7 +696,49 @@ namespace MueLu {
       }
       return lambda;
     } //PowerMethod
-    
+
+   static void MyOldScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true)
+   {
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpOp;
+      try {
+        tpOp = Op2NonConstTpetraCrs(Op);
+      }
+      catch(...) {
+        throw(Exceptions::RuntimeError("Sorry, haven't implemented matrix scaling for epetra"));
+      }
+      const RCP<const Tpetra::Map<LO,GO,NO> > rowMap = tpOp->getRowMap();
+      const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp->getDomainMap();
+      const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap = tpOp->getRangeMap();
+      Teuchos::ArrayView<const LO> cols;
+      Teuchos::ArrayView<const SC> vals;
+      LO maxRowSize = tpOp->getNodeMaxNumRowEntries();
+      std::vector<SC> scaledVals(maxRowSize);
+      tpOp->resumeFill();
+
+      Teuchos::ArrayRCP<SC> sv(scalingVector.size());
+      if (doInverse) {
+        for (int i=0; i<scalingVector.size(); ++i)
+          sv[i] = 1.0 / scalingVector[i];
+      } else {
+        for (int i=0; i<scalingVector.size(); ++i)
+          sv[i] = scalingVector[i];
+      }
+
+      for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
+        tpOp->getLocalRowView(i,cols,vals);
+        size_t nnz = tpOp->getNumEntriesInLocalRow(i);
+        for (size_t j=0; j<nnz; j++) {
+          scaledVals[j] = vals[j]*sv[i];
+        }
+        if (nnz>0) {
+          Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
+          tpOp->replaceLocalValues(i,cols,valview);
+        }
+      } //for (size_t i=0; ...
+
+      tpOp->fillComplete(domainMap,rangeMap);
+   } //ScaleMatrix()
+
   }; // class
 
 } //namespace MueLu

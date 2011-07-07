@@ -167,7 +167,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_A_P"));
         sapTimer->start(true);
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(Op);
-        Utils::ScaleMatrix(Op,diag); //scale matrix
+        Utils::MyOldScaleMatrix(Op,diag); //scale matrix
         bool doFillComplete=false;
         RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,false,Ptent,false,doFillComplete);
         sapTimer->stop();
@@ -176,7 +176,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         sapTimer = rcp(new Teuchos::Time("SaPFactory:eigen_estimate"));
         sapTimer->start(true);
         Scalar lambdaMax = Utils::PowerMethod(*Op,(LO) 10,(Scalar)1e-4);
-        Utils::ScaleMatrix(Op,diag,false); //unscale matrix
+        Utils::MyOldScaleMatrix(Op,diag,false); //unscale matrix
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
         RCP<const Teuchos::Comm<int> > comm = Op->getRowMap()->getComm();
