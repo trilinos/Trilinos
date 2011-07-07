@@ -415,7 +415,14 @@ namespace Tpetra {
       //! Indicates that the graph is static, so that new entries cannot be added to this matrix. */
       bool isStaticGraph() const;
 
-      Scalar getFrobeniusNorm() const;
+      //! Returns the Frobenius norm of the matrix. 
+      /** Computes and returns the Frobenius norm of the matrix, defined as:
+        \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
+
+         If the matrix is fill-complete, then the computed value is cached; the cache is cleared whenever resumeFill() is called.
+         Otherwise, the value is computed every time the method is called.
+        */
+      typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
 
       //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
       /*!
@@ -618,6 +625,7 @@ namespace Tpetra {
       typedef OrdinalTraits<LocalOrdinal>                     LOT;
       typedef OrdinalTraits<GlobalOrdinal>                    GOT;
       typedef ScalarTraits<Scalar>                             ST;
+      typedef typename ST::magnitudeType                Magnitude;
       typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       MV;
       typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             V;
       typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  Graph;
@@ -672,6 +680,9 @@ namespace Tpetra {
       // a wrapper around multiply, for use in apply; it contains a non-owning RCP to *this, therefore, it is not allowed 
       // to persist past the destruction of *this. therefore, WE MAY NOT SHARE THIS POINTER.
       RCP< const CrsMatrixMultiplyOp<Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > sameScalarMultiplyOp_;
+
+      // cached frobenius norm: -ST::one() means invalid
+      mutable Magnitude frobNorm_;
 
   }; // class CrsMatrix
 

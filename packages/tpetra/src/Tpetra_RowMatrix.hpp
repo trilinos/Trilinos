@@ -238,7 +238,10 @@ namespace Tpetra {
        */
       virtual void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) =0;
 
-      /** \brief Returns the Frobenius norm of the matrix */
+      //! Returns the Frobenius norm of the matrix. 
+      /** Computes and returns the Frobenius norm of the matrix, defined as:
+        \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
+        */
       virtual Scalar getFrobeniusNorm() const = 0;
 
       //@}

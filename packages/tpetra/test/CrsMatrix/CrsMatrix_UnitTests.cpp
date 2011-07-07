@@ -282,6 +282,7 @@ namespace {
     }
     STD_TESTS((*zero));
     TEST_EQUALITY_CONST( zero->getRangeMap() == zero->getDomainMap(), true );
+    TEST_EQUALITY_CONST( zero->getFrobeniusNorm(), MT::zero() );
     const RCPMap drmap = zero->getDomainMap();
     {
       MV mv1(drmap,1), mv2(drmap,2), mv3(drmap,3);

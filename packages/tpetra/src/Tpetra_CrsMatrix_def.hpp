@@ -1192,31 +1192,71 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  Scalar CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getFrobeniusNorm() const
+  typename ScalarTraits<Scalar>::magnitudeType
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getFrobeniusNorm() const
   {
-    //TODO Like the epetra norm functions, we should check to see if the matrix
-    //has changed since we last calculated the norm. If it hasn't we should short
-    //circuit and return what ever value we last calculated. The problem is,
-    //I don't know each and every method that could potentially modify the matrix
-    //in such a way that we'd need to recalculate the norm. This is an optimization 
-    //I should do at a later point when I have more time.
-    //KLN 07/07/2011
-
-    Scalar mySum = ScalarTraits<Scalar>::zero();
-    Array<LocalOrdinal> inds(getNodeMaxNumRowEntries());
-    Array<Scalar> vals(getNodeMaxNumRowEntries());
-    for(size_t i =0; i<getNodeNumRows(); ++i){
-      size_t numRowEnts = getNumEntriesInLocalRow(i);
-      ArrayView<const LocalOrdinal> indsView = inds();
-      ArrayView<const Scalar> valsView = vals();
-      getLocalRowView(i, indsView, valsView);
-      for(size_t j=0; j<numRowEnts; ++j){
-        mySum += valsView[j]*valsView[j];
+    // TODO: push localFrobNorm() down to the LocalMatOps class
+    //
+    // check the cache first
+    Magnitude frobNorm = frobNorm_;
+    if (frobNorm == -ScalarTraits<Magnitude>::one()) {
+      Magnitude mySum = ScalarTraits<Magnitude>::zero();
+      if (getNodeNumEntries() > 0) {
+        if (isStorageOptimized()) {
+          // can do this in one pass through A
+          typename ArrayRCP<const Scalar>::iterator valit, valend;
+          valit = values1D_.begin();
+          valend = valit + getNodeNumEntries();
+          while (valit != valend) {
+            const Scalar val = *valit++;
+            mySum += ST::magnitude( ST::conjugate(val) * val );
+          }
+        }
+        else if (getProfileType() == StaticProfile) 
+        {
+          // must hit each row individually
+          const size_t numRows = getNodeNumRows();
+          for (size_t r=0; r != numRows; ++r) 
+          {
+            typename ArrayRCP<const Scalar>::iterator valit, valend;
+            RowInfo rowInfo = myGraph_->getRowInfo(r);
+            valit = values1D_.begin() + rowInfo.offset1D;
+            valend = valit + rowInfo.numEntries;
+            while (valit != valend) {
+              const Scalar val = *valit++;
+              mySum += ST::magnitude( ST::conjugate(val) * val );
+            }
+          }
+        }
+        else if (getProfileType() == DynamicProfile) 
+        {
+          // must hit each row individually
+          const size_t numRows = getNodeNumRows();
+          for (size_t r=0; r != numRows; ++r) 
+          {
+            typename ArrayRCP<const Scalar>::iterator valit, valend;
+            RowInfo rowInfo = myGraph_->getRowInfo(r);
+            valit = values2D_[r].begin();
+            valend = valit + rowInfo.numEntries;
+            while (valit != valend) {
+              const Scalar val = *valit++;
+              mySum += ST::magnitude( ST::conjugate(val) * val );
+            }
+          }
+        }
+        else {
+          TEST_FOR_EXCEPTION(true, std::logic_error, typeName(*this) << "::getFrobeniusNorm(): Internal logic error. Please contact Tpetra team.");
+        }
       }
+      Magnitude totalSum;
+      Teuchos::reduceAll(*(getComm()), Teuchos::REDUCE_SUM, mySum, outArg(totalSum));
+      frobNorm = ScalarTraits<Magnitude>::squareroot(totalSum);
     }
-    Scalar totalSum = ScalarTraits<Scalar>::zero();
-    Teuchos::reduceAll(*(getComm()), Teuchos::REDUCE_SUM, 1, &mySum, &totalSum);
-    return ScalarTraits<Scalar>::squareroot(totalSum);
+    if (isFillComplete()) {
+      // cache the result
+      frobNorm_ = frobNorm;
+    }
+    return frobNorm;
   }
   
 
@@ -1463,6 +1503,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *getRowMap()->getComm() );
 #endif
+    frobNorm_ = -ScalarTraits<Magnitude>::one();
     if (isStaticGraph() == false) {
       myGraph_->resumeFill();
     }
