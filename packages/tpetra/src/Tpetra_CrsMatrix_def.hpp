@@ -1132,9 +1132,9 @@ namespace Tpetra {
     for(LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero(); Teuchos::as<size_t>(i) < getNodeNumRows(); ++i){
       const RowInfo rowinfo = staticGraph_->getRowInfo(i);
       rowValues = getViewNonConst(rowinfo);
-      Scalar scale = vectorVals[i];
+      Scalar scaleValue = vectorVals[i];
       for(LocalOrdinal j=OrdinalTraits<LocalOrdinal>::zero(); Teuchos::as<size_t>(j)<rowinfo.numEntries; ++j){
-        rowValues[j] *= scale;
+        rowValues[j] *= scaleValue;
       }
       rowValues = null;
     }

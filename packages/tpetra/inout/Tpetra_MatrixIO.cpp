@@ -124,7 +124,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
   try {
     std::ifstream fin;
     int ptrCrd, indCrd, valCrd;
-    Teuchos::ArrayRCP<char> Title, Key, Rhstype, Ptrfmt, Indfmt, Valfmt, Rhsfmt;
+    Teuchos::ArrayRCP<char> Title, Key, Ptrfmt, Indfmt, Valfmt;
     const int MAXSIZE = 81;
     char lineBuf[MAXSIZE];
     // nitty gritty
