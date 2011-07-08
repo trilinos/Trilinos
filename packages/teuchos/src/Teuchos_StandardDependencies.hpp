@@ -1723,5 +1723,205 @@ RCP<RangeValidatorDependency<T> >
 }
 
 
+
+template<class DependeeType, class DependentType>
+class TwoDRowDependency : public Dependency{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a TwoDRowDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependent The dependent parameter.
+   * @param func A function specifying how the TwoDArrays
+   * number of rows 
+   * should be calculated from the dependees value.
+   */
+  TwoDRowDependency(
+    RCP<const ParameterEntry> dependee,
+    RCP<ParameterEntry> dependent,
+    RCP<SimpleFunctionObject<DependeeType> > func=null);
+
+
+  /**
+   * \brief Constructs a TwoDRowDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependents The dependents.
+   * @param func A function specifying how the TwoDArrays
+   * number of rows 
+   * should be calculated from the dependees value.
+   */
+  TwoDRowDependency(
+    RCP<const ParameterEntry> dependee,
+    ParameterEntryList dependent,
+    RCP<SimpleFunctionObject<DependeeType> > func=null);
+
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  void evaluate();
+  
+  /** \brief . */
+  std::string getTypeAttributeValue() const;
+  
+  //@}
+
+  /** \name Getters */
+  //@{
+
+  /** \brief Const version of function getter. */
+  RCP<const SimpleFunctionObject<DependeeType> > 
+    getFunctionObject() const;
+
+  //@}
+
+protected:
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  void validateDep() const;
+  
+  //@}
+  
+private:
+
+  /** \name Private Members */
+  //@{
+  
+  /**
+   * \brief The function used to calculate the new value of the
+   * arrays number of rows.
+   */
+    RCP<SimpleFunctionObject<DependeeType> > func_;
+
+  /**
+   * \brief modifies the number of rows in the TwoDArray.
+   */
+  void modifyRowAmount(
+    DependeeType newRowNum,
+    RCP<ParameterEntry> dependentToModify);
+  
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
+  RCP<const ParameterEntry> dependee,
+  RCP<ParameterEntry> dependent,
+  RCP<SimpleFunctionObject<DependeeType> > func):
+  Dependency(dependee, dependent),
+  func_(func)
+{
+  validateDep();
+}
+
+template<class DependeeType, class DependentType>
+TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
+  RCP<const ParameterEntry> dependee,
+  ParameterEntryList dependents,
+  RCP<SimpleFunctionObject<DependeeType> > func):
+  Dependency(dependee, dependents),
+  func_(func)
+{
+  validateDep();
+}
+
+
+template<class DependeeType, class DependentType>
+std::string 
+TwoDRowDependency<DependeeType, DependentType>::getTypeAttributeValue()
+const
+{
+  return "TwoDRowDependency(" +
+    TypeNameTraits<DependeeType>::name() + ", " +
+    TypeNameTraits<DependentType>::name() +")";
+}
+
+template<class DependeeType, class DependentType>
+RCP<const SimpleFunctionObject<DependeeType> >
+TwoDRowDependency<DependeeType, DependentType>::getFunctionObject()
+const
+{
+  return func_.getConst();
+}
+
+template <class DependeeType, class DependentType>
+void 
+TwoDRowDependency<DependeeType, DependentType>::modifyRowAmount(
+  DependeeType newRowNum, 
+  RCP<ParameterEntry> dependentToModify)
+{
+  TwoDArray<DependentType> originalArray = 
+    any_cast<TwoDArray<DependentType> >(dependentToModify->getAny()); 
+  originalArray.resizeRows(newRowNum);
+  dependentToModify->setValue(originalArray,
+    false, dependentToModify->docString(), dependentToModify->validator());
+}
+
+template<class DependeeType, class DependentType>
+void 
+TwoDRowDependency<DependeeType, DependentType>::evaluate(){
+  DependeeType newRowNum = getFirstDependeeValue<DependeeType>();
+  if(!func_.is_null()){
+    newRowNum = func_->runFunction(newRowNum);
+  }
+
+  TEST_FOR_EXCEPTION(newRowNum < OrdinalTraits<DependeeType>::zero(),
+    Exceptions::InvalidParameterValue,
+    "Ruh Roh Shaggy! Looks like a dependency tried to set the number of "
+    "rows in TwoDArray(s) to a negative number. Silly. You can't have "
+    "a TwoDArray with a negative number of rows!" << std::endl << std::endl <<
+    "Error:" << std::endl <<
+    "An attempt was made to set the length of an Array to a negative "
+    "number by a NumberArrayLengthDependency" << std::endl << std::endl);
+  for(
+    ParameterEntryList::iterator it = getDependents().begin(); 
+    it != getDependents().end(); 
+    ++it)
+  {
+    modifyRowAmount(newRowNum, *it);
+  }
+}
+
+template<class DependeeType, class DependentType>
+void 
+TwoDRowDependency<DependeeType, DependentType>::validateDep() 
+  const
+{
+  TEST_FOR_EXCEPTION(
+    typeid(DependeeType) != getFirstDependee()->getAny().type(),
+    InvalidDependencyException,
+    "Ay no! The dependee parameter types don't match." << std::endl <<
+    "Dependee Template Type: " << TypeNameTraits<DependeeType>::name() <<
+    std::endl <<
+    "Dependee Parameter Type: " << getFirstDependee()->getAny().typeName()
+    << std::endl << std::endl);
+
+  for(
+    ConstParameterEntryList::const_iterator it = getDependents().begin(); 
+    it != getDependents().end(); 
+    ++it)
+  {
+    TEST_FOR_EXCEPTION(
+      typeid(Teuchos::TwoDArray<DependentType>) != (*it)->getAny().type(),
+        InvalidDependencyException,
+        "Ay no! The dependent parameter types don't match." << std::endl <<
+        "Dependent Template Type: " << 
+        TypeNameTraits<DependentType>::name() << std::endl <<
+        "Dependent Parameter Type: " << 
+        (*it)->getAny().typeName() << std::endl << std::endl);
+  }
+}
+
 } //namespace Teuchos
 #endif //TEUCHOS_STANDARDDEPENDCIES_HPP_
