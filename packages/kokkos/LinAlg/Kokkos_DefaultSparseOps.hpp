@@ -42,6 +42,7 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
+#include "Kokkos_DefaultSparseScaleKernelOps.hpp"
 #include "Kokkos_DefaultSparseSolveKernelOps.hpp"
 #include "Kokkos_DefaultSparseMultiplyKernelOps.hpp"
 
@@ -119,6 +120,10 @@ namespace Kokkos {
     template <class DomainScalar, class RangeScalar>
     void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
                const MultiVector<DomainScalar,Node> &Y, MultiVector<RangeScalar,Node> &X) const;
+
+    //! Left-scales a matrix by a vector
+    template <class VectorScalar>
+    void leftScale(const MultiVector<VectorScalar,Node> &X);
 
     //@}
 
@@ -556,6 +561,46 @@ namespace Kokkos {
   }
 
 
+
+
+  template <class Scalar, class Ordinal, class Node>
+  template <class VectorScalar>
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::leftScale(const MultiVector<VectorScalar,Node> &X) 
+  {
+    typedef DefaultSparseScaleOp1<Scalar,Ordinal,VectorScalar>  Op1D;
+    typedef DefaultSparseScaleOp2<Scalar,Ordinal,VectorScalar>  Op2D;
+    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::leftScale(): operation not fully initialized.");
+    TEST_FOR_EXCEPT(X.getNumCols() != 1);
+    ReadyBufferHelper<Node> rbh(node_);
+    if (begs1D_ != null) {
+      Op1D wdp;
+      rbh.begin();
+      wdp.numRows = numRows_;
+      wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
+      wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
+      wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds1D_);
+      wdp.vals    = rbh.template addNonConstBuffer<Scalar>(vals1D_);
+      wdp.x       = rbh.template addConstBuffer<VectorScalar>(X.getValues());
+      rbh.end();
+      node_->template parallel_for<Op1D>(0,numRows_,wdp);	
+    }
+    else {
+      Op2D wdp;
+      rbh.begin();
+      wdp.numRows = numRows_;
+      wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
+      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
+      wdp.vals_beg   = rbh.template addNonConstBuffer<const  Scalar *>(valPtrs_);
+      wdp.x          = rbh.template addConstBuffer<VectorScalar>(X.getValues());
+      rbh.end();
+      const size_t numRHS = X.getNumCols();
+      node_->template parallel_for<Op2D>(0,numRows_,wdp);
+    }
+    return;
+  }
+
+
   /** \brief Default implementation of sparse matrix-vector multiplication and solve routines, for device-based nodes.
       \ingroup kokkos_crs_ops
     */
@@ -623,6 +668,11 @@ namespace Kokkos {
     template <class DomainScalar, class RangeScalar>
     void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
                const MultiVector<DomainScalar,Node> &Y, MultiVector<RangeScalar,Node> &X) const;
+
+
+    //! Left-scales a matrix by a vector
+    template <class VectorScalar>
+    void leftScale(const MultiVector<VectorScalar,Node> &X);
 
     //@}
 
@@ -893,6 +943,40 @@ namespace Kokkos {
     }
     return;
   }
+
+
+
+
+
+  template <class Scalar, class Ordinal, class Node>
+  template <class VectorScalar>
+  void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::leftScale(const MultiVector<VectorScalar,Node> &X)
+  {
+    typedef DefaultSparseScaleOp1<Scalar,Ordinal,VectorScalar>  Op1D;
+    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::scale(): operation not fully initialized.");
+    TEST_FOR_EXCEPT(X.getNumCols() != 1);
+    ReadyBufferHelper<Node> rbh(node_);
+
+
+    Op1D wdp;
+    rbh.begin();
+    wdp.numRows = numRows_;
+    wdp.begs    = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
+    wdp.ends    = wdp.begs+1;
+    wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
+    wdp.vals    = rbh.template addNonConstBuffer<Scalar>(pbuf_vals1D_);
+    wdp.x       = rbh.template addConstBuffer<VectorScalar>(X.getValues());
+    rbh.end();
+    const size_t numRHS = X.getNumCols();
+    node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
+    
+    return;
+  }
+
+
+
+
 
   /** \example CrsMatrix_DefaultMultiplyTests.hpp 
     * This is an example that unit tests and demonstrates the implementation requirements for the DefaultSparseOps class.
