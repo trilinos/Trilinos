@@ -264,10 +264,11 @@ namespace moab {
             permuted_hash[10] = (*this->output_functor)(
                                                         permuted_hash[0], permuted_hash[2], permuted_hash[1], permuted_coords[10], permuted_tags[10] );
 #else
+            comparison_bits -=  3 ;
             if (CMP_VH(0,1))
-              comparison_bits = 1;
+              comparison_bits |= 1;
             else
-              comparison_bits = 2;
+              comparison_bits |= 2;
 #endif
           }
 
@@ -324,10 +325,11 @@ namespace moab {
             permuted_hash[11] = (*this->output_functor)(
                                                         permuted_hash[1], permuted_hash[3], permuted_hash[0], permuted_coords[11], permuted_tags[11] );
 #else
+            comparison_bits -=  3 ;
             if (CMP_VH(0,3))
-              comparison_bits = 1;
+              comparison_bits |= 1;
             else
-              comparison_bits = 2;
+              comparison_bits |= 2;
 #endif
           }
         if ( ( comparison_bits & 12 ) == 12 )
@@ -342,10 +344,11 @@ namespace moab {
             permuted_hash[13] = (*this->output_functor)(
                                                         permuted_hash[2], permuted_hash[3], permuted_hash[0], permuted_coords[13], permuted_tags[13] );
 #else
+            comparison_bits -=  12 ;
             if (CMP_VH(2,3))
-              comparison_bits = 4;
+              comparison_bits |= 4;
             else
-              comparison_bits = 8;
+              comparison_bits |= 8;
 #endif
           }
         if ( ( comparison_bits & 48 ) == 48 )
@@ -360,10 +363,11 @@ namespace moab {
             permuted_hash[10] = (*this->output_functor)(
                                                         permuted_hash[1], permuted_hash[2], permuted_hash[0], permuted_coords[10] , permuted_tags[10] );
 #else
+            comparison_bits -=  48 ;
             if (CMP_VH(0,2))
-              comparison_bits = 16;
+              comparison_bits |= 16;
             else
-              comparison_bits = 32;
+              comparison_bits |= 32;
 #endif
           }
 
@@ -485,10 +489,11 @@ namespace moab {
             permuted_hash[10] = (*this->output_functor)(
                                                         permuted_hash[0], permuted_hash[2], permuted_hash[1], permuted_coords[10], permuted_tags[10] );
 #else
+            comparison_bits -=  3 ;
             if (CMP_VH(0,1))
-              comparison_bits = 1;
+              comparison_bits |= 1;
             else
-              comparison_bits = 2;
+              comparison_bits |= 2;
 #endif
 
           }
@@ -504,10 +509,11 @@ namespace moab {
             permuted_hash[11] = (*this->output_functor)(
                                                         permuted_hash[1], permuted_hash[3], permuted_hash[0], permuted_coords[11], permuted_tags[11] );
 #else
+            comparison_bits -=  12 ;
             if (CMP_VH(0,3))
-              comparison_bits = 4;
+              comparison_bits |= 4;
             else
-              comparison_bits = 8;
+              comparison_bits |= 8;
 #endif
 
           }
@@ -592,10 +598,11 @@ namespace moab {
             permuted_hash[10] = (*this->output_functor)(
                                                         permuted_hash[1], permuted_hash[2], permuted_hash[0], permuted_coords[10], permuted_tags[10] );
 #else
+            comparison_bits -=  3 ;
             if (CMP_VH(0,2))
-              comparison_bits = 1;
+              comparison_bits |= 1;
             else
-              comparison_bits = 2;
+              comparison_bits |= 2;
 #endif
           }
         if ( ( comparison_bits & 12 ) == 12 )
@@ -610,10 +617,11 @@ namespace moab {
             permuted_hash[11] = (*this->output_functor)(
                                                         permuted_hash[0], permuted_hash[3], permuted_hash[1], permuted_coords[11], permuted_tags[11] );
 #else
+            comparison_bits -=  12 ;
             if (CMP_VH(0,4))
-              comparison_bits = 4;
+              comparison_bits |= 4;
             else
-              comparison_bits = 8;
+              comparison_bits |= 8;
 #endif
           }
         MB_TESSELLATOR_INCR_CASE_COUNT(6);
@@ -697,7 +705,7 @@ namespace moab {
             permuted_hash[12] = (*this->output_functor)(
                                                         permuted_hash[1], permuted_hash[2], permuted_hash[3], permuted_coords[12], permuted_tags[12] );
 #else
-            comparison_bits -= 3;
+            comparison_bits -=  3 ;
             if (CMP_VH(4,5))
               comparison_bits |= 1;
             else
@@ -717,7 +725,7 @@ namespace moab {
             permuted_hash[11] = (*this->output_functor)(
                                                         permuted_hash[0], permuted_hash[1], permuted_hash[3], permuted_coords[11], permuted_tags[11] );
 #else
-            comparison_bits -= 12;
+            comparison_bits -=  12 ;
             if (CMP_VH(3,4))
               comparison_bits |= 4;
             else
@@ -812,10 +820,11 @@ namespace moab {
             permuted_hash[10] = (*this->output_functor)(
                                                         permuted_hash[1], permuted_hash[0], permuted_hash[2], permuted_coords[10], permuted_tags[10] );
 #else
+            comparison_bits -=  3 ;
             if (CMP_VH(1,2))
-              comparison_bits = 1;
+              comparison_bits |= 1;
             else
-              comparison_bits = 2;
+              comparison_bits |= 2;
 #endif
 
           }
@@ -831,10 +840,11 @@ namespace moab {
             permuted_hash[13] = (*this->output_functor)(
                                                         permuted_hash[2], permuted_hash[3], permuted_hash[0], permuted_coords[13], permuted_tags[13] );
 #else
+            comparison_bits -=  12 ;
             if (CMP_VH(2,3))
-              comparison_bits = 4;
+              comparison_bits |= 4;
             else
-              comparison_bits = 8;
+              comparison_bits |= 8;
 #endif
           }
         if ( ( comparison_bits & 48 ) == 48 )
@@ -849,10 +859,11 @@ namespace moab {
             permuted_hash[11] = (*this->output_functor)(
                                                         permuted_hash[0], permuted_hash[1], permuted_hash[3], permuted_coords[11], permuted_tags[11] );
 #else
+            comparison_bits -=  48 ;
             if (CMP_VH(3,4))
-              comparison_bits = 16;
+              comparison_bits |= 16;
             else
-              comparison_bits = 32;
+              comparison_bits |= 32;
 #endif
           }
         if ( ( comparison_bits & 192 ) == 192 )
@@ -867,10 +878,11 @@ namespace moab {
             permuted_hash[12] = (*this->output_functor)(
                                                         permuted_hash[2], permuted_hash[3], permuted_hash[1], permuted_coords[12], permuted_tags[12] );
 #else
+            comparison_bits -=  192 ;
             if (CMP_VH(1,4))
-              comparison_bits = 64;
+              comparison_bits |= 64;
             else
-              comparison_bits = 128;
+              comparison_bits |= 128;
 #endif
           }
         MB_TESSELLATOR_INCR_CASE_COUNT(8);
@@ -1250,10 +1262,11 @@ namespace moab {
             permuted_hash[10] = (*this->output_functor)(
                                                         permuted_hash[1], permuted_hash[0], permuted_hash[2], permuted_coords[10], permuted_tags[10] );
 #else
+            comparison_bits -=  3 ;
             if (CMP_VH(1,2))
-              comparison_bits = 1;
+              comparison_bits |= 1;
             else
-              comparison_bits = 2;
+              comparison_bits |= 2;
 #endif
           }
         if ( ( comparison_bits & 12 ) == 12 )
@@ -1268,10 +1281,11 @@ namespace moab {
             permuted_hash[11] = (*this->output_functor)(
                                                         permuted_hash[0], permuted_hash[1], permuted_hash[3], permuted_coords[11], permuted_tags[11] );
 #else
+            comparison_bits -=  12 ;
             if (CMP_VH(3,4))
-              comparison_bits = 4;
+              comparison_bits |= 4;
             else
-              comparison_bits = 8;
+              comparison_bits |= 8;
 #endif
           }
         MB_TESSELLATOR_INCR_CASE_COUNT(9);

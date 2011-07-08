@@ -15,7 +15,7 @@ namespace stk {
     class TestLocalRefinerTet_N_2 : public Refiner
     {
     public:
-      TestLocalRefinerTet_N_2(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
+      TestLocalRefinerTet_N_2(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0, unsigned mark_first_n_edges=1);
 
       // ElementUnrefineCollection  buildTestUnrefList();
 
@@ -36,12 +36,13 @@ namespace stk {
                                               vector<NeededEntityType>& needed_entity_ranks);
 
 
+      unsigned m_mark_first_n_edges;
     };
 
     // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3 in UnitTestLocalRefiner.cpp)
 
-    TestLocalRefinerTet_N_2::TestLocalRefinerTet_N_2(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
-      Refiner(eMesh, bp, proc_rank_field)
+    TestLocalRefinerTet_N_2::TestLocalRefinerTet_N_2(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field, unsigned mark_first_n_edges) : 
+      Refiner(eMesh, bp, proc_rank_field), m_mark_first_n_edges(mark_first_n_edges)
     {
     }
 
@@ -124,8 +125,8 @@ namespace stk {
                     }
 
 #endif
-                  // mark first 4 edges 
-                  if (iSubDimOrd < 4)
+                  // mark first m_mark_first_n_edges edges 
+                  if (iSubDimOrd < m_mark_first_n_edges)
                     (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
 
                 }

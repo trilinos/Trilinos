@@ -150,8 +150,75 @@ namespace stk {
               breaker.doBreak();
 
               save_or_diff(eMesh, output_files_loc+"local_tet_N_2_1.e");
-              exit(123);
             }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_0.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_2 breaker(eMesh, break_tet, 0, 2);
+              breaker.setRemoveOldElements(true);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_2_2.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_0.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_2 breaker(eMesh, break_tet, 0, 3);
+              breaker.setRemoveOldElements(true);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_2_3.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_0.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_2 breaker(eMesh, break_tet, 0, 4);
+              breaker.setRemoveOldElements(true);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_2_4.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_0.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_2 breaker(eMesh, break_tet, 0, 5);
+              breaker.setRemoveOldElements(true);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_2_5.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_0.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_2 breaker(eMesh, break_tet, 0, 6);
+              breaker.setRemoveOldElements(true);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_2_6.e");
+            }
+
+
+
 
           }
       }
