@@ -87,6 +87,49 @@ void pack_FillableMat(const fei::FillableMat& mat,
 }
 
 //----------------------------------------------------------------------------
+void pack_FillableMat(const fei::FillableMat& mat, 
+                      std::vector<char>& buffer)
+{
+  int nrows = mat.getNumRows();
+  int nnz = fei::count_nnz(mat);
+
+  int num_chars_int = (2 + nrows*2 + nnz)*sizeof(int);
+  int num_chars_double = nnz*sizeof(double);
+  buffer.resize(num_chars_int + num_chars_double);
+
+  int* intdata = reinterpret_cast<int*>(&buffer[0]);
+  double* doubledata = reinterpret_cast<double*>(&buffer[0]+num_chars_int);
+
+  int ioffset = 0;
+  int doffset = 0;
+
+  intdata[ioffset++] = nrows;
+  intdata[ioffset++] = nnz;
+
+  int ioffsetcols = 2+nrows*2;
+
+  fei::FillableMat::const_iterator
+    r_iter = mat.begin(),
+    r_end = mat.end();
+
+  for(; r_iter!=r_end; ++r_iter) {
+    int rowNumber = r_iter->first;
+    const fei::FillableVec* row = r_iter->second;
+
+    intdata[ioffset++] = rowNumber;
+    intdata[ioffset++] = row->size();
+
+    fei::FillableVec::const_iterator
+      iter = row->begin(),
+      iend = row->end();
+    for(; iter!=iend; ++iter) {
+      intdata[ioffsetcols++] = iter->first;
+      doubledata[doffset++] = iter->second;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
 void unpack_FillableMat(const std::vector<int>& intdata,
                         const std::vector<double>& doubledata,
                         fei::FillableMat& mat,
@@ -121,6 +164,145 @@ void unpack_FillableMat(const std::vector<int>& intdata,
         mat.sumInCoef(row, col, coef);
       }
     }
+  }
+}
+
+//----------------------------------------------------------------------------
+void unpack_FillableMat(const std::vector<char>& buffer,
+                        fei::FillableMat& mat,
+                        bool clear_mat_on_entry,
+                        bool overwrite_entries)
+{
+  if (clear_mat_on_entry) {
+    mat.clear();
+  }
+
+  if (buffer.size() < 1) {
+    return;
+  }
+
+  const int* intdata = reinterpret_cast<const int*>(&buffer[0]);
+  int ioffset = 0;
+  int nrows = intdata[ioffset++];
+  int nnz = intdata[ioffset++];
+
+  int ioffsetcols = 2+nrows*2;
+
+  int num_chars_int = (2+nrows*2 + nnz)*sizeof(int);
+  const double* doubledata = reinterpret_cast<const double*>(&buffer[0]+num_chars_int);
+
+  int doffset = 0;
+
+  for(int i=0; i<nrows; ++i) {
+    int row = intdata[ioffset++];
+    int rowlen = intdata[ioffset++];
+
+    for(int j=0; j<rowlen; ++j) {
+      int col = intdata[ioffsetcols++];
+      double coef = doubledata[doffset++];
+
+      if (overwrite_entries) {
+        mat.putCoef(row, col, coef);
+      }
+      else {
+        mat.sumInCoef(row, col, coef);
+      }
+    }
+  }
+
+  if (doffset != nnz) {
+    throw std::runtime_error("fei::impl_utils::unpack_FillableMat: failed, sizes don't agree.");
+  }
+}
+
+//----------------------------------------------------------------------------
+void unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat)
+{
+  if (buffer.size() < 1) {
+    return;
+  }
+
+  const int* intdata = reinterpret_cast<const int*>(&buffer[0]);
+  int ioffset = 0;
+  int nrows = intdata[ioffset++];
+  int nnz = intdata[ioffset++];
+
+  fei::SparseRowGraph& srg = mat.getGraph();
+  srg.rowNumbers.resize(nrows);
+  srg.rowOffsets.resize(nrows+1);
+  srg.packedColumnIndices.resize(nnz);
+  std::vector<double>& packed_coefs = mat.getPackedCoefs();
+  packed_coefs.resize(nnz);
+
+  int ioffsetcols = 2+nrows*2;
+
+  int num_chars_int = (2+nrows*2 + nnz)*sizeof(int);
+  const double* doubledata = reinterpret_cast<const double*>(&buffer[0]+num_chars_int);
+
+  int doffset = 0;
+
+  for(int i=0; i<nrows; ++i) {
+    int row = intdata[ioffset++];
+    int rowlen = intdata[ioffset++];
+
+    srg.rowNumbers[i] = row;
+    srg.rowOffsets[i] = doffset;
+
+    for(int j=0; j<rowlen; ++j) {
+      int col = intdata[ioffsetcols++];
+      double coef = doubledata[doffset];
+
+      srg.packedColumnIndices[doffset] = col;
+      packed_coefs[doffset++] = coef;
+    }
+  }
+  srg.rowOffsets[nrows] = nnz;
+}
+
+void pack_indices_coefs(const std::vector<int>& indices,
+                        const std::vector<double>& coefs,
+                        std::vector<char>& buffer)
+{
+  if (indices.size() != coefs.size()) {
+    throw std::runtime_error("fei::impl_utils::pack_indices_coefs failed, sizes don't match.");
+  }
+
+  int num = indices.size();
+  int num_chars_int = (1+num)*sizeof(int);
+  int num_chars = num_chars_int + num*sizeof(double);
+  buffer.resize(num_chars);
+
+  int* intdata = reinterpret_cast<int*>(&buffer[0]);
+  double* doubledata = reinterpret_cast<double*>(&buffer[0]+num_chars_int);
+
+  int ioffset = 0;
+  int doffset = 0;
+  intdata[ioffset++] = num;
+  for(int i=0; i<num; ++i) {
+    intdata[ioffset++] = indices[i];
+    doubledata[doffset++] = coefs[i];
+  }
+}
+
+void unpack_indices_coefs(const std::vector<char>& buffer,
+                          std::vector<int>& indices,
+                          std::vector<double>& coefs)
+{
+  if (buffer.size() == 0) return;
+
+  const int* intdata = reinterpret_cast<const int*>(&buffer[0]);
+  int ioffset = 0;
+  int num = intdata[ioffset++];
+  int num_chars_int = (1+num)*sizeof(int);
+  const double* doubledata = reinterpret_cast<const double*>(&buffer[0]+num_chars_int);
+
+  indices.resize(num);
+  coefs.resize(num);
+
+  int doffset = 0;
+  for(int i=0; i<num; ++i) {
+    indices[i] = intdata[ioffset++];
+    coefs[i] = doubledata[doffset++];
   }
 }
 
