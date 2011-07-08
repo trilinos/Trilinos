@@ -205,7 +205,7 @@ class RILUK: public virtual Ifpack2::Preconditioner<typename MatrixType::scalar_
   virtual ~RILUK();
 
   //! Set RILU(k) relaxation parameter
-  void SetRelaxValue( double RelaxValue) {RelaxValue_ = RelaxValue;}
+  void SetRelaxValue( magnitudeType RelaxValue) {RelaxValue_ = RelaxValue;}
 
   //! Set absolute threshold value
   void SetAbsoluteThreshold( magnitudeType Athresh) {Athresh_ = Athresh;}
@@ -320,7 +320,7 @@ Not currently supported.
   // Atribute access functions
   
   //! Get RILU(k) relaxation parameter
-  double GetRelaxValue() const {return RelaxValue_;}
+  magnitudeType GetRelaxValue() const {return RelaxValue_;}
 
   //! Get absolute threshold value
   magnitudeType getAbsoluteThreshold() const {return Athresh_;}
