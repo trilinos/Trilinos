@@ -45,13 +45,13 @@ ADD_TEST(Install_Trilinos ${PYTHON_EXE}
   "--verbose-errors"
   )
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT_DEV_INSTALL
-  ctest_linux_nightly_mpi_development_opt_install_trilinos-test2.cmake
-  CTEST_INSTALLER_TYPE dev
-  DEPENDS Install_Trilinos
-  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  MPI_OPT_DEV_INSTALL
+#  ctest_linux_nightly_mpi_development_opt_install_trilinos-test2.cmake
+#  CTEST_INSTALLER_TYPE dev
+#  DEPENDS Install_Trilinos
+#  REQUIRED_FILES ${INSTALLATION_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake
+#)
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV_BACKWARDS_COMPATIBILITY_10.8
