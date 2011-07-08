@@ -24,6 +24,6 @@ cmake_version_min = "2.8.0" # manual_update
 
 cmake_version_release = "2.8.4" # manual_update
 
-cmake_version_rc = "2.8.5-rc3" # auto_update v2.8
+cmake_version_rc = "2.8.5" # auto_update v2.8
 
-cmake_version_dev = "2.8.4.20110627-g4024a" # auto_update vCVS
+cmake_version_dev = "2.8.4.20110707-g0eecf" # auto_update vCVS
