@@ -137,13 +137,13 @@ namespace Kokkos {
     // 1D/packed: arrays of offsets, array of ordinals, array of values.
     ArrayRCP<const Ordinal> inds1D_;
     ArrayRCP<const size_t>  begs1D_, ends1D_;
-    ArrayRCP<const Scalar>  vals1D_;
+    ArrayRCP<Scalar>  vals1D_;
     // 2D: array of pointers
     ArrayRCP<const ArrayRCP<Ordinal> > inds2D_;
     ArrayRCP<const ArrayRCP<Scalar> >  vals2D_;
     ArrayRCP<const size_t>          numEntries_;
     ArrayRCP<const Ordinal *> indPtrs_;
-    ArrayRCP<const Scalar  *> valPtrs_;
+    ArrayRCP<Scalar  *> valPtrs_;
 
     size_t numRows_;
     bool indsInit_, valsInit_, isEmpty_;
@@ -239,7 +239,7 @@ namespace Kokkos {
           const_cast<CrsMatrixHostCompute<Scalar,Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &>(matrix).get2DValues(vals);
           vals2D_ = vals;
         }
-        valPtrs_ = arcp<const Scalar *>(numRows_);
+        valPtrs_ = arcp<Scalar *>(numRows_);
         for (size_t r=0; r < numRows_; ++r) {
           valPtrs_[r] = vals2D_[r].getRawPtr();
         }
@@ -425,7 +425,7 @@ namespace Kokkos {
         wdp.numRows = numRows_;
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
         wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         rbh.end();
@@ -443,7 +443,7 @@ namespace Kokkos {
         wdp.numCols = Y.getNumRows();
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
         wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.xstride = X.getStride();
@@ -527,7 +527,7 @@ namespace Kokkos {
         wdp.numRows = numRows_;
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
         wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         rbh.end();
@@ -547,7 +547,7 @@ namespace Kokkos {
         wdp.numCols = Y.getNumRows();
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
         wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.xstride = X.getStride();
@@ -591,10 +591,9 @@ namespace Kokkos {
       wdp.numRows = numRows_;
       wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
       wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-      wdp.vals_beg   = rbh.template addNonConstBuffer<const  Scalar *>(valPtrs_);
+      wdp.vals_beg   = rbh.template addNonConstBuffer<Scalar *>(valPtrs_);
       wdp.x          = rbh.template addConstBuffer<VectorScalar>(X.getValues());
       rbh.end();
-      const size_t numRHS = X.getNumCols();
       node_->template parallel_for<Op2D>(0,numRows_,wdp);
     }
     return;

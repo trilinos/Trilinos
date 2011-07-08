@@ -55,7 +55,6 @@ namespace Kokkos {
 
     inline KERNEL_PREFIX void execute(size_t i) {
       const size_t row = i % numRows;
-      const size_t rhs = (i - row) / numRows;
       for (size_t c=begs[row]; c != ends[row]; ++c) {
 	vals[c]*=(Scalar)x[row];
       }
@@ -76,9 +75,7 @@ namespace Kokkos {
 
     inline KERNEL_PREFIX void execute(size_t i) {
       const size_t row = i % numRows;
-      const size_t rhs = (i - row) / numRows;
       Scalar  *curval = vals_beg[row];
-      const Ordinal *curind = inds_beg[row];
       for (size_t j=0; j != numEntries[row]; ++j) {
 	curval[j]*=(Scalar)x[row];
       }
