@@ -242,7 +242,7 @@ namespace Tpetra {
       /** Computes and returns the Frobenius norm of the matrix, defined as:
         \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
         */
-      virtual Scalar getFrobeniusNorm() const = 0;
+      virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const = 0;
 
       //@}
 
