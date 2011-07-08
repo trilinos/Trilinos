@@ -222,7 +222,7 @@ IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
 
 	  PACKAGE_ADD_TEST(
 	    Linear2D_Diffusion_PCE_NOX_SG_Solvers
-	    NAME "Linear2D_Diffusion_GS"
+	    NAME "Linear2D_Diffusion_JA"
 	    ARGS "--sg_solver=Jacobi --num_spatial_procs=1"
 	    COMM serial mpi
 	    NUM_MPI_PROCS 2
@@ -236,6 +236,15 @@ IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
 	    COMM serial mpi
 	    NUM_MPI_PROCS 2
 	    PASS_REGULAR_EXPRESSION "Example Passed!"
+          )
+
+          PACKAGE_ADD_TEST(
+            Linear2D_Diffusion_PCE_NOX_SG_Solvers
+            NAME "Linear2D_Diffusion_GSLN"
+            ARGS "--sg_solver=Gauss-Seidel --rand_field=Log-Normal --num_spatial_procs=1"
+            COMM serial mpi
+            NUM_MPI_PROCS 2
+            PASS_REGULAR_EXPRESSION "Example Passed!"
           )
 
 	  PACKAGE_ADD_TEST(
@@ -265,8 +274,8 @@ IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
 	    PASS_REGULAR_EXPRESSION "Example Passed!"
           )
        ENDIF()
-	  
 
+        
      ENDIF()  
 
 ENDIF()
