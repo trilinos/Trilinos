@@ -18,6 +18,10 @@
 #undef STK_ADAPT_HAS_GEOMETRY
 #endif
 
+#if defined( STK_ADAPT_HAS_GEOMETRY )
+#include <stk_adapt/geometry/MeshGeometry.hpp>
+#endif
+
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
@@ -104,6 +108,11 @@ namespace stk {
       setGeometryFile(std::string file_name);
 
       void
+      setSmoothGeometry(bool do_smooth) { m_doSmoothGeometry = do_smooth; }
+      bool
+      getSmoothGeometry() { return m_doSmoothGeometry; }
+
+      void
       setIgnoreSideSets(bool ignore_sidesets) ;
 
       bool
@@ -121,24 +130,52 @@ namespace stk {
       getDoProgressMeter();
 
 
+      typedef std::set<stk::mesh::Entity *> NodeSetType;
+
+      void 
+      filterUnrefSet(ElementUnrefineCollection& elements_to_unref);
+
+      void
+      getKeptNodes(NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
+
+      void
+      getDeletedNodes(NodeSetType& deleted_nodes, const NodeSetType& kept_nodes, ElementUnrefineCollection& elements_to_unref);
+
       void
       unrefineTheseElements(ElementUnrefineCollection& elements_to_unref);
 
       void
       unrefineAll();
 
+      void
+      setAlwaysInitializeNodeRegistry(bool do_init) { m_alwaysInitNodeRegistry = do_init; }
+
+      bool
+      getAlwaysInitializeNodeRegistry() { return m_alwaysInitNodeRegistry; }
+
+#if defined( STK_ADAPT_HAS_GEOMETRY )
+      void smoothGeometry(MeshGeometry& mesh_geometry);
+#endif
+
+      void deleteParentElements();
+
+      void check_db(std::string msg="") ;
+
     protected:
+
+      void check_db_ownership_consistency();
+      void check_db_hanging_nodes();
 
       /**  Overrides start =======>
        */
 
       /** Overrides
-       *
-       * Client (derived-class) code should override this to provide a loop over all (or some) of the elements and apply the given @param function on the NodeRegistry
        *   m_nodeRegistry data member.  The same loop should be executed every time this method is called (i.e. the same elements should be visited).  Also, there
        *   is policy associated with the @param only_count and @param doAllElements inputs.  If doAllElements==true, then ghost elements should not be skipped.
        *   If only_count==true, then *do not* call the supplied @param function, rather just count the number of elements to be visited and return that number.
        *   @return Always return the number of elements visited (modulo the doAllElements parameter).
+       * 
+       *   Note: client code can just use the supplied implementation in this base class - it is not necessary to override
        *
        *   @see UniformRefiner implementation of this method for an example.
        */
@@ -175,7 +212,8 @@ namespace stk {
        *  Override it to only apply the @param function to the desired sub-entities (e.g. for non-uniform/local refinement)
        *
        *  It is a copy of NodeRegistry's doForAllSubEntities method.  Provided here so it can be overridden.
-       *
+       * 
+       *  Note: this is the minimal function that needs to be overridden to get different marking/refining behavior
        */
 
       virtual void
@@ -197,6 +235,9 @@ namespace stk {
 
       void
       addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);
+
+      void 
+      removeFromOldPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
 
       void
       renameNewParts(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
@@ -250,6 +291,9 @@ namespace stk {
 
       int m_progress_meter_frequency;
       bool m_doProgress;
+
+      bool m_alwaysInitNodeRegistry;
+      bool m_doSmoothGeometry;
     };
 
 

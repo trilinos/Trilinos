@@ -208,9 +208,7 @@ bool use_case_5_driver( MPI_Comm comm ,
     //Note: set_owners should throw an error if not done inside a modification_begin/end block.
     //------------------------------------------------------------------
 
-    int numProcs=1, myProc=0;
-    MPI_Comm_size(comm, &numProcs);
-    MPI_Comm_rank(comm, &myProc);
+    const unsigned myProc = mesh_bulk_data.parallel_rank();
 
     //Now begin the use-case:
     //Create a fei::Factory of type Factory_Trilinos, which will produce

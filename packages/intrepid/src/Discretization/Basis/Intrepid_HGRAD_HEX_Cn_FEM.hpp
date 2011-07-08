@@ -37,7 +37,7 @@
 #include "Intrepid_Basis.hpp"
 #include "Intrepid_ProductTopology.hpp"
 #include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
-
+#include "Teuchos_Array.hpp"
 
 namespace Intrepid {
   
@@ -61,12 +61,9 @@ private:
    */
   void initializeTags();
 
-  /** \brief basis for x-coordinate basis functions */
-  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> xBasis_;
-  /** \brief basis for y-coordinate basis functions */
-  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> yBasis_;
-  /** \brief basis for z-coordinate basis functions */
-  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> zBasis_;
+  /** \brief bases for each coordinate direction */
+  Teuchos::Array< Teuchos::RCP< Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar > > > bases_;
+
   
 public:
 

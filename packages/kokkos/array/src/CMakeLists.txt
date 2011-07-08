@@ -1,37 +1,21 @@
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+INCLUDE(PackageLibraryMacros)
+INCLUDE(AddOptionAndDefine)
+
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINRARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
 
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINRARY_DIR})
+FILE(GLOB HEADERS *.hpp)
 
-SET(HEADERS ${HEADERS}
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+LIST(APPEND HEADERS 
  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
-APPEND_SET(HEADERS
-    Kokkos_ArrayForwardDeclerations.hpp
-    Kokkos_DeviceClear_macros.hpp
-    Kokkos_DeviceCuda_macros.hpp
-    Kokkos_DeviceCuda.hpp
-    Kokkos_DeviceHost_macros.hpp
-    Kokkos_DeviceHost.hpp
-    Kokkos_DeviceTPI_macros.hpp
-    Kokkos_DeviceTPI.hpp
-    Kokkos_MDArrayView.hpp
-    Kokkos_MemoryView.hpp
-    Kokkos_MultiVectorView.hpp
-    Kokkos_ParallelFor.hpp
-    Kokkos_ParallelReduce.hpp
-    Kokkos_ValueView.hpp
-  )
-
-
-INCLUDE(PackageLibraryMacros)
-INCLUDE(AddOptionAndDefine)
 
 ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_DeviceCuda
@@ -68,8 +52,3 @@ ENDIF()
 
 ADD_SUBDIRECTORY(impl)
 
-
-# No longer needed; Trilinos does this at the top level.
-# IF (Kokkos_ENABLE_MDArray_Cuda)
-#   FIND_PACKAGE(CUDA)
-# ENDIF()

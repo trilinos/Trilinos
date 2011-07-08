@@ -95,7 +95,7 @@ int ex_put_concat_all_blocks (int    exoid,
   exerrval  = 0; /* clear error code */
 
   /* inquire previously defined dimensions  */
-  if ((status = nc_inq_dimid(exoid, DIM_STR, &strdim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
             "Error: failed to get string length in file id %d",exoid);

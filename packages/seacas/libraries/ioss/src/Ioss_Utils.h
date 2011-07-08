@@ -44,6 +44,7 @@
 #include <stdexcept>
 #include <cstdlib>
 
+#define TOPTR(x) (x.empty() ? NULL : &x[0])
 #define IOSS_ERROR(errmsg) throw std::runtime_error(errmsg.str())
 #define IOSS_WARNING std::cerr
 

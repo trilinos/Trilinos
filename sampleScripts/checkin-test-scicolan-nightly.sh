@@ -27,7 +27,7 @@ echo "
 -D TPL_ENABLE_Netcdf:BOOL=ON
 -D TPL_Netcdf_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/netcdf/src/include
 -D Netcdf_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/netcdf/4.0-snl3/gcc-4.4.4/release/address-model-64/mpi-openmpi/runtime-link-shared
--D seacas_ENABLE_XDMF:BOOL=OFF
+-D SEACAS_ENABLE_XDMF:BOOL=OFF
 -D TPL_ENABLE_XMDF:BOOL=OFF
 -D TPL_ENABLE_HDF5:BOOL=OFF
 -D Claps_ENABLE_SClaps:BOOL=ON

@@ -658,6 +658,14 @@ clp.add_option(
   +" notification, just set --send-email-to='' and no email will be sent." )
 
 clp.add_option(
+  "--send-email-for-all", dest="sendEmailOnlyOnFailure", action="store_false",
+  help="If set, then emails will get sent out for all operations. [default]" )
+clp.add_option(
+  "--send-email-only-on-failure", dest="sendEmailOnlyOnFailure", action="store_true",
+  help="If set, then emails will only get sent out for failures.",
+  default=False )
+
+clp.add_option(
   "--send-email-to-on-push", dest="sendEmailToOnPush", type="string",
   default="trilinos-checkin-tests@software.sandia.gov",
   help="List of comma-separated email addresses to send email notification to" \
@@ -843,6 +851,10 @@ if not options.withSerialRelease:
 if options.withoutDefaultBuilds:
   print "  --without-default-builds \\" 
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
+if not options.sendEmailOnlyOnFailure:
+  print "  --send-email-for-all \\"
+else:
+  print "  --send-email-only-on-failure \\ "
 print "  --send-email-to-on-push='"+options.sendEmailToOnPush+"' \\"
 if options.forcePush:
   print "  --force-push \\"

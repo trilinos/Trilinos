@@ -154,7 +154,7 @@ int ex_put_all_var_param_ext ( int   exoid,
   }
 
   /* Check this now so we can use it later without checking for errors */
-  if ((status = nc_inq_dimid(exoid, DIM_STR, &temp)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &temp)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
             "Error: failed to get string length in file id %d",exoid);
@@ -411,7 +411,7 @@ int define_variable_name_variable(int exoid, const char *VARIABLE, int dimension
   int status;
   
   dims[0] = dimension;
-  nc_inq_dimid(exoid, DIM_STR, &dims[1]); /* Checked earlier, so known to exist */
+  nc_inq_dimid(exoid, DIM_STR_NAME, &dims[1]); /* Checked earlier, so known to exist */
 
   if ((status=nc_def_var(exoid, VARIABLE, NC_CHAR, 2, dims, &variable)) != NC_NOERR) {
     if (status == NC_ENAMEINUSE) {

@@ -536,6 +536,7 @@ namespace Tpetra {
   {
     const std::string tfecfFuncName("insertLocalValues()");
     TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false,                            std::runtime_error, " requires that fill is active.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC( isStaticGraph() == true,                            std::runtime_error, " cannot insert indices with static graph; use replaceLocalValues() instead.");
     TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_->isGloballyIndexed() == true,              std::runtime_error, ": graph indices are global; use insertGlobalValues().");
     TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false,                               std::runtime_error, " cannot insert local indices without a column map.");
     TEST_FOR_EXCEPTION_CLASS_FUNC( values.size() != indices.size(),                    std::runtime_error, ": values.size() must equal indices.size().");
@@ -1034,12 +1035,12 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllToScalar(const Scalar &alpha) 
   {
-    const std::string tfecfFuncName("scale()");
+    const std::string tfecfFuncName("setAllToScalar()");
     TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false, std::runtime_error, " requires that fill is active.");
-    // scale all values in the matrix
-    // it is easiest to scale all allocated values, instead of scaling only the ones with valid entries
+    // replace all values in the matrix
+    // it is easiest to replace all allocated values, instead of replacing only the ones with valid entries
     // however, if there are no valid entries, we can short-circuit
-    // furthermore, if the values aren't allocated, we can short-circuit (unallocated values are zero, scaling to zero)
+    // furthermore, if the values aren't allocated, we can short-circuit (no entry have been inserted so far)
     const size_t     nlrs = staticGraph_->getNodeNumRows(),
                  numAlloc = staticGraph_->getNodeAllocationSize(),
                numEntries = staticGraph_->getNodeNumEntries();
@@ -1097,6 +1098,127 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION_CLASS_FUNC(numDiagFound != getNodeNumDiags(), std::logic_error, ": logic error. Please contact Tpetra team.");
 #endif
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::leftScale(
+    const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+  {
+    const std::string tfecfFuncName("leftScale()");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::runtime_error, ": matrix must be fill complete.");
+    RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xp = null;
+    if(getRangeMap()->isSameAs(*(x.getMap()))){
+      // Take from Epetra:
+      // If we have a non-trivial exporter, we must import elements that are 
+      // permuted or are on other processors.  (We will use the exporter to
+      // perform the import.)
+      if(getCrsGraph()->getExporter() != null){
+        RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempVec
+          = rcp(new Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(getRowMap()));
+        tempVec->doImport(x, *(getCrsGraph()->getExporter()), INSERT);
+        xp = tempVec;
+      }
+      else{
+        xp = rcpFromRef(x);
+      }
+    }
+    else if(getRowMap()->isSameAs(*(x.getMap()))){
+      xp = rcpFromRef(x);
+    }
+    else{
+      TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, ": The vector x must be the same as either the row map or the range map");
+    }
+    ArrayRCP<const Scalar> vectorVals = xp->getData(0);
+    ArrayView<Scalar> rowValues = null;
+    for(LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero(); Teuchos::as<size_t>(i) < getNodeNumRows(); ++i){
+      const RowInfo rowinfo = staticGraph_->getRowInfo(i);
+      rowValues = getViewNonConst(rowinfo);
+      Scalar scaleValue = vectorVals[i];
+      for(LocalOrdinal j=OrdinalTraits<LocalOrdinal>::zero(); Teuchos::as<size_t>(j)<rowinfo.numEntries; ++j){
+        rowValues[j] *= scaleValue;
+      }
+      rowValues = null;
+    }
+  }
+  
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::rightScale(
+    const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+  {
+    const std::string tfecfFuncName("rightScale()");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::runtime_error, ": matrix must be fill complete.");
+    RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xp = null;
+    if(getDomainMap()->isSameAs(*(x.getMap()))){
+      // Take from Epetra:
+      // If we have a non-trivial exporter, we must import elements that are 
+      // permuted or are on other processors.  (We will use the exporter to
+      // perform the import.)
+      if(getCrsGraph()->getImporter() != null){
+        RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempVec
+          = rcp(new Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(getColMap()));
+        tempVec->doImport(x, *(getCrsGraph()->getImporter()), INSERT);
+        xp = tempVec;
+      }
+      else{
+        xp = rcpFromRef(x);
+      }
+    }
+    else if(getRowMap()->isSameAs(*(x.getMap()))){
+      xp = rcpFromRef(x);
+    }
+    else{
+      TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, ": The vector x must be the same as either the row map or the range map");
+    }
+      
+    ArrayRCP<const Scalar> vectorVals = xp->getData(0);
+    ArrayView<Scalar> rowValues = null;
+    for(
+      LocalOrdinal i = OrdinalTraits<LocalOrdinal>::zero();
+      Teuchos::as<size_t>(i) < getNodeNumRows();
+      ++i)
+    {
+      const RowInfo rowinfo = staticGraph_->getRowInfo(i);
+      rowValues = getViewNonConst(rowinfo);
+      ArrayView<const LocalOrdinal> colInices;
+      getCrsGraph()->getLocalRowView(i, colInices);
+      for(
+        LocalOrdinal j = OrdinalTraits<LocalOrdinal>::zero();
+        Teuchos::as<size_t>(j) < rowinfo.numEntries;
+        ++j
+      )
+      {
+        rowValues[j] *= vectorVals[colInices[j]];
+      }
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Scalar CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getFrobeniusNorm() const
+  {
+    //TODO Like the epetra norm functions, we should check to see if the matrix
+    //has changed since we last calculated the norm. If it hasn't we should short
+    //circuit and return what ever value we last calculated. The problem is,
+    //I don't know each and every method that could potentially modify the matrix
+    //in such a way that we'd need to recalculate the norm. This is an optimization 
+    //I should do at a later point when I have more time.
+    //KLN 07/07/2011
+
+    Scalar mySum = ScalarTraits<Scalar>::zero();
+    Array<LocalOrdinal> inds(getNodeMaxNumRowEntries());
+    Array<Scalar> vals(getNodeMaxNumRowEntries());
+    for(size_t i =0; i<getNodeNumRows(); ++i){
+      size_t numRowEnts = getNumEntriesInLocalRow(i);
+      ArrayView<const LocalOrdinal> indsView = inds();
+      ArrayView<const Scalar> valsView = vals();
+      getLocalRowView(i, indsView, valsView);
+      for(size_t j=0; j<numRowEnts; ++j){
+        mySum += valsView[j]*valsView[j];
+      }
+    }
+    Scalar totalSum = ScalarTraits<Scalar>::zero();
+    Teuchos::reduceAll(*(getComm()), Teuchos::REDUCE_SUM, 1, &mySum, &totalSum);
+    return ScalarTraits<Scalar>::squareroot(totalSum);
+  }
+  
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1464,7 +1586,7 @@ namespace Tpetra {
     if (myGraph_->isSorted() == false) {
       for (size_t row=0; row < getNodeNumRows(); ++row) {
         RowInfo rowInfo = myGraph_->getRowInfo(row);
-        myGraph_->template sortRowIndicesAndValues<typename ArrayRCP<Scalar>::iterator>(rowInfo,this->getViewNonConst(rowInfo).begin());
+        myGraph_->template sortRowIndicesAndValues<Scalar>(rowInfo,this->getViewNonConst(rowInfo));
       }
       // we just sorted every row
       myGraph_->setSorted(true);
@@ -1512,11 +1634,16 @@ namespace Tpetra {
                                               MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                                               Teuchos::ETransp mode, RangeScalar alpha, RangeScalar beta) const 
   {
+    using Teuchos::NO_TRANS;
     const std::string tfecfFuncName("multiply()");
     typedef ScalarTraits<RangeScalar> RST;
     const Kokkos::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
     Kokkos::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
 #ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION_CLASS_FUNC(mode == NO_TRANS && X.getMap() != getColMap() && *X.getMap() != *getColMap(), std::runtime_error, " X is not distributed according to the appropriate map.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(mode != NO_TRANS && X.getMap() != getRowMap() && *X.getMap() != *getRowMap(), std::runtime_error, " X is not distributed according to the appropriate map.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(mode == NO_TRANS && Y.getMap() != getRowMap() && *Y.getMap() != *getRowMap(), std::runtime_error, " Y is not distributed according to the appropriate map.");
+    TEST_FOR_EXCEPTION_CLASS_FUNC(mode != NO_TRANS && Y.getMap() != getColMap() && *Y.getMap() != *getColMap(), std::runtime_error, " Y is not distributed according to the appropriate map.");
     TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(),                                              std::runtime_error, " until fillComplete() has been called.");
     TEST_FOR_EXCEPTION_CLASS_FUNC(X.getNumVectors() != Y.getNumVectors(),                         std::runtime_error, ": X and Y must have the same number of vectors.");
     TEST_FOR_EXCEPTION_CLASS_FUNC(X.isConstantStride() == false || Y.isConstantStride() == false, std::runtime_error, ": X and Y must be constant stride.");
@@ -1544,6 +1671,7 @@ namespace Tpetra {
                                           MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                                           Teuchos::ETransp mode) const 
   {
+    using Teuchos::NO_TRANS;
     const std::string tfecfFuncName("solve()");
     const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
     Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
@@ -1575,6 +1703,35 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class T>
+  RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node> > 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::convert() const
+  {
+    const std::string tfecfFuncName("convert()");
+    // FINISH: we have a problem here: converted matrices will be statically allocated, and therefore will not benefit from first touch 
+    // allocation. must address this in the future.
+    TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, ": fill must be complete.");
+    RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > newmat;
+    newmat = rcp(new CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(getCrsGraph()));
+    const Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap = *getRowMap();
+    Array<T> newvals;
+    for (LocalOrdinal li=rowMap.getMinLocalIndex(); li <= rowMap.getMaxLocalIndex(); ++li)
+    {
+      ArrayView<const LocalOrdinal> rowinds;
+      ArrayView<const Scalar>       rowvals;
+      this->getLocalRowView(li,rowinds,rowvals);
+      if (rowvals.size() > 0) {
+        newvals.resize(rowvals.size());
+        std::transform( rowvals.begin(), rowvals.end(), newvals.begin(), Teuchos::asFunc<T>() );
+        newmat->replaceLocalValues(li, rowinds, newvals());
+      }
+    }
+    // we don't choose here; we have to abide by the existing graph
+    const OptimizeOption oo = (this->isStorageOptimized() == true ? DoOptimizeStorage : DoNotOptimizeStorage);    
+    newmat->fillComplete(this->getDomainMap(), this->getRangeMap(), oo);
+    return newmat;
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////

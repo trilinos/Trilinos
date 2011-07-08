@@ -203,3 +203,7 @@ PACKAGE_ARCH_EXCLUDE_FILES(
 #
 
 PACKAGE_POSTPROCESS()
+
+# For use by other packages
+GLOBAL_SET(TEUCHOS_STD_UNIT_TEST_MAIN
+  ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)

@@ -127,6 +127,16 @@ struct OperatorData
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_JadMatrix.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDenseSolver.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_Time.h"
+#include "Epetra_SerialDistributor.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 
 // Epetra python includes
 #define NO_IMPORT_ARRAY

@@ -507,6 +507,7 @@ _Epetra.NumPySerialDenseVector_swigregister(SerialDenseVector)
 //////////////////////////////////////
 // Epetra_SerialDenseSolver support //
 //////////////////////////////////////
+%teuchos_rcp(Epetra_SerialDenseSolver)
 %ignore Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double&);
 %rename(SerialDenseSolver) Epetra_SerialDenseSolver;
 %fragment("NumPy_Macros");  // These macros depend upon this fragment
@@ -540,6 +541,7 @@ _Epetra.NumPySerialDenseVector_swigregister(SerialDenseVector)
 ///////////////////////////////////
 // Epetra_SerialDenseSVD support //
 ///////////////////////////////////
+%teuchos_rcp(Epetra_SerialDenseSVD)
 %rename(SerialDenseSVD) Epetra_SerialDenseSVD;
 %include "Epetra_SerialDenseSVD.h"
 
@@ -548,6 +550,7 @@ _Epetra.NumPySerialDenseVector_swigregister(SerialDenseVector)
 /////////////////////////////////////////
 // *** Epetra_SerialSpdDenseSolver is apparently not built ***
 //#include "Epetra_SerialSpdDenseSolver.h"
+//%teuchos_rcp(Epetra_SerialSpdDenseSolver)
 //%rename(SerialSpdDenseSolver  ) Epetra_SerialSpdDenseSolver;
 //%include "Epetra_SerialSpdDenseSolver.h"
 

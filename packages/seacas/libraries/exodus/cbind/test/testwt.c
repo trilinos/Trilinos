@@ -981,10 +981,11 @@ int main (int argc, char **argv)
 
 
    num_ele_vars = 3;
-
-   var_names[0] = "ele_var0";
-   var_names[1] = "ele_var1";
-   var_names[2] = "ele_var2";
+   /*              0        1         2         3 
+   /*              12345678901234567890123456789012 */
+   var_names[0] = "this_variable_name_is_short";
+   var_names[1] = "this_variable_name_is_just_right";
+   var_names[2] = "this_variable_name_is_tooooo_long";
 
    error = ex_put_var_param (exoid, "e", num_ele_vars);
    printf ("after ex_put_var_param, error = %d\n", error);

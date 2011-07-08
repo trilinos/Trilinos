@@ -38,35 +38,6 @@
 
 namespace Intrepid {
 
-  /** \brief file-scope function for indexing from orthogonal expansion indices into linear space
-      p+q+r = the degree of the polynomial.
-      \param p [in] - the first index
-      \param q [in] - the second index
-      \param r [in] - the third index */
-  static int idx(int p, int q,int r);
-
-  /** \brief file-scope function for computing the Jacobi recurrence coefficients so that
-      \param alpha [in] - the first Jacobi weight
-      \param beta  [in] - the second Jacobi weight
-      \param n     [n]  - the polynomial degree
-      \param an    [out] - the a weight for recurrence
-      \param bn    [out] - the b weight for recurrence
-      \param cn    [out] - the c weight for recurrence
-
-      The recurrence is
-      \f[
-      P^{\alpha,\beta}_{n+1} = \left( a_n + b_n x\right) P^{\alpha,\beta}_n - c_n P^{\alpha,\beta}_{n-1}
-      \f],
-      where
-      \f[
-      P^{\alpha,\beta}_0 = 1
-      \f]
-  */
-  template<typename Scalar>
-  void jrc( const Scalar &alpha , const Scalar &beta , 
-                  const int &n ,
-                  Scalar &an , Scalar &bn, Scalar &cn );
-  
   template<class Scalar, class ArrayScalar>
   Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::Basis_HGRAD_TET_Cn_FEM_ORTH( int degree )
   {
@@ -184,7 +155,7 @@ namespace Intrepid {
     }
 
     // constant term
-    idxcur = idx(0,0,0);
+    idxcur = TabulatorTet<Scalar,ArrayScalar,0>::idx(0,0,0);
     for (int i=0;i<np;i++) {
       outputValues(idxcur,i) = 1.0 + z(i,0) - z(i,0) + z(i,1) - z(i,1) + z(i,2) - z(i,2);
     }
@@ -192,7 +163,7 @@ namespace Intrepid {
     if (deg > 0) {
 
       // D^{1,0,0}
-      idxcur = idx(1,0,0);
+      idxcur = TabulatorTet<Scalar,ArrayScalar,0>::idx(1,0,0);
       for (int i=0;i<np;i++) {
         outputValues(idxcur,i) = f1[i];
       }
@@ -201,17 +172,17 @@ namespace Intrepid {
       for (int p=1;p<deg;p++) {
         Scalar a1 = (2.0 * p + 1.0) / ( p + 1.0);
         Scalar a2 = p / ( p + 1.0 );
-        int idxp = idx(p,0,0);
-        int idxpp1 = idx(p+1,0,0);
-        int idxpm1 = idx(p-1,0,0);
+        int idxp = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,0,0);
+        int idxpp1 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p+1,0,0);
+        int idxpm1 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p-1,0,0);
         for (int i=0;i<np;i++) {
           outputValues(idxpp1,i) = a1 * f1[i] * outputValues(idxp,i) - a2 * f2[i] * outputValues(idxpm1,i);
         }
       }
       // q = 1
       for (int p=0;p<deg;p++) {
-        int idx0 = idx(p,0,0);
-        int idx1 = idx(p,1,0);
+        int idx0 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,0,0);
+        int idx1 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,1,0);
         for (int i=0;i<np;i++) {
           outputValues(idx1,i) = outputValues(idx0,i) * ( p * ( 1.0 + (2.0*z(i,1)-1.0) ) +
                                                           0.5 * ( 2.0 + 3.0 * (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) ) );
@@ -223,10 +194,10 @@ namespace Intrepid {
         for (int q=1;q<deg-p;q++) {
           Scalar aq,bq,cq;
 
-          jrc<Scalar>(2.0*p+1.0 ,0 ,q, aq, bq, cq);
-          int idxpqp1 = idx(p,q+1,0);
-          int idxpq = idx(p,q,0);
-          int idxpqm1 = idx(p,q-1,0);
+	  TabulatorTet<Scalar,ArrayScalar,0>::jrc(2.0*p+1.0 ,0 ,q, aq, bq, cq);
+          int idxpqp1 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q+1,0);
+          int idxpq = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q,0);
+          int idxpqm1 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q-1,0);
           for (int i=0;i<np;i++) {
             outputValues(idxpqp1,i) = ( aq * f3[i] + bq * f4[i] ) * outputValues(idxpq,i) 
               - ( cq * f5[i] ) * outputValues(idxpqm1,i);
@@ -237,8 +208,8 @@ namespace Intrepid {
       // r = 1
       for (int p=0;p<deg;p++) {
         for (int q=0;q<deg-p;q++) {
-          int idxpq1 = idx(p,q,1);
-          int idxpq0 = idx(p,q,0);
+          int idxpq1 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q,1);
+          int idxpq0 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q,0);
           for (int i=0;i<np;i++) {
             outputValues(idxpq1,i) = outputValues(idxpq0,i) * ( 1.0 + p + q + ( 2.0 + q + 
                                                                                 p ) * (2.0*z(i,2)-1.0) );
@@ -250,10 +221,10 @@ namespace Intrepid {
         for (int q=0;q<deg-p-1;q++) {
           for (int r=1;r<deg-p-q;r++) {
             Scalar ar,br,cr;
-            int idxpqrp1 = idx(p,q,r+1);
-            int idxpqr = idx(p,q,r);
-            int idxpqrm1 = idx(p,q,r-1);
-            jrc<Scalar>(2.0*p+2.0*q+2.0, 0.0, r, ar, br, cr);
+            int idxpqrp1 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q,r+1);
+            int idxpqr = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q,r);
+            int idxpqrm1 = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q,r-1);
+            jrc(2.0*p+2.0*q+2.0, 0.0, r, ar, br, cr);
             for (int i=0;i<np;i++) {
               outputValues(idxpqrp1,i) = (ar * (2.0*z(i,2)-1.0) + br) * outputValues( idxpqr , i ) - cr * outputValues(idxpqrm1,i);
             }
@@ -266,7 +237,7 @@ namespace Intrepid {
     for (int p=0;p<=deg;p++) {
       for (int q=0;q<=deg-p;q++) {
         for (int r=0;r<=deg-p-q;r++) {
-          int idxcur = idx(p,q,r);
+          int idxcur = TabulatorTet<Scalar,ArrayScalar,0>::idx(p,q,r);
           Scalar scal = sqrt( (p+0.5)*(p+q+1.0)*(p+q+r+1.5) );
           for (int i=0;i<np;i++) {
             outputValues(idxcur,i) *= scal;
@@ -312,26 +283,8 @@ namespace Intrepid {
 
   }
 
-  int idx(int p , int q, int r)
-  {
-    return (p+q+r)*(p+q+r+1)*(p+q+r+2)/6+(q+r)*(q+r+1)/2+r;
-  }
 
 }// namespace Intrepid
 
 
-template<class Scalar>
-void Intrepid::jrc( const Scalar &alpha , const Scalar &beta , 
-  const int &n ,
-  Scalar &an , Scalar &bn, Scalar &cn )
-{
-  an = (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) 
-    / ( 2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) );
-  bn = (alpha*alpha-beta*beta)*(2.0*n+1.0+alpha+beta) 
-    / ( 2.0*(n+1.0)*(2.0*n+alpha+beta)*(n+1.0+alpha+beta) );
-  cn = (n+alpha)*(n+beta)*(2.0*n+2.0+alpha+beta) 
-    / ( (n+1.0)*(n+1.0+alpha+beta)*(2.0*n+alpha+beta) );
-  
-  return;
-}
 #endif

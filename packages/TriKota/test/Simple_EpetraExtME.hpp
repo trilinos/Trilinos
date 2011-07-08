@@ -61,7 +61,11 @@ class Simple_ModelEval
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
+#ifdef HAVE_MPI
   Simple_ModelEval(const MPI_Comm appComm);
+#else
+  Simple_ModelEval(const int appComm=0);
+#endif
 
   //@}
 

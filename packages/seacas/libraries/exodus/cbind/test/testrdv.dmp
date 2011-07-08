@@ -768,9 +768,9 @@ after ex_get_var_param, error =   0
 
 after ex_get_var_names, error =   0
 There are  3 element variables; their names are :
- 'ele_var0'
- 'ele_var1'
- 'ele_var2'
+ 'this_variable_name_is_short'
+ 'this_variable_name_is_just_right'
+ 'this_variable_name_is_tooooo_lon'
 
 after ex_get_elem_var_tab, error =   0
 This is the element variable truth table:

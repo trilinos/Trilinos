@@ -67,6 +67,7 @@ namespace stk {
   namespace adapt {
     namespace unit_tests {
 
+      static int printInfoLevel = 0;
 
       /// configuration: you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
       /// The following defines where to put the input and output files created by this set of functions
@@ -128,14 +129,14 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_0.e");
 
             TestLocalRefinerTri breaker(eMesh, break_tri_to_tri_2, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_1.e");
 
             // end_demo
@@ -179,7 +180,7 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_1_0.e");
 
             bool diagonals=true;
@@ -187,7 +188,7 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_1_1.e");
 
             // end_demo
@@ -232,7 +233,7 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_2_0.e");
 
             bool diagonals=false;
@@ -240,7 +241,7 @@ namespace stk {
             //breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined",  printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_2_1.e");
 
             // end_demo
@@ -282,14 +283,14 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_0.e");
 
             TestLocalRefinerTri_N breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined",  printInfoLevel);
             //eMesh.dumpElements();
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1.e");
 
@@ -339,14 +340,14 @@ namespace stk {
 
             fixture.generate_mesh();
 
-            eMesh.printInfo("local tri mesh",2);
+            eMesh.printInfo("local tri mesh", printInfoLevel);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1_0.e");
 
             TestLocalRefinerTri_N_1 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
-            eMesh.printInfo("local tri mesh refined", 2);
+            eMesh.printInfo("local tri mesh refined",  printInfoLevel);
             //eMesh.dumpElements();
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1_1.e");
 
@@ -362,6 +363,202 @@ namespace stk {
       }
 #endif
 
+
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+      struct SingleTriangleFixture
+      {
+        static PerceptMesh * create()
+        {
+            const unsigned n = 1;
+            const unsigned nx = n , ny = n;
+
+            stk::ParallelMachine pm = MPI_COMM_WORLD ;
+            bool createEdgeSets = false;
+            percept::QuadFixture<double, shards::Triangle<3> > *fixture = new percept::QuadFixture<double, shards::Triangle<3> >( pm , nx , ny, createEdgeSets);
+
+            bool isCommitted = false;
+            percept::PerceptMesh * eMesh = new percept::PerceptMesh(&fixture->meta_data, &fixture->bulk_data, isCommitted);
+
+            eMesh->commit();
+
+            fixture->generate_mesh();
+
+            // delete the first element
+            eMesh->getBulkData()->modification_begin();
+            stk::mesh::Entity* element = &( (**(eMesh->getBulkData()->buckets(eMesh->element_rank()).begin()))[0]);
+            if ( ! eMesh->getBulkData()->destroy_entity( element ) )
+              {
+                throw std::logic_error("failed in deleting element");
+              }
+            eMesh->getBulkData()->modification_end();
+
+            // single element left
+            //stk::mesh::Entity& element = (**(eMesh->getBulkData()->buckets(eMesh->element_rank()).begin()))[0];
+
+            return eMesh;
+        }
+      };
+
+
+      static void set_node_coords(percept::PerceptMesh& eMesh, mesh::PairIterRelation& elem_nodes, double tri_coords[3][3])
+      {
+        for (unsigned inode=0; inode < elem_nodes.size(); inode++)
+          {
+            stk::mesh::Entity *node = elem_nodes[inode].entity();
+            double *fdata = stk::mesh::field_data( *eMesh.getCoordinatesField() , *node );
+            for (int dim=0; dim < eMesh.getSpatialDim(); dim++)
+              {
+                fdata[dim] = tri_coords[inode][dim];
+              }
+          }
+      }
+
+      std::vector<int> convert_tuple(tri_tuple_type_local& tuple)
+      {
+        std::vector<int> cv(3);
+        cv[0] = tuple.get<0>();
+        cv[1] = tuple.get<1>();
+        cv[2] = tuple.get<2>();
+        return cv;
+      }
+
+      static bool in_set(tri_tuple_type_local& expected, vector<tri_tuple_type_local>& base, bool reverse=false)
+      {
+        std::vector<int> cv_expected = convert_tuple(expected);
+
+        for (unsigned ie = 0; ie < base.size(); ie++)
+          {
+            std::vector<int> cv_base = convert_tuple(base[ie]);
+            for (int i = 0; i < 3; i++)
+              {
+                bool found = true;
+                if (reverse)
+                  {
+                    int k=0;
+                    for (int j = 2; j >= 0; --j)
+                      {
+                        if (cv_expected[k++] != cv_base[(i+j)%3])
+                          {
+                            found = false;
+                            break;
+                          }
+                      }
+                  }
+                else
+                  {
+                    for (int j = 0; j < 3; j++)
+                      {
+                        if (cv_expected[j] != cv_base[(i+j)%3])
+                          {
+                            found = false;
+                            break;
+                          }
+                      }
+                  }
+
+                if (found)
+                  {
+                    return true;
+                  }
+              }
+          }
+        return false;
+      }
+
+      /// Create a single triangle mesh and mark the edges, call RefinerPattern_Tri3_Tri3_N::triangulate_face
+      ///   and check properties of the result - reverse the triangle polarity and check for consistency
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, check_triangulate_face)
+      {
+        //fixture_setup();
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 1)
+          {
+            percept::PerceptMesh& eMesh = *SingleTriangleFixture::create();
+
+            eMesh.saveAs(output_files_loc+"tri_face_0.e");
+
+            // single element left
+            stk::mesh::Entity& element = (**(eMesh.getBulkData()->buckets(eMesh.element_rank()).begin()))[0];
+            std::cout << "element = " << element << std::endl;
+
+            mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+
+
+            stk::mesh::Entity *elem_nodes_vector[3];
+            for (unsigned inode=0; inode < elem_nodes.size(); inode++)
+              {
+                stk::mesh::Entity *node = elem_nodes[inode].entity();
+                elem_nodes_vector[inode] = node;
+              }
+            vector<tri_tuple_type_local> elems_local;
+
+            // test 1
+            {
+              unsigned edge_marks[3] = {1,1,0};
+              double tri_coords[3][3] = {{0,0,0}, {1,0,0}, {0,1,0}};
+              set_node_coords(eMesh, elem_nodes, tri_coords);
+              Local_Tri3_Tri3_N::triangulate_face(eMesh, elem_nodes_vector, edge_marks, elems_local);
+
+              // expected:
+              vector<tri_tuple_type_local> elems_local_expected(3);
+              elems_local_expected[0] = tri_tuple_type_local(0,3,4);
+              elems_local_expected[1] = tri_tuple_type_local(3,1,4);
+              elems_local_expected[2] = tri_tuple_type_local(0,4,2);
+              
+              std::cout << "test1: elems_local_expected= " << elems_local_expected << std::endl;
+              std::cout << "test1: elems_local= " << elems_local << std::endl;
+
+              STKUNIT_EXPECT_TRUE(in_set(elems_local_expected[0], elems_local));
+              STKUNIT_EXPECT_TRUE(in_set(elems_local_expected[1], elems_local));
+              STKUNIT_EXPECT_TRUE(in_set(elems_local_expected[2], elems_local));
+
+              STKUNIT_EXPECT_TRUE(!in_set(elems_local_expected[0], elems_local, true));
+              STKUNIT_EXPECT_TRUE(!in_set(elems_local_expected[1], elems_local, true));
+              STKUNIT_EXPECT_TRUE(!in_set(elems_local_expected[2], elems_local, true));
+            }
+
+            // test2: same as test 1 but mirror image (emulating a face shared between two tets)
+            {
+              stk::mesh::Entity* node1 = elem_nodes_vector[1];
+              elem_nodes_vector[1] = elem_nodes_vector[2];
+              elem_nodes_vector[2] = node1;
+
+              unsigned edge_marks[3] = {0,1,1};
+              Local_Tri3_Tri3_N::triangulate_face(eMesh, elem_nodes_vector, edge_marks, elems_local);
+
+              // expected:
+              vector<tri_tuple_type_local> elems_local_expected(3);
+              elems_local_expected[0] = tri_tuple_type_local(0,1,4);
+              elems_local_expected[1] = tri_tuple_type_local(0,4,5);
+              elems_local_expected[2] = tri_tuple_type_local(2,5,4);
+              
+              std::cout << "test2: elems_local_expected= " << elems_local_expected << std::endl;
+              std::cout << "test2: elems_local= " << elems_local << std::endl;
+
+              STKUNIT_EXPECT_TRUE(in_set(elems_local_expected[0], elems_local));
+              STKUNIT_EXPECT_TRUE(in_set(elems_local_expected[1], elems_local));
+              STKUNIT_EXPECT_TRUE(in_set(elems_local_expected[2], elems_local));
+
+              STKUNIT_EXPECT_TRUE(!in_set(elems_local_expected[0], elems_local, true));
+              STKUNIT_EXPECT_TRUE(!in_set(elems_local_expected[1], elems_local, true));
+              STKUNIT_EXPECT_TRUE(!in_set(elems_local_expected[2], elems_local, true));
+            }
+
+            
+        
+            // end_demo
+          }
+
+      }
 
 
     } // namespace unit_tests

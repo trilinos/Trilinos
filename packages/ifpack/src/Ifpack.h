@@ -30,12 +30,17 @@
 #ifndef IFPACK_H
 #define IFPACK_H
 
+
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
+#include "Teuchos_iostream_helpers.hpp"
+
 
 #ifdef HAVE_HYPRE
 #include "Ifpack_Hypre.h"
 #endif
+
+
 //! Ifpack: a function class to define Ifpack preconditioners.
 /*!
 Class Ifpack is a function class, that contains just one method:
@@ -238,5 +243,9 @@ public:
                     int& Overlap);
 
 };
+
+
+TEUCHOS_ENUM_INPUT_STREAM_OPERATOR(Ifpack::EPrecType)
+
 
 #endif

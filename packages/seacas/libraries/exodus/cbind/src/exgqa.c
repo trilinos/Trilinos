@@ -82,11 +82,10 @@ int ex_get_qa (int exoid,
                char *qa_record[][4])
 {
   int status;
-  int j, k, dimid, varid;
-  size_t i;
-  size_t num_qa_records, start[3];
+  int dimid, varid;
+  size_t i, j;
+  size_t num_qa_records, start[3], count[3];
 
-  char *ptr;
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
@@ -125,40 +124,18 @@ int ex_get_qa (int exoid,
     /* read the QA records */
     for (i=0; i<num_qa_records; i++) {
       for (j=0; j<4; j++) {
-	start[0] = i;
-	start[1] = j;
-	start[2] = 0;
-
-	k = 0;
-	ptr = qa_record[i][j];
-
-	if ((status = nc_get_var1_text(exoid, varid, start, ptr)) != NC_NOERR) {
+	start[0] = i; count[0] = 1;
+	start[1] = j; count[1] = 1;
+	start[2] = 0; count[2] = MAX_STR_LENGTH+1;
+	if ((status = nc_get_vara_text(exoid, varid, start, count, qa_record[i][j])) != NC_NOERR) {
 	  exerrval = status;
 	  sprintf(errmsg,
 		  "Error: failed to get qa record data in file id %d", exoid);
 	  ex_err("ex_get_qa",errmsg,exerrval);
 	  return (EX_FATAL);
 	}
-
-
-	while ((*(ptr++) != '\0') && (k < MAX_STR_LENGTH)) {
-	  start[2] = ++k;
-	  if ((status = nc_get_var1_text(exoid, varid, start, ptr)) != NC_NOERR) {
-	    exerrval = status;
-	    sprintf(errmsg,
-		    "Error: failed to get qa record data in file id %d", exoid);
-	    ex_err("ex_get_qa",errmsg,exerrval);
-	    return (EX_FATAL);
-	  }
-	}
-
-	/* remove trailing blanks */
-
-	if(start[2] != 0) {
-	  --ptr;
-	  while ( --ptr >= qa_record[i][j] && *ptr == ' ' );
-	  *(++ptr) = '\0';
-	}
+	qa_record[i][j][MAX_STR_LENGTH] = '\0';
+	ex_trim_internal(qa_record[i][j]);
       }
     }
   }

@@ -62,8 +62,8 @@ int main(int argc, char *argv[])
   // matrices is `Recirc2D' (advection-diffusion in a box, with
   // recirculating flow). The grid has nx x ny nodes, divided into
   // mx x my subdomains, each assigned to a different processor.
-  int nx = 8;
-  int ny = 8 * Comm.NumProc();
+  int nx = 28;
+  int ny = 28 * Comm.NumProc();
 
   ParameterList GaleriList;
   GaleriList.set("nx", nx);

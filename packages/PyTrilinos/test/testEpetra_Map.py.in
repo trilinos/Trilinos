@@ -93,12 +93,14 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testConstructor1(self):
         "Test Epetra.Map uniform, linear constructor"
+        self.assertEqual(self.map1.Label(),             "Epetra::Map"        )
         self.assertEqual(self.map1.NumGlobalElements(), self.numGlobalElConst)
         self.assertEqual(self.map1.ElementSize(),       self.elSize          )
         self.assertEqual(self.map1.IndexBase(),         self.indexBase       )
 
     def testConstructor2(self):
         "Test Epetra.Map nonuniform, linear constructor"
+        self.assertEqual(self.map2.Label(),             "Epetra::Map"        )
         self.assertEqual(self.map2.NumGlobalElements(), self.numGlobalEl)
         self.assertEqual(self.map2.NumMyElements(),     self.numMyEl    )
         self.assertEqual(self.map2.ElementSize(),       self.elSize     )
@@ -106,6 +108,7 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testConstructor3(self):
         "Test Epetra.Map nonuniform, arbitrary constructor"
+        self.assertEqual(self.map3.Label(),             "Epetra::Map"        )
         self.assertEqual(self.map3.NumGlobalElements(), self.numGlobalEl)
         self.assertEqual(self.map3.NumMyElements(),     self.numMyEl    )
         self.assertEqual(self.map3.ElementSize(),       self.elSize     )
@@ -122,9 +125,9 @@ class EpetraMapTestCase(unittest.TestCase):
         map1 = Epetra.Map(self.map1)
         map2 = Epetra.Map(self.map2)
         map3 = Epetra.Map(self.map3)
-        self.assertEqual(self.map1.SameAs(map1),True)
-        self.assertEqual(self.map2.SameAs(map2),True)
-        self.assertEqual(self.map3.SameAs(map3),True)
+        self.assertEqual(self.map1.SameAs(map1), True)
+        self.assertEqual(self.map2.SameAs(map2), True)
+        self.assertEqual(self.map3.SameAs(map3), True)
 
     def testRemoteIDList1(self):
         "Test Epetra.Map RemoteIDList method for constant element size"
@@ -441,7 +444,12 @@ if __name__ == "__main__":
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
-    # Exit with a code that indicates the total number of errors and failures
+    # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)

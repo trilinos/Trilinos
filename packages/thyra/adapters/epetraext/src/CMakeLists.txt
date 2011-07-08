@@ -16,5 +16,4 @@ PACKAGE_ADD_LIBRARY(
   thyraepetraext
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS thyraepetra
   )

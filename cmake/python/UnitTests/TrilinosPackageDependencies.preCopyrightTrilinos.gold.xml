@@ -1,4 +1,19 @@
 <PackageDependencies>
+  <Package name="TrilinosFramework" dir="../cmake">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="MPI"/>
+    <EmailAddresses>
+      <Checkin address="trilinosframework-checkins@software.sandia.gov"/>
+      <Regression address="trilinosframework-regression@software.sandia.gov"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
+  </Package>
   <Package name="Teuchos" dir="teuchos">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -12,6 +27,7 @@
       <Checkin address="teuchos-checkins@software.sandia.gov"/>
       <Regression address="teuchos-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="RTOp" dir="rtop">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
@@ -26,6 +42,7 @@
       <Checkin address="rtop-checkins@software.sandia.gov"/>
       <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Epetra" dir="epetra">
     <LIB_REQUIRED_DEP_PACKAGES/>
@@ -40,6 +57,7 @@
       <Checkin address="epetra-checkins@software.sandia.gov"/>
       <Regression address="epetra-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Zoltan" dir="zoltan">
     <LIB_REQUIRED_DEP_PACKAGES/>
@@ -54,6 +72,7 @@
       <Checkin address="zoltan-checkins@software.sandia.gov"/>
       <Regression address="zoltan-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Shards" dir="shards">
     <LIB_REQUIRED_DEP_PACKAGES/>
@@ -68,6 +87,7 @@
       <Checkin address="shards-checkins@software.sandia.gov"/>
       <Regression address="shards-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Triutils" dir="triutils">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
@@ -82,6 +102,7 @@
       <Checkin address="triutils-checkins@software.sandia.gov"/>
       <Regression address="triutils-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Tpetra" dir="tpetra">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
@@ -96,6 +117,7 @@
       <Checkin address="tpetra-checkins@software.sandia.gov"/>
       <Regression address="tpetra-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="EpetraExt" dir="epetraext">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
@@ -110,6 +132,7 @@
       <Checkin address="epetraext-checkins@software.sandia.gov"/>
       <Regression address="epetraext-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Stokhos" dir="stokhos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
@@ -124,6 +147,7 @@
       <Checkin address="stokhos-checkins@software.sandia.gov"/>
       <Regression address="stokhos-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Sacado" dir="sacado">
     <LIB_REQUIRED_DEP_PACKAGES/>
@@ -138,10 +162,11 @@
       <Checkin address="sacado-checkins@software.sandia.gov"/>
       <Regression address="sacado-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
-  <Package name="Thyra" dir="thyra">
+  <Package name="ThyraCoreLibs" dir="thyra/src">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,RTOp"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -150,8 +175,99 @@
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Checkin address="thyra-checkins@software.sandia.gov"/>
-      <Regression address="thyra-regression@software.sandia.gov"/>
+      <Regression address="thyra-boneheads@gmail.com"/>
     </EmailAddresses>
+    <ParentPackage value="Thyra"/>
+  </Package>
+  <Package name="ThyraGoodStuff" dir="thyra/src/good_stuff">
+    <LIB_REQUIRED_DEP_PACKAGES value="ThyraCoreLibs"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
+      <Regression address="thyra-boneheads@gmail.com"/>
+    </EmailAddresses>
+    <ParentPackage value="Thyra"/>
+  </Package>
+  <Package name="ThyraCrazyStuff" dir="thyra/src/crazy_stuff">
+    <LIB_REQUIRED_DEP_PACKAGES value="ThyraGoodStuff"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
+      <Regression address="thyra-boneheads@gmail.com"/>
+    </EmailAddresses>
+    <ParentPackage value="Thyra"/>
+  </Package>
+  <Package name="ThyraEpetra" dir="thyra/adapters/epetra">
+    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,ThyraCoreLibs"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
+      <Regression address="thyra-boneheads@gmail.com"/>
+    </EmailAddresses>
+    <ParentPackage value="Thyra"/>
+  </Package>
+  <Package name="ThyraEpetraExt" dir="thyra/adapters/epetraext">
+    <LIB_REQUIRED_DEP_PACKAGES value="ThyraEpetra,EpetraExt"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
+      <Regression address="thyra-boneheads@gmail.com"/>
+    </EmailAddresses>
+    <ParentPackage value="Thyra"/>
+  </Package>
+  <Package name="ThyraTpetra" dir="thyra/adapters/tpetra">
+    <LIB_REQUIRED_DEP_PACKAGES value="Tpetra,ThyraCoreLibs"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
+      <Regression address="thyra-boneheads@gmail.com"/>
+    </EmailAddresses>
+    <ParentPackage value="Thyra"/>
+  </Package>
+  <Package name="Thyra" dir="thyra">
+    <LIB_REQUIRED_DEP_PACKAGES value="ThyraCoreLibs"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="ThyraGoodStuff,ThyraCrazyStuff,ThyraEpetra,ThyraEpetraExt,ThyraTpetra"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
+      <Regression address="thyra-boneheads@gmail.com"/>
+    </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Isorropia" dir="isorropia">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Zoltan"/>
@@ -166,6 +282,7 @@
       <Checkin address="isorropia-checkins@software.sandia.gov"/>
       <Regression address="isorropia-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="AztecOO" dir="aztecoo">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Triutils"/>
@@ -180,6 +297,7 @@
       <Checkin address="aztecoo-checkins@software.sandia.gov"/>
       <Regression address="aztecoo-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Galeri" dir="galeri">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
@@ -194,6 +312,7 @@
       <Checkin address="galeri-checkins@software.sandia.gov"/>
       <Regression address="galeri-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Amesos" dir="amesos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
@@ -208,6 +327,7 @@
       <Checkin address="amesos-checkins@software.sandia.gov"/>
       <Regression address="amesos-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Intrepid" dir="intrepid">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards"/>
@@ -222,6 +342,7 @@
       <Checkin address="intrepid-checkins@software.sandia.gov"/>
       <Regression address="intrepid-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Ifpack" dir="ifpack">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
@@ -236,6 +357,7 @@
       <Checkin address="ifpack-checkins@software.sandia.gov"/>
       <Regression address="ifpack-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="ML" dir="ml">
     <LIB_REQUIRED_DEP_PACKAGES/>
@@ -250,6 +372,7 @@
       <Checkin address="ml-checkins@software.sandia.gov"/>
       <Regression address="ml-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Belos" dir="belos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
@@ -264,12 +387,13 @@
       <Checkin address="belos-checkins@software.sandia.gov"/>
       <Regression address="belos-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Stratimikos" dir="stratimikos">
-    <LIB_REQUIRED_DEP_PACKAGES value="Thyra"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="ThyraEpetraExt,ThyraCoreLibs"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Belos,Ifpack,ML"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Triutils"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -278,6 +402,7 @@
       <Checkin address="stratimikos-checkins@software.sandia.gov"/>
       <Regression address="stratimikos-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="RBGen" dir="rbgen">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
@@ -292,6 +417,7 @@
       <Checkin address="rbgen-checkins@software.sandia.gov"/>
       <Regression address="rbgen-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Phalanx" dir="phalanx">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
@@ -306,6 +432,7 @@
       <Checkin address="phalanx-checkins@software.sandia.gov"/>
       <Regression address="phalanx-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Teko" dir="../preCopyrightTrilinos/teko">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,EpetraExt,Stratimikos,AztecOO,ML,Ifpack,Amesos"/>
@@ -320,6 +447,7 @@
       <Checkin address="teko-checkins@software.sandia.gov"/>
       <Regression address="teko-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
   <Package name="Stalix" dir="../preCopyrightTrilinos/stalix">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Sacado,Tpetra,Thyra"/>
@@ -334,5 +462,6 @@
       <Checkin address="stalix-checkins@software.sandia.gov"/>
       <Regression address="stalix-regression@software.sandia.gov"/>
     </EmailAddresses>
+    <ParentPackage value=""/>
   </Package>
 </PackageDependencies>

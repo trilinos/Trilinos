@@ -7,6 +7,7 @@ INCLUDE(PackageListHelpers)
 
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+  TrilinosFramework ../cmake              PS
   Teuchos          teuchos                PS
   RTOp             rtop                   PS
   Epetra           epetra                 PS 

@@ -44,7 +44,7 @@ PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
 	testcp_ln testwt_clb testwt_nc testrd_nc testwt-zeroe testwt-zeron \
 	testrdv testwt-one-attrib create_mesh rd_wt_mesh \
 	testrd-partial testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
-	testrd-nfaced
+	testrd-nfaced testwt-long-name testrd-long-name
 
 #if 0
 	CreateEdgeFace ReadEdgeFace
@@ -74,6 +74,8 @@ NormalProgramTarget(testcp_ln ,testcp_ln.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt_nc, testwt_nc.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testrd_nc, testrd_nc.o, $(LOCALEXO), /**/, $(LIBS))
 
+NormalProgramTarget(testwt-long-name,testwt-long-name.o,$(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrd-long-name,testrd-long-name.o,$(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt-zeroe, testwt-zeroe.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt-zeron, testwt-zeron.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(testwt-one-attrib, testwt-one-attrib.o, $(LOCALEXO), /**/, $(LIBS))

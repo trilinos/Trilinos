@@ -12,6 +12,7 @@
 #    source /opt/casldev/env/casl_dev_env.sh
 #
 
-SET(Trilinos_EXTRAREPOS_FILE "${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/ExtraExternalRepositories.casl_vri.cmake")
+SET(Trilinos_EXTRAREPOS_FILE
+  "${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/ExtraExternalRepositories.casl_vri.cmake")
 SET(VERA_COUPLED_BOA  ON CACHE BOOL "")
 SET(VERA_COUPLED_RAVE ON CACHE BOOL "")

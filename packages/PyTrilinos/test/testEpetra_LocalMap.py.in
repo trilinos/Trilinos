@@ -74,14 +74,16 @@ class EpetraLocalMapTestCase(unittest.TestCase):
 
     def testConstructor1(self):
         "Test Epetra.LocalMap uniform, linear constructor"
-        self.assertEqual(self.map.NumGlobalElements(), self.numElem  )
-        self.assertEqual(self.map.ElementSize(),       self.elSize   )
-        self.assertEqual(self.map.IndexBase(),         self.indexBase)
+        self.assertEqual(self.map.Label(),             "Epetra::LocalMap")
+        self.assertEqual(self.map.NumGlobalElements(), self.numElem      )
+        self.assertEqual(self.map.ElementSize(),       self.elSize       )
+        self.assertEqual(self.map.IndexBase(),         self.indexBase    )
 
     def testConstructor2(self):
         "Test Epetra.LocalMap copy constructor"
         map = Epetra.LocalMap(self.map)
-        self.assertEqual(self.map.SameAs(map),True)
+        self.assertEqual(map.Label(),          self.map.Label())
+        self.assertEqual(self.map.SameAs(map), True            )
 
     def testRemoteIDList(self):
         "Test Epetra.LocalMap RemoteIDList method for constant element size"
@@ -296,7 +298,12 @@ if __name__ == "__main__":
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
-    # Exit with a code that indicates the total number of errors and failures
+    # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)

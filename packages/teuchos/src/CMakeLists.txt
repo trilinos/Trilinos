@@ -187,6 +187,7 @@ APPEND_SET(HEADERS
   Teuchos_oblackholestream.hpp
   Teuchos_stacktrace.hpp
   Teuchos_toString.hpp
+  Teuchos_iostream_helpers.hpp
   )
 
 # Set sources

@@ -124,16 +124,18 @@ namespace stk {
             for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
               {
                 stk::mesh::Entity& element = bucket[ientity];
-#if 0
-                // add ghost elements here, but skip them in Refiner::unrefineTheseElements
-                bool elementIsGhost = m_eMesh.isGhostElement(element);
-                if (elementIsGhost)
+
+                // FIXME
+                // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error is isParentElement)
+                const bool check_for_family_tree = false;  
+                bool isParent = m_eMesh.isParentElement(element, check_for_family_tree);
+              
+                if (isParent)
                   continue;
-#endif
                 
                 const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-                if (elem_nodes.size() && m_eMesh.isChildElement(element, false))
+                if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false) )
                   {
                     bool found = true;
                     for (unsigned inode=0; inode < elem_nodes.size(); inode++)

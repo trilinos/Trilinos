@@ -37,6 +37,8 @@ namespace unit_tests {
 
 #define EXTRA_PRINT 0
 
+      static int printInfoLevel = 0;
+
 //=============================================================================
 //=============================================================================
 //=============================================================================
@@ -49,7 +51,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_1_0_0)
   PerceptMesh eMesh(3u);
   eMesh.newMesh(PerceptMesh::GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"));  // create a 3x3x3 hex mesh in the unit cube
   eMesh.commit();
-  eMesh.printInfo("fieldFunction_demo_1_0_0", 2);
+  eMesh.printInfo("fieldFunction_demo_1_0_0",  printInfoLevel);
 
   // the coordinates field is always created by the PerceptMesh read operation, here we just get the field
   stk::mesh::FieldBase *f_coords = eMesh.getField("coordinates");

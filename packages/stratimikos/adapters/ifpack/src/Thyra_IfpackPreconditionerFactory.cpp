@@ -40,6 +40,9 @@
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_StaticSetupMacro.hpp"
+
 
 namespace {
 
@@ -57,6 +60,13 @@ const std::string PrecTypeName_default = Ifpack::precTypeNames[PrecType_default]
 
 const std::string Overlap_name = "Overlap";
 const int Overlap_default = 0;
+
+
+TEUCHOS_STATIC_SETUP()
+{
+  TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(Ifpack::EPrecType);
+}
+
 
 } // namespace
 

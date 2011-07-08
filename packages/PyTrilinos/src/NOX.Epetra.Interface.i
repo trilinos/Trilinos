@@ -76,9 +76,19 @@ NOX.Epetra.Interface provides the following user-level classes:
 #include "Epetra_InvOperator.h"
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_FECrsMatrix.h"
-#include "Epetra_PyUtil.h"
+#include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDenseSolver.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_Time.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 
 // Local Epetra includes
+#include "Epetra_PyUtil.h"
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"

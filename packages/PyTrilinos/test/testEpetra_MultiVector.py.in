@@ -72,15 +72,17 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
     def testConstructor01(self):
         "Test Epetra.MultiVector (BlockMap,int,bool) constructor"
         emv = Epetra.MultiVector(self.map,2,True)
-        self.assertEquals(emv.NumVectors(),2)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   2                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
 
     def testConstructor02(self):
         "Test Epetra.MultiVector (BlockMap,int) constructor"
         emv = Epetra.MultiVector(self.map,3)
-        self.assertEquals(emv.NumVectors(),3)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   3                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
 
     def testConstructor03(self):
@@ -93,8 +95,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         "Test Epetra.MultiVector (BlockMap,1D-small-list) constructor"
         list = [0, 1.0, 2, 3.14]
         emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),1)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   1                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((emv[0,:len(list)] == list).all())
 
@@ -102,8 +105,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         "Test Epetra.MultiVector (BlockMap,1D-correct-list) constructor"
         list = [0, 1.0, 2, 3.14, 2.17, 1.5, 1, 0.5, 0.0]
         emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),1)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   1                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((emv[0,:] == list).all())
 
@@ -111,8 +115,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         "Test Epetra.MultiVector (BlockMap,1D-big-list) constructor"
         list = [0, 1.0, 2, 3.14, 2.17, 1.5, 1, 0.5, 0.0, -1, -2]
         emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),1)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   1                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((emv[0,:] == list[:emv.shape[1]]).all())
 
@@ -121,8 +126,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         list = [[0,    1.0, 2, 3.14],
                 [2.17, 1.5, 1, 0.5 ]]
         emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),2)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   2                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((emv[:,:len(list[0])] == list).all())
 
@@ -131,8 +137,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         list = [[0, 1.0, 2, 3.14, 2.17, 1.5, 1, 0.5, 0.0],
                 [0.0, 0.5, 1, 1.5, 2.17, 3.14, 2, 1.0, 0]]
         emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),2)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   2                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((emv == list).all())
 
@@ -141,8 +148,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         list = [[0, 1.0, 2, 3.14, 2.17, 1.5, 1, 0.5, 0.0, -1, -2],
                 [0, 1.0, 2, 3.14, 2.17, 1.5, 1, 0.5, 0.0, -1, -2]]
         emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),2)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   2                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
         for i in range(emv.shape[0]):
             self.failUnless((emv[i,:] == list[i][:emv.shape[1]]).all())
@@ -152,8 +160,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         list = [[[0   , 1.0], [2, 3.14]],
                 [[2.17, 1.5], [1, 0.5 ]]]
         emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),2)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   2                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
         for i in range(len(list)):
             for j in range(len(list[i])):
@@ -165,8 +174,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         list = [[[0  , 1.0, 2], [3.14, 2.17, 1.5 ], [1, 0.5, 0.0]],
                 [[0.0, 0.5, 1], [1.5 , 2.17, 3.14], [2, 1.0, 0  ]]]
         emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),2)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   2                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((emv == list).all())
 
@@ -176,8 +186,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
                 [[0, 1.0, 2, 3.14, 2.17], [1.5, 1, 0.5, 0.0, -1]],
                 [[0, 1.0, 2, 3.14, 2.17], [1.5, 1, 0.5, 0.0, -1]]]
         emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),3)
-        self.assertEquals(emv.MyLength(), self.length)
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv.NumVectors(),   3                         )
+        self.assertEquals(emv.MyLength(),     self.length               )
         self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
         for i in range(emv.shape[0]):
             for j in range(len(list[i])):
@@ -191,9 +202,10 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         "Test Epetra.MultiVector (1D-list) constructor"
         list = [0, 1.0, 2, 3.14, 2.17, 1.5, 1, 0.5, 0.0]
         emv = Epetra.MultiVector(list)
-        self.assertEquals(emv.NumVectors(),1)
-        self.assertEquals(emv.MyLength(), len(list))
-        self.assertEquals(emv.GlobalLength(), len(list))
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector")
+        self.assertEquals(emv.NumVectors(),   1                    )
+        self.assertEquals(emv.MyLength(),     len(list)            )
+        self.assertEquals(emv.GlobalLength(), len(list)            )
         self.failUnless((emv[0,:] == list).all())
 
     def testConstructor15(self):
@@ -201,9 +213,10 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         list = [[0, 1.0, 2, 3.14, 2.17, 1.5, 1, 0.5, 0.0],
                 [0.0, 0.5, 1, 1.5, 2.17, 3.14, 2, 1.0, 0]]
         emv = Epetra.MultiVector(list)
-        self.assertEquals(emv.NumVectors(),2)
-        self.assertEquals(emv.MyLength(), len(list[0]))
-        self.assertEquals(emv.GlobalLength(), len(list[0]))
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector")
+        self.assertEquals(emv.NumVectors(),   2                    )
+        self.assertEquals(emv.MyLength(),     len(list[0])         )
+        self.assertEquals(emv.GlobalLength(), len(list[0])         )
         self.failUnless((emv == list).all())
 
     def testConstructor16(self):
@@ -212,9 +225,10 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
                 [[0.0 ,0.5,1  ], [1.5 ,2.17,3.14], [2,1.0,0   ]],
                 [[3.14,2  ,1.0], [0   ,0.0 ,0.5 ], [1,1.5,2.17]]]
         emv = Epetra.MultiVector(list)
-        self.assertEquals(emv.NumVectors(),3)
-        self.assertEquals(emv.MyLength(), 3*len(list[0][0]))
-        self.assertEquals(emv.GlobalLength(), 3*len(list[0][0]))
+        self.assertEquals(emv.Label(),        "Epetra::MultiVector")
+        self.assertEquals(emv.NumVectors(),   3                    )
+        self.assertEquals(emv.MyLength(),     3*len(list[0][0])    )
+        self.assertEquals(emv.GlobalLength(), 3*len(list[0][0])    )
         for i in range(emv.shape[0]):
             for j in range(len(list[i])):
                 self.failUnless((emv[i,j] == list[i][j]).all())
@@ -230,8 +244,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
                 [2, 1, 0, 0, 1, 2, 3, 4, 5]]
         emv1  = Epetra.MultiVector(self.map,list)
         emv2  = Epetra.MultiVector(Epetra.Copy,emv1)
-        self.assertEquals(emv2.NumVectors(),2)
-        self.assertEquals(emv2.MyLength(),self.length)
+        self.assertEquals(emv2.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv2.NumVectors(),   2                         )
+        self.assertEquals(emv2.MyLength(),     self.length               )
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((abs(emv2[:,:] - emv1[:,:]) < 1.0e-10).all())
 
@@ -241,8 +256,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
                 [2, 1, 0, 0, 1, 2, 3, 4, 5]]
         emv1  = Epetra.MultiVector(self.map,list)
         emv2  = Epetra.MultiVector(Epetra.Copy,emv1,(1,))
-        self.assertEquals(emv2.NumVectors(),1)
-        self.assertEquals(emv2.MyLength(),self.length)
+        self.assertEquals(emv2.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv2.NumVectors(),   1                         )
+        self.assertEquals(emv2.MyLength(),     self.length               )
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((abs(emv2[0,:] - emv1[1,:]) < 1.0e-10).all())
 
@@ -252,10 +268,11 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
                        [ 7.8, -9.0,  1.2],
                        [-3.4,  5.6, -7.8]]
         multiArray = [squareArray] * 8
-        emv1  = Epetra.MultiVector(self.map,multiArray)
-        emv2  = Epetra.MultiVector(Epetra.Copy,emv1,range(4))
-        self.assertEquals(emv2.NumVectors(),4)
-        self.assertEquals(emv2.MyLength(),self.length)
+        emv1       = Epetra.MultiVector(self.map, multiArray)
+        emv2       = Epetra.MultiVector(Epetra.Copy, emv1, range(4))
+        self.assertEquals(emv2.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv2.NumVectors(),   4                         )
+        self.assertEquals(emv2.MyLength(),     self.length               )
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
         for i in range(emv2.shape[0]):
             self.assertEquals(emv2[i], emv1[i])
@@ -266,11 +283,12 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
                        [ 7.8, -9.0,  1.2],
                        [-3.4,  5.6, -7.8]]
         multiArray = [squareArray] * 8
-        emv1  = Epetra.MultiVector(self.map,multiArray)
-        indexes = (0,2,3,7)
-        emv2  = Epetra.MultiVector(Epetra.Copy,emv1,indexes)
-        self.assertEquals(emv2.NumVectors(),4)
-        self.assertEquals(emv2.MyLength(),self.length)
+        emv1       = Epetra.MultiVector(self.map, multiArray)
+        indexes    = (0,2,3,7)
+        emv2       = Epetra.MultiVector(Epetra.Copy, emv1, indexes)
+        self.assertEquals(emv2.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv2.NumVectors(),   4                         )
+        self.assertEquals(emv2.MyLength(),     self.length               )
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
         for i in range(emv2.shape[0]):
             self.assertEquals(emv2[i], emv1[indexes[i]])
@@ -292,8 +310,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
                 [2, 1, 0, 0, 1, 2, 3, 4, 5]]
         emv1  = Epetra.MultiVector(self.map,list)
         emv2  = Epetra.MultiVector(Epetra.View,emv1)
-        self.assertEquals(emv2.NumVectors(),2)
-        self.assertEquals(emv2.MyLength(),self.length)
+        self.assertEquals(emv2.Label(),        "Epetra::MultiVector"     )
+        self.assertEquals(emv2.NumVectors(),   2                         )
+        self.assertEquals(emv2.MyLength(),     self.length               )
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((emv2[:,:] == emv1[:,:]).all())
 
@@ -301,8 +320,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         "Test Epetra.MultiVector (View,MultiVector,range-of-1) constructor"
         list = [[0, 1, 2, 3, 4, 5, 5, 4, 3],
                 [2, 1, 0, 0, 1, 2, 3, 4, 5]]
-        emv1  = Epetra.MultiVector(self.map,list)
-        emv2  = Epetra.MultiVector(Epetra.View,emv1,(1,))
+        emv1 = Epetra.MultiVector(self.map,list)
+        emv2 = Epetra.MultiVector(Epetra.View,emv1,(1,))
         self.assertEquals(emv2.NumVectors(),1)
         self.assertEquals(emv2.MyLength(),self.length)
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
@@ -314,8 +333,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
                        [ 7.8, -9.0,  1.2],
                        [-3.4,  5.6, -7.8]]
         multiArray = [squareArray] * 8
-        emv1  = Epetra.MultiVector(self.map,multiArray)
-        emv2  = Epetra.MultiVector(Epetra.View,emv1,range(4))
+        emv1       = Epetra.MultiVector(self.map,multiArray)
+        emv2       = Epetra.MultiVector(Epetra.View,emv1,range(4))
         self.assertEquals(emv2.NumVectors(),4)
         self.assertEquals(emv2.MyLength(),self.length)
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
@@ -328,9 +347,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
                        [ 7.8, -9.0,  1.2],
                        [-3.4,  5.6, -7.8]]
         multiArray = [squareArray] * 8
-        emv1  = Epetra.MultiVector(self.map,multiArray)
-        indexes = (0,2,3,7)
-        emv2  = Epetra.MultiVector(Epetra.View,emv1,indexes)
+        emv1       = Epetra.MultiVector(self.map,multiArray)
+        indexes    = (0,2,3,7)
+        emv2       = Epetra.MultiVector(Epetra.View,emv1,indexes)
         self.assertEquals(emv2.NumVectors(),4)
         self.assertEquals(emv2.MyLength(),self.length)
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
@@ -342,9 +361,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         squareArray = [[-1.2,  3.4, -5.6],
                        [ 7.8, -9.0,  1.2],
                        [-3.4,  5.6, -7.8]]
-        multiArray = [squareArray] * 8
-        emv1  = Epetra.MultiVector(self.map,multiArray)
-        indexes = [0, 1.0, "e", "pi"]
+        multiArray  = [squareArray] * 8
+        emv1        = Epetra.MultiVector(self.map,multiArray)
+        indexes     = [0, 1.0, "e", "pi"]
         self.assertRaises((TypeError,ValueError), Epetra.MultiVector,
                           Epetra.View, emv1, indexes)
 
@@ -785,7 +804,12 @@ if __name__ == "__main__":
     verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
-    # Exit with a code that indicates the total number of errors and failures
+    # Compute the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
     sys.exit(errsPlusFails)

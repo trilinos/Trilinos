@@ -74,12 +74,10 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 
 // EpetraExt includes for dumping a matrix
-#ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
 #include "EpetraExt_BlockMapOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_RowMatrixOut.h"
-#endif
 #endif
 
 #ifdef HAVE_NOX_ML_EPETRA
@@ -367,17 +365,17 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 ***/
 
   // Dump solution of linear system
-#ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
   ++linearSolveCount;
-  std::ostringstream iterationNumber;
-  iterationNumber << linearSolveCount;
-    
-  std::string prefixName = p.get("Write Linear System File Prefix", 
-				 "NOX_LinSys");
-  std::string postfixName = iterationNumber.str();
-  postfixName += ".mm";
   if (p.get("Write Linear System", false)) {
+    std::ostringstream iterationNumber;
+    iterationNumber << linearSolveCount;
+    
+    std::string prefixName = p.get("Write Linear System File Prefix", 
+				   "NOX_LinSys");
+    std::string postfixName = iterationNumber.str();
+    postfixName += ".mm";
+
     std::string lhsFileName = prefixName + "_LHS_" + postfixName;
     std::string rhsFileName = prefixName + "_RHS_" + postfixName;
     std::string jacFileName = prefixName + "_Jacobian_" + postfixName;
@@ -398,7 +396,6 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix, 
 					   "test matrix", "Jacobian XXX");
   }
-#endif
 #endif
 
   double endTime = timer.WallTime();

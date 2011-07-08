@@ -31,6 +31,7 @@
 
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream 
 #include <iterator>
+#include <algorithm>
 #include <Teuchos_Utils.hpp>
 #include <Teuchos_TestForException.hpp>
 
@@ -145,27 +146,7 @@ namespace Tpetra {
    */
   template<class IT1, class IT2>
   void sort2(const IT1 &first1, const IT1 &last1, const IT2 &first2) {
-    typedef typename std::iterator_traits<IT1>::value_type KT;
-    typedef typename std::iterator_traits<IT2>::value_type VT;
-    // copy values into a multimap
-    // (using a multimap instead of a map because values may be duplicated)
-    std::multimap<KT,VT> tempMap;
-    IT1 keyIter = first1;
-    IT2 valueIter = first2;
-    for (; keyIter != last1; ++keyIter, ++valueIter) {
-      tempMap.insert(std::pair<KT,VT>(*keyIter, *valueIter));
-    }
-    // multimap will automatically sort them, we just need to pull them out in order
-    // and write them back to the original arrays
-    keyIter   = first1;
-    valueIter = first2;
-    for(typename std::multimap<KT,VT>::iterator i = tempMap.begin(); 
-                                                i != tempMap.end(); 
-                                                ++i, ++keyIter, ++valueIter) 
-    {
-      *keyIter   = i->first;
-      *valueIter = i->second;
-    }
+    sort2Shell(first1,last1,first2);
   }
 
   /** sort function for three arrays
@@ -176,33 +157,72 @@ namespace Tpetra {
   template<class IT1, class IT2, class IT3>
   void sort3(const IT1 &first1, const IT1 &last1, const IT2 &first2, const IT3 &first3)
   {
-    typedef typename std::iterator_traits<IT1>::value_type KT;
-    typedef typename std::iterator_traits<IT2>::value_type VT1;
-    typedef typename std::iterator_traits<IT3>::value_type VT2;
-    // copy values into a multimap
-    // (using a multimap instead of a map because values may be duplicated)
-    typedef typename std::pair<VT1,VT2> ValuePair;
-    std::multimap<KT,ValuePair> tempMap;
-    IT1 keyIter    = first1;
-    IT2 valueIter1 = first2;
-    IT3 valueIter2 = first3;
-    for(; keyIter != last1; ++keyIter, ++valueIter1, ++valueIter2) {
-      tempMap.insert(std::pair<KT,ValuePair>(*keyIter,ValuePair(*valueIter1,*valueIter2)));
-    }
-    // multimap will automatically sort them, we just need to pull them out in order
-    // and write them back to the original arrays
-    keyIter    = first1;
-    valueIter1 = first2;
-    valueIter2 = first3;
-    for(typename std::multimap<KT,ValuePair>::iterator i = tempMap.begin(); 
-                                                       i != tempMap.end(); 
-                                                       i++, keyIter++, valueIter1++, valueIter2++) 
-    {
-      *keyIter    = i->first;
-      *valueIter1 = i->second.first;
-      *valueIter2 = i->second.second;
-    }
+    sort3Shell(first1, last1, first2, first3);
   }
+
+
+  template<class IT1, class IT2>
+  void sort2Shell(const IT1 &first1, const IT1 &last1, const IT2 &first2)
+  {
+    typedef typename std::iterator_traits<IT1>::difference_type DT;
+    const DT sz  = last1 - first1;
+    const DT DT0 = OrdinalTraits<DT>::zero();
+    for (DT i = DT0; i < sz; ++i){
+      DT m = sz/2;
+      while (m > DT0){
+        DT max = sz - m;
+        for (DT j = DT0; j < max; ++j){
+          for (DT k = j; k >= DT0; k-=m){
+            if (first1[k+m] >= first1[k]){
+              break;
+            }
+            std::swap( first1[k+m], first1[k] );
+            std::swap( first2[k+m], first2[k] );
+          }
+        }
+        m = m/2;
+      }
+    }
+#ifdef HAVE_TPETRA_DEBUG
+    for (DT i=DT0; i < sz-1; ++i) {
+      TEST_FOR_EXCEPTION( first1[i] > first1[i+1], std::logic_error,
+          "Tpetra::sort2Shell(): internal Tpetra error. Please contact Tpetra team.");
+    }
+#endif
+  }
+
+
+  template<class IT1, class IT2, class IT3>
+  void sort3Shell(const IT1 &first1, const IT1 &last1, const IT2 &first2, const IT3 &first3)
+  {
+    typedef typename std::iterator_traits<IT1>::difference_type DT;
+    const DT sz  = last1 - first1;
+    const DT DT0 = OrdinalTraits<DT>::zero();
+    for (DT i = DT0; i < sz; ++i){
+      DT m = sz/2;
+      while (m > DT0){
+        DT max = sz - m;
+        for (DT j = DT0; j < max; ++j){
+          for (DT k = j; k >= DT0; k-=m){
+            if (first1[k+m] >= first1[k]){
+              break;
+            }
+            std::swap( first1[k+m], first1[k] );
+            std::swap( first2[k+m], first2[k] );
+            std::swap( first3[k+m], first3[k] );
+          }
+        }
+        m = m/2;
+      }
+    }
+#ifdef HAVE_TPETRA_DEBUG
+    for (DT i=DT0; i < sz-1; ++i) {
+      TEST_FOR_EXCEPTION( first1[i] > first1[i+1], std::logic_error,
+          "Tpetra::sort3Shell(): internal Tpetra error. Please contact Tpetra team.");
+    }
+#endif
+  }
+
 
   template<class IT1, class T>
   IT1 binary_serach(IT1 first, IT1 last, const T& value){

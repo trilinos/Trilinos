@@ -1,0 +1,12 @@
+<ParameterList>                                         
+  <Parameter name='tolerance' value='1e-60' type='double'/>
+  <Parameter name='numIters' value='25' type='int'/>      
+  <Parameter name='verbose' value='2' type='int'/>      
+  <ParameterList name='child'>                          
+    <Parameter name='tolerance' value='1e-30' type='double'/>
+    <Parameter name='numIters' value='1000' type='int'/>    
+    <Parameter name='verbose' value='1' type='int'/>      
+    <Parameter name='Extract Diagonal' value='true' type='bool'/>    
+  </ParameterList>                                      
+</ParameterList>                                        
+

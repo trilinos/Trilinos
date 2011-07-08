@@ -103,6 +103,9 @@ namespace Ioss {
     int  global_minmax(int  local_minmax, MinMax which) const;
     double global_minmax(double local_minmax, MinMax which) const;
     unsigned int  global_minmax(unsigned int local_minmax, MinMax which) const;
+    void global_array_minmax(std::vector<int> &local_minmax,  MinMax which) const;
+    void global_array_minmax(std::vector<double> &local_minmax,  MinMax which) const;
+    void global_array_minmax(std::vector<unsigned int> &local_minmax,  MinMax which) const;
     void global_array_minmax(int *local_minmax, size_t count, MinMax which) const;
     void global_array_minmax(unsigned int *local_minmax, size_t count, MinMax which) const;
     void global_array_minmax(double *local_minmax, size_t count, MinMax which) const;

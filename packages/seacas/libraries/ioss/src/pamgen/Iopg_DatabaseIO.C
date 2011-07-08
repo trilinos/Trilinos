@@ -834,8 +834,7 @@ namespace Iopg {
 
 	  // See if any processor has non-zero count for the topo_map counts
 	  // For the side_map, need the max value.
-	  util().global_array_minmax(&global_side_counts[0], global_side_counts.size(),
-				     Ioss::ParallelUtils::DO_MAX);
+	  util().global_array_minmax(global_side_counts, Ioss::ParallelUtils::DO_MAX);
 	}
 
 

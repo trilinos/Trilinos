@@ -121,6 +121,13 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_FEVector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDenseSolver.h"
+#include "Epetra_SerialDistributor.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_Time.h"
 
 // Epetra python includes
 #define NO_IMPORT_ARRAY

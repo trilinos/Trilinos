@@ -391,6 +391,37 @@ get_parts(
   return std::pair<STKGenericMesh::bucket_part_descriptor_iterator,STKGenericMesh::bucket_part_descriptor_iterator>(NULL,NULL);
 }
 
+// Generic API:  Begin modification cycle. Returns true if cycle was not already in progress
+inline
+bool
+modification_begin( STKGenericMesh & mesh )
+{
+  return mesh.m_bulk_data.modification_begin();
+}
+
+// Generic API:  End modification cycle. Returns true if cycle was in progress.
+inline
+bool
+modification_end( STKGenericMesh & mesh )
+{
+  return mesh.m_bulk_data.modification_end();
+}
+
+// Generic API:  Query if we are in a modification cycle
+inline
+bool
+is_modifiable( const STKGenericMesh & mesh )
+{
+  return mesh.m_bulk_data.synchronized_state() == stk::mesh::BulkData::MODIFIABLE;
+}
+
+// Generic API:  Rotate the field data of multistate fields.
+inline
+void
+rotate_multistate_fields( STKGenericMesh & mesh )
+{
+  mesh.m_bulk_data.update_field_data_states();
+}
 
 } // namespace mesh
 } // namespace stk

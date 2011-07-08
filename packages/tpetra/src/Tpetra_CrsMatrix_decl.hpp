@@ -415,6 +415,8 @@ namespace Tpetra {
       //! Indicates that the graph is static, so that new entries cannot be added to this matrix. */
       bool isStaticGraph() const;
 
+      Scalar getFrobeniusNorm() const;
+
       //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
       /*!
         \param LocalRow - (In) Global row number for which indices are desired.
@@ -480,13 +482,20 @@ namespace Tpetra {
           the zero and non-zero diagonals owned by this node. */
       void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
 
+      /** \brief . */
+      void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+
+      /** \brief . */
+      void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+
       //@}
 
-      //! @name Advanced Matrix-vector multiplication and solve methods
+      //! @name Advanced templated methods
       //@{
 
       //! Multiplies this matrix by a MultiVector.
-      /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
+      /*! If \c trans is \c Teuchos::NO_TRANS, then  X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix. 
+          Otherwise, then  X is should be described by the row map of the matrix and \c Y should be described by the column map of the matrix. 
 
           Both are required to have constant stride, and they are not permitted to ocupy overlapping space. No runtime checking will be performed in a non-debug build.
 
@@ -507,6 +516,12 @@ namespace Tpetra {
        */
       template <class DomainScalar, class RangeScalar>
       void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+          
+      //@}
+
+      //! Returns another CrsMatrix with the same entries, but represented as a different scalar type.
+      template <class T>
+      RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node> > convert() const;
           
       //@}
 

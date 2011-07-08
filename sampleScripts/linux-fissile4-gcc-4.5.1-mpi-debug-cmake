@@ -31,7 +31,7 @@ echo "TRILINOS_DIR_ABS = $TRILINOS_DIR_ABS"
 DRIVERS_BASE_DIR=$TRILINOS_DIR_ABS/cmake/ctest/drivers/pu241
 
 cmake \
--D Trilinos_CONFIGURE_OPTIONS_FILE:FILEPATH="$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-options.cmake;$DRIVERS_BASE_DIR/SubmitToCaslDev.cmake" \
+-D Trilinos_CONFIGURE_OPTIONS_FILE:FILEPATH="$DRIVERS_BASE_DIR/gcc-4.5.1-mpi-options.cmake;$DRIVERS_BASE_DIR/casl-vri-tpls.cmake;$DRIVERS_BASE_DIR/SubmitToCaslDev.cmake" \
 -D CMAKE_BUILD_TYPE:STRING=DEBUG \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \

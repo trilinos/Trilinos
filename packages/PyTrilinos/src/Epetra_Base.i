@@ -211,61 +211,6 @@ except ImportError:
 }
 %enddef
 
-// The Epetra __str__() and Print() methods need to be referenced in
-// a couple of different places, so we define a macro to keep their
-// definitions in a single place.
-%define %epetra_output(ClassName)
-%rename(Print) ClassName::MyPrint;
-%extend ClassName
-{
-  // The __str__() method is used by the python str() operator on any
-  // object given to the python print command.
-  PyObject * __str__()
-  {
-    std::ostringstream os;
-    self->Print(os);               // Put the output in os
-    std::string s = os.str();      // Extract the string from os
-    Py_ssize_t last = s.length();  // Get the last index
-    if (s.substr(last) == "\n")
-      last-=1;                     // Ignore any trailing newline
-    return PyString_FromStringAndSize(s.c_str(),last);  // Return the string as a PyObject
-  }
-  // The ClassName::Print(ostream) method will be ignored and replaced
-  // by a MyPrint() (renamed Print()) method here that takes a python
-  // file object as its optional argument.  If no argument is given,
-  // then output is to standard out.
-  void MyPrint(PyObject*pf=NULL) const
-  {
-    if (pf == NULL)
-    {
-      self->Print(std::cout);
-    }
-    else
-    {
-      if (!PyFile_Check(pf))
-      {
-	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
-      }
-      else
-      {
-	std::FILE * f = PyFile_AsFile(pf);
-	FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->Print(os);
-	os.flush();
-      }
-    }
-  }
-}
-%enddef
-
-// Extend the definition for Teuchos::RCP<> wrapped Epetra classes to
-// include a __str__() and Print() method.
-%define %teuchos_rcp_epetra(ClassName...)
-  %teuchos_rcp(ClassName)
-  %epetra_output(ClassName)
-%enddef
-
 // Define macro for typemaps that convert arguments from
 // Epetra_*Matrix or Epetra_*Vector to the corresponding
 // Epetra_NumPy*Matrix or Epetra_NumPy*Vector.  There is additional
@@ -364,11 +309,11 @@ except ImportError:
 #endif
 
 // Use the %teuchos_rcp_epetra_numpy_overrides macro to define the
-// %teuchos_rcp_epetra macro
+// %teuchos_rcp_epetra_numpy macro
 #define EMPTYHACK
 %define %teuchos_rcp_epetra_numpy(CLASS)
-  %teuchos_rcp_epetra(Epetra_##CLASS)
-  %teuchos_rcp_epetra(Epetra_NumPy##CLASS)
+  %teuchos_rcp(Epetra_##CLASS)
+  %teuchos_rcp(Epetra_NumPy##CLASS)
   %teuchos_rcp_epetra_numpy_overrides(EMPTYHACK, CLASS)
   %teuchos_rcp_epetra_numpy_overrides(const, CLASS)
 %enddef
@@ -444,7 +389,7 @@ optional file object argument whose default value is standard out."
 %feature("docstring")
 Epetra_Object::__str__
 "Returns the results of ``Print()`` in a string, so that
-the ``print`` command will work on ``Epetra`` objects.  The
+the python ``print`` command will work on ``Epetra`` objects.  The
 ``Print()`` methods are designed to run correctly in parallel, so do
 not execute ``print`` on an Epetra object conditionally on the
 processor number.  For example, do not do
@@ -452,15 +397,59 @@ processor number.  For example, do not do
   ``if comm.MyPID() == 0: print epetra_obj``
 
 or it will hang your code."
+%teuchos_rcp(Epetra_Object)
 %rename(Object) Epetra_Object;
-%epetra_output(Epetra_Object)
-%ignore *::Print;  // Only the above Print() method will be implemented
+%extend Epetra_Object
+{
+  // The __str__() method is used by the python str() operator on any
+  // object given to the python print command.
+  PyObject * __str__()
+  {
+    std::ostringstream os;
+    self->Print(os);               // Put the output in os
+    std::string s = os.str();      // Extract the string from os
+    Py_ssize_t last = s.length();  // Get the last index
+    if (s.substr(last) == "\n")
+      last-=1;                     // Ignore any trailing newline
+    return PyString_FromStringAndSize(s.c_str(),last);  // Return the string as a PyObject
+  }
+  // The ClassName::Print(ostream) method will be ignored and replaced
+  // by a MyPrint() (renamed Print()) method here that takes a python
+  // file object as its optional argument.  If no argument is given,
+  // then output is to standard out.
+  void Print(PyObject*pf=NULL) const
+  {
+    if (pf == NULL)
+    {
+      self->Print(std::cout);
+    }
+    else
+    {
+      if (!PyFile_Check(pf))
+      {
+	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
+      }
+      else
+      {
+	std::FILE * f = PyFile_AsFile(pf);
+	FILEstream buffer(f);
+	std::ostream os(&buffer);
+	self->Print(os);
+	os.flush();
+      }
+    }
+  }
+}
+// Ignore the Print() method for all classes.  Only the above Print()
+// method will be implemented
+%ignore *::Print;
 %ignore operator<<(ostream &, const Epetra_Object &); // From python, use __str__
 %include "Epetra_Object.h"
 
 ///////////////////////////////
 // Epetra_CompObject support //
 ///////////////////////////////
+%teuchos_rcp(Epetra_CompObject)
 %rename(CompObject) Epetra_CompObject;
 %include "Epetra_CompObject.h"
 
@@ -471,6 +460,7 @@ or it will hang your code."
 // warnings for doing this.  Now I use %include, coupled with a bunch
 // of %ignores, because I want a simple python base class without the
 // C-style BLAS interface.
+%teuchos_rcp(Epetra_BLAS)
 %rename(BLAS) Epetra_BLAS;
 %ignore Epetra_BLAS::ASUM;
 %ignore Epetra_BLAS::AXPY;
@@ -546,6 +536,7 @@ or it will hang your code."
 /////////////////////////
 // Epetra_Time support //
 /////////////////////////
+%teuchos_rcp(Epetra_Time)
 %rename(Time) Epetra_Time;
 %include "Epetra_Time.h"
 

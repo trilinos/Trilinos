@@ -246,7 +246,7 @@ method must support the case where X and Y are the same object. ";
 %feature("docstring")  Ifpack_AdditiveSchwarz::NormInf "double
 Ifpack_AdditiveSchwarz< T >::NormInf() const
 
-Returns the infinity norm of the global matrix (not implemented). ";
+Returns the infinity norm of the global matrix (not implemented) ";
 
 %feature("docstring")  Ifpack_AdditiveSchwarz::Label "const char *
 Ifpack_AdditiveSchwarz< T >::Label() const
@@ -599,7 +599,7 @@ method must support the case where X and Y are the same object. ";
 %feature("docstring")  Ifpack_Amesos::NormInf "double
 Ifpack_Amesos::NormInf() const
 
-Returns the infinity norm of the global matrix (not implemented). ";
+Returns the infinity norm of the global matrix (not implemented) ";
 
 %feature("docstring")  Ifpack_Amesos::Label "const char *
 Ifpack_Amesos::Label() const
@@ -846,7 +846,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Ifpack_BlockRelaxation::NormInf "virtual
 double Ifpack_BlockRelaxation< T >::NormInf() const
 
-Returns the infinity norm of the global matrix (not implemented). ";
+Returns the infinity norm of the global matrix (not implemented) ";
 
 %feature("docstring")  Ifpack_BlockRelaxation::SetUseTranspose "virtual int Ifpack_BlockRelaxation< T >::SetUseTranspose(bool
 UseTranspose_in) ";
@@ -1096,7 +1096,7 @@ WARNING:  This routine is NOT AztecOO complaint. ";
 %feature("docstring")  Ifpack_Chebyshev::NormInf "virtual double
 Ifpack_Chebyshev::NormInf() const
 
-Returns the infinity norm of the global matrix (not implemented). ";
+Returns the infinity norm of the global matrix (not implemented) ";
 
 %feature("docstring")  Ifpack_Chebyshev::Label "virtual const char*
 Ifpack_Chebyshev::Label() const ";
@@ -6940,7 +6940,7 @@ WARNING:  This routine is NOT AztecOO complaint. ";
 %feature("docstring")  Ifpack_PointRelaxation::NormInf "virtual
 double Ifpack_PointRelaxation::NormInf() const
 
-Returns the infinity norm of the global matrix (not implemented). ";
+Returns the infinity norm of the global matrix (not implemented) ";
 
 %feature("docstring")  Ifpack_PointRelaxation::Label "virtual const
 char* Ifpack_PointRelaxation::Label() const ";
@@ -8021,8 +8021,8 @@ Returns the flops in Apply(). ";
 
 Returns the flops in ApplyInverse(). ";
 
-%feature("docstring")  Ifpack_SparseContainer::Print "virtual
-ostream& Ifpack_SparseContainer< T >::Print(std::ostream &os) const
+%feature("docstring")  Ifpack_SparseContainer::Print "ostream &
+Ifpack_SparseContainer< T >::Print(std::ostream &os) const
 
 Prints basic information on iostream. This function is used by
 operator<<. ";

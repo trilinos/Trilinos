@@ -129,6 +129,29 @@ namespace stk {
     class UniformRefinerPatternBase
     {
     protected:
+
+      enum
+        {
+          /*
+          base_topo_key_hex27      = shards::Hexahedron<27>::key,
+          base_topo_key_hex20      = shards::Hexahedron<20>::key,
+          base_topo_key_quad8      = shards::Quadrilateral<8>::key,
+          base_topo_key_shellquad8 = shards::ShellQuadrilateral<8>::key,
+          base_topo_key_shellquad9 = shards::ShellQuadrilateral<9>::key,
+          base_topo_key_quad9      = shards::Quadrilateral<9>::key,
+          base_topo_key_wedge15    = shards::Wedge<15>::key,
+          */
+
+          base_s_shell_line_2_key = shards::ShellLine<2>::key,
+          base_s_shell_line_3_key = shards::ShellLine<3>::key,
+          base_s_shell_tri_3_key  = shards::ShellTriangle<3>::key,
+          base_s_shell_tri_6_key  = shards::ShellTriangle<6>::key,
+          base_s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key,
+          base_s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key,
+          base_s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key
+          
+        };
+
       std::string m_fromTopoPartName;
       std::string m_toTopoPartName;
       stk::mesh::PartVector m_fromParts;
@@ -246,6 +269,25 @@ namespace stk {
         return x;
       }
 
+      static int getTopoDim(CellTopology& cell_topo)
+      {
+        int topoDim = cell_topo.getDimension();
+        unsigned cell_topo_key = cell_topo.getKey();
+
+        if (cell_topo_key == base_s_shell_line_2_key || cell_topo_key == base_s_shell_line_3_key)
+          {
+            topoDim = 1;
+          }
+
+        else if (cell_topo_key == base_s_shell_tri_3_key || cell_topo_key == base_s_shell_tri_6_key ||
+                 cell_topo_key == base_s_shell_quad_4_key || cell_topo_key == base_s_shell_quad_9_key ||
+                 cell_topo_key == base_s_shell_quad_8_key )
+          {
+            topoDim = 2;
+          }
+        return topoDim;
+      }
+
       static Teuchos::RCP<UniformRefinerPatternBase>
       createPattern(std::string refine, std::string enrich, std::string convert, percept::PerceptMesh& eMesh, BlockNamesType& block_names);
 
@@ -284,7 +326,7 @@ namespace stk {
           topo_key_shellquad9 = shards::ShellQuadrilateral<9>::key,
           topo_key_quad9      = shards::Quadrilateral<9>::key,
           topo_key_wedge15    = shards::Wedge<15>::key,
-
+          
           s_shell_line_2_key = shards::ShellLine<2>::key,
           s_shell_line_3_key = shards::ShellLine<3>::key,
           s_shell_tri_3_key  = shards::ShellTriangle<3>::key,
@@ -292,7 +334,6 @@ namespace stk {
           s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key,
           s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key,
           s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key,
-
 
           centroid_node       = (toTopoKey == topo_key_quad9 ? 8 :
                             (toTopoKey == topo_key_hex27 ? 20 : 0)
@@ -583,20 +624,6 @@ namespace stk {
       /// ------------------------------------------------------------------------------------------------------------------------
 #define EXTRA_PRINT_URP_IF 0
 
-      static void getTopoDim(int& topoDim, unsigned cell_topo_key)
-      {
-        if (cell_topo_key == s_shell_line_2_key || cell_topo_key == s_shell_line_3_key)
-          {
-            topoDim = 1;
-          }
-
-        else if (cell_topo_key == s_shell_tri_3_key || cell_topo_key == s_shell_tri_6_key ||
-                 cell_topo_key == s_shell_quad_4_key || cell_topo_key == s_shell_quad_9_key ||
-                 cell_topo_key == s_shell_quad_8_key )
-          {
-            topoDim = 2;
-          }
-      }
 
       /// This version uses Intrepid for interpolation
       void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::Entity& newElement,  const unsigned *child_nodes,
@@ -609,10 +636,8 @@ namespace stk {
         CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
 
         // FIXME - need topo dimensions here
-        int topoDim = cell_topo.getDimension();
-        unsigned cell_topo_key = stk::percept::PerceptMesh::get_cell_topology(element)->key;
-
-        getTopoDim(topoDim, cell_topo_key);
+        int topoDim = getTopoDim(cell_topo);
+        
 
         int fieldStride = 0;
         stk::mesh::EntityRank fr_type = stk::mesh::fem::FEMMetaData::NODE_RANK;
@@ -1758,10 +1783,9 @@ namespace stk {
         unsigned num_child_nodes = ref_topo.num_child_nodes();
         shards::CellTopology cell_topo ( shards::getCellTopologyData< FromTopology >() );
 
-        int topoDim = cell_topo.getDimension();
-        unsigned cell_topo_key = fromTopoKey;
+        int topoDim = getTopoDim(cell_topo);
+        //unsigned cell_topo_key = fromTopoKey;
 
-        getTopoDim(topoDim, cell_topo_key);
 
         if (topoDim == 2)
           {
@@ -2108,8 +2132,7 @@ namespace stk {
                 //unsigned n_sides = cell_topo.getSideCount();
 
                 // check for shell line elements
-                int topoDim = cell_topo.getDimension();
-                getTopoDim(topoDim, fromTopoKey);
+                int topoDim = getTopoDim(cell_topo);
                 if (topoDim == 1) n_faces = 0;
 
                 for (unsigned i_edge = 0; i_edge < n_edges; i_edge++)

@@ -524,8 +524,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // These should remain int* and double*, rather than Teuchos::RCP's.
       // The user created the options & params arrays, so he is responsible for
       // freeing them.
-      int* MySmootherOptionsPtr = smList.get("smoother: Aztec options", SmootherOptionsPtr);
-      double* MySmootherParamsPtr = smList.get("smoother: Aztec params", SmootherParamsPtr);
+//      int* MySmootherOptionsPtr         = smList.get("smoother: Aztec options", SmootherOptionsPtr);
+RCP<std::vector<int> > myaztecOptions   = smList.get("smoother: Aztec options",SmootherOptions_);
+RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",SmootherParams_);
+  int* MySmootherOptionsPtr = &(*myaztecOptions)[0];
+  double* MySmootherParamsPtr = &(*myaztecParams)[0];
+//      double* MySmootherParamsPtr = smList.get("smoother: Aztec params", SmootherParamsPtr);
       bool MyAztecSmootherAsASolver = smList.get("smoother: Aztec as solver",AztecSmootherAsASolver);
      
       if( MyAztecSmootherAsASolver == false ) aztec_its = AZ_ONLY_PRECONDITIONER;

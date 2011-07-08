@@ -87,8 +87,8 @@ class RowMatrixTransposer {
 			   the rows of the tranpose matrix.
   */
   RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
-  createTranspose(const OptimizeOption optimizeTranspose 
-    /*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap = Teuchos::null*/);
+  createTranspose(const OptimizeOption optimizeTranspose=DoOptimizeStorage
+    , Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap = Teuchos::null);
 
 	
  private: 

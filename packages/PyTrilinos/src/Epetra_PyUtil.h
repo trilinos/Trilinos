@@ -87,9 +87,9 @@ convertEpetraVectorToPython(const Epetra_Vector * ev);
 // the many Epetra classes that derive from Epetra_Operator.
 #ifdef HAVE_TEUCHOS
 PyObject *
-convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > *eo, int cnvt_flags=0);
+convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > *eo);
 PyObject *
-convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *eo, int cnvt_flags=0);
+convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *eo);
 #else
 PyObject *
 convertEpetraOperatorToPython(const Epetra_Operator * eo, int cnvt_flags=0);

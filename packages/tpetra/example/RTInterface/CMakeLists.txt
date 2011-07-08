@@ -1,7 +1,7 @@
 INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
-IF (Tpetra_BUILD_CXX0X)
+IF (Trilinos_ENABLE_CXX11)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     RTIExample
     SOURCES RTIExample

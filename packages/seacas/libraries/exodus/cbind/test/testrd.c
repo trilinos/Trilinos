@@ -209,9 +209,10 @@ int main (int argc, char **argv)
 
   error = ex_get_coord_names (exoid, coord_names);
   printf ("\nafter ex_get_coord_names, error = %3d\n", error);
-
   printf ("x coord name = '%s'\n", coord_names[0]);
   printf ("y coord name = '%s'\n", coord_names[1]);
+  if (num_dim >2)
+    printf ("z coord name = '%s'\n", coord_names[2]);
 
   for (i=0; i<num_dim; i++)
     free(coord_names[i]);

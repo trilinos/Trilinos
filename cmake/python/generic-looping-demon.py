@@ -125,7 +125,7 @@ elif options.todayRunTill:
   todayDateStr = datetime.datetime.strftime(todayDate, dateFormat)
   finalDateTime = parseDateTimeString(todayDateStr+" "+options.todayRunTill)
 
-print "The script will run iterations till = " + formatDateTime(finalDateTime) + "\n"
+print "\nThe script will run iterations till = " + formatDateTime(finalDateTime) + "\n"
 
 currentTime = datetime.datetime.now()
 iteration = 0
