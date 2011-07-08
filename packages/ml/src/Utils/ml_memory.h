@@ -19,11 +19,7 @@
 
 #define MAX_MALLOC_LOG 1000
 
-#ifdef size_t
 #define ml_size_t size_t
-#else
-#define ml_size_t unsigned int
-#endif
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
