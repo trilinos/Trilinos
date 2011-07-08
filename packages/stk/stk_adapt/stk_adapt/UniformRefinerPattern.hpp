@@ -2734,6 +2734,7 @@ namespace stk {
 // local refinement - for testing only right now
 #include "RefinerPattern_Tri3_Tri3_2.hpp"
 #include "RefinerPattern_Tri3_Tri3_N.hpp"
+#include "RefinerPattern_Tet4_Tet4_N.hpp"
 
 
 namespace stk {
@@ -2794,6 +2795,8 @@ namespace stk {
 
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      2  >            Local_Tri3_Tri3_2;
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,     -1  >            Local_Tri3_Tri3_N;
+
+    typedef  RefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,  -1  >            Local_Tet4_Tet4_N;
 
   }
 }

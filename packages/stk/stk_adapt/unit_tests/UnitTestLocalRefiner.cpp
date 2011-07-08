@@ -25,6 +25,7 @@
 #include <unit_tests/TestLocalRefinerTri_N.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_1.hpp>
 
+
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <unit_tests/UnitTestSupport.hpp>
@@ -44,6 +45,7 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 #include <stk_percept/fixtures/Fixture.hpp>
+#include <stk_percept/fixtures/SingleTetFixture.hpp>
 #include <stk_percept/fixtures/BeamFixture.hpp>
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
@@ -558,6 +560,39 @@ namespace stk {
             // end_demo
           }
 
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+      /// check triangulate_tet
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, triangulate_tet)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            // create the mesh
+
+              stk::percept::SingleTetFixture mesh(pm, false);
+              stk::io::put_io_part_attribute(  mesh.m_block_tet );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              std::cout << "here" << std::endl;
+              bool isCommitted = true;
+              percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              save_or_diff(eMesh, output_files_loc+"tet_0.e");
+
+              //Local_Tet4_Tet4_N break_tet(eMesh);
+              
+          }
       }
 
 
