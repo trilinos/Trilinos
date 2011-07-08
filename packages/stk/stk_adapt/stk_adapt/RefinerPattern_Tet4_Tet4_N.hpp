@@ -348,8 +348,9 @@ namespace stk {
                 ++num_edges_marked;
               }
           }
-
-        //std::cout << "tmp RefinerPattern_Tet4_Tet4_N::num_edges_marked= " << num_edges_marked << std::endl;
+        
+        if (1)
+          std::cout << "tmp RefinerPattern_Tet4_Tet4_N::num_edges_marked= " << num_edges_marked << std::endl;
 
         // uniform refinement
         if (num_edges_marked == 6)
@@ -399,6 +400,10 @@ namespace stk {
                 for (int inode=0; inode < 4; inode++)
                   {
                     node_coords[inode] = stk::mesh::field_data( *eMesh.getCoordinatesField() , *tet_elem_nodes[inode] );
+                    if (1) std::cout << "tmp RP node_coords= " 
+                                     << node_coords[inode][0] << " "
+                                     << node_coords[inode][1] << " "
+                                     << node_coords[inode][2] << std::endl;
                   }
 
                 std::vector<moab::TetTupleInt> new_tets;
@@ -409,13 +414,28 @@ namespace stk {
                                      node_coords[2], 0, tet_elem_nodes[2]->identifier(),
                                      node_coords[3], 0, tet_elem_nodes[3]->identifier() );
 
+                if (1)
+                  {
+                    for (int inode=0; inode < 4; inode++)
+                      {
+                        node_coords[inode] = stk::mesh::field_data( *eMesh.getCoordinatesField() , *tet_elem_nodes[inode] );
+                        std::cout << "tmp RP node_coords after= " 
+                                  << node_coords[inode][0] << " "
+                                  << node_coords[inode][1] << " "
+                                  << node_coords[inode][2] << std::endl;
+                      }
+                  }
+
                 tets.resize(new_tets.size());
                 for (unsigned i = 0; i < new_tets.size(); i++)
                   {
                     tets[i] = TetTupleTypeLocal((unsigned)new_tets[i].get<0>(),
-                                                   (unsigned)new_tets[i].get<1>(),
-                                                   (unsigned)new_tets[i].get<2>(),
-                                                   (unsigned)new_tets[i].get<3>() );
+                                                (unsigned)new_tets[i].get<1>(),
+                                                (unsigned)new_tets[i].get<2>(),
+                                                (unsigned)new_tets[i].get<3>() );
+                    if (1)
+                      std::cout << "tmp RefPatt new tet= " << tets[i] << std::endl;
+
                   }
                 return;
               }
@@ -542,6 +562,9 @@ namespace stk {
                                          TET_CV_EV(elems_local[ielem].get<1>() ), 
                                          TET_CV_EV(elems_local[ielem].get<2>() ), 
                                          TET_CV_EV(elems_local[ielem].get<3>() ) );
+            if (1)
+              std::cout << "tmp RefPatt::createNewElements new tet= " << elems[ielem] << std::endl;
+
           }
 
         //std::cout << "tmp RefinerPattern_Tet4_Tet4_N::num_edges_marked= " << num_edges_marked << std::endl;

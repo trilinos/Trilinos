@@ -7,7 +7,7 @@
 #include <iostream>
 #include <stack>
 #include <string>
-#include <exception>
+#include <stdexcept>
 
 #include <boost/lexical_cast.hpp>
 
@@ -29,14 +29,14 @@ static double MBTetParametric[]    = { 0., 0., 0.,   1., 0., 0.,   0., 1., 0.,  
 #  define MB_TESSELLATOR_INCR_SUBCASE_COUNT(cs,sc)
 #endif // MB_DEBUG_TESSELLATOR
 
+#define PERCEPT_DEBUG 1
 
 namespace moab {
 
   static void error(int i)
   {
-    //std::string ii =  "Percept_MOAB_SimplexTemplateRefiner:: err # "+ boost::lexical_cast<std::string>(i);
-    //throw std::runtime_error("test");
-    //if (1) throw std::runtime_error("file: option Not implemented");
+    std::string ii =  "Percept_MOAB_SimplexTemplateRefiner:: err # "+ boost::lexical_cast<std::string>(i);
+    throw std::logic_error("test");
   }
 
   //p this is from some comments below, and coded in tet_edges.  It's only used for disambiguation of same-length edges.
@@ -64,19 +64,19 @@ namespace moab {
   {
     int edge_code = 0;
 
-    double* midpt0c;
-    double* midpt1c;
-    double* midpt2c;
-    double* midpt3c;
-    double* midpt4c;
-    double* midpt5c;
+    double* midpt0c=0;
+    double* midpt1c=0;
+    double* midpt2c=0;
+    double* midpt3c=0;
+    double* midpt4c=0;
+    double* midpt5c=0;
 
-    void* midpt0t;
-    void* midpt1t;
-    void* midpt2t;
-    void* midpt3t;
-    void* midpt4t;
-    void* midpt5t;
+    void* midpt0t=0;
+    void* midpt1t=0;
+    void* midpt2t=0;
+    void* midpt3t=0;
+    void* midpt4t=0;
+    void* midpt5t=0;
 
     EntityHandle midpt0h=0;
     EntityHandle midpt1h=0;
@@ -132,6 +132,10 @@ namespace moab {
     for ( int ei = 0; ei < 6; ++ ei )
       edge_length2[ei] = 0.;
 
+
+    if (PERCEPT_DEBUG)
+      std::cout << "tmp PM edge_code= " << edge_code << std::endl;
+
     if ( ! edge_code )
       {
         // No edges to subdivide
@@ -184,6 +188,9 @@ namespace moab {
     double permlen[6]; // permuted edge lengths
     int C = SimplexTemplateRefiner::template_index[edge_code][0];
     int P = SimplexTemplateRefiner::template_index[edge_code][1];
+
+    if (PERCEPT_DEBUG)
+      std::cout << "tmp PM C,P= " << C << " " << P << std::endl;
   
     // 1. Permute the tetrahedron into our canonical configuration
     for ( int i = 0; i < 14; ++ i )
@@ -690,10 +697,11 @@ namespace moab {
             permuted_hash[12] = (*this->output_functor)(
                                                         permuted_hash[1], permuted_hash[2], permuted_hash[3], permuted_coords[12], permuted_tags[12] );
 #else
+            comparison_bits -= 3;
             if (CMP_VH(4,5))
-              comparison_bits = 1;
+              comparison_bits |= 1;
             else
-              comparison_bits = 2;
+              comparison_bits |= 2;
 #endif
 
           }
@@ -709,12 +717,14 @@ namespace moab {
             permuted_hash[11] = (*this->output_functor)(
                                                         permuted_hash[0], permuted_hash[1], permuted_hash[3], permuted_coords[11], permuted_tags[11] );
 #else
+            comparison_bits -= 12;
             if (CMP_VH(3,4))
-              comparison_bits = 4;
+              comparison_bits |= 4;
             else
-              comparison_bits = 8;
+              comparison_bits |= 8;
 #endif
           }
+        if (PERCEPT_DEBUG) std::cout << "tmp case 4a comparison_bits= " << comparison_bits << std::endl;
         MB_TESSELLATOR_INCR_CASE_COUNT(7);
         output_tets.push( SimplexTemplateRefiner::templates + 545 );
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
@@ -1388,6 +1398,8 @@ namespace moab {
         output_perm.pop();
         output_sign.pop();
 
+        if (PERCEPT_DEBUG)
+          std::cout << "tmp PM ntets= " << ntets << std::endl;
         int t;
         if ( sgn > 0 )
           {
@@ -1401,13 +1413,15 @@ namespace moab {
                                         permuted_coords[perm[tets[3]]], permuted_tags[perm[tets[3]]], permuted_hash[perm[tets[3]]]
                                         );
 #endif
-                new_tets.push_back(TetTupleInt(
-                                   permuted_local_ids[perm[tets[0]]],
-                                   permuted_local_ids[perm[tets[1]]],
-                                   permuted_local_ids[perm[tets[2]]],
-                                   permuted_local_ids[perm[tets[3]]]
-                                   )
-                                   );
+                TetTupleInt nt = TetTupleInt(permuted_local_ids[perm[tets[0]]],
+                                             permuted_local_ids[perm[tets[1]]],
+                                             permuted_local_ids[perm[tets[2]]],
+                                             permuted_local_ids[perm[tets[3]]]);
+
+                new_tets.push_back(nt);
+
+                if (PERCEPT_DEBUG)
+                  std::cout << "tmp PM new tet= " << nt << std::endl;
 
                 tets += 4;
               }
@@ -1426,13 +1440,16 @@ namespace moab {
                                         permuted_coords[perm[tets[3]]], permuted_tags[perm[tets[3]]], permuted_hash[perm[tets[3]]]
                                         );
 #endif
-                new_tets.push_back(TetTupleInt(
-                                   permuted_local_ids[perm[tets[1]]],
-                                   permuted_local_ids[perm[tets[0]]],
-                                   permuted_local_ids[perm[tets[2]]],
-                                   permuted_local_ids[perm[tets[3]]]
-                                   )
-                                   );
+                TetTupleInt nt = TetTupleInt(permuted_local_ids[perm[tets[1]]],
+                                             permuted_local_ids[perm[tets[0]]],
+                                             permuted_local_ids[perm[tets[2]]],
+                                             permuted_local_ids[perm[tets[3]]]);
+
+                new_tets.push_back(nt);
+
+                if (PERCEPT_DEBUG)
+                  std::cout << "tmp PM new tet= " << nt << std::endl;
+
                 tets += 4;
               }
           }

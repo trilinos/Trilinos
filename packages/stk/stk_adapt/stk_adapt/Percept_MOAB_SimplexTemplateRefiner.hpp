@@ -45,10 +45,12 @@
 #ifndef MB_SIMPLEX_TEMPLATE_REFINER_HPP
 #define MB_SIMPLEX_TEMPLATE_REFINER_HPP
 
+#include <vector>
+#include <exception>
+
 #include <boost/tuple/tuple_io.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 
-#include <vector>
 
 //p #include "EntityRefiner.hpp"
 //p #include "SimplexTemplateTagAssigner.hpp"

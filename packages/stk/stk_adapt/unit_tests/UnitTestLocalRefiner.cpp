@@ -26,6 +26,7 @@
 #include <unit_tests/TestLocalRefinerTri_N_1.hpp>
 
 #include <unit_tests/TestLocalRefinerTet_N_1.hpp>
+#include <unit_tests/TestLocalRefinerTet_N_2.hpp>
 
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -93,6 +94,66 @@ namespace stk {
       static void save_or_diff(PerceptMesh& eMesh, std::string filename, int option = 0)
       {
         return UnitTestSupport::save_or_diff(eMesh, filename, option);
+      }
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+      /// check triangulate_tet
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, triangulate_tet)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            {
+              // create the mesh
+
+              stk::percept::SingleTetFixture mesh(pm, false);
+              stk::io::put_io_part_attribute(  mesh.m_block_tet );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              std::cout << "here" << std::endl;
+              bool isCommitted = true;
+              percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              eMesh.saveAs(input_files_loc+"local_tet_0.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_0.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_1 breaker(eMesh, break_tet, 0);
+              breaker.setRemoveOldElements(false);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_1_1.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_0.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_2 breaker(eMesh, break_tet, 0);
+              breaker.setRemoveOldElements(true);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_2_1.e");
+              exit(123);
+            }
+
+          }
       }
 
       //=============================================================================
@@ -564,50 +625,6 @@ namespace stk {
 
       }
 
-      //=============================================================================
-      //=============================================================================
-      //=============================================================================
-      /// check triangulate_tet
-
-      STKUNIT_UNIT_TEST(unit_localRefiner, triangulate_tet)
-      {
-        EXCEPTWATCH;
-        MPI_Barrier( MPI_COMM_WORLD );
-
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-        const unsigned p_size = stk::parallel_machine_size(pm);
-
-        if (p_size <= 1)
-          {
-            {
-              // create the mesh
-
-              stk::percept::SingleTetFixture mesh(pm, false);
-              stk::io::put_io_part_attribute(  mesh.m_block_tet );
-              mesh.m_metaData.commit();
-              mesh.populate();
-
-              std::cout << "here" << std::endl;
-              bool isCommitted = true;
-              percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              eMesh.saveAs(input_files_loc+"local_tet_0.e");
-            }
-
-            {
-              PerceptMesh eMesh;
-              eMesh.open(input_files_loc+"local_tet_0.e");
-              Local_Tet4_Tet4_N break_tet(eMesh);
-              eMesh.commit();
-
-              TestLocalRefinerTet_N_1 breaker(eMesh, break_tet, 0);
-              breaker.setRemoveOldElements(false);
-              breaker.doBreak();
-
-              save_or_diff(eMesh, output_files_loc+"local_tet_1.e");
-            }
-          }
-      }
 
 
     } // namespace unit_tests
