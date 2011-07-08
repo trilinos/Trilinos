@@ -463,6 +463,7 @@ int zero_Epetra_VbrMatrix(Epetra_VbrMatrix* mat)
   const Epetra_CrsGraph& crsgraph = mat->Graph();
   const Epetra_BlockMap& rowmap = crsgraph.RowMap();
   const Epetra_BlockMap& colmap = crsgraph.ColMap();
+  mat->RowMatrixRowMap();//generate point objects
   int maxBlkRowSize = mat->GlobalMaxRowDim();
   int maxBlkColSize = mat->GlobalMaxColDim();
   std::vector<double> zeros(maxBlkRowSize*maxBlkColSize, 0);
