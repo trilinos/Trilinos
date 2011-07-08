@@ -165,7 +165,7 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
                               MaxResidentBlocksPerMultiprocessor ;
 
     m_maxBlock = 1 ;
-    while ( minBlock < m_maxBlock &&
+    while ( m_maxBlock < minBlock &&
             ( m_maxBlock << 1 ) <= m_cudaProp.maxGridSize[0] ) {
       m_maxBlock <<= 1 ;
     }
