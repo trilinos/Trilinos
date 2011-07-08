@@ -306,13 +306,13 @@ namespace {
       MV mvbad(badmap,1);
 #ifdef HAVE_TPETRA_DEBUG
       const Scalar ONE = ST::one(), ZERO = ST::zero();
-      // tests in solve() and multiply() are only done in a debug build
+      // tests in localSolve() and localMultiply() are only done in a debug build
       MV mvcol(zero->getColMap(),1);
       MV mvrow(zero->getRowMap(),1);
-      TEST_THROW(zero->template multiply<Scalar>(mvcol,mvbad,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad output map
-      TEST_THROW(zero->template multiply<Scalar>(mvbad,mvrow,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad input map
-      TEST_THROW(zero->template multiply<Scalar>(mvbad,mvcol,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad output map
-      TEST_THROW(zero->template multiply<Scalar>(mvrow,mvbad,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad input map
+      TEST_THROW(zero->template localMultiply<Scalar>(mvcol,mvbad,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad output map
+      TEST_THROW(zero->template localMultiply<Scalar>(mvbad,mvrow,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad input map
+      TEST_THROW(zero->template localMultiply<Scalar>(mvbad,mvcol,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad output map
+      TEST_THROW(zero->template localMultiply<Scalar>(mvrow,mvbad,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad input map
 #endif
     }
   }
@@ -493,7 +493,7 @@ namespace {
       // Bug verification:
       // Tpetra::CrsMatrix constructed with a Optimized, Fill-Complete graph will not call fillLocalMatrix() 
       // in optimizeStorage(), because it returns early due to picking up the storage optimized bool from the graph.
-      // As a result, the local mat-vec and mat-solve operations are never initialized, and multiply() and solve() 
+      // As a result, the local mat-vec and mat-solve operations are never initialized, and localMultiply() and localSolve() 
       // fail with a complaint regarding the initialization of these objects.
       MAT matrix(rcpFromRef(diaggraph));
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
@@ -505,8 +505,8 @@ namespace {
       // init x to ones(); multiply into y, solve in-situ in y, check result
       V x(map,false), y(map,false);
       x.putScalar(SONE);
-      TEST_NOTHROW( matrix.multiply(x,y,NO_TRANS,SONE,SZERO) );
-      TEST_NOTHROW( matrix.solve(y,y,NO_TRANS) );
+      TEST_NOTHROW( matrix.localMultiply(x,y,NO_TRANS,SONE,SZERO) );
+      TEST_NOTHROW( matrix.localSolve(y,y,NO_TRANS) );
       ArrayRCP<const Scalar> x_view = x.get1dView();
       ArrayRCP<const Scalar> y_view = y.get1dView();
       TEST_COMPARE_FLOATING_ARRAYS( y_view, x_view, MT::zero() );

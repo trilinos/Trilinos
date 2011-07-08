@@ -512,7 +512,7 @@ namespace Tpetra {
           will be accumulated into \c Y.
        */
       template <class DomainScalar, class RangeScalar>
-      void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+      void localMultiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
 
       //! Solves a linear system when the underlying matrix is triangular.
       /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
@@ -522,7 +522,7 @@ namespace Tpetra {
           Both are required to have constant stride. However, unlike multiply(), it is permissible for <tt>&X == &Y</tt>. No runtime checking will be performed in a non-debug build.
        */
       template <class DomainScalar, class RangeScalar>
-      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+      void localSolve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
           
       //@}
 
@@ -612,6 +612,16 @@ namespace Tpetra {
 
       //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
       TPETRA_DEPRECATED void getLocalRowView(LocalOrdinal LocalRow, ArrayRCP<const LocalOrdinal> &indices, ArrayRCP<const Scalar> &values) const;
+
+      //! Deprecated. Replaced by localMultiply().
+      template <class DomainScalar, class RangeScalar>
+      TPETRA_DEPRECATED 
+      void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+
+      //! Deprecated. Replaced by localSolve().
+      template <class DomainScalar, class RangeScalar>
+      TPETRA_DEPRECATED 
+      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
 
       //@}
 

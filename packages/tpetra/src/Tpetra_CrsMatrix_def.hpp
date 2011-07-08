@@ -1670,13 +1670,13 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <class DomainScalar, class RangeScalar>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multiply(
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::localMultiply(
                                         const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
                                               MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                                               Teuchos::ETransp mode, RangeScalar alpha, RangeScalar beta) const 
   {
     using Teuchos::NO_TRANS;
-    const std::string tfecfFuncName("multiply()");
+    const std::string tfecfFuncName("localMultiply()");
     typedef ScalarTraits<RangeScalar> RST;
     const Kokkos::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
     Kokkos::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
@@ -1707,13 +1707,13 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <class DomainScalar, class RangeScalar>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::localSolve(
                                     const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>  &Y, 
                                           MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                                           Teuchos::ETransp mode) const 
   {
     using Teuchos::NO_TRANS;
-    const std::string tfecfFuncName("solve()");
+    const std::string tfecfFuncName("localSolve()");
     const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
     Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
 #ifdef HAVE_TPETRA_DEBUG
@@ -1744,6 +1744,9 @@ namespace Tpetra {
     }
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   template <class T>
   RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node> > 
@@ -2234,6 +2237,33 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  // DEPRECATED
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class DomainScalar, class RangeScalar>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multiply(
+                                        const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+                                              MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+                                              Teuchos::ETransp mode, RangeScalar alpha, RangeScalar beta) const 
+  {
+    this->localMultiply(X,Y,mode,alpha,beta);
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // DEPRECATED
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template <class DomainScalar, class RangeScalar>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(
+                                    const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>  &Y, 
+                                          MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                                          Teuchos::ETransp mode) const 
+  {
+    this->localSolve(Y,X,mode);
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // DEPRECATED
