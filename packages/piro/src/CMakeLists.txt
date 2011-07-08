@@ -25,11 +25,13 @@ APPEND_SET(HEADERS Piro_ValidPiroParameters.hpp
                    Piro_Epetra_VelocityVerletSolver.hpp
                    Piro_Epetra_TrapezoidRuleSolver.hpp
                    Piro_Epetra_InvertMassMatrixDecorator.hpp
+		   Piro_Epetra_Factory.hpp
                    Piro_ConfigDefs.hpp)
 APPEND_SET(SOURCES Piro_ValidPiroParameters.cpp
                    Piro_Epetra_VelocityVerletSolver.cpp
                    Piro_Epetra_TrapezoidRuleSolver.cpp
                    Piro_Epetra_InvertMassMatrixDecorator.cpp
+		   Piro_Epetra_Factory.cpp
                    Piro_Version.cpp)
 
 #
@@ -54,11 +56,12 @@ IF (Piro_ENABLE_Rythmos)
   APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp)
 ENDIF()
 
-# Optional StochasticGalerkin capability, dependion upon Stokhos and NOX
-# NEED TO CREATE  Piro_Epetra_StokhosNOXSolver from ENAT
+# Optional StochasticGalerkin capability, depending upon Stokhos and NOX
 IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX) 
-  APPEND_SET(HEADERS Piro_Epetra_StokhosNOXObserver.hpp) 
-  APPEND_SET(SOURCES Piro_Epetra_StokhosNOXObserver.cpp)
+  APPEND_SET(HEADERS Piro_Epetra_StokhosNOXObserver.hpp
+  		     Piro_Epetra_StokhosSolver.hpp) 
+  APPEND_SET(SOURCES Piro_Epetra_StokhosNOXObserver.cpp
+  		     Piro_Epetra_StokhosSolver.cpp)
 ENDIF()
 #
 
