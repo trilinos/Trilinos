@@ -321,7 +321,7 @@ namespace Kokkos {
         rbh.begin();
         wdp.numEntries = rbh.template addConstBuffer<size_t>(numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-        wdp.vals_beg   = rbh.template addConstBuffer<const  Scalar *>(valPtrs_);
+        wdp.vals_beg   = rbh.template addConstBuffer< Scalar *>(valPtrs_);
         wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
         wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
         rbh.end();
