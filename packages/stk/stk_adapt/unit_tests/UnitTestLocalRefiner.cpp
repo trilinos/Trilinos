@@ -25,6 +25,8 @@
 #include <unit_tests/TestLocalRefinerTri_N.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_1.hpp>
 
+#include <unit_tests/TestLocalRefinerTet_N_1.hpp>
+
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
@@ -578,7 +580,8 @@ namespace stk {
 
         if (p_size <= 1)
           {
-            // create the mesh
+            {
+              // create the mesh
 
               stk::percept::SingleTetFixture mesh(pm, false);
               stk::io::put_io_part_attribute(  mesh.m_block_tet );
@@ -588,10 +591,21 @@ namespace stk {
               std::cout << "here" << std::endl;
               bool isCommitted = true;
               percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              save_or_diff(eMesh, output_files_loc+"tet_0.e");
+              eMesh.saveAs(input_files_loc+"local_tet_0.e");
+            }
 
-              //Local_Tet4_Tet4_N break_tet(eMesh);
-              
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_0.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_1 breaker(eMesh, break_tet, 0);
+              breaker.setRemoveOldElements(false);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_1.e");
+            }
           }
       }
 
