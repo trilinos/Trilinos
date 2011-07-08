@@ -139,6 +139,41 @@ public:
 
   //@}
 
+  /** @name Resizing Functions */
+  //@{
+
+  /** \brief Changes the number of rows in the matrix.
+   *
+   * If the new number of rows is less than the current number, the
+   * last rows in the array will be deleted (i.e. if an array has 10 rows and
+   * it is resized to have only 5 rows, rows 5-9 are deleted). If the new number
+   * of rows is greater than the current number of rows, the rows are appended on
+   * to the end of the array and the new entries are initialized to T's
+   * default value.
+   *
+   * @param numberOfRows The new number of rows the TwoDArray should have.
+   */
+  void resizeRows(size_type numberOfRows);
+
+  /** \brief Changes the number of rows in the matrix.
+   *
+   * If the new number of columns is less than the current number, the
+   * last columns in the array will be deleted (i.e. if an array has 10 columns and
+   * it is resized to have only 5 columns, columns 5-9 are deleted). If the new number
+   * of columns is greater than the current number of columns, the columns are appended on
+   * to the end of the array and the new entries are initialized to T's default value.
+   *
+   * \warning This operation has the potential to be very expensive 
+   * as it essentially creates an entirely new 2DArray.
+   * Please take this into account when using this function.
+   *
+   * @param numberOfCols The new number of rows the TwoDArray should have.
+   */
+  void resizeCols(size_type numberOfCols);
+
+  //@}
+
+  
   /** \name String conversion functions */
   //@{
 
@@ -182,6 +217,27 @@ template<class T> inline
 const ArrayView<T> TwoDArray<T>::operator[](size_type i) const{
   return _data.view(_numCols*i, _numCols);  
 }
+
+template<class T>
+void TwoDArray<T>::resizeRows(size_type numberOfRows){
+  _data.resize(_numCols*numberOfRows);
+  _numRows = numberOfRows;
+}
+
+
+template<class T>
+void TwoDArray<T>::resizeCols(size_type numberOfCols){
+  Array<T> newData(numberOfCols*_numRows);
+  size_type colLimit = (numberOfCols < _numCols ? numberOfCols : _numCols);
+  for(size_type i = 0; i<_numRows; i++){
+    for(size_type j = 0; j<colLimit; j++){
+      newData[i*numberOfCols+j] = _data[i*_numCols+j];
+    }
+  }
+  _data = newData;
+  _numCols=numberOfCols;
+}
+
 
 template<class T>
 std::string TwoDArray<T>::toString(const TwoDArray<T> array){
@@ -269,7 +325,6 @@ public:
   static std::string concreteName(const TwoDArray<T>&)
     { return name(); }
 };
-
 
 } //namespace Teuchos
 
