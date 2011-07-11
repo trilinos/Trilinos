@@ -350,15 +350,19 @@ namespace Cthulhu {
       CTHULHU_ERR_CHECK(vec_->Multiply(eTransA, eTransB, alpha, *eA.getEpetra_MultiVector(), *eB.getEpetra_MultiVector(), beta));
     }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a EpetraMultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
      *  where @ denotes element-wise multiplication.
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-    inline void elementWiseMultiply(double scalarAB, const Vector<double,int,int> &A, const MultiVector<double,int,int> &B, double scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
-#endif // CTHULHU_NOT_IMPLEMENTED
+    inline void elementWiseMultiply(double scalarAB, const Vector<double,int,int> &A, const MultiVector<double,int,int> &B, double
+scalarThis) {
+      CTHULHU_DEBUG_ME;
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "Cthulhu::EpetraMultiVector->elementWiseMultiply() only accepts Cthulhu::EpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, B, eB, "Cthulhu::EpetraMultiVector->elementWiseMultiply() only accepts Cthulhu::EpetraMultiVector as input arguments.");
+      vec_->Multiply(scalarAB, *eA.getEpetra_MultiVector() , *eB.getEpetra_MultiVector() , scalarThis);
+    }
     //@} 
 
     //! @name Attribute access functions

@@ -405,15 +405,17 @@ namespace Cthulhu {
     }
 
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a EpetraMultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
      *  where @ denotes element-wise multiplication.
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-    inline void elementWiseMultiply(int scalarAB, const Vector<int,int,int> &A, const MultiVector<int,int,int> &B, int scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
-#endif // CTHULHU_NOT_IMPLEMENTED
+    inline void elementWiseMultiply(int scalarAB, const Vector<int,int,int> &A, const MultiVector<int,int,int> &B, int scalarThis) {
+      CTHULHU_DEBUG_ME;
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "Cthulhu_EpetraIntVector: elementWiseMultiply not implemented because Epetra_IntVector does not support this operation");
+
+    }
     //@} 
 
     //! @name Attribute access functions
