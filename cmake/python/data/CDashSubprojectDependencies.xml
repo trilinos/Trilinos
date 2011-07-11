@@ -338,11 +338,11 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Kokkos" type="ILO"/>
-    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Epetra" type="ILR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILR"/>
     <Dependency name="Tpetra" type="ILO"/>
-    <Dependency name="EpetraExt" type="LR"/>
+    <Dependency name="EpetraExt" type="ILR"/>
     <Dependency name="Thyra" type="LR"/>
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="AztecOO" type="LR"/>
