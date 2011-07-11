@@ -37,61 +37,35 @@
  *************************************************************************
  */
 
+#if ! defined( KOKKOS_DEVICE_FERRY ) || \
+    defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
+    defined( KOKKOS_MACRO_DEVICE ) || \
+    defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
+    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
 
-#include <iostream>
-#include <iomanip>
+#error "Including <Kokkos_DeviceFerry_macros.hpp> with macros already defined"
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+#else
 
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <PerfTestHexGrad.hpp>
-#include <PerfTestGramSchmidt.hpp>
-#include <PerfTestDriver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+/*  If compiling with Ferry compiler
+ *  then must clarify what functions are only available on the device
+ *  versus available on both the device and host.
+ */
 
-//------------------------------------------------------------------------
+#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
+#define KOKKOS_MACRO_DEVICE                      Kokkos::DeviceFerry
+#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION    __declspec(target(mic))
+#define KOKKOS_MACRO_DEVICE_FUNCTION_FERRY 		 _Shared
+#define KOKKOS_MACRO_DEVICE_FUNCTION             __declspec(target(mic))
 
-namespace Test {
+/* Device-only functions are not compiled unless compiling for the device. */
+#if defined( __MIC__ )
+#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  /* */
+#define KOKKOS_MACRO_CHECK( expr )             /* */
+#else
+#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr ) expr
+#define KOKKOS_MACRO_CHECK( expr )  /* */
+#endif
 
-void run_test_host_hexgrad( int beg , int end )
-{ Test::run_test_hexgrad< Kokkos::DeviceHost>( beg , end ); }
-
-void run_test_host_gramschmidt( int beg , int end )
-{ Test::run_test_gramschmidt< Kokkos::DeviceHost>( beg , end ); }
-
-void run_test_tpi_hexgrad(int,int);
-void run_test_tpi_gramschmidt(int,int);
-
-void run_test_cuda_hexgrad(int,int);
-void run_test_cuda_gramschmidt(int,int);
-
-void run_test_tbb_hexgrad(int,int);
-void run_test_tbb_gramschmidt(int,int);
-
-void run_test_ferry_hexgrad(int,int);
-void run_test_ferry_gramschmidt(int,int);
-
-}
-
-int main( int argc , char ** argv )
-{
-	Test::run_test_host_hexgrad( 10 , 20 );
-	Test::run_test_tpi_hexgrad(  10 , 24 );
- 	Test::run_test_cuda_hexgrad( 10 , 24 );
- 	Test::run_test_tbb_hexgrad(  10 , 24 );
- 	Test::run_test_ferry_hexgrad( 10 , 20);
- 
-  	Test::run_test_host_gramschmidt( 10 , 20 );
-  	Test::run_test_tpi_gramschmidt(  10 , 26 );
-  	Test::run_test_cuda_gramschmidt( 10 , 24 );
- 	Test::run_test_tbb_gramschmidt( 10 , 26);
- 	Test::run_test_ferry_gramschmidt(10 , 15);
-
-  return 0 ;
-}
+#endif
 

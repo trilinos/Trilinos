@@ -37,61 +37,53 @@
  *************************************************************************
  */
 
+#ifndef KOKKOS_DEVICETBB_PARALLELFOR_HPP
+#define KOKKOS_DEVICETBB_PARALLELFOR_HPP
 
-#include <iostream>
-#include <iomanip>
+#include <Kokkos_ParallelFor.hpp>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+#include <algorithm>
+#include <tbb/tbb.h>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
 
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <PerfTestHexGrad.hpp>
-#include <PerfTestGramSchmidt.hpp>
-#include <PerfTestDriver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+namespace Kokkos {
+namespace Impl {
 
-//------------------------------------------------------------------------
+template< class FunctorType >
+class ParallelFor< FunctorType , DeviceTBB > {
+public:
+  typedef DeviceTBB::size_type size_type ;
 
-namespace Test {
+  const FunctorType * m_functor ;
 
-void run_test_host_hexgrad( int beg , int end )
-{ Test::run_test_hexgrad< Kokkos::DeviceHost>( beg , end ); }
+  void operator () ( const tbb::blocked_range<size_type> &r ) const {
+    for(size_type i = r.begin() ; i != r.end(); ++i) {
+	  (*m_functor)(i);
+	}
+  }
+  
+private:
 
-void run_test_host_gramschmidt( int beg , int end )
-{ Test::run_test_gramschmidt< Kokkos::DeviceHost>( beg , end ); }
+  ParallelFor(const FunctorType * f ) : m_functor( f )  { }  
 
-void run_test_tpi_hexgrad(int,int);
-void run_test_tpi_gramschmidt(int,int);
+public:
 
-void run_test_cuda_hexgrad(int,int);
-void run_test_cuda_gramschmidt(int,int);
+  static void execute( const size_type work_count ,
+                       const FunctorType & functor )
+  {
+    DeviceTBB::set_dispatch_functor();
 
-void run_test_tbb_hexgrad(int,int);
-void run_test_tbb_gramschmidt(int,int);
+    ParallelFor driver( & functor );
 
-void run_test_ferry_hexgrad(int,int);
-void run_test_ferry_gramschmidt(int,int);
+    DeviceTBB::clear_dispatch_functor();
 
-}
+	tbb::parallel_for(tbb::blocked_range<size_type>(0,work_count) , driver , tbb::auto_partitioner() );
+  }
+};
 
-int main( int argc , char ** argv )
-{
-	Test::run_test_host_hexgrad( 10 , 20 );
-	Test::run_test_tpi_hexgrad(  10 , 24 );
- 	Test::run_test_cuda_hexgrad( 10 , 24 );
- 	Test::run_test_tbb_hexgrad(  10 , 24 );
- 	Test::run_test_ferry_hexgrad( 10 , 20);
- 
-  	Test::run_test_host_gramschmidt( 10 , 20 );
-  	Test::run_test_tpi_gramschmidt(  10 , 26 );
-  	Test::run_test_cuda_gramschmidt( 10 , 24 );
- 	Test::run_test_tbb_gramschmidt( 10 , 26);
- 	Test::run_test_ferry_gramschmidt(10 , 15);
+} // namespace Impl
+} // namespace Kokkos
 
-  return 0 ;
-}
+#endif /* KOKKOS_DEVICETBB_PARALLELFOR_HPP */
 

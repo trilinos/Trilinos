@@ -37,61 +37,60 @@
  *************************************************************************
  */
 
-
-#include <iostream>
-#include <iomanip>
-
 #include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
 #include <Kokkos_DeviceHost_ValueView.hpp>
+#include <Kokkos_DeviceHost_MultiVectorView.hpp>
+#include <Kokkos_DeviceHost_MDArrayView.hpp>
 #include <Kokkos_DeviceHost_ParallelFor.hpp>
 #include <Kokkos_DeviceHost_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <PerfTestHexGrad.hpp>
-#include <PerfTestGramSchmidt.hpp>
-#include <PerfTestDriver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_DeviceTBB.hpp>
+#include <Kokkos_DeviceTBB_ValueView.hpp>
+#include <Kokkos_DeviceTBB_MultiVectorView.hpp>
+#include <Kokkos_DeviceTBB_MDArrayView.hpp>
+#include <Kokkos_DeviceTBB_ParallelFor.hpp>
+#include <Kokkos_DeviceTBB_ParallelReduce.hpp>
 
-//------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#include <Kokkos_DeviceTBB_macros.hpp>
+
+#include <UnitTestDeviceMemoryManagement.hpp>
+#include <UnitTestValueView.hpp>
+#include <UnitTestMultiVectorView.hpp>
+#include <UnitTestMDArrayView.hpp>
+#include <UnitTestMDArrayDeepCopy.hpp>
+#include <UnitTestMDArrayIndexMap.hpp>
+#include <UnitTestReduce.hpp>
+
+#include <Kokkos_DeviceClear_macros.hpp>
 
 namespace Test {
 
-void run_test_host_hexgrad( int beg , int end )
-{ Test::run_test_hexgrad< Kokkos::DeviceHost>( beg , end ); }
+void test_device_tbb()
+{
+  try {
+//    Kokkos::DeviceTBB::initialize( 4 );
 
-void run_test_host_gramschmidt( int beg , int end )
-{ Test::run_test_gramschmidt< Kokkos::DeviceHost>( beg , end ); }
+    UnitTestDeviceMemoryManagement< Kokkos::DeviceTBB >();
+    UnitTestValueView<       Kokkos::DeviceTBB >();
+    UnitTestMultiVectorView< Kokkos::DeviceTBB >();
+    UnitTestMDArrayView<     Kokkos::DeviceTBB >();
+    UnitTestMDArrayDeepCopy< Kokkos::DeviceTBB >();
 
-void run_test_tpi_hexgrad(int,int);
-void run_test_tpi_gramschmidt(int,int);
+    Test::UnitTestMDArrayIndexMap< Kokkos::DeviceTBB >();
 
-void run_test_cuda_hexgrad(int,int);
-void run_test_cuda_gramschmidt(int,int);
+    UnitTestReduce< long ,   Kokkos::DeviceTBB >( 1000000 );
+    UnitTestReduce< double , Kokkos::DeviceTBB >( 1000000 );
 
-void run_test_tbb_hexgrad(int,int);
-void run_test_tbb_gramschmidt(int,int);
+    std::cout << "PASSED : UnitTestTBB" << std::endl ;
+  }
+  catch( const std::exception & x ) {
+    std::cout << "FAILED : UnitTestTBB : " << x.what() << std::endl ;
+  }
 
-void run_test_ferry_hexgrad(int,int);
-void run_test_ferry_gramschmidt(int,int);
-
+//  Kokkos::DeviceTBB::finalize();
 }
 
-int main( int argc , char ** argv )
-{
-	Test::run_test_host_hexgrad( 10 , 20 );
-	Test::run_test_tpi_hexgrad(  10 , 24 );
- 	Test::run_test_cuda_hexgrad( 10 , 24 );
- 	Test::run_test_tbb_hexgrad(  10 , 24 );
- 	Test::run_test_ferry_hexgrad( 10 , 20);
- 
-  	Test::run_test_host_gramschmidt( 10 , 20 );
-  	Test::run_test_tpi_gramschmidt(  10 , 26 );
-  	Test::run_test_cuda_gramschmidt( 10 , 24 );
- 	Test::run_test_tbb_gramschmidt( 10 , 26);
- 	Test::run_test_ferry_gramschmidt(10 , 15);
-
-  return 0 ;
 }
 

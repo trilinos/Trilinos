@@ -37,61 +37,27 @@
  *************************************************************************
  */
 
+#if ! defined( KOKKOS_DEVICE_TBB ) || \
+    defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
+    defined( KOKKOS_MACRO_DEVICE ) || \
+    defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
+    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
 
-#include <iostream>
-#include <iomanip>
+#error "Including <Kokkos_DeviceTBB.hpp> with macros already defined"
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+#else
 
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <PerfTestHexGrad.hpp>
-#include <PerfTestGramSchmidt.hpp>
-#include <PerfTestDriver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
+#define KOKKOS_MACRO_DEVICE                       Kokkos::DeviceTBB
+#define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
+#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
+#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
 
-//------------------------------------------------------------------------
+#if ! defined( KOKKOS_ARRAY_BOUNDS_CHECK )
+#define KOKKOS_MACRO_CHECK( expr )  /* */
+#else
+#define KOKKOS_MACRO_CHECK( expr )  expr
+#endif
 
-namespace Test {
-
-void run_test_host_hexgrad( int beg , int end )
-{ Test::run_test_hexgrad< Kokkos::DeviceHost>( beg , end ); }
-
-void run_test_host_gramschmidt( int beg , int end )
-{ Test::run_test_gramschmidt< Kokkos::DeviceHost>( beg , end ); }
-
-void run_test_tpi_hexgrad(int,int);
-void run_test_tpi_gramschmidt(int,int);
-
-void run_test_cuda_hexgrad(int,int);
-void run_test_cuda_gramschmidt(int,int);
-
-void run_test_tbb_hexgrad(int,int);
-void run_test_tbb_gramschmidt(int,int);
-
-void run_test_ferry_hexgrad(int,int);
-void run_test_ferry_gramschmidt(int,int);
-
-}
-
-int main( int argc , char ** argv )
-{
-	Test::run_test_host_hexgrad( 10 , 20 );
-	Test::run_test_tpi_hexgrad(  10 , 24 );
- 	Test::run_test_cuda_hexgrad( 10 , 24 );
- 	Test::run_test_tbb_hexgrad(  10 , 24 );
- 	Test::run_test_ferry_hexgrad( 10 , 20);
- 
-  	Test::run_test_host_gramschmidt( 10 , 20 );
-  	Test::run_test_tpi_gramschmidt(  10 , 26 );
-  	Test::run_test_cuda_gramschmidt( 10 , 24 );
- 	Test::run_test_tbb_gramschmidt( 10 , 26);
- 	Test::run_test_ferry_gramschmidt(10 , 15);
-
-  return 0 ;
-}
+#endif
 

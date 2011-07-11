@@ -37,27 +37,36 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICEHOST_HPP
-#define KOKKOS_DEVICEHOST_HPP
+#ifndef KOKKOS_DEVICEFERRY_HPP
+#define KOKKOS_DEVICEFERRY_HPP
 
 #include <iosfwd>
 #include <typeinfo>
-#include <string>
+#include <vector>
 
 #include <Kokkos_MemoryView.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
 
-#define KOKKOS_DEVICE_HOST  Kokkos::DeviceHost
+#define KOKKOS_DEVICE_FERRY  Kokkos::DeviceFerry
+
+#include <Kokkos_DeviceFerry_macros.hpp>
+
+
 
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
 
-class MDArrayIndexMapRight ;
+	class MDArrayIndexMapRight;
 
-class DeviceHost {
+class DeviceFerry {
 private:
 
+  static void load_parallel_functor( const void * , size_t );
+
+  static const void * get_parallel_functor();
+
+	
   static void * allocate_memory( const std::string & label ,
                                  const std::type_info & type ,
                                  const size_t member_size ,
@@ -69,48 +78,59 @@ private:
 
 public:
 
-  /** \brief  On the host device use size_t for indexing */
-  typedef size_t                size_type ;
+  /** \brief  On the ferry device use unsigned int for indexing */
+  typedef unsigned int         size_type ;
   typedef MDArrayIndexMapRight  default_mdarray_map ;
 
+  /*--------------------------------*/
+
+  static void initialize( );
+  
   /*--------------------------------*/
   /** \brief  Clear the memory view setting it to the NULL view.
    *          If this is the last view to this allocated memory
    *          then deallocate this allocated memory.
    */
   template< typename ValueType >
-  static
-  void clear_memory_view( MemoryView< ValueType , DeviceHost > & lhs )
+  static void clear_memory_view( MemoryView< ValueType , DeviceFerry > & lhs )
     {
+#if ! defined( __MIC__ )
+      // Memory management only available on the host side.
+      // If compiling for the device then omit memory management.
       if ( lhs.m_tracker.remove_and_query_is_last() ) {
         deallocate_memory( lhs.m_ptr_on_device );
       }
+#endif
       lhs.m_ptr_on_device = 0 ;
     }
 
   /** \brief  Assign the 'lhs' view to be another view of the 'rhs' view.
    *          Clear the 'lhs' view before the assignment.
    */
+   
   template< typename ValueType >
-  static
-  void assign_memory_view(       MemoryView< ValueType , DeviceHost > & lhs ,
-                           const MemoryView< ValueType , DeviceHost > & rhs )
+  static void assign_memory_view(       MemoryView< ValueType , DeviceFerry > & lhs ,
+                           const MemoryView< ValueType , DeviceFerry > & rhs )
     {
       clear_memory_view( lhs );
+#if ! defined( __MIC__ )
+      // Memory management only available on the host side.
+      // If compiling for the device then omit memory management.
       // If launching a kernel then the view is untracked.
       if ( ! m_launching_kernel ) {
         lhs.m_tracker.insert( rhs.m_tracker );
       }
+#endif
       lhs.m_ptr_on_device = rhs.m_ptr_on_device ;
     }
 
   /** \brief  Allocate memory to be viewed by 'lhs' */
   template< typename ValueType >
   static
-  void allocate_memory_view( MemoryView< ValueType , DeviceHost > & lhs ,
+  void allocate_memory_view( MemoryView< ValueType , DeviceFerry > & lhs ,
                              size_t count , const std::string & label )
     {
-      clear_memory_view( lhs );
+      clear_memory_view( lhs );  
       lhs.m_ptr_on_device = (ValueType *)
         allocate_memory( label, typeid(ValueType), sizeof(ValueType), count );
       lhs.m_tracker.insert( lhs.m_tracker );
@@ -123,7 +143,7 @@ public:
 
   static void set_dispatch_functor();
   static void clear_dispatch_functor();
-  static void wait_functor_completion() {}
+  static void wait_functor_completion();
 
   /*--------------------------------*/
 };
@@ -132,9 +152,10 @@ public:
 
 /*--------------------------------------------------------------------------*/
 
-#include <Kokkos_DeviceHost_macros.hpp>
 #include <impl/Kokkos_MemoryView_macros.hpp>
+
 #include <Kokkos_DeviceClear_macros.hpp>
 
-#endif /* #define KOKKOS_DEVICEHOST_HPP */
+
+#endif /* #ifndef KOKKOS_DEVICEFERRY_HPP */
 

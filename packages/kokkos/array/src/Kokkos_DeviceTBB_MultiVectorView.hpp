@@ -37,61 +37,53 @@
  *************************************************************************
  */
 
+#ifndef KOKKOS_DEVICETBB_MULTIVECTORVIEW_HPP
+#define KOKKOS_DEVICETBB_MULTIVECTORVIEW_HPP
 
-#include <iostream>
-#include <iomanip>
+#include <Kokkos_MultiVectorView.hpp>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
-
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <PerfTestHexGrad.hpp>
-#include <PerfTestGramSchmidt.hpp>
-#include <PerfTestDriver.hpp>
+#include <Kokkos_DeviceTBB_macros.hpp>
+#include <impl/Kokkos_MultiVectorView_macros.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 
-//------------------------------------------------------------------------
+namespace Kokkos {
+namespace Impl {
 
-namespace Test {
-
-void run_test_host_hexgrad( int beg , int end )
-{ Test::run_test_hexgrad< Kokkos::DeviceHost>( beg , end ); }
-
-void run_test_host_gramschmidt( int beg , int end )
-{ Test::run_test_gramschmidt< Kokkos::DeviceHost>( beg , end ); }
-
-void run_test_tpi_hexgrad(int,int);
-void run_test_tpi_gramschmidt(int,int);
-
-void run_test_cuda_hexgrad(int,int);
-void run_test_cuda_gramschmidt(int,int);
-
-void run_test_tbb_hexgrad(int,int);
-void run_test_tbb_gramschmidt(int,int);
-
-void run_test_ferry_hexgrad(int,int);
-void run_test_ferry_gramschmidt(int,int);
-
-}
-
-int main( int argc , char ** argv )
+template< typename ValueType >
+class MultiVectorDeepCopy< ValueType , DeviceTBB , true , DeviceHost , true >
 {
-	Test::run_test_host_hexgrad( 10 , 20 );
-	Test::run_test_tpi_hexgrad(  10 , 24 );
- 	Test::run_test_cuda_hexgrad( 10 , 24 );
- 	Test::run_test_tbb_hexgrad(  10 , 24 );
- 	Test::run_test_ferry_hexgrad( 10 , 20);
- 
-  	Test::run_test_host_gramschmidt( 10 , 20 );
-  	Test::run_test_tpi_gramschmidt(  10 , 26 );
-  	Test::run_test_cuda_gramschmidt( 10 , 24 );
- 	Test::run_test_tbb_gramschmidt( 10 , 26);
- 	Test::run_test_ferry_gramschmidt(10 , 15);
+public:
+  static void run( const MultiVectorView< ValueType , DeviceTBB >  & dst ,
+                   const MultiVectorView< ValueType , DeviceHost > & src )
+  {
+    typedef MultiVectorDeepCopy< ValueType , DeviceTBB , true ,
+                                             DeviceTBB , true > functor_type ;
 
-  return 0 ;
-}
+    parallel_for( dst.length() * dst.count() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+  }
+};
+
+template< typename ValueType >
+class MultiVectorDeepCopy< ValueType , DeviceHost , true , DeviceTBB , true >
+{
+public:
+  static void run( const MultiVectorView< ValueType , DeviceHost > & dst ,
+                   const MultiVectorView< ValueType , DeviceTBB >  & src )
+  {
+    typedef MultiVectorDeepCopy< ValueType , DeviceTBB , true ,
+                                             DeviceTBB , true > functor_type ;
+
+    parallel_for( dst.length() * dst.count() ,
+                  functor_type( dst.m_memory.ptr_on_device() ,
+                                src.m_memory.ptr_on_device() ) );
+  }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_DEVICETBB_MULTIVECTORVIEW_HPP */
+
 

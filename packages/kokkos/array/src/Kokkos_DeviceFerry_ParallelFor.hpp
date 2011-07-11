@@ -37,61 +37,96 @@
  *************************************************************************
  */
 
+#ifndef KOKKOS_DEVICEFERRY_PARALLELFOR_HPP
+#define KOKKOS_DEVICEFERRY_PARALLELFOR_HPP
 
-#include <iostream>
-#include <iomanip>
+#include <Kokkos_ParallelFor.hpp>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+#include <Kokkos_DeviceFerry_macros.hpp>
 
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <PerfTestHexGrad.hpp>
-#include <PerfTestGramSchmidt.hpp>
-#include <PerfTestDriver.hpp>
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
+#include <stdio.h>
+#include <algorithm>
+
+#pragma offload_attribute(push, target(mic))
+#include <tbb/task_scheduler_init.h>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+#include <tbb/task.h>
+#pragma offload_attribute(pop)
+
+
+
+namespace Kokkos {
+namespace Impl {
+
+
+template< class FunctorType >
+class ParallelFor< FunctorType , DeviceFerry > {
+public:
+  typedef DeviceFerry::size_type size_type ;
+  
+  const FunctorType m_functor ;
+
+#if 1
+	class __declspec(target(mic)) ParallelTBB
+	{
+	public:
+	const FunctorType * m_functor;
+
+	void operator() (const tbb::blocked_range<size_type> & r) const {
+	#ifdef __MIC__
+		for(size_type i = r.begin() ; i != r.end(); ++i) {
+			(*m_functor)(i);
+		}
+	#endif
+	}
+	ParallelTBB(const FunctorType *f) : m_functor(f) { }
+	};
+#endif
+
+private:
+  ParallelFor();
+  ParallelFor(const FunctorType & f ) : m_functor( f )  { }  
+
+public:
+  static void execute( size_type work_count ,
+                       const FunctorType & functor )
+  {
+    DeviceFerry::set_dispatch_functor();
+
+    ParallelFor driver( functor );
+
+    DeviceFerry::clear_dispatch_functor();
+    
+    ParallelFor *tmp_driver = &driver;
+    
+	//Perform on device
+	
+	#pragma offload target(mic) in(work_count) in(tmp_driver : length(1))
+	{
+#if 0
+//		#pragma omp parallel for
+		for(size_type i = 0; i <= work_count; ++i) {
+			(tmp_functor->m_functor)(i);
+		}
+#else	
+		ParallelTBB tmp_tbb(&(tmp_driver->m_functor));
+		tbb::task_scheduler_init init;
+		tbb::parallel_for(tbb::blocked_range<size_type>(0,work_count) , tmp_tbb , tbb::auto_partitioner());	
+#endif
+	}
+  }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+#endif /* defined (KOKKOS_MACRO_DEVICE_FUNCTION) */
+
 #include <Kokkos_DeviceClear_macros.hpp>
 
-//------------------------------------------------------------------------
+#endif /* KOKKOS_DEVICEFerry_PARALLELREDUCE_HPP */
 
-namespace Test {
-
-void run_test_host_hexgrad( int beg , int end )
-{ Test::run_test_hexgrad< Kokkos::DeviceHost>( beg , end ); }
-
-void run_test_host_gramschmidt( int beg , int end )
-{ Test::run_test_gramschmidt< Kokkos::DeviceHost>( beg , end ); }
-
-void run_test_tpi_hexgrad(int,int);
-void run_test_tpi_gramschmidt(int,int);
-
-void run_test_cuda_hexgrad(int,int);
-void run_test_cuda_gramschmidt(int,int);
-
-void run_test_tbb_hexgrad(int,int);
-void run_test_tbb_gramschmidt(int,int);
-
-void run_test_ferry_hexgrad(int,int);
-void run_test_ferry_gramschmidt(int,int);
-
-}
-
-int main( int argc , char ** argv )
-{
-	Test::run_test_host_hexgrad( 10 , 20 );
-	Test::run_test_tpi_hexgrad(  10 , 24 );
- 	Test::run_test_cuda_hexgrad( 10 , 24 );
- 	Test::run_test_tbb_hexgrad(  10 , 24 );
- 	Test::run_test_ferry_hexgrad( 10 , 20);
- 
-  	Test::run_test_host_gramschmidt( 10 , 20 );
-  	Test::run_test_tpi_gramschmidt(  10 , 26 );
-  	Test::run_test_cuda_gramschmidt( 10 , 24 );
- 	Test::run_test_tbb_gramschmidt( 10 , 26);
- 	Test::run_test_ferry_gramschmidt(10 , 15);
-
-  return 0 ;
-}
 

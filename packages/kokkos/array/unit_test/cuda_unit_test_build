@@ -4,7 +4,7 @@
 # Quick and dirty build for unit testing with Host (serial) and TPI devices.
 # To be replace with CMake integration.
 
-set INC_PATH="-I../../../ThreadPool/src -I. -I../src"
+set INC_PATH="-I. -I../src"
 
 set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp UnitTestMain.cpp"
 
@@ -12,16 +12,23 @@ set LIB=""
 
 #-----------------------------------------------------------------------------
 
-set GCC_SOURCES="${GCC_SOURCES} ../../../ThreadPool/src/*.c ../src/DeviceTPI/*.cpp  UnitTestTPI.cpp"
-
-set LIB="${LIB} -lpthread"
-
-# set GCC_SOURCES="${GCC_SOURCES} UnitTestTPIStub.cpp"
+set GCC_SOURCES="${GCC_SOURCES} UnitTestTPIStub.cpp"
 
 #-----------------------------------------------------------------------------
-# Stub out CUDA unit tests
 
-set GCC_SOURCES="${GCC_SOURCES} UnitTestCudaStub.cpp"
+
+set GCC_SOURCES="${GCC_SOURCES} UnitTestTBBStub.cpp"
+
+#-----------------------------------------------------------------------------
+
+set GCC_SOURCES="${GCC_SOURCES} UnitTestFerryStub.cpp"
+
+#-----------------------------------------------------------------------------
+
+ /usr/local/cuda/bin/nvcc -arch=sm_20 -g ${INC_PATH} -lib -o libCuda.a \
+        ../src/DeviceCuda/*.cu UnitTestCuda.cu 
+
+set LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda"
 
 #-----------------------------------------------------------------------------
 
