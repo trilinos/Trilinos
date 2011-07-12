@@ -39,6 +39,13 @@ namespace Cthulhu {
       CTHULHU_DEBUG_ME;
     }
     
+    //! EpetraVector constructor.
+    EpetraVector(const RCP<Epetra_Vector> &source)
+    : EpetraMultiVector(source)
+    {
+      CTHULHU_DEBUG_ME;
+    }
+
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! EpetraVector copy constructor.
     EpetraVector(const EpetraVector &source);
