@@ -17,6 +17,26 @@ General TODO
  - When refreshing the internal values of A, need to check that the
    dimensions still line up, and if not, resize internal arrays and
    variables.
+   
+ - Validate and give doc strings to parameterlists
+ 
+ - In our general solver test framework, add an option to run multiple
+   factorizations and solves in sequence.  The option would make the
+   test do a sequence like::
+
+     symb -> num -> solve -> num -> solve -> solve
+
+   or something similar
+   
+ - Make the B argument for solve_impl and solve(X,B) a Ptr to a const
+   MV adapter.  This might mean we have to follow through to some
+   downstream functions to make them take const arguments also (or
+   make member functions const when appropriate)
+   
+ - May be useful to define some Amesos2 exception classes.
+
+ - Update the NewSolver and NewAdapter templates in examples/ 
+
 
 -------------------------------
  Some things worth considering
