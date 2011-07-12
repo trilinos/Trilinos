@@ -215,7 +215,8 @@ namespace MueLu {
     */
    static RCP<Operator> TwoMatrixMultiply(RCP<Operator> const &A, bool transposeA,
                                           RCP<Operator> const &B, bool transposeB,
-                                          bool callFillCompleteOnResult=true)
+                                          bool doFillComplete=true,
+                                          bool doOptimizeStorage=true)
     {
       //FIXME 30 is likely a big overestimate
       RCP<Operator> C;
@@ -233,7 +234,7 @@ namespace MueLu {
         RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
         RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
         
-        int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,callFillCompleteOnResult);
+        int i = EpetraExt::MatrixMatrix::Multiply(*epA,transposeA,*epB,transposeB,*epC,doFillComplete);
         
         if (i != 0) {
           std::ostringstream buf;
@@ -242,7 +243,7 @@ namespace MueLu {
         throw(Exceptions::RuntimeError(msg));
         }
 #else
-        throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
+        throw(Exceptions::RuntimeError("MueLu must be compiled with EpetraExt."));
 #endif
       } else if(C->getRowMap()->lib() == Cthulhu::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
@@ -250,9 +251,16 @@ namespace MueLu {
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2TpetraCrs(B);
         RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >       tpC = Op2NonConstTpetraCrs(C);
         
-        Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,callFillCompleteOnResult);
+        if (!doOptimizeStorage) {
+          Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,false);
+          tpC->fillComplete((transposeB) ? tpB->getRangeMap() : tpB->getDomainMap(),
+                             (transposeA) ? tpA->getDomainMap() : tpA->getRangeMap(),
+                            Tpetra::DoNotOptimizeStorage);
+        } else {
+          Tpetra::MatrixMatrix::Multiply(*tpA,transposeA,*tpB,transposeB,*tpC,doFillComplete);
+        }
 #else
-        throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
+        throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
 #endif
       }
 
@@ -301,7 +309,7 @@ namespace MueLu {
         
         Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, beta);
 #else
-        throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
+        throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
 #endif
       }
 
@@ -652,8 +660,18 @@ namespace MueLu {
       return AT;
     } //simple_Tranpose
 
-    //! @brief Power method.  (Shamelessly grabbed from tpetra/examples.)
-    static Scalar PowerMethod(Operator const &A, LO niters=10, Magnitude tolerance=1e-2, bool verbose=false)
+    /*! @brief Power method.
+
+      @param A matrix
+      @param scaleByDiag if true, estimate the largest eigenvalue of \f$ D^{-1} A \f$.
+      @param niters maximum number of iterations
+      @param tolerance stopping tolerance
+      @verbose if true, print iteration information
+      
+      (Shamelessly grabbed from tpetra/examples.)
+    */
+    static Scalar PowerMethod(Operator const &A, bool scaleByDiag=true,
+                              LO niters=10, Magnitude tolerance=1e-2, bool verbose=false)
     {
       if ( !(A.getRangeMap()->isSameAs(*(A.getDomainMap()))) ) {
         throw(Exceptions::Incompatible("Utils::PowerMethod: operator must have domain and range maps that are equivalent."));
@@ -674,10 +692,18 @@ namespace MueLu {
       Magnitude residual = 0.0;
       // power iteration
       Teuchos::ArrayView<Scalar> avLambda(&lambda,1);
+      RCP<Vector> diagVec,oneOverDiagonal;
+      if (scaleByDiag) {
+        diagVec = VectorFactory::Build(A.getRowMap());
+        A.getLocalDiagCopy(*diagVec);
+        oneOverDiagonal = VectorFactory::Build(A.getRowMap());
+        oneOverDiagonal->reciprocal(*diagVec);
+      }
       for (int iter = 0; iter < niters; ++iter) {
         z->norm2(norms);                               // Compute 2-norm of z
         q->update(1.0/norms[0],*z,0.);                 // Set q = z / normz
         A.apply(*q, *z);                               // Compute z = A*q
+        if (scaleByDiag) z->elementWiseMultiply(1.0, *oneOverDiagonal, *z, 0.0);
         q->dot(*z,avLambda);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
         if ( iter % 100 == 0 || iter + 1 == niters ) {
           r->update(1.0, *z, -lambda, *q, 0.0);         // Compute A*q - lambda*q
@@ -697,8 +723,11 @@ namespace MueLu {
       return lambda;
     } //PowerMethod
 
-   static void MyOldScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true)
+   static void MyOldScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true,
+                                bool doFillComplete=true,
+                                bool doOptimizeStorage=true)
    {
+
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpOp;
       try {
         tpOp = Op2NonConstTpetraCrs(Op);
@@ -706,14 +735,20 @@ namespace MueLu {
       catch(...) {
         throw(Exceptions::RuntimeError("Sorry, haven't implemented matrix scaling for epetra"));
       }
+
       const RCP<const Tpetra::Map<LO,GO,NO> > rowMap = tpOp->getRowMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp->getDomainMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap = tpOp->getRangeMap();
       Teuchos::ArrayView<const LO> cols;
       Teuchos::ArrayView<const SC> vals;
-      LO maxRowSize = tpOp->getNodeMaxNumRowEntries();
+      size_t maxRowSize = tpOp->getNodeMaxNumRowEntries();
+      if (maxRowSize==(size_t)-1) //hasn't been determined yet
+        maxRowSize=20;
       std::vector<SC> scaledVals(maxRowSize);
-      tpOp->resumeFill();
+      if (tpOp->isFillComplete()) {
+        std::cout << "In MyOldScale, resuming fill" << std::endl;
+        tpOp->resumeFill();
+      }
 
       Teuchos::ArrayRCP<SC> sv(scalingVector.size());
       if (doInverse) {
@@ -724,19 +759,50 @@ namespace MueLu {
           sv[i] = scalingVector[i];
       }
 
-      for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
-        tpOp->getLocalRowView(i,cols,vals);
-        size_t nnz = tpOp->getNumEntriesInLocalRow(i);
-        for (size_t j=0; j<nnz; j++) {
-          scaledVals[j] = vals[j]*sv[i];
-        }
-        if (nnz>0) {
-          Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
-          tpOp->replaceLocalValues(i,cols,valview);
-        }
-      } //for (size_t i=0; ...
+      if (Op->isLocallyIndexed() == true) {
+        for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
+          tpOp->getLocalRowView(i,cols,vals);
+          size_t nnz = tpOp->getNumEntriesInLocalRow(i);
+          if (nnz>maxRowSize) {
+            maxRowSize=nnz;
+            scaledVals.resize(maxRowSize);
+          }
+          for (size_t j=0; j<nnz; ++j) {
+            scaledVals[j] = vals[j]*sv[i];
+          }
+          if (nnz>0) {
+            Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
+            tpOp->replaceLocalValues(i,cols,valview);
+          }
+        } //for (size_t i=0; ...
+      } else {
+        for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
+          GO gid = rowMap->getGlobalElement(i);
+          tpOp->getGlobalRowView(gid,cols,vals);
+          size_t nnz = tpOp->getNumEntriesInGlobalRow(gid);
+          if (nnz>maxRowSize) {
+            maxRowSize=nnz;
+            scaledVals.resize(maxRowSize);
+          }
+          for (size_t j=0; j<nnz; ++j) {
+            scaledVals[j] = vals[j]*sv[i]; //FIXME i or gid?
+          }
+          if (nnz>0) {
+            Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
+            tpOp->replaceGlobalValues(gid,cols,valview);
+          }
+        } //for (size_t i=0; ...
+      }
 
-      tpOp->fillComplete(domainMap,rangeMap);
+      if (doFillComplete) {
+        if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
+          throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
+        if (doOptimizeStorage)
+          tpOp->fillComplete(domainMap,rangeMap,Tpetra::DoOptimizeStorage);
+        else
+          tpOp->fillComplete(domainMap,rangeMap,Tpetra::DoNotOptimizeStorage);
+      }
+
    } //ScaleMatrix()
 
   }; // class
