@@ -51,6 +51,11 @@
 #include "EpetraExt_ModelEvaluator.h"
 
 ////////////////////////////////////////////////////////////////////////
+
+namespace PyTrilinos
+{
+
+////////////////////////////////////////////////////////////////////////
 // Helper functions.  Ultimately, we want to implement the functions
 // 'convertInArgsFromPython', 'convertInArgsToPython',
 // 'convertOutArgsFromPython' and 'convertOutArgsToPython' (where the
@@ -164,6 +169,8 @@ convertDerivativeToPython(
 PyObject *
 convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & outArgs);
 
+}  //  Namespace PyTrilinos
+
 // The following two conversion functions have already been declared
 // as friends in the EpetraExt_ModelEvaluator.h header file.  However,
 // some newer compilers require them to be declared explicitly again.
@@ -182,10 +189,15 @@ ModelEvaluator::OutArgs convertOutArgsFromPython(PyObject*);
 
 #ifdef HAVE_TEUCHOS
 
+namespace PyTrilinos
+{
+
 // Given a Teuchos Array of ints, return a tuple_of_int.  Return NULL
 // upon failure.
 PyObject *
 convertArrayOfIntToPython(const Teuchos::Array<int> & tai);
+
+}  // Namespace PyTrilinos
 
 #endif  // HAVE_TEUCHOS
 

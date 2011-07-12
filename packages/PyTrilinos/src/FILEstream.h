@@ -32,6 +32,9 @@
 #include <streambuf>
 #include <vector>
 
+namespace PyTrilinos
+{
+
 class FILEstream : public std::streambuf
 {
 public:
@@ -52,5 +55,7 @@ private:
   const std::size_t put_back_;
   std::vector<char> buffer_;
 };
+
+}  // Namespace PyTrilinos
 
 #endif

@@ -202,7 +202,7 @@ example subdirectory of the PyTrilinos package:
   {
     $action
   }
-  catch(PythonException &pe)
+  catch(PyTrilinos::PythonException &pe)
   {
     pe.restore();
     SWIG_fail;
@@ -278,7 +278,7 @@ BaseObject::__str__;
       else
       {
 	std::FILE * f = PyFile_AsFile(ostream);
-	FILEstream buffer(f);
+	PyTrilinos::FILEstream buffer(f);
 	std::ostream os(&buffer);
 	self->Print(os, verbose);
 	os.flush();
@@ -456,7 +456,7 @@ MultiVector::Delete;
       obj_to_array_contiguous_allow_conversion(pyValues, PyArray_DOUBLE,
 					       &is_new_object);
     // Error checking
-    if (!array) throw PythonException();
+    if (!array) throw PyTrilinos::PythonException();
     int numDims = array_numdims(array);
     int myVectorLen = PyArray_Size(array);
     if (numDims > 1)
@@ -467,7 +467,7 @@ MultiVector::Delete;
 		   " %d != %d", vectorSpace.GetNumMyElements(),
 		   myVectorLen);
       if (is_new_object) Py_DECREF(array);
-      throw PythonException();
+      throw PyTrilinos::PythonException();
     }
     // Reshape the array for the case where pyValues represents a 1D
     // array
@@ -478,7 +478,7 @@ MultiVector::Delete;
       PyTuple_SET_ITEM(shape, 1, PyInt_FromLong(myVectorLen));
       array = (PyObject*) PyArray_Reshape((PyArrayObject*)array, shape);
       Py_DECREF(shape);
-      if (!array) throw PythonException();
+      if (!array) throw PyTrilinos::PythonException();
     }
     // Use the numpy array to construct a MultiVector
     int numVectors = array_size(array, 0);
@@ -501,7 +501,7 @@ MultiVector::Delete;
     if (self->GetVectorSpace() != rhs.GetVectorSpace())
     {
       PyErr_SetString(PyExc_ValueError, "Mismatched Vector Spaces");
-      throw PythonException();
+      throw PyTrilinos::PythonException();
     }
     MultiVector res = MultiVector(*self);
     for (int v = 0; v < self->GetNumVectors(); ++v)
@@ -520,7 +520,7 @@ MultiVector::Delete;
     if (self->GetVectorSpace() != rhs.GetVectorSpace())
     {
       PyErr_SetString(PyExc_ValueError, "Mismatched Vector Spaces");
-      throw PythonException();
+      throw PyTrilinos::PythonException();
     }
     MultiVector res = MultiVector(*self);
     for (int v = 0; v < self->GetNumVectors(); ++v)
@@ -575,18 +575,18 @@ MultiVector::Delete;
 	  SWIG_IsOK(SWIG_AsVal_int(vecNum, &v))))
     {
       PyErr_SetString(PyExc_IndexError, "Invalid index");
-      throw PythonException();
+      throw PyTrilinos::PythonException();
     }
     // Convert the vector specified by v into a numpy array
     npy_intp dim = self->GetMyLength();
     PyObject * array = PyArray_SimpleNewFromData(1,&dim,NPY_DOUBLE,
 						 (void*)self->GetValues(v));
-    if (!array) throw PythonException();
+    if (!array) throw PyTrilinos::PythonException();
     // Call the __setitem__ method
     char methodName[12] = "__setitem__";
     char format[3]      = "OO";
     PyObject * result = PyObject_CallMethod(array, methodName, format, index, value);
-    if (!result) throw PythonException();
+    if (!result) throw PyTrilinos::PythonException();
     // Cleanup and return
     Py_DECREF(array);
     return result;
@@ -603,18 +603,18 @@ MultiVector::Delete;
 	  SWIG_IsOK(SWIG_AsVal_int(vecNum, &v))))
     {
       PyErr_SetString(PyExc_IndexError, "Invalid index");
-      throw PythonException();
+      throw PyTrilinos::PythonException();
     }
     // Convert the vector specified by v into a numpy array
     npy_intp dim = self->GetMyLength();
     PyObject * array = PyArray_SimpleNewFromData(1,&dim,NPY_DOUBLE,
 						 (void*)self->GetValues(v));
-    if (!array) throw PythonException();
+    if (!array) throw PyTrilinos::PythonException();
     // Call the __getitem__ method
     char methodName[12] = "__getitem__";
     char format[2]      = "O";
     PyObject * result = PyObject_CallMethod(array, methodName, format, index);
-    if (!result) throw PythonException();
+    if (!result) throw PyTrilinos::PythonException();
     // Cleanup and return
     Py_DECREF(array);
     return result;
@@ -624,12 +624,12 @@ MultiVector::Delete;
     if ((v < 0) or (v > self->GetNumVectors()-1))
     {
       PyErr_Format(PyExc_IndexError, "Invalid vector index %d", v);
-      throw PythonException();
+      throw PyTrilinos::PythonException();
     }
     if ((i < 0) or (i > self->GetMyLength()-1))
     {
       PyErr_Format(PyExc_IndexError, "Invalid element index %d", i);
-      throw PythonException();
+      throw PyTrilinos::PythonException();
     }
     return self->operator()(i,v);
   }
@@ -711,7 +711,7 @@ namespace MLAPI
 ////////////////////////////
 #ifdef HAVE_EPETRA
 %include "MLAPI_PyMatrix.h"
-%extend PyMatrix
+%extend PyTrilinos::PyMatrix
 {
   PyObject * __setitem__(PyObject* args, double val)
   {
@@ -770,7 +770,7 @@ namespace ML_Epetra
   int SetParameterListAndNullSpace(PyObject* obj,
 				   const Epetra_MultiVector& NullSpace)
   {
-    Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+    Teuchos::ParameterList * List = PyTrilinos::pyDictToNewParameterList(obj);
     if (List == NULL) List = new Teuchos::ParameterList();
     // WARNING: THIS IS DELICATE, NULLSPACE SHOULD NOT DISAPPEAR
     // otherwise the pointer here stored will vanish. This function should
@@ -806,7 +806,7 @@ namespace MLAPI
     }
     bool Reshape(const Operator& Op, const std::string Type, PyObject* obj)
     {
-      Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+      Teuchos::ParameterList * List = PyTrilinos::pyDictToNewParameterList(obj);
       if (List == NULL) return false;
       else
 	self->Reshape(Op, Type, *List);
@@ -863,7 +863,7 @@ namespace MLAPI
 				  MLAPI::MultiVector& NextNS,
 				  PyObject* obj)
   {
-    Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+    Teuchos::ParameterList * List = PyTrilinos::pyDictToNewParameterList(obj);
     MLAPI::Operator Ptent;
     MLAPI::GetPtent(A, *List, ThisNS, Ptent, NextNS);
     delete List;
@@ -874,7 +874,7 @@ namespace MLAPI
 	       const MLAPI::MultiVector& RHS, const MLAPI::BaseOperator& Prec, 
 	       PyObject* obj)
   {
-    Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+    Teuchos::ParameterList * List = PyTrilinos::pyDictToNewParameterList(obj);
     if (List == NULL) return(false);
     Krylov(A, LHS, RHS, Prec, *List);
     delete List;

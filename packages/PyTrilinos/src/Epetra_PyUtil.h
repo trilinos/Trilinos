@@ -55,6 +55,12 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 
+
+////////////////////////////////////////////////////////////////////////
+
+namespace PyTrilinos
+{
+
 ////////////////////////////////////////////////////////////
 
 // Given a pointer to an Epetra_MultiVector, convert to a python
@@ -148,5 +154,9 @@ Teuchos::RCP<Epetra_Operator>
 getEpetraOperatorObjectAttr(PyObject * object, CONST char * name);
 
 #endif  // HAVE_TEUCHOS
+
+////////////////////////////////////////////////////////////////////////
+
+}  // Namespace PyTrilinos
 
 #endif // EPETRA_PYUTIL_H
