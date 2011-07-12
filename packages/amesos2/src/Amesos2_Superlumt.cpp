@@ -46,4 +46,10 @@
 
 #include "Amesos2_Superlumt.hpp"
 
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
+#include "Amesos2_Superlumt_def.hpp"
+
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
 #endif  // AMESOS2_SUPERLUMT_CPP

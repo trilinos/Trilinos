@@ -44,6 +44,12 @@
 #ifndef AMESOS2_SOLVERCORE_CPP
 #define AMESOS2_SOLVERCORE_CPP
 
-#include "Amesos2_SolverCore.hpp"
+#include "Amesos2_SolverCore_decl.hpp"
+
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
+#include "Amesos2_SolverCore_def.hpp"
+
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
 #endif  // AMESOS2_SOLVERCORE_CPP

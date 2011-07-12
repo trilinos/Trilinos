@@ -41,8 +41,8 @@
 //
 // @HEADER
 
-#ifndef AMESOS2_FACTORY_DECL_HPP
-#define AMESOS2_FACTORY_DECL_HPP
+#ifndef AMESOS2_FACTORY_CPP
+#define AMESOS2_FACTORY_CPP
 
 #include "Amesos2_Factory_decl.hpp"
 

@@ -95,11 +95,7 @@
 #ifdef HAVE_AMESOS2_SUPERLUMT	// Multi-threaded SuperLU
 #include "Amesos2_Superlumt.hpp"
 #endif
-/* This check is no longer required as SuperLU is a required dependency.
-  cmake build infrastructure never turns this flag on for required
-  dependencies. Uncomment here if SuperLU changes to an optional dependency.
-  */
-#ifdef HAVE_AMESOS2_SUPERLU
+#ifdef HAVE_AMESOS2_SUPERLU	// Sequential SuperLU
 #include "Amesos2_Superlu.hpp"
 #endif
 // #ifdef HAVE_AMESOS2_DSCPACK
@@ -112,8 +108,6 @@
 // #include "Amesos2_Taucs.hpp"
 // #endif
 
-
-using Teuchos::rcp;
 
 namespace Amesos {
 

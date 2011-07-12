@@ -46,4 +46,10 @@
 
 #include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.hpp"
 
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
+#include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_def.hpp"
+
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
 #endif  // AMESOS2_TPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_CPP

@@ -46,5 +46,10 @@
 
 #include "Amesos2_MatrixAdapter.hpp"
 
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
+#include "Amesos2_MatrixAdapter_def.hpp"
+
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
 #endif  // AMESOS2_MATRIXADAPTER_CPP

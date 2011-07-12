@@ -386,8 +386,8 @@ namespace Amesos {
   template < class Matrix >
   void
   MatrixAdapter<Matrix>::getGlobalRowCopy(global_ordinal_t row,
-					  const ArrayView<global_ordinal_t>& indices,
-					  const ArrayView<scalar_t>& vals,
+					  const Teuchos::ArrayView<global_ordinal_t>& indices,
+					  const Teuchos::ArrayView<scalar_t>& vals,
 					  size_t& nnz) const
   {
     static_cast<const adapter_t*>(this)->getGlobalRowCopy_impl(row, indices, vals, nnz);
@@ -396,8 +396,8 @@ namespace Amesos {
   template < class Matrix >
   void
   MatrixAdapter<Matrix>::getGlobalColCopy(global_ordinal_t col,
-					  const ArrayView<global_ordinal_t>& indices,
-					  const ArrayView<scalar_t>& vals,
+					  const Teuchos::ArrayView<global_ordinal_t>& indices,
+					  const Teuchos::ArrayView<scalar_t>& vals,
 					  size_t& nnz) const
   {
     static_cast<const adapter_t*>(this)->getGlobalColCopy_impl(col, indices, vals, nnz);

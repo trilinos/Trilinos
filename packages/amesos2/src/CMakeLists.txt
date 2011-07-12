@@ -88,9 +88,6 @@ APPEND_SET(HEADERS
   Amesos2_Factory_decl.hpp
   Amesos2_Factory_def.hpp
   Amesos2_FunctionMap.hpp
-#  Amesos2_TpetraCrsMatrixAdapter.hpp
-#  Amesos2_TpetraCrsMatrixAdapter_decl.hpp
-#  Amesos2_TpetraCrsMatrixAdapter_def.hpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.hpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_decl.hpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_def.hpp
@@ -132,7 +129,6 @@ APPEND_SET(SOURCES
   Amesos2_SolverCore.cpp
   Amesos2_Solver.cpp
   Amesos2_Status.cpp
-#  Amesos2_TpetraCrsMatrixAdapter.cpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.cpp
   Amesos2_TpetraCrsMatrix_MatrixAdapter.cpp
   Amesos2_TpetraMultiVecAdapter.cpp
@@ -147,11 +143,11 @@ APPEND_SET(SOURCES
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
   APPEND_SET(HEADERS
     Amesos2_Superlu.hpp
+    Amesos2_Superlu_decl.hpp
+    Amesos2_Superlu_def.hpp
     Amesos2_Superlu_FunctionMap.hpp
     Amesos2_Superlu_MatrixHelper.hpp
     Amesos2_Superlu_TypeMap.hpp
-    Amesos2_Superlu_decl.hpp
-    Amesos2_Superlu_def.hpp
     )
 
   APPEND_SET(SOURCES
@@ -191,19 +187,6 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   APPEND_SET(HEADERS
-    # Amesos2_EpetraCrsMatrixAdapter.hpp
-    # Amesos2_EpetraCrsMatrixAdapter_decl.hpp
-    # Amesos2_EpetraCrsMatrixAdapter_def.hpp
-    # Amesos2_EpetraJadMatrixAdapter_decl.hpp
-    # Amesos2_EpetraJadMatrixAdapter_def.hpp
-    # Amesos2_EpetraJadMatrixAdapter.hpp
-    # Amesos2_EpetraMsrMatrixAdapter_decl.hpp
-    # Amesos2_EpetraMsrMatrixAdapter_def.hpp
-    # Amesos2_EpetraMsrMatrixAdapter.hpp
-    # Amesos2_EpetraRowMatrixAdapter_decl.hpp
-    # Amesos2_EpetraRowMatrixAdapter_def.hpp
-    # Amesos2_EpetraRowMatrixAdapter.hpp
-    # Amesos2_EpetraVbrMatrixAdapter_decl.hpp
     Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.hpp
     Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_decl.hpp
     Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_def.hpp
