@@ -155,7 +155,7 @@ int Zoltan_PHG_Coarsening
 {
   char     *yo = "Zoltan_PHG_Coarsening";
   PHGComm  *hgc = hg->comm;
-  int   ierr=ZOLTAN_OK, i, j, count, size, me=hgc->myProc_x, idx, ni;
+  int   ierr=ZOLTAN_OK, i, j, count, size, coordsize, me=hgc->myProc_x, idx, ni;
   int   *vmark=NULL, *listlno=NULL, *listproc=NULL, *ip=NULL;
   int   *ahindex=NULL, *hlsize=NULL, *hsize=NULL, *ids=NULL, *iden;
   int   *emptynets=NULL, emptynetsize, *idennets=NULL, *allemptynets=NULL, *allidennets=NULL,
@@ -169,9 +169,10 @@ int Zoltan_PHG_Coarsening
   struct Zoltan_Comm_Obj *plan=NULL;
   ZOLTAN_GNO_TYPE *listgno=NULL;
   char *buffer=NULL, *rbuffer=NULL, *b=NULL, *b_end=NULL;
+  double *coordbuf=NULL, *coordrecbuf=NULL;
   int *ahvertex=NULL;
   int *msg_size=NULL;     /* TODO64 - would we ever need ZOLTAN_GNO_TYPE for message sizes? */
-
+  double *coorcount = NULL; /* No. of vertices represented by the cooresponding c_hg->coor */
   int gno_size, alt_field_count, int_size, float_size;
   ZOLTAN_GNO_TYPE tmp_gno;
   ZOLTAN_GNO_TYPE *gnoptr;
@@ -223,7 +224,7 @@ int Zoltan_PHG_Coarsening
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   c_hg->comm    = hg->comm;         /* set communicators */
   c_hg->info    = hg->info + 1;     /* for debugging */
-  c_hg->coor    = NULL;             /* currently we don't use coordinates */
+  c_hg->coor    = NULL;             /* NEANEA would give coarse HG ALL coords here */
   c_hg->nDim    = hg->nDim;    
   c_hg->vmap    = NULL;             /* only needed by rec-bisec */
   c_hg->redl    = hg->redl;  /* to stop coarsening near desired count */
@@ -424,9 +425,25 @@ int Zoltan_PHG_Coarsening
   /* Create comm plan. */
   Zoltan_Comm_Create(comm_plan, count, listproc, hgc->row_comm, PLAN_TAG, 
                       &size); /* we'll ignore the size because of resize*/
+
+  coordsize = hg->nVtx * hg->nDim;
+
+  /* Allocate receive buffer for coordinates */
+  /* NOT FREEING... DX */
+  if (coordsize && (
+       !(coordbuf    = (double *) ZOLTAN_MALLOC(coordsize * sizeof(double)))
+    || !(coordrecbuf = (double *) ZOLTAN_MALLOC(coordsize * sizeof(double)))
+      ))
+    MEMORY_ERROR;
   
+  for (i = 0; i < coordsize; i++)
+    coordbuf[i] = hg->coor[i];
+  /* No need for resize yet, since coordinates won't be of variable sizes */
+  Zoltan_Comm_Do(*comm_plan, PLAN_TAG+1, (char *)coordbuf, sizeof(double) * hg->nDim,
+		 (char *)coordrecbuf);
+
   /* call Comm_Resize since we have variable-size messages */
-  Zoltan_Comm_Resize(*comm_plan, msg_size, PLAN_TAG+1, &size); 
+  Zoltan_Comm_Resize(*comm_plan, msg_size, PLAN_TAG+2, &size); 
 
   /* Allocate receive buffer. */
   /* size is the size of the received data, measured in #ints */
@@ -444,8 +461,29 @@ int Zoltan_PHG_Coarsening
       MEMORY_ERROR;
 
   /* Comm_Do sends personalized messages of variable sizes */
-  Zoltan_Comm_Do(*comm_plan, PLAN_TAG+2, (char *)buffer, sizeof(int), (char *)rbuffer);
+  Zoltan_Comm_Do(*comm_plan, PLAN_TAG+3, (char *)buffer, sizeof(int), (char *)rbuffer);
 
+  
+  /* Allocate coordinate array for coarse hgraph, then */
+  /* cycle through all coordinates and average them    */
+  if (c_hg->nVtx && hg->nDim && (
+       !(c_hg->coor = (double *) ZOLTAN_CALLOC(c_hg->nVtx * hg->nDim, sizeof(double)))
+    || !(coorcount  = (double *) ZOLTAN_CALLOC(c_hg->nVtx * hg->nDim, sizeof(double)))
+      ))
+    MEMORY_ERROR;
+  
+  for (i = 0; i < hg->nVtx; i++) {
+    ZOLTAN_GNO_TYPE ni = LevelMap[i];
+    if (ni >= 0)
+      for (j = 0; j < hg->nDim; j++) {
+	c_hg->coor[ni*hg->nDim + j] += hg->coor[i*hg->nDim + j];
+	coorcount[ni*hg->nDim + j]++;
+      }
+  }
+  for (i = 0; i < (c_hg->nVtx * hg->nDim); i++)
+    c_hg->coor[i] = c_hg->coor[i] / coorcount[i];
+  ZOLTAN_FREE(&coorcount);
+      
   /* Allocate vertex weight array for coarse hgraph */
   if (c_hg->nVtx > 0 && c_hg->VtxWeightDim > 0 &&
       !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx * c_hg->VtxWeightDim,
@@ -523,7 +561,7 @@ int Zoltan_PHG_Coarsening
         ahvertex[--ahindex[*intptr++]] = lno;
   }
 
-  Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);
+  Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer, &coordbuf, &coordrecbuf);
   
   c_hg->nPins = hg->nPins + ahindex[hg->nEdge]; /* safe over estimate of nPins */
   c_hg->nEdge = hg->nEdge;
