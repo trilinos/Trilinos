@@ -256,8 +256,10 @@ int main(int argc, char *argv[]) {
       smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
     } else if (smooType == "cheby") {
       ifpackList.set("chebyshev: degree", (LO) fineSweeps);
+      ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
+      ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
       ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
-      ifpackList.set("chebyshev: zero starting solution", false);
+      ifpackList.set("chebyshev: zero starting solution", true);
       smooProto = rcp( new Ifpack2Smoother("CHEBYSHEV",ifpackList) );
     }
 #else
