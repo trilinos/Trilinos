@@ -602,6 +602,51 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	TEST_ASSERT(!conVisDep->isDependentVisible());
 }
 
+/**
+ * Test the TwoDRowDependency.
+ */
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testTwoDRowDependency){
+	RCP<ParameterList> My_deplist = RCP<ParameterList>(new ParameterList);
+	RCP<DependencySheet> depSheet1 = 
+    RCP<DependencySheet>(new DependencySheet);
+
+	ParameterList
+	rowNumDepList = My_deplist->sublist(
+    "2D Row Depdency List", false,
+    "2D Row Dependecy testing list.");
+	rowNumDepList.set("Num rows", 10, "num rows setter");
+  TwoDArray<double> variableRowsArray(11,2,16.5);
+	RCP<EnhancedNumberValidator<double> > 
+	varRowArrayVali = RCP<EnhancedNumberValidator<double> >(
+  		new EnhancedNumberValidator<double>(10,50,4) 
+	);
+	rowNumDepList.set(
+    "Variable Row Array", variableRowsArray, "variable row array",
+	  RCP<TwoDArrayNumberValidator<double> >(
+      new TwoDArrayNumberValidator<double>(varRowArrayVali)));
+
+	RCP<TwoDRowDependency<int, double> >
+	  arrayRowDep = rcp(
+  		new TwoDRowDependency<int, double>(
+		  rowNumDepList.getEntryRCP("Num rows"),
+			rowNumDepList.getEntryRCP("Variable Row Array") ,
+      rcp(new AdditionFunction<int>(1))
+		)
+	);
+	depSheet1->addDependency(arrayRowDep);
+  TwoDArray<double> curArray = 
+    rowNumDepList.get<TwoDArray<double> >("Variable Row Array");
+	TEST_EQUALITY_CONST(curArray.getNumRows(),11);
+	rowNumDepList.set("Num rows", 12);
+	arrayRowDep()->evaluate();
+  curArray = 
+    rowNumDepList.get<TwoDArray<double> >("Variable Row Array");
+	TEST_EQUALITY_CONST(curArray.getNumRows(),13);
+	rowNumDepList.set("Num rows", -2);
+	TEST_THROW(arrayRowDep()->evaluate(), 
+    Exceptions::InvalidParameterValue);
+}
+
 
 /**
  * Test the ArrayLengthDependency.
@@ -616,7 +661,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testArrayLengthDep){
     "Number Array Length Dependency List", false,
     "Number Array Length Dependecy testing list.");
 	numberArrayLengthDepList.set("Array Length", 10, "array length setter");
-	Array<double> variableLengthArray(10,23.0);
+	Array<double> variableLengthArray(11,23.0);
 	RCP<EnhancedNumberValidator<double> > 
 	varLengthArrayVali = RCP<EnhancedNumberValidator<double> >(
   		new EnhancedNumberValidator<double>(10,50,4) 
@@ -630,20 +675,21 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testArrayLengthDep){
 	  arrayLengthDep(
   		new NumberArrayLengthDependency<int, double>(
 			numberArrayLengthDepList.getEntryRCP("Array Length"),
-			numberArrayLengthDepList.getEntryRCP("Variable Length Array") 
+			numberArrayLengthDepList.getEntryRCP("Variable Length Array"),
+      rcp(new AdditionFunction<int>(1))
 		)
 	);
 	depSheet1->addDependency(arrayLengthDep);
   Array<double> curArray = 
     numberArrayLengthDepList.get<Array<double> >("Variable Length Array");
-	TEST_ASSERT(curArray.length() ==10);
+	TEST_ASSERT(curArray.length() ==11);
 	numberArrayLengthDepList.set("Array Length", 12);
 	arrayLengthDep()->evaluate();
   curArray = 
     numberArrayLengthDepList.get<Array<double> >("Variable Length Array");
   out << curArray.length() << std::endl;
-	TEST_ASSERT(curArray.length() ==12);
-	numberArrayLengthDepList.set("Array Length", -1);
+	TEST_ASSERT(curArray.length() ==13);
+	numberArrayLengthDepList.set("Array Length", -2);
 	TEST_THROW(arrayLengthDep()->evaluate(), 
     Exceptions::InvalidParameterValue);
 }
