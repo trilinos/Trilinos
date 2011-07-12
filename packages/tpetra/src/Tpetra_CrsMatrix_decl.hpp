@@ -308,26 +308,10 @@ namespace Tpetra {
       /// 
       global_size_t getGlobalNumRows() const;
 
-      /// \brief Number of global elements in the column map of this matrix.
-      ///
-      /// This is <it>not</it> the number of columns in the matrix as
-      /// a mathematical object.  This method returns the global sum
-      /// of the number of local elements in the column map on each
-      /// processor, which is the column map's getGlobalNumElements().
-      /// Since the column map is not one-to-one in general, that
-      /// global sum could be different than the number of columns in
-      /// the matrix.  If you want the number of rows in the matrix,
-      /// ask the domain map for its global number of elements, using
-      /// the following code:
-      /// <code>
-      /// global_size_t globalNumCols = getDomainMap()->getGlobalNumElements();
-      /// </code>
-      /// This method retains the behavior of Epetra, which also asks
-      /// the column map for the global number of columns, rather than
-      /// asking the domain map.
-      ///
-      /// \warning Undefined if isFillActive().
-      ///
+      //! \brief Number of global columns in the matrix.
+      /** Returns the number of entries in the domain map of the matrix.
+          \warning Undefined if isFillActive().
+      */
       global_size_t getGlobalNumCols() const;
 
       //! Returns the number of matrix rows owned on the calling node.

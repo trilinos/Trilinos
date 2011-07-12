@@ -166,8 +166,8 @@ namespace Tpetra {
   global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalNumCols() const
   {
     std::string tfecfFuncName("getGlobalNumCols()");
-    TEST_FOR_EXCEPTION(hasColMap() == false, std::runtime_error, ": requires column map.");
-    return colMap_->getGlobalNumElements();
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error, ": requires domain map (which requires fillComplete()).");
+    return getDomainMap()->getGlobalNumElements();
   }
 
 

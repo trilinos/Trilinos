@@ -592,7 +592,7 @@ namespace {
       TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
       TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
       TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
-      TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumCols(), numImages*numLocal );
       TEST_EQUALITY( zero->getNodeNumCols(), 0 );
       TEST_EQUALITY( zero->getIndexBase(), 0 );
       TEST_EQUALITY( zero->isUpperTriangular(), true );
@@ -623,7 +623,7 @@ namespace {
       TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
       TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
       TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
-      TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumCols(), numImages*numLocal );
       TEST_EQUALITY( zero->getNodeNumCols(), 0 );
       TEST_EQUALITY( zero->getIndexBase(), 0 );
       TEST_EQUALITY( zero->isUpperTriangular(), true );
@@ -668,7 +668,7 @@ namespace {
     TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
     TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
     TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
-    TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
+    TEST_EQUALITY( zero->getGlobalNumCols(), numImages*numLocal );
     TEST_EQUALITY( zero->getNodeNumCols(), 0 );
     TEST_EQUALITY( zero->getIndexBase(), 0 );
     TEST_EQUALITY( zero->isUpperTriangular(), true );
@@ -728,8 +728,8 @@ namespace {
           TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
         }
         // also, the row map and column map should be equivalent
-        TEST_EQUALITY( ddgraph.getGlobalNumCols(), (global_size_t)(numImages) );
-        TEST_EQUALITY( ddgraph.getGlobalNumRows(), (global_size_t)(3*numImages) );
+        TEST_EQUALITY( ddgraph.getGlobalNumCols(), (global_size_t)(3*numImages) );
+        TEST_EQUALITY( ddgraph.getGlobalNumRows(), ddgraph.getGlobalNumCols() );
         TEST_EQUALITY( ddgraph.getGlobalNumDiags(), (global_size_t)numImages );
         TEST_EQUALITY_CONST( ddgraph.getNodeNumDiags(), 1 );
         STD_TESTS(ddgraph);

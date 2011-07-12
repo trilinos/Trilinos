@@ -256,7 +256,8 @@ namespace Tpetra {
       global_size_t getGlobalNumRows() const;
 
       //! \brief Returns the number of global columns in the graph.
-      /** Undefined if isFillActive().
+      /** Returns the number of entries in the domain map of the matrix.
+          Undefined if isFillActive().
         */
       global_size_t getGlobalNumCols() const;
 
