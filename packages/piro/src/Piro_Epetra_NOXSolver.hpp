@@ -127,6 +127,8 @@ class NOXSolver
    int num_g;
 
    Teuchos::RCP<NOX::Epetra::Group> grp;
+
+   enum DerivativeLayout { OP, COL, ROW };
 };
 
 }
