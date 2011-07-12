@@ -137,12 +137,13 @@ int main(int argc, char *argv[]) {
   RCP<Amesos::Solver<MAT,MV> > solver;
   try{
     solver = Amesos::create<MAT,MV>("Superlu", A);
-    solver->symbolicFactorization();
-    solver->numericFactorization();
   } catch(std::invalid_argument e){
-    // This solver is not supported/enable
-    return EXIT_FAILURE;
+    // This solver is not supported/enabled.  This is not really a
+    // "failure", so we exit with success.
+    return EXIT_SUCCESS;
   }
+  solver->symbolicFactorization();
+  solver->numericFactorization();
 
   // Now create X and B vectors
   

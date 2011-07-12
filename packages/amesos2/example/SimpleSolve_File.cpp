@@ -157,33 +157,34 @@ int main(int argc, char *argv[]) {
 
   // Constructor from Factory
   RCP<Amesos::Solver<MAT,MV> > solver;
-  try {
-    solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
+  if( !Amesos::query("Superlu") ){
+    *fos << "SuperLU solver not enabled.  Exiting..." << std::endl;
+    return EXIT_SUCCESS;
+  }
+  
+  solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
 
-    solver->symbolicFactorization().numericFactorization().solve();
+  solver->symbolicFactorization().numericFactorization().solve();
 
-    if( printSolution ){
-      // Print the solution
-      if( allprint ){
-        if( myRank == 0 ) *fos << "Solution :" << std::endl;
-        Xhat->describe(*fos,Teuchos::VERB_EXTREME);
-        *fos << std::endl;
-      } else {
-	Xhat->doImport(*X,*importer,Tpetra::REPLACE);
-	if( myRank == 0 ){
-	  *fos << "Solution :" << std::endl;
-	  Xhat->describe(*fos,Teuchos::VERB_EXTREME);
-	  *fos << std::endl;
-	}
+  if( printSolution ){
+    // Print the solution
+    if( allprint ){
+      if( myRank == 0 ) *fos << "Solution :" << std::endl;
+      Xhat->describe(*fos,Teuchos::VERB_EXTREME);
+      *fos << std::endl;
+    } else {
+      Xhat->doImport(*X,*importer,Tpetra::REPLACE);
+      if( myRank == 0 ){
+	*fos << "Solution :" << std::endl;
+	Xhat->describe(*fos,Teuchos::VERB_EXTREME);
+	*fos << std::endl;
       }
     }
+  }
 
-    if( printTiming ){
-      // Print some timing statistics
-      solver->printTiming(*fos);
-    }
-  } catch ( std::invalid_argument e ){
-    *fos << "Solver does not support this matrix shape" << std::endl;
+  if( printTiming ){
+    // Print some timing statistics
+    solver->printTiming(*fos);
   }
   
   // We are done.

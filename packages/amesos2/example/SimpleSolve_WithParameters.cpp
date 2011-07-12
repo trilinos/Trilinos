@@ -145,32 +145,38 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Constructor from Factory
-  RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
+  // Check first whether SuperLU is supported
+  if( Amesos::query("Superlu") ){
+  
+    // Constructor from Factory
+    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
 
-  // Create a Teuchos::ParameterList to hold solver parameters
-  Teuchos::ParameterList amesos2_params("Amesos2");
-  Teuchos::ParameterList superlu_params = amesos2_params.sublist("SuperLU");
-  superlu_params.set("Trans","TRANS","Whether to solve with A^T");
-  superlu_params.set("Equil",false,"Whether to equilibrate the system before solve");
-  superlu_params.set("ColPerm","NATURAL","Use 'natural' ordering of columns");
+    // Create a Teuchos::ParameterList to hold solver parameters
+    Teuchos::ParameterList amesos2_params("Amesos2");
+    Teuchos::ParameterList superlu_params = amesos2_params.sublist("SuperLU");
+    superlu_params.set("Trans","TRANS","Whether to solve with A^T");
+    superlu_params.set("Equil",false,"Whether to equilibrate the system before solve");
+    superlu_params.set("ColPerm","NATURAL","Use 'natural' ordering of columns");
 
-  solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
-  solver->symbolicFactorization().numericFactorization().solve();
+    solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+    solver->symbolicFactorization().numericFactorization().solve();
 
-  /* Print the solution
-   * 
-   * Should be:
-   *
-   *  [[1]
-   *   [2]
-   *   [3]
-   *   [4]
-   *   [5]
-   *   [6]]
-   */
-  X->describe(*fos,Teuchos::VERB_EXTREME);
+    /* Print the solution
+     * 
+     * Should be:
+     *
+     *  [[1]
+     *   [2]
+     *   [3]
+     *   [4]
+     *   [5]
+     *   [6]]
+     */
+    X->describe(*fos,Teuchos::VERB_EXTREME);
+  } else {
+    *fos << "SuperLU solver not enable.  Exiting..." << std::endl;
+  }
 
   // We are done.
-  return 0;
+  return EXIT_SUCCESS;
 }

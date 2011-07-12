@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
   bool printSolution = false;
   bool printTiming   = false;
   bool verbose       = false;
+  std::string solver_name = "SuperLU"; 
   std::string filename("arc130.mtx");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -105,6 +106,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("print-matrix","no-print-matrix",&printMatrix,"Print the full matrix after reading it.");
   cmdp.setOption("print-solution","no-print-solution",&printSolution,"Print solution vector after solve.");
   cmdp.setOption("print-timing","no-print-timing",&printTiming,"Print solver timing statistics");
+  cmdp.setOption("solver", &solver_name, "Which TPL solver library to use.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -147,53 +149,52 @@ int main(int argc, char *argv[]) {
   // Constructor from Factory
   RCP<Amesos::Solver<MAT,MV> > solver;
   try{
-    solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
-
-    solver->symbolicFactorization().numericFactorization().solve();
-
-    if( printSolution ){
-      // Print the solution
-      X->describe(*fos,Teuchos::VERB_EXTREME);
-    }
-
-    // change one of the matrix values and re-solve.
-    //
-    // Replace the lowest column index and lowest row index entry with "20"
-    A->resumeFill();
-    A->replaceGlobalValues(
-      Teuchos::as<GO>(A->getRowMap()->getMinGlobalIndex()),
-      tuple<GO>(A->getColMap()->getMinGlobalIndex()),
-      tuple<Scalar>(20));
-    A->fillComplete();
-
-    solver->numericFactorization().solve();
-
-    if( printSolution ){
-      // Print the solution
-      X->describe(*fos,Teuchos::VERB_EXTREME);
-    }
-
-    // change the RHS vector and re-solve.
-    B->randomize();
-    if( verbose ){
-      if( myRank == 0) *fos << "New RHS vector:" << std::endl;
-      B->describe(*fos,Teuchos::VERB_EXTREME);
-    }
-
-    solver->solve();
-
-    if( printSolution ){
-      // Print the solution
-      X->describe(*fos,Teuchos::VERB_EXTREME);
-    }
-
-    if( printTiming ){
-      // Print some timing statistics
-      solver->printTiming(*fos);
-    }
-
+    solver = Amesos::create<MAT,MV>(solver_name, A, X, B);
   } catch (std::invalid_argument e){
-    *fos << "The solver does not support the matrix shape" << std::endl;
+    *fos << e.what() << std::endl;
+    return 0;
+  }
+
+  solver->symbolicFactorization().numericFactorization().solve();
+
+  if( printSolution ){
+    // Print the solution
+    X->describe(*fos,Teuchos::VERB_EXTREME);
+  }
+
+  // change one of the matrix values and re-solve.
+  //
+  // Replace the lowest column index and lowest row index entry with "20"
+  A->resumeFill();
+  A->replaceGlobalValues(Teuchos::as<GO>(A->getRowMap()->getMinGlobalIndex()),
+			 tuple<GO>(A->getColMap()->getMinGlobalIndex()),
+			 tuple<Scalar>(20));
+  A->fillComplete();
+
+  solver->numericFactorization().solve();
+
+  if( printSolution ){
+    // Print the solution
+    X->describe(*fos,Teuchos::VERB_EXTREME);
+  }
+
+  // change the RHS vector and re-solve.
+  B->randomize();
+  if( verbose ){
+    if( myRank == 0) *fos << "New RHS vector:" << std::endl;
+    B->describe(*fos,Teuchos::VERB_EXTREME);
+  }
+
+  solver->solve();
+
+  if( printSolution ){
+    // Print the solution
+    X->describe(*fos,Teuchos::VERB_EXTREME);
+  }
+
+  if( printTiming ){
+    // Print some timing statistics
+    solver->printTiming(*fos);
   }
 
   // We are done.

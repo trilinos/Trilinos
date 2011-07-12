@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   // Before we do anything, check that SuperLU is enabled
   if( !Amesos::query("SuperLU") ){
-    std::cerr << "SuperLU not enabled.  Aborting..." << std::endl;
+    std::cerr << "SuperLU not enabled.  Exiting..." << std::endl;
     return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
 				// failure, which it isn't really
   }
