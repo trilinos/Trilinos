@@ -460,7 +460,11 @@ int main(int argc, char *argv[]) {
     for(int i=0;i<ntimers;i++) lTime[i]=mtime[i]->totalElapsedTime();
 
     // Allreduce is my friend.
+#ifdef HAVE_MPI
     MPI_Allreduce(&lTime,&gTime,ntimers,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+#else
+    for(int i=0;i<ntimers;i++) gTime[i] = lTime[i];
+#endif
 
     for(int i=0;i<ntimers;i++) *out<<mtime[i]->name()<<": \t"<<gTime[i]<<endl;
 
