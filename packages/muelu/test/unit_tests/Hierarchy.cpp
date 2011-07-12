@@ -309,14 +309,14 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
   Finest->Save("NullSpace",nullSpace);
   H.SetLevel(Finest);
 
-  MueLu::AggregationOptions aggOptions;
-  aggOptions.SetMinNodesPerAggregate(3);
-  aggOptions.SetMaxNeighAlreadySelected(0);
-  aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
-  aggOptions.SetPhase3AggCreation(0.5);
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(aggOptions));
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  UCAggFact->SetMinNodesPerAggregate(3);
+  UCAggFact->SetMaxNeighAlreadySelected(0);
+  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  UCAggFact->SetPhase3AggCreation(0.5);
+
   RCP<CoalesceDropFactory> cdFact;
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));
@@ -407,14 +407,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
   Finest->Save("NullSpace",nullSpace);
   H.SetLevel(Finest);
 
-  MueLu::AggregationOptions aggOptions;
-  aggOptions.SetMinNodesPerAggregate(3);
-  aggOptions.SetMaxNeighAlreadySelected(0);
-  aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
-  aggOptions.SetPhase3AggCreation(0.5);
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(aggOptions));
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  UCAggFact->SetMinNodesPerAggregate(3);
+  UCAggFact->SetMaxNeighAlreadySelected(0);
+  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  UCAggFact->SetPhase3AggCreation(0.5);
   RCP<CoalesceDropFactory> cdFact;
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<GenericPRFactory>   PRfact = rcp( new GenericPRFactory(Pfact));

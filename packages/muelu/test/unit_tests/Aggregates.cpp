@@ -18,15 +18,13 @@ namespace {
   {
     RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "someGraphLabel"));
 
-    MueLu::AggregationOptions aggOptions;
+    UCAggregationFactory aggFact;
+    aggFact.SetPrintFlag(0);
+    aggFact.SetMinNodesPerAggregate(3);
+    aggFact.SetMaxNeighAlreadySelected(0);
+    aggFact.SetOrdering(MueLu::AggOptions::NATURAL);
+    aggFact.SetPhase3AggCreation(0.5);
 
-    aggOptions.SetPrintFlag(0);
-    aggOptions.SetMinNodesPerAggregate(3);
-    aggOptions.SetMaxNeighAlreadySelected(0);
-    aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
-    aggOptions.SetPhase3AggCreation(0.5);
-
-    UCAggregationFactory aggFact(aggOptions);
     RCP<Aggregates> aggregates = aggFact.Build(*graph);
     return aggregates;
   }  //gimmeAggregates

@@ -58,12 +58,12 @@ namespace {
       fineLevel.Save("Nullspace",nullSpace);
       fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                       //FIXME is implemented
-      MueLu::AggregationOptions aggOptions;
-      aggOptions.SetMinNodesPerAggregate(3);
-      aggOptions.SetMaxNeighAlreadySelected(0);
-      aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
-      aggOptions.SetPhase3AggCreation(0.5);
-      UCAggregationFactory UCAggFact(aggOptions);
+      UCAggregationFactory UCAggFact;
+      UCAggFact.SetMinNodesPerAggregate(3);
+      UCAggFact.SetMaxNeighAlreadySelected(0);
+      UCAggFact.SetOrdering(MueLu::AggOptions::NATURAL);
+      UCAggFact.SetPhase3AggCreation(0.5);
+
       UCAggFact.Build(fineLevel);
       fineLevel.Request("Aggregates"); //FIXME putting this in to avoid error until Merge needs business
       TentativePFactory::MakeTentative(fineLevel,coarseLevel);
@@ -113,12 +113,13 @@ namespace {
 
     fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                     //FIXME is implemented
-    MueLu::AggregationOptions aggOptions;
-    aggOptions.SetMinNodesPerAggregate(3);
-    aggOptions.SetMaxNeighAlreadySelected(0);
-    aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
-    aggOptions.SetPhase3AggCreation(0.5);
-    UCAggregationFactory UCAggFact(aggOptions);
+
+    UCAggregationFactory UCAggFact;
+    UCAggFact.SetMinNodesPerAggregate(3);
+    UCAggFact.SetMaxNeighAlreadySelected(0);
+    UCAggFact.SetOrdering(MueLu::AggOptions::NATURAL);
+    UCAggFact.SetPhase3AggCreation(0.5);
+
     UCAggFact.Build(fineLevel);
     fineLevel.Request("Aggregates"); //FIXME putting this in to avoid error until Merge needs business
     TentativePFactory::MakeTentative(fineLevel,coarseLevel);

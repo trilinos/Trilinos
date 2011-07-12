@@ -196,32 +196,31 @@ int main(int argc, char *argv[]) {
   Finest->Save("NullSpace",nullSpace);
   H->SetLevel(Finest);
 
-  MueLu::AggregationOptions aggOptions;
-  aggOptions.SetPrintFlag(6);
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  UCAggFact->SetPrintFlag(6);
   *out << "========================= Aggregate option summary  =========================" << std::endl;
   *out << "min DOFs per aggregate :                " << minPerAgg << std::endl;
   *out << "min # of root nbrs already aggregated : " << maxNbrAlreadySelected << std::endl;
-  aggOptions.SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
-  aggOptions.SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
+  UCAggFact->SetMinNodesPerAggregate(minPerAgg);  //TODO should increase if run anything other than 1D
+  UCAggFact->SetMaxNeighAlreadySelected(maxNbrAlreadySelected);
   std::transform(aggOrdering.begin(), aggOrdering.end(), aggOrdering.begin(), ::tolower);
   if (aggOrdering == "natural") {
        *out << "aggregate ordering :                    NATURAL" << std::endl;
-       aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
+       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   } else if (aggOrdering == "random") {
        *out << "aggregate ordering :                    RANDOM" << std::endl;
-       aggOptions.SetOrdering(MueLu::AggOptions::RANDOM);
+       UCAggFact->SetOrdering(MueLu::AggOptions::RANDOM);
   } else if (aggOrdering == "graph") {
        *out << "aggregate ordering :                    GRAPH" << std::endl;
-       aggOptions.SetOrdering(MueLu::AggOptions::GRAPH);
+       UCAggFact->SetOrdering(MueLu::AggOptions::GRAPH);
   } else {
     std::string msg = "main: bad aggregation option """ + aggOrdering + """.";
     throw(MueLu::Exceptions::RuntimeError(msg));
   }
-  aggOptions.SetPhase3AggCreation(0.5);
+  UCAggFact->SetPhase3AggCreation(0.5);
   *out << "=============================================================================" << std::endl;
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(aggOptions));
-  RCP<CoalesceDropFactory> cdFact;
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
+
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   Pfact->SetDampingFactor(SADampingFactor);

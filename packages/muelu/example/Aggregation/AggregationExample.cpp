@@ -70,14 +70,6 @@ int main(int argc, char *argv[]) {
   int currentPrintLevel=10;
   int printFlag=6;
   
-  MueLu::AggregationOptions aggOptions;
-  
-  aggOptions.SetPrintFlag(printFlag);      
-  aggOptions.SetMinNodesPerAggregate(2);  
-  aggOptions.SetMaxNeighAlreadySelected(5);
-  aggOptions.SetOrdering(MueLu::AggOptions::GRAPH);
-  aggOptions.SetPhase3AggCreation(0.5);
-
   /**********************************************************************************/
   /*                                                                                */
   /**********************************************************************************/
@@ -87,7 +79,13 @@ int main(int argc, char *argv[]) {
  
   RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "Uncoupled"));
   
-  RCP<UCAggregationFactory> AggFact = rcp(new UCAggregationFactory(aggOptions));
+  RCP<UCAggregationFactory> AggFact = rcp(new UCAggregationFactory());
+  AggFact->SetPrintFlag(printFlag);      
+  AggFact->SetMinNodesPerAggregate(2);  
+  AggFact->SetMaxNeighAlreadySelected(5);
+  AggFact->SetOrdering(MueLu::AggOptions::GRAPH);
+  AggFact->SetPhase3AggCreation(0.5);
+  
   RCP<Aggregates> aggregates = AggFact->Build(*graph);
   
   /**********************************************************************************/

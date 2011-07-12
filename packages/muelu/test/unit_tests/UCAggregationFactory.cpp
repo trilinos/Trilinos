@@ -37,8 +37,7 @@ namespace {
 #include "MueLu_UseShortNames.hpp"
       
       out << "version: " << MueLu::Version() << std::endl;
-      MueLu::AggregationOptions aggOptions; //TODO: this parameter should be optional
-      RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory(aggOptions));
+      RCP<UCAggregationFactory> aggFact = rcp(new UCAggregationFactory());
       TEUCHOS_TEST_EQUALITY(aggFact != Teuchos::null, true, out, success);
     } 
   } // Constructor
@@ -55,16 +54,14 @@ namespace {
       RCP<Graph> graph = rcp(new Graph(Op->getCrsGraph(), "someGraphLabel"));
 
       {
-        MueLu::AggregationOptions aggOptions;
 
-        //
-        aggOptions.SetPrintFlag(6);
-        aggOptions.SetMinNodesPerAggregate(2);
-        aggOptions.SetMaxNeighAlreadySelected(5);
-        aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
-        aggOptions.SetPhase3AggCreation(0.5);
+        UCAggregationFactory aggFact;
+        aggFact.SetPrintFlag(6);
+        aggFact.SetMinNodesPerAggregate(2);
+        aggFact.SetMaxNeighAlreadySelected(5);
+        aggFact.SetOrdering(MueLu::AggOptions::NATURAL);
+        aggFact.SetPhase3AggCreation(0.5);
 
-        UCAggregationFactory aggFact(aggOptions);
         RCP<Aggregates> aggregates;
 
         aggregates = aggFact.Build(*graph);
@@ -72,16 +69,14 @@ namespace {
       }
 
       {
-        MueLu::AggregationOptions aggOptions;
 
-        //
-        aggOptions.SetPrintFlag(6);
-        aggOptions.SetMinNodesPerAggregate(2);
-        aggOptions.SetMaxNeighAlreadySelected(5);
-        aggOptions.SetOrdering(MueLu::AggOptions::RANDOM);
-        aggOptions.SetPhase3AggCreation(0.5);
+        UCAggregationFactory aggFact;
+        aggFact.SetPrintFlag(6);
+        aggFact.SetMinNodesPerAggregate(2);
+        aggFact.SetMaxNeighAlreadySelected(5);
+        aggFact.SetOrdering(MueLu::AggOptions::RANDOM);
+        aggFact.SetPhase3AggCreation(0.5);
 
-        UCAggregationFactory aggFact(aggOptions);
         RCP<Aggregates> aggregates;
 
         aggregates = aggFact.Build(*graph);
@@ -89,16 +84,14 @@ namespace {
       }
 
       {
-        MueLu::AggregationOptions aggOptions;
 
-        //
-        aggOptions.SetPrintFlag(6);
-        aggOptions.SetMinNodesPerAggregate(2);
-        aggOptions.SetMaxNeighAlreadySelected(5);
-        aggOptions.SetOrdering(MueLu::AggOptions::GRAPH);
-        aggOptions.SetPhase3AggCreation(0.5);
+        UCAggregationFactory aggFact;
+        aggFact.SetPrintFlag(6);
+        aggFact.SetMinNodesPerAggregate(2);
+        aggFact.SetMaxNeighAlreadySelected(5);
+        aggFact.SetOrdering(MueLu::AggOptions::GRAPH);
+        aggFact.SetPhase3AggCreation(0.5);
 
-        UCAggregationFactory aggFact(aggOptions);
         RCP<Aggregates> aggregates;
 
         aggregates = aggFact.Build(*graph);

@@ -42,7 +42,7 @@ class GenericPRFactory : public PRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
        Defaults to plain aggregation.
     */
-    GenericPRFactory(RCP<PFactory> PFact=Teuchos::null, RCP<RFactory> RFact=Teuchos::null)
+    GenericPRFactory(RCP<PFactory> PFact = Teuchos::null, RCP<RFactory> RFact = Teuchos::null)
     {
       //Teuchos::OSTab tab(this->out_);
       //MueLu_cout(Teuchos::VERB_HIGH) << "GenericPRFactory: Instantiating a new factory" << std::endl;
