@@ -199,15 +199,34 @@ class Level;
     {
       if (!SmootherPrototype::IsSetup())
         throw(Exceptions::RuntimeError("Setup has not been called"));
+
       Teuchos::ParameterList  ifpack2List;
+
+      // Forward the InitialGuessIsZero option to Ifpack2
+      //  TODO: It might be nice to switch back the internal
+      //        "zero starting solution" option of the ifpack2 object prec_ to his
+      //        initial value at the end but there is no way right now to get
+      //        the current value of the "zero starting solution" in ifpack2.
+      //        It's not really an issue, as prec_  can only be used by this method.
       if (ifpack2Type_ == "CHEBYSHEV") {
         ifpack2List.set("chebyshev: zero starting solution", InitialGuessIsZero);
       }
       else if (ifpack2Type_ == "RELAXATION") {
         ifpack2List.set("relaxation: zero starting solution", InitialGuessIsZero);
       }
+      else if (ifpack2Type_ == "ILUT") {
+        static int warning_only_once=0;
+        if ((warning_only_once++) == 0)
+          *out_ << "MueLu::Ifpack2Smoother::Apply(): Warning: ILUT as a smoother must solve correction equations but not implemented yet." << std::endl;
+        // TODO: ILUT using correction equation should be implemented in ifpack2 directly
+        //       I think that an option named "zero starting solution"
+        //       is also appropriate for ILUT
+      }
       else {
-        throw(Exceptions::RuntimeError("don't know this Ifpack2 type"));
+        // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
+        // we should remove the if/else/elseif and just test if this
+        // option is supported by current ifpack2 preconditioner
+        throw(Exceptions::RuntimeError("Ifpack2Smoother::Apply(): Ifpack2 preconditioner '"+ifpack2Type_+"' not supported"));
       }
       prec_->setParameters(ifpack2List);
 
@@ -215,6 +234,7 @@ class Level;
       Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
 
       prec_->apply(tpB,tpX);
+
     }
 
     //@}
