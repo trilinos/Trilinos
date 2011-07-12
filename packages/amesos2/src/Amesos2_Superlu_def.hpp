@@ -365,13 +365,24 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 #endif
   } // end block for solve time
 
-  // TODO: Check the value of ierr
+  global_size_type ierr_st = as<global_size_type>(ierr);
+  TEST_FOR_EXCEPTION( ierr < 0,
+		      std::invalid_argument,
+		      "Argument " << -ierr << " to SuperLU xgssvx had illegal value" );
+  TEST_FOR_EXCEPTION( ierr > 0 && ierr_st <= this->globalNumCols_,
+		      std::runtime_error,
+		      "Factorization complete, but U is exactly singular" );
+  TEST_FOR_EXCEPTION( ierr > 0 && ierr_st > this->globalNumCols_ + 1,
+		      std::runtime_error,
+		      "SuperLU allocated " << ierr - this->globalNumCols_ << " bytes of "
+		      "memory before allocation failure occured." );
 
   /* Update X's global values */
   {
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 
-    X->globalize(xValues()); // operator() does conversion from ArrayRCP to ArrayView
+    Util::put_1d_data_helper<
+      MultiVecAdapter<Vector> ,slu_type>::do_put(X, xValues(), ldx, Util::Rooted);
   }
 
   /* All processes should return the same error code */

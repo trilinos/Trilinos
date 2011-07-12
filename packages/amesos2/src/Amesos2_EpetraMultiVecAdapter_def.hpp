@@ -63,74 +63,37 @@
 #include <Epetra_Import.h>
 #include <Epetra_Export.h>
 
+#include "Amesos2_Util.hpp"
+
 namespace Amesos {
 
-MultiVecAdapter<Epetra_MultiVector>&
-MultiVecAdapter<Epetra_MultiVector>::scale(
-  const MultiVecAdapter<Epetra_MultiVector>::scalar_type alpha )
+MultiVecAdapter<Epetra_MultiVector>::MultiVecAdapter(const MultiVecAdapter<multivec_t>& adapter)
+  : mv_(adapter.mv_)
+  , mv_map_(adapter.mv_map_)
+{ }
+  
+MultiVecAdapter<Epetra_MultiVector>::MultiVecAdapter(const Teuchos::RCP<multivec_t>& m)
+  : mv_(m)
 {
-  mv_->Scale(alpha);
-
-  return *this;
+  mv_map_ = Teuchos::rcpFromRef(mv_->Map());
 }
+  
 
-
-
-MultiVecAdapter<Epetra_MultiVector>&
-MultiVecAdapter<Epetra_MultiVector>::update(
-  const MultiVecAdapter<Epetra_MultiVector>::scalar_type beta,
-  const MultiVecAdapter<Epetra_MultiVector>& B,
-  const MultiVecAdapter<Epetra_MultiVector>::scalar_type alpha )
-{
-  mv_->Update(beta, *(B.mv_), alpha);
-
-  return *this;
-}
-
-
-
-bool MultiVecAdapter<Epetra_MultiVector>::isLocal() const
+bool MultiVecAdapter<Epetra_MultiVector>::isLocallyIndexed() const
 {
   return !mv_->DistributedGlobal();
 }
 
+bool MultiVecAdapter<Epetra_MultiVector>::isGloballyIndexed() const
+{
+  return mv_->DistributedGlobal();
+}
 
 
-// ETB: Following code borrowed from Thyra wrappers
 const Teuchos::RCP<const Teuchos::Comm<int> >
 MultiVecAdapter<Epetra_MultiVector>::getComm() const
 {
-  using Teuchos::rcp;
-  using Teuchos::RCP;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::set_extra_data;
-
-  RCP<const Epetra_SerialComm>
-    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm>(rcp(mv_->Comm().Clone()));
-  if( serialEpetraComm.get() ) {
-    RCP<const Teuchos::SerialComm<int> >
-      serialComm = rcp(new Teuchos::SerialComm<int>());
-    set_extra_data( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg(serialComm) );
-    return serialComm;
-  }
-
-#ifdef HAVE_MPI
-  
-  RCP<const Epetra_MpiComm>
-    mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm>(rcp(mv_->Comm().Clone()));
-  if( mpiEpetraComm.get() ) {
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
-      rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
-    set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
-    RCP<const Teuchos::MpiComm<int> >
-      mpiComm = rcp(new Teuchos::MpiComm<int>(rawMpiComm));
-    return mpiComm;
-  }
-
-#endif // HAVE_MPI
-  
-  // If you get here then the conversion failed!
-  return Teuchos::null;
+  return Util::to_teuchos_comm(Teuchos::rcpFromRef(mv_->Comm()));
 }
 
 
@@ -146,10 +109,10 @@ size_t MultiVecAdapter<Epetra_MultiVector>::getLocalNumVectors() const
 }
 
 
-MultiVecAdapter<Epetra_MultiVector>::global_size_type
+MultiVecAdapter<Epetra_MultiVector>::global_size_t
 MultiVecAdapter<Epetra_MultiVector>::getGlobalLength() const
 {
-  return Teuchos::as<global_size_type>(mv_->GlobalLength());
+  return Teuchos::as<global_size_t>(mv_->GlobalLength());
 }
 
 
@@ -171,20 +134,20 @@ bool MultiVecAdapter<Epetra_MultiVector>::isConstantStride() const
 }
 
 
-Teuchos::RCP<const Tpetra::Vector<MultiVecAdapter<Epetra_MultiVector>::scalar_type,
-                                  MultiVecAdapter<Epetra_MultiVector>::local_ordinal_type,
-                                  MultiVecAdapter<Epetra_MultiVector>::global_ordinal_type,
-                                  MultiVecAdapter<Epetra_MultiVector>::node_type> >
+Teuchos::RCP<const Tpetra::Vector<MultiVecAdapter<Epetra_MultiVector>::scalar_t,
+                                  MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
+                                  MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
+                                  MultiVecAdapter<Epetra_MultiVector>::node_t> >
 MultiVecAdapter<Epetra_MultiVector>::getVector( size_t j ) const
 {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Tpetra::MultiVector;
 
-  typedef scalar_type st;
-  typedef local_ordinal_type lot;
-  typedef global_ordinal_type got;
-  typedef node_type nt;
+  typedef scalar_t st;
+  typedef local_ordinal_t lot;
+  typedef global_ordinal_t got;
+  typedef node_t nt;
   
   RCP<MultiVector<st,lot,got,nt> > vector = rcp(new MultiVector<st,lot,got,nt>(this->getMap(),1));
 
@@ -197,25 +160,25 @@ MultiVecAdapter<Epetra_MultiVector>::getVector( size_t j ) const
     *it = vector_data[i];
   }
 
-  return vector->getVector(0);
+  return vector->getVector(j);
 }
 
 
 // Implementation is essentially the same as getVector()
-Teuchos::RCP<Tpetra::Vector<MultiVecAdapter<Epetra_MultiVector>::scalar_type,
-                            MultiVecAdapter<Epetra_MultiVector>::local_ordinal_type,
-                            MultiVecAdapter<Epetra_MultiVector>::global_ordinal_type,
-                            MultiVecAdapter<Epetra_MultiVector>::node_type> >
+Teuchos::RCP<Tpetra::Vector<MultiVecAdapter<Epetra_MultiVector>::scalar_t,
+                            MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
+                            MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
+                            MultiVecAdapter<Epetra_MultiVector>::node_t> >
 MultiVecAdapter<Epetra_MultiVector>::getVectorNonConst( size_t j )
 {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Tpetra::MultiVector;
 
-  typedef scalar_type st;
-  typedef local_ordinal_type lot;
-  typedef global_ordinal_type got;
-  typedef node_type nt;
+  typedef scalar_t st;
+  typedef local_ordinal_t lot;
+  typedef global_ordinal_t got;
+  typedef node_t nt;
   
   RCP<MultiVector<st,lot,got,nt> > vector = rcp(new MultiVector<st,lot,got,nt>(this->getMap(),1));
 
@@ -228,255 +191,128 @@ MultiVecAdapter<Epetra_MultiVector>::getVectorNonConst( size_t j )
     *it = vector_data[i];
   }
 
-  return vector->getVectorNonConst(0);
+  return vector->getVectorNonConst(j);
 }
 
 
 void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
-  const Teuchos::ArrayView<MultiVecAdapter<Epetra_MultiVector>::scalar_type>& A,
+  const Teuchos::ArrayView<MultiVecAdapter<Epetra_MultiVector>::scalar_t>& av,
   size_t lda,
-  bool global_copy) const
+  Teuchos::Ptr<
+    const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
+                      MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
+                      MultiVecAdapter<Epetra_MultiVector>::node_t> > distribution_map ) const
 {
-  // size_t local_length = getLocalLength();
-  global_size_type global_length = getGlobalLength();
-  size_t num_vecs = getGlobalNumVectors();
-  
-  const Epetra_BlockMap o_map(mv_->Map());
-  Epetra_BlockMap l_map(o_map);
-  
-  if( global_copy ){
-    // l_map = Tpetra::createLocalMapWithNode
-    //        <local_ordinal_type,
-    //        global_ordinal_type,
-    //        node_type>( Teuchos::as<size_t>(global_length),
-    //                    getComm(),
-    //                    o_map->getNode() );
-    
-    int num_my_elements = 0;
-    if( o_map.Comm().MyPID() == 0 ){
-      num_my_elements = Teuchos::as<int>(global_length);
-    } 
-    l_map = Epetra_Map( -1, // not locally replicated
-			num_my_elements,
-			o_map.IndexBase(),
-			o_map.Comm());
-  }
-  
-  multivec_type l_mv(l_map, num_vecs);
-  
-  Epetra_Import importer(l_map, o_map); // Note, target/source order is reversed in Tpetra
+  using Teuchos::rcpFromPtr;
+  using Teuchos::as;
 
-  l_mv.Import(*mv_, importer, Insert);
+  const size_t num_vecs = getGlobalNumVectors();
+  
+#ifdef HAVE_AMESOS2_DEBUG
+  const size_t local_vector_length = getLocalLength();
+  TEST_FOR_EXCEPTION( lda < local_vector_length,
+		      std::invalid_argument,
+		      "Given stride is not large enough for local vector length" );
+  TEST_FOR_EXCEPTION( av.size() < (num_vecs-1) * lda + local_vector_length,
+		      std::invalid_argument,
+		      "MultiVector storage not large enough given leading dimension "
+		      "and number of vectors" );
+#endif
+
+  Epetra_Map e_dist_map
+    = *Util::tpetra_map_to_epetra_map<local_ordinal_t,
+                                      global_ordinal_t,
+                                      global_size_t,
+                                      node_t>(*distribution_map);
+  multivec_t redist_mv(e_dist_map, as<int>(num_vecs));
+  
+  const Epetra_Import importer(e_dist_map, *mv_map_); // Note, target/source order is reversed in Tpetra
+
+  redist_mv.Import(*mv_, importer, Insert);
 
   // Finally, do copy
-  l_mv.ExtractCopy(A.getRawPtr(), lda);
+  redist_mv.ExtractCopy(av.getRawPtr(), lda);
 }
 
 
-Teuchos::ArrayRCP<MultiVecAdapter<Epetra_MultiVector>::scalar_type>
+Teuchos::ArrayRCP<MultiVecAdapter<Epetra_MultiVector>::scalar_t>
 MultiVecAdapter<Epetra_MultiVector>::get1dViewNonConst(bool local)
 {
-  TEST_FOR_EXCEPTION( !this->isConstantStride(),
-    std::logic_error,
-    "get1dViewNonConst() : can only get 1d view if stride is constant");
+  // TEST_FOR_EXCEPTION( !this->isConstantStride(),
+  //   std::logic_error,
+  //   "get1dViewNonConst() : can only get 1d view if stride is constant");
 
-  if( local ){
-    TEST_FOR_EXCEPTION(
-      true,
-      std::logic_error,
-      "Amesos::MultiVecAdapter<Epetra_MultiVector> : 1D views not yet supported for local-local Epetra multi-vectors");
+  // if( local ){
+  //   TEST_FOR_EXCEPTION(
+  //     true,
+  //     std::logic_error,
+  //     "Amesos::MultiVecAdapter<Epetra_MultiVector> : 1D views not yet supported for local-local Epetra multi-vectors");
     
-    // localize();
-    // /* Use the global element list returned by
-    //  * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
-    //  * assign to l_l_mv_, then return get1dViewNonConst() of l_l_mv_
-    //  */
-    // l_l_mv_ = Teuchos::null;
+  //   // localize();
+  //   // /* Use the global element list returned by
+  //   //  * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
+  //   //  * assign to l_l_mv_, then return get1dViewNonConst() of l_l_mv_
+  //   //  */
+  //   // l_l_mv_ = Teuchos::null;
     
-    // Teuchos::Array<GlobalOrdinal> nodeElements_go(mv_->Map().NumMyElements());
-    // mv_->Map().MyGlobalElements(nodeElements_go.getRawPtr());
-    // Teuchos::Array<size_t> nodeElements_st(nodeElements_go.size());
+  //   // Teuchos::Array<GlobalOrdinal> nodeElements_go(mv_->Map().NumMyElements());
+  //   // mv_->Map().MyGlobalElements(nodeElements_go.getRawPtr());
+  //   // Teuchos::Array<size_t> nodeElements_st(nodeElements_go.size());
 
-    // // Convert the node element to a list of size_t type objects
-    // typename Teuchos::ArrayView<const GlobalOrdinal>::iterator it_go;
-    // Teuchos::Array<size_t>::iterator it_st = nodeElements_st.begin();
-    // for( it_go = nodeElements_go.begin(); it_go != nodeElements_go.end(); ++it_go ){
-    //   *(it_st++) = Teuchos::as<size_t>(*it_go);
-    // }
+  //   // // Convert the node element to a list of size_t type objects
+  //   // typename Teuchos::ArrayView<const GlobalOrdinal>::iterator it_go;
+  //   // Teuchos::Array<size_t>::iterator it_st = nodeElements_st.begin();
+  //   // for( it_go = nodeElements_go.begin(); it_go != nodeElements_go.end(); ++it_go ){
+  //   //   *(it_st++) = Teuchos::as<size_t>(*it_go);
+  //   // }
 
-    // l_l_mv_ = l_mv_->subViewNonConst(nodeElements_st);
+  //   // l_l_mv_ = l_mv_->subViewNonConst(nodeElements_st);
 
-    // return(l_l_mv_->get1dViewNonConst());
-  } else {
-    scalar_type* values;
-    int lda;
+  //   // return(l_l_mv_->get1dViewNonConst());
+  // } else {
+  //   scalar_t* values;
+  //   int lda;
 
-    if( !isLocal() ){
-      this->localize();
-      l_mv_->ExtractView(&values, &lda);
-    } else {
-      mv_->ExtractView(&values, &lda);
-    }
+  //   if( !isLocal() ){
+  //     this->localize();
+  //     l_mv_->ExtractView(&values, &lda);
+  //   } else {
+  //     mv_->ExtractView(&values, &lda);
+  //   }
 
-    TEST_FOR_EXCEPTION( lda != Teuchos::as<int>(this->getStride()),
-      std::logic_error,
-      "Stride reported during extraction not consistent with what multivector reports");
+  //   TEST_FOR_EXCEPTION( lda != Teuchos::as<int>(this->getStride()),
+  //     std::logic_error,
+  //     "Stride reported during extraction not consistent with what multivector reports");
 
-    return Teuchos::arcp(values,0,lda*this->getGlobalNumVectors(),false);
-  }
-}
-
-
-void MultiVecAdapter<Epetra_MultiVector>::get2dCopy(
-  Teuchos::ArrayView<const Teuchos::ArrayView<MultiVecAdapter<Epetra_MultiVector>::scalar_type> > A)
-{
-  using Teuchos::ArrayView;
-  typedef ArrayView<const ArrayView<scalar_type> >::iterator iterator;
-  typedef ArrayView<scalar_type>::iterator inner_iterator;
-
-  TEST_FOR_EXCEPTION( Teuchos::as<size_t>(A.size()) != getGlobalNumVectors(),
-    std::length_error,
-    "get2dCopy() : The size of A is not equal to the global number of vectors");
-  TEST_FOR_EXCEPTION( Teuchos::as<size_t>(A[0].size()) != getGlobalLength(),
-    std::length_error,
-    "get2dCopy() : The size of arrays in A is not equal to the global vector length");
-  
-  scalar_type** ptr_ptr = NULL;
-  TEST_FOR_EXCEPTION( mv_->ExtractCopy(ptr_ptr) != 0,
-    std::runtime_error,
-    "get2dCopy() : Error extracting vector values from multi-vector");
-
-  int count = 0, inner_count = 0;
-  iterator it = A.begin(), end = A.end();
-
-  for( ; it != end; ++it ){
-    inner_iterator inner_it = (*it).begin(), inner_end = (*it).end();
-    for( ; inner_it != inner_end; inner_it++ ){
-      *inner_it = ptr_ptr[count][inner_count++];
-    }
-    ++count;
-  }
-}
-
-
-Teuchos::ArrayRCP<Teuchos::ArrayRCP<MultiVecAdapter<Epetra_MultiVector>::scalar_type> >
-MultiVecAdapter<Epetra_MultiVector>::get2dViewNonConst( bool local )
-{
-  using Teuchos::ArrayRCP;
-  using Teuchos::Array;
-  
-  TEST_FOR_EXCEPTION( !this->isConstantStride(),
-    std::logic_error,
-    "get1dViewNonConst() : can only get 1d view if stride is constant");
-
-  if( local ){
-    TEST_FOR_EXCEPTION(
-      true,
-      std::logic_error,
-      "Amesos::MultiVecAdapter<Epetra_MultiVector> : 1D views not yet supported for local-local Epetra multi-vectors");
-    
-    // localize();
-    // /* Use the global element list returned by
-    //  * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
-    //  * assign to l_l_mv_, then return get1dViewNonConst() of l_l_mv_
-    //  */
-    // l_l_mv_ = Teuchos::null;
-    
-    // Teuchos::Array<GlobalOrdinal> nodeElements_go(mv_->Map().NumMyElements());
-    // mv_->Map().MyGlobalElements(nodeElements_go.getRawPtr());
-    // Teuchos::Array<size_t> nodeElements_st(nodeElements_go.size());
-
-    // // Convert the node element to a list of size_t type objects
-    // typename Teuchos::ArrayView<const GlobalOrdinal>::iterator it_go;
-    // Teuchos::Array<size_t>::iterator it_st = nodeElements_st.begin();
-    // for( it_go = nodeElements_go.begin(); it_go != nodeElements_go.end(); ++it_go ){
-    //   *(it_st++) = Teuchos::as<size_t>(*it_go);
-    // }
-
-    // l_l_mv_ = l_mv_->subViewNonConst(nodeElements_st);
-
-    // return(l_l_mv_->get1dViewNonConst());
-  } else {
-    scalar_type** vec_values;
-
-    if( !isLocal() ){
-      this->localize();
-      l_mv_->ExtractView(&vec_values);
-    } else {
-      mv_->ExtractView(&vec_values);
-    }
-
-    size_t numVectors = this->getGlobalNumVectors(), vec_len = this->getGlobalLength();
-    Array<ArrayRCP<scalar_type> > ret(numVectors);
-    size_t i;
-
-    for( i = 0; i < numVectors; ++i ){
-      ret[i] = Teuchos::arcp(vec_values[Teuchos::as<int>(i)], 0, vec_len, false);
-    }
-    
-    return Teuchos::arcpFromArray(ret);
-  }
+  //   return Teuchos::arcp(values,0,lda*this->getGlobalNumVectors(),false);
+  // }
 }
 
 
 void
-MultiVecAdapter<Epetra_MultiVector>::globalize(int root)
+MultiVecAdapter<Epetra_MultiVector>::put1dData(
+  const Teuchos::ArrayView<const MultiVecAdapter<Epetra_MultiVector>::scalar_t>& new_data,
+  size_t lda,
+  Teuchos::Ptr<
+    const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
+                      MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
+                      MultiVecAdapter<Epetra_MultiVector>::node_t> > source_map)
 {
-  TEST_FOR_EXCEPTION(
-    true,
-    std::logic_error,
-    "MultiVecAdapter<Epetra_MultiVector> : arbitrary globalize not yet supported");
+  using Teuchos::rcpFromPtr;
+  using Teuchos::as;
+
+  const size_t num_vecs  = getGlobalNumVectors();
+  // TODO: check that the following const_cast is safe
+  double* data_ptr = const_cast<double*>(new_data.getRawPtr());
+  const Epetra_BlockMap e_source_map
+    = *Util::tpetra_map_to_epetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(*source_map);
+  const multivec_t source_mv(Copy, e_source_map, data_ptr, as<int>(lda), as<int>(num_vecs));
+  const Epetra_Import importer(*mv_map_, e_source_map);
+  
+  mv_->Import(source_mv, importer, Insert);
 }
 
 
-template <typename Value_t>
-void
-MultiVecAdapter<Epetra_MultiVector>::globalize(const Teuchos::ArrayView<Value_t>& newVals, int root)
-{
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
-  std::cout << "globalizing : " << newVals.toString() << std::endl;
-#endif
-  size_t num_vecs  = getGlobalNumVectors();
-  global_size_type global_length = getGlobalLength();
-  int num_elems;
-  const Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
-  
-  const Epetra_BlockMap o_map = mv_->Map();
-  if( o_map.Comm().MyPID() == root ){ // root distributes its values
-    num_elems = Teuchos::as<int>(global_length);
-  } else {
-    num_elems = Teuchos::OrdinalTraits<int>::zero();
-  }
-  const Epetra_Map l_map(-1, // do not construct as a locally replicated map
-			 num_elems,
-			 o_map.IndexBase(),
-			 o_map.Comm());
-  
-  // Do conversion to Scalar values
-  Teuchos::Array<scalar_type> converted_vals(newVals.size());
-  typedef typename Teuchos::Array<scalar_type>::iterator scalar_it_t;
-  typedef typename Teuchos::ArrayView<Value_t>::iterator value_it_t;
-  value_it_t val_it = newVals.begin();
-  scalar_it_t it = converted_vals.begin();
-  scalar_it_t end = converted_vals.end();
-  for( ; it != end; ++it )
-    {
-      *it = Teuchos::as<scalar_type>(*val_it++);
-    }
-  
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG			
-  std::cout << "converted vals : " << converted_vals.toString() << std::endl;
-#endif
-  
-  multivec_type l_mv(Copy, l_map, converted_vals.getRawPtr(), Teuchos::as<int>(global_length), num_vecs);
-  
-  Epetra_Import importer(o_map, l_map);
-  
-  mv_->Import(l_mv, importer, Insert);
-}
-
-
-// TODO: adapt to needs
 std::string MultiVecAdapter<Epetra_MultiVector>::description() const
 {
   std::ostringstream oss;
@@ -494,49 +330,12 @@ void MultiVecAdapter<Epetra_MultiVector>::describe(
 }
 
 
-void MultiVecAdapter<Epetra_MultiVector>::localize()
-{
-  using Teuchos::rcp;
-  
-  if( l_mv_.is_null() ){
-    // create local multi-vector, maps, and do import
-    *o_map_ = mv_->Map();
-    Epetra_Comm* comm = mv_->Comm().Clone();
-
-    size_t numVectors = getGlobalNumVectors();
-
-    l_map_ = rcp(new Epetra_LocalMap(Teuchos::as<int>(numVectors),0,*comm));
-
-    l_mv_ = rcp(new Epetra_MultiVector(*l_map_,Teuchos::as<int>(numVectors)));
-
-    importer_ = rcp(new Epetra_Import(*l_map_, *o_map_));
-    exporter_ = rcp(new Epetra_Export(*l_map_, *o_map_));
-
-    l_mv_->Import(*mv_, *importer_, Insert);
-  } else {
-    // Just update local values
-    l_mv_->Import(*mv_, *importer_, Insert);
-  }
-}
-
-
-Teuchos::RCP<const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_type,
-                               MultiVecAdapter<Epetra_MultiVector>::global_ordinal_type,
-                               MultiVecAdapter<Epetra_MultiVector>::node_type> >
+Teuchos::RCP<const Tpetra::Map<MultiVecAdapter<Epetra_MultiVector>::local_ordinal_t,
+                               MultiVecAdapter<Epetra_MultiVector>::global_ordinal_t,
+                               MultiVecAdapter<Epetra_MultiVector>::node_t> >
 MultiVecAdapter<Epetra_MultiVector>::getMap() const
 {
-  Teuchos::Array<int> local_element_list(mv_->Map().NumMyElements());
-  // Get element list with mv_->MyGlobalElements(), then use that list, the
-  // number of global elements, and the index base to create a Tpetra::Map
-  mv_->Map().MyGlobalElements( local_element_list.getRawPtr() );
-  int num_global_elements = mv_->Map().NumGlobalElements();
-  int index_base = mv_->Map().IndexBase();
-
-  return( rcp(new Tpetra::Map<local_ordinal_type,global_ordinal_type>(
-        num_global_elements,
-        local_element_list,
-        index_base,
-        this->getComm())) );
+  return Util::epetra_map_to_tpetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(*mv_map_);
 }
 
 

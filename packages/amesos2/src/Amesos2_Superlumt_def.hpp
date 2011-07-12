@@ -394,7 +394,8 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
   {
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 
-    X->globalize(bxvals_()); // operator() does conversion from Array to ArrayView
+    Util::put_1d_data_helper<
+      MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, Util::Rooted);
   }
 
   /* All processes should return the same error code */
@@ -458,7 +459,7 @@ Superlumt<Matrix,Vector>::setParameters_impl(
 
   if( parameterList->isParameter("relax") ){
     const int relax = parameterList->template get<int>("relax");
-    data_.poptions.relax = relax;
+    data_.options.relax = relax;
   }
 
   if( parameterList->isParameter("Equil") ){

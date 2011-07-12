@@ -50,6 +50,7 @@
 #include <Tpetra_DefaultPlatform.hpp>
 
 #include "Amesos2_EpetraMultiVecAdapter.hpp"
+#include "Amesos2_Util.hpp"
 #include "Amesos2_Util_is_same.hpp"
 
 namespace {
@@ -62,6 +63,8 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
+  using Teuchos::ptrInArg;
+  using Teuchos::outArg;
   using Teuchos::Comm;
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -72,8 +75,13 @@ namespace {
   using Teuchos::VerboseObjectBase;
 
   using Amesos::MultiVecAdapter;
+  using Amesos::createMultiVecAdapter;
 
+  using Amesos::Util::getDistributionMap;
+  using Amesos::Util::to_teuchos_comm;
   using Amesos::Util::is_same;
+  using Amesos::Util::get_1d_copy_helper;
+  using Amesos::Util::put_1d_data_helper;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -130,21 +138,15 @@ namespace {
     RCP<MV> mv = rcp(new MV(map,11));
     mv->Random();
 
-    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
-    // Test copy constructor
-    RCP<ADAPT> adapter2 = rcp(new ADAPT(*adapter));
-
-    // Check that the values remain the same (more comprehensive test of get1dView elsewhere...
-    // TEST_EQUALITY( mv->get1dViewNonConst(),      adapter->get1dViewNonConst() );
-    // TEST_EQUALITY( adapter->get1dViewNonConst(), adapter2->get1dViewNonConst() );
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
 
     // The following should all pass at compile time
-    TEST_ASSERT( (is_same<double, ADAPT::scalar_type>::value) );
-    TEST_ASSERT( (is_same<int,    ADAPT::local_ordinal_type>::value) );
-    TEST_ASSERT( (is_same<int,    ADAPT::global_ordinal_type>::value) );
-    TEST_ASSERT( (is_same<Node,   ADAPT::node_type>::value) );
-    TEST_ASSERT( (is_same<size_t, ADAPT::global_size_type>::value) );
-    TEST_ASSERT( (is_same<MV,     ADAPT::multivec_type>::value) );
+    TEST_ASSERT( (is_same<double, ADAPT::scalar_t>::value) );
+    TEST_ASSERT( (is_same<int,    ADAPT::local_ordinal_t>::value) );
+    TEST_ASSERT( (is_same<int,    ADAPT::global_ordinal_t>::value) );
+    TEST_ASSERT( (is_same<Node,   ADAPT::node_t>::value) );
+    TEST_ASSERT( (is_same<size_t, ADAPT::global_size_t>::value) );
+    TEST_ASSERT( (is_same<MV,     ADAPT::multivec_t>::value) );
 
   }
 
@@ -164,7 +166,7 @@ namespace {
     RCP<MV> mv = rcp(new MV(map,11));
     mv->Random();
 
-    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
 
     TEST_EQUALITY( mv->MyLength(),     as<int>(adapter->getLocalLength())     );
     TEST_EQUALITY( mv->NumVectors(),   as<int>(adapter->getLocalNumVectors()) );
@@ -199,11 +201,12 @@ namespace {
 
     // mv->Print(std::cout);
 
-    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
     Array<double> original(numVectors*numLocal*numprocs);
     Array<double> copy(numVectors*numLocal*numprocs);
 
-    adapter->get1dCopy(copy(),numLocal*numprocs,true);
+    get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
+					     numLocal*numprocs, Amesos::Util::Rooted);
 
     // Just rank==0 process has global copy of mv data, check against an import
     int my_elements = 0;
@@ -230,7 +233,8 @@ namespace {
     mv->Random();
     
     mv->ExtractCopy(original.getRawPtr(),mv->MyLength());
-    adapter->get1dCopy(copy(),adapter->getLocalLength(),false);
+    get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
+					     numLocal, Amesos::Util::Distributed);
     
     // Check that the values remain the same
     TEST_EQUALITY( original, copy );
@@ -258,7 +262,7 @@ namespace {
     RCP<MV> mv = rcp(new MV(map,numVectors));
     mv->Random();
 
-    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
     Array<double> original(numVectors*numLocal*numprocs);
     Array<double> copy(numVectors*numLocal*numprocs);
 
@@ -266,11 +270,21 @@ namespace {
       std::fill(original.begin(), original.end(), 1.9);
     }
 
-    adapter->globalize(original(), 0); // distribute rank 0's data
-    adapter->get1dCopy(copy(),numLocal*numprocs,true);
+    // distribute rank 0's data
+    put_1d_data_helper<ADAPT,double>::do_put(outArg(*adapter), original(),
+					     numLocal*numprocs,
+					     Amesos::Util::Rooted);
+
+    // Send rank 0's array to everyone else
+    comm->Broadcast(original.getRawPtr(), original.size(), 0);
+    
+    // Now have everyone get a copy from the multivector adapter
+    get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
+					     numLocal*numprocs,
+					     Amesos::Util::Globally_Replicated);
 
     // Check that the values are the same
-    TEST_COMPARE_FLOATING_ARRAYS( original, copy, 1e-8 ); // Really, the two should be *exactly* the same
+    TEST_EQUALITY( original, copy );
 
     delete comm;
   }

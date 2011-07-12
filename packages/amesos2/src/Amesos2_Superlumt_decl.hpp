@@ -231,8 +231,6 @@ private:
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters_impl() const;
 
 
-  typedef typename TypeMap<Amesos::Superlumt,scalar_type>::magnitude_type magnitude_type;
-
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
     SLUMT::SuperMatrix A, BX, L, U;

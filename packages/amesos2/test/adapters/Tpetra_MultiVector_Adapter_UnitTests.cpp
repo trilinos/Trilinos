@@ -50,6 +50,7 @@
 #include <Tpetra_DefaultPlatform.hpp>
 
 #include "Amesos2_TpetraMultiVecAdapter.hpp"
+#include "Amesos2_Util.hpp"
 #include "Amesos2_Util_is_same.hpp"
 
 namespace {
@@ -61,6 +62,9 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  using Teuchos::ptrInArg;
+  using Teuchos::outArg;
   using Teuchos::Comm;
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -76,8 +80,14 @@ namespace {
   using Tpetra::Map;
 
   using Amesos::MultiVecAdapter;
+  using Amesos::createMultiVecAdapter;
 
   using Amesos::Util::is_same;
+  using Amesos::Util::get_1d_copy_helper;
+  using Amesos::Util::put_1d_data_helper;
+  using Amesos::Util::Rooted;
+  using Amesos::Util::Distributed;
+  using Amesos::Util::Globally_Replicated;
 
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
@@ -142,17 +152,15 @@ namespace {
     // RCP<FancyOStream> os = getDefaultOStream();
     // mv->describe(*os,Teuchos::VERB_EXTREME);
 
-    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
-    // Test copy constructor
-    RCP<ADAPT> adapter2 = rcp(new ADAPT(*adapter));
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
 
     // The following should all pass at compile time
-    TEST_ASSERT( (is_same<SCALAR,        typename ADAPT::scalar_type>::value) );
-    TEST_ASSERT( (is_same<LO,            typename ADAPT::local_ordinal_type>::value) );
-    TEST_ASSERT( (is_same<GO,            typename ADAPT::global_ordinal_type>::value) );
-    TEST_ASSERT( (is_same<Node,          typename ADAPT::node_type>::value) );
-    TEST_ASSERT( (is_same<global_size_t, typename ADAPT::global_size_type>::value) );
-    TEST_ASSERT( (is_same<MV,            typename ADAPT::multivec_type>::value) );
+    TEST_ASSERT( (is_same<SCALAR,        typename ADAPT::scalar_t>::value) );
+    TEST_ASSERT( (is_same<LO,            typename ADAPT::local_ordinal_t>::value) );
+    TEST_ASSERT( (is_same<GO,            typename ADAPT::global_ordinal_t>::value) );
+    TEST_ASSERT( (is_same<Node,          typename ADAPT::node_t>::value) );
+    TEST_ASSERT( (is_same<global_size_t, typename ADAPT::global_size_t>::value) );
+    TEST_ASSERT( (is_same<MV,            typename ADAPT::multivec_t>::value) );
 
   }
 
@@ -177,7 +185,7 @@ namespace {
     // RCP<FancyOStream> os = getDefaultOStream();
     // mv->describe(*os,Teuchos::VERB_EXTREME);
 
-    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
 
     TEST_EQUALITY( mv->getLocalLength(),  adapter->getLocalLength()      );
     TEST_EQUALITY( mv->getNumVectors(),   adapter->getLocalNumVectors()  );
@@ -202,7 +210,7 @@ namespace {
 
     RCP<const Comm<int> > comm = getDefaultComm();
     const size_t numprocs = comm->getSize();
-    // const size_t rank     = comm->getRank();
+    const size_t rank     = comm->getRank();
 
     // create a Map
     const size_t numVectors = 7;
@@ -212,35 +220,36 @@ namespace {
     RCP<MV> mv = rcp(new MV(map,numVectors));
     mv->randomize();
 
-    // std::ostream &sout = std::cout;
-    // RCP<Teuchos::FancyOStream> os = Teuchos::fancyOStream(Teuchos::rcpFromRef(sout));
-    // mv->describe(*os,Teuchos::VERB_EXTREME);
-
-    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
     Array<SCALAR> original(numVectors*numLocal*numprocs);
     Array<SCALAR> copy(numVectors*numLocal*numprocs);
 
-    mv->get1dCopy(original(),numLocal*numprocs);
-    adapter->get1dCopy(copy(),numLocal*numprocs,true);
+    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal*numprocs, Rooted);
+
+    // Only rank=0 process has global copy of the mv data, check against an import
+    size_t my_num_elems = OrdinalTraits<size_t>::zero();
+    if( rank == 0 ) my_num_elems = numLocal*numprocs;
+    Map<LO,GO,Node> root_map(numLocal*numprocs, my_num_elems, 0, comm);
+    MV root_mv(rcpFromRef(root_map), numVectors);
+    Tpetra::Import<LO,GO,Node> importer(map,rcpFromRef(root_map));
+    root_mv.doImport(*mv, importer, Tpetra::REPLACE);
+
+    root_mv.get1dCopy(original(),numLocal*numprocs);
+
+    TEST_EQUALITY( original, copy );
 
     // Check getting copy of just local data
     original.clear();
     original.resize(numVectors*numLocal);
     copy.clear();
     copy.resize(numVectors*numLocal);
+    mv->randomize();
     
     mv->get1dCopy(original(),mv->getLocalLength());
-    adapter->get1dCopy(copy(),adapter->getLocalLength(),false);
+    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal, Distributed);
     
     // Check that the values remain the same
     TEST_EQUALITY( original, copy );
-
-  }
-
-  // Do not check Views, since their use is deprecated already
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, Localize, SCALAR, LO, GO )
-  {
 
   }
 
@@ -264,12 +273,7 @@ namespace {
     RCP<MV> mv = rcp(new MV(map,numVectors));
     mv->randomize();
 
-    // std::ostream &sout = std::cout;
-    // RCP<Teuchos::FancyOStream> os = Teuchos::fancyOStream(Teuchos::rcpFromRef(sout));
-    // mv->describe(*os,Teuchos::VERB_EXTREME);
-
-    RCP<ADAPT> adapter = rcp(new ADAPT(mv));
-
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
     Array<SCALAR> original(numVectors*numLocal*numprocs);
     Array<SCALAR> copy(numVectors*numLocal*numprocs);
 
@@ -277,10 +281,20 @@ namespace {
       std::fill(original.begin(), original.end(), 1.9);
     }
 
-    adapter->globalize(original(), 0); // distribute rank 0's data
-    adapter->get1dCopy(copy(),numLocal*numprocs,true);
+    // distribute rank 0's data
+    put_1d_data_helper<ADAPT,SCALAR>::do_put(outArg(*adapter), original(),
+					     numLocal*numprocs,
+					     Rooted);
 
-    TEST_COMPARE_FLOATING_ARRAYS(original, copy, 1e-8); // Really, the two should be *exactly* the same
+    // Send rank 0's array to everyone else
+    Teuchos::broadcast(*comm, 0, original());
+
+    // Now have everyone get a copy from the multivector adapter
+    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(),
+					     numLocal*numprocs,
+					     Globally_Replicated);
+
+    TEST_EQUALITY( original, copy );
   }
 
 
@@ -308,7 +322,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Dimensions, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Copy, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Localize, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Globalize, SCALAR, LO, GO ) \
   
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )		\

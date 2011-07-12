@@ -147,49 +147,6 @@ namespace Amesos {
     }
 
 
-    /*
-     * If the scalar and SuperLU types are the same, then we can do
-     * a simple straight copy.
-     */
-    template <typename MV>
-    struct same_type_get_copy {
-      static void apply(const Teuchos::Ptr<MV>& mv,
-			const Teuchos::ArrayView<typename MV::scalar_type>& v,
-			const size_t& ldx)
-      {
-	bool get_root_global_copy = true;
-	mv->get1dCopy(v, ldx, get_root_global_copy);
-      }
-    };
-
-    /*
-     * In the case where the scalar type of the multi-vector and the
-     * corresponding SuperLU type are different, then we need to
-     * first get a copy of the scalar values, then convert each one
-     * into the SuperLU type before inserting into the vals array.
-     */
-    template <typename MV>
-    struct diff_type_get_copy {
-      static void apply(const Teuchos::Ptr<MV>& mv,
-			const Teuchos::ArrayView<typename TypeMap<Superlu,typename MV::scalar_type>::type>& v,
-			const size_t& ldx)
-      {
-	typedef typename MV::scalar_type scalar_type;
-	typedef typename TypeMap<Superlu,scalar_type>::type slu_type;
-	  
-	bool get_root_global_copy = true;
-	int vals_length = v.size();
-	Teuchos::Array<scalar_type> vals_tmp(vals_length);
-	  
-	mv->get1dCopy(vals_tmp(), ldx, get_root_global_copy);
-
-	for ( int i = 0; i < vals_length; ++i ){
-	  v[i] = Teuchos::as<slu_type>(vals_tmp[i]);
-	}
-      }
-    };
-
-
     /** \brief Creates a Superlu Dense Matrix from the given MultiVector
      *
      * \tparam MV A multi-vector type conforming to the interface, in particular
@@ -207,12 +164,12 @@ namespace Amesos {
     template <class MV>
     static void createMVDenseMatrix(
         const Teuchos::Ptr<MV>& mv,
-        const Teuchos::ArrayView<typename TypeMap<Superlu,typename MV::scalar_type>::type>& vals,
+        const Teuchos::ArrayView<typename TypeMap<Superlu,typename MV::scalar_t>::type>& vals,
         size_t& ldx,
         const Teuchos::Ptr<SLU::SuperMatrix>& X,
         Teuchos::Time& vecRedistTime)
     {
-      typedef typename MV::scalar_type scalar_type;
+      typedef typename MV::scalar_t scalar_type;
       typedef typename TypeMap<Superlu,scalar_type>::type slu_type;
       SLU::Dtype_t dtype = TypeMap<Superlu,scalar_type>::dtype;
 
@@ -224,10 +181,7 @@ namespace Amesos {
       {
         Teuchos::TimeMonitor redistTimer( vecRedistTime );
 
-	// Dispatch to the copy function appropriate for the type
-        Util::if_then_else<Util::is_same<scalar_type,slu_type>::value,
-          same_type_get_copy<MV>,
-          diff_type_get_copy<MV> >::type::apply(mv, vals, ldx);
+	Util::get_1d_copy_helper<MV,slu_type>::do_get(mv, vals, ldx, Util::Rooted);
     }
 
       FunctionMap<Superlu,scalar_type>::create_Dense_Matrix(

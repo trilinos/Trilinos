@@ -83,106 +83,56 @@ namespace Amesos {
     typedef Tpetra::MultiVector<Scalar,
 				LocalOrdinal,
 				GlobalOrdinal,
-				Node>       multivec_type;
-    typedef Scalar                          scalar_type;
-    typedef LocalOrdinal                    local_ordinal_type;
-    typedef GlobalOrdinal                   global_ordinal_type;
-    typedef Node                            node_type;
-    typedef typename Tpetra::global_size_t  global_size_type;
+				Node>       multivec_t;
+    typedef Scalar                          scalar_t;
+    typedef LocalOrdinal                    local_ordinal_t;
+    typedef GlobalOrdinal                   global_ordinal_t;
+    typedef Node                            node_t;
+    typedef Tpetra::global_size_t           global_size_t;
+
+    friend Teuchos::RCP<MultiVecAdapter<multivec_t> > createMultiVecAdapter<>(Teuchos::RCP<multivec_t>);
+    friend Teuchos::RCP<const MultiVecAdapter<multivec_t> > createConstMultiVecAdapter<>(Teuchos::RCP<const multivec_t>);
 
     static const char* name;
 
 
-    /// Default Constructor
-    MultiVecAdapter()
-      : mv_(Teuchos::null)
-      , l_mv_(Teuchos::null)
-      , l_l_mv_(Teuchos::null)
-    { }
-
-
+  protected:
+    // Do not allow direct construction of MultiVecAdapter's.  Only
+    // allow construction throw the non-member friend functions.
+    
     /// Copy constructor
-    MultiVecAdapter( const MultiVecAdapter<multivec_type>& adapter )
-      : mv_(adapter.mv_)
-      , l_mv_(adapter.l_mv_)
-      , l_l_mv_(adapter.l_l_mv_)
-    { }
+    MultiVecAdapter( const MultiVecAdapter<multivec_t>& adapter );
 
     /**
      * \brief Initialize an adapter from a multi-vector RCP.
      *
      * \param m An RCP pointing to the multi-vector which is to be wrapped.
      */
-    MultiVecAdapter( const Teuchos::RCP<multivec_type>& m )
-      : mv_(m)
-      , l_mv_(Teuchos::null)
-      , l_l_mv_(Teuchos::null)
+    MultiVecAdapter( const Teuchos::RCP<multivec_t>& m );
+
+
+  public:
+    
+    ~MultiVecAdapter()
     { }
 
 
-    ~MultiVecAdapter()
-    {
-      // TODO: Should the destructor export changes to the serial
-      // version before it destroys itself, or should we leave the
-      // user responsible for calling the updateValues method?
-    }
-
-    /**
-     * \return An RCP to the matrix that is being adapted by this adapter
-     */
-    const Teuchos::RCP<multivec_type> getAdaptee(){ return mv_; }
-
-    /**
-     * \brief Scales values of \c this by a factor of \c alpha
-     *
-     * \f$ this = alpha * this\f$
-     *
-     * \param [in] alpha scalar factor
-     *
-     * \return A reference to \c this
-     */
-    MultiVecAdapter<multivec_type>& scale( const scalar_type alpha )
-    {
-      mv_->scale(alpha);
-
-      return *this;
-    }
-
-
-
-    /**
-     * \brief Updates the values of \c this to \f$this = alpha*this + beta*B\f$
-     *
-     * \param [in] beta scalar coefficient of \c B
-     * \param [in] B additive MultiVector
-     * \param [in] alpha scalar coefficient of \c this
-     *
-     * \return A reference to \c this
-     */
-    MultiVecAdapter<multivec_type>& update(
-					   const scalar_type beta,
-					   const MultiVecAdapter<multivec_type>& B,
-					   const scalar_type alpha )
-    {
-      mv_->update(beta, B.mv_, alpha);
-
-      return *this;
-    }
-
-
     /// Checks whether this multivector is local to the calling node.
-    bool isLocal() const
+    bool isLocallyIndexed() const
     {
       if(getComm()->getSize() == 1){
 	return true;
       } // There may be other conditions to check
     }
 
+    // TODO
+    bool isGloballyIndexed() const;
+
 
     const Teuchos::RCP<const Tpetra::Map<
-			 local_ordinal_type,
-			 global_ordinal_type,
-			 node_type > >&
+			 local_ordinal_t,
+			 global_ordinal_t,
+			 node_t > >&
     getMap() const
     {
       return mv_->getMap();
@@ -209,7 +159,7 @@ namespace Amesos {
 
 
     /// Get the length of vectors in the global space
-    global_size_type getGlobalLength() const
+    global_size_t getGlobalLength() const
     {
       // return mv_->getGlobalLength();
       return getMap()->getMaxAllGlobalIndex() + 1;
@@ -217,9 +167,9 @@ namespace Amesos {
 
 
     /// Get the number of global vectors
-    size_t getGlobalNumVectors() const
+    global_size_t getGlobalNumVectors() const
     {
-      return mv_->getNumVectors();
+      return Teuchos::as<global_size_t>(mv_->getNumVectors());
     }
 
 
@@ -238,7 +188,7 @@ namespace Amesos {
 
 
     /// Const vector access
-    Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
+    Teuchos::RCP<const Tpetra::Vector<scalar_t,local_ordinal_t,global_ordinal_t,node_t> >
     getVector( size_t j ) const
     {
       return mv_->getVector(j);
@@ -246,49 +196,45 @@ namespace Amesos {
 
 
     /// Nonconst vector access
-    Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
+    Teuchos::RCP<Tpetra::Vector<scalar_t,local_ordinal_t,global_ordinal_t,node_t> >
     getVectorNonConst( size_t j )
     {
       return mv_->getVectorNonConst(j);
     }
 
 
-    /*
-     * TODO: The declaration and implementation of this function needs
-     * to eventually be redefined to be more general.  An enum
-     * parameter might be sufficient to describe the possible
-     * use-cases we would expect to have to support in the long run
-     * for all types of solvers.  This must encompase the different
-     * ways in which a solver would like the multivector data
-     * distributed across processes:
-     *
-     * - Root only has access to all MV data
-     * - All processes have access to all MV data
-     * - Processes have access only to its local data
-     */
     /**
      * \brief Copies the multivector's data into the user-provided vector.
      *
-     *  Each multivector is \c lda apart in memory.
+     *  Each vector of the multivector is placed \c lda apart in the
+     *  given ArrayView.  Giving a distribution map is useful in the
+     *  case where the data needs to end up on different processors
+     *  than it currently resides.  For example, the SuperLU_DIST
+     *  interface may receive a B multivector that is distributed
+     *  across 13 processors, but only 12 of those 13 processors are
+     *  in SuperLU_DIST's processor grid.  The rows of the multivector
+     *  need to then be distributed amongst the 12 that are in the
+     *  grid.
      *
-     *  \param             A user-supplied storage for multi-vector data
-     *  \param lda         user-supplied spacing for consecutive vectors
+     *  \param [in/out] A  user-supplied storage for multi-vector data
+     *  \param [in] lda    user-supplied spacing for consecutive vectors
      *                     in \c A
-     *  \param global_copy Whether a copy of the full global multivector
-     *                     is copied into A, or just the local portion.
-     *                     If \c true, then A must be large enough to
-     *                     fit all global multivector entries; if \c
-     *                     false, then it must be large enough to fit
-     *                     all local entries.
+     *  \param [in] distribution_map is a Tpetra::Map that describes the
+     *                     desired distribution of the multivector's
+     *                     data accross the calling processors.  The map
+     *                     describes where the 'rows' of the multivector
+     *                     will end up.
      *
      *  \throw std::runtime_error Thrown if the space available in \c A
      *  is not large enough given \c lda , the value of \c global_copy ,
      *  and the number of vectors in \c this.
      */
-    void get1dCopy( const Teuchos::ArrayView<scalar_type>& A,
+    void get1dCopy( const Teuchos::ArrayView<scalar_t>& A,
 		    size_t lda,
-		    bool global_copy ) const;
-
+		    Teuchos::Ptr<
+		      const Tpetra::Map<local_ordinal_t,
+		                        global_ordinal_t,
+		                        node_t> > distribution_map ) const;
 
     /**
      * \brief Extracts a 1 dimensional view of this MultiVector's data
@@ -303,68 +249,22 @@ namespace Amesos {
      * in possession of.  The default, \c false , will give each calling node a
      * view of the global multivector.
      */
-    Teuchos::ArrayRCP<scalar_type> get1dViewNonConst( bool local = false );
+    Teuchos::ArrayRCP<scalar_t> get1dViewNonConst( bool local = false );
 
     /**
-     * \brief Get a 2-D copy of the multi-vector.
+     * \brief Export data into the global MultiVector space.
      *
-     * Copies a 2-D representation of the multi-vector into the user-supplied
-     * array-of-arrays.
-     *
-     * \param A user-supplied storage for the 2-D copy.
-     *
-     * \throw std::length_error Thrown if the size of \c A is not equal to the
-     * number of vectors in the underlying multi-vector.
+     * \param new_data The data to be exported into \c this.
+     * \param source_map describes how the input array data is distributed
+     *                 accross processors.  This data will be redistributed
+     *                 to match the map of the adapted multivector.
      */
-    void get2dCopy( Teuchos::ArrayView<const Teuchos::ArrayView<scalar_type> > A ) const;
-
-    /**
-     * \brief Extracts a 2 dimensional view of this multi-vector's data.
-     *
-     * Guarantees that the view returned will reside in contiguous storage.  The
-     * data is not \c const , so it may be altered if desired.
-     *
-     * \warning
-     * It is recommended to use the \c get2dCopy function, from a
-     * data-hiding perspective. Use if you know what you are doing.
-     *
-     * \param local if \c true , each node will get a view of the vectors it is
-     * in possession of.  The default, \c false , will give each calling node a
-     * view of the global multivector.
-     *
-     * \return An array-of-arrays view of this multi-vector's data
-     *
-     * \note This function is not declared \c const as it normally would be,
-     * since it must modify local copies of the vector data before returning the
-     * result.
-     */
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> >
-    get2dViewNonConst( bool local = false );
-
-
-    /**
-     * \brief Exports any local changes to this MultiVector to the global space.
-     *
-     * \post The values in \c l_mv_ will be equal to the values in \c mv_
-     *
-     * \param root gives the rank whose local multivector will be distributed
-     */
-    void globalize(int root = 0);
-
-
-    /**
-     * \brief Export \c newVals into the global MultiVector space.
-     *
-     * \note We assume that the leading dimension of the data in
-     * newVals is equal to the global length of a vector in \c this.
-     *
-     * \tparam Value_t The type of the data values that are being put into \c mv_
-     *
-     * \param newVals The values to be exported into the global space.
-     * \param root gives the rank whose values will be distributed
-     */
-    template<typename Value_t>
-    void globalize( const Teuchos::ArrayView<Value_t>& newVals, int root = 0 );
+    void put1dData( const Teuchos::ArrayView<const scalar_t>& new_data,
+		    size_t lda,
+		    Teuchos::Ptr<
+		      const Tpetra::Map<local_ordinal_t,
+		                        global_ordinal_t,
+		                        node_t> > source_map );
 
 
     /// Get a short description of this adapter class
@@ -378,72 +278,22 @@ namespace Amesos {
 
   private:
 
-    /**
-     * \brief "Localizes" the wrapped \c mv_ .
-     *
-     * It defines the private maps \c o_map_ and \c l_map_ and imports
-     * global data into the root node (given by the function parameter).
-     * If \c mv_ is not distributed (which includes locally replicated),
-     * this method does nothing.
-     *
-     * It is intended to set things up properly for calls to
-     * \c get1dCopy() and \c get1dView().
-     *
-     * \param root gives which processor is to have the local copy of
-     *             the entire multivector.
-     *
-     * \sa get1dCopy(), get1dView()
-     */
-    void localize( bool root ) const;
-
-
     /// The multivector this adapter wraps
-    Teuchos::RCP<Tpetra::MultiVector<scalar_type,
-				     local_ordinal_type,
-				     global_ordinal_type,
-				     node_type > > mv_;
+    Teuchos::RCP<multivec_t> mv_;
 
-    /**
-     * \brief local multivector.
-     *
-     * Contains a local view of the entire multivector.
-     */
-    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,
-					     local_ordinal_type,
-					     global_ordinal_type,
-					     node_type > > l_mv_;
-
-    /**
-     * \brief local-local multivector.
-     *
-     * Holds only a representation of the vectors local to the calling processor.
-     */
-    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,
-					     local_ordinal_type,
-					     global_ordinal_type,
-					     node_type > > l_l_mv_;
 
     /// Used for transferring between local and global multivectors
-    mutable Teuchos::RCP<Tpetra::Import<local_ordinal_type,
-					global_ordinal_type,
-					node_type> > importer_;
-    mutable Teuchos::RCP<Tpetra::Export<local_ordinal_type,
-					global_ordinal_type,
-					node_type> > exporter_;
+    mutable Teuchos::RCP<Tpetra::Import<local_ordinal_t,
+					global_ordinal_t,
+					node_t> > importer_;
+    mutable Teuchos::RCP<Tpetra::Export<local_ordinal_t,
+					global_ordinal_t,
+					node_t> > exporter_;
 
-    /**
-     * \brief Local map.
-     *
-     * If \c mv_ is not distributed, then this should be equivalent to \c o_map_
-     */
-    mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
-					   global_ordinal_type,
-					   node_type > > l_map_;
-
-    /// original map
-    mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
-					   global_ordinal_type,
-					   node_type > > o_map_;
+    /// The adapted multivector's map
+    mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_t,
+					   global_ordinal_t,
+					   node_t> > mv_map_;
 
   };                              // end class MultiVecAdapter<Tpetra::MultiVector>
 

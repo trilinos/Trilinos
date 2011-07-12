@@ -123,6 +123,28 @@ namespace Amesos {
       Rooted                      /**< only \c rank=0 has a full view, all others have nothing. */
     } EDistribution;
 
+    /**
+     * \brief Gets a Tpetra::Map described by the EDistribution.
+     *
+     * \param distribution The distribution that the returned map will conform to
+     * \param num_global_elements A global_size_t value that gives the number of
+     *                     global elements in the map.
+     * \param comm         The communicator to create the map on.
+     *
+     * \tparam LO          The local ordinal type
+     * \tparam GO          The global ordinal type
+     * \tparam GS          The global size type
+     * \tparam Node        The Kokkos node type
+     *
+     * \ingroup amesos2_utils
+     */
+    template <typename LO, typename GO, typename GS, typename Node>
+    const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
+    getDistributionMap(EDistribution distribution,
+		       GS num_global_elements,
+		       const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+    
+
     /** \enum EStorage_Ordering
      *
      * This enum also used by the matrix adapters to indicate whether
@@ -136,6 +158,7 @@ namespace Amesos {
       Arbitrary                   /**< index order can be arbitrary */
     } EStorage_Ordering;
 
+    
 #ifdef HAVE_AMESOS2_EPETRA
     /**
      * \brief Transform an Epetra_Map object into a Tpetra::Map
@@ -461,10 +484,15 @@ namespace Amesos {
 			 GS& nnz, EDistribution distribution,
 			 EStorage_Ordering ordering=Arbitrary)
       {
-	const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
-	                                     typename Matrix::global_ordinal_t,
-	                                     typename Matrix::node_t> > map
-	  = mat->getDistributionMap(distribution); // access provided as friend class
+	typedef typename Matrix::local_ordinal_t lo_t;
+	typedef typename Matrix::global_ordinal_t go_t;
+	typedef typename Matrix::global_size_t gs_t;
+	typedef typename Matrix::node_t node_t;
+	
+	const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
+	  = getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
+						      Op::get_dimension(mat),
+						      mat->getComm());
 	do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), ordering);
       }
 
@@ -536,9 +564,16 @@ namespace Amesos {
       const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
 					   typename Matrix::global_ordinal_t,
 					   typename Matrix::node_t> >
-      getMap(const Teuchos::Ptr<Matrix> mat)
+      getMap(const Teuchos::Ptr<const Matrix> mat)
       {
 	return mat->getColMap();
+      }
+
+      static
+      typename Matrix::global_size_t
+      get_dimension(const Teuchos::Ptr<const Matrix> mat)
+      {
+	return mat->getGlobalNumCols();
       }
     };
 
@@ -563,9 +598,16 @@ namespace Amesos {
       const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
 					   typename Matrix::global_ordinal_t,
 					   typename Matrix::node_t> >
-      getMap(const Teuchos::Ptr<Matrix> mat)
+      getMap(const Teuchos::Ptr<const Matrix> mat)
       {
 	return mat->getRowMap();
+      }
+
+      static
+      typename Matrix::global_size_t
+      get_dimension(const Teuchos::Ptr<const Matrix> mat)
+      {
+	return mat->getGlobalNumRows();
       }
     };
 #endif	// DOXYGEN_SHOULD_SKIP_THIS
@@ -637,6 +679,183 @@ namespace Amesos {
     struct get_crs_helper : get_cxs_helper<Matrix,S,GO,GS,get_crs_func<Matrix> >
     {};
 
+
+
+////////////////////////////////////////////////////////////////////////////////  
+  
+    /*
+     * If the multivector scalar type and the desired scalar tpye are
+     * the same, then we can do a simple straight copy.
+     */
+    template <typename MV>
+    struct same_type_get_copy {
+      static void apply(const Teuchos::Ptr<const MV>& mv,
+			const Teuchos::ArrayView<typename MV::scalar_t>& v,
+			const size_t ldx,
+			Teuchos::Ptr<
+			  const Tpetra::Map<typename MV::local_ordinal_t,
+			                    typename MV::global_ordinal_t,
+			                    typename MV::node_t> > distribution_map )
+      {
+	mv->get1dCopy(v, ldx, distribution_map);
+      }
+    };
+
+    /*
+     * In the case where the scalar type of the multi-vector and the
+     * corresponding S type are different, then we need to first get a
+     * copy of the scalar values, then convert each one into the S
+     * type before inserting into the vals array.
+     */
+    template <typename MV, typename S>
+    struct diff_type_get_copy {
+      static void apply(const Teuchos::Ptr<const MV>& mv,
+			const Teuchos::ArrayView<S>& v,
+			const size_t& ldx,
+			Teuchos::Ptr<
+			  const Tpetra::Map<typename MV::local_ordinal_t,
+			                    typename MV::global_ordinal_t,
+			                    typename MV::node_t> > distribution_map )
+      {
+	typedef typename MV::scalar_t mv_scalar_t;
+	  
+	int vals_length = v.size();
+	Teuchos::Array<mv_scalar_t> vals_tmp(vals_length);
+	  
+	mv->get1dCopy(vals_tmp(), ldx, distribution_map);
+
+	for ( int i = 0; i < vals_length; ++i ){
+	  v[i] = Teuchos::as<S>(vals_tmp[i]);
+	}
+      }
+    };
+
+    /**
+     * \brief Helper class for getting 1-D copies of multivectors
+     *
+     * Handles datatype conversion when appropriate.
+     */
+    template <class MV, typename S>
+    struct get_1d_copy_helper {
+      static void do_get(const Teuchos::Ptr<const MV>& mv,
+			 const Teuchos::ArrayView<S>& vals,
+			 const size_t ldx,
+			 Teuchos::Ptr<
+			   const Tpetra::Map<typename MV::local_ordinal_t,
+			                     typename MV::global_ordinal_t,
+			                     typename MV::node_t> > distribution_map )
+      {
+	// Dispatch to the copy function appropriate for the type
+	if_then_else<is_same<typename MV::scalar_t,S>::value,
+	  same_type_get_copy<MV>,
+	  diff_type_get_copy<MV,S> >::type::apply(mv, vals, ldx, distribution_map);
+      }
+      
+      static void do_get(const Teuchos::Ptr<const MV>& mv,
+		       const Teuchos::ArrayView<S>& vals,
+			 const size_t ldx,
+			 EDistribution distribution);
+
+      static void do_get(const Teuchos::Ptr<const MV>& mv,
+			 const Teuchos::ArrayView<S>& vals,
+			 const size_t ldx)
+      {
+	const Teuchos::RCP<const Tpetra::Map<typename MV::local_ordinal_t,
+	                                     typename MV::global_ordinal_t,
+	                                     typename MV::node_t> > map
+	  = mv->getMap();
+	do_get(mv, vals, ldx, Teuchos::ptrInArg(*map));
+      }
+    };
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+  /*
+     * If the multivector scalar type and the desired scalar tpye are
+     * the same, then we can do a simple straight copy.
+     */
+    template <typename MV>
+    struct same_type_data_put {
+      static void apply(const Teuchos::Ptr<MV>& mv,
+			const Teuchos::ArrayView<typename MV::scalar_t>& data,
+			const size_t ldx,
+			Teuchos::Ptr<
+			  const Tpetra::Map<typename MV::local_ordinal_t,
+			                    typename MV::global_ordinal_t,
+			                    typename MV::node_t> > distribution_map )
+      {
+	mv->put1dData(data, ldx, distribution_map);
+      }
+    };
+
+    /*
+     * In the case where the scalar type of the multi-vector and the
+     * corresponding S type are different, then we need to first get a
+     * copy of the scalar values, then convert each one into the S
+     * type before inserting into the vals array.
+     */
+    template <typename MV, typename S>
+    struct diff_type_data_put {
+      static void apply(const Teuchos::Ptr<MV>& mv,
+			const Teuchos::ArrayView<S>& data,
+			const size_t& ldx,
+			Teuchos::Ptr<
+			  const Tpetra::Map<typename MV::local_ordinal_t,
+			                    typename MV::global_ordinal_t,
+			                    typename MV::node_t> > distribution_map )
+      {
+	typedef typename MV::scalar_t mv_scalar_t;
+	  
+	int vals_length = data.size();
+	Teuchos::Array<mv_scalar_t> data_tmp(vals_length);
+	  
+	for ( int i = 0; i < vals_length; ++i ){
+	  data_tmp[i] = Teuchos::as<mv_scalar_t>(data[i]);
+	}
+
+	mv->put1dData(data_tmp(), ldx, distribution_map);
+      }
+    };
+
+  
+    /**
+     * \brief Helper class for putting 1-D data arrays into multivectors
+     *
+     * Handles dataype conversion when necessary before putting the data.
+     */
+    template <class MV, typename S>
+    struct put_1d_data_helper {
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+			 const Teuchos::ArrayView<S>& data,
+			 const size_t ldx,
+			 Teuchos::Ptr<
+			   const Tpetra::Map<typename MV::local_ordinal_t,
+			                     typename MV::global_ordinal_t,
+			                     typename MV::node_t> > distribution_map )
+      {
+	// Dispatch to the copy function appropriate for the type
+	if_then_else<is_same<typename MV::scalar_t,S>::value,
+	  same_type_data_put<MV>,
+	  diff_type_data_put<MV,S> >::type::apply(mv, data, ldx, distribution_map);
+      }
+      
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+			 const Teuchos::ArrayView<S>& data,
+			 const size_t ldx,
+			 EDistribution distribution);
+
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+			 const Teuchos::ArrayView<S>& data,
+			 const size_t ldx)
+      {
+	const Teuchos::RCP<const Tpetra::Map<typename MV::local_ordinal_t,
+	                                     typename MV::global_ordinal_t,
+	                                     typename MV::node_t> > map
+	  = mv->getMap();
+	do_put(mv, data, ldx, Teuchos::ptrInArg(*map));
+      }
+    };
 
   } // end namespace Util
 

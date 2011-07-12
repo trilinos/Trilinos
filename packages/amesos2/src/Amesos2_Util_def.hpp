@@ -69,6 +69,30 @@ namespace Amesos {
 
   namespace Util {
 
+    template <typename LO, typename GO, typename GS, typename Node>
+    const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
+    getDistributionMap(Util::EDistribution distribution,
+		       GS num_global_elements,
+		       const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+    {
+      switch( distribution ){
+      case Util::Distributed:
+      case Util::Distributed_No_Overlap:
+	return Tpetra::createUniformContigMap<LO,GO>(num_global_elements, comm);
+	break;
+      case Util::Globally_Replicated:
+	return Tpetra::createLocalMap<LO,GO>(num_global_elements, comm);
+	break;
+      case Util::Rooted:
+	int rank = Teuchos::rank(*comm);
+	size_t my_num_elems = Teuchos::OrdinalTraits<size_t>::zero();
+	if( rank == 0 ) my_num_elems = num_global_elements;
+	return Tpetra::createContigMap<LO,GO>(num_global_elements,
+					      my_num_elems, comm);
+	break;
+      }
+    }
+
 #ifdef HAVE_AMESOS2_EPETRA
     template <typename LO, typename GO, typename GS, typename Node>
     Teuchos::RCP<Tpetra::Map<LO,GO,Node> >
@@ -363,16 +387,54 @@ namespace Amesos {
       }
     }
 
-    /// Prints a line of 80 "-"s on std::cout.
-    void printLine( Teuchos::FancyOStream &out )
+    /// Prints a line of 80 "-"s on out.
+    void printLine( Teuchos::FancyOStream& out )
     {
       out << "----------------------------------------"
 	  << "----------------------------------------"
 	  << std::endl;
     }
 
+////////////////////////////////////////////////////////////////////////////////
   } // end namespace Util
 }   // end namespace Amesos
+
+
+template <class MV, typename S>
+void Amesos::Util::get_1d_copy_helper<MV,S>::do_get(const Teuchos::Ptr<const MV>& mv,
+						    const Teuchos::ArrayView<S>& vals,
+						    const size_t ldx,
+						    EDistribution distribution)
+{
+  typedef typename MV::local_ordinal_t lo_t;
+  typedef typename MV::global_ordinal_t go_t;
+  typedef typename MV::global_size_t gs_t;
+  typedef typename MV::node_t node_t;
+  
+  const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
+    = Amesos::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
+							      mv->getGlobalLength(),
+							      mv->getComm());
+  do_get(mv, vals, ldx, Teuchos::ptrInArg(*map));
+}
+
+template <class MV, typename S>
+void Amesos::Util::put_1d_data_helper<MV,S>::do_put(const Teuchos::Ptr<MV>& mv,
+						    const Teuchos::ArrayView<S>& data,
+						    const size_t ldx,
+						    EDistribution distribution)
+{
+  typedef typename MV::local_ordinal_t lo_t;
+  typedef typename MV::global_ordinal_t go_t;
+  typedef typename MV::global_size_t gs_t;
+  typedef typename MV::node_t node_t;
+  
+  const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
+    = Amesos::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
+							      mv->getGlobalLength(),
+							      mv->getComm());
+  do_put(mv, data, ldx, Teuchos::ptrInArg(*map));
+}
 
 
 #endif	// #ifndef AMESOS2_UTIL_DEF_HPP

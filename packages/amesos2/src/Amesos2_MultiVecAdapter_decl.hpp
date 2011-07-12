@@ -79,6 +79,8 @@ namespace Amesos {
    * \code
    * bool isLocallyIndexed() const;
    * bool isGloballyIndexed() const;
+   *
+   * Teuchos::RCP<Tpetra::Map<LO,GO,Node> > getMap() const;
    * \endcode
    * </li>
    *

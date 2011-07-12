@@ -52,8 +52,8 @@ namespace Amesos {
 
     // template<typename S, typename GO, typename GS, typename Op>
     // friend class Util::get_cxs_helper<MatrixAdapter<Matrix>,S,GO,GS,Op>;
-    template<class M, typename S, typename GO, typename GS, typename Op>
-    friend class Util::get_cxs_helper;
+    // template<class M, typename S, typename GO, typename GS, typename Op>
+    // friend class Util::get_cxs_helper;
 
     MatrixAdapter(RCP<Matrix> m);
 
@@ -259,9 +259,6 @@ namespace Amesos {
 		   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 		   EStorage_Ordering ordering,
 		   col_access ca) const;
-
-    const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
-    getDistributionMap(Util::EDistribution distribution) const;
 
   protected:
     // These methods will link to concrete implementations, and may
