@@ -739,8 +739,6 @@ namespace MueLu {
       const RCP<const Tpetra::Map<LO,GO,NO> > rowMap = tpOp->getRowMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp->getDomainMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap = tpOp->getRangeMap();
-      Teuchos::ArrayView<const LO> cols;
-      Teuchos::ArrayView<const SC> vals;
       size_t maxRowSize = tpOp->getNodeMaxNumRowEntries();
       if (maxRowSize==(size_t)-1) //hasn't been determined yet
         maxRowSize=20;
@@ -760,6 +758,8 @@ namespace MueLu {
       }
 
       if (Op->isLocallyIndexed() == true) {
+        Teuchos::ArrayView<const LO> cols;
+        Teuchos::ArrayView<const SC> vals;
         for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
           tpOp->getLocalRowView(i,cols,vals);
           size_t nnz = tpOp->getNumEntriesInLocalRow(i);
@@ -776,6 +776,8 @@ namespace MueLu {
           }
         } //for (size_t i=0; ...
       } else {
+        Teuchos::ArrayView<const GO> cols;
+        Teuchos::ArrayView<const SC> vals;
         for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
           GO gid = rowMap->getGlobalElement(i);
           tpOp->getGlobalRowView(gid,cols,vals);
