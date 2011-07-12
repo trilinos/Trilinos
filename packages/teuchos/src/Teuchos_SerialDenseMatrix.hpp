@@ -311,9 +311,9 @@ public:
   //! Multiply \c A * \c B and add them to \e this; \e this = \c beta * \e this + \c alpha*A*B.
   /*!
     \param transa - Use the transpose of \c A if transa = Teuchos::TRANS, else don't use the 
-    transpose if transa = Teuchos::NOTRANS.
+    transpose if transa = Teuchos::NO_TRANS.
     \param transb - Use the transpose of \c B if transb = Teuchos::TRANS, else don't use the
-    transpose if transb = Teuchos::NOTRANS.
+    transpose if transb = Teuchos::NO_TRANS.
     \param alpha - The scaling factor for \c A * \c B.
     \param A - SerialDenseMatrix
     \param B - SerialDenseMatrix
