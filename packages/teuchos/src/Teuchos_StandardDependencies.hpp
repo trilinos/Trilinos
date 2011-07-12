@@ -857,6 +857,67 @@ RCP<NumberVisualDependency<T> >
     DummyObjectGetter<ParameterEntry>::getDummyObject()));
 }
 
+template<class DependeeType, class DependentType>
+class ArrayModifierDependency : public Dependency{
+public:
+  ArrayModifierDependency(
+    RCP<const ParameterEntry> dependee,
+    RCP<ParameterEntry> dependent,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+  ArrayModifierDependency(
+    RCP<const ParameterEntry> dependee,
+    ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+  inline RCP<const SimpleFunctionObject<DependeeType> > 
+    getFunctionObject() const
+  {
+    return func_;
+  }
+
+protected:
+  /** \name Overridden from Dependency */
+  //@{
+
+  virtual void validateDep() const;
+  
+  //@}
+private:
+  RCP<const SimpleFunctionObject<DependeeType> > func_;
+};
+
+template<class DependeeType, class DependentType>
+ArrayModifierDependency<DependeeType,DependentType>::ArrayModifierDependency(
+  RCP<const ParameterEntry> dependee,
+  RCP<ParameterEntry> dependent,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  Dependency(dependee, dependent),
+  func_(func)
+{}
+
+template<class DependeeType, class DependentType>
+ArrayModifierDependency<DependeeType,DependentType>::ArrayModifierDependency(
+  RCP<const ParameterEntry> dependee,
+  ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  Dependency(dependee, dependents),
+  func_(func)
+{}
+
+template<class DependeeType, class DependentType>
+void ArrayModifierDependency<DependeeType,DependentType>::validateDep() const{
+  TEST_FOR_EXCEPTION(
+    typeid(DependeeType) != getFirstDependee()->getAny().type(),
+    InvalidDependencyException,
+    "Ay no! The dependee parameter types don't match." << std::endl <<
+    "Dependee Template Type: " << TypeNameTraits<DependeeType>::name() <<
+    std::endl <<
+    "Dependee Parameter Type: " << getFirstDependee()->getAny().typeName()
+    << std::endl << std::endl);
+}
+
+
 /**
  * \brief A NumberArrayLengthDependency says the following about the 
  * relationship between two parameters:
@@ -880,7 +941,9 @@ RCP<NumberVisualDependency<T> >
  *
  */
 template<class DependeeType, class DependentType>
-class NumberArrayLengthDependency : public Dependency{
+class NumberArrayLengthDependency : 
+  public ArrayModifierDependency<DependeeType, DependentType>
+{
 
 public:
 
@@ -898,8 +961,7 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<SimpleFunctionObject<DependeeType> > func=null);
-
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
 
   /**
    * \brief Constructs a NumberArrayLengthDependency.
@@ -911,8 +973,8 @@ public:
    */
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
-    ParameterEntryList dependent,
-    RCP<SimpleFunctionObject<DependeeType> > func=null);
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
 
   //@}
 
@@ -927,34 +989,19 @@ public:
   
   //@}
 
-  /** \name Getters */
-  //@{
-
-  /** \brief Const version of function getter. */
-  RCP<const SimpleFunctionObject<DependeeType> > 
-    getFunctionObject() const;
-
-  //@}
-
 protected:
 
-  /** \name Overridden from Dependency */
+  /** \name Overridden from ArrayModifierDependency */
   //@{
 
-  void validateDep() const;
+  virtual void validateDep() const;
   
   //@}
-  //
+  
 private:
 
-  /** \name Private Members */
+  /** \name Private Functions */
   //@{
-  
-  /**
-   * \brief The function used to calculate the new value of the
-   * arrays length.
-   */
-    RCP<SimpleFunctionObject<DependeeType> > func_;
   
   /**
    * \brief Modifies the length of an array.
@@ -973,9 +1020,8 @@ template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RCP<SimpleFunctionObject<DependeeType> > func):
-  Dependency(dependee, dependent),
-  func_(func)
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  ArrayModifierDependency<DependeeType, DependentType>(dependee, dependent, func)
 {
   validateDep();
 }
@@ -983,10 +1029,9 @@ NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDepen
 template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
-  ParameterEntryList dependents,
-  RCP<SimpleFunctionObject<DependeeType> > func):
-  Dependency(dependee, dependents),
-  func_(func)
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  ArrayModifierDependency<DependeeType, DependentType>(dependee, dependents, func)
 {
   validateDep();
 }
@@ -1000,14 +1045,6 @@ const
   return "NumberArrayLengthDependency(" +
     TypeNameTraits<DependeeType>::name() + ", " +
     TypeNameTraits<DependentType>::name() +")";
-}
-
-template<class DependeeType, class DependentType>
-RCP<const SimpleFunctionObject<DependeeType> >
-NumberArrayLengthDependency<DependeeType, DependentType>::getFunctionObject()
-const
-{
-  return func_.getConst();
 }
 
 template <class DependeeType, class DependentType>
@@ -1034,9 +1071,9 @@ NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
 template<class DependeeType, class DependentType>
 void 
 NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
-  DependeeType newLength = getFirstDependeeValue<DependeeType>();
-  if(!func_.is_null()){
-    newLength = func_->runFunction(newLength);
+  DependeeType newLength = Dependency::getFirstDependeeValue<DependeeType>();
+  if(!this->getFunctionObject().is_null()){
+    newLength = this->getFunctionObject()->runFunction(newLength);
   }
 
   TEST_FOR_EXCEPTION(newLength < OrdinalTraits<DependeeType>::zero(),
@@ -1048,8 +1085,8 @@ NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
     "An attempt was made to set the length of an Array to a negative "
     "number by a NumberArrayLengthDependency" << std::endl << std::endl);
   for(
-    ParameterEntryList::iterator it = getDependents().begin(); 
-    it != getDependents().end(); 
+    Dependency::ParameterEntryList::iterator it = this->getDependents().begin();
+    it != this->getDependents().end(); 
     ++it)
   {
     modifyArrayLength(newLength, *it);
@@ -1061,18 +1098,11 @@ void
 NumberArrayLengthDependency<DependeeType, DependentType>::validateDep() 
   const
 {
-  TEST_FOR_EXCEPTION(
-    typeid(DependeeType) != getFirstDependee()->getAny().type(),
-    InvalidDependencyException,
-    "Ay no! The dependee parameter types don't match." << std::endl <<
-    "Dependee Template Type: " << TypeNameTraits<DependeeType>::name() <<
-    std::endl <<
-    "Dependee Parameter Type: " << getFirstDependee()->getAny().typeName()
-    << std::endl << std::endl);
-
+  ArrayModifierDependency<DependeeType, DependentType>::validateDep();
   for(
-    ConstParameterEntryList::const_iterator it = getDependents().begin(); 
-    it != getDependents().end(); 
+    Dependency::ConstParameterEntryList::const_iterator it = 
+      this->getDependents().begin(); 
+    it != this->getDependents().end(); 
     ++it)
   {
     TEST_FOR_EXCEPTION(
@@ -1725,7 +1755,9 @@ RCP<RangeValidatorDependency<T> >
 
 
 template<class DependeeType, class DependentType>
-class TwoDRowDependency : public Dependency{
+class TwoDRowDependency : 
+  public ArrayModifierDependency<DependeeType, DependentType>
+{
 
 public:
 
@@ -1744,7 +1776,7 @@ public:
   TwoDRowDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<SimpleFunctionObject<DependeeType> > func=null);
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
 
 
   /**
@@ -1758,8 +1790,8 @@ public:
    */
   TwoDRowDependency(
     RCP<const ParameterEntry> dependee,
-    ParameterEntryList dependent,
-    RCP<SimpleFunctionObject<DependeeType> > func=null);
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
 
   //@}
 
@@ -1774,18 +1806,9 @@ public:
   
   //@}
 
-  /** \name Getters */
-  //@{
-
-  /** \brief Const version of function getter. */
-  RCP<const SimpleFunctionObject<DependeeType> > 
-    getFunctionObject() const;
-
-  //@}
-
 protected:
 
-  /** \name Overridden from Dependency */
+  /** \name Overridden from ArrayModifierDependency */
   //@{
 
   void validateDep() const;
@@ -1797,12 +1820,6 @@ private:
   /** \name Private Members */
   //@{
   
-  /**
-   * \brief The function used to calculate the new value of the
-   * arrays number of rows.
-   */
-    RCP<SimpleFunctionObject<DependeeType> > func_;
-
   /**
    * \brief modifies the number of rows in the TwoDArray.
    */
@@ -1818,9 +1835,9 @@ template<class DependeeType, class DependentType>
 TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RCP<SimpleFunctionObject<DependeeType> > func):
-  Dependency(dependee, dependent),
-  func_(func)
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  ArrayModifierDependency<DependeeType, DependentType>(
+    dependee, dependent, func)
 {
   validateDep();
 }
@@ -1828,10 +1845,10 @@ TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
 template<class DependeeType, class DependentType>
 TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
   RCP<const ParameterEntry> dependee,
-  ParameterEntryList dependents,
-  RCP<SimpleFunctionObject<DependeeType> > func):
-  Dependency(dependee, dependents),
-  func_(func)
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  ArrayModifierDependency<DependeeType, DependentType>(
+    dependee, dependents, func)
 {
   validateDep();
 }
@@ -1845,14 +1862,6 @@ const
   return "TwoDRowDependency(" +
     TypeNameTraits<DependeeType>::name() + ", " +
     TypeNameTraits<DependentType>::name() +")";
-}
-
-template<class DependeeType, class DependentType>
-RCP<const SimpleFunctionObject<DependeeType> >
-TwoDRowDependency<DependeeType, DependentType>::getFunctionObject()
-const
-{
-  return func_.getConst();
 }
 
 template <class DependeeType, class DependentType>
@@ -1871,9 +1880,9 @@ TwoDRowDependency<DependeeType, DependentType>::modifyRowAmount(
 template<class DependeeType, class DependentType>
 void 
 TwoDRowDependency<DependeeType, DependentType>::evaluate(){
-  DependeeType newRowNum = getFirstDependeeValue<DependeeType>();
-  if(!func_.is_null()){
-    newRowNum = func_->runFunction(newRowNum);
+  DependeeType newRowNum = Dependency::getFirstDependeeValue<DependeeType>();
+  if(!this->getFunctionObject().is_null()){
+    newRowNum = this->getFunctionObject()->runFunction(newRowNum);
   }
 
   TEST_FOR_EXCEPTION(newRowNum < OrdinalTraits<DependeeType>::zero(),
@@ -1885,8 +1894,8 @@ TwoDRowDependency<DependeeType, DependentType>::evaluate(){
     "An attempt was made to set the length of an Array to a negative "
     "number by a NumberArrayLengthDependency" << std::endl << std::endl);
   for(
-    ParameterEntryList::iterator it = getDependents().begin(); 
-    it != getDependents().end(); 
+    Dependency::ParameterEntryList::iterator it = this->getDependents().begin();
+    it != this->getDependents().end(); 
     ++it)
   {
     modifyRowAmount(newRowNum, *it);
@@ -1898,18 +1907,11 @@ void
 TwoDRowDependency<DependeeType, DependentType>::validateDep() 
   const
 {
-  TEST_FOR_EXCEPTION(
-    typeid(DependeeType) != getFirstDependee()->getAny().type(),
-    InvalidDependencyException,
-    "Ay no! The dependee parameter types don't match." << std::endl <<
-    "Dependee Template Type: " << TypeNameTraits<DependeeType>::name() <<
-    std::endl <<
-    "Dependee Parameter Type: " << getFirstDependee()->getAny().typeName()
-    << std::endl << std::endl);
-
+  ArrayModifierDependency<DependeeType, DependentType>::validateDep();
   for(
-    ConstParameterEntryList::const_iterator it = getDependents().begin(); 
-    it != getDependents().end(); 
+    Dependency::ConstParameterEntryList::const_iterator it = 
+      this->getDependents().begin(); 
+    it != this->getDependents().end(); 
     ++it)
   {
     TEST_FOR_EXCEPTION(
