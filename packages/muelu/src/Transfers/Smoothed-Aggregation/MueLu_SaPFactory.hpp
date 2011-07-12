@@ -164,19 +164,30 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         //MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
         Teuchos::RCP< Operator > Op = fineLevel.GetA();
-        sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_A_P"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:APtent"));
         sapTimer->start(true);
+
+        //JJH -- If I switch doFillComplete to false, the resulting matrix seems weird when printed with describe.
+        //JJH -- The final prolongator is wrong, to boot.  So right now, I fillComplete AP, but avoid fillComplete
+        //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
+        bool doFillComplete=true;
+        bool optimizeStorage=false;
+        RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,false,Ptent,false,doFillComplete,optimizeStorage);
+        sapTimer->stop();
+        MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
+
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_APtent"));
+        sapTimer->start(true);
+        doFillComplete=false;
+        optimizeStorage=false;
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(Op);
-        Utils::MyOldScaleMatrix(Op,diag); //scale matrix
-        bool doFillComplete=false;
-        RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,false,Ptent,false,doFillComplete);
+        Utils::MyOldScaleMatrix(AP,diag,true,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
         sapTimer = rcp(new Teuchos::Time("SaPFactory:eigen_estimate"));
         sapTimer->start(true);
-        Scalar lambdaMax = Utils::PowerMethod(*Op,(LO) 10,(Scalar)1e-4);
-        Utils::MyOldScaleMatrix(Op,diag,false); //unscale matrix
+        Scalar lambdaMax = Utils::PowerMethod(*Op, true, (LO) 10,(Scalar)1e-4);
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
         RCP<const Teuchos::Comm<int> > comm = Op->getRowMap()->getComm();
@@ -184,14 +195,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
           std::cout << "damping factor = " << dampingFactor_/lambdaMax << " ("
                     << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
 
-/*
-        sapTimer = rcp(new Teuchos::Time("SaPFactory:Dinv_times_AP"));
-        sapTimer->start(true);
-        Utils::ScaleMatrix(AP,diag);
-        sapTimer->stop();
-        MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
-*/
-        sapTimer = rcp(new Teuchos::Time("SaPFactory:finalP"));
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:Pt_plus_DinvAPtent"));
         sapTimer->start(true);
 
         bool doTranspose=false; 
@@ -201,6 +205,11 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
           Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,-dampingFactor_/lambdaMax);
           finalP = AP;
         }
+        sapTimer->stop();
+        MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
+
+        sapTimer = rcp(new Teuchos::Time("SaPFactory:finalP_fillComplete"));
+        sapTimer->start(true);
         finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
         sapTimer->stop();
         MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));

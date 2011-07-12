@@ -169,11 +169,8 @@ class Level;
       if (ifpack2Type_ == "CHEBYSHEV") {
         Scalar maxEigenValue = list_.get("chebyshev: max eigenvalue",(Scalar)-1.0);
         if (maxEigenValue == -1.0) {
-          Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(A_);
-          Utils::ScaleMatrix(A_,diag); //scale matrix
-          maxEigenValue = Utils::PowerMethod(*A_,10,1e-4);
+          maxEigenValue = Utils::PowerMethod(*A_,true,10,1e-4);
           list_.set("chebyshev: max eigenvalue",maxEigenValue);
-          Utils::ScaleMatrix(A_,diag,false); //undo scaling
         }
         *out_ << prefix << "Ifpack2 Chebyshev, degree " << list_.get("chebyshev degree",1) << std::endl;
         *out_ << prefix << "lambda_min=" << list_.get("chebyshev: min eigenvalue",-1.0)
