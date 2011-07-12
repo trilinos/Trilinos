@@ -19,11 +19,11 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
 
   IF (CMAKE_BUILD_TYPE STREQUAL DEBUG)
     APPEND_SET(PASS_REGEXS
-      "teuchos/example/show_stack/cxx_main.cpp., line 23, in main()"
+      "teuchos/example/show_stack/cxx_main.cpp., line 66, in main()"
       "f()"
-      "teuchos/example/show_stack/cxx_main.cpp., line 14, in f()"
+      "teuchos/example/show_stack/cxx_main.cpp., line 57, in f()"
       "g()"
-      "teuchos/example/show_stack/cxx_main.cpp., line 7, in g()"
+      "teuchos/example/show_stack/cxx_main.cpp., line 50, in g()"
       "char .p = NULL. .p = 0"
       )
   ENDIF()
