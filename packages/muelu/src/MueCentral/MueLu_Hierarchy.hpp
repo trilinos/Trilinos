@@ -326,7 +326,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        @param B right-hand side of linear problem
        @param nIts number of multigrid cycles to perform
        @param X initial and final (approximate) solution of linear problem
-       @param InitialGuessIsZero Currently does nothing. FIXME
+       @param InitialGuessIsZero Indicates whether the initial guess is zero
        @param Cycle Supports VCYCLE and WCYCLE types.
      */
   void Iterate(MultiVector const &B, LO nIts, MultiVector &X, //TODO: move parameter nIts and default value=1
