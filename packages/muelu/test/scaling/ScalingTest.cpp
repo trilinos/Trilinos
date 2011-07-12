@@ -9,7 +9,6 @@
 
 #include "MueLu_Memory.hpp"
 #include "MueLu_Hierarchy.hpp"
-#include "MueLu_SaLevel.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 //#include "MueLu_GaussSeidel.hpp"
@@ -261,6 +260,8 @@ int main(int argc, char *argv[]) {
       ifpackList.set("chebyshev: zero starting solution", false);
       smooProto = rcp( new Ifpack2Smoother("CHEBYSHEV",ifpackList) );
     }
+#else
+#error
 #endif
   }
   if (smooProto == Teuchos::null) {

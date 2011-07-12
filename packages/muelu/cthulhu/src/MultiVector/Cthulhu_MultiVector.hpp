@@ -22,11 +22,10 @@
 
 namespace Cthulhu {
 
-  // TODO
-  // #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  //   // forward declaration of Vector, needed to prevent circular inclusions
-  //   template<class S, class LO, class GO, class N> class Vector;
-  // #endif
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration of Vector, needed to prevent circular inclusions
+  template<class S, class LO, class GO, class N> class Vector;
+#endif
 
   //! \brief A class for constructing and using dense, distributors multivectors.
   /*!
@@ -266,15 +265,16 @@ namespace Cthulhu {
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) =0;
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a MultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
      *  where @ denotes element-wise multiplication.
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-    void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
+    virtual void elementWiseMultiply(Scalar scalarAB,
+                                     const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,
+                                     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B,
+                                     Scalar scalarThis) =0;
     //@} 
 
     //! @name Attribute access functions

@@ -329,15 +329,20 @@ namespace Cthulhu {
       vec_->multiply(transA, transB, alpha, *tA.getTpetra_MultiVector(), *tB.getTpetra_MultiVector(), beta); 
     }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a TpetraMultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
      *  where @ denotes element-wise multiplication.
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-    inline void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
-#endif // CTHULHU_NOT_IMPLEMENTED
+    inline void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) {
+      CTHULHU_DEBUG_ME;
+      //TODO CTHULHU_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+      //TODO as an argument, hence the following typedef.
+      typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> tpv;
+      CTHULHU_DYNAMIC_CAST(const tpv, A, tA, "Cthulhu::TpetraMultiVectorMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, B, tB, "Cthulhu::TpetraMultiVectorMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+      vec_->elementWiseMultiply(scalarAB, *tA.getTpetra_Vector(), *tB.getTpetra_MultiVector(), scalarThis); }
     //@} 
 
     //! @name Attribute access functions
