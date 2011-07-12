@@ -68,20 +68,27 @@
 	    <Parameter name="Equil" type="string" value="YES"/>
 	  </ParameterList>
 	</ParameterList>
-	<ParameterList name="run3">
+	<ParameterList name="run3 - 4 threads - equilibrate">
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <ParameterList name="run_params">
+	    <Parameter name="Equil" type="string" value="YES"/>
+	    <Parameter name="nprocs" type="int" value="4"/>
+	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="run4">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	</ParameterList>
-	<ParameterList name="run5">
+	<ParameterList name="run5 - 4 threads">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <ParameterList name="run_params">
+	    <Parameter name="nprocs" type="int" value="4"/>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
       <ParameterList name="solver_params">

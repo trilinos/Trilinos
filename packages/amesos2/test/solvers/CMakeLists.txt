@@ -41,7 +41,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
     Solver_Test
     NAME SuperLU_MT_Solver_Test
     ARGS "--xml-params=superlumt_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/"
-    STANDAR_PASS_OUTPUT
+    STANDARD_PASS_OUTPUT
     )
 ENDIF()
 
