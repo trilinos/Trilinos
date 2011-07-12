@@ -923,7 +923,7 @@ namespace Tpetra {
       numEntriesPerRow_[rowinfo.localRow] += numNewInds;
     }
     nodeNumEntries_ += numNewInds;
-    indicesAreSorted_ = false;
+    setSorted(false);
     noRedundancies_ = false;
     return numNewInds;
   }
@@ -1839,9 +1839,9 @@ namespace Tpetra {
 #endif
     clearGlobalConstants();
     lclGraph_.clear();
+    setSorted(true);
     lowerTriangular_  = false;
     upperTriangular_  = false;
-    indicesAreSorted_ = false;
     noRedundancies_   = false;
     fillComplete_ = false;
 #ifdef HAVE_TPETRA_DEBUG
@@ -2167,9 +2167,9 @@ namespace Tpetra {
         RowInfo rowInfo = getRowInfo(row);
         sortRowIndices(rowInfo);
       }
-      // we just sorted every row
-      setSorted(true);
     }
+    // we just sorted every row
+    setSorted(true);
   }
 
 

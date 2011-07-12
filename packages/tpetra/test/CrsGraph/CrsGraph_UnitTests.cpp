@@ -265,21 +265,83 @@ namespace {
     {
       Array<LO> lids(1);
       lids[0] = myImageID;
-      {
-        GRAPH diaggraph(map,map,1);
-        TEST_EQUALITY(diaggraph.hasColMap(), true);
-        // insert
-        LO row = myImageID*numLocal;
-        //insert a column-index:
-        diaggraph.insertLocalIndices(row, lids());
-        TEST_EQUALITY(as<Array_size_type>(diaggraph.getNumEntriesInLocalRow(row)), lids.size())
-        //remove the column-index:
-        diaggraph.removeLocalIndices(row);
-        TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), 0)
-        //now inserting the index again, should make the row-length be 1 again...
-        diaggraph.insertLocalIndices(row, lids());
-        TEST_EQUALITY(as<Array_size_type>(diaggraph.getNumEntriesInLocalRow(row)), lids.size())
+      GRAPH diaggraph(map,map,1);
+      TEST_EQUALITY(diaggraph.hasColMap(), true);
+      const LO row = 0;
+      // insert
+      diaggraph.insertLocalIndices(row, lids());
+      TEST_EQUALITY(as<Array_size_type>(diaggraph.getNumEntriesInLocalRow(row)), lids.size())
+      // remove the row
+      diaggraph.removeLocalIndices(row);
+      TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), 0)
+      // now inserting the index again, should make the row-length be 1 again...
+      diaggraph.insertLocalIndices(row, lids());
+      TEST_EQUALITY(as<Array_size_type>(diaggraph.getNumEntriesInLocalRow(row)), lids.size())
+    }
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, SortingTests, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map
+    const size_t numLocal = 10;
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
+    // 
+    GRAPH graph(map,map,4);
+    TEST_EQUALITY_CONST(graph.isSorted(), true);
+    // insert entires; shouldn't be sorted anymore
+    for (GO i=map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
+      graph.insertGlobalIndices(i, tuple<GO>( (i+5)%map->getMaxAllGlobalIndex(),
+                                             i,
+                                             (i-5)%map->getMaxAllGlobalIndex() ) );
+    }
+    TEST_EQUALITY_CONST(graph.isSorted(), false);
+    // fill complete; should be sorted now
+    graph.fillComplete(DoNotOptimizeStorage);
+    {
+      bool sortingCheck = true;
+      for (LO i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
+        ArrayView<const LO> inds;
+        graph.getLocalRowView(i,inds);
+        for (int j=1; j < (int)inds.size(); ++j) {
+          if (inds[j-1] > inds[j]) {sortingCheck = false; break;}
+        }
       }
+      TEST_EQUALITY_CONST(sortingCheck, graph.isSorted() );
+    }
+    // resume fill; should still be sorted
+    graph.resumeFill();
+    TEST_EQUALITY_CONST(graph.isSorted(), true);
+    {
+      bool sortingCheck = true;
+      for (LO i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
+        ArrayView<const LO> inds;
+        graph.getLocalRowView(i,inds);
+        for (int j=1; j < (int)inds.size(); ++j) {
+          if (inds[j-1] > inds[j]) {sortingCheck = false; break;}
+        }
+      }
+      TEST_EQUALITY_CONST(sortingCheck, graph.isSorted() );
+    }
+    // insert a column-index; currently, this invalidates sorting, though it may change in the future
+    graph.insertLocalIndices(0, tuple<LO>(0));
+    TEST_EQUALITY_CONST(graph.isSorted(), false);
+    // fill complete, check one more time
+    graph.fillComplete(DoOptimizeStorage);
+    {
+      bool sortingCheck = true;
+      for (LO i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
+        ArrayView<const LO> inds;
+        graph.getLocalRowView(i,inds);
+        for (int j=1; j < (int)inds.size(); ++j) {
+          if (inds[j-1] > inds[j]) {sortingCheck = false; break;}
+        }
+      }
+      TEST_EQUALITY_CONST(sortingCheck, graph.isSorted() );
     }
   }
 
@@ -928,7 +990,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyFillComplete, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Typedefs      , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Bug20100622K  , LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, ActiveFill    , LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, ActiveFill    , LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, SortingTests  , LO, GO )
 
      UNIT_TEST_GROUP_LO_GO(int,int)
 // #ifndef FAST_DEVELOPMENT_UNIT_TEST_BUILD
