@@ -213,4 +213,4 @@ void TimeMonitor::summarize(
 	}
 
 
-	} // namespace Tuechos
+} // namespace Teuchos
