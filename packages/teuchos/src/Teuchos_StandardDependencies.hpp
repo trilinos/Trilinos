@@ -857,24 +857,59 @@ RCP<NumberVisualDependency<T> >
     DummyObjectGetter<ParameterEntry>::getDummyObject()));
 }
 
+/**
+ * \brief An abstract base class for all dependencies which modify the 
+ * dimensional attributes of an Array parameter.
+ */
 template<class DependeeType, class DependentType>
 class ArrayModifierDependency : public Dependency{
 public:
+
+  /** @name Constructor(s) */
+  //@{
+
+  /** \brief Constructs an ArrayModifierDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependent The dependent parameter.
+   * @param func The function to be used when calculating the amount an
+   * array dimension should be modified.
+   */
   ArrayModifierDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     RCP<const SimpleFunctionObject<DependeeType> > func=null);
 
+  /** \brief Constructs an ArrayModifierDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependents The dependent parameter.
+   * @param func The function to be used when calculating the amount an
+   * array dimension should be modified.
+   */
   ArrayModifierDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents,
     RCP<const SimpleFunctionObject<DependeeType> > func=null);
 
+  //@}
+
+  /** @name Getters */
+  //@{
+
+  /** \brief Retrieves the function being used to calculate the amount by
+   * which an arrays dimensional attribute should be modified.
+   *
+   * @return The funciton being used to calculate the amount by which
+   * an arrays dimensional attribute should be modified.
+   */
   inline RCP<const SimpleFunctionObject<DependeeType> > 
     getFunctionObject() const
   {
     return func_;
   }
+
+  //@}
 
 protected:
   /** \name Overridden from Dependency */
@@ -884,7 +919,16 @@ protected:
   
   //@}
 private:
+
+  /** \name Private Members */
+  //@{
+  
+  /** \brief The function used to calculate the amount by which
+   * an arrays dimensional attribute should be modified.
+   */
   RCP<const SimpleFunctionObject<DependeeType> > func_;
+
+  //}
 };
 
 template<class DependeeType, class DependentType>
@@ -1752,8 +1796,10 @@ RCP<RangeValidatorDependency<T> >
     dummyMap));
 }
 
-
-
+/**
+ * \brief A dependency in which the number of rows in a parameter 
+ * with a TwoDArray depends on the value of another parameter.
+ */
 template<class DependeeType, class DependentType>
 class TwoDRowDependency : 
   public ArrayModifierDependency<DependeeType, DependentType>
@@ -1770,8 +1816,7 @@ public:
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
    * @param func A function specifying how the TwoDArrays
-   * number of rows 
-   * should be calculated from the dependees value.
+   * number of rows should be calculated from the dependees value.
    */
   TwoDRowDependency(
     RCP<const ParameterEntry> dependee,
@@ -1785,8 +1830,7 @@ public:
    * @param dependee The dependee parameter.
    * @param dependents The dependents.
    * @param func A function specifying how the TwoDArrays
-   * number of rows 
-   * should be calculated from the dependees value.
+   * number of rows should be calculated from the dependees value.
    */
   TwoDRowDependency(
     RCP<const ParameterEntry> dependee,
@@ -1817,7 +1861,7 @@ protected:
   
 private:
 
-  /** \name Private Members */
+  /** \name Private Functions */
   //@{
   
   /**
