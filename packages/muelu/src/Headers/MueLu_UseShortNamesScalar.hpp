@@ -94,6 +94,10 @@ typedef MueLu::AmesosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       Amesos2Smoother;
 #endif
 
+#ifdef MUELU_MERGED_SMOOTHER_SHORT
+typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       MergedSmoother;
+#endif
+
 #ifdef MUELU_UCAGGREGATIONCOMMHELPER_SHORT
 typedef MueLu::UCAggregationCommHelper<Scalar, LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       UCAggregationCommHelper;
 #endif

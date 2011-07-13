@@ -139,7 +139,7 @@ class Level;
     */
     void Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero=false)
     {
-      if (!SmootherPrototype::IsSetup())
+      if (!SmootherPrototype::IsSetup()) //TODO: use TEST_FOR_EXCEPTION
         throw(Exceptions::RuntimeError("Setup has not been called"));
 
 // OLD AMESOS2

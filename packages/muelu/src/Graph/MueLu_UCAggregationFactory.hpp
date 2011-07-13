@@ -120,7 +120,8 @@ namespace MueLu {
       RCP<Aggregates> aggregates;
       currentLevel.CheckOut("Aggregates",aggregates);
      
-      AggregateLeftOvers(aggregates, "UC_CleanUp", *graph);
+      std::string name =  "UC_CleanUp";
+      AggregateLeftOvers(*aggregates, name, *graph);
 
       // currentLevel.Save("Aggregates",aggregates);
 
@@ -131,7 +132,8 @@ namespace MueLu {
     RCP<Aggregates> Build(const Graph& graph) const
     {
       RCP<Aggregates> aggregates = localAggregationFactory_.Build(graph);
-      AggregateLeftOvers(*aggregates, "UC_CleanUp", graph);
+      std::string name =  "UC_CleanUp";
+      AggregateLeftOvers(*aggregates, name, *graph);
       return aggregates;
     }
 
