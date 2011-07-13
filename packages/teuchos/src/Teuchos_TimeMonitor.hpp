@@ -54,11 +54,10 @@
  * This is an example of how to use the Teuchos::TimeMonitor class.
  */
 
-
 #include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_Comm.hpp"
 #include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_Time.hpp"
-
 
 /** \brief Defines a static non-member function that returns a time monitor.
  */ 
@@ -117,17 +116,21 @@
 namespace Teuchos {
 
 
-/** \brief A timer class that starts when constructed and stops when the
- * destructor is called.
+/** \brief A scope-safe timer wrapper class.
  *
- * Termination upon destruction lets this timer behave
- * correctly even if scope is exited because of an std::exception. 
+ * TimeMonitor objects start the timer when constructed, and stop the
+ * timer when the destructor is called.  Termination upon destruction
+ * lets this timer behave correctly even if scope is exited because of
+ * an exception.  TimeMonitor also keeps track of the set of all
+ * timers, and has a method (\c summarize()) for printing out global
+ * statistics (min, mean, and max over all MPI processes, in an MPI
+ * build).
  *
- * NOTE: It is critical that this class only be used to time functions that
- * are called only within the main program and not at pre-program setup or
- * post-program teardown!
+ * \warning This class must only be used to time functions that are
+ *   called only within the main program.  It may <i>not</i> be used in
+ *   pre-program setup or post-program teardown!
  *
- * \note Teuchos::TimeMonitor uses the Teuchos::Time class internally.
+ * \note Teuchos::TimeMonitor uses the \c Teuchos::Time class internally.
  */
 class TEUCHOS_LIB_DLL_EXPORT TimeMonitor : public PerformanceMonitorBase<Time>
 {
@@ -136,19 +139,16 @@ public:
   /** \name Constructor/Destructor */
   //@{
  
-  /** \brief Constructor starts timer */
-  TimeMonitor(Time& timer, bool reset=false)
-    : PerformanceMonitorBase<Time>(timer, reset)
-    {
-      if (!isRecursiveCall()) counter().start(reset);
-    }
- 
-  /** \brief Destructor causes timer to stop */
-  ~TimeMonitor()
-    {
-      if (!isRecursiveCall()) counter().stop();
-    }
-
+  /// \brief Constructor starts the timer.
+  ///
+  /// \param timer [in/out] Reference to the timer to be wrapped.
+  ///
+  /// \param reset [in] If true, reset the timer before starting it.
+  ///   Default behavior is not to reset the timer.
+  TimeMonitor (Time& timer, bool reset=false);
+  
+  //! Destructor causes timer to stop.
+  ~TimeMonitor();
   //@}
 
   /** \name Static functions */
@@ -157,8 +157,9 @@ public:
   /** \brief Wrapping of getNewCounter() for backwards compatibiity with old
    * code.
    */
-  static Teuchos::RCP<Time> getNewTimer(const std::string& name)
-    {return getNewCounter(name);}
+  static Teuchos::RCP<Time> getNewTimer (const std::string& name) {
+    return getNewCounter(name);
+  }
 
   /** \brief Reset the global timers to zero.
    *
@@ -168,19 +169,115 @@ public:
    */
   static void zeroOutTimers();
  
-  /** \brief Print summary statistics for a group of timers. 
-   *
-   * Timings are gathered from all processors 
-   *
-   * \note This method <b>must</b> be called by all processors */
-  static void summarize(
-    std::ostream &out=std::cout, 
-    const bool alwaysWriteLocal=false,
-    const bool writeGlobalStats=true,
-    const bool writeZeroTimers=true
-    );
-
+  /// \brief Print summary statistics for all timers. 
+  ///
+  /// The typical use case for timers is that all MPI processes create
+  /// the same set of timers, and then want to report summary
+  /// statistics.  This method's default behavior
+  /// (writeGlobalStats=true) is to report the mininum, arithmetic
+  /// mean, and maximum for each timer.  Duplicate timers get merged
+  /// additively.
+  ///
+  /// Note that different MPI processes may have different sets of
+  /// timers.  If writeGlobalStats is true, we have to reconcile the
+  /// different sets of timers somehow.  This method gives you two
+  /// options: if globalUnionOfTimers is true, it computes the
+  /// intersection (the common subset) of timers on all MPI processes,
+  /// otherwise it computes the union of timers on all MPI processes.
+  ///
+  /// Suppose there are \f$P\f$ MPI processes, \f$N\f$ unique timers
+  /// in the global union, and \f$n\f$ unique timers in the global
+  /// intersection.  This method requires \f$O(\log P)\f$ messages (a
+  /// single "reduction") and \f$O(N)\f$ per-processor storage (in the
+  /// worst case) when computing either the intersection or the union
+  /// of timers (the algorithm is similar in either case).  The whole
+  /// algorithm takes at worst \f$O(N (\log N) (\log P))\f$ time along
+  /// the critical path.
+  ///
+  /// \param out [out] Output stream to which to write.  This will
+  ///   only be used on MPI Rank 0.
+  ///
+  /// \param alwaysWriteLocal [in] If true, MPI Proc 0 will write its
+  ///   local timings to the given output stream.  Defaults to false,
+  ///   since the global statistics are more meaningful.  We also
+  ///   exclude this case if the local set of timers differs from the
+  ///   global set of timers (either the union or the intersection,
+  ///   depending on \c globalUnionOfTimers), since that would mess up
+  ///   the table's formatting.
+  ///
+  /// \param writeGlobalStats [in] If true (the default), compute and
+  ///   display the min, average (arithmetic mean), and max of all
+  ///   timings over all processors (in MPI_COMM_WORLD).  If there is
+  ///   only one MPI process or if this is a non-MPI build of
+  ///   Trilinos, we only show the "global" timings, without the
+  ///   "statistics" that would be all the same anyway.
+  ///
+  /// \param writeZeroTimers [in] If false, do not display results for
+  ///   timers that have never been called (numCalls() == 0).  If
+  ///   true, display results for all timers.
+  ///
+  /// \param globalUnionOfTimers [in] If true, compute and display the
+  ///   union of all created timers over all processors.  If false
+  ///   (the default), compute and display the intersection of all
+  ///   created timers over all processors.
+  ///
+  /// \note If writeGlobalStats is true, this method <i>must</i> be
+  ///   called by all processors.
+  static void 
+  summarize (std::ostream &out=std::cout, 
+	     const bool alwaysWriteLocal=false,
+	     const bool writeGlobalStats=true,
+	     const bool writeZeroTimers=true,
+	     const bool globalUnionOfTimers=false);
   //@}
+
+ private:
+
+  typedef std::pair<std::string, std::pair<double, int> > timer_datum_t;
+
+  //! Collect and sort local timer data by timer names.
+  static void collectLocalTimerData (Array<timer_datum_t>& localData);
+
+  //! Locally filter out timer data with zero call counts.
+  static void filterZeroData (Array<timer_datum_t>& timerData);
+
+  /// \brief Merge timer data over all processors.
+  ///
+  /// \param comm [in] Communicator over which to merge.
+  /// \param localTimerData [in] Each processor's timer data.
+  /// \param globalTimerData [out] On output, on MPI Proc 0: the
+  ///   results of merging the timer data.
+  /// \param intersect [in] If true, globalTimerData on output
+  ///   contains the intersection of all timers.  If false,
+  ///   globalTimerData on output contains the union of all timers.
+  static void
+  mergeTimers (const Comm<int>& comm, 
+	       const Array<timer_datum_t>& localTimerData,
+	       Array<timer_datum_t>& globalTimerData,
+	       const bool intersect);
+
+  //! Recursive helper function for \c mergeTimers().
+  static void 
+  mergeTimersHelper (const Comm<int>& comm, 
+		     const int myRank,
+		     const int left,
+		     const int right, // inclusive range [left, right]
+		     const Array<timer_datum_t>& localTimerData,
+		     Array<timer_datum_t>& globalTimerData,
+		     const bool intersect);
+
+  //! Helper function for \c mergeTimersHelper().
+  static void
+  mergeTimersPair (const Comm<int>& comm, 
+		   const int myRank,
+		   const int left,
+		   const int mid,
+		   const Array<timer_datum_t>& localTimerData,
+		   Array<timer_datum_t>& globalTimerData,
+		   const bool intersect);
+
+
+
 
 };
 
