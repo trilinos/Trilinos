@@ -76,7 +76,7 @@ static HGraph *HG_Ptr;
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
     int exist=1;
-    
+    /* NEANEA add own for RCB w/ match_array_type == 1 follow agg_ipm as example (for output)*/
     if (!strcasecmp(hgp->redm_str, "no"))
         hgp->matching = NULL;
     else if (!strcasecmp(hgp->redm_str, "none"))
@@ -134,6 +134,7 @@ char  *yo = "Zoltan_PHG_Matching";
   /* Do the matching */
   if (hgp->matching) {
     /* first match isolated vertices */
+    /* NEANEA if matching is not what I call my RCB, then run isolated */
     Zoltan_PHG_match_isolated(zz, hg, hgp, match, 0);
 
     /* now do the real matching */
