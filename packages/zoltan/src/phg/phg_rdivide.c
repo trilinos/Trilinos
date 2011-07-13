@@ -581,7 +581,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
                              int connectivitycut)
 {
   int *tmap = NULL;  /* temporary array mapping from old HGraph info to new */
-  int edge, i, ierr=ZOLTAN_OK;  
+  int edge, i, j, ierr=ZOLTAN_OK;  
   PHGComm *hgc = ohg->comm;
   char *yo = "split_hypergraph";
   double pw[2], tpw[2];
@@ -594,6 +594,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
   Zoltan_HG_HGraph_Init (nhg);
   nhg->comm = ohg->comm;
   nhg->info               = ohg->info;
+  nhg->nDim               = ohg->nDim;
   nhg->VtxWeightDim       = ohg->VtxWeightDim;
   nhg->EdgeWeightDim      = ohg->EdgeWeightDim;
   
@@ -606,9 +607,12 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
   for (i = 0; i < ohg->nVtx; i++)
       tmap[i] = (part[i] == partid) ? nhg->nVtx++ : -1; 
 
-  /* save vertex and edge weights if they exist */
+  /* save vertex weights, edge weights, and NEANEA coordinates if they exist */
   if (nhg->nVtx && ohg->vwgt && nhg->VtxWeightDim &&
       !(nhg->vwgt=(float*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(float)*nhg->VtxWeightDim)))
+      MEMORY_ERROR;
+  if (nhg->nVtx && ohg->coor && nhg->nDim &&
+      !(nhg->coor=(double *)ZOLTAN_MALLOC(nhg->nVtx * sizeof(double) * nhg->nDim)))
       MEMORY_ERROR;
   if (nhg->nVtx && hgp->UseFixedVtx &&
       !(nhg->fixed_part = (int*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(int))))
@@ -644,6 +648,12 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
                      nhg->VtxWeightDim * sizeof(float)); 
           } else
               pw[0] += 1.0;
+	  /* NEANEA ignoring pw... whatever it may be... */
+	  if (nhg->nDim) {
+	    for (j = 0; j < nhg->nDim; j++)
+	      memcpy(&nhg->coor[v*nhg->nDim + j], &ohg->coor[i*nhg->nDim + j],
+		     nhg->nDim * sizeof(double));
+	  }
       } else {
           pw[1] += (nhg->VtxWeightDim) ? ohg->vwgt[i*nhg->VtxWeightDim] : 1.0;
       }
