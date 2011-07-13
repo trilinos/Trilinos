@@ -93,27 +93,27 @@ int main(int argc, char *argv[]) {
   /*                                                                                */
   /**********************************************************************************/
   
-  RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
+//   RCP<LOVector> Final_ = LOVectorFactory::Build( aggregates->GetVertex2AggId()->getMap() );
 
-  {
-    Teuchos::ArrayRCP<LO> Final = Final_->getDataNonConst(0);
-    Teuchos::ArrayRCP<const LO> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
-    Teuchos::ArrayRCP<const LO> procWinner   = aggregates->GetProcWinner()->getData(0);
+//   {
+//     Teuchos::ArrayRCP<LO> Final = Final_->getDataNonConst(0);
+//     Teuchos::ArrayRCP<const LO> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
+//     Teuchos::ArrayRCP<const LO> procWinner   = aggregates->GetProcWinner()->getData(0);
 
-    for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++) 
-      Final[i] = vertex2AggId[i] + procWinner[i]*1000;
-  }
+//     for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++) 
+//       Final[i] = vertex2AggId[i] + procWinner[i]*1000;
+//   }
 
-  if (comm->getRank() == 0)
-      printf("finals\n");
-  //cout << *Final_ << endl; sleep(2);
+//   if (comm->getRank() == 0)
+//       printf("finals\n");
+//   //cout << *Final_ << endl; sleep(2);
 
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
+//   RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
 
-  Final_->describe(*out, Teuchos::VERB_EXTREME);
+//   Final_->describe(*out, Teuchos::VERB_EXTREME);
 
-  // dumpAggregates(*aggregates);
+//   // dumpAggregates(*aggregates);
 
   return EXIT_SUCCESS;
 }
