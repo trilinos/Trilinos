@@ -678,6 +678,8 @@ namespace fei {
 
     std::vector<fei::FieldMask*> fieldMasks_;
 
+    void getSendProcs(std::vector<int>& sendProcs) const;
+
   private:
     friend class fei::Lookup_Impl;
 

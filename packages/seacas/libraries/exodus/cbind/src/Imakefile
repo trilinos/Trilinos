@@ -38,7 +38,7 @@ REQUIREDLIBS = -L$(USRLIBDIR) $(NETCDF)
 
 #ifndef BuildSharedExodusLibrary
 #define BuildSharedExodusLibrary NO
-#endif  BuildSharedExodusLibrary
+#endif  
 
 #define DoNormalLib YES
 #define DoSharedLib BuildSharedExodusLibrary

@@ -13,6 +13,7 @@
 
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
+#include <stk_percept/GeometryVerifier.hpp>
 #include <stk_percept/function/StringFunction.hpp>
 #include <stk_percept/function/FieldFunction.hpp>
 #include <stk_percept/function/ConstantFunction.hpp>
@@ -24,6 +25,10 @@
 #include <unit_tests/TestLocalRefinerTri_N_1.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_2.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_3.hpp>
+
+#include <unit_tests/TestLocalRefinerTet_N_3_1.hpp>
+
+#include <stk_percept/fixtures/SingleTetFixture.hpp>
 
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -210,9 +215,127 @@ namespace stk {
       //=====================================================================================================================================================================================================
       //=====================================================================================================================================================================================================
 
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+      /// check triangulate_tet - all 64 cases for a single tet
+
+#if 1
+
+      STKUNIT_UNIT_TEST(unit1_uniformRefiner, triangulate_tet_64_1)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            {
+
+              // create the mesh
+              static  SingleTetFixture::Point node_coord_data[  ] = {
+                { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 0 , 1 , 0 } , { 0 , 0 , 1 } };
+
+              SingleTetFixture::Point pts[64*4];
+
+              // Hard coded tetra node ids for all the tetra nodes in the entire mesh
+              static  SingleTetFixture::TetIds tets[64];
+
+//               unsigned ntets = 64;
+//               unsigned npts = ntets*4;
+              unsigned ntets = 0;
+              unsigned npts = 0;
+              unsigned edge_mark_bitcode = 0u;
+              unsigned ipts = 0;
+              int is = 0;
+              int ie = 7;
+              int js = 0;
+              int je = 7;
+#if 0
+              is = 0;
+              ie = 2;
+              js = 2;
+              je = 6;
+#endif
+              for (int i = is; i <= ie; i++)
+                {
+                  for (int j = js; j <= je; j++)
+                    {
+                      //std::cout << "\ntmp i = " << i << " j= " << j << "\n--------------------------------\n" << std::endl;
+
+                      for (int k = 0; k < 4; k++)
+                        {
+                          pts[ipts][0] = node_coord_data[k][0] + i * 2;
+                          pts[ipts][1] = node_coord_data[k][1] + j * 2;
+                          pts[ipts][2] = node_coord_data[k][2];
+                          ++npts;
+                          ++ipts;
+                        }
+                      
+                      tets[edge_mark_bitcode][0] = edge_mark_bitcode*4 + 1;
+                      tets[edge_mark_bitcode][1] = edge_mark_bitcode*4 + 2;
+                      tets[edge_mark_bitcode][2] = edge_mark_bitcode*4 + 3;
+                      tets[edge_mark_bitcode][3] = edge_mark_bitcode*4 + 4;
+                      
+                      ++edge_mark_bitcode;
+                      ++ntets;
+                    }
+                }
+
+              stk::percept::SingleTetFixture mesh(pm, false, npts, pts, ntets, tets);
+              stk::io::put_io_part_attribute(  mesh.m_block_tet );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+
+              if (0)
+                {
+                  percept::GeometryVerifier gv(true);
+                  std::cout << "tmp GeometryVerifier= " << eMesh.getBulkData() << std::endl;
+                  bool igb = gv.isGeometryBad(*eMesh.getBulkData(), true);
+                  std::cout << "tmp isGeometryBad= " << igb << std::endl;
+                }
+              
+
+              eMesh.saveAs(input_files_loc+"local_tet_64.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_64.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_3_1 breaker(eMesh, break_tet, 0, 1);
+              breaker.setRemoveOldElements(false);
+              breaker.doBreak();
+              //breaker.deleteParentElements();
+
+              if (0)
+                {
+                  percept::GeometryVerifier gv(true);
+                  std::cout << "tmp GeometryVerifier= " << eMesh.getBulkData() << std::endl;
+                  bool igb = gv.isGeometryBad(*eMesh.getBulkData(), true);
+                  std::cout << "tmp isGeometryBad= " << igb << std::endl;
+                }
+              
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_3_64tet_1_2.e");
+              //exit(123);
+            }
+
+          }
+      }
+#endif
+
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
 
 #if 1
 
@@ -249,6 +372,14 @@ namespace stk {
 
             //fixture.meta_data.commit();
             eMesh.commit();
+
+            if (0)
+              {
+                percept::GeometryVerifier gv(true);
+                std::cout << "tmp GeometryVerifier= " << eMesh.getBulkData() << std::endl;
+                bool igb = gv.isGeometryBad(*eMesh.getBulkData(), true);
+                std::cout << "tmp isGeometryBad= " << igb << std::endl;
+              }
 
             fixture.generate_mesh();
 

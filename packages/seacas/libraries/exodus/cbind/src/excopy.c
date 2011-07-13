@@ -96,6 +96,8 @@ int ex_copy (int in_exoid, int out_exoid)
    int var_out_id;              /* variable id */
    struct ncvar var;            /* variable */
    struct ncatt att;            /* attribute */
+   nc_type att_type = NC_NAT;
+   size_t att_len = 0;
    size_t i;
    size_t numrec;
    size_t dim_sz;
@@ -189,10 +191,16 @@ int ex_copy (int in_exoid, int out_exoid)
     * the target...
     */
    status = nc_inq_dimid(in_exoid, DIM_STR_NAME, &dim_out_id);
-   if(status != NC_NOERR) {
+   if (status != NC_NOERR) {
      /* Not found; set to default value of 32+1. */
      status = nc_def_dim(out_exoid, DIM_STR_NAME, 33, &dim_out_id);
    }
+
+   status = nc_inq_att(in_exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
+   if (status != NC_NOERR) {
+      int max_so_far = 32;
+      status=nc_put_att_int(out_exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far);
+    }
 
    /* copy variable definitions and variable attributes */
    for (varid = 0; varid < nvars; varid++) {

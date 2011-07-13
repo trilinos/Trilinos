@@ -46,6 +46,9 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     matrixGraph_(matrixGraph),
     remotelyOwned_(),
     remotelyOwned_last_requested_(NULL),
+    sendProcs_(),
+    recvProcs_(),
+    sendRecvProcsNeedUpdated_(true),
     proc_last_requested_(-1),
     haveBlockMatrix_(false),
     haveFEMatrix_(false),
@@ -164,121 +167,107 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   //this function gathers shared-but-not-owned data onto the
   //owning processors.
 
-  //iterate the remotelyOwned_ map and create a list of processors
-  //that we will be sending data to. (processors which own matrix rows
-  //that we share.)
-  std::vector<int> sendProcs;
-  std::map<int,FillableMat*>::iterator
-    it = remotelyOwned_.begin(),
-    it_end = remotelyOwned_.end();
-  for(; it!=it_end; ++it) {
-    if (it->first == localProc_) continue;
-    if (it->second != NULL) {
-      if (it->second->getNumRows() == 0) {
-        continue;
+  if (sendRecvProcsNeedUpdated_) {
+    //iterate the remotelyOwned_ map and create a list of processors
+    //that we will be sending data to. (processors which own matrix rows
+    //that we share.)
+    sendProcs_.clear();
+    std::map<int,FillableMat*>::iterator
+      it = remotelyOwned_.begin(),
+      it_end = remotelyOwned_.end();
+    for(; it!=it_end; ++it) {
+      if (it->first == localProc_) continue;
+      if (it->second != NULL) {
+        if (it->second->getNumRows() == 0) {
+          continue;
+        }
+  
+        sendProcs_.push_back(it->first);
       }
-
-      sendProcs.push_back(it->first);
     }
+    sendRecvProcsNeedUpdated_ = false;
+
+    //now we can find out which procs we'll be receiving from.
+    recvProcs_.clear();
+    fei::mirrorProcs(comm_, sendProcs_, recvProcs_);
   }
 
-  //now we can find out which procs we'll be receiving from.
-  std::vector<int> recvProcs;
-  fei::mirrorProcs(comm_, sendProcs, recvProcs);
-
   //next we'll declare arrays to receive into.
-  std::vector<std::vector<int> > recv_ints(recvProcs.size());
-  std::vector<std::vector<double> > recv_doubles(recvProcs.size());
+  std::vector<std::vector<char> > recv_chars(recvProcs_.size());
 
   //...and an array for the sizes of the recv buffers:
-  std::vector<int> recv_sizes(recvProcs.size()*2);
-  std::vector<MPI_Request> mpiReqs(recvProcs.size()*2);
-  std::vector<MPI_Status> mpiStatuses(recvProcs.size()*2);
+  std::vector<int> recv_sizes(recvProcs_.size());
+  std::vector<MPI_Request> mpiReqs(recvProcs_.size());
+  std::vector<MPI_Request> mpiReqs2(recvProcs_.size());
+  std::vector<MPI_Status> mpiStatuses(recvProcs_.size());
 
   int tag1 = 11111;
-  int tag2 = 11112;
 
-  unsigned offset = 0;
-  for(size_t i=0; i<recvProcs.size(); ++i) {
-    MPI_Irecv(&recv_sizes[offset], 1, MPI_INT, recvProcs[i],
-              tag1, comm_, &mpiReqs[offset]);
-    ++offset;
-    MPI_Irecv(&recv_sizes[offset], 1, MPI_INT, recvProcs[i],
-              tag2, comm_, &mpiReqs[offset]);
-    ++offset;
+  for(size_t i=0; i<recvProcs_.size(); ++i) {
+    MPI_Irecv(&recv_sizes[i], 1, MPI_INT, recvProcs_[i],
+              tag1, comm_, &mpiReqs[i]);
   }
 
   //now we'll pack our to-be-sent data into buffers, and send the
   //sizes to the receiving procs:
-  std::vector<std::vector<int> > send_ints(sendProcs.size());
-  std::vector<std::vector<double> > send_doubles(sendProcs.size());
+  std::vector<std::vector<char> > send_chars(sendProcs_.size());
 
-  for(size_t i=0; i<sendProcs.size(); ++i) {
-    int proc = sendProcs[i];
+  for(size_t i=0; i<sendProcs_.size(); ++i) {
+    int proc = sendProcs_[i];
 
     fei::impl_utils::pack_FillableMat(*(remotelyOwned_[proc]),
-                                      send_ints[i], send_doubles[i]);
+                                      send_chars[i]);
 
-    int isize = send_ints[i].size();
-    int dsize = send_doubles[i].size();
+    int bsize = send_chars[i].size();
 
-    MPI_Send(&isize, 1, MPI_INT, proc, tag1, comm_);
-    MPI_Send(&dsize, 1, MPI_INT, proc, tag2, comm_);
+    MPI_Send(&bsize, 1, MPI_INT, proc, tag1, comm_);
 
-    remotelyOwned_[proc]->clear();
+    remotelyOwned_[proc]->clear();//setValues(0.0);
   }
 
-  if (mpiReqs.size() > 0) {
-    MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
-  }
-
+  int numRecvProcs = recvProcs_.size();
 
   //now resize our recv buffers, and post the recvs.
-  offset = 0;
-  unsigned offset2 = 0;
-  for(size_t i=0; i<recvProcs.size(); ++i) {
-    int intsize = recv_sizes[offset++];
-    int doublesize = recv_sizes[offset++];
+  for(size_t i=0; i<recvProcs_.size(); ++i) {
+    int index;
+    MPI_Status status;
+    MPI_Waitany(numRecvProcs, &mpiReqs[0], &index, &status);
 
-    recv_ints[i].resize(intsize);
-    recv_doubles[i].resize(doublesize);
+    int bsize = recv_sizes[index];
 
-    MPI_Irecv(&(recv_ints[i][0]), intsize, MPI_INT, recvProcs[i],
-              tag1, comm_, &mpiReqs[offset2++]);
-    MPI_Irecv(&(recv_doubles[i][0]), doublesize, MPI_DOUBLE, recvProcs[i],
-              tag2, comm_, &mpiReqs[offset2++]);
+    recv_chars[index].resize(bsize);
+
+    MPI_Irecv(&(recv_chars[index][0]), bsize, MPI_CHAR, recvProcs_[index],
+              tag1, comm_, &mpiReqs2[index]);
   }
 
   //now send our packed buffers.
-  for(size_t i=0; i<sendProcs.size(); ++i) {
-    int proc = sendProcs[i];
+  for(size_t i=0; i<sendProcs_.size(); ++i) {
+    int proc = sendProcs_[i];
 
-    MPI_Send(&(send_ints[i][0]), send_ints[i].size(), MPI_INT, proc, tag1, comm_);
-    MPI_Send(&(send_doubles[i][0]), send_doubles[i].size(), MPI_DOUBLE,
-             proc, tag2, comm_);
+    MPI_Send(&(send_chars[i][0]), send_chars[i].size(), MPI_CHAR, proc, tag1, comm_);
   }
 
-  if (mpiReqs.size() > 0) {
-    MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  for(size_t ir=0; ir<recvProcs_.size(); ++ir) {
+    int index;
+    MPI_Status status;
+    MPI_Waitany(numRecvProcs, &mpiReqs2[0], &index, &status);
   }
-
 
   //and finally, unpack and store the received buffers.
-  FillableMat recvMat;
-  for(size_t ir=0; ir<recvProcs.size(); ++ir) {
-    fei::impl_utils::unpack_FillableMat(recv_ints[ir], recv_doubles[ir], recvMat);
+  CSRMat recvMat;
+  for(size_t ir=0; ir<recvProcs_.size(); ++ir) {
+    fei::impl_utils::unpack_CSRMat(recv_chars[ir], recvMat);
 
-    fei::CSRMat M(recvMat);
-
-    int nrows = M.getNumRows();
+    int nrows = recvMat.getNumRows();
 
     for(int i=0; i<nrows; ++i) {
-      int row = M.getGraph().rowNumbers[i];
-      int rowOffset = M.getGraph().rowOffsets[i];
-      int rowLen = M.getGraph().rowOffsets[i+1] - rowOffset;
+      int row = recvMat.getGraph().rowNumbers[i];
+      int rowOffset = recvMat.getGraph().rowOffsets[i];
+      int rowLen = recvMat.getGraph().rowOffsets[i+1] - rowOffset;
 
-      int* indices = &(M.getGraph().packedColumnIndices[rowOffset]);
-      double* vals = &(M.getPackedCoefs()[rowOffset]);
+      int* indices = &(recvMat.getGraph().packedColumnIndices[rowOffset]);
+      double* vals = &(recvMat.getPackedCoefs()[rowOffset]);
       int err = 0;
       if (haveBlockMatrix()) {
         err = giveToBlockMatrix(1, &row, rowLen, indices, &vals, accumulate);
@@ -289,7 +278,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
       }
       if (err != 0) {
         FEI_COUT << "fei::Matrix_core::gatherFromOverlap ERROR storing "
-         << "values for row=" << row<<", recv'd from proc " << recvProcs[i]
+         << "values for row=" << row<<", recv'd from proc " << recvProcs_[i]
          << FEI_ENDL;
         
         return(err);

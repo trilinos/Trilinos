@@ -568,6 +568,27 @@ int fei::VectorSpace::addVectorSpace(fei::VectorSpace* inputSpace)
 }
 
 //----------------------------------------------------------------------------
+void fei::VectorSpace::getSendProcs(std::vector<int>& sendProcs) const
+{
+  sendProcs.clear();
+  std::set<int> sendSet;
+
+  std::map<int,fei::SharedIDs<int> >::const_iterator
+    s_it = sharedIDTables_.begin(),
+    s_end= sharedIDTables_.end();
+  for(; s_it!=s_end; ++s_it) {
+    const std::vector<int>& owners = s_it->second.getOwningProcs();
+    for(size_t i=0; i<owners.size(); ++i) {
+      sendSet.insert(owners[i]);
+    }
+  }
+
+  for(std::set<int>::iterator it=sendSet.begin(); it!=sendSet.end(); ++it) {
+    if (fei::localProc(comm_) != *it) sendProcs.push_back(*it);
+  }
+}
+
+//----------------------------------------------------------------------------
 fei::SharedIDs<int>& fei::VectorSpace::getSharedIDs_private(int idType)
 {
   std::map<int,fei::SharedIDs<int> >::iterator

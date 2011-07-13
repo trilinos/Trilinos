@@ -291,7 +291,7 @@ int ex_put_init_ext (int   exoid,
   }
 
   {
-    int max_so_far = 0;
+    int max_so_far = 32;
     if ((status=nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
