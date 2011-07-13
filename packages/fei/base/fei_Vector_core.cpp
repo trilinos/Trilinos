@@ -271,9 +271,9 @@ int fei::Vector_core::giveToVector(int numValues,
       //ignored... so we'll continue rather than throwing.
       continue;
     }
-    int proc = eqnComm_->getOwnerProc(ind);
     int local = ind - firstLocalOffset_;
     if (local < 0 || local >= numLocal_) {
+      int proc = eqnComm_->getOwnerProc(ind);
       if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
         FEI_OSTREAM& os = *output_stream_;
         os << dbgprefix_<<"giveToVector remote["<<proc<<"]("
@@ -359,16 +359,32 @@ int fei::Vector_core::gatherFromOverlap(bool accumulate)
   int tag1 = 11111;
 
   if (sendRecvProcsNeedUpdated_) {
-    sendProcs_.clear();
-    vecSpace_->getSendProcs(sendProcs_);
-//    //first create the list of procs we'll be sending to.
-//    for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
-//      if ((int)i == fei::localProc(comm_)) continue;
-//      if (remotelyOwned_[i]->size() == 0) continue;
-//  
-//      sendProcs_.push_back(i);
-//    }
+    //first create the list of procs we'll be sending to.
+    for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
+      if ((int)i == fei::localProc(comm_)) continue;
+      if (remotelyOwned_[i]->size() == 0) continue;
   
+      sendProcs_.push_back(i);
+    }
+  
+    std::vector<int> tmpSendProcs;
+    vecSpace_->getSendProcs(tmpSendProcs);
+    for(size_t i=0; i<tmpSendProcs.size(); ++i) {
+      bool found = false;
+      for(size_t j=0; j<sendProcs_.size(); ++j) {
+        if (sendProcs_[j] == tmpSendProcs[i]) {
+          found = true;
+          break;
+        }
+        if (sendProcs_[j] > tmpSendProcs[i]) {
+          sendProcs_.insert(sendProcs_.begin()+j, tmpSendProcs[i]);
+          found = true;
+          break;
+        }
+      }
+      if (!found) sendProcs_.push_back(tmpSendProcs[i]);
+    }
+
     recvProcs_.clear();
     fei::mirrorProcs(comm_, sendProcs_, recvProcs_);
     sendRecvProcsNeedUpdated_ = false;
