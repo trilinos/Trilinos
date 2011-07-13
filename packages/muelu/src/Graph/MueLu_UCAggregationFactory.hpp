@@ -120,7 +120,7 @@ namespace MueLu {
       RCP<Aggregates> aggregates;
       currentLevel.CheckOut("Aggregates",aggregates);
      
-      AggregateLeftOvers(aggregates, "UC_CleanUp" *graph);
+      AggregateLeftOvers(aggregates, "UC_CleanUp", *graph);
 
       // currentLevel.Save("Aggregates",aggregates);
 
