@@ -133,6 +133,7 @@ namespace stk {
                   if ( ((1 << iSubDimOrd) & edge_mark_bitcode ) )
                     {
                       //if (edge_mark_bitcode == 4)
+                      if (0)
                         {
                           std::cout << "tmp TestLocalRefinerTet_N_3_1 element.identifier() = " << element.identifier() 
                                     << " edge_mark_bitcode = " << edge_mark_bitcode << "  iSubDimOrd= " << iSubDimOrd << std::endl;

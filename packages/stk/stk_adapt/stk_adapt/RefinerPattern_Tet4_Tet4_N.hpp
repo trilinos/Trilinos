@@ -349,7 +349,7 @@ namespace stk {
               }
           }
         
-        if (1)
+        if (0)
           std::cout << "tmp RefinerPattern_Tet4_Tet4_N::num_edges_marked= " << num_edges_marked << std::endl;
 
         // uniform refinement
@@ -400,7 +400,7 @@ namespace stk {
                 for (int inode=0; inode < 4; inode++)
                   {
                     node_coords[inode] = stk::mesh::field_data( *eMesh.getCoordinatesField() , *tet_elem_nodes[inode] );
-                    if (1) std::cout << "tmp RP node_coords= " 
+                    if (0) std::cout << "tmp RP node_coords= " 
                                      << node_coords[inode][0] << " "
                                      << node_coords[inode][1] << " "
                                      << node_coords[inode][2] << std::endl;
@@ -414,7 +414,7 @@ namespace stk {
                                      node_coords[2], 0, tet_elem_nodes[2]->identifier(),
                                      node_coords[3], 0, tet_elem_nodes[3]->identifier() );
 
-                if (1)
+                if (0)
                   {
                     for (int inode=0; inode < 4; inode++)
                       {
@@ -433,7 +433,7 @@ namespace stk {
                                                 (unsigned)new_tets[i].get<1>(),
                                                 (unsigned)new_tets[i].get<2>(),
                                                 (unsigned)new_tets[i].get<3>() );
-                    if (1)
+                    if (0)
                       std::cout << "tmp RefPatt::createNewElements new tet= " << tets[i] << std::endl;
 
                   }
@@ -562,7 +562,7 @@ namespace stk {
                                          TET_CV_EV(elems_local[ielem].get<1>() ), 
                                          TET_CV_EV(elems_local[ielem].get<2>() ), 
                                          TET_CV_EV(elems_local[ielem].get<3>() ) );
-            if (1)
+            if (0)
               std::cout << "tmp RefPatt::createNewElements new tet= " << elems[ielem] << std::endl;
 
           }
@@ -600,7 +600,7 @@ namespace stk {
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
 
-            if (1)
+            if (0)
               {
                 std::cout << "tmp RefPatt::createNewElements element.identifier()= " << element.identifier() 
                           << " newElement= " << newElement.identifier() << std::endl;

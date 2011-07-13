@@ -29,7 +29,7 @@ static double MBTetParametric[]    = { 0., 0., 0.,   1., 0., 0.,   0., 1., 0.,  
 #  define MB_TESSELLATOR_INCR_SUBCASE_COUNT(cs,sc)
 #endif // MB_DEBUG_TESSELLATOR
 
-#define PERCEPT_DEBUG 1
+#define PERCEPT_DEBUG 0
 
 namespace moab {
 
@@ -224,6 +224,7 @@ namespace moab {
       }
 
     int comparison_bits;
+    int comparison_bits_save;
     std::stack<int*> output_tets;
     std::stack<int*> output_perm;
     std::stack<int>  output_sign;
@@ -249,8 +250,21 @@ namespace moab {
         // a tie-breaker for a pair of edges that have the same length - add all the vertex handles
         //   and choose one case or the other depending on if the sum is odd or even
 
+#if 1
+
 #define VH(iedge) (permuted_hash[tet_edges[iedge][0]] + permuted_hash[tet_edges[iedge][1]])
 #define CMP_VH(ie,je) ((VH(ie)+VH(je)) % 2 == 0)
+
+#else
+
+#define V0(iedge) permuted_hash[tet_edges[iedge][0]] 
+#define V1(iedge) permuted_hash[tet_edges[iedge][1]]
+
+#define VH(iedge) (V0(iedge) + V1(iedge))
+        //#define CMP_VH(ie,je) ( VH(ie) == VH(je) ? ( std::min(V0(ie),V1(ie)) < std::min(V0(je),V1(je)) ) :  ((VH(ie)+VH(je)) % 2 == 0) )
+#define CMP_VH(ie,je) ( ( std::min(V0(ie),V1(ie)) == std::min(V0(je),V1(je)) ) ? (VH(ie) < VH(je)) : ( std::min(V0(ie),V1(ie)) < std::min(V0(je),V1(je)) ) )
+
+#endif
 
         if ( ( comparison_bits & 3 ) == 3 )
           {
@@ -308,12 +322,15 @@ namespace moab {
         MB_TESSELLATOR_INCR_SUBCASE_COUNT(2,0);
         break;
       case 4: // Ruprecht-Müller Case 3a
+        //0<3<2<0 ?
+
         comparison_bits = 
           ( permlen[0] <= permlen[3] ? 1 : 0 ) | ( permlen[0] >= permlen[3] ? 2 : 0 ) |
           ( permlen[2] <= permlen[3] ? 4 : 0 ) | ( permlen[2] >= permlen[3] ? 8 : 0 ) |
           ( permlen[0] <= permlen[2] ? 16 : 0 ) | ( permlen[0] >= permlen[2] ? 32 : 0 ) |
           0;
-        if ( ( comparison_bits & 3 ) == 3 )
+        comparison_bits_save = comparison_bits;
+        if ( ( comparison_bits_save & 3 ) == 3 )
           {
 #if PERCEPT_MOAB_ALLOW_FACE_DISAMB
             // Compute face point and tag
@@ -327,12 +344,12 @@ namespace moab {
 #else
             comparison_bits -=  3 ;
             if (CMP_VH(0,3))
-              comparison_bits |= 1;
+              comparison_bits |= 1; 
             else
               comparison_bits |= 2;
 #endif
           }
-        if ( ( comparison_bits & 12 ) == 12 )
+        if ( ( comparison_bits_save & 12 ) == 12 )
           {
 #if PERCEPT_MOAB_ALLOW_FACE_DISAMB
             // Compute face point and tag
@@ -346,12 +363,12 @@ namespace moab {
 #else
             comparison_bits -=  12 ;
             if (CMP_VH(2,3))
-              comparison_bits |= 4;
+              comparison_bits |= 4; 
             else
-              comparison_bits |= 8;
+              comparison_bits |= 8; 
 #endif
           }
-        if ( ( comparison_bits & 48 ) == 48 )
+        if ( ( comparison_bits_save & 48 ) == 48 )
           {
 #if PERCEPT_MOAB_ALLOW_FACE_DISAMB
             // Compute face point and tag
@@ -365,7 +382,7 @@ namespace moab {
 #else
             comparison_bits -=  48 ;
             if (CMP_VH(0,2))
-              comparison_bits |= 16;
+              comparison_bits |= 16; 
             else
               comparison_bits |= 32;
 #endif
@@ -376,6 +393,8 @@ namespace moab {
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
         output_sign.push( 1 );
         MB_TESSELLATOR_INCR_SUBCASE_COUNT(3,0);
+
+        // here
         switch ( comparison_bits )
           {
           case 42: // 0>2>3<0
@@ -464,6 +483,7 @@ namespace moab {
             MB_TESSELLATOR_INCR_SUBCASE_COUNT(3,13);
             break;
           }
+
         break;
       case 5: // Ruprecht-Müller Case 3b
         MB_TESSELLATOR_INCR_CASE_COUNT(4);
@@ -732,7 +752,6 @@ namespace moab {
               comparison_bits |= 8;
 #endif
           }
-        //if (PERCEPT_DEBUG) std::cout << "tmp case 4a comparison_bits= " << comparison_bits << std::endl;
         MB_TESSELLATOR_INCR_CASE_COUNT(7);
         output_tets.push( SimplexTemplateRefiner::templates + 545 );
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
@@ -1413,7 +1432,7 @@ namespace moab {
         output_sign.pop();
 
         if (PERCEPT_DEBUG)
-          std::cout << "tmp PM ntets= " << ntets << std::endl;
+          std::cout << "tmp PM case= " << C << " edge_code= " << edge_code << " ntets= " << ntets << std::endl;
         int t;
         if ( sgn > 0 )
           {

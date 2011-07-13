@@ -126,7 +126,7 @@ namespace stk {
 
 #endif
                   // mark first m_mark_first_n_edges edges 
-                  std::cout << "element.identifier() = " << element.identifier() << std::endl;
+                  //std::cout << "element.identifier() = " << element.identifier() << std::endl;
 
                   if (iSubDimOrd < m_mark_first_n_edges && element.identifier() == 1)
                     (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);

@@ -2569,8 +2569,8 @@ namespace stk {
                 }
             }
         }
-      std::cout << "tmp filterUnrefSet::elements_to_unref.size = " << elements_to_unref.size() << 
-        " filtered size= " << elements_to_unref_copy.size() << std::endl;
+      //std::cout << "tmp filterUnrefSet::elements_to_unref.size = " << elements_to_unref.size() 
+      //          <<  " filtered size= " << elements_to_unref_copy.size() << std::endl;
       elements_to_unref = elements_to_unref_copy;
     }
 

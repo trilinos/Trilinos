@@ -37,7 +37,9 @@ namespace stk{
 
     typedef shards::Tetrahedron<4>         Tet4;
 
-    SingleTetFixture::SingleTetFixture( stk::ParallelMachine comm, bool doCommit, unsigned npts, Point *points, unsigned ntets, TetIds *tetIds) :
+    SingleTetFixture::SingleTetFixture( stk::ParallelMachine comm, bool doCommit, unsigned npts, Point *points, unsigned ntets, TetIds *tetIds,
+                                        stk::mesh::EntityId elem_id_start
+                                        ) :
       m_spatial_dimension(3)
       , m_metaData(m_spatial_dimension, stk::mesh::fem::entity_rank_names(m_spatial_dimension) )
       , m_bulkData( stk::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
@@ -46,6 +48,7 @@ namespace stk{
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
       , m_npts(npts), m_points(points)
       , m_ntets(ntets), m_tetIds(tetIds)
+      , m_elem_id_start(elem_id_start)
     {
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
@@ -87,7 +90,7 @@ namespace stk{
 
       if (m_bulkData.parallel_rank() == 0)
         {
-          stk::mesh::EntityId curr_elem_id = 1;
+          stk::mesh::EntityId curr_elem_id = (m_elem_id_start ? m_elem_id_start : 1);
 
           // For each element topology declare elements
           unsigned ntets = 1;
@@ -104,7 +107,7 @@ namespace stk{
             }
           for ( unsigned i = 0 ; i < ntets ; ++i , ++curr_elem_id ) {
             stk::mesh::fem::declare_element( m_bulkData, m_block_tet, curr_elem_id, tets[i] );
-            std::cout << "tmp SingleTetFixture::populate tets[i]= " << i << " " << tets[i][0] << " " << tets[i][1] << " " << tets[i][2] << " " << tets[i][3] << std::endl;
+            //std::cout << "tmp SingleTetFixture::populate tets[i]= " << i << " " << tets[i][0] << " " << tets[i][1] << " " << tets[i][2] << " " << tets[i][3] << std::endl;
           }
 
           // For all nodes assign nodal coordinates
@@ -114,7 +117,7 @@ namespace stk{
             coord[0] = pts[i][0] ;
             coord[1] = pts[i][1] ;
             coord[2] = pts[i][2] ;
-            std::cout << "tmp SingleTetFixture::populate coords= " << i << " " << coord[0] << " " << coord[1] << " "  << coord[2] << std::endl;
+            //std::cout << "tmp SingleTetFixture::populate coords= " << i << " " << coord[0] << " " << coord[1] << " "  << coord[2] << std::endl;
           }
 
         }

@@ -66,6 +66,7 @@
 #include <fstream>
 #include <string>
 #include <typeinfo>
+#include <cstdlib>
 
 #include <math.h>
 #include <stk_util/parallel/Parallel.hpp>
@@ -96,6 +97,60 @@ namespace stk {
       static void save_or_diff(PerceptMesh& eMesh, std::string filename, int option = 0)
       {
         return UnitTestSupport::save_or_diff(eMesh, filename, option);
+      }
+
+      static double  tet_volume(SingleTetFixture::Point *node_coord_data, SingleTetFixture::TetIds& tetra_node_ids, unsigned node_id_offset=0)
+      {
+        double mat[3][3];
+        for (int inode=0; inode < 3; inode++)
+          {
+            for (int ipt=0; ipt < 3; ipt++)
+              {
+                mat[inode][ipt] = node_coord_data[tetra_node_ids[inode+1]-node_id_offset][ipt] - node_coord_data[tetra_node_ids[0]-node_id_offset][ipt];
+              }
+          }
+        double vol = (mat[0][0]*(mat[1][1]*mat[2][2]-mat[1][2]*mat[2][1])
+                      -mat[0][1]*(mat[1][0]*mat[2][2] - mat[1][2]*mat[2][0])
+                      +mat[0][2]*(mat[1][0]*mat[2][1] - mat[1][1]*mat[2][0])
+                      ) / 6.0;
+        return vol;
+      }
+
+      static double totalVolume(PerceptMesh& eMesh)
+      {
+        double totVol=0.0;
+
+        SingleTetFixture::Point node_coord_data[4];
+        static  SingleTetFixture::TetIds tetra_node_ids[] = { {0, 1, 2, 3} };
+
+        const vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( eMesh.element_rank() );
+
+        for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+          {
+            stk::mesh::Bucket & bucket = **k ;
+
+            const unsigned num_elements_in_bucket = bucket.size();
+            for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+              {
+                stk::mesh::Entity& element = bucket[iElement];
+                stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+                for (unsigned inode=0; inode < elem_nodes.size(); inode++)
+                  {
+                    stk::mesh::Entity *node = elem_nodes[inode].entity();
+                    double *fdata = stk::mesh::field_data( *eMesh.getCoordinatesField() , *node);
+                    node_coord_data[inode][0] = fdata[0];
+                    node_coord_data[inode][1] = fdata[1];
+                    node_coord_data[inode][2] = fdata[2];
+                  }
+                double vol = tet_volume(node_coord_data, tetra_node_ids[0]);
+                if (vol < 0)
+                  {
+                    std::cout << "ERROR neg vol = " << vol << std::endl;
+                  }
+                totVol += vol;
+              }
+          }        
+        return totVol;
       }
 
       //=============================================================================
@@ -166,21 +221,27 @@ namespace stk {
               }
 
               {
-                for (unsigned edge_mark_bitcode = 41u; edge_mark_bitcode <= 41u; edge_mark_bitcode++)
+                for (unsigned edge_mark_bitcode = 12u; edge_mark_bitcode <= 14u; edge_mark_bitcode++)
                   {
                     PerceptMesh eMesh;
                     eMesh.open(input_files_loc+"local_tet_41.e");
                     Local_Tet4_Tet4_N break_tet(eMesh);
                     eMesh.commit();
 
+                    double totalVol0 = totalVolume(eMesh);
+                    std::cout << "tmp edge_mark_bitcode= " << edge_mark_bitcode << " totalVol0 = " << totalVol0 << std::endl;
+
                     TestLocalRefinerTet_N_2_1 breaker(eMesh, break_tet, 0, edge_mark_bitcode);
                     breaker.setRemoveOldElements(true);
                     breaker.doBreak();
 
+                    double totalVol1 = totalVolume(eMesh);
+                    std::cout << "tmp edge_mark_bitcode= " << edge_mark_bitcode << " totalVol1 = " << totalVol1 << std::endl;
+
                     eMesh.saveAs(output_files_loc+"local_tet_N_2_1_bitcode_"+toString((int)edge_mark_bitcode)+".e" );
                   }
               }
-              // exit(123);
+              //exit(123);
             }
 
             {
@@ -332,6 +393,94 @@ namespace stk {
           }
       }
 
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+
+      /// check triangulate_tet - two tets sharing a face, random coords
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, triangulate_tet_2_rand)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            srandom(1234);
+            int ncases = 100;
+            int icase = 0;
+            for (int jcase = 0; jcase < ncases; jcase++)
+            {
+
+              // create the mesh
+              unsigned npts=5;
+              unsigned ntets=2;
+              SingleTetFixture::Point node_coord_data[] = {
+                { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 0 , 1 , 0 } , { 0 , 0 , 1 }, {1, 1, 1} };
+
+              // Hard coded tetra node ids for all the tetra nodes in the entire mesh
+              static  SingleTetFixture::TetIds tetra_node_ids[] = {
+                { 1, 2, 3, 4}, {2, 3, 4, 5} };
+
+              for (unsigned ipts = 0; ipts < npts; ipts++)
+                {
+                  for (int ii=0; ii < 3; ii++) node_coord_data[ipts][ii] = ((double)random())/((double)RAND_MAX);
+                }
+
+              double vol0 = tet_volume(node_coord_data, tetra_node_ids[0], 1);
+              double vol1 = tet_volume(node_coord_data, tetra_node_ids[1], 1);
+              std::cout << "tmp vol0 = " << vol0 << " vol1 = " << vol1 << std::endl;
+              if (vol0 < 0.0 || vol1 < 0.0)
+                continue;
+
+              {
+                stk::percept::SingleTetFixture mesh(pm, false, npts, node_coord_data, ntets, tetra_node_ids);
+                stk::io::put_io_part_attribute(  mesh.m_block_tet );
+                mesh.m_metaData.commit();
+                mesh.populate();
+
+                std::cout << "here" << std::endl;
+                bool isCommitted = true;
+                percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+
+                eMesh.saveAs(input_files_loc+"local_tet_2_rand.e."+toString(icase));
+              }
+
+              {
+                PerceptMesh eMesh;
+                eMesh.open(input_files_loc+"local_tet_2_rand.e."+toString(icase));
+                Local_Tet4_Tet4_N break_tet(eMesh);
+                eMesh.commit();
+                double totalVol0 = totalVolume(eMesh);
+                std::cout << "tmp totalVol0 = " << totalVol0 << std::endl;
+
+                TestLocalRefinerTet_N_3 breaker(eMesh, break_tet, 0, 1);
+                breaker.setRemoveOldElements(true);
+                breaker.doBreak();
+
+                double totalVol1 = totalVolume(eMesh);
+                std::cout << "tmp totalVol1 = " << totalVol1 << std::endl;
+
+                if (std::abs(totalVol0 - totalVol1) > 1.e-6)
+                  {
+                    throw std::runtime_error("triangulate_tet_2_rand:: error, volumes don't match");
+                  }
+
+                save_or_diff(eMesh, output_files_loc+"local_tet_2_rand.e."+toString(icase) );
+                //exit(123);
+              }
+
+              ++icase;
+            }
+            //exit(123);
+          }
+      }
+
 
       //=============================================================================
       //=============================================================================
@@ -376,18 +525,18 @@ namespace stk {
               js = 2;
               je = 6;
 #endif
-              for (int i = is; i <= ie; i++)
+              for (int j = js; j <= je; j++)
                 {
-                  for (int j = js; j <= je; j++)
+                  for (int i = is; i <= ie; i++)
                     {
                       //std::cout << "\ntmp i = " << i << " j= " << j << "\n--------------------------------\n" << std::endl;
 
                       for (int k = 0; k < 4; k++)
                         {
-//                           pts[ipts][0] = node_coord_data[k][0] + i * 2;
-//                           pts[ipts][1] = node_coord_data[k][1] + j * 2;
-                          pts[ipts][0] = node_coord_data[k][0] + i * 1.25;
-                          pts[ipts][1] = node_coord_data[k][1] + j * 1.25;
+                          pts[ipts][0] = node_coord_data[k][0] + i * 2;
+                          pts[ipts][1] = node_coord_data[k][1] + j * 2;
+                          //pts[ipts][0] = node_coord_data[k][0] + i * 1.25;
+                          //pts[ipts][1] = node_coord_data[k][1] + j * 1.25;
                           pts[ipts][2] = node_coord_data[k][2];
                           ++npts;
                           ++ipts;
@@ -410,6 +559,10 @@ namespace stk {
 
               bool isCommitted = true;
               percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+
+              double totalVol0 = totalVolume(eMesh);
+              std::cout << "tmp 64 totalVol0 = " << totalVol0 << std::endl;
+
               eMesh.saveAs(input_files_loc+"local_tet_64.e");
             }
 
@@ -422,6 +575,9 @@ namespace stk {
               TestLocalRefinerTet_N_3 breaker(eMesh, break_tet, 0, 1);
               breaker.setRemoveOldElements(true);
               breaker.doBreak();
+
+              double totalVol1 = totalVolume(eMesh);
+              std::cout << "tmp 64 totalVol1 = " << totalVol1 << std::endl;
 
               save_or_diff(eMesh, output_files_loc+"local_tet_N_3_64tet_1.e");
               //exit(123);

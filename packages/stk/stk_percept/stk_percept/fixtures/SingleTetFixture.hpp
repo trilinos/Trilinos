@@ -59,7 +59,8 @@ namespace stk {
 
       ~SingleTetFixture();
 
-      SingleTetFixture( stk::ParallelMachine comm, bool doCommit = true, unsigned npts=0, Point *points=0, unsigned ntets=0, TetIds *tetIds=0);
+      SingleTetFixture( stk::ParallelMachine comm, bool doCommit = true, unsigned npts=0, Point *points=0, unsigned ntets=0, TetIds *tetIds=0, 
+                        stk::mesh::EntityId elem_id_start=0);
 
       void populate();
 
@@ -77,6 +78,9 @@ namespace stk {
       Point *m_points;
       unsigned m_ntets;
       TetIds *m_tetIds;
+
+      stk::mesh::EntityId m_elem_id_start;
+      
     };
 
     //bool verifyMesh( const SingleTetFixture & mesh );
