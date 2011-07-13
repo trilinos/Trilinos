@@ -572,7 +572,7 @@ namespace MueLu {
     const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
     const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx != Teuchos::null) {
-
+#ifdef HAVE_MUELU_EPETRAEXT
       RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
       int rv = EpetraExt::RowMatrixToMatrixMarketFile(fileName.c_str(), *A);
       if (rv != 0) {
@@ -581,7 +581,9 @@ namespace MueLu {
       std::string msg = "EpetraExt::RowMatrixToMatrixMarketFile return value of " + buf.str();
       throw(Exceptions::RuntimeError(msg));
       }
-
+#else
+      throw(Exceptions::RuntimeError("Compiled without EpetraExt"));
+#endif
     } else if (tmp_TCrsMtx != Teuchos::null) {
 
       RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = tmp_TCrsMtx->getTpetra_CrsMatrix();

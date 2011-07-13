@@ -194,19 +194,20 @@ namespace MueLu {
       //FIXME work around until Cthulhu view table is fixed
       RCP<const Epetra_CrsMatrix> epA;
       RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA;
+#if HAVE_MUELU_EPETRAEXT
       try {
         epA = Utils::Op2EpetraCrs(fineA);
       }
       catch(...) {
         ;//do nothing
       }
+#endif
       try {
         tpA = Utils::Op2TpetraCrs(fineA);
       }
       catch(...) {
         ;//do nothing
       }
-
       std::vector<GO> globalIdsForPtent;
       for (int i=0; i< aggToRowMap.size(); ++i) {
         for (int k=0; k< aggToRowMap[i].size(); ++k) {
