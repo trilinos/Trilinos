@@ -1480,6 +1480,7 @@ namespace moab {
 
                 new_tets.push_back(nt);
 
+
                 if (PERCEPT_DEBUG)
                   std::cout << "tmp PM new tet= " << nt << std::endl;
 
