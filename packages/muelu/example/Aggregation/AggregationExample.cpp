@@ -86,7 +86,8 @@ int main(int argc, char *argv[]) {
   AggFact->SetOrdering(MueLu::AggOptions::GRAPH);
   AggFact->SetPhase3AggCreation(0.5);
   
-  RCP<Aggregates> aggregates = AggFact->Build(*graph);
+#warning TO BE FIXED
+  //  RCP<Aggregates> aggregates = AggFact->Build(*graph);
   
   /**********************************************************************************/
   /*                                                                                */
