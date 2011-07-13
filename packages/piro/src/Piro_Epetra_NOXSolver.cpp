@@ -603,9 +603,9 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 		  else {
 		    Teuchos::RCP<Epetra_MultiVector> arg1, arg2;
 		    EDerivativeMultiVectorOrientation dfdp_orient =
-		      outArgs.get_DfDp(i).getMultiVectorOrientation();
+		      model_outargs.get_DfDp(i).getMultiVectorOrientation();
 		    EDerivativeMultiVectorOrientation dgdx_orient =
-		      outArgs.get_DgDx(j).getMultiVectorOrientation();
+		      model_outargs.get_DgDx(j).getMultiVectorOrientation();
 		    char flag1, flag2;
 		    if (dgdp_orient == DERIV_MV_BY_COL) {
 		      arg1 = dgdx;
@@ -741,11 +741,11 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 		  else {
 		    Teuchos::RCP<Epetra_MultiVector> arg1, arg2;
 		    EDerivativeMultiVectorOrientation dgdp_orient =
-		      outArgs.get_DgDp(j,i).getMultiVectorOrientation();
+		      model_outargs.get_DgDp(j,i).getMultiVectorOrientation();
 		    EDerivativeMultiVectorOrientation dfdp_orient =
-		      outArgs.get_DfDp(i).getMultiVectorOrientation();
+		      model_outargs.get_DfDp(i).getMultiVectorOrientation();
 		    EDerivativeMultiVectorOrientation dgdx_orient =
-		      outArgs.get_DgDx(j).getMultiVectorOrientation();
+		      model_outargs.get_DgDx(j).getMultiVectorOrientation();
 		    char flag1, flag2;
 		    if (dgdp_orient == DERIV_TRANS_MV_BY_ROW) {
 		      arg1 = dfdp;
