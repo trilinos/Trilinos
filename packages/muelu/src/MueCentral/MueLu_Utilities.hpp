@@ -18,6 +18,7 @@
 #include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_EpetraVector.hpp>
 #include <Cthulhu_EpetraMultiVector.hpp>
+#include "Epetra_RowMatrixTransposer.h"
 #endif
 
 #include "MueLu_MatrixFactory.hpp"
@@ -628,17 +629,60 @@ namespace MueLu {
      comm->barrier();
    } //PauseForDebugger
 
-    //! @brief Transpose a Cthulhu::Operator
+    /*! @brief Transpose a Cthulhu::Operator
+
+      Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
+      In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
+    */
+
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
    {
-     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp = Op2TpetraCrs(Op); //TODO JJH try/catch this
-     //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
-     //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
-     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=simple_Transpose(tpetraOp);
-     RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
-     RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
-     RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
-     return AAAA;
+     string TorE = "epetra";
+     RCP<Epetra_CrsMatrix> epetraOp;
+     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
+     try {
+       epetraOp = Op2NonConstEpetraCrs(Op);
+     }
+     catch (...) {
+       TorE = "tpetra";
+     }
+
+     if (TorE=="tpetra") {
+       try {
+         tpetraOp = Op2TpetraCrs(Op);
+       }
+       catch (...) {
+         throw(Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices"));
+       }
+     } //if
+
+     if (TorE == "tpetra") {
+       //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
+       //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
+       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=simple_Transpose(tpetraOp);
+       RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
+       RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
+       RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
+       return AAAA;
+
+     } else {
+       //epetra case
+       Epetra_RowMatrixTransposer et(&*epetraOp);
+       Epetra_CrsMatrix *A;
+       int rv = et.CreateTranspose(false,A);
+       if (rv != 0) {
+         std::ostringstream buf;
+         buf << rv;
+         std::string msg = "Utils::Transpose: Epetra::RowMatrixTransposer returned value of " + buf.str();
+         throw(Exceptions::RuntimeError(msg));
+       }
+       RCP<Epetra_CrsMatrix> rcpA(A);
+       RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
+       RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
+       RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
+       return AAAA;
+     }
+     
    } //Transpose
 
 
@@ -731,26 +775,25 @@ namespace MueLu {
                                 bool doFillComplete=true,
                                 bool doOptimizeStorage=true)
    {
-
+      string TorE = "epetra";
+      RCP<const Epetra_CrsMatrix> epOp;
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpOp;
+
       try {
-        tpOp = Op2NonConstTpetraCrs(Op);
+        epOp = Op2NonConstEpetraCrs(Op);
       }
-      catch(...) {
-        throw(Exceptions::RuntimeError("Sorry, haven't implemented matrix scaling for epetra"));
+      catch (...){
+        TorE = "tpetra";
       }
 
-      const RCP<const Tpetra::Map<LO,GO,NO> > rowMap = tpOp->getRowMap();
-      const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp->getDomainMap();
-      const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap = tpOp->getRangeMap();
-      size_t maxRowSize = tpOp->getNodeMaxNumRowEntries();
-      if (maxRowSize==(size_t)-1) //hasn't been determined yet
-        maxRowSize=20;
-      std::vector<SC> scaledVals(maxRowSize);
-      if (tpOp->isFillComplete()) {
-        std::cout << "In MyOldScale, resuming fill" << std::endl;
-        tpOp->resumeFill();
-      }
+      if (TorE=="tpetra") {
+        try {
+          tpOp = Op2NonConstTpetraCrs(Op);
+        }
+        catch(...) {
+          throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled"));
+        }
+      } //if
 
       Teuchos::ArrayRCP<SC> sv(scalingVector.size());
       if (doInverse) {
@@ -761,52 +804,81 @@ namespace MueLu {
           sv[i] = scalingVector[i];
       }
 
-      if (Op->isLocallyIndexed() == true) {
-        Teuchos::ArrayView<const LO> cols;
-        Teuchos::ArrayView<const SC> vals;
-        for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
-          tpOp->getLocalRowView(i,cols,vals);
-          size_t nnz = tpOp->getNumEntriesInLocalRow(i);
-          if (nnz>maxRowSize) {
-            maxRowSize=nnz;
-            scaledVals.resize(maxRowSize);
-          }
-          for (size_t j=0; j<nnz; ++j) {
-            scaledVals[j] = vals[j]*sv[i];
-          }
-          if (nnz>0) {
-            Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
-            tpOp->replaceLocalValues(i,cols,valview);
-          }
-        } //for (size_t i=0; ...
-      } else {
-        Teuchos::ArrayView<const GO> cols;
-        Teuchos::ArrayView<const SC> vals;
-        for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
-          GO gid = rowMap->getGlobalElement(i);
-          tpOp->getGlobalRowView(gid,cols,vals);
-          size_t nnz = tpOp->getNumEntriesInGlobalRow(gid);
-          if (nnz>maxRowSize) {
-            maxRowSize=nnz;
-            scaledVals.resize(maxRowSize);
-          }
-          for (size_t j=0; j<nnz; ++j) {
-            scaledVals[j] = vals[j]*sv[i]; //FIXME i or gid?
-          }
-          if (nnz>0) {
-            Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
-            tpOp->replaceGlobalValues(gid,cols,valview);
-          }
-        } //for (size_t i=0; ...
-      }
+      if (TorE == "tpetra") {
 
-      if (doFillComplete) {
-        if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
-          throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
-        if (doOptimizeStorage)
-          tpOp->fillComplete(domainMap,rangeMap,Tpetra::DoOptimizeStorage);
-        else
-          tpOp->fillComplete(domainMap,rangeMap,Tpetra::DoNotOptimizeStorage);
+        const RCP<const Tpetra::Map<LO,GO,NO> > rowMap = tpOp->getRowMap();
+        const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp->getDomainMap();
+        const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap = tpOp->getRangeMap();
+        size_t maxRowSize = tpOp->getNodeMaxNumRowEntries();
+        if (maxRowSize==(size_t)-1) //hasn't been determined yet
+          maxRowSize=20;
+        std::vector<SC> scaledVals(maxRowSize);
+        if (tpOp->isFillComplete()) {
+          std::cout << "In MyOldScale, resuming fill" << std::endl;
+          tpOp->resumeFill();
+        }
+
+        if (Op->isLocallyIndexed() == true) {
+          Teuchos::ArrayView<const LO> cols;
+          Teuchos::ArrayView<const SC> vals;
+          for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
+            tpOp->getLocalRowView(i,cols,vals);
+            size_t nnz = tpOp->getNumEntriesInLocalRow(i);
+            if (nnz>maxRowSize) {
+              maxRowSize=nnz;
+              scaledVals.resize(maxRowSize);
+            }
+            for (size_t j=0; j<nnz; ++j) {
+              scaledVals[j] = vals[j]*sv[i];
+            }
+            if (nnz>0) {
+              Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
+              tpOp->replaceLocalValues(i,cols,valview);
+            }
+          } //for (size_t i=0; ...
+        } else {
+          Teuchos::ArrayView<const GO> cols;
+          Teuchos::ArrayView<const SC> vals;
+          for (size_t i=0; i<rowMap->getNodeNumElements(); ++i) {
+            GO gid = rowMap->getGlobalElement(i);
+            tpOp->getGlobalRowView(gid,cols,vals);
+            size_t nnz = tpOp->getNumEntriesInGlobalRow(gid);
+            if (nnz>maxRowSize) {
+              maxRowSize=nnz;
+              scaledVals.resize(maxRowSize);
+            }
+            for (size_t j=0; j<nnz; ++j) {
+              scaledVals[j] = vals[j]*sv[i]; //FIXME i or gid?
+            }
+            if (nnz>0) {
+              Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
+              tpOp->replaceGlobalValues(gid,cols,valview);
+            }
+          } //for (size_t i=0; ...
+        }
+
+        if (doFillComplete) {
+          if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
+            throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
+          if (doOptimizeStorage)
+            tpOp->fillComplete(domainMap,rangeMap,Tpetra::DoOptimizeStorage);
+          else
+            tpOp->fillComplete(domainMap,rangeMap,Tpetra::DoNotOptimizeStorage);
+        }
+      } else if (TorE == "epetra") {
+        Epetra_Map const &rowMap = epOp->RowMap();
+        int nnz;
+        double *vals;
+        int *cols;
+        for (int i=0; i<rowMap.NumMyElements(); ++i) {
+          epOp->ExtractMyRowView(i,nnz,vals,cols);
+          for (int j=0; j<nnz; ++j)
+            vals[j] *= sv[i];
+        }
+
+      } else {
+        //throw should already have occured, thus should never get here
+        throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled"));
       }
 
    } //ScaleMatrix()
