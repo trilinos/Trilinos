@@ -1,3 +1,4 @@
+
 /*------------------------------------------------------------------------*/
 /*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
@@ -36,13 +37,15 @@ namespace stk{
 
     typedef shards::Tetrahedron<4>         Tet4;
 
-    SingleTetFixture::SingleTetFixture( stk::ParallelMachine comm, bool doCommit ) :
+    SingleTetFixture::SingleTetFixture( stk::ParallelMachine comm, bool doCommit, unsigned npts, Point *points, unsigned ntets, TetIds *tetIds) :
       m_spatial_dimension(3)
       , m_metaData(m_spatial_dimension, stk::mesh::fem::entity_rank_names(m_spatial_dimension) )
       , m_bulkData( stk::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
       , m_block_tet(        m_metaData.declare_part< Tet4 >( "block_1" ))
       , m_elem_rank( m_metaData.element_rank() )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
+      , m_npts(npts), m_points(points)
+      , m_ntets(ntets), m_tetIds(tetIds)
     {
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
@@ -65,11 +68,11 @@ namespace stk{
     namespace {
 
       // Hard coded node coordinate data for all the nodes in the entire mesh
-      static const double node_coord_data[ node_count ][ SpatialDim ] = {
+      static  SingleTetFixture::Point node_coord_data[ node_count ] = {
         { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 0 , 1 , 0 } , { 0 , 0 , 1 } };
 
       // Hard coded tetra node ids for all the tetra nodes in the entire mesh
-      static const stk::mesh::EntityId tetra_node_ids[1][ 4 ] = {
+      static  SingleTetFixture::TetIds tetra_node_ids[] = {
         { 1, 2, 3, 4} };
 
     }
@@ -87,18 +90,31 @@ namespace stk{
           stk::mesh::EntityId curr_elem_id = 1;
 
           // For each element topology declare elements
-
-          for ( unsigned i = 0 ; i < 1 ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_tet, curr_elem_id, tetra_node_ids[i] );
+          unsigned ntets = 1;
+          unsigned npts = 4;
+          Point *pts = node_coord_data;
+          TetIds *tets = tetra_node_ids;
+          
+          if (m_ntets && m_npts)
+            {
+              ntets = m_ntets;
+              npts = m_npts;
+              pts = m_points;
+              tets = m_tetIds;
+            }
+          for ( unsigned i = 0 ; i < ntets ; ++i , ++curr_elem_id ) {
+            stk::mesh::fem::declare_element( m_bulkData, m_block_tet, curr_elem_id, tets[i] );
+            std::cout << "tmp SingleTetFixture::populate tets[i]= " << i << " " << tets[i][0] << " " << tets[i][1] << " " << tets[i][2] << " " << tets[i][3] << std::endl;
           }
 
           // For all nodes assign nodal coordinates
-          for ( unsigned i = 0 ; i < node_count ; ++i ) {
+          for ( unsigned i = 0 ; i < npts ; ++i ) {
             stk::mesh::Entity * const node = m_bulkData.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
             double * const coord = field_data( m_coordinates_field , *node );
-            coord[0] = node_coord_data[i][0] ;
-            coord[1] = node_coord_data[i][1] ;
-            coord[2] = node_coord_data[i][2] ;
+            coord[0] = pts[i][0] ;
+            coord[1] = pts[i][1] ;
+            coord[2] = pts[i][2] ;
+            std::cout << "tmp SingleTetFixture::populate coords= " << i << " " << coord[0] << " " << coord[1] << " "  << coord[2] << std::endl;
           }
 
         }

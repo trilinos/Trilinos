@@ -1,5 +1,5 @@
-#ifndef stk_adapt_TestLocalRefinerTet_N_2_hpp
-#define stk_adapt_TestLocalRefinerTet_N_2_hpp
+#ifndef stk_adapt_TestLocalRefinerTet_N_3_hpp
+#define stk_adapt_TestLocalRefinerTet_N_3_hpp
 
 #include <stk_adapt/Refiner.hpp>
 
@@ -12,10 +12,10 @@ namespace stk {
     /**
      * A test implementation that marks some edges randomly to test RefinerPattern_Tri3_Tri3_N_3
      */
-    class TestLocalRefinerTet_N_2 : public Refiner
+    class TestLocalRefinerTet_N_3 : public Refiner
     {
     public:
-      TestLocalRefinerTet_N_2(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0, unsigned mark_first_n_edges=1);
+      TestLocalRefinerTet_N_3(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0, unsigned edge_mark_bitcode=1);
 
       // ElementUnrefineCollection  buildTestUnrefList();
 
@@ -36,18 +36,18 @@ namespace stk {
                                               vector<NeededEntityType>& needed_entity_ranks);
 
 
-      unsigned m_mark_first_n_edges;
+      unsigned m_edge_mark_bitcode;
     };
 
     // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3 in UnitTestLocalRefiner.cpp)
 
-    TestLocalRefinerTet_N_2::TestLocalRefinerTet_N_2(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field, unsigned mark_first_n_edges) : 
-      Refiner(eMesh, bp, proc_rank_field), m_mark_first_n_edges(mark_first_n_edges)
+    TestLocalRefinerTet_N_3::TestLocalRefinerTet_N_3(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field, unsigned edge_mark_bitcode) : 
+      Refiner(eMesh, bp, proc_rank_field), m_edge_mark_bitcode(edge_mark_bitcode)
     {
     }
 
 
-    void TestLocalRefinerTet_N_2::
+    void TestLocalRefinerTet_N_3::
     applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
@@ -125,11 +125,20 @@ namespace stk {
                     }
 
 #endif
-                  // mark first m_mark_first_n_edges edges 
-                  std::cout << "element.identifier() = " << element.identifier() << std::endl;
+                  // mark first m_edge_mark_bitcode edges 
+                  unsigned edge_mark_bitcode = (element.identifier() - 1);
 
-                  if (iSubDimOrd < m_mark_first_n_edges && element.identifier() == 1)
-                    (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+
+                  //if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode) && element.identifier() == m_edge_mark_bitcode)
+                  if ( ((1 << iSubDimOrd) & edge_mark_bitcode ) )
+                    {
+                      //if (edge_mark_bitcode == 4)
+                        {
+                          std::cout << "tmp TestLocalRefinerTet_N_3 element.identifier() = " << element.identifier() 
+                                    << " edge_mark_bitcode = " << edge_mark_bitcode << "  iSubDimOrd= " << iSubDimOrd << std::endl;
+                        }
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                    }
 
                 }
 

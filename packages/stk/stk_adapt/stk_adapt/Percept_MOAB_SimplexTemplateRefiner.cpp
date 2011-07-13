@@ -732,7 +732,7 @@ namespace moab {
               comparison_bits |= 8;
 #endif
           }
-        if (PERCEPT_DEBUG) std::cout << "tmp case 4a comparison_bits= " << comparison_bits << std::endl;
+        //if (PERCEPT_DEBUG) std::cout << "tmp case 4a comparison_bits= " << comparison_bits << std::endl;
         MB_TESSELLATOR_INCR_CASE_COUNT(7);
         output_tets.push( SimplexTemplateRefiner::templates + 545 );
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );

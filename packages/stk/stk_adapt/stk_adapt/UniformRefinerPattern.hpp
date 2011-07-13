@@ -148,7 +148,7 @@ namespace stk {
           base_s_shell_tri_6_key  = shards::ShellTriangle<6>::key,
           base_s_shell_quad_4_key = shards::ShellQuadrilateral<4>::key,
           base_s_shell_quad_8_key = shards::ShellQuadrilateral<8>::key,
-          base_s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key,
+          base_s_shell_quad_9_key = shards::ShellQuadrilateral<9>::key
           
         };
 

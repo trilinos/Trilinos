@@ -27,6 +27,8 @@
 
 #include <unit_tests/TestLocalRefinerTet_N_1.hpp>
 #include <unit_tests/TestLocalRefinerTet_N_2.hpp>
+#include <unit_tests/TestLocalRefinerTet_N_2_1.hpp>
+#include <unit_tests/TestLocalRefinerTet_N_3.hpp>
 
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -120,10 +122,65 @@ namespace stk {
               mesh.m_metaData.commit();
               mesh.populate();
 
-              std::cout << "here" << std::endl;
               bool isCommitted = true;
               percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
               eMesh.saveAs(input_files_loc+"local_tet_0.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_0.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              unsigned edge_mark_bitcode = 4u;
+              TestLocalRefinerTet_N_2_1 breaker(eMesh, break_tet, 0, edge_mark_bitcode);
+              breaker.setRemoveOldElements(true);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_2_1_bitcode_4.e");
+            }
+
+            {
+              {
+
+                // create the mesh
+                unsigned npts=4;
+                unsigned ntets=1;
+                static  SingleTetFixture::Point node_coord_data[  ] = {
+                  { 10 , 2 , 0 } , { 11 , 2 , 0 } , { 10 , 3 , 0 } , { 10 , 2 , 1 } };
+
+                // Hard coded tetra node ids for all the tetra nodes in the entire mesh
+                static  SingleTetFixture::TetIds tetra_node_ids[] = {
+                  { 1, 2, 3, 4} };
+
+                stk::percept::SingleTetFixture mesh(pm, false, npts, node_coord_data, ntets, tetra_node_ids);
+                stk::io::put_io_part_attribute(  mesh.m_block_tet );
+                mesh.m_metaData.commit();
+                mesh.populate();
+
+                std::cout << "here" << std::endl;
+                bool isCommitted = true;
+                percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+                eMesh.saveAs(input_files_loc+"local_tet_41.e");
+              }
+
+              {
+                for (unsigned edge_mark_bitcode = 41u; edge_mark_bitcode <= 41u; edge_mark_bitcode++)
+                  {
+                    PerceptMesh eMesh;
+                    eMesh.open(input_files_loc+"local_tet_41.e");
+                    Local_Tet4_Tet4_N break_tet(eMesh);
+                    eMesh.commit();
+
+                    TestLocalRefinerTet_N_2_1 breaker(eMesh, break_tet, 0, edge_mark_bitcode);
+                    breaker.setRemoveOldElements(true);
+                    breaker.doBreak();
+
+                    eMesh.saveAs(output_files_loc+"local_tet_N_2_1_bitcode_"+toString((int)edge_mark_bitcode)+".e" );
+                  }
+              }
+              // exit(123);
             }
 
             {
@@ -138,6 +195,7 @@ namespace stk {
 
               save_or_diff(eMesh, output_files_loc+"local_tet_N_1_1.e");
             }
+
 
             {
               PerceptMesh eMesh;
@@ -216,12 +274,162 @@ namespace stk {
 
               save_or_diff(eMesh, output_files_loc+"local_tet_N_2_6.e");
             }
+          }
+      }
 
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+      /// check triangulate_tet - two tets sharing a face
 
+      STKUNIT_UNIT_TEST(unit_localRefiner, triangulate_tet_2)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
 
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            {
+
+              // create the mesh
+              unsigned npts=5;
+              unsigned ntets=2;
+              static  SingleTetFixture::Point node_coord_data[  ] = {
+                { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 0 , 1 , 0 } , { 0 , 0 , 1 }, {1, 1, 1} };
+
+              // Hard coded tetra node ids for all the tetra nodes in the entire mesh
+              static  SingleTetFixture::TetIds tetra_node_ids[] = {
+                { 1, 2, 3, 4}, {2, 3, 4, 5} };
+
+              stk::percept::SingleTetFixture mesh(pm, false, npts, node_coord_data, ntets, tetra_node_ids);
+              stk::io::put_io_part_attribute(  mesh.m_block_tet );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              std::cout << "here" << std::endl;
+              bool isCommitted = true;
+              percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              eMesh.saveAs(input_files_loc+"local_tet_2.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_2.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_2 breaker(eMesh, break_tet, 0, 1);
+              breaker.setRemoveOldElements(false);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_2tet_1.e");
+            }
 
           }
       }
+
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+      /// check triangulate_tet - all 64 cases for a single tet
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, triangulate_tet_64)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+            {
+
+              // create the mesh
+              static  SingleTetFixture::Point node_coord_data[  ] = {
+                { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 0 , 1 , 0 } , { 0 , 0 , 1 } };
+
+              SingleTetFixture::Point pts[64*4];
+
+              // Hard coded tetra node ids for all the tetra nodes in the entire mesh
+              static  SingleTetFixture::TetIds tets[64];
+
+//               unsigned ntets = 64;
+//               unsigned npts = ntets*4;
+              unsigned ntets = 0;
+              unsigned npts = 0;
+              unsigned edge_mark_bitcode = 0u;
+              unsigned ipts = 0;
+              int is = 0;
+              int ie = 7;
+              int js = 0;
+              int je = 7;
+#if 0
+              is = 0;
+              ie = 2;
+              js = 2;
+              je = 6;
+#endif
+              for (int i = is; i <= ie; i++)
+                {
+                  for (int j = js; j <= je; j++)
+                    {
+                      //std::cout << "\ntmp i = " << i << " j= " << j << "\n--------------------------------\n" << std::endl;
+
+                      for (int k = 0; k < 4; k++)
+                        {
+//                           pts[ipts][0] = node_coord_data[k][0] + i * 2;
+//                           pts[ipts][1] = node_coord_data[k][1] + j * 2;
+                          pts[ipts][0] = node_coord_data[k][0] + i * 1.25;
+                          pts[ipts][1] = node_coord_data[k][1] + j * 1.25;
+                          pts[ipts][2] = node_coord_data[k][2];
+                          ++npts;
+                          ++ipts;
+                        }
+                      
+                      tets[edge_mark_bitcode][0] = edge_mark_bitcode*4 + 1;
+                      tets[edge_mark_bitcode][1] = edge_mark_bitcode*4 + 2;
+                      tets[edge_mark_bitcode][2] = edge_mark_bitcode*4 + 3;
+                      tets[edge_mark_bitcode][3] = edge_mark_bitcode*4 + 4;
+                      
+                      ++edge_mark_bitcode;
+                      ++ntets;
+                    }
+                }
+
+              stk::percept::SingleTetFixture mesh(pm, false, npts, pts, ntets, tets);
+              stk::io::put_io_part_attribute(  mesh.m_block_tet );
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              eMesh.saveAs(input_files_loc+"local_tet_64.e");
+            }
+
+            {
+              PerceptMesh eMesh;
+              eMesh.open(input_files_loc+"local_tet_64.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_3 breaker(eMesh, break_tet, 0, 1);
+              breaker.setRemoveOldElements(true);
+              breaker.doBreak();
+
+              save_or_diff(eMesh, output_files_loc+"local_tet_N_3_64tet_1.e");
+              //exit(123);
+            }
+
+          }
+      }
+
 
       //=============================================================================
       //=============================================================================

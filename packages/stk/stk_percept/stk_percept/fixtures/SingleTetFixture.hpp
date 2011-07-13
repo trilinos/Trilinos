@@ -53,10 +53,13 @@ namespace stk {
     class SingleTetFixture {
     public:
 
+      typedef double Point[3];
+      typedef stk::mesh::EntityId TetIds[4];
+
 
       ~SingleTetFixture();
 
-      SingleTetFixture( stk::ParallelMachine comm, bool doCommit = true);
+      SingleTetFixture( stk::ParallelMachine comm, bool doCommit = true, unsigned npts=0, Point *points=0, unsigned ntets=0, TetIds *tetIds=0);
 
       void populate();
 
@@ -70,6 +73,10 @@ namespace stk {
 
       VectorFieldType & m_coordinates_field;
 
+      unsigned m_npts;
+      Point *m_points;
+      unsigned m_ntets;
+      TetIds *m_tetIds;
     };
 
     //bool verifyMesh( const SingleTetFixture & mesh );

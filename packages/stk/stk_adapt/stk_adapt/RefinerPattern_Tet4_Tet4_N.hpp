@@ -148,7 +148,7 @@ namespace stk {
       }
 
       // FIXME - for now, create more than we need (to fix this right we need a change to the Refiner.cpp interface)
-      virtual unsigned getNumNewElemPerElem() { return 16; }    // FIXME ???
+      virtual unsigned getNumNewElemPerElem() { return 8; }
 
       static stk::mesh::Entity* get_new_node(percept::PerceptMesh& eMesh)
       {
@@ -419,7 +419,7 @@ namespace stk {
                     for (int inode=0; inode < 4; inode++)
                       {
                         node_coords[inode] = stk::mesh::field_data( *eMesh.getCoordinatesField() , *tet_elem_nodes[inode] );
-                        std::cout << "tmp RP node_coords after= " 
+                        std::cout << "tmp RefPatt::createNewElements node_coords after= " 
                                   << node_coords[inode][0] << " "
                                   << node_coords[inode][1] << " "
                                   << node_coords[inode][2] << std::endl;
@@ -434,7 +434,7 @@ namespace stk {
                                                 (unsigned)new_tets[i].get<2>(),
                                                 (unsigned)new_tets[i].get<3>() );
                     if (1)
-                      std::cout << "tmp RefPatt new tet= " << tets[i] << std::endl;
+                      std::cout << "tmp RefPatt::createNewElements new tet= " << tets[i] << std::endl;
 
                   }
                 return;
@@ -599,6 +599,13 @@ namespace stk {
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
+
+            if (1)
+              {
+                std::cout << "tmp RefPatt::createNewElements element.identifier()= " << element.identifier() 
+                          << " newElement= " << newElement.identifier() << std::endl;
+                
+              }
 
             element_pool++;
 

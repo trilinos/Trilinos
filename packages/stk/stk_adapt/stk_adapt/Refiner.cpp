@@ -169,7 +169,6 @@ namespace stk {
                       //exit(1);
                     }
 
-
                   if (elementType && (topo.getKey() != *elementType))
                     {
                     }
@@ -938,11 +937,13 @@ namespace stk {
 #if PERCEPT_USE_FAMILY_TREE
       removeFamilyTrees();
 #endif
+      //std::cout << "tmp removeOldElements(parents) " << std::endl;
       removeOldElements(parents);
       m_eMesh.getBulkData()->modification_end();
 
     }
 
+#if defined( STK_ADAPT_HAS_GEOMETRY )
     static stk::mesh::Selector getNodeWasSnappedSelector(MeshGeometry& mesh_geometry)
     {
       stk::mesh::Selector selector;
@@ -1345,6 +1346,7 @@ namespace stk {
             }
         }
     }
+#endif
 
     unsigned Refiner::
     doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
@@ -2297,7 +2299,8 @@ namespace stk {
 #else
                       elements_to_be_destroyed.insert(element_p);
 #endif
-                      //std::cout << "tmp removing elem = " << *element_p << std::endl;
+                      //std::cout << "tmp removing elem = " << *element_p << " ";
+                      //m_eMesh.printEntity(std::cout, *element_p);
                     }
                 }
             }
@@ -2313,6 +2316,13 @@ namespace stk {
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed.begin(); itbd != elements_to_be_destroyed.end();  ++itbd)
         {
           stk::mesh::Entity *element_p = *itbd;
+
+          if (0)
+            {
+              std::cout << "tmp removeOldElements removing element_p = " << element_p << std::endl;
+              if (element_p) std::cout << "tmp removeOldElements removing id= " << element_p->identifier() << std::endl;
+            }
+
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
