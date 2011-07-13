@@ -93,6 +93,7 @@ namespace MueLu {
     //! Constructor.
     LocalAggregationFactory(RCP<CoalesceDropFactory> const &cdFact=Teuchos::null) :
       ordering_(NATURAL), minNodesPerAggregate_(1), maxNeighAlreadySelected_(0),
+      printFlag_(0), //TODO: to be removed
       coalesceDropFact_(cdFact), 
       graphName_("unnamed") //, Algorithm_("notSpecified"), 
     {

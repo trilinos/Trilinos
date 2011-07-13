@@ -123,7 +123,7 @@ namespace MueLu {
       std::string name =  "UC_CleanUp";
       AggregateLeftOvers(*aggregates, name, *graph);
 
-      // currentLevel.Save("Aggregates",aggregates);
+      currentLevel.Save("Aggregates",aggregates);
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(graph->GetComm()));

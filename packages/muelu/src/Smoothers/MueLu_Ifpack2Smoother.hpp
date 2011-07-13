@@ -91,7 +91,9 @@ class Level;
 //         label = "Ifpack2: " + list.get("relaxation: type","unknown relaxation");
 //       else
       label = "Ifpack2: " + type;
+
       SmootherBase::SetType(label);
+      SmootherPrototype::IsSetup(false);
     }
 
     //! Destructor

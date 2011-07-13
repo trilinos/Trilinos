@@ -92,6 +92,7 @@ class Level;
       else
         label = "Ifpack: " + type;
       SmootherBase::SetType(label);
+      SmootherPrototype::IsSetup(false);
     }
 
     //! Destructor
