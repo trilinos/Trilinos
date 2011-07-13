@@ -405,7 +405,10 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                                      // ^^ nonzero initial guess
      
 	       // update X+=P * coarseX
-	       P->apply(*coarseX,X,Teuchos::NO_TRANS,1.0,1.0);
+	       //P->apply(*coarseX,X,Teuchos::NO_TRANS,1.0,1.0);  //Cthulhu throws an error if linAlgebra==0
+           RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(),X.getNumVectors());
+           P->apply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
+           X.update(1.0,*correction,1.0);
 
            if (postSmoo != Teuchos::null) {
              //X.norm2(norms);

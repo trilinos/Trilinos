@@ -667,6 +667,7 @@ namespace MueLu {
 
      } else {
        //epetra case
+       /*
        Epetra_RowMatrixTransposer et(&*epetraOp);
        Epetra_CrsMatrix *A;
        int rv = et.CreateTranspose(false,A);
@@ -677,6 +678,8 @@ namespace MueLu {
          throw(Exceptions::RuntimeError(msg));
        }
        RCP<Epetra_CrsMatrix> rcpA(A);
+       */
+       RCP<Epetra_CrsMatrix> rcpA = simple_EpetraTranspose(epetraOp);
        RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
        RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
        RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
@@ -686,6 +689,10 @@ namespace MueLu {
    } //Transpose
 
 
+   /*! @brief Simple transpose for Tpetra::CrsMatrix types
+
+      Note:  This is very inefficient, as it inserts one entry at a time.
+   */
    static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > simple_Transpose(RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > const &A)
    {
       LocalOrdinal N=A->getNodeNumRows();
@@ -706,7 +713,33 @@ namespace MueLu {
       AT->fillComplete(A->getRangeMap(),A->getDomainMap());
       
       return AT;
-    } //simple_Tranpose
+    } //simple_Transpose
+
+   /*! @brief Simple transpose for Epetra_CrsMatrix types
+
+      Note:  This is very inefficient, as it inserts one entry at a time.
+   */
+   static RCP<Epetra_CrsMatrix> simple_EpetraTranspose(RCP<const Epetra_CrsMatrix> const &A)
+   {
+      int N=A->NumMyRows();
+      RCP<Epetra_CrsMatrix> AT=rcp(new Epetra_CrsMatrix(Copy,A->DomainMap(),0));
+      const Epetra_Map& rowMap=A->RowMap();
+      const Epetra_Map& colMap=A->ColMap();
+
+      for(int i=0;i<N;++i){
+        int grid= rowMap.GID(i);
+        int *indices,nnz;
+        double *vals;
+        A->ExtractMyRowView(i,nnz,vals,indices);
+        for(int j=0;j<nnz;++j){
+          int gcid=colMap.GID(indices[j]);
+          AT->InsertGlobalValues(gcid,1,vals+j,&grid);
+        }
+      }
+      AT->FillComplete(A->RangeMap(),A->DomainMap());
+      
+      return AT;
+    } //simple_Transpose
 
     /*! @brief Power method.
 
