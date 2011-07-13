@@ -171,7 +171,7 @@ EpetraExt::ModelEvaluator::OutArgs MockModelEval_A::createOutArgs() const
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(1, 1);
   outArgs.setSupports(OUT_ARG_DgDp, 0, 0, DerivativeSupport(DERIV_MV_BY_COL));
-  outArgs.setSupports(OUT_ARG_DgDx, 0, DerivativeSupport(DERIV_MV_BY_COL));
+  outArgs.setSupports(OUT_ARG_DgDx, 0, DerivativeSupport(DERIV_TRANS_MV_BY_ROW));
 
   outArgs.setSupports(OUT_ARG_f,true);
   outArgs.setSupports(OUT_ARG_DfDp, 0, DerivativeSupport(DERIV_MV_BY_COL));
