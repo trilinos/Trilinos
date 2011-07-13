@@ -133,7 +133,7 @@ namespace MueLu {
     {
       RCP<Aggregates> aggregates = localAggregationFactory_.Build(graph);
       std::string name =  "UC_CleanUp";
-      AggregateLeftOvers(*aggregates, name, *graph);
+      AggregateLeftOvers(*aggregates, name, graph);
       return aggregates;
     }
 
