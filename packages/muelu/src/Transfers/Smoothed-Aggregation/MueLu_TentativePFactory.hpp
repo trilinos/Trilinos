@@ -194,7 +194,7 @@ namespace MueLu {
       //FIXME work around until Cthulhu view table is fixed
       RCP<const Epetra_CrsMatrix> epA;
       RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA;
-#if HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRAEXT
       try {
         epA = Utils::Op2EpetraCrs(fineA);
       }
