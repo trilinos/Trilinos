@@ -152,15 +152,13 @@ int main(int argc, char *argv[]) {
   Finest->Save("NullSpace",nullSpace);
   H->SetLevel(Finest);
 
-  MueLu::AggregationOptions aggOptions;
-  aggOptions.SetPrintFlag(6);
-  aggOptions.SetMinNodesPerAggregate(3);
-  aggOptions.SetMaxNeighAlreadySelected(0);
-  aggOptions.SetOrdering(MueLu::AggOptions::NATURAL);
-  aggOptions.SetPhase3AggCreation(0.5);
-  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(aggOptions));
-  RCP<CoalesceDropFactory> cdFact;
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(cdFact,UCAggFact));
+  RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
+  UCAggFact->SetMinNodesPerAggregate(3);
+  UCAggFact->SetMaxNeighAlreadySelected(0);
+  UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
+  UCAggFact->SetPhase3AggCreation(0.5);
+
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
   RCP<RFactory>         Rfact = rcp( new TransPFactory() );
