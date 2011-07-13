@@ -439,6 +439,8 @@ namespace MueLu {
     /*! @brief Extract Operator Diagonal
 
         Returns Operator diagonal in ArrayRCP.
+
+        Note -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(RCP<Operator> const &A)
     {
