@@ -357,6 +357,8 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
       Teuchos::RCP<const Epetra_Map> f_map = model->get_f_map();
       int num_params = p_map->NumGlobalElements();
       int num_resids = f_map->NumGlobalElements();
+      bool p_dist = p_map->DistributedGlobal();
+      bool f_dist = f_map->DistributedGlobal();
       DerivativeSupport ds =  model_outargs.supports(OUT_ARG_DfDp,i);
       // Determine which layout to use for df/dp.  Ideally one would look
       // at num_params, num_resids, what is supported by the underlying
@@ -368,34 +370,38 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
       // to get the right layout in most situations.
       DerivativeLayout dfdp_layout;
       if (sensitivity_method == "Forward") {
-        if (ds.supports(DERIV_MV_BY_COL))
+        if (ds.supports(DERIV_MV_BY_COL) && !p_dist)
           dfdp_layout = COL;
-        else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
+        else if (ds.supports(DERIV_TRANS_MV_BY_ROW) && !f_dist)
           dfdp_layout = ROW;
 	else if (ds.supports(DERIV_LINEAR_OP))
           dfdp_layout = OP;
         else
-	  TEST_FOR_EXCEPTION(true, std::logic_error,
-			     std::endl <<
-			     "Piro::Epetra::NOXSolver::evalModel():  " <<
-                             "Underlying ModelEvaluator must support " <<
-                             "df/dp " << i << " with forward sensitivities."
-                             << std::endl);
+	  TEST_FOR_EXCEPTION(
+	    true, std::logic_error, 
+	    std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
+	    "For df/dp(" << i <<") with forward sensitivities, " <<
+	    "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
+	    "DERIV_MV_BY_COL with p not distributed, or "
+	    "DERIV_TRANS_MV_BY_ROW with f not distributed." <<
+	    std::endl);
       }
       else if (sensitivity_method == "Adjoint") {
         if (ds.supports(DERIV_LINEAR_OP))
           dfdp_layout = OP;
-	else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
+	else if (ds.supports(DERIV_TRANS_MV_BY_ROW) && !f_dist)
           dfdp_layout = ROW;
-	else if (ds.supports(DERIV_MV_BY_COL))
+	else if (ds.supports(DERIV_MV_BY_COL) && !p_dist)
           dfdp_layout = COL;
         else
-	  TEST_FOR_EXCEPTION(true, std::logic_error,
-			     std::endl <<
-			     "Piro::Epetra::NOXSolver::evalModel():  " <<
-                             "Underlying ModelEvaluator must support " <<
-                             "df/dp " << i << " with adjoint sensitivities."
-                             << std::endl);
+	  TEST_FOR_EXCEPTION(
+	    true, std::logic_error, 
+	    std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
+	    "For df/dp(" << i <<") with adjoint sensitivities, " <<
+	    "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
+	    "DERIV_MV_BY_COL with p not distributed, or "
+	    "DERIV_TRANS_MV_BY_ROW with f not distributed." <<
+	    std::endl);
       }
       else
         TEST_FOR_EXCEPTION(true, 
@@ -457,37 +463,43 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
       Teuchos::RCP<const Epetra_Map> x_map = model->get_x_map();
       int num_responses = g_map->NumGlobalElements();
       int num_solution = x_map->NumGlobalElements();
+      bool g_dist = g_map->DistributedGlobal();
+      bool x_dist = x_map->DistributedGlobal();
       DerivativeSupport ds =  model_outargs.supports(OUT_ARG_DgDx,j);
       DerivativeLayout dgdx_layout;
       if (sensitivity_method == "Forward") {
 	if (ds.supports(DERIV_LINEAR_OP))
           dgdx_layout = OP;
-        if (ds.supports(DERIV_MV_BY_COL))
+        else if (ds.supports(DERIV_MV_BY_COL) && !x_dist)
           dgdx_layout = COL;
-        else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
+        else if (ds.supports(DERIV_TRANS_MV_BY_ROW) && !g_dist)
           dgdx_layout = ROW;
 	else
-	  TEST_FOR_EXCEPTION(true, std::logic_error,
-			     std::endl <<
-			     "Piro::Epetra::NOXSolver::evalModel():  " <<
-                             "Underlying ModelEvaluator must support " <<
-                             "dg/dx " << j << " with forward sensitivities."
-                             << std::endl);
+	  TEST_FOR_EXCEPTION(
+	    true, std::logic_error, 
+	    std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
+	    "For dg/dx(" << j <<") with forward sensitivities, " <<
+	    "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
+	    "DERIV_MV_BY_COL with x not distributed, or "
+	    "DERIV_TRANS_MV_BY_ROW with g not distributed." <<
+	    std::endl);
       }
       else if (sensitivity_method == "Adjoint") {
-	if (ds.supports(DERIV_TRANS_MV_BY_ROW))
+	if (ds.supports(DERIV_TRANS_MV_BY_ROW) && !g_dist)
           dgdx_layout = ROW;
-	else if (ds.supports(DERIV_MV_BY_COL))
+	else if (ds.supports(DERIV_MV_BY_COL) && !x_dist)
           dgdx_layout = COL;
 	else if (ds.supports(DERIV_LINEAR_OP))
           dgdx_layout = OP;
         else
-	  TEST_FOR_EXCEPTION(true, std::logic_error,
-			     std::endl <<
-			     "Piro::Epetra::NOXSolver::evalModel():  " <<
-                             "Underlying ModelEvaluator must support " <<
-                             "dg/dx " << j << " with forward sensitivities."
-                             << std::endl);
+	  TEST_FOR_EXCEPTION(
+	    true, std::logic_error, 
+	    std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
+	    "For dg/dx(" << j <<") with adjoint sensitivities, " <<
+	    "underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
+	    "DERIV_MV_BY_COL with x not distributed, or "
+	    "DERIV_TRANS_MV_BY_ROW with g not distributed." <<
+	    std::endl);
       }
       else
         TEST_FOR_EXCEPTION(true, 
@@ -505,12 +517,16 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
       else if (dgdx_layout == ROW) {
 	Teuchos::RCP<Epetra_MultiVector> dgdx = 
 	  Teuchos::rcp(new Epetra_MultiVector(*x_map, num_responses));
-	model_outargs.set_DgDx(j,dgdx);
+	EpetraExt::ModelEvaluator::DerivativeMultiVector 
+	  dmv_dgdx(dgdx, DERIV_TRANS_MV_BY_ROW);
+	model_outargs.set_DgDx(j,dmv_dgdx);
       }
       else if (dgdx_layout == COL) {
 	Teuchos::RCP<Epetra_MultiVector> dgdx = 
 	  Teuchos::rcp(new Epetra_MultiVector(*g_map, num_solution));
-	model_outargs.set_DgDx(j,dgdx);
+	EpetraExt::ModelEvaluator::DerivativeMultiVector 
+	  dmv_dgdx(dgdx, DERIV_MV_BY_COL);
+	model_outargs.set_DgDx(j,dmv_dgdx);
       }
 
       // dg/dp
@@ -535,8 +551,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	TEST_FOR_EXCEPTION(
 	  model_outargs.get_DfDp(i).getLinearOp()!=Teuchos::null,
 	  std::logic_error,
-	  std::endl <<
-	  "Piro::Epetra::NOXSolver::evalModel():  " <<
+	  std::endl <<"Piro::Epetra::NOXSolver::evalModel():  " <<
 	  "Can\'t use df/dp operator " << i << " with forward sensitivities." <<
 	  std::endl);
 	Teuchos::RCP<Epetra_MultiVector> dfdp  = 
@@ -588,7 +603,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 		      TEST_FOR_EXCEPTION(
 			dgdp_out->Map().DistributedGlobal(), 
 			std::logic_error,
-			std::endl <<
+			std::endl << 
 			"Piro::Epetra::NOXSolver::evalModel():  " <<
 			"Can\'t handle special case:  " << 
 			" dg/dx operator, " <<
@@ -666,8 +681,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	TEST_FOR_EXCEPTION(
 	  model_outargs.get_DgDx(j).getLinearOp()!=Teuchos::null,
 	  std::logic_error,
-	  std::endl <<
-	  "Piro::Epetra::NOXSolver::evalModel():  " <<
+	  std::endl << "Piro::Epetra::NOXSolver::evalModel():  " <<
 	  "Can\'t use dg/dx operator " << j << " with adjoint sensitivities." <<
 	  std::endl);
 	Teuchos::RCP<Epetra_MultiVector> dgdx  = 
