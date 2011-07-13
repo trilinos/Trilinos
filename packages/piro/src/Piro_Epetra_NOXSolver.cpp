@@ -795,6 +795,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	}
       }
     }
+    LOCA::destroyGlobalData(globalData);
   }
   
 
