@@ -143,6 +143,19 @@ namespace Tpetra {
     }
   }
 
+  template<class IT1>
+  bool isAlreadySorted(const IT1& first, const IT1& last){
+    typedef typename std::iterator_traits<IT1>::difference_type DT;
+    DT myit =OrdinalTraits<DT>::one();
+    const DT sz  = last - first;
+    for(;myit < sz; ++myit){
+      if(first[myit] < first[myit-1]){
+        return false;
+      }
+    }
+    return true;
+  }
+
 
   /** sort function for two arrays
      The values in sortVals will be sorted in ascending order.
@@ -151,6 +164,9 @@ namespace Tpetra {
    */
   template<class IT1, class IT2>
   void sort2(const IT1 &first1, const IT1 &last1, const IT2 &first2) {
+    if(isAlreadySorted(first1, last1)){
+      return;
+    }
     sort2Shell(first1,last1,first2);
   }
 
@@ -162,6 +178,9 @@ namespace Tpetra {
   template<class IT1, class IT2, class IT3>
   void sort3(const IT1 &first1, const IT1 &last1, const IT2 &first2, const IT3 &first3)
   {
+    if(isAlreadySorted(first1, last1)){
+      return;
+    }
     sort3Shell(first1, last1, first2, first3);
   }
 
