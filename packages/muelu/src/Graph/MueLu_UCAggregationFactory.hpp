@@ -110,6 +110,8 @@ namespace MueLu {
       currentLevel.Request("Graph");
       currentLevel.Request("Aggregates");
 
+      // Graph creation is delegated to localAggregationFactory_
+      // Maybe it is not the best way to do it.
       localAggregationFactory_.Build(currentLevel);
 
       RCP<Graph> graph;
@@ -118,7 +120,7 @@ namespace MueLu {
       RCP<Aggregates> aggregates;
       currentLevel.CheckOut("Aggregates",aggregates);
      
-      Build(aggregates, *graph);
+      AggregateLeftOvers(aggregates, "UC_CleanUp" *graph);
 
       // currentLevel.Save("Aggregates",aggregates);
 
@@ -126,16 +128,14 @@ namespace MueLu {
       MemUtils::ReportTimeAndMemory(*timer, *(graph->GetComm()));
     }
 
-  private://TMP
-    /*! @brief Build aggregates. */ //REMOVE
-    void Build( RCP<Aggregates> & aggregates /* in/out */, const Graph& graph) const
+    RCP<Aggregates> Build(const Graph& graph) const
     {
-      std::string name = "UC_CleanUp";
-      AggregateLeftOvers(*aggregates, name, graph);
+      RCP<Aggregates> aggregates = localAggregationFactory_.Build(graph);
+      AggregateLeftOvers(*aggregates, "UC_CleanUp", graph);
+      return aggregates;
     }
-    //@}
-  
-//   private: //TMP
+
+  private:
 
     //! 
     LocalAggregationFactory localAggregationFactory_;

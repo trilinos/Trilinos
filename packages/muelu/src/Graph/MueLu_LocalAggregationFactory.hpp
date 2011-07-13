@@ -106,7 +106,7 @@ namespace MueLu {
 
   //! @name Set/get methods.
   //@{
-  void SetPrintFlag(int printFlag)                          { printFlag_               = printFlag;               } //TODO: to be removed
+  void SetPrintFlag(int printFlag)                             { printFlag_               = printFlag;               } //TODO: to be removed
   void SetOrdering(Ordering ordering)                          { ordering_                = ordering;                }
   void SetMinNodesPerAggregate(int minNodesPerAggregate)       { minNodesPerAggregate_    = minNodesPerAggregate;    }
   void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
