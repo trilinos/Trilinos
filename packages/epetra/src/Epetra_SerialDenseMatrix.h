@@ -472,7 +472,7 @@ This function performs a variety of matrix-matrix multiply operations.
 
  protected:
 
-  void CopyMat(double* Source, int Source_LDA, int NumRows, int NumCols,
+  void CopyMat(const double* Source, int Source_LDA, int NumRows, int NumCols,
                double* Target, int Target_LDA, bool add=false);
   void CleanupData();
 
