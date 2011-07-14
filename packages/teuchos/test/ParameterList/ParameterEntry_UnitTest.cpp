@@ -67,7 +67,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterEntry, testTypeFunctions )
   TEST_ASSERT(arrayEntry.isArray());
   TEST_ASSERT(!arrayEntry.isTwoDArray());
 
-  TwoDArray<double> twoDArray(3,3.0);
+  TwoDArray<double> twoDArray(3,3,3.0);
   ParameterEntry twoDEntry(twoDArray);
   TEST_ASSERT(twoDEntry.isType<TwoDArray<double> >());
   TEST_ASSERT(twoDEntry.isTwoDArray());

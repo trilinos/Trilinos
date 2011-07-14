@@ -132,7 +132,9 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArray, resizeTest){
   simpleArray.resizeRows(2);
   TEST_EQUALITY_CONST(simpleArray.getNumRows(), 2);
   TEST_EQUALITY_CONST(simpleArray.getNumCols(), 2);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW(simpleArray(3,1), RangeError);
+#endif
   TEST_EQUALITY_CONST(simpleArray(1,1), 4);
 
   simpleArray.resizeCols(4);
@@ -144,7 +146,9 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArray, resizeTest){
   simpleArray.resizeCols(2);
   TEST_EQUALITY_CONST(simpleArray.getNumCols(), 2);
   TEST_EQUALITY_CONST(simpleArray.getNumRows(), 2);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_THROW(simpleArray(1,3), RangeError);
+#endif
   TEST_EQUALITY_CONST(simpleArray(1,1), 4);
 
 }

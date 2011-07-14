@@ -911,12 +911,42 @@ public:
 
   //@}
 
-protected:
-  /** \name Overridden from Dependency */
+  /** @name Overridden from Dependency */
   //@{
 
+  /** \brief . */
+  virtual void evaluate();
+
+protected:
+
+  /** \brief . */
   virtual void validateDep() const;
   
+  //@}
+
+  /** @name Pure virtual functions */
+  //@{
+
+  /**
+   * \brief Modifies a particular attribute of the array according to the
+   * specific semantics of the dependency.
+   *
+   * @param newAmount The new value of the attribute which is being modified.
+   * @param dependentToModify The dependent containing the array to be modified.
+   */
+  virtual void modifyArray(
+    DependeeType newAmount, 
+    RCP<ParameterEntry> dependentToModify) = 0;
+
+  /**
+   * \brief Returns the error message that should be displayed if the 
+   * dependent has taken on a value that, when run through the funciton given
+   * in the constructor, returns a negative value.
+   *
+   * @return Error message to be displayed when the dependnt has a bad value.
+   */
+  virtual std::string getBadDependentValueErrorMessage() const=0;
+
   //@}
 private:
 
@@ -959,6 +989,26 @@ void ArrayModifierDependency<DependeeType,DependentType>::validateDep() const{
     std::endl <<
     "Dependee Parameter Type: " << getFirstDependee()->getAny().typeName()
     << std::endl << std::endl);
+}
+
+template<class DependeeType, class DependentType>
+void ArrayModifierDependency<DependeeType,DependentType>::evaluate(){
+  DependeeType newAmount = Dependency::getFirstDependeeValue<DependeeType>();
+  if(!this->getFunctionObject().is_null()){
+    newAmount = this->getFunctionObject()->runFunction(newAmount);
+  }
+
+  TEST_FOR_EXCEPTION(newAmount < OrdinalTraits<DependeeType>::zero(),
+    Exceptions::InvalidParameterValue,
+    getBadDependentValueErrorMessage());
+
+  for(
+    Dependency::ParameterEntryList::iterator it = this->getDependents().begin();
+    it != this->getDependents().end(); 
+    ++it)
+  {
+    modifyArray(newAmount, *it);
+  }
 }
 
 
@@ -1024,9 +1074,6 @@ public:
 
   /** \name Overridden from Dependency */
   //@{
-
-  /** \brief . */
-  void evaluate();
   
   /** \brief . */
   std::string getTypeAttributeValue() const;
@@ -1040,22 +1087,13 @@ protected:
 
   virtual void validateDep() const;
   
-  //@}
+  /** \brief .  */
+  void modifyArray(
+    DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
   
-private:
+  /** \brief . */
+  std::string getBadDependentValueErrorMessage() const;
 
-  /** \name Private Functions */
-  //@{
-  
-  /**
-   * \brief Modifies the length of an array.
-   *
-   * @param newLength The new length the array should be.
-   * @param dependentValue The index of the dependent array that is going to be changed.
-   */
-  void modifyArrayLength(
-    DependeeType newLength, RCP<ParameterEntry> dependentToModify);
-  
   //@}
   
 };
@@ -1093,16 +1131,16 @@ const
 
 template <class DependeeType, class DependentType>
 void 
-NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
-  DependeeType newLength, RCP<ParameterEntry> dependentToModify)
+NumberArrayLengthDependency<DependeeType, DependentType>::modifyArray(
+  DependeeType newAmount, RCP<ParameterEntry> dependentToModify)
 {
   const Array<DependentType> originalArray = 
     any_cast<Array<DependentType> >(dependentToModify->getAny()); 
-  Array<DependentType> newArray(newLength);
+  Array<DependentType> newArray(newAmount);
   DependeeType i;
   for(
     i=OrdinalTraits<DependeeType>::zero(); 
-    i<originalArray.size() && i<newLength; 
+    i<originalArray.size() && i<newAmount; 
     ++i)
   {
     newArray[i] = originalArray[i];
@@ -1113,28 +1151,17 @@ NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
 }
 
 template<class DependeeType, class DependentType>
-void 
-NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
-  DependeeType newLength = Dependency::getFirstDependeeValue<DependeeType>();
-  if(!this->getFunctionObject().is_null()){
-    newLength = this->getFunctionObject()->runFunction(newLength);
-  }
-
-  TEST_FOR_EXCEPTION(newLength < OrdinalTraits<DependeeType>::zero(),
-    Exceptions::InvalidParameterValue,
+std::string 
+NumberArrayLengthDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage() const{
+    std::ostringstream os;
+    os <<
     "Ruh Roh Shaggy! Looks like a dependency tried to set the length "
     "of the Array(s) to a negative number. Silly. You can't have "
     "an Array with a negative length!" << std::endl << std::endl <<
     "Error:" << std::endl <<
     "An attempt was made to set the length of an Array to a negative "
-    "number by a NumberArrayLengthDependency" << std::endl << std::endl);
-  for(
-    Dependency::ParameterEntryList::iterator it = this->getDependents().begin();
-    it != this->getDependents().end(); 
-    ++it)
-  {
-    modifyArrayLength(newLength, *it);
-  }
+    "number by a NumberArrayLengthDependency" << std::endl << std::endl;
+    return os.str();
 }
 
 template<class DependeeType, class DependentType>
@@ -1843,9 +1870,6 @@ public:
   //@{
 
   /** \brief . */
-  void evaluate();
-  
-  /** \brief . */
   std::string getTypeAttributeValue() const;
   
   //@}
@@ -1855,22 +1879,12 @@ protected:
   /** \name Overridden from ArrayModifierDependency */
   //@{
 
-  void validateDep() const;
+  virtual void validateDep() const;
   
-  //@}
+  void modifyArray(
+    DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
   
-private:
-
-  /** \name Private Functions */
-  //@{
-  
-  /**
-   * \brief modifies the number of rows in the TwoDArray.
-   */
-  void modifyRowAmount(
-    DependeeType newRowNum,
-    RCP<ParameterEntry> dependentToModify);
-  
+  std::string getBadDependentValueErrorMessage() const;
   //@}
   
 };
@@ -1910,40 +1924,29 @@ const
 
 template <class DependeeType, class DependentType>
 void 
-TwoDRowDependency<DependeeType, DependentType>::modifyRowAmount(
-  DependeeType newRowNum, 
+TwoDRowDependency<DependeeType, DependentType>::modifyArray(
+  DependeeType newAmount, 
   RCP<ParameterEntry> dependentToModify)
 {
   TwoDArray<DependentType> originalArray = 
     any_cast<TwoDArray<DependentType> >(dependentToModify->getAny()); 
-  originalArray.resizeRows(newRowNum);
+  originalArray.resizeRows(newAmount);
   dependentToModify->setValue(originalArray,
     false, dependentToModify->docString(), dependentToModify->validator());
 }
 
 template<class DependeeType, class DependentType>
-void 
-TwoDRowDependency<DependeeType, DependentType>::evaluate(){
-  DependeeType newRowNum = Dependency::getFirstDependeeValue<DependeeType>();
-  if(!this->getFunctionObject().is_null()){
-    newRowNum = this->getFunctionObject()->runFunction(newRowNum);
-  }
-
-  TEST_FOR_EXCEPTION(newRowNum < OrdinalTraits<DependeeType>::zero(),
-    Exceptions::InvalidParameterValue,
+std::string 
+TwoDRowDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage() const{
+  std::ostringstream os;
+  os <<
     "Ruh Roh Shaggy! Looks like a dependency tried to set the number of "
     "rows in TwoDArray(s) to a negative number. Silly. You can't have "
     "a TwoDArray with a negative number of rows!" << std::endl << std::endl <<
     "Error:" << std::endl <<
     "An attempt was made to set the length of an Array to a negative "
-    "number by a NumberArrayLengthDependency" << std::endl << std::endl);
-  for(
-    Dependency::ParameterEntryList::iterator it = this->getDependents().begin();
-    it != this->getDependents().end(); 
-    ++it)
-  {
-    modifyRowAmount(newRowNum, *it);
-  }
+    "number by a NumberArrayLengthDependency" << std::endl << std::endl;
+  return os.str();
 }
 
 template<class DependeeType, class DependentType>
