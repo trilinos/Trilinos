@@ -1131,8 +1131,8 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     }
 
     for(int j=0; j<numCols; ++j) {
-      int blockCol = pointBlockMap->eqnToBlkEqn(cols[j]);
-      int blkOffset= pointBlockMap->getBlkEqnOffset(blockCol, cols[j]);
+      int blockCol, blkOffset;
+      CHK_ERR( pointBlockMap->getPtEqnInfo(cols[j], blockCol, blkOffset) );
 
       for(int jj=0; jj<blockRowLength; ++jj) {
 
