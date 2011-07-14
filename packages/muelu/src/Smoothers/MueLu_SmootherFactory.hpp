@@ -136,12 +136,21 @@ class SmootherFactory : public SmootherFactoryBase<Scalar,LocalOrdinal,GlobalOrd
         preSmoo->Setup(*level);
       }
 
-      // Is post-smoother of the same type as pre-smoother ?
+
+
       if (PostSmootherPrototype_ != Teuchos::null)
       {
-        if (PreSmootherPrototype_ != Teuchos::null &&
-            PreSmootherPrototype_->GetType() == PostSmootherPrototype_->GetType())
-        {
+
+        if (PreSmootherPrototype_ == PostSmootherPrototype_) {
+
+          // Very simple reuse. TODO: should be done in MueMat too
+          postSmoo = preSmoo;
+
+        } else if (PreSmootherPrototype_ != Teuchos::null &&
+                   PreSmootherPrototype_->GetType() == PostSmootherPrototype_->GetType()) {
+
+          // Complex reuse: need implementation of CopyParameters() and a smoothers smart enough to know when parameters affect the setup phase.
+          
           // YES: post-smoother == pre-smoother 
           // => copy the pre-smoother to avoid the setup phase of the post-smoother.
           postSmoo = preSmoo->Copy();
@@ -158,11 +167,14 @@ class SmootherFactory : public SmootherFactoryBase<Scalar,LocalOrdinal,GlobalOrd
           postSmoo->Setup(*level);
 
           // TODO: if CopyParameters do not exist, do setup twice.
+
         } else {
+
           // NO: post-smoother != pre-smoother 
           // Copy the prototype and run the setup phase.
           postSmoo = PostSmootherPrototype_->Copy();
           postSmoo->Setup(*level);
+
         }
       }
 
@@ -197,3 +209,5 @@ class SmootherFactory : public SmootherFactoryBase<Scalar,LocalOrdinal,GlobalOrd
 #define MUELU_SMOOTHERFACTORY_SHORT
 
 #endif //ifndef MUELU_SMOOTHERFACTORY_HPP
+
+// TODO: add a simpler test (PreSmoo==PostSmoo) to try to reuse directly presmoo for postsmoo even if CopyParameter is not implemented
