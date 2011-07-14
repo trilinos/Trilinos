@@ -391,7 +391,6 @@ int Zoltan_PHG_Coarsening
       MEMORY_ERROR;
 
   b = buffer;
-  /* NEANEA use same for coords */
   for (i = 0; i < count; i++)  {
 
     int lno=listlno[i], sz=hg->vindex[lno+1] - hg->vindex[lno];
