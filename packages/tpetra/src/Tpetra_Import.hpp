@@ -37,6 +37,7 @@
 #include "Tpetra_ImportExportData.hpp"
 #include "Tpetra_Distributor.hpp"
 #include <iterator>
+#include "Teuchos_Time.hpp"
 
 namespace Tpetra {
 
@@ -371,6 +372,13 @@ namespace Tpetra {
     // sort remoteImageIDs in ascending order
     // apply same permutation to remoteGIDs_
     sort2(remoteImageIDs.begin(), remoteImageIDs.end(), remoteGIDs.begin());
+    
+    RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("bar");
+    timer->start();
+    source.getComm()->barrier();
+    timer->stop();
+    std::cout << "Proc" << source.getComm()->getRank() << " bar " <<
+      timer->totalElapsedTime() << std::endl;
 
     // call Distributor.createFromRecvs()
     // takes in remoteGIDs and remoteImageIDs_
