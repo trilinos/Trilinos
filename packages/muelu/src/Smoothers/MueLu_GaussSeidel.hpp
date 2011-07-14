@@ -91,11 +91,11 @@ class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,N
   //! @name Utilities.
   //@{
 
-  void Print(std::string prefix) {
+  void Print(std::string prefix) const {
     throw(Exceptions::NotImplemented("Printing not implemented yet"));
   }
 
-  RCP<SmootherPrototype> Copy()
+  RCP<SmootherPrototype> Copy() const
   {
     return rcp(new GaussSeidel(*this) );
   }

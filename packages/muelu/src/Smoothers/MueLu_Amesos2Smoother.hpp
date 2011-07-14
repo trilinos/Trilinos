@@ -185,11 +185,11 @@ class Level;
     //! @name Utilities.
     //@{
 
-    void Print(std::string prefix) {
+    void Print(std::string prefix) const {
       throw(Exceptions::NotImplemented("Amesos2Smoother::Print is not implemented"));
     }
 
-    RCP<SmootherPrototype> Copy()
+    RCP<SmootherPrototype> Copy() const
     {
       return rcp(new Amesos2Smoother(*this) );
     }

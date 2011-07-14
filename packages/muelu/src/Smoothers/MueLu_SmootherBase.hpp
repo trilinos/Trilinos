@@ -10,21 +10,21 @@ namespace MueLu {
 
   using Teuchos::RCP;
 
-/*!
-  @class SmootherBase
-  @brief Base class for smoothers
+  /*!
+    @class SmootherBase
+    @brief Base class for smoothers
 
-  This has the signature for the required Apply function and contains data that is generic across all
-  smoothers.
-*/
+    This has the signature for the required Apply function and contains data that is generic across all
+    smoothers.
+  */
 
-template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
-class SmootherBase : public Needs {
+  template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+  class SmootherBase : public Needs {
 
 #include "MueLu_UseShortNames.hpp"
 
   private:
-  std::string Type_;
+    std::string Type_;
 
   public:
     //@{ Constructors/Destructors.
@@ -46,16 +46,18 @@ class SmootherBase : public Needs {
     //@{
 
     //! Prototype of the method to setup the number of iteration of the smoother.
-    virtual void SetNIts(LO const &Nits) = 0;
+    virtual void SetNIts(LO const &Nits) { //TODO: should be removed from the interface
+       TEST_FOR_EXCEPTION(1, MueLu::Exceptions::RuntimeError, "SetNIts() not implemented for this smoother");
+    };
 
     //! Get the smoother type.
-    std::string GetType() {
+    std::string GetType() const {
       return Type_;
     }
 
     /*! @brief Set the smoother type.
 
-      This method must be called by constructors of derived classes.
+    This method must be called by constructors of derived classes.
     */
     void SetType(std::string type) {
       Type_ = type;
@@ -65,11 +67,11 @@ class SmootherBase : public Needs {
     //@{
 
     //! @brief Print information about the smoother
-    virtual void Print(std::string prefix) = 0;
+    virtual void Print(std::string prefix) const = 0;
 
     //@}
 
-}; //class SmootherBase
+  }; //class SmootherBase
 
 } //namespace MueLu
 

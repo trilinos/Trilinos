@@ -189,13 +189,13 @@ class Level;
     //! @name Utilities
     //@{
 
-    void Print(std::string prefix) {
+    void Print(std::string prefix) const {
       Teuchos::OSTab tab(out_);
       //MueLu_cout(Teuchos::VERB_HIGH) << "IfpackSmoother::Print()" << std::endl;
       prec_->Print(*out_);
     }
 
-    RCP<SmootherPrototype> Copy()
+    RCP<SmootherPrototype> Copy() const
     {
       return rcp(new IfpackSmoother(*this) );
     }

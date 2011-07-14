@@ -36,7 +36,9 @@ class SmootherPrototype : public SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,
   public:
     //!@nameConstructors/Destructors.
     //@{
-    SmootherPrototype() {}
+  SmootherPrototype() 
+    : IsSetup_(false) //TODO removed initialization from derived classes?
+  {}
 
     virtual ~SmootherPrototype() {}
     //@}
@@ -48,7 +50,7 @@ class SmootherPrototype : public SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,
 
     virtual void Setup(Level<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> &) = 0;
 
-    virtual RCP<SmootherPrototype> Copy() = 0;
+    virtual RCP<SmootherPrototype> Copy() const = 0;
 
     //@}
 
@@ -56,7 +58,7 @@ class SmootherPrototype : public SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,
     //@{
 
     //! Get the state of a smoother prototype.
-    bool IsSetup() {
+    bool IsSetup() const {
       return IsSetup_;
     }
 
