@@ -20704,9 +20704,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 
 
 // File: Epetra__Util_8h.xml
-%feature("docstring")  Epetra_Util_binary_search "int
-Epetra_Util_binary_search(int item, const int *list, int len, int
-&insertPoint)
+%feature("docstring")  Epetra_Util_binary_search "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(int item, const
+int *list, int len, int &insertPoint)
 
 Utility function to perform a binary-search on a list of data.
 Important assumption: data is assumed to be sorted.

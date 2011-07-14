@@ -1559,9 +1559,8 @@ std::string & Teuchos::XMLObject::getAttribute(const std::string
 
 Return the value of the attribute with the specified name. ";
 
-%feature("docstring")  Teuchos::XMLObject::getRequired "std::string
-Teuchos::XMLObject::getRequired< std::string >(const std::string
-&name) const
+%feature("docstring")  Teuchos::XMLObject::getRequired "TEUCHOS_LIB_DLL_EXPORT std::string Teuchos::XMLObject::getRequired<
+std::string >(const std::string &name) const
 
 Get an attribute, throwing an std::exception if it is not found. ";
 
@@ -1686,9 +1685,8 @@ Teuchos::XMLObject::addContent(const std::string &contentLine)
 
 Add a line of character content. ";
 
-%feature("docstring")  Teuchos::XMLObject::addAttribute "void
-Teuchos::XMLObject::addAttribute(const std::string &name, const
-std::string &value) ";
+%feature("docstring")  Teuchos::XMLObject::addAttribute "TEUCHOS_LIB_DLL_EXPORT void Teuchos::XMLObject::addAttribute(const
+std::string &name, const std::string &value) ";
 
 
 // File: classTeuchos_1_1XMLObjectImplem.xml
