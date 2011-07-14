@@ -51,18 +51,20 @@ function execute_loadbalance {
     nem_slice_flag=$4
     NEM_SLICE=$5
 
-    input=$basename.$input_suffix
+    input=$basename.$suffix_input
     output=$basename.decomp.out
     error=$basename.decomp.err
     nemesis=$basename.nem
-    genesis=$basename.$genesis_suffix
+    genesis=$basename.$suffix_mesh
 
     # Check for valid executable...
     if [ ! -x $NEM_SLICE ]
     then
 	echo
+	echo ${txtred}
 	echo "ERROR: Could not find or execute $NEM_SLICE"
 	echo "ERROR: Configuration error"
+	echo ${txtrst}
 	echo
 
 	return -1
@@ -71,14 +73,6 @@ function execute_loadbalance {
     date=`date '+%m/%d/%y'`
     time=`date '+%H:%M:%S'`
     prob_dir=`pwd | sed "s/.*\///g"`
-    
-    echo ""
-    echo "    Starting loadbal calculation for $basename"
-    echo "         `date`"
-    echo ""
-    echo "    .... begining decomposition ...."
-    echo "         see $output for current status"
-    
     
     if [ -e $output ]
     then
@@ -89,8 +83,11 @@ function execute_loadbalance {
     echo '| $Revision: 1.57 $, $Date: 2008/05/19 12:29:22 $'           >> $output   
     echo "===========================================================" >> $output
     
+    echo ${txtblu}
     echo "Executing:"
     echo "   $NEM_SLICE -e $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
+    echo "   ...see $output for nem_slice status"
+    echo ${txtrst}
     if [ -e $input ]
     then
 	($NEM_SLICE -e $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis >> $output) 
@@ -114,7 +111,7 @@ function execute_spread {
     output=$basename.decomp.out
     error=$basename.decomp.err
     nemesis=$basename.nem
-    genesis=$basename.$genesis_suffix
+    genesis=$basename.$suffix_mesh
 
     pexsh=$basename.pex
 
@@ -122,8 +119,10 @@ function execute_spread {
     if [ ! -x $NEM_SPREAD ]
     then
 	echo
+	echo ${txtred}
 	echo "ERROR: Could not find or execute $NEM_SPREAD"
 	echo "ERROR: Configuration error"
+	echo ${txtrst}
 	echo
 	return -1
     fi
@@ -143,10 +142,9 @@ function execute_spread {
 	/bin/rm -rf $pexsh
     fi
     
-    echo "Creating $pexsh"
     echo "Input FEM file                   = $genesis"                  >  $pexsh
     echo "LB file                          = $nemesis"                  >> $pexsh
-    echo "File Extension for Spread Files  = .$spread_suffix"           >> $pexsh
+    echo "File Extension for Spread Files  = .$suffix_spread"           >> $pexsh
     echo "Number of Processors             = $numproc "                 >> $pexsh
     echo "------------------------------------------------------------" >> $pexsh
     echo "                Parallel I/O section"                         >> $pexsh
@@ -154,15 +152,32 @@ function execute_spread {
     echo "Parallel Disk Info= number=1, offset=1, zeros, nosubdirectory">> $pexsh
     echo "Parallel file location = root=$rootdir, subdir=$subdir"       >> $pexsh
     
+    echo ${txtblu}
+    echo "Executing:"
+    echo "   $NEM_SPREAD $pexsh"
+    echo ${txtrst}
     $NEM_SPREAD $pexsh
 }
 
 ########################################################################
 # initialize variables
+# Text color variables
+txtund=$(tput sgr 0 1)    # Underline
+txtbld=$(tput bold)       # Bold
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+txtblu=$(tput setaf 4)    # Blue
+txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
 echo "==========================================================="
 echo "| Sandia Engineering Analysis Access procedure for: decomp "
 echo "| Version: 2011/06/10                                      "
 echo "==========================================================="
+
 
 basename=''
 processors=''
@@ -171,21 +186,17 @@ nem_slice_flag="-c"
 rootdir="`pwd`/"
 subdir="."
 
-userid=`echo $LOGNAME`
 curdir=`pwd`
 
-BIN=@CMAKE_INSTALL_PREFIX@/bin
-NEM_SLICE=$BIN/nem_slice
-NEM_SPREAD=$BIN/nem_spread
+ACCESS=@CMAKE_INSTALL_PREFIX@
+NEM_SLICE=${ACCESS}/bin/nem_slice
+NEM_SPREAD=${ACCESS}/bin/nem_spread
 
-input_suffix='i'
-genesis_suffix='g'
-spread_suffix='g'
+suffix_input='i'
   
 JUNK=`env | grep "ALEGRA_EXE"`
 if [ -n "$JUNK" ]; then
-  input_suffix='inp'
-  genesis_suffix='gen'
+  suffix_input='inp'
 fi
 
 if test -z "$1"
@@ -216,12 +227,6 @@ while true ; do
 	      rootdir=$2 ; shift 2 ;;
 	    -S|--subdir)
 	      subdir=$2 ; shift 2 ;;
-	    --suffix_mesh)
-	      genesis_suffix=$2 ; shift 2 ;;
-	    --suffix_spread)
-	      spread_suffix=$2 ; shift 2 ;;
-	    --No_scalar_mesh)
-	      scalar_mesh="no" ; shift ;;
 
 # Decomposition Method options...
 	    --multikl)   decomp_method="-l multikl" ; shift ;;
@@ -236,32 +241,36 @@ while true ; do
 	    --brick)     decomp_method="-l brick" ; shift ;;
 	    --zpinch)    decomp_method="-l zpinch" ; shift ;;
 	    --) shift ; break ;;
-	    *) echo "ERROR: unrecognized option $1" ; shift ;;
+	    *) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
 	esac
 done
 
 ########################################################################
 if test -z "$1"
 then
+    echo ${txtred}
     echo "ERROR:******************************************************************"
     echo "ERROR:"
     echo "ERROR:  No 'meshfile' specified."
     echo "ERROR:"
     echo "ERROR:******************************************************************"
+    echo ${txtrst}
     usage
 else
     if [ -e "$1" ]
     then
 	file=$1
 	suffix_mesh=${file##*.}
-	    suffix_spread=$suffix_mesh
-	    basename=${file%.*}
+	suffix_spread=$suffix_mesh
+	basename=${file%.*}
     else
+    echo ${txtred}
 	echo "ERROR:******************************************************************"
 	echo "ERROR:"
 	echo "ERROR: $1 does not exist."
 	echo "ERROR:"
 	echo "ERROR:******************************************************************"
+	echo ${txtrst}
 	usage
     fi
 fi    
@@ -269,11 +278,13 @@ fi
 if test -z "$processors"
 then
   echo
+  echo ${txtred}
   echo "ERROR:***************************************************"
   echo "ERROR:"
   echo "ERROR: Must specify number of processors --processors (-p -j) option"
   echo "ERROR:"
   echo "ERROR:***************************************************"
+  echo ${txtrst}
   echo
   usage
 fi
@@ -282,24 +293,32 @@ fi
 execute_loadbalance "$basename" "$processors" "$decomp_method" "$nem_slice_flag" "$NEM_SLICE"
 if [ $? -ne 0 ]
 then
+    echo ${txtred}
     echo "ERROR:******************************************************************"
     echo "ERROR:"
     echo "ERROR     During nem_slice execution. Check error output above and rerun"
     echo "ERROR:"
     echo "ERROR:******************************************************************"
+    echo ${txtrst}
     exit 1
+else
+    echo "${txtgrn}...nem_slice successful execution${txtrst}"
 fi
 
 ########################################################################
 execute_spread "$basename" "$rootdir" "$subdir" "$processors" "$NEM_SPREAD"
 if [ $? -ne 0 ]
 then
+    echo ${txtred}
     echo "ERROR:******************************************************************"
     echo "ERROR:"
     echo "ERROR    During nem_spread execution. Check error output above and rerun"
     echo "ERROR:"
     echo "ERROR:******************************************************************"
+    echo ${txtrst}
     exit 1
+else
+    echo "${txtgrn}...nem_spread successful execution${txtrst}"
 fi
 
-echo "DECOMP Successful Execution"
+echo "${txtgrn}DECOMP Successful Execution${txtrst}"

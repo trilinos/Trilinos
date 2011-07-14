@@ -42,12 +42,17 @@
 
 #include <cstddef>
 #include <string>
-#include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
+template< typename ValueType , class DeviceType >
+class MultiVectorView ;
+
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
+                const MultiVectorView< ValueType , DeviceSrc > & src );
 
 template< typename ValueType , class DeviceType >
 MultiVectorView< ValueType , DeviceType >
@@ -110,7 +115,7 @@ public:
    *          then allocated memory is deallocated.
    */
   MultiVectorView & operator = ( const MultiVectorView & rhs );
-  
+
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
@@ -216,27 +221,6 @@ void deep_copy( const MultiVectorView< ValueType , DeviceDst > & dst ,
 }
 
 } // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-// Partial specializations for known devices
-  
-#if defined( KOKKOS_DEVICE_HOST )
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <impl/Kokkos_MultiVectorView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-#endif
-  
-#if defined( KOKKOS_DEVICE_TPI )
-#include <Kokkos_DeviceTPI_macros.hpp>
-#include <impl/Kokkos_MultiVectorView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-#include <DeviceTPI/Kokkos_DeviceTPI_MultiVectorView.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_CUDA )
-#include <DeviceCuda/Kokkos_DeviceCuda_MultiVectorView.hpp>
-#endif
 
 #endif /* KOKKOS_MULTIVECTORVIEW_HPP */
 

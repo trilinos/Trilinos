@@ -36,7 +36,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ParameterEntry_UnitTest
-  SOURCES ParameterList_UnitTest.cpp Teuchos_StandardUnitTestMain.cpp
+  SOURCES ParameterEntry_UnitTest.cpp Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

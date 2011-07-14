@@ -166,8 +166,8 @@ namespace Tpetra {
   global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalNumCols() const
   {
     std::string tfecfFuncName("getGlobalNumCols()");
-    TEST_FOR_EXCEPTION(hasColMap() == false, std::runtime_error, ": requires column map.");
-    return colMap_->getGlobalNumElements();
+    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error, ": requires domain map (which requires fillComplete()).");
+    return getDomainMap()->getGlobalNumElements();
   }
 
 
@@ -923,7 +923,7 @@ namespace Tpetra {
       numEntriesPerRow_[rowinfo.localRow] += numNewInds;
     }
     nodeNumEntries_ += numNewInds;
-    indicesAreSorted_ = false;
+    setSorted(false);
     noRedundancies_ = false;
     return numNewInds;
   }
@@ -990,7 +990,7 @@ namespace Tpetra {
   {
     if (rowinfo.numEntries > 0) {
       ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst(rowinfo);
-      sort2Shell(inds_view(), rowinfo.numEntries, values); 
+      sort2(inds_view.begin(), inds_view.begin()+rowinfo.numEntries, values.begin());
     }
   }
 
@@ -1839,9 +1839,9 @@ namespace Tpetra {
 #endif
     clearGlobalConstants();
     lclGraph_.clear();
+    setSorted(true);
     lowerTriangular_  = false;
     upperTriangular_  = false;
-    indicesAreSorted_ = false;
     noRedundancies_   = false;
     fillComplete_ = false;
 #ifdef HAVE_TPETRA_DEBUG
@@ -2167,9 +2167,9 @@ namespace Tpetra {
         RowInfo rowInfo = getRowInfo(row);
         sortRowIndices(rowInfo);
       }
-      // we just sorted every row
-      setSorted(true);
     }
+    // we just sorted every row
+    setSorted(true);
   }
 
 

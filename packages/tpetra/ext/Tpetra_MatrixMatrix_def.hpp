@@ -40,6 +40,8 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include <algorithm>
+#include "Teuchos_FancyOStream.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
   //#include "Tpetra_MMMultiply_decl.hpp"
@@ -69,6 +71,7 @@ void Multiply(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C,
   bool call_FillComplete_on_result)
 {
+  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> Matrix_t;
   //
   //This method forms the matrix-matrix product C = op(A) * op(B), where
   //op(A) == A   if transposeA is false,
@@ -96,19 +99,32 @@ void Multiply(
     Node,
     SpMatOps> CrsMatrixStruct_t;
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
-  //We're going to refer to the different combinations of op(A) and op(B)
-  //as scenario 1 through 4.
 
-  int scenario = 1;//A*B
-  if (transposeB && !transposeA) scenario = 2;//A*B^T
-  if (transposeA && !transposeB) scenario = 3;//A^T*B
-  if (transposeA && transposeB)  scenario = 4;//A^T*B^T
+  RCP<const Matrix_t > Aprime = null;
+  RCP<const Matrix_t > Bprime = null;
+  if(transposeA){
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  at(A);
+    Aprime = at.createTranspose();
+  }
+  else{
+    Aprime = rcpFromRef(A);
+  }
+  if(transposeB){
+    RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>  bt(B);
+    Bprime=bt.createTranspose();
+  }
+  else{
+    Bprime = rcpFromRef(B);
+  }
+    
 
   //now check size compatibility
-  global_size_t Aouter = transposeA ? A.getGlobalNumCols() : A.getGlobalNumRows();
-  global_size_t Bouter = transposeB ? B.getGlobalNumRows() : B.getGlobalNumCols();
-  global_size_t Ainner = transposeA ? A.getGlobalNumRows() : A.getGlobalNumCols();
-  global_size_t Binner = transposeB ? B.getGlobalNumCols() : B.getGlobalNumRows();
+  global_size_t numACols = A.getDomainMap()->getGlobalNumElements();
+  global_size_t numBCols = B.getDomainMap()->getGlobalNumElements();
+  global_size_t Aouter = transposeA ? numACols : A.getGlobalNumRows();
+  global_size_t Bouter = transposeB ? B.getGlobalNumRows() : numBCols;
+  global_size_t Ainner = transposeA ? A.getGlobalNumRows() : numACols;
+  global_size_t Binner = transposeB ? numBCols : B.getGlobalNumRows();
   TEST_FOR_EXCEPTION(!A.isFillComplete(), std::runtime_error,
     "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
     "must match for matrix-matrix product. op(A) is "
@@ -140,48 +156,21 @@ void Multiply(
   CrsMatrixStruct_t Aview;
   CrsMatrixStruct_t Bview;
 
-  //const Epetra_Map* targetMap_A = rowmap_A;
-  //const Epetra_Map* targetMap_B = rowmap_B;
+  RCP<const Map_t > targetMap_A = Aprime->getRowMap();
+  RCP<const Map_t > targetMap_B = Bprime->getRowMap();
 
-  RCP<const Map_t > targetMap_A = A.getRowMap();
-  RCP<const Map_t > targetMap_B = B.getRowMap();
-
-  if (numProcs > 1) {
-    //If op(A) = A^T, find all rows of A that contain column-indices in the
-    //local portion of the domain-map. (We'll import any remote rows
-    //that fit this criteria onto the local processor.)
-    if (transposeA) {
-      targetMap_A = MMdetails::find_rows_containing_cols(A, A.getDomainMap());
-    }
-  }
   //Now import any needed remote rows and populate the Aview struct.
-  MMdetails::import_and_extract_views(A, targetMap_A, Aview);
+  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview);
+ 
 
   //We will also need local access to all rows of B that correspond to the
   //column-map of op(A).
   if (numProcs > 1) {
-    RCP<const Map_t > colmap_op_A = null;
-    if (transposeA) {
-      colmap_op_A = targetMap_A;
-    }
-    else {
-      colmap_op_A = A.getColMap(); 
-    }
-
-    targetMap_B = colmap_op_A;
-
-    //If op(B) = B^T, find all rows of B that contain column-indices in the
-    //local-portion of the domain-map, or in the column-map of op(A).
-    //We'll import any remote rows that fit this criteria onto the
-    //local processor.
-    if (transposeB) {
-      RCP<const Map_t > mapunion1 = MMdetails::form_map_union(colmap_op_A, B.getDomainMap());
-      targetMap_B = MMdetails::find_rows_containing_cols(B, mapunion1);
-    }
+    targetMap_B = Aprime->getColMap(); //colmap_op_A;
   }
 
   //Now import any needed remote rows and populate the Bview struct.
-  MMdetails::import_and_extract_views(B, targetMap_B, Bview);
+  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview);
 
 
   //If the result matrix C is not already FillComplete'd, we will do a
@@ -191,49 +180,18 @@ void Multiply(
 
     //pass the graph-builder object to the multiplication kernel to fill in all
     //the nonzero positions that will be used in the result matrix.
-    switch(scenario) {
-    case 1:    MMdetails::mult_A_B(Aview, Bview, crsgraphbuilder);
-      break;
-    case 2:    MMdetails::mult_A_Btrans(Aview, Bview, crsgraphbuilder);
-      break;
-    case 3:    MMdetails::mult_Atrans_B(Aview, Bview, crsgraphbuilder);
-      break;
-    case 4:    MMdetails::mult_Atrans_Btrans(Aview, Bview, crsgraphbuilder);
-      break;
-    }
+    MMdetails::mult_A_B(Aview, Bview, crsgraphbuilder);
 
     //now insert all of the nonzero positions into the result matrix.
     insert_matrix_locations(crsgraphbuilder, C);
 
-  /*  if (call_FillComplete_on_result) {
-      RCP<const Map_t > domainmap = transposeB ? B->getRangeMap() : B->getDomainMap();
-
-      RCP<const Map_t > rangemap = transposeA ? A->getDomainMap() : A->getRangeMap();
-
-      C->fillComplete(domainmap, rangemap, DoNotOptimizeStorage);
-      call_FillComplete_on_result = false;
-    }*/
   }
-  //RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  //C->describe(*out, Teuchos::VERB_EXTREME);
-
-  //Pre-zero the result matrix:
-  //C->setAllToScalar(ScalarTraits<Scalar>::zero());
 
   //Now call the appropriate method to perform the actual multiplication.
 
   CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsmat(C);
 
-  switch(scenario) {
-  case 1:    MMdetails::mult_A_B(Aview, Bview, crsmat);
-    break;
-  case 2:    MMdetails::mult_A_Btrans(Aview, Bview, crsmat);
-    break;
-  case 3:    MMdetails::mult_Atrans_B(Aview, Bview, crsmat);
-    break;
-  case 4:    MMdetails::mult_Atrans_Btrans(Aview, Bview, crsmat);
-    break;
-  }
+  MMdetails::mult_A_B(Aview, Bview, crsmat);
 
   if (call_FillComplete_on_result) {
     //We'll call FillComplete on the C matrix before we exit, and give
@@ -243,17 +201,12 @@ void Multiply(
     //The range-map will be the range-map of A, unless
     //op(A)==transpose(A), in which case the domain-map of A will be used.
     if (!C.isFillComplete()) {
-      RCP<const Map_t > domainmap = transposeB ? B.getRangeMap() : B.getDomainMap();
-
-      RCP<const Map_t > rangemap = transposeA ? A.getDomainMap() : A.getRangeMap();
-      C.fillComplete(domainmap, rangemap);
+      C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
     }
   }
 
-  //return(0);
 }
 
-// CGB: check this...
 template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -281,10 +234,8 @@ void Add(
     SpMatOps> CrsMatrix_t;
   RCP<const CrsMatrix_t> Aprime = null;
   if( transposeA ){
-    RCP<CrsMatrix_t> transpose = null;
 	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
-    theTransposer.createTranspose(DoOptimizeStorage, transpose);
-    Aprime = transpose;
+    Aprime = theTransposer.createTranspose(DoOptimizeStorage); 
   }
   else{
     Aprime = rcpFromRef(A);
@@ -298,6 +249,7 @@ void Add(
     B.scale(scalarB);
   }
 
+  bool bFilled = B.isFillComplete();
   size_t numMyRows = B.getNodeNumRows();
   if(scalarA != ScalarTraits<Scalar>::zero()){
     for(LocalOrdinal i = 0; (size_t)i < numMyRows; ++i){
@@ -308,12 +260,17 @@ void Add(
           a_vals[j] *= scalarA;
         }
       }
-      B.insertGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+      if(bFilled){
+        B.sumIntoGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+      }
+      else{
+        B.insertGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+      }
+
     }
   }
 }
 
-// CGB: check this...
 template <class Scalar, 
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -353,10 +310,8 @@ void Add(
 
   //explicit tranpose A formed as necessary
   if( transposeA ) {
-    RCP<CrsMatrix_t> aTrans;
 	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(A);
-    theTransposer.createTranspose(DoOptimizeStorage, aTrans);
-    Aprime = aTrans;
+    Aprime = theTransposer.createTranspose(DoOptimizeStorage);
   }
   else{
     Aprime = rcpFromRef(A);
@@ -364,10 +319,8 @@ void Add(
 
   //explicit tranpose B formed as necessary
   if( transposeB ) {
-    RCP<CrsMatrix_t> bTrans = null;
 	  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> theTransposer(B);
-    theTransposer.createTranspose(DoOptimizeStorage, bTrans);
-    Bprime = bTrans;
+    Bprime = theTransposer.createTranspose(DoOptimizeStorage);
   }
   else{
     Bprime = rcpFromRef(B);
@@ -384,7 +337,7 @@ void Add(
   Array<Scalar> scalar = Teuchos::tuple<Scalar>(scalarA, scalarB);
 
   // do a loop over each matrix to add: A reordering might be more efficient
-  for(int k=0;k<2;k++) {
+  for(int k=0;k<2;++k) {
     size_t NumEntries;
     Array<GlobalOrdinal> Indices;
     Array<Scalar> Values;
@@ -396,6 +349,10 @@ void Add(
      for( size_t i = OrdinalTraits<size_t>::zero(); i < NumMyRows; ++i ) {
         Row = Mat[k]->getRowMap()->getGlobalElement(i);
         NumEntries = Mat[k]->getNumEntriesInGlobalRow(Row);
+        if(NumEntries == OrdinalTraits<global_size_t>::zero()){
+          continue;
+        }
+
         Indices.resize(NumEntries);
         Values.resize(NumEntries);
 		    Mat[k]->getGlobalRowCopy(Row, Indices(), Values(), NumEntries);
@@ -434,9 +391,7 @@ void mult_A_B(
   LocalOrdinal C_firstCol_import = OrdinalTraits<LocalOrdinal>::zero();
   LocalOrdinal C_lastCol_import = OrdinalTraits<LocalOrdinal>::invalid();
 
-  //int* bcols = Bview.colMap->MyGlobalElements();
   ArrayView<const GlobalOrdinal> bcols =Bview.colMap->getNodeElementList();
-  //int* bcols_import = NULL;
   ArrayView<const GlobalOrdinal> bcols_import = null;
   if (Bview.importColMap != null) {
     C_firstCol_import = Bview.importColMap->getMinLocalIndex();
@@ -450,14 +405,11 @@ void mult_A_B(
 
   if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
   Array<Scalar> dwork = Array<Scalar>(C_numCols);
-  //int* iwork = new int[C_numCols];
   Array<GlobalOrdinal> iwork = Array<GlobalOrdinal>(C_numCols);
 
   Array<Scalar> C_row_i = dwork;
-  //int* C_cols = iwork;
   Array<GlobalOrdinal> C_cols = iwork;
 
-  //int C_row_i_length, i, j, k;
   size_t C_row_i_length, i, j, k;
 
   //To form C = A*B we're going to execute this expression:
@@ -512,14 +464,6 @@ void mult_A_B(
           C_cols[C_row_i_length++] = bcols[Bcol_inds[j]];
         }
       }
-	  /*
-	  std::cout << "About to insert row: " << global_row << std::endl;
-	  ArrayView<const Scalar> C_row_iView = C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length);
-      typename ArrayView<const Scalar>::iterator it = C_row_iView.begin();
-      for(; it != C_row_iView.end(); ++it){
-        std::cout << *it << ", ";
-      }
-      std::cout << std::endl;*/
 
       //
       //Now put the C_row_i values into C.
@@ -540,483 +484,16 @@ template<class Scalar,
          class GlobalOrdinal, 
          class Node,
          class SpMatOps>
-void
-getGlobalRowFromLocalIndex(
-  LocalOrdinal localRow,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview, 
-  Array<GlobalOrdinal>& indices,
-  Array<Scalar>& values,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colMap)
+void setMaxNumEntriesPerRow(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview)
 {
-  ArrayView<const LocalOrdinal> localIndices = Mview.indices[localRow];
-  ArrayView<const Scalar> constValues = Mview.values[localRow];
-  values = Array<Scalar>(constValues);
-  for(typename Array<GlobalOrdinal>::size_type i = 0; i<localIndices.size(); ++i){
-    indices.push_back(Mview.colMap->getGlobalElement(localIndices[i]));
-  }
-  //sort2(indices.begin(), indices.end(), values.begin());
-  sort2Shell(indices(), indices.size(), values());
-}
-
-//kernel method for computing the local portion of C = A*B^T
-template<class Scalar,
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node,
-         class SpMatOps>
-void mult_A_Btrans(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
-{
-  //Nieve implementation
-  for(GlobalOrdinal i=0; (global_size_t)i<Aview.rowMap->getGlobalNumElements(); ++i){
-    if(Aview.remote[i]){
-      continue;
-    }
-    if(Aview.indices[i].size() == 0){
-      continue;
-    }
-    LocalOrdinal localARow = Aview.rowMap->getLocalElement(i);
-    Array<GlobalOrdinal> cIndices;
-    Array<Scalar> cValues;
-    Array<GlobalOrdinal> aIndices;
-    Array<Scalar> aValues;
-    getGlobalRowFromLocalIndex(localARow, Aview, aIndices, aValues, Aview.colMap);
-    for(GlobalOrdinal j=0; (global_size_t)j<Bview.rowMap->getGlobalNumElements(); ++j){
-      if(Bview.remote[j]){
-        continue;
-      }
-      if(Bview.indices[i].size() == 0){
-        continue;
-      }
-      LocalOrdinal localBRow = Bview.rowMap->getLocalElement(j); 
-      Array<GlobalOrdinal> bIndices;
-      Array<Scalar> bValues;
-      getGlobalRowFromLocalIndex(localBRow, Bview, bIndices, bValues, Bview.importColMap);
-      Scalar product = 
-        sparsedot(aValues, aIndices, bValues, bIndices);
-      cIndices.push_back(j);
-      cValues.push_back(product);
-    }
-    C.insertGlobalValues(i, cIndices(), cValues());
-  }
-  //Real optimized version, not working.
-  /*size_t maxlen = 0;
-  for (size_t i=0; i<Aview.numRows; ++i) {
-    if (Aview.numEntriesPerRow[i] > maxlen) maxlen = Aview.numEntriesPerRow[i];
-  }
-  for (size_t i=0; i<Bview.numRows; ++i) {
-    if (Bview.numEntriesPerRow[i] > maxlen) maxlen = Bview.numEntriesPerRow[i];
-  }
-
-  size_t numBrows = Bview.numRows;
-
-  Array<GlobalOrdinal>     iwork(maxlen*2);
-  ArrayView<GlobalOrdinal>  Aind = iwork(0,maxlen);
-  ArrayView<GlobalOrdinal>  Bind = iwork(maxlen,maxlen);
-
-  ArrayView<const GlobalOrdinal> bgids = Bview.colMap->getNodeElementList();
-
-  Array<Scalar>      vals(maxlen*2);
-  ArrayView<Scalar> bvals = vals(0,maxlen);
-  ArrayView<Scalar> avals = vals(maxlen, maxlen);
-
-  const GlobalOrdinal max_all_b = Bview.colMap->getMaxAllGlobalIndex();
-  const GlobalOrdinal min_all_b = Bview.colMap->getMinAllGlobalIndex();
-
-  // next create arrays indicating the first and last column-index in
-  // each row of B, so that we can know when to skip certain rows below.
-  // This will provide a large performance gain for banded matrices, and
-  // a somewhat smaller gain for *most* other matrices.
-  Array<GlobalOrdinal> b_firstcol(numBrows);
-  Array<GlobalOrdinal> b_lastcol(numBrows);
-  GlobalOrdinal temp;
-  for(size_t i=0; i<numBrows; ++i) {
-    b_firstcol[i] = max_all_b;
-    b_lastcol[i] = min_all_b;
-
-    size_t Blen_i = Bview.numEntriesPerRow[i];
-    if (Blen_i < 1) continue;
-    ArrayView<const LocalOrdinal> Bindices_i = Bview.indices[i];
-
-    if (Bview.remote[i]) {
-      for(size_t k=0; k<Blen_i; ++k) {
-        temp = Bview.importColMap->getGlobalElement(Bindices_i[k]);
-        if (temp < b_firstcol[i]) b_firstcol[i] = temp;
-        if (temp > b_lastcol[i]) b_lastcol[i] = temp;
-      }
-    }
-    else {
-      for(size_t k=0; k<Blen_i; ++k) {
-        temp = bgids[Bindices_i[k]];
-        if (temp < b_firstcol[i]) b_firstcol[i] = temp;
-        if (temp > b_lastcol[i]) b_lastcol[i] = temp;
-      }
-    }
-  }
-
-  //Epetra_Util util;
-
-  const bool C_filled = C.isFillComplete();
-
-  //To form C = A*B^T, we're going to execute this expression:
-  //
-  // C(i,j) = sum_k( A(i,k)*B(j,k) )
-  //
-  //This is the easiest case of all to code (easier than A*B, A^T*B, A^T*B^T).
-  //But it requires the use of a 'sparsedot' function (we're simply forming
-  //dot-products with row A_i and row B_j for all i and j).
-
-  //loop over the rows of A.
-  for(size_t i=0; i<Aview.numRows; ++i) {
-    if (Aview.remote[i]) {
-      continue;
-    }
-
-    ArrayView<const LocalOrdinal> Aindices_i = Aview.indices[i];
-    ArrayView<const Scalar> Aval_i  = Aview.values[i];
-    size_t A_len_i = Aview.numEntriesPerRow[i];
-
-    if (A_len_i < 1) {
-      continue;
-    }
-
-    for(size_t k=0; k<A_len_i; ++k) {
-      Aind[k] = Aview.colMap->getGlobalElement(Aindices_i[k]);
-      avals[k] = Aval_i[k];
-    }
-
-
-    typename ArrayView<GlobalOrdinal>::iterator end = Aind.begin() + A_len_i;
-    sort2(Aind.begin(), end, avals.begin());
-
-    GlobalOrdinal mina = Aind[0];
-    GlobalOrdinal maxa = Aind[A_len_i-1];
-
-    if (mina > max_all_b || maxa < min_all_b) {
-      continue;
-    }
-
-    GlobalOrdinal global_row = Aview.rowMap->getGlobalElement(i);
-
-    //loop over the rows of B and form results C_ij = dot(A(i,:),B(j,:))
-    for(size_t j=0; j<Bview.numRows; ++j) {
-      if (b_firstcol[j] > maxa || b_lastcol[j] < mina) {
-        continue;
-      }
-
-      ArrayView<const LocalOrdinal> Bindices_j = Bview.indices[j];
-
-      size_t B_len_j = Bview.numEntriesPerRow[j];
-      if (B_len_j < 1) {
-        continue;
-      }
-
-      GlobalOrdinal tmp;
-      size_t Blen = 0;
-
-      if (Bview.remote[j]) {
-        for(size_t k=0; k<B_len_j; ++k) {
-          tmp = Bview.importColMap->getGlobalElement(Bindices_j[k]);
-          if (tmp < mina || tmp > maxa) {
-            continue;
-          }
-          bvals[Blen] = Bview.values[j][k];
-          Bind[Blen++] = tmp;
-        }
-      }
-      else {
-        for(size_t k=0; k<B_len_j; ++k) {
-          tmp = bgids[Bindices_j[k]];
-          if (tmp < mina || tmp > maxa) {
-            continue;
-          }
-          bvals[Blen] = Bview.values[j][k];
-          Bind[Blen++] = tmp;
-        }
-      }
-      if (Blen < 1) {
-        continue;
-      }
-
-      sort2(Bind.begin(), Bind.end(), bvals.begin());
-
-      const Scalar C_ij = sparsedot(avals(0,A_len_i), Aind(0,A_len_i), bvals(0,B_len_j), Bind(0,B_len_j));
-
-      if (C_ij == ScalarTraits<Scalar>::zero()) {
-        continue;
-      }
-      GlobalOrdinal global_col = Bview.rowMap->getGlobalElement(j);
-
-      if (C_filled) {
-        C.sumIntoGlobalValues(global_row, tuple(global_col), tuple(C_ij));
-      }
-      else {
-        C.insertGlobalValues(global_row, tuple(global_col), tuple(C_ij));
-      }
-
-    }
-  }*/
-}
-
-
-//kernel method for computing the local portion of C = A^T*B
-template<class Scalar,
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node,
-         class SpMatOps>
-void mult_Atrans_B(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C)
-{
-  LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
-  LocalOrdinal C_lastCol = Bview.colMap->getMaxLocalIndex();
-
-  LocalOrdinal C_firstCol_import = OrdinalTraits<LocalOrdinal>::zero();
-  LocalOrdinal C_lastCol_import = OrdinalTraits<LocalOrdinal>::invalid();
-
-  if (Bview.importColMap != null) {
-    C_firstCol_import = Bview.importColMap->getMinLocalIndex();
-    C_lastCol_import = Bview.importColMap->getMaxLocalIndex();
-  }
-
-  size_t C_numCols = 
-    C_lastCol - C_firstCol + OrdinalTraits<LocalOrdinal>::one();
-
-  size_t C_numCols_import = 
-    C_lastCol_import - C_firstCol_import + OrdinalTraits<LocalOrdinal>::one();
-
-  if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
-
-  Array<Scalar> C_row_i = Array<Scalar>(C_numCols);
-  Array<GlobalOrdinal> C_colInds = Array<GlobalOrdinal>(C_numCols);
-
-  size_t i, j, k;
-
-  for(j=OrdinalTraits<size_t>::zero(); j<C_numCols; ++j) {
-    C_row_i[j] = ScalarTraits<Scalar>::zero();
-    C_colInds[j] = OrdinalTraits<GlobalOrdinal>::zero();
-  }
-
-  //To form C = A^T*B, compute a series of outer-product updates.
-  //
-  // for (ith column of A^T) { 
-  //   C_i = outer product of A^T(:,i) and B(i,:)
-  // Where C_i is the ith matrix update,
-  //       A^T(:,i) is the ith column of A^T, and
-  //       B(i,:) is the ith row of B.
-  // }
-  //
-
-  int localProc = Bview.colMap->getComm()->getRank();
-
-  ArrayView<const GlobalOrdinal> Arows = Aview.rowMap->getNodeElementList();
-
-  bool C_filled = C.isFillComplete();
-
-  //loop over the rows of A (which are the columns of A^T).
-  for(i=OrdinalTraits<size_t>::zero(); i<Aview.numRows; ++i) {
-
-    ArrayView<const LocalOrdinal> Aindices_i = Aview.indices[i];
-    ArrayView<const Scalar> Aval_i  = Aview.values[i];
-
-    //we'll need to get the row of B corresponding to Arows[i],
-    //where Arows[i] is the GID of A's ith row.
-    LocalOrdinal Bi = Bview.rowMap->getLocalElement(Arows[i]);
-    TEST_FOR_EXCEPTION(Bi == OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
-      "mult_Atrans_B ERROR, proc "<<localProc<<" needs row "
-     <<Arows[i]<<" of matrix B, but doesn't have it.");
-
-    ArrayView<const LocalOrdinal> Bcol_inds = Bview.indices[Bi];
-    ArrayView<const Scalar> Bvals_i = Bview.values[Bi];
-
-    //for each column-index Aj in the i-th row of A, we'll update
-    //global-row GID(Aj) of the result matrix C. In that row of C,
-    //we'll update column-indices given by the column-indices in the
-    //ith row of B that we're now holding (Bcol_inds).
-
-    //First create a list of GIDs for the column-indices
-    //that we'll be updating.
-
-    size_t Blen = Bview.numEntriesPerRow[Bi];
-    if (Bview.remote[Bi]) {
-      for(j=OrdinalTraits<size_t>::zero(); j<Blen; ++j) {
-        C_colInds[j] = Bview.importColMap->getGlobalElement(Bcol_inds[j]);
-      }
-    }
-    else {
-      for(j=OrdinalTraits<size_t>::zero(); j<Blen; ++j) {
-        C_colInds[j] = Bview.colMap->getGlobalElement(Bcol_inds[j]);
-      }
-    }
-
-    //loop across the i-th row of A (column of A^T)
-    for(j=OrdinalTraits<size_t>::zero(); j<Aview.numEntriesPerRow[i]; ++j) {
-
-      LocalOrdinal Aj = Aindices_i[j];
-      Scalar Aval = Aval_i[j];
-
-      GlobalOrdinal global_row;
-      if (Aview.remote[i]) {
-        global_row = Aview.importColMap->getGlobalElement(Aj);
-      }
-      else {
-        global_row = Aview.colMap->getGlobalElement(Aj);
-      }
-
-      if (!C.getRowMap()->isNodeGlobalElement(global_row)) {
-        continue;
-      }
-
-      for(k=OrdinalTraits<size_t>::zero(); k<Blen; ++k) {
-        C_row_i[k] = Aval*Bvals_i[k];
-      }
-
-      //
-      //Now add this row-update to C.
-      //
-
-      C_filled ?
-        C.sumIntoGlobalValues(global_row, C_colInds(), C_row_i() )
-        :
-        C.insertGlobalValues(global_row, C_colInds(), C_row_i());
-
-    }
-  }
-}
-
-//kernel method for computing the local portion of C = A^T*B^T
-template<class Scalar,
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node,
-         class SpMatOps>
-void mult_Atrans_Btrans(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C)
-{
-  LocalOrdinal C_firstCol = Aview.rowMap->getMinLocalIndex();
-  LocalOrdinal C_lastCol = Aview.rowMap->getMaxLocalIndex();
-
-  LocalOrdinal C_firstCol_import = OrdinalTraits<LocalOrdinal>::zero();
-  LocalOrdinal C_lastCol_import = OrdinalTraits<LocalOrdinal>::invalid();
-
-  if (Aview.importColMap != null) {
-    C_firstCol_import = Aview.importColMap->getMinLocalIndex();
-    C_lastCol_import = Aview.importColMap->getMaxLocalIndex();
-  }
-
-  size_t C_numCols = C_lastCol - C_firstCol + OrdinalTraits<LocalOrdinal>::one();
-  size_t C_numCols_import = C_lastCol_import - C_firstCol_import + OrdinalTraits<LocalOrdinal>::one();
-
-  if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
-
-  Array<Scalar> dwork = Array<Scalar>(C_numCols);
-  Array<GlobalOrdinal> iwork = Array<GlobalOrdinal>(C_numCols);
-
-  Array<Scalar> C_col_j = dwork;
-  Array<GlobalOrdinal> C_inds = iwork;
-
-  size_t i, j, k;
-
-  for(j=OrdinalTraits<size_t>::zero(); j<C_numCols; ++j) {
-    C_col_j[j] = ScalarTraits<Scalar>::zero();
-    C_inds[j] = OrdinalTraits<GlobalOrdinal>::invalid();
-  }
-
-  ArrayView<const GlobalOrdinal> A_col_inds = 
-    Aview.colMap->getNodeElementList();
-  ArrayView<const GlobalOrdinal> A_col_inds_import = 
-    (Aview.importColMap != null ?
-    Aview.importColMap->getNodeElementList() 
-	  :
-	  null);
-
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Crowmap = C.getRowMap();
-
-  //To form C = A^T*B^T, we're going to execute this expression:
-  //
-  // C(i,j) = sum_k( A(k,i)*B(j,k) )
-  //
-  //Our goal, of course, is to navigate the data in A and B once, without
-  //performing searches for column-indices, etc. In other words, we avoid
-  //column-wise operations like the plague...
-
-  ArrayView<const GlobalOrdinal> Brows = Bview.rowMap->getNodeElementList();
-
-  //loop over the rows of B
-  for(j=OrdinalTraits<size_t>::zero(); j<Bview.numRows; ++j) {
-    ArrayView<const LocalOrdinal> Bindices_j = Bview.indices[j];
-    ArrayView<const Scalar> Bvals_j = Bview.values[j];
-
-    //GlobalOrdinal global_col = Brows[j];
-    ArrayView<const GlobalOrdinal> global_col = Brows.view(j,1);
-
-    //loop across columns in the j-th row of B and for each corresponding
-    //row in A, loop across columns and accumulate product
-    //A(k,i)*B(j,k) into our partial sum quantities in C_col_j. In other
-    //words, as we stride across B(j,:), we use selected rows in A to
-    //calculate updates for column j of the result matrix C.
-
-    for(k=OrdinalTraits<size_t>::zero(); k<Bview.numEntriesPerRow[j]; ++k) {
-
-      LocalOrdinal bk = Bindices_j[k];
-      Scalar Bval = Bvals_j[k];
-
-      GlobalOrdinal global_k;
-      if (Bview.remote[j]) {
-        global_k = Bview.importColMap->getGlobalElement(bk);
-      }
-      else {
-        global_k = Bview.colMap->getGlobalElement(bk);
-      }
-
-      //get the corresponding row in A
-      LocalOrdinal ak = Aview.rowMap->getLocalElement(global_k);
-      if (ak == OrdinalTraits<LocalOrdinal>::invalid()) {
-        continue;
-      }
-
-      ArrayView<const LocalOrdinal> Aindices_k = Aview.indices[ak];
-      ArrayView<const Scalar> Avals_k = Aview.values[ak];
-
-      size_t C_len = OrdinalTraits<size_t>::zero();
-
-      if (Aview.remote[ak]) {
-        for(i=OrdinalTraits<size_t>::zero(); i<Aview.numEntriesPerRow[ak]; ++i) {
-          C_col_j[C_len] = Avals_k[i]*Bval;
-          C_inds[C_len++] = A_col_inds_import[Aindices_k[i]];
-        }
-      }
-      else {
-        for(i=OrdinalTraits<size_t>::zero(); i<Aview.numEntriesPerRow[ak]; ++i) {
-          C_col_j[C_len] = Avals_k[i]*Bval;
-          C_inds[C_len++] = A_col_inds[Aindices_k[i]];
-        }
-      }
-
-      //Now loop across the C_col_j values and put non-zeros into C.
-
-      for(i=OrdinalTraits<size_t>::zero(); i < C_len ; ++i) {
-        if (C_col_j[i] == ScalarTraits<Scalar>::zero()) continue;
-
-        GlobalOrdinal global_row = C_inds[i];
-        if (!Crowmap->isNodeGlobalElement(global_row)) {
-          continue;
-        }
-
-        try{
-          //C.sumIntoGlobalValues(global_row, global_col, C_col_j[i]);
-          C.sumIntoGlobalValues(global_row, global_col, C_col_j.view(i,1));
-        }
-        catch(std::runtime_error){
-          //C.insertGlobalValues(global_row, global_col, C_col_j[i]);
-          C.insertGlobalValues(global_row, global_col, C_col_j.view(i,1));
-        }
+  typedef typename Array<ArrayView<const LocalOrdinal> >::size_type  local_length_size;
+  Mview.maxNumRowEntries = OrdinalTraits<local_length_size>::zero();
+  if(Mview.indices.size() > OrdinalTraits<local_length_size>::zero() ){
+    Mview.maxNumRowEntries = Mview.indices[0].size();
+    for(local_length_size i = 1; i<Mview.indices.size(); ++i){
+      if(Mview.indices[i].size() > Mview.maxNumRowEntries){
+        Mview.maxNumRowEntries = Mview.indices[i].size();
       }
     }
   }
@@ -1044,19 +521,10 @@ void import_and_extract_views(
 
   RCP<const Map_t> Mrowmap = M.getRowMap();
 
-  // CGB: will/should this change? then make it const, to ensure that it doesn't?
-  //OLD// int numProcs = Mrowmap->getComm()->getSize();
   const int numProcs = Mrowmap->getComm()->getSize();
 
   ArrayView<const GlobalOrdinal> Mrows = targetMap->getNodeElementList();
 
-  // CGB: Resize exists for a reason; use it
-  //OLD//  Mview->numEntriesPerRow = Array<size_t>(Mview->numRows);
-  //OLD//  Mview->indices = 
-  //OLD//    Array<ArrayView<const LocalOrdinal> >(Mview->numRows);
-  //OLD//  Mview->values = 
-  //OLD//    Array<ArrayView<const Scalar> >(Mview->numRows);
-  //OLD//  Mview->remote = Array<bool>(Mview->numRows);
   Mview.numRemote = 0;
   Mview.numRows = targetMap->getNodeNumElements();
   Mview.numEntriesPerRow.resize(Mview.numRows);
@@ -1071,8 +539,6 @@ void import_and_extract_views(
   Mview.domainMap = M.getDomainMap();
   Mview.importColMap = null;
 
-  // CGB: some documentation, e.g. of this loop, would be nice... Mike may not need it, but you will likely not be the one maintaining this code, so you should do a courtesy 
-  // to those who will follow you
 
   // mark each row in targetMap as local or remote, and go ahead and get a view for the local rows
 
@@ -1094,8 +560,8 @@ void import_and_extract_views(
   if (numProcs < 2) {
     TEST_FOR_EXCEPTION(Mview.numRemote > 0, std::runtime_error,
       "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows." <<std::endl);
+    setMaxNumEntriesPerRow(Mview);
     //If only one processor we don't need to import any remote rows, so return.
-    //return(0);
     return;
   }
 
@@ -1108,15 +574,10 @@ void import_and_extract_views(
   Teuchos::reduceAll(*(Mrowmap->getComm()) , Teuchos::REDUCE_MAX, Mview.numRemote, Teuchos::outArg(globalMaxNumRemote) );
 
   if (globalMaxNumRemote > 0) {
-
     // Create a map that describes the remote rows of M that we need.
 
     Array<GlobalOrdinal> MremoteRows(Mview.numRemote);
 
-    // CGB: I know where this came from, but it doesn't need to be here. More danger from trying to change Epetra to Tpetra, one line at at time.
-    //OLD// if(Mview->numRemote > 0) {
-    //OLD//  Array<GlobalOrdinal>(Mview->numRemote);
-    //OLD// }
 
     global_size_t offset = 0;
     for(size_t i=0; i < Mview.numRows; ++i) {
@@ -1125,7 +586,7 @@ void import_and_extract_views(
       }
     }
 
-    RCP<Map_t> MremoteRowMap = rcp(new Map_t(
+    RCP<const Map_t> MremoteRowMap = rcp(new Map_t(
       OrdinalTraits<GlobalOrdinal>::invalid(), 
       MremoteRows(), 
       Mrowmap->getIndexBase(), 
@@ -1155,303 +616,7 @@ void import_and_extract_views(
       }
     }
   }
-}
-
-// CGB: check this...
-template<class Ordinal,
-         class GlobalOrdinal>
-void distribute_list(
-  RCP<const Comm<Ordinal> > comm,
-  size_t lenSendList,
-  const Array<GlobalOrdinal>& sendList,
-  size_t& maxSendLen,
-  Array<GlobalOrdinal>& recvList)
-{
-  maxSendLen = 0;
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, OrdinalTraits<Ordinal>::one(), &lenSendList, &maxSendLen);
-  const int numProcs = comm->getSize();
-  recvList.resize(numProcs*maxSendLen);
-  Array<GlobalOrdinal> send(maxSendLen);
-  std::copy(sendList.begin(), sendList.end(), send.begin());
-  Teuchos::gatherAll(*comm, (Ordinal)maxSendLen, send.getRawPtr(), (Ordinal)(numProcs*maxSendLen), recvList.getRawPtr());
-}
-
-
-template<class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node>
-RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > create_map_from_imported_rows(
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
-  const size_t& totalNumSend,
-  ArrayView<GlobalOrdinal> sendRows,
-  const int& numProcs,
-  ArrayView<size_t> numSendPerProc)
-{
-  // Perform sparse all-to-all communication to send the row-GIDs
-  // in sendRows to appropriate processors according to offset
-  // information in numSendPerProc.
-  // Then create and return a map containing the rows that we
-  // received on the local processor.
-
-  // Convience typdef
-  typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
-
-  RCP<Distributor> distributor = rcp(new Distributor(map->getComm()));
-  Array<int> sendPIDs(totalNumSend);
-  int offset = 0;
-  for(int i=0; i<numProcs; ++i) {
-    for(size_t j=0; j<numSendPerProc[i]; ++j) {
-      sendPIDs[offset++] = i;
-    }
-  }
-
-  size_t numRecv = 0;
-  numRecv = distributor->createFromSends(sendPIDs());
-
-  Array<GlobalOrdinal> recv_rows(numRecv);
-  const size_t numpackets = 1;
-  distributor->doPostsAndWaits(sendRows.getConst(), numpackets, recv_rows());
-
-  //Now create a map with the rows we've received from other processors.
-  RCP<Map_t > import_rows = rcp(new Map_t(OrdinalTraits<global_size_t>::invalid(), recv_rows(), map->getIndexBase(), map->getComm(), map->getNode()));
-  //const ArrayView<const GlobalOrdinal> recv_rows_view = recv_rows();
-  //RCP<Map_t > import_rows = createNonContigMapWithNode(recv_rows_view, map->getComm(), map->getNode());
-
-  return( import_rows );
-}
-
-
-template<class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node>
-RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > form_map_union(
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map1,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map2)
-{
-  // form the union of two maps
-  if (map1 == null) {
-    return map2;
-  }
-  if (map2 == null) {
-    return map1;
-  }
-
-  const size_t map1_len = map1->getNodeNumElements();
-  ArrayView<const GlobalOrdinal> map1_elements = map1->getNodeElementList();
-  const size_t map2_len = map2->getNodeNumElements();
-  ArrayView<const GlobalOrdinal> map2_elements = map2->getNodeElementList();
-
-  Array<GlobalOrdinal> union_elements(map1_len + map2_len);
-    
-  //int map1_offset = 0, map2_offset = 0, union_offset = 0;
-  size_t map1_offset = 0;
-  size_t map2_offset = 0;
-  size_t union_offset = 0;
-
-  while(map1_offset < map1_len && map2_offset < map2_len) {
-    GlobalOrdinal map1_elem = map1_elements[map1_offset];
-    GlobalOrdinal map2_elem = map2_elements[map2_offset];
-    if (map1_elem < map2_elem) {
-      union_elements[union_offset++] = map1_elem;
-      ++map1_offset;
-    }
-    else if (map1_elem > map2_elem) {
-      union_elements[union_offset++] = map2_elem;
-      ++map2_offset;
-    }
-    else {
-      union_elements[union_offset++] = map1_elem;
-      ++map1_offset;
-      ++map2_offset;
-    }
-  }
-  for(size_t i=map1_offset; i<map1_len; ++i) {
-    union_elements[union_offset++] = map1_elements[i];
-  }
-  for(size_t i=map2_offset; i<map2_len; ++i) {
-    union_elements[union_offset++] = map2_elements[i];
-  }
-
-  // note, union_elements potentially contains duplicate elements. however, this is 
-  // allowed, and accounted for, in the Map constructor below.
-
-  // CGB: I think this should be union_offset, not +1
-  // ERROR FIXED
-  //OLD// union_elements.resize(union_offset+1);
-  union_elements.resize(union_offset);
-  return rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(
-    OrdinalTraits<global_size_t>::invalid(), 
-    union_elements(), 
-    map1->getIndexBase(), 
-    map1->getComm(), 
-    map1->getNode()));
-}
-
-
-template<class Scalar, 
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node, 
-         class SpMatOps>
-RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
-  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap)
-{
-/*
-  std::map<LocalOrdinal, Array<int> > rowsToSendToNodes;
-  ArrayView<const GlobalOrdinal> myGlobalRows = 
-    M->getRowMap()->getNodeElementList();
-
-  Array<GlobalOrdinal> currentRow(
-    M->getCrsGraph()->getNodeMaxNumEntries());;
-  size_t numEntriesInCurrentRow;
-  ArrayView<int> currentNodes;
-  for(ArrayView<const GlobalOrdinal>::iterator it = myGlobalRows.begin();
-    it != myGlobalRows.end();
-    ++it)
-  {
-    M->getCrsGraph()->getGlobalRowCopy(i, currentRow(), numEntriesInCurrentRow);
-
-  }
-  for(LocalOrdinal i = M->getRowMap()->getMinLocalIndex();
-    i < M->getRowMap->getMaxLocalIndex();
-    ++i)
-  {
-    M->getCrsGraph()->getGlobalRowCopy(i, currentRow, numEntriesInCurrentRow);
-    colmap->getRemoteIndexList(
-      currentRow(0,numEntriesInCurrentRow), currentNodes);
-    if(currentNodes.size() > 0){
-      rowsToSendToNodes[i] = Array(currentNodes);
-    }
-  }
-*/
-
-
-  //The goal of this function is to find all rows in the matrix M that contain
-  //column-indices which are in 'colmap'. A map containing those rows is
-  //returned.
-
-  //Convience typdef
-  typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
-  const int numProcs = colmap->getComm()->getSize();
-  const int localProc = colmap->getComm()->getRank();
-
-  if (numProcs < 2) {
-    return M.getRowMap();
-  }
-
-  const size_t MnumRows = M.getNodeNumRows();
-  const size_t numCols = colmap->getNodeNumElements();
-
-  Array<GlobalOrdinal> cols(numCols + 1);
-  cols[0] = numCols;
-  // get ids from column map and sort them
-  cols(1,numCols).assign(colmap->getNodeElementList());
-  // must sort before distribute_list, because below we assume that all ids are sorted for each proc
-  std::sort(cols.begin()+1, cols.end());
-
-  size_t max_num_cols;
-  Array<GlobalOrdinal> all_proc_cols;
-  distribute_list(colmap->getComm(), numCols+1, cols, max_num_cols, all_proc_cols);
-
-  RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > Mgraph = M.getCrsGraph();
-  RCP<const Map_t > Mrowmap = M.getRowMap();
-  RCP<const Map_t > Mcolmap = M.getColMap();
-
-  Array<size_t> procNumCols(numProcs);
-  Array<size_t> procNumRows(numProcs);
-  Array<GlobalOrdinal> procRows_1D(numProcs*MnumRows);
-  Array<typename Array<GlobalOrdinal>::iterator> procCols(numProcs);
-  Array<typename Array<GlobalOrdinal>::iterator> procRows(numProcs);
-  size_t offset = 0;
-  for(int p=0; p<numProcs; ++p) {
-    // procCols points into all_proc_cols, and procNumCols[p] stores the number of cols for proc p
-    procNumCols[p] = all_proc_cols[offset];
-    procCols[p] = all_proc_cols.begin() + offset + 1;
-    offset += max_num_cols;
-    // procRows points into procRows_1D, and procNumRows[p] stores ??? FINISH
-    procNumRows[p] = 0;
-    procRows[p] = procRows_1D.begin() + p*MnumRows;
-  }
-
-
-  for(LocalOrdinal localRow =  Mrowmap->getMinLocalIndex(); 
-                   localRow <= Mrowmap->getMaxLocalIndex(); 
-                 ++localRow) 
-  {
-    const GlobalOrdinal globalRow = Mrowmap->getGlobalElement(localRow);
-    ArrayView<const LocalOrdinal> Mindices;
-    Mgraph->getLocalRowView(localRow, Mindices);
-    for (size_t j=0; j<(size_t)Mindices.size(); ++j) {
-      const GlobalOrdinal colGID = Mcolmap->getGlobalElement(Mindices[j]);
-      for(int p=0; p<numProcs; ++p) 
-      {
-        if (p==localProc) continue;
-        // according to the sort above, before distribute_list, these are sorted
-        bool result = std::binary_search(procCols[p], procCols[p] + procNumCols[p], colGID);
-        if (result) {
-          size_t numRowsP = procNumRows[p];
-          typename Array<GlobalOrdinal>::iterator prows = procRows[p];
-          if (numRowsP < 1 || prows[numRowsP-1] < globalRow) {
-            prows[numRowsP] = globalRow;
-            procNumRows[p]++;
-          }
-        }
-      }
-    }
-  }
-
-  // Now make the contents of procRows occupy a contiguous section
-  // of procRows_1D; pack the last numProcs-1 sections.
-  offset = procNumRows[0];
-  for(int i=1; i<numProcs; ++i) {
-    // we are packing, which must be done sequentially
-    for(size_t j=0; j<procNumRows[i]; ++j) {
-      procRows_1D[offset++] = procRows[i][j];
-    }
-  }
-  const size_t totalNumSend = offset;
-
-  // Next we will do a sparse all-to-all communication to send the lists of rows
-  // to the appropriate processors, and create a map with the rows we've received
-  // from other processors.
-  RCP<const Map_t > recvd_rows = 
-    //create_map_from_imported_rows<LocalOrdinal, GlobalOrdinal, Node>(
-    create_map_from_imported_rows(
-      Mrowmap,
-      totalNumSend,
-      procRows_1D(),
-      numProcs,
-      procNumRows());
-  RCP<const Map_t > result_map = form_map_union(M.getRowMap(), recvd_rows);
-  return(result_map);
-}
-
-
-template<class Scalar, class GlobalOrdinal>
-Scalar sparsedot(
-  const Array<Scalar>& u, const Array<GlobalOrdinal>& u_ind,
-  const Array<Scalar>& v, const Array<GlobalOrdinal>& v_ind)
-{
-  const size_t usize = (size_t)u.size();
-  const size_t vsize = (size_t)v.size();
-  Scalar result = ScalarTraits<Scalar>::zero();
-  size_t v_idx = 0;
-  size_t u_idx = 0;
-  while(v_idx < vsize && u_idx < usize) {
-    GlobalOrdinal ui = u_ind[u_idx];
-    GlobalOrdinal vi = v_ind[v_idx];
-    if (ui < vi) {
-      ++u_idx;
-    }
-    else if (ui > vi) {
-      ++v_idx;
-    }
-    else {
-      result += u[u_idx++]*v[v_idx++];
-    }
-  }
-  return(result);
+  setMaxNumEntriesPerRow(Mview);
 }
 
 } //End namepsace MMdetails
@@ -1475,12 +640,6 @@ Scalar sparsedot(
     bool call_FillComplete_on_result); \
 \
   template \
-  RCP<const Map< LO , GO , NODE > > \
-  MMdetails::find_rows_containing_cols( \
-    const CrsMatrix< SCALAR , LO , GO , NODE >& M, \
-    RCP<const Map< LO , GO , NODE > > colmap); \
-\
-  template \
   void MatrixMatrix::Add( \
     const CrsMatrix< SCALAR , LO , GO , NODE >& A, \
     bool transposeA, \
@@ -1497,5 +656,7 @@ Scalar sparsedot(
     SCALAR scalarA, \
     CrsMatrix<SCALAR, LO, GO, NODE>& B, \
     SCALAR scalarB ); \
+  \
+
 
 #endif // TPETRA_MATRIXMATRIX_DEF_HPP

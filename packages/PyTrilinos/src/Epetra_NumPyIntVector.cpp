@@ -32,6 +32,9 @@
 #define PyArray_ANYORDER -1
 #endif
 
+namespace PyTrilinos
+{
+
 // Static variables
 const Epetra_SerialComm   Epetra_NumPyIntVector::defaultComm = Epetra_SerialComm();
 PyArrayObject           * Epetra_NumPyIntVector::tmp_array   = NULL               ;
@@ -232,3 +235,5 @@ PyObject * Epetra_NumPyIntVector::Values() const
   Py_INCREF(array);
   return PyArray_Return(array);
 }
+
+}  // Namepace PyTrilinos

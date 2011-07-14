@@ -1,0 +1,29 @@
+../configure \
+--prefix=/home/jmwille/temp/testINSTALL \
+--disable-fortran \
+--enable-teuchos \
+--with-mpi-compilers \
+--disable-default-packages \
+--with-gnumake \
+--with-blas="-L/home/jmwille/lib/ATLAS/lib/Linux_UNKNOWNSSE2_2 -lcblas
+-lf77blas -latlas -lgfortranbegin -lgfortran -lm" \
+--with-lapack="-L/home/jmwille/lib/LAPACK -llapack"
+
+The key is the --disable-fortran.  However, my BLAS and LAPACK need to
+be linked against the gfortran library.  If you have a machine without a
+Fortran compiler, your libraries presumably would not need to be linked
+against these libraries (BLAS and LAPACK are required).
+
+Please let me know if you are successful.  This new feature has not been
+heavily tested.  Also, note you cannot build all packages without
+Fortran at this time.
+
+The below link points to a "no-fortran" serial nightly build.  You will
+see what packages can be built without Fortran there.
+
+http://software.sandia.gov/trilinos/developer/test_harness/results/build.html?mid=51=1172
+<http://software.sandia.gov/trilinos/developer/test_harness/results/build.html?mid=51&bid=1172> 
+
+Also, this only works on the dev branch.
+
+Jim

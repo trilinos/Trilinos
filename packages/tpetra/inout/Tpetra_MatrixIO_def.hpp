@@ -71,7 +71,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   Teuchos::ArrayRCP<GlobalOrdinal> colinds;
   Teuchos::ArrayRCP<int>           rowptrs;
   Teuchos::ArrayRCP<size_t>        nnzPerRow;
-  Teuchos::ArrayRCP<char>          type;
+  //Teuchos::ArrayRCP<char>          type;
   int fail = 0;
   if (myRank == 0) {
     bool isSymmetric=false;

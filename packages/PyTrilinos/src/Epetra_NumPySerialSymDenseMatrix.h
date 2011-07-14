@@ -41,6 +41,9 @@
 #endif
 #include "Epetra_SerialSymDenseMatrix.h"
 
+namespace PyTrilinos
+{
+
 class Epetra_NumPySerialSymDenseMatrix : public Epetra_SerialSymDenseMatrix
 {
 public:
@@ -92,5 +95,7 @@ private:
   PyArrayObject * array;
 
 };
+
+}  // Namespace PyTrilinos
 
 #endif

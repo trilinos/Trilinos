@@ -1,0 +1,192 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#           PyTrilinos.Isorropia: Python Interface to Isorropia
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#
+# System imports
+from   optparse import *
+import sys
+from   types    import *
+import unittest
+
+from testutil import fromPyTrilinosImport
+Epetra      = fromPyTrilinosImport('Epetra'     , True)
+Isorropia   = fromPyTrilinosImport('Isorropia'  , True)
+Teuchos     = fromPyTrilinosImport('Teuchos'    , True)
+
+################################################################################
+
+class PartitionerTestCase(unittest.TestCase):
+    "TestCase for Isorropia.Partitioner"
+
+    def setUp(self):
+        nRows = 10
+        self.pList = Teuchos.ParameterList()
+        self.pList.set("PARTITIONING METHOD", "CYCLIC")
+        self.pDictionary = {"PARTITIONING METHOD":"CYCLIC"}
+        self.map = Epetra.Map(nRows, 0, comm)
+        self.crsg = buildGraph(comm, comm.NumProc()*10)
+        
+        
+        self.part = Isorropia.Epetra.Partitioner(self.crsg, self.pList)
+	self.costs = Isorropia.Epetra.CostDescriber()
+#        self.pv = LOCA.ParameterVector()
+#        self.pv.addParameter("Zero"     )
+#        self.pv.addParameter("One", 1.0 )
+#        self.pv.addParameter("Pi" , 3.14)
+
+
+
+    def testAlwaysPasses(self):
+        "Test Isorropia.alwaysPasses"
+        self.assertEquals(0, 0.0)
+
+    def testConstructor0(self):
+        """Test Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now)"""
+        part = Isorropia.Epetra.Partitioner(self.crsg, self.pList, True)
+        self.failUnless(isinstance(part, Isorropia.Epetra.Partitioner))
+        part = Isorropia.Epetra.Partitioner(self.crsg, self.pDictionary, True)
+        self.failUnless(isinstance(part, Isorropia.Epetra.Partitioner))
+
+    def testConstructor1(self):
+        """Test Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			 Teuchos::RCP<CostDescriber> costs,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now)"""
+        part = Isorropia.Epetra.Partitioner(self.crsg, self.costs, self.pList, True)
+        self.failUnless(isinstance(part, Isorropia.Epetra.Partitioner))
+
+    def testConstructor2(self):
+        """Test Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+                         Teuchos::RCP<const Epetra_MultiVector> coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now)"""
+        coords = Epetra.MultiVector(self.map, 2, True)
+        part = Isorropia.Epetra.Partitioner(self.crsg, coords, self.pList, True)
+        self.failUnless(isinstance(part, Isorropia.Epetra.Partitioner))
+
+
+
+    def testCreateNewMap(self):
+        """Test createNewMap()"""
+        ## Don't actually do any partitioning
+        part = Isorropia.Epetra.Partitioner(self.crsg, {"PARTITIONING METHOD":"BLOCK"}, False)
+        newMap = part.createNewMap()
+        self.failUnless(newMap.IsOneToOne())
+        myElems = newMap.MyGlobalElements()
+        for elem in myElems:
+            self.failUnless(elem / 10 == comm.MyPID())
+
+    def testCyclicPartition(self):
+        """Test Cyclic 1D Partitioning, relies on createNewMap()"""
+        part = Isorropia.Epetra.Partitioner(self.crsg, self.pList, True)
+        newMap = part.createNewMap()
+        self.failUnless(newMap.IsOneToOne())
+        myElems = newMap.MyGlobalElements()
+        for elem in myElems:
+            self.failUnless(elem % comm.NumProc() == comm.MyPID())
+
+
+    ## As written, this will fail if the random partition is cyclic. However, 
+    ## it appears that the random partitioning uses the same seed every time, in 
+    ## which case it should pass every time, or fail every time (the small cases
+    ## I've tested don't fail, and as numProc() grows the probability of randomly
+    ## partitioning as cyclic drops quickly)
+    def testRepartitioning(self):
+        """Test compute(True) forces repartitioning, relies on createNewMap()"""
+        part = Isorropia.Epetra.Partitioner(self.crsg, {"PARTITIONING METHOD":"RANDOM"}, True)
+        newMap = part.createNewMap()
+        myFirstElems = newMap.MyGlobalElements()
+        part.setParameters({"PARTITIONING METHOD":"CYCLIC"})
+        part.compute(True)
+        newMap = part.createNewMap()
+        isEqual = True
+        newElems = newMap.MyGlobalElements()
+        if len(myFirstElems) != len(newElems):
+            isEqual = False
+        for i in range(len(myFirstElems)):
+            if isEqual and myFirstElems[i] != newElems[i]:
+                isEqual = False
+
+        if isEqual == True and comm.NumProc() != 1:
+                self.failUnless(1 == 0)
+        
+        
+        
+
+#    def testAddParameterWithValue(self):
+#        "Test LOCA.ParameterVector addParameter method with given value"
+#        self.assertEquals(self.pv.getValue("One"), 1.0)
+
+################################################################################
+
+def buildGraph(comm, nRows):
+    map = Epetra.Map(nRows, 0, comm)
+    graph = Epetra.CrsGraph(Epetra.Copy, map, 3)
+    for gid in map.MyGlobalElements():
+        if gid == 0:
+            indices = [0, 1]
+        elif gid == nRows-1:
+            indices = [nRows-2, nRows-1]
+        else:
+            indices = [gid-1, gid, gid+1]
+        graph.InsertGlobalIndices(gid, indices)
+    graph.FillComplete()
+    return graph
+
+if __name__ == "__main__":
+    
+    comm    = Epetra.PyComm()
+    iAmRoot = comm.MyPID() == 0
+    
+    # Create the test suite object
+    suite = unittest.TestSuite()
+    
+    # Add the test cases to the test suite
+    suite.addTest(unittest.makeSuite( PartitionerTestCase ))
+    
+    # Run the test suite
+    #if comm.MyPID() == 0:
+    print >>sys.stderr, "\n****************************", \
+          "\nTesting Isorropia.Partitioner\n****************************\n"
+    verbosity = 2 #* int(comm.MyPID() == 0)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+    # Compute the total number of errors and failures
+    errsPlusFails = len(result.errors) + len(result.failures)
+    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+
+    # Some versions of python don't properly delete suite upon exit
+    del suite
+
+    # Exit with error/nonerror code
+    sys.exit(errsPlusFails)

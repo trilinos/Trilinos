@@ -14,9 +14,12 @@ SET(SOURCES builtin.c  main.c     stat.c    getopt.c  getopt1.c
 
 # If I use the PACKAGE_ADD_EXECUTABLE, it adds all libraries in this
 # package to the link line for aprepro.  This includes aprepro_lib
-# and we get duplicat symbols.  Use the ADD_EXECUTABLE rule instead.
+# and we get duplicate symbols.  Use the ADD_EXECUTABLE rule instead.
 # PACKAGE_ADD_EXECUTABLE(aprepro NOEXEPREFIX NOEXESUFFIX SOURCES ${SOURCES} )
 
+
 ADD_EXECUTABLE(aprepro ${SOURCES})
+TARGET_LINK_LIBRARIES(aprepro m) 
+
 install_executable(aprepro)
 

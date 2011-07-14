@@ -256,7 +256,8 @@ namespace Tpetra {
       global_size_t getGlobalNumRows() const;
 
       //! \brief Returns the number of global columns in the graph.
-      /** Undefined if isFillActive().
+      /** Returns the number of entries in the domain map of the matrix.
+          Undefined if isFillActive().
         */
       global_size_t getGlobalNumCols() const;
 
@@ -349,6 +350,12 @@ namespace Tpetra {
 
       //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
       bool isFillActive() const;
+
+      //! Indicates whether the graph indices in all rows are known to be sorted.
+      /** A fill-complete graph is always sorted, as is a newly constructed graph. A graph is sorted immediately after 
+         calling resumeFill(), but any changes to the graph may result in the sorting status becoming unknown (and therefore, presumed unsorted.)
+         */
+      bool isSorted() const;
 
       //! \brief Returns \c true if storage has been optimized.
       /**
@@ -525,7 +532,6 @@ namespace Tpetra {
       template <ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN> void         insertIndicesAndValues(RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
       template <ELocalGlobal lg, class IterO, class IterN, class BinaryFunction> void   transformValues(RowInfo rowInfo, const SLocalGlobalViews &inds,    IterO rowVals, IterN newVals, BinaryFunction f) const;
       // Sorting and merging
-      bool                       isSorted() const;
       bool                       isMerged() const;
       void                       setSorted(bool sorted);
       void                       setMerged(bool merged);

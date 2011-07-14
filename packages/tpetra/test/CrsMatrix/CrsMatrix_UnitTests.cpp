@@ -17,7 +17,6 @@
 #include "Tpetra_CrsMatrixSolveOp.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_MatrixMatrix.hpp"
-#include "MatrixMarket_Tpetra.hpp"
 
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
@@ -283,6 +282,7 @@ namespace {
     }
     STD_TESTS((*zero));
     TEST_EQUALITY_CONST( zero->getRangeMap() == zero->getDomainMap(), true );
+    TEST_EQUALITY_CONST( zero->getFrobeniusNorm(), MT::zero() );
     const RCPMap drmap = zero->getDomainMap();
     {
       MV mv1(drmap,1), mv2(drmap,2), mv3(drmap,3);
@@ -306,13 +306,13 @@ namespace {
       MV mvbad(badmap,1);
 #ifdef HAVE_TPETRA_DEBUG
       const Scalar ONE = ST::one(), ZERO = ST::zero();
-      // tests in solve() and multiply() are only done in a debug build
+      // tests in localSolve() and localMultiply() are only done in a debug build
       MV mvcol(zero->getColMap(),1);
       MV mvrow(zero->getRowMap(),1);
-      TEST_THROW(zero->template multiply<Scalar>(mvcol,mvbad,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad output map
-      TEST_THROW(zero->template multiply<Scalar>(mvbad,mvrow,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad input map
-      TEST_THROW(zero->template multiply<Scalar>(mvbad,mvcol,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad output map
-      TEST_THROW(zero->template multiply<Scalar>(mvrow,mvbad,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad input map
+      TEST_THROW(zero->template localMultiply<Scalar>(mvcol,mvbad,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad output map
+      TEST_THROW(zero->template localMultiply<Scalar>(mvbad,mvrow,  NO_TRANS,ONE,ZERO), std::runtime_error); // bad input map
+      TEST_THROW(zero->template localMultiply<Scalar>(mvbad,mvcol,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad output map
+      TEST_THROW(zero->template localMultiply<Scalar>(mvrow,mvbad,CONJ_TRANS,ONE,ZERO), std::runtime_error); // bad input map
 #endif
     }
   }
@@ -493,7 +493,7 @@ namespace {
       // Bug verification:
       // Tpetra::CrsMatrix constructed with a Optimized, Fill-Complete graph will not call fillLocalMatrix() 
       // in optimizeStorage(), because it returns early due to picking up the storage optimized bool from the graph.
-      // As a result, the local mat-vec and mat-solve operations are never initialized, and multiply() and solve() 
+      // As a result, the local mat-vec and mat-solve operations are never initialized, and localMultiply() and localSolve() 
       // fail with a complaint regarding the initialization of these objects.
       MAT matrix(rcpFromRef(diaggraph));
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
@@ -505,8 +505,8 @@ namespace {
       // init x to ones(); multiply into y, solve in-situ in y, check result
       V x(map,false), y(map,false);
       x.putScalar(SONE);
-      TEST_NOTHROW( matrix.multiply(x,y,NO_TRANS,SONE,SZERO) );
-      TEST_NOTHROW( matrix.solve(y,y,NO_TRANS) );
+      TEST_NOTHROW( matrix.localMultiply(x,y,NO_TRANS,SONE,SZERO) );
+      TEST_NOTHROW( matrix.localSolve(y,y,NO_TRANS) );
       ArrayRCP<const Scalar> x_view = x.get1dView();
       ArrayRCP<const Scalar> y_view = y.get1dView();
       TEST_COMPARE_FLOATING_ARRAYS( y_view, x_view, MT::zero() );
@@ -1807,6 +1807,15 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LO     >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GO     >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< node_type           , Node   >::value) == true, true );
+    typedef RowMatrix<Scalar,LO,GO,Node> RMAT;
+    typedef typename RMAT::scalar_type         rmat_scalar_type;
+    typedef typename RMAT::local_ordinal_type  rmat_local_ordinal_type;
+    typedef typename RMAT::global_ordinal_type rmat_global_ordinal_type;
+    typedef typename RMAT::node_type           rmat_node_type;
+    TEST_EQUALITY_CONST( (is_same< rmat_scalar_type         , Scalar >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< rmat_local_ordinal_type  , LO     >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< rmat_global_ordinal_type , GO     >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< rmat_node_type           , Node   >::value) == true, true );
   }
 
   ////

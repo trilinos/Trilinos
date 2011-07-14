@@ -14,7 +14,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   EpetraRowMatrix_UnitTests
   SOURCES
     EpetraRowMatrix_UnitTests
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   STANDARD_PASS_OUTPUT
   )

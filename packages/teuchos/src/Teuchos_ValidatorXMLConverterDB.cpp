@@ -137,21 +137,21 @@ namespace {
 
 TEUCHOS_STATIC_SETUP()
 {
-  TEUCHOS_ADD_NUMBERTYPECONVERTERS(int);
-  TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(double);
-  TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(float);
+  TEUCHOS_ADD_NUMBERTYPE_VALIDATOR_CONVERTERS(int);
+  TEUCHOS_ADD_ENHANCEDNUMBERVALIDATOR_CONVERTER(double);
+  TEUCHOS_ADD_ENHANCEDNUMBERVALIDATOR_CONVERTER(float);
   
-  TEUCHOS_ADD_ARRAYCONVERTER(Teuchos::EnhancedNumberValidator<double>, double);
-  TEUCHOS_ADD_ARRAYCONVERTER(Teuchos::EnhancedNumberValidator<float>, float);
+  TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::EnhancedNumberValidator<double>, double);
+  TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::EnhancedNumberValidator<float>, float);
   
-  TEUCHOS_ADD_ARRAYCONVERTER(Teuchos::FileNameValidator, std::string);
-  TEUCHOS_ADD_ARRAYCONVERTER(Teuchos::StringValidator, std::string);
+  TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::FileNameValidator, std::string);
+  TEUCHOS_ADD_ARRAYVALIDATOR_CONVERTER(Teuchos::StringValidator, std::string);
   
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-  TEUCHOS_ADD_NUMBERTYPECONVERTERS(long long int);
+  TEUCHOS_ADD_NUMBERTYPE_VALIDATOR_CONVERTERS(long long int);
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
   
-  TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(Teuchos::EVerbosityLevel); 
+  TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(Teuchos::EVerbosityLevel); 
 
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::FileNameValidator, Teuchos::FileNameValidatorXMLConverter);
   TEUCHOS_ADD_VALIDATOR_CONVERTER(Teuchos::StringValidator, Teuchos::StringValidatorXMLConverter);

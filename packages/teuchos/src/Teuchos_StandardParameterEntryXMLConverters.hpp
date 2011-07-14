@@ -84,7 +84,7 @@ public:
  * This converter is appropriate for most data types.
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT StandardTemplatedParameterConverter : 
+class StandardTemplatedParameterConverter : 
   public ParameterEntryXMLConverter
 {
 

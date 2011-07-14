@@ -556,6 +556,97 @@ private:
 
 };
 
+template<class ValidatorType, class EntryType>
+class AbstractArrayValidatorXMLConverter : public ValidatorXMLConverter{
+public:
+
+  /** \name Overridden from ValidatorXMLConverter */
+  //@{
+
+  /** \brief . */
+  RCP<ParameterEntryValidator> convertXML(
+    const XMLObject& xmlObj,
+    const IDtoValidatorMap& validatorIDsMap) const;
+
+  /** \brief . */
+  void convertValidator(
+    const RCP<const ParameterEntryValidator> validator,
+    XMLObject& xmlObj,
+    const ValidatortoIDMap& validatorIDsMap) const;
+
+  //@}
+  
+  /** \name Pure Virtual Fuctions */
+  //@{
+  
+  /** \brief Returns a concrete validator that has 
+   * AbstractArrayValidator as it's parent class.
+   */
+  virtual RCP<AbstractArrayValidator<ValidatorType, EntryType> > 
+    getConcreteValidator(RCP<ValidatorType> prototypeValidator) const = 0;
+
+  //@}
+};
+
+
+template<class ValidatorType, class EntryType>
+RCP<ParameterEntryValidator>
+AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>::convertXML(
+    const XMLObject& xmlObj,
+    const IDtoValidatorMap& validatorIDsMap) const
+{
+  RCP<ValidatorType> prototypeValidator;
+  if(xmlObj.hasAttribute(
+    ValidatorXMLConverter::getPrototypeIdAttributeName()))
+  {
+    IDtoValidatorMap::const_iterator result =
+      validatorIDsMap.find(
+        xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
+          getPrototypeIdAttributeName()));
+    if (result != validatorIDsMap.end() ) {
+      prototypeValidator = 
+        rcp_dynamic_cast<ValidatorType>(result->second, true);
+    }
+    else {
+      TEST_FOR_EXCEPTION(true,
+        MissingValidatorDefinitionException,
+        "Could not find prototype validator with id: "
+        << xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
+          getPrototypeIdAttributeName()) << std::endl<< std::endl);
+    }
+  }
+  else {
+    prototypeValidator = rcp_dynamic_cast<ValidatorType>(
+      ValidatorXMLConverterDB::convertXML(
+        xmlObj.getChild(0), validatorIDsMap), true);
+  }
+  return getConcreteValidator(prototypeValidator);
+}
+
+template<class ValidatorType, class EntryType>
+void 
+AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>::convertValidator(
+  const RCP<const ParameterEntryValidator> validator,
+  XMLObject& xmlObj,
+  const ValidatortoIDMap& validatorIDsMap) const
+{
+  RCP<const AbstractArrayValidator<ValidatorType, EntryType> > castedValidator = 
+    rcp_dynamic_cast<const AbstractArrayValidator<ValidatorType, EntryType> >(
+      validator, true);
+  if(validatorIDsMap.find(castedValidator->getPrototype()) 
+    == validatorIDsMap.end())
+  {
+    xmlObj.addChild(ValidatorXMLConverterDB::convertValidator(
+      castedValidator->getPrototype(), validatorIDsMap, false));
+  }
+  else{
+    ParameterEntryValidator::ValidatorID prototypeID = 
+      validatorIDsMap.find(castedValidator->getPrototype())->second;
+  
+    xmlObj.addAttribute<ParameterEntryValidator::ValidatorID>(
+      getPrototypeIdAttributeName(), prototypeID);
+  }
+}
 
 /**
  * \brief Converts ArrayValidators to and from XML.
@@ -585,97 +676,86 @@ private:
  * \endcode
  */
 template<class ValidatorType, class EntryType>
-class ArrayValidatorXMLConverter : public ValidatorXMLConverter
+class ArrayValidatorXMLConverter : 
+  public AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>
 {
-
-public:
-
-  /** \name Overridden from ValidatorXMLConverter */
+  /** @name Overridden from AbstractArrayValidatorXMLConverter */
   //@{
 
-  /** \brief . */
-  RCP<ParameterEntryValidator> convertXML(
-    const XMLObject& xmlObj,
-    const IDtoValidatorMap& validatorIDsMap) const;
-
-  /** \brief . */
-  void convertValidator(
-    const RCP<const ParameterEntryValidator> validator,
-    XMLObject& xmlObj,
-    const ValidatortoIDMap& validatorIDsMap) const;
+  virtual RCP<AbstractArrayValidator<ValidatorType, EntryType> > getConcreteValidator(
+    RCP<ValidatorType> prototypeValidator) const
+  {
+    return rcp(new ArrayValidator<ValidatorType, EntryType>(prototypeValidator));
+  }
 
 #ifdef HAVE_TEUCHOS_DEBUG
+  /** @name Overridden ValidatorXMLConverter*/
+  //@{
   /** \brief . */
   RCP<const ParameterEntryValidator> getDummyValidator() const{
     return DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >::
       getDummyObject();
   }
+  //@}
+#endif
+};
+
+/**
+ * \brief Converts TwoDArrayValidators to and from XML.
+ *
+ * TwoDArrayValidators can be represented in XML one of two ways.
+ * The first just creates the prototype validator as a child of
+ * the ArrayValidator. In this case, the prototype validator does
+ * NOT use a validatorId.
+ *\code
+  <Validator 
+   type="TwoDArrayValidator(PrototypeValidatorType,ParameterArrayType)"
+   validatorId="Validator id"
+  >
+     ...Prototype Validator Goes Here...
+  </Validator>
+ \endcode
+ *
+ * The second way to define an TwoDArrayValidator in XML is to just use
+ * the "prototypeId" attribute to specify the prototype validator as
+ * some other validator you've already defined.
+ * \code
+   <Validator 
+     type="TwoDArrayValidator(PrototypeValidatorType,ParameterArrayType)"
+     validatorId="Validator id"
+     prototypeId="Prototype Validator Id"
+   />
+ * \endcode
+ */
+template<class ValidatorType, class EntryType>
+class TwoDArrayValidatorXMLConverter : 
+  public AbstractArrayValidatorXMLConverter<ValidatorType, EntryType>
+{
+  /** @name Overridden from AbstractArrayValidatorXMLConverter */
+  //@{
+
+  virtual RCP<AbstractArrayValidator<ValidatorType, EntryType> > getConcreteValidator(
+    RCP<ValidatorType> prototypeValidator) const
+  {
+    return rcp(new TwoDArrayValidator<ValidatorType, EntryType>(prototypeValidator));
+  }
+
+  //@}
+  
+#ifdef HAVE_TEUCHOS_DEBUG
+  /** @name Overridden ValidatorXMLConverter*/
+  //@{
+  /** \brief . */
+  RCP<const ParameterEntryValidator> getDummyValidator() const{
+    return DummyObjectGetter<TwoDArrayValidator<ValidatorType, EntryType> >::
+      getDummyObject();
+  }
+  //@}
 #endif
   
-  //@}
-
 };
 
 
-template<class ValidatorType, class EntryType>
-RCP<ParameterEntryValidator>
-ArrayValidatorXMLConverter<ValidatorType, EntryType>::convertXML(
-    const XMLObject& xmlObj,
-    const IDtoValidatorMap& validatorIDsMap) const
-{
-  RCP<ValidatorType> prototypeValidator;
-  if(xmlObj.hasAttribute(
-    ValidatorXMLConverter::getPrototypeIdAttributeName()))
-  {
-    IDtoValidatorMap::const_iterator result =
-      validatorIDsMap.find(
-        xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-          getPrototypeIdAttributeName()));
-    if (result != validatorIDsMap.end() ) {
-      prototypeValidator = 
-        rcp_dynamic_cast<ValidatorType>(result->second, true);
-    }
-    else {
-      TEST_FOR_EXCEPTION(true,
-        MissingValidatorDefinitionException,
-        "Could not find prototype validator with id: "
-        << xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-          getPrototypeIdAttributeName()) << std::endl<< std::endl);
-    }
-  }
-  else {
-    prototypeValidator = rcp_dynamic_cast<ValidatorType>(
-      ValidatorXMLConverterDB::convertXML(
-        xmlObj.getChild(0), validatorIDsMap), true);
-  }
-  return rcp(new ArrayValidator<ValidatorType, EntryType>(prototypeValidator));
-}
-
-
-template<class ValidatorType, class EntryType>
-void 
-ArrayValidatorXMLConverter<ValidatorType, EntryType>::convertValidator(
-  const RCP<const ParameterEntryValidator> validator,
-  XMLObject& xmlObj,
-  const ValidatortoIDMap& validatorIDsMap) const
-{
-  RCP<const ArrayValidator<ValidatorType, EntryType> > castedValidator = 
-    rcp_dynamic_cast<const ArrayValidator<ValidatorType, EntryType> >(
-      validator, true);
-  if(validatorIDsMap.find(castedValidator->getPrototype()) 
-    == validatorIDsMap.end())
-  {
-    xmlObj.addChild(ValidatorXMLConverterDB::convertValidator(
-      castedValidator->getPrototype(), validatorIDsMap, false));
-  }
-  else{
-    ParameterEntryValidator::ValidatorID prototypeID = 
-      validatorIDsMap.find(castedValidator->getPrototype())->second;
-  
-    xmlObj.addAttribute<ParameterEntryValidator::ValidatorID>(
-      getPrototypeIdAttributeName(), prototypeID);
-  }
-}
 
 } // namespace Teuchos
 

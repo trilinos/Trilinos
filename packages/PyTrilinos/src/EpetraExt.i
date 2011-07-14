@@ -648,20 +648,20 @@ class InArgs(PropertyBase):
 
 %typemap(out) EpetraExt::ModelEvaluator::InArgs
 {
-  $result = convertInArgsToPython($1);
+  $result = PyTrilinos::convertInArgsToPython($1);
   if (PyErr_Occurred()) SWIG_fail;
 }
 
 %typemap(directorin) const EpetraExt::ModelEvaluator::InArgs &
 {
-  $input = convertInArgsToPython($1_name);
-  if (PyErr_Occurred()) throw PythonException();
+  $input = PyTrilinos::convertInArgsToPython($1_name);
+  if (PyErr_Occurred()) throw PyTrilinos::PythonException();
 }
 
 %typemap(directorout) EpetraExt::ModelEvaluator::InArgs
 {
   $result = EpetraExt::convertInArgsFromPython($1);
-  if (PyErr_Occurred()) throw PythonException();
+  if (PyErr_Occurred()) throw PyTrilinos::PythonException();
 }
 
 %typemap(in) const EpetraExt::ModelEvaluator::InArgs &
@@ -909,20 +909,20 @@ class OutArgs(PropertyBase):
 
 %typemap(out) EpetraExt::ModelEvaluator::OutArgs
 {
-  $result = convertOutArgsToPython($1);
+  $result = PyTrilinos::convertOutArgsToPython($1);
   if (PyErr_Occurred()) SWIG_fail;
 }
 
 %typemap(directorin) const EpetraExt::ModelEvaluator::OutArgs &
 {
-  $input = convertOutArgsToPython($1_name);
-  if (PyErr_Occurred()) throw PythonException();
+  $input = PyTrilinos::convertOutArgsToPython($1_name);
+  if (PyErr_Occurred()) throw PyTrilinos::PythonException();
 }
 
 %typemap(directorout) EpetraExt::ModelEvaluator::OutArgs
 {
   $result = EpetraExt::convertOutArgsFromPython($1);
-  if (PyErr_Occurred()) throw PythonException();
+  if (PyErr_Occurred()) throw PyTrilinos::PythonException();
 }
 
 %typemap(in) const EpetraExt::ModelEvaluator::OutArgs &

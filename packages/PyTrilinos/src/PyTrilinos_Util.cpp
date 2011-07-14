@@ -36,6 +36,11 @@
 
 ////////////////////////////////////////////////////////////////////////
 
+namespace PyTrilinos
+{
+
+////////////////////////////////////////////////////////////////////////
+
 PyObject * getObjectFromModule(char * modName, CONST char * objName)
 {
   PyObject * fromList = NULL;
@@ -179,4 +184,8 @@ CONST char * getStringItemObjectAttr(PyObject * object, CONST char * name, int i
   Py_DECREF(item);
   if (PyErr_Occurred()) throw PythonException();
   return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
 }

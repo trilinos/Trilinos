@@ -31,7 +31,6 @@
 
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
-//#include "NumPyImporter.h"
 
 #include "PythonException.h"
 #ifdef HAVE_INTTYPES_H
@@ -41,6 +40,9 @@
 #undef HAVE_STDINT_H
 #endif
 #include "Epetra_SerialDenseVector.h"
+
+namespace PyTrilinos
+{
 
 class Epetra_NumPySerialDenseVector : public Epetra_SerialDenseVector
 {
@@ -92,5 +94,7 @@ private:
   PyArrayObject * array;
 
 };
+
+}  // Namespace PyTrilinos
 
 #endif

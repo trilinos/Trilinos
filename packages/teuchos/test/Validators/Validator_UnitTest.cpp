@@ -316,6 +316,167 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, arrayValidators)
     Exceptions::InvalidParameterType);
 }
 
+/*
+ * Testing TwoDArray Validators.
+ */
+TEUCHOS_UNIT_TEST(Teuchos_Validators, twoDArrayValidators)
+{
+
+	/*
+	 * Testing StringArrayValidator.
+	 */
+	RCP<ParameterList> stringList = rcp(new ParameterList("String List"));
+	Array<std::string> stringVals = tuple<std::string>("str1", "str2", "str3");
+	RCP<StringValidator> stringVali = rcp(new StringValidator(stringVals));
+	RCP<TwoDArrayStringValidator> stringArrayVali = 
+    rcp(new TwoDArrayStringValidator(stringVali));
+	TEST_ASSERT(stringVali.get() == stringArrayVali->getPrototype().get());
+	TwoDArray<std::string> stringArray(2,2);
+  stringArray(0,0) = "str2";
+  stringArray(0,1) = "str1";
+  stringArray(1,0) = "str3";
+  stringArray(1,1) = "str2";
+	TEST_NOTHROW(stringList->set("String Array Param", stringArray, "string array parameter", stringArrayVali));
+	TwoDArray<std::string> badStringArray(2,2);
+  badStringArray(0,0) = "str2";
+  badStringArray(0,1) = "str1";
+  badStringArray(1,0) = "str3";
+  badStringArray(1,1) = "not valid";
+	TEST_THROW(stringList->set("String Array Param", badStringArray, "string array parameter", stringArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Int param", 5, "int parameter", stringArrayVali),
+    Exceptions::InvalidParameterType);
+	TwoDArray<long> longArray(2,2);
+  longArray(0,0) = (long)5;
+  longArray(0,1) = (long)4;
+  longArray(1,0) = (long)9;
+  longArray(1,1) = (long)1;
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", stringArrayVali),
+    Exceptions::InvalidParameterType);
+	
+	/*
+	 * Testing Int ArrayValidator.
+	 */
+	RCP<ParameterList> intList = rcp(new ParameterList("Int List"));
+	RCP<EnhancedNumberValidator<int> > intVali = rcp(new EnhancedNumberValidator<int>(0, 10));
+	RCP<TwoDArrayNumberValidator<int> > intArrayVali = 
+    rcp(new TwoDArrayNumberValidator<int>(intVali));
+	TEST_ASSERT(intVali.get() == intArrayVali->getPrototype().get());
+	TwoDArray<int> intArray(2,2);
+  intArray(0,0) = 1;
+  intArray(0,1) = 4;
+  intArray(1,0) = 2;
+  intArray(1,1) = 5;
+	TEST_NOTHROW(intList->set("int array param", intArray, "int array parameter", intArrayVali));
+	TwoDArray<int> intBadArray(2,2);
+  intBadArray(0,0) = 11;
+  intBadArray(0,1) = 4;
+  intBadArray(1,0) = 2;
+  intBadArray(1,1) = 5;
+	TEST_THROW(intList->set("int bad array param", intBadArray, "int bad array parameter", intArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", intArrayVali),
+    Exceptions::InvalidParameterType);
+
+	/*
+	 * Testing Short ArrayValidator.
+	 */
+	RCP<ParameterList> shortList = rcp(new ParameterList("Short List"));
+	RCP<EnhancedNumberValidator<short> > shortVali =
+    rcp(new EnhancedNumberValidator<short>(0, 10));
+	RCP<TwoDArrayNumberValidator<short> > shortArrayVali =
+    rcp(new TwoDArrayNumberValidator<short>(shortVali));
+	TEST_ASSERT(shortVali.get() == shortArrayVali->getPrototype().get());
+	TwoDArray<short> shortArray(2,2);
+  shortArray(0,0) = 1;
+  shortArray(0,1) = 4;
+  shortArray(1,0) = 2;
+  shortArray(1,1) = 5;
+	TEST_NOTHROW(shortList->set("short array param", shortArray, "short array parameter", shortArrayVali));
+	TwoDArray<short> shortBadArray(2,2);
+  shortBadArray(0,0) = 11;
+  shortBadArray(0,1) = 4;
+  shortBadArray(1,0) = 2;
+  shortBadArray(1,1) = 5;
+	TEST_THROW(shortList->set("short bad array param", shortBadArray, "short bad array parameter", shortArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", shortArrayVali),
+    Exceptions::InvalidParameterType);
+
+	/*
+	 * Testing Float ArrayValidator.
+	 */
+	RCP<ParameterList> floatList = rcp(new ParameterList("Float List"));
+	RCP<EnhancedNumberValidator<float> > floatVali =
+    rcp(new EnhancedNumberValidator<float>(0.0, 10.0));
+	RCP<TwoDArrayNumberValidator<float> > floatArrayVali =
+    rcp(new TwoDArrayNumberValidator<float>(floatVali));
+	TEST_ASSERT(floatVali.get() == floatArrayVali->getPrototype().get());
+	TwoDArray<float> floatArray(2,2);
+  floatArray(0,0) = 1.0;
+  floatArray(0,1) = 4.0;
+  floatArray(1,0) = 5.0;
+  floatArray(1,1) = 2.0;
+	TEST_NOTHROW(floatList->set("float array param", floatArray, "float array parameter", floatArrayVali));
+	TwoDArray<float> floatBadArray(2,2);
+  floatBadArray(0,0) = 11.0;
+  floatBadArray(0,1) = 4.0;
+  floatBadArray(1,0) = 5.0;
+  floatBadArray(1,1) = 2.0;
+	TEST_THROW(floatList->set("float bad array param", floatBadArray, "float bad array parameter", floatArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", floatArrayVali),
+    Exceptions::InvalidParameterType);
+
+	/*
+	 * Testing Double ArrayValidator.
+	 */
+	RCP<ParameterList> doubleList = rcp(new ParameterList("Double List"));
+	RCP<EnhancedNumberValidator<double> > doubleVali =
+    rcp(new EnhancedNumberValidator<double>(0.0, 10.0));
+	RCP<TwoDArrayNumberValidator<double> > doubleArrayVali =
+    rcp(new TwoDArrayNumberValidator<double>(doubleVali));
+	TEST_ASSERT(doubleVali.get() == doubleArrayVali->getPrototype().get());
+	TwoDArray<double> doubleArray(2,2);
+  doubleArray(0,0) = 1.0;
+  doubleArray(0,1) = 4.0;
+  doubleArray(1,0) = 5.0;
+  doubleArray(1,1) = 2.0;
+	TEST_NOTHROW(doubleList->set("double array param", doubleArray, "double array parameter", doubleArrayVali));
+	TwoDArray<double> doubleBadArray(2,2);
+  doubleBadArray(0,0) = 11.0;
+  doubleBadArray(0,1) = 4.0;
+  doubleBadArray(1,0) = 5.0;
+  doubleBadArray(1,1) = 2.0;
+	TEST_THROW(doubleList->set("double bad array param", doubleBadArray, "double bad array parameter", doubleArrayVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", doubleArrayVali),
+    Exceptions::InvalidParameterType);
+
+	/*
+	 * Testing FileName ArrayValidator.
+	 */
+	RCP<ParameterList> fileNameList = rcp(new ParameterList("Filename List"));
+	RCP<FileNameValidator> fileNameVali = rcp(new FileNameValidator(true));
+	RCP<TwoDArrayFileNameValidator> arrayFileNameVali = 
+    rcp(new TwoDArrayFileNameValidator(fileNameVali));
+	TEST_ASSERT(arrayFileNameVali->getPrototype().get() == fileNameVali.get());
+	TwoDArray<std::string> fileNameArray(2,2);
+  fileNameArray(0,0) = "testFile.txt";
+  fileNameArray(0,1) = "testFile2.txt";
+  fileNameArray(1,0) = "testFile3.txt";
+  fileNameArray(1,1) = "testFile.txt";
+	TwoDArray<std::string> fileNameBadArray(2,2);
+  fileNameBadArray(0,0) = "doesntexist.txt";
+  fileNameBadArray(0,1) = "testFile2.txt";
+  fileNameBadArray(1,0) = "testFile3.txt";
+  fileNameBadArray(1,1) = "testFile.txt";
+	TEST_NOTHROW(fileNameList->set("File name array", fileNameArray, "file name array parameter", arrayFileNameVali));
+	TEST_THROW(fileNameList->set("Bad File name array", fileNameBadArray, "bad file name array parameter", arrayFileNameVali),
+    Exceptions::InvalidParameterValue);
+	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", arrayFileNameVali),
+    Exceptions::InvalidParameterType);
+}
 
 } // namespace Teuchos
 

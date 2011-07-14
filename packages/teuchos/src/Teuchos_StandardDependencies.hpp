@@ -392,7 +392,7 @@ private:
  * \relates StringVisualDependency
  */
 template<>
-class DummyObjectGetter<StringVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringVisualDependency>{
 
 public:
 
@@ -494,7 +494,7 @@ protected:
  * \relates BoolVisualDependency
  */
 template<>
-class DummyObjectGetter<BoolVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolVisualDependency>{
 
 public:
 
@@ -620,7 +620,7 @@ private:
  * \relates ConditionVisualDependency
  */
 template<>
-class DummyObjectGetter<ConditionVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<ConditionVisualDependency>{
 
 public:
 
@@ -1273,7 +1273,7 @@ private:
  * \relates StringValidatorDependency
  */
 template<>
-class DummyObjectGetter<StringValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringValidatorDependency>{
 
 public:
 
@@ -1400,7 +1400,7 @@ private:
  * \relates BoolValidatorDependency
  */
 template<>
-class DummyObjectGetter<BoolValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolValidatorDependency>{
 
 public:
 

@@ -50,6 +50,10 @@ namespace Tpetra
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class RowGraph : virtual public Teuchos::Describable {
     public: 
+      typedef LocalOrdinal  local_ordinal_type;
+      typedef GlobalOrdinal global_ordinal_type;
+      typedef Node          node_type;
+
       //! @name Destructor Method
       //@{ 
 

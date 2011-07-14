@@ -42,7 +42,6 @@
 
 #include <iosfwd>
 #include <typeinfo>
-#include <Kokkos_ArrayForwardDeclarations.hpp>
 
 #include <Kokkos_MemoryView.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
@@ -52,6 +51,8 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+
+class MDArrayIndexMapRight ;
 
 class DeviceHost {
 private:
@@ -108,7 +109,7 @@ public:
   void allocate_memory_view( MemoryView< ValueType , DeviceHost > & lhs ,
                              size_t count , const std::string & label )
     {
-      clear_memory_view( lhs );  
+      clear_memory_view( lhs );
       lhs.m_ptr_on_device = (ValueType *)
         allocate_memory( label, typeid(ValueType), sizeof(ValueType), count );
       lhs.m_tracker.insert( lhs.m_tracker );

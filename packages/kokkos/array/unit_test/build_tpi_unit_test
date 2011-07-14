@@ -1,0 +1,40 @@
+#!/bin/csh
+
+#-----------------------------------------------------------------------------
+# Quick and dirty build for unit testing with Host (serial) and TPI devices.
+# To be replace with CMake integration.
+
+set INC_PATH="-I../../../ThreadPool/src -I. -I../src"
+
+set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp UnitTestMain.cpp"
+
+set LIB=""
+
+#-----------------------------------------------------------------------------
+
+set GCC_SOURCES="${GCC_SOURCES} ../../../ThreadPool/src/*.c ../src/DeviceTPI/*.cpp  UnitTestTPI.cpp"
+
+set LIB="${LIB} -lpthread"
+
+# set GCC_SOURCES="${GCC_SOURCES} UnitTestTPIStub.cpp"
+
+#-----------------------------------------------------------------------------
+# Stub out CUDA unit tests
+
+set GCC_SOURCES="${GCC_SOURCES} UnitTestCudaStub.cpp"
+
+#-----------------------------------------------------------------------------
+
+echo "#define HAVE_PTHREAD" > ThreadPool_config.h
+
+set GCC_FLAGS="-Wall -Werror -g ${INC_PATH}"
+
+g++ $GCC_FLAGS -c ${GCC_SOURCES}
+
+g++ $GCC_FLAGS -o unit_test.exe *.o ${LIB}
+
+rm -f *.o *.a ThreadPool_config.h
+
+#-----------------------------------------------------------------------------
+
+

@@ -42,11 +42,20 @@
 
 #include <cstddef>
 #include <string>
-#include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <impl/Kokkos_ArrayBounds.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
 namespace Kokkos {
+
+enum { MDArrayMaxRank = 8 };
+
+template< typename ValueType ,
+          class DeviceType ,
+          class MapOption = typename DeviceType::default_mdarray_map >
+class MDArrayView ;
+
+class MDArrayIndexMapLeft ;
+class MDArrayIndexMapRight ;
 
 template< typename ValueType , class DeviceType , class MapOption >
 MDArrayView< ValueType , DeviceType , MapOption >
@@ -196,7 +205,7 @@ public:
    */
   inline
   MDArrayView & operator = ( const MDArrayView & rhs );
-  
+
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
@@ -224,7 +233,7 @@ private:
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
-  
+
   template< typename V , class DeviceDst , class MapDst , bool ContigDst ,
                          class DeviceSrc , class MapSrc , bool ContigSrc >
   friend
@@ -329,6 +338,11 @@ create_mdarray( size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
 }
 
 //----------------------------------------------------------------------------
+template< typename ValueType , class DeviceDst , class MapDst ,
+                               class DeviceSrc , class MapSrc >
+void deep_copy( const MDArrayView< ValueType , DeviceDst , MapDst > & dst ,
+                const MDArrayView< ValueType , DeviceSrc , MapSrc > & src );
+
 
 template< typename ValueType , class DeviceDst , class MapDst ,
                                class DeviceSrc , class MapSrc >
@@ -351,30 +365,7 @@ void deep_copy( const MDArrayView<ValueType,DeviceDst,MapDst> & dst ,
 
 } // namespace Kokkos
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-// Partial specializations for known devices and default index maps
 
-#if defined( KOKKOS_DEVICE_HOST )
-#include <Kokkos_DeviceHost_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
-#include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_TPI )
-#include <Kokkos_DeviceTPI_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
-#include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
-#include <DeviceTPI/Kokkos_DeviceTPI_MDArrayView.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_CUDA )
-#include <DeviceCuda/Kokkos_DeviceCuda_MDArrayView.hpp>
-#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -424,6 +415,53 @@ public:
 
     relocate_operator::run( tmp_dst , src );
     remap_operator   ::run( dst ,     tmp_dst );
+  }
+};
+
+/** \brief  Deep copy between different devices, different maps,
+ *          and no assumption of contiguity.
+ *          Force remap to occur on the host.
+ */
+template< typename ValueType , class DeviceDst , class MapDst , bool ContigDst ,
+                               class MapSrc , bool ContigSrc >
+class MDArrayDeepCopy< ValueType , DeviceDst ,  MapDst , ContigDst ,
+                                   DeviceHost , MapSrc , ContigSrc > {
+private:
+  enum { okD = StaticAssert< ! SameType<DeviceDst,DeviceHost>::value >::value };
+  enum { okM = StaticAssert< ! SameType<MapDst,MapSrc>::value >::value };
+public:
+
+  typedef MDArrayView<ValueType,DeviceDst, MapDst> dst_type ;
+  typedef MDArrayView<ValueType,DeviceHost,MapDst> src_dstmap_type ;
+  typedef MDArrayView<ValueType,DeviceHost,MapSrc> src_type ;
+
+  typedef MDArrayDeepCopy< ValueType,
+                           DeviceHost,MapDst, src_dstmap_type::Contiguous,
+                           DeviceHost,MapSrc, src_type::Contiguous >
+    remap_operator ;
+
+  typedef MDArrayDeepCopy< ValueType,
+                           DeviceDst, MapDst,dst_type::Contiguous,
+                           DeviceHost,MapDst,src_dstmap_type::Contiguous >
+    relocate_operator ;
+
+  // Both the devices and the maps are different.
+  // Copy to a temporary on the destination with the source map
+  // and then remap the temporary to the final array.
+  static
+  void run( const dst_type & dst , const src_type & src )
+  {
+    size_t dims[ MDArrayMaxRank ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+    dst.dimensions( dims );
+
+    src_dstmap_type tmp_src = create_labeled_mdarray<src_dstmap_type>(
+                                "temporary" ,
+                                dims[0] , dims[1] , dims[2] , dims[3] ,
+                                dims[4] , dims[5] , dims[6] , dims[7] );
+
+    remap_operator   ::run( tmp_src , src );
+    relocate_operator::run( dst , tmp_src );
   }
 };
 

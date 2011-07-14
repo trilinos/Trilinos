@@ -76,7 +76,7 @@
 //////////////////////////////////////////////
 // Epetra_NumPyIntSerialDenseMatrix support //
 //////////////////////////////////////////////
-%rename(NumPyIntSerialDenseMatrix) Epetra_NumPyIntSerialDenseMatrix;
+%rename(NumPyIntSerialDenseMatrix) PyTrilinos::Epetra_NumPyIntSerialDenseMatrix;
 %include "Epetra_NumPyIntSerialDenseMatrix.h"
 %pythoncode
 %{
@@ -167,7 +167,7 @@ _Epetra.NumPyIntSerialDenseMatrix_swigregister(IntSerialDenseMatrix)
 //////////////////////////////////////////////
 // Epetra_NumPyIntSerialDenseVector support //
 //////////////////////////////////////////////
-%rename(NumPyIntSerialDenseVector) Epetra_NumPyIntSerialDenseVector;
+%rename(NumPyIntSerialDenseVector) PyTrilinos::Epetra_NumPyIntSerialDenseVector;
 %include "Epetra_NumPyIntSerialDenseVector.h"
 %pythoncode
 %{
@@ -256,7 +256,7 @@ _Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
 ///////////////////////////////////////////
 // Epetra_NumPySerialDenseMatrix support //
 ///////////////////////////////////////////
-%rename(NumPySerialDenseMatrix) Epetra_NumPySerialDenseMatrix;
+%rename(NumPySerialDenseMatrix) PyTrilinos::Epetra_NumPySerialDenseMatrix;
 %include "Epetra_NumPySerialDenseMatrix.h"
 %pythoncode
 %{
@@ -345,7 +345,7 @@ _Epetra.NumPySerialDenseMatrix_swigregister(SerialDenseMatrix)
 ///////////////////////////////////////////
 // Epetra_NumPySerialSymDenseMatrix support //
 ///////////////////////////////////////////
-%rename(NumPySerialSymDenseMatrix) Epetra_NumPySerialSymDenseMatrix;
+%rename(NumPySerialSymDenseMatrix) PyTrilinos::Epetra_NumPySerialSymDenseMatrix;
 %include "Epetra_NumPySerialSymDenseMatrix.h"
 %pythoncode
 %{
@@ -435,7 +435,7 @@ _Epetra.NumPySerialSymDenseMatrix_swigregister(SerialSymDenseMatrix)
 ///////////////////////////////////////////
 // Epetra_NumPySerialDenseVector support //
 ///////////////////////////////////////////
-%rename(NumPySerialDenseVector) Epetra_NumPySerialDenseVector;
+%rename(NumPySerialDenseVector) PyTrilinos::Epetra_NumPySerialDenseVector;
 %include "Epetra_NumPySerialDenseVector.h"
 %pythoncode
 %{

@@ -38,6 +38,9 @@
 
 using namespace MLAPI;
 
+namespace PyTrilinos
+{
+
 class PyMatrix : public MLAPI::Operator
 {
 public:
@@ -135,6 +138,8 @@ private:
   Teuchos::RCP<Epetra_Map> RowMap_;
   Teuchos::RCP<Epetra_FECrsMatrix> Matrix_;
 
-}; // PyMatrix
+};  // PyMatrix
+
+}  // Namespace PyTrilinos
 
 #endif 

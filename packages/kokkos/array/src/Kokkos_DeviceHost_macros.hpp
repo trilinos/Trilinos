@@ -52,7 +52,12 @@
 #define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
 #define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
 #define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
+
+#if ! defined( KOKKOS_ARRAY_BOUNDS_CHECK )
+#define KOKKOS_MACRO_CHECK( expr )  /* */
+#else
 #define KOKKOS_MACRO_CHECK( expr )  expr
+#endif
 
 #endif
 

@@ -125,7 +125,6 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 */
 #include "exodusII.h"
 #include "exodusII_int.h"
-#include <stdlib.h>
 
 int ex_create_int (const char *path,
 		   int   cmode,

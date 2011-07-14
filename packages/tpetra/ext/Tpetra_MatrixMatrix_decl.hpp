@@ -145,29 +145,6 @@ void Add(
 
 namespace MMdetails{
 
-template<class Scalar,
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node,
-         class SpMatOps>
-void
-getGlobalRowFromLocalIndex(
-  LocalOrdinal localRow,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview, 
-  Array<GlobalOrdinal>& indices,
-  ArrayView<Scalar>& values,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colMap);
-
-template<class Scalar, 
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node, 
-         class SpMatOps>
-RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > find_rows_containing_cols(
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
-  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap);
-
-
 template<class Scalar, 
          class LocalOrdinal, 
          class GlobalOrdinal, 
@@ -176,36 +153,6 @@ template<class Scalar,
 void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview, 
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
-  
-template<class Scalar,
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node,
-         class SpMatOps>
-void mult_A_Btrans(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C);
-
-template<class Scalar,
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node,
-         class SpMatOps>
-void mult_Atrans_B(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node> & C);
-
-template<class Scalar,
-         class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node,
-         class SpMatOps>
-void mult_Atrans_Btrans(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
 
 template<class Scalar,
@@ -218,50 +165,15 @@ void import_and_extract_views(
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview);
 
-template<class Ordinal,
-         class GlobalOrdinal>
-void distribute_list(
-  RCP<const Comm<Ordinal> > comm,
-  size_t lenSendList,
-  const Array<GlobalOrdinal>& sendList,
-  size_t& maxSendLen,
-  Array<GlobalOrdinal>& recvList);
-
-template<class LocalOrdinal, 
+template<class Scalar,
+         class LocalOrdinal, 
          class GlobalOrdinal, 
-         class Node>
-RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > create_map_from_imported_rows(
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
-  const size_t& totalNumSend,
-  ArrayView<GlobalOrdinal> sendRows,
-  const int& numProcs,
-  ArrayView<size_t> numSendPerProc);
-
-template<class LocalOrdinal, 
-         class GlobalOrdinal, 
-         class Node>
-RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > form_map_union(
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map1,
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map2);
-
-  /**
-   * Method for internal use... sparsedot forms a dot-product between two
-   * sparsely-populated 'vectors'.
-   * Important assumption: assumes the indices in u_ind and v_ind are sorted.
-   */
-  template <class Scalar, class GlobalOrdinal>
-  Scalar sparsedot(
-    const Teuchos::Array<Scalar> &u, 
-    const Teuchos::Array<GlobalOrdinal> &u_ind, 
-    const Teuchos::Array<Scalar> &v, 
-    const Teuchos::Array<GlobalOrdinal> &v_ind);
+         class Node,
+         class SpMatOps>
+void setMaxNumEntriesPerRow(
+  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview);
   
 }//end namespace MMdetails
-
-
-
-
-  
 
 } // end of Tpetra namespace
 

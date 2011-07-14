@@ -280,9 +280,6 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
     utils.out() << endl;
   }
 
-  if (observer != Teuchos::null)
-    observer->observeSolution(*finalSolution);
-
   // Print stats
   {
     static int totalNewtonIters=0;
@@ -430,15 +427,6 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	grp->applyJacobianInverseMultiVector(*piroParams, dfdp_nox, dxdp_nox);
 	dxdp_nox.scale(-1.0);
 	
-	if (observer != Teuchos::null &&
-	    piroParams->sublist("VTK").get("Visualize Sensitivities", false) ==
-	    true) {
-	  for (int k=0; k<numParameters; k++) {
-	    Epetra_Vector* sv = dxdp_nox.getEpetraMultiVector()(k);
-	    observer->observeSolution(*sv);
-	  }
-	}
-	
 	// (3) Calculate dg/dp = dg/dx*dx/dp + dg/dp
 	// This may be the transpose of what we want since we specified
 	// we want dg/dp by column in createOutArgs(). 
@@ -467,6 +455,10 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
       }
     }
   }
+
+  if (status == NOX::StatusTest::Converged) 
+    if (observer != Teuchos::null)
+      observer->observeSolution(*finalSolution);
 
   // return the final solution as an additional g-vector, if requested
   Teuchos::RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 

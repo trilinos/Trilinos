@@ -5,7 +5,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NodeAPI_DefaultNodeTest
   SOURCES 
     DefaultNodeTest
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -17,7 +17,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES 
     NodeTest
     SerialNodeTest
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -31,7 +31,7 @@ IF (Kokkos_ENABLE_TBB)
     SOURCES 
       NodeTest
       TBBNodeTest
-      ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -46,7 +46,7 @@ IF (Kokkos_ENABLE_ThreadPool)
     SOURCES 
       NodeTest
       TPINodeTest
-      ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -67,7 +67,7 @@ IF (Kokkos_ENABLE_Thrust)
       ThrustGPUNodeTest
       ${CUDA_FILES}
       ${source_files}
-      ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT

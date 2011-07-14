@@ -91,7 +91,10 @@ struct SubcellNodeIndex< CellTop , CellMap , Index , false >
 template< class CellTop , class CellMap , unsigned Index >
 struct SubcellNodeIndex< CellTop , CellMap , Index , true >
 {
-  enum { value = Index < CellTop::template subcell<0>::count
+private:
+  typedef typename CellTop::template subcell<0> subcell_node ;
+public:
+  enum { value = Index < subcell_node::count
                ? IndexListAt< CellMap , Index >::value : ~0u };
 };
 

@@ -229,7 +229,7 @@ private:
  * \relates StringCondition
  */
 template<>
-class DummyObjectGetter<StringCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringCondition>{
 
 public:
 
@@ -414,7 +414,7 @@ public:
  * \relates BoolCondition
  */
 template<>
-class DummyObjectGetter<BoolCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolCondition>{
 
 public:
 
@@ -581,7 +581,7 @@ public:
  * \relates OrCondition
  */
 template<>
-class DummyObjectGetter<OrCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<OrCondition>{
 
 public:
 
@@ -653,7 +653,7 @@ public:
  * \relates AndCondition
  */
 template<>
-class DummyObjectGetter<AndCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<AndCondition>{
 
 public:
 
@@ -724,7 +724,7 @@ public:
  * \relates EqualsCondition
  */
 template<>
-class DummyObjectGetter<EqualsCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<EqualsCondition>{
 
 public:
 
@@ -819,7 +819,7 @@ private:
  * \relates NotCondition
  */
 template<>
-class DummyObjectGetter<NotCondition>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<NotCondition>{
 
 public:
 

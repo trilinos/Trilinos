@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
   //By default, there is no validator converter for a StringToIntegralParameterEntryValidator
   //templated on type short. So lets add one with the following convience macro found
   //in ValidatorXMLConverterDB.hpp
-  TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(short)
+  TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(short)
 
   //Of course if you have a completly custom validator you'll need to do a little more
   //You'll have to make you're own converter for it by subclassing the ValidatorXMLConverter

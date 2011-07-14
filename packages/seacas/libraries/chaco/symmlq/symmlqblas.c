@@ -16,7 +16,7 @@
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
- /* Subroutine */ int daxpy_(n, da, dx, incx, dy, incy)
+int chdaxpy_(n, da, dx, incx, dy, incy)
 integer  *n;
 doublereal *da, *dx;
 integer  *incx;
@@ -102,7 +102,7 @@ L40:
 }				/* daxpy_ */
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
- /* Subroutine */ int dcopy_(n, dx, incx, dy, incy)
+int chdcopy_(n, dx, incx, dy, incy)
 integer  *n;
 doublereal *dx;
 integer  *incx;
@@ -188,7 +188,7 @@ L40:
 }				/* dcopy_ */
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-doublereal ddot_(n, dx, incx, dy, incy)
+doublereal chddot_(n, dx, incx, dy, incy)
 integer  *n;
 doublereal *dx;
 integer  *incx;
@@ -277,7 +277,7 @@ L60:
 }				/* ddot_ */
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-doublereal dnrm2_(n, dx, incx)
+doublereal chdnrm2_(n, dx, incx)
 integer  *n;
 doublereal *dx;
 integer  *incx;

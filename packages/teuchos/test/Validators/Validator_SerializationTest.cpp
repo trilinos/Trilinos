@@ -407,6 +407,53 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Validator, NumberArrayValidatorConvert
   );
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Validator, TwoDArrayNumberValidatorConverterTest, T)
+{
+  std::string arrayParameterName = "array";
+  ParameterList myList;
+
+  const T arrayValidatorLen = as<T>(11);
+  RCP<TwoDArrayNumberValidator< T > > arrayValidator =
+    rcp(new TwoDArrayNumberValidator< T >(
+      rcp(new EnhancedNumberValidator<T>(as<T>(0), arrayValidatorLen))));
+  myList.set(arrayParameterName,
+    TwoDArray< T >(4,4, 10), "array parameter", arrayValidator);
+
+  RCP<ParameterList> readInPL = writeThenReadPL(myList);
+
+  RCP<const EnhancedNumberValidator< T > > readInPrototypeValidator =
+    rcp_dynamic_cast<const TwoDArrayValidator<EnhancedNumberValidator<T>, T > >(
+      readInPL->getEntry(
+        arrayParameterName).validator(), true)->getPrototype();
+  RCP<const EnhancedNumberValidator< T > > actualPrototypeValidator =
+    arrayValidator->getPrototype();
+
+  TEST_EQUALITY(
+    readInPrototypeValidator->getMin(),
+    actualPrototypeValidator->getMin()
+  );
+  TEST_EQUALITY(
+    readInPrototypeValidator->getMax(),
+    actualPrototypeValidator->getMax()
+  );
+  TEST_EQUALITY(
+    readInPrototypeValidator->getStep(),
+    actualPrototypeValidator->getStep()
+  );
+  TEST_EQUALITY(
+    readInPrototypeValidator->getPrecision(),
+    actualPrototypeValidator->getPrecision()
+  );
+  TEST_EQUALITY(
+    readInPrototypeValidator->hasMin(),
+    actualPrototypeValidator->hasMin()
+  );
+  TEST_EQUALITY(
+    readInPrototypeValidator->hasMax(),
+    actualPrototypeValidator->hasMax()
+  );
+}
+
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Validator, StringToIntegralConverterTest, T)
 {

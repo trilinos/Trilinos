@@ -152,9 +152,9 @@ namespace Tpetra {
 
 	typedef Tpetra::MatrixMarket::Writer<sparse_matrix_type> writer_type;
 	if (testWrite && outputFilename != "")
-	  writer_type::writeSparseFile (outputFilename, pMatrix);
+	  writer_type::writeSparseFile (outputFilename, pMatrix, debug);
 	if (echo)
-	  writer_type::writeSparse (cout, pMatrix);
+	  writer_type::writeSparse (cout, pMatrix, debug);
       }
     } // namespace Test
   } // namespace MatrixMarket

@@ -92,7 +92,7 @@ the Trilinos package LOCA:
     $action
     if (PyErr_Occurred()) SWIG_fail;
   }
-  catch(PythonException & e)
+  catch(PyTrilinos::PythonException & e)
   {
     e.restore();
     SWIG_fail;
@@ -122,8 +122,8 @@ the Trilinos package LOCA:
 // Epetra_Vector directorin typemap
 // %typemap(directorin) Epetra_Vector &
 // %{
-//   Epetra_NumPyVector *npa$argnum = new Epetra_NumPyVector(View,$1_name);
-//   $input = SWIG_NewPointerObj((void*)npa$argnum, $descriptor(Epetra_NumPyVector*), 0);
+//   PyTrilinos::Epetra_NumPyVector *npa$argnum = new PyTrilinos::Epetra_NumPyVector(View,$1_name);
+//   $input = SWIG_NewPointerObj((void*)npa$argnum, $descriptor(PyTrilinos::Epetra_NumPyVector*), 0);
 // %}
 
 ///////////////////////

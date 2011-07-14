@@ -139,7 +139,7 @@ NOX.Epetra.Interface provides the following user-level classes:
     $action
     if (PyErr_Occurred()) SWIG_fail;
   }
-  catch(PythonException & e)
+  catch(PyTrilinos::PythonException & e)
   {
     e.restore();
     SWIG_fail;

@@ -53,100 +53,37 @@ template<class Scalar,
   class GlobalOrdinal, 
   class Node, 
   class SpMatOps>
-void 
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (const OptimizeOption optimizeTranspose, 
-    RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
+RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (
+  const OptimizeOption optimizeTranspose,
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap)
 {
-
   optimizeTranspose_ = optimizeTranspose;
-  const size_t LST0 = Teuchos::OrdinalTraits<size_t>::zero();
-  const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
-  const LocalOrdinal LO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
-
-  // RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > tRowMap;
-  // if (transposeRowMap.is_null()) {
-  //   tRowMap = origMatrix_->getDomainMap();
-  // }
-  // else {
-  //   tRowMap = transposeRowMap;
-  // }
-
-  size_t numMyRows = origMatrix_.getNodeNumRows();
-  size_t numMyCols = origMatrix_.getNodeNumCols();
-  ArrayRCP<size_t> transNumNz = Teuchos::ArrayRCP<size_t>(numMyCols);
-  std::fill(transNumNz.begin(), transNumNz.end(), LST0);
-  Array<Array<GlobalOrdinal> > transIndices(numMyCols);
-  Array<Array<Scalar> > transValues(numMyCols);
-
-  // loop over all column indices, counting the number of non-zeros per column
+  transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(
+    transposeRowMap == null? origMatrix_.getDomainMap() : transposeRowMap, 0));
+  ArrayView<const LocalOrdinal> localIndicies;
+  ArrayView<const Scalar> localValues;
+  ArrayView<const GlobalOrdinal> myGlobalRows = origMatrix_.getRowMap()->getNodeElementList();
+  size_t numEntriesInRow;
+  Array<GlobalOrdinal> rowNum(1);
+  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > origColMap = origMatrix_.getColMap();
+  for(
+    size_t i = Teuchos::OrdinalTraits<size_t>::zero();
+    i < origMatrix_.getNodeNumRows();
+    ++i
+  )
   {
-    const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &graph = 
-      *origMatrix_.getCrsGraph();
-    ArrayView<const LocalOrdinal> indices;
-    for (LocalOrdinal r=LO0; (size_t)r<numMyRows;++r) {
-      graph.getLocalRowView(r, indices);
-      for (size_t j=LO0; j<(size_t)indices.size(); ++j) {
-        ++transNumNz[indices[j]];
-      }
+    rowNum[0] = origMatrix_.getRowMap()->getGlobalElement(i);
+    numEntriesInRow = origMatrix_.getNumEntriesInLocalRow(i);
+    origMatrix_.getLocalRowView(i, localIndicies, localValues);
+    for(size_t j=0; j<numEntriesInRow; ++j){
+      transposeMatrix_->insertGlobalValues(origColMap->getGlobalElement(localIndicies[j]), rowNum(0,1), localValues(j,1));
     }
   }
 
-  // now that we know how big the columns are, allocate space.
-  for (LocalOrdinal c=LO0; (size_t)c<numMyCols; c++) {
-    const size_t numIndices = transNumNz[c];
-    if (numIndices>0) {
-      transIndices[c] = Teuchos::Array<GlobalOrdinal>(numIndices);
-      transValues[c]  = Teuchos::Array<Scalar>(numIndices);
-    }
-  }
+  transposeMatrix_->fillComplete(origMatrix_.getRangeMap(), origMatrix_.getDomainMap(), optimizeTranspose_);
 
-
-  // pass through the matrix/graph again, transposing the data into transIndices,transValues
-  // get local views, add the entries to the transposed arrays. 
-  // indices are translated to global indices
-  {
-    const Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap = *origMatrix_.getRowMap();
-    ArrayView<const LocalOrdinal> indices;
-    ArrayView<const Scalar> values;
-    // clear these and use them for offsets into the current row
-    std::fill( transNumNz.begin(), transNumNz.end(), 0 );
-    for (LocalOrdinal lrow=LO0; (size_t)lrow<numMyRows; ++lrow) {
-      origMatrix_.getLocalRowView(lrow,indices,values);
-      const GlobalOrdinal grow = rowMap.getGlobalElement(lrow);
-      for (size_t nnz=LO0; nnz<(size_t)indices.size(); ++nnz) {
-        const LocalOrdinal transRow = indices[nnz];
-        const size_t loc = transNumNz[transRow];
-        transIndices[transRow][loc] = grow;
-        transValues [transRow][loc] = values[nnz];
-        ++transNumNz[transRow];
-      }
-    }
-  }
-
-  // we already have the matrix data, organized by row. too bad.
-  const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transRowMap = origMatrix_.getColMap();
-  transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(transRowMap, transNumNz, Tpetra::StaticProfile));
-  for (size_t c = GST0; c<numMyCols; ++c) {
-    transposeMatrix_->insertGlobalValues(transRowMap->getGlobalElement(c), transIndices[c](), transValues[c]());
-  }
-
-  // const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > domain_map = origMatrix_->getDomainMap();
-  // const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > range_map  = origMatrix_->getRangeMap();
-  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > origRowMap = origMatrix_.getRowMap();
-
-  RCP<Teuchos::FancyOStream> out_all = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out_all->setOutputToRootOnly(-1);
-  RCP<Teuchos::FancyOStream> out_root = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  out_root->setOutputToRootOnly(0);
-
-  //*out_root << "transpose before fillComplete()" << std::endl;
-  //transposeMatrix_->describe(*out_all, Teuchos::VERB_EXTREME);
-
-
-  // for now, we don't care about the domain/range maps, as we won't be applying this matrix as an operator
-  transposeMatrix_->fillComplete(transRowMap, origRowMap, optimizeTranspose_);
-
-  transposeMatrix = transposeMatrix_;
+  return transposeMatrix_;
 }
 
 //

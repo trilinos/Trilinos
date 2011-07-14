@@ -2,7 +2,8 @@ INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 
-INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING "${PACKAGE_SOURCE_DIR}/../thyra/example/operator_solve")
+INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
+  "${PACKAGE_SOURCE_DIR}/../thyra/core/example/operator_solve")
 
 
 SET(COMMON_SOURCES test_single_amesos_thyra_solver.cpp)

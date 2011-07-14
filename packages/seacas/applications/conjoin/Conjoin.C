@@ -603,9 +603,11 @@ int conjoin(SystemInterface &interface, T /* dummy */)
   //  NOTE: it is assumed that every part has the same global, nodal,
   //        and element lists
 
+  bool add_n_status = interface.nodal_status_variable() != "NONE";
+  bool add_e_status = interface.element_status_variable() != "NONE";
   Variables global_vars(GLOBAL);
-  Variables nodal_vars(NODE, true);
-  Variables element_vars(EBLK, true);
+  Variables nodal_vars(NODE, add_n_status);
+  Variables element_vars(EBLK, add_e_status);
   Variables nodeset_vars(NSET);
   Variables sideset_vars(SSET);
   
@@ -747,7 +749,8 @@ int conjoin(SystemInterface &interface, T /* dummy */)
       int node_count = local_mesh[p].count(NODE);
       std::vector<T> master_nodal_values(global.count(NODE));
 
-      for (int i = 0; i < nodal_vars.count(OUT)-1; i++) { // Last output variable is status
+      int offset = nodal_vars.addStatus ? 1 : 0;
+      for (int i = 0; i < nodal_vars.count(OUT)-offset; i++) { // Last output variable may be status
 	for (int j = 0; j < nodal_vars.count(IN); j++) {
 	  if (nodal_vars.index_[j]-1 == i) {
 	    std::fill(master_nodal_values.begin(), master_nodal_values.end(), 0.0);
@@ -769,16 +772,18 @@ int conjoin(SystemInterface &interface, T /* dummy */)
 
 	// Fill "node_status" variable -- 'alive' for alive; 1-alive for dead.
 	// It is the last output variable...
-	SMART_ASSERT(alive == 0.0 || alive == 1.0)(alive);
-	std::fill(master_nodal_values.begin(), master_nodal_values.end(), (1.0 - alive));
-	for (int j = 0; j < node_count; j++) {
-	  // Map local nodal value to global location...
-	  int nodal_value = local_mesh[p].localNodeToGlobal[j];
-	  master_nodal_values[nodal_value] = alive;
+	if (nodal_vars.addStatus) {
+	  SMART_ASSERT(alive == 0.0 || alive == 1.0)(alive);
+	  std::fill(master_nodal_values.begin(), master_nodal_values.end(), (1.0 - alive));
+	  for (int j = 0; j < node_count; j++) {
+	    // Map local nodal value to global location...
+	    int nodal_value = local_mesh[p].localNodeToGlobal[j];
+	    master_nodal_values[nodal_value] = alive;
+	  }
+	  
+	  error+=ex_put_var(ExodusFile::output(), time_step_out, EX_NODAL, nodal_vars.count(OUT), 0,
+			    global.count(NODE), &master_nodal_values[0]);
 	}
-      
-	error+=ex_put_var(ExodusFile::output(), time_step_out, EX_NODAL, nodal_vars.count(OUT), 0,
-			  global.count(NODE), &master_nodal_values[0]);
       }
     }
 
@@ -794,11 +799,13 @@ int conjoin(SystemInterface &interface, T /* dummy */)
     
     // Add element status variable...
     // Use the output time step for writing data
-    add_status_variable(ExodusFile::output(), global, blocks[p], glob_blocks,
-			local_mesh[p].localElementToGlobal,
-			time_step_out,
-			element_vars.index_[element_vars.count(IN)], alive,
-			combined_status_variable_index);
+    if (interface.element_status_variable() != "NONE") {
+      add_status_variable(ExodusFile::output(), global, blocks[p], glob_blocks,
+			  local_mesh[p].localElementToGlobal,
+			  time_step_out,
+			  element_vars.index_[element_vars.count(IN)], alive,
+			  combined_status_variable_index);
+    }
 
     // ========================================================================
     // Extracting sideset transient variable data
@@ -1608,11 +1615,13 @@ namespace {
 	if (vars.type() == EX_ELEM_BLOCK || vars.type() == EX_NODAL) {
 	  if (vars.type() == EX_ELEM_BLOCK) {
 	    std::string status = si.element_status_variable();
-	    strcpy(input_name_list[num_input_vars-1], status.c_str());
+	    if (status != "NONE")
+	      strcpy(input_name_list[num_input_vars-1], status.c_str());
 	  }
 	  else if (vars.type() == EX_NODAL) {
 	    std::string status = si.nodal_status_variable();
-	    strcpy(input_name_list[num_input_vars-1], status.c_str());
+	    if (status != "NONE")
+	      strcpy(input_name_list[num_input_vars-1], status.c_str());
 	  }
 	}
 
@@ -1692,7 +1701,8 @@ namespace {
 
     // If 'type' is ELEMENT or NODE, then reserve space for the 'status' variable.
     int extra = 0;
-    if (vars.type() == EX_ELEM_BLOCK || vars.type() == EX_NODAL) extra = 1;
+    if (vars.addStatus)
+      extra = 1;
 
     int num_vars;
     ex_get_variable_param (id, vars.type(),  &num_vars);

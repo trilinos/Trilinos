@@ -80,7 +80,7 @@ the empty string."
   void addAttribute(const std::string & name, PyObject * value)
   {
     PyObject * strObj = PyObject_Str(value);
-    if (!strObj) throw PythonException();
+    if (!strObj) throw PyTrilinos::PythonException();
     self->addAttribute(name, std::string(PyString_AsString(strObj)));
     Py_DECREF(strObj);
   }
@@ -98,7 +98,7 @@ the empty string."
 	value = PyString_FromString(attrStr);
       }
       Py_DECREF(globals);
-      if (!value) throw PythonException();
+      if (!value) throw PyTrilinos::PythonException();
     }
     return value;
   }

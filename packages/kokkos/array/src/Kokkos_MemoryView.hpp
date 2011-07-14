@@ -40,9 +40,10 @@
 #ifndef KOKKOS_MEMORYVIEW_HPP
 #define KOKKOS_MEMORYVIEW_HPP
 
-#include <Kokkos_ArrayForwardDeclarations.hpp>
-
 namespace Kokkos {
+
+template< typename ValueType , class DeviceType >
+class MemoryView ;
 
 template< typename ValueType , class DeviceType >
 class MemoryView {

@@ -50,6 +50,11 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class RowMatrix : virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     public:
+      typedef Scalar        scalar_type;
+      typedef LocalOrdinal  local_ordinal_type;
+      typedef GlobalOrdinal global_ordinal_type;
+      typedef Node          node_type;
+
       //! @name Destructor Method
       //@{ 
 
@@ -134,6 +139,7 @@ namespace Tpetra {
 
       //! Returns \c true if fillComplete() has been called.
       virtual bool isFillComplete() const = 0;
+
 
       //@}
 
@@ -231,6 +237,12 @@ namespace Tpetra {
        * \param x A vector to right scale this matrix.
        */
       virtual void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) =0;
+
+      //! Returns the Frobenius norm of the matrix. 
+      /** Computes and returns the Frobenius norm of the matrix, defined as:
+        \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
+        */
+      virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const = 0;
 
       //@}
 

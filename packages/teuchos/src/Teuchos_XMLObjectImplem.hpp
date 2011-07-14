@@ -59,7 +59,7 @@ class XMLObject;
  * \brief The XMLObjectImplem class takes care of the low-level implementation 
  details of XMLObject
 */
-class XMLObjectImplem
+class TEUCHOS_LIB_DLL_EXPORT XMLObjectImplem
 {
   typedef Teuchos::map<std::string, std::string> Map;
 

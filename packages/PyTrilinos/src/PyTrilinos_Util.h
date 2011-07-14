@@ -40,6 +40,9 @@
 #define CONST
 #endif
 
+namespace PyTrilinos
+{
+
 // Given the name of a python object, extract it from the named python
 // module.  If it does not exist in the given module, return NULL.
 PyObject * getObjectFromModule(char * modName, CONST char * objName);
@@ -88,5 +91,7 @@ CONST char * getStringObjectAttr(PyObject * object, CONST char * name);
 // exist or the attribute is not a sequence of strings, throw a
 // PythonException.
 CONST char * getStringItemObjectAttr(PyObject * object, CONST char * name, int i);
+
+}  // Namespace PyTrilinos
 
 #endif // PYTRILINOS_UTIL_H

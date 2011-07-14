@@ -59,7 +59,7 @@ namespace Teuchos {
 /*! \relates SerialSymDenseMatrix 
   \brief A templated, non-member, helper function for computing the matrix triple-product:  B = alpha*W^T*A*W or B = alpha*W*A*W^T.
   
-  \param transw - [in] Compute B = alpha*W^T*A*W if transw = Teuchos::TRANS, else compute B = alpha*W*A*W^T if transw = Teuchos::NOTRANS.
+  \param transw - [in] Compute B = alpha*W^T*A*W if transw = Teuchos::TRANS, else compute B = alpha*W*A*W^T if transw = Teuchos::NO_TRANS.
   \param alpha - [in] The scaling factor.
   \param A - [in] SerialSymDenseMatrix
   \param W - [in] SerialDenseMatrix

@@ -53,7 +53,6 @@
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_MpiComm.h"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;

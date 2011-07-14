@@ -34,6 +34,9 @@
 #define PyArray_ANYORDER -1
 #endif
 
+namespace PyTrilinos
+{
+
 // Static variables
 const Epetra_SerialComm   Epetra_NumPyFEVector::defaultComm = Epetra_SerialComm();
 PyArrayObject           * Epetra_NumPyFEVector::tmp_array   = NULL               ;
@@ -429,3 +432,5 @@ int Epetra_NumPyFEVector::SumIntoGlobalValues(PyObject * indices,
   Py_XDECREF(myIndices);
   return -1;
 }
+
+}  // Namespace PyTrilinos

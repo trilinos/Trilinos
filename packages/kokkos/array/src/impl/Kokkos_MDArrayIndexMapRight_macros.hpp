@@ -245,7 +245,7 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  void reverse_index( size_t offset, size_t * const indices ) const
+  void reverse_index( size_type offset, size_type * const indices ) const
   {
     for ( size_type i = m_rank ; 0 < i ; ) {
       --i ;

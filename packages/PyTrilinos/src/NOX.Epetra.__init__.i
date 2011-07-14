@@ -205,13 +205,16 @@ using namespace NOX::Epetra;
 // Make Epetra_Vector and NOX::Epetra::Vector input arguments
 // interchangeable
 %typemap(in) NOX::Epetra::Vector &
-(void* argp=0, int res=0, Teuchos::RCP< Epetra_NumPyVector > tempshared, bool cleanup=false)
+(void* argp=0, int res=0, Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > tempshared,
+ bool cleanup=false)
 {
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
   if (!SWIG_IsOK(res))
   {
     int newmem = 0;
-    res = SWIG_ConvertPtrAndOwn($input, &argp, $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
+    res = SWIG_ConvertPtrAndOwn($input,
+				&argp,
+				$descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *),
 				%convertptr_flags, &newmem);
     if (!SWIG_IsOK(res))
     {
@@ -223,15 +226,15 @@ using namespace NOX::Epetra;
     }
     if (newmem & SWIG_CAST_NEW_MEMORY)
     {
-      tempshared = *%reinterpret_cast(argp, Teuchos::RCP< Epetra_NumPyVector > *);
-      delete %reinterpret_cast(argp, Teuchos::RCP< Epetra_NumPyVector > *);
+      tempshared = *%reinterpret_cast(argp, Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *);
+      delete %reinterpret_cast(argp, Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *);
       $1 = new NOX::Epetra::Vector(Teuchos::rcp_dynamic_cast< Epetra_Vector >(tempshared),
 				   NOX::Epetra::Vector::CreateView);
       cleanup = true;
     }
     else
     {
-      tempshared = *%reinterpret_cast(argp, Teuchos::RCP< Epetra_NumPyVector > *);
+      tempshared = *%reinterpret_cast(argp, Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *);
       $1 = new NOX::Epetra::Vector(Teuchos::rcp_dynamic_cast< Epetra_Vector >(tempshared),
 				   NOX::Epetra::Vector::CreateView);
       cleanup = true;
@@ -247,8 +250,8 @@ using namespace NOX::Epetra;
   $1 = SWIG_CheckState(SWIG_ConvertPtr($input, 0, $descriptor, 0)) ? 1 : 0;
   if (!$1)
     $1 = SWIG_CheckState(SWIG_ConvertPtrAndOwn($input, 0,
-					       $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
-					       %convertptr_flags, 0)) ? 1 : 0;
+			       $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *),
+			       %convertptr_flags, 0)) ? 1 : 0;
 }
 %typemap(freearg) NOX::Epetra::Vector &
 {
@@ -267,20 +270,20 @@ using namespace NOX::Epetra;
   }
   else
   {
-    Epetra_NumPyVector enpvResult(View, nevResult->getEpetraVector(), 0);
-    Teuchos::RCP< Epetra_NumPyVector > *smartresult = 
-      new Teuchos::RCP< Epetra_NumPyVector >(enpvResult, bool($owner));
+    PyTrilinos::Epetra_NumPyVector enpvResult(View, nevResult->getEpetraVector(), 0);
+    Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *smartresult = 
+      new Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >(enpvResult, bool($owner));
     %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-				   $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
+				   $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *),
 				   SWIG_POINTER_OWN));
   }
 }
 
 // Convert Epetra_Vector return arguments to Epetra.Vectors (now provided by Epetra_Base.i)
-// %typemap(out) Epetra_Vector & (Epetra_NumPyVector* enpvResult = NULL)
+// %typemap(out) Epetra_Vector & (PyTrilinos::Epetra_NumPyVector* enpvResult = NULL)
 // {
-//   enpvResult = new Epetra_NumPyVector(View, *$1, 0);
-//   $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
+//   enpvResult = new PyTrilinos::Epetra_NumPyVector(View, *$1, 0);
+//   $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(PyTrilinos::Epetra_NumPyVector*), 1);
 // }
 
 // Convert NOX::Epetra::LinearSystem objects to

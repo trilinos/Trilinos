@@ -28,5 +28,10 @@
 
 #include "NumPyImporter.h"
 
+namespace PyTrilinos
+{
+
 // Static initialization
 NumPyImporter NumPyImporter::m_singleton;
+
+}  // Namespace PyTrilinos

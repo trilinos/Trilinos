@@ -55,6 +55,12 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 
+
+////////////////////////////////////////////////////////////////////////
+
+namespace PyTrilinos
+{
+
 ////////////////////////////////////////////////////////////
 
 // Given a pointer to an Epetra_MultiVector, convert to a python
@@ -87,9 +93,9 @@ convertEpetraVectorToPython(const Epetra_Vector * ev);
 // the many Epetra classes that derive from Epetra_Operator.
 #ifdef HAVE_TEUCHOS
 PyObject *
-convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > *eo, int cnvt_flags=0);
+convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > *eo);
 PyObject *
-convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *eo, int cnvt_flags=0);
+convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *eo);
 #else
 PyObject *
 convertEpetraOperatorToPython(const Epetra_Operator * eo, int cnvt_flags=0);
@@ -148,5 +154,9 @@ Teuchos::RCP<Epetra_Operator>
 getEpetraOperatorObjectAttr(PyObject * object, CONST char * name);
 
 #endif  // HAVE_TEUCHOS
+
+////////////////////////////////////////////////////////////////////////
+
+}  // Namespace PyTrilinos
 
 #endif // EPETRA_PYUTIL_H

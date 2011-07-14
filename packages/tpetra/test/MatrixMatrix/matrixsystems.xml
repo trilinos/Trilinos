@@ -1,3 +1,22 @@
+<!-- Note
+A*B
+      A^T * B
+      A*B^T
+      A*P
+      R*A
+      R*P
+      Q*P
+      Q*R
+
+     where
+
+      A is m-by-m
+      B is m-by-m
+      P is m-by-n
+      R is n-by-m
+      m > n
+      Q is a permutation matrix (identity matrix with rows swapped around)
+-->
 <ParameterList>
 	<ParameterList name="synthetic1">
     <Parameter name="op" value="multiply" type="string"/>
@@ -7,7 +26,47 @@
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
-     <ParameterList name="syntheticT">
+	<ParameterList name="RectangleA*P">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/rectAPa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectAPb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectAPc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+  <ParameterList name="RectangleR*A">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/rectRAa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectRAb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectRAc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+  <ParameterList name="RectangleQ*P">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/rectQPa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectQPb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectQPc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+  <ParameterList name="RectangleQ*R">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/rectQRa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectQRb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectQRc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+	<ParameterList name="RectangleR*P">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/rectRPa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectRPb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectRPc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+  <ParameterList name="syntheticT">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synTa.mtx" type="string"/>
 		<Parameter name="B" value="matrices/synTb.mtx" type="string"/>
@@ -31,7 +90,6 @@
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
 	</ParameterList> 
-  <!-- Doesn't work but i might remove any way because it's so small
   <ParameterList name="cdt_system">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/cdt_m.mtx" type="string"/>
@@ -39,8 +97,8 @@
 		<Parameter name="C" value="matrices/cdt_d.mtx" type="string"/>
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="true" type="bool"/>
-	</ParameterList> -->
-	<!--  Known to not work at this time, Kurtis Nusbaum 03/24/2011
+		<Parameter name="epsilon" value="1e-04" type="double"/>
+	</ParameterList> 
 	<ParameterList name="syntheticAT">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synATa.mtx" type="string"/>
@@ -48,7 +106,15 @@
 		<Parameter name="C" value="matrices/synATc.mtx" type="string"/>
 		<Parameter name="TransA" value="true" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
-	</ParameterList> -->
+	</ParameterList>
+	<ParameterList name="smallAT">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/smallATa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/smallATb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/smallATc.mtx" type="string"/>
+		<Parameter name="TransA" value="true" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
 	<ParameterList name="syntheticRect">
     <Parameter name="op" value="multiply" type="string"/>
 		<Parameter name="A" value="matrices/synRecta.mtx" type="string"/>
@@ -73,4 +139,29 @@
 		<Parameter name="TransA" value="false" type="bool"/>
 		<Parameter name="TransB" value="false" type="bool"/>
 	</ParameterList>
+	<ParameterList name="Rectangular Matricies with B Transposed">
+    <Parameter name="op" value="add" type="string"/>
+		<Parameter name="A" value="matrices/rectTransAdda.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectTransAddb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectTransAddc.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="true" type="bool"/>
+	</ParameterList>
+	<ParameterList name="Rectangular A transpose times I">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/rectAtransIa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/rectAtransIb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/rectAtransIc.mtx" type="string"/>
+		<Parameter name="TransA" value="true" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+	<ParameterList name="Small Rectangular A transpose time I">
+    <Parameter name="op" value="multiply" type="string"/>
+		<Parameter name="A" value="matrices/smallRectAIa.mtx" type="string"/>
+		<Parameter name="B" value="matrices/smallRectAIb.mtx" type="string"/>
+		<Parameter name="C" value="matrices/smallRectAIc.mtx" type="string"/>
+		<Parameter name="TransA" value="true" type="bool"/>
+		<Parameter name="TransB" value="false" type="bool"/>
+	</ParameterList>
+  
 </ParameterList>

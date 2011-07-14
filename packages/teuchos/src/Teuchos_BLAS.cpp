@@ -91,6 +91,17 @@ Scalar generic_dot(const int n, const Scalar* x, const int incx,
 
 namespace Teuchos {
 
+//Explicitly instantiating these templates for windows due to an issue with
+//resolving them when linking dlls.
+#ifdef _WIN32
+#  ifdef HAVE_TEUCHOS_COMPLEX
+     template BLAS<long int, std::complex<float> >;
+     template BLAS<long int, std::complex<double> >;
+#  endif
+     template BLAS<long int, float>;
+     template BLAS<long int, double>;
+#endif
+
   // *************************** BLAS<int,float> DEFINITIONS ******************************  
 
   void BLAS<int, float>::ROTG(float* da, float* db, float* c, float* s) const

@@ -136,12 +136,12 @@ NOX.Abstract provides the following user-level classes:
   }
   else
   {
-    Teuchos::RCP< Epetra_NumPyVector > *smartresult = new
-      Teuchos::RCP< Epetra_NumPyVector >(new Epetra_NumPyVector(View,
+    Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *smartresult = new
+      Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >(new PyTrilinos::Epetra_NumPyVector(View,
 								nevResult->getEpetraVector(),
 								0), bool($owner));
     %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-				   $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
+				   $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *),
 				   SWIG_POINTER_OWN));
   }
 }
@@ -161,12 +161,12 @@ NOX.Abstract provides the following user-level classes:
   }
   else
   {
-    Teuchos::RCP< const Epetra_NumPyVector > *smartresult = new
-      Teuchos::RCP< const Epetra_NumPyVector >(new Epetra_NumPyVector(View,
+    Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector > *smartresult = new
+      Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector >(new PyTrilinos::Epetra_NumPyVector(View,
 								      (*nevResult).getEpetraVector(),
 								      0), bool($owner));
     %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-				   $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
+				   $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *),
 				   SWIG_POINTER_OWN));
   }
 }
