@@ -679,11 +679,13 @@ namespace MueLu {
        }
        RCP<Epetra_CrsMatrix> rcpA(A);
        */
-       RCP<Epetra_CrsMatrix> rcpA = simple_EpetraTranspose(epetraOp);
-       RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
-       RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
-       RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
-       return AAAA;
+// //        RCP<Epetra_CrsMatrix> rcpA = simple_EpetraTranspose(epetraOp);
+// //        RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
+// //        RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
+// //        RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
+// //        return AAAA;
+       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
+       return Teuchos::null;
      }
      
    } //Transpose
