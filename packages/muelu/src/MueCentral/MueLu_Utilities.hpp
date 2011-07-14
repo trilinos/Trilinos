@@ -849,7 +849,6 @@ namespace MueLu {
           maxRowSize=20;
         std::vector<SC> scaledVals(maxRowSize);
         if (tpOp->isFillComplete()) {
-          std::cout << "In MyOldScale, resuming fill" << std::endl;
           tpOp->resumeFill();
         }
 
