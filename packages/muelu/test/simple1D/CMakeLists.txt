@@ -39,6 +39,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     DEPLIBS muelu muelu-cthulhu
   )
 
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    simple1D-mergedSmoo
+    SOURCES mainMergedSmoo.cpp
+    ARGS ""
+    COMM serial mpi
+    DEPLIBS muelu muelu-cthulhu
+  )
+
 # PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #     simple1D-belosCthulhuEpetra
 #     SOURCES main-belosCthulhuEpetra.cpp
