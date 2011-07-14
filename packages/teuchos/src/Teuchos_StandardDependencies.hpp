@@ -1824,12 +1824,100 @@ RCP<RangeValidatorDependency<T> >
 }
 
 /**
+ * \brief A dependency in which some attribute of a TwoDArray in a parameter 
+ * depends on the value of another parameter.
+ */
+template<class DependeeType, class DependentType>
+class TwoDArrayModifierDependency : 
+  public ArrayModifierDependency<DependeeType, DependentType>
+{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a TwoDArrayModifierDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependent The dependent parameter.
+   * @param func A function specifying how the TwoDArrays
+   * number of rows should be calculated from the dependees value.
+   */
+  TwoDArrayModifierDependency(
+    RCP<const ParameterEntry> dependee,
+    RCP<ParameterEntry> dependent,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null):
+    ArrayModifierDependency<DependeeType, DependentType>(
+      dependee,
+      dependent,
+      func)
+  {}
+
+
+  /**
+   * \brief Constructs a TwoDArrayModifierDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependents The dependents.
+   * @param func A function specifying how the TwoDArrays
+   * number of rows should be calculated from the dependees value.
+   */
+  TwoDArrayModifierDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null):
+    ArrayModifierDependency<DependeeType, DependentType>(
+      dependee,
+      dependents,
+      func)
+  {}
+
+  //@}
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+
+  virtual void validateDep() const;
+  
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+void 
+TwoDArrayModifierDependency<DependeeType, DependentType>::validateDep() 
+  const
+{
+  ArrayModifierDependency<DependeeType, DependentType>::validateDep();
+  for(
+    Dependency::ConstParameterEntryList::const_iterator it = 
+      this->getDependents().begin(); 
+    it != this->getDependents().end(); 
+    ++it)
+  {
+    TEST_FOR_EXCEPTION(
+      typeid(Teuchos::TwoDArray<DependentType>) != (*it)->getAny().type(),
+        InvalidDependencyException,
+        "Ay no! The dependent parameter types don't match." << std::endl <<
+        "Dependent Template Type: " << 
+        TypeNameTraits<DependentType>::name() << std::endl <<
+        "Dependent Parameter Type: " << 
+        (*it)->getAny().typeName() << std::endl << std::endl);
+  }
+}
+
+
+/**
  * \brief A dependency in which the number of rows in a parameter 
  * with a TwoDArray depends on the value of another parameter.
  */
 template<class DependeeType, class DependentType>
 class TwoDRowDependency : 
-  public ArrayModifierDependency<DependeeType, DependentType>
+  public TwoDArrayModifierDependency<DependeeType, DependentType>
 {
 
 public:
@@ -1878,8 +1966,6 @@ protected:
 
   /** \name Overridden from ArrayModifierDependency */
   //@{
-
-  virtual void validateDep() const;
   
   void modifyArray(
     DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
@@ -1894,10 +1980,10 @@ TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
   RCP<const SimpleFunctionObject<DependeeType> > func):
-  ArrayModifierDependency<DependeeType, DependentType>(
+  TwoDArrayModifierDependency<DependeeType, DependentType>(
     dependee, dependent, func)
 {
-  validateDep();
+  this->validateDep();
 }
 
 template<class DependeeType, class DependentType>
@@ -1905,10 +1991,10 @@ TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
   RCP<const ParameterEntry> dependee,
   Dependency::ParameterEntryList dependents,
   RCP<const SimpleFunctionObject<DependeeType> > func):
-  ArrayModifierDependency<DependeeType, DependentType>(
+  TwoDArrayModifierDependency<DependeeType, DependentType>(
     dependee, dependents, func)
 {
-  validateDep();
+  this->validateDep();
 }
 
 
@@ -1947,29 +2033,6 @@ TwoDRowDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage
     "An attempt was made to set the length of an Array to a negative "
     "number by a NumberArrayLengthDependency" << std::endl << std::endl;
   return os.str();
-}
-
-template<class DependeeType, class DependentType>
-void 
-TwoDRowDependency<DependeeType, DependentType>::validateDep() 
-  const
-{
-  ArrayModifierDependency<DependeeType, DependentType>::validateDep();
-  for(
-    Dependency::ConstParameterEntryList::const_iterator it = 
-      this->getDependents().begin(); 
-    it != this->getDependents().end(); 
-    ++it)
-  {
-    TEST_FOR_EXCEPTION(
-      typeid(Teuchos::TwoDArray<DependentType>) != (*it)->getAny().type(),
-        InvalidDependencyException,
-        "Ay no! The dependent parameter types don't match." << std::endl <<
-        "Dependent Template Type: " << 
-        TypeNameTraits<DependentType>::name() << std::endl <<
-        "Dependent Parameter Type: " << 
-        (*it)->getAny().typeName() << std::endl << std::endl);
-  }
 }
 
 } //namespace Teuchos
