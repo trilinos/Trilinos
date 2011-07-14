@@ -454,38 +454,15 @@ int Zoltan_PHG_Coarsening
     || !(coorcount  = (double *) ZOLTAN_CALLOC(c_hg->nVtx, sizeof(double)))
       ))
     MEMORY_ERROR;
-  
+
   for (i = 0; i < hg->nVtx; i++) {
     ZOLTAN_GNO_TYPE ni = LevelMap[i];
     if (ni >= 0) {
       for (j = 0; j < hg->nDim; j++)
 	c_hg->coor[ni*hg->nDim + j] += hg->coor[i*hg->nDim + j];
-      coorcount[ni] += 1;
+      coorcount[ni]++;
     }
   }
-  
-#ifdef GETRIDOFME 
-  /* DEPRECATED Received coords are added to the coarse hypergraph */
-  *LevelCnt = 0;
-  cb = coordrecbuf;
-  cb_end = coordrecbuf + (size * sizeof(double));
-
-  while (cb < cb_end) {
-    double coord;
-    int lno;
-
-    gnoptr = (ZOLTAN_GNO_TYPE *)cb;
-    lno = VTX_GNO_TO_LNO(hg, gnoptr[0]);
-    cb = (char *)(gnoptr + hg->nDim);
-    
-    for (j = 0; j < hg->nDim; j++)
-      c_hg->coor[lno * hg->nDim + j] += *gnoptr++;
-    coorcount[lno] += 1;
-
-  }
-
-#endif
-
   
   /* call Comm_Resize since we have variable-size messages */
   Zoltan_Comm_Resize(*comm_plan, msg_size, PLAN_TAG+2, &size); 
@@ -556,9 +533,8 @@ int Zoltan_PHG_Coarsening
 
     for (j = 0; j < hg->nDim; j++){
       c_hg->coor[lno * hg->nDim + j] += *doubleptr++;
-      coorcount[lno + j] += 1;
-    }
-
+     }
+     coorcount[lno]++;
     
     for (j=0; j<hg->VtxWeightDim; ++j)
         c_hg->vwgt[lno*hg->VtxWeightDim+j] += *floatptr++;
