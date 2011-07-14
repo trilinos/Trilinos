@@ -2,9 +2,13 @@
 PyTrilinos To Do List
 =====================
 
+Amesos unit tests
+New Amesos TPL support
+Anasazi unit tests
+AztecOO BasicRowMatrix unit tests?
+
 * General
   - Automate documentation
-  - Trilinos 10.6 website/documentation
 
 * Teuchos
   - Unit tests
