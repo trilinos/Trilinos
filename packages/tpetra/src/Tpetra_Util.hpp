@@ -167,7 +167,49 @@ namespace Tpetra {
     if(isAlreadySorted(first1, last1)){
       return;
     }
-    sort2Shell(first1,last1,first2);
+    quicksort2(first1, last1, first2, first2+(last1-first1));
+  }
+
+  template<class IT>
+  IT getPivot(IT first, IT last){
+    IT pivot(first+(last-first)/2);
+    if(*first<=*pivot && *(last-1)<=*first) pivot=first;
+    else if(*(last-1)<=*pivot && *first<= *(last-1)) pivot = last-1;
+    return pivot; 
+  }
+
+  template<class IT1, class IT2>
+  IT1 partition(IT1 first1, IT1 last1, IT2 first2, IT2 last2, IT1 pivot){
+    typename std::iterator_traits<IT1>::value_type piv(*pivot);
+    std::swap(*pivot, *(last1-1));
+    std::swap(first2[(pivot-first1)], *(last2-1));
+    IT1 store1=first1;
+    for(IT1 it=first1; it!=last1-1; ++it){
+      if(*it<=piv){
+        std::swap(*store1, *it);
+        std::swap(first2[(store1-first1)], first2[(it-first1)]);
+        ++store1;
+      }
+    }
+    std::swap(*(last1-1), *store1);
+    std::swap(*(last2-1), first2[store1-first1]);
+    return store1;
+  }
+  
+  /**
+   * \brief Prefoms a quick sort on the two arrays using the permutations
+   * that are done on the first array on the second array as well.
+   */
+  template<class IT1, class IT2>
+  void quicksort2(IT1 first1, IT1 last1, IT2 first2, IT2 last2){
+    typedef typename std::iterator_traits<IT1>::difference_type DT;
+    DT DT1 = OrdinalTraits<DT>::one();
+    if(last1-first1 > DT1){
+      IT1 pivot = getPivot(first1, last1);
+      pivot = partition(first1, last1, first2, last2, pivot);
+      quicksort2(first1, pivot, first2, first2+(pivot-first1));
+      quicksort2(pivot+1, last1, first2+(pivot-first1)+1, last2);
+    }
   }
 
   /** sort function for three arrays
