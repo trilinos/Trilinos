@@ -165,15 +165,16 @@ int main(int argc, char *argv[]) {
 
   RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
-  ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
+    ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
     smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 #endif
   } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
+    ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
     smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
 #endif
   }
