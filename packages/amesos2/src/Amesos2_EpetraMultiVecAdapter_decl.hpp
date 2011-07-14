@@ -57,6 +57,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 
+#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_Map.hpp>
 

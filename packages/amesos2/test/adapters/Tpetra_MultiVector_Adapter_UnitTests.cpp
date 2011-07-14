@@ -94,13 +94,9 @@ namespace {
 
   bool testMpi = false;
 
-  // Where to look for input files
-  string filedir;
-
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
-    clp.setOption("filedir",&filedir,"Directory of matrix files.");
     clp.addOutputSetupOptions(true);
     clp.setOption("test-mpi", "test-serial", &testMpi,
 		  "Test Serial by default (for now) or force MPI test.  In a serial build,"
@@ -224,6 +220,10 @@ namespace {
     Array<SCALAR> original(numVectors*numLocal*numprocs);
     Array<SCALAR> copy(numVectors*numLocal*numprocs);
 
+    ///////////////////////////////////
+    // Check a global copy at rank=0 //
+    ///////////////////////////////////
+
     get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal*numprocs, Rooted);
 
     // Only rank=0 process has global copy of the mv data, check against an import
@@ -236,9 +236,12 @@ namespace {
 
     root_mv.get1dCopy(original(),numLocal*numprocs);
 
-    TEST_EQUALITY( original, copy );
+    TEST_COMPARE_ARRAYS( original, copy );
 
-    // Check getting copy of just local data
+    /////////////////////////////////////
+    // Check a local copy at all ranks //
+    /////////////////////////////////////
+
     original.clear();
     original.resize(numVectors*numLocal);
     copy.clear();
@@ -249,8 +252,104 @@ namespace {
     get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal, Distributed);
     
     // Check that the values remain the same
-    TEST_EQUALITY( original, copy );
+    TEST_COMPARE_ARRAYS( original, copy );
+  }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, Copy_Map, SCALAR, LO, GO )
+  {
+    /* Test the get1dCopy() method of MultiVecAdapter.  This test
+       checks the map-based interface to the get1dCopy method.  We
+       create an initial multivector which is distributed across all
+       MPI processes and then get a copy of the multivector data on
+       only the first 2 ranks.
+     */
+    typedef ScalarTraits<SCALAR> ST;
+    typedef typename ScalarTraits<SCALAR>::magnitudeType MAG;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    typedef MultiVecAdapter<MV> ADAPT;
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const size_t numprocs = comm->getSize();
+    const size_t rank     = comm->getRank();
+
+    // create a Map
+    const size_t numVectors = 7;
+    const size_t numLocal = 13;
+    const size_t total_rows = numLocal * numprocs;
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+
+    RCP<MV> mv = rcp(new MV(map,numVectors));
+    mv->randomize();
+
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
+    Array<SCALAR> original(numVectors*numLocal*numprocs);
+    Array<SCALAR> global_copy(numVectors*numLocal*numprocs);
+
+    /*
+     * We divide the numLocal * numprocs rows of the multivector
+     * amongst the first two rank (or just the first rank in case we
+     * don't have more than one) and get the copies.  Each processor
+     * checks against a globally-replicated copy of the multivector
+     * data.
+     */
+    size_t my_num_rows = OrdinalTraits<size_t>::zero();
+    if ( numprocs > 1 ){
+      if ( rank < 2 ){
+	my_num_rows = total_rows / 2;
+      }
+      // If we have an odd number of rows, rank=0 gets the remainder
+      if ( rank == 0 ) my_num_rows += total_rows % 2;
+    } else {
+      my_num_rows = total_rows;
+    }
+    const Tpetra::Map<LO,GO,Node> redist_map(total_rows, my_num_rows, 0, comm);
+
+    // Get first the global data copy
+    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter),
+					     global_copy(),
+					     total_rows,
+					     Globally_Replicated);
+
+    // Now get a copy using the map
+    Array<SCALAR> my_copy(numVectors * my_num_rows);
+    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter),
+					     my_copy(),
+					     my_num_rows,
+					     ptrInArg(redist_map));
+    
+    // Check that you have the data you wanted.  Data is stored in
+    // column-major order.
+    if ( numprocs > 1 ){
+      if ( rank == 0 ){
+	// Should get the first ceil(total_rows/2) rows
+	size_t vec_num = 0;
+	size_t vec_ind = 0;
+	for( ; vec_ind < numVectors; ++vec_ind ){
+	  for( size_t i = 0; i < my_num_rows; ++i ){
+	    double mv_value = global_copy[total_rows*vec_num + i];
+	    double my_value = my_copy[my_num_rows*vec_num + i];
+	    TEST_EQUALITY( mv_value, my_value );
+	  }
+	}
+      } else if ( rank == 1 ){
+	// Should get the last floor(total_rows/2) rows
+	size_t vec_num = 0;
+	size_t vec_ind = 0;
+	for( ; vec_ind < numVectors; ++vec_ind ){
+	  // Iterate backwards through rows
+	  for( size_t i = total_rows-1; i >= total_rows - my_num_rows; --i ){
+	    double mv_value = global_copy[total_rows*vec_num + i];
+	    double my_value = my_copy[my_num_rows*vec_num + i];
+	    TEST_EQUALITY( mv_value, my_value );
+	  }
+	}
+      }
+    } else {
+      // Otherwise, rank=0 should have gotten the whole thing
+      TEST_COMPARE_ARRAYS( global_copy, my_copy );
+    }
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, Globalize, SCALAR, LO, GO )
@@ -322,6 +421,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Dimensions, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Copy, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Copy_Map, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Globalize, SCALAR, LO, GO ) \
   
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )		\

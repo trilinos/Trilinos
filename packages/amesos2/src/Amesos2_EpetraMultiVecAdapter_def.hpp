@@ -209,11 +209,11 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
   const size_t num_vecs = getGlobalNumVectors();
   
 #ifdef HAVE_AMESOS2_DEBUG
-  const size_t local_vector_length = getLocalLength();
-  TEST_FOR_EXCEPTION( lda < local_vector_length,
+  const size_t requested_vector_length = distribution_map->getNodeNumElements();
+  TEST_FOR_EXCEPTION( lda < requested_vector_length,
 		      std::invalid_argument,
 		      "Given stride is not large enough for local vector length" );
-  TEST_FOR_EXCEPTION( av.size() < (num_vecs-1) * lda + local_vector_length,
+  TEST_FOR_EXCEPTION( as<size_t>(av.size()) < (num_vecs-1) * lda + requested_vector_length,
 		      std::invalid_argument,
 		      "MultiVector storage not large enough given leading dimension "
 		      "and number of vectors" );
@@ -224,10 +224,9 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
                                       global_ordinal_t,
                                       global_size_t,
                                       node_t>(*distribution_map);
-  multivec_t redist_mv(e_dist_map, as<int>(num_vecs));
-  
-  const Epetra_Import importer(e_dist_map, *mv_map_); // Note, target/source order is reversed in Tpetra
 
+  multivec_t redist_mv(e_dist_map, as<int>(num_vecs));
+  const Epetra_Import importer(e_dist_map, *mv_map_); // Note, target/source order is reversed in Tpetra
   redist_mv.Import(*mv_, importer, Insert);
 
   // Finally, do copy
@@ -286,6 +285,7 @@ MultiVecAdapter<Epetra_MultiVector>::get1dViewNonConst(bool local)
 
   //   return Teuchos::arcp(values,0,lda*this->getGlobalNumVectors(),false);
   // }
+  return Teuchos::null;
 }
 
 

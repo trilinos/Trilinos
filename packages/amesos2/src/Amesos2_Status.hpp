@@ -63,12 +63,10 @@ class Status {
 public:
   /// Default constructor.
   Status()
-    : printTiming_(false)
-    , printStatus_(false)
     // , computeVectorNorms_(false)
     // , computeTrueResidual_(false)
       // Will use the Teuchos::VerboseObject for verbosity settings
-    , verbose_(0)
+    : verbose_(0)
     , debug_(0)
 
     , numPreOrder_(0)
@@ -87,12 +85,10 @@ public:
 
 
   Status(const Teuchos::RCP<const Teuchos::Comm<int> > comm)
-    : printTiming_(false)
-    , printStatus_(false)
     // , computeVectorNorms_(false)
     // , computeTrueResidual_(false)
       // Will use the Teuchos::VerboseObject for verbosity settings
-    , verbose_(0)
+    : verbose_(0)
     , debug_(0)
 
     , numPreOrder_(0)
@@ -121,12 +117,6 @@ public:
    */
   void setStatusParameters(
     const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
-
-  /// If \c true, prints timing information in the destructor.
-  bool printTiming_;
-
-  /// If \c true, print additional information in the destructor.
-  bool printStatus_;
 
   // /// If \c true, prints the norms of X and B in solve().
   // bool computeVectorNorms_;

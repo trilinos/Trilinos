@@ -311,7 +311,7 @@ namespace Amesos {
     template <class M, typename S, typename GO, typename GS, class Op>
     struct same_gs_helper
     {
-      static void do_get(const Teuchos::Ptr<M> mat,
+      static void do_get(const Teuchos::Ptr<const M> mat,
 			 const ArrayView<typename M::scalar_t> nzvals,
 			 const ArrayView<typename M::global_ordinal_t> indices,
 			 const ArrayView<GS> pointers,
@@ -329,7 +329,7 @@ namespace Amesos {
     template <class M, typename S, typename GO, typename GS, class Op>
     struct diff_gs_helper
     {
-      static void do_get(const Teuchos::Ptr<M> mat,
+      static void do_get(const Teuchos::Ptr<const M> mat,
 			 const ArrayView<typename M::scalar_t> nzvals,
 			 const ArrayView<typename M::global_ordinal_t> indices,
 			 const ArrayView<GS> pointers,
@@ -357,7 +357,7 @@ namespace Amesos {
     template <class M, typename S, typename GO, typename GS, class Op>
     struct same_go_helper
     {
-      static void do_get(const Teuchos::Ptr<M> mat,
+      static void do_get(const Teuchos::Ptr<const M> mat,
 			 const ArrayView<typename M::scalar_t> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
@@ -380,7 +380,7 @@ namespace Amesos {
     template <class M, typename S, typename GO, typename GS, class Op>
     struct diff_go_helper
     {
-      static void do_get(const Teuchos::Ptr<M> mat,
+      static void do_get(const Teuchos::Ptr<const M> mat,
 			 const ArrayView<typename M::scalar_t> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
@@ -411,7 +411,7 @@ namespace Amesos {
     template <class M, typename S, typename GO, typename GS, class Op>
     struct same_scalar_helper
     {
-      static void do_get(const Teuchos::Ptr<M> mat,
+      static void do_get(const Teuchos::Ptr<const M> mat,
 			 const ArrayView<S> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
@@ -434,7 +434,7 @@ namespace Amesos {
     template <class M, typename S, typename GO, typename GS, class Op>
     struct diff_scalar_helper
     {
-      static void do_get(const Teuchos::Ptr<M> mat,
+      static void do_get(const Teuchos::Ptr<const M> mat,
 			 const ArrayView<S> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
@@ -477,7 +477,7 @@ namespace Amesos {
     template<class Matrix, typename S, typename GO, typename GS, class Op>
     struct get_cxs_helper
     {
-      static void do_get(const Teuchos::Ptr<Matrix> mat,
+      static void do_get(const Teuchos::Ptr<const Matrix> mat,
 			 const ArrayView<S> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
@@ -500,7 +500,7 @@ namespace Amesos {
        * Basic function overload that uses the matrix's row/col map as
        * returned by Op::getMap().
        */
-      static void do_get(const Teuchos::Ptr<Matrix> mat,
+      static void do_get(const Teuchos::Ptr<const Matrix> mat,
 			 const ArrayView<S> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
@@ -517,7 +517,7 @@ namespace Amesos {
        * Function overload that takes an explicit map to use for the
        * representation's distribution.
        */
-      static void do_get(const Teuchos::Ptr<Matrix> mat,
+      static void do_get(const Teuchos::Ptr<const Matrix> mat,
 			 const ArrayView<S> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
@@ -546,7 +546,7 @@ namespace Amesos {
     template<class Matrix>
     struct get_ccs_func
     {
-      static void apply(const Teuchos::Ptr<Matrix> mat,
+      static void apply(const Teuchos::Ptr<const Matrix> mat,
 			const ArrayView<typename Matrix::scalar_t> nzvals,
 			const ArrayView<typename Matrix::global_ordinal_t> rowind,
 			const ArrayView<typename Matrix::global_size_t> colptr,
@@ -580,7 +580,7 @@ namespace Amesos {
     template<class Matrix>
     struct get_crs_func
     {
-      static void apply(const Teuchos::Ptr<Matrix> mat,
+      static void apply(const Teuchos::Ptr<const Matrix> mat,
 			const ArrayView<typename Matrix::scalar_t> nzvals,
 			const ArrayView<typename Matrix::global_ordinal_t> colind,
 			const ArrayView<typename Matrix::global_size_t> rowptr,

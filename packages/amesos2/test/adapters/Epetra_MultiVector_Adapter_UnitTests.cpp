@@ -48,6 +48,7 @@
 #include <Teuchos_as.hpp>
 
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Map.hpp>
 
 #include "Amesos2_EpetraMultiVecAdapter.hpp"
 #include "Amesos2_Util.hpp"
@@ -63,6 +64,7 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
   using Teuchos::ptrInArg;
   using Teuchos::outArg;
   using Teuchos::Comm;
@@ -85,19 +87,11 @@ namespace {
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
-  bool testMpi = false;
-
-  // Where to look for input files
-  string filedir;
-
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
-    clp.setOption("filedir",&filedir,"Directory of matrix files.");
     clp.addOutputSetupOptions(true);
-    clp.setOption("test-mpi", "test-serial", &testMpi,
-		  "Test Serial by default (for now) or force MPI test.  In a serial build,"
-		  " this option is ignored and a serial comm is always used." );
+    // No options for now
   }
 
   const Epetra_Comm* getDefaultComm()
@@ -222,7 +216,7 @@ namespace {
 
     root_mv.ExtractCopy(original.getRawPtr(), numLocal*numprocs);
 
-    TEST_EQUALITY( original, copy );
+    TEST_COMPARE_ARRAYS( original, copy );
 
 
     // Check getting copy of just local data
@@ -237,7 +231,100 @@ namespace {
 					     numLocal, Amesos::Util::Distributed);
     
     // Check that the values remain the same
-    TEST_EQUALITY( original, copy );
+    TEST_COMPARE_ARRAYS( original, copy );
+
+    delete comm;
+  }
+
+  // Similar to the above Copy test, but we check the interface that
+  // accepts a Map describing the distribution of the copy
+  TEUCHOS_UNIT_TEST( MultiVecAdapter, Copy_Map )
+  {
+    typedef ScalarTraits<double> ST;
+    typedef Epetra_MultiVector MV;
+    typedef MultiVecAdapter<MV> ADAPT;
+
+    const Epetra_Comm* comm = getDefaultComm();
+    int numprocs = comm->NumProc();
+    int rank = comm->MyPID();
+
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(std::cout));
+
+    // create a Map for the multivector
+    const size_t numVectors = 3;
+    const size_t numLocal = 13;
+    const size_t total_rows = numLocal * numprocs;
+    Epetra_Map map(-1, numLocal, 0, *comm);
+
+    RCP<MV> mv = rcp(new MV(map,numVectors));
+    mv->Random();
+
+    RCP<ADAPT> adapter = createMultiVecAdapter(mv);
+    Array<double> original(numVectors * total_rows);
+    Array<double> global_copy(numVectors * total_rows);
+
+    /*
+     * We divide the numLocal*numprocs rows of the multivector amongst
+     * the first two processors (or just the one in case we don't have
+     * more than one) and get the copies.  Each processor checks
+     * against a globally-replicated copy of the multivector data.
+     */
+    size_t my_num_rows = OrdinalTraits<size_t>::zero();
+    if ( numprocs > 1 ){
+      if ( rank < 2 ){
+	my_num_rows = total_rows / 2;
+      }
+      // If we have an odd number of rows, rank=0 gets the remainder
+      if ( rank == 0 ) my_num_rows += total_rows % 2;
+    } else {
+      my_num_rows = total_rows;
+    }
+    const Tpetra::Map<int,int> redist_map(total_rows, my_num_rows, 0,
+					  to_teuchos_comm(rcp(comm)));
+
+    // Get first the global data copy
+    get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter),
+					     global_copy(),
+					     total_rows,
+					     Amesos::Util::Globally_Replicated);
+
+    // Now get a copy using the map
+    Array<double> my_copy(numVectors * my_num_rows);
+    get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter),
+					     my_copy(),
+					     my_num_rows,
+					     ptrInArg(redist_map));
+
+    // Check that you have the data you wanted
+    if ( numprocs > 1 ){
+      if ( rank == 0 ){
+	// Should get the first ceil(total_rows/2) rows
+	size_t vec_num = 0;
+	size_t vec_ind = 0;
+	for( ; vec_ind < numVectors; ++vec_ind ){
+	  for( size_t i = 0; i < my_num_rows; ++i ){
+	    double mv_value = global_copy[total_rows*vec_num + i];
+	    double my_value = my_copy[my_num_rows*vec_num + i];
+	    TEST_EQUALITY( mv_value, my_value );
+	  }
+	}
+      } else if ( rank == 1 ){
+	// Should get the last floor(total_rows/2) rows
+	size_t vec_num = 0;
+	size_t vec_ind = 0;
+	for( ; vec_ind < numVectors; ++vec_ind ){
+	  // Iterate backwards through rows
+	  for( size_t i = total_rows-1; i >= total_rows - my_num_rows; --i ){
+	    double mv_value = global_copy[total_rows*vec_num + i];
+	    double my_value = my_copy[my_num_rows*vec_num + i];
+	    TEST_EQUALITY( mv_value, my_value );
+	  }
+	}
+      }
+    } else {
+      // Otherwise, rank=0 should have gotten the whole thing
+      TEST_COMPARE_ARRAYS( global_copy, my_copy );
+    }
 
     delete comm;
   }
@@ -284,7 +371,7 @@ namespace {
 					     Amesos::Util::Globally_Replicated);
 
     // Check that the values are the same
-    TEST_EQUALITY( original, copy );
+    TEST_COMPARE_ARRAYS( original, copy );
 
     delete comm;
   }

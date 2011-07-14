@@ -88,11 +88,11 @@ namespace Amesos {
     size_t num_vecs = getGlobalNumVectors();
 
 #ifdef HAVE_AMESOS2_DEBUG
-    size_t local_vector_length = getLocalLength();
-    TEST_FOR_EXCEPTION( lda < local_vector_length,
+    size_t requested_vector_length = distribution_map->getNodeNumElements();
+    TEST_FOR_EXCEPTION( lda < requested_vector_length,
 			std::invalid_argument,
 			"Given stride is not large enough for local vector length" );
-    TEST_FOR_EXCEPTION( as<size_t>(av.size()) < as<size_t>((num_vecs-1) * lda + local_vector_length),
+    TEST_FOR_EXCEPTION( as<size_t>(av.size()) < as<size_t>((num_vecs-1) * lda + requested_vector_length),
 			std::invalid_argument,
 			"MultiVector storage not large enough given leading dimension "
 			"and number of vectors" );

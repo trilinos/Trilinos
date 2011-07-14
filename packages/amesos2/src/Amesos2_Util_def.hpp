@@ -395,10 +395,11 @@ namespace Amesos {
 	  << std::endl;
     }
 
-////////////////////////////////////////////////////////////////////////////////
   } // end namespace Util
 }   // end namespace Amesos
 
+
+////////////////////////////////////////////////////////////////////////////////
 
 template <class MV, typename S>
 void Amesos::Util::get_1d_copy_helper<MV,S>::do_get(const Teuchos::Ptr<const MV>& mv,

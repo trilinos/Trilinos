@@ -37,6 +37,59 @@ General TODO
 
  - Update the NewSolver and NewAdapter templates in examples/ 
 
+ - Change namespace to "Amesos2"
+
+ - setParameters should use the default parameter interface provided
+   by ParameterList.  This should make the effect of multiple
+   setParameters calls non-cumulative (which is how most packages
+   treat this function).
+
+ - Add cases to unit tests where the matrix is empty on some
+   processors before calling solve().  This was suggested by David Day
+   since this case has a tenddency to expose bugs.
+
+ - Remove the printStatus method
+
+ - LAPACK support (ScaLAPACK would be nice, but more involved.  Only
+   upon request).
+
+ - Add Amesos2_ENABLE_Timers option which is off by default.  Will
+   have to put ifdef guards around all timer activity.
+
+ - Add Amesos2 parameter "Memory" which has two possible values "safe"
+   and "optimized".  The "optimized" option will tell the Amesos2
+   solver that it can release it's hold on the matrix RCP as soon as
+   numeric factorization has been performed.
+
+ - Give the setA() method an additional parameter, which will be a
+   state that should be kept within the solver object.  For example
+   setA(newA,SYMBFACT) will direct the solver to replace A with newA,
+   but instead of resetting everything, should set the solver state
+   such that it is the same as if a symbolic factorization had just
+   been performed.  The default value for the second parameter would
+   be something like "FRESH" or "NONE" to indicate that no computation
+   has been performed.
+
+ - Provide an Amesos2 "Status" object to users through a
+   solver->getStatus() method.  The status should hold things such as
+
+   + number of non-zeros in the L and U factors
+   + number of solves, numeric and symbolic facts, and preOrderings
+   + the current phase (i.e. which was the last phase to complete)
+   
+   The concrete solver interfaces can set the values for the L and U
+   nnz.  I think it would be best to provide a method in the status
+   object for setting these values, rather than calling a function in
+   the interface.  That way, if a solver does not yet want to support
+   that feature, or is unable to support that feature (e.g. MUMPS),
+   then we do not have to burden the developer with stubbing out the
+   method.  The solver interface can then just call the method when
+   they want to.
+
+   A lot of status machinery exists already in the Amesos::Status
+   class, but it was designed mostly for internal use.  It could just
+   be cleaned up and made ready for use by users.
+
 
 -------------------------------
  Some things worth considering

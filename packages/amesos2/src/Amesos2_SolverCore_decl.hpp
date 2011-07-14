@@ -113,7 +113,7 @@ public:
   typedef typename MatrixAdapter<matrix_type>::local_ordinal_t    local_ordinal_type;
   typedef typename MatrixAdapter<matrix_type>::global_ordinal_t   global_ordinal_type;
   typedef typename MatrixAdapter<matrix_type>::global_size_t      global_size_type;
-  // typedef typename MatrixAdapter<matrix_type>::node_t             node_type;
+  typedef typename MatrixAdapter<matrix_type>::node_t             node_type;
 
 
   /// \name Constructor/Destructor methods

@@ -43,6 +43,7 @@
 
 using std::string;
 
+using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::ETransp;
 using Teuchos::TRANS;
@@ -387,7 +388,7 @@ bool do_epetra_test(const string& mm_file,
   try {
     solver->symbolicFactorization().numericFactorization().solve();
   } catch ( std::exception e ){
-    *fos << "Exception encountered during solution: " << e.what() << std::endl;
+    *fos << "      Exception encountered during solution: " << e.what() << std::endl;
     return( false );
   }
   if( verbosity > 2 ){
@@ -538,9 +539,27 @@ bool do_tpetra_test_with_types(const string& mm_file,
 
   solver->setParameters( rcpFromRef(solve_params) );
   try {
-    solver->symbolicFactorization().numericFactorization().solve();
+    solver->preOrdering();
   } catch ( std::exception e ){
-    *fos << "Exception encountered during solution." << e.what() << std::endl;
+    *fos << "      Exception encountered during preOrdering: " << e.what() << std::endl;
+    return( false );
+  }
+  try {
+    solver->symbolicFactorization();
+  } catch ( std::exception e ){
+    *fos << "      Exception encountered during symbolic factorization: " << e.what() << std::endl;
+    return( false );
+  }
+  try {
+    solver->numericFactorization();
+  } catch ( std::exception e ){
+    *fos << "      Exception encountered during numeric factorization: " << e.what() << std::endl;
+    return( false );
+  }
+  try {
+    solver->solve();
+  } catch ( std::exception e ){
+    *fos << "      Exception encountered during solution: " << e.what() << std::endl;
     return( false );
   }
   if( verbosity > 2 ){
@@ -610,7 +629,7 @@ bool test_tpetra(const string& mm_file,
 	  }
 #else
 	  if( verbosity > 1 ){
-	    *fos << "    Complex support not enabled, aborting run `"
+	    *fos << "    Complex support not enabled, skipping run `"
 		 << run_list.name() << "'..." << std::endl;
 	  }
 	  continue;

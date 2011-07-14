@@ -79,11 +79,14 @@
  * Solver Interface Defines *
  ****************************/
 
-/* Define if want to build amesos2-klu2 */
+/* Define if you want to build amesos2-klu2 */
 #cmakedefine HAVE_AMESOS2_KLU2
 
-/* Define if want to build amesos2-superlu */
+/* Define if you want to build amesos2-superlu */
 #cmakedefine HAVE_AMESOS2_SUPERLU
 
-/* Define if want to build amesos2-superlumt */
+/* Define if you want to build amesos2-superlumt */
 #cmakedefine HAVE_AMESOS2_SUPERLUMT
+
+/* Define if you want to build amesos2-superludist */
+#cmakedefine HAVE_AMESOS2_SUPERLUDIST

@@ -75,16 +75,6 @@ void Status::setStatusParameters(
     debug_ = parameterList->get<int>("DebugLevel");
   }
 
-  // print some timing information (on process 0)
-  if( parameterList->isParameter("PrintTiming") ){
-    printTiming_ = parameterList->get<bool>("PrintTiming");
-  }
-
-  // print some statistics (on process 0). Do not include timing
-  if( parameterList->isParameter("PrintStatus") ){
-    printStatus_ = parameterList->get<bool>("PrintStatus");
-  }
-
   // // compute norms of some vectors
   // if( parameterList->isParameter("ComputeVectorNorms") ){
   //   computeVectorNorms_ = parameterList->get<bool>("ComputeVectorNorms");

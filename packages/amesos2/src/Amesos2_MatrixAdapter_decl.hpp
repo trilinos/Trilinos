@@ -186,6 +186,8 @@ namespace Amesos {
       return col_map_;
     }
 
+    RCP<const type> get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
+
     /// Returns a short description of this Solver
     std::string description() const;
 
@@ -288,8 +290,6 @@ namespace Amesos {
     bool isLocallyIndexed() const;
 
     bool isGloballyIndexed() const;
-
-    RCP<const type> get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
 
   protected:
     const RCP<const Matrix> mat_;
