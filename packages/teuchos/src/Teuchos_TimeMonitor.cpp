@@ -48,6 +48,8 @@
 
 namespace Teuchos {
 
+  typedef std::map<std::string, std::pair<double, int> > timer_map_t;
+
   TimeMonitor::TimeMonitor (Time& timer, bool reset) 
     : PerformanceMonitorBase<Time>(timer, reset)
   {
@@ -63,130 +65,262 @@ namespace Teuchos {
   {
     const Array<RCP<Time> > timers = counters();
   
+    // In debug mode, loop first to check whether any of the timers
+    // are running, before resetting them.  This ensures that this
+    // method satisfies the strong exception guarantee (either it
+    // completes normally, or there are no side effects).
+#ifdef TEUCHOS_DEBUG
     typedef Array<RCP<Time> >::size_type size_type;
     const size_type numTimers = timers.size();
     for (size_type i = 0; i < numTimers; ++i) 
       {
 	Time &timer = *timers[i];
-#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPTION(timer.isRunning(), std::logic_error,
 			   "The timer i = " << i << " with name \"" 
 			   << timer.name() << "\" is currently running and may not "
 			   "be reset.");
+      }
 #endif // TEUCHOS_DEBUG
-	timer.reset();
-      }
+
+    for (Array<RCP<Time> >::const_iterator it = timers.begin(); 
+	 it != timers.end(); ++it)
+      (*it)->reset ();
   }
 
-  void
-  TimeMonitor::filterZeroData (Array<timer_datum_t>& timerData)
-  {
-    Array<timer_datum_t> newTimerData;
-    for (Array<timer_datum_t>::const_iterator it = timerData.begin(); 
-	 it != timerData.end(); ++it)
-      {
-	if (it->second.second > 0)
-	  newTimerData.push_back (*it);
-      }
-    timerData.swap (newTimerData);
-  }
+  namespace {
 
-  void
-  TimeMonitor::mergeTimers (const Comm<int>& comm, 
-			    const Array<timer_datum_t>& localTimerData,
-			    Array<timer_datum_t>& globalTimerData,
-			    const bool intersect)
-  {
-    const int myRank = comm.getRank ();
-    const int left = 0;
-    const int right = comm.getSize() - 1;
-    Array<timer_datum_t> theGlobalTimerData;
-    mergeTimersHelper (comm, myRank, left, right, 
-		       localTimerData, theGlobalTimerData, intersect);
-    // "Transactional" semantics ensure strong exception safety for
-    // output.
-    globalTimerData.swap (theGlobalTimerData);
-  }
+    // \brief Helper function for \c mergeTimersHelper().
+    //
+    // mergeTimersHelper() implements the set union resp. intersection
+    // (depending on the \c setOp argument) of the MPI process' sets
+    // of timer names as a parallel reduction.  The \c
+    // mergeTimersPair() function implements the associative operator
+    // which computes the set union resp. intersection of two sets:
+    // the "left" process' intermediate reduction result (global timer
+    // names), and the "mid" process' local timer names.
+    // 
+    // \param comm [in] Communicator for which mergeTimersHelper() was
+    //   called.
+    //
+    // \param myRank [in] Rank of the calling MPI process; must be
+    //   either == left or == mid.
+    //
+    // \param left [in] The "left" input argument of
+    //   mergeTimersHelper().
+    //
+    // \param mid [in] The value of "mid" in the implementation of
+    //   mergeTimersHelper().
+    //
+    // \param localTimerNames [in] List of timer names belonging to
+    //   the calling MPI process.
+    //
+    // \param globalTimerNames [in/out] Only accessed if myRank ==
+    //   left.  If so, on input: the intermediate reduction result of
+    //   the union resp. intersection (depending on \c setOp).  On
+    //   output: the union resp. intersection of the input value of
+    //   globalTimerNames with the other MPI process' localTimerNames.
+    //
+    // \param setOp [in] If Intersection, compute the set intersection
+    //   of timer names, else if Union, compute the set union of timer
+    //   names.
+    void
+    mergeTimersPair (const Comm<int>& comm, 
+		     const int myRank,
+		     const int left,
+		     const int mid,
+		     const Array<std::string>& localTimerNames,
+		     Array<std::string>& globalTimerNames,
+		     const ETimerSetOp setOp)
+    {
+      using std::string;
 
-  void
-  TimeMonitor::mergeTimersHelper (const Comm<int>& comm, 
-				  const int myRank,
-				  const int left,
-				  const int right, // inclusive range [left, right]
-				  const Array<timer_datum_t>& localTimerData,
-				  Array<timer_datum_t>& globalTimerData,
-				  const bool intersect)
-  {
-    // Correctness proof:
+      if (myRank == left)
+	{ // Receive timer names from the other process, and merge its
+	  // names with the timer names on this process.
+	  Array<string> otherTimerNames;
+	  (void) receive (comm, mid, &otherTimerNames);
+
+	  // Assume that both globalTimerNames and otherTimerNames are
+	  // sorted.  Compute the set intersection / union as
+	  // specified by the enum.
+	  Array<string> newTimerNames;
+	  if (setOp == Intersection)
+	    std::set_intersection (globalTimerNames.begin(), globalTimerNames.end(),
+				   otherTimerNames.begin(), otherTimerNames.end(),
+				   std::back_inserter (newTimerNames));
+	  else if (setOp == Union)
+	    std::set_union (globalTimerNames.begin(), globalTimerNames.end(),
+			    otherTimerNames.begin(), otherTimerNames.end(),
+			    std::back_inserter (newTimerNames));
+	  else
+	    TEST_FOR_EXCEPTION(setOp != Intersection && setOp != Union,
+			       std::logic_error,
+			       "Invalid set operation enum value.  Please "
+			       "report this bug to the Teuchos developers.");
+	  globalTimerNames.swap (newTimerNames);
+	}
+      else if (myRank == mid)
+	send (comm, localTimerNames, left);
+      else
+	TEST_FOR_EXCEPTION(myRank != left && myRank != mid, 
+			   std::logic_error,
+			   "myRank=" << myRank << " is neither left=" << left
+			   << " nor mid=" << mid << ".  Please report this "
+			   "bug to the Teuchos developers.");
+    }
+
+    // Recursive helper function for \c mergeTimers().
     //
-    // 1. Both set intersection and set union are associative (and
-    //    indeed even commutative) operations.
-    // 2. mergeTimersHelper() is just a reduction by binary tree.
-    // 3. Reductions may use any tree shape as long as the binary
-    //    operation is associative.
+    // mergeTimersHelper() implements the set union resp. intersection
+    // (depending on the \c setOp argument) of the MPI process' sets
+    // of timer names as a parallel reduction. (Since the Teuchos comm
+    // wrappers as of 11 July 2011 lack a wrapper for MPI_Reduce(), we
+    // hand-roll the reduction using a binary tree via recursion.  We
+    // don't need an all-reduce in this case.)
+    void
+    mergeTimersHelper (const Comm<int>& comm, 
+		       const int myRank,
+		       const int left,
+		       const int right, // inclusive range [left, right]
+		       const Array<std::string>& localTimerNames,
+		       Array<std::string>& globalTimerNames,
+		       const ETimerSetOp setOp)
+    {
+      // Correctness proof:
+      //
+      // 1. Both set intersection and set union are associative (and
+      //    indeed even commutative) operations.
+      // 2. mergeTimersHelper() is just a reduction by binary tree.
+      // 3. Reductions may use any tree shape as long as the binary
+      //    operation is associative.
+      //
+      // Recursive "reduction" algorithm:
+      //
+      // If the (intersection, union) of [left, mid-1] and the
+      // (intersection, union) of [mid, right] are both computed
+      // correctly, then the (intersection, union) of these two sets is
+      // the union of [left, right].
+      //
+      // The first base case is left == right: the (intersection, union)
+      // of one set is simply that set.  For safety, we include a second
+      // base case left > right, which means an empty interval: the
+      // (intersection, union) of an empty set of sets is the empty set.
+      if (left > right)
+	return;
+      else if (left == right)
+	{
+	  globalTimerNames.resize (localTimerNames.length());
+	  std::copy (localTimerNames.begin(), localTimerNames.end(), 
+		     globalTimerNames.begin());
+	}
+      else
+	{ // You're sending messages across the network, so don't bother
+	  // to optimize away a few branches here.
+	  //
+	  // Recurse on [left, mid-1] or [mid, right], depending on myRank.
+	  const int mid = (right - left + 1) / 2;
+	  if (myRank >= left && myRank <= mid-1)
+	    mergeTimersHelper (comm, myRank, left, mid-1, 
+			       localTimerNames, globalTimerNames, setOp);
+	  else if (myRank >= mid && myRank <= right)
+	    mergeTimersHelper (comm, myRank, mid, right,
+			       localTimerNames, globalTimerNames, setOp);
+	  // Combine the results of the recursive step.
+	  if (myRank == left || myRank == mid)
+	    mergeTimersPair (comm, myRank, left, mid, 
+			     localTimerNames, globalTimerNames, setOp);
+	}
+    }
+
+    /// \brief Merge timer data over all processors.
     //
-    // Recursive "reduction" algorithm:
+    // \param comm [in] Communicator over which to merge.
+    // \param localTimerData [in] Each processor's timer data.
+    // \param globalTimerData [out] On output, on MPI Proc 0: the
+    //   results of merging the timer data.
+    // \param setOp [in] If Intersection, globalTimerData on output
+    //   contains the intersection of all timers.  If Union,
+    //   globalTimerData on output contains the union of all timers.
+    void
+    mergeTimers (const Comm<int>& comm, 
+		 const Array<std::string>& localTimerNames,
+		 Array<std::string>& globalTimerNames,
+		 const ETimerSetOp setOp)
+    {
+      const int myRank = comm.getRank ();
+      const int left = 0;
+      const int right = comm.getSize() - 1;
+      Array<std::string> theGlobalTimerNames;
+      mergeTimersHelper (comm, myRank, left, right, 
+			 localTimerNames, theGlobalTimerNames, setOp);
+      // "Transactional" semantics ensure strong exception safety for
+      // output.
+      globalTimerNames.swap (theGlobalTimerNames);
+    }
+
     //
-    // If the (intersection, union) of [left, mid-1] and the
-    // (intersection, union) of [mid, right] are both computed
-    // correctly, then the (intersection, union) of these two sets is
-    // the union of [left, right].
+    // \brief Locally filter out timer data with zero call counts.
     //
-    // The first base case is left == right: the (intersection, union)
-    // of one set is simply that set.  For safety, we include a second
-    // base case left > right, which means an empty interval: the
-    // (intersection, union) of an empty set of sets is the empty set.
-    if (left > right)
-      return;
-    else if (left == right)
-      {
-	globalTimerData.resize (localTimerData.length());
-	std::copy (localTimerData.begin(), localTimerData.end(), 
-		   globalTimerData.begin());
-      }
-    else
-      { // You're sending messages across the network, so don't bother
-	// to optimize away a few branches here.
-	//
-	// Recurse on [left, mid-1] or [mid, right], depending on myRank.
-	const int mid = (right - left + 1) / 2;
-	if (myRank >= left && myRank <= mid-1)
-	  mergeTimersHelper (comm, myRank, left, mid-1, 
-			     localTimerData, globalTimerData, intersect);
-	else if (myRank >= mid && myRank <= right)
-	  mergeTimersHelper (comm, myRank, mid, right,
-			     localTimerData, globalTimerData, intersect);
-	// Combine the results of the recursive step.
-	if (myRank == left || myRank == mid)
-	  mergeTimersPair (comm, myRank, left, mid, 
-			   localTimerData, globalTimerData, intersect);
-      }
-  }
+    void
+    filterZeroData (std::map<std::string, std::pair<double, int> >& timerData)
+    {
+      timer_map_t newTimerData;
+      for (timer_map_t::const_iterator it = timerData.begin(); 
+	   it != timerData.end(); ++it)
+	{
+	  if (it->second.second > 0)
+	    newTimerData[it->first] = it->second;
+	}
+      timerData.swap (newTimerData);
+    }
+
+    //
+    // \brief Collect and sort local timer data by timer names.
+    //
+    void
+    collectLocalTimerData (std::map<std::string, std::pair<double, int> >& localData,
+			   const Array<RCP<Time> >& localCounters)
+    {
+      using std::make_pair;
+      typedef timer_map_t::const_iterator const_iter_t;
+      typedef timer_map_t::iterator iter_t;
+
+      timer_map_t theLocalData;
+      for (Array<RCP<Time> >::const_iterator it = localCounters.begin();
+	   it != localCounters.end(); ++it)
+	{
+	  const std::string& name = (*it)->name();
+	  const double timing = (*it)->totalElapsedTime();
+	  const int numCalls = (*it)->numCalls();
+
+	  // Merge timers with duplicate labels, by summing their
+	  // total elapsed times and call counts.
+	  iter_t loc = theLocalData.find (name);
+	  if (loc == theLocalData.end())
+	    // Use loc as an insertion location hint.
+	    theLocalData.insert (loc, make_pair (name, make_pair (timing, numCalls)));
+	  else
+	    {
+	      loc->second.first += timing;
+	      loc->second.second += numCalls;
+	    }
+	}
+      // This avoids copying the map, and also makes this method
+      // satisfy the strong exception guarantee.
+      localData.swap (theLocalData);
+    }
+  } // namespace (anonymous)
 
   namespace {
     //
     // Local utility functions for operating on timer_datum_t objects.
     //
-    inline bool
-    lessTimerData (const std::pair<std::string, std::pair<double, int> >& x,
-		   const std::pair<std::string, std::pair<double, int> >& y)
-    {
-      return x.first < y.first;
-    }
 
     inline bool
     eqTimerData (const std::pair<std::string, std::pair<double, int> >& x,
 		 const std::pair<std::string, std::pair<double, int> >& y)
     {
       return x.first == y.first;
-    }
-
-    inline void
-    mergeTimerData (std::pair<std::string, std::pair<double, int> >& x,
-		    const std::pair<std::string, std::pair<double, int> >& y)
-    {
-      x.second.first += y.second.first;
-      x.second.second += y.second.second;
     }
 
     inline const std::string& 
@@ -196,109 +330,14 @@ namespace Teuchos {
     }
   } // namespace (anonymous)
 
-  void
-  TimeMonitor::mergeTimersPair (const Comm<int>& comm, 
-				const int myRank,
-				const int left,
-				const int mid,
-				const Array<timer_datum_t>& localTimerData,
-				Array<timer_datum_t>& globalTimerData,
-				const bool intersect)
-  {
-    using std::string;
-
-    if (myRank == left)
-      { // Receive timer data from the other process, and merge its
-	// timers with the timers on this process.
-	Array<timer_datum_t> otherTimerData;
-	(void) receive (comm, mid, &otherTimerData);
-
-	// Assume that the other process' timer data is (jointly)
-	// sorted, in alphabetical order by timer names.  Assume also
-	// that our timer data (as stored in (names, timings, calls)) is
-	// sorted in the same way.  Compute the set intersection / union
-	// as specified.
-	Array<timer_datum_t> newTimerData;
-	if (intersect)
-	  std::set_intersection (globalTimerData.begin(), globalTimerData.end(),
-				 otherTimerData.begin(), otherTimerData.end(),
-				 std::back_inserter (newTimerData));
-	else
-	  std::set_union (globalTimerData.begin(), globalTimerData.end(),
-			  otherTimerData.begin(), otherTimerData.end(),
-			  std::back_inserter (newTimerData));
-	globalTimerData.swap (newTimerData);
-      }
-    else if (myRank == mid)
-      send (comm, localTimerData, left);
-    else
-      TEST_FOR_EXCEPTION(myRank != left && myRank != mid, 
-			 std::logic_error,
-			 "Should never get here! myRank=" << myRank 
-			 << " is neither left=" << left << " nor mid=" 
-			 << mid << ".");
-  }
-
-  void
-  TimeMonitor::collectLocalTimerData (Array<timer_datum_t>& localData)
-  {
-    using std::make_pair;
-    using std::pair;
-    using std::string;
-
-    Array<RCP<Time> > theLocalCounters = counters();
-    const Array<RCP<Time> >::size_type numLocalCounters = theLocalCounters.length();
-  
-    Array<timer_datum_t> theLocalData;
-    theLocalData.reserve (numLocalCounters);
-    for (Array<RCP<Time> >::const_iterator it = theLocalCounters.begin();
-	 it != theLocalCounters.end(); ++it)
-      {
-	const string& name = (*it)->name();
-	const double timing = (*it)->totalElapsedTime();
-	const int numCalls = (*it)->numCalls();
-	theLocalData.push_back (make_pair (name, make_pair (timing, numCalls)));
-      }
-
-    // Sort the local timer data in place, using timer name as the key.
-    std::sort (theLocalData.begin(), theLocalData.end(), lessTimerData);
-
-    // Merge timers with duplicate labels by summing their total elapsed
-    // times and call counts.
-    Array<timer_datum_t>::iterator first = theLocalData.begin();
-    Array<timer_datum_t>::iterator second = first;
-    while (first != theLocalData.end() && second != theLocalData.end())
-      {
-	++second;
-	if (second != theLocalData.end())
-	  {
-	    if (eqTimerData (*first, *second))
-	      mergeTimerData (*first, *second);
-	    else
-	      ++first;
-	  }
-	else 
-	  // "second" is at the (old) end of the data.
-	  // Make "first" mark the new end.
-	  ++first;
-      }
-    Array<timer_datum_t> finalLocalData;
-    finalLocalData.reserve (theLocalData.length());
-    std::copy (theLocalData.begin(), first, std::back_inserter (finalLocalData));
-
-    // This avoids copying the array yet another time, and also gives
-    // a nice "transactional" semantics to this method (for strong
-    // exception safety).
-    localData.swap (finalLocalData);
-  }
-
   void 
   TimeMonitor::summarize (std::ostream &out,
 			  const bool alwaysWriteLocal,
 			  const bool writeGlobalStats,
 			  const bool writeZeroTimers,
-			  const bool globalUnionOfTimers)
+			  const ETimerSetOp setOp)
   {
+    using std::make_pair;
     using std::string;
 
     // The default "MPI_COMM_WORLD" communicator.
@@ -306,24 +345,90 @@ namespace Teuchos {
     const int numProcs = pComm->getSize();
     const int myRank = pComm->getRank();
 
-    // This is subject to revision, since we can't print both global
-    // and local stats in the same table if they don't share the same
-    // set of timer labels.  In any case, only MPI Rank 0 prints local
-    // data.
+    // Only MPI Rank 0 prints local timer stats, if asked always to
+    // print local data.
     bool writeLocalStats = alwaysWriteLocal && myRank == 0;
 
     // Collect and sort local timer data by timer names.
-    Array<timer_datum_t> localTimerData;
-    collectLocalTimerData (localTimerData);
+    timer_map_t localTimerData;
+    collectLocalTimerData (localTimerData, counters());
 
-    // globalTimerData is only valid if writeGlobalStats is true.
-    Array<timer_datum_t> globalTimerData; 
+    // Extract the set of local timer names.  The std::map keeps them
+    // sorted alphabetically.
+    Array<string> localTimerNames;
+    std::transform (localTimerData.begin(), localTimerData.end(), 
+		    std::back_inserter (localTimerNames), 
+		    std::mem_fun (&timer_map_t::value_type::first));
+    // for (timer_map_t::const_iterator it = localTimerData.begin(); 
+    // 	 it != localTimerData.end(); ++it)
+    //   localTimerNames.push_back (it->first);
+      
+    // globalTimerData and globalTimerNames are only valid if
+    // writeGlobalStats is true.
+    Array<string> globalTimerNames;
+    timer_map_t globalTimerData;
+
+    // If setOp == Union, there may be some global timers that are not
+    // local timers.  In that case, if we want to print local timers,
+    // we forbid filtering out zero data, for reasons discussed below.
+    bool foundGlobalNotLocal = false;
     if (writeGlobalStats)
-      { // This does the correct and inexpensive thing if numProcs==1.
-	mergeTimers (*pComm, localTimerData, globalTimerData, 
-		     ! globalUnionOfTimers);
-	if (! writeZeroTimers)
-	  filterZeroData (globalTimerData);
+      { // This does the correct and inexpensive thing (just copies
+	// the timer data) if numProcs == 1.
+	mergeTimers (*pComm, localTimerNames, globalTimerNames, setOp);
+
+	// mergeTimers() just merges timer names, not their actual
+	// data.  Now we need to fill globalTimerData with this MPI
+	// process' timer data for those timers in globalTimerNames.
+	// If setOp == Union, there may be some global timers that are
+	// not local timers.  In that case, if we want to print local
+	// timers, we insert a local timer datum with zero elapsed
+	// time and zero call count, and forbid filtering out zero
+	// data.  Inserting the local timer datum makes sure that both
+	// global and local timer columns in the output table have the
+	// same number of rows.
+	//
+	// Insertion optimization; if the iterator given to
+	// map::insert points right before where we want to insert,
+	// insertion is O(1).  globalTimerNames is sorted, so feeding
+	// the iterator output of map::insert into the next
+	// invocation's input should make the whole insertion O(N)
+	// where N is the number of entries in globalTimerNames.
+	timer_map_t::iterator globalMapIter = globalTimerData.begin();
+	for (Array<string>::const_iterator it = globalTimerNames.begin(); 
+	     it != globalTimerNames.end(); ++it)
+	  {
+	    const std::string& globalName = *it;
+	    localMapIter = localTimerData.find (globalName);
+	    if (localMapIter == localTimerData.end())
+	      {
+		foundGlobalNotLocal = true;
+
+		// We really only need to do the following on MPI Rank
+		// 0, which is the only process that will print local
+		// or global output.  However, we do it on all MPI
+		// processes just in case someone later wants to
+		// modify this function to print out local timer data
+		// for some other MPI process other than Rank 0.
+		std::pair<timer_map_t::iterator, bool> insertResult;
+		if (alwaysWriteLocal)
+		  {
+		    insertResult = localTimerData.insert (localMapIter, make_pair (globalName, make_pair (double(0), int(0))));
+		    localMapIter = insertResult.first;
+		  }
+	      }
+	    else 
+	      // We know that globalTimerNames is unique, so we don't
+	      // have to worry about inserting an element whose key
+	      // already exists in the global timer data map.
+	      globalTimerData.insert (globalMapIter, make_pair (globalName, localMapIter->second));
+	
+	    // Don't filter out zero data if we had to insert a local
+	    // timer datum corresponding to a global timer name with no
+	    // local timer name.
+	    if (! writeZeroTimers && ! foundGlobalNotLocal)
+	      filterZeroData (globalTimerData);
+	  }
       }
     // Wait until after merging local into global timer data before
     // filtering out local timers with zero call counts.  This ensures
@@ -339,30 +444,41 @@ namespace Teuchos {
     // would be more complicated and would not help the common case
     // (in which the local and global sets of timers, as well as their
     // call counts, are the same).
-    if ((alwaysWriteLocal || ! writeGlobalStats) && ! writeZeroTimers)
+    //
+    // If writing local stats or not writing global stats, and if not
+    // writing zero timers, and if (if writing global stats, we
+    // didn't find any global-not-local timer names), filter zero data
+    // from local timers.
+    if ((alwaysWriteLocal || ! writeGlobalStats) && ! writeZeroTimers && (! writeGlobalStatus || foundGlobalNotLocal))
       filterZeroData (localTimerData);
 
     // Extract the timer names (global or local) into a single array
     // of strings, representing the column labels in the table.
-    Array<string> timerNames;
-    timerNames.reserve (globalTimerData.length());
+    Array<string> timerNames (globalTimerData.size());
     if (writeGlobalStats)
       {
-	std::transform (globalTimerData.begin(), globalTimerData.end(), 
-			std::back_inserter (timerNames), timerDatumName);
-	// If the set of local timer names doesn't match the set of
-	// global timer names, we can't print both in the same table.
-	// Check this first!  In this case, rather than throwing an
-	// exception, we ignore the "alwaysWriteLocal" option and only
-	// print global timer data.
-	if (alwaysWriteLocal && 
-	    ! std::equal (localTimerData.begin(), localTimerData.end(),
-			  globalTimerData.begin(), eqTimerData))
-	  writeLocalStats = false;
+	std::copy (globalTimerNames.begin(), globalTimerNames.end(), timerNames.begin());
+
+	// FIXME (mfh 15 Jul 2011) We've already dealt with this
+	// above.  localTimerNames might be different than
+	// globalTimerNames, but if writeGlobalStats==true and
+	// alwaysWriteLocal==true, then localTimerData has had "dummy"
+	// data inserted to pad out the table.
+	if (false)
+	  {
+	    // If the set of local timer names doesn't match the set of
+	    // global timer names, we can't print both in the same table.
+	    // Check this first!  In this case, rather than throwing an
+	    // exception, we ignore the "alwaysWriteLocal" option and only
+	    // print global timer data.
+	    if (alwaysWriteLocal && 
+		! std::equal (localTimerNames.begin(), localTimerNames.end(), 
+			      globalTimerNames.begin()))
+	      writeLocalStats = false;
+	  }
       }
     else // Use local timer names as the column labels.
-      std::transform (localTimerData.begin(), localTimerData.end(), 
-		      std::back_inserter (timerNames), timerDatumName);
+      std::copy (localTimerNames.begin(), localTimerNames.end(), timerNames.begin());
 
     const int precision = format().precision();
 
@@ -405,7 +521,7 @@ namespace Teuchos {
 	Array<double> localNumCalls;
 	localTimings.reserve (localTimerData.length());
 	localNumCalls.reserve (localTimerData.length());
-	for (Array<timer_datum_t>::const_iterator it = localTimerData.begin();
+	for (timer_map_t::const_iterator it = localTimerData.begin();
 	     it != localTimerData.end(); ++it)
 	  {
 	    localTimings.push_back (it->second.first);
@@ -419,8 +535,7 @@ namespace Teuchos {
 
     if (writeGlobalStats)
       {
-	const Array<timer_datum_t>::size_type numGlobalTimers = 
-	  globalTimerData.length();
+	const timer_map_t::size_type numGlobalTimers = globalTimerData.size();
 
 	// Copy global timer data out of the array-of-structs into
 	// separate arrays, for display in the table and/or for
@@ -429,7 +544,7 @@ namespace Teuchos {
 	Array<double> globalNumCalls;
 	globalTimings.reserve (globalTimerData.length());
 	globalNumCalls.reserve (globalTimerData.length());
-	for (Array<timer_datum_t>::const_iterator it = globalTimerData.begin();
+	for (timer_map_t::const_iterator it = globalTimerData.begin();
 	     it != globalTimerData.end(); ++it)
 	  {
 	    globalTimings.push_back (it->second.first);

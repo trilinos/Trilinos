@@ -153,21 +153,34 @@ public:
 
   /** \name Static functions */
   //@{
- 
-  /** \brief Wrapping of getNewCounter() for backwards compatibiity with old
-   * code.
-   */
+
+  /// \brief Return a new timer with the given name.
+  ///
+  /// This method wraps \c getNewCounter() (inherited from the base
+  /// class) for backwards compatibiity.
   static Teuchos::RCP<Time> getNewTimer (const std::string& name) {
-    return getNewCounter(name);
+    return getNewCounter (name);
   }
 
-  /** \brief Reset the global timers to zero.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li>None of the timers must currently be running!
-   * </ul>
-   */
+  /// \brief Reset all global timers to zero.
+  ///
+  /// This method only affects \c Time objects created by \c
+  /// getNewCounter() or \c getNewTimer().
+  ///
+  /// <b>Preconditions:</b><ul>
+  /// <li>None of the timers must currently be running.
+  /// </ul>
   static void zeroOutTimers();
+
+  /// \brief Set operation type for \c summarize() to perform.
+  ///
+  /// The \c summarize() method can compute global timer statistics
+  /// (currently the min, mean, and max over all timers).  Since
+  /// different MPI processes may have created different sets of
+  /// timers, summarize() has to decide on a common set of timers for
+  /// which to compute statistics.  This enum allows the caller to
+  /// specify how summarize() picks the global set of timers.
+  typedef enum { Intersection, Union } ETimerSetOp;
  
   /// \brief Print summary statistics for all timers. 
   ///
@@ -181,9 +194,10 @@ public:
   /// Note that different MPI processes may have different sets of
   /// timers.  If writeGlobalStats is true, we have to reconcile the
   /// different sets of timers somehow.  This method gives you two
-  /// options: if globalUnionOfTimers is true, it computes the
-  /// intersection (the common subset) of timers on all MPI processes,
-  /// otherwise it computes the union of timers on all MPI processes.
+  /// options: if setOp is Intersection, it computes the intersection
+  /// (the common subset) of timers on all MPI processes, otherwise if
+  /// setOp is Union, it computes the union of timers on all MPI
+  /// processes.
   ///
   /// Suppose there are \f$P\f$ MPI processes, \f$N\f$ unique timers
   /// in the global union, and \f$n\f$ unique timers in the global
@@ -192,18 +206,19 @@ public:
   /// worst case) when computing either the intersection or the union
   /// of timers (the algorithm is similar in either case).  The whole
   /// algorithm takes at worst \f$O(N (\log N) (\log P))\f$ time along
-  /// the critical path.
+  /// the critical path (i.e., on the "slowest MPI process").
   ///
   /// \param out [out] Output stream to which to write.  This will
   ///   only be used on MPI Rank 0.
   ///
   /// \param alwaysWriteLocal [in] If true, MPI Proc 0 will write its
   ///   local timings to the given output stream.  Defaults to false,
-  ///   since the global statistics are more meaningful.  We also
-  ///   exclude this case if the local set of timers differs from the
-  ///   global set of timers (either the union or the intersection,
-  ///   depending on \c globalUnionOfTimers), since that would mess up
-  ///   the table's formatting.
+  ///   since the global statistics are more meaningful.  If the local
+  ///   set of timers differs from the global set of timers (either
+  ///   the union or the intersection, depending on \c setOp), Proc 0
+  ///   will create corresponding local timer data (<i>not</i>
+  ///   corresponding timers) with zero elapsed times and call counts,
+  ///   just to pad the table of output.
   ///
   /// \param writeGlobalStats [in] If true (the default), compute and
   ///   display the min, average (arithmetic mean), and max of all
@@ -216,69 +231,21 @@ public:
   ///   timers that have never been called (numCalls() == 0).  If
   ///   true, display results for all timers.
   ///
-  /// \param globalUnionOfTimers [in] If true, compute and display the
-  ///   union of all created timers over all processors.  If false
-  ///   (the default), compute and display the intersection of all
+  /// \param setOp [in] If Intersection (the default), compute and
+  ///   display the intersection of all created timers over all
+  ///   processors.  If Union, compute and display the union of all
   ///   created timers over all processors.
   ///
   /// \note If writeGlobalStats is true, this method <i>must</i> be
-  ///   called by all processors.
+  ///   called by all processors.  This method will <i>only</i>
+  ///   perform communication if writeGlobalStats is true.
   static void 
   summarize (std::ostream &out=std::cout, 
 	     const bool alwaysWriteLocal=false,
 	     const bool writeGlobalStats=true,
 	     const bool writeZeroTimers=true,
-	     const bool globalUnionOfTimers=false);
+	     const ETimerSetOp setOp=Intersection);
   //@}
-
- private:
-
-  typedef std::pair<std::string, std::pair<double, int> > timer_datum_t;
-
-  //! Collect and sort local timer data by timer names.
-  static void collectLocalTimerData (Array<timer_datum_t>& localData);
-
-  //! Locally filter out timer data with zero call counts.
-  static void filterZeroData (Array<timer_datum_t>& timerData);
-
-  /// \brief Merge timer data over all processors.
-  ///
-  /// \param comm [in] Communicator over which to merge.
-  /// \param localTimerData [in] Each processor's timer data.
-  /// \param globalTimerData [out] On output, on MPI Proc 0: the
-  ///   results of merging the timer data.
-  /// \param intersect [in] If true, globalTimerData on output
-  ///   contains the intersection of all timers.  If false,
-  ///   globalTimerData on output contains the union of all timers.
-  static void
-  mergeTimers (const Comm<int>& comm, 
-	       const Array<timer_datum_t>& localTimerData,
-	       Array<timer_datum_t>& globalTimerData,
-	       const bool intersect);
-
-  //! Recursive helper function for \c mergeTimers().
-  static void 
-  mergeTimersHelper (const Comm<int>& comm, 
-		     const int myRank,
-		     const int left,
-		     const int right, // inclusive range [left, right]
-		     const Array<timer_datum_t>& localTimerData,
-		     Array<timer_datum_t>& globalTimerData,
-		     const bool intersect);
-
-  //! Helper function for \c mergeTimersHelper().
-  static void
-  mergeTimersPair (const Comm<int>& comm, 
-		   const int myRank,
-		   const int left,
-		   const int mid,
-		   const Array<timer_datum_t>& localTimerData,
-		   Array<timer_datum_t>& globalTimerData,
-		   const bool intersect);
-
-
-
-
 };
 
 
