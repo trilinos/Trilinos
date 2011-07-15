@@ -178,7 +178,6 @@ bool use_case_3_driver( MPI_Comm comm ,
 
     //------------------------------------------------------------------
 
-    const unsigned numProcs = mesh_bulk_data.parallel_size();
     const unsigned myProc = mesh_bulk_data.parallel_rank();
 
     stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
