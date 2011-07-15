@@ -35,9 +35,10 @@ namespace Amesos {
   {
     using Teuchos::as;
     
-    int nnz_ret = as<int>(nnz);
+    local_ordinal_t local_row = this->row_map_->getLocalElement(row);
+    int nnz_ret = 0;
     int rowmatrix_return_val
-      = this->mat_->ExtractMyRowCopy(as<int>(row),
+      = this->mat_->ExtractMyRowCopy(as<int>(local_row),
 				     as<int>(std::min(indices.size(), vals.size())),
 				     nnz_ret,
 				     vals.getRawPtr(),
@@ -47,8 +48,14 @@ namespace Amesos {
 			"Epetra_RowMatrix object returned error code "
 			<< rowmatrix_return_val << " from ExtractMyRowCopy." );
     nnz = as<size_t>(nnz_ret);
+
+    // Epetra_CrsMatrix::ExtractMyRowCopy returns local column
+    // indices, so transform these into global indices
+    for( size_t i = 0; i < nnz; ++i ){
+      indices[i] = this->col_map_->getGlobalElement(indices[i]);
+    }
   }
-  
+
   template <class DerivedMat>
   void
   AbstractConcreteMatrixAdapter<
