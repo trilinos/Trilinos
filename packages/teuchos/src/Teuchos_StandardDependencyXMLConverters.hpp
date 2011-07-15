@@ -772,22 +772,8 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     dependee, dependents, rangesAndValidators, defaultValidator));
 }
 
-/** \brief An xml converter for NumberArrayLengthDependencies.
- *
- * The valid XML representation of a NumberArrayLengthDependency is:
- * \code
-    <Dependency 
-      type="NumberArrayLengthDependency(dependee_number_type, type_of_array_values)"
-    >
-      <Dependee parameterId="Id of dependee parameter"/>
-      <Dependent parameterId="Id of dependent parameter"/>
-      ...Any other dependent parameters...
-      ...Optional Function tag...
-    </Dependency>
- \endcode
- */
 template<class DependeeType, class DependentType>
-class NumberArrayLengthDependencyXMLConverter : public DependencyXMLConverter{
+class ArrayModifierDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 
@@ -811,11 +797,18 @@ public:
   
   //@}
 
+protected:
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  getConcreteDependency(
+    RCP<const ParameterEntry> dependee,
+    const Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > function) const = 0;
+
 };
 
 template<class DependeeType, class DependentType>
 RCP<Dependency> 
-NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertXML(
+ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertXML(
   const XMLObject& xmlObj, 
   const Dependency::ConstParameterEntryList dependees,
   const Dependency::ParameterEntryList dependents,
@@ -824,7 +817,7 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertXML
 {
   TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
-    "A NumberArrayLengthDependency can only have 1 dependee!" <<
+    "A ArrayModifierDependency can only have 1 dependee!" <<
     std::endl << std::endl);
   RCP<SimpleFunctionObject<DependeeType> > functionObject = null;
   int functionIndex = xmlObj.findFirstChild(FunctionObject::getXMLTagName());
@@ -832,21 +825,20 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertXML
     functionObject = rcp_dynamic_cast<SimpleFunctionObject<DependeeType> >(
       FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionIndex)));
   }
-  return rcp(
-    new NumberArrayLengthDependency<DependeeType, DependentType>(
-      *(dependees.begin()), dependents, functionObject));
+  return 
+    getConcreteDependency(*(dependees.begin()), dependents, functionObject);
 }
 
 template<class DependeeType, class DependentType>
 void
-NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertDependency(
+ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertDependency(
     const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const
 {
-  RCP<const NumberArrayLengthDependency<DependeeType, DependentType> > castedDep =
-    rcp_dynamic_cast<const NumberArrayLengthDependency<DependeeType, DependentType> >(
+  RCP<const ArrayModifierDependency<DependeeType, DependentType> > castedDep =
+    rcp_dynamic_cast<const ArrayModifierDependency<DependeeType, DependentType> >(
       dependency);
   RCP<const SimpleFunctionObject<DependeeType> > functionObject = 
     castedDep->getFunctionObject();
@@ -858,8 +850,51 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertDep
 }
 
 
+/** \brief An xml converter for NumberArrayLengthDependencies.
+ *
+ * The valid XML representation of a NumberArrayLengthDependency is:
+ * \code
+    <Dependency 
+      type="NumberArrayLengthDependency(dependee_number_type, type_of_array_values)"
+    >
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependent parameters...
+      ...Optional Function tag...
+    </Dependency>
+ \endcode
+ */
+template<class DependeeType, class DependentType>
+class NumberArrayLengthDependencyXMLConverter : 
+  public ArrayModifierDependencyXMLConverter<DependeeType, DependentType>{
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  getConcreteDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > function) const;
+  //@}
+
+};
+
+template<class DependeeType, class DependentType>
+RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::getConcreteDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > function) const
+{
+return rcp(
+    new NumberArrayLengthDependency<DependeeType, DependentType>(
+      dependee, dependents, function));
+}
+
+
 } // namespace Teuchos
 
 
 #endif // TEUCHOS_STANDARDDEPENDENCYXMLCONVERTERS_HPP
-
