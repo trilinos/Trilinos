@@ -189,9 +189,13 @@ namespace Amesos {
     }
     // RCP<const type> get_mat = get(rowmap);
 
-    // technically, if all is well and good, then rowmap == rmap
+    // rmap may not necessarily check same as rowmap because rmap may
+    // have been constructued with Tpetra's "expert" constructor,
+    // which assumes that the map points are non-contiguous.
+    //
+    // TODO: There may be some more checking between the row map
+    // compatibility, but things are working fine now.
     RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
-    TEUCHOS_ASSERT( *rowmap == *rmap );
 
     ArrayView<const global_ordinal_t> node_elements = rmap->getNodeElementList();
     typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;

@@ -265,11 +265,24 @@ namespace Amesos {
   protected:
     // These methods will link to concrete implementations, and may
     // also be used by them
+
+    /**
+     * \param [out] row the global matrix row
+     * \param [out] indices global column indices
+     * \param [out] vals the non-zero values in row \c row
+     * \param [out] nnz the number of nonzeros extracted from row \c row
+     */
     void getGlobalRowCopy(global_ordinal_t row,
 			  const Teuchos::ArrayView<global_ordinal_t>& indices,
 			  const Teuchos::ArrayView<scalar_t>& vals,
 			  size_t& nnz) const;
 
+    /**
+     * \param [out] col the global matrix col
+     * \param [out] indices global column indices
+     * \param [out] vals the non-zero values in row \c row
+     * \param [out] nnz the number of nonzeros extracted from row \c row
+     */
     void getGlobalColCopy(global_ordinal_t col,
 			  const Teuchos::ArrayView<global_ordinal_t>& indices,
 			  const Teuchos::ArrayView<scalar_t>& vals,
