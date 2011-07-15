@@ -45,6 +45,21 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
     )
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUDistFiles
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers/
+    SOURCE_FILES superludist_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  PACKAGE_ADD_TEST(
+    Solver_Test
+    NAME SuperLU_DIST_Solver_Test
+    ARGS "--xml-params=superludist_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/"
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF()
+
 PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyFiles
   SOURCE_FILES solvers_test.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}

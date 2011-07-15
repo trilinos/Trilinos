@@ -300,6 +300,23 @@ struct FunctionMap<Superludist,Scalar>
         "SuperLU_DIST does not support the data type");
     }
 
+  static void permute_Dense_Matrix(SLUD::int_t fst_row,
+				   SLUD::int_t m_loc, // number of local matrix rows
+				   SLUD::int_t* row_to_proc,
+				   SLUD::int_t* perm, // row permutation vector
+				   typename type_map::type* X,
+				   int ldx,
+				   typename type_map::type* B,
+				   int ldb,
+				   int nrhs,
+				   SLUD::gridinfo_t* grid)
+  {
+    TEST_FOR_EXCEPTION( true,
+			std::runtime_error,
+			"SuperLU_DIST does not support the data type");
+  }
+				   
+
   /**
    * Equilibrates the matrix A.  Row scalings are placed in the array
    * \c r, and column scalings in the array \c c .  The estimated row
@@ -450,6 +467,16 @@ struct FunctionMap<Superludist,Scalar>
 			SLUD::gridinfo_t* grid,
 			typename type_map::SOLVEstruct_t* solve_struct);
 
+  static void LUstructInit(SLUD::int_t m,
+			   SLUD::int_t n,
+			   typename type_map::LUstruct_t* lu);
+
+  static void Destroy_LU(SLUD::int_t m,
+			 SLUD::gridinfo_t* grid,
+			 typename type_map::LUstruct_t* lu);
+
+  static void LUstructFree(typename type_map::LUstruct_t* lu);
+
   static void SolveFinalize(SLUD::superlu_options_t* options,
 			    typename type_map::SOLVEstruct_t* solve_struct);
 };
@@ -471,7 +498,7 @@ struct FunctionMap<Superludist,double>
       SLUD::D::pdgstrf(options, m, n, anorm, LU, grid, stat, info);
     }
 
-  static void gstrs(SLUD::int_t n, typename type_map::LUstruct_t* lu_struct, 
+  static void gstrs(SLUD::int_t n, type_map::LUstruct_t* lu_struct, 
     SLUD::ScalePermstruct_t* scale_perm_struct, SLUD::gridinfo_t* grid,
     type_map::type* B, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, 
     SLUD::int_t ldb, int nrhs, type_map::SOLVEstruct_t* solve_struct, 
@@ -481,7 +508,7 @@ struct FunctionMap<Superludist,double>
 		       fst_global_row, ldb, nrhs, solve_struct, stat, info);
     }
 
-  static void gstrs_Bglobal(SLUD::int_t n, typename type_map::LUstruct_t* lu_struct, 
+  static void gstrs_Bglobal(SLUD::int_t n, type_map::LUstruct_t* lu_struct, 
     SLUD::gridinfo_t* grid, type_map::type* B, SLUD::int_t ldb, int nrhs, 
     SLUD::SuperLUStat_t* stat, int* info)
     {
@@ -489,7 +516,7 @@ struct FunctionMap<Superludist,double>
     }
 
   static void gsrfs(SLUD::int_t n, SLUD::SuperMatrix* A, double anorm, 
-    typename type_map::LUstruct_t* lu_struct, SLUD::ScalePermstruct_t* scale_perm, 
+    type_map::LUstruct_t* lu_struct, SLUD::ScalePermstruct_t* scale_perm, 
     SLUD::gridinfo_t* grid, type_map::type* B, SLUD::int_t ldb, 
     type_map::type* X, SLUD::int_t ldx, int nrhs, 
     type_map::SOLVEstruct_t* solve_struct, double* berr, 
@@ -500,7 +527,7 @@ struct FunctionMap<Superludist,double>
     }
 
   static void gsrfs_ABXglobal(SLUD::int_t n, SLUD::SuperMatrix* A, 
-    double anorm, typename type_map::LUstruct_t* lu_struct, SLUD::gridinfo_t* grid, 
+    double anorm, type_map::LUstruct_t* lu_struct, SLUD::gridinfo_t* grid, 
     type_map::type* B, SLUD::int_t ldb, type_map::type* X, SLUD::int_t ldx, 
     int nrhs, double* berr, SLUD::SuperLUStat_t* stat, int* info)
     {
@@ -529,12 +556,20 @@ struct FunctionMap<Superludist,double>
     }
 
   static void create_Dense_Matrix(SLUD::SuperMatrix* X, int m, int n,
-    TypeMap<Superludist,double>::type* x, int ldx, SLUD::Stype_t stype,
+    type_map::type* x, int ldx, SLUD::Stype_t stype,
     SLUD::Dtype_t dtype, SLUD::Mtype_t mtype)
     {
       SLUD::D::dCreate_Dense_Matrix_dist(X, m, n, x, ldx, stype, dtype, mtype);
     }
 
+  static void permute_Dense_Matrix(SLUD::int_t fst_row, SLUD::int_t m_loc, 
+    SLUD::int_t* row_to_proc, SLUD::int_t* perm, type_map::type* X, int ldx, 
+    type_map::type* B, int ldb, int nrhs, SLUD::gridinfo_t* grid)
+  {
+    SLUD::D::pdPermute_Dense_Matrix(fst_row, m_loc, row_to_proc, perm,
+				    X, ldx, B, ldb, nrhs, grid);
+  }
+  
   static void gsequ_loc(SLUD::SuperMatrix* A, double* r, double* c, 
     double* rowcnd, double* colcnd, double* amax, int* info, 
     SLUD::gridinfo_t* grid)
@@ -594,14 +629,29 @@ struct FunctionMap<Superludist,double>
 
   static void SolveInit(SLUD::superlu_options_t* options, SLUD::SuperMatrix* A, 
     SLUD::int_t* perm_r, SLUD::int_t* perm_c, SLUD::int_t nrhs, 
-    typename type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
-    typename type_map::SOLVEstruct_t* solve_struct)
+    type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
+    type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::D::dSolveInit(options, A, perm_r, perm_c, nrhs, lu, grid, solve_struct);
     }
 
+  static void LUstructInit(SLUD::int_t m, SLUD::int_t n, type_map::LUstruct_t* lu)
+  {
+    SLUD::D::LUstructInit(m, n, lu);
+  }
+
+  static void Destroy_LU(SLUD::int_t m, SLUD::gridinfo_t* grid, type_map::LUstruct_t* lu)
+  {
+    SLUD::D::Destroy_LU(m, grid, lu);
+  }
+
+  static void LUstructFree(type_map::LUstruct_t* lu)
+  {
+    SLUD::D::LUstructFree(lu);
+  }
+
   static void SolveFinalize(SLUD::superlu_options_t* options,
-    typename type_map::SOLVEstruct_t* solve_struct)
+    type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::D::dSolveFinalize(options, solve_struct);
     }
@@ -613,7 +663,7 @@ struct FunctionMap<Superludist,double>
  * SLUD::doublecomplex are provided in Amesos2_Superlu_Type.hpp
  */
 template <>
-struct FunctionMap<Superludist,std::complex<double> >
+struct FunctionMap<Superludist,SLUD::Z::doublecomplex>
 {
   typedef TypeMap<Superludist,std::complex<double> > type_map;
 
@@ -623,17 +673,17 @@ struct FunctionMap<Superludist,std::complex<double> >
       SLUD::Z::pzgstrf(options, m, n, anorm, LU, grid, stat, info);
     }
 
-  static void gstrs(SLUD::int_t n, SLUD::LUstruct_t* lu_struct, 
+  static void gstrs(SLUD::int_t n, type_map::LUstruct_t* lu_struct, 
     SLUD::ScalePermstruct_t* scale_perm_struct, SLUD::gridinfo_t* grid, 
     type_map::type* B, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, 
     SLUD::int_t ldb, int nrhs, type_map::SOLVEstruct_t* solve_struct, 
     SLUD::SuperLUStat_t* stat, int* info)
     {
-      SLUD::Z::pzgstrs(m, lu_struct, scale_perm_struct, grid, fst_global_row, 
-                       ldb, nrhs, solve_struct, stat, info);
+      SLUD::Z::pzgstrs(n, lu_struct, scale_perm_struct, grid, B, l_numrows,
+		       fst_global_row, ldb, nrhs, solve_struct, stat, info);
     }
 
-  static void gstrs_Bglobal(SLUD::int_t n, SLUD::LUstruct_t* lu_struct, 
+  static void gstrs_Bglobal(SLUD::int_t n, type_map::LUstruct_t* lu_struct, 
     SLUD::gridinfo_t* grid, type_map::type* B, 
     SLUD::int_t ldb, int nrhs, SLUD::SuperLUStat_t* stat, int* info)
     {
@@ -667,11 +717,19 @@ struct FunctionMap<Superludist,std::complex<double> >
       SLUD::Z::zCreate_Dense_Matrix_dist(X, m, n, x, ldx, stype, dtype, mtype);
     }
 
+  static void permute_Dense_Matrix(SLUD::int_t fst_row, SLUD::int_t m_loc, 
+    SLUD::int_t* row_to_proc, SLUD::int_t* perm, type_map::type* X, int ldx, 
+    type_map::type* B, int ldb, int nrhs, SLUD::gridinfo_t* grid)
+  {
+    SLUD::Z::pzPermute_Dense_Matrix(fst_row, m_loc, row_to_proc, perm,
+				    X, ldx, B, ldb, nrhs, grid);
+  }
+  
   static void gsequ_loc(SLUD::SuperMatrix* A, double* r, double* c, 
     double* rowcnd, double* colcnd, double* amax, int* info, 
     SLUD::gridinfo_t* grid)
     {
-      SLUD::Z::pzgsequ(A, r, c, rowcnd, colcnd, amax, info);
+      SLUD::Z::pzgsequ(A, r, c, rowcnd, colcnd, amax, info, grid);
     }
 
   static void gsequ(SLUD::SuperMatrix* A, double* r, double* c, 
@@ -732,8 +790,23 @@ struct FunctionMap<Superludist,std::complex<double> >
       SLUD::Z::zSolveInit(options, A, perm_r, perm_c, nrhs, lu, grid, solve_struct);
     }
 
+  static void LUstructInit(SLUD::int_t m, SLUD::int_t n, type_map::LUstruct_t* lu)
+  {
+    SLUD::Z::LUstructInit(m, n, lu);
+  }
+
+  static void Destroy_LU(SLUD::int_t m, SLUD::gridinfo_t* grid, type_map::LUstruct_t* lu)
+  {
+    SLUD::Z::Destroy_LU(m, grid, lu);
+  }
+
+  static void LUstructFree(type_map::LUstruct_t* lu)
+  {
+    SLUD::Z::LUstructFree(lu);
+  }
+
   static void SolveFinalize(SLUD::superlu_options_t* options,
-    typename type_map::SOLVEstruct_t* solve_struct)
+    type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::Z::zSolveFinalize(options, solve_struct);
     }

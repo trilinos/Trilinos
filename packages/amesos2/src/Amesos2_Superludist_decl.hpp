@@ -131,7 +131,7 @@ public:
   typedef typename type_map::magnitude_type                  magnitude_type;
 
   typedef FunctionMap<Amesos::Superludist,slu_type>            function_map;
-  typedef MatrixHelper<Amesos::Superludist>                   matrix_helper;
+  // typedef MatrixHelper<Amesos::Superludist>                   matrix_helper;
 
   
   /// \name Constructor/Destructor methods
@@ -245,6 +245,21 @@ private:
   void get_default_grid_size(int nprocs, SLUD::int_t& nprow, SLUD::int_t& npcol) const;
 
 
+  /**
+   * \brief Reads matrix data into internal solver structures.
+   *
+   * Loads data from the matrix A into the internal SuperLU_DIST
+   * matrix structure.  This function requires communication accross
+   * all processors as the matrix is redistributed as necessary to the
+   * processors in the SuperLU_DIST process grid.
+   *
+   * \post
+   * - nzvals_, colind_, and rowptr_ arrays are sized to match the portion
+   *   of the matrix on this processor.
+   */
+  void loadA();
+
+
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
     SLUD::SuperMatrix A,;
@@ -263,7 +278,7 @@ private:
     SLUD::superlu_options_t          options;
     SLUD::mem_usage_t                mem_usage;
     SLUD::gridinfo_t                 grid;
-    MPI_Comm                         grid_comm;
+    MPI_Comm                         mat_comm; ///< Raw communicator used by the matrix A
     typename type_map::LUstruct_t    lu; ///< stores the L and U factors
     SLUD::SuperLUStat_t              stat;
     typename type_map::SOLVEstruct_t solve_struct;
@@ -289,8 +304,7 @@ private:
   /// Stores the location in \c Ai_ and Aval_ that starts row j
   Teuchos::Array<int> rowptr_;
   /// 1D store for B and X values
-  mutable Teuchos::Array<slu_type> bxvals_;
-  mutable size_t ldbx_;
+  mutable Teuchos::Array<slu_type> bvals_, xvals_;
 
   /// \c true if this processor is in SuperLU_DISTS's 2D process grid
   bool in_grid_;

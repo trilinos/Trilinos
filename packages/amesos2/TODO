@@ -54,7 +54,7 @@ General TODO
    upon request).
 
  - Add Amesos2_ENABLE_Timers option which is off by default.  Will
-   have to put ifdef guards around all timer activity.
+   have to put ifdef guards around all timer activity. (DONE)
 
  - Add Amesos2 parameter "Memory" which has two possible values "safe"
    and "optimized".  The "optimized" option will tell the Amesos2
@@ -89,6 +89,20 @@ General TODO
    A lot of status machinery exists already in the Amesos::Status
    class, but it was designed mostly for internal use.  It could just
    be cleaned up and made ready for use by users.
+
+ - Abstract the matrix loading/reading process/decisions into the
+   SolverCore class.  SolverCore should declare and define a private
+   (or perhaps public) method called `loadA()'.  This method will be
+   called from within the computational methods whenever it is decided
+   that the internal solver data of matrix A should be refreshed.  In
+   general, this is upon every call to preOrdering,
+   symbolicFactorization, or numericFactorization.  In certain
+   circumstances, in particular whenever a method calls it's
+   predecessor because it has not been done yet (e.g. numeric calling
+   symbolic).
+
+   The solver interfaces then define a `loadA_impl()' method that
+   actually handles loading the matrix data into internal structures.
 
 
 -------------------------------

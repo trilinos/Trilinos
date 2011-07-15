@@ -136,7 +136,7 @@ APPEND_SET(SOURCES
   Amesos2_Version.cpp
   )
 
-# Set addition headers and source based on package-specific
+# Set additional headers and sources based on package-specific
 # configuration options.  In Amesos2, each solver interface should be
 # added only if that solver has been enabled by the user.
 
@@ -206,6 +206,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     # Amesos2_EpetraVbrMatrixAdapter.cpp
     Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.cpp
     Amesos2_EpetraCrsMatrix_MatrixAdapter.cpp
+    Amesos2_EpetraMultiVecAdapter.cpp
     )
 ENDIF()
 

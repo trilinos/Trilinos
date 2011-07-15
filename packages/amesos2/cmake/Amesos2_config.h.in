@@ -63,6 +63,9 @@
 /* Define if you want debug-mode to be verbose (print stuff) */
 #cmakedefine HAVE_AMESOS2_VERBOSE_DEBUG
 
+/* Define if you want performance timer support */
+#cmakedefine HAVE_AMESOS2_TIMERS
+
 /* Define if want want to build amesos2-explicit_instantiation */
 #cmakedefine HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
