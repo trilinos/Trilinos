@@ -661,7 +661,7 @@
   </Package>
   <Package name="NOX" dir="nox">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Belos,Anasazi,Stratimikos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,ThyraCore,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Amesos,AztecOO,Ifpack,ML,Belos,Anasazi,Stratimikos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos,Isorropia"/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -708,7 +708,7 @@
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,ThyraCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="EpetraExt,Sacado,Stratimikos,NOX"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="EpetraExt,ThyraEpetraExtAdapters,Sacado,Stratimikos,NOX"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="GaaspTpl,Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>

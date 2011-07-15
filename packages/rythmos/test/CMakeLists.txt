@@ -12,7 +12,7 @@ IF ( ${PACKAGE_NAME}_ENABLE_Experimental )
 ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
-IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+IF (${PACKAGE_NAME}_ENABLE_Stratimikos  AND ${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
   ADD_SUBDIRECTORIES(complicatedExample)
   ADD_SUBDIRECTORIES(simpleAdjoint)
 ENDIF()
