@@ -328,8 +328,8 @@ namespace {
 	size_t vec_ind = 0;
 	for( ; vec_ind < numVectors; ++vec_ind ){
 	  for( size_t i = 0; i < my_num_rows; ++i ){
-	    double mv_value = global_copy[total_rows*vec_num + i];
-	    double my_value = my_copy[my_num_rows*vec_num + i];
+	    SCALAR mv_value = global_copy[total_rows*vec_num + i];
+	    SCALAR my_value = my_copy[my_num_rows*vec_num + i];
 	    TEST_EQUALITY( mv_value, my_value );
 	  }
 	}
@@ -340,8 +340,8 @@ namespace {
 	for( ; vec_ind < numVectors; ++vec_ind ){
 	  // Iterate backwards through rows
 	  for( size_t i = total_rows-1; i >= total_rows - my_num_rows; --i ){
-	    double mv_value = global_copy[total_rows*vec_num + i];
-	    double my_value = my_copy[my_num_rows*vec_num + i];
+	    SCALAR mv_value = global_copy[total_rows*vec_num + i];
+	    SCALAR my_value = my_copy[my_num_rows*vec_num + i];
 	    TEST_EQUALITY( mv_value, my_value );
 	  }
 	}

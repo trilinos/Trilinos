@@ -102,12 +102,12 @@ namespace {
 		  " this option is ignored and a serial comm is always used." );
   }
 
-  const Epetra_Comm& getDefaultComm()
+  const RCP<Epetra_Comm> getDefaultComm()
   {
 #ifdef EPETRA_MPI
-    return Epetra_MpiComm( MPI_COMM_WORLD );
+    return rcp(new Epetra_MpiComm( MPI_COMM_WORLD ));
 #else
-    return Epetra_SerialComm();
+    return rcp(new Epetra_SerialComm());
 #endif
   }
 
@@ -153,13 +153,13 @@ namespace {
     typedef Epetra_CrsMatrix MAT;
     typedef MatrixAdapter<MAT> ADAPT;
 
-    Epetra_SerialComm comm;
-    //const size_t numprocs = comm.NumProc();
-    //  const int rank     = comm.MyPID();
+    RCP<Epetra_Comm> comm = getDefaultComm();
+    //const size_t numprocs = comm->NumProc();
+    //  const int rank     = comm->MyPID();
     // create a Map
     const int num_eqn = 100;
 
-    Epetra_Map Map(num_eqn, 0, comm);
+    Epetra_Map Map(num_eqn, 0, *comm);
   
     // Get update list and number of local equations from newly created Map.
 
@@ -211,13 +211,13 @@ namespace {
     typedef Epetra_CrsMatrix MAT;
     typedef MatrixAdapter<MAT> ADAPT;
 
-    Epetra_SerialComm comm;
-    //const size_t numprocs = comm.NumProc();
-    //  const int rank     = comm.MyPID();
+    RCP<Epetra_Comm> comm = getDefaultComm();
+    //const size_t numprocs = comm->NumProc();
+    //  const int rank     = comm->MyPID();
     // create a Map
     const int num_eqn = 100;
 
-    Epetra_Map Map(num_eqn, 0, comm);
+    Epetra_Map Map(num_eqn, 0, *comm);
   
     // Get update list and number of local equations from newly created Map.
 
@@ -276,13 +276,13 @@ namespace {
      *   [ 0,  -1, 0,  0,  4,  0 ]
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
-    Epetra_SerialComm comm;
-    int rank = comm.MyPID();
+    RCP<Epetra_Comm> comm = getDefaultComm();
+    int rank = comm->MyPID();
 
     // create a Map
     const int num_eqn = 6;
 
-    Epetra_Map Map(num_eqn, 0, comm);
+    Epetra_Map Map(num_eqn, 0, *comm);
   
     // Get update list and number of local equations from newly created Map.
 
@@ -381,12 +381,12 @@ namespace {
      *   [ 0,  -1, 0,  0,  4,  0 ]
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
-    Epetra_SerialComm comm;
+    RCP<Epetra_Comm> comm = getDefaultComm();
 
     // create a Map
     const int num_eqn = 6;
 
-    Epetra_Map Map(num_eqn, 0, comm);
+    Epetra_Map Map(num_eqn, 0, *comm);
   
     // Get update list and number of local equations from newly created Map.
 
@@ -499,14 +499,14 @@ namespace {
      *   [ 0,  -1, 0,  0,  4,  0 ]
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
-    Epetra_SerialComm comm;
-    int numprocs = comm.NumProc();
-    int rank = comm.MyPID();
+    RCP<Epetra_Comm> comm = getDefaultComm();
+    int numprocs = comm->NumProc();
+    int rank = comm->MyPID();
 
     // create a Map
     const int num_eqn = 6;
 
-    Epetra_Map Map(num_eqn, 0, comm);
+    Epetra_Map Map(num_eqn, 0, *comm);
   
     // Get update list and number of local equations from newly created Map.
 
@@ -574,7 +574,7 @@ namespace {
       my_num_rows = 6;
     }
     const Tpetra::Map<int,int> half_map(6, my_num_rows, 0,
-					to_teuchos_comm(Teuchos::rcpFromRef(comm)));
+					to_teuchos_comm(comm));
 
     adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos::Util::Sorted_Indices);
 
@@ -615,12 +615,12 @@ namespace {
      *   [ 0,  -1, 0,  0,  4,  0 ]
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
-    Epetra_SerialComm comm;
+    RCP<Epetra_Comm> comm = getDefaultComm();
 
     // create a Map
     const int num_eqn = 6;
 
-    Epetra_Map Map(num_eqn, 0, comm);
+    Epetra_Map Map(num_eqn, 0, *comm);
   
     // Get update list and number of local equations from newly created Map.
 
