@@ -43,10 +43,12 @@ IF (Piro_ENABLE_NOX)
                      Piro_NOXSolver.hpp
                      Piro_NOXSolver_Def.hpp
                      Piro_Epetra_LOCASolver.hpp
-                     Piro_Epetra_MatrixFreeDecorator.hpp)
+                     Piro_Epetra_MatrixFreeDecorator.hpp
+		     Piro_Epetra_SensitivityOperator.hpp)
   APPEND_SET(SOURCES Piro_Epetra_NOXSolver.cpp
                      Piro_Epetra_LOCASolver.cpp
-                     Piro_Epetra_MatrixFreeDecorator.cpp)
+                     Piro_Epetra_MatrixFreeDecorator.cpp
+		     Piro_Epetra_SensitivityOperator.cpp)
 ENDIF()
 # Optional Rythmos Dependency
 IF (Piro_ENABLE_Rythmos) 
