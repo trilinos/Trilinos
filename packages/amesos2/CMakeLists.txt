@@ -23,6 +23,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_VERBOSE_DEBUG
   "Enable output during debug-mode"
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Timers
+  HAVE_${PACKAGE_NAME_UC}_TIMERS
+  "Enable performance timers"
+  OFF )
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_EpetraExt
   HAVE_${PACKAGE_NAME_UC}_EPETRAEXT
   "Enable EpetraExt functionality (for examples and testing)"
