@@ -93,6 +93,8 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_ConnManager.hpp
   dofmngr/Panzer_DOFManager.hpp
   dofmngr/Panzer_DOFManagerT.hpp
+  dofmngr/Panzer_BlockedDOFManager.hpp
+  dofmngr/Panzer_BlockedDOFManagerT.hpp
   dofmngr/Panzer_UniqueGlobalIndexer_Utilities.hpp
   dofmngr/Panzer_UniqueGlobalIndexer_UtilitiesT.hpp
   dofmngr/Panzer_UniqueGlobalIndexer.hpp
@@ -156,6 +158,7 @@ APPEND_SET(SOURCES
   dofmngr/Panzer_GeometricAggFieldPattern.cpp
   dofmngr/Panzer_FieldAggPattern.cpp
   dofmngr/Panzer_DOFManager.cpp
+  dofmngr/Panzer_BlockedDOFManager.cpp
   dofmngr/Panzer_EpetraLinearObjFactory.cpp
   )
 

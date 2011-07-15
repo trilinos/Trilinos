@@ -42,3 +42,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   COMM mpi
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  tBlockedDOFManager
+  SOURCES tBlockedDOFManager.cpp UnitTest_ConnManager.cpp UnitTest_ConnManager.hpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM mpi
+  )
