@@ -205,7 +205,9 @@ int DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::string & st
 
    // return based on what was found
    if(itr==fieldStrToInt_.end()) {
-      TEUCHOS_ASSERT(false); // return -1; // incorrect field name
+      // incorrect field name
+      TEST_FOR_EXCEPTION(true,std::logic_error,
+                         "DOFManager::getFieldNum No field with the name \"" + str + "\" has been added");
    }
    else {
       return itr->second;
@@ -442,6 +444,22 @@ Teuchos::RCP<const FieldPattern> DOFManager<LocalOrdinalT,GlobalOrdinalT>::getFi
    }
 
    return itr->second;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+Teuchos::RCP<const FieldPattern> DOFManager<LocalOrdinalT,GlobalOrdinalT>::
+getFieldPattern(const std::string & blockId, const std::string & fieldName) const
+{
+   // return null even if field doesn't exist in manager
+   int fieldNum = -1;
+   try {
+      fieldNum = getFieldNum(fieldName);
+   }
+   catch(const std::logic_error & le) {
+      return Teuchos::null;
+   }
+
+   return getFieldPattern(blockId,fieldNum);
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>

@@ -147,8 +147,7 @@ public:
      * \returns Pointer to <code>FieldPattern</code> requested if the field exists,
      *          otherwise <code>Teuchos::null</code> is returned.
      */
-   Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const
-   { return getFieldPattern(blockId,getFieldNum(fieldName)); }
+   Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const;
    
    /** \brief Get the number used for access to this
      *        field
@@ -329,6 +328,11 @@ public:
      */
    bool validFieldOrder(const std::vector<std::string> & fieldOrder_ut,const std::set<std::string> & fields) const;
 
+   /** This builds all numbers for the fields as well as
+     * constructing a default field orderand validating the user specified field order.
+     */
+   void registerFields();
+
 protected:
    
    /** Get ordered field IDs associated with a particular element
@@ -347,11 +351,6 @@ protected:
    void buildPattern(const std::vector<std::string> & fieldOrder,
                      const std::string & blockId,
                      const Teuchos::RCP<const FieldPattern> & geomPattern);
-
-   /** This builds all numbers for the fields as well as
-     * constructing a default field orderand validating the user specified field order.
-     */
-   void registerFields();
 
    // computes connectivity
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 
