@@ -13,6 +13,8 @@
 
 #include "Panzer_STK_Utilities.hpp"
 
+#include "Thyra_EpetraThyraWrappers.hpp"
+
 namespace user_app {
 
   class RythmosObserver_Epetra : 
