@@ -453,7 +453,7 @@ protected:
   { return status_.numericFactorizationDone_; }
 
   /// The LHS operator
-  Teuchos::RCP<MatrixAdapter<Matrix> >   matrixA_;
+  Teuchos::RCP<MatrixAdapter<Matrix> > matrixA_;
 
   /// The LHS vector/multi-vector
   Teuchos::RCP<Vector> multiVecX_;

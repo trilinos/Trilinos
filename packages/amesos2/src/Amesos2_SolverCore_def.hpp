@@ -374,7 +374,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
   double numTime  = timers_.numFactTime_.totalElapsedTime();
   double solTime  = timers_.solveTime_.totalElapsedTime();
   double totTime  = timers_.totalTime_.totalElapsedTime();
-  double overhead = totTime - (symTime + numTime + solTime);
+  double overhead = totTime - (preTime + symTime + numTime + solTime);
 
   std::string p = name() + " : ";
   Util::printLine(out);
