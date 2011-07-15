@@ -607,12 +607,12 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
   for (i = 0; i < ohg->nVtx; i++)
       tmap[i] = (part[i] == partid) ? nhg->nVtx++ : -1; 
 
-  /* save vertex weights, edge weights, and NEANEA coordinates if they exist */
+  /* save vertex weights, edge weights, and coordinates if they exist */
   if (nhg->nVtx && ohg->vwgt && nhg->VtxWeightDim &&
       !(nhg->vwgt=(float*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(float)*nhg->VtxWeightDim)))
       MEMORY_ERROR;
   if (nhg->nVtx && ohg->coor && nhg->nDim &&
-      !(nhg->coor=(double *)ZOLTAN_MALLOC(nhg->nVtx * sizeof(double) * nhg->nDim)))
+      !(nhg->coor=(double *)ZOLTAN_MALLOC(nhg->nVtx * sizeof(double) * nhg->nDim + 1)))
       MEMORY_ERROR;
   if (nhg->nVtx && hgp->UseFixedVtx &&
       !(nhg->fixed_part = (int*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(int))))
@@ -648,11 +648,10 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
                      nhg->VtxWeightDim * sizeof(float)); 
           } else
               pw[0] += 1.0;
-	  /* NEANEA ignoring pw... whatever it may be... */
-	  if (nhg->nDim) {
+	  if (nhg->nDim && ohg->coor) {
 	    for (j = 0; j < nhg->nDim; j++)
 	      memcpy(&nhg->coor[v*nhg->nDim + j], &ohg->coor[i*nhg->nDim + j],
-		     nhg->nDim * sizeof(double));
+		     sizeof(double));
 	  }
       } else {
           pw[1] += (nhg->VtxWeightDim) ? ohg->vwgt[i*nhg->VtxWeightDim] : 1.0;
