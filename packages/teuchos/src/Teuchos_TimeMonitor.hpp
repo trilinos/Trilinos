@@ -180,7 +180,7 @@ public:
   /// timers, summarize() has to decide on a common set of timers for
   /// which to compute statistics.  This enum allows the caller to
   /// specify how summarize() picks the global set of timers.
-  typedef enum { Intersection, Union } ETimerSetOp;
+  enum ETimerSetOp { Intersection, Union };
  
   /// \brief Print summary statistics for all timers. 
   ///
