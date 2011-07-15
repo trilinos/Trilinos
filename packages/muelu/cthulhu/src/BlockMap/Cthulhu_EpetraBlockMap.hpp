@@ -16,13 +16,11 @@
 
 #include "Cthulhu_Debug.hpp"
 
-/** \file Cthulhu_EpetraBlockMap.hpp
-
-  Declarations for the class Cthulhu::EpetraBlockMap.
-*/
 namespace Cthulhu {
 
-/** \brief Block-entry counterpart to Cthulhu::Map.
+/*!
+  @class EpetraBlockMap
+  @brief Block-entry counterpart to Cthulhu::Map.
 
   BlockMap doesn't inherit Cthulhu::Map
 */

@@ -6,15 +6,13 @@
 
 #include "Cthulhu_Map.hpp"
 
-/** \file Cthulhu_BlockMap.hpp
-
-  Declarations for the class Cthulhu::BlockMap.
-*/
 namespace Cthulhu {
 
-/** \brief Block-entry counterpart to Cthulhu::Map.
+/*!
+  @class BlockMap
+  @brief Block-entry counterpart to Cthulhu::Map.
 
-  BlockMap doesn't inherit Cthulhu::Map
+  Note: BlockMap doesn't inherit from Cthulhu::Map
 */
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class BlockMap : public Teuchos::Describable {
