@@ -1843,7 +1843,7 @@ public:
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
    * @param func A function specifying how the TwoDArrays
-   * number of rows should be calculated from the dependees value.
+   * new attribute's value should be calculated from the dependees value.
    */
   TwoDArrayModifierDependency(
     RCP<const ParameterEntry> dependee,
@@ -1862,7 +1862,7 @@ public:
    * @param dependee The dependee parameter.
    * @param dependents The dependents.
    * @param func A function specifying how the TwoDArrays
-   * number of rows should be calculated from the dependees value.
+   * new attribute's value should be calculated from the dependees value.
    */
   TwoDArrayModifierDependency(
     RCP<const ParameterEntry> dependee,
@@ -1967,9 +1967,11 @@ protected:
   /** \name Overridden from ArrayModifierDependency */
   //@{
   
+  /** \brief . */
   void modifyArray(
     DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
   
+  /** \brief . */
   std::string getBadDependentValueErrorMessage() const;
   //@}
   
@@ -2030,10 +2032,137 @@ TwoDRowDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage
     "rows in TwoDArray(s) to a negative number. Silly. You can't have "
     "a TwoDArray with a negative number of rows!" << std::endl << std::endl <<
     "Error:" << std::endl <<
-    "An attempt was made to set the length of an Array to a negative "
-    "number by a NumberArrayLengthDependency" << std::endl << std::endl;
+    "An attempt was made to set the number of rows of a TwoDArray to a negative "
+    "number by a TwoDRowDependency" << std::endl << std::endl;
   return os.str();
 }
+
+/**
+ * \brief A dependency in which the number of rows in a parameter 
+ * with a TwoDArray depends on the value of another parameter.
+ */
+template<class DependeeType, class DependentType>
+class TwoDColDependency : 
+  public TwoDArrayModifierDependency<DependeeType, DependentType>
+{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a TwoDColDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependent The dependent parameter.
+   * @param func A function specifying how the TwoDArrays
+   * number of cols should be calculated from the dependees value.
+   */
+  TwoDColDependency(
+    RCP<const ParameterEntry> dependee,
+    RCP<ParameterEntry> dependent,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+
+  /**
+   * \brief Constructs a TwoDColDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependents The dependents.
+   * @param func A function specifying how the TwoDArrays
+   * number of cols should be calculated from the dependees value.
+   */
+  TwoDColDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const;
+  
+  //@}
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+  
+  /** \brief . */
+  void modifyArray(
+    DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
+  
+  /** \brief . */
+  std::string getBadDependentValueErrorMessage() const;
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+TwoDColDependency<DependeeType, DependentType>::TwoDColDependency(
+  RCP<const ParameterEntry> dependee,
+  RCP<ParameterEntry> dependent,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  TwoDArrayModifierDependency<DependeeType, DependentType>(
+    dependee, dependent, func)
+{
+  this->validateDep();
+}
+
+template<class DependeeType, class DependentType>
+TwoDColDependency<DependeeType, DependentType>::TwoDColDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  TwoDArrayModifierDependency<DependeeType, DependentType>(
+    dependee, dependents, func)
+{
+  this->validateDep();
+}
+
+
+template<class DependeeType, class DependentType>
+std::string 
+TwoDColDependency<DependeeType, DependentType>::getTypeAttributeValue()
+const
+{
+  return "TwoDColDependency(" +
+    TypeNameTraits<DependeeType>::name() + ", " +
+    TypeNameTraits<DependentType>::name() +")";
+}
+
+template <class DependeeType, class DependentType>
+void 
+TwoDColDependency<DependeeType, DependentType>::modifyArray(
+  DependeeType newAmount, 
+  RCP<ParameterEntry> dependentToModify)
+{
+  TwoDArray<DependentType> originalArray = 
+    any_cast<TwoDArray<DependentType> >(dependentToModify->getAny()); 
+  originalArray.resizeCols(newAmount);
+  dependentToModify->setValue(originalArray,
+    false, dependentToModify->docString(), dependentToModify->validator());
+}
+
+template<class DependeeType, class DependentType>
+std::string 
+TwoDColDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage() const{
+  std::ostringstream os;
+  os <<
+    "Ruh Roh Shaggy! Looks like a dependency tried to set the number of "
+    "cols in TwoDArray(s) to a negative number. Silly. You can't have "
+    "a TwoDArray with a negative number of cols!" << std::endl << std::endl <<
+    "Error:" << std::endl <<
+    "An attempt was made to set the number of colums  of a TwoDArrayArray to a negative "
+    "number by a TwoDColDependency" << std::endl << std::endl;
+  return os.str();
+}
+
 
 } //namespace Teuchos
 #endif //TEUCHOS_STANDARDDEPENDCIES_HPP_

@@ -647,6 +647,51 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testTwoDRowDependency){
     Exceptions::InvalidParameterValue);
 }
 
+/**
+ * Test the TwoDColDependency.
+ */
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testTwoDColDependency){
+	RCP<ParameterList> My_deplist = RCP<ParameterList>(new ParameterList);
+	RCP<DependencySheet> depSheet1 = 
+    RCP<DependencySheet>(new DependencySheet);
+
+	ParameterList
+	colNumDepList = My_deplist->sublist(
+    "2D Col Depdency List", false,
+    "2D Col Dependecy testing list.");
+	colNumDepList.set("Num cols", 2, "num cols setter");
+  TwoDArray<double> variableColsArray(11,3,16.5);
+	RCP<EnhancedNumberValidator<double> > 
+	varColArrayVali = RCP<EnhancedNumberValidator<double> >(
+  		new EnhancedNumberValidator<double>(10,50,4) 
+	);
+	colNumDepList.set(
+    "Variable Col Array", variableColsArray, "variable col array",
+	  RCP<TwoDArrayNumberValidator<double> >(
+      new TwoDArrayNumberValidator<double>(varColArrayVali)));
+
+	RCP<TwoDColDependency<int, double> >
+	  arrayColDep = rcp(
+  		new TwoDColDependency<int, double>(
+		  colNumDepList.getEntryRCP("Num cols"),
+			colNumDepList.getEntryRCP("Variable Col Array") ,
+      rcp(new AdditionFunction<int>(1))
+		)
+	);
+	depSheet1->addDependency(arrayColDep);
+  TwoDArray<double> curArray = 
+    colNumDepList.get<TwoDArray<double> >("Variable Col Array");
+	TEST_EQUALITY_CONST(curArray.getNumCols(),3);
+	colNumDepList.set("Num cols", 4);
+	arrayColDep()->evaluate();
+  curArray = 
+    colNumDepList.get<TwoDArray<double> >("Variable Col Array");
+	TEST_EQUALITY_CONST(curArray.getNumCols(),5);
+	colNumDepList.set("Num cols", -2);
+	TEST_THROW(arrayColDep()->evaluate(), 
+    Exceptions::InvalidParameterValue);
+}
+
 
 /**
  * Test the ArrayLengthDependency.
