@@ -34,7 +34,8 @@ typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorField ;
 
 enum { nx = 2, ny = 2 };
 
-STKUNIT_UNIT_TEST(UnitTestZoltanGraph, testUnit)
+//STKUNIT_UNIT_TEST(UnitTestZoltanGraph, testUnit)
+void disabled_unit_test()
 {
 #ifdef STK_HAS_MPI
   stk::ParallelMachine comm(MPI_COMM_WORLD);
@@ -170,7 +171,6 @@ STKUNIT_UNIT_TEST(UnitTestZoltanGraph, testUnit)
     bool result = stk::rebalance::verify_dependent_ownership(NODE_RANK, entities);
     STKUNIT_ASSERT( result );
   }
-
 }
 
 /// \page stk_rebalance_unit_test_zoltan
