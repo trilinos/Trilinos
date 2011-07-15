@@ -29,6 +29,8 @@
 #include <unit_tests/TestLocalRefinerTet_N_2.hpp>
 #include <unit_tests/TestLocalRefinerTet_N_2_1.hpp>
 #include <unit_tests/TestLocalRefinerTet_N_3.hpp>
+#include <unit_tests/TestLocalRefinerTet_N_3_1.hpp>
+#include <unit_tests/TestLocalRefinerTet_N_4.hpp>
 
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -152,6 +154,74 @@ namespace stk {
           }        
         return totVol;
       }
+
+      static void fixture_setup_0()
+      {
+        EXCEPTWATCH;
+        static int entered=0;
+        if (!entered)
+          entered = 1;
+        else
+          return;
+
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        int N=4;
+
+        // start_demo_uniformRefiner_hex8_build
+        {
+          percept::PerceptMesh eMesh(3u);
+
+          //unsigned p_size = eMesh.getParallelSize();
+
+          // generate a N x N x N mesh
+          std::string gmesh_spec = 
+            toString(N)+"x"+
+            toString(N)+"x"+
+            toString(N)+
+            std::string("|bbox:0,0,0,")+
+            toString(N)+","+
+            toString(N)+","+
+            toString(N);
+            
+          eMesh.newMesh(percept::PerceptMesh::GMeshSpec(gmesh_spec));
+          eMesh.commit();
+
+          eMesh.saveAs(input_files_loc+"hex_fixture_NxNxN.e");
+
+          // end_demo
+        }
+
+        // start_demo_uniformRefiner_hex8_build_1
+        {
+          percept::PerceptMesh eMesh(3u);
+
+          //unsigned p_size = eMesh.getParallelSize();
+          eMesh.open(input_files_loc+"hex_fixture_NxNxN.e");
+
+          Hex8_Tet4_24 break_hex_to_tet(eMesh);
+
+          int scalarDimension = 0; // a scalar
+          stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+
+          eMesh.commit();
+
+          UniformRefiner breaker(eMesh, break_hex_to_tet, proc_rank_field);
+          breaker.doBreak();
+          save_or_diff(eMesh, input_files_loc+"tet_fixture_NxNxN.e");
+
+
+          if (0)
+          {
+            PerceptMesh em1;
+            em1.openReadOnly(input_files_loc+"tet_fixture_NxNxN_tmp.e");
+            em1.saveAs(input_files_loc+"tet_fixture_NxNxN.e");
+            em1.printInfo("srk tmp tet_fixture_NxNxN.e after reopen", 2);
+          }
+          // end_demo
+        }
+      }
+
 
       //=============================================================================
       //=============================================================================
@@ -459,7 +529,12 @@ namespace stk {
                 double totalVol0 = totalVolume(eMesh);
                 std::cout << "tmp totalVol0 = " << totalVol0 << std::endl;
 
-                TestLocalRefinerTet_N_3 breaker(eMesh, break_tet, 0, 1);
+                int edge_mark_bitcode = 0;
+                edge_mark_bitcode = (int)(63.*((double)random())/((double)RAND_MAX));
+                if (edge_mark_bitcode <= 0) edge_mark_bitcode = 1;
+                if (edge_mark_bitcode >= 63) edge_mark_bitcode = 63;
+
+                TestLocalRefinerTet_N_3_1 breaker(eMesh, break_tet, 0, edge_mark_bitcode);
                 breaker.setRemoveOldElements(true);
                 breaker.doBreak();
 
@@ -586,6 +661,54 @@ namespace stk {
           }
       }
 
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+      /// check triangulate_tet
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, triangulate_tet_planes)
+      {
+        EXCEPTWATCH;
+        fixture_setup_0();
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        const unsigned p_size = stk::parallel_machine_size(pm);
+
+        if (p_size <= 1)
+          {
+
+            {
+              PerceptMesh eMesh;
+
+              eMesh.open(input_files_loc+"tet_fixture_NxNxN.e");
+              Local_Tet4_Tet4_N break_tet(eMesh);
+              eMesh.commit();
+
+              TestLocalRefinerTet_N_4 breaker(eMesh, break_tet, 0);
+              breaker.setRemoveOldElements(false);
+              breaker.doBreak();
+              breaker.doBreak();
+              breaker.doBreak();
+
+              //save_or_diff(eMesh, output_files_loc+"local_tet_N_4_planes.e");
+              eMesh.saveAs( output_files_loc+"local_tet_N_4_planes.e");
+
+              for (int iunref_pass=0; iunref_pass < 1; ++iunref_pass)
+                {
+                  ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
+                  breaker.unrefineTheseElements(elements_to_unref);
+                }
+
+              //save_or_diff(eMesh, output_files_loc+"local_tet_N_4_planes_unref.e");
+              eMesh.saveAs( output_files_loc+"local_tet_N_4_planes_unref.e");
+
+            }
+
+            //exit(123);
+          }
+      }
 
       //=============================================================================
       //=============================================================================

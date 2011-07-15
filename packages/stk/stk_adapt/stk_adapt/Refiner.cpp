@@ -129,7 +129,10 @@ namespace stk {
       //m_eMesh.getBulkData()->modification_begin();
       std::string oldPartName = breakPattern->getOldElementsPartName()+toString(rank);
       mesh::Part *oldPart = m_eMesh.getFEM_meta_data()->get_part(oldPartName);
-      //std::cout << "tmp addOldElementsToPart:: oldPartName= " << oldPartName << std::endl;
+#define DEBUG_REMOVE_OLD_PARTS 0
+
+      if (DEBUG_REMOVE_OLD_PARTS) std::cout << "tmp addOldElementsToPart:: oldPartName= " << oldPartName << std::endl;
+
       if (!oldPart)
         {
           std::cout << "oldPartName= " << oldPartName << std::endl;
