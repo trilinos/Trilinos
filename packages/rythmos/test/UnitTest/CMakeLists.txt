@@ -22,13 +22,15 @@ ENDIF()
 #    STANDARD_PASS_OUTPUT
 #    )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    ConvergenceTestHelpers_UnitTest
-    SOURCES Rythmos_ConvergenceTestHelpers_UnitTest.cpp Rythmos_UnitTest.cpp 
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
+IF(${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      ConvergenceTestHelpers_UnitTest
+      SOURCES Rythmos_ConvergenceTestHelpers_UnitTest.cpp Rythmos_UnitTest.cpp 
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+ENDIF()
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     CubicSplineInterpolator_UnitTest
@@ -156,21 +158,23 @@ IF (${PACKAGE_NAME}_ENABLE_Sacado)
       STANDARD_PASS_OUTPUT
       )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      ForwardSensitivity_UnitTest
-      SOURCES Rythmos_ForwardSensitivity_UnitTest.cpp Rythmos_UnitTest.cpp
-      DEPLIBS rythmos_test_models
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
+  IF(${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+        ForwardSensitivity_UnitTest
+        SOURCES Rythmos_ForwardSensitivity_UnitTest.cpp Rythmos_UnitTest.cpp
+        DEPLIBS rythmos_test_models
+        NUM_MPI_PROCS 1
+        STANDARD_PASS_OUTPUT
+        )
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      ImplicitBDF_UnitTest
-      SOURCES Rythmos_ImplicitBDF_UnitTest.cpp Rythmos_UnitTest.cpp
-      DEPLIBS rythmos_test_models
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+        ImplicitBDF_UnitTest
+        SOURCES Rythmos_ImplicitBDF_UnitTest.cpp Rythmos_UnitTest.cpp
+        DEPLIBS rythmos_test_models
+        NUM_MPI_PROCS 1
+        STANDARD_PASS_OUTPUT
+        )
+  ENDIF()
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
       BasicDiscreteAdjointStepperTester_UnitTest
@@ -217,13 +221,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
     )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    StepperValidator_UnitTest
-    SOURCES Rythmos_StepperValidator_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
+IF(${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      StepperValidator_UnitTest
+      SOURCES Rythmos_StepperValidator_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+ENDIF()
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     GlobalErrorEstimator_UnitTest
@@ -241,37 +247,39 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
     )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    ForwardEulerStepper_UnitTest
-    SOURCES Rythmos_ForwardEuler_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    BackwardEulerStepper_UnitTest
-    SOURCES Rythmos_BackwardEuler_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    ForwardSensitivityExplicitModelEvaluator_UnitTest
-    SOURCES Rythmos_ForwardSensitivityExplicitModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    ForwardSensitivityImplicitModelEvaluator_UnitTest
-    SOURCES Rythmos_ForwardSensitivityImplicitModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
+IF(${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      ForwardEulerStepper_UnitTest
+      SOURCES Rythmos_ForwardEuler_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+  
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      BackwardEulerStepper_UnitTest
+      SOURCES Rythmos_BackwardEuler_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+  
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      ForwardSensitivityExplicitModelEvaluator_UnitTest
+      SOURCES Rythmos_ForwardSensitivityExplicitModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+  
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      ForwardSensitivityImplicitModelEvaluator_UnitTest
+      SOURCES Rythmos_ForwardSensitivityImplicitModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+ENDIF()
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     StateSerializerStrategy_UnitTest
@@ -297,11 +305,12 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
     )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    TestModelBuilder_UnitTest
-    SOURCES Rythmos_TestModelBuilder_UnitTest.cpp Rythmos_UnitTest.cpp Rythmos_UnitTestModels.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-
+IF(${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      TestModelBuilder_UnitTest
+      SOURCES Rythmos_TestModelBuilder_UnitTest.cpp Rythmos_UnitTest.cpp Rythmos_UnitTestModels.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+ENDIF()

@@ -465,7 +465,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Thyra" type="LO"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="TO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
