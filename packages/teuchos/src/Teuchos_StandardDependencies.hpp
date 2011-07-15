@@ -2037,6 +2037,40 @@ TwoDRowDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage
   return os.str();
 }
 
+/** \brief Speicialized class for retrieving a dummy object of type
+ * TwoDRowDependency.
+ *
+ * \relates TwoDRowDependency
+ */
+template<class DependeeType, class DependentType>
+class DummyObjectGetter<TwoDRowDependency<DependeeType, DependentType> >{
+
+public:
+
+  /** \name GetterFunctions */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NumberArrayLengthDependency.
+  */
+  static RCP<TwoDRowDependency<DependeeType, DependentType> >
+    getDummyObject();
+  
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+RCP<TwoDRowDependency<DependeeType, DependentType> >
+  DummyObjectGetter<TwoDRowDependency<DependeeType, DependentType> >::getDummyObject()
+{
+  return rcp(
+    new TwoDRowDependency<DependeeType, DependentType>(
+    rcp(new ParameterEntry(ScalarTraits<DependeeType>::zero())),
+    rcp(new ParameterEntry(TwoDArray<DependentType>(1,1)))));
+}
+
+
 /**
  * \brief A dependency in which the number of rows in a parameter 
  * with a TwoDArray depends on the value of another parameter.
@@ -2162,6 +2196,40 @@ TwoDColDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage
     "number by a TwoDColDependency" << std::endl << std::endl;
   return os.str();
 }
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * TwoDColDependency.
+ *
+ * \relates TwoDColDependency
+ */
+template<class DependeeType, class DependentType>
+class DummyObjectGetter<TwoDColDependency<DependeeType, DependentType> >{
+
+public:
+
+  /** \name GetterFunctions */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NumberArrayLengthDependency.
+  */
+  static RCP<TwoDColDependency<DependeeType, DependentType> >
+    getDummyObject();
+  
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+RCP<TwoDColDependency<DependeeType, DependentType> >
+  DummyObjectGetter<TwoDColDependency<DependeeType, DependentType> >::getDummyObject()
+{
+  return rcp(
+    new TwoDColDependency<DependeeType, DependentType>(
+    rcp(new ParameterEntry(ScalarTraits<DependeeType>::zero())),
+    rcp(new ParameterEntry(TwoDArray<DependentType>(1,1)))));
+}
+
 
 
 } //namespace Teuchos

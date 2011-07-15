@@ -772,6 +772,10 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     dependee, dependents, rangesAndValidators, defaultValidator));
 }
 
+/**
+ * \brief A converter used to convert ArrayModifierDepdencies to and from
+ * xml.
+ */
 template<class DependeeType, class DependentType>
 class ArrayModifierDependencyXMLConverter : public DependencyXMLConverter{
 
@@ -798,6 +802,24 @@ public:
   //@}
 
 protected:
+
+  /**
+   * \brief Obtains a concrete ArrayModifierDependency given a
+   * dependee, dependtns, and a funciton object.
+   *
+   * Because ArrayModifierDependency is an abstact class with pure virtual
+   * methods we need to be able to get a concrete object to actually 
+   * return. This is the reponsibility of any classes subclassing this one.
+   *
+   * @param dependee The dependee to be used in the construction of the
+   * concrete dependency.
+   * @param dependents The dependts to be used in the construction of the
+   * concrete dependency.
+   * @param function The function object to be used in the construction of the
+   * concrete dependency.
+   * @return A concrete dependency object.which subclasses 
+   * ArrayModifierDependency.
+   */
   virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
   getConcreteDependency(
     RCP<const ParameterEntry> dependee,
@@ -892,6 +914,68 @@ return rcp(
     new NumberArrayLengthDependency<DependeeType, DependentType>(
       dependee, dependents, function));
 }
+
+
+template<class DependeeType, class DependentType>
+class TwoDRowDependencyXMLConverter :
+  public ArrayModifierDependencyXMLConverter<DependeeType, DependentType>
+{
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  getConcreteDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > function) const;
+  //@}
+
+};
+
+template<class DependeeType, class DependentType>
+RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+TwoDRowDependencyXMLConverter<DependeeType, DependentType>::getConcreteDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > function) const
+{
+return rcp(
+    new TwoDRowDependency<DependeeType, DependentType>(
+      dependee, dependents, function));
+}
+
+template<class DependeeType, class DependentType>
+class TwoDColDependencyXMLConverter :
+  public ArrayModifierDependencyXMLConverter<DependeeType, DependentType>
+{
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  getConcreteDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > function) const;
+  //@}
+
+};
+
+template<class DependeeType, class DependentType>
+RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+TwoDColDependencyXMLConverter<DependeeType, DependentType>::getConcreteDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > function) const
+{
+return rcp(
+    new TwoDColDependency<DependeeType, DependentType>(
+      dependee, dependents, function));
+}
+
 
 
 } // namespace Teuchos
