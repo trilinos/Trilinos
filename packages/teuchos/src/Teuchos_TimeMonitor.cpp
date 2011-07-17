@@ -76,7 +76,11 @@ namespace Teuchos {
     for (size_type i = 0; i < numTimers; ++i) 
       {
 	Time &timer = *timers[i];
-	TEST_FOR_EXCEPTION(timer.isRunning(), std::logic_error,
+	// We throw a runtime_error rather than a logic_error, because
+	// logic_error suggests a bug in the implementation of
+	// TimeMonitor.  Calling zeroOutTimers() when a timer is
+	// running is not TimeMonitor's fault.
+	TEST_FOR_EXCEPTION(timer.isRunning(), std::runtime_error,
 			   "The timer i = " << i << " with name \"" 
 			   << timer.name() << "\" is currently running and may not "
 			   "be reset.");
@@ -88,17 +92,48 @@ namespace Teuchos {
       (*it)->reset ();
   }
 
+  // An anonymous namespace is the standard way of limiting linkage of
+  // its contained routines to file scope.
   namespace {
 
+    std::pair<std::string, std::pair<double, int> >
+    makeEmptyTimerDatum (const std::string& name)
+    {
+      return std::make_pair (name, std::make_pair (double(0), int(0)));
+    }
+
+    // Pack the given array of strings into a single string with an
+    // offsets array.  This is a helper routine of \c sendStrings().
+    // For strings[k], offsets[k] gives its start position in
+    // packedString, and offsets[k+1]-ofsets[k] gives its length.
+    // Thus, packedString.substr (offsets[k], offsets[k+1]-offsets[k])
+    // == strings[k].
+    //
+    // \param packedString [out] The packed string.  It will be
+    //   resized on output as necessary.
+    //
+    // \param offsets [out] Array of offsets, of length one more than
+    //   the number of strings in the \c strings array.  Thus, the
+    //   offsets array always has positive length.  
+    //
+    // \param strings [in] The array of strings to pack.  It may have
+    //   zero length.  In that case, on output, the offsets array will
+    //   have length one, offsets[0] = 0, and packedString will have
+    //   length zero.
+    //
     // Although std::string could be considered an array, it does not
     // have a size_type typedef.  Instead, it uses size_t for that
     // purpose.
     void
     packStringsForSend (std::string& packedString, 
-			Array<size_t> offsets,
+			Array<size_t>& offsets,
 			const Array<std::string>& strings)
     {
+      using std::cerr;
+      using std::endl;
       using std::string;
+
+      const bool debug = false;
 
       // Compute index offsets in the packed string.
       offsets.resize (strings.size() + 1);
@@ -118,6 +153,22 @@ namespace Teuchos {
       for (Array<string>::const_iterator it = strings.begin(); 
 	   it != strings.end(); ++it)
 	packedStringIter = std::copy (it->begin(), it->end(), packedStringIter);
+
+      if (debug)
+	{
+	  std::ostringstream out;
+	  RCP<const Comm<int> > pComm = DefaultComm<int>::getComm ();
+	  out << "Proc " << pComm->getRank() << ": in pack: offsets = [";
+	  for (Array<size_t>::const_iterator it = offsets.begin(); 
+	       it != offsets.end(); ++it)
+	    {
+	      out << *it;
+	      if (it + 1 != offsets.end())
+		out << ", ";
+	    }
+	  out << "], packedString = " << packedString << endl;
+	  cerr << out.str();
+	}
     }
 
     // \brief Send an array of strings.
@@ -137,6 +188,12 @@ namespace Teuchos {
       std::string packedString;
       Array<size_t> offsets;
       packStringsForSend (packedString, offsets, strings);
+      TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error, 
+			 "packStringsForSend() returned a zero-length offsets "
+			 "array on MPI Proc " << comm.getRank() << ", to be "
+			 "sent to Proc " << destRank << ".  The offsets array "
+			 "should always have positive length.  Please report "
+			 "this bug to the Teuchos developers.");
 
       // Send the count of offsets.
       send (comm, offsets.size(), destRank);
@@ -162,13 +219,33 @@ namespace Teuchos {
 			       const std::string& packedString,
 			       const Array<size_t> offsets)
     {
+      const bool debug = false;
+      if (debug)
+	{
+	  using std::cerr;
+	  using std::endl;
+
+	  std::ostringstream out;
+	  RCP<const Comm<int> > pComm = DefaultComm<int>::getComm ();
+	  out << "Proc " << pComm->getRank() << ": in unpack: offsets = [";
+	  for (Array<size_t>::const_iterator it = offsets.begin(); 
+	       it != offsets.end(); ++it)
+	    {
+	      out << *it;
+	      if (it + 1 != offsets.end())
+		out << ", ";
+	    }
+	  out << "], packedString = " << packedString << endl;
+	  cerr << out.str();
+	}
       TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error, 
 			 "The offsets array has length zero, which does not "
 			 "make sense.  Even when sending / receiving zero "
 			 "strings, the offsets array should have one entry "
 			 "(namely, zero).");
-      strings.resize (offsets.size() - 1);
-      for (Array<size_t>::size_type k = 0; k < offsets.size() - 1; ++k)
+      const Array<size_t>::size_type numStrings = offsets.size() - 1;
+      strings.resize (numStrings);
+      for (Array<size_t>::size_type k = 0; k < numStrings; ++k)
 	{ // Exclusive index range in the packed string in which to
 	  // find the current string.
 	  const size_t start = offsets[k];
@@ -177,6 +254,8 @@ namespace Teuchos {
 	}
     }
 
+    // Function corresponding to \c sendStrings() that receives an
+    // array of strings (Array<std::string>) in packed form.
     void
     receiveStrings (const Comm<int>& comm,
 		    const int sourceRank,
@@ -196,13 +275,14 @@ namespace Teuchos {
       Array<size_t> offsets (numOffsets);
       const int offsetsRecvCount = static_cast<int> (numOffsets);
       receive (comm, sourceRank, offsetsRecvCount, &offsets[0]);
-      
+
       // If the packed string is nonempty, receive the packed string,
-      // and unpack it.
+      // and unpack it.  The last entry of offsets is the length of
+      // the packed string.
       std::string packedString (offsets.back(), ' ');
-      if (offsets.back() > 0)
+      const int stringRecvCount = static_cast<int> (offsets.back());
+      if (stringRecvCount > 0)
 	{
-	  const int stringRecvCount = static_cast<int> (offsets.back());	  
 	  receive (comm, sourceRank, stringRecvCount, &packedString[0]);
 	  unpackStringsAfterReceive (strings, packedString, offsets);
 	}
@@ -251,13 +331,35 @@ namespace Teuchos {
 		     Array<std::string>& globalTimerNames,
 		     const TimeMonitor::ETimerSetOp setOp)
     {
+      using std::cerr;
+      using std::endl;
       using std::string;
+
+      const bool debug = false;
 
       if (myRank == left)
 	{ // Receive timer names from the other process, and merge its
 	  // names with the timer names on this process.
 	  Array<string> otherTimerNames;
 	  receiveStrings (comm, mid, otherTimerNames);
+
+	  if (debug)
+	    {
+	      // Buffering locally in an ostringstream before writing to
+	      // the shared stderr sometimes helps avoid interleaved
+	      // debugging output.
+	      std::ostringstream out;
+	      out << "Proc " << myRank << ": in mergeTimersPair: otherTimerNames = [";
+	      for (Array<std::string>::const_iterator it = otherTimerNames.begin(); 
+		   it != otherTimerNames.end(); ++it)
+		{
+		  out << "\"" << *it << "\"";
+		  if (it + 1 != otherTimerNames.end())
+		    out << ", ";
+		}
+	      out << "]" << endl;
+	      cerr << out.str();
+	    }
 
 	  // Assume that both globalTimerNames and otherTimerNames are
 	  // sorted.  Compute the set intersection / union as
@@ -315,35 +417,45 @@ namespace Teuchos {
       //
       // Recursive "reduction" algorithm:
       //
-      // If the (intersection, union) of [left, mid-1] and the
-      // (intersection, union) of [mid, right] are both computed
-      // correctly, then the (intersection, union) of these two sets is
-      // the union of [left, right].
+      // Let mid be the midpoint of the inclusive interval [left,
+      // right].  If the (intersection, union) of [left, mid-1] and
+      // the (intersection, union) of [mid, right] are both computed
+      // correctly, then the (intersection, union) of these two sets
+      // is the (intersection, union) of [left, right].
       //
-      // The first base case is left == right: the (intersection, union)
-      // of one set is simply that set.  For safety, we include a second
-      // base case left > right, which means an empty interval: the
-      // (intersection, union) of an empty set of sets is the empty set.
+      // The base case is left == right: the (intersection, union) of
+      // one set is simply that set, so copy localTimerNames into
+      // globalTimerNames.  
+      //
+      // We include another base case for safety: left > right,
+      // meaning that the set of processes is empty, so we do nothing
+      // (the (intersection, union) of an empty set of sets is the
+      // empty set).
       if (left > right)
 	return;
       else if (left == right)
 	{
-	  globalTimerNames.resize (localTimerNames.length());
+	  Array<string> newTimerNames;
+	  newTimerNames.reserve (localTimerNames.size());
 	  std::copy (localTimerNames.begin(), localTimerNames.end(), 
-		     globalTimerNames.begin());
+		     std::back_inserter (newTimerNames));
+	  globalTimerNames.swap (newTimerNames);
 	}
       else
 	{ // You're sending messages across the network, so don't bother
 	  // to optimize away a few branches here.
 	  //
 	  // Recurse on [left, mid-1] or [mid, right], depending on myRank.
-	  const int mid = (right - left + 1) / 2;
+	  const int mid = left + (right - left + 1) / 2;
 	  if (myRank >= left && myRank <= mid-1)
 	    mergeTimersHelper (comm, myRank, left, mid-1, 
 			       localTimerNames, globalTimerNames, setOp);
 	  else if (myRank >= mid && myRank <= right)
 	    mergeTimersHelper (comm, myRank, mid, right,
 			       localTimerNames, globalTimerNames, setOp);
+	  else
+	    return; // Don't call mergeTimersPair if not participating.
+
 	  // Combine the results of the recursive step.
 	  if (myRank == left || myRank == mid)
 	    mergeTimersPair (comm, myRank, left, mid, 
@@ -366,9 +478,10 @@ namespace Teuchos {
 		 Array<std::string>& globalTimerNames,
 		 const TimeMonitor::ETimerSetOp setOp)
     {
+      const int numProcs = comm.getSize ();
       const int myRank = comm.getRank ();
       const int left = 0;
-      const int right = comm.getSize() - 1;
+      const int right = numProcs - 1;
       Array<std::string> theGlobalTimerNames;
       mergeTimersHelper (comm, myRank, left, right, 
 			 localTimerNames, theGlobalTimerNames, setOp);
@@ -381,7 +494,7 @@ namespace Teuchos {
     // \brief Locally filter out timer data with zero call counts.
     //
     void
-    filterZeroData (std::map<std::string, std::pair<double, int> >& timerData)
+    filterZeroData (timer_map_t& timerData)
     {
       timer_map_t newTimerData;
       for (timer_map_t::const_iterator it = timerData.begin(); 
@@ -397,7 +510,7 @@ namespace Teuchos {
     // \brief Collect and sort local timer data by timer names.
     //
     void
-    collectLocalTimerData (std::map<std::string, std::pair<double, int> >& localData,
+    collectLocalTimerData (timer_map_t& localData,
 			   const Array<RCP<Time> >& localCounters)
     {
       using std::make_pair;
@@ -430,25 +543,6 @@ namespace Teuchos {
     }
   } // namespace (anonymous)
 
-  namespace {
-    //
-    // Local utility functions for operating on timer_datum_t objects.
-    //
-
-    inline bool
-    eqTimerData (const std::pair<std::string, std::pair<double, int> >& x,
-		 const std::pair<std::string, std::pair<double, int> >& y)
-    {
-      return x.first == y.first;
-    }
-
-    inline const std::string& 
-    timerDatumName (const std::pair<std::string, std::pair<double, int> >& x)
-    {
-      return x.first;
-    }
-  } // namespace (anonymous)
-
   void 
   TimeMonitor::summarize (std::ostream &out,
 			  const bool alwaysWriteLocal,
@@ -456,13 +550,27 @@ namespace Teuchos {
 			  const bool writeZeroTimers,
 			  const ETimerSetOp setOp)
   {
+    using std::cerr;
+    using std::endl;
     using std::make_pair;
     using std::string;
+    
+    const bool debug = false;
 
     // The default "MPI_COMM_WORLD" communicator.
     RCP<const Comm<int> > pComm = DefaultComm<int>::getComm ();
     const int numProcs = pComm->getSize();
     const int myRank = pComm->getRank();
+
+    if (debug && myRank == 0)
+      {
+	cerr << "summarize (out, "
+	     << "alwaysWriteLocal=" << alwaysWriteLocal 
+	     << ", writeGlobalStats=" << writeGlobalStats 
+	     << ", writeZeroTimers=" << writeZeroTimers 
+	     << ", setOp=" << (setOp==Union ? "Union" : "Intersection") 
+	     << ")" << endl;
+      }
 
     // Only MPI Rank 0 prints local timer stats, if asked always to
     // print local data.
@@ -471,6 +579,23 @@ namespace Teuchos {
     // Collect and sort local timer data by timer names.
     timer_map_t localTimerData;
     collectLocalTimerData (localTimerData, counters());
+
+    if (debug)
+      {
+	for (int p = 0; p < numProcs; ++p)
+	  {
+	    if (myRank == p)
+	      {
+		cerr << "Proc " << myRank << ": Local timer data:" << endl;
+		for (timer_map_t::const_iterator it = localTimerData.begin(); it != localTimerData.end(); ++it)
+		  cerr << "-- " << it->first << ", " << it->second.first << ", " << it->second.second << endl;
+	      }
+	    // Two barriers generally synchronize output, at least
+	    // when debugging with multiple MPI processes on one node.
+	    barrier (*pComm);
+	    barrier (*pComm);
+	  }
+      }
 
     // Extract the set of local timer names.  The std::map keeps them
     // sorted alphabetically.
@@ -481,7 +606,22 @@ namespace Teuchos {
     for (timer_map_t::const_iterator it = localTimerData.begin(); 
      	 it != localTimerData.end(); ++it)
       localTimerNames.push_back (it->first);
-      
+
+    if (debug)
+      {
+	for (int p = 0; p < numProcs; ++p)
+	  {
+	    if (myRank == p)
+	      {
+		cerr << "Proc " << myRank << ": Local timer names:" << endl;
+		for (Array<string>::const_iterator it = localTimerNames.begin(); it != localTimerNames.end(); ++it)
+		  cerr << "-- " << *it << endl;
+	      }
+	    barrier (*pComm);
+	    barrier (*pComm);
+	  }
+      }
+
     // globalTimerData and globalTimerNames are only valid if
     // writeGlobalStats is true.
     Array<string> globalTimerNames;
@@ -531,7 +671,7 @@ namespace Teuchos {
 		// modify this function to print out local timer data
 		// for some other MPI process other than Rank 0.
 		if (alwaysWriteLocal)
-		  localMapIter = localTimerData.insert (localMapIter, make_pair (globalName, make_pair (double(0), int(0))));
+		  localMapIter = localTimerData.insert (localMapIter, makeEmptyTimerDatum (globalName));
 	      }
 	    else 
 	      // We know that globalTimerNames is unique, so we don't
@@ -561,40 +701,51 @@ namespace Teuchos {
     // (in which the local and global sets of timers, as well as their
     // call counts, are the same).
     //
-    // If writing local stats or not writing global stats, and if not
-    // writing zero timers, and if (if writing global stats, we
+    // If not writing zero timers, and if writing local stats or not
+    // writing global stats, and if (if writing global stats, we
     // didn't find any global-not-local timer names), filter zero data
     // from local timers.
-    if ((alwaysWriteLocal || ! writeGlobalStats) && ! writeZeroTimers && (! writeGlobalStats || foundGlobalNotLocal))
+    if (! writeZeroTimers &&
+	(alwaysWriteLocal || ! writeGlobalStats) && 
+	(! writeGlobalStats || foundGlobalNotLocal))
       filterZeroData (localTimerData);
 
     // Extract the timer names (global or local) into a single array
     // of strings, representing the column labels in the table.
-    Array<string> timerNames (globalTimerData.size());
-    if (writeGlobalStats)
-      {
-	std::copy (globalTimerNames.begin(), globalTimerNames.end(), timerNames.begin());
+    Array<string> timerNames;
+    timerNames.reserve (globalTimerData.size());
+    if (writeGlobalStats) // use global timer names as the column names.
+      std::copy (globalTimerNames.begin(), globalTimerNames.end(), 
+		 std::back_inserter (timerNames));
+    else // Use local timer names as the column labels.
+      std::copy (localTimerNames.begin(), localTimerNames.end(), 
+		 std::back_inserter (timerNames));
 
-	// FIXME (mfh 15 Jul 2011) We've already dealt with this
-	// above.  localTimerNames might be different than
-	// globalTimerNames, but if writeGlobalStats==true and
-	// alwaysWriteLocal==true, then localTimerData has had "dummy"
-	// data inserted to pad out the table.
-	if (false)
+    if (debug)
+      {
+	for (int p = 0; p < numProcs; ++p)
 	  {
-	    // If the set of local timer names doesn't match the set of
-	    // global timer names, we can't print both in the same table.
-	    // Check this first!  In this case, rather than throwing an
-	    // exception, we ignore the "alwaysWriteLocal" option and only
-	    // print global timer data.
-	    if (alwaysWriteLocal && 
-		! std::equal (localTimerNames.begin(), localTimerNames.end(), 
-			      globalTimerNames.begin()))
-	      writeLocalStats = false;
+	    if (myRank == p)
+	      {
+		cerr << "Proc " << myRank << ": Global timer names:" << endl;
+		for (Array<std::string>::const_iterator it = globalTimerNames.begin(); it != globalTimerNames.end(); ++it)
+		  cerr << "-- " << *it << endl;
+	      }
+	    barrier (*pComm);
+	    barrier (*pComm);
+	  }
+	for (int p = 0; p < numProcs; ++p)
+	  {
+	    if (myRank == p)
+	      {
+		cerr << "Proc " << myRank << ": Global timer data:" << endl;
+		for (timer_map_t::const_iterator it = globalTimerData.begin(); it != globalTimerData.end(); ++it)
+		  cerr << "-- " << it->first << ", " << it->second.first << ", " << it->second.second << endl;
+	      }
+	    barrier (*pComm);
+	    barrier (*pComm);
 	  }
       }
-    else // Use local timer names as the column labels.
-      std::copy (localTimerNames.begin(), localTimerNames.end(), timerNames.begin());
 
     const int precision = format().precision();
 
