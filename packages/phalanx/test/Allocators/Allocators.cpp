@@ -36,6 +36,7 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "mock_object.hpp"
 
@@ -67,6 +68,8 @@ int main(int argc, char *argv[])
   using namespace Teuchos;
   using namespace PHX;
   
+  GlobalMPISession mpi_session(&argc, &argv);
+
   try {
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
