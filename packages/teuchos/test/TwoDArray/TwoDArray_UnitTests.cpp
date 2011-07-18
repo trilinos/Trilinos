@@ -93,6 +93,10 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, stringFunctions){
   std::string stringRep = TwoDArray<int>::toString(simpleArray);
   TwoDArray<int> convertedArray = TwoDArray<int>::fromString(stringRep);
   TEST_EQUALITY(simpleArray, convertedArray)
+
+  std::string badStringRep = "4x4:{1.0,1.0}";
+  TEST_THROW(TwoDArray<int>::fromString(badStringRep), 
+    InvalidArrayStringRepresentation)
 }
 
 TEUCHOS_UNIT_TEST(Teuchos_TwoDArrays, emptyTest){
