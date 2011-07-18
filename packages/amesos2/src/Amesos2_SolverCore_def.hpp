@@ -156,22 +156,25 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 void
 SolverCore<ConcreteSolver,Matrix,Vector>::solve()
 {
-  solve(multiVecX_, multiVecB_);
+  solve(multiVecX_.ptr(), multiVecB_.ptr());
 }
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 void
-SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::RCP<Vector> X,
-                                                const Teuchos::RCP<const Vector> B) const
+SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
+                                                const Teuchos::Ptr<const Vector> B) const
 {
-  TEST_FOR_EXCEPTION( X.is_null() || B.is_null(),
-                      std::runtime_error,
-                      "X and B must be set before attempting solve" );
+#ifdef HAVE_AMESOS2_TIMERS
+  Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+#endif
+
+  X.assert_not_null();
+  B.assert_not_null();
 
   const Teuchos::RCP<MultiVecAdapter<Vector> > x =
-    createMultiVecAdapter<Vector>(X);
-  const Teuchos::RCP<MultiVecAdapter<Vector> > b =
-    createMultiVecAdapter<Vector>(Teuchos::rcp_const_cast<Vector>(B));
+    createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(X));
+  const Teuchos::RCP<const MultiVecAdapter<Vector> > b =
+    createConstMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(B));
     
 #ifdef HAVE_AMESOS2_DEBUG
   // Check some required properties of X and B
@@ -190,20 +193,22 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::RCP<Vector> X,
                      "X and B MultiVectors must have the same number of vectors");
 #endif  // HAVE_AMESOS2_DEBUG
   
-#ifdef HAVE_AMESOS2_TIMERS
-  Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
-#endif
-
   if( !numericFactorizationDone() ){
     // This casting-away of constness is probably OK because this
     // function is meant to be "logically const"
     const_cast<type*>(this)->numericFactorization();
   }
   
-  static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), b.ptr());
+  static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), Teuchos::ptrInArg(*b));
   ++status_.numSolve_;
 }
 
+template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
+void
+SolverCore<ConcreteSolver,Matrix,Vector>::solve(Vector* X, const Vector* B) const
+{
+  solve(Teuchos::ptr(X), Teuchos::ptr(B));
+}
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 bool

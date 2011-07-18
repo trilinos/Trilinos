@@ -165,7 +165,7 @@ private:
    * \callgraph
    */
   int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
-		 const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const;
+		 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
 
 
   /**

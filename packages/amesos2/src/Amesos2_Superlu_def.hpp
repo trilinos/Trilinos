@@ -129,7 +129,7 @@ Superlu<Matrix,Vector>::preOrdering_impl()
 #endif
     
     matrix_helper::createCCSMatrix(
-      this->matrixA_.ptr(),
+      Teuchos::ptrInArg(*this->matrixA_),
       nzvals_(), rowind_(), colptr_(),
       Teuchos::outArg(data_.A),
       this->timers_.mtxRedistTime_);
@@ -211,7 +211,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 #endif
     
     matrix_helper::createCCSMatrix(
-      this->matrixA_.ptr(),
+      Teuchos::ptrInArg(*this->matrixA_),
       nzvals_(), rowind_(), colptr_(),
       Teuchos::outArg(data_.A),
       this->timers_.mtxRedistTime_);
@@ -297,7 +297,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 template <class Matrix, class Vector>
 int
 Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
-				   const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const
+				   const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
   // root sets up for Solve and calls SuperLU

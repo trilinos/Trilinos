@@ -347,8 +347,8 @@ namespace Amesos2 {
 
   template <class Matrix, class Vector>
   int
-  Superludist<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
-					 const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const
+  Superludist<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
+					 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
   {
     using Teuchos::as;
 

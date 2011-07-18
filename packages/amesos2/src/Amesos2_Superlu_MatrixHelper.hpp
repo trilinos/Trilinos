@@ -89,7 +89,7 @@ namespace Amesos2 {
      * \callgraph
      */
     template <class Matrix>
-    static void createCCSMatrix(const Teuchos::Ptr<Matrix>& mat,
+    static void createCCSMatrix(const Teuchos::Ptr<const Matrix>& mat,
                                 const Teuchos::ArrayView<typename TypeMap<Superlu,typename Matrix::scalar_t>::type>& nzval,
                                 const Teuchos::ArrayView<int>& rowind,
                                 const Teuchos::ArrayView<int>& colptr,

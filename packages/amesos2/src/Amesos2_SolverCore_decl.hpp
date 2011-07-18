@@ -230,7 +230,10 @@ public:
   void solve();
 
 
-  void solve(const Teuchos::RCP<Vector> X, const Teuchos::RCP<const Vector> B) const;
+  void solve(const Teuchos::Ptr<Vector> X, const Teuchos::Ptr<const Vector> B) const;
+
+
+  void solve(Vector* X, const Vector* B) const;
   
 
   //@}  End Mathematical Functions group
@@ -250,12 +253,20 @@ public:
   void setA( const Teuchos::RCP<Matrix> a );
 
   void setX(const Teuchos::RCP<Vector> x){ multiVecX_ = x; }
+
+  void setX(Vector* x){ multiVecX_ = Teuchos::rcp(x); }
   
   const Teuchos::RCP<Vector> getX(){ return( multiVecX_ ); }
 
+  Vector* getXRaw(){ return multiVecX_.getRawPtr(); }
+
   void setB(const Teuchos::RCP<const Vector> b){ multiVecB_ = b; }
 
-  const Teuchos::RCP<const Vector> getB(){ return( multiVecB_ ); }  
+  void setB(const Vector* b){ multiVecB_ = Teuchos::rcp(b); }
+
+  const Teuchos::RCP<const Vector> getB(){ return( multiVecB_ ); }
+
+  const Vector* getBRaw(){ return multiVecB_.getRawPtr(); }
 
 
   /// \name Parameter methods

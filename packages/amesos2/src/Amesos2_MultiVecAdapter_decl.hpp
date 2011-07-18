@@ -187,7 +187,7 @@ namespace Amesos2 {
   Teuchos::RCP<const MultiVecAdapter<MV> >
   createConstMultiVecAdapter(Teuchos::RCP<const MV> mv){
     if(mv.is_null()) return Teuchos::null;
-    return( rcp(new MultiVecAdapter<MV>(mv)) );
+    return( rcp(new MultiVecAdapter<MV>(Teuchos::rcp_const_cast<MV,const MV>(mv))).getConst() );
   }
 
 } // end namespace Amesos2

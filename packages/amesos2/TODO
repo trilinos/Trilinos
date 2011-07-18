@@ -31,7 +31,7 @@ General TODO
  - Make the B argument for solve_impl and solve(X,B) a Ptr to a const
    MV adapter.  This might mean we have to follow through to some
    downstream functions to make them take const arguments also (or
-   make member functions const when appropriate)
+   make member functions const when appropriate). (DONE)
    
  - May be useful to define some Amesos2 exception classes.
 

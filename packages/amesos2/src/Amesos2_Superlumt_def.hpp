@@ -315,7 +315,7 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
 template <class Matrix, class Vector>
 int
 Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
-				     const Teuchos::Ptr<MultiVecAdapter<Vector> > B) const
+				     const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
 

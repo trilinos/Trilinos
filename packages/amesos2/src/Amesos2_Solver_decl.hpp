@@ -147,7 +147,25 @@ namespace Amesos2 {
      *  - The (multi)vector \c X contains the solution to the system
      *  - The \c X and \c B given at construction time (if any) are unchanged.
      */
-    virtual void solve(const Teuchos::RCP<Vector> X, const Teuchos::RCP<const Vector> B) const = 0;
+    virtual void solve(const Teuchos::Ptr<Vector>       X,
+		       const Teuchos::Ptr<const Vector> B) const = 0;
+
+
+    /** \brief Solve \f$ A X = B\f$ using the given X and B vectors.
+     *
+     * This overload of solve uses the given X and B vectors when
+     * solving.  This X and B are used in place of any X and B that
+     * were given upon construction of the Amesos2 solver instance and
+     * are used only for this solve.
+     *
+     * If a permanent change of X and B are required, see the setX()
+     * and setB() methods.
+     *
+     * \post
+     *  - The (multi)vector \c X contains the solution to the system
+     *  - The \c X and \c B given at construction time (if any) are unchanged.
+     */
+    virtual void solve(Vector* X, const Vector* B) const = 0;
 
     //@} End Mathematical Functions
 
@@ -216,16 +234,32 @@ namespace Amesos2 {
     virtual void setX( const Teuchos::RCP<Vector> x ) = 0;
 
 
+    /// Sets the LHS vector X using a raw pointer
+    virtual void setX( Vector* x ) = 0;
+
+
     /// Returns the vector that is the LHS of the linear system
     virtual const Teuchos::RCP<Vector> getX( void ) = 0;
+
+
+    /// Returns a raw pointer to the LHS of the linear system
+    virtual Vector* getXRaw( void ) = 0;
 
 
     /// Sets the RHS vector B
     virtual void setB( const Teuchos::RCP<const Vector> b ) = 0;
 
 
+    /// Sets the RHS vector B using a raw pointer
+    virtual void setB( const Vector* b ) = 0;
+
+
     /// Returns the vector that is the RHS of the linear system
     virtual const Teuchos::RCP<const Vector> getB( void ) = 0;
+
+
+    /// Returns a raw pointer to the RHS of the linear system
+    virtual const Vector* getBRaw( void ) = 0;
 
 
     /// Returns a pointer to the Teuchos::Comm communicator with this matrix
