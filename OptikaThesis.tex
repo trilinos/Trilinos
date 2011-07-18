@@ -747,7 +747,8 @@ validator we want to use and do not specify a validator to be used if the depend
 \label{BoolValidDepXML}
 \end{figure}
 
-\subsection{Number Array Length Dependencies}
+\subsection{Array Modifier Dependencies}
+\subsubsection{Number Array Length Dependencies}
 Number Array Length Dependencies allow the application developer to have the length of an array parameter determined by the value of another parameter. Number Array Length
 Dependencies must have a dependee with an integer type and the dependent(s) must be an array. Unless otherwise specified, the value of the dependee parameter is directly
 used for the length of the dependent array parameter(s). 
@@ -781,6 +782,109 @@ dependent.
 
 If we wanted the length of the array to be based on something other then the direct value of the dependee parameter, we could run it through a function. This would 
 be done by adding a <Function> tag inside the <Dependency> tag, just like we did in Figure~\ref{NumberVisXML2} for the Number Visual Dependency.
+
+\subsubsection{TwoD Row Dependencies and TwoD Column Dependencies}
+TwoD Row Dependencies allows the application developer to have the number or rows in a TwoDArray parameter to be determined by the value of another
+parameter. TwoD Row Dependencies must have a dependen with an integer type and the dependent(s) must be a TwoDArray. Unless otherwise specified, the
+value of the dependee parameter is directly used for the number of rows in the TwoDArray dependent parameter(s).
+
+Figure~\ref{TwoDRowXML} shows an example of a TwoD Row Dependency. In this example we have a TwoDArray which specifies two parameter values for each surface
+we have in some simulation. In other words, each row in the TwoDArray corresponds to a surface and each column in a row corresponds to a particular 
+parameter value for the surface. This means that as we add or remove surfaces we want the number of rows in the TwoDArray to change accrodingly.
+With a TwoD Row Dependency, this is exactly what will happen when the ``Number of surfaces'' parameter changes. Note how the ``type'' XML attributes for the dependency corresspond to the types of both the
+dependee and the dependent.
+
+\begin{figure}
+\centering
+{\footnotesize
+\begin{Verbatim}
+<ParameterList>
+  <Parameter name="Number of surfaces" 
+    type="int" value="2"
+    id="1" docString="The number of surfaces in a simulation"/>
+  <Parameter name="Params" type="TwoDArray(double)"
+    value="2x2:{3,4,3,4}" id="2" 
+    docString="An array containing parameter values for each surface"/>
+  <Dependencies>
+    <Dependency type="TwoDRowDependency(int, double)">
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+    </Dependency>
+  </Dependencies>
+</ParameterList>
+\end{Verbatim}
+}
+\caption{Example usage of a TwoDRowDependency}
+\label{TwoDRowXML}
+\end{figure}
+
+If we wanted the number of rows to be based on something other then the direct value of the dependee parameter, we could run it through a function. 
+This would be done by adding a <Function> tag inside the <Dependency> tag, just like we did in Figure~\ref{NumberVisXML2} for the Number Visual Dependency.
+
+In addition to the TwoD Row Dependency, there is also another dependency called a TwoD Column Dependency. It functions in almost exactly the same way
+as the TwoD Row Dependency except instead of modifying the number of rows in a TwoDArray. It modifies the number of columns. Let's modify the example above.
+Instead of having each row represent a surface, we'll have each column represent a surface. Figure~\ref{TwoDColXML} shows how we now change the number
+of columns in the TwoDArray as the number of surfaces change.
+\begin{figure}
+\centering
+{\footnotesize
+\begin{Verbatim}
+<ParameterList>
+  <Parameter name="Number of surfaces" 
+    type="int" value="2"
+    id="1" docString="The number of surfaces in a simulation"/>
+  <Parameter name="Params" type="TwoDArray(double)"
+    value="2x2:{3,3,4,4}" id="2" 
+    docString="An array containing parameter values for each surface"/>
+  <Dependencies>
+    <Dependency type="TwoDColDependency(int, double)">
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+    </Dependency>
+  </Dependencies>
+</ParameterList>
+\end{Verbatim}
+}
+\caption{Example usage of a TwoDColDependency}
+\label{TwoDColXML}
+\end{figure}
+
+It's also worth noting that there is nothing preventing you from using a TwoD Row Dependency and TwoD Column Dependency together. You could have a single
+dependent parameter who's number of row's and columns are dependent on two different parameters or even on the same parameter. One instance in which you 
+might want to have both the number of rows and columns dependent on a single parameter is when you are dealing with a symetric array.  Figure~\ref{TwoDSym}
+shows an example of this. In this example, we are specifying some characteristic of a boundry interaction between two surfaces. Since the boundry
+interaction charactersitic between surface one and surface zero is the same as the boundry interaction characteristic between surface zero and surface one,
+and we don't specify the interaction between a surface and itself
+we need a symetrical array. In this case, the number of rows and columns the array contains is dependent on the same parameter.
+
+\begin{figure}
+\centering
+{\footnotesize
+\begin{Verbatim}
+<ParameterList>
+  <Parameter name="Number of surfaces" 
+    type="int" value="3"
+    id="1" docString="The number of surfaces in a simulation"/>
+  <Parameter name="Boundry Interaction Characteristic" type="TwoDArray(double)"
+    value="3x3:sym:{-1,-1,-1,5,-1,-1,4,4,-1}" id="2" 
+    docString="An array containing parameter values for each surface"/>
+  <Dependencies>
+    <Dependency type="TwoDRowDependency(int, double)">
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+    </Dependency>
+    <Dependency type="TwoDColDependency(int, double)">
+      <Dependee parameterId="1"/>
+      <Dependent parameterId="2"/>
+    </Dependency>
+  </Dependencies>
+</ParameterList>
+\end{Verbatim}
+}
+\caption{Example usage of both a TwoDColDependency and TwoDRowDependency for a symetric TwoDArray}
+\label{TwoDColXML}
+\end{figure}
+
 
 \section{Condition Visual Dependencies}
 Up until this point, all Dependencies have had a single dependee. Condition Visual Dependencies are a special type of visual dependencies that allow the application developer to
