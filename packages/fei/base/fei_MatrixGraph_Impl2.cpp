@@ -2266,9 +2266,6 @@ int fei::MatrixGraph_Impl2::getConnectivityIndices_multiField(const snl_fei::Rec
 
       for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
         indices[numIndices++] = eqnNumbers[eqnOffset+fs];
-if (indices[numIndices-1] > 100000) {
-std::cout<<"ind: " << indices[numIndices-1]<<std::endl;
-}
       }
 
       ++fld_offset;
