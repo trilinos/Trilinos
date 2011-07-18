@@ -256,9 +256,9 @@ namespace Amesos2 {
      */
     bool matrixShapeOK();
 
-    void setA( const Teuchos::RCP<const Matrix> a );
+    void setA( const Teuchos::RCP<const Matrix> a, EPhase keep_phase = CLEAN );
 
-    void setA( const Matrix* a ){ setA(Teuchos::rcp(a)); }
+    void setA( const Matrix* a, EPhase keep_phase = CLEAN ){ setA(Teuchos::rcp(a), keep_phase); }
 
     void setX(const Teuchos::RCP<Vector> x){ multiVecX_ = x; }
 

@@ -83,15 +83,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::SolverCore(
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 SolverCore<ConcreteSolver,Matrix,Vector>::~SolverCore( )
 {
-  // TODO: The below code is still dependent on there being some kind
-  // of status and control code available to Amesos2::SolverCore,
-  // either in the form of a shared library or private inheritance of
-  // classes that provide that functionality.
-
-  // print out some information if required by the user
-  // if ((control_.verbose_ && control_.printTiming_) || control_.verbose_ == 2) printTiming();
-  // if ((control_.verbose_ && control_.printStatus_) || control_.verbose_ == 2) printStatus();
-
+  // Nothing
 }
 
 
@@ -226,23 +218,26 @@ SolverCore<ConcreteSolver,Matrix,Vector>::matrixShapeOK()
   // const types
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 void
-SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<const Matrix> a )
+SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<const Matrix> a,
+						EPhase keep_phase )
 {
   matrixA_ = createConstMatrixAdapter(a);
-  if( !matrixA_.is_null() ){
-    // The user passed a non-null rcp, reset state
-    //
-    // Resetting the done-ness of each phase will force each to be
-    // repeated from scratch.  The solver interface is responsible
-    // for assuring that no dependencies linger between one matrix
-    // and another.
-    
-    status_.last_phase_ = CLEAN;
 
-    globalNumNonZeros_ = matrixA_->getGlobalNNZ();
-    globalNumCols_     = matrixA_->getGlobalNumCols();
-    globalNumRows_     = matrixA_->getGlobalNumRows();
-  }
+#ifdef HAVE_AMESOS2_DEBUG
+  TEST_FOR_EXCEPTION( (keep_phase != CLEAN) &&
+		      (globalNumRows_ != matrixA_->getGlobalNumRows() ||
+		       globalNumCols_ != matrixA_->getGlobalNumCols()),
+		      std::invalid_argument,
+		      "Dimensions of new matrix be the same as the old matrix if "
+		      "keeping any solver phase" );
+#endif
+  
+  status_.last_phase_ = keep_phase;
+
+  // Re-get the matrix dimensions in case they have changed
+  globalNumNonZeros_ = matrixA_->getGlobalNNZ();
+  globalNumCols_     = matrixA_->getGlobalNumCols();
+  globalNumRows_     = matrixA_->getGlobalNumRows();
 }
 
 

@@ -49,7 +49,7 @@ General TODO
    processors before calling solve().  This was suggested by David Day
    since this case has a tenddency to expose bugs.
 
- - Remove the printStatus method
+ - Remove the printStatus method. (DONE)
 
  - LAPACK support (ScaLAPACK would be nice, but more involved.  Only
    upon request).
@@ -69,7 +69,7 @@ General TODO
    such that it is the same as if a symbolic factorization had just
    been performed.  The default value for the second parameter would
    be something like "FRESH", "CLEAN", or "NONE" to indicate that no
-   computation has been performed.
+   computation has been performed.  (DONE)
 
  - Provide an Amesos2 "Status" object to users through a
    solver->getStatus() method.  The status should hold things such as

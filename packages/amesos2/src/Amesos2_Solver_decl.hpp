@@ -57,6 +57,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
+#include "Amesos2_TypeDecl.hpp"
 #include "Amesos2_Status.hpp"
 
 namespace Amesos2 {
@@ -202,29 +203,45 @@ namespace Amesos2 {
 
     /** \brief Sets the matrix A of this solver
      *
-     * Calling this method will reset any internal state of the solver
-     * which was dependent on the previous matrix.
+     * \param [in] a          An RCP to a matrix will will be used for
+     *                        future computation steps
+     *                        
+     * \param [in] keep_phase This parameter tells the solver what
+     *                        state it should keep.  For example, you
+     *                        may want to replace the matrix but keep
+     *                        the symbolic factorization because you
+     *                        know the structure of the new matrix is
+     *                        the same as the structure of the old
+     *                        matrix.  In this case you would pass
+     *                        Amesos2::SYMBFACT as this parameter.
      *
-     * Passing Teuchos::null is a special case, however.  This will
-     * release the matrix, but will not reset any internal state.  It
-     * is expected then, that symbolicFactorization or
-     * numericFactorization will not be called again until another
-     * matrix is set using this method.  This allows the user to free
-     * a matrix from memory once the L and U factors have been
-     * computed.  For example:
-     *
-     * \code
-     * Solver<MAT,MV> solver = create(A);
-     * solver->symbolicFactorization().numericFactorization();
-     * A = Teuchos::null;
-     * solver->setA(Teuchos::null); // release A
-     * solver->solve(X, B);
-     * \endcode
+     * The default value for the second parameter is Amesos2::CLEAN,
+     * which means that the internal state of the solver will be
+     * completely reset.  It will be as if no previous computational
+     * steps were performed.
      */
-    virtual void setA( const Teuchos::RCP<const Matrix> a ) = 0;
+    virtual void setA( const Teuchos::RCP<const Matrix> a, EPhase keep_phase = CLEAN ) = 0;
 
-
-    virtual void setA( const Matrix* a ) = 0;
+    /** \brief Sets the matrix A of this solver
+     *
+     * \param [in] a          An raw C pointer to a matrix will will
+     *                        be used for future computation steps.
+     *                        
+     * \param [in] keep_phase This parameter tells the solver what
+     *                        state it should keep.  For example, you
+     *                        may want to replace the matrix but keep
+     *                        the symbolic factorization because you
+     *                        know the structure of the new matrix is
+     *                        the same as the structure of the old
+     *                        matrix.  In this case you would pass
+     *                        Amesos2::SYMBFACT as this parameter.
+     *
+     * The default value for the second parameter is Amesos2::CLEAN,
+     * which means that the internal state of the solver will be
+     * completely reset.  It will be as if no previous computational
+     * steps were performed.
+     */
+    virtual void setA( const Matrix* a, EPhase keep_phase = CLEAN ) = 0;
     
 
     /// Returns \c true if the solver can handle the matrix shape
