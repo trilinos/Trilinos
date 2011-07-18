@@ -94,7 +94,7 @@ namespace Z {
 } // end namespace SLUMT
 
 
-namespace Amesos {
+namespace Amesos2 {
 
   template <class Matrix, class Vector> class Superlumt;
 
@@ -102,19 +102,20 @@ namespace Amesos {
 /**
  * \brief Pass function calls to SuperLU_MT based on data type.
  *
- * Helper class which passes on function calls to the appropriate SuperLU_MT
- * function based on the type of its scalar template argument.
+ * Helper class which passes on function calls to the appropriate
+ * SuperLU_MT function based on the type of its scalar template
+ * argument.
  *
- * SuperLU_MT has solver and matrix builder functions defined based on data type.
- * One function for complex, one for double precision complex, another for \c
- * float , and yet another for \c double.  To work elegantly with the
- * Amesos::SuperLU_MT interface we want to be able to perform a single function
- * call which is appropriate for the scalar type of the Matrix and
- * MultiVectors that we are working with.  The \c FunctionMap class
- * provides that capability.
+ * SuperLU_MT has solver and matrix builder functions defined based on
+ * data type.  One function for complex, one for double precision
+ * complex, another for \c float , and yet another for \c double.  To
+ * work elegantly with the Amesos2::SuperLU_MT interface we want to be
+ * able to perform a single function call which is appropriate for the
+ * scalar type of the Matrix and MultiVectors that we are working
+ * with.  The \c FunctionMap class provides that capability.
  *
- * The class template is specialized for each data type that SuperLU_MT supports,
- * and errors are thrown for other data types.
+ * The class template is specialized for each data type that
+ * SuperLU_MT supports, and errors are thrown for other data types.
  *
  * Please see the <a
  * href="http://crd.lbl.gov/~xiaoye/SuperLU/superlu_ug.pdf">Superlu Users'
@@ -603,7 +604,7 @@ struct FunctionMap<Superlumt,std::complex<double> >
 
 /* \endcond SuperLU_MT_function_specializations */
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 
 #endif  // AMESOS2_SUPERLUMT_FUNCTIONMAP_HPP

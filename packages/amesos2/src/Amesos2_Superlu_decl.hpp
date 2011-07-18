@@ -59,7 +59,7 @@
 #include "Amesos2_Superlu_TypeMap.hpp"
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 /** \brief Amesos2 interface to the SuperLU package.
@@ -71,9 +71,9 @@ namespace Amesos {
  */
 template <class Matrix,
           class Vector>
-class Superlu : public SolverCore<Amesos::Superlu, Matrix, Vector>
+class Superlu : public SolverCore<Amesos2::Superlu, Matrix, Vector>
 {
-  friend class SolverCore<Amesos::Superlu,Matrix,Vector>; // Give our base access
+  friend class SolverCore<Amesos2::Superlu,Matrix,Vector>; // Give our base access
                                                           // to our private
                                                           // implementation funcs
 public:
@@ -82,7 +82,7 @@ public:
   static const char* name;	// declaration. Initialization outside.
 
   typedef Superlu<Matrix,Vector>                                       type;
-  typedef SolverCore<Amesos::Superlu,Matrix,Vector>              super_type;
+  typedef SolverCore<Amesos2::Superlu,Matrix,Vector>              super_type;
 
   // Since typedef's are not inheritted, go grab them
   typedef typename super_type::scalar_type                      scalar_type;
@@ -90,16 +90,18 @@ public:
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
 
+  typedef TypeMap<Amesos2::Superlu,scalar_type>                    type_map;
+  
   /*
    * The SuperLU interface will need two other typedef's, which are:
    * - the superlu type that corresponds to scalar_type and
    * - the corresponding type to use for magnitude
    */
-  typedef typename TypeMap<Amesos::Superlu,scalar_type>::type           slu_type;
-  typedef typename TypeMap<Amesos::Superlu,scalar_type>::magnitude_type magnitude_type;
+  typedef typename type_map::type                                  slu_type;
+  typedef typename type_map::magnitude_type magnitude_type;
 
-  typedef FunctionMap<Amesos::Superlu,scalar_type>             function_map;
-  typedef MatrixHelper<Amesos::Superlu>                       matrix_helper;
+  typedef FunctionMap<Amesos2::Superlu,scalar_type>            function_map;
+  typedef MatrixHelper<Amesos2::Superlu>                      matrix_helper;
 
   /// \name Constructor/Destructor methods
   //@{
@@ -108,7 +110,7 @@ public:
    * \brief Initialize from Teuchos::RCP.
    *
    * \warning Should not be called directly!  Use instead
-   * Amesos::create() to initialize a Superlu interface.
+   * Amesos2::create() to initialize a Superlu interface.
    */
   Superlu(
     Teuchos::RCP<Matrix> A,
@@ -206,7 +208,7 @@ private:
 
 
   /**
-   * Hooked in by Amesos::SolverCore parent class.
+   * Hooked in by Amesos2::SolverCore parent class.
    *
    * \return a const Teuchos::ParameterList of all valid parameters for this
    * solver.
@@ -248,14 +250,14 @@ private:
   Teuchos::Array<int> colptr_;
 
   /// Persisting 1D store for X
-  Teuchos::Array<typename TypeMap<Amesos::Superlu,scalar_type>::type> xvals_;  int ldx_;
+  Teuchos::Array<slu_type> xvals_;  int ldx_;
   /// Persisting 1D store for B
-  Teuchos::Array<typename TypeMap<Amesos::Superlu,scalar_type>::type> bvals_;  int ldb_;
+  Teuchos::Array<slu_type> bvals_;  int ldb_;
 
-  /* Note: In the above, must use "Amesos::Superlu" rather than
+  /* Note: In the above, must use "Amesos2::Superlu" rather than
    * "Superlu" because otherwise the compiler references the
    * specialized type of the class, and not the templated type that is
-   * required for Amesos::TypeMap
+   * required for Amesos2::TypeMap
    */
 
   /* SuperLU can accept input in either compressed-row or
@@ -284,6 +286,6 @@ private:
 };				// End class Superlu
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_SUPERLU_DECL_HPP

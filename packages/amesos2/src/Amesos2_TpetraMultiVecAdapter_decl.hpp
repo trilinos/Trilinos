@@ -60,7 +60,7 @@
 
 #include "Amesos2_MultiVecAdapter_decl.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
 
   /**
@@ -297,7 +297,7 @@ namespace Amesos {
 
   };                              // end class MultiVecAdapter<Tpetra::MultiVector>
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 
 #endif // AMESOS2_TPETRA_MULTIVEC_ADAPTER_DECL_HPP

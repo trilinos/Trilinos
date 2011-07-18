@@ -4,7 +4,7 @@
 #include <Epetra_LocalMap.h>
 #include <Epetra_Import.h>
 
-namespace Amesos {
+namespace Amesos2 {
 
   ConcreteMatrixAdapter<Epetra_CrsMatrix>::ConcreteMatrixAdapter(RCP<Epetra_CrsMatrix> m)
     : AbstractConcreteMatrixAdapter<Epetra_RowMatrix,Epetra_CrsMatrix>(m) // CrsMatrix inherits from RowMatrix virtually, so a dynamic cast is necessary
@@ -31,6 +31,6 @@ namespace Amesos {
       return( rcp(new ConcreteMatrixAdapter<Epetra_CrsMatrix>(t_mat)) );
     }
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_EPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP

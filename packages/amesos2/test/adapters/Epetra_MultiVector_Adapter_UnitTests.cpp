@@ -76,14 +76,14 @@ namespace {
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
 
-  using Amesos::MultiVecAdapter;
-  using Amesos::createMultiVecAdapter;
+  using Amesos2::MultiVecAdapter;
+  using Amesos2::createMultiVecAdapter;
 
-  using Amesos::Util::getDistributionMap;
-  using Amesos::Util::to_teuchos_comm;
-  using Amesos::Util::is_same;
-  using Amesos::Util::get_1d_copy_helper;
-  using Amesos::Util::put_1d_data_helper;
+  using Amesos2::Util::getDistributionMap;
+  using Amesos2::Util::to_teuchos_comm;
+  using Amesos2::Util::is_same;
+  using Amesos2::Util::get_1d_copy_helper;
+  using Amesos2::Util::put_1d_data_helper;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -118,7 +118,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos::is_same<> )
+     * - Correct typedefs ( using Amesos2::is_same<> )
      */
     typedef ScalarTraits<double> ST;
     typedef Epetra_MultiVector MV;
@@ -200,7 +200,7 @@ namespace {
     Array<double> copy(numVectors*numLocal*numprocs);
 
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
-					     numLocal*numprocs, Amesos::Util::Rooted);
+					     numLocal*numprocs, Amesos2::Util::Rooted);
 
     // Just rank==0 process has global copy of mv data, check against an import
     int my_elements = 0;
@@ -228,7 +228,7 @@ namespace {
     
     mv->ExtractCopy(original.getRawPtr(),mv->MyLength());
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
-					     numLocal, Amesos::Util::Distributed);
+					     numLocal, Amesos2::Util::Distributed);
     
     // Check that the values remain the same
     TEST_COMPARE_ARRAYS( original, copy );
@@ -286,7 +286,7 @@ namespace {
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter),
 					     global_copy(),
 					     total_rows,
-					     Amesos::Util::Globally_Replicated);
+					     Amesos2::Util::Globally_Replicated);
 
     // Now get a copy using the map
     Array<double> my_copy(numVectors * my_num_rows);
@@ -360,7 +360,7 @@ namespace {
     // distribute rank 0's data
     put_1d_data_helper<ADAPT,double>::do_put(outArg(*adapter), original(),
 					     numLocal*numprocs,
-					     Amesos::Util::Rooted);
+					     Amesos2::Util::Rooted);
 
     // Send rank 0's array to everyone else
     comm->Broadcast(original.getRawPtr(), original.size(), 0);
@@ -368,7 +368,7 @@ namespace {
     // Now have everyone get a copy from the multivector adapter
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
 					     numLocal*numprocs,
-					     Amesos::Util::Globally_Replicated);
+					     Amesos2::Util::Globally_Replicated);
 
     // Check that the values are the same
     TEST_COMPARE_ARRAYS( original, copy );

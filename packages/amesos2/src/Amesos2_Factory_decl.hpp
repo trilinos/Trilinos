@@ -46,10 +46,10 @@
  * \author Eric Bavier <etbavie@sandia.gov>
  * \date   Tue Jun  7 16:25:16 2011
  * 
- * \brief  Contains declarations for Amesos::create and Amesos::query.
+ * \brief  Contains declarations for Amesos2::create and Amesos2::query.
  *
- * Amesos2 defines the nonmember factory method \c Amesos::create for
- * creating instances of Amesos2 solvers.  The \c Amesos::query
+ * Amesos2 defines the nonmember factory method \c Amesos2::create for
+ * creating instances of Amesos2 solvers.  The \c Amesos2::query
  * function can be used to ask Amesos2 at runtime whether a particular
  * solver is supported.
  * 
@@ -69,7 +69,7 @@
  * typedef Tpetra::CrsMatrix<double,int> MAT;
  * typedef Tpetra::MultiVector<double,int> VEC;
  * // ... Create A of type RCP<MAT>, and X and B of type RCP<VEC> ...
- * RCP<Amesos::Solver<MAT,VEC> > solver = Amesos::create<MAT,VEC>("SuperLU", A, X, B);
+ * RCP<Amesos2::Solver<MAT,VEC> > solver = Amesos2::create<MAT,VEC>("SuperLU", A, X, B);
  * \endcode
  *
  * \ingroup amesos2_solver_framework
@@ -109,7 +109,7 @@
 // #endif
 
 
-namespace Amesos {
+namespace Amesos2 {
 
   template <class,class> class Solver;
 
@@ -125,7 +125,7 @@ namespace Amesos {
    *
    * \return A \c C pointer to a KLU2 solver interface.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -145,7 +145,7 @@ namespace Amesos {
    * 
    * \return A <tt>Teuchos::RCP</tt> to a KLU2 solver interface.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -170,7 +170,7 @@ namespace Amesos {
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -192,7 +192,7 @@ namespace Amesos {
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -217,7 +217,7 @@ namespace Amesos {
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -239,7 +239,7 @@ namespace Amesos {
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -266,7 +266,7 @@ namespace Amesos {
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -290,7 +290,7 @@ namespace Amesos {
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   template <class Matrix,
 	    class Vector >
@@ -304,7 +304,7 @@ namespace Amesos {
    *
    * \return \c true if the solver is supported.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   bool query(const char* solverName);
 
@@ -314,7 +314,7 @@ namespace Amesos {
    *
    * \return \c true if the solver is supported.
    *
-   * \relatesalso Amesos::Solver
+   * \relatesalso Amesos2::Solver
    */
   bool query(const std::string solverName);
 

@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
 
   // Say hello
-  out << myRank << " : " << Amesos::version() << std::endl << std::endl;
+  out << myRank << " : " << Amesos2::version() << std::endl << std::endl;
 
   const size_t numVectors = 1;
 
@@ -156,13 +156,13 @@ int main(int argc, char *argv[]) {
   
 
   // Constructor from Factory
-  RCP<Amesos::Solver<MAT,MV> > solver;
-  if( !Amesos::query("Superlu") ){
+  RCP<Amesos2::Solver<MAT,MV> > solver;
+  if( !Amesos2::query("Superlu") ){
     *fos << "SuperLU solver not enabled.  Exiting..." << std::endl;
     return EXIT_SUCCESS;
   }
   
-  solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
+  solver = Amesos2::create<MAT,MV>("Superlu", A, X, B);
 
   solver->symbolicFactorization().numericFactorization().solve();
 

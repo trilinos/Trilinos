@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 
   size_t myRank = comm->getRank();
 
-  if( myRank == 0 ) *fos << Amesos::version() << std::endl << std::endl;
+  if( myRank == 0 ) *fos << Amesos2::version() << std::endl << std::endl;
 
   const size_t numVectors = 1;
 
@@ -146,10 +146,10 @@ int main(int argc, char *argv[]) {
   }
 
   // Check first whether SuperLU is supported
-  if( Amesos::query("Superlu") ){
+  if( Amesos2::query("Superlu") ){
   
     // Constructor from Factory
-    RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
+    RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("Superlu", A, X, B);
 
     // Create a Teuchos::ParameterList to hold solver parameters
     Teuchos::ParameterList amesos2_params("Amesos2");

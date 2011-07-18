@@ -287,11 +287,11 @@ namespace std {
 #endif	// HAVE_TEUCHOS_COMPLEX
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 template <class, class> class Superlumt;
 
-/* Specialize the Amesos::TypeMap struct for Superlumt types
+/* Specialize the Amesos2::TypeMap struct for Superlumt types
  *
  * \cond Superlumt_type_specializations 
  */
@@ -365,6 +365,6 @@ SLUMT::Dtype_t TypeMap<Superlumt,SLUMT::Z::doublecomplex>::dtype = SLUMT::SLU_Z;
 /* \endcond Superlumt_type_specializations */
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_SUPERLUMT_TYPEMAP_HPP

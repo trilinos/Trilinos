@@ -84,11 +84,11 @@ namespace {
   using Tpetra::Map;
   using Tpetra::createUniformContigMap;
 
-  using Amesos::MatrixAdapter;
+  using Amesos2::MatrixAdapter;
 
-  using Amesos::Util::is_same;
-  using Amesos::Util::Rooted;
-  using Amesos::Util::Globally_Replicated;
+  using Amesos2::Util::is_same;
+  using Amesos2::Util::Rooted;
+  using Amesos2::Util::Globally_Replicated;
 
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
@@ -157,7 +157,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos::is_same<> )
+     * - Correct typedefs ( using Amesos2::is_same<> )
      */
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -177,7 +177,7 @@ namespace {
     }
     eye->fillComplete();
     // Create using non-member function
-    RCP<ADAPT> adapter  = Amesos::createMatrixAdapter<MAT>(eye);
+    RCP<ADAPT> adapter  = Amesos2::createMatrixAdapter<MAT>(eye);
 
     // The following should all pass at compile time
     TEST_ASSERT( (is_same<Scalar,typename ADAPT::scalar_t>::value) );
@@ -211,7 +211,7 @@ namespace {
     eye->fillComplete();
 
     // Constructor from RCP
-    RCP<MatrixAdapter<MAT> > adapter  = Amesos::createMatrixAdapter<MAT>(eye);
+    RCP<MatrixAdapter<MAT> > adapter  = Amesos2::createMatrixAdapter<MAT>(eye);
 
     // Check the adapters (limited) set of accessor funcs
     TEST_EQUALITY(eye->getGlobalNumEntries(), adapter->getGlobalNNZ());
@@ -256,7 +256,7 @@ namespace {
     }
     mat->fillComplete();
 
-    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
     Array<Scalar> nzvals_test(tuple<Scalar>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
     Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
@@ -300,7 +300,7 @@ namespace {
     // Check now a rooted, sorted-indices repr //
     /////////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted,Amesos::Util::Sorted_Indices);
+    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted,Amesos2::Util::Sorted_Indices);
 
     if ( rank == 0 ){
       // Now the arrays should compare directly
@@ -349,7 +349,7 @@ namespace {
     }
     mat->fillComplete();
 
-    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
     Array<Scalar> nzvals_test(tuple<Scalar>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
     Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
@@ -394,7 +394,7 @@ namespace {
     ///////////////////////////////////////////
 
     adapter->getCrs(nzvals,colind,rowptr,nnz,
-		    Globally_Replicated,Amesos::Util::Sorted_Indices);
+		    Globally_Replicated,Amesos2::Util::Sorted_Indices);
 
     TEST_COMPARE_ARRAYS(nzvals, nzvals_test);
     TEST_COMPARE_ARRAYS(colind, colind_test);
@@ -440,7 +440,7 @@ namespace {
     }
     mat->fillComplete();
 
-    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
     Array<Scalar> nzvals_test(tuple<Scalar>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
     Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
@@ -466,7 +466,7 @@ namespace {
     }
     const Map<LO,GO,Node> half_map(6, my_num_rows, 0, comm);
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos::Util::Sorted_Indices);
+    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::Util::Sorted_Indices);
 
     /*
      * Check that you got the entries you'd expect
@@ -530,7 +530,7 @@ namespace {
     // RCP<FancyOStream> os = getDefaultOStream();
     // mat->describe(*os,Teuchos::VERB_EXTREME);
 
-    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
     Array<Scalar> nzvals_test(tuple<Scalar>(7,2,-3,8,-1,-3,1,5,-2,-1,4,6));
     Array<GO> rowind_test(tuple<GO>(0,1,3,1,4,0,2,3,5,0,4,5));

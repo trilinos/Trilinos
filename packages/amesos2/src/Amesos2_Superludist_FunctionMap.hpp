@@ -65,7 +65,7 @@
 // Declarations of SuperLU_DIST types and namespace are found in
 // Superludist_TypeMap.hpp
 
-namespace Amesos {
+namespace Amesos2 {
 
   template <class Matrix, class Vector> class Superludist;
 
@@ -82,7 +82,7 @@ namespace Amesos {
  *
  * SuperLU_DIST has solver and matrix builder functions defined based
  * on data type.  One function for double precision complex, and one
- * for \c double.  To work elegantly with the Amesos::SuperLU_DIST
+ * for \c double.  To work elegantly with the Amesos2::SuperLU_DIST
  * interface we want to be able to perform a single function call
  * which is appropriate for the scalar type of the Matrix and
  * MultiVectors that we are working with.  The \c FunctionMap class
@@ -851,7 +851,7 @@ char get_equed(SLUD::DiagScale_t ds){
   }
 }
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 
 #endif  // AMESOS2_SUPERLUDIST_FUNCTIONMAP_HPP

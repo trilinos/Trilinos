@@ -55,7 +55,7 @@
 #include <sstream>
 #include "Amesos2_Control.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 /**
@@ -138,7 +138,7 @@ void Control::setControlParameters(
 
     // If true, the Amesos2 class should reindex the matrix to
     // standard indexing (i.e. 0-(n-1)).  At present, only
-    // Amesos::Klu supports this option.
+    // Amesos2::Klu supports this option.
     if( parameterList->isParameter("Reindex") ){
       reindex_ = parameterList->get<bool>("Reindex");
     }
@@ -146,6 +146,6 @@ void Control::setControlParameters(
 }
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_CONTROL_CPP

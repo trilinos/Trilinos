@@ -58,7 +58,7 @@
 #include "Amesos2_Superlumt_FunctionMap.hpp"
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 /** \brief Amesos2 interface to the Multi-threaded version of SuperLU.
@@ -74,9 +74,9 @@ namespace Amesos {
  */
 template <class Matrix,
 	  class Vector>
-class Superlumt : public SolverCore<Amesos::Superlumt, Matrix, Vector>
+class Superlumt : public SolverCore<Amesos2::Superlumt, Matrix, Vector>
 {
-  friend class SolverCore<Amesos::Superlumt,Matrix,Vector>; // Give our base access
+  friend class SolverCore<Amesos2::Superlumt,Matrix,Vector>; // Give our base access
 							    // to our private
 							    // implementation funcs
 public:
@@ -85,7 +85,7 @@ public:
   static const char* name;	// declaration. Initialization outside.
 
   typedef Superlumt<Matrix,Vector>                                     type;
-  typedef SolverCore<Amesos::Superlumt,Matrix,Vector>            super_type;
+  typedef SolverCore<Amesos2::Superlumt,Matrix,Vector>           super_type;
 
   // Since typedef's are not inheritted, go grab them
   typedef typename super_type::scalar_type                      scalar_type;
@@ -93,11 +93,11 @@ public:
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
 
-  typedef typename TypeMap<Amesos::Superlumt,scalar_type>::type           slu_type;
-  typedef typename TypeMap<Amesos::Superlumt,scalar_type>::magnitude_type magnitude_type;
+  typedef typename TypeMap<Amesos2::Superlumt,scalar_type>::type           slu_type;
+  typedef typename TypeMap<Amesos2::Superlumt,scalar_type>::magnitude_type magnitude_type;
 
-  typedef FunctionMap<Amesos::Superlumt,scalar_type>           function_map;
-  typedef MatrixHelper<Amesos::Superlumt>                     matrix_helper;
+  typedef FunctionMap<Amesos2::Superlumt,scalar_type>          function_map;
+  typedef MatrixHelper<Amesos2::Superlumt>                    matrix_helper;
 
 
   /// \name Constructor/Destructor methods
@@ -107,7 +107,7 @@ public:
    * \brief Initialize from Teuchos::RCP.
    *
    * \warning Should not be called directly!  Use instead
-   * Amesos::create() to initialize a SuperLU_MT interface.
+   * Amesos2::create() to initialize a SuperLU_MT interface.
    */
   Superlumt(
     Teuchos::RCP<Matrix> A,
@@ -223,7 +223,7 @@ private:
    */
 
   /**
-   * Hooked in by Amesos::SolverCore parent class.
+   * Hooked in by Amesos2::SolverCore parent class.
    *
    * \return a const Teuchos::ParameterList of all valid parameters for this
    * solver.
@@ -256,25 +256,26 @@ private:
 
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for SuperLU
-  Teuchos::Array<typename TypeMap<Amesos::Superlumt,scalar_type>::type> nzvals_;
+  Teuchos::Array<typename TypeMap<Amesos2::Superlumt,scalar_type>::type> nzvals_;
   /// Stores the row indices of the nonzero entries
   Teuchos::Array<int> rowind_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
   Teuchos::Array<int> colptr_;
 
-  /* Note: In the above, must use "Amesos::Superlumt" rather than "Superlumt"
-   * because otherwise the compiler references the specialized type of the
-   * class, and not the templated type that is required for Amesos::TypeMap
+  /* Note: In the above, must use "Amesos2::Superlumt" rather than
+   * "Superlumt" because otherwise the compiler references the
+   * specialized type of the class, and not the templated type that is
+   * required for Amesos2::TypeMap
    */
 
-  /* SuperLU can accept input in either compressed-row or compressed-column
-   * storage.  We will store and pass matrices in *compressed-row* format
-   * because that is the format Amesos used.
+  /* SuperLU can accept input in either compressed-row or
+   * compressed-column storage.  We will store and pass matrices in
+   * *compressed-row* format because that is the format Amesos used.
    */
 
 };				// End class Superlumt
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_SUPERLUMT_DECL_HPP

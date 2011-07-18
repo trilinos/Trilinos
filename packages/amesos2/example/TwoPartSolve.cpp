@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Say hello
-  if( myRank == 0 ) *fos << Amesos::version() << std::endl << std::endl;
+  if( myRank == 0 ) *fos << Amesos2::version() << std::endl << std::endl;
 
   const size_t numVectors = 1;
 
@@ -134,9 +134,9 @@ int main(int argc, char *argv[]) {
   }
 
   // We have our matrix, create our solver and factor
-  RCP<Amesos::Solver<MAT,MV> > solver;
+  RCP<Amesos2::Solver<MAT,MV> > solver;
   try{
-    solver = Amesos::create<MAT,MV>("Superlu", A);
+    solver = Amesos2::create<MAT,MV>("Superlu", A);
   } catch(std::invalid_argument e){
     // This solver is not supported/enabled.  This is not really a
     // "failure", so we exit with success.

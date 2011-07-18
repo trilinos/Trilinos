@@ -1,7 +1,7 @@
 #ifndef AMESOS2_ABSTRACTCONCRETEMATRIXADAPTER_HPP
 #define AMESOS2_ABSTRACTCONCRETEMATRIXADAPTER_HPP
 
-namespace Amesos {
+namespace Amesos2 {
 
   /**
    * This class provides a statically polymorphic abstract base class

@@ -79,15 +79,15 @@ namespace {
   using Tpetra::DefaultPlatform;
   using Tpetra::Map;
 
-  using Amesos::MultiVecAdapter;
-  using Amesos::createMultiVecAdapter;
+  using Amesos2::MultiVecAdapter;
+  using Amesos2::createMultiVecAdapter;
 
-  using Amesos::Util::is_same;
-  using Amesos::Util::get_1d_copy_helper;
-  using Amesos::Util::put_1d_data_helper;
-  using Amesos::Util::Rooted;
-  using Amesos::Util::Distributed;
-  using Amesos::Util::Globally_Replicated;
+  using Amesos2::Util::is_same;
+  using Amesos2::Util::get_1d_copy_helper;
+  using Amesos2::Util::put_1d_data_helper;
+  using Amesos2::Util::Rooted;
+  using Amesos2::Util::Distributed;
+  using Amesos2::Util::Globally_Replicated;
 
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
@@ -129,7 +129,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos::is_same<> )
+     * - Correct typedefs ( using Amesos2::is_same<> )
      */
     typedef ScalarTraits<SCALAR> ST;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;

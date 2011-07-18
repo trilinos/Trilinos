@@ -57,7 +57,7 @@
 
 #include <Teuchos_RCP.hpp>
 
-namespace Amesos {
+namespace Amesos2 {
 
   using Teuchos::rcp;
   using Teuchos::RCP;
@@ -313,6 +313,6 @@ namespace Amesos {
       }
     return rtn;
   }
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_FACTORY_DEF_HPP

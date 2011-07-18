@@ -64,7 +64,7 @@
 #include "Amesos2_Util.hpp"
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 /* This is the base class to be used in a *statically* polymorphic
@@ -99,7 +99,7 @@ namespace Amesos {
 template <template <class,class> class ConcreteSolver,
           class Matrix,
           class Vector >
-class SolverCore : public Amesos::Solver<Matrix,Vector>
+class SolverCore : public Amesos2::Solver<Matrix,Vector>
 {
 public:
 
@@ -121,9 +121,10 @@ public:
 
   /** \brief Initialize a Solver instance.
    *
-   * A single constructor is supported, which accepts Teuchos::RCP objects
-   * that point to a matrix-esque \x A, and vector-esque LHS object \X and RHS
-   * object \x B.  This is the only constructor used by Amesos::Factory.
+   * A single constructor is supported, which accepts Teuchos::RCP
+   * objects that point to a matrix-esque \x A, and vector-esque LHS
+   * object \X and RHS object \x B.  This is the only constructor used
+   * by Amesos2::create.
    *
    * \throw std::invalid_argument The shape of the matrix \c A is not
    * supported by the underlying solver.
@@ -376,10 +377,10 @@ public:
   /**
    * \brief Prints timing information about the current solver.
    *
-   * The \c Amesos::SolverCore base class takes care of tracking total
-   * time spent in the Amesos2 interface.  Concrete solver interface
-   * class are responsible for reporting other timing statistics,
-   * which include time spent in:
+   * The \c Amesos2::SolverCore base class takes care of tracking
+   * total time spent in the Amesos2 interface.  Concrete solver
+   * interface class are responsible for reporting other timing
+   * statistics, which include time spent in:
    *
    * - Redistribution of matrix objects,
    * - Conversion of matrix objects to solver-specific formats,
@@ -475,8 +476,8 @@ protected:
   global_size_type globalNumNonZeros_;
 
 
-  /* Status and Control data are handled in the Amesos::Status and
-   * Amesos::Control base classes
+  /* Status and Control data are handled in the Amesos2::Status and
+   * Amesos2::Control base classes
    */
 
   /// Holds status information about a solver
@@ -486,14 +487,14 @@ protected:
   Control control_;
 
 
-  /* Timers are handled in Amesos::Timers */
+  /* Timers are handled in Amesos2::Timers */
 
   /// Various timing statistics
   Timers timers_;
 
-};				// End class Amesos::SolverCore
+};				// End class Amesos2::SolverCore
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_SOLVERCORE_DECL_HPP

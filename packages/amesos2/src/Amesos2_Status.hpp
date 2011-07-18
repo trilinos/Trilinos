@@ -56,7 +56,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 class Status {
@@ -162,9 +162,9 @@ public:
   /// The number of processors in this MPI communicator
   int numProcs_;
 
-};                              // end class Amesos::Status
+};                              // end class Amesos2::Status
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_STATUS_HPP

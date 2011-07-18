@@ -57,7 +57,7 @@
 #include "Amesos2_Superludist_FunctionMap.hpp"
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 /** \brief Amesos2 interface to the distributed memory version of SuperLU.
@@ -84,9 +84,9 @@ namespace Amesos {
  */
 template <class Matrix,
           class Vector>
-class Superludist : public SolverCore<Amesos::Superludist, Matrix, Vector>
+class Superludist : public SolverCore<Amesos2::Superludist, Matrix, Vector>
 {
-  friend class SolverCore<Amesos::Superludist,Matrix,Vector>; // Give our base access
+  friend class SolverCore<Amesos2::Superludist,Matrix,Vector>; // Give our base access
                                                               // to our private
                                                               // implementation funcs
 public:
@@ -95,7 +95,7 @@ public:
   static const char* name;	// declaration. Initialization outside.
 
   typedef Superludist<Matrix,Vector>                                   type;
-  typedef SolverCore<Amesos::Superludist,Matrix,Vector>          super_type;
+  typedef SolverCore<Amesos2::Superludist,Matrix,Vector>         super_type;
 
   typedef Matrix                                                matrix_type;
   typedef Vector                                                vector_type;
@@ -107,12 +107,12 @@ public:
   typedef typename super_type::global_size_type            global_size_type;
   typedef typename super_type::node_type                          node_type;
 
-  typedef TypeMap<Amesos::Superludist,scalar_type>                 type_map;
+  typedef TypeMap<Amesos2::Superludist,scalar_type>                type_map;
 
   typedef typename type_map::type                                  slu_type;
   typedef typename type_map::magnitude_type                  magnitude_type;
 
-  typedef FunctionMap<Amesos::Superludist,slu_type>            function_map;
+  typedef FunctionMap<Amesos2::Superludist,slu_type>           function_map;
 
   
   /// \name Constructor/Destructor methods
@@ -122,7 +122,7 @@ public:
    * \brief Initialize from Teuchos::RCP.
    *
    * \warning Should not be called directly!  Use instead
-   * Amesos::create() to initialize a SuperLU_DIST interface.
+   * Amesos2::create() to initialize a SuperLU_DIST interface.
    */
   Superludist(
     Teuchos::RCP<Matrix> A,
@@ -225,7 +225,7 @@ private:
 
 
   /**
-   * Hooked in by Amesos::Solver parent class.
+   * Hooked in by Amesos2::Solver parent class.
    *
    * \return a const Teuchos::ParameterList of all valid parameters for this
    * solver.
@@ -324,6 +324,6 @@ private:
 };				// End class Superludist
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_SUPERLUDIST_DECL_HPP

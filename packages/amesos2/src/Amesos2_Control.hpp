@@ -54,7 +54,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 
-namespace Amesos{
+namespace Amesos2 {
 
 
 struct Control {
@@ -158,6 +158,6 @@ struct Control {
 };                              // end class Control
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_CONTROL_HPP

@@ -281,11 +281,11 @@ namespace std {
 #endif	// HAVE_TEUCHOS_COMPLEX
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 template <class, class> class Superlu;
 
-/* Specialize the Amesos::TypeMap struct for Superlu types
+/* Specialize the Amesos2::TypeMap struct for Superlu types
  *
  * \cond Superlu_type_specializations
  */
@@ -361,6 +361,6 @@ SLU::Dtype_t TypeMap<Superlu,SLU::Z::doublecomplex>::dtype = SLU::SLU_Z;
 /* \endcond Superlu_type_specializations */
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_SUPERLU_TYPEMAP_HPP

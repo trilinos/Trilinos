@@ -14,16 +14,7 @@
 #include "Amesos2_Util.hpp"
 #include "Amesos2_MatrixTraits.hpp"
 
-namespace Amesos {
-
-  using Amesos::Util::has_special_impl;
-  using Amesos::Util::no_special_impl;
-  using Amesos::Util::row_access;
-  using Amesos::Util::col_access;
-  using Amesos::Util::EDistribution;
-  using Amesos::Util::EStorage_Ordering;
-  
-  using Teuchos::RCP;
+namespace Amesos2 {
 
   /**
    * \brief A Matrix adapter interface for Amesos2.
@@ -37,13 +28,13 @@ namespace Amesos {
    */
   template < class Matrix >
   class MatrixAdapter {
+
   public:
 
     typedef typename MatrixTraits<Matrix>::scalar_t                 scalar_t;
     typedef typename MatrixTraits<Matrix>::local_ordinal_t   local_ordinal_t;
     typedef typename MatrixTraits<Matrix>::global_ordinal_t global_ordinal_t;
     typedef typename MatrixTraits<Matrix>::node_t                     node_t;
-    // typedef typename MatrixTraits<Matrix>::local_mat_ops_t   local_mat_ops_t;
     typedef Tpetra::global_size_t                              global_size_t;
 
     typedef Matrix                                                  matrix_t;
@@ -55,7 +46,7 @@ namespace Amesos {
     // template<class M, typename S, typename GO, typename GS, typename Op>
     // friend class Util::get_cxs_helper;
 
-    MatrixAdapter(RCP<Matrix> m);
+    MatrixAdapter(Teuchos::RCP<Matrix> m);
 
 
     /**
@@ -92,7 +83,7 @@ namespace Amesos {
 		const Teuchos::ArrayView<global_size_t> rowptr,
 		global_size_t& nnz,
 		const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-		EStorage_Ordering ordering=Util::Arbitrary) const;
+		Amesos2::Util::EStorage_Ordering ordering=Util::Arbitrary) const;
 
     /**
      * Convenience overload for the getCrs function that uses an enum
@@ -103,8 +94,8 @@ namespace Amesos {
 		const Teuchos::ArrayView<global_ordinal_t> colind,
 		const Teuchos::ArrayView<global_size_t> rowptr,
 		global_size_t& nnz,
-		EDistribution distribution,
-		EStorage_Ordering ordering=Util::Arbitrary) const;
+		Amesos2::Util::EDistribution distribution,
+		Amesos2::Util::EStorage_Ordering ordering=Util::Arbitrary) const;
 
     /**
      * \brief Gets a compressed-column storage summary of \c this
@@ -137,7 +128,7 @@ namespace Amesos {
 		const Teuchos::ArrayView<global_size_t> colptr,
 		global_size_t& nnz,
 		const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-		EStorage_Ordering ordering=Util::Arbitrary) const;
+		Amesos2::Util::EStorage_Ordering ordering=Util::Arbitrary) const;
 
     /**
      * Convenience overload for the getCcs function that uses an enum
@@ -148,12 +139,12 @@ namespace Amesos {
 		const Teuchos::ArrayView<global_ordinal_t> rowind,
 		const Teuchos::ArrayView<global_size_t> colptr,
 		global_size_t& nnz,
-		EDistribution distribution,
-		EStorage_Ordering ordering=Util::Arbitrary) const;
+		Amesos2::Util::EDistribution distribution,
+		Amesos2::Util::EStorage_Ordering ordering=Util::Arbitrary) const;
 
 
     /// Returns the Teuchos::Comm object associated with this matrix.
-    const RCP<const Teuchos::Comm<int> > getComm() const
+    const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
     {
       return comm_;
     }
@@ -176,17 +167,17 @@ namespace Amesos {
     /// Get the local number of non-zeros on this processor
     size_t getLocalNNZ() const;
 
-    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
     getRowMap() const {
       return row_map_;
     }
 
-    RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
+    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t> >
     getColMap() const {
       return col_map_;
     }
 
-    RCP<const type> get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
+    Teuchos::RCP<const type> get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const;
 
     /// Returns a short description of this Solver
     std::string description() const;
@@ -203,64 +194,64 @@ namespace Amesos {
 		     const Teuchos::ArrayView<global_size_t> rowptr,
 		     global_size_t& nnz,
 		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-		     EStorage_Ordering ordering,
-		     has_special_impl hsi) const;
+		     Amesos2::Util::EStorage_Ordering ordering,
+		     Amesos2::Util::has_special_impl hsi) const;
 
     void help_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
 		     const Teuchos::ArrayView<global_ordinal_t> colind,
 		     const Teuchos::ArrayView<global_size_t> rowptr,
 		     global_size_t& nnz,
 		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-		     EStorage_Ordering ordering,
-		     no_special_impl nsi) const;
+		     Amesos2::Util::EStorage_Ordering ordering,
+		     Amesos2::Util::no_special_impl nsi) const;
 
     void do_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
 		   const Teuchos::ArrayView<global_ordinal_t> colind,
 		   const Teuchos::ArrayView<global_size_t> rowptr,
 		   global_size_t& nnz,
 		   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-		   EStorage_Ordering ordering,
-		   row_access ra) const;
+		   Amesos2::Util::EStorage_Ordering ordering,
+		   Amesos2::Util::row_access ra) const;
 
     void do_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
 		   const Teuchos::ArrayView<global_ordinal_t> colind,
 		   const Teuchos::ArrayView<global_size_t> rowptr,
 		   global_size_t& nnz,
 		   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-		   EStorage_Ordering ordering,
-		   col_access ca) const;
+		   Amesos2::Util::EStorage_Ordering ordering,
+		   Amesos2::Util::col_access ca) const;
 
     void help_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
 		     const Teuchos::ArrayView<global_ordinal_t> rowind,
 		     const Teuchos::ArrayView<global_size_t> colptr,
 		     global_size_t& nnz,
 		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-		     EStorage_Ordering ordering,
-		     has_special_impl hsi) const;
+		     Amesos2::Util::EStorage_Ordering ordering,
+		     Amesos2::Util::has_special_impl hsi) const;
 
     void help_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
 		     const Teuchos::ArrayView<global_ordinal_t> rowind,
 		     const Teuchos::ArrayView<global_size_t> colptr,
 		     global_size_t& nnz,
 		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-		     EStorage_Ordering ordering,
-		     no_special_impl nsi) const;
+		     Amesos2::Util::EStorage_Ordering ordering,
+		     Amesos2::Util::no_special_impl nsi) const;
 
     void do_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
 		   const Teuchos::ArrayView<global_ordinal_t> rowind,
 		   const Teuchos::ArrayView<global_size_t> colptr,
 		   global_size_t& nnz,
 		   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-		   EStorage_Ordering ordering,
-		   row_access ra) const;
+		   Amesos2::Util::EStorage_Ordering ordering,
+		   Amesos2::Util::row_access ra) const;
 
     void do_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
 		   const Teuchos::ArrayView<global_ordinal_t> rowind,
 		   const Teuchos::ArrayView<global_size_t> colptr,
 		   global_size_t& nnz,
 		   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-		   EStorage_Ordering ordering,
-		   col_access ca) const;
+		   Amesos2::Util::EStorage_Ordering ordering,
+		   Amesos2::Util::col_access ca) const;
 
   protected:
     // These methods will link to concrete implementations, and may
@@ -305,15 +296,15 @@ namespace Amesos {
     bool isGloballyIndexed() const;
 
   protected:
-    const RCP<const Matrix> mat_;
+    const Teuchos::RCP<const Matrix> mat_;
 
     // only need to be mutable for the initial assignment, is there
     // another way to do this?
-    mutable RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > row_map_;
+    mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > row_map_;
 
-    mutable RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > col_map_;
+    mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > col_map_;
 
-    mutable RCP<const Teuchos::Comm<int> > comm_;
+    mutable Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     
   };				// end class MatrixAdapter
 
@@ -326,6 +317,6 @@ namespace Amesos {
     return( rcp(new ConcreteMatrixAdapter<Matrix>(m)) );
   }
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_MATRIXADAPTER_DECL_HPP

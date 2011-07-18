@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   // Before we do anything, check that SuperLU is enabled
-  if( !Amesos::query("SuperLU") ){
+  if( !Amesos2::query("SuperLU") ){
     std::cerr << "SuperLU not enabled.  Exiting..." << std::endl;
     return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
 				// failure, which it isn't really
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
   std::ostream &out = std::cout;
 
-  out << Amesos::version() << std::endl << std::endl;
+  out << Amesos2::version() << std::endl << std::endl;
 
   const size_t numVectors = 1;
 
@@ -154,8 +154,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Create solver interface to Superlu through Amesos::Factory
-  RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
+  // Create solver interface to Superlu with Amesos2 factory method
+  RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("Superlu", A, X, B);
 
   solver->symbolicFactorization().numericFactorization().solve();
 

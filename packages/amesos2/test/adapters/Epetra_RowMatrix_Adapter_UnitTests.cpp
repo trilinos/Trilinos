@@ -78,12 +78,12 @@ namespace {
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
 
-  using Amesos::MatrixAdapter;
+  using Amesos2::MatrixAdapter;
 
-  using Amesos::Util::is_same;
-  using Amesos::Util::Rooted;
-  using Amesos::Util::Globally_Replicated;
-  using Amesos::Util::to_teuchos_comm;
+  using Amesos2::Util::is_same;
+  using Amesos2::Util::Rooted;
+  using Amesos2::Util::Globally_Replicated;
+  using Amesos2::Util::to_teuchos_comm;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -148,7 +148,7 @@ namespace {
      *
      * - All Constructors
      * - Correct initialization of class members
-     * - Correct typedefs ( using Amesos::is_same<> )
+     * - Correct typedefs ( using Amesos2::is_same<> )
      */
     typedef Epetra_CrsMatrix MAT;
     typedef MatrixAdapter<MAT> ADAPT;
@@ -192,7 +192,7 @@ namespace {
       }
 
     eye->FillComplete();
-    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(eye);
+    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(eye);
 
     // The following should all pass at compile time
     TEST_ASSERT( (is_same<double,ADAPT::scalar_t>::value) );
@@ -251,7 +251,7 @@ namespace {
 
     eye->FillComplete();
     // Constructor from RCP
-    RCP<ADAPT> adapter  = Amesos::createMatrixAdapter<MAT>( eye );
+    RCP<ADAPT> adapter  = Amesos2::createMatrixAdapter<MAT>( eye );
 
     TEST_EQUALITY(Teuchos::as<ADAPT::global_size_t>(eye->NumGlobalNonzeros()), adapter->getGlobalNNZ());
     TEST_EQUALITY(Teuchos::as<ADAPT::global_size_t>(eye->NumGlobalRows()), adapter->getGlobalNumRows());
@@ -325,7 +325,7 @@ namespace {
     // RCP<FancyOStream> os = getDefaultOStream();
     // mat->describe(*os,Teuchos::VERB_EXTREME);
 
-    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
     Array<ADAPT::scalar_t> nzvals_test(tuple<ADAPT::scalar_t>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
     Array<ADAPT::global_ordinal_t> colind_test(tuple<ADAPT::global_ordinal_t>(0,2,4,0,1,2,0,3,1,4,3,5));
@@ -350,7 +350,7 @@ namespace {
     // Check now a rooted, sorted-indices repr //
     /////////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted,Amesos::Util::Sorted_Indices);
+    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted,Amesos2::Util::Sorted_Indices);
 
     if ( rank == 0 ){
       // Now the arrays should compare directly
@@ -429,7 +429,7 @@ namespace {
     // RCP<FancyOStream> os = getDefaultOStream();
     // mat->describe(*os,Teuchos::VERB_EXTREME);
 
-    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
     Array<ADAPT::scalar_t> nzvals_test(tuple<ADAPT::scalar_t>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
     Array<ADAPT::global_ordinal_t> colind_test(tuple<ADAPT::global_ordinal_t>(0,2,4,0,1,2,0,3,1,4,3,5));
@@ -474,7 +474,7 @@ namespace {
     ///////////////////////////////////////////
 
     adapter->getCrs(nzvals,colind,rowptr,nnz,
-		    Globally_Replicated,Amesos::Util::Sorted_Indices);
+		    Globally_Replicated,Amesos2::Util::Sorted_Indices);
 
     TEST_COMPARE_ARRAYS(nzvals, nzvals_test);
     TEST_COMPARE_ARRAYS(colind, colind_test);
@@ -549,7 +549,7 @@ namespace {
     // RCP<FancyOStream> os = getDefaultOStream();
     // mat->describe(*os,Teuchos::VERB_EXTREME);
 
-    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
     Array<ADAPT::scalar_t> nzvals_test(tuple<ADAPT::scalar_t>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
     Array<ADAPT::global_ordinal_t> colind_test(tuple<ADAPT::global_ordinal_t>(0,2,4,0,1,2,0,3,1,4,3,5));
@@ -576,7 +576,7 @@ namespace {
     const Tpetra::Map<int,int> half_map(6, my_num_rows, 0,
 					to_teuchos_comm(comm));
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos::Util::Sorted_Indices);
+    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::Util::Sorted_Indices);
 
     /*
      * Check that you got the entries you'd expect
@@ -663,7 +663,7 @@ namespace {
     // RCP<FancyOStream> os = getDefaultOStream();
     // mat->describe(*os,Teuchos::VERB_EXTREME);
 
-    RCP<ADAPT> adapter = Amesos::createMatrixAdapter<MAT>(mat);
+    RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
     Array<ADAPT::scalar_t> nzvals_test(tuple<ADAPT::scalar_t>(7,2,-3,8,-1,-3,1,5,-2,-1,4,6));
     Array<ADAPT::global_ordinal_t> rowind_test(tuple<ADAPT::global_ordinal_t>(0,1,3,1,4,0,2,3,5,0,4,5));

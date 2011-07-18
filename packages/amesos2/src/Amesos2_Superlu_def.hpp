@@ -54,7 +54,7 @@
 #define AMESOS2_SUPERLU_DEF_HPP
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 template <class Matrix, class Vector>
@@ -62,7 +62,7 @@ Superlu<Matrix,Vector>::Superlu(
   Teuchos::RCP<Matrix> A,
   Teuchos::RCP<Vector> X,
   Teuchos::RCP<Vector> B)
-  : SolverCore<Amesos::Superlu,Matrix,Vector>(A, X, B)
+  : SolverCore<Amesos2::Superlu,Matrix,Vector>(A, X, B)
   , nzvals_(this->globalNumNonZeros_)
   , rowind_(this->globalNumNonZeros_)
   , colptr_(this->globalNumRows_ + 1)
@@ -425,7 +425,8 @@ Superlu<Matrix,Vector>::setParameters_impl(
       // TODO: Fix this!
       TEST_FOR_EXCEPTION( fact == "CONJ" && Teuchos::ScalarTraits<scalar_type>::isComplex,
 			  std::invalid_argument,
-			  "Amesos::Superlu does not currently support solution of complex systems with conjugate transpose");
+			  "Amesos2::Superlu does not currently support solution of complex "
+			  "systems with conjugate transpose" );
     }
   } else {                      // default to no transpose if no parameter given
     data_.options.Trans = SLU::NOTRANS;
@@ -563,6 +564,6 @@ template<class Matrix, class Vector>
 const char* Superlu<Matrix,Vector>::name = "SuperLU";
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_SUPERLU_DEF_HPP

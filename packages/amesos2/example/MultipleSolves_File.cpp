@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Say hello
-  if( myRank == 0 ) *fos << Amesos::version() << std::endl << std::endl;
+  if( myRank == 0 ) *fos << Amesos2::version() << std::endl << std::endl;
 
   const size_t numVectors = 1;
 
@@ -147,9 +147,9 @@ int main(int argc, char *argv[]) {
   B->putScalar(10);
 
   // Constructor from Factory
-  RCP<Amesos::Solver<MAT,MV> > solver;
+  RCP<Amesos2::Solver<MAT,MV> > solver;
   try{
-    solver = Amesos::create<MAT,MV>(solver_name, A, X, B);
+    solver = Amesos2::create<MAT,MV>(solver_name, A, X, B);
   } catch (std::invalid_argument e){
     *fos << e.what() << std::endl;
     return 0;

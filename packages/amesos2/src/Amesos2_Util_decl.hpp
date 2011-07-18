@@ -73,7 +73,7 @@
 
 #include "Amesos2_Util_is_same.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
   /**
    * \defgroup amesos2_util Amesos2 Utilities
@@ -272,8 +272,8 @@ namespace Amesos {
 
 
     /* We assume that Matrix and Vector are some instance of a
-     * Amesos::MatrixAdapter or a Amesos::MultiVecAdapter, or at least implement
-     * the required methods
+     * Amesos2::MatrixAdapter or a Amesos2::MultiVecAdapter, or at
+     * least implement the required methods
      */
     template< typename Matrix,
 	      typename Vector>
@@ -862,6 +862,6 @@ namespace Amesos {
 
   } // end namespace Util
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// #ifndef AMESOS2_UTIL_DECL_HPP

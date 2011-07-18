@@ -77,12 +77,12 @@
  * not all) third-party libraries accept matrices in either the
  * compressed sparse row format or the compressed sparse column
  * format.  Retrieving such a representation from a matrix is the
- * major task of the Amesos::MatrixAdapter class (along with providing
- * other critical statistics about a matrix, such as row/column size,
- * number of nonzero entries, etc).
+ * major task of the Amesos2::MatrixAdapter class (along with
+ * providing other critical statistics about a matrix, such as
+ * row/column size, number of nonzero entries, etc).
  *
- * The Amesos::AbstractConcreteMatrixAdapter and
- * Amesos::ConcreteMatrixAdapter, as a pair, exist to fully exploit
+ * The Amesos2::AbstractConcreteMatrixAdapter and
+ * Amesos2::ConcreteMatrixAdapter, as a pair, exist to fully exploit
  * inheritence in the adaptation.  The ConcreteMatrixAdapter is where
  * the MatrixAdapter class goes to for much of its business.  For
  * example, when getting a compressed sparse row representation of a
@@ -129,7 +129,7 @@
  * amesos2_solver_framework "solver framework", and the \ref
  * amesos2_solver_interfaces "solver interfaces".
  *
- * The Amesos::Solver class provides a uniform interface to the
+ * The Amesos2::Solver class provides a uniform interface to the
  * third-party library solvers.  The interface is designed to be both
  * simple to use for novice users, as well as powerful enough for
  * advanced users.  While a novice user might like to just give a
@@ -144,7 +144,7 @@
  * \code
  * RCP<MAT> A; RCP<MV> X; RCP<MV> B;
  * // initialize A and B
- * RCP<Solver<MAT,MV> > solver = Amesos::create(A, X, B); // use default solver
+ * RCP<Solver<MAT,MV> > solver = Amesos2::create(A, X, B); // use default solver
  * solver->solve(); // solution placed in X
  * \endcode
  *
@@ -153,7 +153,7 @@
  * \code
  * RCP<MAT> A;
  * // Get A from somewhere
- * RCP<Solver<MAT,MV> > solver = Amesos::create("SuperLU", A);
+ * RCP<Solver<MAT,MV> > solver = Amesos2::create("SuperLU", A);
  * Teuchos::ParameterList params("Amesos2");
  * params.sublist("SuperLU").set("IterRefine","DOUBLE");
  * params.sublist("SuperLU").set("ColPerm","MMD_AT_PLUS_A");
@@ -253,15 +253,15 @@
  *
  * \subsection superlu_parameters SuperLU
  *
- * \copydoc Amesos::Superlu::setParameters_impl()
+ * \copydoc Amesos2::Superlu::setParameters_impl()
  *
  * \subsection superlu_mt_parameters SuperLU_MT
  *
- * \copydetails Amesos::Superlumt::setParameters_impl()
+ * \copydetails Amesos2::Superlumt::setParameters_impl()
  *
  * \subsection superlu_dist_parameters SuperLU_DIST
  *
- * \copydetails Amesos::Superludist::setParameters_impl()
+ * \copydetails Amesos2::Superludist::setParameters_impl()
  */
 
 
@@ -276,7 +276,7 @@
 /**
  * \example SimpleSolve.cpp
  *
- * Shows how to create an Amesos2 solver using the Amesos::create()
+ * Shows how to create an Amesos2 solver using the Amesos2::create()
  * factory method interface, followed by solving a small linear
  * system.
  */

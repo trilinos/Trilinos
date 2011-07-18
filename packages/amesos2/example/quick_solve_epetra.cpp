@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   // Before we do anything, check that SuperLU is enabled
-  if( !Amesos::query("SuperLU_DIST") ){
+  if( !Amesos2::query("SuperLU_DIST") ){
     std::cerr << "SuperLU_DIST not enabled.  Exiting..." << std::endl;
     return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
 				// failure, which it isn't really
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
-  *fos << myRank << " : " << Amesos::version() << std::endl << std::endl;
+  *fos << myRank << " : " << Amesos2::version() << std::endl << std::endl;
 
   bool printMatrix   = false;
   bool printSolution = false;
@@ -150,9 +150,9 @@ int main(int argc, char *argv[]) {
   B->Random();
 
   // Constructor from Factory
-  RCP<Amesos::Solver<MAT,MV> > solver;
+  RCP<Amesos2::Solver<MAT,MV> > solver;
   try{
-    solver = Amesos::create<MAT,MV>(solver_name, rcp(A), X, B);
+    solver = Amesos2::create<MAT,MV>(solver_name, rcp(A), X, B);
   } catch (std::invalid_argument e){
     *fos << e.what() << std::endl;
     return 0;

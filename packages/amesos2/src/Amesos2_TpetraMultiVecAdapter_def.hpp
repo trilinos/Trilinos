@@ -53,7 +53,7 @@
 #ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 #define AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 
-namespace Amesos {
+namespace Amesos2 {
 
   using Tpetra::MultiVector;
 
@@ -228,6 +228,6 @@ namespace Amesos {
   = "Amesos2 adapter for Tpetra::MultiVector";
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif // AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP

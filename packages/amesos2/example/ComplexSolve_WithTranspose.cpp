@@ -134,8 +134,8 @@ int main(int argc, char *argv[]){
   Xhat->randomize();
 
   // Solve A*Xhat = B for Xhat using the Superlu solver
-  RCP<Amesos::Solver<MAT,MV> > solver
-    = Amesos::create<MAT,MV>("SuperLU", A, Xhat, B );
+  RCP<Amesos2::Solver<MAT,MV> > solver
+    = Amesos2::create<MAT,MV>("SuperLU", A, Xhat, B );
 
   Teuchos::ParameterList amesos2_params;
   // Setting the following will cause Amesos2 to complain

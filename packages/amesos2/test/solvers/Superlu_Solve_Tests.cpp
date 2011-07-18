@@ -94,7 +94,7 @@ namespace {
   using Tpetra::MultiVector;
   using Tpetra::Map;
 
-  using Amesos::Util::is_same;
+  using Amesos2::Util::is_same;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
   typedef Platform::NodeType Node;
@@ -163,8 +163,8 @@ namespace {
   X->randomize();                                                       \
   AMat->apply(*X,*B,trans);                                             \
 									\
-  RCP<Amesos::Solver<MAT,MV> > solver                                   \
-    = Amesos::create<MAT,MV>("Superlu", AMat, Xhat, B );                \
+  RCP<Amesos2::Solver<MAT,MV> > solver					\
+  = Amesos2::create<MAT,MV>("Superlu", AMat, Xhat, B );			\
 									\
   Teuchos::ParameterList amesos2_params("Amesos2");			\
   if( transpose ){                                                      \

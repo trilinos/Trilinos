@@ -43,7 +43,7 @@
 
 /**
   \file   Amesos2_SolverCore_def.hpp
-  \class  Amesos::SolverCore
+  \class  Amesos2::SolverCore
   \author Eric T Bavier <etbavie@sandia.gov>
   \date   Thu May 27 14:02:35 CDT 2010
 
@@ -54,7 +54,7 @@
 #define AMESOS2_SOLVERCORE_DEF_HPP
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
@@ -81,10 +81,10 @@ SolverCore<ConcreteSolver,Matrix,Vector>::SolverCore(
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 SolverCore<ConcreteSolver,Matrix,Vector>::~SolverCore( )
 {
-  // TODO: The below code is still dependent on there being some
-  // kind of status and control code available to Amesos2::SolverCore,
-  // either in the form of a shared library or private inheritance
-  // of classes that provide that functionality.
+  // TODO: The below code is still dependent on there being some kind
+  // of status and control code available to Amesos2::SolverCore,
+  // either in the form of a shared library or private inheritance of
+  // classes that provide that functionality.
 
   // print out some information if required by the user
   // if ((control_.verbose_ && control_.printTiming_) || control_.verbose_ == 2) printTiming();
@@ -455,6 +455,6 @@ SolverCore<ConcreteSolver,Matrix,Vector>::name() const {
 }
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_SOLVERCORE_DEF_HPP

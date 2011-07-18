@@ -44,7 +44,7 @@
 #ifndef AMESOS2_UTIL_IS_SAME_HPP
 #define AMESOS2_UTIL_IS_SAME_HPP
 
-namespace Amesos {
+namespace Amesos2 {
 
   namespace Util {
 
@@ -92,6 +92,6 @@ namespace Amesos {
 
   } // end namespace Util
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_UTIL_IS_SAME_HPP

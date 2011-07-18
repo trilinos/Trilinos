@@ -245,7 +245,7 @@ bool do_mat_test(const ParameterList& parameters)
 	     << "Ignoring the " << solver_name << " solver..."
 	     << std::endl;
       } else {
-	if( Amesos::query(solver_name) ){
+	if( Amesos2::query(solver_name) ){
 	  // then we have support for this solver
 
 	  if( verbosity > 1) *fos << "  | with " << solver_name << " : " << std::endl;
@@ -381,8 +381,8 @@ bool do_epetra_test(const string& mm_file,
   A->Multiply(transpose, *X, *B);
 
   RCP<MAT> A_rcp(A);
-  RCP<Amesos::Solver<MAT,MV> > solver
-    = Amesos::create<MAT,MV>(solver_name, A_rcp, Xhat, B );
+  RCP<Amesos2::Solver<MAT,MV> > solver
+    = Amesos2::create<MAT,MV>(solver_name, A_rcp, Xhat, B );
 
   solver->setParameters( rcpFromRef(solve_params) );
   try {
@@ -534,8 +534,8 @@ bool do_tpetra_test_with_types(const string& mm_file,
   X->randomize();
   A->apply(*X,*B,trans);
 
-  RCP<Amesos::Solver<MAT,MV> > solver
-    = Amesos::create<MAT,MV>(solver_name, A, Xhat, B );
+  RCP<Amesos2::Solver<MAT,MV> > solver
+    = Amesos2::create<MAT,MV>(solver_name, A, Xhat, B );
 
   solver->setParameters( rcpFromRef(solve_params) );
   try {

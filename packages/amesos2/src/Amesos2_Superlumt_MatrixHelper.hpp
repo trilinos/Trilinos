@@ -62,7 +62,7 @@ namespace SLUMT {
 
 template <class Matrix, class Vector> class Superlumt;
 
-namespace Amesos {
+namespace Amesos2 {
 
 
   template <>
@@ -72,7 +72,7 @@ namespace Amesos {
     /** \brief Creates a Superlumt compressed-column Matrix from the given Matrix
      *
      * \tparam Matrix A matrix type conforming to the interface, in particular
-     *         an Amesos::MatrixAdapter<>.
+     *         an Amesos2::MatrixAdapter<>.
      *
      * \param [in]     mat    The matrix which will be converted to Superlumt format
      * \param [in,out] nzval  A user-provided persisting store for the nonzero
@@ -151,7 +151,7 @@ namespace Amesos {
     /** \brief Creates a Superlumt Dense Matrix from the given MultiVector
      *
      * \tparam MV A multi-vector type conforming to the interface, in particular
-     *         an Amesos::MultiVecAdapter<>.
+     *         an Amesos2::MultiVecAdapter<>.
      *
      * \param [in]     mv   The MultiVector which will be converted to Superlumt format
      * \param [in,out] vals A user-provided persisting store for the values of
@@ -193,6 +193,6 @@ namespace Amesos {
 };                              // end struct MatrixHelper
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // end AMESOS2_SUPERLUMT_MATRIXHELPER_HPP

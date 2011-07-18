@@ -71,7 +71,7 @@ namespace SLUMT {
 } // end namespace SLUMT
 
 
-namespace Amesos {
+namespace Amesos2 {
 
   /*
    * Note: Although many of the type definitions for SuperLU_MT are
@@ -91,7 +91,7 @@ Superlumt<Matrix,Vector>::Superlumt(
   Teuchos::RCP<Matrix> A,
   Teuchos::RCP<Vector> X,
   Teuchos::RCP<Vector> B)
-  : SolverCore<Amesos::Superlumt,Matrix,Vector>(A, X, B)
+  : SolverCore<Amesos2::Superlumt,Matrix,Vector>(A, X, B)
   , nzvals_(this->globalNumNonZeros_)
   , rowind_(this->globalNumNonZeros_)
   , colptr_(this->globalNumRows_ + 1)
@@ -446,7 +446,8 @@ Superlumt<Matrix,Vector>::setParameters_impl(
       // TODO: Fix this!
       TEST_FOR_EXCEPTION( fact == "CONJ" && Teuchos::ScalarTraits<scalar_type>::isComplex,
 			  std::invalid_argument,
-			  "Amesos::Superlumt does not currently support solution of complex systems with conjugate transpose");
+			  "Amesos2::Superlumt does not currently support solution of complex "
+			  "systems with conjugate transpose");
     }
   } else {                      // default to no transpose if no parameter given
     data_.options.trans = SLUMT::NOTRANS;
@@ -630,6 +631,6 @@ template<class Matrix, class Vector>
 const char* Superlumt<Matrix,Vector>::name = "SuperLU_MT";
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_SUPERLUMT_DEF_HPP

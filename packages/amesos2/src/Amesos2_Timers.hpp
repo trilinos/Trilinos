@@ -58,7 +58,7 @@
 using Teuchos::TimeMonitor;
 using Teuchos::Time;
 
-namespace Amesos{
+namespace Amesos2 {
 
 
 struct Timers {
@@ -87,6 +87,6 @@ struct Timers {
 };
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_TIMERS_HPP

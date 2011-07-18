@@ -57,7 +57,7 @@
 
 #include <Teuchos_RCP.hpp>
 
-namespace Amesos {
+namespace Amesos2 {
 
 
   /**
@@ -190,6 +190,6 @@ namespace Amesos {
     return( rcp(new MultiVecAdapter<MV>(mv)) );
   }
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_MULTIVEC_ADAPTER_DECL_HPP

@@ -48,12 +48,12 @@
 
 #include <string>
 
-namespace Amesos {
+namespace Amesos2 {
 
 std::string version(){
   return( "Amesos2 version " AMESOS2_VERSION " - " AMESOS2_RELEASE_DATE );
 }
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif

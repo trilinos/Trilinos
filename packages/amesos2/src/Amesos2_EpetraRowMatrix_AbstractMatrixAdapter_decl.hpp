@@ -21,14 +21,17 @@
 #include "Amesos2_MatrixAdapter_decl.hpp"
 #include "Amesos2_Util.cpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
+  using Teuchos::RCP;
+  
   /**
-   * \brief Amesos::MatrixAdapter definitions for objects deriving from Epetra_RowMatrix.
+   * \brief Amesos2::MatrixAdapter definitions for objects deriving
+   * from Epetra_RowMatrix.
    *
    * This class provides definitions for classes that derive
    * from/implement the Epetra_RowMatrix interface.  Most methods
-   * required for compliance with the Amesos::MatrixAdapter interface
+   * required for compliance with the Amesos2::MatrixAdapter interface
    * are defined here.  The only method that derived class must define
    * is the get() method, which relies on each derived object knowing
    * how to construct an instance of itself (something which the
@@ -120,6 +123,6 @@ namespace Amesos {
 
   };
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_EPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DECL_HPP

@@ -16,13 +16,13 @@
 #include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.hpp"
 #include "Amesos2_MatrixAdapter_decl.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
   /**
    * \brief MatrixAdapter definitions for Epetra_CrsMatrix objects.
    *
    * Defines only the get_impl() method, which returns an instance of
-   * a Amesos::MatrixAdapter whose underlying matrix has the given
+   * a Amesos2::MatrixAdapter whose underlying matrix has the given
    * distribution based on the Tpetra::Map.
    *
    * All other significant functionality is inherited from this
@@ -58,6 +58,6 @@ namespace Amesos {
     
   };
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_EPETRACRSMATRIX_MATRIXADAPTER_DECL_HPP

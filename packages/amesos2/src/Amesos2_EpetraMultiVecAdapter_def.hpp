@@ -65,7 +65,7 @@
 
 #include "Amesos2_Util.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
 MultiVecAdapter<Epetra_MultiVector>::MultiVecAdapter(const MultiVecAdapter<multivec_t>& adapter)
   : mv_(adapter.mv_)
@@ -245,7 +245,7 @@ MultiVecAdapter<Epetra_MultiVector>::get1dViewNonConst(bool local)
   //   TEST_FOR_EXCEPTION(
   //     true,
   //     std::logic_error,
-  //     "Amesos::MultiVecAdapter<Epetra_MultiVector> : 1D views not yet supported for local-local Epetra multi-vectors");
+  //     "Amesos2::MultiVecAdapter<Epetra_MultiVector> : 1D views not yet supported for local-local Epetra multi-vectors");
     
   //   // localize();
   //   // /* Use the global element list returned by
@@ -343,6 +343,6 @@ const char* MultiVecAdapter<Epetra_MultiVector>::name
 = "Amesos2 adapter for Epetra_MultiVector";
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif // AMESOS2_EPETRA_MULTIVEC_ADAPTER_DEF_HPP

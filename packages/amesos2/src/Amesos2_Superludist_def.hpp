@@ -55,14 +55,14 @@
 #include "Amesos2_Util.hpp"
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 
   template <class Matrix, class Vector>
   Superludist<Matrix,Vector>::Superludist(Teuchos::RCP<Matrix> A,
 					  Teuchos::RCP<Vector> X,
 					  Teuchos::RCP<Vector> B)
-    : SolverCore<Amesos::Superludist,Matrix,Vector>(A, X, B)
+    : SolverCore<Amesos2::Superludist,Matrix,Vector>(A, X, B)
     , nzvals_()                 // initialization to empty arrays
     , colind_()
     , rowptr_()
@@ -575,7 +575,7 @@ namespace Amesos {
 
       TEST_FOR_EXCEPTION( col_perm_method != "PARMETIS" && col_perm_method != "NATURAL",
 			  std::invalid_argument,
-			  "Amesos::Superludist only supports natural column orderings "
+			  "Amesos2::Superludist only supports natural column orderings "
 			  "or parallel ordering with ParMETIS" );
 
       if( col_perm_method == "NATURAL" ){
@@ -595,17 +595,15 @@ namespace Amesos {
 
 	// Now we also expect to find a parameter in parameterList called
 	// "perm_c"
-	TEST_FOR_EXCEPTION(
-			   !parameterList->isParameter("perm_c"),
-			   std::invalid_argument,
-			   "MY_PERMC option specified without accompanying 'perm_c' parameter.");
+	TEST_FOR_EXCEPTION( !parameterList->isParameter("perm_c"),
+			    std::invalid_argument,
+			    "MY_PERMC option specified without accompanying 'perm_c' parameter.");
 
 	data_.perm_c = parameterList->template get<Teuchos::Array<int> >("perm_c");
 
-	TEST_FOR_EXCEPTION(
-			   as<global_size_type>(data_.perm_c.size()) != this->globalNumCols_,
-			   std::length_error,
-			   "'perm_c' parameter not of correct length.");
+	TEST_FOR_EXCEPTION( as<global_size_type>(data_.perm_c.size()) != this->globalNumCols_,
+			    std::length_error,
+			    "'perm_c' parameter not of correct length.");
       } else {
 	TEST_FOR_EXCEPTION( true, std::invalid_argument,
 			    "Unrecognized value for 'ColPerm' parameter.");
@@ -617,16 +615,16 @@ namespace Amesos {
       data_.options.ColPerm = SLUD::MY_PERMC;
       data_.perm_c = parameterList->template get<Teuchos::Array<int> >("perm_c");
 
-      TEST_FOR_EXCEPTION(
-			 as<global_size_type>(data_.perm_c.size()) == this->globalNumCols_,
-			 std::length_error,
-			 "'perm_c' parameter not of correct length.");
+      TEST_FOR_EXCEPTION( as<global_size_type>(data_.perm_c.size()) == this->globalNumCols_,
+			  std::length_error,
+			  "'perm_c' parameter not of correct length." );
     }
 
     // Always use a "NATURAL" RowPerm to avoid a serial bottleneck
     // with the weighted bipartite matching algorithm used for the
-    // "LargeDiag" RowPerm
-    data_.options.RowPerm = SLUD::NATURAL;
+    // "LargeDiag" RowPerm.  Note the inconsistency with the SuperLU
+    // User guide (which states that the value should be "NATURAL")
+    data_.options.RowPerm = SLUD::NOROWPERM;
 
     if( parameterList->isParameter("IterRefine") ){
       std::string refine = parameterList->template get<std::string>("IterRefine");
@@ -639,10 +637,9 @@ namespace Amesos {
       } else if ( refine == "EXTRA" ) {
 	data_.options.IterRefine = SLUD::EXTRA;
       } else {
-	TEST_FOR_EXCEPTION(
-			   true,
-			   std::invalid_argument,
-			   "Unrecognized value for 'IterRefine' parameter.");
+	TEST_FOR_EXCEPTION( true,
+			    std::invalid_argument,
+			    "Unrecognized value for 'IterRefine' parameter.");
       }
     }
 
@@ -790,6 +787,6 @@ namespace Amesos {
   const char* Superludist<Matrix,Vector>::name = "SuperLU_DIST";
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_SUPERLUDIST_DEF_HPP

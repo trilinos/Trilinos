@@ -104,6 +104,10 @@ General TODO
    The solver interfaces then define a `loadA_impl()' method that
    actually handles loading the matrix data into internal structures.
 
+ - Pull out many of the type and enum declarations from the Util::
+   namespace and header files.  Put them in an Amesos2_TypesDecl.hpp
+   header and in the Amesos2:: namespace to be used when needed.
+
 
 -------------------------------
  Some things worth considering

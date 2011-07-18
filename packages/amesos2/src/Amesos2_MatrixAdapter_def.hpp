@@ -1,7 +1,7 @@
 #ifndef AMESOS2_MATRIXADAPTER_DEF_HPP
 #define AMESOS2_MATRIXADAPTER_DEF_HPP
 
-namespace Amesos {
+namespace Amesos2 {
 
   
   template < class Matrix >
@@ -145,7 +145,7 @@ namespace Amesos {
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 				     Util::EStorage_Ordering ordering,
-				     has_special_impl hsi) const
+				     Util::has_special_impl hsi) const
   {
     static_cast<const adapter_t*>(this)->getCrs_spec(nzval, colind, rowptr,
 						     nnz, rowmap, ordering);
@@ -159,7 +159,7 @@ namespace Amesos {
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 				     Util::EStorage_Ordering ordering,
-				     no_special_impl nsi) const
+				     Util::no_special_impl nsi) const
   {
     do_getCrs(nzval, colind, rowptr,
 	      nnz, rowmap, ordering,
@@ -174,7 +174,7 @@ namespace Amesos {
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 				   Util::EStorage_Ordering ordering,
-				   row_access ra) const
+				   Util::row_access ra) const
   {
     using Teuchos::RCP;
     using Teuchos::ArrayView;
@@ -237,7 +237,7 @@ namespace Amesos {
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
 				   Util::EStorage_Ordering ordering,
-				   col_access ca) const
+				   Util::col_access ca) const
   {
     using Teuchos::Array;
     // get the ccs and transpose
@@ -258,7 +258,7 @@ namespace Amesos {
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 				     Util::EStorage_Ordering ordering,
-				     has_special_impl hsi) const
+				     Util::has_special_impl hsi) const
   {
     static_cast<const adapter_t*>(this)->getCcs_spec(nzval, rowind, colptr,
 						     nnz, colmap, ordering);
@@ -272,7 +272,7 @@ namespace Amesos {
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 				     Util::EStorage_Ordering ordering,
-				     no_special_impl nsi) const
+				     Util::no_special_impl nsi) const
   {
     do_getCcs(nzval, rowind, colptr,
 	      nnz, colmap, ordering,
@@ -287,7 +287,7 @@ namespace Amesos {
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 				   Util::EStorage_Ordering ordering,
-				   row_access ra) const
+				   Util::row_access ra) const
   {
     using Teuchos::Array;
     // get the crs and transpose
@@ -308,7 +308,7 @@ namespace Amesos {
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
 				   Util::EStorage_Ordering ordering,
-				   col_access ca) const
+				   Util::col_access ca) const
   {
     using Teuchos::RCP;
     using Teuchos::ArrayView;
@@ -442,6 +442,6 @@ namespace Amesos {
   }
   
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_MATRIXADAPTER_DEF_HPP

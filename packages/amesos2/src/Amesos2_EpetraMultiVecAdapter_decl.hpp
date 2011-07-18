@@ -65,7 +65,7 @@
 
 #include "Amesos2_MultiVecAdapter_decl.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 /**
@@ -243,7 +243,7 @@ private:
 
 };                              // end class MultiVecAdapter<NewMultiVec>
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 
 #endif // AMESOS2_EPETRA_MULTIVEC_ADAPTER_DECL_HPP

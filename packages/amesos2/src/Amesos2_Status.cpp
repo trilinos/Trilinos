@@ -53,7 +53,7 @@
 
 #include "Amesos2_Status.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
 
 void Status::setStatusParameters(
@@ -88,6 +88,6 @@ void Status::setStatusParameters(
 }
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_STATUS_CPP

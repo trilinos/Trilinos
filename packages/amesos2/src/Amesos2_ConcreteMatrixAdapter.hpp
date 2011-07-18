@@ -1,7 +1,7 @@
 #ifndef AMESOS2_CONCRETEMATRIXADAPTER_HPP
 #define AMESOS2_CONCRETEMATRIXADAPTER_HPP
 
-namespace Amesos {
+namespace Amesos2 {
 
   template <class Matrix>
   class ConcreteMatrixAdapter {};

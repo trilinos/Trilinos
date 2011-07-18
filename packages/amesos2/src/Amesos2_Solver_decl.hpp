@@ -61,7 +61,7 @@
 #include "Amesos2_Status.hpp"
 #include "Amesos2_Timers.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
 
   /**
@@ -294,6 +294,6 @@ namespace Amesos {
   };                              // End class Solver
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_SOLVER_BASE_DECL_HPP

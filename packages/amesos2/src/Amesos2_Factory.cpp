@@ -50,8 +50,8 @@
 #  include "Amesos2_Factory_def.hpp"
 #  include "Teuchos_ExplicitInstantiationHelpers.hpp"
 // I don't think this makes sense to do for a class with only static methods...
-// namespace Amesos {
-// TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(Amesos::Factory)
+// namespace Amesos2 {
+// TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(Amesos2::Factory)
 // }
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 

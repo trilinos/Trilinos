@@ -216,11 +216,11 @@ namespace std {
 
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 template <class, class> class Superludist;
 
-/* Specialize the Amesos::TypeMap struct for SuperLU_DIST types
+/* Specialize the Amesos2::TypeMap struct for SuperLU_DIST types
  *
  * \cond Superludist_type_specializations 
  */
@@ -301,6 +301,6 @@ SLUD::Dtype_t TypeMap<Superludist,SLUD::Z::doublecomplex>::dtype = SLUD::SLU_Z;
 /* \endcond Superludist_type_specializations */
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_SUPERLUDIST_TYPEMAP_HPP

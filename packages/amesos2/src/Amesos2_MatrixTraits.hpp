@@ -16,7 +16,7 @@
 
 #include "Amesos2_Util.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
   // The declaration
   template <class Matrix>

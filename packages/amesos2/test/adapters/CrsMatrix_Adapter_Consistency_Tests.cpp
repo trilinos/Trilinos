@@ -54,13 +54,13 @@ namespace {
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
 
-  using Amesos::MatrixAdapter;
+  using Amesos2::MatrixAdapter;
 
-  using Amesos::Util::is_same;
-  using Amesos::Util::Rooted;
-  using Amesos::Util::Globally_Replicated;
-  using Amesos::Util::Sorted_Indices;
-  using Amesos::Util::to_teuchos_comm;
+  using Amesos2::Util::is_same;
+  using Amesos2::Util::Rooted;
+  using Amesos2::Util::Globally_Replicated;
+  using Amesos2::Util::Sorted_Indices;
+  using Amesos2::Util::to_teuchos_comm;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -144,8 +144,8 @@ namespace {
     EpetraExt::MatrixMarketFileToCrsMatrix(mat_pathname.c_str(), *ecomm, EA, false, false);
 
     // Create adapters
-    RCP<TADAPT> tadapter = Amesos::createMatrixAdapter<TMAT>( TA );
-    RCP<EADAPT> eadapter = Amesos::createMatrixAdapter<EMAT>( rcp(EA) );
+    RCP<TADAPT> tadapter = Amesos2::createMatrixAdapter<TMAT>( TA );
+    RCP<EADAPT> eadapter = Amesos2::createMatrixAdapter<EMAT>( rcp(EA) );
 
     // Check that adapters return the same dimensions and stats
 
@@ -179,8 +179,8 @@ namespace {
     EpetraExt::MatrixMarketFileToCrsMatrix(mat_pathname.c_str(), *ecomm, EA, false, false);
 
     // Create adapters
-    RCP<TADAPT> tadapter = Amesos::createMatrixAdapter<TMAT>( TA );
-    RCP<EADAPT> eadapter = Amesos::createMatrixAdapter<EMAT>( rcp(EA) );
+    RCP<TADAPT> tadapter = Amesos2::createMatrixAdapter<TMAT>( TA );
+    RCP<EADAPT> eadapter = Amesos2::createMatrixAdapter<EMAT>( rcp(EA) );
 
     Array<TADAPT::scalar_t> tnzvals(tadapter->getGlobalNNZ());
     Array<TADAPT::global_ordinal_t> tcolind(tadapter->getGlobalNNZ());
@@ -228,8 +228,8 @@ namespace {
     EpetraExt::MatrixMarketFileToCrsMatrix(mat_pathname.c_str(), *ecomm, EA, false, false);
 
     // Create adapters
-    RCP<TADAPT> tadapter = Amesos::createMatrixAdapter<TMAT>( TA );
-    RCP<EADAPT> eadapter = Amesos::createMatrixAdapter<EMAT>( rcp(EA) );
+    RCP<TADAPT> tadapter = Amesos2::createMatrixAdapter<TMAT>( TA );
+    RCP<EADAPT> eadapter = Amesos2::createMatrixAdapter<EMAT>( rcp(EA) );
 
     Array<TADAPT::scalar_t> tnzvals(tadapter->getGlobalNNZ());
     Array<TADAPT::global_ordinal_t> tcolind(tadapter->getGlobalNNZ());
@@ -278,8 +278,8 @@ namespace {
     EpetraExt::MatrixMarketFileToCrsMatrix(mat_pathname.c_str(), *ecomm, EA, false, false);
 
     // Create adapters
-    RCP<TADAPT> tadapter = Amesos::createMatrixAdapter<TMAT>( TA );
-    RCP<EADAPT> eadapter = Amesos::createMatrixAdapter<EMAT>( rcp(EA) );
+    RCP<TADAPT> tadapter = Amesos2::createMatrixAdapter<TMAT>( TA );
+    RCP<EADAPT> eadapter = Amesos2::createMatrixAdapter<EMAT>( rcp(EA) );
 
     TADAPT::global_size_t g_num_rows = tadapter->getGlobalNumRows();
 

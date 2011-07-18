@@ -1,7 +1,7 @@
 #ifndef AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP
 #define AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP
 
-namespace Amesos {
+namespace Amesos2 {
 
   template <typename Scalar,
 	    typename LocalOrdinal,
@@ -48,6 +48,6 @@ namespace Amesos {
       return( rcp(new ConcreteMatrixAdapter<matrix_t>(t_mat)) );
     }
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP

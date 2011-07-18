@@ -1,7 +1,7 @@
 #ifndef AMESOS2_TPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP
 #define AMESOS2_TPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP
 
-namespace Amesos {
+namespace Amesos2 {
 
   using Teuchos::RCP;
   using Teuchos::ArrayView;
@@ -292,6 +292,6 @@ namespace Amesos {
     return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map);
   }
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_TPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP

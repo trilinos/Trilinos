@@ -65,7 +65,7 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 
-namespace Amesos {
+namespace Amesos2 {
 
   namespace Util {
 
@@ -363,7 +363,7 @@ namespace Amesos {
 
 
     /* We assume that Matrix and Vector are some instance of a
-     * Amesos::MatrixAdapter or a Amesos::MultiVecAdapter, or at least implement
+     * Amesos2::MatrixAdapter or a Amesos2::MultiVecAdapter, or at least implement
      * the required methods
      */
     template< typename Matrix,
@@ -396,16 +396,16 @@ namespace Amesos {
     }
 
   } // end namespace Util
-}   // end namespace Amesos
+}   // end namespace Amesos2
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <class MV, typename S>
-void Amesos::Util::get_1d_copy_helper<MV,S>::do_get(const Teuchos::Ptr<const MV>& mv,
-						    const Teuchos::ArrayView<S>& vals,
-						    const size_t ldx,
-						    EDistribution distribution)
+void Amesos2::Util::get_1d_copy_helper<MV,S>::do_get(const Teuchos::Ptr<const MV>& mv,
+						     const Teuchos::ArrayView<S>& vals,
+						     const size_t ldx,
+						     EDistribution distribution)
 {
   typedef typename MV::local_ordinal_t lo_t;
   typedef typename MV::global_ordinal_t go_t;
@@ -413,17 +413,17 @@ void Amesos::Util::get_1d_copy_helper<MV,S>::do_get(const Teuchos::Ptr<const MV>
   typedef typename MV::node_t node_t;
   
   const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
-    = Amesos::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
+    = Amesos2::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
 							      mv->getGlobalLength(),
 							      mv->getComm());
   do_get(mv, vals, ldx, Teuchos::ptrInArg(*map));
 }
 
 template <class MV, typename S>
-void Amesos::Util::put_1d_data_helper<MV,S>::do_put(const Teuchos::Ptr<MV>& mv,
-						    const Teuchos::ArrayView<S>& data,
-						    const size_t ldx,
-						    EDistribution distribution)
+void Amesos2::Util::put_1d_data_helper<MV,S>::do_put(const Teuchos::Ptr<MV>& mv,
+						     const Teuchos::ArrayView<S>& data,
+						     const size_t ldx,
+						     EDistribution distribution)
 {
   typedef typename MV::local_ordinal_t lo_t;
   typedef typename MV::global_ordinal_t go_t;
@@ -431,7 +431,7 @@ void Amesos::Util::put_1d_data_helper<MV,S>::do_put(const Teuchos::Ptr<MV>& mv,
   typedef typename MV::node_t node_t;
   
   const Teuchos::RCP<const Tpetra::Map<lo_t,go_t,node_t> > map
-    = Amesos::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
+    = Amesos2::Util::getDistributionMap<lo_t,go_t,gs_t,node_t>(distribution,
 							      mv->getGlobalLength(),
 							      mv->getComm());
   do_put(mv, data, ldx, Teuchos::ptrInArg(*map));

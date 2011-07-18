@@ -44,10 +44,10 @@
 #ifndef AMESOS2_VERSION_HPP
 #define AMESOS2_VERSION_HPP
 
-namespace Amesos {
+namespace Amesos2 {
 
 std::string version();
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif

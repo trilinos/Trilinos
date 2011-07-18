@@ -62,7 +62,8 @@ namespace SLU {
 
 template <class Matrix, class Vector> class Superlu;
 
-namespace Amesos {
+
+namespace Amesos2 {
 
 
   template <>
@@ -72,7 +73,7 @@ namespace Amesos {
     /** \brief Creates a Superlu compressed-column Matrix from the given Matrix
      *
      * \tparam Matrix A matrix type conforming to the interface, in particular
-     *         an Amesos::MatrixAdapter<>.
+     *         an Amesos2::MatrixAdapter<>.
      *
      * \param [in]     mat    The matrix which will be converted to SuperLU format
      * \param [in,out] nzval  A user-provided persisting store for the nonzero
@@ -96,12 +97,12 @@ namespace Amesos {
                                 Teuchos::Time& mtxRedistTime
                                 )
     {
-      typedef typename Matrix::scalar_t                        scalar_type;
-      typedef typename Matrix::global_ordinal_t                    go_type;
-      typedef typename Matrix::global_size_t                       gs_type;
-      typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
+      typedef typename Matrix::scalar_t                         scalar_type;
+      typedef typename Matrix::global_ordinal_t                     go_type;
+      typedef typename Matrix::global_size_t                        gs_type;
+      typedef typename TypeMap<Amesos2::Superlu,scalar_type>::type slu_type;
       // Get the SLU data type for this type of matrix
-      SLU::Dtype_t dtype = TypeMap<Amesos::Superlu,scalar_type>::dtype;
+      SLU::Dtype_t dtype = TypeMap<Amesos2::Superlu,scalar_type>::dtype;
 
       // Extract the necessary information from mat and call SLU function
       using Teuchos::Array;
@@ -150,7 +151,7 @@ namespace Amesos {
     /** \brief Creates a Superlu Dense Matrix from the given MultiVector
      *
      * \tparam MV A multi-vector type conforming to the interface, in particular
-     *         an Amesos::MultiVecAdapter<>.
+     *         an Amesos2::MultiVecAdapter<>.
      *
      * \param [in]     mv   The MultiVector which will be converted to SuperLU format
      * \param [in,out] vals A user-provided persisting store for the values of
@@ -191,6 +192,6 @@ namespace Amesos {
     
   };				// end struct MatrixHelper
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // end AMESOS2_SUPERLU_MATRIXHELPER_HPP
