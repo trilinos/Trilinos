@@ -159,6 +159,7 @@ namespace Teuchos {
   TEUCHOS_UNIT_TEST( TimeMonitor, SUMMARIZE_diffTimerSets )
   {
     RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
+    const int numProcs = comm->getSize ();
     const int myRank = comm->getRank ();
 
     // If MPI has not been initialized, turn the MPI communicator into
@@ -183,14 +184,14 @@ namespace Teuchos {
     if (myRank == 0)
       timerB = TimeMonitor::getNewCounter ("Timer B");
     else
-      timerB = null; // True anyway, but I want to make this explicit
+      timerB = null; // True anyway, but I want to make this explicit.
 
     // The actual number of operations in the loop is proportional to
     // the cube of the loop length.  Adjust the quantities below as
     // necessary to ensure the timer reports a nonzero elapsed time
     // for each of the invocations.
-    const size_t timerA_loopLength = 500;
-    const size_t timerB_loopLength = 1000;
+    const size_t timerA_loopLength = 150;
+    const size_t timerB_loopLength = 200;
 
     // Timer A gets a call count of 3.
     for (size_t k = 0; k < 3; ++k)
@@ -216,11 +217,15 @@ namespace Teuchos {
     out << std::endl << "Testing intersection of timers:" << std::endl
 	<< oss.str() << std::endl;
 
-    // Since setOp == Intersection, only Timer A should be reported.
+    // Since setOp == Intersection, only Timer A should be reported,
+    // unless there is only one (MPI) process.
     size_t substr_i = oss.str().find ("Timer A");
     TEST_INEQUALITY(substr_i, std::string::npos);
-    substr_i = oss.str().find ("Timer B");
-    TEST_EQUALITY(substr_i, std::string::npos);
+    if (numProcs > 1)
+      {
+	substr_i = oss.str().find ("Timer B");
+	TEST_EQUALITY(substr_i, std::string::npos);
+      }
 
     // Now call summarize(), but ask for a union of timers.
     std::ostringstream ossUnion;
