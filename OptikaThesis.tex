@@ -91,6 +91,7 @@ Parameters in Optika are typed. Parameters can be any one of the following types
 		\item string
 		\item boolean
 		\item arrays of int, short, double, and string
+		\item 2D arrays of int, short, double, and string
 	\end{itemize}
 When editing a parameter in Optika, different ``widgets'' are used to change the parameters value. A widget is 
 a graphical construct used for obtaining input from the user. For number types, a spin box (Figure~\ref{spinboxfig}) is used to obtain input. 
@@ -405,6 +406,37 @@ be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of thes
 \caption{Example usage of an Array Validator in which the prototype is specified using the prototypeId XML attribute}
 \label{protoAttributeArrayXML}
 \end{figure}
+
+All the discussion above is also relevant for TwoDArrays. The only difference is instead of using an ArrayValidator, a TwoDArrayValidator is used. For
+example, if a TwoDArray of arbitrary integer values needs to be restricted with an EnhancedNumberValidator, the XML in Figure~\ref{TwoDArrayValidator}
+would be appropriate.
+\begin{figure}
+\centering
+{\footnotesize
+\begin{Verbatim}
+<ParameterList>
+  <Parameter name="Integer Values" value="2x2:{4,3,1,2}" 
+    type="TwoDArray(int)" docString="A twod array of integers" 
+    validatorId="1" />
+    ...Other Parameters ....
+  <Validators>
+    <Validator type="TwoDArrayValidator(EnhancedNumberValidator(int), int)" 
+      validatorId="1">
+      <Validator 
+        type="EnhancedNumberValidator(int)"
+        min="0"
+        max="10"
+      />
+      </Validator>
+    </Validator>
+  </Validators>
+</ParameterList>
+\end{Verbatim}
+}
+\caption{Example usage of a TwoDArrayValidator}
+\label{TwoDArrayValidator}
+\end{figure}
+
 
 \section{Dependencies}
 Dependencies are one of the most powerful tools provided by Optika~\footnote{Dependencies are actually found in the Teuchos package. However they were 
@@ -819,13 +851,13 @@ the dependency correspond to the types of both the dependee and the dependent.
 \label{TwoDRowXML}
 \end{figure}
 
-If a developer wanted the number of rows to be based on something other then the direct value of the dependee parameter, the dependee's value could be
+If a developer wanted the number of rows to be based on something other than the direct value of the dependee parameter, the dependee's value could be
 run through a function. 
 This would be done by adding a <Function> tag inside the <Dependency> tag, just like in Figure~\ref{NumberVisXML2} for the Number Visual Dependency.
 
 In addition to the TwoD Row Dependency, there is also another dependency called a TwoD Column Dependency. It functions in almost exactly the same way
 as the TwoD Row Dependency except instead of modifying the number of rows in a TwoDArray it modifies the number of columns. Let's modify the example above.
-Instead of having each row represent a surface, each column will represent a surface. Figure~\ref{TwoDColXML} shows how to now have the number of columns
+Instead of having each row represent a surface, each column will represent a surface. Figure~\ref{TwoDColXML} shows how to have the number of columns
 changed, rather than the number of rows.
 \begin{figure}
 \centering
@@ -852,8 +884,8 @@ changed, rather than the number of rows.
 \end{figure}
 
 It's also worth noting that there is nothing preventing a developer from using a TwoD Row Dependency and TwoD Column Dependency together. 
-A developer could have a single
-dependent parameter who's number of row's and columns are dependent on two different parameters or even on the same parameter. One instance in which a
+A developer could have a 
+dependent parameter whose number of rows and columns are dependent on two different parameters or even on the same parameter. One instance in which a
 developer
 might want to have both the number of rows and columns dependent on a single parameter is when the developer is dealing with a symmetric array. 
 Figure~\ref{TwoDSym}
