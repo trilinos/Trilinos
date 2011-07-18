@@ -168,8 +168,26 @@ namespace Teuchos {
     
     const bool debug = false;
 
-    // The default "MPI_COMM_WORLD" communicator.
+    // The default communicator.  If Trilinos was built with MPI
+    // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
+    // be a "serial" (no MPI, one "process") communicator.
     RCP<const Comm<int> > pComm = DefaultComm<int>::getComm ();
+
+    // Callers may or may not have initialized MPI before calling
+    // summarize().  Just because they built with MPI, doesn't mean
+    // they want to use MPI.  It's not my responsibility to initialize
+    // MPI for them, and I don't have the context I need in order to
+    // do so anyway.  Thus, if Trilinos was built with MPI and MPI has
+    // not yet been initialized, make pComm a "serial" communicator.
+#ifdef HAVE_MPI
+    {
+      int mpiHasBeenStarted = 0;
+      MPI_Initialized (&mpiHasBeenStarted);
+      if (! mpiHasBeenStarted)
+	pComm = DefaultComm<int>::getDefaultSerialComm (null);
+    }
+#endif // HAVE_MPI
+
     const int numProcs = pComm->getSize();
     const int myRank = pComm->getRank();
 
