@@ -45,8 +45,14 @@
 
 /*! \file Teuchos_TimeMonitor.hpp
  *
- * \brief Timer class that starts when constructed and stops when the
- * destructor is called
+ * \brief Scope protection wrapper for a Teuchos::Time object.
+ *
+ * TimeMonitor wraps a nonconst reference to a Teuchos::Time timer
+ * object.  The TimeMonitor's constructor starts the timer, and its
+ * destructor stops the timer.  This ensures scope safety of timers,
+ * so that no matter how a scope is exited (whether the normal way or
+ * when an exception is thrown), a timer started in the scope is
+ * stopped when the scope is left.
  */
 
 /** \example TimeMonitor/cxx_main.cpp
@@ -59,8 +65,7 @@
 #include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_Time.hpp"
 
-/** \brief Defines a static non-member function that returns a time monitor.
- */ 
+//! Defines a static non-member function that returns a time monitor.
 #define TEUCHOS_TIMER(funcName, strName) \
   static Teuchos::Time& funcName() \
   {static Teuchos::RCP<Time> rtn = \
@@ -172,16 +177,6 @@ public:
   /// </ul>
   static void zeroOutTimers();
 
-  /// \brief Set operation type for \c summarize() to perform.
-  ///
-  /// The \c summarize() method can compute global timer statistics
-  /// (currently the min, mean, and max over all timers).  Since
-  /// different MPI processes may have created different sets of
-  /// timers, summarize() has to decide on a common set of timers for
-  /// which to compute statistics.  This enum allows the caller to
-  /// specify how summarize() picks the global set of timers.
-  enum ETimerSetOp { Intersection, Union };
- 
   /// \brief Print summary statistics for all timers. 
   ///
   /// The typical use case for timers is that all MPI processes create
@@ -244,7 +239,7 @@ public:
 	     const bool alwaysWriteLocal=false,
 	     const bool writeGlobalStats=true,
 	     const bool writeZeroTimers=true,
-	     const ETimerSetOp setOp=Intersection);
+	     const ECounterSetOp setOp=Intersection);
   //@}
 };
 
