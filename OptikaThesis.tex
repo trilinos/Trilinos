@@ -37,7 +37,7 @@ a number of constraints.
 \subsubsection{Something Simple}
 Current GUI frameworks like Qt (on which Optika is based), GTK+, and Cocao are incredibly robust. But
 because of this, they are also large and complicated. When looking for a solution to the 
-scientific application interface problem, we need something that is simple. Otherwise, developers will be hesitant to use it.
+scientific application interface problem, something simple is required. Otherwise, developers will be hesitant to use it.
 
 \subsubsection{Cross-Platform}
 Having a better user interface can lead to having a wider user base. But when adding the functionality
@@ -49,7 +49,7 @@ platforms.
 \subsubsection{Trilinos Integration}
 Optika was developed as part of the Trilinos project. Trilinos is a set of C++ libraries
 used extensively throughout the scientific community. Since Optika is part of Trilinos,
-we wanted it to have tight integration with constructs that were already in place inside
+it was desirable to have tight integration with constructs that were already in place inside
 of Trilinos (namely the ParameterList class). By creating our own GUI solution, Optika allows 
 users already familiar with the Trilinos framework to take advantage of the capabilities 
 Optika has to offer.
@@ -59,7 +59,7 @@ Optika has to offer.
 An Optika based GUI is laid out in a hierarchical fashion as shown in Figure \ref{paramlistFigure}.
 This hierarchy is made up of parameters and parameter lists. A parameter can be thought of simply as single key-value input pair for
 a program. A parameter list is a collection of parameters and other parameter lists. When a parameter list
-is part of another parameter list, we call it a sublist. Optika then uses these parameter lists to dynamically
+is part of another parameter list, it is called a sublist. Optika then uses these parameter lists to dynamically
 generate a GUI which is used to obtain input from the user.
 \begin{figure}
   \centering
@@ -155,7 +155,7 @@ has support for the necessary special building tools required by Qt.
 At the core of Optika is the ParameterList class from the Teuchos package~\cite{TeuchosPackage}, another part
 of the Trilinos project. ParameterLists can be constructed either from within C++ source code or using XML.
 In this paper, we will first start off with a basic example using C++ source code. However, once we start
-talking about the more complex features, we will switch over to XML.
+talking about more complex features, we will switch over to XML.
 \subsection{Utilizing C++ to Create A GUI}
 Looking at the sample Tramonto input file above, we can see how Optika could be used to create a better user interface.
 While examining the example input file section, we see it deals with ``Dimension Control Parameters.'' These are a group of parameters 
@@ -590,7 +590,7 @@ dependents.
 A String Validator Dependency allows the application developer to change the validator used on a dependent based on the string value of the dependee
 parameter. This is accomplished by mapping values the dependee might take on to corresponding validators. Also, a default validator may be specified.
 This way, if the dependee takes on a value that has not been mapped to a validator, the default validator can be used. If the dependee takes on a value
-that is not speicified in the values to validator mappings and no default validator is specified, then the dependee(s) will have no validator(s).
+that is not specified in the values to validator mappings and no default validator is specified, then the dependee(s) will have no validator(s).
 
 A String Validator Dependency must comply with the following rules:
 \begin{itemize}
@@ -652,7 +652,7 @@ Range Validator Dependencies work very similarly to String Validator Dependencie
 instead of mapping string values to validators, Range Validator Dependencies map ranges of numbers to validators. If the dependee's value falls within one of the 
 mapped ranges, then that range's associated validator is applied to the dependent(s). A range is specified by defining its minimum (inclusive) and its maximum (exclusive) 
 values. Also, like String Validator Dependencies, a default validator can be specified. If the dependees value does not fall with in one of the mapped ranges, the default 
-validator is used. If the dependee takes on a value that is not speicified in the values to validator mappings and no default validator is specified, then the 
+validator is used. If the dependee takes on a value that is not specified in the values to validator mappings and no default validator is specified, then the 
 dependee(s) will have no validator(s).
 
 A Range Validator Dependency must conform to the following constraints:
@@ -780,19 +780,20 @@ dependent.
 \label{ArrayLengthXML}
 \end{figure}
 
-If we wanted the length of the array to be based on something other then the direct value of the dependee parameter, we could run it through a function. This would 
-be done by adding a <Function> tag inside the <Dependency> tag, just like we did in Figure~\ref{NumberVisXML2} for the Number Visual Dependency.
+If a developer wanted the length of the array to be based on something other then the direct value of the dependee parameter, the dependee's
+value could be run through a function. This would 
+be done by adding a <Function> tag inside the <Dependency> tag, just like in Figure~\ref{NumberVisXML2} for the Number Visual Dependency.
 
 \subsubsection{TwoD Row Dependencies and TwoD Column Dependencies}
-TwoD Row Dependencies allows the application developer to have the number or rows in a TwoDArray parameter to be determined by the value of another
-parameter. TwoD Row Dependencies must have a dependen with an integer type and the dependent(s) must be a TwoDArray. Unless otherwise specified, the
+TwoD Row Dependencies allow the application developer to have the number or rows in a TwoDArray parameter be determined by the value of another
+parameter. TwoD Row Dependencies must have a dependent with an integer type and the dependent(s) must be a TwoDArray. Unless otherwise specified, the
 value of the dependee parameter is directly used for the number of rows in the TwoDArray dependent parameter(s).
 
-Figure~\ref{TwoDRowXML} shows an example of a TwoD Row Dependency. In this example we have a TwoDArray which specifies two parameter values for each surface
-we have in some simulation. In other words, each row in the TwoDArray corresponds to a surface and each column in a row corresponds to a particular 
-parameter value for the surface. This means that as we add or remove surfaces we want the number of rows in the TwoDArray to change accrodingly.
-With a TwoD Row Dependency, this is exactly what will happen when the ``Number of surfaces'' parameter changes. Note how the ``type'' XML attributes for the dependency corresspond to the types of both the
-dependee and the dependent.
+Figure~\ref{TwoDRowXML} shows an example of a TwoD Row Dependency. In this example there is a TwoDArray which specifies two parameter values for each surface
+in some simulation. In other words, each row in the TwoDArray corresponds to a surface and each column in a row corresponds to a particular 
+parameter value for the surface. This means that as the number of surfaces change, rows are added or removed from the TwoDArray accordingly.
+In this example, as the ``Number of surfaces'' parameter is changed, the ``Params'' parameter is modified. Note how the ``type'' XML attributes for 
+the dependency correspond to the types of both the dependee and the dependent.
 
 \begin{figure}
 \centering
@@ -818,13 +819,14 @@ dependee and the dependent.
 \label{TwoDRowXML}
 \end{figure}
 
-If we wanted the number of rows to be based on something other then the direct value of the dependee parameter, we could run it through a function. 
-This would be done by adding a <Function> tag inside the <Dependency> tag, just like we did in Figure~\ref{NumberVisXML2} for the Number Visual Dependency.
+If a developer wanted the number of rows to be based on something other then the direct value of the dependee parameter, the dependee's value could be
+run through a function. 
+This would be done by adding a <Function> tag inside the <Dependency> tag, just like in Figure~\ref{NumberVisXML2} for the Number Visual Dependency.
 
 In addition to the TwoD Row Dependency, there is also another dependency called a TwoD Column Dependency. It functions in almost exactly the same way
-as the TwoD Row Dependency except instead of modifying the number of rows in a TwoDArray. It modifies the number of columns. Let's modify the example above.
-Instead of having each row represent a surface, we'll have each column represent a surface. Figure~\ref{TwoDColXML} shows how we now change the number
-of columns in the TwoDArray as the number of surfaces change.
+as the TwoD Row Dependency except instead of modifying the number of rows in a TwoDArray it modifies the number of columns. Let's modify the example above.
+Instead of having each row represent a surface, each column will represent a surface. Figure~\ref{TwoDColXML} shows how to now have the number of columns
+changed, rather than the number of rows.
 \begin{figure}
 \centering
 {\footnotesize
@@ -849,13 +851,16 @@ of columns in the TwoDArray as the number of surfaces change.
 \label{TwoDColXML}
 \end{figure}
 
-It's also worth noting that there is nothing preventing you from using a TwoD Row Dependency and TwoD Column Dependency together. You could have a single
-dependent parameter who's number of row's and columns are dependent on two different parameters or even on the same parameter. One instance in which you 
-might want to have both the number of rows and columns dependent on a single parameter is when you are dealing with a symetric array.  Figure~\ref{TwoDSym}
-shows an example of this. In this example, we are specifying some characteristic of a boundry interaction between two surfaces. Since the boundry
-interaction charactersitic between surface one and surface zero is the same as the boundry interaction characteristic between surface zero and surface one,
-and we don't specify the interaction between a surface and itself
-we need a symetrical array. In this case, the number of rows and columns the array contains is dependent on the same parameter.
+It's also worth noting that there is nothing preventing a developer from using a TwoD Row Dependency and TwoD Column Dependency together. 
+A developer could have a single
+dependent parameter who's number of row's and columns are dependent on two different parameters or even on the same parameter. One instance in which a
+developer
+might want to have both the number of rows and columns dependent on a single parameter is when the developer is dealing with a symmetric array. 
+Figure~\ref{TwoDSym}
+shows an example of this. In this example, the developer is specifying some characteristic of a boundary interaction between two surfaces. Since the boundary
+interaction characteristic between surface one and surface zero is the same as the boundary interaction characteristic between surface zero and surface one,
+and the developer doesn't want to specify the interaction between a surface and itself, a symmetrical array is needed. And in this case, the number of rows 
+and columns the array contains is dependent on the same parameter.
 
 \begin{figure}
 \centering
@@ -881,10 +886,9 @@ we need a symetrical array. In this case, the number of rows and columns the arr
 </ParameterList>
 \end{Verbatim}
 }
-\caption{Example usage of both a TwoDColDependency and TwoDRowDependency for a symetric TwoDArray}
+\caption{Example usage of both a TwoDColDependency and TwoDRowDependency for a symmetric TwoDArray}
 \label{TwoDColXML}
 \end{figure}
-
 
 \section{Condition Visual Dependencies}
 Up until this point, all Dependencies have had a single dependee. Condition Visual Dependencies are a special type of visual dependencies that allow the application developer to
