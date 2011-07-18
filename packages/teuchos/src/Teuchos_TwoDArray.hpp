@@ -54,8 +54,15 @@
 namespace Teuchos{
 
 /**
- * A thin wrapper around the Array class which causes it to be interpurted
+ * \brief A thin wrapper around the Array class which causes it to be interpurted
  * as a 2D Array.
+ *
+ * 2D Array's can also be "symetric". This means that anyone viewing the
+ * Array should only consider the lower half of the array as valid. The
+ * 
+ * \warning The TwoDArray will not enforce symetry. However, when two 
+ * symetrical TwoDArrays are compared, only the the lower half of the
+ * TwoDArray's will be compared.
  */
 template<class T> 
 class TwoDArray{
@@ -354,6 +361,17 @@ std::ostream& operator<<(std::ostream& os, const TwoDArray<T>& array){
   return os << TwoDArray<T>::toString(array);
 }
 
+
+namespace TwoDDetails {
+
+/**
+ * \brief A function for comparing symetrical arrarys.
+ *
+ * @param a1 The first array to compare.
+ * @param a2 The second array to compare.
+ * @return True if the two TwoDArrays are symetricaly the same, false 
+ * otherwise.
+ */
 template<typename T>
 bool symetricCompare(const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
   if(a1.getNumRows() != a2.getNumRows() || 
@@ -372,6 +390,9 @@ bool symetricCompare(const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
     }
     return true;
   }
+}
+
+
 }
 
 /* \brief Returns true of the two TwoDArrays have the same contents and
@@ -394,7 +415,7 @@ bool operator==( const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
     return false;
   }
   if(a1.isSymetrical()){
-    return symetricCompare(a1,a2);
+    return TwoDDetails::symetricCompare(a1,a2);
   }
   else{
     return a1.getDataArray() == a2.getDataArray() && 
