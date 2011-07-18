@@ -60,7 +60,9 @@ namespace Amesos2 {
 struct Control {
   /// Default constructor.
   Control()
-    : useTranspose_(false)
+    : verbose_(0)
+    , debug_(0)
+    , useTranspose_(false)
     , addToDiag_("0.0")
     , addZeroToDiag_(false)
     , matrixProperty_(0)
@@ -75,6 +77,16 @@ struct Control {
 
   void setControlParameters(
     const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
+
+  /** \brief Sets the verbosity level.
+   *
+   * \internal Really should implement the Teuchos::VerboseObject
+   * interface for this sort of thing.
+   */ 
+  int verbose_;
+
+  /// Sets the level of debug output
+  int debug_;
 
 
   /// When solving, use A^T instead of A

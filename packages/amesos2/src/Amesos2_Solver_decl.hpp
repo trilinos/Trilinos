@@ -57,9 +57,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
-#include "Amesos2_Control.hpp"
 #include "Amesos2_Status.hpp"
-#include "Amesos2_Timers.hpp"
 
 namespace Amesos2 {
 
@@ -223,7 +221,10 @@ namespace Amesos2 {
      * solver->solve(X, B);
      * \endcode
      */
-    virtual void setA( const Teuchos::RCP<Matrix> a ) = 0;
+    virtual void setA( const Teuchos::RCP<const Matrix> a ) = 0;
+
+
+    virtual void setA( const Matrix* a ) = 0;
     
 
     /// Returns \c true if the solver can handle the matrix shape
@@ -264,6 +265,10 @@ namespace Amesos2 {
 
     /// Returns a pointer to the Teuchos::Comm communicator with this matrix
     virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm( void ) const = 0;
+
+
+    /// Returns a reference to this solver's internal status object
+    virtual Status& getStatus() const = 0;
 
 
     /// Returns the number of pre-orderings performed by this object.

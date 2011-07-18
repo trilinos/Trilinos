@@ -31,7 +31,8 @@ General TODO
  - Make the B argument for solve_impl and solve(X,B) a Ptr to a const
    MV adapter.  This might mean we have to follow through to some
    downstream functions to make them take const arguments also (or
-   make member functions const when appropriate). (DONE)
+   make member functions const when appropriate). (DONE, also extended
+   this const'ness to the `create' method and all matrix args)
    
  - May be useful to define some Amesos2 exception classes.
 
@@ -88,7 +89,7 @@ General TODO
 
    A lot of status machinery exists already in the Amesos::Status
    class, but it was designed mostly for internal use.  It could just
-   be cleaned up and made ready for use by users.
+   be cleaned up and made ready for use by users. (DONE)
 
  - Abstract the matrix loading/reading process/decisions into the
    SolverCore class.  SolverCore should declare and define a private

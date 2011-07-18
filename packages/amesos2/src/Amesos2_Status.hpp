@@ -56,113 +56,112 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 
+#include "Amesos2_TypeDecl.hpp"
+
 namespace Amesos2 {
 
-
-class Status {
-public:
-  /// Default constructor.
-  Status()
-    // , computeVectorNorms_(false)
-    // , computeTrueResidual_(false)
-      // Will use the Teuchos::VerboseObject for verbosity settings
-    : verbose_(0)
-    , debug_(0)
-
-    , numPreOrder_(0)
-    , numSymbolicFact_(0)
-    , numNumericFact_(0)
-    , numSolve_(0)
-
-    , preOrderingDone_(false)
-    , symbolicFactorizationDone_(false)
-    , numericFactorizationDone_(false)
-
-    , myPID_(0)
-    , root_(true)
-    , numProcs_(1)
-    { }
-
-
-  Status(const Teuchos::RCP<const Teuchos::Comm<int> > comm)
-    // , computeVectorNorms_(false)
-    // , computeTrueResidual_(false)
-      // Will use the Teuchos::VerboseObject for verbosity settings
-    : verbose_(0)
-    , debug_(0)
-
-    , numPreOrder_(0)
-    , numSymbolicFact_(0)
-    , numNumericFact_(0)
-    , numSolve_(0)
-
-    , preOrderingDone_(false)
-    , symbolicFactorizationDone_(false)
-    , numericFactorizationDone_(false)
-
-    , myPID_(comm->getRank())
-    , root_( myPID_ == 0 )
-    , numProcs_(comm->getSize())
-    { }
-
-
-  /// Default destructor.
-  ~Status() { };
-
+  template < template <class,class> class ConcreteSolver, class Matrix, class Vector > class SolverCore;
 
   /**
-   * \brief Set various status parameters.
+   * \brief Holds internal status data about the owning Amesos2 solver
    *
-   * Updates internal variables from the given parameterList.
+   * Provides convenient access to status data for both solvers and
+   * outside users.
+   *
+   * \sa Solver::getStatus()
    */
-  void setStatusParameters(
-    const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
+  class Status {
+  public:
+    template < template <class,class> class ConcreteSolver, class Matrix, class Vector >
+    friend class SolverCore;
 
-  // /// If \c true, prints the norms of X and B in solve().
-  // bool computeVectorNorms_;
+    Status()
+      : numPreOrder_(0)
+      , numSymbolicFact_(0)
+      , numNumericFact_(0)
+      , numSolve_(0)
 
-  // /// If \c true, computes the true residual in solve().
-  // bool computeTrueResidual_;
+      , last_phase_(CLEAN)
 
-
-  /// Toggles the output level.
-  int verbose_;
-
-  /// Sets the level of debug_ output
-  int debug_;
-
-  /// Number of pre-ordering phases
-  mutable int numPreOrder_;
-
-  /// Number of symbolic factorization phases.
-  mutable int numSymbolicFact_;
-
-  /// Number of numeric factorization phases.
-  mutable int numNumericFact_;
-
-  /// Number of solves.
-  mutable int numSolve_;
-
-  /// If \c true, preOrdering() has been successfully called.
-  mutable bool preOrderingDone_;
-
-  /// If \c true, symbolicFactorization() has been successfully called.
-  mutable bool symbolicFactorizationDone_;
-
-  /// If \c true, numericFactorization() has been successfully called.
-  mutable bool numericFactorizationDone_;
+      , l_nnz_(0)
+      , u_nnz_(0)
+    { }
 
 
-  /// My process ID in this MPI communicator
-  int myPID_;
+    /// Default destructor.
+    ~Status() { };
 
-  /// Indicates whether this process is the root process
-  bool root_;
+    /// Returns the number of pre-orderings performed by the owning solver.
+    inline int getNumPreOrder() const
+    { return( numPreOrder_ ); }
 
-  /// The number of processors in this MPI communicator
-  int numProcs_;
+    /// Returns the number of symbolic factorizations performed by the owning solver.
+    inline int getNumSymbolicFact() const
+    { return( numSymbolicFact_ ); }
 
-};                              // end class Amesos2::Status
+    /// Returns the number of numeric factorizations performed by the owning solver.
+    inline int getNumNumericFact() const
+    { return( numNumericFact_ ); }
+
+    /// Returns the number of solves performed by the owning solver.
+    inline int getNumSolve() const
+    { return( numSolve_ ); }
+
+    /// If \c true , then pre-ordering has been performed
+    inline bool preOrderingDone() const
+    { return( last_phase_ >= PREORDERING ); }
+
+    /// If \c true , then symbolic factorization has been performed
+    inline bool symbolicFactorizationDone() const
+    { return( last_phase_ >= SYMBFACT ); }
+
+    /// If \c true , then numeric factorization has been performed
+    inline bool numericFactorizationDone() const
+    { return( last_phase_ >= NUMFACT ); }
+
+    /** \brief Get the number of non-zero entries in the \f$L\f$ factor.
+     * 
+     * Returns \c 0 if numeric factorization has not yet been performed,
+     * or if the solver does not support getting statistics about the
+     * factors.
+     */
+    inline size_t getLNNZ() const
+    { return( l_nnz_ ); }
+
+    /** \brief Get the number of non-zero entries in the \f$U\f$ factor.
+     * 
+     * Returns \c 0 if numeric factorization has not yet been performed,
+     * or if the solver does not support getting statistics about the
+     * factors.
+     */
+    inline size_t getUNNZ() const
+    { return( u_nnz_ ); }
+
+
+  private:
+
+    /// Number of pre-ordering phases
+    int numPreOrder_;
+
+    /// Number of symbolic factorization phases.
+    int numSymbolicFact_;
+
+    /// Number of numeric factorization phases.
+    int numNumericFact_;
+
+    /// Number of solves.
+    int numSolve_;
+
+    /// The last phase of computation that was performed by the owning solver object
+    EPhase last_phase_;
+
+    /// The number of non-zeros in the L factor
+    size_t l_nnz_;
+
+    /// The number of non-zeros in the U factor
+    size_t u_nnz_;
+
+  };                              // end class Amesos2::Status
 
 
 } // end namespace Amesos2

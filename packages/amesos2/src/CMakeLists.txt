@@ -128,7 +128,6 @@ APPEND_SET(SOURCES
   Amesos2_MultiVecAdapter.cpp
   Amesos2_SolverCore.cpp
   Amesos2_Solver.cpp
-  Amesos2_Status.cpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.cpp
   Amesos2_TpetraCrsMatrix_MatrixAdapter.cpp
   Amesos2_TpetraMultiVecAdapter.cpp

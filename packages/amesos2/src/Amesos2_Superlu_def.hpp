@@ -59,9 +59,9 @@ namespace Amesos2 {
 
 template <class Matrix, class Vector>
 Superlu<Matrix,Vector>::Superlu(
-  Teuchos::RCP<Matrix> A,
-  Teuchos::RCP<Vector> X,
-  Teuchos::RCP<Vector> B)
+  Teuchos::RCP<const Matrix> A,
+  Teuchos::RCP<Vector>       X,
+  Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::Superlu,Matrix,Vector>(A, X, B)
   , nzvals_(this->globalNumNonZeros_)
   , rowind_(this->globalNumNonZeros_)
@@ -83,6 +83,7 @@ Superlu<Matrix,Vector>::Superlu(
   data_.panel_size = SLU::sp_ienv(1); // Query optimal panel size
 
   data_.equed = 'N';            // No equilibration
+  data_.A.Store = NULL;
 }
 
 
@@ -100,7 +101,7 @@ Superlu<Matrix,Vector>::~Superlu( )
   if ( this->getNumNumericFact() > 0 ){
     SLU::Destroy_SuperMatrix_Store( &(data_.A) );
 
-    if ( this->status_.root_ ){       // only root allocated these SuperMatrices.
+    if ( this->root_ ){	   // only root allocated these SuperMatrices.
       SLU::Destroy_SuperNode_Matrix( &(data_.L) );
       SLU::Destroy_CompCol_Matrix( &(data_.U) );
     }
@@ -155,6 +156,7 @@ Superlu<Matrix,Vector>::preOrdering_impl()
   // Cleanup SuperMatrix A's Store, will be allocated again when new
   // values are retrieved in numericFactorization.
   SLU::Destroy_SuperMatrix_Store( &(data_.A) );
+  data_.A.Store = NULL;
 
   return(0);
 }
@@ -189,15 +191,16 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   using Teuchos::as;
   
   int info = 0;
-  if( this->numericFactorizationDone() ){
+  if( data_.A.Store != NULL ){
     // Cleanup old SuperMatrix A's Store, will be allocated again when
     // new values are retrieved.
     SLU::Destroy_SuperMatrix_Store( &(data_.A) );
+    data_.A.Store = NULL;
 
     // Cleanup old L and U matrices if we are not reusing a symbolic
     // factorization.  Stores and other data will be allocated in
     // gstrf.  Only rank 0 has valid pointers
-    if ( !same_symbolic_ && this->status_.root_ ){
+    if ( !same_symbolic_ && this->root_ ){
       SLU::Destroy_SuperNode_Matrix( &(data_.L) );
       SLU::Destroy_CompCol_Matrix( &(data_.U) );
     }
@@ -217,7 +220,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
       this->timers_.mtxRedistTime_);
   } // end matrix conversion block
 
-  if ( this->status_.root_ ){
+  if ( this->root_ ){
     
 #ifdef HAVE_AMESOS2_DEBUG
     TEST_FOR_EXCEPTION( data_.A.ncol != as<int>(this->globalNumCols_),
@@ -274,9 +277,15 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
     }
     // Cleanup. AC data will be alloc'd again for next factorization (if at all)
     SLU::Destroy_CompCol_Permuted( &(data_.AC) );
+
+    // Set the number of non-zero values in the L and U factors
+    this->setLNNZ(as<size_t>(((SLU::SCformat*)data_.L.Store)->nnz));
+    this->setUNNZ(as<size_t>(((SLU::NCformat*)data_.U.Store)->nnz));
   }
 
-  // Check output
+  /* All processes should have the same error code */
+  Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
+
   global_size_type info_st = as<global_size_type>(info);
   TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
     std::runtime_error,
@@ -288,8 +297,6 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   data_.options.Fact = SLU::FACTORED;
   same_symbolic_ = true;
 
-  /* All processes should return the same error code */
-  Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
   return(info);
 }
 
@@ -349,7 +356,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   int ierr = 0; // returned error code
 
   magnitude_type rpg, rcond;
-  if ( this->status_.root_ ) {
+  if ( this->root_ ) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
@@ -377,6 +384,9 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 #endif
   } // end block for solve time
 
+  /* All processes should have the same error code */
+  Teuchos::broadcast(*(this->matrixA_->getComm()),0,&ierr);
+
   global_size_type ierr_st = as<global_size_type>(ierr);
   TEST_FOR_EXCEPTION( ierr < 0,
 		      std::invalid_argument,
@@ -399,8 +409,6 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
       MultiVecAdapter<Vector> ,slu_type>::do_put(X, xValues(), ldx, Util::Rooted);
   }
 
-  /* All processes should return the same error code */
-  Teuchos::broadcast(*(this->matrixA_->getComm()),0,&ierr);
   return(ierr);
 }
 

@@ -109,10 +109,9 @@ public:
    * \warning Should not be called directly!  Use instead
    * Amesos2::create() to initialize a SuperLU_MT interface.
    */
-  Superlumt(
-    Teuchos::RCP<Matrix> A,
-    Teuchos::RCP<Vector> X,
-    Teuchos::RCP<Vector> B);
+  Superlumt(Teuchos::RCP<const Matrix> A,
+	    Teuchos::RCP<Vector>       X,
+	    Teuchos::RCP<const Vector> B);
 
 
   /// Destructor

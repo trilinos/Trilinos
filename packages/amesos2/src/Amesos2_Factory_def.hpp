@@ -82,7 +82,7 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   RCP<Solver<Matrix,Vector> >
-  create(RCP<Matrix> A, RCP<Vector> X, RCP<Vector> B)
+  create(RCP<const Matrix> A, RCP<Vector> X, RCP<const Vector> B)
   {
     std::string solver = "Klu2";
     return( create(solver, A, X, B) );
@@ -92,7 +92,7 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   Solver<Matrix,Vector>*
-  create(const char* solverName, Matrix* A, Vector* X, Vector* B)
+  create(const char* solverName, const Matrix* A, Vector* X, const Vector* B)
   {
     std::string solver = solverName;
     // Pass non-owning RCP objects to other factory method
@@ -104,7 +104,7 @@ namespace Amesos2 {
 	    class Vector >
   RCP<Solver<Matrix,Vector> >
   create(const char* solverName,
-	 const RCP<Matrix> A, const RCP<Vector> X, const RCP<Vector> B)
+	 const RCP<const Matrix> A, const RCP<Vector> X, const RCP<const Vector> B)
   {
     std::string solver = solverName;
     return( create(solver, A, X, B) );
@@ -114,7 +114,7 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   Solver<Matrix,Vector>*
-  create(const std::string solverName, Matrix* A){
+  create(const std::string solverName, const Matrix* A){
     return( create(solverName, rcp(A,false), RCP<Vector>(), RCP<Vector>()).getRawPtr() );
   }
 
@@ -122,7 +122,7 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   RCP<Solver<Matrix,Vector> >
-  create(const std::string solverName, const RCP<Matrix> A){
+  create(const std::string solverName, const RCP<const Matrix> A){
     return( create(solverName, A, RCP<Vector>(), RCP<Vector>()) );
   }
 
@@ -130,7 +130,7 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   RCP<Solver<Matrix,Vector> >
-  create(const std::string solverName, Matrix* A, Vector* X, Vector* B)
+  create(const std::string solverName, const Matrix* A, Vector* X, const Vector* B)
   {
     // Pass non-owning RCP objects to other factory method
     return( create(solverName, rcp(A,false), rcp(X,false), rcp(B,false)) );
@@ -141,7 +141,7 @@ namespace Amesos2 {
 	    class Vector >
   RCP<Solver<Matrix,Vector> >
   create(const std::string solver_name,
-	 const RCP<Matrix> A, const RCP<Vector> X, const RCP<Vector> B)
+	 const RCP<const Matrix> A, const RCP<Vector> X, const RCP<const Vector> B)
   {
     std::string solverName = tolower(solver_name); // for easy string checking
 
@@ -232,7 +232,8 @@ namespace Amesos2 {
   bool query(const std::string solver_name){
     std::string solverName = tolower(solver_name); // for easier string checking
 #ifdef HAVE_AMESOS2_KLU2
-    if((solverName == "amesos2_klu2") || (solverName == "klu2")){
+    if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
+       (solverName == "amesos2_klu")  || (solverName == "klu")){
       return( true );
     }
 #endif

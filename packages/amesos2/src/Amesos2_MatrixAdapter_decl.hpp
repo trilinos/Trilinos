@@ -317,6 +317,13 @@ namespace Amesos2 {
     return( rcp(new ConcreteMatrixAdapter<Matrix>(m)) );
   }
 
+  template <class Matrix>
+  Teuchos::RCP<const MatrixAdapter<Matrix> >
+  createConstMatrixAdapter(Teuchos::RCP<const Matrix> m){
+    if(m.is_null()) return Teuchos::null;
+    return( rcp(new ConcreteMatrixAdapter<Matrix>(Teuchos::rcp_const_cast<Matrix,const Matrix>(m))).getConst() );
+  }
+
 } // end namespace Amesos2
 
 #endif	// AMESOS2_MATRIXADAPTER_DECL_HPP

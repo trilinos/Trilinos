@@ -77,6 +77,9 @@ namespace Amesos2 {
  * need row permutations and your matrix will fit on a single node,
  * then you may consider using Amesos2's SuperLU_MT interface instead.
  *
+ * SuperLU_DIST does not provide a means to directly get the number of
+ * non-zeros in the L and U factors.
+ *
  * \warning After creation, the size of the matrix should not change
  * (i.e. when using setA())
  *
@@ -124,10 +127,9 @@ public:
    * \warning Should not be called directly!  Use instead
    * Amesos2::create() to initialize a SuperLU_DIST interface.
    */
-  Superludist(
-    Teuchos::RCP<Matrix> A,
-    Teuchos::RCP<Vector> X,
-    Teuchos::RCP<Vector> B);
+  Superludist(Teuchos::RCP<const Matrix> A,
+	      Teuchos::RCP<Vector>       X,
+	      Teuchos::RCP<const Vector> B);
 
 
   /// Destructor

@@ -130,7 +130,7 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   Solver<Matrix,Vector>*
-  create(Matrix* A, Vector* X, Vector* B);
+  create(const Matrix* A, Vector* X, const Vector* B);
 
 
   /**
@@ -150,9 +150,9 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
-  create(Teuchos::RCP<Matrix> A,
-	 Teuchos::RCP<Vector> X,
-	 Teuchos::RCP<Vector> B);
+  create(Teuchos::RCP<const Matrix> A,
+	 Teuchos::RCP<Vector>       X,
+	 Teuchos::RCP<const Vector> B);
 
 
   /**
@@ -175,7 +175,7 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   Solver<Matrix,Vector>*
-  create(const char* solverName, Matrix* A, Vector* X, Vector* B);
+  create(const char* solverName, const Matrix* A, Vector* X, const Vector* B);
 
 
   /**
@@ -198,9 +198,9 @@ namespace Amesos2 {
 	    class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const char* solverName,
-	 const Teuchos::RCP<Matrix> A,
-	 const Teuchos::RCP<Vector> X,
-	 const Teuchos::RCP<Vector> B);
+	 const Teuchos::RCP<const Matrix> A,
+	 const Teuchos::RCP<Vector>       X,
+	 const Teuchos::RCP<const Vector> B);
 
 
   /**
@@ -222,7 +222,7 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   Solver<Matrix,Vector>*
-  create(const std::string solverName, Matrix* A, Vector* X, Vector* B);
+  create(const std::string solverName, const Matrix* A, Vector* X, const Vector* B);
 
 
   /**
@@ -245,9 +245,9 @@ namespace Amesos2 {
 	    class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const std::string solverName,
-	 const Teuchos::RCP<Matrix> A,
-	 const Teuchos::RCP<Vector> X,
-	 const Teuchos::RCP<Vector> B);
+	 const Teuchos::RCP<const Matrix> A,
+	 const Teuchos::RCP<Vector>       X,
+	 const Teuchos::RCP<const Vector> B);
 
   
   /**
@@ -271,7 +271,7 @@ namespace Amesos2 {
   template <class Matrix,
 	    class Vector >
   Solver<Matrix,Vector>*
-  create(const std::string solverName, Matrix* A);
+  create(const std::string solverName, const Matrix* A);
 
 
   /**
@@ -296,7 +296,7 @@ namespace Amesos2 {
 	    class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const std::string solverName,
-	 const Teuchos::RCP<Matrix> A);
+	 const Teuchos::RCP<const Matrix> A);
 
 
   /**

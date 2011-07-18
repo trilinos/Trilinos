@@ -88,9 +88,9 @@ namespace Amesos2 {
 
 template <class Matrix, class Vector>
 Superlumt<Matrix,Vector>::Superlumt(
-  Teuchos::RCP<Matrix> A,
-  Teuchos::RCP<Vector> X,
-  Teuchos::RCP<Vector> B)
+  Teuchos::RCP<const Matrix> A,
+  Teuchos::RCP<Vector>       X,
+  Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::Superlumt,Matrix,Vector>(A, X, B)
   , nzvals_(this->globalNumNonZeros_)
   , rowind_(this->globalNumNonZeros_)
@@ -137,7 +137,7 @@ Superlumt<Matrix,Vector>::~Superlumt( )
     SLUMT::D::Destroy_SuperMatrix_Store( &(data_.A) );
 
 
-    if ( this->status_.root_ ){       // only root allocated these Objects.
+    if ( this->root_ ){       // only root allocated these Objects.
       SLUMT::D::StatFree( &(data_.stat) ) ;
 
       SLUMT::D::Destroy_SuperNode_SCP( &(data_.L) );
@@ -196,12 +196,12 @@ Superlumt<Matrix,Vector>::symbolicFactorization_impl()
   // flag that tells it it needs to symbolically factor later.
   data_.options.refact = SLUMT::NO;
 
-  if( this->numericFactorizationDone() ){
+  if( this->status_.numericFactorizationDone() ){
     // If we've done a numeric factorization already, then we need to
     // cleanup the old L and U. Stores and other data will be
     // allocated during numeric factorization.  Only rank 0 has valid
     // pointers
-    if ( this->status_.root_ ){
+    if ( this->root_ ){
       SLUMT::D::Destroy_SuperNode_Matrix( &(data_.L) );
       SLUMT::D::Destroy_CompCol_Matrix( &(data_.U) );
     }
@@ -213,7 +213,10 @@ Superlumt<Matrix,Vector>::symbolicFactorization_impl()
 
 template <class Matrix, class Vector>
 int
-Superlumt<Matrix,Vector>::numericFactorization_impl(){
+Superlumt<Matrix,Vector>::numericFactorization_impl()
+{
+  using Teuchos::as;
+  
 #ifdef HAVE_AMESOS2_DEBUG
   const int nprocs = data_.options.nprocs;
   TEST_FOR_EXCEPTION( nprocs <= 0,
@@ -242,7 +245,7 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
 				   this->timers_.mtxRedistTime_);
   }
 
-  if ( this->status_.root_ ) {
+  if ( this->root_ ) {
 
     if( data_.options.fact == SLUMT::EQUILIBRATE ){
       magnitude_type rowcnd, colcnd, amax;
@@ -266,7 +269,7 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
     }
 
     // Allocate and initialize status variable
-    const int n = Teuchos::as<int>(this->globalNumCols_); // n is the number of columns in A
+    const int n = as<int>(this->globalNumCols_); // n is the number of columns in A
     SLUMT::D::StatAlloc(n, data_.options.nprocs, data_.options.panel_size, data_.options.relax, &(data_.stat));
     SLUMT::D::StatInit(n, data_.options.nprocs, &(data_.stat));
 
@@ -290,10 +293,14 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
 			  data_.perm_r.getRawPtr(), &(data_.L), &(data_.U),
 			  &(data_.stat), &info);
     }
+
+    // Set the number of non-zero values in the L and U factors
+    this->setLNNZ(as<size_t>(((SLUMT::SCformat*)data_.L.Store)->nnz));
+    this->setUNNZ(as<size_t>(((SLUMT::NCformat*)data_.U.Store)->nnz));
   }
 
   // Check output
-  const global_size_type info_st = Teuchos::as<global_size_type>(info);
+  const global_size_type info_st = as<global_size_type>(info);
   TEST_FOR_EXCEPTION( (info_st > 0) && (info_st <= this->globalNumCols_),
 		      std::runtime_error,
 		      "Factorization complete, but matrix is singular. Division by zero eminent");
@@ -359,7 +366,7 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
   int info = 0; // returned error code (0 = success)
 
   // magnitude_type rpg, rcond;
-  if ( this->status_.root_ ) {
+  if ( this->root_ ) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif

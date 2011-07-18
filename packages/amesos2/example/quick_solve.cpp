@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
   bool printSolution = false;
   bool printTiming   = false;
   bool printResidual = false;
+  bool printLUStats  = false;
   bool verbose       = false;
   std::string solver_name = "SuperLU";
   std::string filedir = "../test/matrices/";
@@ -111,6 +112,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("print-solution","no-print-solution",&printSolution,"Print solution vector after solve.");
   cmdp.setOption("print-timing","no-print-timing",&printTiming,"Print solver timing statistics");
   cmdp.setOption("print-residual","no-print-residual",&printResidual,"Print solution residual");
+  cmdp.setOption("print-lu-stats","no-print-lu-stats",&printLUStats,"Print nnz in L and U factors");
   cmdp.setOption("solver", &solver_name, "Which TPL solver library to use.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
@@ -163,6 +165,14 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
+  solver->numericFactorization();
+
+  if( printLUStats && myRank == 0 ){
+    Amesos2::Status solver_status = solver->getStatus();
+    *fos << "L nnz = " << solver_status.getLNNZ() << std::endl;
+    *fos << "U nnz = " << solver_status.getUNNZ() << std::endl;
+  }
+  
   solver->solve();
 
   if( printSolution ){

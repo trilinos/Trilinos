@@ -112,10 +112,9 @@ public:
    * \warning Should not be called directly!  Use instead
    * Amesos2::create() to initialize a Superlu interface.
    */
-  Superlu(
-    Teuchos::RCP<Matrix> A,
-    Teuchos::RCP<Vector> X,
-    Teuchos::RCP<Vector> B);
+  Superlu(Teuchos::RCP<const Matrix> A,
+	  Teuchos::RCP<Vector>       X,
+	  Teuchos::RCP<const Vector> B);
 
 
   /// Destructor

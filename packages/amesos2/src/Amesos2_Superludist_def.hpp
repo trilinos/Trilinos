@@ -59,9 +59,9 @@ namespace Amesos2 {
 
 
   template <class Matrix, class Vector>
-  Superludist<Matrix,Vector>::Superludist(Teuchos::RCP<Matrix> A,
+  Superludist<Matrix,Vector>::Superludist(Teuchos::RCP<const Matrix> A,
 					  Teuchos::RCP<Vector> X,
-					  Teuchos::RCP<Vector> B)
+					  Teuchos::RCP<const Vector> B)
     : SolverCore<Amesos2::Superludist,Matrix,Vector>(A, X, B)
     , nzvals_()                 // initialization to empty arrays
     , colind_()
@@ -99,7 +99,7 @@ namespace Amesos2 {
     // parallel symbolic factorization.
     data_.symb_comm = MPI_COMM_NULL;
     int color = MPI_UNDEFINED;
-    int my_rank = this->status_.myPID_;
+    int my_rank = this->rank_;
 
     /* domains is the next power of 2 less than nprow*npcol.  This
      * value will be used for creating an MPI communicator for the
@@ -107,7 +107,7 @@ namespace Amesos2 {
      */
     data_.domains = (int) ( pow(2, ((int) (log10((double)nprow*npcol)/log10(2.0)))) );
 
-    if( this->status_.myPID_ < data_.domains ) color = 0;
+    if( this->rank_ < data_.domains ) color = 0;
     MPI_Comm_split (data_.mat_comm, color, my_rank, &(data_.symb_comm));
 
     //////////////////////////////////////////////////////////////////////
@@ -116,7 +116,7 @@ namespace Amesos2 {
     //////////////////////////////////////////////////////////////////////
   
     int my_weight = 0;
-    if( this->status_.myPID_ < nprow * npcol ){
+    if( this->rank_ < nprow * npcol ){
       in_grid_ = true; my_weight = 1; // I am in the grid, and I get some of the matrix rows
     }
     // TODO: might only need to initialize if parallel symbolic factorization is requested.

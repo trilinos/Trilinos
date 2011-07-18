@@ -59,16 +59,18 @@ namespace Amesos2 {
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 SolverCore<ConcreteSolver,Matrix,Vector>::SolverCore(
-  Teuchos::RCP<Matrix> A,
-  Teuchos::RCP<Vector> X,
-  Teuchos::RCP<Vector> B )
-  : matrixA_(createMatrixAdapter<Matrix>(A))
+  Teuchos::RCP<const Matrix> A,
+  Teuchos::RCP<Vector>       X,
+  Teuchos::RCP<const Vector> B )
+  : matrixA_(createConstMatrixAdapter<Matrix>(A))
   , multiVecX_(X) // may be null
   , multiVecB_(B) // may be null
   , globalNumRows_(matrixA_->getGlobalNumRows())
   , globalNumCols_(matrixA_->getGlobalNumCols())
   , globalNumNonZeros_(matrixA_->getGlobalNNZ())
-  , status_(matrixA_->getComm())
+  , rank_(Teuchos::rank(*this->getComm()))
+  , root_(rank_ == 0)
+  , nprocs_(Teuchos::size(*this->getComm()))
 {
     TEST_FOR_EXCEPTION(
     !matrixShapeOK(),
@@ -103,9 +105,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::preOrdering()
 
   static_cast<solver_type*>(this)->preOrdering_impl();
   ++status_.numPreOrder_;
-  status_.preOrderingDone_ = true;
-  status_.symbolicFactorizationDone_ = false;
-  status_.numericFactorizationDone_  = false;
+  status_.last_phase_ = PREORDERING;
 
   return *this;
 }
@@ -119,14 +119,13 @@ SolverCore<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 #endif
 
-  if( !preOrderingDone() ){
+  if( !status_.preOrderingDone() ){
     preOrdering();
   }
 
   static_cast<solver_type*>(this)->symbolicFactorization_impl();
   ++status_.numSymbolicFact_;
-  status_.symbolicFactorizationDone_ = true;
-  status_.numericFactorizationDone_  = false;
+  status_.last_phase_ = SYMBFACT;
 
   return *this;
 }
@@ -140,13 +139,13 @@ SolverCore<ConcreteSolver,Matrix,Vector>::numericFactorization()
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 #endif
 
-  if( !symbolicFactorizationDone() ){
+  if( !status_.symbolicFactorizationDone() ){
     symbolicFactorization();
   }
 
   static_cast<solver_type*>(this)->numericFactorization_impl();
   ++status_.numNumericFact_;
-  status_.numericFactorizationDone_ = true;
+  status_.last_phase_ = NUMFACT;
 
   return *this;
 }
@@ -193,7 +192,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
                      "X and B MultiVectors must have the same number of vectors");
 #endif  // HAVE_AMESOS2_DEBUG
   
-  if( !numericFactorizationDone() ){
+  if( !status_.numericFactorizationDone() ){
     // This casting-away of constness is probably OK because this
     // function is meant to be "logically const"
     const_cast<type*>(this)->numericFactorization();
@@ -201,6 +200,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
   
   static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), Teuchos::ptrInArg(*b));
   ++status_.numSolve_;
+  status_.last_phase_ = SOLVE;
 }
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
@@ -226,9 +226,9 @@ SolverCore<ConcreteSolver,Matrix,Vector>::matrixShapeOK()
   // const types
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 void
-SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<Matrix> a )
+SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<const Matrix> a )
 {
-  matrixA_ = createMatrixAdapter(a);
+  matrixA_ = createConstMatrixAdapter(a);
   if( !matrixA_.is_null() ){
     // The user passed a non-null rcp, reset state
     //
@@ -237,9 +237,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<Matrix> a )
     // for assuring that no dependencies linger between one matrix
     // and another.
     
-    status_.preOrderingDone_ = false;
-    status_.symbolicFactorizationDone_ = false;
-    status_.numericFactorizationDone_  = false;
+    status_.last_phase_ = CLEAN;
 
     globalNumNonZeros_ = matrixA_->getGlobalNNZ();
     globalNumCols_     = matrixA_->getGlobalNumCols();
@@ -260,7 +258,6 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
   if( parameterList->name() == "Amesos2" ){
     // Do everything here that is for generic status and control parameters
     control_.setControlParameters(parameterList);
-    status_.setStatusParameters(parameterList);
     
     // Finally, hook to the implementation's parameter list parser
     // First check if there is a dedicated sublist for this solver and use that if there is
@@ -295,18 +292,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::getValidParameters() const
   control_params->set("MatrixProperty","general");
   control_params->set("ScaleMethod",0);
 
-  Teuchos::RCP<ParameterList> status_params = rcp(new ParameterList("Amesos2 Status"));
-  status_params->set("PrintTiming",false);
-  status_params->set("PrintStatus",false);
-  status_params->set("ComputeVectorNorms",false);
-  status_params->set("ComputeTrueResidual",false);
-
   RCP<const ParameterList>
     solver_params = static_cast<const solver_type*>(this)->getValidParameters_impl();
 
   RCP<ParameterList> amesos2_params = rcp(new ParameterList("Amesos2"));
   amesos2_params->setParameters(*control_params);
-  amesos2_params->setParameters(*status_params);
   amesos2_params->set(name(), *solver_params);
 
   return amesos2_params;
@@ -329,7 +319,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::describe(
   Teuchos::FancyOStream &out,
   const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
 {
-  if( matrixA_.is_null() || (status_.myPID_ != 0) ){ return; }
+  if( matrixA_.is_null() || (rank_ != 0) ){ return; }
   using std::endl;
   using std::setw;
   using Teuchos::VERB_DEFAULT;
@@ -388,7 +378,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
   Teuchos::FancyOStream &out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  if( matrixA_.is_null() || (status_.myPID_ != 0) ){ return; }
+  if( matrixA_.is_null() || (rank_ != 0) ){ return; }
 
   double preTime  = timers_.preOrderTime_.totalElapsedTime();
   double symTime  = timers_.symFactTime_.totalElapsedTime();
