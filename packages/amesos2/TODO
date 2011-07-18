@@ -37,7 +37,7 @@ General TODO
 
  - Update the NewSolver and NewAdapter templates in examples/ 
 
- - Change namespace to "Amesos2"
+ - Change namespace to "Amesos2" (DONE)
 
  - setParameters should use the default parameter interface provided
    by ParameterList.  This should make the effect of multiple
@@ -67,8 +67,8 @@ General TODO
    but instead of resetting everything, should set the solver state
    such that it is the same as if a symbolic factorization had just
    been performed.  The default value for the second parameter would
-   be something like "FRESH" or "NONE" to indicate that no computation
-   has been performed.
+   be something like "FRESH", "CLEAN", or "NONE" to indicate that no
+   computation has been performed.
 
  - Provide an Amesos2 "Status" object to users through a
    solver->getStatus() method.  The status should hold things such as

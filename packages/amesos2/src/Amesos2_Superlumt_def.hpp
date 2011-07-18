@@ -165,7 +165,9 @@ Superlumt<Matrix,Vector>::preOrdering_impl()
   if( perm_spec != SLUMT::MY_PERMC ){
     // In order to calculate a pre-order, we must first have a matrix!
     {                           // start matrix conversion block
+#ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
 
       matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
 				     nzvals_(), rowind_(), colptr_(),
@@ -230,7 +232,9 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
 
   // Get values from matrix in temporary storage
   {
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
 
     matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
 				   nzvals_(), rowind_(), colptr_(),
@@ -271,7 +275,9 @@ Superlumt<Matrix,Vector>::numericFactorization_impl(){
 			  &(data_.options), &(data_.AC));
 
     { // Do factorization
+#ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+#endif
 
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "SuperLU_MT:: Before numeric factorization" << std::endl;
@@ -328,7 +334,9 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
   }
 
   {                 // Convert: Get a SuperMatrix for the B multi-vectors
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
+#endif
 
     matrix_helper::createMVDenseMatrix(
       B, bxvals_(), ldbx_,
@@ -352,7 +360,9 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
 
   // magnitude_type rpg, rcond;
   if ( this->status_.root_ ) {
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+#endif
 
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
     std::cout << "SuperLU_MT:: Before solve" << std::endl;
@@ -392,7 +402,9 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
 
   /* Update X's global values */
   {
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
 
     Util::put_1d_data_helper<
       MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, Util::Rooted);

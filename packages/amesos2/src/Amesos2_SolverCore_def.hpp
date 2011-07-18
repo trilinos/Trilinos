@@ -97,7 +97,10 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 Solver<Matrix,Vector>&
 SolverCore<ConcreteSolver,Matrix,Vector>::preOrdering()
 {
+#ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+#endif
+
   static_cast<solver_type*>(this)->preOrdering_impl();
   ++status_.numPreOrder_;
   status_.preOrderingDone_ = true;
@@ -112,7 +115,9 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 Solver<Matrix,Vector>&
 SolverCore<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
 {
+#ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+#endif
 
   if( !preOrderingDone() ){
     preOrdering();
@@ -131,7 +136,9 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 Solver<Matrix,Vector>&
 SolverCore<ConcreteSolver,Matrix,Vector>::numericFactorization()
 {
+#ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+#endif
 
   if( !symbolicFactorizationDone() ){
     symbolicFactorization();
@@ -183,8 +190,10 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::RCP<Vector> X,
                      "X and B MultiVectors must have the same number of vectors");
 #endif  // HAVE_AMESOS2_DEBUG
   
+#ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
-  
+#endif
+
   if( !numericFactorizationDone() ){
     // This casting-away of constness is probably OK because this
     // function is meant to be "logically const"
@@ -200,7 +209,10 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 bool
 SolverCore<ConcreteSolver,Matrix,Vector>::matrixShapeOK()
 {
+#ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+#endif
+
   return( static_cast<solver_type*>(this)->matrixShapeOK_impl() );
 }
 
@@ -236,7 +248,9 @@ Solver<Matrix,Vector>&
 SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
   const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
 {
+#ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+#endif
 
   if( parameterList->name() == "Amesos2" ){
     // Do everything here that is for generic status and control parameters
@@ -261,7 +275,9 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 Teuchos::RCP<const Teuchos::ParameterList>
 SolverCore<ConcreteSolver,Matrix,Vector>::getValidParameters() const
 {
+#ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor LocalTimer1( timers_.totalTime_ );
+#endif
 
   using Teuchos::ParameterList;
   using Teuchos::RCP;

@@ -86,13 +86,6 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  // Before we do anything, check that SuperLU is enabled
-  if( !Amesos2::query("SuperLU_DIST") ){
-    std::cerr << "SuperLU_DIST not enabled.  Exiting..." << std::endl;
-    return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
-				// failure, which it isn't really
-  }
-
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
   Teuchos::RCP<Node>             node = platform.getNode();
@@ -122,6 +115,14 @@ int main(int argc, char *argv[]) {
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
+
+  // Before we do anything, check that the solver is enabled
+  if( !Amesos2::query(solver_name) ){
+    std::cerr << "SuperLU_DIST not enabled.  Exiting..." << std::endl;
+    return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
+				// failure, which it isn't really
+  }
+
   const size_t numVectors = 1;
 
   // create a Map

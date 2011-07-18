@@ -124,7 +124,9 @@ Superlu<Matrix,Vector>::preOrdering_impl()
 {
   // We need a matrix before we can pre-order it
   {
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
     
     matrix_helper::createCCSMatrix(
       this->matrixA_.ptr(),
@@ -143,7 +145,9 @@ Superlu<Matrix,Vector>::preOrdering_impl()
    */
   int permc_spec = data_.options.ColPerm;
   if ( permc_spec != SLU::MY_PERMC ){
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
+#endif
     
     SLU::get_perm_c(permc_spec, &(data_.A), data_.perm_c.getRawPtr());
   }
@@ -202,7 +206,9 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   if( same_symbolic_ ) data_.options.Fact = SLU::SamePattern_SameRowPerm;
   
   {                           // start matrix conversion block
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
     
     matrix_helper::createCCSMatrix(
       this->matrixA_.ptr(),
@@ -250,7 +256,9 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 		     data_.etree.getRawPtr(), &(data_.AC));
     
     { // Do factorization
+#ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+#endif
       
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
       std::cout << "Superlu:: Before numeric factorization" << std::endl;
@@ -315,7 +323,9 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   }
 
   {                 // Convert: Get a SuperMatrix for the B and X multi-vectors
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
+#endif
 
     matrix_helper::createMVDenseMatrix(
       X,
@@ -340,7 +350,9 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 
   magnitude_type rpg, rcond;
   if ( this->status_.root_ ) {
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+#endif
 
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
     std::cout << "Superlu:: Before solve" << std::endl;
@@ -379,7 +391,9 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 
   /* Update X's global values */
   {
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
 
     Util::put_1d_data_helper<
       MultiVecAdapter<Vector> ,slu_type>::do_put(X, xValues(), ldx, Util::Rooted);

@@ -128,7 +128,9 @@ namespace Amesos2 {
       // Actually uses the compressed-row-store format, and tells Superlu this
       // while creating a compressed-column store.
       {
+#ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor mtxRedistTimer( mtxRedistTime );
+#endif
 
 	Util::get_ccs_helper<Matrix,slu_type,int,int>::do_get(mat, nzval, rowind,
 							      colptr, nnz_ret,
@@ -180,10 +182,12 @@ namespace Amesos2 {
       ldx  = Teuchos::as<size_t>(rows);
 
       {
+#ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor redistTimer( vecRedistTime );
+#endif
 
 	Util::get_1d_copy_helper<MV,slu_type>::do_get(mv, vals, ldx, Util::Rooted);
-    }
+      }
 
       FunctionMap<Superlu,scalar_type>::create_Dense_Matrix(
         X.getRawPtr(), rows, cols, vals.getRawPtr(), Teuchos::as<int>(ldx),

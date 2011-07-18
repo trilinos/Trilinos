@@ -125,7 +125,9 @@ namespace Amesos2 {
 
       // Use compressed-column store for SuperLU_MT
       {
+#ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor mtxRedistTimer( mtxRedistTime );
+#endif
 
 	Util::get_ccs_helper<Matrix,slu_type,int,int>::do_get(mat,
 							      nzval, rowind, colptr,
@@ -180,7 +182,9 @@ namespace Amesos2 {
       ldx  = Teuchos::as<size_t>(rows);
 
       {
+#ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor redistTimer( vecRedistTime );
+#endif
 
 	Util::get_1d_copy_helper<MV,slu_type>::do_get(mv, vals, ldx, Util::Rooted);
       }
