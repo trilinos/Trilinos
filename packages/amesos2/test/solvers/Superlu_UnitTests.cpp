@@ -60,7 +60,7 @@
 #include <MatrixMarket_Tpetra.hpp> // for loading matrices from file
 
 #include "Amesos2.hpp"
-#include "Amesos2_Util_is_same.hpp"
+#include "Amesos2_Meta.hpp"
 // #include "Amesos2_MatrixAdapter.hpp"
 // #include "Amesos2_MultiVecAdapter.hpp"
 
@@ -103,7 +103,7 @@ namespace {
   // using Amesos2::MultiVecAdapter;
   using Amesos2::Superlu;
 
-  using Amesos2::Util::is_same;
+  using Amesos2::Meta::is_same;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
   typedef Platform::NodeType Node;

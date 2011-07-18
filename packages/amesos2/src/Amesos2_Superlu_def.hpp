@@ -406,7 +406,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
 #endif
 
     Util::put_1d_data_helper<
-      MultiVecAdapter<Vector> ,slu_type>::do_put(X, xValues(), ldx, Util::Rooted);
+      MultiVecAdapter<Vector> ,slu_type>::do_put(X, xValues(), ldx, ROOTED);
   }
 
   return(ierr);

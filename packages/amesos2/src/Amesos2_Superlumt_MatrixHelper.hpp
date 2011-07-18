@@ -49,7 +49,7 @@
 #include "Amesos2_MatrixHelper.hpp"
 #include "Amesos2_Superlumt_FunctionMap.hpp"
 #include "Amesos2_Util.hpp"	// for get_ccs_helper and get_1d_copy_helper classes
-#include "Amesos2_Util_is_same.hpp"
+#include "Amesos2_Meta.hpp"
 
 namespace SLUMT {
   extern "C" {

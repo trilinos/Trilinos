@@ -80,9 +80,11 @@ namespace {
 
   using Amesos2::MatrixAdapter;
 
+  using Amesos2::Meta::is_same;
+
   using Amesos2::ROOTED;
   using Amesos2::GLOBALLY_REPLICATED;
-  using Amesos2::Util::is_same;
+
   using Amesos2::Util::to_teuchos_comm;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;

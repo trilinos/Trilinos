@@ -29,6 +29,10 @@ namespace Amesos2 {
    * implementation for either the \c getCrs or \c getCcs functions.
    */
   struct has_special_impl {};
+
+  /** \brief Indicates that the concrete class can use the generic
+   *  getC{c|r}s methods implemented in MatrixAdapter.
+   */
   struct no_special_impl {};
 
   /// Indicates that the object of an adapter provides row access to its data.

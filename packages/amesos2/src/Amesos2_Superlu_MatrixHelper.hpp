@@ -49,7 +49,7 @@
 #include "Amesos2_MatrixHelper.hpp"
 #include "Amesos2_Superlu_FunctionMap.hpp"
 #include "Amesos2_Util.hpp"
-#include "Amesos2_Util_is_same.hpp"
+#include "Amesos2_Meta.hpp"
 
 namespace SLU {
   extern "C" {

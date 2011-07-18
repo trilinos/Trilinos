@@ -72,7 +72,7 @@
 #include <Tpetra_Map.hpp>
 
 #include "Amesos2_TypeDecl.hpp"
-#include "Amesos2_Util_is_same.hpp"
+#include "Amesos2_Meta.hpp"
 
 namespace Amesos2 {
 
@@ -84,6 +84,9 @@ namespace Amesos2 {
 
     using Teuchos::RCP;
     using Teuchos::ArrayView;
+
+    using Meta::is_same;
+    using Meta::if_then_else;
 
     /**
      * \brief Gets a Tpetra::Map described by the EDistribution.

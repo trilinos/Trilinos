@@ -68,7 +68,7 @@
 #include <MatrixMarket_Tpetra.hpp> // for loading matrices from file
 
 #include "Amesos2.hpp"
-#include "Amesos2_Util_is_same.hpp"
+#include "Amesos2_Meta.hpp"
 
 #define DEBUG
 
@@ -94,7 +94,7 @@ namespace {
   using Tpetra::MultiVector;
   using Tpetra::Map;
 
-  using Amesos2::Util::is_same;
+  using Amesos2::Meta::is_same;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
   typedef Platform::NodeType Node;

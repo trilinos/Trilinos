@@ -52,7 +52,7 @@
 
 #include "Amesos2_EpetraMultiVecAdapter.hpp"
 #include "Amesos2_Util.hpp"
-#include "Amesos2_Util_is_same.hpp"
+#include "Amesos2_Meta.hpp"
 
 namespace {
 
@@ -79,9 +79,10 @@ namespace {
   using Amesos2::MultiVecAdapter;
   using Amesos2::createMultiVecAdapter;
 
+  using Amesos2::Meta::is_same;
+
   using Amesos2::Util::getDistributionMap;
   using Amesos2::Util::to_teuchos_comm;
-  using Amesos2::Util::is_same;
   using Amesos2::Util::get_1d_copy_helper;
   using Amesos2::Util::put_1d_data_helper;
 

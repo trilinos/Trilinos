@@ -100,6 +100,7 @@ APPEND_SET(HEADERS
   Amesos2_AbstractConcreteMatrixAdapter.hpp
   Amesos2_ConcreteMatrixAdapter.hpp
   Amesos2_MatrixHelper.hpp
+  Amesos2_Meta.hpp
   Amesos2_MultiVecAdapter.hpp
   Amesos2_MultiVecAdapter_decl.hpp
   Amesos2_Solver.hpp

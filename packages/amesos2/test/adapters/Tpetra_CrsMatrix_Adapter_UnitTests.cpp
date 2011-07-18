@@ -57,7 +57,7 @@
 #include <Tpetra_Map.hpp>
 
 #include "Amesos2_MatrixAdapter.hpp"
-#include "Amesos2_Util_is_same.hpp"
+#include "Amesos2_Meta.hpp"
 
 namespace {
 
@@ -86,7 +86,8 @@ namespace {
 
   using Amesos2::MatrixAdapter;
 
-  using Amesos2::Util::is_same;
+  using Amesos2::Meta::is_same;
+  
   using Amesos2::ROOTED;
   using Amesos2::GLOBALLY_REPLICATED;
 
