@@ -541,7 +541,7 @@
   </Package>
   <Package name="Anasazi" dir="anasazi">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra,Epetra,Thyra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra,Epetra,ThyraCore,ThyraEpetraAdapters"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Ifpack,Amesos,AztecOO,Belos"/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -708,7 +708,7 @@
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,ThyraCore"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="EpetraExt,ThyraEpetraExtAdapters,Sacado,Stratimikos,NOX"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="EpetraExt,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Sacado,Stratimikos,NOX"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="GaaspTpl,Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -765,7 +765,7 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Piro" dir="piro">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Thyra,Epetra,EpetraExt"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,ThyraCore,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Epetra,EpetraExt"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="NOX,Rythmos,MOOCHO,Stokhos,OptiPack,TriKota"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>

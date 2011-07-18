@@ -1,6 +1,6 @@
 INCLUDE(PackageAddExecutableAndTest)
 
-IF(Anasazi_ENABLE_Epetra)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     IRTRThyra_test

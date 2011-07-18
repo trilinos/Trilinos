@@ -320,11 +320,10 @@
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
-    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="LO"/>
     <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Thyra" type="LO"/>
     <Dependency name="AztecOO" type="TO"/>
     <Dependency name="Amesos" type="TO"/>
     <Dependency name="Ifpack" type="TO"/>
@@ -367,7 +366,6 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Anasazi" type="LO"/>
     <EmailAddresses>
       <Email address="rbgen-regression@software.sandia.gov"/>
@@ -465,7 +463,6 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="TO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -512,7 +509,6 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -543,7 +539,6 @@
     <Dependency name="Triutils" type="ITO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="ITO"/>
     <Dependency name="Galeri" type="ITO"/>
@@ -643,7 +638,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
-    <Dependency name="Thyra" type="LR"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="OptiPack" type="LO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
@@ -736,7 +731,6 @@
     <Dependency name="Triutils" type="LO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="Pliris" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
@@ -763,7 +757,6 @@
     <Dependency name="Triutils" type="ILR"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
-    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="Pliris" type="ILO"/>
     <Dependency name="AztecOO" type="LR"/>
@@ -791,7 +784,6 @@
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="TO"/>
     <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="TO"/>
     <Dependency name="Galeri" type="TO"/>
