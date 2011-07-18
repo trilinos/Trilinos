@@ -233,6 +233,56 @@ namespace Teuchos {
 	}
     }
 
+
+    void
+    broadcastStringsHelper (const Comm<int>& comm,
+			    const int myRank,
+			    const int left,
+			    const int right,
+			    Array<std::string>& globalNames)
+    {
+      // If left >= right, there is only one process, so we don't need
+      // to do anything.
+      //
+      // If left < right, then split the inclusive interval [left,
+      // right] into [left, mid-1] and [mid, right].  Send from left
+      // to mid, and recurse on the two subintervals.
+      if (left >= right)
+	return;
+      else
+	{
+	  const int mid = left + (right - left + 1) / 2;
+
+	  // This could be optimized further on the sending rank, by
+	  // prepacking the strings so that they don't have to be
+	  // packed more than once.
+	  if (myRank == left)
+	    sendStrings (comm, globalNames, mid);
+	  else if (myRank == mid)
+	    receiveStrings (comm, left, globalNames);
+
+	  // Recurse on [left, mid-1] or [mid, right], depending on myRank.
+	  if (myRank >= left && myRank <= mid-1)
+	    broadcastStringsHelper (comm, myRank, left, mid-1, globalNames);
+	  else if (myRank >= mid && myRank <= right)
+	    broadcastStringsHelper (comm, myRank, mid, right, globalNames);
+	  else
+	    return; // Don't recurse if not participating.
+	}
+    }
+
+
+    void
+    broadcastStrings (const Comm<int>& comm,
+		      Array<std::string>& globalNames)
+    {
+      const int myRank = comm.getRank();
+      const int left = 0;
+      const int right = comm.getSize() - 1;
+
+      broadcastStringsHelper (comm, myRank, left, right, globalNames);
+    }
+
     // \brief Helper function for \c mergeCounterNamesHelper().
     //
     // The \c mergeCounterNamesHelper() function implements (using a
@@ -346,12 +396,12 @@ namespace Teuchos {
     // via recursion.  We don't need an all-reduce in this case.)
     void
     mergeCounterNamesHelper (const Comm<int>& comm, 
-			 const int myRank,
-			 const int left,
-			 const int right, // inclusive range [left, right]
-			 const Array<std::string>& localNames,
-			 Array<std::string>& globalNames,
-			 const ECounterSetOp setOp)
+			     const int myRank,
+			     const int left,
+			     const int right, // inclusive range [left, right]
+			     const Array<std::string>& localNames,
+			     Array<std::string>& globalNames,
+			     const ECounterSetOp setOp)
     {
       // Correctness proof:
       //
@@ -423,6 +473,11 @@ namespace Teuchos {
     Array<std::string> theGlobalNames;
     mergeCounterNamesHelper (comm, myRank, left, right, 
 			     localNames, theGlobalNames, setOp);
+
+    // Proc 0 has the list of counter names.  Now broadcast it back to
+    // all the procs.
+    broadcastStrings (comm, theGlobalNames);
+
     // "Transactional" semantics ensure strong exception safety for
     // output.
     globalNames.swap (theGlobalNames);

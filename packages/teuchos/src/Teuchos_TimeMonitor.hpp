@@ -192,16 +192,18 @@ public:
   /// options: if setOp is Intersection, it computes the intersection
   /// (the common subset) of timers on all MPI processes, otherwise if
   /// setOp is Union, it computes the union of timers on all MPI
-  /// processes.
+  /// processes.  Intersection is the default, since it expresses a
+  /// common case of timing global solvers.
   ///
   /// Suppose there are \f$P\f$ MPI processes, \f$N\f$ unique timers
   /// in the global union, and \f$n\f$ unique timers in the global
-  /// intersection.  This method requires \f$O(\log P)\f$ messages (a
-  /// single "reduction") and \f$O(N)\f$ per-processor storage (in the
-  /// worst case) when computing either the intersection or the union
-  /// of timers (the algorithm is similar in either case).  The whole
-  /// algorithm takes at worst \f$O(N (\log N) (\log P))\f$ time along
-  /// the critical path (i.e., on the "slowest MPI process").
+  /// intersection.  This method requires \f$O(\log P)\f$ messages
+  /// (\f$O(1)\f$ "reductions" and exactly 1 "broadcast") and
+  /// \f$O(N)\f$ per-processor storage (in the worst case) when
+  /// computing either the intersection or the union of timers (the
+  /// algorithm is similar in either case).  The whole algorithm takes
+  /// at worst \f$O(N (\log N) (\log P))\f$ time along the critical
+  /// path (i.e., on the "slowest MPI process").
   ///
   /// \param out [out] Output stream to which to write.  This will
   ///   only be used on MPI Rank 0.
@@ -226,10 +228,10 @@ public:
   ///   timers that have never been called (numCalls() == 0).  If
   ///   true, display results for all timers.
   ///
-  /// \param setOp [in] If Intersection (the default), compute and
-  ///   display the intersection of all created timers over all
-  ///   processors.  If Union, compute and display the union of all
-  ///   created timers over all processors.
+  /// \param setOp [in] If Intersection, compute and display the
+  ///   intersection of all created timers over all processors.  If
+  ///   Union, compute and display the union of all created timers
+  ///   over all processors.
   ///
   /// \note If writeGlobalStats is true, this method <i>must</i> be
   ///   called by all processors.  This method will <i>only</i>

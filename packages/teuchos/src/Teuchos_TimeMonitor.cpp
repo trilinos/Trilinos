@@ -94,16 +94,21 @@ namespace Teuchos {
   // An anonymous namespace is the standard way of limiting linkage of
   // its contained routines to file scope.
   namespace {
-
+    // \brief Return an "empty" local timer datum.
+    // 
+    // "Empty" means the datum has zero elapsed time and zero call
+    // count.  This function does not actually create a timer.
+    //
+    // \param name The timer's name.
     std::pair<std::string, std::pair<double, int> >
     makeEmptyTimerDatum (const std::string& name)
     {
       return std::make_pair (name, std::make_pair (double(0), int(0)));
     }
 
-    //
     // \brief Locally filter out timer data with zero call counts.
     //
+    // \param timerData [in/out]
     void
     filterZeroData (timer_map_t& timerData)
     {
@@ -201,14 +206,12 @@ namespace Teuchos {
 	     << ")" << endl;
       }
 
-    // Only MPI Rank 0 prints local timer stats, if asked always to
-    // print local data.
-    bool writeLocalStats = alwaysWriteLocal && myRank == 0;
-
     // Collect and sort local timer data by timer names.
     timer_map_t localTimerData;
     collectLocalTimerData (localTimerData, counters());
 
+    // In debug mode, print out local timer data on each process,
+    // before possibly filtering out data with zero call counts.
     if (debug)
       {
 	for (int p = 0; p < numProcs; ++p)
@@ -228,12 +231,41 @@ namespace Teuchos {
 	  }
       }
 
+    // Filter out zero data locally first.  This ensures that if we
+    // are writing global stats, and if a timer name exists in the set
+    // of global names, then that timer has a nonzero call count on at
+    // least one MPI process.
+    if (! writeZeroTimers)
+      {
+	filterZeroData (localTimerData);
+
+	// In debug mode, print out local timer data on each process,
+	// after possibly filtering out data with zero call counts.
+	if (debug)
+	  {
+	    for (int p = 0; p < numProcs; ++p)
+	      {
+		if (myRank == p)
+		  {
+		    cerr << "Proc " << myRank << ": Local timer data, "
+		      "after filtering zero call counts:" << endl;
+		    for (timer_map_t::const_iterator it = localTimerData.begin(); 
+			 it != localTimerData.end(); ++it)
+		      cerr << "-- " << it->first << ", " << it->second.first 
+			   << ", " << it->second.second << endl;
+		  }
+		// Two barriers generally synchronize output, at least
+		// when debugging with multiple MPI processes on one node.
+		barrier (*pComm);
+		barrier (*pComm);
+	      }
+	  }
+      }
+
     // Extract the set of local timer names.  The std::map keeps them
     // sorted alphabetically.
     Array<string> localTimerNames;
-    // std::transform (localTimerData.begin(), localTimerData.end(), 
-    // 		    std::back_inserter (localTimerNames), 
-    // 		    std::mem_fun (&timer_map_t::value_type::first));
+    localTimerNames.reserve (localTimerData.size());
     for (timer_map_t::const_iterator it = localTimerData.begin(); 
      	 it != localTimerData.end(); ++it)
       localTimerNames.push_back (it->first);
@@ -259,25 +291,65 @@ namespace Teuchos {
     Array<string> globalTimerNames;
     timer_map_t globalTimerData;
 
-    // If setOp == Union, there may be some global timers that are not
-    // local timers.  In that case, if we want to print local timers,
-    // we forbid filtering out zero data, for reasons discussed below.
-    bool foundGlobalNotLocal = false;
+    // If writeGlobalStats is true (i.e., if we are computing global
+    // stats), there may be some global timers that are not local
+    // timers on the calling MPI process(es).  In that case, if
+    // alwaysWriteLocal is true, then we need to fill in the "missing"
+    // local timers.  That will ensure that both global and local
+    // timer columns in the output table have the same number of rows.
+    // If writeZeroTimers==false, we already filtered out local timers
+    // with zero call counts above.  Thus, any inserted local timer
+    // data won't get filtered out again.
+    //
+    // Inserting new local data with zero call counts will result in
+    // local timers with zero call counts, which violates the
+    // expectation of writeZeroTimers == false for the local call
+    // counts.  However, writeZeroTimers == false will still do what
+    // it says for the global call counts.
     if (writeGlobalStats)
-      { // This does the correct and inexpensive thing (just copies
-	// the timer data) if numProcs == 1.
+      { 
+	// This does the correct and inexpensive thing (just copies
+	// the timer data) if numProcs == 1.  Otherwise, it initiates
+	// a communication with \f$O(\log P)\f$ messages along the
+	// critical path.
 	mergeCounterNames (*pComm, localTimerNames, globalTimerNames, setOp);
+
+	if (debug)
+	  {
+	    // Sanity check that all MPI procs have the name number of
+	    // global timer names.
+	    const timer_map_t::size_type myNumGlobalNames = globalTimerNames.size();
+	    timer_map_t::size_type minNumGlobalNames = 0;
+	    timer_map_t::size_type maxNumGlobalNames = 0;
+	    reduceAll (*pComm, REDUCE_MIN, myNumGlobalNames, 
+		       outArg (minNumGlobalNames));
+	    reduceAll (*pComm, REDUCE_MAX, myNumGlobalNames, 
+		       outArg (maxNumGlobalNames));
+	    TEST_FOR_EXCEPTION(minNumGlobalNames != maxNumGlobalNames,
+			       std::logic_error,
+			       "Min # global timer names = " << minNumGlobalNames 
+			       << " != max # global timer names = " << maxNumGlobalNames
+			       << ".  Please report this bug to the Teuchos developers.");
+	    TEST_FOR_EXCEPTION(myNumGlobalNames != minNumGlobalNames,
+			       std::logic_error,
+			       "My # global timer names = " << myNumGlobalNames 
+			       << " != min # global timer names = " << minNumGlobalNames
+			       << ".  Please report this bug to the Teuchos developers.");
+	  }
 
 	// mergeTimers() just merges timer names, not their actual
 	// data.  Now we need to fill globalTimerData with this MPI
 	// process' timer data for those timers in globalTimerNames.
-	// If setOp == Union, there may be some global timers that are
-	// not local timers.  In that case, if we want to print local
-	// timers, we insert a local timer datum with zero elapsed
-	// time and zero call count, and forbid filtering out zero
-	// data.  Inserting the local timer datum makes sure that both
-	// global and local timer columns in the output table have the
-	// same number of rows.
+	//
+	// All processes need the full list of global timers, since
+	// there may be some global timers that are not local timers.
+	// That's why mergeCounterNames() has to be an all-reduce, not
+	// just a reduction to Proc 0.
+	//
+	// If there are some global timers that are not local timers,
+	// and if we want to print local timers, we insert a local
+	// timer datum with zero elapsed time and zero call count into
+	// localTimerData as well, for the reason mentioned above.
 	//
 	// Insertion optimization; if the iterator given to
 	// map::insert points right before where we want to insert,
@@ -292,64 +364,77 @@ namespace Teuchos {
 	  {
 	    const std::string& globalName = *it;
 	    localMapIter = localTimerData.find (globalName);
+
 	    if (localMapIter == localTimerData.end())
 	      {
-		foundGlobalNotLocal = true;
-
-		// We really only need to do the following on MPI Rank
-		// 0, which is the only process that will print local
-		// or global output.  However, we do it on all MPI
-		// processes just in case someone later wants to
-		// modify this function to print out local timer data
-		// for some other MPI process other than Rank 0.
 		if (alwaysWriteLocal)
-		  localMapIter = localTimerData.insert (localMapIter, makeEmptyTimerDatum (globalName));
+		  {
+		    // We really only need to do this on MPI Proc 0, which is
+		    // the only process that currently may print local timers.
+		    // However, we do it on all MPI processes, just in case
+		    // someone later wants to modify this function to print
+		    // out local timer data for some MPI process other than
+		    // Rank 0.  This extra computation won't affect the cost
+		    // along the critical path, for future computations in
+		    // which Proc 0 participates.
+		    localMapIter = 
+		      localTimerData.insert (localMapIter, 
+					     makeEmptyTimerDatum (globalName));
+
+		    // Make sure the missing global name gets added to
+		    // the list of local names.  We'll resort it below.
+		    localTimerNames.push_back (globalName);
+		  }
+		globalMapIter = 
+		  globalTimerData.insert (globalMapIter, 
+					  makeEmptyTimerDatum (globalName));
 	      }
-	    else 
-	      // We know that globalTimerNames is unique, so we don't
-	      // have to worry about inserting an element whose key
-	      // already exists in the global timer data map.
-	      globalTimerData.insert (globalMapIter, make_pair (globalName, localMapIter->second));
-	
-	    // Don't filter out zero data if we had to insert a local
-	    // timer datum corresponding to a global timer name with no
-	    // local timer name.
-	    if (! writeZeroTimers && ! foundGlobalNotLocal)
-	      filterZeroData (globalTimerData);
+	    else
+	      globalMapIter = 
+		globalTimerData.insert (globalMapIter, 
+					make_pair (globalName, 
+						   localMapIter->second));
 	  }
-      }
-    // Wait until after merging local into global timer data before
-    // filtering out local timers with zero call counts.  This ensures
-    // that if at least one MPI process had a nonzero call count for a
-    // particular timer, it won't be filtered out.  We only need to do
-    // this work if we writing local stats.  Note also that the
-    // filtering step may make the set of local timers different than
-    // the set of global timers, which would prevent us from printing
-    // the local stats.
-    //
-    // A smarter thing to do would be to let the filtering of local
-    // timers be guided by the set of filtered global timers, but that
-    // would be more complicated and would not help the common case
-    // (in which the local and global sets of timers, as well as their
-    // call counts, are the same).
-    //
-    // If not writing zero timers, and if writing local stats or not
-    // writing global stats, and if (if writing global stats, we
-    // didn't find any global-not-local timer names), filter zero data
-    // from local timers.
-    if (! writeZeroTimers &&
-	(alwaysWriteLocal || ! writeGlobalStats) && 
-	(! writeGlobalStats || foundGlobalNotLocal))
-      filterZeroData (localTimerData);
+
+	if (alwaysWriteLocal)
+	  // Resort the list of local timer names, since we may have
+	  // inserted "missing" names above.
+	  std::sort (localTimerNames.begin(), localTimerNames.end());
+
+	if (debug)
+	  {
+	    // Sanity check that all MPI procs have the name number of
+	    // global timers.
+	    const timer_map_t::size_type myNumGlobalTimers = globalTimerData.size();
+	    timer_map_t::size_type minNumGlobalTimers = 0;
+	    timer_map_t::size_type maxNumGlobalTimers = 0;
+	    reduceAll (*pComm, REDUCE_MIN, myNumGlobalTimers, 
+		       outArg (minNumGlobalTimers));
+	    reduceAll (*pComm, REDUCE_MAX, myNumGlobalTimers, 
+		       outArg (maxNumGlobalTimers));
+	    TEST_FOR_EXCEPTION(minNumGlobalTimers != maxNumGlobalTimers,
+			       std::logic_error,
+			       "Min # global timers = " << minNumGlobalTimers 
+			       << " != max # global timers = " << maxNumGlobalTimers
+			       << ".  Please report this bug to the Teuchos developers.");
+	    TEST_FOR_EXCEPTION(myNumGlobalTimers != minNumGlobalTimers,
+			       std::logic_error,
+			       "My # global timers = " << myNumGlobalTimers 
+			       << " != min # global timers = " << minNumGlobalTimers
+			       << ".  Please report this bug to the Teuchos developers.");
+	  }
+      } // if (writeGlobalStats)
 
     // Extract the timer names (global or local) into a single array
     // of strings, representing the column labels in the table.
     Array<string> timerNames;
     timerNames.reserve (globalTimerData.size());
-    if (writeGlobalStats) // use global timer names as the column names.
+    if (writeGlobalStats) 
+      // Use global timer names as the column names.
       std::copy (globalTimerNames.begin(), globalTimerNames.end(), 
 		 std::back_inserter (timerNames));
-    else // Use local timer names as the column labels.
+    else 
+      // Use local timer names as the column labels.
       std::copy (localTimerNames.begin(), localTimerNames.end(), 
 		 std::back_inserter (timerNames));
 
@@ -409,11 +494,11 @@ namespace Teuchos {
     }
 
     // Table column containing local timer stats, if applicable.  We
-    // only write local stats for MPI Proc 0, only if asked, and only if
-    // the list of local timer labels matches the list of global timer
-    // labels.  (The latter is a common case, but not the only
-    // possibility.)
-    if (writeLocalStats)
+    // only write local stats if asked, only on MPI Proc 0, and only
+    // if there is more than one MPI process in the communicator
+    // (otherwise local stats == global stats, so we just print the
+    // global stats).
+    if (alwaysWriteLocal && numProcs > 1 && myRank == 0)
       {
 	titles.append ("Local time (num calls)");
 
@@ -450,7 +535,9 @@ namespace Teuchos {
 	  }
 
 	if (numProcs == 1)
-	  { // Don't display statistics in the case of only 1 MPI process.
+	  { 
+	    // Don't display statistics in the case of only 1 MPI process.
+	    // Just display the elapsed times and the call counts.
 	    titles.append ("Global time (num calls)");
 	    TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, true);
 	    tableColumns.append (timeAndCalls);
@@ -461,6 +548,15 @@ namespace Teuchos {
 	  {
 	    // Table column containing min of global timer stats, if
 	    // applicable.
+	    //
+	    // NOTE (mfh 18 Jul 2011) The report minimum global number
+	    // of calls may be for a different MPI process than the
+	    // minimum global timing.  Ditto for the other statistics.
+	    // What this means is that you should not divide the
+	    // reported (minimum, mean, maximum) elapsed time by the
+	    // reported (minimum, mean, maximum) call count to get an
+	    // "average," since those quantities are not necessarily
+	    // comparable.
 	    {
 	      titles.append ("Min over procs");
 	      Array<double> minGlobalTimings (numGlobalTimers);
@@ -551,7 +647,12 @@ namespace Teuchos {
     // Print the whole table to the given output stream on MPI Rank 0.
     format ().setColumnWidths (columnWidths);
     if (myRank == 0)
-      format().writeWholeTable (out, "TimeMonitor Results", titles, tableColumns);
+      {
+	std::ostringstream theTitle;
+	theTitle << "TimeMonitor results over " << numProcs << " processor" 
+		 << (numProcs > 1 ? "s" : "");
+	format().writeWholeTable (out, theTitle.str(), titles, tableColumns);
+      }
   }
 
 

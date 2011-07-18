@@ -69,16 +69,21 @@ namespace Teuchos
   /// Different MPI processes may have created different sets of
   /// counters.  Use this function to reconcile the sets among
   /// processes, either by computing their intersection or their
-  /// union.
+  /// union.  This is done using a reduction to MPI Rank 0 (relative
+  /// to the given communicator) and a broadcast to all processes
+  /// participating in the communicator.  We use a
+  /// reduce-and-broadcast rather than just a reduction, so that all
+  /// participating processes can use the resulting list of global
+  /// names as lookup keys for computing global statistics.
+  /// (Otherwise, different processes
   /// 
   /// \param comm [in] Communicator over which to merge.
   ///
   /// \param localNames [in] The calling MPI process' list of (local)
   ///   counter names.
   ///
-  /// \param globalNames [out] On output, on MPI Proc 0 (relative to
-  ///   the given communicator): the results of merging the counter
-  ///   names.
+  /// \param globalNames [out] On output, on each MPI process: the
+  ///   results of merging the counter names.
   ///
   /// \param setOp [in] If Intersection, globalNames on output
   ///   contains the intersection of all sets of counter names.  If
@@ -196,6 +201,15 @@ namespace Teuchos
     static RCP<T> 
     lookupCounter (const std::string& name);
 
+    /// \brief "Forget" about all timers created with \c getNewCounter().
+    ///
+    /// This removes all timers from the current list of timers (as
+    /// would be returned by \c counters()).
+    static void clearTimers ();
+
+    //! "Forget" about any timers named "name" created with \c getNewCounter().
+    static void clearTimer (const std::string& name);
+
   protected:
     
     //! Constant access to the counter reference.
@@ -245,6 +259,41 @@ namespace Teuchos
     else
       return *it;
   }
+
+  template<class T>
+  void
+  PerformanceMonitorBase<T>::clearTimer (const std::string& name)
+  {
+    Array<RCP<T> > newCounters;
+    // Only fill newCounters with counters whose name is not name.
+    //
+    // Alas, standard STL lacks compose1.
+    // std::remove_copy_if (counters().begin(), 
+    // 			 counters().end(), 
+    // 			 std::back_inserter (newCounters),
+    // 			 std::compose1 (std::bind2nd (std::equal_to<std::string>, name),
+    // 					std::mem_fun (&T::name)));
+    typedef typename Array<RCP<T> >::const_iterator iter_t;
+    for (iter_t it = counters().begin(); it != counters().end(); ++it)
+      {
+	if (it->name() != name)
+	  newCounters.push_back (*it);
+      }
+    counters().swap (newCounters);
+  }
+
+  template<class T>
+  void
+  PerformanceMonitorBase<T>::clearTimers ()
+  {
+    // Just resizing an Array to have length zero may not necessarily
+    // free its storage.  The standard idiom is to swap with an empty
+    // array.
+    Array<RCP<T> > newCounters;
+    counters().swap (newCounters);
+  }
+
+
 
 
   
