@@ -63,8 +63,8 @@ namespace Amesos2 {
     typedef AbstractConcreteMatrixAdapter<matrix_t, DerivedMat>          type;
 
     // subclasses should override these typedef's in case of specialization
-    typedef Util::no_special_impl                                get_crs_spec;
-    typedef Util::no_special_impl                                get_ccs_spec;
+    typedef no_special_impl                                      get_crs_spec;
+    typedef no_special_impl                                      get_ccs_spec;
     typedef MatrixTraits<Epetra_RowMatrix>::major_access         major_access;
 
     AbstractConcreteMatrixAdapter(RCP<matrix_t> m);

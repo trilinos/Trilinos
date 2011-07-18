@@ -132,8 +132,8 @@ namespace Amesos2 {
 	Util::get_ccs_helper<Matrix,slu_type,int,int>::do_get(mat,
 							      nzval, rowind, colptr,
 							      nnz_ret,
-							      Util::Rooted,
-							      Util::Arbitrary);
+							      ROOTED,
+							      ARBITRARY);
       }
 
       TEST_FOR_EXCEPTION( mat->getComm()->getRank() == 0 && nnz_ret != nnz,
@@ -186,7 +186,7 @@ namespace Amesos2 {
         Teuchos::TimeMonitor redistTimer( vecRedistTime );
 #endif
 
-	Util::get_1d_copy_helper<MV,slu_type>::do_get(mv, vals, ldx, Util::Rooted);
+	Util::get_1d_copy_helper<MV,slu_type>::do_get(mv, vals, ldx, ROOTED);
       }
 
       FunctionMap<Superlumt,scalar_type>::create_Dense_Matrix(

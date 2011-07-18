@@ -40,7 +40,7 @@ namespace Amesos2 {
     typedef GlobalOrdinal global_ordinal_t;
     typedef Node node_t;
 
-    typedef Util::row_access major_access;
+    typedef row_access major_access;
   };
 
   template < typename Scalar,
@@ -59,7 +59,7 @@ namespace Amesos2 {
     typedef GlobalOrdinal global_ordinal_t;
     typedef Node node_t;
 
-    typedef Util::row_access major_access;
+    typedef row_access major_access;
   };
 
 #ifdef HAVE_AMESOS2_EPETRA
@@ -71,7 +71,7 @@ namespace Amesos2 {
     typedef int global_ordinal_t;
     typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
     
-    typedef Util::row_access major_access;
+    typedef row_access major_access;
   };
 
   template <>
@@ -81,7 +81,7 @@ namespace Amesos2 {
     typedef int global_ordinal_t;
     typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
     
-    typedef Util::row_access major_access;
+    typedef row_access major_access;
   };
 
   // template <>
@@ -91,7 +91,7 @@ namespace Amesos2 {
   //   typedef int global_ordinal_t;
   //   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
     
-  //   typedef Util::row_access major_access;
+  //   typedef row_access major_access;
   // };
 
   template <>
@@ -101,7 +101,7 @@ namespace Amesos2 {
     typedef int global_ordinal_t;
     typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_t;
     
-    typedef Util::row_access major_access;
+    typedef row_access major_access;
   };
 
 #endif

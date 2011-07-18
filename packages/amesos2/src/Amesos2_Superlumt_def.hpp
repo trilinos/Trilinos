@@ -390,6 +390,9 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
 #endif
   } // end block for solve time
 
+  /* All processes should have the same error code */
+  Teuchos::broadcast(*(this->getComm()),0,&info);
+  
   TEST_FOR_EXCEPTION( info < 0,
 		      std::runtime_error,
 		      "Argument " << -info << " to gstrs had an illegal value" );
@@ -414,11 +417,9 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
 #endif
 
     Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, Util::Rooted);
+      MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, ROOTED);
   }
 
-  /* All processes should return the same error code */
-  Teuchos::broadcast(*(this->getComm()),0,&info);
   return(info);
 }
 

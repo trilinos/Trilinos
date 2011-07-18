@@ -200,7 +200,7 @@ namespace {
     Array<double> copy(numVectors*numLocal*numprocs);
 
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
-					     numLocal*numprocs, Amesos2::Util::Rooted);
+					     numLocal*numprocs, Amesos2::ROOTED);
 
     // Just rank==0 process has global copy of mv data, check against an import
     int my_elements = 0;
@@ -228,7 +228,7 @@ namespace {
     
     mv->ExtractCopy(original.getRawPtr(),mv->MyLength());
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
-					     numLocal, Amesos2::Util::Distributed);
+					     numLocal, Amesos2::DISTRIBUTED);
     
     // Check that the values remain the same
     TEST_COMPARE_ARRAYS( original, copy );
@@ -286,7 +286,7 @@ namespace {
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter),
 					     global_copy(),
 					     total_rows,
-					     Amesos2::Util::Globally_Replicated);
+					     Amesos2::GLOBALLY_REPLICATED);
 
     // Now get a copy using the map
     Array<double> my_copy(numVectors * my_num_rows);
@@ -360,7 +360,7 @@ namespace {
     // distribute rank 0's data
     put_1d_data_helper<ADAPT,double>::do_put(outArg(*adapter), original(),
 					     numLocal*numprocs,
-					     Amesos2::Util::Rooted);
+					     Amesos2::ROOTED);
 
     // Send rank 0's array to everyone else
     comm->Broadcast(original.getRawPtr(), original.size(), 0);
@@ -368,7 +368,7 @@ namespace {
     // Now have everyone get a copy from the multivector adapter
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter), copy(),
 					     numLocal*numprocs,
-					     Amesos2::Util::Globally_Replicated);
+					     Amesos2::GLOBALLY_REPLICATED);
 
     // Check that the values are the same
     TEST_COMPARE_ARRAYS( original, copy );

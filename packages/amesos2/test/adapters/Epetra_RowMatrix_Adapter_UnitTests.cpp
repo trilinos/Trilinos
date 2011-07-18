@@ -80,9 +80,9 @@ namespace {
 
   using Amesos2::MatrixAdapter;
 
+  using Amesos2::ROOTED;
+  using Amesos2::GLOBALLY_REPLICATED;
   using Amesos2::Util::is_same;
-  using Amesos2::Util::Rooted;
-  using Amesos2::Util::Globally_Replicated;
   using Amesos2::Util::to_teuchos_comm;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
@@ -336,7 +336,7 @@ namespace {
     Array<ADAPT::global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted);
+    adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED);
 
     // getCrs does not guarantee the sorted-ness of the column
     // indices, so this test might fail
@@ -350,7 +350,7 @@ namespace {
     // Check now a rooted, sorted-indices repr //
     /////////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted,Amesos2::Util::Sorted_Indices);
+    adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED,Amesos2::SORTED_INDICES);
 
     if ( rank == 0 ){
       // Now the arrays should compare directly
@@ -444,7 +444,7 @@ namespace {
     // Now check a globally replicated representation //
     ////////////////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,Globally_Replicated);
+    adapter->getCrs(nzvals,colind,rowptr,nnz,GLOBALLY_REPLICATED);
 
     // All processes check
     
@@ -474,7 +474,7 @@ namespace {
     ///////////////////////////////////////////
 
     adapter->getCrs(nzvals,colind,rowptr,nnz,
-		    Globally_Replicated,Amesos2::Util::Sorted_Indices);
+		    GLOBALLY_REPLICATED,Amesos2::SORTED_INDICES);
 
     TEST_COMPARE_ARRAYS(nzvals, nzvals_test);
     TEST_COMPARE_ARRAYS(colind, colind_test);
@@ -576,7 +576,7 @@ namespace {
     const Tpetra::Map<int,int> half_map(6, my_num_rows, 0,
 					to_teuchos_comm(comm));
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::Util::Sorted_Indices);
+    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::SORTED_INDICES);
 
     /*
      * Check that you got the entries you'd expect
@@ -674,7 +674,7 @@ namespace {
     Array<ADAPT::global_size_t> colptr(adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
-    adapter->getCcs(nzvals,rowind,colptr,nnz,Globally_Replicated);
+    adapter->getCcs(nzvals,rowind,colptr,nnz,GLOBALLY_REPLICATED);
 
     TEST_COMPARE_ARRAYS(nzvals,nzvals_test);
     TEST_COMPARE_ARRAYS(rowind,rowind_test);

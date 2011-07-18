@@ -87,8 +87,8 @@ namespace {
   using Amesos2::MatrixAdapter;
 
   using Amesos2::Util::is_same;
-  using Amesos2::Util::Rooted;
-  using Amesos2::Util::Globally_Replicated;
+  using Amesos2::ROOTED;
+  using Amesos2::GLOBALLY_REPLICATED;
 
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
@@ -271,7 +271,7 @@ namespace {
     // Check getting a rooted representation //
     ///////////////////////////////////////////
     
-    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted);
+    adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED);
 
     if ( rank == 0 ){
       // getCrs() does not guarantee a permutation of the non-zero
@@ -300,7 +300,7 @@ namespace {
     // Check now a rooted, sorted-indices repr //
     /////////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,Rooted,Amesos2::Util::Sorted_Indices);
+    adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED,Amesos2::SORTED_INDICES);
 
     if ( rank == 0 ){
       // Now the arrays should compare directly
@@ -364,7 +364,7 @@ namespace {
     // Now check a globally replicated representation //
     ////////////////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,Globally_Replicated);
+    adapter->getCrs(nzvals,colind,rowptr,nnz,GLOBALLY_REPLICATED);
 
     // All processes check
     
@@ -394,7 +394,7 @@ namespace {
     ///////////////////////////////////////////
 
     adapter->getCrs(nzvals,colind,rowptr,nnz,
-		    Globally_Replicated,Amesos2::Util::Sorted_Indices);
+		    GLOBALLY_REPLICATED,Amesos2::SORTED_INDICES);
 
     TEST_COMPARE_ARRAYS(nzvals, nzvals_test);
     TEST_COMPARE_ARRAYS(colind, colind_test);
@@ -466,7 +466,7 @@ namespace {
     }
     const Map<LO,GO,Node> half_map(6, my_num_rows, 0, comm);
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::Util::Sorted_Indices);
+    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::SORTED_INDICES);
 
     /*
      * Check that you got the entries you'd expect
@@ -541,7 +541,7 @@ namespace {
     Array<global_size_t> colptr(adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
-    adapter->getCcs(nzvals,rowind,colptr,nnz,Rooted);
+    adapter->getCcs(nzvals,rowind,colptr,nnz,ROOTED);
 
     // Only rank 0 gets the CRS representation
     if( rank == 0 ){

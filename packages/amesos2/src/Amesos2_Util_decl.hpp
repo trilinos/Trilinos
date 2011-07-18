@@ -71,6 +71,7 @@
 
 #include <Tpetra_Map.hpp>
 
+#include "Amesos2_TypeDecl.hpp"
 #include "Amesos2_Util_is_same.hpp"
 
 namespace Amesos2 {
@@ -83,45 +84,6 @@ namespace Amesos2 {
 
     using Teuchos::RCP;
     using Teuchos::ArrayView;
-
-    /** \brief Indicates that the concrete class has a special
-     * implementation that should be called.
-     *
-     * Matrix Adapters \c typedef this as \c {get_ccs|get_crs}_spec
-     * indicating that the concrete adapter has a special
-     * implementation for either the \c getCrs or \c getCcs functions.
-     *
-     * \ingroup amesos2_utils
-     */
-    struct has_special_impl {};
-    struct no_special_impl {};
-
-    /** \brief Indicates that the object of an adapter provides row access to its data.
-     * 
-     * \ingroup amesos2_utils
-     */
-    struct row_access {};
-    
-    /** \brief Indicates that the object of an adapter provides column access to its data.
-     *
-     * \ingroup amesos2_utils
-     */
-    struct col_access {};
-
-    /** \enum EDistribution
-     *
-     * An enum of this type is expected by the Matrix adapters' getCrs
-     * and getCcs functions to describe the layout of the
-     * representation on the calling processors.
-     *
-     * \ingroup amesos2_utils
-     */
-    typedef enum {
-      Distributed,                /**< no processor has a view of the entire matrix, only local pieces */
-      Distributed_No_Overlap,     /**< no row or column may be present on more than one processor */
-      Globally_Replicated,        /**< each processor has a view of the entire matrix */
-      Rooted                      /**< only \c rank=0 has a full view, all others have nothing. */
-    } EDistribution;
 
     /**
      * \brief Gets a Tpetra::Map described by the EDistribution.
@@ -145,20 +107,6 @@ namespace Amesos2 {
 		       const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
     
 
-    /** \enum EStorage_Ordering
-     *
-     * This enum also used by the matrix adapters to indicate whether
-     * the indices of the representation must be in sorted order or
-     * can have an arbitrary order.
-     *
-     * \ingroup amesos2_utils
-     */
-    typedef enum {
-      Sorted_Indices,             /**< row/col indices need to appear in sorted order */
-      Arbitrary                   /**< index order can be arbitrary */
-    } EStorage_Ordering;
-
-    
 #ifdef HAVE_AMESOS2_EPETRA
     /**
      * \brief Transform an Epetra_Map object into a Tpetra::Map
@@ -482,7 +430,7 @@ namespace Amesos2 {
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
 			 GS& nnz, EDistribution distribution,
-			 EStorage_Ordering ordering=Arbitrary)
+			 EStorage_Ordering ordering=ARBITRARY)
       {
 	typedef typename Matrix::local_ordinal_t lo_t;
 	typedef typename Matrix::global_ordinal_t go_t;
@@ -504,7 +452,7 @@ namespace Amesos2 {
 			 const ArrayView<S> nzvals,
 			 const ArrayView<GO> indices,
 			 const ArrayView<GS> pointers,
-			 GS& nnz, EStorage_Ordering ordering=Arbitrary)
+			 GS& nnz, EStorage_Ordering ordering=ARBITRARY)
       {
 	const Teuchos::RCP<const Tpetra::Map<typename Matrix::local_ordinal_t,
 	                                     typename Matrix::global_ordinal_t,
@@ -526,7 +474,7 @@ namespace Amesos2 {
 			   const Tpetra::Map<typename Matrix::local_ordinal_t,
                                              typename Matrix::global_ordinal_t,
 			                     typename Matrix::node_t> > map,
-			 EStorage_Ordering ordering=Arbitrary)
+			 EStorage_Ordering ordering=ARBITRARY)
       {
 	typedef typename Matrix::scalar_t mat_scalar;
 	if_then_else<is_same<mat_scalar,S>::value,

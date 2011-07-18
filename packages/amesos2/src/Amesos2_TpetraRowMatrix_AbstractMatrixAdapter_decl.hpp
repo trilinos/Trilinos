@@ -62,9 +62,9 @@ namespace Amesos2 {
     typedef AbstractConcreteMatrixAdapter<matrix_t,
 					  DerivedMat> type;
 
-    typedef Util::no_special_impl             get_crs_spec;
-    typedef Util::no_special_impl             get_ccs_spec;
-    typedef Util::row_access                  major_access;
+    typedef no_special_impl                   get_crs_spec;
+    typedef no_special_impl                   get_ccs_spec;
+    typedef row_access                        major_access;
 
     AbstractConcreteMatrixAdapter(RCP<matrix_t> m);
 

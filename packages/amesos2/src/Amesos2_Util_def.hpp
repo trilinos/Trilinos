@@ -71,19 +71,19 @@ namespace Amesos2 {
 
     template <typename LO, typename GO, typename GS, typename Node>
     const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
-    getDistributionMap(Util::EDistribution distribution,
+    getDistributionMap(EDistribution distribution,
 		       GS num_global_elements,
 		       const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     {
       switch( distribution ){
-      case Util::Distributed:
-      case Util::Distributed_No_Overlap:
+      case DISTRIBUTED:
+      case DISTRIBUTED_NO_OVERLAP:
 	return Tpetra::createUniformContigMap<LO,GO>(num_global_elements, comm);
 	break;
-      case Util::Globally_Replicated:
+      case GLOBALLY_REPLICATED:
 	return Tpetra::createLocalMap<LO,GO>(num_global_elements, comm);
 	break;
-      case Util::Rooted:
+      case ROOTED:
 	int rank = Teuchos::rank(*comm);
 	size_t my_num_elems = Teuchos::OrdinalTraits<size_t>::zero();
 	if( rank == 0 ) my_num_elems = num_global_elements;

@@ -57,10 +57,11 @@ namespace {
   using Amesos2::MatrixAdapter;
 
   using Amesos2::Util::is_same;
-  using Amesos2::Util::Rooted;
-  using Amesos2::Util::Globally_Replicated;
-  using Amesos2::Util::Sorted_Indices;
   using Amesos2::Util::to_teuchos_comm;
+
+  using Amesos2::ROOTED;
+  using Amesos2::GLOBALLY_REPLICATED;
+  using Amesos2::SORTED_INDICES;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -192,8 +193,8 @@ namespace {
     Array<EADAPT::global_size_t> erowptr(eadapter->getGlobalNumRows() + 1);
     size_t ennz = 0;
 
-    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, Rooted, Sorted_Indices);
-    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, Rooted, Sorted_Indices);
+    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, ROOTED, SORTED_INDICES);
+    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, ROOTED, SORTED_INDICES);
 
     // The nzvals, colind, rowptr, and nnz values for each adapter
     // should be the same at the root.  It is ok to to these tests at
@@ -241,8 +242,8 @@ namespace {
     Array<EADAPT::global_size_t> erowptr(eadapter->getGlobalNumRows() + 1);
     size_t ennz = 0;
 
-    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, Globally_Replicated, Sorted_Indices);
-    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, Globally_Replicated, Sorted_Indices);
+    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, GLOBALLY_REPLICATED, SORTED_INDICES);
+    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, GLOBALLY_REPLICATED, SORTED_INDICES);
 
     // The nzvals, colind, rowptr, and nnz values for each adapter
     // should be the same at the root.  It is ok to to these tests at
@@ -310,8 +311,8 @@ namespace {
     }
     const Tpetra::Map<int,int> half_map(g_num_rows, my_num_rows, 0, tcomm);
 
-    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, Teuchos::ptrInArg(half_map), Sorted_Indices);
-    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, Teuchos::ptrInArg(half_map), Sorted_Indices);
+    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, Teuchos::ptrInArg(half_map), SORTED_INDICES);
+    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, Teuchos::ptrInArg(half_map), SORTED_INDICES);
 
     /*
      * Check that you got the entries you'd expect

@@ -85,9 +85,9 @@ namespace {
   using Amesos2::Util::is_same;
   using Amesos2::Util::get_1d_copy_helper;
   using Amesos2::Util::put_1d_data_helper;
-  using Amesos2::Util::Rooted;
-  using Amesos2::Util::Distributed;
-  using Amesos2::Util::Globally_Replicated;
+  using Amesos2::ROOTED;
+  using Amesos2::DISTRIBUTED;
+  using Amesos2::GLOBALLY_REPLICATED;
 
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
@@ -224,7 +224,7 @@ namespace {
     // Check a global copy at rank=0 //
     ///////////////////////////////////
 
-    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal*numprocs, Rooted);
+    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal*numprocs, ROOTED);
 
     // Only rank=0 process has global copy of the mv data, check against an import
     size_t my_num_elems = OrdinalTraits<size_t>::zero();
@@ -249,7 +249,7 @@ namespace {
     mv->randomize();
     
     mv->get1dCopy(original(),mv->getLocalLength());
-    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal, Distributed);
+    get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(), numLocal, DISTRIBUTED);
     
     // Check that the values remain the same
     TEST_COMPARE_ARRAYS( original, copy );
@@ -310,7 +310,7 @@ namespace {
     get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter),
 					     global_copy(),
 					     total_rows,
-					     Globally_Replicated);
+					     GLOBALLY_REPLICATED);
 
     // Now get a copy using the map
     Array<SCALAR> my_copy(numVectors * my_num_rows);
@@ -383,7 +383,7 @@ namespace {
     // distribute rank 0's data
     put_1d_data_helper<ADAPT,SCALAR>::do_put(outArg(*adapter), original(),
 					     numLocal*numprocs,
-					     Rooted);
+					     ROOTED);
 
     // Send rank 0's array to everyone else
     Teuchos::broadcast(*comm, 0, original());
@@ -391,7 +391,7 @@ namespace {
     // Now have everyone get a copy from the multivector adapter
     get_1d_copy_helper<ADAPT,SCALAR>::do_get(ptrInArg(*adapter), copy(),
 					     numLocal*numprocs,
-					     Globally_Replicated);
+					     GLOBALLY_REPLICATED);
 
     TEST_EQUALITY( original, copy );
   }

@@ -20,7 +20,7 @@ namespace Amesos2 {
 				const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> > rowmap,
-				Util::EStorage_Ordering ordering) const
+				EStorage_Ordering ordering) const
   {
     help_getCrs(nzval, colind, rowptr,
 		nnz, rowmap, ordering,
@@ -33,8 +33,8 @@ namespace Amesos2 {
 				const Teuchos::ArrayView<global_ordinal_t> colind,
 				const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				Util::EDistribution distribution,
-				Util::EStorage_Ordering ordering) const
+				EDistribution distribution,
+				EStorage_Ordering ordering) const
   {
     const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap
       = Util::getDistributionMap<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(distribution,
@@ -50,7 +50,7 @@ namespace Amesos2 {
 				const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> > colmap,
-				Util::EStorage_Ordering ordering) const
+				EStorage_Ordering ordering) const
   {
     help_getCcs(nzval, rowind, colptr,
 		nnz, colmap, ordering,
@@ -63,8 +63,8 @@ namespace Amesos2 {
 				const Teuchos::ArrayView<global_ordinal_t> rowind,
 				const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				typename MatrixAdapter<Matrix>::global_size_t& nnz,
-				Util::EDistribution distribution,
-				Util::EStorage_Ordering ordering) const
+				EDistribution distribution,
+				EStorage_Ordering ordering) const
   {
     const Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap
       = Util::getDistributionMap<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(distribution,
@@ -144,8 +144,8 @@ namespace Amesos2 {
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-				     Util::EStorage_Ordering ordering,
-				     Util::has_special_impl hsi) const
+				     EStorage_Ordering ordering,
+				     has_special_impl hsi) const
   {
     static_cast<const adapter_t*>(this)->getCrs_spec(nzval, colind, rowptr,
 						     nnz, rowmap, ordering);
@@ -158,8 +158,8 @@ namespace Amesos2 {
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-				     Util::EStorage_Ordering ordering,
-				     Util::no_special_impl nsi) const
+				     EStorage_Ordering ordering,
+				     no_special_impl nsi) const
   {
     do_getCrs(nzval, colind, rowptr,
 	      nnz, rowmap, ordering,
@@ -173,8 +173,8 @@ namespace Amesos2 {
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-				   Util::EStorage_Ordering ordering,
-				   Util::row_access ra) const
+				   EStorage_Ordering ordering,
+				   row_access ra) const
   {
     using Teuchos::RCP;
     using Teuchos::ArrayView;
@@ -215,7 +215,7 @@ namespace Amesos2 {
       // It was suggested that instead of sorting each row's indices
       // individually, that we instead do a double-transpose at the
       // end, which would also lead to the indices being sorted.
-      if( ordering == Util::Sorted_Indices ){
+      if( ordering == SORTED_INDICES ){
 	Tpetra::sort2(colind_view.begin(), colind_view.end(), nzval_view.begin());
       }
       
@@ -236,8 +236,8 @@ namespace Amesos2 {
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> rowptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-				   Util::EStorage_Ordering ordering,
-				   Util::col_access ca) const
+				   EStorage_Ordering ordering,
+				   col_access ca) const
   {
     using Teuchos::Array;
     // get the ccs and transpose
@@ -257,8 +257,8 @@ namespace Amesos2 {
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-				     Util::EStorage_Ordering ordering,
-				     Util::has_special_impl hsi) const
+				     EStorage_Ordering ordering,
+				     has_special_impl hsi) const
   {
     static_cast<const adapter_t*>(this)->getCcs_spec(nzval, rowind, colptr,
 						     nnz, colmap, ordering);
@@ -271,8 +271,8 @@ namespace Amesos2 {
 				     const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				     typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-				     Util::EStorage_Ordering ordering,
-				     Util::no_special_impl nsi) const
+				     EStorage_Ordering ordering,
+				     no_special_impl nsi) const
   {
     do_getCcs(nzval, rowind, colptr,
 	      nnz, colmap, ordering,
@@ -286,8 +286,8 @@ namespace Amesos2 {
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-				   Util::EStorage_Ordering ordering,
-				   Util::row_access ra) const
+				   EStorage_Ordering ordering,
+				   row_access ra) const
   {
     using Teuchos::Array;
     // get the crs and transpose
@@ -307,8 +307,8 @@ namespace Amesos2 {
 				   const Teuchos::ArrayView<typename MatrixAdapter<Matrix>::global_size_t> colptr,
 				   typename MatrixAdapter<Matrix>::global_size_t& nnz,
 				   const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-				   Util::EStorage_Ordering ordering,
-				   Util::col_access ca) const
+				   EStorage_Ordering ordering,
+				   col_access ca) const
   {
     using Teuchos::RCP;
     using Teuchos::ArrayView;
@@ -343,7 +343,7 @@ namespace Amesos2 {
       // It was suggested that instead of sorting each row's indices
       // individually, that we instead do a double-transpose at the
       // end, which would also lead to the indices being sorted.
-      if( ordering == Util::Sorted_Indices ){
+      if( ordering == SORTED_INDICES ){
 	Tpetra::sort2(rowind_view.begin(), rowind_view.end(), nzval_view.begin());
       }
       

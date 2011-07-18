@@ -760,7 +760,7 @@ namespace Amesos2 {
 	SLUD::int_t,
 	SLUD::int_t >::do_get(redist_mat.ptr(), nzvals_(), colind_(),
 			      rowptr_(), nnz_ret, ptrInArg(*superlu_rowmap_),
-			      Util::Arbitrary);
+			      ARBITRARY);
     }
     
     TEST_FOR_EXCEPTION( nnz_ret != l_nnz,

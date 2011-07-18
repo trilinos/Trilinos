@@ -34,7 +34,7 @@ General TODO
    make member functions const when appropriate). (DONE, also extended
    this const'ness to the `create' method and all matrix args)
    
- - May be useful to define some Amesos2 exception classes.
+ - May be useful to define some Amesos2 exception classes?
 
  - Update the NewSolver and NewAdapter templates in examples/ 
 
@@ -47,7 +47,7 @@ General TODO
 
  - Add cases to unit tests where the matrix is empty on some
    processors before calling solve().  This was suggested by David Day
-   since this case has a tenddency to expose bugs.
+   since this case has a tendency to expose bugs.
 
  - Remove the printStatus method. (DONE)
 
@@ -107,7 +107,8 @@ General TODO
 
  - Pull out many of the type and enum declarations from the Util::
    namespace and header files.  Put them in an Amesos2_TypesDecl.hpp
-   header and in the Amesos2:: namespace to be used when needed.
+   header and in the Amesos2:: namespace to be used when
+   needed. (DONE)
 
 
 -------------------------------
