@@ -77,13 +77,16 @@ public:
    * @param value The value with which to populate the TwoDArray.
    */
   TwoDArray(size_type numRows, size_type numCols, T value=T()):
-    _numRows(numRows),_numCols(numCols),_data(Array<T>(numCols*numRows, value))
+    _numRows(numRows),
+    _numCols(numCols),
+    _data(Array<T>(numCols*numRows, value)),
+    _symetrical(false)
     {}
   /**
    * \brief Constructs an empty TwoDArray.
    */
   TwoDArray():
-    _numRows(0),_numCols(0),_data(Array<T>()){}
+    _numRows(0),_numCols(0),_data(Array<T>()),_symetrical(false){}
 
   /** \brief . */
   virtual ~TwoDArray(){}
@@ -137,6 +140,42 @@ public:
       _data.size() == 0;
   }
 
+  /** \brief A simple flag indicating whether or not
+   * this TwoDArray should be interpurted as symetrical.
+   *
+   * \note A symetrical TwoDArray is defined as an TwoDArray where
+   * entry i,j is the same as entry j,i.
+   *
+   * \note This does not change any of the TwoDArrays behavior.
+   * It merely serves as an indicator to any one using a TwoDArray
+   * that the TwoDArray can be read as if it were symetrical. In other words,
+   * the TwoDArray class does not enforce the symetry.
+   *
+   * @return True if the array is "symetrical", false otherwise.
+   */
+  inline bool isSymetrical() const{
+    return _symetrical;
+  }
+
+  /**
+   * \brief Sets whether or not the the TwoDArray should be 
+   * interpurted as symetric.
+   *
+   * \note A symetrical TwoDArray is defined as an TwoDArray where
+   * entry i,j is the same as entry j,i.
+   *
+   * \note This does not change any of the TwoDArrays behavior.
+   * It merely serves as an indicator to any one using a TwoDArray
+   * that the TwoDArray can be read as if it were symetrical. In other words,
+   * the TwoDArray class does not enforce the symetry.
+   *
+   * @param symetry Whether or not the matrix should be interpurted
+   * as symetric.
+   */
+  inline void setSymetrical(bool symetrical){
+    _symetrical = symetrical;
+  }
+
   //@}
 
   /** @name Resizing Functions */
@@ -177,16 +216,16 @@ public:
   /** \name String conversion functions */
   //@{
 
-  /** \brief returns the string used as the dimension dilimeter when convering
-   * the TwoDArray to a string.
+  /** \brief returns the string used to seperate meta information from
+   * actual data information when converting a TwoDArray to a string.
    */
-  static const std::string& getDimensionsSeperator(){
-    static const std::string dimensionSeperator = ":";
-    return dimensionSeperator;
+  static const std::string& getMetaSeperator(){
+    static const std::string metaSeperator = ":";
+    return metaSeperator;
   }
 
-  /** \brief returns the string used to seperate dimension information from
-   * actual data information when converting a TwoDArray to a string.
+  /** \brief returns the string used as the dimension dilimeter when convering
+   * the TwoDArray to a string.
    */
   static const std::string& getDimensionsDelimiter(){
     static const std::string dimensionsDelimiter = "x";
@@ -206,6 +245,7 @@ private:
   Array<T> _data;
   TwoDArray(size_type numRows, size_type numCols, Array<T> data):
     _numRows(numRows),_numCols(numCols),_data(data){}
+  bool _symetrical;
 };
 
 template<class T> inline
@@ -245,28 +285,48 @@ std::string TwoDArray<T>::toString(const TwoDArray<T> array){
   std::stringstream numRowsStream;
   numColsStream << array.getNumCols();
   numRowsStream << array.getNumRows();
+  std::string metaSeperator = TwoDArray<T>::getMetaSeperator();
   return 
     numRowsStream.str() +
     TwoDArray<T>::getDimensionsDelimiter() +
     numColsStream.str() +
-    TwoDArray<T>::getDimensionsSeperator() +
+    metaSeperator +
+    (array.isSymetrical() ? "sym"+metaSeperator : "") +
     array.getDataArray().toString();
 }
 
 template<class T>
 TwoDArray<T> TwoDArray<T>::fromString(const std::string& string){
+  std::string curString = string;
+  std::string metaSeperator = TwoDArray<T>::getMetaSeperator();
+  size_t curPos = curString.find(metaSeperator);
+  std::string dimString = curString.substr(0, curPos);
+  curString = curString.substr(curPos+1);
+
+  //process dimensions
   size_t dimCharPos = 
-    string.find_first_of(TwoDArray<T>::getDimensionsDelimiter());
-  size_t seperatorPos = 
-    string.find_first_of(TwoDArray<T>::getDimensionsSeperator());
-  std::string valueData = string.substr(seperatorPos+1);
-  std::istringstream numRowsStream(string.substr(0,dimCharPos));
-  std::istringstream numColsStream(string.substr(dimCharPos+1, seperatorPos-dimCharPos-1));
+    dimString.find(TwoDArray<T>::getDimensionsDelimiter());
+  std::istringstream numRowsStream(dimString.substr(0,dimCharPos));
+  std::istringstream numColsStream(dimString.substr(dimCharPos+1));
   size_t numRows, numCols;
   numRowsStream >> numRows;
   numColsStream >> numCols;
-  Array<T> array = fromStringToArray<T>(valueData);
-  return TwoDArray<T>(numRows, numCols, array);
+
+  //determine symetry state
+  bool symetrical = false;
+  curPos = curString.find(metaSeperator);
+  if(curPos != std::string::npos){
+    symetrical = true;
+    curString = curString.substr(curPos+1);
+  }
+
+  //Get actual data
+  Array<T> array = fromStringToArray<T>(curString);
+
+  //Construct object to return
+  TwoDArray<T> toReturn(numRows, numCols, array);
+  toReturn.setSymetrical(symetrical);
+  return toReturn;
 }
 
 /* \brief .
