@@ -54,7 +54,6 @@
 #define AMESOS2_SUPERLUDIST_DECL_HPP
 
 #include "Amesos2_SolverCore.hpp"
-#include "Amesos2_Superludist_MatrixHelper.hpp"
 #include "Amesos2_Superludist_FunctionMap.hpp"
 
 
@@ -63,42 +62,25 @@ namespace Amesos {
 
 /** \brief Amesos2 interface to the distributed memory version of SuperLU.
  *
- * The distributed memory version of SuperLU, SuperLU_DIST, is supported by
- * this Amesos2 interface.  Currently support is for the SuperLU_DIST
- * 2.5 version.
+ * The distributed memory version of SuperLU, SuperLU_DIST, is
+ * supported by this Amesos2 interface.  Currently support is for the
+ * SuperLU_DIST 2.5 version.
  *
- * \section slu_dist_options Supported Options
- *
- * Currently, the following parameters/options are recognized:
- *
- * <ul>
- *   <li> \c "nprocs"(int) : Specifies the number of threads to be spawned.
- *     Default is 1.</li>
- *   <li> \c "Equil" : { \c "YES" | \c "NO" } or, equivalently, { \c true | \c false }.
- *     Specifies whether the solver to equilibrate the matrix before solving.</li>
- *   <li> \c "IterRefine" : { \c "NO" | \c "SINGLE" | \c "DOUBLE" | \c "EXTRA"
- *     }. Specifies whether to perform iterative refinement, and in
- *     what precision to compute the residual. (Not currently supported)</li>
- *   <li> \c "ColPerm" which takes one of the following:
- *     <ul>
- *     <li> \c "NATURAL" : natural ordering.</li>
- *     <li> \c "MMD_AT_PLUS_A" : minimum degree ordering on the structure of
- *       \f$ A^T + A\f$ .</li>
- *     <li> \c "MMD_ATA" : minimum degree ordering on the structure of
- *       \f$ A T A \f$ .</li>
- *     <li> \c "COLAMD" : approximate minimum degree column ordering.
- *       (default)</li>
- *     <li> \c "MY_PERMC" : use the ordering given in the "perm_c" parameter
- *       given by the user.  The value of the "perm_c" parameter should be a
- *       Teuchos::Array<int> with length equal to the number of global columns.
- *       </li>
- *     </ul>
- *   <li> \c "perm_c" : a Teuchos::Array<int> with length equal to the number
- *     of global columns.  Will assume <tt> ColPerm = MY_PERMC</tt>.</li>
- * </ul>
+ * This interface to SuperLU_DIST currently does not support row
+ * permutations due to a sequential bottleneck present in SuperLU_DIST
+ * when calculating such a row permutation (i.e. the matrix must be
+ * brought to the root processor, which then finds the row permutation
+ * and broadcasts this permutation to the other processors).  In the
+ * future we may support row permutations through Zoltan.  By not
+ * supporting this option, we make use of the entirely distributed
+ * interface to SuperLU_DIST.  On the other hand, if you absolutely
+ * need row permutations and your matrix will fit on a single node,
+ * then you may consider using Amesos2's SuperLU_MT interface instead.
  *
  * \warning After creation, the size of the matrix should not change
  * (i.e. when using setA())
+ *
+ * \ingroup amesos2_solver_interfaces
  */
 template <class Matrix,
           class Vector>
@@ -131,7 +113,6 @@ public:
   typedef typename type_map::magnitude_type                  magnitude_type;
 
   typedef FunctionMap<Amesos::Superludist,slu_type>            function_map;
-  // typedef MatrixHelper<Amesos::Superludist>                   matrix_helper;
 
   
   /// \name Constructor/Destructor methods
@@ -211,11 +192,33 @@ private:
 
 
   /**
-   * This method is hooked in by our Amesos::Solver parent class, which
-   * handles the status and control methods, and this method handles
-   * solver-specific parameters.
+   * Currently, the following SuperLU_DIST parameters/options are recognized:
    *
-   * See also: \ref slu_mt_options
+   * <ul>
+   *   <li> \c "npcol"(int) and "nprow"(int) : Specified together, these parameters
+   *     set the size of the SuperLU_DIST processor grid to \c nprow rows by
+   *     \c npcol columns.  If these parameters are not set, the SuperLU_DIST
+   *     interface uses a heuristic to pick the grid dimensions based on the
+   *     number of processors in the matrix' communicator.</li>
+   *   <li> \c "ColPerm" which takes one of the following:
+   *     <ul>
+   *     <li> \c "NATURAL" : natural column ordering.</li>
+   *     <li> \c "PARMETIS" : use the ParMETIS TPL to order the columns. (default)</li>
+   *     </ul>
+   *   </li>
+   *   <li> \c "ReplaceTinyPivot" : { \c "YES" | \c "NO" } or, equivalently,
+   *     { \c true | \c false }.  Specifies whether to replace tiny diagonals with
+   *     \f$\sqrt{\epsilon}\cdot\| A \|\f$ during LU factorization. (default: \c true)</li>
+   * </ul>
+   */
+  /*
+   * The following options could be supported in the future:
+   * 
+   *   <li> \c "Equil" : { \c "YES" | \c "NO" } or, equivalently, { \c true | \c false }.
+   *     Specifies whether the solver to equilibrate the matrix before solving.</li>
+   *   <li> \c "IterRefine" : { \c "NO" | \c "SINGLE" | \c "DOUBLE" | \c "EXTRA"
+   *     }. Specifies whether to perform iterative refinement, and in
+   *     what precision to compute the residual. (Not currently supported)</li>
    */
   void setParameters_impl(
     const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
@@ -297,14 +300,16 @@ private:
   } data_;
 
   // The following Arrays are persisting storage arrays for A, X, and B
-  /// Stores the values of the nonzero entries for SuperLU
+  /// Stores the values of the nonzero entries for SuperLU_DIST
   Teuchos::Array<slu_type> nzvals_;
   /// Stores the row indices of the nonzero entries
   Teuchos::Array<int> colind_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
   Teuchos::Array<int> rowptr_;
-  /// 1D store for B and X values
-  mutable Teuchos::Array<slu_type> bvals_, xvals_;
+  /// 1D store for B values
+  mutable Teuchos::Array<slu_type> bvals_;
+  /// 1D store for X values
+  mutable Teuchos::Array<slu_type> xvals_;
 
   /// \c true if this processor is in SuperLU_DISTS's 2D process grid
   bool in_grid_;

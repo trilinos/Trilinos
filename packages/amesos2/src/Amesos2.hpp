@@ -258,6 +258,10 @@
  * \subsection superlu_mt_parameters SuperLU_MT
  *
  * \copydetails Amesos::Superlumt::setParameters_impl()
+ *
+ * \subsection superlu_dist_parameters SuperLU_DIST
+ *
+ * \copydetails Amesos::Superludist::setParameters_impl()
  */
 
 

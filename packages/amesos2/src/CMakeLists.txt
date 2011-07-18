@@ -174,7 +174,6 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist) # This naming syntax is consistent with 
   APPEND_SET(HEADERS
     Amesos2_Superludist.hpp
     Amesos2_Superludist_FunctionMap.hpp
-    Amesos2_Superludist_MatrixHelper.hpp
     Amesos2_Superludist_TypeMap.hpp
     Amesos2_Superludist_decl.hpp
     Amesos2_Superludist_def.hpp

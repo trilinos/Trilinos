@@ -56,6 +56,7 @@ third-party solver libraries.
 <ul>
   <li> SuperLU</li>
   <li> SuperLU_MT</li>
+  <li> SuperLU_DIST</li>
 </ul>
 
 A templated version of KLU (KLU2) will be included in Amesos2.

@@ -682,7 +682,8 @@ namespace Amesos {
 
 
 ////////////////////////////////////////////////////////////////////////////////  
-  
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS  
     /*
      * If the multivector scalar type and the desired scalar tpye are
      * the same, then we can do a simple straight copy.
@@ -729,6 +730,7 @@ namespace Amesos {
 	}
       }
     };
+#endif	// DOXYGEN_SHOULD_SKIP_THIS
 
     /**
      * \brief Helper class for getting 1-D copies of multivectors
@@ -771,6 +773,7 @@ namespace Amesos {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   /*
      * If the multivector scalar type and the desired scalar tpye are
      * the same, then we can do a simple straight copy.
@@ -817,7 +820,7 @@ namespace Amesos {
 	mv->put1dData(data_tmp(), ldx, distribution_map);
       }
     };
-
+#endif	// DOXYGEN_SHOULD_SKIP_THIS
   
     /**
      * \brief Helper class for putting 1-D data arrays into multivectors

@@ -201,110 +201,33 @@ namespace Amesos {
     SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
     for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
 
-    // The request for symbolic factorization will dictate what type
-    // of storage is allocated for the matrix.
-    if( data_.options.ParSymbFact == SLUD::NO ){
-      // // First, do equilibration if requested
-      // if( data_.options.Equil == SLUD::YES ){
-      //        data_.R.resize(this->globalNumRows_);
-      //        data_.C.resize(this->globalNumCols_);
+    loadA();			// Refresh matrix values
 
-      //        int info;
-
-      //        function_map::gsequ(&(data_.A), data_.R.getRawPtr(),
-      //                            data_.C.getRawPtr(), &(data_.rowcnd),
-      //                            &(data_.colcnd), &(data_.amax), &info);
-      //        TEST_FOR_EXCEPTION( info != 0,
-      //                            std::runtime_error,
-      //                            "SuperLU_MT gsequ returned with status " << info );
-      //        // Scalings will be applied in numericFactorization
-      // }
-
-      // // Next find a row permutation.
-      // if( data_.options.RowPerm == SLUD::NATURAL ){
-      //        for( int i = 0; i < this->globalNumRows_; ++i ) data_.perm_r[i] = i;
-      // } else if( data_.options.RowPerm == SLUD::LargeDiag ){
-      //        // Currently this must be done serially.
-      //        matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
-      //                                       nzvals_(), colind_(), rowptr_(),
-      //                                       Teuchos::ptrFromRef(data_.A),
-      //                                       this->timers_.mtxRedistTime_);
-      //        // Everyone has a global matrix copy, so we just all compute
-      //        // the row permutation
-      //        if( data_.options.Equil == SLUD::YES ){
-      //          data_.R1.resize(this->globalNumRows_);
-      //          data_.C1.resize(this->globalNumCols_);
-      //        }
-      //        // TODO: Do we need to apply R and C to A's nzvals before
-      //        // finding a row permutation?
-      //        function_map::ldperm(5, this->globalNumRows_, this->globalNumNonZeros_,
-      //                             colind_, rowptr_, nzvals_, data_.perm_r.getRawPtr(),
-      //                             data_.R1.getRawPtr(), data_.C1.getRawPtr());
-
-      //        // Note: if equilibration was not requested, then R1 and C1
-      //        // scalings will never be applied to the matrix values
-      //        // (indeed, the arrays will never be accessed)
-
-      // }      // else it must be MY_PERMR, and we expect perm_r to have been initialized
-
-      // // Finally, find a column permutation if requested
-      // // Use either the column-ordering found in the users perm_c or
-      // // the requested computed ordering
-      // int perm_spec = data_.options.ColPerm;
-      // if( perm_spec != SLUD::MY_PERMC ){
-      //        {                           // start matrix conversion block
-      //          Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-
-      //          if( data_.options.RowPerm != SLUD::LargeDiag ){
-      //            matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
-      //                                           nzvals_(), colind_(), rowptr_(),
-      //                                           Teuchos::ptrFromRef(data_.A),
-      //                                           this->timers_.mtxRedistTime_);
-      //          } // else we've already created the supermatrix
-      //        } // end matrix conversion block
-
-      //        TEST_FOR_EXCEPTION( perm_spec == SLUD::PARMETIS,
-      //                            std::invalid_argument,
-      //                            "Parmetis orderings not yet supported in Amesos2" );
-
-      //        // TODO: Do we need to apply R1 and C1 to A before finding a
-      //        // column permutation?
-      //        SLUD::get_perm_c_dist(this->status_.myPID,
-      //                              perm_spec,
-      //                              &(data_.A),
-      //                              data_.perm_c.getRawPtr());
-      // }
-      // // Else the user's perm_c will be applied later
-    } else {                    // ParSymbFact == YES (default, required)
-
-      loadA();			// Refresh matrix values
-
-      if( in_grid_ ){
-	// If this function has been called at least once, then the
-	// sizes, and fstVtxSep arrays were allocated in
-	// get_perm_c_parmetis.  Delete them before calling that
-	// function again.  These arrays will also be dealloc'd in the
-	// deconstructor.
-	if( this->getNumPreOrder() > 0 ){
-	  free( data_.sizes );
-	  free( data_.fstVtxSep );
-	}
-#ifdef HAVE_AMESOS2_TIMERS
-	Teuchos::TimeMonitor preOrderTime( this->timers_.preOrderTime_ );
-#endif
-	
-	float info = 0.0;
-	info = SLUD::get_perm_c_parmetis( &(data_.A),
-					  data_.perm_r.getRawPtr(), data_.perm_c.getRawPtr(),
-					  data_.grid.nprow * data_.grid.npcol, data_.domains,
-					  &(data_.sizes), &(data_.fstVtxSep),
-					  &(data_.grid), &(data_.symb_comm) );
-	
-	TEST_FOR_EXCEPTION( info > 0.0,
-			    std::runtime_error,
-			    "SuperLU_DIST pre-ordering ran out of memory after allocating "
-			    << info << " bytes of memory" );
+    if( in_grid_ ){
+      // If this function has been called at least once, then the
+      // sizes, and fstVtxSep arrays were allocated in
+      // get_perm_c_parmetis.  Delete them before calling that
+      // function again.  These arrays will also be dealloc'd in the
+      // deconstructor.
+      if( this->getNumPreOrder() > 0 ){
+	free( data_.sizes );
+	free( data_.fstVtxSep );
       }
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor preOrderTime( this->timers_.preOrderTime_ );
+#endif
+      
+      float info = 0.0;
+      info = SLUD::get_perm_c_parmetis( &(data_.A),
+					data_.perm_r.getRawPtr(), data_.perm_c.getRawPtr(),
+					data_.grid.nprow * data_.grid.npcol, data_.domains,
+					&(data_.sizes), &(data_.fstVtxSep),
+					&(data_.grid), &(data_.symb_comm) );
+      
+      TEST_FOR_EXCEPTION( info > 0.0,
+			  std::runtime_error,
+			  "SuperLU_DIST pre-ordering ran out of memory after allocating "
+			  << info << " bytes of memory" );
     }
 
     // Ordering will be applied directly before numeric factorization,
@@ -610,6 +533,7 @@ namespace Amesos {
     data_.options.Trans = SLUD::NOTRANS; // Should always be set this way
 
 
+    // TODO: Act upon this parameter
     if( parameterList->isParameter("Equil") ){
       if ( parameterList->template isType<bool>("Equil") ){
 	bool equil = parameterList->template get<bool>("Equil");
@@ -624,47 +548,6 @@ namespace Amesos {
 	  data_.options.Equil = SLUD::YES;
 	} else if ( equil == "NO" || equil == "no" ) {
 	  data_.options.Equil = SLUD::NO;
-	}
-      }
-    }
-
-    if( parameterList->isParameter("ParSymbFact") ){
-      if ( parameterList->template isType<bool>("ParSymbFact") ){
-	bool parsymbfact = parameterList->template get<bool>("ParSymbFact");
-	if( parsymbfact ){
-	  data_.options.ParSymbFact = SLUD::YES;
-	} else {
-	  data_.options.ParSymbFact = SLUD::NO;
-	}
-      } else if ( parameterList->template isType<std::string>("ParSymbFact") ) {
-	std::string parsymbfact = parameterList->template get<std::string>("ParSymbFact");
-	if ( parsymbfact == "YES" || parsymbfact == "yes" ){
-	  data_.options.ParSymbFact = SLUD::YES;
-	} else if ( parsymbfact == "NO" || parsymbfact == "no" ) {
-	  data_.options.ParSymbFact = SLUD::NO;
-	}
-      }
-
-      TEST_FOR_EXCEPTION( data_.options.ParSymbFact == SLUD::NO,
-			  std::invalid_argument,
-			  "Amesos::Superludist requires parallel symbolic factorization" );
-    }
-
-
-    if( parameterList->isParameter("SymmetricMode") ){
-      if ( parameterList->template isType<bool>("SymmetricMode") ){
-	bool sym = parameterList->template get<bool>("SymmetricMode");
-	if( sym ){
-	  data_.options.SymmetricMode = SLUD::YES;
-	} else {
-	  data_.options.SymmetricMode = SLUD::NO;
-	}
-      } else if ( parameterList->template isType<std::string>("SymmetricMode") ) {
-	std::string sym = parameterList->template get<std::string>("SymmetricMode");
-	if ( sym == "YES" || sym == "yes" ){
-	  data_.options.SymmetricMode = SLUD::YES;
-	} else if ( sym == "NO" || sym == "no" ) {
-	  data_.options.SymmetricMode = SLUD::NO;
 	}
       }
     }
@@ -740,6 +623,11 @@ namespace Amesos {
 			 "'perm_c' parameter not of correct length.");
     }
 
+    // Always use a "NATURAL" RowPerm to avoid a serial bottleneck
+    // with the weighted bipartite matching algorithm used for the
+    // "LargeDiag" RowPerm
+    data_.options.RowPerm = SLUD::NATURAL;
+
     if( parameterList->isParameter("IterRefine") ){
       std::string refine = parameterList->template get<std::string>("IterRefine");
       if( refine == "NO" ){
@@ -756,33 +644,6 @@ namespace Amesos {
 			   std::invalid_argument,
 			   "Unrecognized value for 'IterRefine' parameter.");
       }
-    }
-
-    if( parameterList->isParameter("RowPerm") ){
-      std::string method = parameterList->template get<std::string>("RowPerm");
-      if( method == "NO" || method == "NATURAL" ){
-	data_.options.RowPerm = SLUD::NOROWPERM;
-      } else if( method == "LargeDiag" ){
-	data_.options.RowPerm = SLUD::LargeDiag;
-      } else if( method == "MY_PERMR" ){
-	data_.options.RowPerm = SLUD::MY_PERMR;
-
-	// Expect to find a parameter called "perm_r"
-	TEST_FOR_EXCEPTION( !parameterList->isParameter("perm_r"),
-			    std::invalid_argument,
-			    "MY_PERMR specified without accompanying 'perm_r' parameter." );
-
-	data_.perm_r = parameterList->template get<Teuchos::Array<int> >("perm_r");
-	TEST_FOR_EXCEPTION( as<global_size_type>(data_.perm_r.size()) != this->globalNumRows_,
-			    std::invalid_argument,
-			    "'perm_r' parameter not of correct length." );
-      } else {
-	TEST_FOR_EXCEPTION( true, std::invalid_argument,
-			    "Unrecognized value for 'RowPerm' parameter." );
-      }
-      TEST_FOR_EXCEPTION( data_.options.RowPerm != SLUD::NOROWPERM,
-			  std::invalid_argument,
-			  "Amesos::Superludist does not support row permutations" );
     }
 
     if( parameterList->isParameter("ReplaceTinyPivot") ){
@@ -823,10 +684,8 @@ namespace Amesos {
     Teuchos::RCP<ParameterList> valid_params = Teuchos::rcp(new ParameterList());
 
     valid_params->set("Equil", false); // TODO: change to true when supported
-    valid_params->set("ParSymbFact", true);
     valid_params->set("ReplaceTinyPivot", true);
     valid_params->set("ColPerm", "PARMETIS");
-    valid_params->set("RowPerm", "NO");
     valid_params->set("IterRefine", "DOUBLE");
     valid_params->set("Trans", "NOTRANS");
     valid_params->set("PrintStat", false);
