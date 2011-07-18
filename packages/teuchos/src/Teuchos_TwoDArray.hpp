@@ -346,15 +346,53 @@ std::ostream& operator<<(std::ostream& os, const TwoDArray<T>& array){
   return os << TwoDArray<T>::toString(array);
 }
 
+template<typename T>
+bool symetricCompare(const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
+  if(a1.getNumRows() != a2.getNumRows() || 
+    a1.getNumRows() != a2.getNumRows())
+  {
+    return false;
+  }
+  else{
+    typedef typename TwoDArray<T>::size_type ST;
+    for(ST i=0;i<a1.getNumRows(); ++i){
+      for(ST j=0;j<a1.getNumCols()-i; ++j){
+        if(a1(i,j) != a2(i,j)){
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+}
+
 /* \brief Returns true of the two TwoDArrays have the same contents and
  * their dimensions are the same.
+ *
+ * \note If the arrays are symetrical, only the values in the upper half
+ * of the array are compared. For example: in a 4x4 array, only the values 
+ * indicated with x's in the figure below would be compared.
+ *
+ *   x x x x
+ *   x x x
+ *   x x 
+ *   x
+ *
  * \relates TwoDArray
  */
-template<typename T> inline
+template<typename T> 
 bool operator==( const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
-  return a1.getDataArray() == a2.getDataArray() && 
+  if(a1.isSymetrical() != a2.isSymetrical()){
+    return false;
+  }
+  if(a1.isSymetrical()){
+    return symetricCompare(a1,a2);
+  }
+  else{
+    return a1.getDataArray() == a2.getDataArray() && 
     a1.getNumRows() == a2.getNumRows() &&
     a1.getNumCols() == a2.getNumCols();
+  }
 }
 
 /**
