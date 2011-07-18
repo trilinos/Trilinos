@@ -61,7 +61,7 @@ namespace Teuchos{
  * Array should only consider the lower half of the array as valid. The
  * 
  * \warning The TwoDArray will not enforce symetry. However, when two 
- * symetrical TwoDArrays are compared, only the the lower half of the
+ * symmetrical TwoDArrays are compared, only the the lower half of the
  * TwoDArray's will be compared.
  */
 template<class T> 
@@ -87,13 +87,13 @@ public:
     _numRows(numRows),
     _numCols(numCols),
     _data(Array<T>(numCols*numRows, value)),
-    _symetrical(false)
+    _symmetrical(false)
     {}
   /**
    * \brief Constructs an empty TwoDArray.
    */
   TwoDArray():
-    _numRows(0),_numCols(0),_data(Array<T>()),_symetrical(false){}
+    _numRows(0),_numCols(0),_data(Array<T>()),_symmetrical(false){}
 
   /** \brief . */
   virtual ~TwoDArray(){}
@@ -148,39 +148,39 @@ public:
   }
 
   /** \brief A simple flag indicating whether or not
-   * this TwoDArray should be interpurted as symetrical.
+   * this TwoDArray should be interpurted as symmetrical.
    *
-   * \note A symetrical TwoDArray is defined as an TwoDArray where
+   * \note A symmetrical TwoDArray is defined as an TwoDArray where
    * entry i,j is the same as entry j,i.
    *
    * \note This does not change any of the TwoDArrays behavior.
    * It merely serves as an indicator to any one using a TwoDArray
-   * that the TwoDArray can be read as if it were symetrical. In other words,
+   * that the TwoDArray can be read as if it were symmetrical. In other words,
    * the TwoDArray class does not enforce the symetry.
    *
-   * @return True if the array is "symetrical", false otherwise.
+   * @return True if the array is "symmetrical", false otherwise.
    */
-  inline bool isSymetrical() const{
-    return _symetrical;
+  inline bool isSymmetrical() const{
+    return _symmetrical;
   }
 
   /**
    * \brief Sets whether or not the the TwoDArray should be 
    * interpurted as symetric.
    *
-   * \note A symetrical TwoDArray is defined as an TwoDArray where
+   * \note A symmetrical TwoDArray is defined as an TwoDArray where
    * entry i,j is the same as entry j,i.
    *
    * \note This does not change any of the TwoDArrays behavior.
    * It merely serves as an indicator to any one using a TwoDArray
-   * that the TwoDArray can be read as if it were symetrical. In other words,
+   * that the TwoDArray can be read as if it were symmetrical. In other words,
    * the TwoDArray class does not enforce the symetry.
    *
-   * @param symetry Whether or not the matrix should be interpurted
+   * @param symmetrical Whether or not the matrix should be interpurted
    * as symetric.
    */
-  inline void setSymetrical(bool symetrical){
-    _symetrical = symetrical;
+  inline void setSymmetrical(bool symmetrical){
+    _symmetrical = symmetrical;
   }
 
   //@}
@@ -252,7 +252,7 @@ private:
   Array<T> _data;
   TwoDArray(size_type numRows, size_type numCols, Array<T> data):
     _numRows(numRows),_numCols(numCols),_data(data){}
-  bool _symetrical;
+  bool _symmetrical;
 };
 
 template<class T> inline
@@ -298,7 +298,7 @@ std::string TwoDArray<T>::toString(const TwoDArray<T> array){
     TwoDArray<T>::getDimensionsDelimiter() +
     numColsStream.str() +
     metaSeperator +
-    (array.isSymetrical() ? "sym"+metaSeperator : "") +
+    (array.isSymmetrical() ? "sym"+metaSeperator : "") +
     array.getDataArray().toString();
 }
 
@@ -320,10 +320,10 @@ TwoDArray<T> TwoDArray<T>::fromString(const std::string& string){
   numColsStream >> numCols;
 
   //determine symetry state
-  bool symetrical = false;
+  bool symmetrical = false;
   curPos = curString.find(metaSeperator);
   if(curPos != std::string::npos){
-    symetrical = true;
+    symmetrical = true;
     curString = curString.substr(curPos+1);
   }
 
@@ -340,7 +340,7 @@ TwoDArray<T> TwoDArray<T>::fromString(const std::string& string){
 
   //Construct object to return
   TwoDArray<T> toReturn(numRows, numCols, array);
-  toReturn.setSymetrical(symetrical);
+  toReturn.setSymmetrical(symmetrical);
   return toReturn;
 }
 
@@ -365,15 +365,15 @@ std::ostream& operator<<(std::ostream& os, const TwoDArray<T>& array){
 namespace TwoDDetails {
 
 /**
- * \brief A function for comparing symetrical arrarys.
+ * \brief A function for comparing symmetrical arrarys.
  *
  * @param a1 The first array to compare.
  * @param a2 The second array to compare.
- * @return True if the two TwoDArrays are symetricaly the same, false 
+ * @return True if the two TwoDArrays are symmetricaly the same, false 
  * otherwise.
  */
 template<typename T>
-bool symetricCompare(const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
+bool symmetricCompare(const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
   if(a1.getNumRows() != a2.getNumRows() || 
     a1.getNumRows() != a2.getNumRows())
   {
@@ -398,7 +398,7 @@ bool symetricCompare(const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
 /* \brief Returns true of the two TwoDArrays have the same contents and
  * their dimensions are the same.
  *
- * \note If the arrays are symetrical, only the values in the upper half
+ * \note If the arrays are symmetrical, only the values in the upper half
  * of the array are compared. For example: in a 4x4 array, only the values 
  * indicated with x's in the figure below would be compared.
  *
@@ -411,11 +411,11 @@ bool symetricCompare(const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
  */
 template<typename T> 
 bool operator==( const TwoDArray<T> &a1, const TwoDArray<T> &a2 ){
-  if(a1.isSymetrical() != a2.isSymetrical()){
+  if(a1.isSymmetrical() != a2.isSymmetrical()){
     return false;
   }
-  if(a1.isSymetrical()){
-    return TwoDDetails::symetricCompare(a1,a2);
+  if(a1.isSymmetrical()){
+    return TwoDDetails::symmetricCompare(a1,a2);
   }
   else{
     return a1.getDataArray() == a2.getDataArray() && 

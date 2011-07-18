@@ -157,20 +157,20 @@ TEUCHOS_UNIT_TEST(Teuchos_TwoDArray, resizeTest){
 
 }
 
-TEUCHOS_UNIT_TEST(Teuchos_TwoDArray, symetryTest){
+TEUCHOS_UNIT_TEST(Teuchos_TwoDArray, symmetryTest){
   TwoDArray<int> simpleArray = getSimpleTestTwoDArray();
-  TEST_ASSERT(!simpleArray.isSymetrical());
-  simpleArray.setSymetrical(true);
-  TEST_ASSERT(simpleArray.isSymetrical());
+  TEST_ASSERT(!simpleArray.isSymmetrical());
+  simpleArray.setSymmetrical(true);
+  TEST_ASSERT(simpleArray.isSymmetrical());
 
 }
 
-TEUCHOS_UNIT_TEST(Teuchos_TwoDArray, symetrySerialization){
+TEUCHOS_UNIT_TEST(Teuchos_TwoDArray, symmetrySerialization){
   TwoDArray<int> simpleArray = getSimpleTestTwoDArray();
-  simpleArray.setSymetrical(true);
+  simpleArray.setSymmetrical(true);
   std::string arrayString = TwoDArray<int>::toString(simpleArray);
   TwoDArray<int> readIn = TwoDArray<int>::fromString(arrayString);
-  TEST_ASSERT(readIn.isSymetrical());
+  TEST_ASSERT(readIn.isSymmetrical());
 }
 
 
