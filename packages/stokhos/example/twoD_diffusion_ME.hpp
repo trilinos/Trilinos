@@ -253,6 +253,7 @@ fillMatrices(const FuncT& func, int sz)
       }
     }
     A_k[k]->FillComplete();
+    A_k[k]->OptimizeStorage();
   }
 }
 
