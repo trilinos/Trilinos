@@ -406,7 +406,6 @@ namespace stk {
               save_or_diff(eMesh, output_files_loc+"local_tet_N_2_6.e");
             }
           }
-        exit(124);
       }
 
       //=============================================================================
