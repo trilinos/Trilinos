@@ -81,7 +81,7 @@ Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> >
 Stokhos::BasisFactory<ordinal_type, value_type>::
 create1DBasis(Teuchos::ParameterList& bp)
 {
-  Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > basis;
+  Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > basis;
 
   std::string type = bp.get("Type","Legendre");
   ordinal_type order = bp.get("Order", 3);
