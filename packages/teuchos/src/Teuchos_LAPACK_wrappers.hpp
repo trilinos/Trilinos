@@ -685,6 +685,7 @@ extern "C" {
 #endif
 
 // Double precision LAPACK linear solvers
+
 void PREFIX DGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, double* a, const int* lda, double* b, const int* ldb, double* work, const int* lwork, int* info);
 void PREFIX DGELSS_F77(const int* m, const int* n, const int* nrhs, double* a, const int* lda, double* b, const int* ldb, double* s, const double* rcond, int* rank, double* work, const int* lwork, int* info);
 void PREFIX DGGLSE_F77(const int* m, const int* n, const int* p, double* a, const int* lda, double* b, const int* ldb, double* c, double* d, double* x, double* work, const int* lwork, int* info);
@@ -816,7 +817,7 @@ double PREFIX DLAPY2_F77(const double* x, const double* y);
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
-// Double precision std::complex LAPACK linear solvers
+// Double precision complex LAPACK linear solvers
 void PREFIX ZGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, std::complex<double>* a, const int* lda, std::complex<double>* b, const int* ldb, std::complex<double>* work, const int* lwork, int* info);
 void PREFIX ZGEQRF_F77(const int* m, const int* n, std::complex<double>* a, const int* lda, std::complex<double>* tau, std::complex<double>* work, const int* lwork, int* info);
 void PREFIX ZUNGQR_F77(const int* m, const int* n, const int* k, std::complex<double>* a, const int* lda, const std::complex<double>* tau, std::complex<double>* work, const int* lwork, int* info);
@@ -843,7 +844,7 @@ void PREFIX ZPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, 
 void PREFIX ZTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, const std::complex<double>* a, const int* lda, std::complex<double>* b, const int* ldb, int* info);
 void PREFIX ZTRTRI_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const std::complex<double>* a, const int* lda, int* info);
 
-// Single precision std::complex LAPACK linear solvers
+// Single precision complex LAPACK linear solvers
 
 void PREFIX CGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, std::complex<float>* a, const int* lda, std::complex<float>* b, const int* ldb, std::complex<float>* work, const int* lwork, int* info);
 void PREFIX CGEQRF_F77(const int* m, const int* n, std::complex<float>* a, const int* lda, std::complex<float>* tau, std::complex<float>* work, const int* lwork, int* info);
@@ -871,7 +872,8 @@ void PREFIX CPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, 
 void PREFIX CTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, const std::complex<float>* a, const int* lda, std::complex<float>* b, const int* ldb, int* info);
 void PREFIX CTRTRI_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const std::complex<float>* a, const int* lda, int* info);
 
-// Double precision std::complex LAPACK eigen solvers
+// Double precision complex LAPACK eigensolvers
+
 void PREFIX ZSTEQR_F77(Teuchos_fcd, const int* n, double* D, double* E, std::complex<double>* Z, const int* ldz, std::complex<double>* work, int* info);
 void PREFIX ZHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, double* w, std::complex<double>* work, const int* lwork, double* rwork, int* info);
 void PREFIX ZHEGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, std::complex<double>* B, const int* ldb, double* w, std::complex<double>* work, const int* lwork, double *rwork, int* info);
@@ -884,7 +886,7 @@ void PREFIX ZGEES_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(std::complex<dou
 void PREFIX ZTREVC_F77(Teuchos_fcd, Teuchos_fcd, int* select, const int* n, const std::complex<double>* t, const int* ldt, std::complex<double>* vl, const int* ldvl, std::complex<double>* vr, const int* ldvr, const int* mm, int* m, std::complex<double>* work, double* rwork, int* info); 
 void PREFIX ZTREXC_F77(Teuchos_fcd, const int* n, std::complex<double>* t, const int* ldt, std::complex<double>* q, const int* ldq, int* ifst, int* ilst, int* info);
 
-// Single precision std::complex LAPACK eigen solvers
+// Single precision complex LAPACK eigensolvers
 
 void PREFIX CSTEQR_F77(Teuchos_fcd, const int* n, std::complex<float>* D, std::complex<float>* E, std::complex<float>* Z, const int* ldz, std::complex<float>* work, int* info);
 void PREFIX CHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, std::complex<float>* a, const int* lda, float* w, std::complex<float>* work, const int* lwork, float* rwork, int* info);

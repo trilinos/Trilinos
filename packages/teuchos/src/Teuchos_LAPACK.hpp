@@ -92,7 +92,7 @@ functions that include the macro:
 	    	<li>These templates are specialized to use the Fortran LAPACK routines for
 		scalar types \c float and \c double.
     
-		<li>If Teuchos is configured with \c --enable-teuchos-std::complex then these templates
+		<li>If Teuchos is configured with \c -DTeuchos_ENABLE_COMPLEX:BOOL=ON then these templates
 		are specialized for scalar types \c std::complex<float> and \c std::complex<double> also.
 
 		<li>A short description is given for each method.  For more detailed documentation, see the
@@ -272,12 +272,12 @@ namespace Teuchos
     void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* H, const OrdinalType ldh, ScalarType* WR, ScalarType* WI, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
     
     /*! Computes for an \c n by \c n nonsymmetric matrix \c A, the eigenvalues, the Schur form \c T, and, optionally, the matrix of Schur vectors \c Z. When \c ScalarType is \c float or \c double, the real Schur form is computed.
-       \note (This is the version used for \c float and \c double, where \c select requires two arguments to represent a std::complex eigenvalue.)
+       \note (This is the version used for \c float and \c double, where \c select requires two arguments to represent a complex eigenvalue.)
     */
     void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*, ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* WR, ScalarType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const;    
 
     /*! Computes for an \c n by \c n nonsymmetric matrix \c A, the eigenvalues, the Schur form \c T, and, optionally, the matrix of Schur vectors \c Z. When \c ScalarType is \c float or \c double, the real Schur form is computed.
-       \note (This is the version used for \c std::complex<float> and \c std::complex<double>, where \c select requires one arguments to represent a std::complex eigenvalue.)
+       \note (This is the version used for \c std::complex<float> and \c std::complex<double>, where \c select requires one arguments to represent a complex eigenvalue.)
     */
     void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* W, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
 
