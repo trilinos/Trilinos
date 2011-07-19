@@ -40,6 +40,7 @@
 namespace Kokkos {
   // import Teuchos memory management classes into Tpetra
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::arcp;

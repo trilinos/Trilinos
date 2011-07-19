@@ -61,7 +61,7 @@ public:
 
 private:
 
-  static Teuchos::RCP<DefaultPlatformType> platform_;
+  static RCP<DefaultPlatformType> platform_;
 
 };
 

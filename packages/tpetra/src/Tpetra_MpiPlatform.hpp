@@ -41,76 +41,110 @@ namespace Tpetra {
     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
     type, if omitted, defaults to the \c LocalOrdinal type.
    */
-  template<class Node=Kokkos::DefaultNode::DefaultNodeType>
+  template <class Node>
 	class MpiPlatform : public Teuchos::Describable {
-    public:
+  private:
+    MpiPlatform(const MpiPlatform<Node> &platform);
+
+  protected: 
+    //! Teuchos::Comm object instantiated for the platform.
+    RCP<Teuchos::MpiComm<int> > comm_;
+    //! Node object instantiated for the platform.
+    RCP<Node> node_;
+  public:
     //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.
-      typedef Node NodeType;
-      //! @name Constructor/Destructor Methods
-      //@{ 
+    typedef Node NodeType;
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
-      //! Constructor
-      explicit MpiPlatform(Teuchos::RCP<Node> node);
+    //! Node-accepting constructor uses MPI_COMM_WORLD
+    explicit MpiPlatform(const RCP<Node> &node) {
+      node_ = node;
+      comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
+    }
 
-      //! Constructor
-      MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);
+    //! Node and MPI_Comm accepting constructor
+    MpiPlatform(const RCP<Node> &node, const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm) {
+      node_ = node;
+      comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
+    }
 
-      //! Destructor
-      ~MpiPlatform();
+    //! Destructor
+    ~MpiPlatform() {}
 
-      //@}
+    //@}
 
-      //! @name Class Creation and Accessor Methods
-      //@{ 
+    //! @name Class Creation and Accessor Methods
+    //@{ 
 
-      //! Comm Instance
-      Teuchos::RCP< const Teuchos::Comm<int> > getComm() const;
+    //! Comm Instance
+    RCP< const Comm<int> > getComm() const {
+      return comm_; 
+    }
 
-      //! Get Get a node for parallel computation.
-      Teuchos::RCP<Node> getNode() const;
+    //! Get Get a node for parallel computation.
+    RCP<Node> getNode() const {
+      return node_;
+    }
 
-      //@}
-
-    protected: 
-      //! Node object instantiated for the platform.
-      Teuchos::RCP<Node> node_;
-
-    private:
-      Teuchos::RCP<Teuchos::MpiComm<int> > comm_;
-      MpiPlatform(const MpiPlatform<Node> &platform);
+    //@}
   };
 
-  template <class Node>
-  MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
-  : node_(node) {
-    comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
-  }
 
-  template <class Node>
-  MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node)
-  : node_(node) {
-    comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
-  } 
+  template <>
+	class MpiPlatform<Kokkos::DefaultNode::DefaultNodeType> : public Teuchos::Describable {
+  private:
+    MpiPlatform(const MpiPlatform<Kokkos::DefaultNode::DefaultNodeType> &platform);
 
-  template <class Node>
-  MpiPlatform<Node>::~MpiPlatform() {}
+  protected: 
+    //! Teuchos::Comm object instantiated for the platform.
+    RCP<Teuchos::MpiComm<int> > comm_;
+    //! Node object instantiated for the platform.
+    RCP<Kokkos::DefaultNode::DefaultNodeType> dnode_;
+  public:
+    //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.
+    typedef Kokkos::DefaultNode::DefaultNodeType NodeType;
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
-  template <class Node>
-  MpiPlatform<Node>::MpiPlatform(const MpiPlatform<Node> &platform) {
-    comm_ = platform.comm_;
-  }
+    //! Default constructor uses Kokkos default node and MPI_COMM_WORLD
+    MpiPlatform() {
+      dnode_ = null;
+      comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
+    }
 
-  template <class Node>
-  Teuchos::RCP< const Teuchos::Comm<int> > 
-  MpiPlatform<Node>::getComm() const {
-    return comm_;
-  }
+    //! Node and MPI_Comm accepting constructor
+    MpiPlatform(const RCP<Kokkos::DefaultNode::DefaultNodeType> &node, const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm) {
+      dnode_ = node;
+      comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
+    }
 
-  template <class Node>
-  Teuchos::RCP<Node> MpiPlatform<Node>::getNode() const 
-  { return node_; }
+    //! Destructor
+    ~MpiPlatform() {}
+
+    //@}
+
+    //! @name Class Creation and Accessor Methods
+    //@{ 
+
+    //! Comm Instance
+    RCP< const Comm<int> > getComm() const {
+      return comm_; 
+    }
+
+    //! Get Get a node for parallel computation.
+    RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const {
+      RCP<Kokkos::DefaultNode::DefaultNodeType> def = dnode_;
+      if (def == null) {
+        def = Kokkos::DefaultNode::getDefaultNode(); 
+      }
+      return def;
+    }
+
+    //@}
+  };
+
 
 } // namespace Tpetra
 
 #endif // TPETRA_MPIPLATFORM_HPP
-

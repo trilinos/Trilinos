@@ -5,12 +5,12 @@ Teuchos::RCP<Tpetra::DefaultPlatform::DefaultPlatformType> Tpetra::DefaultPlatfo
 
 namespace Tpetra {
 
-  DefaultPlatform::DefaultPlatformType &DefaultPlatform::getDefaultPlatform() {
-    if (!platform_.get()) {
+  DefaultPlatform::DefaultPlatformType & DefaultPlatform::getDefaultPlatform() {
+    if (platform_ == null) {
 #ifdef HAVE_TPETRA_MPI
-      platform_ = Teuchos::rcp(new MpiPlatform<Kokkos::DefaultNode::DefaultNodeType>(Kokkos::DefaultNode::getDefaultNode()));
+      platform_ = rcp(new MpiPlatform<Kokkos::DefaultNode::DefaultNodeType>());
 #else
-      platform_ = Teuchos::rcp(new SerialPlatform<Kokkos::DefaultNode::DefaultNodeType>(Kokkos::DefaultNode::getDefaultNode()));
+      platform_ = rcp(new SerialPlatform<Kokkos::DefaultNode::DefaultNodeType>());
 #endif
     }
     return *platform_;
