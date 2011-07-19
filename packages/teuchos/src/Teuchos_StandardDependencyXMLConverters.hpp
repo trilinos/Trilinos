@@ -916,6 +916,22 @@ return rcp(
 }
 
 
+/**
+ * \brief A class for converting TwoDRowDependencies
+ * to and from XML.
+ *
+ * The valid XML representation of a TwoDRowDependency is:
+ * \code
+    <Dependency 
+      type="TwoDRowDependency(dependee_number_type, type_of_array_values)"
+    >
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependent parameters...
+      ...Optional Function tag...
+    </Dependency>
+ \endcode
+ */
 template<class DependeeType, class DependentType>
 class TwoDRowDependencyXMLConverter :
   public ArrayModifierDependencyXMLConverter<DependeeType, DependentType>
@@ -946,6 +962,22 @@ return rcp(
       dependee, dependents, function));
 }
 
+/**
+ * \brief A class for converting TwoDColDependencies
+ * to and from XML.
+ *
+ * The valid XML representation of a TwoDColDependency is:
+ * \code
+    <Dependency 
+      type="TwoDColDependency(dependee_number_type, type_of_array_values)"
+    >
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependent parameters...
+      ...Optional Function tag...
+    </Dependency>
+ \endcode
+ */
 template<class DependeeType, class DependentType>
 class TwoDColDependencyXMLConverter :
   public ArrayModifierDependencyXMLConverter<DependeeType, DependentType>

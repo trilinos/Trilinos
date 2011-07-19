@@ -1914,6 +1914,9 @@ TwoDArrayModifierDependency<DependeeType, DependentType>::validateDep()
 /**
  * \brief A dependency in which the number of rows in a parameter 
  * with a TwoDArray depends on the value of another parameter.
+ *
+ * Please see TwoDRowDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 template<class DependeeType, class DependentType>
 class TwoDRowDependency : 
@@ -2074,6 +2077,9 @@ RCP<TwoDRowDependency<DependeeType, DependentType> >
 /**
  * \brief A dependency in which the number of rows in a parameter 
  * with a TwoDArray depends on the value of another parameter.
+ *
+ * Please see TwoDColDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
  */
 template<class DependeeType, class DependentType>
 class TwoDColDependency : 
