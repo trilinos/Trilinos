@@ -7,8 +7,6 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#include <Kokkos_DefaultNode.hpp>
-
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_RTI.hpp>
