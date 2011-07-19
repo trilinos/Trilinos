@@ -134,14 +134,14 @@ int main(int argc, char **argv)
     // indices (i,j) if Cijk is non-zero for each k
     typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
     double one = 1.0;
-    for (typename Cijk_type::k_iterator k_it=Cijk->k_begin(); 
+    for (Cijk_type::k_iterator k_it=Cijk->k_begin(); 
 	 k_it!=Cijk->k_end(); ++k_it) {
       int k = index(k_it);
       Epetra_CrsMatrix mat(Copy, map, 1);
-      for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
 	   j_it != Cijk->j_end(k_it); ++j_it) {
 	int j = index(j_it);
-	for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
 	     i_it != Cijk->i_end(j_it); ++i_it) {
 	  int i = index(i_it);
 	  mat.InsertGlobalValues(i, 1, &one, &j);
