@@ -270,8 +270,8 @@ namespace Teuchos {
     // the cube of the loop length.  Adjust the quantities below as
     // necessary to ensure the timer reports a nonzero elapsed time
     // for each of the invocations.
-    const size_t timerA_loopLength = 500;
-    const size_t timerB_loopLength = 1000;
+    const size_t timerA_loopLength = 200;
+    const size_t timerB_loopLength = 250;
 
     // Timer A gets a call count of 3.
     for (size_t k = 0; k < 3; ++k)
