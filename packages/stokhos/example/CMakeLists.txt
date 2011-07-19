@@ -64,6 +64,12 @@ PACKAGE_ADD_EXECUTABLE(
   DEPLIBS stokhos
   )
 
+PACKAGE_ADD_EXECUTABLE(
+  sparsity_slice_example
+  SOURCES sparsity_slice_example.cpp
+  DEPLIBS stokhos
+  )
+
 PACKAGE_ADD_LIBRARY(
   linear2d_diffusion
   HEADERS twoD_diffusion_ME.hpp
