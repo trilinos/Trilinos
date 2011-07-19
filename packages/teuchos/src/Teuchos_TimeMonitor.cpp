@@ -190,16 +190,27 @@ namespace Teuchos {
       MPI_Initialized (&mpiHasBeenStarted);
       if (! mpiHasBeenStarted)
         {
-	  // The line commented out below compiles and runs correctly
-	  // with GCC 4.5.1, but gives a compiler error with Intel's
-	  // C++ compiler (version 11.1).  The trouble is that the
-	  // Intel compiler can't figure out that null is-an RCP<const
-	  // Comm<int> >.
+	  // mfh 19 Jul 2011
+	  //
+	  // The first line commented out below compiles and runs
+	  // correctly with GCC 4.5.1, but gives a compiler error with
+	  // Intel's C++ compiler (version 11.1).  Intel's compiler
+	  // also rejects the two commented-out lines that follow.  It
+	  // seems that as of 19 July 2011, this code is the only code
+	  // in Trilinos that uses getDefaultSerialComm().  Intel's
+	  // compiler claims that the "Ordinal" template parameter of
+	  // DefaultComm is really the Teuchos::Ordinal typedef; the
+	  // Ordinal template parameter _should_ shadow the typedef in
+	  // Teuchos, and does with GCC, but does not in Intel's
+	  // compiler.  This may be the case with other compilers as
+	  // well, but I haven't tested them yet.
 	  //
 	  //pComm = DefaultComm<int>::getDefaultSerialComm (null);
+	  //
+	  //RCP<const Comm<int> > nullComm; // is null.
+	  //pComm = DefaultComm<int>::getDefaultSerialComm (nullComm);
 
-	  RCP<const Comm<int> > nullComm; // is null.
-	  pComm = DefaultComm<int>::getDefaultSerialComm (nullComm);
+	  pComm = rcp_implicit_cast<const Comm<int> > (rcp (new SerialComm<int> ()));
 	}
     }
 #endif // HAVE_MPI
