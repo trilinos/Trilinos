@@ -226,7 +226,7 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
     // Un-transform eigenvalues
     anasaziOp->transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
 
-    // Compute Rayleigh quotient
+    // Compute Rayleigh quotient -- Potentially rescale eigenvectors
     anasaziOp->rayleighQuotient((*evecs_r)[i], (*evecs_i)[i], rq_r, rq_i);
 
     // Print out untransformed eigenvalues and Rayleigh quotient residual

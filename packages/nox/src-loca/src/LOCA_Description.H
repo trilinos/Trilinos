@@ -186,6 +186,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	            <li> <B>"Step Size"</B> -- [int] (default: 1) Checks convergence every so many steps
 	            <li> <B>"Maximum Restarts"</B> -- [int] (default: 1) Number of restarts allowed
                     <li> <B>"Symmetric"</B> -- [bool] (default:  false) Is the operator symmetric
+                    <li> <B>"Normalize Eigenvectors with Mass Matrix"</B> -- [bool] (default:  false) Option to normalize vMv=1 instead of vv=1.
 	            <li> <B>"Verbosity"</B> -- [Anasazi::MsgType] (default: Anasazi::Errors+Anasazi::Warnings+Anasazi::FinalSummary) Verbosity level
 	            <li> <B>"Sorting Order"</B> -- [string] (default: "LM") Sorting order of printed eigenvalues.  Used by LOCA::EigenvalueSort::Factory.  Valid choices are:
 		         <ul>
