@@ -97,10 +97,10 @@ const char *sg_prec_names[] = { "Mean-Based",
 				"Kronecker-Product" };
 
 // Random field types
-enum SG_RF { UNIFORM, LOGNORMAL };
-const int num_sg_rf = 2;
-const SG_RF sg_rf_values[] = { UNIFORM, LOGNORMAL };
-const char *sg_rf_names[] = { "Uniform", "Log-Normal" };
+enum SG_RF { UNIFORM, RYS, LOGNORMAL };
+const int num_sg_rf = 3;
+const SG_RF sg_rf_values[] = { UNIFORM, RYS, LOGNORMAL };
+const char *sg_rf_names[] = { "Uniform", "Rys", "Log-Normal" };
 
 int main(int argc, char *argv[]) {   
 
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
     }
 
     bool nonlinear_expansion = false;
-    if (randField == UNIFORM)
+    if (randField == UNIFORM || randField == RYS)
       nonlinear_expansion = false;
     else if (randField == LOGNORMAL)
       nonlinear_expansion = true;
@@ -270,6 +270,8 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<num_KL; i++)
       if (randField == UNIFORM)
         bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,normalize_basis));
+      else if (randField == RYS)
+        bases[i] = Teuchos::rcp(new Stokhos::RysBasis<int,double>(p,weightCut,normalize_basis));
       else if (randField == LOGNORMAL)      
         bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,normalize_basis));
 
@@ -474,7 +476,7 @@ int main(int argc, char *argv[]) {
       sgOpParams.set("Operator Method", "KL Matrix Free");
     else if (opMethod == KL_REDUCED_MATRIX_FREE) {
       sgOpParams.set("Operator Method", "KL Reduced Matrix Free");
-      if (randField == UNIFORM)
+      if (randField == UNIFORM || randField == RYS)
 	sgOpParams.set("Number of KL Terms", num_KL);
       else
 	sgOpParams.set("Number of KL Terms", basis->size());
@@ -720,6 +722,7 @@ int main(int argc, char *argv[]) {
     Epetra_Vector g_std_dev(*(model->get_g_map(0)));
     sg_g_poly->computeMean(g_mean);
     sg_g_poly->computeStandardDeviation(g_std_dev);
+    std::cout.precision(16);
     // std::cout << "\nResponse Expansion = " << std::endl;
     // std::cout.precision(12);
     // sg_g_poly->print(std::cout);
