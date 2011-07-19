@@ -189,7 +189,18 @@ namespace Teuchos {
       int mpiHasBeenStarted = 0;
       MPI_Initialized (&mpiHasBeenStarted);
       if (! mpiHasBeenStarted)
-	pComm = DefaultComm<int>::getDefaultSerialComm (null);
+        {
+	  // The line commented out below compiles and runs correctly
+	  // with GCC 4.5.1, but gives a compiler error with Intel's
+	  // C++ compiler (version 11.1).  The trouble is that the
+	  // Intel compiler can't figure out that null is-an RCP<const
+	  // Comm<int> >.
+	  //
+	  //pComm = DefaultComm<int>::getDefaultSerialComm (null);
+
+	  RCP<const Comm<int> > nullComm; // is null.
+	  pComm = DefaultComm<int>::getDefaultSerialComm (nullComm);
+	}
     }
 #endif // HAVE_MPI
 
