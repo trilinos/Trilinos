@@ -198,3 +198,11 @@ IF(Stokhos_ENABLE_Sacado)
  )
 
 ENDIF()
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  LogNormalUnitTest
+  SOURCES Stokhos_LogNormalUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
