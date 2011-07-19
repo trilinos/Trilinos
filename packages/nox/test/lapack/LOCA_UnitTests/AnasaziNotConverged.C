@@ -48,8 +48,12 @@
 #include "ChanProblemInterface.H"
 #include "NOX_TestCompare.H"
 
+#include "Teuchos_GlobalMPISession.hpp"
+
 int main(int argc, char *argv[])
 {
+  Teuchos::GlobalMPISession mpi_session(&argc, &argv);
+
   int n = 100;
   double alpha = 0.0;
   double beta = 0.0;
