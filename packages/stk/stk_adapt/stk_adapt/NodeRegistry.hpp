@@ -1445,7 +1445,7 @@ namespace stk {
                           element_p = elementId;
                           if (!element_p)
                             {
-                              throw std::runtime_error("addToExistingParts: bad elem found 2");
+                              throw std::runtime_error("addToExistingPartsNew: bad elem found 2");
                             }
                         }
 
@@ -1488,12 +1488,22 @@ namespace stk {
 
                             if (!c_node)
                               {
-                                std::cout << "addToExistingParts: " <<  nodeIds_onSE[i_nid] << " i_nid= " << i_nid << " nidsz= " << nidsz
-                                          << std::endl;
-                                throw std::runtime_error("addToExistingParts: bad node found 0.3");
+                                // note, this is ok - a null node here can come from a ghost element
+                                if (1)
+                                {
+                                  continue;
+                                }
+                                else
+                                {
+                                  std::cout << "addToExistingPartsNew: " <<  nodeIds_onSE[i_nid] << " i_nid= " << i_nid << " nidsz= " << nidsz
+                                            << std::endl;
+                                  throw std::runtime_error("addToExistingParts: bad node found 0.3");
+                                }
                               }
-
-                            m_eMesh.getBulkData()->change_entity_parts( *c_node, add_parts, remove_parts );
+  
+                            // only try to add to part if I am the owner
+                            if (c_node->owner_rank() == m_eMesh.getParallelRank())
+                              m_eMesh.getBulkData()->change_entity_parts( *c_node, add_parts, remove_parts );
 
                             if (0)
                               {
