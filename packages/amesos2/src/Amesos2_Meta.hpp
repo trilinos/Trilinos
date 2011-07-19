@@ -165,6 +165,8 @@ namespace Amesos2 {
       : type_list<T1, type_list<T2, type_list<T3, type_list<T4, type_list<T5, type_list<T6,nil_t> > > > > >
     { };
 
+    /* More declarations for larger type lists may be added if necessary */
+
     
     /* A utility meta-function to determine whether a given type is
      * found within a type-list

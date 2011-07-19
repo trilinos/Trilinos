@@ -151,19 +151,22 @@ namespace Amesos2 {
 #ifdef HAVE_AMESOS2_KLU2
     if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
        (solverName == "amesos2_klu")  || (solverName == "klu")){
-      return( rcp(new Klu2<Matrix,Vector>(A, X, B)) );
+      return handle_solver_type_support<Klu2,Matrix,Vector>::apply(A, X, B);
+      // return( rcp(new Klu2<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
 #ifdef HAVE_AMESOS2_MUMPS
     if((solverName == "amesos2_mumps") || (solverName == "mumps")){
-      return( rcp(new Mumps<Matrix,Vector>(A, X, B)) );
+      return handle_solver_type_support<Mumps,Matrix,Vector>::apply(A, X, B);
+      // return( rcp(new Mumps<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
 #ifdef HAVE_AMESOS2_UMFPACK
     if((solverName == "amesos2_umfpack") || (solverName == "umfpack")){
-      return( rcp(new Umfpack<Matrix,Vector>(A, X, B)) );
+      return handle_solver_type_support<Umfpack,Matrix,Vector>::apply(A, X, B);
+      // return( rcp(new Umfpack<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
@@ -172,7 +175,8 @@ namespace Amesos2 {
        (solverName == "superludist") ||
        (solverName == "amesos2_superlu_dist") ||
        (solverName == "superlu_dist")){
-      return( rcp(new Superludist<Matrix,Vector>(A, X, B)) );
+      return handle_solver_type_support<Superludist,Matrix,Vector>::apply(A, X, B);
+      // return( rcp(new Superludist<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
@@ -181,32 +185,37 @@ namespace Amesos2 {
        (solverName == "superlumt") ||
        (solverName == "amesos2_superlu_mt") ||
        (solverName == "superlu_mt")){
-      return( rcp(new Superlumt<Matrix,Vector>(A, X, B)) );
+      return handle_solver_type_support<Superlumt,Matrix,Vector>::apply(A, X, B);
+      // return( rcp(new Superlumt<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
 #ifdef HAVE_AMESOS2_SUPERLU
     if((solverName == "amesos2_superlu") ||
        (solverName == "superlu")){
-      return( rcp(new Superlu<Matrix,Vector>(A, X, B)) );
+      return handle_solver_type_support<Superlu,Matrix,Vector>::apply(A, X, B);
+      // return( rcp(new Superlu<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
 #ifdef HAVE_AMESOS2_DSCPACK
     if((solverName == "amesos2_dscpack") || (solverName == "dscpack")){
-      return( rcp(new Dscpack<Matrix,Vector>(A, X, B)) );
+      return handle_solver_type_support<Dscpack,Matrix,Vector>::apply(A, X, B);
+      // return( rcp(new Dscpack<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
 #ifdef HAVE_AMESOS2_PARDISO
     if((solverName == "amesos2_pardiso") || (solverName == "pardiso")){
-      return( rcp(new Pardiso<Matrix,Vector>(A, X, B)) );
+      return handle_solver_type_support<Pardiso,Matrix,Vector>::apply(A, X, B);
+      // return( rcp(new Pardiso<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
 #ifdef HAVE_AMESOS2_TAUCS
     if((solverName == "amesos2_taucs") || (solverName == "taucs")){
-      return( rcp(new Taucs<Matrix,Vector>(A, X, B)) );
+      return handle_solver_type_support<Taucs,Matrix,Vector>::apply(A, X, B);
+      // return( rcp(new Taucs<Matrix,Vector>(A, X, B)) );
     }
 #endif
 

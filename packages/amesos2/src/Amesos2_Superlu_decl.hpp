@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -53,6 +53,7 @@
 #ifndef AMESOS2_SUPERLU_DECL_HPP
 #define AMESOS2_SUPERLU_DECL_HPP
 
+#include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Superlu_MatrixHelper.hpp"
 #include "Amesos2_Superlu_FunctionMap.hpp"
@@ -79,7 +80,7 @@ class Superlu : public SolverCore<Amesos2::Superlu, Matrix, Vector>
 public:
 
   /// Name of this solver interface.
-  static const char* name;	// declaration. Initialization outside.
+  static const char* name;      // declaration. Initialization outside.
 
   typedef Superlu<Matrix,Vector>                                       type;
   typedef SolverCore<Amesos2::Superlu,Matrix,Vector>              super_type;
@@ -91,7 +92,7 @@ public:
   typedef typename super_type::global_size_type            global_size_type;
 
   typedef TypeMap<Amesos2::Superlu,scalar_type>                    type_map;
-  
+
   /*
    * The SuperLU interface will need two other typedef's, which are:
    * - the superlu type that corresponds to scalar_type and
@@ -100,7 +101,7 @@ public:
   typedef typename type_map::type                                  slu_type;
   typedef typename type_map::magnitude_type magnitude_type;
 
-  typedef FunctionMap<Amesos2::Superlu,scalar_type>            function_map;
+  typedef FunctionMap<Amesos2::Superlu,slu_type>               function_map;
   typedef MatrixHelper<Amesos2::Superlu>                      matrix_helper;
 
   /// \name Constructor/Destructor methods
@@ -113,8 +114,8 @@ public:
    * Amesos2::create() to initialize a Superlu interface.
    */
   Superlu(Teuchos::RCP<const Matrix> A,
-	  Teuchos::RCP<Vector>       X,
-	  Teuchos::RCP<const Vector> B);
+          Teuchos::RCP<Vector>       X,
+          Teuchos::RCP<const Vector> B);
 
 
   /// Destructor
@@ -162,7 +163,7 @@ private:
    * \callgraph
    */
   int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
-		 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
+                 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
   // TODO: B should technically be declared const across the board
 
 
@@ -218,7 +219,7 @@ private:
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
     SLU::SuperMatrix A, B, X, L, U; // matrix A in NCformat
-    SLU::SuperMatrix AC;	// permuted matrix A in NCPformat
+    SLU::SuperMatrix AC;        // permuted matrix A in NCPformat
 
     SLU::superlu_options_t options;
     SLU::mem_usage_t mem_usage;
@@ -233,8 +234,8 @@ private:
     Teuchos::Array<magnitude_type> C;
 
     char equed;
-    bool rowequ, colequ;	// flags what type of equilibration
-				// has been performed
+    bool rowequ, colequ;        // flags what type of equilibration
+                                // has been performed
 
     int relax;
     int panel_size;
@@ -282,9 +283,24 @@ private:
    */
   bool same_symbolic_;
 
-};				// End class Superlu
+};                              // End class Superlu
 
+
+// Specialize solver_traits struct for SuperLU
+template <>
+struct solver_traits<Superlu> {
+#ifdef HAVE_TEUCHOS_COMPLEX
+  typedef Meta::make_list6<float,
+                           double,
+                           std::complex<float>
+                           std::complex<double>
+                           SLU::C::complex,
+                           SLU::Z::doublecomplex> supported_scalars;
+#else
+  typedef Meta::make_list2<float, double> supported_scalars;
+#endif
+};
 
 } // end namespace Amesos2
 
-#endif	// AMESOS2_SUPERLU_DECL_HPP
+#endif  // AMESOS2_SUPERLU_DECL_HPP

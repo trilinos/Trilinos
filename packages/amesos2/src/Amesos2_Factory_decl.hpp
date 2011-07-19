@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,14 +45,18 @@
  * \file   Amesos2_Factory_decl.hpp
  * \author Eric Bavier <etbavie@sandia.gov>
  * \date   Tue Jun  7 16:25:16 2011
- * 
+ *
  * \brief  Contains declarations for Amesos2::create and Amesos2::query.
  *
  * Amesos2 defines the nonmember factory method \c Amesos2::create for
- * creating instances of Amesos2 solvers.  The \c Amesos2::query
- * function can be used to ask Amesos2 at runtime whether a particular
- * solver is supported.
- * 
+ * creating instances of Amesos2 solvers.  If a users asks
+ * Amesos2::create to create a solver with a matrix whose scalar type
+ * is not supported by that solver, then a runtime
+ * std::invalid_argument exception will be thrown.
+ *
+ * The \c Amesos2::query function can be used to ask Amesos2 at
+ * runtime whether a particular solver is supported.
+ *
  * \attention
  * Users should favor these factory methods for creating Amesos2 solver
  * instances over explicitly instantiating their own.
@@ -80,6 +84,11 @@
 
 #include "Amesos2_config.h"
 
+#include "Teuchos_ScalarTraits.hpp"
+
+#include "Amesos2_SolverTraits.hpp"
+#include "Amesos2_MatrixTraits.hpp"
+
 #ifdef HAVE_AMESOS2_KLU2
 #include "Amesos2_Klu2.hpp"
 #endif
@@ -89,13 +98,13 @@
 // #ifdef HAVE_AMESOS2_UMFPACK
 // #include "Amesos2_Umfpack.hpp"
 // #endif
-#ifdef HAVE_AMESOS2_SUPERLUDIST	// Distributed-memory SuperLU
+#ifdef HAVE_AMESOS2_SUPERLUDIST // Distributed-memory SuperLU
 #include "Amesos2_Superludist.hpp"
 #endif
-#ifdef HAVE_AMESOS2_SUPERLUMT	// Multi-threaded SuperLU
+#ifdef HAVE_AMESOS2_SUPERLUMT   // Multi-threaded SuperLU
 #include "Amesos2_Superlumt.hpp"
 #endif
-#ifdef HAVE_AMESOS2_SUPERLU	// Sequential SuperLU
+#ifdef HAVE_AMESOS2_SUPERLU     // Sequential SuperLU
 #include "Amesos2_Superlu.hpp"
 #endif
 // #ifdef HAVE_AMESOS2_DSCPACK
@@ -127,8 +136,8 @@ namespace Amesos2 {
    *
    * \relatesalso Amesos2::Solver
    */
-  template <class Matrix,
-	    class Vector >
+  template < class Matrix,
+             class Vector >
   Solver<Matrix,Vector>*
   create(const Matrix* A, Vector* X, const Vector* B);
 
@@ -142,17 +151,17 @@ namespace Amesos2 {
    * \param [in] A <tt>Teuchos::RCP</tt> to the coefficient matrix
    * \param [in] X <tt>Teuchos::RCP</tt> to LHS solution vector
    * \param [in] B <tt>Teuchos::RCP</tt> to RHS vector
-   * 
+   *
    * \return A <tt>Teuchos::RCP</tt> to a KLU2 solver interface.
    *
    * \relatesalso Amesos2::Solver
    */
-  template <class Matrix,
-	    class Vector >
+  template < class Matrix,
+             class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(Teuchos::RCP<const Matrix> A,
-	 Teuchos::RCP<Vector>       X,
-	 Teuchos::RCP<const Vector> B);
+         Teuchos::RCP<Vector>       X,
+         Teuchos::RCP<const Vector> B);
 
 
   /**
@@ -172,8 +181,8 @@ namespace Amesos2 {
    *
    * \relatesalso Amesos2::Solver
    */
-  template <class Matrix,
-	    class Vector >
+  template < class Matrix,
+             class Vector >
   Solver<Matrix,Vector>*
   create(const char* solverName, const Matrix* A, Vector* X, const Vector* B);
 
@@ -194,13 +203,13 @@ namespace Amesos2 {
    *
    * \relatesalso Amesos2::Solver
    */
-  template <class Matrix,
-	    class Vector >
+  template < class Matrix,
+             class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const char* solverName,
-	 const Teuchos::RCP<const Matrix> A,
-	 const Teuchos::RCP<Vector>       X,
-	 const Teuchos::RCP<const Vector> B);
+         const Teuchos::RCP<const Matrix> A,
+         const Teuchos::RCP<Vector>       X,
+         const Teuchos::RCP<const Vector> B);
 
 
   /**
@@ -219,8 +228,8 @@ namespace Amesos2 {
    *
    * \relatesalso Amesos2::Solver
    */
-  template <class Matrix,
-	    class Vector >
+  template < class Matrix,
+             class Vector >
   Solver<Matrix,Vector>*
   create(const std::string solverName, const Matrix* A, Vector* X, const Vector* B);
 
@@ -241,15 +250,15 @@ namespace Amesos2 {
    *
    * \relatesalso Amesos2::Solver
    */
-  template <class Matrix,
-	    class Vector >
+  template < class Matrix,
+             class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const std::string solverName,
-	 const Teuchos::RCP<const Matrix> A,
-	 const Teuchos::RCP<Vector>       X,
-	 const Teuchos::RCP<const Vector> B);
+         const Teuchos::RCP<const Matrix> A,
+         const Teuchos::RCP<Vector>       X,
+         const Teuchos::RCP<const Vector> B);
 
-  
+
   /**
    * \brief Creates an Amesos2 Solver interface with Matrix A.
    *
@@ -262,14 +271,14 @@ namespace Amesos2 {
    * \param [in] A \c C pointer to the coefficient matrix
    *
    * \return A \c C pointer to an Amesos2 solver interface.
-   * 
+   *
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    *
    * \relatesalso Amesos2::Solver
    */
-  template <class Matrix,
-	    class Vector >
+  template < class Matrix,
+             class Vector >
   Solver<Matrix,Vector>*
   create(const std::string solverName, const Matrix* A);
 
@@ -286,18 +295,87 @@ namespace Amesos2 {
    * \param [in] A <tt>Teuchos::RCP</tt> to the coefficient matrix
    *
    * \return A <tt>Teuchos::RCP</tt> to an Amesos2 solver interface.
-   * 
+   *
    * \throw std::invalid_argument The third-party solver named by \c
    * solverName is not supported.
    *
    * \relatesalso Amesos2::Solver
    */
-  template <class Matrix,
-	    class Vector >
+  template < class Matrix,
+             class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const std::string solverName,
-	 const Teuchos::RCP<const Matrix> A);
+         const Teuchos::RCP<const Matrix> A);
 
+
+  template < template <class,class> class ConcreteSolver,
+             class Matrix,
+             class Vector >
+  struct create_solver_with_supported_type {
+    static Teuchos::RCP<Solver<Matrix,Vector> > apply(Teuchos::RCP<const Matrix> A,
+                                                      Teuchos::RCP<Vector>       X,
+                                                      Teuchos::RCP<const Vector> B )
+    {
+      return rcp( new ConcreteSolver<Matrix,Vector>(A, X, B) );
+    }
+  };
+
+  /**
+   * \internal
+   *
+   * If the apply method of this struct is ever called, then it means
+   * that the user requested to create a concrete solver interface for
+   * a matrix whose scalar type is not supported by the solver.  In
+   * such a case we throw a runtime exception.
+   */
+  template < template <class,class> class ConcreteSolver,
+             class Matrix,
+             class Vector >
+  struct throw_no_scalar_support_exception {
+    static Teuchos::RCP<Solver<Matrix,Vector> > apply(Teuchos::RCP<const Matrix> A,
+                                                      Teuchos::RCP<Vector>       X,
+                                                      Teuchos::RCP<const Vector> B )
+    {
+      typedef ConcreteSolver<Matrix,Vector> concretesolver_matrix_vector;
+      typedef typename MatrixTraits<Matrix>::scalar_t scalar_t;
+      TEST_FOR_EXCEPTION( true,
+                          std::invalid_argument,
+                          "The requested Amesos2 " <<
+                          concretesolver_matrix_vector::name <<
+                          " solver interface does not support the " <<
+                          Teuchos::ScalarTraits<scalar_t>::name() <<
+                          " scalar type." );
+    }
+  };
+
+  /**
+   * \internal
+   *
+   * Utility meta-function which binds to an exception-throwing
+   * runtime function if the solver does not support the scalar type
+   * of the matrix.  Otherwise, if the scalar type is supported, then
+   * this returns an RCP to a new concrete Amesos2 solver of the given
+   * type.
+   */
+  template < template <class,class> class ConcreteSolver,
+             class Matrix,
+             class Vector >
+  struct handle_solver_type_support {
+    static Teuchos::RCP<Solver<Matrix,Vector> > apply(Teuchos::RCP<const Matrix> A,
+                                                      Teuchos::RCP<Vector>       X,
+                                                      Teuchos::RCP<const Vector> B )
+    {
+      return Meta::if_then_else<
+      solver_supports_scalar<ConcreteSolver, typename MatrixTraits<Matrix>::scalar_t>::value,
+        create_solver_with_supported_type<ConcreteSolver,Matrix,Vector>,
+        throw_no_scalar_support_exception<ConcreteSolver,Matrix,Vector> >::type::apply(A, X, B);
+    }
+  };
+
+
+  /////////////////////
+  // Query Functions //
+  /////////////////////
 
   /**
    * \brief Queries the Factory for support of the named third-party library.
@@ -320,4 +398,4 @@ namespace Amesos2 {
 
 }
 
-#endif	// AMESOS2_FACTORY_DECL_HPP
+#endif  // AMESOS2_FACTORY_DECL_HPP

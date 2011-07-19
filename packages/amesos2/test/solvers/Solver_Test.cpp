@@ -216,7 +216,7 @@ bool do_mat_test(const ParameterList& parameters)
 
   const string mm_file = parameters.name();
   if( verbosity > 0 ){
-    *fos << "Test matrix " << mm_file << " ... ";
+    *fos << "Test matrix " << mm_file << " ... " << std::flush;
     if( verbosity > 1) *fos << std::endl;
   }
 
@@ -346,7 +346,7 @@ bool do_epetra_test(const string& mm_file,
 #endif
 
   if( verbosity > 2 ){
-    *fos << std::endl << "      Reading matrix from " << mm_file << " ... ";
+    *fos << std::endl << "      Reading matrix from " << mm_file << " ... " << std::flush;
   }
   std::string path = filedir + mm_file;
   MAT* A;
@@ -392,7 +392,7 @@ bool do_epetra_test(const string& mm_file,
     return( false );
   }
   if( verbosity > 2 ){
-    *fos << "      Solution achieved. Checking solution ... ";
+    *fos << "      Solution achieved. Checking solution ... " << std::flush;
   }
 
   Teuchos::Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
@@ -440,7 +440,7 @@ bool test_epetra(const string& mm_file,
       if( run_list.isSublist("run_params") ){
 	string run_name = epetra_runs.name(run_it);
 	if( verbosity > 1 ){
-	  *fos << "    Doing epetra test run `" << run_name << "' ... ";
+	  *fos << "    Doing epetra test run `" << run_name << "' ... " << std::flush;
 	}
 
 	ParameterList solve_params_copy(solve_params);
@@ -457,7 +457,7 @@ bool test_epetra(const string& mm_file,
   // only do one default run
   if( do_default ){
     if( verbosity > 1 ){
-      *fos << "    Doing epetra test default test run ... ";
+      *fos << "    Doing epetra test default test run ... " << std::flush;
     }
     success &= do_epetra_test(mm_file, solver_name, solve_params);
   }
@@ -494,7 +494,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
   RCP<Node>             node = platform.getNode();
 
   if( verbosity > 2 ){
-    *fos << std::endl << "      Reading matrix from " << mm_file << " ... ";
+    *fos << std::endl << "      Reading matrix from " << mm_file << " ... " << std::flush;
   }
   std::string path = filedir + mm_file;
   RCP<MAT> A =
@@ -563,7 +563,7 @@ bool do_tpetra_test_with_types(const string& mm_file,
     return( false );
   }
   if( verbosity > 2 ){
-    *fos << "      Solution achieved. Checking solution ... ";
+    *fos << "      Solution achieved. Checking solution ... " << std::flush;
   }
 
   Teuchos::Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
@@ -668,7 +668,7 @@ bool test_tpetra(const string& mm_file,
 	}
 	*fos << " lo=" << lo
 	     << " go=" << go
-	     << " ... ";
+	     << " ... " << std::flush;
       }
 
       string timer_name = mm_file + "_" + scalar + "_" + lo + "_" + go;

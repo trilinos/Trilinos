@@ -21,7 +21,9 @@ namespace Amesos2 {
     SOLVE
   } EPhase;
 
-  /** \brief Indicates that the concrete class has a special
+  /** \internal
+   *
+   * \brief Indicates that the concrete class has a special
    * implementation that should be called.
    *
    * Matrix Adapters \c typedef this as \c {get_ccs|get_crs}_spec
@@ -30,18 +32,30 @@ namespace Amesos2 {
    */
   struct has_special_impl {};
 
-  /** \brief Indicates that the concrete class can use the generic
-   *  getC{c|r}s methods implemented in MatrixAdapter.
+  /** \internal
+   *
+   * \brief Indicates that the concrete class can use the generic
+   * getC{c|r}s methods implemented in MatrixAdapter.
    */
   struct no_special_impl {};
 
-  /// Indicates that the object of an adapter provides row access to its data.
+  /** \internal
+   * 
+   * \brief Indicates that the object of an adapter provides row
+   * access to its data.
+   */
   struct row_access {};
     
-  /// Indicates that the object of an adapter provides column access to its data.
+  /** \internal
+   *
+   * \brief Indicates that the object of an adapter provides column
+   * access to its data.
+   */
   struct col_access {};
 
-  /** \enum EDistribution
+  /** \internal
+   *
+   * \enum EDistribution
    *
    * An enum of this type is expected by the Matrix adapters' getCrs
    * and getCcs functions to describe the layout of the
@@ -54,7 +68,9 @@ namespace Amesos2 {
     ROOTED                      /**< only \c rank=0 has a full view, all others have nothing. */
   } EDistribution;
 
-  /** \enum EStorage_Ordering
+  /** \internal
+   *
+   * \enum EStorage_Ordering
    *
    * This enum also used by the matrix adapters to indicate whether
    * the indices of the representation must be in sorted order or

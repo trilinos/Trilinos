@@ -110,6 +110,10 @@ General TODO
    header and in the Amesos2:: namespace to be used when
    needed. (DONE)
 
+ - Throw error if a user tries to create a solver with an unsupported
+   type.  This will require a bit more meta-programming than we
+   currently have.  Pulling our meta-programming functions out of Util
+   might also be good.  (DONE)
 
 -------------------------------
  Some things worth considering

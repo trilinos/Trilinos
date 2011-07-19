@@ -63,12 +63,13 @@
 
 /* External definitions of the Superlu functions
  *
- * Note that we do not just include the "slu_*defs.h" files provided
- * for each data-type.  This is because there are several declarations
- * (as of SuperLU 4.1) across these headers which conflict with each
- * other in C linkage.  All of the conflicting functions, on the other
- * hand, we do not care about.  What we do instead is to declare only
- * those functions which we *do* care about with external linkage.
+ * Note that we do include the "slu_*defs.h" files provided for each
+ * data-type.  This produces linker warnings, but keeps us from
+ * including SuperLU code in our own code (even if only extern
+ * declarations, which would eliminate linker warnings).  This is
+ * because there are several declarations (as of SuperLU 4.1) across
+ * these headers which conflict with each other in C linkage.  All of
+ * the conflicting functions, on the other hand, we do not care about.
  */
 namespace SLU {
 
@@ -78,100 +79,20 @@ namespace SLU {
 #include "slu_util.h"
 
     namespace S {               // single-precision real definitions
-      // extern void
-      // sgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
-      //        char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
-      //        void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-      //        float *, float *, float *, float *,
-      //        SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
-      // extern void
-      // sgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
-      //         int, int, int*, void *, int, int *, int *,
-      //         SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
-      // extern void
-      // sCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, float *,
-      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      // extern void
-      // sCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, float *,
-      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      // extern void
-      // sCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, float *, int,
-      //                      SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-
-      #include "slu_sdefs.h"
+#include "slu_sdefs.h"
     }
 
     namespace D {               // double-precision real definitions
-      // extern void
-      // dgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
-      //        char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
-      //        void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-      //        double *, double *, double *, double *,
-      //        SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
-      // extern void
-      // dgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
-      //         int, int, int*, void *, int, int *, int *,
-      //         SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
-      // extern void
-      // dCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, double *,
-      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      // extern void
-      // dCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, double *,
-      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      // extern void
-      // dCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, double *, int,
-      //                      SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-
-      #include "slu_ddefs.h"
+#include "slu_ddefs.h"
     }
 
 #ifdef HAVE_TEUCHOS_COMPLEX
     namespace C {              // single-precision complex definitions
-      // extern void
-      // cgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
-      //        char *, float *, float *, SLU::SuperMatrix *, SLU::SuperMatrix *,
-      //        void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-      //        float *, float *, float *, float *,
-      //        SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
-      // extern void
-      // cgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
-      //         int, int, int*, void *, int, int *, int *,
-      //         SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
-      // extern void
-      // cCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, complex *,
-      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      // extern void
-      // cCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, complex *,
-      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      // extern void
-      // cCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, complex *, int,
-      //                      SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-
-      #include "slu_cdefs.h"
+#include "slu_cdefs.h"
     }
 
     namespace Z {              // double-precision complex definitions
-      // extern void
-      // zgssvx(SLU::superlu_options_t *, SLU::SuperMatrix *, int *, int *, int *,
-      //        char *, double *, double *, SLU::SuperMatrix *, SLU::SuperMatrix *,
-      //        void *, int, SLU::SuperMatrix *, SLU::SuperMatrix *,
-      //        double *, double *, double *, double *,
-      //        SLU::mem_usage_t *, SLU::SuperLUStat_t *, int *);
-      // extern void
-      // zgstrf (SLU::superlu_options_t*, SLU::SuperMatrix*,
-      //         int, int, int*, void *, int, int *, int *,
-      //         SLU::SuperMatrix *, SLU::SuperMatrix *, SLU::SuperLUStat_t*, int *);
-      // extern void
-      // zCreate_CompCol_Matrix(SLU::SuperMatrix *, int, int, int, doublecomplex *,
-      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      // extern void
-      // zCreate_CompRow_Matrix(SLU::SuperMatrix *, int, int, int, doublecomplex *,
-      //                        int *, int *, SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-      // extern void
-      // zCreate_Dense_Matrix(SLU::SuperMatrix *, int, int, doublecomplex *, int,
-      //                      SLU::Stype_t, SLU::Dtype_t, SLU::Mtype_t);
-
-      #include "slu_zdefs.h"
+#include "slu_zdefs.h"
     }
 #endif  // HAVE_TEUCHOS_COMPLEX
 
@@ -182,493 +103,348 @@ namespace SLU {
 
 namespace Amesos2 {
 
-
-/**
- * \brief Pass function calls to Superlu based on data type.
- *
- * Helper class which passes on function calls to the appropriate
- * Superlu function based on the type of its scalar template argument.
- *
- * Superlu has solver and matrix builder functions defined based on
- * data type.  One function for complex, one for double precision
- * complex, another for \c float , and yet another for \c double.  To
- * work elegantly with the Amesos2::Superlu interface we want to be
- * able to perform a single function call which is appropriate for the
- * scalar type of the Matrix and MultiVectors that we are working
- * with.  The \c FunctionMap class provides that capability.
- *
- * The class template is specialized for each data type that Superlu
- * supports, and errors are thrown for other data types.
- *
- * Please see the <a
- * href="http://crd.lbl.gov/~xiaoye/SuperLU/superlu_ug.pdf">Superlu Users'
- * Guide</a> for more information on the TPL functions.
- */
-template <typename Scalar>
-struct FunctionMap<Superlu,Scalar>
-{
-  /**
-   * \brief Binds to the appropriate Superlu solver driver based on data type
+  /* ==================== Specializations ====================
    *
-   * \throw std::runtime_error If no specialization of this type exists for a
-   *        particular scalar type
+   * \cond Superlu_function_specializations
    */
-  static void gssvx(
-    SLU::superlu_options_t*                  options,
-    SLU::SuperMatrix*                        A,
-    int*                                     perm_c,
-    int*                                     perm_r,
-    int*                                     etree,
-    char*                                    equed,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* R,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* C,
-    SLU::SuperMatrix*                        L,
-    SLU::SuperMatrix*                        U,
-    void*                                    work,
-    int                                      lwork,
-    SLU::SuperMatrix*                        B,
-    SLU::SuperMatrix*                        X,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* recip_pivot_growth,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* rcond,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* ferr,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* berr,
-    SLU::mem_usage_t*                        mem_usage,
-    SLU::SuperLUStat_t*                      stat,
-    int*                                     info
-    )
-    {
-      TEST_FOR_EXCEPTION( true,
-        std::runtime_error,
-        "Superlu does not support the data type");
-    }
 
   /**
-   * \brief Computes an LU factorization of a general m-by-n matrix
+   * \brief Pass function calls to Superlu based on data type.
    *
-   * Uses a partial pivoting technique with row interchanges.  The
-   * factorization has the form
+   * Helper class which passes on function calls to the appropriate
+   * Superlu function based on the type of its scalar template argument.
    *
-   * Pr * A = L * U
+   * Superlu has solver and matrix builder functions defined based on
+   * data type.  One function for complex, one for double precision
+   * complex, another for \c float , and yet another for \c double.  To
+   * work elegantly with the Amesos2::Superlu interface we want to be
+   * able to perform a single function call which is appropriate for the
+   * scalar type of the Matrix and MultiVectors that we are working
+   * with.  The \c FunctionMap class provides that capability.
    *
-   * where Pr is a row permutation matrix, L is lower triangular with unit
-   * diagonal elements, and U is upper triangular.
+   * The class template is specialized for each data type that Superlu
+   * supports.  The Amesos2::create function assures that an
+   * unspecialized FunctionMap will never be called by the solver
+   * interface.
    *
-   * See Superlu documentation for a further description of function
-   * arguments.
-   *
-   * \note The SuperLU factorization methods only accept SuperMatrix objects
-   * in the SLU_NC format, so conversion must be done when necessary
+   * Please see the <a
+   * href="http://crd.lbl.gov/~xiaoye/SuperLU/superlu_ug.pdf">Superlu Users'
+   * Guide</a> for more information on the TPL functions.
    */
-  static void gstrf(
-    SLU::superlu_options_t*   options,
-    SLU::SuperMatrix*         AC, // in NCPformat
-    int                       relax,
-    int                       panel_size,
-    int*                      etree,
-    void*                     work,
-    int                       lwork,
-    int*                      perm_c,
-    int*                      perm_r,
-    SLU::SuperMatrix*         L,
-    SLU::SuperMatrix*         U,
-    SLU::SuperLUStat_t*       stat,
-    int*                      info
-    )
-    {
-      TEST_FOR_EXCEPTION( true,
-        std::runtime_error,
-        "Superlu does not support the data type");
-    }
+  template <>
+  struct FunctionMap<Superlu,float>
+  {
+    typedef TypeMap<Superlu,float> type_map;
 
-
-  /**
-   * \brief Creates a Superlu CCS matrix using the appropriate function
-   *
-   * \throw std::runtime_error If there is no specialization of this type for
-   *        the Scalar type
-   */
-  static void create_CompCol_Matrix(
-    SLU::SuperMatrix*                        A,
-    int                                      numrows,
-    int                                      numcols,
-    int                                      nnz,
-    typename TypeMap<Superlu,Scalar>::type*  nzval,
-    int*                                     rowind,
-    int*                                     colptr,
-    SLU::Stype_t                             storage_t,
-    SLU::Dtype_t                             data_t,
-    SLU::Mtype_t                             mat_t
-    )
-    {
-      TEST_FOR_EXCEPTION( true,
-        std::runtime_error,
-        "Superlu does not support the data type");
-    }
-
-  /**
-   * \brief Creates a Superlu CRS matrix using the appropriate function
-   *
-   * \throw std::runtime_error If there is no specialization of this type for
-   *        the Scalar type
-   */
-  static void create_CompRow_Matrix(
-    SLU::SuperMatrix*                        A,
-    int                                      numrows,
-    int                                      numcols,
-    int                                      nnz,
-    typename TypeMap<Superlu,Scalar>::type*  nzval,
-    int*                                     rowind,
-    int*                                     colptr,
-    SLU::Stype_t                             storage_t,
-    SLU::Dtype_t                             data_t,
-    SLU::Mtype_t                             mat_t
-    )
-    {
-      TEST_FOR_EXCEPTION( true,
-        std::runtime_error,
-        "Superlu does not support the data type");
-    }
-
-
-  /**
-   * \brief Creates a Superlu Dense Matrix using the appropriate Superlu
-   *         function.
-   *
-   * \param X Superlu SuperMatrix that is to be created
-   * \param x vals in column major order
-   * \param ldx leading dimension of x
-   *
-   * \throw std::runtime_error If there is no specialization of this type for
-   *        the Scalar type
-   */
-  static void create_Dense_Matrix(
-    SLU::SuperMatrix*                        X,
-    int                                      numrows,
-    int                                      numcols,
-    typename TypeMap<Superlu,Scalar>::type*  x,
-    int                                      ldx,
-    SLU::Stype_t                             storage_t,
-    SLU::Dtype_t                             data_t,
-    SLU::Mtype_t                             mat_t
-    )
-    {
-      TEST_FOR_EXCEPTION( true,
-        std::runtime_error,
-        "Superlu does not support the data type");
-    }
-
-
-  /**
-   * \brief compute row and column scaling for the matrix A
-   */
-  static void gsequ(
-    SLU::SuperMatrix*                                 A,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* R,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* C,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* rowcnd,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* colcnd,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* amax,
-    int*                                              info
-    )
-    {
-      TEST_FOR_EXCEPTION( true,
-        std::runtime_error,
-        "Superlu does not support the data type");
-    }
-
-  /**
-   * \brief Apply row and column scaling to the matrix A
-   *
-   * The row and column scaling in R and C are applied to A if its
-   * determined that such scalings would improce the condition of the
-   * matrix.
-   *
-   * On exit, equed says what type of equilibration were actually
-   * applied:
-   *  - 'N' no equilibration
-   *  - 'R' row equilibration
-   *  - 'C' column equilibration
-   *  - 'B' both row and column equilibration
-   */
-  static void laqgs(
-    SLU::SuperMatrix*                                 A,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* R,
-    typename TypeMap<Superlu,Scalar>::magnitude_type* C,
-    typename TypeMap<Superlu,Scalar>::magnitude_type  rowcnd,
-    typename TypeMap<Superlu,Scalar>::magnitude_type  colcnd,
-    typename TypeMap<Superlu,Scalar>::magnitude_type  amax,
-    char*                                             equed
-    )
-    {
-      TEST_FOR_EXCEPTION( true,
-        std::runtime_error,
-        "Superlu does not support the data type");
-    }
-};
-
-
-/* ==================== Specializations ====================
- *
- * \cond Superlu_function_specializations
- */
-
-template <>
-struct FunctionMap<Superlu,float>
-{
-  static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
-    int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
-    SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
-    SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
-    float* rcond, float* ferr, float* berr, SLU::mem_usage_t* mem_usage,
-    SLU::SuperLUStat_t* stat, int* info)
+    /**
+     * \brief Binds to the appropriate Superlu solver driver based on data type
+     */
+    static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+		      int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
+		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
+		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
+		      float* rcond, float* ferr, float* berr, SLU::mem_usage_t* mem_usage,
+		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::S::sgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-        lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
 
-  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
-    int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
-    int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
-    SLU::SuperLUStat_t* stat, int* info)
+    /**
+     * \brief Computes an LU factorization of a general m-by-n matrix
+     *
+     * Uses a partial pivoting technique with row interchanges.  The
+     * factorization has the form
+     *
+     * Pr * A = L * U
+     *
+     * where Pr is a row permutation matrix, L is lower triangular with unit
+     * diagonal elements, and U is upper triangular.
+     *
+     * The AC argument is given in the SuperLU \c NCPformat
+     *
+     * See Superlu documentation for a further description of function
+     * arguments.
+     *
+     * \note The SuperLU factorization methods only accept SuperMatrix objects
+     * in the SLU_NC format, so conversion must be done when necessary
+     */
+    static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
+		      int relax, int panel_size, int* etree, void* work,
+		      int lwork, int* perm_c, int* perm_r, SLU::SuperMatrix* L,
+		      SLU::SuperMatrix* U, SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::S::sgstrf(options, AC, relax, panel_size, etree,
-        work, lwork, perm_c, perm_r, L, U, stat, info);
+		     work, lwork, perm_c, perm_r, L, U, stat, info);
     }
 
-  static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-    TypeMap<Superlu,float>::type* nzval, int* rowind, int* colptr,
-    SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    /**
+     * \brief Creates a Superlu CCS matrix using the appropriate function
+     */
+    static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, 
+				      int nnz, type_map::type* nzval, int* rowind, int* colptr, 
+				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::S::sCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
-        stype, dtype, mtype);
+				     stype, dtype, mtype);
     }
 
-  static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-    TypeMap<Superlu,float>::type* nzval, int* rowind, int* colptr,
-    SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    /**
+     * \brief Creates a Superlu CRS matrix using the appropriate function
+     */
+    static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, 
+				      int nnz, type_map::type* nzval, int* rowind, int* colptr,
+				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::S::sCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
-        stype, dtype, mtype);
+				     stype, dtype, mtype);
     }
 
 
-  static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-    TypeMap<Superlu,float>::type* x, int ldx, SLU::Stype_t stype,
-    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    /**
+     * \brief Creates a Superlu Dense Matrix using the appropriate Superlu
+     *         function.
+     *
+     * \param X Superlu SuperMatrix that is to be created
+     * \param x vals in column major order
+     * \param ldx leading dimension of x
+     */
+    static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
+				    type_map::type* x, int ldx, SLU::Stype_t stype,
+				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::S::sCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
     }
 
-  static void gsequ(SLU::SuperMatrix* A, float* R, float* C,
-    float* rowcnd, float* colcnd, float* amax, int* info)
+    /**
+     * \brief compute row and column scaling for the matrix A
+     */
+    static void gsequ(SLU::SuperMatrix* A, float* R, float* C,
+		      float* rowcnd, float* colcnd, float* amax, int* info)
     {
       SLU::S::sgsequ(A, R, C, rowcnd, colcnd, amax, info);
     }
 
-  static void laqgs(SLU::SuperMatrix* A, float* R, float* C,
-    float rowcnd, float colcnd, float amax, char* equed)
+    /**
+     * \brief Apply row and column scaling to the matrix A
+     *
+     * The row and column scaling in R and C are applied to A if its
+     * determined that such scalings would improce the condition of the
+     * matrix.
+     *
+     * On exit, equed says what type of equilibration were actually
+     * applied:
+     *  - 'N' no equilibration
+     *  - 'R' row equilibration
+     *  - 'C' column equilibration
+     *  - 'B' both row and column equilibration
+     */
+    static void laqgs(SLU::SuperMatrix* A, float* R, float* C,
+		      float rowcnd, float colcnd, float amax, char* equed)
     {
       SLU::S::slaqgs(A, R, C, rowcnd, colcnd, amax, equed);
     }
-};
+  };
 
 
-template <>
-struct FunctionMap<Superlu,double>
-{
-  static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
-    int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
-    SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
-    SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
-    double* rcond, double* ferr, double* berr, SLU::mem_usage_t* mem_usage,
-    SLU::SuperLUStat_t* stat, int* info)
+  template <>
+  struct FunctionMap<Superlu,double>
+  {
+    typedef TypeMap<Superlu,double> type_map;
+
+    static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
+		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
+		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
+		      double* rcond, double* ferr, double* berr, SLU::mem_usage_t* mem_usage,
+		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::D::dgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-        lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
 
-  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
-    int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
-    int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
-    SLU::SuperLUStat_t* stat, int* info)
+    static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
+		      int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
+		      int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::D::dgstrf(options, AC, relax, panel_size, etree,
-        work, lwork, perm_c, perm_r, L, U, stat, info);
+		     work, lwork, perm_c, perm_r, L, U, stat, info);
     }
 
-  static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-    TypeMap<Superlu,double>::type* nzval, int* rowind, int* colptr,
-    SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, 
+				      int nnz, type_map::type* nzval, int* rowind, int* colptr, 
+				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::D::dCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
-        stype, dtype, mtype);
+				     stype, dtype, mtype);
     }
 
-  static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-    TypeMap<Superlu,double>::type* nzval, int* rowind, int* colptr,
-    SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, 
+				      int nnz, type_map::type* nzval, int* rowind, int* colptr, 
+				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::D::dCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
-        stype, dtype, mtype);
+				     stype, dtype, mtype);
     }
 
-  static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-    TypeMap<Superlu,double>::type* x, int ldx, SLU::Stype_t stype,
-    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, 
+				    int n, type_map::type* x, int ldx, SLU::Stype_t stype, 
+				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::D::dCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
     }
 
-  static void gsequ(SLU::SuperMatrix* A, double* R, double* C,
-    double* rowcnd, double* colcnd, double* amax, int* info)
+    static void gsequ(SLU::SuperMatrix* A, double* R, double* C,
+		      double* rowcnd, double* colcnd, double* amax, int* info)
     {
       SLU::D::dgsequ(A, R, C, rowcnd, colcnd, amax, info);
     }
 
-  static void laqgs(SLU::SuperMatrix* A, double* R, double* C,
-    double rowcnd, double colcnd, double amax, char* equed)
+    static void laqgs(SLU::SuperMatrix* A, double* R, double* C,
+		      double rowcnd, double colcnd, double amax, char* equed)
     {
       SLU::D::dlaqgs(A, R, C, rowcnd, colcnd, amax, equed);
     }
 
-};
+  };
 
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
-/* The specializations for Teuchos::as<> for SLU::complex and
- * SLU::doublecomplex are provided in Amesos2_Superlu_Type.hpp
- */
-template <>
-struct FunctionMap<Superlu,std::complex<float> >
-{
-  static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
-    int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
-    SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
-    SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
-    float* rcond, float* ferr, float* berr, SLU::mem_usage_t* mem_usage,
-    SLU::SuperLUStat_t* stat, int* info)
+  /* The specializations for Teuchos::as<> for SLU::complex and
+   * SLU::doublecomplex are provided in Amesos2_Superlu_Type.hpp
+   */
+  template <>
+  struct FunctionMap<Superlu,SLU::C::complex>
+  {
+    static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+		      int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
+		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
+		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, float* recip_pivot_growth,
+		      float* rcond, float* ferr, float* berr, SLU::mem_usage_t* mem_usage,
+		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::C::cgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-        lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
 
-  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
-    int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
-    int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
-    SLU::SuperLUStat_t* stat, int* info)
+    static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
+		      int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
+		      int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::C::cgstrf(options, AC, relax, panel_size, etree,
-        work, lwork, perm_c, perm_r, L, U, stat, info);
+		     work, lwork, perm_c, perm_r, L, U, stat, info);
     }
 
-  static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-    TypeMap<Superlu,std::complex<float> >::type* nzval, int* rowind, int* colptr,
-    SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
+				      SLU::C::complex* nzval, int* rowind, int* colptr,
+				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::C::cCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
-        stype, dtype, mtype);
+				     stype, dtype, mtype);
     }
 
-  static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-    TypeMap<Superlu,std::complex<float> >::type* nzval, int* rowind, int* colptr,
-    SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
+				      SLU::C::complex* nzval, int* rowind, int* colptr,
+				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::C::cCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
-        stype, dtype, mtype);
+				     stype, dtype, mtype);
     }
 
-  static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-    TypeMap<Superlu,std::complex<float> >::type* x, int ldx, SLU::Stype_t stype,
-    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
+				    SLU::C::complex* x, int ldx, SLU::Stype_t stype,
+				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::C::cCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
     }
 
-  static void gsequ(SLU::SuperMatrix* A, float* R, float* C,
-    float* rowcnd, float* colcnd, float* amax, int* info)
+    static void gsequ(SLU::SuperMatrix* A, float* R, float* C,
+		      float* rowcnd, float* colcnd, float* amax, int* info)
     {
       SLU::C::cgsequ(A, R, C, rowcnd, colcnd, amax, info);
     }
 
-  static void laqgs(SLU::SuperMatrix* A, float* R, float* C,
-    float rowcnd, float colcnd, float amax, char* equed)
+    static void laqgs(SLU::SuperMatrix* A, float* R, float* C,
+		      float rowcnd, float colcnd, float amax, char* equed)
     {
       SLU::C::claqgs(A, R, C, rowcnd, colcnd, amax, equed);
     }
-};
+  };
 
 
-template <>
-struct FunctionMap<Superlu,std::complex<double> >
-{
-  static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
-    int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
-    SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
-    SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
-    double* rcond, double* ferr, double* berr, SLU::mem_usage_t* mem_usage,
-    SLU::SuperLUStat_t* stat, int* info)
+  template <>
+  struct FunctionMap<Superlu,SLU::Z::doublecomplex>
+  {
+    static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
+		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
+		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
+		      SLU::SuperMatrix* B, SLU::SuperMatrix* X, double* recip_pivot_growth,
+		      double* rcond, double* ferr, double* berr, SLU::mem_usage_t* mem_usage,
+		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::Z::zgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
-        lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
+		     lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
 
-  static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
-    int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
-    int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
-    SLU::SuperLUStat_t* stat, int* info)
+    static void gstrf(SLU::superlu_options_t* options, SLU::SuperMatrix* AC,
+		      int relax, int panel_size, int* etree, void* work, int lwork, int* perm_c,
+		      int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
+		      SLU::SuperLUStat_t* stat, int* info)
     {
       SLU::Z::zgstrf(options, AC, relax, panel_size, etree,
-        work, lwork, perm_c, perm_r, L, U, stat, info);
+		     work, lwork, perm_c, perm_r, L, U, stat, info);
     }
 
-  static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-    TypeMap<Superlu,std::complex<double> >::type* nzval, int* rowind, int* colptr,
-    SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    static void create_CompCol_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
+				      SLU::Z::doublecomplex* nzval, int* rowind, int* colptr,
+				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::Z::zCreate_CompCol_Matrix(A, m, n, nnz, nzval, rowind, colptr,
-        stype, dtype, mtype);
+				     stype, dtype, mtype);
 
       TEST_FOR_EXCEPTION( A == NULL,
-        std::runtime_error,
-        "Supermatrix A not initialized properly!");
+			  std::runtime_error,
+			  "Supermatrix A not initialized properly!");
     }
 
 
-  static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
-    TypeMap<Superlu,std::complex<double> >::type* nzval, int* rowind, int* colptr,
-    SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    static void create_CompRow_Matrix(SLU::SuperMatrix* A, int m, int n, int nnz,
+				      SLU::Z::doublecomplex* nzval, int* rowind, int* colptr,
+				      SLU::Stype_t stype, SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::Z::zCreate_CompRow_Matrix(A, m, n, nnz, nzval, rowind, colptr,
-        stype, dtype, mtype);
+				     stype, dtype, mtype);
 
       TEST_FOR_EXCEPTION( A == NULL,
-        std::runtime_error,
-        "Supermatrix A not initialized properly!");
+			  std::runtime_error,
+			  "Supermatrix A not initialized properly!");
     }
 
-  static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
-    TypeMap<Superlu,std::complex<double> >::type* x, int ldx, SLU::Stype_t stype,
-    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
+    static void create_Dense_Matrix(SLU::SuperMatrix* X, int m, int n,
+				    SLU::Z::doublecomplex* x, int ldx, SLU::Stype_t stype,
+				    SLU::Dtype_t dtype, SLU::Mtype_t mtype)
     {
       SLU::Z::zCreate_Dense_Matrix(X, m, n, x, ldx, stype, dtype, mtype);
     }
 
-  static void gsequ(SLU::SuperMatrix* A, double* R, double* C,
-    double* rowcnd, double* colcnd, double* amax, int* info)
+    static void gsequ(SLU::SuperMatrix* A, double* R, double* C,
+		      double* rowcnd, double* colcnd, double* amax, int* info)
     {
       SLU::Z::zgsequ(A, R, C, rowcnd, colcnd, amax, info);
     }
 
-  static void laqgs(SLU::SuperMatrix* A, double* R, double* C,
-    double rowcnd, double colcnd, double amax, char* equed)
+    static void laqgs(SLU::SuperMatrix* A, double* R, double* C,
+		      double rowcnd, double colcnd, double amax, char* equed)
     {
       SLU::Z::zlaqgs(A, R, C, rowcnd, colcnd, amax, equed);
     }
-};
+  };
 #endif	// HAVE_TEUCHOS_COMPLEX
 
-/* \endcond Superlu_function_specializations */
+  /* \endcond Superlu_function_specializations */
 
 
 } // end namespace Amesos2

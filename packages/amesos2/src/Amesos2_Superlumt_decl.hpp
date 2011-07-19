@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -53,6 +53,7 @@
 #ifndef AMESOS2_SUPERLUMT_DECL_HPP
 #define AMESOS2_SUPERLUMT_DECL_HPP
 
+#include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Superlumt_MatrixHelper.hpp"
 #include "Amesos2_Superlumt_FunctionMap.hpp"
@@ -73,16 +74,16 @@ namespace Amesos2 {
  * \ingroup amesos2_solver_interfaces
  */
 template <class Matrix,
-	  class Vector>
+          class Vector>
 class Superlumt : public SolverCore<Amesos2::Superlumt, Matrix, Vector>
 {
   friend class SolverCore<Amesos2::Superlumt,Matrix,Vector>; // Give our base access
-							    // to our private
-							    // implementation funcs
+                                                            // to our private
+                                                            // implementation funcs
 public:
 
   /// Name of this solver interface.
-  static const char* name;	// declaration. Initialization outside.
+  static const char* name;      // declaration. Initialization outside.
 
   typedef Superlumt<Matrix,Vector>                                     type;
   typedef SolverCore<Amesos2::Superlumt,Matrix,Vector>           super_type;
@@ -96,7 +97,7 @@ public:
   typedef typename TypeMap<Amesos2::Superlumt,scalar_type>::type           slu_type;
   typedef typename TypeMap<Amesos2::Superlumt,scalar_type>::magnitude_type magnitude_type;
 
-  typedef FunctionMap<Amesos2::Superlumt,scalar_type>          function_map;
+  typedef FunctionMap<Amesos2::Superlumt,slu_type>             function_map;
   typedef MatrixHelper<Amesos2::Superlumt>                    matrix_helper;
 
 
@@ -110,8 +111,8 @@ public:
    * Amesos2::create() to initialize a SuperLU_MT interface.
    */
   Superlumt(Teuchos::RCP<const Matrix> A,
-	    Teuchos::RCP<Vector>       X,
-	    Teuchos::RCP<const Vector> B);
+            Teuchos::RCP<Vector>       X,
+            Teuchos::RCP<const Vector> B);
 
 
   /// Destructor
@@ -164,7 +165,7 @@ private:
    * \callgraph
    */
   int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
-		 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
+                 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
 
 
   /**
@@ -215,7 +216,7 @@ private:
   void setParameters_impl(
     const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
   /* Parameters to support in the future:
-   *  
+   *
    *  <li> \c "IterRefine" : { \c "NO" | \c "SINGLE" | \c "DOUBLE" | \c "EXTRA"
    *     }. Specifies whether to perform iterative refinement, and in
    *     what precision to compute the residual. (Not currently supported)</li>
@@ -248,9 +249,9 @@ private:
 
     // in contrast to SuperLU, memory for etree will be allocated by
     // pxgssvx and the pointer will be stored in `options'
-    
-    SLUMT::equed_t equed;	///< Whether/what kind of equilibration to use
-    bool rowequ, colequ;	///< whether row/col equilibration has been applied to AC
+
+    SLUMT::equed_t equed;       ///< Whether/what kind of equilibration to use
+    bool rowequ, colequ;        ///< whether row/col equilibration has been applied to AC
   } data_;
 
   // The following Arrays are persisting storage arrays for A, X, and B
@@ -272,9 +273,24 @@ private:
    * *compressed-row* format because that is the format Amesos used.
    */
 
-};				// End class Superlumt
+};                              // End class Superlumt
 
+
+// Specialize the solver_traits struct for SuperLU_MT
+template <>
+struct solver_traits<Superlumt> {
+#ifdef HAVE_TEUCHOS_COMPLEX
+  typedef Meta::make_list6<float,
+                           double,
+                           std::complex<float>,
+                           std::complex<double>,
+                           SLUMT::C::complex,
+                           SLUMT::Z::doublecomplex> supported_scalars;
+#else
+  typedef Meta::make_list2<float, double> supported_scalars;
+#endif
+};
 
 } // end namespace Amesos2
 
-#endif	// AMESOS2_SUPERLUMT_DECL_HPP
+#endif  // AMESOS2_SUPERLUMT_DECL_HPP

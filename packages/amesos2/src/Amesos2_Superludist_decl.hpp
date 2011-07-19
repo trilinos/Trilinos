@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -53,6 +53,7 @@
 #ifndef AMESOS2_SUPERLUDIST_DECL_HPP
 #define AMESOS2_SUPERLUDIST_DECL_HPP
 
+#include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Superludist_FunctionMap.hpp"
 
@@ -95,14 +96,14 @@ class Superludist : public SolverCore<Amesos2::Superludist, Matrix, Vector>
 public:
 
   /// Name of this solver interface.
-  static const char* name;	// declaration. Initialization outside.
+  static const char* name;      // declaration. Initialization outside.
 
   typedef Superludist<Matrix,Vector>                                   type;
   typedef SolverCore<Amesos2::Superludist,Matrix,Vector>         super_type;
 
   typedef Matrix                                                matrix_type;
   typedef Vector                                                vector_type;
-  
+
   // Since typedef's are not inheritted, go grab them
   typedef typename super_type::scalar_type                      scalar_type;
   typedef typename super_type::local_ordinal_type        local_ordinal_type;
@@ -117,7 +118,7 @@ public:
 
   typedef FunctionMap<Amesos2::Superludist,slu_type>           function_map;
 
-  
+
   /// \name Constructor/Destructor methods
   //@{
 
@@ -128,8 +129,8 @@ public:
    * Amesos2::create() to initialize a SuperLU_DIST interface.
    */
   Superludist(Teuchos::RCP<const Matrix> A,
-	      Teuchos::RCP<Vector>       X,
-	      Teuchos::RCP<const Vector> B);
+              Teuchos::RCP<Vector>       X,
+              Teuchos::RCP<const Vector> B);
 
 
   /// Destructor
@@ -182,7 +183,7 @@ private:
    * \callgraph
    */
   int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
-		 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
+                 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
 
 
   /**
@@ -215,7 +216,7 @@ private:
    */
   /*
    * The following options could be supported in the future:
-   * 
+   *
    *   <li> \c "Equil" : { \c "YES" | \c "NO" } or, equivalently, { \c true | \c false }.
    *     Specifies whether the solver to equilibrate the matrix before solving.</li>
    *   <li> \c "IterRefine" : { \c "NO" | \c "SINGLE" | \c "DOUBLE" | \c "EXTRA"
@@ -296,8 +297,8 @@ private:
     Teuchos::Array<magnitude_type> R1, C1;     // row-permutation scalings
     Teuchos::Array<SLUD::int_t>    perm_r, perm_c;
 
-    SLUD::DiagScale_t equed;	///< Whether/what kind of equilibration to use/has been used
-    bool rowequ, colequ;	///< whether row/col equilibration has been applied to AC
+    SLUD::DiagScale_t equed;    ///< Whether/what kind of equilibration to use/has been used
+    bool rowequ, colequ;        ///< whether row/col equilibration has been applied to AC
     magnitude_type rowcnd, colcnd, amax;
   } data_;
 
@@ -320,12 +321,22 @@ private:
 
   /// Maps rows of the matrix to processors in the SuperLU_DIST processor grid
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
-				 global_ordinal_type,
-				 node_type> > superlu_rowmap_;
-  
-};				// End class Superludist
+                                 global_ordinal_type,
+                                 node_type> > superlu_rowmap_;
 
+};                              // End class Superludist
+
+
+// Specialize the solver_traits template for SuperLU_DIST
+template <>
+struct solver_traits<Superludist> {
+#ifdef HAVE_TEUCHOS_COMPLEX
+  typedef Meta::make_list3<double, std::complex<double>, SLUD::Z::doublecomplex> supported_scalars;
+#else
+  typedef Meta::make_list1<double> supported_scalars;
+#endif
+};
 
 } // end namespace Amesos2
 
-#endif	// AMESOS2_SUPERLUDIST_DECL_HPP
+#endif  // AMESOS2_SUPERLUDIST_DECL_HPP

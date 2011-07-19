@@ -414,7 +414,9 @@ namespace Amesos2 {
     };
 #endif	// DOXYGEN_SHOULD_SKIP_THIS
 
-    /** \brief A generic base class for the CRS and CCS helpers.
+    /** \internal
+     *
+     * \brief A generic base class for the CRS and CCS helpers.
      *
      * S, GO, and GS are the desired types.  They are also the types
      * of the respective input parameters.  Matrix is expected to be
@@ -563,25 +565,10 @@ namespace Amesos2 {
     };
 #endif	// DOXYGEN_SHOULD_SKIP_THIS
 
-    /*
-     * These derivations of get_cxs_helper should be the entry points.
-     * They inherit the \c do_get() function and provide the
-     * appropriate concrete operator.
-     *
-     * They can be used like so::
-     *
-     *   typedef Tpetra::CrsMatrix<double,int,int> mat_t;
-     *   mat_t m;
-     *   < initialize m >
-     *   Array<float> nzvals;
-     *   Array<int> indices;
-     *   Array<long int> pointers;
-     *   long int nnz;
-     *   get_ccs_helper<mat_t,float,int,long int>::do_get(
-     *     m, nzvals, indices, pointers, nnz, Rooted, Arbitrary);
-     */
-    /**
-     * A generic helper class for getting a CCS representation of a Matrix.
+    /** \internal
+     * 
+     * \brief A generic helper class for getting a CCS representation
+     * of a Matrix.
      *
      * The template types \c S , \c GO , and \c GS (scalar, global
      * ordinal, and global size type, respectively) are the types that
@@ -620,10 +607,12 @@ namespace Amesos2 {
     struct get_ccs_helper : get_cxs_helper<Matrix,S,GO,GS,get_ccs_func<Matrix> >
     {};
 
-    /**
-     * Similar to get_ccs_helper , but used to get a CRS
+    /** \internal
+     * 
+     * \brief Similar to get_ccs_helper , but used to get a CRS
      * representation of the given matrix.
      *
+     * \sa \ref get_ccs_helper 
      * \ingroup amesos2_util
      */
     template<class Matrix, typename S, typename GO, typename GS>
@@ -683,7 +672,8 @@ namespace Amesos2 {
     };
 #endif	// DOXYGEN_SHOULD_SKIP_THIS
 
-    /**
+    /** \internal
+     * 
      * \brief Helper class for getting 1-D copies of multivectors
      *
      * Handles datatype conversion when appropriate.
@@ -773,7 +763,8 @@ namespace Amesos2 {
     };
 #endif	// DOXYGEN_SHOULD_SKIP_THIS
   
-    /**
+    /** \internal
+     * 
      * \brief Helper class for putting 1-D data arrays into multivectors
      *
      * Handles dataype conversion when necessary before putting the data.

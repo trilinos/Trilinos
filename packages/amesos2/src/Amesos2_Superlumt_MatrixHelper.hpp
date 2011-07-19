@@ -140,13 +140,13 @@ namespace Amesos2 {
                           std::runtime_error,
                           "rank=0 failed to get all nonzero values in getCcs()");
 
-      FunctionMap<Superlumt,scalar_type>::create_CompCol_Matrix(A.getRawPtr(), rows,
-								cols, nnz,
-								nzval.getRawPtr(),
-								rowind.getRawPtr(),
-								colptr.getRawPtr(),
-								SLUMT::SLU_NC,
-								dtype, SLUMT::SLU_GE);
+      FunctionMap<Superlumt,slu_type>::create_CompCol_Matrix(A.getRawPtr(), rows,
+							     cols, nnz,
+							     nzval.getRawPtr(),
+							     rowind.getRawPtr(),
+							     colptr.getRawPtr(),
+							     SLUMT::SLU_NC,
+							     dtype, SLUMT::SLU_GE);
     }
 
 
@@ -165,12 +165,11 @@ namespace Amesos2 {
      * \param [out]    vecRedistTime Will have time added for redistribution of \c \mv
      */
     template <class MV>
-    static void createMVDenseMatrix(
-        const Teuchos::Ptr<MV>& mv,
-        const Teuchos::ArrayView<typename TypeMap<Superlumt,typename MV::scalar_t>::type>& vals,
-        size_t& ldx,
-        const Teuchos::Ptr<SLUMT::SuperMatrix>& X,
-        Teuchos::Time& vecRedistTime)
+    static void createMVDenseMatrix(const Teuchos::Ptr<MV>& mv,
+				    const Teuchos::ArrayView<typename TypeMap<Superlumt,typename MV::scalar_t>::type>& vals,
+				    size_t& ldx,
+				    const Teuchos::Ptr<SLUMT::SuperMatrix>& X,
+				    Teuchos::Time& vecRedistTime)
     {
       typedef typename MV::scalar_t                         scalar_type;
       typedef typename TypeMap<Superlumt,scalar_type>::type    slu_type;
@@ -189,7 +188,7 @@ namespace Amesos2 {
 	Util::get_1d_copy_helper<MV,slu_type>::do_get(mv, vals, ldx, ROOTED);
       }
 
-      FunctionMap<Superlumt,scalar_type>::create_Dense_Matrix(
+      FunctionMap<Superlumt,slu_type>::create_Dense_Matrix(
         X.getRawPtr(), rows, cols, vals.getRawPtr(), Teuchos::as<int>(ldx),
 	SLUMT::SLU_DN, dtype, SLUMT::SLU_GE);
     }

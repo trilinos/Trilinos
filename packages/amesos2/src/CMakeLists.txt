@@ -108,6 +108,7 @@ APPEND_SET(HEADERS
   Amesos2_SolverCore.hpp
   Amesos2_SolverCore_decl.hpp
   Amesos2_SolverCore_def.hpp
+  Amesos2_SolverTraits.hpp
   Amesos2_Status.hpp
   Amesos2_Timers.hpp
   Amesos2_TpetraMultiVecAdapter.hpp
