@@ -42,6 +42,24 @@ JacobiBasis(ordinal_type p,
 
   // Setup rest of recurrence basis
   this->setup();
+
+#ifdef HAVE_STOKHOS_DAKOTA
+  this->setSparseGridRule(Pecos::GAUSS_JACOBI);
+#endif
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::JacobiBasis<ordinal_type, value_type>::
+JacobiBasis(ordinal_type p, const JacobiBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>(p, basis),
+  alphaIndex_(basis.alphaIndex_),
+  betaIndex_(basis.betaIndex_)
+{
+  // Compute coefficients in 3-term recurrsion
+  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
+
+  // Setup rest of recurrence basis
+  this->setup();
 }
 
 template <typename ordinal_type, typename value_type>
@@ -124,5 +142,6 @@ Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> >
 Stokhos::JacobiBasis<ordinal_type,value_type>::
 cloneWithOrder(ordinal_type p) const
 {
-   return Teuchos::rcp(new Stokhos::JacobiBasis<ordinal_type,value_type>(p,alphaIndex_,betaIndex_,this->normalize));
+  return 
+    Teuchos::rcp(new Stokhos::JacobiBasis<ordinal_type,value_type>(p,*this));
 }

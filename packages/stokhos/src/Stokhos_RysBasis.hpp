@@ -59,8 +59,8 @@ namespace Stokhos {
      * \param normalize whether polynomials should be given unit norm
      */
     RysBasis(ordinal_type p, value_type c, bool normalize) :
-      DiscretizedStieltjesBasis<ordinal_type,value_type>("Rys", p, rysWeight, 
-							 -c, c, normalize) {}
+      DiscretizedStieltjesBasis<ordinal_type,value_type>(
+	"Rys", p, rysWeight, -c, c, normalize) {}
     
     //! Destructor
     ~RysBasis() {}
@@ -81,7 +81,13 @@ namespace Stokhos {
      * for column indices in a spatially varying adaptive refinement context.
      */
     virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const
-    { return Teuchos::rcp(new RysBasis<ordinal_type,value_type>(p,this->rightEndPt_,this->normalize)); }
+    { return Teuchos::rcp(new RysBasis<ordinal_type,value_type>(p,*this)); }
+
+  protected:
+
+    //! Copy constructor with specified order
+    RysBasis(ordinal_type p, const RysBasis& basis) : 
+      DiscretizedStieltjesBasis<ordinal_type,value_type>(p, basis) {}
 
   private:
 

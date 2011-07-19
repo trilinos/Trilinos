@@ -157,7 +157,6 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
-#ifdef HAVE_STOKHOS_DAKOTA
     //! Get sparse grid rule number as defined by Dakota's \c webbur package
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
@@ -165,7 +164,10 @@ namespace Stokhos {
      * this rule number is used internally by Stokhos::SparseGridQuadrature
      * to pass an arbitrary one-dimensional basis to that package.
      */
-    virtual int getSparseGridRule() const { return 10; }
+    virtual int getSparseGridRule() const { return sparse_grid_rule; }
+
+    //! Set sparse grid rule
+    virtual void setSparseGridRule(int rule) { sparse_grid_rule = rule; }
 
     /*! 
      * \brief Get sparse grid rule growth rule as defined by 
@@ -176,8 +178,11 @@ namespace Stokhos {
      * basis.  Returns growth rule appropriate for Gaussian quadrature points.
      */
     virtual int getSparseGridGrowthRule() const { 
-      return Pecos::MODERATE_LINEAR; };
-#endif 
+      return sparse_grid_growth_rule; };
+
+    //! Set sparse grid growth rule
+    virtual void setSparseGridGrowthRule(int rule) { 
+      sparse_grid_growth_rule = rule; }
 
     //@}
 
@@ -192,6 +197,10 @@ namespace Stokhos {
 					     Teuchos::Array<value_type>& vals,
 					     Teuchos::Array<value_type>& derivs) const;
 
+    //! Set tolerance for zero in quad point generation
+    virtual void setQuadZeroTol(value_type tol) {
+      quad_zero_tol = tol; }
+
   protected:
 
     //! Constructor to be called by derived classes
@@ -203,8 +212,10 @@ namespace Stokhos {
      * tolerance with zero (which can help with duplicate removal in sparse
      * grid calculations).
      */
-    RecurrenceBasis(const std::string& name, ordinal_type p, bool normalize,
-		    value_type quad_zero_tol = 1.0e-14);
+     RecurrenceBasis(const std::string& name, ordinal_type p, bool normalize);
+
+     //! Copy constructor with specified order
+     RecurrenceBasis(ordinal_type p, const RecurrenceBasis& basis);
 
     //! Compute recurrence coefficients
     /*!
@@ -249,6 +260,12 @@ namespace Stokhos {
 
     //! Tolerance for quadrature points near zero
     value_type quad_zero_tol;
+
+    //! Sparse grid rule (as determined by Pecos)
+    int sparse_grid_rule;
+
+    //! Sparse grid growth rule (as determined by Pecos)
+    int sparse_grid_growth_rule;
 
     //! Recurrence \f$\alpha\f$ coefficients
     Teuchos::Array<value_type> alpha;

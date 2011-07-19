@@ -38,6 +38,22 @@ LegendreBasis(ordinal_type p, bool normalize) :
 
   // Setup rest of recurrence basis
   this->setup();
+
+#ifdef HAVE_STOKHOS_DAKOTA
+  this->setSparseGridRule(Pecos::GAUSS_LEGENDRE);
+#endif
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::LegendreBasis<ordinal_type, value_type>::
+LegendreBasis(ordinal_type p, const LegendreBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>(p, basis)
+{
+  // Compute coefficients in 3-term recurrsion
+  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
+
+  // Setup rest of recurrence basis
+  this->setup();
 }
 
 template <typename ordinal_type, typename value_type>
@@ -74,5 +90,6 @@ Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> >
 Stokhos::LegendreBasis<ordinal_type,value_type>::
 cloneWithOrder(ordinal_type p) const
 {
-   return Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(p,this->normalize));
+  return 
+    Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(p,*this));
 }

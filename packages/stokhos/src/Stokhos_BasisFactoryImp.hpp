@@ -35,6 +35,7 @@
 #include "Stokhos_LegendreBasis.hpp"
 #include "Stokhos_ClenshawCurtisLegendreBasis.hpp"
 #include "Stokhos_HermiteBasis.hpp"
+#include "Stokhos_JacobiBasis.hpp"
 #include "Stokhos_RysBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
 
@@ -93,6 +94,11 @@ create1DBasis(Teuchos::ParameterList& bp)
   }
   else if (type == "Hermite")
     basis = Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(order, normalize));
+  else if (type == "Jacobi") {
+    value_type alpha = bp.get<value_type>("Jacobi Alpha");
+    value_type beta = bp.get<value_type>("Jacobi Beta");
+    basis = Teuchos::rcp(new Stokhos::JacobiBasis<ordinal_type,value_type>(order, alpha, beta, normalize));
+  }
   else if (type == "Rys") {
     value_type cut = bp.get("Weight Cut", 1.0);
     basis = Teuchos::rcp(new Stokhos::RysBasis<ordinal_type,value_type>(order, cut, normalize));
@@ -102,6 +108,11 @@ create1DBasis(Teuchos::ParameterList& bp)
 		       std::endl << 
 		       "Error!  Stokhos::BasisFactory::create1DBasis():  " <<
 		       "Invalid basis type  " << type << std::endl);
+
+  if (bp.isType<int>("Sparse Grid Rule"))
+    basis->setSparseGridRule(bp.get<int>("Sparse Grid Rule"));
+  if (bp.isType<int>("Sparse Grid Growth Rule"))
+    basis->setSparseGridRule(bp.get<int>("Sparse Grid Growth Rule"));
 
   return basis;
 }

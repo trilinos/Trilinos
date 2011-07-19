@@ -59,12 +59,13 @@ namespace Stokhos {
      * \param rightEndPt right end point of the domain of the weight function
      * \param normalize whether polynomials should be given unit norm
      */
-    DiscretizedStieltjesBasis(const std::string& name, const ordinal_type& p, 
-			      value_type (*weightFn)(const value_type&),
-			      const value_type& leftEndPt,
-			      const value_type& rightEndPt,
-			      bool normalize);
-    
+    DiscretizedStieltjesBasis(
+      const std::string& name, const ordinal_type& p, 
+      value_type (*weightFn)(const value_type&),
+      const value_type& leftEndPt,
+      const value_type& rightEndPt,
+      bool normalize);
+
     //! Destructor
     ~DiscretizedStieltjesBasis();
     
@@ -118,6 +119,12 @@ namespace Stokhos {
     expectedValue_J_nsquared(const ordinal_type& order, 
 			     const Teuchos::Array<value_type>& alpha,
 			     const Teuchos::Array<value_type>& beta) const;
+
+  protected:
+
+    //! Copy constructor with specified order
+    DiscretizedStieltjesBasis(const ordinal_type& p, 
+			      const DiscretizedStieltjesBasis& basis);
     
   private:
 

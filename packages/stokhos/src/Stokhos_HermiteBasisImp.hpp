@@ -38,6 +38,22 @@ HermiteBasis(ordinal_type p, bool normalize) :
 
   // Setup rest of recurrence basis
   this->setup();
+
+#ifdef HAVE_STOKHOS_DAKOTA
+  this->setSparseGridRule(Pecos::GAUSS_HERMITE);
+#endif
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::HermiteBasis<ordinal_type, value_type>::
+HermiteBasis(ordinal_type p, const HermiteBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>(p, basis)
+{
+  // Compute coefficients in 3-term recurrsion
+  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
+
+  // Setup rest of recurrence basis
+  this->setup();
 }
 
 template <typename ordinal_type, typename value_type>
@@ -73,5 +89,6 @@ Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> >
 Stokhos::HermiteBasis<ordinal_type,value_type>::
 cloneWithOrder(ordinal_type p) const
 {
-   return Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(p,this->normalize));
+  return 
+    Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(p,*this));
 }

@@ -169,7 +169,6 @@ namespace Stokhos {
      */
     virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const = 0;
 
-#ifdef HAVE_STOKHOS_DAKOTA
     //! Get sparse grid rule number as defined by Dakota's \c webbur package
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
@@ -184,8 +183,13 @@ namespace Stokhos {
      * 8  Generalized Gauss-Laguerre
      * 9  Gauss-Jacobi
      * 10 Golub-Welsch (Gauss points for arbitrary weight function)
+     * 11 Genz-Keister (Gauss-Patterson-type Hermite)
+     * 12 Newton-Cotes
      */
     virtual int getSparseGridRule() const = 0;
+
+    //! Set sparse grid rule
+    virtual void setSparseGridRule(int rule) = 0;
 
     /*! 
      * \brief Get sparse grid rule growth rule as defined by 
@@ -193,10 +197,19 @@ namespace Stokhos {
      */
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
+     * basis.  The current rule definitions are:
+     * 1  Default growth
+     * 2  Slow linear
+     * 3  Slow linear odd
+     * 4  Moderate linear
+     * 5  Slow exponential
+     * 6  Moderate exponential
+     * 7  Full exponential
      */
     virtual int getSparseGridGrowthRule() const = 0;
-#endif
+
+    //! Set sparse grid growth rule
+    virtual void setSparseGridGrowthRule(int rule) = 0;
 
   private:
 

@@ -36,6 +36,23 @@ PecosOneDOrthogPolyBasis(
   pecosPoly(pecosPoly_),
   name(name_),
   p(p_),
+  sparse_grid_rule(Pecos::GOLUB_WELSCH),
+  sparse_grid_growth_rule(Pecos::DEFAULT_GROWTH),
+  norms(p+1, value_type(0.0))
+{
+  for (ordinal_type i=0; i<=p; i++)
+    norms[i] = pecosPoly->norm_squared(i);
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::PecosOneDOrthogPolyBasis<ordinal_type, value_type>::
+PecosOneDOrthogPolyBasis(
+  ordinal_type p_, const PecosOneDOrthogPolyBasis& basis) :
+  pecosPoly(basis.pecosPoly),
+  name(basis.name),
+  p(p_),
+  sparse_grid_rule(basis.sparse_grid_rule),
+  sparse_grid_growth_rule(basis.sparse_grid_growth_rule),
   norms(p+1, value_type(0.0))
 {
   for (ordinal_type i=0; i<=p; i++)
@@ -255,5 +272,6 @@ Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> >
 Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>::
 cloneWithOrder(ordinal_type p) const
 {
-  return Teuchos::rcp(new Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>(pecosPoly,name,p));
+  return 
+    Teuchos::rcp(new Stokhos::PecosOneDOrthogPolyBasis<ordinal_type,value_type>(p,*this));
 }
