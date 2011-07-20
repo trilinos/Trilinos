@@ -66,35 +66,26 @@ USA
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
 namespace std{
-class Node
-{
-public:
-	int layer_num;
-	int scanned;
-	vector<int> edgelist;
-};
-
-class Isorropia_EpetraMatcher {
-
-	//input is MTX format
-	//graph is compressed row storage of the input
-	//vlayered is a vector of v's already in any layer.
-	//mateU and mateV are vectors which stores the matched vertices in U and V
+class Isorropia_EpetraMatcher {	
 private:
-	vector<Node> LU;
-	vector<Node> LV;
-	vector<int> vlayered;
-	vector<vector<int> > del_m;
-	vector<vector<int> > graph;
-	vector<int> mateU;
-	vector<int> mateV;
-	vector<int> vlist;
-	set<int> nvlist;
-	int *CRS_Pointers;
-	int *CRS_Indices;
-	double *CRS_Vals;
-	int U,V,E,k_star,icm,matched_;
-	bool finish;
+	int* mateU_;
+	int* mateV_;
+	int* Queue_;
+	int* LV_;
+	int* LU_;
+	int* unmatchedU_;
+	int *parent_;
+	int *lookahead_;
+	int *CRS_pointers_;
+	int *CRS_indices_;
+	double *CRS_vals_;
+	bool finish_;
+	int U_,V_,E_,avgDegU_,k_star_,icm_,BFSInd_,numThread_,Qst_,Qend_,matched_,choice_;
+	
+	#ifdef ISORROPIA_HAVE_OMP
+	omp_lock_t *scannedV_;
+	#endif
+	
 
 public:
 	/// Interface Functions
@@ -110,23 +101,20 @@ public:
 	Epetra_Map* getPermutedColumnMap();
 	
 	virtual ~Isorropia_EpetraMatcher();
-	void process_mtx_compressed(char *);
 	
-	// HK functions
-	int match();
-	int construct_layered_graph();
-	void find_set_del_M();
-	int recursive_path_finder(int, int, vector<int>*);
-	int iterative_path_finder(int, int, vector<int>*);
-	int augment_matching();
-	void update_vlayered(int);
-	bool U0_empty();
-	int vlayer_clear();
-	int is_intersect(int);
+	//Matching Functions
 	void delete_matched_v();
-	bool remove_edge(int, int);
-	void add_edge(int, int);
 	void filler();
+	int match();
+	int match_dfs();
+	int match_hk();
+	int construct_layered_graph();
+	int find_set_del_M();
+	int recursive_path_finder(int, int);
+	int dfs_path_finder(int);
+	int dfs_augment();
+	int augment_matching(int);
+	int DW_phase();
 };
 } //namespace std
 #endif

@@ -38,9 +38,10 @@ int main(int argc, char** argv) {
 		  }
 		#endif
 		
-		Isorropia_EpetraMatcher pm(matrixPtr);
-		int i=pm.match();
-		cout<<"Good God!!"<<endl;
+		Teuchos::ParameterList paramlist;
+		paramlist.set(argv[2],4);
+		Isorropia_EpetraMatcher pm(matrixPtr,paramlist);
+		pm.match();
 	}
 	else
 		cout<<"Specify input file.."<<endl;
