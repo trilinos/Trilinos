@@ -1,4 +1,5 @@
 #include "RTIInlineCG.hpp"
+#include <qd/qd_real.h>
 
 int main(int argc, char *argv[])
 {
@@ -53,7 +54,7 @@ int main(int argc, char *argv[])
   //
   // instantiate a driver on the scalar stack
   //
-  CGDriver<double> driver;
+  CGDriver<qd_real> driver;
   // hand output stream to driver
   if (verbose) driver.out = Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false));
   else         driver.out = Teuchos::getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
@@ -80,7 +81,10 @@ int main(int argc, char *argv[])
   // 
   // run the driver
   // 
+  unsigned int old_cw;
+  fpu_fix_start(&old_cw);
   platform.runUserCode(driver);
+  fpu_fix_end(&old_cw);
 
   //
   // Print result

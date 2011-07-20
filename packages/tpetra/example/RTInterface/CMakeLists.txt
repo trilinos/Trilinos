@@ -28,6 +28,16 @@ IF (Trilinos_ENABLE_CXX11)
     STANDARD_PASS_OUTPUT
   )
 
+  IF (Tpetra_ENABLE_QD)
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      RTIInlineCG_qd
+      SOURCES RTIInlineCG_qd
+      ARGS 
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+    )
+  ENDIF()
+
 # ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
 # IF (Kokkos_ENABLE_Thrust)
 #   # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
