@@ -1,5 +1,0 @@
-#!/bin/bash
-#Script for spliting the cover page from the rest of the thesis.
-pdftk KurtisNusbaum.pdf cat 1 output titlepage.pdf
-pdftk KurtisNusbaum.pdf cat 2-end output thesis.pdf
-rm KurtisNusbaum.pdf
