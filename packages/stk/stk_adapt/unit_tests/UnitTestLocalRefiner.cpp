@@ -696,7 +696,7 @@ namespace stk {
 
         const unsigned p_size = stk::parallel_machine_size(pm);
 
-        if (p_size <= 1)
+        if (p_size <= 3)
           {
 
             {
@@ -708,14 +708,20 @@ namespace stk {
 
               TestLocalRefinerTet_N_4 breaker(eMesh, break_tet, 0);
               breaker.setRemoveOldElements(false);
-              breaker.doBreak();
-              breaker.doBreak();
-              breaker.doBreak();
+              breaker.setAlwaysInitializeNodeRegistry(false);
+              
+              int nref = 3;
+              int nunref = 5;
+              for (int ipass = 0; ipass < nref; ipass++)
+                {
+                  breaker.doBreak();
+                  eMesh.saveAs( output_files_loc+"local_tet_N_4_planes_iref_"+toString(ipass)+".e");
+                }
 
               //save_or_diff(eMesh, output_files_loc+"local_tet_N_4_planes.e");
               eMesh.saveAs( output_files_loc+"local_tet_N_4_planes.e");
 
-              for (int iunref_pass=0; iunref_pass < 1; ++iunref_pass)
+              for (int iunref_pass=0; iunref_pass < nunref; ++iunref_pass)
                 {
                   ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
                   breaker.unrefineTheseElements(elements_to_unref);
@@ -723,6 +729,9 @@ namespace stk {
 
               //save_or_diff(eMesh, output_files_loc+"local_tet_N_4_planes_unref.e");
               eMesh.saveAs( output_files_loc+"local_tet_N_4_planes_unref.e");
+
+              breaker.deleteParentElements();
+              eMesh.saveAs( output_files_loc+"local_tet_N_4_planes_unref_noParentElements.e");
 
             }
 
@@ -927,6 +936,7 @@ namespace stk {
 
             TestLocalRefinerTri_N_1 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
+            breaker.setAlwaysInitializeNodeRegistry(false);
             breaker.doBreak();
 
             //eMesh.dumpElementsCompact();
@@ -989,6 +999,7 @@ namespace stk {
 
             TestLocalRefinerTri_N_2 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
+            breaker.setAlwaysInitializeNodeRegistry(false);
             for (int ipass=0; ipass < 4; ipass++)
               {
                 std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
@@ -1234,6 +1245,7 @@ namespace stk {
 
             TestLocalRefinerTri_N_3 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
+            breaker.setAlwaysInitializeNodeRegistry(false);
             for (int ipass=0; ipass < 4; ipass++)
               {
                 std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
@@ -1308,6 +1320,7 @@ namespace stk {
 
             TestLocalRefinerTri_N breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
             breaker.setRemoveOldElements(false);
+            breaker.setAlwaysInitializeNodeRegistry(false);
             breaker.doBreak();
 
             eMesh.printInfo("local tri mesh refined", printInfoLevel);

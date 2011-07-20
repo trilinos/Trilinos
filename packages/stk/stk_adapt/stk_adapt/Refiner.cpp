@@ -2660,6 +2660,10 @@ namespace stk {
     Refiner::
     unrefineTheseElements(ElementUnrefineCollection& elements_to_unref)
     {
+      if (m_alwaysInitNodeRegistry)
+        {
+          throw std::logic_error("Refiner::unrefineTheseElements: to use urefinement, you must have setAlwaysInitializeNodeRegistry(false)");
+        }
       m_eMesh.getBulkData()->modification_begin();
       const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
 
