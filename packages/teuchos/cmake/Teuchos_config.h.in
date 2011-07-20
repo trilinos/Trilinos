@@ -39,6 +39,9 @@
 /* Define if want to build teuchos-blasfloat */
 #cmakedefine HAVE_TEUCHOS_BLASFLOAT
 
+/* Define if Lapack has _LARND methods */
+#cmakedefine HAVE_TEUCHOS_LAPACKLARND
+
 /* Define if want to build teuchos-boost */
 #cmakedefine HAVE_TEUCHOS_BOOST
 

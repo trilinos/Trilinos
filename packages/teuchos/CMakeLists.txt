@@ -66,6 +66,9 @@ ENDIF()
 INCLUDE(CheckBlasFloat)
 CHECK_BLAS_FLOAT(HAVE_TEUCHOS_BLASFLOAT)
 
+INCLUDE(CheckLapackLarnd)
+CHECK_LAPACK_LARND(HAVE_TEUCHOS_LAPACKLARND)
+
 SET( ${PACKAGE_NAME}_ORDINAL_TYPE ptrdiff_t
   CACHE STRING
   "Select the data type for Teuchos_Ordinal (Teuchos::Ordinal)." )

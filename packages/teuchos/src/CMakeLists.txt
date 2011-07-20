@@ -203,6 +203,7 @@ APPEND_SET(SOURCES
   Teuchos_ErrorPolling.cpp
   Teuchos_Flops.cpp
   Teuchos_GlobalMPISession.cpp
+  Teuchos_LAPACK.cpp
   Teuchos_LabeledObject.cpp
   Teuchos_MPIComm.cpp
   Teuchos_MPISession.cpp
