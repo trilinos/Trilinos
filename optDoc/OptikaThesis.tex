@@ -344,16 +344,16 @@ of our program. We set the ``fileMustExist'' XML attribute to false so that the 
 
 \subsection{Array Validators}
 Array Validators allow any of the above described validators to be used on a array parameter. For example, we might want to use a
-String Validator on an array of strings. To do this, we create and Array Validator with a ``prototype'' String Validator. The 
+String Validator on an array of strings. To do this, we create an Array Validator with a ``prototype'' String Validator. The 
 ``prototype'' validator is just a term used to describe the validator the developer would like to be applied to each entry of an
 array. Prototype validators can be specified in one of two ways. First, the developer can code the validator as child of the array validator
 tag as in Figure~\ref{actualArrayValidatorXML}. In this case, the prototype validator does not need an Id. 
-Second, the developer can simply specify another validator as array validator's  prototype by using the
+Second, the developer can simply specify another validator as array validator's prototype by using the
 ``prototypeId'' XML attribute as in Figure~\ref{protoAttributeArrayXML}. This second option allows the developer to reuse the prototype validator in 
 other instances.
 
 When creating an Array Validator, the ``type'' XML attribute will include both the type of the prototype validator and the type of the array
-parameter. For instance, if we were using a prototype Filename Validator on a string parameter, the value of our ``type'' XML attribute would
+template parameter. For instance, if we were using a prototype Filename Validator on a string parameter, the value of our ``type'' XML attribute would
 be ``ArrayValidator(FilenameValidator, string)''. It is crucial that all of these types match up. Otherwise, errors will occur.
 
 \begin{figure}
@@ -823,8 +823,8 @@ value of the dependee parameter is directly used for the number of rows in the T
 
 Figure~\ref{TwoDRowXML} shows an example of a TwoD Row Dependency. In this example there is a TwoDArray which specifies two parameter values for each surface
 in some simulation. In other words, each row in the TwoDArray corresponds to a surface and each column in a row corresponds to a particular 
-parameter value for the surface. This means that as the number of surfaces change, rows are added or removed from the TwoDArray accordingly.
-In this example, as the ``Number of surfaces'' parameter is changed, the ``Params'' parameter is modified. Note how the ``type'' XML attributes for 
+parameter value for the surface. This means that as the number of surfaces change, rows need to be added or removed from the TwoDArray accordingly.
+This is accomplished by using the TwoD Row Dependency. Note how the ``type'' XML attributes for 
 the dependency correspond to the types of both the dependee and the dependent.
 
 \begin{figure}
@@ -858,7 +858,7 @@ This would be done by adding a <Function> tag inside the <Dependency> tag, just 
 In addition to the TwoD Row Dependency, there is also another dependency called a TwoD Column Dependency. It functions in almost exactly the same way
 as the TwoD Row Dependency except instead of modifying the number of rows in a TwoDArray it modifies the number of columns. Let's modify the example above.
 Instead of having each row represent a surface, each column will represent a surface. Figure~\ref{TwoDColXML} shows how to have the number of columns
-changed, rather than the number of rows.
+change, rather than the number of rows.
 \begin{figure}
 \centering
 {\footnotesize
