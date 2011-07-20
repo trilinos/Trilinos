@@ -95,8 +95,8 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrix
 	
 	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel
-	#endif
 	numThread_=omp_get_num_threads();
+	#endif
 }
 
 Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::ParameterList& paramlist)
@@ -178,8 +178,8 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMa
 	
 	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel
-	#endif
 	numThread_=omp_get_num_threads();
+	#endif
 }
 
 Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& paramlist)
@@ -193,7 +193,8 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGr
 }
 
 
-Isorropia_EpetraMatcher::~Isorropia_EpetraMatcher() {
+Isorropia_EpetraMatcher::~Isorropia_EpetraMatcher() 
+{
 	delete [] mateU_;
 	delete [] mateV_;
 	
@@ -322,9 +323,8 @@ void Isorropia_EpetraMatcher::filler()
 
 void Isorropia_EpetraMatcher::delete_matched_v()
 {
-	int i,j;
-	
 	#ifdef ISORROPIA_HAVE_OMP
+	int i,j;
 	#pragma omp parallel for private(j)
 	for(i=Qst_;i<Qend_;i++)
 	{	
@@ -421,7 +421,10 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
 		#endif
 		for(s=Qst_;s<Qend_;s++)
 		{
+			#ifdef ISORROPIA_HAVE_OMP
 			tid=omp_get_thread_num();
+			#endif
+			
 			pqind=startInd[tid];
 					
 			i=Queue_[s];
@@ -703,7 +706,12 @@ int Isorropia_EpetraMatcher::dfs_augment()
 		#pragma omp parallel for
 		#endif
 		for(i=0;i<V_;i++)
+		{	
+			#ifdef ISORROPIA_HAVE_OMP
 			omp_unset_lock(&scannedV_[i]);
+			#endif
+		}
+			
 		
 		flag=flag1=count=0;
 		#ifdef stat
@@ -778,9 +786,15 @@ int Isorropia_EpetraMatcher::match_dfs()
 {
 	int totc=0;
 	icm_=0;
-	double start=omp_get_wtime();
+	double start,end;
+	#ifdef ISORROPIA_HAVE_OMP
+	start=omp_get_wtime();
+	#endif
 	totc=dfs_augment();
-	double end=omp_get_wtime();
+	#ifdef ISORROPIA_HAVE_OMP
+	end=omp_get_wtime();
+	#endif
+	
 		
 	#ifdef stat
 	cout<<"Total time: "<<(end-start)<<" seconds"<<" matching="<<totc<<endl;
@@ -792,7 +806,11 @@ int Isorropia_EpetraMatcher::match_hk()
 {
 	int totc=0,count=0;
 	icm_=0;
-	double start=omp_get_wtime();
+	double start,end;
+	#ifdef ISORROPIA_HAVE_OMP
+	start=omp_get_wtime();
+	#endif
+	
 	
 	while(true)
 	{
@@ -816,7 +834,10 @@ int Isorropia_EpetraMatcher::match_hk()
 		med.clear();
 		#endif
 	}
-	double end=omp_get_wtime();
+	#ifdef ISORROPIA_HAVE_OMP
+	end=omp_get_wtime();
+	#endif
+	
 	
 	#ifdef stat	
 	cout<<"Total time: "<<(end-start)<<" seconds"<<" matching="<<totc<<endl;
