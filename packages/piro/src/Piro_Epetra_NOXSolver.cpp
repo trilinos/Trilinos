@@ -565,8 +565,44 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
       for (int i=0; i<num_p; i++) {
 	if (!outArgs.supports(OUT_ARG_DgDp,j,i).none()) {
 	  Derivative dgdp = outArgs.get_DgDp(j,i);
-	  if (dgdp.getLinearOp() != Teuchos::null)
-	    model_outargs.set_DgDp(j,i,model->create_DgDp_op(j,i));
+	  if (dgdp.getLinearOp() != Teuchos::null) {
+	    Teuchos::RCP<const Epetra_Map> g_map = model->get_g_map(j);
+	    Teuchos::RCP<const Epetra_Map> p_map = model->get_p_map(i);
+	    int num_responses = g_map->NumGlobalElements();
+	    int num_params = p_map->NumGlobalElements();
+	    bool g_dist = g_map->DistributedGlobal();
+	    bool p_dist = p_map->DistributedGlobal();
+	    DerivativeSupport ds = model_outargs.supports(OUT_ARG_DgDp,j,i);
+	    if (ds.supports(DERIV_LINEAR_OP)) {
+	      Teuchos::RCP<Epetra_Operator> dgdp_op = 
+		model->create_DgDp_op(j,i);
+	      model_outargs.set_DgDp(j,i,dgdp_op);
+	    }
+	    else if (ds.supports(DERIV_MV_BY_COL) && !p_dist) {
+	      Teuchos::RCP<Epetra_MultiVector> dgdp =
+		Teuchos::rcp(new Epetra_MultiVector(*g_map, num_params));
+	      EpetraExt::ModelEvaluator::DerivativeMultiVector 
+		dmv_dgdp(dgdp, DERIV_MV_BY_COL);
+	      model_outargs.set_DgDp(j,i,dmv_dgdp);
+	    }
+	    else if (ds.supports(DERIV_TRANS_MV_BY_ROW) && !g_dist) {
+	      Teuchos::RCP<Epetra_MultiVector> dgdp =
+		Teuchos::rcp(new Epetra_MultiVector(*p_map, num_responses));
+	      EpetraExt::ModelEvaluator::DerivativeMultiVector 
+		dmv_dgdp(dgdp, DERIV_TRANS_MV_BY_ROW);
+	      model_outargs.set_DgDp(j,i,dmv_dgdp);
+	    }
+	    else
+	      TEST_FOR_EXCEPTION(
+		true, std::logic_error, 
+		std::endl << "Piro::Epetra::NOXSolver::evalModel():  " << 
+		"For dg/dp(" << j << "," << i <<
+		") with operator sensitivities, "<<
+		"underlying ModelEvaluator must support DERIV_LINEAR_OP, " <<
+		"DERIV_MV_BY_COL with p not distributed, or "
+		"DERIV_TRANS_MV_BY_ROW with g not distributed." <<
+		std::endl);
+	  }
 	  else
 	    model_outargs.set_DgDp(j,i,outArgs.get_DgDp(j,i));
 	}

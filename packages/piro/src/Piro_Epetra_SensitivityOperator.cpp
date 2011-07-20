@@ -183,7 +183,7 @@ applyForward(const Epetra_MultiVector& Input,
 
   // Calculate Result = dg/dp*Input
   Teuchos::RCP<Epetra_Operator> dgdp_lo = dgdx.getLinearOp();
-  Teuchos::RCP<Epetra_MultiVector> dgdp_mv = dgdx.getMultiVector();
+  Teuchos::RCP<Epetra_MultiVector> dgdp_mv = dgdp.getMultiVector();
   if (dgdp_lo != Teuchos::null) {
     dgdp_lo->Apply(Input, Result);
   }
@@ -275,7 +275,7 @@ applyAdjoint(const Epetra_MultiVector& Input,
 
   // Calculate Result = dg/dp^T*Input
   Teuchos::RCP<Epetra_Operator> dgdp_lo = dgdx.getLinearOp();
-  Teuchos::RCP<Epetra_MultiVector> dgdp_mv = dgdx.getMultiVector();
+  Teuchos::RCP<Epetra_MultiVector> dgdp_mv = dgdp.getMultiVector();
   if (dgdp_lo != Teuchos::null) {
     dgdp_lo->Apply(Input, Result);
   }
@@ -307,11 +307,11 @@ applyAdjoint(const Epetra_MultiVector& Input,
     if (dgdx_orient == EpetraExt::ModelEvaluator::DERIV_MV_BY_COL) {
       Epetra_LocalMap x_map(dgdx_mv->NumVectors(), 0, dgdx_mv->Comm());
       w = Teuchos::rcp(new Epetra_MultiVector(x_map, m));
-      Result.Multiply('T', 'N', -1.0, *dgdx_mv, Input, 1.0);
+      w->Multiply('T', 'N', 1.0, *dgdx_mv, Input, 0.0);
     }
     else {
       w = Teuchos::rcp(new Epetra_MultiVector(dgdx_mv->Map(), m));
-      Result.Multiply('N', 'N', -1.0, *dgdx_mv, Input, 1.0);
+      w->Multiply('N', 'N', 1.0, *dgdx_mv, Input, 0.0);
     }
   }
   else 
