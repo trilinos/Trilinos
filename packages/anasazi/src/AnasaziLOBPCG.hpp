@@ -1136,6 +1136,7 @@ namespace Anasazi {
       for (int i=0; i<blockSize_; i++) {
         theta_[i] = (*newstate.T)[i];
       }
+      nevLocal_ = blockSize_;
     }
     else {
       // get ritz vecs/vals
