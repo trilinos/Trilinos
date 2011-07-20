@@ -704,9 +704,11 @@ namespace stk {
 
               eMesh.open(input_files_loc+"tet_fixture_NxNxN.e");
               Local_Tet4_Tet4_N break_tet(eMesh);
+              int scalarDimension = 0; // a scalar
+              stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
-              TestLocalRefinerTet_N_4 breaker(eMesh, break_tet, 0);
+              TestLocalRefinerTet_N_4 breaker(eMesh, break_tet, proc_rank_field);
               breaker.setRemoveOldElements(false);
               breaker.setAlwaysInitializeNodeRegistry(false);
               
