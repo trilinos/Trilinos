@@ -123,6 +123,12 @@ namespace Stokhos {
     //! Create SG operator representing dg/dx
     Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
 
+    //! Create SG operator representing dg/dp
+    Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_op(int j, int i) const;
+
+    //! Create SG operator representing df/dp
+    Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int i) const;
+
     //! Create InArgs
     InArgs createInArgs() const;
 

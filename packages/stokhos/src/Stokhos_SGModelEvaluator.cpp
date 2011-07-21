@@ -481,6 +481,118 @@ Stokhos::SGModelEvaluator::create_DgDx_dot_op(int j) const
   return Teuchos::null;
 }
 
+Teuchos::RCP<Epetra_Operator>
+Stokhos::SGModelEvaluator::create_DgDp_op(int j, int i) const
+{
+  if (j < num_g && i < num_p)
+    return me->create_DgDp_op(j,i);
+  else if (j >= num_g && j < num_g + num_g_sg && 
+	   i >= num_p && i < num_p + num_p_sg) {
+    int jj = j-num_g;
+    int ii = i-num_p;
+    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_blocks =
+      Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(
+		     sg_basis, overlapped_stoch_row_map));
+    OutArgs me_outargs = me->createOutArgs();
+    if (me_outargs.supports(OUT_ARG_DgDp_sg,jj,ii).supports(DERIV_LINEAR_OP))
+      for (unsigned int l=0; l<num_sg_blocks; l++)
+	sg_blocks->setCoeffPtr(l, me->create_DgDp_sg_op(jj,ii));
+    else if (me_outargs.supports(OUT_ARG_DgDp_sg,jj,ii).supports(DERIV_MV_BY_COL))
+      for (unsigned int l=0; l<num_sg_blocks; l++) {
+	Teuchos::RCP<Epetra_MultiVector> mv = 
+	  Teuchos::rcp(new Epetra_MultiVector(*(me->get_g_sg_map(jj)), 
+					      me->get_p_sg_map(ii)->NumMyElements()));
+	Teuchos::RCP<Epetra_Operator> block = 
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	sg_blocks->setCoeffPtr(l, block);
+      }
+    else if (me_outargs.supports(OUT_ARG_DgDp_sg,jj,ii).supports(DERIV_TRANS_MV_BY_ROW))
+      for (unsigned int l=0; l<num_sg_blocks; l++) {
+	Teuchos::RCP<Epetra_MultiVector> mv = 
+	  Teuchos::rcp(new Epetra_MultiVector(*(me->get_p_sg_map(ii)), 
+					      me->get_g_sg_map(jj)->NumMyElements()));
+	Teuchos::RCP<Epetra_Operator> block = 
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	sg_blocks->setCoeffPtr(l, block);
+      }
+    else
+      TEST_FOR_EXCEPTION(true, std::logic_error,
+			 "Error!  me_outargs.supports(OUT_ARG_DgDp_sg, " << jj
+			 << "," << ii << ").none() is true!");
+
+    Teuchos::RCP<Teuchos::ParameterList> pl = 
+      Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::RCP<Stokhos::SGOperator> dgdp_sg = 
+      Teuchos::rcp(new Stokhos::MatrixFreeOperator(
+		     sg_comm, sg_basis, serialCijk, 
+		     me->get_p_sg_map(ii), me->get_g_sg_map(jj),
+		     sg_p_map[ii], sg_g_map[jj], pl));
+    dgdp_sg->setupOperator(sg_blocks);
+    return dgdp_sg;
+  }
+  else 
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Error!  DgDp_op is not supported for index (" << j <<
+		       "," << i << ")!");
+  
+  return Teuchos::null;
+}
+
+Teuchos::RCP<Epetra_Operator>
+Stokhos::SGModelEvaluator::create_DfDp_op(int i) const
+{
+  if (i < num_p)
+    return me->create_DfDp_op(i);
+  else if (i >= num_p && i < num_p + num_p_sg) {
+    int ii = i-num_p;
+    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_blocks =
+      Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(
+		     sg_basis, overlapped_stoch_row_map));
+    OutArgs me_outargs = me->createOutArgs();
+    if (me_outargs.supports(OUT_ARG_DfDp_sg,ii).supports(DERIV_LINEAR_OP))
+      for (unsigned int l=0; l<num_sg_blocks; l++)
+	sg_blocks->setCoeffPtr(l, me->create_DfDp_sg_op(ii));
+    else if (me_outargs.supports(OUT_ARG_DfDp_sg,ii).supports(DERIV_MV_BY_COL))
+      for (unsigned int l=0; l<num_sg_blocks; l++) {
+	Teuchos::RCP<Epetra_MultiVector> mv = 
+	  Teuchos::rcp(new Epetra_MultiVector(*f_map, 
+					      me->get_p_sg_map(ii)->NumMyElements()));
+	Teuchos::RCP<Epetra_Operator> block = 
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	sg_blocks->setCoeffPtr(l, block);
+      }
+    else if (me_outargs.supports(OUT_ARG_DfDp_sg,ii).supports(DERIV_TRANS_MV_BY_ROW))
+      for (unsigned int l=0; l<num_sg_blocks; l++) {
+	Teuchos::RCP<Epetra_MultiVector> mv = 
+	  Teuchos::rcp(new Epetra_MultiVector(*(me->get_p_sg_map(ii)), 
+					      f_map->NumMyElements()));
+	Teuchos::RCP<Epetra_Operator> block = 
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	sg_blocks->setCoeffPtr(l, block);
+      }
+    else
+      TEST_FOR_EXCEPTION(true, std::logic_error,
+			 "Error!  me_outargs.supports(OUT_ARG_DfDp_sg, " << ii 
+			 << ").none() is true!");
+
+    Teuchos::RCP<Teuchos::ParameterList> pl = 
+      Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::RCP<Stokhos::SGOperator> dfdp_sg = 
+      Teuchos::rcp(new Stokhos::MatrixFreeOperator(
+		     sg_comm, sg_basis, serialCijk, 
+		     me->get_p_sg_map(ii), f_map,
+		     sg_p_map[ii], sg_f_map, pl));
+    dfdp_sg->setupOperator(sg_blocks);
+    return dfdp_sg;
+  }
+  else 
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Error!  DfDp_op is not supported for index (" << i 
+		       << ")!");
+  
+  return Teuchos::null;
+}
+
 EpetraExt::ModelEvaluator::InArgs
 Stokhos::SGModelEvaluator::createInArgs() const
 {
@@ -511,20 +623,23 @@ Stokhos::SGModelEvaluator::createOutArgs() const
   OutArgs me_outargs = me->createOutArgs();
 
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(me_outargs.Np() + num_p_sg, num_g + num_g_sg);
+  outArgs.set_Np_Ng(num_p + num_p_sg, num_g + num_g_sg);
   outArgs.set_Np_Ng_sg(0, 0);
   outArgs.setSupports(OUT_ARG_f, me_outargs.supports(OUT_ARG_f_sg));
   outArgs.setSupports(OUT_ARG_W, me_outargs.supports(OUT_ARG_W_sg));
   outArgs.setSupports(OUT_ARG_WPrec, me_outargs.supports(OUT_ARG_W_sg));
-  for (int j=0; j<me_outargs.Np(); j++)
+  for (int j=0; j<num_p; j++)
     outArgs.setSupports(OUT_ARG_DfDp, j, 
 			me_outargs.supports(OUT_ARG_DfDp_sg, j));
+  for (int j=0; j<num_p_sg; j++)
+    if (!me_outargs.supports(OUT_ARG_DfDp_sg, j).none())
+      outArgs.setSupports(OUT_ARG_DfDp, j+num_p, DERIV_LINEAR_OP);
   for (int i=0; i<num_g; i++) {
     outArgs.setSupports(OUT_ARG_DgDx_dot, i,
 			me_outargs.supports(OUT_ARG_DgDx_dot, i));
     outArgs.setSupports(OUT_ARG_DgDx, i,
 			me_outargs.supports(OUT_ARG_DgDx, i));
-    for (int j=0; j<me_outargs.Np(); j++)
+    for (int j=0; j<num_p; j++)
       outArgs.setSupports(OUT_ARG_DgDp, i, j, 
 			  me_outargs.supports(OUT_ARG_DgDp, i, j));
   }
@@ -533,13 +648,13 @@ Stokhos::SGModelEvaluator::createOutArgs() const
       outArgs.setSupports(OUT_ARG_DgDx_dot, i+num_g,  DERIV_LINEAR_OP);
     if (!me_outargs.supports(OUT_ARG_DgDx_sg, i).none())
       outArgs.setSupports(OUT_ARG_DgDx, i+num_g,  DERIV_LINEAR_OP);
-    for (int j=0; j<me_outargs.Np(); j++)
+    for (int j=0; j<num_p; j++)
       outArgs.setSupports(OUT_ARG_DgDp, i+num_g, j, 
 			  me_outargs.supports(OUT_ARG_DgDp_sg, i, j));
+    for (int j=0; j<num_p_sg; j++)
+      if (!me_outargs.supports(OUT_ARG_DgDp_sg, i, j).none())
+	outArgs.setSupports(OUT_ARG_DgDp, i+num_g, j+num_p, DERIV_LINEAR_OP);
   }
-
-  // We do not support derivatives w.r.t. the new SG parameters, so their
-  // support defaults to none.
   
   return outArgs;
 }
