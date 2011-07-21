@@ -110,7 +110,6 @@ Superlumt<Matrix,Vector>::Superlumt(
   data_.options.perm_r = data_.perm_r.getRawPtr();
   data_.options.perm_c = data_.perm_c.getRawPtr();
 
-  // data_.etree.resize(this->globalNumRows_);
   data_.R.resize(this->globalNumRows_);
   data_.C.resize(this->globalNumCols_);
 
@@ -177,17 +176,6 @@ Superlumt<Matrix,Vector>::preOrdering_impl()
   // Use either the column-ordering found in the users perm_c or the requested computed ordering
   int perm_spec = data_.options.ColPerm;
   if( perm_spec != SLUMT::MY_PERMC && this->root_ ){
-    // In order to calculate a pre-order, we must first have a matrix!
-    {                           // start matrix conversion block
-#ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-#endif
-
-      // matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
-      // 				     nzvals_(), rowind_(), colptr_(),
-      // 				     Teuchos::outArg(data_.A),
-      // 				     this->timers_.mtxRedistTime_);
-    } // end matrix conversion block
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
@@ -239,25 +227,6 @@ Superlumt<Matrix,Vector>::numericFactorization_impl()
 
   int info = 0;
 
-  // Cleanup old SuperMatrix A's Store, will be allocated again when
-  // new values are retrieved.
-  // if( data_.options.ColPerm != SLUMT::MY_PERMC ||
-  //     this->getNumNumericFact() > 0 ){
-  //   SLUMT::D::Destroy_SuperMatrix_Store( &(data_.A) );
-  // }
-
-  // Get values from matrix in temporary storage
-  {
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-#endif
-
-    // matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
-    // 				   nzvals_(), rowind_(), colptr_(),
-    // 				   Teuchos::ptrFromRef(data_.A),
-    // 				   this->timers_.mtxRedistTime_);
-  }
-
   if ( this->root_ ) {
 
     if( data_.options.fact == SLUMT::EQUILIBRATE ){
@@ -307,7 +276,7 @@ Superlumt<Matrix,Vector>::numericFactorization_impl()
 
     { // Do factorization
 #ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+      Teuchos::TimeMonitor numFactTimer( this->timers_.numFactTime_ );
 #endif
 
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
@@ -354,69 +323,65 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
 {
   using Teuchos::as;
 
-  const global_size_type len_rhs = X->getGlobalLength();
+  const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  Teuchos::Array<slu_type> bxvals_(len_rhs * nrhs);
-  size_t ldbx_;
+  Teuchos::Array<slu_type> bxvals_(ld_rhs * nrhs);
+  size_t ldbx_ = as<size_t>(ld_rhs);
 
-  // We assume the global length of the two vectors have already been
-  // checked for compatibility
-
-  // Clean up old B stores if it has already been created
-  if( data_.BX.Store != NULL ){
-    SLUMT::D::Destroy_SuperMatrix_Store( &(data_.BX) );
-    data_.BX.Store = NULL;
-  }
-
-  {                 // Convert: Get a SuperMatrix for the B multi-vectors
+  {				// Get values from B
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
+    Teuchos::TimeMonitor convTimer( this->timers_.vecConvTime_ );
+    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-    matrix_helper::createMVDenseMatrix(
-      B, bxvals_(), ldbx_,
-      Teuchos::outArg(data_.BX),
-      this->timers_.vecRedistTime_);
-  }         // end block for conversion time
-
-  if( data_.options.trans == SLUMT::NOTRANS ){
-    if( data_.rowequ ){		// row equilibration has been done on AC
-      // scale bxvals_ by diag(R)
-      Util::scale(bxvals_(), as<size_t>(len_rhs), ldbx_, data_.R(),
-		  SLUMT::slu_mt_mult<slu_type,magnitude_type>());
-    }
-  } else if( data_.colequ ){	// column equilibration has been done on AC
-    // scale bxvals_ by diag(C)
-    Util::scale(bxvals_(), as<size_t>(len_rhs), ldbx_, data_.C(),
-		SLUMT::slu_mt_mult<slu_type,magnitude_type>());
+    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+                             slu_type>::do_get(B, bxvals_(),
+					       ldbx_,
+					       ROOTED);
   }
 
   int info = 0; // returned error code (0 = success)
-
-  // magnitude_type rpg, rcond;
   if ( this->root_ ) {
+    // Clean up old B stores if it has already been created
+    if( data_.BX.Store != NULL ){
+      SLUMT::D::Destroy_SuperMatrix_Store( &(data_.BX) );
+      data_.BX.Store = NULL;
+    }
+
+    {
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+      Teuchos::TimeMonitor convTimer( this->timers_.vecConvTime_ );
+#endif
+      SLUMT::Dtype_t dtype = type_map::dtype;
+      function_map::create_Dense_Matrix(&(data_.BX), as<int>(ld_rhs), as<int>(nrhs),
+					bxvals_.getRawPtr(), as<int>(ldbx_),
+					SLUMT::SLU_DN, dtype, SLUMT::SLU_GE);
+    }
+
+    if( data_.options.trans == SLUMT::NOTRANS ){
+      if( data_.rowequ ){		// row equilibration has been done on AC
+	// scale bxvals_ by diag(R)
+	Util::scale(bxvals_(), as<size_t>(ld_rhs), ldbx_, data_.R(),
+		    SLUMT::slu_mt_mult<slu_type,magnitude_type>());
+      }
+    } else if( data_.colequ ){	// column equilibration has been done on AC
+      // scale bxvals_ by diag(C)
+      Util::scale(bxvals_(), as<size_t>(ld_rhs), ldbx_, data_.C(),
+		  SLUMT::slu_mt_mult<slu_type,magnitude_type>());
+    }
+
+
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor solveTimer( this->timers_.solveTime_ );
 #endif
 
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
-    std::cout << "SuperLU_MT:: Before solve" << std::endl;
-    std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
-    std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-    std::cout << "colptr_ : " << colptr_.toString() << std::endl;
-    std::cout << "B : " << bValues().toString() << std::endl;
-#endif
-
-    function_map::gstrs(data_.options.trans, &(data_.L),
-			&(data_.U), data_.perm_r.getRawPtr(),
-			data_.perm_c.getRawPtr(), &(data_.BX),
-			&(data_.stat), &info);
-
-#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
-    std::cout << "SuperLU_MT:: After solve" << std::endl;
-    std::cout << "X : " << bxvals_().toString() << std::endl;
-#endif
+      function_map::gstrs(data_.options.trans, &(data_.L),
+			  &(data_.U), data_.perm_r.getRawPtr(),
+			  data_.perm_c.getRawPtr(), &(data_.BX),
+			  &(data_.stat), &info);
+    }
   } // end block for solve time
 
   /* All processes should have the same error code */
@@ -430,19 +395,19 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
   if( data_.options.trans == SLUMT::NOTRANS ){
     if( data_.colequ ){	// column equilibration has been done on AC
       // scale bxvals_ by diag(C)
-      Util::scale(bxvals_(), as<size_t>(len_rhs), ldbx_, data_.C(),
+      Util::scale(bxvals_(), as<size_t>(ld_rhs), ldbx_, data_.C(),
 		  SLUMT::slu_mt_mult<slu_type,magnitude_type>());
     }
   } else if( data_.rowequ ){		// row equilibration has been done on AC
     // scale bxvals_ by diag(R)
-    Util::scale(bxvals_(), as<size_t>(len_rhs), ldbx_, data_.R(),
+    Util::scale(bxvals_(), as<size_t>(ld_rhs), ldbx_, data_.R(),
 		SLUMT::slu_mt_mult<slu_type,magnitude_type>());
   }
 
   /* Update X's global values */
   {
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
     Util::put_1d_data_helper<
@@ -683,7 +648,7 @@ Superlumt<Matrix,Vector>::loadA_impl(EPhase current_phase)
   using Teuchos::as;
 
 #ifdef HAVE_AMESOS2_TIMERS
-  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+  Teuchos::TimeMonitor convTimer( this->timers_.mtxConvTime_ );
 #endif
 
   if( current_phase == SYMBFACT ) return false;
@@ -703,7 +668,7 @@ Superlumt<Matrix,Vector>::loadA_impl(EPhase current_phase)
   int nnz_ret = 0;
   {
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mtxRedistTimer( mtxRedistTime );
+    Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
     // Use compressed-column store for SuperLU_MT

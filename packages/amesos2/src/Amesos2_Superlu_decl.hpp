@@ -55,7 +55,6 @@
 
 #include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
-#include "Amesos2_Superlu_MatrixHelper.hpp"
 #include "Amesos2_Superlu_FunctionMap.hpp"
 #include "Amesos2_Superlu_TypeMap.hpp"
 
