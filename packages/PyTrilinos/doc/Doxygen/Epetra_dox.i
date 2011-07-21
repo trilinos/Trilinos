@@ -17590,6 +17590,19 @@ In:  ScalarConstant - Value to use.
 
 Integer error code, set to 0 if successful. ";
 
+%feature("docstring")  Epetra_VbrMatrix::DirectSubmitBlockEntry "int
+Epetra_VbrMatrix::DirectSubmitBlockEntry(int GlobalBlockRow, int
+GlobalBlockCol, const double *values, int LDA, int NumRows, int
+NumCols, bool sum_into)
+
+Submit a block-entry directly into the matrix (without using a
+begin/end sequence)
+
+Experimental method which allows submitting a block-entry without
+first calling BeginInsertGlobalValues. This method copies the input
+data directly into the matrix storage. The block-entry is specified by
+global block-row and block-col indices. ";
+
 %feature("docstring")  Epetra_VbrMatrix::BeginInsertGlobalValues "int
 Epetra_VbrMatrix::BeginInsertGlobalValues(int BlockRow, int
 NumBlockEntries, int *BlockIndices)
