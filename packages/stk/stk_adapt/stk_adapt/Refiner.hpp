@@ -161,6 +161,8 @@ namespace stk {
 
       void check_db(std::string msg="") ;
 
+      NodeRegistry& getNodeRegistry() { return *m_nodeRegistry; }
+      percept::PerceptMesh& getMesh() { return m_eMesh; }
     protected:
 
       void check_db_ownership_consistency();

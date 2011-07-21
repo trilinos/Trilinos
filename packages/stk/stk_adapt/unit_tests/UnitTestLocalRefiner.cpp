@@ -17,6 +17,7 @@
 #include <stk_percept/function/FieldFunction.hpp>
 #include <stk_percept/function/ConstantFunction.hpp>
 #include <stk_percept/PerceptMesh.hpp>
+#include <stk_percept/MeshUtil.hpp>
 
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_adapt/UniformRefiner.hpp>
@@ -158,6 +159,7 @@ namespace stk {
           }        
         return totVol;
       }
+
 
       static void fixture_setup_NxNxN_box_hex_and_tet_mesh()
       {
@@ -315,7 +317,6 @@ namespace stk {
                     eMesh.saveAs(output_files_loc+"local_tet_N_2_1_bitcode_"+toString((int)edge_mark_bitcode)+".e" );
                   }
               }
-              //exit(123);
             }
 
             {
@@ -520,9 +521,11 @@ namespace stk {
                 mesh.m_metaData.commit();
                 mesh.populate();
 
-                std::cout << "here" << std::endl;
+
+
                 bool isCommitted = true;
                 percept::PerceptMesh eMesh(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+
 
                 eMesh.saveAs(input_files_loc+"local_tet_2_rand.e."+toString(icase));
               }
@@ -551,14 +554,42 @@ namespace stk {
                   {
                     throw std::runtime_error("triangulate_tet_2_rand:: error, volumes don't match");
                   }
-
                 save_or_diff(eMesh, output_files_loc+"local_tet_2_rand.e."+toString(icase) );
-                //exit(123);
+              }
+
+              {
+                PerceptMesh eMesh;
+                eMesh.open(input_files_loc+"local_tet_2_rand.e."+toString(icase));
+                Local_Tet4_Tet4_N break_tet(eMesh);
+                eMesh.commit();
+
+                //eMesh.printInfo("srk tmp SingleTetFixture 2a", 2);
+
+                int edge_mark_bitcode = 0;
+                edge_mark_bitcode = (int)(63.*((double)random())/((double)RAND_MAX));
+                if (edge_mark_bitcode <= 0) edge_mark_bitcode = 1;
+                if (edge_mark_bitcode >= 63) edge_mark_bitcode = 63;
+
+                TestLocalRefinerTet_N_3_1 breaker(eMesh, break_tet, 0, edge_mark_bitcode);
+                breaker.setRemoveOldElements(false);
+                breaker.doBreak();
+
+                //eMesh.printInfo("srk tmp SingleTetFixture 3", 2);
+
+#if 0
+                bool isConsistent = percept::MeshUtil::facesConsistent(eMesh, true);
+                if (!isConsistent)
+                  {
+                    std::cout << "tmp error isConsistent= " << isConsistent << std::endl;
+                    eMesh.saveAs( output_files_loc+"local_tet_2_rand_error.e."+toString(icase) );
+                  }
+                STKUNIT_EXPECT_TRUE(isConsistent);
+#endif
+
               }
 
               ++icase;
             }
-            //exit(123);
           }
       }
 #endif
@@ -737,7 +768,6 @@ namespace stk {
 
             }
 
-            //exit(123);
           }
       }
 
@@ -947,7 +977,6 @@ namespace stk {
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1_1_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
-            //exit(123);
 
             //breaker.unrefineAll();
             ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
@@ -1015,7 +1044,6 @@ namespace stk {
             eMesh.saveAs(output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
-            //exit(123);
 #if 1           
 
             //breaker.unrefineAll();
@@ -1025,7 +1053,6 @@ namespace stk {
             // FIXME
             eMesh.saveAs( output_files_loc+"local_tri_N_2_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_2_1_unref_"+post_fix[p_size]+".e");
-            //exit(123);
 #endif
             // end_demo
           }
@@ -1100,7 +1127,6 @@ namespace stk {
             // FIXME
             eMesh.saveAs( output_files_loc+"local_tri_N_3_1_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_1_unref_"+post_fix[p_size]+".e");
-            //exit(123);
 #endif
             // end_demo
           }
@@ -1199,7 +1225,6 @@ namespace stk {
               }
 
 
-            //exit(123);
 #endif
             // end_demo
           }
@@ -1261,7 +1286,6 @@ namespace stk {
             eMesh.saveAs(output_files_loc+"local_tri_N_3_2_"+post_fix[p_size]+".e");
 
             //MPI_Barrier( MPI_COMM_WORLD );
-            //exit(123);
 #if 1
 
             for (int iunref_pass=0; iunref_pass < 2; iunref_pass++)
@@ -1337,7 +1361,6 @@ namespace stk {
             eMesh.saveAs( output_files_loc+"local_tri_N_1_unref.e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_1_unref.e");
 
-            //exit(123);
             // end_demo
           }
 

@@ -9,6 +9,7 @@
 
 #include <stk_adapt/Refiner.hpp>
 
+#include <stk_percept/MeshUtil.hpp>
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
 #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
@@ -20,7 +21,6 @@
 
 namespace stk {
   namespace adapt {
-
     using namespace std;
     using namespace percept;
 
@@ -717,51 +717,6 @@ namespace stk {
           ///  Global node loop operations:  this is where we perform ops like adding new nodes to the right parts, interpolating fields, etc.
           /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-          /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.]... ");
-#if !STK_ADAPT_URP_LOCAL_NODE_COMPS
-          if (0)
-          {
-            EXCEPTWATCH;
-            //if (ranks[irank] == ranks[0])
-            // only need to do this once: the map is fully built and we loop over the map's faces/edges, which are fixed after the getFromRemote step
-            if (irank == 0)
-              {
-                if (0)
-                  {
-                    shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
-
-                    if (1) std::cout << "tmp Refiner:: calling addToExistingPartsNew() irank = " << irank << " ranks[irank] = " << ranks[irank]
-                                     << " cell_topo= " << cell_topo.getName()
-                                     << std::endl;
-                  }
-
-                m_nodeRegistry->addToExistingPartsNew();
-                //std::cout << "tmp makeCentroid... " << std::endl;
-                m_nodeRegistry->makeCentroid(m_eMesh.getCoordinatesField());
-                //std::cout << "tmp makeCentroid...done " << std::endl;
-                //std::cout << "tmp interpolateFields... " << std::endl;
-                //FIXME m_nodeRegistry->interpolateFields();
-                //std::cout << "tmp interpolateFields...done " << std::endl;
-              }
-          }
-#endif
-          /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.] ...done ");
-
-          // this is for testing removing old elements as early as possible for memory reasons
-          // FIXME - remove old elements on the fly?
-          if (0 && m_doRemove)
-            {
-              EXCEPTWATCH;
-
-              /**/                                                TRACE_PRINT( "Refiner: remove old elements...start " );
-
-              removeOldElements(ranks[irank], m_breakPattern[irank]);
-              renameNewParts(ranks[irank], m_breakPattern[irank]);
-              fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
-
-              /**/                                                TRACE_PRINT( "Refiner: remove old elements...done " );
-            }
-
           if (TRACE_STAGE_PRINT && !m_eMesh.getRank()) {
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL, "CONNECT_LOCAL");
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_createNewNeededNodes, "CONNECT_LOCAL_createNewNeededNodes");
@@ -769,11 +724,6 @@ namespace stk {
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_URP_createOrGetNode, "CONNECT_LOCAL_URP_createOrGetNode");
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_URP_declare_relation, "CONNECT_LOCAL_URP_declare_relation");
           }
-
-          /**/                                                TRACE_PRINT("Refiner: modification_end...start... ");
-          //FIXME FIXME FIXME
-          //bulkData.modification_end();
-          /**/                                                TRACE_PRINT("Refiner: modification_end...done ");
 
         } // irank
 
@@ -796,7 +746,6 @@ namespace stk {
       // m_eMesh.dumpElements();
 #endif
       /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.] ...done ");
-
 
       /***********************/                           TRACE_PRINT("Refiner: fixElementSides1 ");
       fixElementSides1();
@@ -897,7 +846,6 @@ namespace stk {
 #endif
       //std::cout << "tmp m_nodeRegistry.m_gee_cnt= " << m_nodeRegistry->m_gee_cnt << std::endl;
       //std::cout << "tmp m_nodeRegistry.m_gen_cnt= " << m_nodeRegistry->m_gen_cnt << std::endl;
-
 
     } // doBreak
 

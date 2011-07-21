@@ -2129,8 +2129,9 @@ namespace stk {
                       {
                         bool isGhost = m_eMesh.isGhostElement(*owning_element);
 
-                        std::cout << "clear_element_owner_data: owning_elementId = " << owning_elementId 
-                                  << " isGhost= " << isGhost << std::endl;
+                        if (0)
+                          std::cout << "clear_element_owner_data: owning_elementId = " << owning_elementId 
+                                    << " isGhost= " << isGhost << std::endl;
 
                         // FIXME
                         NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
