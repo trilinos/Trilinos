@@ -281,7 +281,7 @@ namespace {
       my_num_rows = total_rows;
     }
     const Tpetra::Map<int,int> redist_map(total_rows, my_num_rows, 0,
-					  to_teuchos_comm(rcp(comm)));
+					  to_teuchos_comm(rcp(comm,false)));
 
     // Get first the global data copy
     get_1d_copy_helper<ADAPT,double>::do_get(ptrInArg(*adapter),
