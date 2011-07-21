@@ -453,7 +453,7 @@ namespace Amesos2 {
      * (assuming the user know what she's doing) wouldn't otherwise need
      * to call numericFactorization following a solve.
      */
-    void refreshA();
+    void loadA(EPhase current_phase);
 
   protected:
 
@@ -475,6 +475,14 @@ namespace Amesos2 {
 
     /// The LHS operator
     Teuchos::RCP<const MatrixAdapter<Matrix> > matrixA_;
+
+    /** \internal
+     * 
+     * If \c true indicates that the current matrix A has been loaded
+     * into internal solver structures.
+     */
+    bool matrix_loaded_;
+
 
     /// The LHS vector/multi-vector
     Teuchos::RCP<Vector> multiVecX_;

@@ -95,6 +95,8 @@ SolverCore<ConcreteSolver,Matrix,Vector>::preOrdering()
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 #endif
 
+  loadA(PREORDERING);
+
   static_cast<solver_type*>(this)->preOrdering_impl();
   ++status_.numPreOrder_;
   status_.last_phase_ = PREORDERING;
@@ -113,6 +115,9 @@ SolverCore<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
 
   if( !status_.preOrderingDone() ){
     preOrdering();
+    if( !matrix_loaded_ ) loadA(SYMBFACT);
+  } else {
+    loadA(SYMBFACT);
   }
 
   static_cast<solver_type*>(this)->symbolicFactorization_impl();
@@ -133,6 +138,9 @@ SolverCore<ConcreteSolver,Matrix,Vector>::numericFactorization()
 
   if( !status_.symbolicFactorizationDone() ){
     symbolicFactorization();
+    if( !matrix_loaded_ ) loadA(NUMFACT);
+  } else {
+    loadA(NUMFACT);
   }
 
   static_cast<solver_type*>(this)->numericFactorization_impl();
@@ -455,9 +463,17 @@ SolverCore<ConcreteSolver,Matrix,Vector>::getTiming(
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 std::string
-SolverCore<ConcreteSolver,Matrix,Vector>::name() const {
+SolverCore<ConcreteSolver,Matrix,Vector>::name() const
+{
   std::string solverName = solver_type::name;
   return solverName;
+}
+
+template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
+void
+SolverCore<ConcreteSolver,Matrix,Vector>::loadA(EPhase current_phase)
+{
+  matrix_loaded_ = static_cast<solver_type*>(this)->loadA_impl(current_phase);
 }
 
 

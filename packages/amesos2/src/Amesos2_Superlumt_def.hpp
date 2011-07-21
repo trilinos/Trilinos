@@ -92,9 +92,9 @@ Superlumt<Matrix,Vector>::Superlumt(
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::Superlumt,Matrix,Vector>(A, X, B)
-  , nzvals_(this->globalNumNonZeros_)
-  , rowind_(this->globalNumNonZeros_)
-  , colptr_(this->globalNumRows_ + 1)
+  , nzvals_()			// initialize to empty arrays
+  , rowind_()
+  , colptr_()
 {
   // Set some default parameters
   Teuchos::RCP<Teuchos::ParameterList> default_params
@@ -111,7 +111,7 @@ Superlumt<Matrix,Vector>::Superlumt(
   data_.options.perm_c = data_.perm_c.getRawPtr();
 
   // data_.etree.resize(this->globalNumRows_);
-  data_.R.resize(this->globalNumRows_); // Actually, the sizes depend on whether we are doing a transpose solve or not
+  data_.R.resize(this->globalNumRows_);
   data_.C.resize(this->globalNumCols_);
 
   data_.options.refact = SLUMT::NO; // initially we are not refactoring
@@ -119,6 +119,10 @@ Superlumt<Matrix,Vector>::Superlumt(
   data_.equed = SLUMT::NOEQUIL;	// No equilibration has yet been performed
   data_.rowequ = false;
   data_.colequ = false;
+
+  data_.A.Store  = NULL;
+  data_.AC.Store = NULL;
+  data_.BX.Store = NULL;
 }
 
 
@@ -132,21 +136,31 @@ Superlumt<Matrix,Vector>::~Superlumt( )
    */
 
   // Storage is initialized in numericFactorization_impl()
-  if ( this->getNumNumericFact() > 0 ){
+  if ( data_.A.Store != NULL ){
     // Our Teuchos::Array's will destroy rowind, colptr, and nzval for us
     SLUMT::D::Destroy_SuperMatrix_Store( &(data_.A) );
-
-
-    if ( this->root_ ){       // only root allocated these Objects.
-      SLUMT::D::StatFree( &(data_.stat) ) ;
-
-      SLUMT::D::Destroy_SuperNode_SCP( &(data_.L) );
-      SLUMT::D::Destroy_CompCol_Matrix( &(data_.U) );
-    }
   }
 
+  // Cleanup memory allocated during last call to sp_colorder if needed
+  if( data_.AC.Store != NULL ){
+    SLUMT::D::Destroy_CompCol_Permuted( &(data_.AC) ); // free's colbeg, colend, and Store
+  }
+
+  if ( this->status_.getNumNumericFact() > 0 && this->root_ ){ // only root allocated these Objects.
+    SLUMT::D::Destroy_SuperNode_SCP( &(data_.L) );
+    SLUMT::D::Destroy_CompCol_NCP( &(data_.U) );
+
+    // memory alloc'd in sp_colorder
+    free( data_.options.etree );
+    free( data_.options.colcnt_h );
+    free( data_.options.part_super_h );
+
+    SLUMT::D::StatFree( &(data_.stat) ) ;
+  }
+
+
   // Storage is initialized in solve_impl()
-  if ( this->getNumSolve() > 0 ){
+  if ( data_.BX.Store != NULL ){
     /* Cannot use SLU::Destroy_Dense_Matrix routine here, since it attempts to
      * free the array of non-zero values, but that array has already been
      * deallocated by the MultiVector object.  So we release just the Store
@@ -162,23 +176,24 @@ Superlumt<Matrix,Vector>::preOrdering_impl()
 {
   // Use either the column-ordering found in the users perm_c or the requested computed ordering
   int perm_spec = data_.options.ColPerm;
-  if( perm_spec != SLUMT::MY_PERMC ){
+  if( perm_spec != SLUMT::MY_PERMC && this->root_ ){
     // In order to calculate a pre-order, we must first have a matrix!
     {                           // start matrix conversion block
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
 
-      matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
-				     nzvals_(), rowind_(), colptr_(),
-				     Teuchos::outArg(data_.A),
-				     this->timers_.mtxRedistTime_);
+      // matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
+      // 				     nzvals_(), rowind_(), colptr_(),
+      // 				     Teuchos::outArg(data_.A),
+      // 				     this->timers_.mtxRedistTime_);
     } // end matrix conversion block
-
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
+#endif
+    
     SLUMT::S::get_perm_c(perm_spec, &(data_.A), data_.perm_c.getRawPtr());
   }
-  // Else the user's perm_c will be applied later
-
   // Ordering will be applied directly before numeric factorization
 
   return(0);
@@ -196,16 +211,14 @@ Superlumt<Matrix,Vector>::symbolicFactorization_impl()
   // flag that tells it it needs to symbolically factor later.
   data_.options.refact = SLUMT::NO;
 
-  if( this->status_.numericFactorizationDone() ){
+  if( this->status_.numericFactorizationDone() && this->root_ ){
     // If we've done a numeric factorization already, then we need to
     // cleanup the old L and U. Stores and other data will be
     // allocated during numeric factorization.  Only rank 0 has valid
     // pointers
-    if ( this->root_ ){
-      SLUMT::D::Destroy_SuperNode_Matrix( &(data_.L) );
-      SLUMT::D::Destroy_CompCol_Matrix( &(data_.U) );
-    }
-  }
+    SLUMT::D::Destroy_SuperNode_Matrix( &(data_.L) );
+    SLUMT::D::Destroy_CompCol_NCP( &(data_.U) );
+   }
 
   return(0);
 }
@@ -228,10 +241,10 @@ Superlumt<Matrix,Vector>::numericFactorization_impl()
 
   // Cleanup old SuperMatrix A's Store, will be allocated again when
   // new values are retrieved.
-  if( data_.options.ColPerm != SLUMT::MY_PERMC ||
-      this->getNumNumericFact() > 0 ){
-    SLUMT::D::Destroy_SuperMatrix_Store( &(data_.A) );
-  }
+  // if( data_.options.ColPerm != SLUMT::MY_PERMC ||
+  //     this->getNumNumericFact() > 0 ){
+  //   SLUMT::D::Destroy_SuperMatrix_Store( &(data_.A) );
+  // }
 
   // Get values from matrix in temporary storage
   {
@@ -239,10 +252,10 @@ Superlumt<Matrix,Vector>::numericFactorization_impl()
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
 
-    matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
-				   nzvals_(), rowind_(), colptr_(),
-				   Teuchos::ptrFromRef(data_.A),
-				   this->timers_.mtxRedistTime_);
+    // matrix_helper::createCcsMatrix(this->matrixA_.ptr(),
+    // 				   nzvals_(), rowind_(), colptr_(),
+    // 				   Teuchos::ptrFromRef(data_.A),
+    // 				   this->timers_.mtxRedistTime_);
   }
 
   if ( this->root_ ) {
@@ -268,14 +281,29 @@ Superlumt<Matrix,Vector>::numericFactorization_impl()
       data_.options.fact = SLUMT::DOFACT;
     }
 
-    // Allocate and initialize status variable
-    const int n = as<int>(this->globalNumCols_); // n is the number of columns in A
-    SLUMT::D::StatAlloc(n, data_.options.nprocs, data_.options.panel_size, data_.options.relax, &(data_.stat));
-    SLUMT::D::StatInit(n, data_.options.nprocs, &(data_.stat));
+    // Cleanup memory allocated during last call to sp_colorder if needed
+    if( data_.AC.Store != NULL ){
+      SLUMT::D::Destroy_CompCol_Permuted( &(data_.AC) ); // free's colbeg, colend, and Store
+      if( data_.options.refact == SLUMT::NO ){		 // then we recompute etree; free the old one
+	free( data_.options.etree );
+	free( data_.options.colcnt_h );
+	free( data_.options.part_super_h );
+      }
+      data_.AC.Store = NULL;
+    }
 
     // Apply the column ordering, so that AC is the column-permuted A, and compute etree
     SLUMT::sp_colorder(&(data_.A), data_.perm_c.getRawPtr(),
 			  &(data_.options), &(data_.AC));
+
+
+    // Allocate and initialize status variable
+    if ( this->status_.getNumNumericFact() > 0 ) SLUMT::D::StatFree( &(data_.stat) );
+    const int n = as<int>(this->globalNumCols_); // n is the number of columns in A
+    SLUMT::D::StatAlloc(n, data_.options.nprocs, data_.options.panel_size,
+			data_.options.relax, &(data_.stat));
+    SLUMT::D::StatInit(n, data_.options.nprocs, &(data_.stat));
+
 
     { // Do factorization
 #ifdef HAVE_AMESOS2_TIMERS
@@ -336,8 +364,9 @@ Superlumt<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> 
   // checked for compatibility
 
   // Clean up old B stores if it has already been created
-  if( this->getNumSolve() > 0 ){
+  if( data_.BX.Store != NULL ){
     SLUMT::D::Destroy_SuperMatrix_Store( &(data_.BX) );
+    data_.BX.Store = NULL;
   }
 
   {                 // Convert: Get a SuperMatrix for the B multi-vectors
@@ -644,6 +673,68 @@ Superlumt<Matrix,Vector>::getValidParameters_impl() const
   valid_params->set("PrintStat", false);
 
   return valid_params;
+}
+
+
+template <class Matrix, class Vector>
+bool
+Superlumt<Matrix,Vector>::loadA_impl(EPhase current_phase)
+{
+  using Teuchos::as;
+
+#ifdef HAVE_AMESOS2_TIMERS
+  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
+
+  if( current_phase == SYMBFACT ) return false;
+
+  // Store is allocated on create_CompCol_Matrix
+  if( data_.A.Store != NULL ){
+    SLUMT::D::Destroy_SuperMatrix_Store( &(data_.A) );
+    data_.A.Store = NULL;
+  }
+
+  if( this->root_ ){
+    nzvals_.resize(this->globalNumNonZeros_);
+    rowind_.resize(this->globalNumNonZeros_);
+    colptr_.resize(this->globalNumCols_ + 1);
+  }
+
+  int nnz_ret = 0;
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mtxRedistTimer( mtxRedistTime );
+#endif
+
+    // Use compressed-column store for SuperLU_MT
+    Util::get_ccs_helper<
+      MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
+						      nzvals_, rowind_, colptr_,
+						      nnz_ret, ROOTED, ARBITRARY);
+  }
+
+  if( this->root_ ){
+    TEST_FOR_EXCEPTION( nnz_ret != as<int>(this->globalNumNonZeros_),
+			std::runtime_error,
+			"rank=0 failed to get all nonzero values in getCcs()");
+
+    SLUMT::Dtype_t dtype = type_map::dtype;
+    function_map::create_CompCol_Matrix(&(data_.A),
+					as<int>(this->globalNumRows_),
+					as<int>(this->globalNumCols_),
+					nnz_ret,
+					nzvals_.getRawPtr(),
+					rowind_.getRawPtr(),
+					colptr_.getRawPtr(),
+					SLUMT::SLU_NC,
+					dtype, SLUMT::SLU_GE);
+
+    TEST_FOR_EXCEPTION( data_.A.Store == NULL,
+			std::runtime_error,
+			"Failed to allocate matrix store" );
+  }
+
+  return true;
 }
 
 

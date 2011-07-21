@@ -247,7 +247,8 @@ namespace Amesos2 {
     Array<global_size_t> colptr(this->getGlobalNumCols() + 1);
     this->getCcs(nzval_tmp(), rowind(), colptr(), nnz, rowmap, ordering);
     
-    Util::transpose(nzval_tmp(), rowind(), colptr(), nzval, colind, rowptr);
+    if( !nzval.is_null() && !colind.is_null() && !rowptr.is_null() )
+      Util::transpose(nzval_tmp(), rowind(), colptr(), nzval, colind, rowptr);
   }
 
   template < class Matrix >
@@ -296,8 +297,9 @@ namespace Amesos2 {
     Array<global_ordinal_t> colind(rowind.size(), 0);
     Array<global_size_t> rowptr(this->getGlobalNumRows() + 1);
     this->getCrs(nzval_tmp(), colind(), rowptr(), nnz, colmap, ordering);
-    
-    Util::transpose(nzval_tmp(), colind(), rowptr(), nzval, rowind, colptr);
+
+    if( !nzval.is_null() && !rowind.is_null() && !colptr.is_null() )
+      Util::transpose(nzval_tmp(), colind(), rowptr(), nzval, rowind, colptr);
   }
 
   template < class Matrix >

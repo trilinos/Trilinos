@@ -115,7 +115,7 @@ namespace Amesos2 {
 	    class Vector >
   Solver<Matrix,Vector>*
   create(const std::string solverName, const Matrix* A){
-    return( create(solverName, rcp(A,false), RCP<Vector>(), RCP<Vector>()).getRawPtr() );
+    return( create(solverName, rcp(A,false), RCP<Vector>(), RCP<const Vector>()).getRawPtr() );
   }
 
 
@@ -123,7 +123,7 @@ namespace Amesos2 {
 	    class Vector >
   RCP<Solver<Matrix,Vector> >
   create(const std::string solverName, const RCP<const Matrix> A){
-    return( create(solverName, A, RCP<Vector>(), RCP<Vector>()) );
+    return( create(solverName, A, RCP<Vector>(), RCP<const Vector>()) );
   }
 
 

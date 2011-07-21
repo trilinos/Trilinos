@@ -235,7 +235,7 @@ namespace Amesos2 {
 #else
       typename Teuchos::ArrayView<GlobalOrdinal>::iterator ind_it, ind_end;
 #endif
-  
+
       // Count the number of entries in each column
       Teuchos::Array<GlobalSizeT> count(trans_ptr.size(), 0);
       ind_end = indices.end();

@@ -94,8 +94,10 @@ public:
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
 
-  typedef typename TypeMap<Amesos2::Superlumt,scalar_type>::type           slu_type;
-  typedef typename TypeMap<Amesos2::Superlumt,scalar_type>::magnitude_type magnitude_type;
+  typedef TypeMap<Amesos2::Superlumt,scalar_type>                  type_map;
+
+  typedef typename type_map::type                                  slu_type;
+  typedef typename type_map::magnitude_type                  magnitude_type;
 
   typedef FunctionMap<Amesos2::Superlumt,slu_type>             function_map;
   typedef MatrixHelper<Amesos2::Superlumt>                    matrix_helper;
@@ -229,6 +231,17 @@ private:
    * solver.
    */
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters_impl() const;
+
+
+  /**
+   * \brief Reads matrix data into internal structures
+   *
+   * \param [in] current_phase an indication of which solution phase this
+   *                           load is being performed for.
+   *
+   * \return \c true if the matrix was loaded, \c false if not
+   */
+  bool loadA_impl(EPhase current_phase);
 
 
   // struct holds all data necessary to make a superlu factorization or solve call

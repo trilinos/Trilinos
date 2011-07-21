@@ -308,6 +308,10 @@ namespace Amesos2 {
          const Teuchos::RCP<const Matrix> A);
 
 
+  /////////////////////////////////////////////////////
+  // Meta-functions to help with creation of solvers //
+  /////////////////////////////////////////////////////
+
   template < template <class,class> class ConcreteSolver,
              class Matrix,
              class Vector >

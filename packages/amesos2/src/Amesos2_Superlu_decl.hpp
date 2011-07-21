@@ -216,6 +216,17 @@ private:
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters_impl() const;
 
 
+  /**
+   * \brief Reads matrix data into internal structures
+   *
+   * \param [in] current_phase an indication of which solution phase this
+   *                           load is being performed for.
+   *
+   * \return \c true if the matrix was loaded, \c false if not
+   */
+  bool loadA_impl(EPhase current_phase);
+
+
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
     SLU::SuperMatrix A, B, X, L, U; // matrix A in NCformat
@@ -292,8 +303,8 @@ struct solver_traits<Superlu> {
 #ifdef HAVE_TEUCHOS_COMPLEX
   typedef Meta::make_list6<float,
                            double,
-                           std::complex<float>
-                           std::complex<double>
+                           std::complex<float>,
+                           std::complex<double>,
                            SLU::C::complex,
                            SLU::Z::doublecomplex> supported_scalars;
 #else

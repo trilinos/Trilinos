@@ -201,7 +201,7 @@ namespace Amesos2 {
     SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
     for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
 
-    loadA();			// Refresh matrix values
+    // loadA_impl();			// Refresh matrix values
 
     if( in_grid_ ){
       // If this function has been called at least once, then the
@@ -243,7 +243,7 @@ namespace Amesos2 {
   int
   Superludist<Matrix,Vector>::symbolicFactorization_impl()
   {
-    loadA();			// Refresh matrix values
+    // loadA_impl();			// Refresh matrix values
     
     if( in_grid_ ){
 
@@ -276,7 +276,7 @@ namespace Amesos2 {
   Superludist<Matrix,Vector>::numericFactorization_impl(){
     using Teuchos::as;
 
-    loadA();			// Refresh the matrix values
+    // loadA_impl();			// Refresh the matrix values
 
     // if( data_.options.Equil == SLUD::YES ){
     //   // Apply the scalings computed in preOrdering
@@ -717,12 +717,15 @@ namespace Amesos2 {
 
 
   template <class Matrix, class Vector>
-  void
-  Superludist<Matrix,Vector>::loadA(){
+  bool
+  Superludist<Matrix,Vector>::loadA_impl(EPhase current_phase){
     // Extract the necessary information from mat and call SLU function
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::ptrInArg;
+    using Teuchos::as;
+
+    using SLUD::int_t;
 
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
@@ -731,24 +734,24 @@ namespace Amesos2 {
     // Cleanup old store memory if it's non-NULL
     if( data_.A.Store != NULL ){
       SLUD::Destroy_SuperMatrix_Store_dist( &(data_.A) );
+      data_.A.Store = NULL;
     }
     
     Teuchos::RCP<const MatrixAdapter<Matrix> > redist_mat
       = this->matrixA_->get(ptrInArg(*superlu_rowmap_));
     
-    SLUD::int_t l_nnz, l_rows, g_rows, g_cols, fst_global_row;
-    l_nnz  = Teuchos::as<SLUD::int_t>(redist_mat->getLocalNNZ());
-    l_rows = Teuchos::as<SLUD::int_t>(redist_mat->getLocalNumRows());
-    g_rows = Teuchos::as<SLUD::int_t>(redist_mat->getGlobalNumRows());
-    // g_cols = Teuchos::as<SLUD::int_t>(redist_mat->getGlobalNumCols());
-    g_cols = g_rows;		// should be a square matrix anyhow
-    fst_global_row = Teuchos::as<SLUD::int_t>(superlu_rowmap_->getMinGlobalIndex());
+    int_t l_nnz, l_rows, g_rows, g_cols, fst_global_row;
+    l_nnz  = as<int_t>(redist_mat->getLocalNNZ());
+    l_rows = as<int_t>(redist_mat->getLocalNumRows());
+    g_rows = as<int_t>(redist_mat->getGlobalNumRows());
+    g_cols = g_rows;		// we deal with square matrices
+    fst_global_row = as<int_t>(superlu_rowmap_->getMinGlobalIndex());
 
     nzvals_.resize(l_nnz);
     colind_.resize(l_nnz);
     rowptr_.resize(l_rows + 1);
     
-    SLUD::int_t nnz_ret = 0;
+    int_t nnz_ret = 0;
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
@@ -756,11 +759,11 @@ namespace Amesos2 {
       
       Util::get_crs_helper<
         MatrixAdapter<Matrix>,
-	slu_type,
-	SLUD::int_t,
-	SLUD::int_t >::do_get(redist_mat.ptr(), nzvals_(), colind_(),
-			      rowptr_(), nnz_ret, ptrInArg(*superlu_rowmap_),
-			      ARBITRARY);
+	slu_type, int_t, int_t >::do_get(redist_mat.ptr(),
+					 nzvals_(), colind_(), rowptr_(),
+					 nnz_ret,
+					 ptrInArg(*superlu_rowmap_),
+					 ARBITRARY);
     }
     
     TEST_FOR_EXCEPTION( nnz_ret != l_nnz,

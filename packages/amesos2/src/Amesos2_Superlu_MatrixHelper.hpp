@@ -142,7 +142,7 @@ namespace Amesos2 {
 			  std::runtime_error,
 			  "Root rank failed to get all non-zero values in getCrs()");
 
-      typedef FunctionMap<Superlu,scalar_type> function_map;
+      typedef FunctionMap<Superlu,slu_type> function_map;
       function_map::create_CompCol_Matrix(A.getRawPtr(), rows, cols, nnz,
 					  nzval.getRawPtr(), rowind.getRawPtr(),
 					  colptr.getRawPtr(), SLU::SLU_NC,
@@ -189,7 +189,7 @@ namespace Amesos2 {
 	Util::get_1d_copy_helper<MV,slu_type>::do_get(mv, vals, ldx, ROOTED);
       }
 
-      FunctionMap<Superlu,scalar_type>::create_Dense_Matrix(
+      FunctionMap<Superlu,slu_type>::create_Dense_Matrix(
         X.getRawPtr(), rows, cols, vals.getRawPtr(), Teuchos::as<int>(ldx),
 	SLU::SLU_DN, dtype, SLU::SLU_GE);
     }

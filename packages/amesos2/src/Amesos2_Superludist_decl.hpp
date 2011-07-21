@@ -262,8 +262,10 @@ private:
    * \post
    * - nzvals_, colind_, and rowptr_ arrays are sized to match the portion
    *   of the matrix on this processor.
+   *
+   * \return \c true if the matrix was loaded, \c false if not
    */
-  void loadA();
+  bool loadA_impl(EPhase current_phase);
 
 
   // struct holds all data necessary to make a superlu factorization or solve call

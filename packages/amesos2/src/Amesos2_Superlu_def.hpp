@@ -63,9 +63,9 @@ Superlu<Matrix,Vector>::Superlu(
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::Superlu,Matrix,Vector>(A, X, B)
-  , nzvals_(this->globalNumNonZeros_)
-  , rowind_(this->globalNumNonZeros_)
-  , colptr_(this->globalNumRows_ + 1)
+  , nzvals_()			// initialize to empty arrays
+  , rowind_()
+  , colptr_()
 {
   SLU::set_default_options(&(data_.options));
   // Override some default options
@@ -98,13 +98,14 @@ Superlu<Matrix,Vector>::~Superlu( )
   SLU::StatFree( &(data_.stat) ) ;
 
   // Storage is initialized in numericFactorization_impl()
-  if ( this->getNumNumericFact() > 0 ){
+  if ( data_.A.Store != NULL ){
     SLU::Destroy_SuperMatrix_Store( &(data_.A) );
+  }
 
-    if ( this->root_ ){	   // only root allocated these SuperMatrices.
-      SLU::Destroy_SuperNode_Matrix( &(data_.L) );
-      SLU::Destroy_CompCol_Matrix( &(data_.U) );
-    }
+  // only root allocated these SuperMatrices.
+  if ( this->status_.getNumNumericFact() && this->root_ ){
+    SLU::Destroy_SuperNode_Matrix( &(data_.L) );
+    SLU::Destroy_CompCol_Matrix( &(data_.U) );
   }
 
   // Storage is initialized in solve_impl()
@@ -128,12 +129,13 @@ Superlu<Matrix,Vector>::preOrdering_impl()
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
-    
-    matrix_helper::createCCSMatrix(
-      Teuchos::ptrInArg(*this->matrixA_),
-      nzvals_(), rowind_(), colptr_(),
-      Teuchos::outArg(data_.A),
-      this->timers_.mtxRedistTime_);
+
+    // loadA_impl(PREORDERING);
+    // matrix_helper::createCCSMatrix(
+    //   Teuchos::ptrInArg(*this->matrixA_),
+    //   nzvals_(), rowind_(), colptr_(),
+    //   Teuchos::outArg(data_.A),
+    //   this->timers_.mtxRedistTime_);
   } // end matrix conversion block
 
   /*
@@ -145,18 +147,13 @@ Superlu<Matrix,Vector>::preOrdering_impl()
    *   permc_spec = MY_PERMC: the ordering already supplied in perm_c[]
    */
   int permc_spec = data_.options.ColPerm;
-  if ( permc_spec != SLU::MY_PERMC ){
+  if ( permc_spec != SLU::MY_PERMC && this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
     
     SLU::get_perm_c(permc_spec, &(data_.A), data_.perm_c.getRawPtr());
   }
-
-  // Cleanup SuperMatrix A's Store, will be allocated again when new
-  // values are retrieved in numericFactorization.
-  SLU::Destroy_SuperMatrix_Store( &(data_.A) );
-  data_.A.Store = NULL;
 
   return(0);
 }
@@ -189,21 +186,21 @@ int
 Superlu<Matrix,Vector>::numericFactorization_impl()
 {
   using Teuchos::as;
-  
-  int info = 0;
-  if( data_.A.Store != NULL ){
-    // Cleanup old SuperMatrix A's Store, will be allocated again when
-    // new values are retrieved.
-    SLU::Destroy_SuperMatrix_Store( &(data_.A) );
-    data_.A.Store = NULL;
 
-    // Cleanup old L and U matrices if we are not reusing a symbolic
-    // factorization.  Stores and other data will be allocated in
-    // gstrf.  Only rank 0 has valid pointers
-    if ( !same_symbolic_ && this->root_ ){
-      SLU::Destroy_SuperNode_Matrix( &(data_.L) );
-      SLU::Destroy_CompCol_Matrix( &(data_.U) );
-    }
+  // TODO: Remove once loadA_impl is working
+  // if( data_.A.Store != NULL ){
+  //   // Cleanup old SuperMatrix A's Store, will be allocated again when
+  //   // new values are retrieved.
+  //   SLU::Destroy_SuperMatrix_Store( &(data_.A) );
+  //   data_.A.Store = NULL;
+  // }
+  
+  // Cleanup old L and U matrices if we are not reusing a symbolic
+  // factorization.  Stores and other data will be allocated in gstrf.
+  // Only rank 0 has valid pointers
+  if ( !same_symbolic_ && this->getNumNumericFact() > 0 && this->root_ ){
+    SLU::Destroy_SuperNode_Matrix( &(data_.L) );
+    SLU::Destroy_CompCol_Matrix( &(data_.U) );
   }
 
   if( same_symbolic_ ) data_.options.Fact = SLU::SamePattern_SameRowPerm;
@@ -212,14 +209,16 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
-    
-    matrix_helper::createCCSMatrix(
-      Teuchos::ptrInArg(*this->matrixA_),
-      nzvals_(), rowind_(), colptr_(),
-      Teuchos::outArg(data_.A),
-      this->timers_.mtxRedistTime_);
+
+    // loadA_impl(NUMFACT);
+    // matrix_helper::createCCSMatrix(
+    //   Teuchos::ptrInArg(*this->matrixA_),
+    //   nzvals_(), rowind_(), colptr_(),
+    //   Teuchos::outArg(data_.A),
+    //   this->timers_.mtxRedistTime_);
   } // end matrix conversion block
 
+  int info = 0;
   if ( this->root_ ){
     
 #ifdef HAVE_AMESOS2_DEBUG
@@ -579,6 +578,68 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
   valid_params.set("SymmetricMode",false);
 
   return Teuchos::rcpFromRef( valid_params );
+}
+
+
+template <class Matrix, class Vector>
+bool
+Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
+{
+  using Teuchos::as;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::ptrInArg;
+
+#ifdef HAVE_AMESOS2_TIMERS
+  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
+
+  // SuperLU does not need the matrix at symbolicFactorization()
+  if( current_phase == SYMBFACT ) return false;
+
+  // Cleanup old store memory if it's non-NULL (should only ever be non-NULL at root_)
+  if( data_.A.Store != NULL ){
+    SLU::Destroy_SuperMatrix_Store( &(data_.A) );
+    data_.A.Store = NULL;
+  }
+
+  // Only the root image needs storage allocated
+  if( this->root_ ){
+    nzvals_.resize(this->globalNumNonZeros_);
+    rowind_.resize(this->globalNumNonZeros_);
+    colptr_.resize(this->globalNumCols_ + 1);
+  }
+
+  int nnz_ret = 0;
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+#endif
+    
+    Util::get_ccs_helper<
+      MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
+						      nzvals_(), rowind_(), colptr_(),
+						      nnz_ret, ROOTED, ARBITRARY);
+  }
+
+  // Get the SLU data type for this type of matrix
+  SLU::Dtype_t dtype = type_map::dtype;
+
+  if( this->root_ ){
+    TEST_FOR_EXCEPTION( nnz_ret != as<int>(this->globalNumNonZeros_),
+			std::runtime_error,
+			"Did not get the expected number of non-zero vals");
+
+    function_map::create_CompCol_Matrix( &(data_.A),
+					 this->globalNumRows_, this->globalNumCols_,
+					 nnz_ret,
+					 nzvals_.getRawPtr(),
+					 rowind_.getRawPtr(),
+					 colptr_.getRawPtr(),
+					 SLU::SLU_NC, dtype, SLU::SLU_GE);
+  }
+  
+  return true;
 }
 
 

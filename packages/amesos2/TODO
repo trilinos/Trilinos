@@ -16,7 +16,7 @@ General TODO
 
  - When refreshing the internal values of A, need to check that the
    dimensions still line up, and if not, resize internal arrays and
-   variables.
+   variables. (DONE)
    
  - Validate and give doc strings to parameterlists
  
@@ -26,7 +26,7 @@ General TODO
 
      symb -> num -> solve -> num -> solve -> solve
 
-   or something similar
+   or something similar (DONE)
    
  - Make the B argument for solve_impl and solve(X,B) a Ptr to a const
    MV adapter.  This might mean we have to follow through to some
@@ -98,12 +98,13 @@ General TODO
    that the internal solver data of matrix A should be refreshed.  In
    general, this is upon every call to preOrdering,
    symbolicFactorization, or numericFactorization.  In certain
-   circumstances, in particular whenever a method calls it's
+   circumstances, in particular whenever a method calls its
    predecessor because it has not been done yet (e.g. numeric calling
    symbolic).
 
    The solver interfaces then define a `loadA_impl()' method that
-   actually handles loading the matrix data into internal structures.
+   actually handles loading the matrix data into internal
+   structures. (DONE)
 
  - Pull out many of the type and enum declarations from the Util::
    namespace and header files.  Put them in an Amesos2_TypesDecl.hpp
@@ -114,6 +115,12 @@ General TODO
    type.  This will require a bit more meta-programming than we
    currently have.  Pulling our meta-programming functions out of Util
    might also be good.  (DONE)
+
+ - The Amesos2::query function may also want template parameters so
+   that we can also tell the user if a solver does not support a
+   scalar type.  Have it return true only in the case where the solver
+   is enabled *and* it supports the types of the Matrix and Vector
+   template parameters.
 
 -------------------------------
  Some things worth considering
