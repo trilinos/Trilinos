@@ -356,16 +356,16 @@ int Isorropia_EpetraMatcher::augment_matching(int tv)
 
 int Isorropia_EpetraMatcher::construct_layered_graph()
 {
-	int k,i,j,t,tst,tend,fflag,s,tid,mem;
-	unsigned int pqind;
+	int k,i,j,t,tst,tend,fflag,s,tid,mem,pqind;
 	Qst_=Qend_=tst=tend=k=fflag=0;
 	#ifdef stat
 	maxL=0;
 	minL=U_+V_+1;
 	#endif
-	vector<int> tmp;
-	vector<vector<int> >localQ;
-	vector<int> startInd;
+	int* Qsize=new int[numThread_];
+	int** localQ=new int*[numThread_];
+	int* startInd=new int[numThread_];
+	
 	
 	#ifdef ISORROPIA_HAVE_OMP
 	#pragma omp parallel for
@@ -397,23 +397,15 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
 	else
 		BFSInd_=Qend_;
 	
-	mem=((avgDegU_*(Qend_-Qst_))/numThread_)<V_?(avgDegU_*(Qend_-Qst_))/numThread_:V_;
-	
-	for(i=0;i<mem;i++)
-		tmp.push_back(-1);
-	for(i=0;i<numThread_;i++)
-	{
-		startInd.push_back(0);
-		localQ.push_back(tmp);
-	}
-	
 	while(true)
 	{
-		mem=(avgDegU_*(Qend_-Qst_))<V_?(avgDegU_*(Qend_-Qst_)):V_;
-		for(int ii=0;ii<numThread_;ii++)
-		{	
-			localQ[ii].resize(mem);
-			startInd[ii]=0;
+		//mem=MIN(((avgDegU_*(Qend_-Qst_))/numThread_),V_);
+		mem=V_;
+		for(i=0;i<numThread_;i++)
+		{
+			startInd[i]=0;
+			Qsize[i]=mem;
+			localQ[i]=new int[mem];
 		}
 		
 		#ifdef ISORROPIA_HAVE_OMP
@@ -440,12 +432,21 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
 					}
 					else
 					{
-						if(fflag==0 && (LU_[mateV_[j]]==-1 || LU_[mateV_[j]]==k+2))
+						if(fflag==0 && (LV_[j]==-1 || LV_[j]==k+1))
 						{
-							if(LU_[mateV_[j]]==-1)
+							if(LV_[j]==-1)
 							{	
-								if(localQ[tid].size()<=pqind)
-									localQ[tid].resize(pqind+10);	
+								if(Qsize[tid]==pqind)
+								{
+									int newsize=pqind+avgDegU_;
+									Qsize[tid]=newsize;
+									int * temp=new int[newsize];
+									for(i=0;i<pqind;i++)
+										temp[i]=localQ[tid][i];
+									delete [] localQ[tid];
+									localQ[tid]=temp;
+										
+								}
 									
 								localQ[tid][pqind++]=mateV_[j];
 							}
@@ -466,8 +467,10 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
 		for(int ii=0;ii<numThread_;ii++)
 			for(int jj=0;jj<startInd[ii];jj++)
 				Queue_[tst++]=localQ[ii][jj];
-		
 		Qend_=tst;	
+		
+		for(i=0;i<numThread_;i++)
+			delete [] localQ[i];
 		
 		if(fflag>0)
 		{	
@@ -483,6 +486,9 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
 			break;
 		}
 	}
+	
+	delete [] startInd;
+	delete [] Qsize;
 	return k_star_;
 }
 
@@ -545,7 +551,7 @@ int Isorropia_EpetraMatcher::dfs_path_finder(int u)
 		}
 	
 	
-		if(icm_%2==0)	
+		if(icm_%2==1)	
 		{	
 			for(i=CRS_pointers_[u];i<CRS_pointers_[u+1];i++)
 			{
