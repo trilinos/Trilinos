@@ -101,7 +101,6 @@ public:
   typedef typename type_map::magnitude_type magnitude_type;
 
   typedef FunctionMap<Amesos2::Superlu,slu_type>               function_map;
-  typedef MatrixHelper<Amesos2::Superlu>                      matrix_helper;
 
   /// \name Constructor/Destructor methods
   //@{

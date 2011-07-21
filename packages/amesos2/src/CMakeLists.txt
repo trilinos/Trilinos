@@ -147,7 +147,6 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
     Amesos2_Superlu_decl.hpp
     Amesos2_Superlu_def.hpp
     Amesos2_Superlu_FunctionMap.hpp
-    Amesos2_Superlu_MatrixHelper.hpp
     Amesos2_Superlu_TypeMap.hpp
     )
 
@@ -160,7 +159,6 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
   APPEND_SET(HEADERS
     Amesos2_Superlumt.hpp
     Amesos2_Superlumt_FunctionMap.hpp
-    Amesos2_Superlumt_MatrixHelper.hpp
     Amesos2_Superlumt_TypeMap.hpp
     Amesos2_Superlumt_decl.hpp
     Amesos2_Superlumt_def.hpp

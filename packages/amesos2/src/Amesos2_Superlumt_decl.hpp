@@ -55,7 +55,6 @@
 
 #include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
-#include "Amesos2_Superlumt_MatrixHelper.hpp"
 #include "Amesos2_Superlumt_FunctionMap.hpp"
 
 
@@ -100,7 +99,6 @@ public:
   typedef typename type_map::magnitude_type                  magnitude_type;
 
   typedef FunctionMap<Amesos2::Superlumt,slu_type>             function_map;
-  typedef MatrixHelper<Amesos2::Superlumt>                    matrix_helper;
 
 
   /// \name Constructor/Destructor methods

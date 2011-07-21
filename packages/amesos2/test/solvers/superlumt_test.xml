@@ -31,7 +31,7 @@
       
       <!-- Next test Tpetra objects -->
       <ParameterList name="tpetra">
-	<ParameterList name="run0">
+	<ParameterList name="run0 - equilibrate">
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
@@ -39,12 +39,13 @@
 	    <Parameter name="Equil" type="string" value="YES"/>
 	  </ParameterList>
 	</ParameterList>
-	<ParameterList name="run0 - 2 threads">
+	<ParameterList name="run0 - 2 threads - equilibrate">
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="run_params">
 	    <Parameter name="nprocs" type="int" value="2"/>
+	    <Parameter name="Equil" type="string" value="YES"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="run0 - 4 threads - equilibrate">

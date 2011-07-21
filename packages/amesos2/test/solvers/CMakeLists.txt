@@ -5,7 +5,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NAME General_Solver_Test
   SOURCES
     Solver_Test
-  ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/"
+  ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
@@ -40,7 +40,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
   PACKAGE_ADD_TEST(
     Solver_Test
     NAME SuperLU_MT_Solver_Test
-    ARGS "--xml-params=superlumt_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/"
+    ARGS "--xml-params=superlumt_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
     )
 ENDIF()
@@ -55,7 +55,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
   PACKAGE_ADD_TEST(
     Solver_Test
     NAME SuperLU_DIST_Solver_Test
-    ARGS "--xml-params=superludist_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/"
+    ARGS "--xml-params=superludist_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
     )
 ENDIF()
