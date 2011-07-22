@@ -180,7 +180,6 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
 int ex_put_name_internal(int exoid, int varid, size_t index, const char *name,
 			 ex_entity_type obj_type, const char *subtype, const char *routine)
 {
-  size_t i;
   int status;
   size_t start[2], count[2];
   char errmsg[MAX_ERR_LENGTH];
@@ -257,7 +256,7 @@ int ex_get_name_internal(int exoid, int varid, size_t index, char *name,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg, "Error: failed to get %s name at index %d from file id %d",
-	    ex_name_of_object(obj_type), index, exoid);
+	    ex_name_of_object(obj_type), (int)index, exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
   }

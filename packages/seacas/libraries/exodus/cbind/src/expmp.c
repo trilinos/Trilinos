@@ -50,6 +50,7 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 #include <assert.h>
+#include <stdlib.h>
 
 /*!
  * defines the number of node and element maps. It is more efficient

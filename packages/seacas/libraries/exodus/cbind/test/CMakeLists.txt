@@ -84,6 +84,8 @@ SET( cbind_OLDTESTS
   testwt-zeroe
   testwt-zeron
   testrdv
+  testwt-long-name
+  testrd-long-name
   testwt-one-attrib
   testwt-partial
   testrd-partial
