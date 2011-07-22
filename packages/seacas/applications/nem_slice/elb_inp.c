@@ -1828,18 +1828,20 @@ int check_inp_specs(
       return 0;
     }
 
-    for(cnt=0; cnt < nvars; cnt++)
     {
-      var_names[cnt] = malloc((MAX_STR_LENGTH+1)*sizeof(char));
-      if(!var_names[cnt])
-      {
-        Gen_Error(0, "fatal: insufficient memory");
-        return 0;
+      int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+      ex_set_max_name_length(exoid, max_name_length);
+      
+      for(cnt=0; cnt < nvars; cnt++) {
+	var_names[cnt] = malloc((max_name_length+1)*sizeof(char));
+	if(!var_names[cnt]) {
+	  Gen_Error(0, "fatal: insufficient memory");
+	  return 0;
+	}
       }
     }
 
-    if(ex_get_var_names(exoid, ctemp, nvars, var_names) < 0)
-    {
+    if(ex_get_var_names(exoid, ctemp, nvars, var_names) < 0) {
       Gen_Error(0, "fatal: unable to obtain variable names for weighting");
       return 0;
     }
@@ -1849,12 +1851,9 @@ int check_inp_specs(
      * index. If a variable name AND an index were specified then make
      * sure they match.
      */
-    if(strlen(weight->exo_varname) > 0)
-    {
-      for(cnt=0; cnt < nvars; cnt++)
-      {
-        if(strcmp(var_names[cnt], weight->exo_varname) == 0)
-        {
+    if(strlen(weight->exo_varname) > 0) {
+      for(cnt=0; cnt < nvars; cnt++) {
+        if(strcmp(var_names[cnt], weight->exo_varname) == 0) {
           tmp_vindx = cnt+1;
 
           break; /* out of "for" loop */
@@ -1863,8 +1862,7 @@ int check_inp_specs(
 
       if(weight->exo_vindx <= 0)
         weight->exo_vindx = tmp_vindx;
-      else if(weight->exo_vindx != tmp_vindx)
-      {
+      else if(weight->exo_vindx != tmp_vindx) {
         Gen_Error(0, "fatal: requested weight variable index doesn't match"
                   " the variable name in the ExodusII file");
         return 0;
@@ -1872,8 +1870,7 @@ int check_inp_specs(
     }
 
     /* Free up memory */
-    if(nvars > 0)
-    {
+    if(nvars > 0) {
       for(cnt=0; cnt < nvars; cnt++)
         free(var_names[cnt]);
 
@@ -1884,8 +1881,7 @@ int check_inp_specs(
      * If there is still no valid index then the variable name does
      * not exist in the specified file.
      */
-    if(weight->exo_vindx <= 0)
-    {
+    if(weight->exo_vindx <= 0) {
       sprintf(ctemp,
               "fatal: requested weighting variable %s not found in ExodusII"
               " file", weight->exo_varname);
@@ -1893,14 +1889,13 @@ int check_inp_specs(
       return 0;
     }
 
-    if(nvars < weight->exo_vindx)
-    {
+    if(nvars < weight->exo_vindx) {
       Gen_Error(0, "fatal: requested variable index is larger than number in"
                 " ExodusII weighting file");
       return 0;
     }
-    if(weight->exo_vindx <= 0)
-    {
+
+    if(weight->exo_vindx <= 0) {
       sprintf(ctemp, "fatal: variable index must be in the range [1,%d]",
               nvars);
       Gen_Error(0, ctemp);
