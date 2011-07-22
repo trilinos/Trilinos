@@ -63,7 +63,7 @@ namespace {
 
 Exo_Entity::Exo_Entity()
   : fileId(-1),
-    id_(-1),
+    id_(EX_INVALID_ID),
     index_(-1),
     numEntity(-1),
     truth_(NULL),
@@ -85,8 +85,8 @@ Exo_Entity::Exo_Entity(int file_id, int id)
     numAttr(-1)
 {
   SMART_ASSERT(file_id > 0);
-  SMART_ASSERT(id > 0);
-}
+  SMART_ASSERT(id > EX_INVALID_ID);}
+
 
 Exo_Entity::Exo_Entity(int file_id, int id, int nnodes)
   : fileId(file_id),
@@ -100,7 +100,7 @@ Exo_Entity::Exo_Entity(int file_id, int id, int nnodes)
     numAttr(-1)
 {
   SMART_ASSERT(file_id > 0);
-  SMART_ASSERT(id > 0);
+  SMART_ASSERT(id > EX_INVALID_ID);
   SMART_ASSERT(nnodes >= 0);
 }
 
@@ -120,10 +120,10 @@ Exo_Entity::~Exo_Entity()
 
 int Exo_Entity::Check_State() const
 {
-  SMART_ASSERT(id_ >= 0);
+  SMART_ASSERT(id_ >= EX_INVALID_ID);
   SMART_ASSERT(numEntity >= 0);
   
-  SMART_ASSERT( !( id_ == 0 && numEntity > 0 ) );
+  SMART_ASSERT( !( id_ == EX_INVALID_ID && numEntity > 0 ) );
   return 1;
 }
 
@@ -154,7 +154,7 @@ string Exo_Entity::Load_Results(int time_step, int var_index)
   SMART_ASSERT(Check_State());
   
   if (fileId < 0) return "ERROR:  Invalid file id!";
-  if (id_ == 0) return "ERROR:  Must initialize block parameters first!";
+  if (id_ == EX_INVALID_ID) return "ERROR:  Must initialize block parameters first!";
   SMART_ASSERT(var_index >= 0 && var_index < numVars);
   
   int num_times = get_num_timesteps(fileId);
@@ -241,7 +241,7 @@ string Exo_Entity::Load_Attributes(int attr_index)
   SMART_ASSERT(Check_State());
   
   if (fileId < 0) return "ERROR:  Invalid file id!";
-  if (id_ == 0)   return "ERROR:  Must initialize block parameters first!";
+  if (id_ == EX_INVALID_ID)   return "ERROR:  Must initialize block parameters first!";
   SMART_ASSERT(attr_index >= 0 && attr_index < numAttr);
   
   if (!attributes_[attr_index] && numEntity) {
@@ -324,7 +324,8 @@ void Exo_Entity::internal_load_params()
   if (numAttr) {
     attributes_.resize(numAttr);
 
-    char** names = get_name_array(numAttr);
+    int name_size = ex_inquire_int(fileId, EX_INQ_MAX_READ_NAME_LENGTH);
+    char** names = get_name_array(numAttr, name_size);
     int err = ex_get_attr_names(fileId, exodus_type(), id_, names);
     if (err < 0) {
       std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get " << label() 
@@ -336,12 +337,12 @@ void Exo_Entity::internal_load_params()
       SMART_ASSERT(names[vg] != 0);
       if (std::strlen(names[vg]) == 0) {
 	std::string name = "attribute_" + to_string(vg+1);
-	strncpy(names[vg], name.c_str(), MAX_STR_LENGTH);
-      } else if (std::strlen(names[vg]) > MAX_STR_LENGTH) {
+	strncpy(names[vg], name.c_str(), name_size);
+      } else if ((int)std::strlen(names[vg]) > name_size) {
 	std::cout << "exodiff: ERROR: " << label()
 		  << " attribute names appear corrupt\n"
 		  << "                A length is 0 or greater than "
-		  << "MAX_STR_LENGTH(" << MAX_STR_LENGTH << ")\n"
+		  << "name_size(" << name_size << ")\n"
 		  << "                Here are the names that I received from"
 		  << " a call to ex_get_attr_names(...):\n";
 	for (int k = 1; k <= numAttr; ++k)

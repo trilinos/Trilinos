@@ -50,7 +50,6 @@
 using namespace std;
 
 namespace {
-  bool Check_Global(ExoII_Read& file1, ExoII_Read& file2);
   bool Check_Nodal(ExoII_Read& file1, ExoII_Read& file2, bool check_only);
   bool Check_Elmt_Block(ExoII_Read& file1, ExoII_Read& file2, bool check_only);
   bool Check_Nodeset(ExoII_Read& file1, ExoII_Read& file2, const int *node_map, bool check_only);
@@ -59,6 +58,43 @@ namespace {
   bool Check_Elmt_Block_Params(const Exo_Block*, const Exo_Block*);
   bool Check_Elmt_Block_Connectivity(Exo_Block*, Exo_Block*);
   bool close_compare(const string & st1, const string & st2);
+}
+
+bool Check_Global(ExoII_Read& file1, ExoII_Read& file2)
+{
+  bool is_same = true;
+  if (file1.Dimension() != file2.Dimension()) {
+    std::cout << "exodiff: ERROR .. Dimension doesn't agree." << std::endl;
+    is_same = false;
+  }
+  if (file1.Num_Nodes() != file2.Num_Nodes()) {
+    if(specs.map_flag != PARTIAL){
+      std::cout << "exodiff: ERROR .. Number of nodes don't agree." << std::endl;
+      is_same = false;
+    }
+  }
+  if (file1.Num_Elmts() != file2.Num_Elmts()) {
+    if(specs.map_flag != PARTIAL){
+      std::cout << "exodiff: ERROR .. Number of elements don't agree." << std::endl;
+      is_same = false;
+    }
+  }
+  if (!specs.map_flag && file1.Num_Elmt_Blocks() != file2.Num_Elmt_Blocks()) {
+    if(specs.map_flag != PARTIAL){
+      std::cout << "exodiff: ERROR .. Number of blocks don't agree." << std::endl;
+      is_same = false;
+    }
+  }
+  if (!specs.map_flag && file1.Num_Times() != file2.Num_Times() && !specs.quiet_flag) {
+    std::cout << "exodiff: WARNING First file has " << file1.Num_Times()
+	      << " result times while the second file has " << file2.Num_Times()
+	      << ".\n"
+	      << "         Will consider only "
+	      << (file1.Num_Times() < file2.Num_Times() ? file1.Num_Times()
+		  : file2.Num_Times())
+	      << " timesteps." << std::endl;
+  }
+  return is_same;
 }
 
 void Check_Compatible_Meshes(ExoII_Read& file1, ExoII_Read& file2, bool check_only,
@@ -87,43 +123,6 @@ void Check_Compatible_Meshes(ExoII_Read& file1, ExoII_Read& file2, bool check_on
 }
 
 namespace {
-  bool Check_Global(ExoII_Read& file1, ExoII_Read& file2)
-  {
-    bool is_same = true;
-    if (file1.Dimension() != file2.Dimension()) {
-      std::cout << "exodiff: ERROR .. Dimension doesn't agree." << std::endl;
-      is_same = false;
-    }
-    if (file1.Num_Nodes() != file2.Num_Nodes()) {
-      if(specs.map_flag != PARTIAL){
-	std::cout << "exodiff: ERROR .. Number of nodes don't agree." << std::endl;
-	is_same = false;
-      }
-    }
-    if (file1.Num_Elmts() != file2.Num_Elmts()) {
-      if(specs.map_flag != PARTIAL){
-	std::cout << "exodiff: ERROR .. Number of elements don't agree." << std::endl;
-	is_same = false;
-      }
-    }
-    if (!specs.map_flag && file1.Num_Elmt_Blocks() != file2.Num_Elmt_Blocks()) {
-      if(specs.map_flag != PARTIAL){
-	std::cout << "exodiff: ERROR .. Number of blocks don't agree." << std::endl;
-	is_same = false;
-      }
-    }
-    if (!specs.map_flag && file1.Num_Times() != file2.Num_Times() && !specs.quiet_flag) {
-      std::cout << "exodiff: WARNING First file has " << file1.Num_Times()
-		<< " result times while the second file has " << file2.Num_Times()
-		<< ".\n"
-		<< "         Will consider only "
-		<< (file1.Num_Times() < file2.Num_Times() ? file1.Num_Times()
-		    : file2.Num_Times())
-		<< " timesteps." << std::endl;
-    }
-    return is_same;
-  }
-
   bool Check_Nodal(ExoII_Read& file1, ExoII_Read& file2, bool check_only)
   {
     bool is_same = true;

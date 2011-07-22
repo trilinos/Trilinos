@@ -57,7 +57,7 @@
  
 using namespace std;
 
-string Version() { return "2.43 (2011-04-07)"; }
+string Version() { return "2.46 (2011-07-11)"; }
 
 string Date() {
   char tbuf[32];
@@ -332,6 +332,8 @@ void Echo_Help(const std::string &option) {
 
   extern void add_to_log(const char *name);
   extern void Build_Variable_Names(ExoII_Read& file1, ExoII_Read& file2, bool *diff_found);
+  extern bool Check_Global( ExoII_Read& file1, ExoII_Read& file2);
+
   extern void Check_Compatible_Meshes( ExoII_Read& file1,
 				       ExoII_Read& file2,
 				       bool check_only,
@@ -460,10 +462,10 @@ void output_init(ExoII_Read& file, int count, const char *prefix)
       specs.node_var_do_all_flag = true;
       specs.elmt_var_do_all_flag = true;
       specs.elmt_att_do_all_flag = true;
-      specs.ns_var_do_all_flag = true;
-      specs.ss_var_do_all_flag = true;
-      specs.map_flag = FILE_ORDER;
-      specs.quiet_flag = false;
+      specs.ns_var_do_all_flag   = true;
+      specs.ss_var_do_all_flag   = true;
+      specs.map_flag             = FILE_ORDER;
+      specs.quiet_flag           = false;
     }
   
     if (!specs.quiet_flag && !specs.summary_flag) Print_Banner(" ");
@@ -545,6 +547,19 @@ void output_init(ExoII_Read& file, int count, const char *prefix)
       }
     }
   
+    if (!specs.summary_flag) {
+      bool is_same = Check_Global(file1, file2);
+      if (!is_same) {
+	file1.Close_File();
+	file2.Close_File();
+	std::cout << "\nexodiff: Files are different" << std::endl;
+	if (specs.exit_status_switch)
+	  return 2;
+	else
+	  return 0;
+      }
+    }
+
     // When mapping is on ("-m"), node_map maps indexes from file1 to indexes
     // into file2.  Similarly with elmt_map.
     int *node_map = 0, *elmt_map = 0;
@@ -569,7 +584,6 @@ void output_init(ExoII_Read& file, int count, const char *prefix)
 	specs.map_flag = FILE_ORDER;
       }
     }  
-
 
     bool diff_flag = false; // Set to 'true' to indicate files contain diffs
     // Call this before checking for compatible meshes since it sets which variables

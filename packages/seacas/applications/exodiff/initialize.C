@@ -104,6 +104,7 @@ string ExoII_Read::Open_File(const char* fname)
   
   file_id = err;
   io_word_size = ws;
+
   Get_Init_Data();
   
   return "";
@@ -113,6 +114,10 @@ void ExoII_Read::Get_Init_Data()
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(file_id >= 0);
+  
+  // Determine max size of entity and variable names on the database
+  int name_length = ex_inquire_int(file_id, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  ex_set_max_name_length(file_id, name_length);
   
   char title_buff[MAX_LINE_LENGTH+1];
   
@@ -161,7 +166,7 @@ void ExoII_Read::Get_Init_Data()
   
   //                   Coordinate Names...
   
-  char** coords = get_name_array(3);
+  char** coords = get_name_array(3, name_length);
   err = ex_get_coord_names(file_id, coords);
   if (err < 0) {
     std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get coordinate"
@@ -192,10 +197,10 @@ void ExoII_Read::Get_Init_Data()
     
     int e_count = 0;
     for (int b = 0; b < num_elmt_blocks; ++b) {
-      if (ids[b] <= 0) {
+      if (ids[b] <= EX_INVALID_ID) {
 	std::cout << "ExoII_Read::Get_Init_Data()  WARNING:  Element block Id "
 		  << "for block index " << b << " is " << ids[b]
-		  << " which is nonpositive. This was returned by call to ex_get_elem_blk_ids()."
+		  << " which is negative. This was returned by call to ex_get_elem_blk_ids()."
 		  << std::endl;
       }
       
@@ -236,10 +241,10 @@ void ExoII_Read::Get_Init_Data()
     }
 
     for (int nset = 0; nset < num_node_sets; ++nset) {
-      if (ids[nset] <= 0) {
+      if (ids[nset] <= EX_INVALID_ID) {
 	std::cout << "ExoII_Read::Get_Init_Data()  WARNING: Nodeset Id "
 		  << "for nodeset index " << nset << " is " << ids[nset]
-		  << " which is nonpositive.  This was returned by call to ex_get_ids()."
+		  << " which is negative.  This was returned by call to ex_get_ids()."
 		  << std::endl;
       }
 	
@@ -261,10 +266,10 @@ void ExoII_Read::Get_Init_Data()
     }
 
     for (int sset = 0; sset < num_side_sets; ++sset) {
-      if (ids[sset] <= 0) {
+      if (ids[sset] <= EX_INVALID_ID) {
 	std::cout << "ExoII_Read::Get_Init_Data()  WARNING:  Sideset Id "
 		  << "for sideset index " << sset << " is " << ids[sset]
-		  << " which is nonpositive. This was returned by call to ex_get_ids()."
+		  << " which is negative. This was returned by call to ex_get_ids()."
 		  << std::endl;
       }
       ssets[sset].initialize(file_id, ids[sset]);
@@ -388,8 +393,10 @@ namespace {
 		 int num_vars, vector<string> &varlist)
   {
     if (num_vars) {
-      char **varnames = get_name_array(num_vars);
+      int name_size = ex_inquire_int(file_id, EX_INQ_MAX_READ_NAME_LENGTH);
+      char **varnames = get_name_array(num_vars, name_size);
       int err = ex_get_variable_names(file_id, flag, num_vars, varnames);
+
       if (err < 0) {
 	std::cout << "ExoII_Read::Get_Init_Data(): ERROR: Failed to get " << type 
 		  << " variable names!  Aborting..." << std::endl;
@@ -401,11 +408,11 @@ namespace {
       for (int vg = 0; vg < num_vars; ++vg) {
 	SMART_ASSERT(varnames[vg] != 0);
 	if (std::strlen(varnames[vg]) == 0 ||
-	    std::strlen(varnames[vg]) > MAX_STR_LENGTH) {
+	    (int)std::strlen(varnames[vg]) > name_size) {
 	  std::cout << "exodiff: ERROR: " << type
 		    << " variable names appear corrupt\n"
 		    << "                A length is 0 or greater than "
-		    << "MAX_STR_LENGTH(" << MAX_STR_LENGTH << ")\n"
+		    << "name_size(" << name_size << ")\n"
 		    << "                Here are the names that I received from"
 		    << " a call to ex_get_var_names(...):\n";
 	  for (int k = 1; k <= num_vars; ++k)
