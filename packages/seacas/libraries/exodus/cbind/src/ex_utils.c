@@ -675,7 +675,7 @@ int ex_id_lkup( int exoid,
     /* check if values in stored arrays are filled with non-zeroes */
     filled = TRUE;
     for (i=0;i<dim_len;i++) {
-      if (id_vals[i] == 0 || id_vals[i] == NC_FILL_INT) {
+      if (id_vals[i] == EX_INVALID_ID || id_vals[i] == NC_FILL_INT) {
         filled = FALSE;
         break; /* id array hasn't been completely filled with valid ids yet */
       }

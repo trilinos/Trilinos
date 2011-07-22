@@ -150,8 +150,7 @@ int ex_put_variable_names (int   exoid,
 			   int   num_vars,
 			   char* var_names[])
 {
-  int i, varid, dimid, status; 
-  size_t  start[2], count[2];
+  int varid, dimid, status; 
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */

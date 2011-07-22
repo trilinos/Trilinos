@@ -64,7 +64,7 @@ int ex_get_attr_names( int   exoid,
 {
   int status;
   int varid, numattrdim, obj_id_ndx;
-  size_t num_attr, start[2], count[2], i;
+  size_t num_attr, i;
   char errmsg[MAX_ERR_LENGTH];
   const char* dnumobjatt;
   const char* vattrbname;

@@ -75,7 +75,7 @@ int ex_get_coord_names (int    exoid,
   int status;
   size_t i;
   int ndimdim, varid;
-  size_t num_dim, start[2], count[2];
+  size_t num_dim;
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0;

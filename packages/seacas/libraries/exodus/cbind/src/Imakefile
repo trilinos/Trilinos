@@ -34,7 +34,7 @@
 
 XCOMM Use include files locates in exodusii/cbind/include
 INCLUDES = IncRef-I../include
-REQUIREDLIBS = -L$(USRLIBDIR) $(NETCDF)
+REQUIREDLIBS = -L$(SHLIBDIR) $(NETCDF)
 
 #ifndef BuildSharedExodusLibrary
 #define BuildSharedExodusLibrary NO

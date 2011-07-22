@@ -63,7 +63,6 @@ int ex_get_names (int exoid,
   int status;
   int varid, temp;
   size_t num_entity, i;
-  size_t start[2], count[2];
   char errmsg[MAX_ERR_LENGTH];
   const char *routine = "ex_get_names";
    
