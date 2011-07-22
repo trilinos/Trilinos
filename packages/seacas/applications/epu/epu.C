@@ -100,13 +100,13 @@ namespace {
     }
   }
 
-  char **get_name_array(int size) {
+  char **get_name_array(int size, int length) {
     char **names = NULL;
     if (size > 0) {
       names = new char* [size];
       for (int i=0; i < size; i++) {
-	names[i] = new char [MAX_STR_LENGTH+1];
-	std::memset(names[i], '\0', MAX_STR_LENGTH+1);
+	names[i] = new char [length+1];
+	std::memset(names[i], '\0', length+1);
       }
     }
     return names;
@@ -523,7 +523,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // Define metadata for model....
     put_global_info(global);
 
-    Internals exodus(ExodusFile::output());
+    Internals exodus(ExodusFile::output(), ExodusFile::max_name_length());
 
     if (interface.append()) {
       bool matches = exodus.check_meta_data(global, glob_blocks, glob_nsets, glob_ssets, comm_data);
@@ -1139,7 +1139,7 @@ namespace {
   int get_put_coordinate_names(int in, int out, int dimensionality)
   {
     int error = 0;
-    char **coordinate_names = get_name_array(dimensionality);
+    char **coordinate_names = get_name_array(dimensionality, ExodusFile::max_name_length());
 
     error += ex_get_coord_names (in, coordinate_names);
     error += ex_put_coord_names(out,coordinate_names);
@@ -1276,22 +1276,20 @@ namespace {
 	int temp_element_attributes;
 
 	char temp_element_type[MAX_STR_LENGTH+1];
-	char name[MAX_STR_LENGTH+1];
-
 	error += ex_get_elem_block(id, block_id[b], temp_element_type,
 				   &temp_elements, &temp_node_elements,
 				   &temp_element_attributes);
 
-	name[0] = '\0'; // Should not be needed for exodusII >= 4.35
-	ex_get_name(id, EX_ELEM_BLOCK, block_id[b], name);
+	std::vector<char> name(Excn::ExodusFile::max_name_length()+1);
+	ex_get_name(id, EX_ELEM_BLOCK, block_id[b], &name[0]);
 
 	blocks[p][b].id    = block_id[b];
 	if (name[0] != '\0')
-	  blocks[p][b].name_ = name;
+	  blocks[p][b].name_ = &name[0];
 	if (p == 0) {
 	  glob_blocks[b].id    = block_id[b];
 	  if (name[0] != '\0')
-	    glob_blocks[b].name_ = name;
+	    glob_blocks[b].name_ = &name[0];
 	}
 
 	if (temp_elements != 0) {
@@ -1312,7 +1310,7 @@ namespace {
 	if (temp_element_attributes > 0 && glob_blocks[b].attributeNames.empty()) {
 	  // Get attribute names.  Assume the same on all processors
 	  // on which the block exists. 
-	  char **names = get_name_array(temp_element_attributes);
+	  char **names = get_name_array(temp_element_attributes, ExodusFile::max_name_length());
 
 	  ex_get_attr_names(id, EX_ELEM_BLOCK, block_id[b], names);
 	  for (int i=0; i < temp_element_attributes; i++) {
@@ -1725,12 +1723,12 @@ namespace {
   {
     if (vars.count(OUT) > 0) {
 
-      char **output_name_list  = get_name_array(vars.count(OUT));
+      char **output_name_list  = get_name_array(vars.count(OUT), ExodusFile::max_name_length());
 
       int extra = vars.add_processor_id() ? 1 : 0;
       int num_input_vars = vars.index_.size();
 
-      char **input_name_list = get_name_array(num_input_vars);
+      char **input_name_list = get_name_array(num_input_vars, ExodusFile::max_name_length());
       ex_get_variable_names(id, vars.type(), num_input_vars-extra, input_name_list);
 
       if (vars.add_processor_id()) {
@@ -1977,7 +1975,7 @@ namespace {
 
 	int iset = 0;
 	while (I != IE) {
-	  char name[MAX_STR_LENGTH+1];
+
 	  nodesets[p][iset].id = *I++;
 
 	  // Get the parameters for this nodeset...
@@ -1985,9 +1983,9 @@ namespace {
 			   nodesets[p][iset].id, &nodesets[p][iset].nodeCount,
 			   &nodesets[p][iset].dfCount);
 
-	  name[0] = '\0'; // Should not be needed for exodusII >= 4.35
-	  ex_get_name(id, EX_NODE_SET, nodesets[p][iset].id, name);
-	  if (name[0] != '\0') nodesets[p][iset].name_ = name;
+	  std::vector<char> name(Excn::ExodusFile::max_name_length()+1);
+	  ex_get_name(id, EX_NODE_SET, nodesets[p][iset].id, &name[0]);
+	  if (name[0] != '\0') nodesets[p][iset].name_ = &name[0];
 
 	  nodesets[p][iset].position_ = -1;
 	  for (size_t j=0; j < ids.size(); j++) {
@@ -2163,7 +2161,6 @@ namespace {
     glob_ssets.resize(set_ids.size());
 
     {
-      char name[MAX_STR_LENGTH+1];
       for (int p=0; p < part_count; p++) {
 	ExodusFile id(p);
 
@@ -2187,12 +2184,12 @@ namespace {
 	  glob_ssets[i].sideCount += sets[p][i].entity_count();
 	  glob_ssets[i].dfCount   += sets[p][i].dfCount;
 
-	  name[0] = '\0'; // Should not be needed for exodusII >= 4.35
-	  ex_get_name(id, EX_SIDE_SET, sets[p][i].id, name);
+	  std::vector<char> name(Excn::ExodusFile::max_name_length()+1);
+	  ex_get_name(id, EX_SIDE_SET, sets[p][i].id, &name[0]);
 	  if (name[0] != '\0') {
-	    sets[p][i].name_ = name;
+	    sets[p][i].name_ = &name[0];
 	    if (p == 0)
-	      glob_ssets[i].name_ = name;
+	      glob_ssets[i].name_ = &name[0];
 	  }
 
 	  sets[p][i].position_ = -1;
@@ -2348,7 +2345,7 @@ namespace {
   StringVector get_exodus_variable_names(int id, ex_entity_type elType, int var_count)
   {
     // Allocate space for variable names...
-    char **name_list = get_name_array(var_count);
+    char **name_list = get_name_array(var_count, ExodusFile::max_name_length());
     ex_get_variable_names(id, elType, var_count, name_list);
 
     StringVector names(var_count);

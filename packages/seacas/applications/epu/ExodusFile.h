@@ -55,6 +55,7 @@ namespace Excn {
       static int  output();
       static int  io_word_size() {return ioWordSize_;}
       operator int () const;
+      static int  max_name_length() {return maximumNameLength_;}
   
     private:
       int myProcessor_;
@@ -68,6 +69,7 @@ namespace Excn {
       static int cpuWordSize_;
       static std::string outputFilename_;
       static bool keepOpen_;
+      static int maximumNameLength_;
 
       // Disable copying and assignment...
       ExodusFile(const ExodusFile&);
