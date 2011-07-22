@@ -58,7 +58,7 @@
 
 #include "ps_pario_const.h"
 
-static int write_var_param(int mesh_exoid,
+static int write_var_param(int mesh_exoid, int max_name_length, 
 			   int num_glob, char **gv_names,
 			   int num_node, char **nv_names, 
                            int num_elem, char **ev_names, int *local_ebtt,
@@ -86,7 +86,7 @@ extern char GeomTitle[];
 /*      11 November 1993 - Date of first working version on the nCube.      */
 /****************************************************************************/
 
-void write_parExo_data(int mesh_exoid,
+void write_parExo_data(int mesh_exoid, int max_name_length,
                        int iproc,
                        int io_ws,
                        int num_qa_records,
@@ -1045,7 +1045,7 @@ void write_parExo_data(int mesh_exoid,
     if(ne_put_elem_map(mesh_exoid, Elem_Map[iproc],
 		       Elem_Map[iproc] + Num_Internal_Elems[iproc],
 		       proc_for) < 0) {
-      fprintf(stderr, "[%d, %s]: ERROR, unable to output nem element map!\n",
+      fprintf(stderr, "[%d, %s]: ERROR, unable to output nemesis element map!\n",
 	      Proc, yo);
       ex_close(mesh_exoid);
       exit(1);
@@ -1466,7 +1466,7 @@ void write_parExo_data(int mesh_exoid,
     else
       local_sstt = NULL;
 
-    bytes_out += write_var_param(mesh_exoid,
+    bytes_out += write_var_param(mesh_exoid, max_name_length,
 				 Restart_Info.NVar_Glob, Restart_Info.GV_Name,
 				 Restart_Info.NVar_Node, Restart_Info.NV_Name, 
 				 Restart_Info.NVar_Elem, Restart_Info.EV_Name,  local_tt,
@@ -1493,7 +1493,7 @@ void write_parExo_data(int mesh_exoid,
 
 } /* END write_parExo_data() */
 
-static int write_var_param(int mesh_exoid,
+static int write_var_param(int mesh_exoid, int max_name_length,
 			   int num_glob, char **gv_names,
 			   int num_node, char **nv_names, 
                            int num_elem, char **ev_names, int *local_ebtt,
@@ -1512,27 +1512,27 @@ static int write_var_param(int mesh_exoid,
   check_exodus_error(error, "ex_put_all_var_param");
 
   if (gv_names != NULL) {
-    bytes_out += Restart_Info.NVar_Glob * MAX_STR_LENGTH;
+    bytes_out += Restart_Info.NVar_Glob * max_name_length;
     error = ex_put_var_names(mesh_exoid, "g", num_glob, gv_names);
     check_exodus_error(error, "ex_put_var_names");
   }
   if (nv_names != NULL) {
-    bytes_out += num_node * MAX_STR_LENGTH;
+    bytes_out += num_node * max_name_length;
     error = ex_put_var_names(mesh_exoid, "n", num_node, nv_names);
     check_exodus_error(error, "ex_put_var_names");
   }
   if (ev_names != NULL) {
-    bytes_out += Restart_Info.NVar_Elem * MAX_STR_LENGTH;
+    bytes_out += Restart_Info.NVar_Elem * max_name_length;
     error = ex_put_var_names(mesh_exoid, "e", num_elem, ev_names);
     check_exodus_error(error, "ex_put_var_names");
   }
   if (ns_names != NULL) {
-    bytes_out += Restart_Info.NVar_Nset * MAX_STR_LENGTH;
+    bytes_out += Restart_Info.NVar_Nset * max_name_length;
     error = ex_put_var_names(mesh_exoid, "m", num_nset, ns_names);
     check_exodus_error(error, "ex_put_var_names");
   }
   if (ss_names != NULL) {
-    bytes_out += Restart_Info.NVar_Sset * MAX_STR_LENGTH;
+    bytes_out += Restart_Info.NVar_Sset * max_name_length;
     error = ex_put_var_names(mesh_exoid, "s", num_sset, ss_names);
     check_exodus_error(error, "ex_put_var_names");
   }
