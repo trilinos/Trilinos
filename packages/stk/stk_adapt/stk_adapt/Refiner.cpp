@@ -801,14 +801,9 @@ namespace stk {
             }
 
         }
-      else  // m_doRemove
-        {
-          if (0)
-            {
-              for (unsigned irank = 0; irank < ranks.size(); irank++)
-                removeFromOldPart(ranks[irank], m_breakPattern[irank]);
-            }
-        }
+
+      // remove any elements that are empty (these can exist when doing local refinement)
+      removeEmptyElements();
 
       /**/                                                TRACE_PRINT("Refiner: modification_end...start... ");
       bulkData.modification_end();
@@ -888,9 +883,42 @@ namespace stk {
 #if PERCEPT_USE_FAMILY_TREE
       removeFamilyTrees();
 #endif
-      //std::cout << "tmp removeOldElements(parents) " << std::endl;
-      removeOldElements(parents);
+      //std::cout << "tmp removeElements(parents) " << std::endl;
+      removeElements(parents);
       m_eMesh.getBulkData()->modification_end();
+
+    }
+
+    void Refiner::removeEmptyElements()
+    {
+
+      elements_to_be_destroyed_type list;
+
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        {
+          stk::mesh::Bucket & bucket = **k ;
+
+          const unsigned num_elements_in_bucket = bucket.size();
+          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+            {
+              stk::mesh::Entity& element = bucket[iElement];
+              if (0 == element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK).size())
+                {
+#if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
+                  list.push_back(&element);
+#else
+                  list.insert(&element);
+#endif
+                }
+            }
+        }
+
+      //m_eMesh.getBulkData()->modification_begin();
+      //std::cout << "tmp removeElements(parents) " << std::endl;
+      removeElements(list);
+      //m_eMesh.getBulkData()->modification_end();
 
     }
 
@@ -2177,7 +2205,7 @@ namespace stk {
             }
         }
       //std::cout << "tmp P[" << m_eMesh.getRank() << "] removing family_trees, size() = "  << elements_to_be_destroyed.size() << std::endl;
-      removeOldElements(elements_to_be_destroyed);
+      removeElements(elements_to_be_destroyed);
     }
 
     void Refiner::
@@ -2258,11 +2286,11 @@ namespace stk {
                 }
             }
         }
-      removeOldElements(elements_to_be_destroyed);
+      removeElements(elements_to_be_destroyed);
 
     }
 
-    void Refiner::removeOldElements(elements_to_be_destroyed_type& elements_to_be_destroyed)
+    void Refiner::removeElements(elements_to_be_destroyed_type& elements_to_be_destroyed)
     {
       elements_to_be_destroyed_type elements_to_be_destroyed_pass2;
 
@@ -2272,8 +2300,8 @@ namespace stk {
 
           if (0)
             {
-              std::cout << "tmp removeOldElements removing element_p = " << element_p << std::endl;
-              if (element_p) std::cout << "tmp removeOldElements removing id= " << element_p->identifier() << std::endl;
+              std::cout << "tmp removeElements removing element_p = " << element_p << std::endl;
+              if (element_p) std::cout << "tmp removeElements removing id= " << element_p->identifier() << std::endl;
             }
 
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
@@ -2283,12 +2311,12 @@ namespace stk {
 #else
               elements_to_be_destroyed_pass2.insert(element_p);
 #endif
-              //throw std::logic_error("Refiner::removeOldElements couldn't remove element");
+              //throw std::logic_error("Refiner::removeElements couldn't remove element");
 
             }
         }
 
-      //std::cout << "tmp Refiner::removeOldElements pass2 size = " << elements_to_be_destroyed_pass2.size() << std::endl;
+      //std::cout << "tmp Refiner::removeElements pass2 size = " << elements_to_be_destroyed_pass2.size() << std::endl;
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed_pass2.begin();
            itbd != elements_to_be_destroyed_pass2.end();  ++itbd)
         {
@@ -2296,11 +2324,11 @@ namespace stk {
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
               CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(*element_p));
-              std::cout << "tmp Refiner::removeOldElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
+              std::cout << "tmp Refiner::removeElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
               const mesh::PairIterRelation elem_relations = element_p->relations(element_p->entity_rank()+1);
               std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
 
-              throw std::logic_error("Refiner::removeOldElements couldn't remove element, destroy_entity returned false.");
+              throw std::logic_error("Refiner::removeElements couldn't remove element, destroy_entity returned false.");
             }
         }
     }

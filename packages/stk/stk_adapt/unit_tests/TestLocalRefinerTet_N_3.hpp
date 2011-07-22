@@ -15,7 +15,7 @@ namespace stk {
     class TestLocalRefinerTet_N_3 : public Refiner
     {
     public:
-      TestLocalRefinerTet_N_3(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0, unsigned edge_mark_bitcode=1);
+      TestLocalRefinerTet_N_3(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
 
       // ElementUnrefineCollection  buildTestUnrefList();
 
@@ -36,13 +36,12 @@ namespace stk {
                                               vector<NeededEntityType>& needed_entity_ranks);
 
 
-      unsigned m_edge_mark_bitcode;
     };
 
     // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3 in UnitTestLocalRefiner.cpp)
 
-    TestLocalRefinerTet_N_3::TestLocalRefinerTet_N_3(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field, unsigned edge_mark_bitcode) : 
-      Refiner(eMesh, bp, proc_rank_field), m_edge_mark_bitcode(edge_mark_bitcode)
+    TestLocalRefinerTet_N_3::TestLocalRefinerTet_N_3(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) :
+      Refiner(eMesh, bp, proc_rank_field)
     {
     }
 
@@ -128,8 +127,6 @@ namespace stk {
                   // mark first m_edge_mark_bitcode edges 
                   unsigned edge_mark_bitcode = (element.identifier() - 1);
 
-
-                  //if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode) && element.identifier() == m_edge_mark_bitcode)
                   if ( ((1 << iSubDimOrd) & edge_mark_bitcode ) )
                     {
                       //if (edge_mark_bitcode == 4)

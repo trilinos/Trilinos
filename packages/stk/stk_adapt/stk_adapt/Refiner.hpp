@@ -233,7 +233,10 @@ namespace stk {
       removeOldElements(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern );
 
       void
-      removeOldElements( elements_to_be_destroyed_type& elements_to_be_destroyed);
+      removeElements( elements_to_be_destroyed_type& elements_to_be_destroyed);
+
+      void
+      removeEmptyElements();
 
       void
       addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);

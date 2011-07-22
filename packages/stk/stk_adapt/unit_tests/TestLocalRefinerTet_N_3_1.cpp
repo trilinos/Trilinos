@@ -90,18 +90,15 @@ namespace stk {
                     }
 
 #endif
-                  // mark first m_edge_mark_bitcode edges 
-                  unsigned edge_mark_bitcode = (element.identifier() - 1);
+                  // mark only the first element
 
 
-                  //if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode) && element.identifier() == m_edge_mark_bitcode)
-                  if ( ((1 << iSubDimOrd) & edge_mark_bitcode ) )
+                  if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode ) && 1 == element.identifier()  )
                     {
-                      //if (edge_mark_bitcode == 4)
-                      if (0)
+                      if (1)
                         {
                           std::cout << "tmp TestLocalRefinerTet_N_3_1 element.identifier() = " << element.identifier() 
-                                    << " edge_mark_bitcode = " << edge_mark_bitcode << "  iSubDimOrd= " << iSubDimOrd << std::endl;
+                                    << " edge_mark_bitcode = " << m_edge_mark_bitcode << "  iSubDimOrd= " << iSubDimOrd << std::endl;
                         }
                       (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
                     }

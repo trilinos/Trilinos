@@ -540,18 +540,22 @@ namespace stk {
 
                 int edge_mark_bitcode = 0;
                 edge_mark_bitcode = (int)(63.*((double)random())/((double)RAND_MAX));
+                std::cout << "tmp edge_mark_bitcode= " << edge_mark_bitcode << std::endl;
                 if (edge_mark_bitcode <= 0) edge_mark_bitcode = 1;
                 if (edge_mark_bitcode >= 63) edge_mark_bitcode = 63;
 
                 TestLocalRefinerTet_N_3_1 breaker(eMesh, break_tet, 0, edge_mark_bitcode);
-                breaker.setRemoveOldElements(true);
+                // we do this (for now) since old elements that aren't refined are being removed (FIXME in Refiner.cpp)
+                breaker.setRemoveOldElements(false);
                 breaker.doBreak();
+                breaker.deleteParentElements();
 
                 double totalVol1 = totalVolume(eMesh);
-                std::cout << "tmp totalVol1 = " << totalVol1 << std::endl;
+                std::cout << "tmp edge_mark_bitcode= " << edge_mark_bitcode << " totalVol1 = " << totalVol1 << std::endl;
 
                 if (std::abs(totalVol0 - totalVol1) > 1.e-6)
                   {
+                    eMesh.saveAs( output_files_loc+"local_tet_2_rand_error."+toString(icase)+".e" );
                     throw std::runtime_error("triangulate_tet_2_rand:: error, volumes don't match");
                   }
                 save_or_diff(eMesh, output_files_loc+"local_tet_2_rand.e."+toString(icase) );
@@ -576,8 +580,10 @@ namespace stk {
 
                 //eMesh.printInfo("srk tmp SingleTetFixture 3", 2);
 
-#if 0
-                bool isConsistent = percept::MeshUtil::facesConsistent(eMesh, true);
+#if 1
+                MeshUtil::m_debug = true;
+                bool isConsistent = percept::MeshUtil::facesConsistent(eMesh);
+                MeshUtil::m_debug = false;
                 if (!isConsistent)
                   {
                     std::cout << "tmp error isConsistent= " << isConsistent << std::endl;
@@ -585,7 +591,6 @@ namespace stk {
                   }
                 STKUNIT_EXPECT_TRUE(isConsistent);
 #endif
-
               }
 
               ++icase;
@@ -690,7 +695,7 @@ namespace stk {
               Local_Tet4_Tet4_N break_tet(eMesh);
               eMesh.commit();
 
-              TestLocalRefinerTet_N_3 breaker(eMesh, break_tet, 0, 1);
+              TestLocalRefinerTet_N_3 breaker(eMesh, break_tet, 0);
               breaker.setRemoveOldElements(true);
               breaker.doBreak();
               //breaker.deleteParentElements();

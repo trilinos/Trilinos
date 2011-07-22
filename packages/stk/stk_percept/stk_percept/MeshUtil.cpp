@@ -10,11 +10,13 @@
 namespace stk {
   namespace percept {
 
+    bool MeshUtil::m_debug = false;
+
     // ================================================================================================================================================================
     // ================================================================================================================================================================
     // ================================================================================================================================================================
 
-    void MeshUtil::fillSideNodes(stk::mesh::Entity& element, unsigned iside, std::vector<stk::mesh::EntityId> side_nodes)
+    void MeshUtil::fillSideNodes(stk::mesh::Entity& element, unsigned iside, std::vector<stk::mesh::EntityId>& side_nodes)
     {
       CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
@@ -28,7 +30,7 @@ namespace stk {
         }
     }
 
-    void MeshUtil::fillSideNodes(stk::mesh::Entity& element, unsigned iside, std::vector<stk::mesh::Entity *> side_nodes)
+    void MeshUtil::fillSideNodes(stk::mesh::Entity& element, unsigned iside, std::vector<stk::mesh::Entity *>& side_nodes)
     {
       CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
@@ -67,9 +69,10 @@ namespace stk {
       return 0.5*std::sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2]);
     }
 
-    bool MeshUtil::nodesMatch(  std::vector<stk::mesh::EntityId> side1, std::vector<stk::mesh::EntityId> side2, bool reverse)
+    bool MeshUtil::nodesMatch(  std::vector<stk::mesh::EntityId>& side1, std::vector<stk::mesh::EntityId>& side2, bool reverse)
     {
       if (side1.size() != side2.size()) return false;
+      //std::cout << "tmp side1= " << side1 << " side2= " << side2 << std::endl;
       int nfn = side1.size();
       for (int i = 0; i < nfn; i++)
         {
@@ -113,14 +116,14 @@ namespace stk {
       if (cell_topo1.getKey() != cell_topo2.getKey())
         return false;
         
+      std::vector<stk::mesh::EntityId> side1;
+      std::vector<stk::mesh::EntityId> side2;
       unsigned nsides = (unsigned)cell_topo1.getSideCount();
       for (iside1 = 0; iside1 < nsides; iside1++)
         {
-          std::vector<stk::mesh::EntityId> side1;
           fillSideNodes(element1, iside1, side1);
           for (iside2 = 0; iside2 < nsides; iside2++)
             {
-              std::vector<stk::mesh::EntityId> side2;
               fillSideNodes(element2, iside2, side2);
 
               // true = reverse the nodes since we are looking at a face from two sides
@@ -134,7 +137,7 @@ namespace stk {
       return false;
     }
 
-    bool MeshUtil::facesConsistent1(percept::PerceptMesh& eMesh, stk::mesh::Entity& element1, stk::mesh::Entity& element2, bool checkTopoOnly)
+    bool MeshUtil::facesConsistent1(percept::PerceptMesh& eMesh, stk::mesh::Entity& element1, stk::mesh::Entity& element2)
     {
       //int spatialDim = eMesh.getSpatialDim();
       //unsigned side_rank = (spatialDim == 3 ? m_eMesh.face_rank() : m_eMesh.edge_rank());
@@ -145,11 +148,10 @@ namespace stk {
 
       if (cell_topo1.getKey() != cell_topo2.getKey())
         return false;
-      if (checkTopoOnly) return true;
 
       unsigned ichild_side1=0, ichild_side2=0;
       unsigned iside1=0, iside2=0;
-      if (eMesh.isParentElement(element1) && eMesh.isParentElement(element2))
+      if (eMesh.isParentElement(element1, false) && eMesh.isParentElement(element2, false))
         {
           if (sharesFace(element1, element2, iside1, iside2))
             {
@@ -183,6 +185,11 @@ namespace stk {
                         }
                     }
                 }
+              if (m_debug)
+                {
+                  std::cout << "E1= " << element1.identifier() << " E2= " << element2.identifier() << " cfaceTot= " << cfaceTot 
+                            << " ptriFaceArea1= " << ptriFaceArea1 << std::endl;
+                }
               if (std::abs(cfaceTot - ptriFaceArea1) > tol*(cfaceTot+ptriFaceArea1)/2.)
                 {
                   throw std::runtime_error("triFaceArea inconsistent child/parent");
@@ -193,7 +200,7 @@ namespace stk {
     }
 
 
-    bool MeshUtil::facesConsistent(percept::PerceptMesh& eMesh, bool checkTopoOnly)
+    bool MeshUtil::facesConsistent(percept::PerceptMesh& eMesh)
     {
       const std::vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( eMesh.element_rank() );
 
@@ -216,7 +223,7 @@ namespace stk {
                       stk::mesh::Entity& element1 = bucket1[iElement1];
                       if (&element1 != &element)
                         {
-                          bool isConsistent = facesConsistent1(eMesh, element, element1, checkTopoOnly);
+                          bool isConsistent = facesConsistent1(eMesh, element, element1);
                           if (!isConsistent)
                             return false;
                         }

@@ -535,7 +535,7 @@ namespace stk {
         return true;
       }
 
-      bool getChildren( const stk::mesh::Entity& element, std::vector<stk::mesh::Entity*> children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false)
+      bool getChildren( const stk::mesh::Entity& element, std::vector<stk::mesh::Entity*>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false)
       {
         children.resize(0);
         const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
