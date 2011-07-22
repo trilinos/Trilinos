@@ -37,10 +37,10 @@ int     (*hops)[MAXSETS];	/* between-set hop cost for KL */
     extern int TERM_PROP;	/* invoking terminal propogation? */
     extern int DEBUG_TRACE;	/* trace the execution of the code */
     extern int MATCH_TYPE;	/* type of matching to use when coarsening */
-    struct vtx_data **subgraph;	/* data structure for subgraph */
-    struct set_info *set_info;	/* information about each processor subset */
-    struct set_info **set_buckets;	/* buckets for sorting processor sets */
-    struct set_info *set;	/* current processor set information */
+    struct vtx_data **subgraph = NULL;	/* data structure for subgraph */
+    struct set_info *set_info  = NULL;	/* information about each processor subset */
+    struct set_info **set_buckets = NULL;	/* buckets for sorting processor sets */
+    struct set_info *set = NULL;	/* current processor set information */
     int     hops_special[MAXSETS][MAXSETS];	/* hop mtx for nonstandard cases */
     float    *term_wgts;	/* net pull of terminal propogation */
     float    *save_term_wgts;	/* saved location of term_wgts */
@@ -62,9 +62,9 @@ int     (*hops)[MAXSETS];	/* between-set hop cost for KL */
     int       nsets_tot;	/* total sets to divide subgraph into */
     int       subnvtxs;		/* number of vertices in subgraph */
     int       subnedges;	/* number of edgess in subgraph */
-    double   *subvwsqrt;	/* vwsqrt array for subgraph */
-    int    *subassign;	/* set assignments for subgraph */
-    float   **subcoords;	/* coordinates for subgraph */
+    double   *subvwsqrt = NULL;	/* vwsqrt array for subgraph */
+    int    *subassign = NULL;	/* set assignments for subgraph */
+    float   **subcoords = NULL;	/* coordinates for subgraph */
     int       striping;		/* partition with parallel cuts? */
     int       pass;		/* counts passes through loop */
     int       max_proc_size;	/* size of largest processor set */
@@ -72,7 +72,7 @@ int     (*hops)[MAXSETS];	/* between-set hop cost for KL */
     int       new_dir;		/* new cut direction? => no terminal prop */
     int       nsets;		/* typical number of sets at each cut */
     int       done_dir[3];	/* mesh directions already cut */
-    int       i, j;		/* loop counter */
+    int       i;		/* loop counter */
 
     int       make_maps(), divide_procs();
     void      merge_goals();
@@ -98,6 +98,7 @@ int     (*hops)[MAXSETS];	/* between-set hop cost for KL */
     nsets = 1 << ndims;
     subsets[2] = 2;		/* Needed for vertex separators */
 
+    nsets_tot = 0;
     if (architecture > 0)
 	nsets_tot = mesh_dims[0] * mesh_dims[1] * mesh_dims[2];
     else if (architecture == 0)
@@ -163,6 +164,7 @@ int     (*hops)[MAXSETS];	/* between-set hop cost for KL */
 	/* Now place the new sets into the set_info data structure. */
 	/* This is indexed by number of processors in set. */
 	for (i = 0; i < nsets_real; i++) {
+	    int j = 0;
 	    if (architecture > 0) {
 		j = set_info[subsets[i]].span[0] *
 		   set_info[subsets[i]].span[1] * set_info[subsets[i]].span[2];

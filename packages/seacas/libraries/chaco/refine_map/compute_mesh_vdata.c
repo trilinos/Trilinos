@@ -28,6 +28,9 @@ int       dim;			/* dimension we are currently working in */
 
     node = vtx2node[vtx];
 
+    neighb_loc = 0;
+    my_loc = 0;
+
     if (dim == 0) {
 	my_loc = node % mesh_dims[0];
     }

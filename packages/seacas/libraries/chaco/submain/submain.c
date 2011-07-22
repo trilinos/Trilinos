@@ -135,8 +135,12 @@ long      seed;			/* for random graph mutations */
 	mesh_dims[2] = 1;
     
     /* Check for simple special case of 1 processor. */
-    if (architecture == 0) k = 1 << ndims_tot;
-    else if (architecture > 0) k = mesh_dims[0] * mesh_dims[1] * mesh_dims[2];
+    k = 0;
+    if (architecture == 0)
+      k = 1 << ndims_tot;
+    else if (architecture > 0)
+      k = mesh_dims[0] * mesh_dims[1] * mesh_dims[2];
+
     if (k == 1) {
 	for (i = 1; i <= nvtxs; i++) assignment[i] = 0;
 
@@ -303,6 +307,7 @@ long      seed;			/* for random graph mutations */
 
     partition_time += seconds() - time - kernel_time;
 
+    nsets_tot = 0;
     if (architecture == 0)
 	nsets_tot = 1 << ndims_tot;
     else if (architecture > 0)
