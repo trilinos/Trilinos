@@ -49,6 +49,7 @@ int Excn::ExodusFile::ioWordSize_ = 0;
 int Excn::ExodusFile::cpuWordSize_ = 0;
 std::string Excn::ExodusFile::outputFilename_;
 bool Excn::ExodusFile::keepOpen_ = false;
+int Excn::ExodusFile::maximumNameLength_ = 32;
 
 namespace {
   int get_free_descriptor_count();
@@ -71,6 +72,8 @@ Excn::ExodusFile::ExodusFile(size_t which)
 	   << "' - exiting" << std::endl;
       exit(1);
     }
+    ex_set_max_name_length(fileids_[which], maximumNameLength_);
+
     SMART_ASSERT(io_wrd_size  == ioWordSize_);
     SMART_ASSERT(cpu_word_size == cpuWordSize_);
   }
@@ -129,6 +132,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si)
   filenames_.resize(si.inputFiles_.size());
   fileids_.resize(si.inputFiles_.size());
   
+  int overall_max_name_length = 0;
   for(size_t p = 0; p < si.inputFiles_.size(); p++) {
     std::string name = si.inputFiles_[p];
 
@@ -144,6 +148,11 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si)
 	std::cerr << "Cannot open file '" << filenames_[p] << "'" << std::endl;
 	return false;
       }
+
+      int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+      if (max_name_length > overall_max_name_length)
+	overall_max_name_length = max_name_length;
+
       ex_close(exoid);
 
       if (io_wrd_size < (int)sizeof(float))
@@ -167,6 +176,12 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si)
     
     std::cout << "Part " << p+1 << ": '" << name.c_str() << "'" << std::endl;
   }
+
+  maximumNameLength_ = overall_max_name_length;
+  for(size_t p = 0; p < si.inputFiles_.size(); p++) {
+    ex_set_max_name_length(fileids_[p], maximumNameLength_);
+  }
+
   return true;
 }
 
@@ -185,6 +200,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface& si)
     return false;
   }
   std::cout << "IO Word size is " << ioWordSize_ << " bytes.\n";
+  ex_set_max_name_length(outputId_, maximumNameLength_);
   return true;
 }
 

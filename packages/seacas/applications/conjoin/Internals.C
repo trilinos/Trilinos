@@ -1,34 +1,38 @@
-// Copyright(C) 2009-2010 Sandia Corporation.
-// 
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//         
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-// 
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-// 
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/*
+ * Copyright(C) 2009-2011 Sandia Corporation.
+ * 
+ * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ * the U.S. Government retains certain rights in this software.
+ *         
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ * 
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *     * Neither the name of Sandia Corporation nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
 #include <Internals.h>
 
 extern "C" {
@@ -86,8 +90,14 @@ Excn::Redefine::~Redefine()
   }
 }
 
-Excn::Internals::Internals(int exoid)
-  : exodusFilePtr(exoid) {}
+Excn::Internals::Internals(int exoid, int maximum_name_length)
+  : exodusFilePtr(exoid),
+    nodeMapVarID(),
+    elementMapVarID(),
+    commIndexVar(0),
+    elemCommIndexVar(0),
+    maximumNameLength(maximum_name_length)
+{}
 
 int Excn::Internals::write_meta_data(const Mesh &mesh,
 				     const std::vector<Block>   &blocks,
@@ -198,15 +208,16 @@ int Excn::Internals::write_meta_data(const Mesh &mesh,
       }
     }
   	 
+    int name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
     char **names = new char* [max_entity];
     for (int i=0; i < max_entity; i++) {
-      names[i] = new char [MAX_STR_LENGTH+1];
+      names[i] = new char [name_size+1];
     }
   	 
     if (mesh.blockCount > 0) {
       for (int i=0; i < mesh.blockCount; i++) {
-	std::strncpy(names[i], blocks[i].name_.c_str(), MAX_STR_LENGTH);
-	names[i][MAX_STR_LENGTH] = 0;
+	std::strncpy(names[i], blocks[i].name_.c_str(), name_size);
+	names[i][name_size] = 0;
       }
       ex_put_names(exodusFilePtr, EX_ELEM_BLOCK, names);
 
@@ -214,11 +225,11 @@ int Excn::Internals::write_meta_data(const Mesh &mesh,
 	if (blocks[i].attributeCount > 0) {
 	  SMART_ASSERT(blocks[i].attributeCount == (int)blocks[i].attributeNames.size());
 	  for (int j=0; j < blocks[i].attributeCount; j++) {
-	    std::memset(names[j], '\0', MAX_STR_LENGTH+1);
+	    std::memset(names[j], '\0', name_size+1);
 	    if (blocks[i].attributeNames[j].size() > 0) {
 	      std::strncpy(names[j], blocks[i].attributeNames[j].c_str(),
-			   MAX_STR_LENGTH);
-	      names[j][MAX_STR_LENGTH] = 0;
+			   name_size);
+	      names[j][name_size] = 0;
 	    }
 	  }
 	  ierr=ex_put_attr_names(exodusFilePtr, EX_ELEM_BLOCK, blocks[i].id, names);
@@ -229,16 +240,16 @@ int Excn::Internals::write_meta_data(const Mesh &mesh,
   	 
     if (mesh.nodesetCount > 0) {
       for (int i=0; i < mesh.nodesetCount; i++) {
-	std::strncpy(names[i], nodesets[i].name_.c_str(), MAX_STR_LENGTH);
-	names[i][MAX_STR_LENGTH] = 0;
+	std::strncpy(names[i], nodesets[i].name_.c_str(), name_size);
+	names[i][name_size] = 0;
       }
       ex_put_names(exodusFilePtr, EX_NODE_SET, names);
     }
 
     if (mesh.sidesetCount > 0) {
       for (int i=0; i < mesh.sidesetCount; i++) {
-	std::strncpy(names[i], sidesets[i].name_.c_str(), MAX_STR_LENGTH);
-	names[i][MAX_STR_LENGTH] = 0;
+	std::strncpy(names[i], sidesets[i].name_.c_str(), name_size);
+	names[i][name_size] = 0;
       }
       ex_put_names(exodusFilePtr, EX_SIDE_SET, names);
     }
@@ -256,7 +267,15 @@ int Excn::Internals::write_meta_data(const Mesh &mesh,
 int Excn::Internals::put_metadata(const Mesh &mesh,
 				  const CommunicationMetaData&)
 {
-  int numdimdim, numnoddim, numelemdim, elblkdim, strdim, dim[2], dimid, varid;
+  int numdimdim  = 0;
+  int numnoddim  = 0;
+  int numelemdim = 0;
+  int elblkdim   = 0;
+  int strdim     = 0;
+  int namestrdim = 0;
+  int dim[2];
+  int dimid = 0;
+  int varid = 0;
 
   char errmsg[MAX_ERR_LENGTH];
   const char *routine = "Excn::Internals::put_metadata()";
@@ -271,12 +290,39 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
     return(EX_FATAL); 
   }
 
+  // For use later to help readers know how much memory to allocate
+  // for name storage, we define an attribute containing the maximum
+  // size of any name.
+  {
+    int current_len = 0;
+    status=nc_put_att_int(exodusFilePtr, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &current_len);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg,
+              "Error: failed to define ATT_MAX_NAME_LENGTH attribute to file id %d", exodusFilePtr);
+      ex_err(routine,errmsg,status);
+      return(EX_FATAL);
+    }
+  }
+
   // inquire previously defined dimensions
   status=nc_inq_dimid (exodusFilePtr, DIM_STR, &strdim);
   if (status != NC_NOERR) {
     ex_opts(EX_VERBOSE);
     sprintf(errmsg,
 	    "Error: failed to get string length in file id %d",exodusFilePtr);
+    ex_err(routine,errmsg,status);
+    return(EX_FATAL);
+  }
+
+  // create name string length dimension
+  if (maximumNameLength < 32)
+    maximumNameLength = 32;
+  status = nc_def_dim (exodusFilePtr, DIM_STR_NAME, maximumNameLength+1, &namestrdim);
+  if (status != NC_NOERR) {
+    ex_opts(EX_VERBOSE);
+    sprintf(errmsg,
+	    "Error: failed to define name string length in file id %d",exodusFilePtr);
     ex_err(routine,errmsg,status);
     return(EX_FATAL);
   }
@@ -399,7 +445,7 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
     }
 
     dim[0] = elblkdim;
-    dim[1] = strdim;
+    dim[1] = namestrdim;
 
     status = nc_def_var (exodusFilePtr, VAR_NAME_EL_BLK, NC_CHAR, 2, dim, &varid);
     if (status != NC_NOERR) {
@@ -460,7 +506,7 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
     }
 
     dim[0] = dimid;
-    dim[1] = strdim;
+    dim[1] = namestrdim;
 
     status=nc_def_var(exodusFilePtr, VAR_NAME_NS, NC_CHAR, 2, dim, &varid);
     if (status != NC_NOERR) {
@@ -518,7 +564,7 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
     }
 
     dim[0] = dimid;
-    dim[1] = strdim;
+    dim[1] = namestrdim;
 
     status=nc_def_var(exodusFilePtr, VAR_NAME_SS, NC_CHAR, 2, dim, &varid);
     if (status != NC_NOERR) {
@@ -531,7 +577,7 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
     }
   }
 
-  status = define_coordinate_vars(exodusFilePtr, mesh.nodeCount, numnoddim, mesh.dimensionality, numdimdim, strdim);
+  status = define_coordinate_vars(exodusFilePtr, mesh.nodeCount, numnoddim, mesh.dimensionality, numdimdim, namestrdim);
   if (status != EX_NOERR)
     return EX_FATAL;
   
@@ -562,12 +608,12 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
     return (EX_FATAL);
   }
 
-  int strdim;
-  status=nc_inq_dimid (exodusFilePtr, DIM_STR, &strdim);
+  int namestrdim;
+  status=nc_inq_dimid (exodusFilePtr, DIM_STR_NAME, &namestrdim);
   if (status != NC_NOERR) {
     ex_opts(EX_VERBOSE);
     sprintf(errmsg,
-	    "Error: failed to get string length in file id %d",exodusFilePtr);
+	    "Error: failed to get name string length in file id %d",exodusFilePtr);
     ex_err(routine,errmsg,status);
     return(EX_FATAL);
   }
@@ -655,7 +701,7 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
 
       // Attribute name array...
       dims[0] = numattrdim;
-      dims[1] = strdim;
+      dims[1] = namestrdim;
 
       status = nc_def_var(exodusFilePtr, VAR_NAME_ATTRIB(iblk+1),
 			  NC_CHAR, 2, dims, &varid);
