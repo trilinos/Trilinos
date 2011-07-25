@@ -60,6 +60,9 @@
 #endif
 
 #include <Teuchos_as.hpp>
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include <Teuchos_SerializationTraits.hpp>
+#endif
 
 #include "Amesos2_TypeMap.hpp"
 
@@ -269,13 +272,9 @@ class SerializationTraits<Ordinal,SLU::Z::doublecomplex>
 
 // C++-style output functions for Superlu complex types
 namespace std {
-  ostream& operator<<(ostream& out, const SLU::Z::doublecomplex z){
-    return (out << "(" << z.r << "," << z.i << ")");
-  }
+  ostream& operator<<(ostream& out, const SLU::Z::doublecomplex z);
 
-  ostream& operator<<(ostream& out, const SLU::C::complex c){
-    return (out << "(" << c.r << "," << c.i << ")");
-  }
+  ostream& operator<<(ostream& out, const SLU::C::complex c);
 }
 
 #endif	// HAVE_TEUCHOS_COMPLEX
@@ -297,8 +296,6 @@ struct TypeMap<Superlu,float>
   typedef float magnitude_type;
 };
 
-SLU::Dtype_t TypeMap<Superlu,float>::dtype = SLU::SLU_S;
-
 
 template <>
 struct TypeMap<Superlu,double>
@@ -307,8 +304,6 @@ struct TypeMap<Superlu,double>
   typedef double type;
   typedef double magnitude_type;
 };
-
-SLU::Dtype_t TypeMap<Superlu,double>::dtype = SLU::SLU_D;
 
 
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -321,8 +316,6 @@ struct TypeMap<Superlu,std::complex<float> >
   typedef float magnitude_type;
 };
 
-SLU::Dtype_t TypeMap<Superlu,std::complex<float> >::dtype = SLU::SLU_C;
-
 
 template <>
 struct TypeMap<Superlu,std::complex<double> >
@@ -331,8 +324,6 @@ struct TypeMap<Superlu,std::complex<double> >
   typedef SLU::Z::doublecomplex type;
   typedef double magnitude_type;
 };
-
-SLU::Dtype_t TypeMap<Superlu,std::complex<double> >::dtype = SLU::SLU_Z;
 
 
 template <>
@@ -343,8 +334,6 @@ struct TypeMap<Superlu,SLU::C::complex>
   typedef float magnitude_type;
 };
 
-SLU::Dtype_t TypeMap<Superlu,SLU::C::complex>::dtype = SLU::SLU_C;
-
 
 template <>
 struct TypeMap<Superlu,SLU::Z::doublecomplex>
@@ -354,7 +343,6 @@ struct TypeMap<Superlu,SLU::Z::doublecomplex>
   typedef double magnitude_type;
 };
 
-SLU::Dtype_t TypeMap<Superlu,SLU::Z::doublecomplex>::dtype = SLU::SLU_Z;
 
 #endif  // HAVE_TEUCHOS_COMPLEX
 

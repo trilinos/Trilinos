@@ -44,6 +44,27 @@
 #ifndef AMESOS2_SUPERLUDIST_CPP
 #define AMESOS2_SUPERLUDIST_CPP
 
-#include "Amesos2_Superludist.hpp"
+#include "Amesos2_Superludist_decl.hpp"
+
+
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
+#  include "Amesos2_Superludist_def.hpp"
+#  include "Amesos2_ExplicitInstantiationHelpers.hpp"
+
+namespace Amesos2 {
+#ifdef HAVE_AMESOS2_EPETRA
+  AMESOS2_SOLVER_EPETRA_INST(Superludist);
+#endif
+
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,double,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superludist,std::complex<double>,int,int);
+#endif
+}
+
+#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
 #endif  // AMESOS2_SUPERLUDIST_CPP

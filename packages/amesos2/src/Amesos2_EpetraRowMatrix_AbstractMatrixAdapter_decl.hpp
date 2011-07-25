@@ -19,7 +19,8 @@
 
 #include "Amesos2_AbstractConcreteMatrixAdapter.hpp"
 #include "Amesos2_MatrixAdapter_decl.hpp"
-#include "Amesos2_Util.cpp"
+#include "Amesos2_MatrixTraits.hpp"
+#include "Amesos2_Util.hpp"
 
 namespace Amesos2 {
 
@@ -51,7 +52,6 @@ namespace Amesos2 {
     typedef MatrixTraits<Epetra_RowMatrix>::global_ordinal_t global_ordinal_t;
     typedef MatrixTraits<Epetra_RowMatrix>::node_t                     node_t;
 
-    // typedef Epetra_RowMatrix                                         matrix_t;
     typedef DerivedMat                                               matrix_t;
 
   private:

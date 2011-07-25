@@ -1,11 +1,16 @@
 #ifndef AMESOS2_MATRIXADAPTER_DEF_HPP
 #define AMESOS2_MATRIXADAPTER_DEF_HPP
 
+#include "Amesos2_MatrixAdapter_decl.hpp"
+#include "Amesos2_ConcreteMatrixAdapter_def.hpp"
+//#include "Amesos2_ConcreteMatrixAdapter.hpp"
+
+
 namespace Amesos2 {
 
   
   template < class Matrix >
-  MatrixAdapter<Matrix>::MatrixAdapter(RCP<Matrix> m)
+  MatrixAdapter<Matrix>::MatrixAdapter(const Teuchos::RCP<Matrix> m)
     : mat_(m)
   {
     comm_ = static_cast<const adapter_t*>(this)->getComm_impl();
@@ -176,6 +181,7 @@ namespace Amesos2 {
 				   EStorage_Ordering ordering,
 				   row_access ra) const
   {
+    using Teuchos::rcp;
     using Teuchos::RCP;
     using Teuchos::ArrayView;
     using Teuchos::OrdinalTraits;
@@ -437,12 +443,32 @@ namespace Amesos2 {
   }
   
   template < class Matrix >
-  RCP<const MatrixAdapter<Matrix> >
+  Teuchos::RCP<const MatrixAdapter<Matrix> >
   MatrixAdapter<Matrix>::get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
   {
     return static_cast<const adapter_t*>(this)->get_impl(map);
   }
-  
+
+
+  template <class Matrix>
+  Teuchos::RCP<MatrixAdapter<Matrix> >
+  createMatrixAdapter(Teuchos::RCP<Matrix> m){
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    
+    if(m.is_null()) return Teuchos::null;
+    return( rcp(new ConcreteMatrixAdapter<Matrix>(m)) );
+  }
+
+  template <class Matrix>
+  Teuchos::RCP<const MatrixAdapter<Matrix> >
+  createConstMatrixAdapter(Teuchos::RCP<const Matrix> m){
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    
+    if(m.is_null()) return Teuchos::null;
+    return( rcp(new ConcreteMatrixAdapter<Matrix>(rcp_const_cast<Matrix,const Matrix>(m))).getConst() );
+  }
 
 } // end namespace Amesos2
 

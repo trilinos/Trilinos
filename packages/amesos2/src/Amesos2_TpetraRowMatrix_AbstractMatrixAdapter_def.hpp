@@ -1,6 +1,9 @@
 #ifndef AMESOS2_TPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP
 #define AMESOS2_TPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP
 
+#include "Amesos2_ConcreteMatrixAdapter_decl.hpp"
+#include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_decl.hpp"
+
 namespace Amesos2 {
 
   using Teuchos::RCP;

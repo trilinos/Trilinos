@@ -61,8 +61,6 @@
 
 #include "Amesos2.hpp"
 #include "Amesos2_Meta.hpp"
-// #include "Amesos2_MatrixAdapter.hpp"
-// #include "Amesos2_MultiVecAdapter.hpp"
 
 namespace {
 
@@ -559,16 +557,44 @@ namespace {
    * Instantiations
    */
 #ifdef HAVE_TEUCHOS_COMPLEX
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX(LO, GO, SCALAR)               \
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_SCALAR(LO, GO, SCALAR)	\
   typedef std::complex<SCALAR>  Complex##SCALAR;                        \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, Initialization, Complex##SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, SymbolicFactorization, Complex##SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, NumericFactorization, Complex##SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, ComplexSolve, SCALAR, LO, GO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, ComplexSolve2, SCALAR, LO, GO)
-  // TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superlu, ComplexSolve2Trans, SCALAR, LO, GO)
+  
+#  ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_SCALAR(LO, GO, float)
+#  else
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
+#  endif
+
+#  ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)        \
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_SCALAR(LO, GO, double)
+#  else
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
+#  endif
+
+#else  // !(defined HAVE_TEUCHOS_COMPLEX
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
+#endif
+
+#ifdef HAVE_TPETRA_INST_FLOAT
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )	\
+  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, float )
 #else
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX(LO,GO,SCALAR)
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )	\
+  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double )
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )
 #endif
 
   // Uncomment this for really fast development cycles but make sure to comment
@@ -586,29 +612,31 @@ namespace {
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
 
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )   \
+#ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
   UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double)       \
   UNIT_TEST_GROUP_ORDINAL(int)
   UNIT_TEST_GROUP_ORDINAL_COMPLEX(LO,GO,float)
 
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )   \
-  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, float)         \
-  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, double)        \
-  UNIT_TEST_GROUP_ORDINAL_COMPLEX(LO,GO, float)         \
-  UNIT_TEST_GROUP_ORDINAL_COMPLEX(LO,GO, double)
+#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
+  UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)			\
+  UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)		\
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO,GO)		\
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
 
   UNIT_TEST_GROUP_ORDINAL(int)
 
+#  ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
 #    ifdef HAVE_TEUCHOS_LONG_LONG_INT
   typedef long long int LongLongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
 #    endif
+#  endif  // EXPL-INST
 
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 } // end anonymous namespace

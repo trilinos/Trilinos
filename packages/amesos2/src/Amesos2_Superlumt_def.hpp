@@ -52,7 +52,9 @@
 #ifndef AMESOS2_SUPERLUMT_DEF_HPP
 #define AMESOS2_SUPERLUMT_DEF_HPP
 
+#include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Util.hpp"
+
 
 namespace SLUMT {
   /*
@@ -63,7 +65,8 @@ namespace SLUMT {
    * function as defined, it will compile fine, but will choke during
    * linking.  No other code in SuperLU_MT actually calls these
    * functions. Instead, all other SuperLU_MT function just call
-   * "sp_colorder", which is defined within the SuperLU_MT library.
+   * "sp_colorder", which is defined within the SuperLU_MT library,
+   * but not declared.
    */
   extern "C" {
     int sp_colorder(SuperMatrix*,int*,superlumt_options_t*,SuperMatrix*);

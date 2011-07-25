@@ -880,545 +880,552 @@ bool do_tpetra_test_with_types(const string& mm_file,
     A2->apply(*x2, *b2, trans);
   } // else A2 is never read
   
-  const bool result = do_solve_routine<MAT,MV>(solver_name, A, A2,
-					       Xhat, x(), b(), x2, b2,
-					       numRHS, solve_params);
-					 
-  if (!result) {
-    if( verbosity > 1 ){
-      *fos << "failed!" << std::endl;
-    }
-    return( false );
-  } else {
-    if( verbosity > 1 ){
-      *fos << "passed" << std::endl;
-    }
-    return( true );
-  }
+  return do_solve_routine<MAT,MV>(solver_name, A, A2,
+				  Xhat, x(), b(), x2, b2,
+				  numRHS, solve_params);
 }
 
 
-  bool test_tpetra(const string& mm_file,
-		   const string& solver_name,
-		   const ParameterList& tpetra_runs,
-		   ParameterList solve_params)
-  {
-    bool success = true;
+bool test_tpetra(const string& mm_file,
+		 const string& solver_name,
+		 const ParameterList& tpetra_runs,
+		 ParameterList solve_params)
+{
+  bool success = true;
 
-    typedef DefaultNode DN;
+  typedef DefaultNode DN;
 
-    ParameterList::ConstIterator run_it;
-    for( run_it = tpetra_runs.begin(); run_it != tpetra_runs.end(); ++run_it ){
-      if( tpetra_runs.entry(run_it).isList() ){
-	ParameterList run_list = Teuchos::getValue<ParameterList>(tpetra_runs.entry(run_it));
-	ParameterList solve_params_copy(solve_params);
-	if( run_list.isSublist("run_params") ){
-	  solve_params_copy.setParameters( run_list.sublist("run_params") );
-	}
+  ParameterList::ConstIterator run_it;
+  for( run_it = tpetra_runs.begin(); run_it != tpetra_runs.end(); ++run_it ){
+    if( tpetra_runs.entry(run_it).isList() ){
+      ParameterList run_list = Teuchos::getValue<ParameterList>(tpetra_runs.entry(run_it));
+      ParameterList solve_params_copy(solve_params);
+      if( run_list.isSublist("run_params") ){
+	solve_params_copy.setParameters( run_list.sublist("run_params") );
+      }
 
-	string scalar, mag, lo, go, node;
-	if( run_list.isParameter("Scalar") ){
-	  scalar = run_list.get<string>("Scalar");
-	  if( scalar == "complex" ){
+      string scalar, mag, lo, go, node;
+      if( run_list.isParameter("Scalar") ){
+	scalar = run_list.get<string>("Scalar");
+	if( scalar == "complex" ){
 #ifdef HAVE_TEUCHOS_COMPLEX
-	    // get the magnitude parameter
-	    if( run_list.isParameter("Magnitude") ){
-	      mag = run_list.get<string>("Magnitude");
-	    } else {
-	      *fos << "    Must provide a type for `Magnitude' when Scalar='complex', aborting run `"
-		   << run_list.name() << "'..." << std::endl;
-	      continue;
-	    }
-#else
-	    if( verbosity > 1 ){
-	      *fos << "    Complex support not enabled, skipping run `"
-		   << run_list.name() << "'..." << std::endl;
-	    }
+	  // get the magnitude parameter
+	  if( run_list.isParameter("Magnitude") ){
+	    mag = run_list.get<string>("Magnitude");
+	  } else {
+	    *fos << "    Must provide a type for `Magnitude' when Scalar='complex', aborting run `"
+		 << run_list.name() << "'..." << std::endl;
 	    continue;
+	  }
+#else
+	  if( verbosity > 1 ){
+	    *fos << "    Complex support not enabled, skipping run `"
+		 << run_list.name() << "'..." << std::endl;
+	  }
+	  continue;
 #endif	// HAVE_TEUCHOS_COMPLEX
+	}
+      } else {
+	*fos << "    Must provide a type for `Scalar', aborting run `"
+	     << run_list.name() << "'..." << std::endl;
+	continue;
+      }
+      if( run_list.isParameter("LocalOrdinal") ){
+	lo = run_list.get<string>("LocalOrdinal");
+      } else {
+	*fos << "    Must provide a type for `LocalOrdinal', aborting run `"
+	     << run_list.name() << "'..." << std::endl;
+	continue;
+      }
+      if( run_list.isParameter("GlobalOrdinal") ){
+	go = run_list.get<string>("GlobalOrdinal");
+      } else {
+	go = "default";
+      }
+      if( run_list.isParameter("Node") ){
+	scalar = run_list.get<string>("Node");
+      } else {
+	node = "default";
+      }
+
+      string run_name = tpetra_runs.name(run_it);
+      if( verbosity > 1 ){
+	*fos << "    Doing tpetra test run `"
+	     << run_name << "' with"
+	     << " s=" << scalar;
+	if( scalar == "complex" ){
+	  *fos << "(" << mag << ")";
+	}
+	*fos << " lo=" << lo
+	     << " go=" << go
+	     << " ... " << std::flush;
+      }
+
+      string timer_name = mm_file + "_" + scalar + "_" + lo + "_" + go;
+      RCP<Time> timer = TimeMonitor::getNewTimer(timer_name);
+      TimeMonitor LocalTimer(*timer);
+
+      bool test_done = false;
+
+#define AMESOS2_SOLVER_TPETRA_TEST(S,LO,GO,N)				\
+      test_done = true;							\
+      bool run_success = do_tpetra_test_with_types<S,LO,GO,N>(mm_file,solver_name, \
+							      solve_params_copy); \
+      if( verbosity > 1 ){						\
+	if (!run_success)						\
+	  *fos << "failed!" << std::endl;				\
+	else								\
+	  *fos << "passed" << std::endl;				\
+      }									\
+      success &= run_success
+
+	
+      // I can't think of any better way to do the types as
+      // specified in the parameter list at runtime but to branch
+      // out on all possibilities, sorry...  Note: we're going to
+      // ignore the `node' parameter for now
+#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_FLOAT))
+      if( scalar == "float" ){
+	if( lo == "int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(float,int,int,DN);
 	  }
-	} else {
-	  *fos << "    Must provide a type for `Scalar', aborting run `"
-	       << run_list.name() << "'..." << std::endl;
-	  continue;
-	}
-	if( run_list.isParameter("LocalOrdinal") ){
-	  lo = run_list.get<string>("LocalOrdinal");
-	} else {
-	  *fos << "    Must provide a type for `LocalOrdinal', aborting run `"
-	       << run_list.name() << "'..." << std::endl;
-	  continue;
-	}
-	if( run_list.isParameter("GlobalOrdinal") ){
-	  go = run_list.get<string>("GlobalOrdinal");
-	} else {
-	  go = "default";
-	}
-	if( run_list.isParameter("Scalar") ){
-	  scalar = run_list.get<string>("Scalar");
-	} else {
-	  node = "default";
-	}
-
-	string run_name = tpetra_runs.name(run_it);
-	if( verbosity > 1 ){
-	  *fos << "    Doing tpetra test run `"
-	       << run_name << "' with"
-	       << " s=" << scalar;
-	  if( scalar == "complex" ){
-	    *fos << "(" << mag << ")";
+	  else if( go == "int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(float,int,int,DN);
 	  }
-	  *fos << " lo=" << lo
-	       << " go=" << go
-	       << " ... " << std::flush;
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+	  else if( go == "long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(float,int,long int,DN);
+	  }
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(float,int,long long int,DN);
+	  }
+#endif
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 	}
-
-	string timer_name = mm_file + "_" + scalar + "_" + lo + "_" + go;
-	RCP<Time> timer = TimeMonitor::getNewTimer(timer_name);
-	TimeMonitor LocalTimer(*timer);
-
-	// I can't think of any better way to do the types as
-	// specified in the parameter list at runtime but to branch
-	// out on all possibilities, sorry...
-	// Note: we're going to ignore the `node' parameter for now
-	if( scalar == "float" ){
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+	else if( lo == "long int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(float,long int,long int,DN);
+	  }
+	  else if( go == "int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(float,long int,long int,DN);
+	  }
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(float,long int,long long int,DN);
+	  }
+#endif
+	}
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	else if( lo == "long long int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(float,long long int,long long int,DN);
+	  }
+	  else if( go == "int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(float,long long int,long long int,DN);
+	  }
+	}
+#endif
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+      } // end scalar == "float"
+#endif	// HAVE_TPETRA_INST_FLOAT
+#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_DOUBLE))
+      if( scalar == "double" ){
+	if( lo == "int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(double,int,int,DN);
+	  }
+	  else if( go == "int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(double,int,int,DN);
+	  }
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+	  else if( go == "long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(double,int,long int,DN);
+	  }
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(double,int,long long int,DN);
+	  }
+#endif
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+	}
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+	else if( lo == "long int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(double,long int,long int,DN);
+	  }
+	  else if( go == "int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(double,long int,long int,DN);
+	  }
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(double,long int,long long int,DN);
+	  }
+#endif
+	}
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	else if( lo == "long long int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(double,long long int,long long int,DN);
+	  }
+	  else if( go == "int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(double,long long int,long long int,DN);
+	  }
+	}
+#endif
+#endif	  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+      } // end scalar == "double"
+#endif	  // HAVE_TPETRA_INST_DOUBLE
+#if (defined HAVE_TEUCHOS_QD) && !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION)
+      if( scalar == "double double" ){
+	if( lo == "int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,int,DN);
+	  }
+	  else if( go == "int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,int,DN);
+	  }
+	  else if( go == "long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,long int,DN);
+	  }
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,long long int,DN);
+	  }
+#endif
+	}
+	else if( lo == "long int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(dd_real,long int,long int,DN);
+	  }
+	  else if( go == "int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(dd_real,long int,long int,DN);
+	  }
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(dd_real,long int,long long int,DN);
+	  }
+#endif
+	}
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	else if( lo == "long long int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(dd_real,long long int,long long int,DN);
+	  }
+	  else if( go == "int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(dd_real,long long int,long long int,DN);
+	  }
+	}
+#endif
+      } // end scalar == "double double"
+      if( scalar == "quad" || scalar == "quad double" ){
+	if( lo == "int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,int,DN);
+	  }
+	  else if( go == "int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,int,DN);
+	  }
+	  else if( go == "long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,long int,DN);
+	  }
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,long long int,DN);
+	  }
+#endif
+	}
+	else if( lo == "long int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(qd_real,long int,long int,DN);
+	  }
+	  else if( go == "int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(qd_real,long int,long int,DN);
+	  }
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(qd_real,long int,long long int,DN);
+	  }
+#endif
+	}
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	else if( lo == "long long int" ){
+	  if( go == "default" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(qd_real,long long int,long long int,DN);
+	  }
+	  else if( go == "int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long int" ){
+	    *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
+	  }
+	  else if( go == "long long int" ){
+	    AMESOS2_SOLVER_TPETRA_TEST(qd_real,long long int,long long int,DN);
+	  }
+	}
+#endif
+      } // end scalar == "quad double"
+#endif    // HAVE_TEUCHOS_QD
+#ifdef HAVE_TEUCHOS_COMPLEX
+      if( scalar == "complex" ){
+#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_FLOAT))
+	if( mag == "float" ){
+	  typedef std::complex<float> cmplx;
 	  if( lo == "int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<float,int,int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,int,DN);
 	    }
 	    else if( go == "int" ){
-	      success &= do_tpetra_test_with_types<float,int,int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,int,DN);
 	    }
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 	    else if( go == "long int" ){
-	      success &= do_tpetra_test_with_types<float,int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,long int,DN);
 	    }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<float,int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,long long int,DN);
 	    }
 #endif
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 	  }
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 	  else if( lo == "long int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<float,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx,long int,long int,DN);
 	    }
 	    else if( go == "int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<float,long int,int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long int" ){
-	      success &= do_tpetra_test_with_types<float,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx,long int,long int,DN);
 	    }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<float,long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx,long int,long long int,DN);
 	    }
 #endif
 	  }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	  else if( lo == "long long int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<float,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx,long long int,long long int,DN);
 	    }
 	    else if( go == "int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<float,long long int,int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<float,long long int,long int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<float,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx,long long int,long long int,DN);
 	    }
 	  }
 #endif
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 	}
-	else if( scalar == "double" ){
+#endif
+#if !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) || ((defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION) && (defined HAVE_TPETRA_INST_COMPLEX_DOUBLE))
+	if( mag == "double" ){
+	  typedef std::complex<double> cmplx_double;
 	  if( lo == "int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<double,int,int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,int,DN);
 	    }
 	    else if( go == "int" ){
-	      success &= do_tpetra_test_with_types<double,int,int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,int,DN);
 	    }
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 	    else if( go == "long int" ){
-	      success &= do_tpetra_test_with_types<double,int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,long int,DN);
 	    }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<double,int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,long long int,DN);
 	    }
 #endif
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 	  }
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 	  else if( lo == "long int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<double,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long int,long int,DN);
 	    }
 	    else if( go == "int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<double,long int,int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long int" ){
-	      success &= do_tpetra_test_with_types<double,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long int,long int,DN);
 	    }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<double,long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long int,long long int,DN);
 	    }
 #endif
 	  }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	  else if( lo == "long long int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<double,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long long int,long long int,DN);
 	    }
 	    else if( go == "int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<double,long long int,int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<double,long long int,long int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<double,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long long int,long long int,DN);
 	    }
 	  }
 #endif
-	} // end scalar == "double"
-#ifdef HAVE_TEUCHOS_QD
-	else if( scalar == "double double" ){
+#endif	// HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+	} // end mag == "double"
+#endif	     
+#if (defined HAVE_TEUCHOS_QD) && !(defined HAVE_AMESOS2_EXPLICIT_INSTANTIATION)
+	if( mag == "double double" ){
+	  typdef std::complex<dd_real> cmplx_dd;
 	  if( lo == "int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<dd_real,int,int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,int,DN);
 	    }
 	    else if( go == "int" ){
-	      success &= do_tpetra_test_with_types<dd_real,int,int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,int,DN);
 	    }
 	    else if( go == "long int" ){
-	      success &= do_tpetra_test_with_types<dd_real,int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,long int,DN);
 	    }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<dd_real,int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,long long int,DN);
 	    }
 #endif
 	  }
 	  else if( lo == "long int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<dd_real,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long int,long int,DN);
 	    }
 	    else if( go == "int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<dd_real,long int,int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long int" ){
-	      success &= do_tpetra_test_with_types<dd_real,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long int,long int,DN);
 	    }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<dd_real,long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long int,long long int,DN);
 	    }
 #endif
 	  }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	  else if( lo == "long long int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<dd_real,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long long int,long long int,DN);
 	    }
 	    else if( go == "int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<dd_real,long long int,int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<dd_real,long long int,long int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<dd_real,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long long int,long long int,DN);
 	    }
 	  }
 #endif
 	} // end scalar == "double double"
-	else if( scalar == "quad" || scalar == "quad double" ){
+	else if( mag == "quad" || mag == "quad double" ){
+	  typdef std::complex<qd_real> cmplx_qd;
 	  if( lo == "int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<qd_real,int,int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,int,DN);
 	    }
 	    else if( go == "int" ){
-	      success &= do_tpetra_test_with_types<qd_real,int,int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,int,DN);
 	    }
 	    else if( go == "long int" ){
-	      success &= do_tpetra_test_with_types<qd_real,int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,long int,DN);
 	    }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<qd_real,int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,long long int,DN);
 	    }
 #endif
 	  }
 	  else if( lo == "long int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<qd_real,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long int,long int,DN);
 	    }
 	    else if( go == "int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<qd_real,long int,int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long int" ){
-	      success &= do_tpetra_test_with_types<qd_real,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long int,long int,DN);
 	    }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<qd_real,long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long int,long long int,DN);
 	    }
 #endif
 	  }
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 	  else if( lo == "long long int" ){
 	    if( go == "default" ){
-	      success &= do_tpetra_test_with_types<qd_real,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long long int,long long int,DN);
 	    }
 	    else if( go == "int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<qd_real,long long int,int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long int" ){
 	      *fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-	      // success &= do_tpetra_test_with_types<qd_real,long long int,long int,DN>(mm_file,solver_name,solve_params_copy);
 	    }
 	    else if( go == "long long int" ){
-	      success &= do_tpetra_test_with_types<qd_real,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
+	      AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long long int,long long int,DN);
 	    }
 	  }
 #endif
 	} // end scalar == "quad double"
 #endif    // HAVE_TEUCHOS_QD
-#ifdef HAVE_TEUCHOS_COMPLEX
-	else if( scalar == "complex" ){
-	  if( mag == "float" ){
-	    typedef std::complex<float> cmplx;
-	    if( lo == "int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx,int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		success &= do_tpetra_test_with_types<cmplx,int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		success &= do_tpetra_test_with_types<cmplx,int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx,int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#endif
-	    }
-	    else if( lo == "long int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx,long int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		success &= do_tpetra_test_with_types<cmplx,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx,long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#endif
-	    }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	    else if( lo == "long long int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx,long long int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx,long long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	    }
-#endif
-	  }
-	  else if( mag == "double" ){
-	    typedef std::complex<double> cmplx_double;
-	    if( lo == "int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx_double,int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		success &= do_tpetra_test_with_types<cmplx_double,int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		success &= do_tpetra_test_with_types<cmplx_double,int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx_double,int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#endif
-	    }
-	    else if( lo == "long int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx_double,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx_double,long int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		success &= do_tpetra_test_with_types<cmplx_double,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx_double,long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#endif
-	    }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	    else if( lo == "long long int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx_double,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx_double,long long int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx_double,long long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx_double,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	    }
-#endif
-	  } // end scalar == "double"
-#ifdef HAVE_TEUCHOS_QD
-	  else if( mag == "double double" ){
-	    typdef std::complex<dd_real> cmplx_dd;
-	    if( lo == "int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx_dd,int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		success &= do_tpetra_test_with_types<cmplx_dd,int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		success &= do_tpetra_test_with_types<cmplx_dd,int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx_dd,int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#endif
-	    }
-	    else if( lo == "long int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx_dd,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx_dd,long int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		success &= do_tpetra_test_with_types<cmplx_dd,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx_dd,long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#endif
-	    }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	    else if( lo == "long long int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx_dd,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx_dd,long long int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx_dd,long long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx_dd,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	    }
-#endif
-	  } // end scalar == "double double"
-	  else if( mag == "quad" || mag == "quad double" ){
-	    typdef std::complex<qd_real> cmplx_qd;
-	    if( lo == "int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx_qd,int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		success &= do_tpetra_test_with_types<cmplx_qd,int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		success &= do_tpetra_test_with_types<cmplx_qd,int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx_qd,int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#endif
-	    }
-	    else if( lo == "long int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx_qd,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx_qd,long int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		success &= do_tpetra_test_with_types<cmplx_qd,long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx_qd,long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-#endif
-	    }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-	    else if( lo == "long long int" ){
-	      if( go == "default" ){
-		success &= do_tpetra_test_with_types<cmplx_qd,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx_qd,long long int,int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long int" ){
-		*fos << "May not have global ordinal with size smaller than local ordinal" << std::endl;
-		// success &= do_tpetra_test_with_types<cmplx_qd,long long int,long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	      else if( go == "long long int" ){
-		success &= do_tpetra_test_with_types<cmplx_qd,long long int,long long int,DN>(mm_file,solver_name,solve_params_copy);
-	      }
-	    }
-#endif
-	  } // end scalar == "quad double"
-#endif    // HAVE_TEUCHOS_QD
-	}
+      } // end if( scalar == "complex" )
 #endif  // HAVE_TEUCHOS_COMPLEX
-      } // else : no default cases for tpetra
-    }
 
-    return( success );
+      if( !test_done && verbosity > 1 ){
+	*fos << "type parameters not recognized or enabled" << std::endl;
+      }
+    } // else there are no runs given; no default cases for tpetra
   }
+
+  return( success );
+}

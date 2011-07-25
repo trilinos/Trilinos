@@ -65,6 +65,10 @@
 // Declarations of SuperLU_DIST types and namespace are found in
 // Superludist_TypeMap.hpp
 
+#define AMESOS2_SLUD_GET_DIAG_SCALE(eq) (((eq)=='N') ? SLUD::NOEQUIL : ((eq)=='R') ? SLUD::ROW : ((eq)=='C') ? SLUD::COL : SLUD::BOTH)
+
+#define AMESOS2_SLUD_GET_EQUED(ds) (((ds)==SLUD::NOEQUIL) ? 'N' : ((ds)==SLUD::ROW) ? 'R' : ((ds)=='C') ? SLUD::COL : SLUD::BOTH)
+
 namespace Amesos2 {
 
   template <class Matrix, class Vector> class Superludist;
@@ -277,9 +281,9 @@ namespace Amesos2 {
 			  double rowcnd, double colcnd, double amax,
 			  SLUD::DiagScale_t* equed)
     {
-      char eq = get_equed(*equed);
+      char eq = AMESOS2_SLUD_GET_EQUED(*equed);
       SLUD::D::pdlaqgs(A, r, c, rowcnd, colcnd, amax, &eq);
-      *equed = get_diag_scale(eq);
+      *equed = AMESOS2_SLUD_GET_DIAG_SCALE(eq);
     }
 
     /**
@@ -298,9 +302,9 @@ namespace Amesos2 {
     static void laqgs(SLUD::SuperMatrix* A, double* r, double* c, 
 		      double rowcnd, double colcnd, double amax, SLUD::DiagScale_t* equed)
     {
-      char eq = get_equed(*equed);
+      char eq = AMESOS2_SLUD_GET_EQUED(*equed);
       SLUD::D::dlaqgs_dist(A, r, c, rowcnd, colcnd, amax, &eq);
-      *equed = get_diag_scale(eq);
+      *equed = AMESOS2_SLUD_GET_DIAG_SCALE(eq);
     }
 
     /*
@@ -481,17 +485,17 @@ namespace Amesos2 {
     static void laqgs_loc(SLUD::SuperMatrix* A, double* r, double* c, 
 			  double rowcnd, double colcnd, double amax, SLUD::DiagScale_t* equed)
     {
-      char eq = get_equed(*equed);
+      char eq = AMESOS2_SLUD_GET_EQUED(*equed);
       SLUD::Z::pzlaqgs(A, r, c, rowcnd, colcnd, amax, &eq);
-      *equed = get_diag_scale(eq);
+      *equed = AMESOS2_SLUD_GET_DIAG_SCALE(eq);
     }
 
     static void laqgs(SLUD::SuperMatrix* A, double* r, double* c, 
 		      double rowcnd, double colcnd, double amax, SLUD::DiagScale_t* equed)
     {
-      char eq = get_equed(*equed);
+      char eq = AMESOS2_SLUD_GET_EQUED(*equed);
       SLUD::Z::zlaqgs_dist(A, r, c, rowcnd, colcnd, amax, &eq);
-      *equed = get_diag_scale(eq);
+      *equed = AMESOS2_SLUD_GET_DIAG_SCALE(eq);
     }
 
     static void distribute(SLUD::fact_t fact, SLUD::int_t n,
@@ -555,41 +559,41 @@ namespace Amesos2 {
 
   /* \endcond SuperLU_DIST_function_specializations */
 
-  SLUD::DiagScale_t get_diag_scale(char eq){
-    switch( eq ){
-    case 'N':
-      return SLUD::NOEQUIL;
-    case 'R':
-      return SLUD::ROW;
-    case 'C':
-      return SLUD::COL;
-    case 'B':
-      return SLUD::BOTH;
-    default:
-      TEST_FOR_EXCEPTION( true,
-			  std::invalid_argument,
-			  "Control should never reach this point. "
-			  "Pleace contact the Amesos2 developers." );
-    }
-  }
+  // SLUD::DiagScale_t get_diag_scale(char eq){
+  //   switch( eq ){
+  //   case 'N':
+  //     return SLUD::NOEQUIL;
+  //   case 'R':
+  //     return SLUD::ROW;
+  //   case 'C':
+  //     return SLUD::COL;
+  //   case 'B':
+  //     return SLUD::BOTH;
+  //   default:
+  //     TEST_FOR_EXCEPTION( true,
+  // 			  std::invalid_argument,
+  // 			  "Control should never reach this point. "
+  // 			  "Pleace contact the Amesos2 developers." );
+  //   }
+  // }
 
-  char get_equed(SLUD::DiagScale_t ds){
-    switch( ds ){
-    case SLUD::NOEQUIL:
-      return 'N';
-    case SLUD::ROW:
-      return 'R';
-    case SLUD::COL:
-      return 'C';
-    case SLUD::BOTH:
-      return 'B';
-    default:
-      TEST_FOR_EXCEPTION( true,
-			  std::invalid_argument,
-			  "Control should never reach this point. "
-			  "Pleace contact the Amesos2 developers." );
-    }
-  }
+  // char get_equed(SLUD::DiagScale_t ds){
+  //   switch( ds ){
+  //   case SLUD::NOEQUIL:
+  //     return 'N';
+  //   case SLUD::ROW:
+  //     return 'R';
+  //   case SLUD::COL:
+  //     return 'C';
+  //   case SLUD::BOTH:
+  //     return 'B';
+  //   default:
+  //     TEST_FOR_EXCEPTION( true,
+  // 			  std::invalid_argument,
+  // 			  "Control should never reach this point. "
+  // 			  "Pleace contact the Amesos2 developers." );
+  //   }
+  // }
 
 } // end namespace Amesos2
 

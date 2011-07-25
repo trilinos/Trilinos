@@ -54,18 +54,6 @@
   <ParameterList name="young1c.mtx">
     <ParameterList name="SuperLU_DIST">
       <ParameterList name="tpetra">
-	<ParameterList name="run0">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <Parameter name="Magnitude" type="string" value="float"/>
-	</ParameterList>
-	<ParameterList name="run0-l">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <Parameter name="Magnitude" type="string" value="float"/>
-	</ParameterList>
 	<ParameterList name="run1">
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>

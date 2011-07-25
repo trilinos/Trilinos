@@ -49,7 +49,7 @@
 
 #include <Tpetra_DefaultPlatform.hpp>
 
-#include "Amesos2_TpetraMultiVecAdapter.hpp"
+#include "Amesos2_MultiVecAdapter.hpp"
 #include "Amesos2_Util.hpp"
 #include "Amesos2_Meta.hpp"
 
@@ -403,15 +403,36 @@ namespace {
    */
 
 #ifdef HAVE_TEUCHOS_COMPLEX
+#  ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)	\
   typedef std::complex<float> ComplexFloat;		\
   UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexFloat)
+#  else
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
+#  endif
+#  ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)	\
   typedef std::complex<double> ComplexDouble;			\
-  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble) 
+  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble)
+#  else
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
+#  endif
 #else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
+#endif
+
+#ifdef HAVE_TPETRA_INST_FLOAT
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )	\
+  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, float )
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )	\
+  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double )
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )
 #endif
 
   // Uncomment this for really fast development cycles but make sure to comment
@@ -425,31 +446,34 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Copy_Map, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVecAdapter, Globalize, SCALAR, LO, GO ) \
   
-#define UNIT_TEST_GROUP_ORDINAL( ORDINAL )		\
+#  define UNIT_TEST_GROUP_ORDINAL( ORDINAL )		\
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
 
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
-  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double)	\
+#ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
+  UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO)		\
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT( LO, GO )
+
   UNIT_TEST_GROUP_ORDINAL(int)
 
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
-  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, float)		\
-  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, double)	\
+#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
+  UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)			\
+  UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)		\
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)		\
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
 
   UNIT_TEST_GROUP_ORDINAL(int)
 
+#  ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
 #    ifdef HAVE_TEUCHOS_LONG_LONG_INT
   typedef long long int LongLongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
 #    endif
+#  endif  // EXPL-INST
 
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 

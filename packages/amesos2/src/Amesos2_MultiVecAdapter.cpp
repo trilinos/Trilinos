@@ -46,16 +46,8 @@
 
 #include "Amesos2_MultiVecAdapter_decl.hpp"
 
-// #ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-// #  include "Amesos2_MultiVecAdapter_def.hpp"
-// #  include "Teuchos_ExplicitInstantiationHelpers.hpp"
-// namespace Amesos2 {
-// /* Need to figure out the explicit instantiation system for Amesos2, since we
-//  * are instantiating not only on the Scalar types, but Matrices and Vectors
-//  */
-
-// // TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES( )
-// }
-// #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#include "Amesos2_MultiVecAdapter_def.hpp"
+#endif
 
 #endif  // AMESOS2_MULTIVECADAPTER_CPP

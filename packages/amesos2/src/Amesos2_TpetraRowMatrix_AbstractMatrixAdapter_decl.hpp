@@ -7,10 +7,11 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 #include "Amesos2_AbstractConcreteMatrixAdapter.hpp"
-#include "Amesos2_MatrixAdapter_decl.hpp"
-#include "Amesos2_Util.cpp"
+#include "Amesos2_Util.hpp"
 
 namespace Amesos2 {
+
+  template <class Matrix> class MatrixAdapter;
 
   using Teuchos::RCP;
 

@@ -54,9 +54,15 @@
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
-#include <Epetra_CrsMatrix.h>
 
-#include "Amesos2_MatrixAdapter.hpp"
+#include <Epetra_CrsMatrix.h>
+#ifdef HAVE_MPI
+#  include <Epetra_MpiComm.h>
+#else
+#  include <Epetra_SerialComm.h>
+#endif
+
+#include "Amesos2_MatrixAdapter_def.hpp"
 #include "Amesos2_Util.hpp"
 
 namespace {

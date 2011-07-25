@@ -54,27 +54,19 @@
 
 */
 
-// TODO: The LUstruct_t and SOLVEstruct_t types need to be put in the
-// TypeMap because their types (or rather, their namespaces and their
-// dependent types) are dependent on whether we are in double or
-// complex<double>.
-
 #ifndef AMESOS2_SUPERLUDIST_TYPEMAP_HPP
 #define AMESOS2_SUPERLUDIST_TYPEMAP_HPP
 
 #include <functional>
 
 #include <Teuchos_as.hpp>
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include <Teuchos_SerializationTraits.hpp>
+#endif
 
 #include "Amesos2_TypeMap.hpp"
 
-#ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-#endif
-
 namespace SLUD {
-
-typedef int int_t;
 
 extern "C" {
 
@@ -207,9 +199,8 @@ class SerializationTraits<Ordinal,SLUD::Z::doublecomplex>
  */
 namespace std {
   // C++-style output functions for Superludist complex types
-  ostream& operator<<(ostream& out, const SLUD::Z::doublecomplex z){
-    return (out << "(" << z.r << "," << z.i << ")");
-  }
+  ostream& operator<<(ostream& out, const SLUD::Z::doublecomplex z);
+  
   //@} End std operators group
 }
 #endif	// HAVE_TEUCHOS_COMPLEX
@@ -227,27 +218,23 @@ template <class, class> class Superludist;
 template <>
 struct TypeMap<Superludist,double>
 {
-  static SLUD::Dtype_t dtype;
+  static const SLUD::Dtype_t dtype = SLUD::SLU_D;
   typedef double type;
   typedef double magnitude_type;
   typedef SLUD::D::LUstruct_t LUstruct_t;
   typedef SLUD::D::SOLVEstruct_t SOLVEstruct_t;
 };
 
-SLUD::Dtype_t TypeMap<Superludist,double>::dtype = SLUD::SLU_D;
-
 #ifdef HAVE_TEUCHOS_COMPLEX
 template <>
 struct TypeMap<Superludist,std::complex<double> >
 {
-  static SLUD::Dtype_t dtype;
+  static const SLUD::Dtype_t dtype = SLUD::SLU_Z;
   typedef SLUD::Z::doublecomplex type;
   typedef double magnitude_type;
   typedef SLUD::Z::LUstruct_t LUstruct_t;
   typedef SLUD::Z::SOLVEstruct_t SOLVEstruct_t;
 };
-
-SLUD::Dtype_t TypeMap<Superludist,std::complex<double> >::dtype = SLUD::SLU_Z;
 
   // It probably won't happen, but what if someone does create a
   // matrix or multivector with the SuperLU_DIST doublecomplex type
@@ -255,48 +242,14 @@ SLUD::Dtype_t TypeMap<Superludist,std::complex<double> >::dtype = SLUD::SLU_Z;
 template <>
 struct TypeMap<Superludist,SLUD::Z::doublecomplex>
 {
-  static SLUD::Dtype_t dtype;
+  static const SLUD::Dtype_t dtype = SLUD::SLU_Z;
   typedef SLUD::Z::doublecomplex type;
   typedef double magnitude_type;
   typedef SLUD::Z::LUstruct_t LUstruct_t;
   typedef SLUD::Z::SOLVEstruct_t SOLVEstruct_t;
 };
 
-SLUD::Dtype_t TypeMap<Superludist,SLUD::Z::doublecomplex>::dtype = SLUD::SLU_Z;
-
 #endif	// HAVE_TEUCHOS_COMPLEX
-
-///////////////////////////////////////////////////////////////////////////////////
-// Remove these specializations if we decide not to do implicit type conversions //
-///////////////////////////////////////////////////////////////////////////////////
-
-  template <>
-  struct TypeMap<Superludist,float>
-  {
-    static SLUD::Dtype_t dtype;
-    typedef double type;
-    typedef double magnitude_type;
-    typedef SLUD::D::LUstruct_t LUstruct_t;
-    typedef SLUD::D::SOLVEstruct_t SOLVEstruct_t;
-  };
-
-  SLUD::Dtype_t TypeMap<Superludist,float>::dtype = SLUD::SLU_D;
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-  template <>
-  struct TypeMap<Superludist,std::complex<float> >
-  {
-    static SLUD::Dtype_t dtype;
-    typedef SLUD::Z::doublecomplex type;
-    typedef double magnitude_type;
-    typedef SLUD::Z::LUstruct_t LUstruct_t;
-    typedef SLUD::Z::SOLVEstruct_t SOLVEstruct_t;
-  };
-
-  SLUD::Dtype_t TypeMap<Superludist,std::complex<float> >::dtype = SLUD::SLU_Z;
-#endif	// HAVE_TEUCHOS_COMPLEX
-
-//////////////////////////////////////////////////////////////////////////////////
 
 /* \endcond Superludist_type_specializations */
 

@@ -57,12 +57,11 @@
 #include <functional>
 
 #include <Teuchos_as.hpp>
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include <Teuchos_SerializationTraits.hpp>
+#endif
 
 #include "Amesos2_TypeMap.hpp"
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-#include <complex>
-#endif
 
 namespace SLUMT {
 
@@ -274,13 +273,10 @@ class SerializationTraits<Ordinal,SLUMT::Z::doublecomplex>
  */
 namespace std {
   // C++-style output functions for Superlumt complex types
-  ostream& operator<<(ostream& out, const SLUMT::C::complex c){
-    return (out << "(" << c.r << "," << c.i << ")");
-  }
+  ostream& operator<<(ostream& out, const SLUMT::C::complex c);
 
-  ostream& operator<<(ostream& out, const SLUMT::Z::doublecomplex z){
-    return (out << "(" << z.r << "," << z.i << ")");
-  }
+  ostream& operator<<(ostream& out, const SLUMT::Z::doublecomplex z);
+  
   //@} End std operators group
 }
 
@@ -303,8 +299,6 @@ struct TypeMap<Superlumt,float>
   typedef float magnitude_type;
 };
 
-SLUMT::Dtype_t TypeMap<Superlumt,float>::dtype = SLUMT::SLU_S;
-
 
 template <>
 struct TypeMap<Superlumt,double>
@@ -314,7 +308,6 @@ struct TypeMap<Superlumt,double>
   typedef double magnitude_type;
 };
 
-SLUMT::Dtype_t TypeMap<Superlumt,double>::dtype = SLUMT::SLU_D;
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 template <>
@@ -325,8 +318,6 @@ struct TypeMap<Superlumt,std::complex<float> >
   typedef float magnitude_type;
 };
 
-SLUMT::Dtype_t TypeMap<Superlumt,std::complex<float> >::dtype = SLUMT::SLU_C;
-
 
 template <>
 struct TypeMap<Superlumt,std::complex<double> >
@@ -335,8 +326,6 @@ struct TypeMap<Superlumt,std::complex<double> >
   typedef SLUMT::Z::doublecomplex type;
   typedef double magnitude_type;
 };
-
-SLUMT::Dtype_t TypeMap<Superlumt,std::complex<double> >::dtype = SLUMT::SLU_Z;
 
 
 template <>
@@ -347,8 +336,6 @@ struct TypeMap<Superlumt,SLUMT::C::complex>
   typedef float magnitude_type;
 };
 
-SLUMT::Dtype_t TypeMap<Superlumt,SLUMT::C::complex>::dtype = SLUMT::SLU_C;
-
 
 template <>
 struct TypeMap<Superlumt,SLUMT::Z::doublecomplex>
@@ -357,8 +344,6 @@ struct TypeMap<Superlumt,SLUMT::Z::doublecomplex>
   typedef SLUMT::Z::doublecomplex type;
   typedef double magnitude_type;
 };
-
-SLUMT::Dtype_t TypeMap<Superlumt,SLUMT::Z::doublecomplex>::dtype = SLUMT::SLU_Z;
 
 #endif	// HAVE_TEUCHOS_COMPLEX
 

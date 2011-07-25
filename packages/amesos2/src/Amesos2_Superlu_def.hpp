@@ -53,6 +53,7 @@
 #ifndef AMESOS2_SUPERLU_DEF_HPP
 #define AMESOS2_SUPERLU_DEF_HPP
 
+#include "Amesos2_SolverCore_def.hpp"
 
 namespace Amesos2 {
 

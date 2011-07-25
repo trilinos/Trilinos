@@ -1,6 +1,10 @@
 #ifndef AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP
 #define AMESOS2_TPETRACRSMATRIX_MATRIXADAPTER_DEF_HPP
 
+#include "Amesos2_TpetraCrsMatrix_MatrixAdapter_decl.hpp"
+#include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_def.hpp"
+#include "Amesos2_MatrixAdapter_def.hpp"
+
 namespace Amesos2 {
 
   template <typename Scalar,
@@ -14,7 +18,7 @@ namespace Amesos2 {
 		      GlobalOrdinal,
 		      Node,
 		      LocalMatOps>
-    >::ConcreteMatrixAdapter(RCP<matrix_t> m) 
+    >::ConcreteMatrixAdapter(Teuchos::RCP<matrix_t> m) 
       : AbstractConcreteMatrixAdapter<Tpetra::RowMatrix<Scalar,
 							LocalOrdinal,
 							GlobalOrdinal,

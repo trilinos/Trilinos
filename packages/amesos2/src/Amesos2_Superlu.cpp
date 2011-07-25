@@ -41,21 +41,30 @@
 //
 // @HEADER
 
-#ifndef AMESOS2_SUPERLU_CPP
-#define AMESOS2_SUPERLU_CPP
-
 #include "Amesos2_Superlu_decl.hpp"
 
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
 #  include "Amesos2_Superlu_def.hpp"
-#  include "Teuchos_ExplicitInstantiationHelpers.hpp"
+#  include "Amesos2_ExplicitInstantiationHelpers.hpp"
+
 namespace Amesos2 {
-/* Need to figure out the explicit instantiation system for Amesos2, since we
- * are instantiating not only on the Scalar types, but Matrices and Vectors
- */
+#ifdef HAVE_AMESOS2_EPETRA
+  AMESOS2_SOLVER_EPETRA_INST(Superlu);
+#endif
 
-// TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES( )
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,float,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,double,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<float>,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,int);
+#endif
 }
-#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
-#endif  // AMESOS2_SUPERLU_CPP
+#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

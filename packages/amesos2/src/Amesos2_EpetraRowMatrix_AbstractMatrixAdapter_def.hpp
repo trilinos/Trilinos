@@ -10,6 +10,8 @@
 #define AMESOS2_EPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP
 
 #include <Epetra_Map.h>
+#include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_decl.hpp"
+
 
 namespace Amesos2 {
 

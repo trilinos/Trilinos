@@ -62,7 +62,6 @@
 
 namespace Amesos2 {
 
-
   /**
    * \brief Amesos2 adapter for the Tpetra::MultiVector class.
    *

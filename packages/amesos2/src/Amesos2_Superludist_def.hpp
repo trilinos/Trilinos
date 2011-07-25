@@ -52,6 +52,10 @@
 #ifndef AMESOS2_SUPERLUDIST_DEF_HPP
 #define AMESOS2_SUPERLUDIST_DEF_HPP
 
+#include <Teuchos_DefaultMpiComm.hpp>
+
+#include "Amesos2_SolverCore_def.hpp"
+#include "Amesos2_Superludist_TypeMap.hpp"
 #include "Amesos2_Util.hpp"
 
 
@@ -148,7 +152,7 @@ namespace Amesos2 {
   template <class Matrix, class Vector>
   Superludist<Matrix,Vector>::~Superludist( )
   {
-    /* Free SuperLU_MT data_types
+    /* Free SuperLU_DIST data_types
      * - Matrices
      * - Vectors
      * - Stat object
@@ -162,16 +166,38 @@ namespace Amesos2 {
       free( data_.fstVtxSep );
     }
 
-    // Storage is initialized in numericFactorization_impl()
-    if ( this->getNumNumericFact() > 0 ){
-      // Cleanup old matrix store memory if it's non-NULL
-      if( data_.A.Store != NULL ){
-	SLUD::Destroy_SuperMatrix_Store_dist( &(data_.A) );
-      }
+    // Cleanup old matrix store memory if it's non-NULL.  Our
+    // Teuchos::Array's will destroy rowind, colptr, and nzval for us
+    if( data_.A.Store != NULL ){
+      SLUD::Destroy_SuperMatrix_Store_dist( &(data_.A) );
+    }
 
-      // Our Teuchos::Array's will destroy rowind, colptr, and nzval for us
+    // LU data is initialized in numericFactorization_impl()
+    if ( this->getNumNumericFact() > 0 ){
       function_map::Destroy_LU(this->globalNumRows_, &(data_.grid), &(data_.lu));
-      function_map::LUstructFree(&(data_.lu));
+    }
+    function_map::LUstructFree(&(data_.lu));
+
+    // If a symbolic factorization is ever performed without a
+    // follow-up numericfactorization, there are some arrays in the
+    // Pslu_freeable struct which will never be free'd by
+    // SuperLU_DIST.
+    if ( this->status_.symbolicFactorizationDone() &&
+	 !this->status_.numericFactorizationDone() ){
+      if ( data_.pslu_freeable.xlsub != NULL ){
+	free( data_.pslu_freeable.xlsub );
+	free( data_.pslu_freeable.lsub );
+      }
+      if ( data_.pslu_freeable.xusub != NULL ){
+	free( data_.pslu_freeable.xusub );
+	free( data_.pslu_freeable.usub );
+      }
+      if ( data_.pslu_freeable.supno_loc != NULL ){
+	free( data_.pslu_freeable.supno_loc );
+	free( data_.pslu_freeable.xsup_beg_loc );
+	free( data_.pslu_freeable.xsup_end_loc );
+      }
+      free( data_.pslu_freeable.globToLoc );
     }
 
     SLUD::PStatFree( &(data_.stat) ) ;
@@ -783,6 +809,8 @@ namespace Amesos2 {
 					     SLUD::SLU_NR_loc,
 					     dtype, SLUD::SLU_GE);
     }
+
+    return true;
   }
 
 

@@ -53,6 +53,12 @@
 #ifndef AMESOS2_SOLVERCORE_DEF_HPP
 #define AMESOS2_SOLVERCORE_DEF_HPP
 
+#include "Amesos2_MatrixAdapter_def.hpp"
+#include "Amesos2_MultiVecAdapter_def.hpp"
+// #include "Amesos2_MultiVecAdapter.hpp"
+
+#include "Amesos2_Util.hpp"
+
 
 namespace Amesos2 {
 

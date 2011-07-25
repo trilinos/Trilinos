@@ -53,6 +53,9 @@
 #ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 #define AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 
+#include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
+
+
 namespace Amesos2 {
 
   using Tpetra::MultiVector;

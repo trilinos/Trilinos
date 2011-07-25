@@ -10,12 +10,14 @@
 
 #include <Tpetra_ConfigDefs.hpp>	// for global_size_t
 
-#include "Amesos2_ConcreteMatrixAdapter.hpp"
+// #include "Amesos2_ConcreteMatrixAdapter_decl.hpp"
 #include "Amesos2_Util.hpp"
 #include "Amesos2_MatrixTraits.hpp"
 
 namespace Amesos2 {
 
+  template <class M> class ConcreteMatrixAdapter;
+  
   /**
    * \brief A Matrix adapter interface for Amesos2.
    *
@@ -312,17 +314,11 @@ namespace Amesos2 {
   // Factory creation method
   template <class Matrix>
   Teuchos::RCP<MatrixAdapter<Matrix> >
-  createMatrixAdapter(Teuchos::RCP<Matrix> m){
-    if(m.is_null()) return Teuchos::null;
-    return( rcp(new ConcreteMatrixAdapter<Matrix>(m)) );
-  }
-
+  createMatrixAdapter(Teuchos::RCP<Matrix> m);
+    
   template <class Matrix>
   Teuchos::RCP<const MatrixAdapter<Matrix> >
-  createConstMatrixAdapter(Teuchos::RCP<const Matrix> m){
-    if(m.is_null()) return Teuchos::null;
-    return( rcp(new ConcreteMatrixAdapter<Matrix>(Teuchos::rcp_const_cast<Matrix,const Matrix>(m))).getConst() );
-  }
+  createConstMatrixAdapter(Teuchos::RCP<const Matrix> m);
 
 } // end namespace Amesos2
 

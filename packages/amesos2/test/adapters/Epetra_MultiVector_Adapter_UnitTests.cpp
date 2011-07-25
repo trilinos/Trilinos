@@ -50,7 +50,17 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
 
+#include <Epetra_MultiVector.h>
+#include <Epetra_Import.h>
+#include <Epetra_Map.h>
+#ifdef HAVE_MPI
+#  include <Epetra_MpiComm.h>
+#else
+#  include <Epetra_SerialComm.h>
+#endif
+
 #include "Amesos2_EpetraMultiVecAdapter.hpp"
+#include "Amesos2_MultiVecAdapter.hpp"
 #include "Amesos2_Util.hpp"
 #include "Amesos2_Meta.hpp"
 
@@ -125,10 +135,10 @@ namespace {
     typedef Epetra_MultiVector MV;
     typedef MultiVecAdapter<MV> ADAPT;
 
-    Epetra_SerialComm comm;
+    const Epetra_Comm* comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 10;
-    Epetra_Map map(-1,numLocal,0,comm);
+    Epetra_Map map(-1, numLocal, 0, *comm);
 
     RCP<MV> mv = rcp(new MV(map,11));
     mv->Random();
@@ -143,6 +153,7 @@ namespace {
     TEST_ASSERT( (is_same<size_t, ADAPT::global_size_t>::value) );
     TEST_ASSERT( (is_same<MV,     ADAPT::multivec_t>::value) );
 
+    delete comm;
   }
 
   TEUCHOS_UNIT_TEST( MultiVecAdapter, Dimensions )

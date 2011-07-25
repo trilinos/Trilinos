@@ -59,9 +59,8 @@
 
 #include "Amesos2_Solver.hpp"
 #include "Amesos2_MatrixTraits.hpp"
-#include "Amesos2_MatrixAdapter.hpp"
-#include "Amesos2_MultiVecAdapter.hpp"
-#include "Amesos2_Util.hpp"
+#include "Amesos2_MatrixAdapter_decl.hpp"
+#include "Amesos2_MultiVecAdapter_decl.hpp"
 #include "Amesos2_TypeDecl.hpp"
 
 #include "Amesos2_Control.hpp"

@@ -28,11 +28,16 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 #include <Epetra_CrsMatrix.h>
+#ifdef HAVE_MPI
+#  include <Epetra_MpiComm.h>
+#else
+#  include <Epetra_SerialComm.h>
+#endif
 
 #include <MatrixMarket_Tpetra.hpp> // reading matrixmarket files for Tpetra
 #include <EpetraExt_CrsMatrixIn.h> // reading matrixmarket files for Epetra
 
-#include "Amesos2_MatrixAdapter.hpp"
+#include "Amesos2_MatrixAdapter_def.hpp"
 #include "Amesos2_Util.hpp"
 
 namespace {
@@ -147,7 +152,7 @@ namespace {
 
     // Create adapters
     RCP<TADAPT> tadapter = Amesos2::createMatrixAdapter<TMAT>( TA );
-    RCP<EADAPT> eadapter = Amesos2::createMatrixAdapter<EMAT>( rcp(EA) );
+    RCP<EADAPT> eadapter = Amesos2::createMatrixAdapter<EMAT>( rcp(EA) ); // this rcp becomes owning
 
     // Check that adapters return the same dimensions and stats
 

@@ -85,8 +85,6 @@ APPEND_SET(HEADERS
   Amesos2.hpp
   Amesos2_Control.hpp
   Amesos2_Factory.hpp
-  Amesos2_Factory_decl.hpp
-  Amesos2_Factory_def.hpp
   Amesos2_FunctionMap.hpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.hpp
   Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_decl.hpp
@@ -99,6 +97,8 @@ APPEND_SET(HEADERS
   Amesos2_MatrixAdapter_def.hpp
   Amesos2_AbstractConcreteMatrixAdapter.hpp
   Amesos2_ConcreteMatrixAdapter.hpp
+  Amesos2_ConcreteMatrixAdapter_decl.hpp
+  Amesos2_ConcreteMatrixAdapter_def.hpp
   Amesos2_MatrixHelper.hpp
   Amesos2_Meta.hpp
   Amesos2_MultiVecAdapter.hpp
@@ -116,8 +116,6 @@ APPEND_SET(HEADERS
   Amesos2_TpetraMultiVecAdapter_def.hpp
   Amesos2_TypeMap.hpp
   Amesos2_Util.hpp
-  Amesos2_Util_decl.hpp
-  Amesos2_Util_def.hpp
   Amesos2_Version.hpp
   )
 
@@ -127,6 +125,7 @@ APPEND_SET(SOURCES
   Amesos2_Control.cpp
   Amesos2_Factory.cpp
   Amesos2_MatrixAdapter.cpp
+  Amesos2_ConcreteMatrixAdapter.cpp
   Amesos2_MultiVecAdapter.cpp
   Amesos2_SolverCore.cpp
   Amesos2_Solver.cpp
@@ -152,6 +151,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
 
   APPEND_SET(SOURCES
     Amesos2_Superlu.cpp
+    Amesos2_Superlu_TypeMap.cpp
     )
 ENDIF()
 
@@ -166,6 +166,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
 
   APPEND_SET(SOURCES
     Amesos2_Superlumt.cpp
+    Amesos2_Superlumt_TypeMap.cpp
     )
 ENDIF()
 
@@ -180,6 +181,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist) # This naming syntax is consistent with 
 
   APPEND_SET(SOURCES
     Amesos2_Superludist.cpp
+#    Amesos2_Superludist_TypeMap.cpp
     )
 ENDIF()
 

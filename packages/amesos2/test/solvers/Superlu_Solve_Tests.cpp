@@ -68,9 +68,6 @@
 #include <MatrixMarket_Tpetra.hpp> // for loading matrices from file
 
 #include "Amesos2.hpp"
-#include "Amesos2_Meta.hpp"
-
-#define DEBUG
 
 namespace {
 
@@ -93,8 +90,6 @@ namespace {
   using Tpetra::CrsMatrix;
   using Tpetra::MultiVector;
   using Tpetra::Map;
-
-  using Amesos2::Meta::is_same;
 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
   typedef Platform::NodeType Node;
@@ -179,7 +174,7 @@ namespace {
   Array<Mag> xhatnorms(numVecs), xnorms(numVecs);                       \
   Xhat->norm2(xhatnorms());                                             \
   X->norm2(xnorms());                                                   \
-  TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
+  TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 )
 
   /**************
    * UNIT TESTS *
@@ -239,14 +234,14 @@ namespace {
   // Integer matrices not yet supported
 #define BCSSTM01_SOLVE(LO, GO, SCALAR)                  \
   // SUPERLU_MATRIX_TEST(bcsstm01, LO, GO, SCALAR)
-
+  
   // This is a rectangular matrix
   //
   //   Throw test that evaluated to true: *A.getMap() != *importer.getSourceMap()
   //   Source Maps don't match.
 #define BEACXC_SOLVE(LO, GO, SCALAR)                    \
   // SUPERLU_MATRIX_TEST(beacxc, LO, GO, SCALAR)
-
+  
 #define GEMAT12_SOLVE(LO, GO, SCALAR)           \
   SUPERLU_MATRIX_TEST(gemat12, LO, GO, SCALAR)
 
@@ -259,14 +254,12 @@ namespace {
   // functioning, so we do just the standard solve
 #define YOUNG1C_SOLVE(LO, GO, COMPLEX)                                  \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Superlu, young1c, LO, GO, COMPLEX)
-  //  SUPERLU_MATRIX_TEST(young1c, LO, GO, COMPLEX)
+
 
 
   /*****************************
    * Instantiations with types *
    *****************************/
-
-  // Note: The tolerances used here much be predeclared above
 
 #define UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, SCALAR) \
   ARC130_SOLVE(LO, GO, SCALAR)                          \
@@ -277,17 +270,44 @@ namespace {
   GEMAT12_SOLVE(LO, GO, SCALAR)                         \
   SHERMAN3_SOLVE(LO, GO, SCALAR)
 
-#define UNIT_TEST_GROUP_ORDINALS_REALS(LO, GO)          \
-  UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, float)        \
+#ifdef HAVE_TPETRA_INST_FLOAT
+#  define UNIT_TEST_GROUP_ORDINALS_FLOAT(LO, GO)	\
+  UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, float)
+#else
+#  define UNIT_TEST_GROUP_ORDINALS_FLOAT(LO, GO)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+#  define UNIT_TEST_GROUP_ORDINALS_DOUBLE(LO, GO)	\
   UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, double)
+#else
+#  define UNIT_TEST_GROUP_ORDINALS_DOUBLE(LO, GO)
+#endif
+  
+#define UNIT_TEST_GROUP_ORDINALS_REALS(LO, GO)          \
+  UNIT_TEST_GROUP_ORDINALS_FLOAT(LO, GO)		\
+  UNIT_TEST_GROUP_ORDINALS_DOUBLE(LO, GO)
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-#  define UNIT_TEST_GROUP_ORDINALS_COMPLEX(LO, GO)      \
-  typedef std::complex<float>  ComplexFloat;		\
-  YOUNG1C_SOLVE(LO, GO, ComplexFloat)			\
-  typedef std::complex<double> ComplexDouble;		\
-  YOUNG1C_SOLVE(LO, GO, ComplexDouble)
+#  ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+#    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
+  typedef std::complex<float> ComplexFloat;		  \
+  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexFloat)
+#  else
+#    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
+#  endif
+#  ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+#    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)	\
+  typedef std::complex<double> ComplexDouble;                   \
+  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble)
+#  else
+#    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
+#  endif
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX(LO, GO)	\
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)		\
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
 #else
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
 #  define UNIT_TEST_GROUP_ORDINALS_COMPLEX(LO, GO)
 #endif
 
@@ -298,11 +318,13 @@ namespace {
   // Entry:
   UNIT_TEST_GROUP_ORDINALS(int, int)
 
+#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINALS(int, LongInt)
-#    ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#  ifdef HAVE_TEUCHOS_LONG_LONG_INT
   typedef long long int LongLongInt;
   UNIT_TEST_GROUP_ORDINALS(int, LongLongInt)
-#    endif
+#  endif
+#endif	// EXPL-INST
 
 } // end anonymous namespace

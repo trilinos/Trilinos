@@ -56,7 +56,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 
-#include "Amesos2_MatrixAdapter.hpp"
+#include "Amesos2_MatrixAdapter_def.hpp"
 #include "Amesos2_Meta.hpp"
 
 namespace {
@@ -87,7 +87,7 @@ namespace {
   using Amesos2::MatrixAdapter;
 
   using Amesos2::Meta::is_same;
-  
+
   using Amesos2::ROOTED;
   using Amesos2::GLOBALLY_REPLICATED;
 
@@ -105,8 +105,8 @@ namespace {
     clp.setOption("filedir",&filedir,"Directory of matrix files.");
     clp.addOutputSetupOptions(true);
     clp.setOption("test-mpi", "test-serial", &testMpi,
-		  "Test Serial by default (for now) or force MPI test.  In a serial build,"
-		  " this option is ignored and a serial comm is always used." );
+                  "Test Serial by default (for now) or force MPI test.  In a serial build,"
+                  " this option is ignored and a serial comm is always used." );
   }
 
   RCP<const Comm<int> > getDefaultComm()
@@ -137,7 +137,7 @@ namespace {
     }
     return(r);
   }
-  
+
   template<typename T>
   bool contains(const ArrayView<T> a, T t)
   {
@@ -187,7 +187,7 @@ namespace {
     TEST_ASSERT( (is_same<Node,typename ADAPT::node_t>::value) );
     TEST_ASSERT( (is_same<global_size_t,typename ADAPT::global_size_t>::value) );
     TEST_ASSERT( (is_same<MAT,typename ADAPT::matrix_t>::value) );
-  
+
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, Dimensions, Scalar, LO, GO )
@@ -238,7 +238,7 @@ namespace {
     RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
 
     /* We will be using the following matrix for this test:
-     * 
+     *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
      *   [ 0,  0,  1,  0,  0,  0 ]
@@ -271,7 +271,7 @@ namespace {
     ///////////////////////////////////////////
     // Check getting a rooted representation //
     ///////////////////////////////////////////
-    
+
     adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED);
 
     if ( rank == 0 ){
@@ -280,18 +280,18 @@ namespace {
       // know that they need to match up with what is expected.
       GO maxRow = map->getMaxAllGlobalIndex();
       for ( GO row = map->getMinAllGlobalIndex(); row <= maxRow; ++row ){
-	global_size_t rp  = rowptr[row];
-	global_size_t nrp = rowptr[row+1];
-	global_size_t row_nnz = nrp - rp;
-	TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
-	TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
-	const RCP<Array<my_pair_t> > expected_pairs
-	  = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
-	const RCP<Array<my_pair_t> > got_pairs
-	  = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
-	for ( global_size_t i = 0; i < row_nnz; ++i ){
-	  TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
-	}
+        global_size_t rp  = rowptr[row];
+        global_size_t nrp = rowptr[row+1];
+        global_size_t row_nnz = nrp - rp;
+        TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
+        TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
+        const RCP<Array<my_pair_t> > expected_pairs
+          = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
+        const RCP<Array<my_pair_t> > got_pairs
+          = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
+        for ( global_size_t i = 0; i < row_nnz; ++i ){
+          TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
+        }
       }
       TEST_COMPARE_ARRAYS(rowptr, rowptr_test);
       TEST_EQUALITY_CONST(nnz, 12);
@@ -312,7 +312,7 @@ namespace {
     }
   }
 
-  
+
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, CRS_Replicated, Scalar, LO, GO )
   {
     /* Test the getCrs() method of MatrixAdapter.  We check against a simple
@@ -331,7 +331,7 @@ namespace {
     RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
 
     /* We will be using the following matrix for this test:
-     * 
+     *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
      *   [ 0,  0,  1,  0,  0,  0 ]
@@ -368,7 +368,7 @@ namespace {
     adapter->getCrs(nzvals,colind,rowptr,nnz,GLOBALLY_REPLICATED);
 
     // All processes check
-    
+
     // getCrs() does not guarantee a permutation of the non-zero
     // values and the column indices in the Arbitrary case, we just
     // know that they need to match up with what is expected.
@@ -380,11 +380,11 @@ namespace {
       TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
       TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
       const RCP<Array<my_pair_t> > expected_pairs
-	= zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
+        = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
       const RCP<Array<my_pair_t> > got_pairs
-	= zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
+        = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
       for ( global_size_t i = 0; i < row_nnz; ++i ){
-	TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
+        TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
       }
     }
     TEST_COMPARE_ARRAYS(rowptr, rowptr_test);
@@ -395,7 +395,7 @@ namespace {
     ///////////////////////////////////////////
 
     adapter->getCrs(nzvals,colind,rowptr,nnz,
-		    GLOBALLY_REPLICATED,Amesos2::SORTED_INDICES);
+                    GLOBALLY_REPLICATED,Amesos2::SORTED_INDICES);
 
     TEST_COMPARE_ARRAYS(nzvals, nzvals_test);
     TEST_COMPARE_ARRAYS(colind, colind_test);
@@ -403,7 +403,7 @@ namespace {
     TEST_EQUALITY_CONST(nnz, 12);
   }
 
-  
+
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, CRS_Map, Scalar, LO, GO )
   {
     /* Test the getCrs() method of MatrixAdapter.  We check against a simple
@@ -422,7 +422,7 @@ namespace {
     RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
 
     /* We will be using the following matrix for this test:
-     * 
+     *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
      *   [ 0,  0,  1,  0,  0,  0 ]
@@ -460,9 +460,9 @@ namespace {
     size_t my_num_rows = OrdinalTraits<size_t>::zero();
     if ( numprocs > 1 ){
       if ( rank < 2 ){
-	my_num_rows = 3;		// total num_rows is 6
+        my_num_rows = 3;                // total num_rows is 6
       }
-    } else {			// We only have 1 proc, then she just takes it all
+    } else {                    // We only have 1 proc, then she just takes it all
       my_num_rows = 6;
     }
     const Map<LO,GO,Node> half_map(6, my_num_rows, 0, comm);
@@ -488,7 +488,7 @@ namespace {
       TEST_EQUALITY_CONST(rowptr[3], 6);
     }
   }
-  
+
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, CCS, Scalar, LO, GO )
   {
@@ -508,7 +508,7 @@ namespace {
     RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
 
     /* We will be using the following matrix for this test:
-     * 
+     *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
      *   [ 0,  0,  1,  0,  0,  0 ]
@@ -565,54 +565,78 @@ namespace {
    */
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)	\
-  typedef std::complex<float> ComplexFloat;		\
+#  ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
+  typedef std::complex<float> ComplexFloat;             \
   UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexFloat)
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)	\
-  typedef std::complex<double> ComplexDouble;			\
-  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble) 
+#  else
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
+#  endif
+#  ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)        \
+  typedef std::complex<double> ComplexDouble;                   \
+  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble)
+#  else
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
+#  endif
 #else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
+#endif
+
+#ifdef HAVE_TPETRA_INST_FLOAT
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )	\
+  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, float )
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )	\
+  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double )
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )
 #endif
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )		\
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, Initialization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, Dimensions, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CRS_Serial, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CRS_Replicated, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CRS_Map, SCALAR, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CCS, SCALAR, LO, GO ) 
-  
-#define UNIT_TEST_GROUP_ORDINAL( ORDINAL )		\
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixAdapter, CCS, SCALAR, LO, GO )
+
+#define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
 
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
-  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double)	\
+#ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
+  UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double)       \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT( LO, GO )
+
   UNIT_TEST_GROUP_ORDINAL(int)
 
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )	\
-  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, float)		\
-  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, double)	\
-  UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)		\
+#  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
+  UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)                 \
+  UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)                \
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)         \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
 
   UNIT_TEST_GROUP_ORDINAL(int)
 
+#  ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
 #    ifdef HAVE_TEUCHOS_LONG_LONG_INT
   typedef long long int LongLongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
 #    endif
+#  endif  // EXPL-INST
 
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 

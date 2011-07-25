@@ -78,6 +78,14 @@
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	</ParameterList>
+	<ParameterList name="run3 - 4 threads">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="run_params">
+	    <Parameter name="nprocs" type="int" value="4"/>
+	  </ParameterList>
+	</ParameterList>
 	<ParameterList name="run4 - 4 threads">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>

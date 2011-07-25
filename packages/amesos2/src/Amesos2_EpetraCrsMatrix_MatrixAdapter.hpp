@@ -45,8 +45,5 @@
 #define AMESOS2_EPETRACRSMATRIX_MATRIXADAPTER_HPP
 
 #include "Amesos2_EpetraCrsMatrix_MatrixAdapter_decl.hpp"
-#ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
-#  include "Amesos2_EpetraCrsMatrix_MatrixAdapter_def.hpp"
-#endif
 
 #endif  // AMESOS2_EPETRACRSMATRIX_MATRIXADAPTER_HPP

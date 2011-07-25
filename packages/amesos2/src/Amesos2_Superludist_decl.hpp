@@ -57,7 +57,6 @@
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_Superludist_FunctionMap.hpp"
 
-
 namespace Amesos2 {
 
 

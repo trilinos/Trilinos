@@ -13,10 +13,14 @@
 
 #include "Amesos2_config.h"
 
-#include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.hpp"
+#include <Epetra_CrsMatrix.h>
+
+#include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_decl.hpp"
 #include "Amesos2_MatrixAdapter_decl.hpp"
 
 namespace Amesos2 {
+
+  // template <class M, class D> class AbstractConcreteMatrixAdapter;
 
   /**
    * \brief MatrixAdapter definitions for Epetra_CrsMatrix objects.

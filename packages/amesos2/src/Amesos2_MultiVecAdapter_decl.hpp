@@ -56,6 +56,11 @@
 #define AMESOS2_MULTIVEC_ADAPTER_DECL_HPP
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Ptr.hpp>
+#include <Teuchos_ArrayView.hpp>
+#include <Tpetra_Map.hpp>
+
+#include "Amesos2_TypeDecl.hpp"
 
 namespace Amesos2 {
 
@@ -179,6 +184,8 @@ namespace Amesos2 {
   template <class MV>
   Teuchos::RCP<MultiVecAdapter<MV> >
   createMultiVecAdapter(Teuchos::RCP<MV> mv){
+    using Teuchos::rcp;
+    
     if(mv.is_null()) return Teuchos::null;
     return( rcp(new MultiVecAdapter<MV>(mv)) );
   }
@@ -186,10 +193,123 @@ namespace Amesos2 {
   template <class MV>
   Teuchos::RCP<const MultiVecAdapter<MV> >
   createConstMultiVecAdapter(Teuchos::RCP<const MV> mv){
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    
     if(mv.is_null()) return Teuchos::null;
     return( rcp(new MultiVecAdapter<MV>(Teuchos::rcp_const_cast<MV,const MV>(mv))).getConst() );
   }
 
+
+  ///////////////////////////////////////////////////////////
+  // Utilities for getting and putting data from MultiVecs //
+  ///////////////////////////////////////////////////////////
+  
+  namespace Util {
+    
+    /*
+     * If the multivector scalar type and the desired scalar tpye are
+     * the same, then we can do a simple straight copy.
+     */
+    template <typename MV>
+    struct same_type_get_copy {
+      static void apply(const Teuchos::Ptr<const MV>& mv,
+			const Teuchos::ArrayView<typename MV::scalar_t>& v,
+			const size_t ldx,
+			Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+    };
+
+    /*
+     * In the case where the scalar type of the multi-vector and the
+     * corresponding S type are different, then we need to first get a
+     * copy of the scalar values, then convert each one into the S
+     * type before inserting into the vals array.
+     */
+    template <typename MV, typename S>
+    struct diff_type_get_copy {
+      static void apply(const Teuchos::Ptr<const MV>& mv,
+			const Teuchos::ArrayView<S>& v,
+			const size_t& ldx,
+			Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+    };
+
+    /** \internal
+     * 
+     * \brief Helper class for getting 1-D copies of multivectors
+     *
+     * Handles datatype conversion when appropriate.
+     */
+    template <class MV, typename S>
+    struct get_1d_copy_helper {
+      static void do_get(const Teuchos::Ptr<const MV>& mv,
+			 const Teuchos::ArrayView<S>& vals,
+			 const size_t ldx,
+			 Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+      
+      static void do_get(const Teuchos::Ptr<const MV>& mv,
+			 const Teuchos::ArrayView<S>& vals,
+			 const size_t ldx,
+			 EDistribution distribution);
+
+      static void do_get(const Teuchos::Ptr<const MV>& mv,
+			 const Teuchos::ArrayView<S>& vals,
+			 const size_t ldx);
+    };
+
+    /*
+     * If the multivector scalar type and the desired scalar tpye are
+     * the same, then we can do a simple straight copy.
+     */
+    template <typename MV>
+    struct same_type_data_put {
+      static void apply(const Teuchos::Ptr<MV>& mv,
+			const Teuchos::ArrayView<typename MV::scalar_t>& data,
+			const size_t ldx,
+			Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+    };
+
+    /*
+     * In the case where the scalar type of the multi-vector and the
+     * corresponding S type are different, then we need to first get a
+     * copy of the scalar values, then convert each one into the S
+     * type before inserting into the vals array.
+     */
+    template <typename MV, typename S>
+    struct diff_type_data_put {
+      static void apply(const Teuchos::Ptr<MV>& mv,
+			const Teuchos::ArrayView<S>& data,
+			const size_t& ldx,
+			Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+    };
+  
+    /** \internal
+     * 
+     * \brief Helper class for putting 1-D data arrays into multivectors
+     *
+     * Handles dataype conversion when necessary before putting the data.
+     */
+    template <class MV, typename S>
+    struct put_1d_data_helper {
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+			 const Teuchos::ArrayView<S>& data,
+			 const size_t ldx,
+			 Teuchos::Ptr<const Tpetra::Map<typename MV::local_ordinal_t, typename MV::global_ordinal_t, typename MV::node_t> > distribution_map );
+      
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+			 const Teuchos::ArrayView<S>& data,
+			 const size_t ldx,
+			 EDistribution distribution);
+
+      static void do_put(const Teuchos::Ptr<MV>& mv,
+			 const Teuchos::ArrayView<S>& data,
+			 const size_t ldx);
+    };
+  }
 } // end namespace Amesos2
+
+#include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
+#ifdef HAVE_AMESOS2_EPETRA
+#  include "Amesos2_EpetraMultiVecAdapter_decl.hpp"
+#endif
 
 #endif  // AMESOS2_MULTIVEC_ADAPTER_DECL_HPP

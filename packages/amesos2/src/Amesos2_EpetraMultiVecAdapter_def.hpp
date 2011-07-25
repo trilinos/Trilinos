@@ -63,6 +63,7 @@
 #include <Epetra_Import.h>
 #include <Epetra_Export.h>
 
+#include "Amesos2_EpetraMultiVecAdapter_decl.hpp"
 #include "Amesos2_Util.hpp"
 
 namespace Amesos2 {
@@ -71,7 +72,7 @@ MultiVecAdapter<Epetra_MultiVector>::MultiVecAdapter(const MultiVecAdapter<multi
   : mv_(adapter.mv_)
   , mv_map_(adapter.mv_map_)
 { }
-  
+
 MultiVecAdapter<Epetra_MultiVector>::MultiVecAdapter(const Teuchos::RCP<multivec_t>& m)
   : mv_(m)
 {

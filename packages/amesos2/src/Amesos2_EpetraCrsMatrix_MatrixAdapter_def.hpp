@@ -4,6 +4,11 @@
 #include <Epetra_LocalMap.h>
 #include <Epetra_Import.h>
 
+#include "Amesos2_EpetraCrsMatrix_MatrixAdapter_decl.hpp"
+#include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_def.hpp"
+#include "Amesos2_MatrixAdapter_def.hpp"
+
+
 namespace Amesos2 {
 
   ConcreteMatrixAdapter<Epetra_CrsMatrix>::ConcreteMatrixAdapter(RCP<Epetra_CrsMatrix> m)

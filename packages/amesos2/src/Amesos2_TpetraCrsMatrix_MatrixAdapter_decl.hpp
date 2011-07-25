@@ -13,7 +13,7 @@
 
 #include "Amesos2_config.h"
 
-#include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter.hpp"
+#include "Amesos2_TpetraRowMatrix_AbstractMatrixAdapter_decl.hpp"
 #include "Amesos2_MatrixAdapter_decl.hpp"
 
 namespace Amesos2 {

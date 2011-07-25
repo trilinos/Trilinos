@@ -54,7 +54,7 @@
 #define AMESOS2_SUPERLUMT_DECL_HPP
 
 #include "Amesos2_SolverTraits.hpp"
-#include "Amesos2_SolverCore.hpp"
+#include "Amesos2_SolverCore_decl.hpp"
 #include "Amesos2_Superlumt_FunctionMap.hpp"
 
 
