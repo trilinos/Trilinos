@@ -81,7 +81,7 @@ public:
   static const char* name;      // declaration. Initialization outside.
 
   typedef Superlu<Matrix,Vector>                                       type;
-  typedef SolverCore<Amesos2::Superlu,Matrix,Vector>              super_type;
+  typedef SolverCore<Amesos2::Superlu,Matrix,Vector>             super_type;
 
   // Since typedef's are not inheritted, go grab them
   typedef typename super_type::scalar_type                      scalar_type;
@@ -97,7 +97,7 @@ public:
    * - the corresponding type to use for magnitude
    */
   typedef typename type_map::type                                  slu_type;
-  typedef typename type_map::magnitude_type magnitude_type;
+  typedef typename type_map::magnitude_type                  magnitude_type;
 
   typedef FunctionMap<Amesos2::Superlu,slu_type>               function_map;
 
@@ -159,9 +159,8 @@ private:
    *
    * \callgraph
    */
-  int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
+  int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
                  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
-  // TODO: B should technically be declared const across the board
 
 
   /**

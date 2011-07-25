@@ -54,6 +54,7 @@
 #define AMESOS2_SUPERLU_DEF_HPP
 
 #include "Amesos2_SolverCore_def.hpp"
+#include "Amesos2_Superlu_decl.hpp"
 
 namespace Amesos2 {
 
@@ -268,7 +269,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 
 template <class Matrix, class Vector>
 int
-Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > X,
+Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
@@ -540,9 +541,6 @@ bool
 Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
   using Teuchos::as;
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::ptrInArg;
 
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);

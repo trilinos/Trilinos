@@ -216,6 +216,8 @@
  * the solver interface classes
  */
 
+//////////////////// Solver Parameters ////////////////////
+
 /**
  * \defgroup amesos2_solver_parameters Supported Solver Parameters
  * \ingroup amesos2_solvers

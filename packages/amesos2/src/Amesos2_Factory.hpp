@@ -42,7 +42,7 @@
 // @HEADER
 
 /**
- * \file   Amesos2_Factory_decl.hpp
+ * \file   Amesos2_Factory.hpp
  * \author Eric Bavier <etbavie@sandia.gov>
  * \date   Tue Jun  7 16:25:16 2011
  *
