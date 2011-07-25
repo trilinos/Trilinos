@@ -55,6 +55,7 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
+#include <MatrixMarket_Tpetra.hpp>
 
 #include "Amesos2_MatrixAdapter_def.hpp"
 #include "Amesos2_Meta.hpp"
@@ -92,12 +93,30 @@ namespace {
   using Amesos2::GLOBALLY_REPLICATED;
 
 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
+  typedef Platform::NodeType Node;
 
   bool testMpi = true;
 
   // Where to look for input files
   string filedir;
+
+  template <typename Scalar>
+  struct test_traits {
+    static const char* test_mat;
+  };
+
+  template <typename Scalar>
+  const char* test_traits<Scalar>::test_mat = "../matrices/amesos2_test_mat0.mtx";
+
+  template <typename Mag>
+  struct test_traits<std::complex<Mag> > {
+    static const char* test_mat;
+  };
+  
+  template <typename Mag>
+  const char* test_traits<std::complex<Mag> >::test_mat = "../matrices/amesos2_test_mat0_complex.mtx";
+
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -229,15 +248,12 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
     typedef std::pair<Scalar,GO> my_pair_t;
-    RCP<const Comm<int> > comm = getDefaultComm();
-    //const size_t numprocs = comm->getSize();
-    const size_t rank     = comm->getRank();
-    // create a Map for our matrix
-    global_size_t nrows = 6;
-    RCP<const Map<LO,GO,Node> > map = createUniformContigMap<LO,GO>(nrows,comm);
-    RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
+    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    RCP<const Comm<int> > comm = platform.getComm();
+    RCP<Node>             node = platform.getNode();
+    const size_t rank          = comm->getRank();
 
-    /* We will be using the following matrix for this test:
+    /* We will be using the following matrix for this test (amesos2_test_mat0[_complex].mtx:
      *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
@@ -246,16 +262,10 @@ namespace {
      *   [ 0,  -1, 0,  0,  4,  0 ]
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
-    // Construct matrix
-    if( rank == 0 ){
-      mat->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<Scalar>(7,-3,-1));
-      mat->insertGlobalValues(1,tuple<GO>(0,1),tuple<Scalar>(2,8));
-      mat->insertGlobalValues(2,tuple<GO>(2),tuple<Scalar>(1));
-      mat->insertGlobalValues(3,tuple<GO>(0,3),tuple<Scalar>(-3,5));
-      mat->insertGlobalValues(4,tuple<GO>(1,4),tuple<Scalar>(-1,4));
-      mat->insertGlobalValues(5,tuple<GO>(3,5),tuple<Scalar>(-2,6));
-    }
-    mat->fillComplete();
+    RCP<MAT> mat =
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
+							comm, node, true, true);
+    RCP<const Map<LO,GO,Node> > map = mat->getRowMap();
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
@@ -322,15 +332,14 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
     typedef std::pair<Scalar,GO> my_pair_t;
-    RCP<const Comm<int> > comm = getDefaultComm();
-    //const size_t numprocs = comm->getSize();
-    const size_t rank     = comm->getRank();
+    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    RCP<const Comm<int> > comm = platform.getComm();
+    RCP<Node>             node = platform.getNode();
     // create a Map for our matrix
     global_size_t nrows = 6;
     RCP<const Map<LO,GO,Node> > map = createUniformContigMap<LO,GO>(nrows,comm);
-    RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
 
-    /* We will be using the following matrix for this test:
+    /* We will be using the following matrix for this test (amesos2_test_mat0[_complex].mtx):
      *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
@@ -339,16 +348,9 @@ namespace {
      *   [ 0,  -1, 0,  0,  4,  0 ]
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
-    // Construct matrix
-    if( rank == 0 ){
-      mat->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<Scalar>(7,-3,-1));
-      mat->insertGlobalValues(1,tuple<GO>(0,1),tuple<Scalar>(2,8));
-      mat->insertGlobalValues(2,tuple<GO>(2),tuple<Scalar>(1));
-      mat->insertGlobalValues(3,tuple<GO>(0,3),tuple<Scalar>(-3,5));
-      mat->insertGlobalValues(4,tuple<GO>(1,4),tuple<Scalar>(-1,4));
-      mat->insertGlobalValues(5,tuple<GO>(3,5),tuple<Scalar>(-2,6));
-    }
-    mat->fillComplete();
+    RCP<MAT> mat =
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
+							comm, node, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
@@ -413,15 +415,16 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
     typedef std::pair<Scalar,GO> my_pair_t;
-    RCP<const Comm<int> > comm = getDefaultComm();
+    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    RCP<const Comm<int> > comm = platform.getComm();
+    RCP<Node>             node = platform.getNode();
     const size_t numprocs = comm->getSize();
     const size_t rank     = comm->getRank();
     // create a Map for our matrix
     global_size_t nrows = 6;
     RCP<const Map<LO,GO,Node> > map = createUniformContigMap<LO,GO>(nrows,comm);
-    RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
 
-    /* We will be using the following matrix for this test:
+    /* We will be using the following matrix for this test (amesos2_test_mat0[_complex].mtx):
      *
      * [ [ 7,  0,  -3, 0,  -1, 0 ]
      *   [ 2,  8,  0,  0,  0,  0 ]
@@ -430,16 +433,9 @@ namespace {
      *   [ 0,  -1, 0,  0,  4,  0 ]
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
-    // Construct matrix
-    if( rank == 0 ){
-      mat->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<Scalar>(7,-3,-1));
-      mat->insertGlobalValues(1,tuple<GO>(0,1),tuple<Scalar>(2,8));
-      mat->insertGlobalValues(2,tuple<GO>(2),tuple<Scalar>(1));
-      mat->insertGlobalValues(3,tuple<GO>(0,3),tuple<Scalar>(-3,5));
-      mat->insertGlobalValues(4,tuple<GO>(1,4),tuple<Scalar>(-1,4));
-      mat->insertGlobalValues(5,tuple<GO>(3,5),tuple<Scalar>(-2,6));
-    }
-    mat->fillComplete();
+    RCP<MAT> mat =
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
+							comm, node, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
@@ -499,13 +495,10 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
 
-    RCP<const Comm<int> > comm = getDefaultComm();
-    //const size_t numprocs = comm->getSize();
-    const size_t rank     = comm->getRank();
-    // create a Map for our matrix
-    global_size_t nrows = 6;
-    RCP<const Map<LO,GO,Node> > map = createUniformContigMap<LO,GO>(nrows,comm);
-    RCP<MAT> mat = rcp( new MAT(map,3) ); // max of three entries in a row
+    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+    RCP<const Comm<int> > comm = platform.getComm();
+    RCP<Node>             node = platform.getNode();
+    const size_t rank          = comm->getRank();
 
     /* We will be using the following matrix for this test:
      *
@@ -516,20 +509,9 @@ namespace {
      *   [ 0,  -1, 0,  0,  4,  0 ]
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
-    // Construct matrix
-    if( rank == 0 ){
-      mat->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<Scalar>(7,-3,-1));
-      mat->insertGlobalValues(1,tuple<GO>(0,1),tuple<Scalar>(2,8));
-      mat->insertGlobalValues(2,tuple<GO>(2),tuple<Scalar>(1));
-      mat->insertGlobalValues(3,tuple<GO>(0,3),tuple<Scalar>(-3,5));
-      mat->insertGlobalValues(4,tuple<GO>(1,4),tuple<Scalar>(-1,4));
-      mat->insertGlobalValues(5,tuple<GO>(3,5),tuple<Scalar>(-2,6));
-    }
-    mat->fillComplete();
-
-    // Print for sanity sake
-    // RCP<FancyOStream> os = getDefaultOStream();
-    // mat->describe(*os,Teuchos::VERB_EXTREME);
+    RCP<MAT> mat =
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
+							comm, node, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 

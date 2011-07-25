@@ -591,7 +591,7 @@ namespace Amesos2 {
     //           Definitions              //
     ////////////////////////////////////////
 
-        template <typename LO, typename GO, typename GS, typename Node>
+    template <typename LO, typename GO, typename GS, typename Node>
     const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
     getDistributionMap(EDistribution distribution,
 		       GS num_global_elements,
@@ -606,11 +606,19 @@ namespace Amesos2 {
 	return Tpetra::createLocalMap<LO,GO>(num_global_elements, comm);
 	break;
       case ROOTED:
-	int rank = Teuchos::rank(*comm);
-	size_t my_num_elems = Teuchos::OrdinalTraits<size_t>::zero();
-	if( rank == 0 ) my_num_elems = num_global_elements;
-	return Tpetra::createContigMap<LO,GO>(num_global_elements,
-					      my_num_elems, comm);
+	{
+	  int rank = Teuchos::rank(*comm);
+	  size_t my_num_elems = Teuchos::OrdinalTraits<size_t>::zero();
+	  if( rank == 0 ) my_num_elems = num_global_elements;
+	  return Tpetra::createContigMap<LO,GO>(num_global_elements,
+						my_num_elems, comm);
+	  break;
+	}
+      default:
+	TEST_FOR_EXCEPTION( true,
+			    std::logic_error,
+			    "Control should never reach this point.  "
+			    "Please contact the Amesos2 developers." );
 	break;
       }
     }
