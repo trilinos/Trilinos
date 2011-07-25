@@ -1,10 +1,10 @@
-#include "Tpetra_MatrixMatrix.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 // #include "Tpetra_ExplicitInstantiationHelpers.hpp"
 
-#include "Tpetra_MatrixMatrix_def.hpp"
+#include "TpetraExt_MatrixMatrix_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)

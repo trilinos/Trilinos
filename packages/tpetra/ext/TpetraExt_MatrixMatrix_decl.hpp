@@ -33,7 +33,7 @@
 #include <Teuchos_Array.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MMHelpers.hpp"
+#include "TpetraExt_MMHelpers.hpp"
 
 /*! \file Tpetra_MatrixMatrix_decl.hpp 
 
@@ -41,13 +41,6 @@
  */
 
 namespace Tpetra {
-
-// CGB: you included the header file above. you don't need a forward declaration.
-// #ifndef DOXYGEN_SHOULD_SKIP_THIS  
-//   // forward declaration
-// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
-// class CrsMatrix;
-// #endif
 
 namespace MatrixMatrix {
 

@@ -1,10 +1,10 @@
-#include "Tpetra_MMHelpers.hpp"
+#include "TpetraExt_MMHelpers.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 // #include "Tpetra_ExplicitInstantiationHelpers.hpp"
 
-#include "Tpetra_MMHelpers_def.hpp"
+#include "TpetraExt_MMHelpers_def.hpp"
 
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)

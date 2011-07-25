@@ -32,7 +32,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MMHelpers_decl.hpp"
+#include "TpetraExt_MMHelpers_decl.hpp"
 
 /*! \file Tpetra_MMHelpers_def.hpp 
 
