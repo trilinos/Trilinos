@@ -3,20 +3,25 @@
 
 namespace panzer {
   
-  void pauseToAttach()
+  void pauseToAttach(MPI_Comm mpicomm)
   {
-    MPI_Comm mpicomm = MPI_COMM_WORLD;
     Teuchos::RCP<Teuchos::Comm<int> > comm = 
       Teuchos::createMpiComm<int>(Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
     Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
     out.setShowProcRank(true);
     out.setOutputToRootOnly(-1);
     
-    //out << "PID = " << getpid();
+    out << "PID = " << getpid() << std::endl;
     if (comm->getRank() == 0)
       getchar();
     comm->barrier();
   }
+
+  inline void pauseToAttach()
+  {
+    pauseToAttach(MPI_COMM_WORLD);
+  }
+
   
 }
 

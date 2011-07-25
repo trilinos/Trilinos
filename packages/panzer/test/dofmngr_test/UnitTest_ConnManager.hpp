@@ -23,8 +23,59 @@ namespace unit_test {
 class ConnCallback { public: virtual void buildConnectivity(const FieldPattern & fp) = 0; };
 
 /** This a dummy connection manager used for testing. It has three element blocks
-  *    "block_0", "block_1", and "block_2"
-  * each with two elements.  Elements in each block reside on different processors.
+  *    "block_0", "block_1", and "block_2".
+  * There are 4 elements in blocks 0 and 1 and two in block 2.
+  * This connection manager works on two processors and currently handles only nodal
+  * field patterns.
+  *
+  * Here is a drawing showing the blocks, double lines distinguishes block boundaries
+    where as single lines denote element boundaries.
+ 
+       +------+------+
+       |      |      |
+       |   BLOCK 2   |
+       |      |      |
+       +======+======+-------+------+
+       |      |      ||      |      |
+       |      |      ||      |      |
+       |      |      ||      |      |
+       +---BLOCK 0---+----BLOCK 1---+
+       |      |      ||      |      |
+       |      |      ||      |      |
+       |      |      ||      |      |
+       +------+------+-------+------+
+
+    This shows element global/local ids, and node global ids
+
+       15-----16----17
+       |      |      |
+       |  8/2 |  9/3 |
+       |      |      |
+       10-----11-----12-----13----14
+       |      |      |      |      |
+       |  4/1 |  5/1 |  6/4 |  7/5 |
+       |      |      |      |      |
+       5------6------7------8------9
+       |      |      |      |      |
+       |  0/0 |  1/0 |  2/2 |  3/3 |
+       |      |      |      |      |
+       0------1------2------3------4
+
+    This shows processor ownership
+
+       +------+------+
+       |      |      |
+       |  P0  |  P0  |
+       |      |      |
+       +------+------+------+------+
+       |      |      |      |      |
+       |  P0  |  P1  |  P0  |  P0  |
+       |      |      |      |      |
+       +------+------+------+------+
+       |      |      |      |      |
+       |  P0  |  P1  |  P1  |  P1  |
+       |      |      |      |      |
+       +------+------+------+------+
   */
 class ConnManager : public virtual panzer::ConnManager<short,int> {
 public:

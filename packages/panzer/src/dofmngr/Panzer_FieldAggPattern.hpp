@@ -162,7 +162,6 @@ protected:
 
    struct LessThan  
    { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
-   // mutable std::map<Teuchos::Tuple<int,3>, std::vector<int>,LessThan> fieldSubcellOffsets_closure_;
    mutable std::map<Teuchos::Tuple<int,3>, std::pair<std::vector<int>,std::vector<int> >,LessThan>
          fieldSubcellOffsets_closure_;
 };

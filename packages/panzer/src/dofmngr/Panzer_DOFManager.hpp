@@ -239,7 +239,7 @@ public:
    /** Is the specified field in the element block? 
      */
    virtual bool fieldInBlock(const std::string & field, const std::string & block) const
-   { return fieldAggPattern_.find(block)->second != Teuchos::null; }
+   { return fieldStringToPattern_.find(std::make_pair(block,field))->second != Teuchos::null; }
 
    /** Get the local element IDs for a paricular element
      * block.
@@ -348,9 +348,8 @@ protected:
    std::size_t blockIdToIndex(const std::string & blockId) const;
 
    //! build the pattern associated with this manager
-   void buildPattern(const std::vector<std::string> & fieldOrder,
-                     const std::string & blockId,
-                     const Teuchos::RCP<const FieldPattern> & geomPattern);
+   bool buildPattern(const std::vector<std::string> & fieldOrder,
+                     const std::string & blockId);
 
    // computes connectivity
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 

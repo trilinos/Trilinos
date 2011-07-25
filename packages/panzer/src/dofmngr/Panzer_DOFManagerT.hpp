@@ -171,6 +171,13 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
    }      
    numFields_ = fieldOrder_.size();
 
+   // initialize blockToField_ vector to have at least empty sets
+   // for each element block
+   std::vector<std::string> elementBlockIds;
+   getElementBlockIds(elementBlockIds);
+   for(std::size_t ebi=0;ebi<elementBlockIds.size();ebi++)
+      blockToField_.insert(std::make_pair(elementBlockIds[ebi],std::set<int>())); 
+
    // associate blocks with particular field ids
    for(std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::const_iterator
        fieldItr=fieldStringToPattern_.begin(); fieldItr!=fieldStringToPattern_.end();++fieldItr) {
@@ -262,28 +269,35 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos
       std::size_t blockIndex = blockIdToIndex(blockId);
 
       // build the pattern
-      buildPattern(fieldOrder,blockId,geomPattern);
+      bool patternBuilt = buildPattern(fieldOrder,blockId);
 
-      // figure out what IDs are active for this pattern
-      const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockId]->numFieldsPerId();
-      std::vector<int> activeIds;
-      for(std::size_t i=0;i<numFieldsPerID.size();i++)
-         if(numFieldsPerID[i]>0) 
-            activeIds.push_back(i);
-      std::vector<int> reduceConn(activeIds.size()); // which IDs to use
+      if(patternBuilt) {
+         // note that condition "patternBuilt==true" implies "fieldAggPattern_[blockId]!=Teuchos::null"
+
+         // figure out what IDs are active for this pattern
+         const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockId]->numFieldsPerId();
+         std::vector<int> activeIds;
+         for(std::size_t i=0;i<numFieldsPerID.size();i++)
+            if(numFieldsPerID[i]>0) 
+               activeIds.push_back(i);
+         std::vector<int> reduceConn(activeIds.size()); // which IDs to use
+      
+         // grab elements for this block
+         const std::vector<LocalOrdinal> & elements = connMngr->getElementBlock(blockId);
    
-      // grab elements for this block
-      const std::vector<LocalOrdinal> & elements = connMngr->getElementBlock(blockId);
-
-      // build graph for this block
-      matrixGraph_->initConnectivityBlock(blockIndex,elements.size(),patternNum_[blockIndex]);
-      for(std::size_t e=0;e<elements.size();e++) {
-         const GlobalOrdinal * conn = connMngr->getConnectivity(elements[e]);
-         for(std::size_t i=0;i<activeIds.size();i++)
-            reduceConn[i] = conn[activeIds[i]];
- 
-         matrixGraph_->initConnectivity(blockIndex,elements[e],&reduceConn[0]);
+         // build graph for this block
+         matrixGraph_->initConnectivityBlock(blockIndex,elements.size(),patternNum_[blockIndex]);
+         for(std::size_t e=0;e<elements.size();e++) {
+            const GlobalOrdinal * conn = connMngr->getConnectivity(elements[e]);
+            for(std::size_t i=0;i<activeIds.size();i++)
+               reduceConn[i] = conn[activeIds[i]];
+    
+            matrixGraph_->initConnectivity(blockIndex,elements[e],&reduceConn[0]);
+         }
       }
+      // else: no fields on this block, don't try to do anything with it.
+      //       basically no field has been added that is associated with this
+      //       element block. This is OK, but we need to correctly ignore it.
    }
    matrixGraph_->initComplete();
 
@@ -338,9 +352,8 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOrderedBlock(const std::vector
 
 // build the pattern associated with this manager
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<std::string> & fieldOrder,
-                                                            const std::string & blockId,
-                                                            const RCP<const FieldPattern> & geomPattern)
+bool DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<std::string> & fieldOrder,
+                                                            const std::string & blockId)
 {
    using Teuchos::rcp;
    using Teuchos::RCP;
@@ -357,6 +370,13 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<st
       blockPatterns.push_back(std::make_pair(*itr,fp));
    }
 
+   std::size_t blockIndex = blockIdToIndex(blockId);
+   if(blockPatterns.size()<=0) {
+      patternNum_[blockIndex] = -1; // this should cause an error
+                                    // if this is accidently visited
+      return false;
+   }
+   
    // smash together all fields...do interlacing
    fieldAggPattern_[blockId] = rcp(new FieldAggPattern(blockPatterns));
 
@@ -371,9 +391,10 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<st
 
    int idsPerElement  = reduceNumFieldsPerID.size();
 
-   std::size_t blockIndex = blockIdToIndex(blockId);
    patternNum_[blockIndex] 
          = matrixGraph_->definePattern(idsPerElement,nodeType_,&reduceNumFieldsPerID[0],&fields[0]);
+
+   return true;
 }
 
 // "Get" functions
