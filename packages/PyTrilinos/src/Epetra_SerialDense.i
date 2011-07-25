@@ -240,6 +240,7 @@ _Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
 // Epetra_SerialDenseOperator support //
 ////////////////////////////////////////
 %rename(SerialDenseOperator) Epetra_SerialDenseOperator;
+%teuchos_rcp(Epetra_SerialDenseOperator)
 %include "Epetra_SerialDenseOperator.h"
 
 //////////////////////////////////////

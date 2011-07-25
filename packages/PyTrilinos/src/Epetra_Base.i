@@ -488,6 +488,7 @@ or it will hang your code."
 // warnings for doing this.  Now I use %include, coupled with a bunch
 // of %ignores, because I want a simple python base class without the
 // C-style LAPACK interface.
+%teuchos_rcp(Epetra_LAPACK)
 %rename(LAPACK) Epetra_LAPACK;
 %ignore Epetra_LAPACK::GECON;
 %ignore Epetra_LAPACK::GEEQU;
