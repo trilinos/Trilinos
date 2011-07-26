@@ -1496,6 +1496,7 @@ namespace stk {
               {
                 std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
                 breaker.doBreak();
+                std::cout << "P[" << eMesh.getRank() << "] done... ipass= " << ipass << std::endl;
                 eMesh.saveAs(output_files_loc+"local_tri_N_3_1_ElementMarker_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 

@@ -330,19 +330,6 @@ namespace stk {
 
       if (0) doPrintSizes();
 
-      //NodeRegistry nr (m_eMesh);
-      //m_nodeRegistry = &nr;
-
-//       if (m_nodeRegistry)
-//         {
-//           delete m_nodeRegistry;
-//         }
-
-//        if (!m_nodeRegistry)
-//          {
-//            m_nodeRegistry = new NodeRegistry (m_eMesh);
-//          }
-
       CommDataType buffer_entry;
 
       stk::mesh::BulkData& bulkData = *m_eMesh.getBulkData();
