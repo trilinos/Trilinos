@@ -313,7 +313,7 @@ namespace stk {
               //SubDimCell_SDSEntityType subDimEntity;
               //getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
 
-              (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+              (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
 
             } // iSubDimOrd
         } // ineed_ent
@@ -611,7 +611,7 @@ namespace stk {
 
                 bool count_only = false;
                 bool doAllElements = false;   // ghost elements only
-                num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
+                num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks,  count_only, doAllElements);
               }
             }
 
@@ -1330,7 +1330,7 @@ namespace stk {
       if (m_doProgress)
         {
           m_doProgress = false;
-          progress_meter_num_total = doForAllElements(rank, function, elementColors, elementType, needed_entity_ranks, true, doAllElements);
+          progress_meter_num_total = doForAllElements(rank, function, elementColors, elementType, needed_entity_ranks,  true, doAllElements);
           m_doProgress = true;
           ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "NodeRegistry passes");
           notifyObservers(&pd);
@@ -1373,7 +1373,6 @@ namespace stk {
 
               if (!only_count && (doAllElements || elementIsGhost))
                 {
-                  //m_nodeRegistry->doForAllSubEntities(function, element, needed_entity_ranks);
                   apply(function, element, needed_entity_ranks);
                 }
 

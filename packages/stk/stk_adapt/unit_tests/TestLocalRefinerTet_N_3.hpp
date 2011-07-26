@@ -21,19 +21,10 @@ namespace stk {
 
     protected:
 
-      // not needed
-#if 0
-      virtual unsigned
-      doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
-                       vector< ColorerSetType >& elementColors, unsigned elementType,
-                       vector<NeededEntityType>& needed_entity_ranks,
-                       bool only_count=false, bool doAllElements=true);
-#endif
-
 
       virtual void 
       apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
-                                              vector<NeededEntityType>& needed_entity_ranks);
+            vector<NeededEntityType>& needed_entity_ranks);
 
 
     };
@@ -120,7 +111,7 @@ namespace stk {
                         )
                       )
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd,  true);
                     }
 
 #endif
@@ -135,7 +126,7 @@ namespace stk {
                           std::cout << "tmp TestLocalRefinerTet_N_3 element.identifier() = " << element.identifier() 
                                     << " edge_mark_bitcode = " << edge_mark_bitcode << "  iSubDimOrd= " << iSubDimOrd << std::endl;
                         }
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd,  true);
                     }
 
                 }

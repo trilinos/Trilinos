@@ -553,7 +553,7 @@ namespace stk {
       /// Register the need for a new node on the sub-dimensional entity @param subDimEntity on element @param element.
       /// If the element is a ghost element, the entity is still registered: the locality/ownership of the new entity
       /// can be determined by the locality of the element (ghost or not).
-      bool registerNeedNewNode(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd)
+      bool registerNeedNewNode(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes)
       {
         static SubDimCell_SDSEntityType subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
@@ -598,7 +598,9 @@ namespace stk {
             // new SubDimCellData SDC_DATA_OWNING_ELEMENT_KEY
             // CHECK
 
-            SubDimCellData data(NodeIdsOnSubDimEntityType(needed_entity_rank.second, 0u), stk::mesh::EntityKey(element.entity_rank(), element.identifier()) );
+            unsigned numNewNodes = needed_entity_rank.second;
+            if (!needNodes) numNewNodes = 0;
+            SubDimCellData data(NodeIdsOnSubDimEntityType(numNewNodes, 0u), stk::mesh::EntityKey(element.entity_rank(), element.identifier()) );
             putInMap(subDimEntity,  data);
 
 
@@ -632,7 +634,7 @@ namespace stk {
       ///   1. counts buffer in prep for sending (just does a pack)
       ///   2. packs the buffer (after buffers are alloc'd)
       ///   3. returns the new node after all communications are done
-      bool checkForRemote(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd)
+      bool checkForRemote(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes_notUsed)
       {
         EXCEPTWATCH;
         static SubDimCellData empty_SubDimCellData;
@@ -758,9 +760,9 @@ namespace stk {
         return true; // FIXME
       }
 
-      bool getFromRemote(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd)
+      bool getFromRemote(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes_notUsed)
       {
-        return checkForRemote(element, needed_entity_rank, iSubDimOrd);
+        return checkForRemote(element, needed_entity_rank, iSubDimOrd, needNodes_notUsed);
       }
 
 
@@ -1556,7 +1558,13 @@ namespace stk {
       ;
 #endif
 
-      typedef bool (NodeRegistry::*ElementFunctionPrototype)( const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd);
+      /// @param needNodes should be true in general; it's used by registerNeedNewNode to generate actual data or not on the subDimEntity
+      ///   For local refinement, subDimEntity's needs are not always known uniquely by the pair {elementId, iSubDimOrd}; for example, in
+      ///   an element-based marking scheme, the shared face between two elements may be viewed differently.  So, we need the ability to
+      ///   override the default behavior of always creating new nodes on the subDimEntity, but still allow the entity to be created in 
+      ///   the NodeRegistry databse.
+
+      typedef bool (NodeRegistry::*ElementFunctionPrototype)( const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes);
 
       /// this is a helper method that loops over all sub-dimensional entities whose rank matches on of those in @param needed_entity_ranks
       ///    and registers that sub-dimensional entity as needing a new node.
@@ -1594,7 +1602,7 @@ namespace stk {
                 /// note: at this level of granularity we can do single edge refinement, hanging nodes, etc.
                 //SubDimCell_SDSEntityType subDimEntity;
                 //getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
-                (this->*function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                (this ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
 
               } // iSubDimOrd
           } // ineed_ent

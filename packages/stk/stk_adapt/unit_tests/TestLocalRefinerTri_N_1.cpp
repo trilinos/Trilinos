@@ -107,7 +107,7 @@ namespace stk {
                   // choose to refine or not 
                   if (random_sequence[ node0.identifier() + node1.identifier() ] < node0.identifier() + node1.identifier())
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                     }
                 }
 

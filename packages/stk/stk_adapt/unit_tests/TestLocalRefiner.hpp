@@ -27,7 +27,7 @@ namespace stk {
 
       virtual void 
       apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
-                                              vector<NeededEntityType>& needed_entity_ranks);
+            vector<NeededEntityType>& needed_entity_ranks);
 
 
     };

@@ -90,7 +90,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
     const stk::mesh::Entity& element_1 = *eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num);
 
     //nodeRegistry.getSubDimEntity(subDimEntity, element_1, entity_rank, iSubDimOrd);
-    nodeRegistry.registerNeedNewNode(element_1, entity_rank, iSubDimOrd);
+    nodeRegistry.registerNeedNewNode(element_1, entity_rank, iSubDimOrd, true);
 
     // must be a ghost on one processor
     int n_check = 0;
@@ -125,7 +125,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, createAddNodes_serial_and_1st_parallel)
 
     const stk::mesh::Entity& element_1 = *eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num);
 
-    nodeRegistry.registerNeedNewNode(element_1, entity_rank, iSubDimOrd);
+    nodeRegistry.registerNeedNewNode(element_1, entity_rank, iSubDimOrd, true);
 
     // must be a ghost on one processor
     if (eMesh.isGhostElement(element_1))

@@ -75,7 +75,7 @@ namespace stk {
                   double * const coord1 = stk::mesh::field_data( *coordField , node1 );
                   if (coord0[0] < 0.49 && coord1[0] < 0.49)
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                     }
                 }
 

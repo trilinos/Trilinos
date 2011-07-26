@@ -185,7 +185,7 @@ namespace stk {
       virtual unsigned
       doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
                        vector< ColorerSetType >& elementColors, unsigned elementType,
-                       vector<NeededEntityType>& needed_entity_ranks,
+                       vector<NeededEntityType>& needed_entity_ranks,  
                        bool only_count=false, bool doAllElements=true) ;
 
       /** Create a list of nodes from the new nodes that can be easily deciphered by the UniformRefinerPattern.

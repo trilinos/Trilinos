@@ -86,7 +86,7 @@ namespace stk {
                         )
                       )
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                     }
 
 #endif
@@ -100,7 +100,7 @@ namespace stk {
                           std::cout << "tmp TestLocalRefinerTet_N_3_1 element.identifier() = " << element.identifier() 
                                     << " edge_mark_bitcode = " << m_edge_mark_bitcode << "  iSubDimOrd= " << iSubDimOrd << std::endl;
                         }
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                     }
 
                 }

@@ -82,7 +82,7 @@ namespace stk {
               // arbitrarily mark the first edge if no edges are marked
               if (num_marked <= 1)
                 {
-                  (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], which_edge_marked );
+                  (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], which_edge_marked, true );
                 }
               
             }
