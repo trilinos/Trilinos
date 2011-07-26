@@ -91,7 +91,7 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
     else if (!strncasecmp(hgp->redm_str, "agg", 3)) { /* == "agg-ipm" */
-      hgp->matching = pmatching_rcb;
+      hgp->matching = pmatching_agg_ipm;
         hgp->match_array_type = 1;
     }
     else if (!strncasecmp(hgp->redm_str, "rcb", 3)) { /* NEANEA */
@@ -2368,7 +2368,6 @@ static int pmatching_rcb (ZZ *zz,
   int replycnt, header_size;
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   KVHash hash;
-  RCB_STRUCT rcb;                            /* NEANEA Main RCB structure */
 	     
   ZOLTAN_GNO_TYPE candidate_gno = 0;         /* gno of current candidate */
                                              /* identical on all procs in hgc->Communicator.*/
@@ -2441,7 +2440,7 @@ static int pmatching_rcb (ZZ *zz,
     }
 
     sprintf(s, "%d", -1);
-    /* Should be DEFAULT value (which we're assuming is -1 here */
+    /* Should be DEFAULT value (which we're assuming is -1 here) */
     if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
       goto End;
@@ -2453,22 +2452,20 @@ static int pmatching_rcb (ZZ *zz,
     }
      
   
-    int *num_import;                  /* Returned */
-    ZOLTAN_ID_PTR *import_global_ids; /* Returned */
-    ZOLTAN_ID_PTR *import_local_ids;  /* Returned */
-    int **import_procs;               /* Returned */
-    int **import_to_part;             /* Returned */
-    int *num_export;                  /* Not computed */
-    ZOLTAN_ID_PTR *export_global_ids; /* Not computed */
-    ZOLTAN_ID_PTR *export_local_ids;  /* Not computed */
-    int **export_procs;               /* Not computed */
-    int **export_to_part;             /* Not computed */
+    int num_import;                  /* Returned */
+    ZOLTAN_ID_PTR import_global_ids; /* Returned */
+    ZOLTAN_ID_PTR import_local_ids;  /* Returned */
+    int *import_procs;               /* Returned */
+    int *import_to_part;             /* Returned */
+    int num_export;                  /* Not computed */
+    ZOLTAN_ID_PTR export_global_ids; /* Not computed */
+    ZOLTAN_ID_PTR export_local_ids;  /* Not computed */
+    int *export_procs;               /* Not computed */
+    int *export_to_part;             /* Not computed */
 
-
-    
-    ierr = Zoltan_RCB(zz2, hgp->part_sizes, num_import, import_global_ids,
-		      import_local_ids, import_procs, import_to_part,
-		      num_export, export_global_ids, export_local_ids,
+    ierr = Zoltan_RCB(zz2, hgp->part_sizes, &num_import, &import_global_ids,
+		      &import_local_ids, &import_procs, &import_to_part,
+		      &num_export, &export_global_ids, &export_local_ids,
 		      export_to_part, export_to_part);
 
 #ifdef BLOCK_ME_NOW
@@ -2745,7 +2742,7 @@ static int rcb_get_num_obj(void *data, int *ierr) {
   *ierr = ZOLTAN_OK;
 
   count = hg->nVtx / hg->comm->nProc_y;
-  diff = hg->nVtx - (hg->comm->nProc_y * count);
+  diff  = hg->nVtx % hg->comm->nProc_y;
   
 /* Use processor ID to select which will take extra processes */
   return hg->comm->myProc_y < diff? count + 1 : count;
@@ -2773,18 +2770,11 @@ static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
   local_obj = rcb_get_num_obj(hg, ierr);
   diff = hg->nVtx % local_obj;
   
-  if(diff == 0) {
+  if((diff == 0) || (hg->comm->myProc_y < diff)) {
     /* If every processor in a coln has the same number of vertices,
        the number of local vertices(local_obj) will evenly divide
        the total number of vertices */
-    for (i = 0; i < local_obj; i++) {
-      global_id[i] = VTX_LNO_TO_GNO(hg, (((hg->comm->myProc_y) * local_obj) + i));
-      local_id[i] = i;
-    }
-  }
-  
-  else if (hg->comm->myProc_y < diff) {
-    /* If the processor has +1 vertex than another in its coln, it will
+    /* Or if the processor has +1 vertex than another in its coln, it will
        have an ID smaller than or equal to those of the other processors in
        the coln, and less than the modulus from dividing the number of total
        vertices by the number of local vertices (as per rcb_get_num_obj) */
@@ -2799,6 +2789,11 @@ static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
        an ID larger than or equal to those of other processors in the coln,
        as well as the modulus from dividing the total number of verticies by
        the number of local vertices */
+    /* Or if the processor is the first processor in the coln with fewer than
+       another (a "cusp"), it will have an ID that's +1 from the closest
+       processor with more vertices than it. The value of its ID will also
+       be equal to the modulus from dividing the number of total vertices by
+       the number of local vertices */
     modifier = hg->comm->myProc_y - diff + 1;
     for (i = 0; i < local_obj; i++) {
       global_id[i] = VTX_LNO_TO_GNO(hg, modifier +
@@ -2807,23 +2802,8 @@ static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
     }
   }
 
-#ifdef HANDLED_BY_MODIFIER
-  else if (hg->comm->myProc_y == diff) {
-    /* If the processor is the first processor in the coln with fewer than
-       another (a "cusp"), it will have an ID that's +1 from the closest
-       processor with more vertices than it. The value of its ID will also
-       be equal to the modulus from dividing the number of total vertices by
-       the number of local vertices */
-        for (i = 0; i < local_obj; i++) {
-      global_id[i] = VTX_LNO_TO_GNO(hg, (((hg->comm->myProc_y) * local_obj) + i));
-      local_id[i] = i;
-    }
-  }
-#endif
   if (wdim > 0)
     memcpy(wgt, hg->vwgt, sizeof(float) * local_obj * wdim);
-
-  printf("HALT! INSPECTION!!");
 }
 
 static int rcb_get_num_geom(void *data, int *ierr) {
@@ -2848,7 +2828,10 @@ static void rcb_get_geom_multi(void *data, int num_obj, int num_gid,
   /* Return coords by GNOs of object list */
   /* NEANEA TODO */
     HGraph *hg;
-
+    int local_obj;
+    ZOLTAN_ID_TYPE glob;
+    int i, j;
+    
   if (data == NULL) {
       *ierr = ZOLTAN_FATAL;
       return;
@@ -2856,6 +2839,15 @@ static void rcb_get_geom_multi(void *data, int num_obj, int num_gid,
 
   hg = ((HGraph*) data);
   *ierr = ZOLTAN_OK;
+
+  local_obj = rcb_get_num_obj(hg, ierr);
+				    
+  for (i = 0; i < local_obj; i++) { 
+    glob = VTX_GNO_TO_LNO(hg, global_id[i]);
+    for (j = 0; j < hg->nDim; j++)
+      coor[i * hg->nDim + j] = hg->coor[glob * hg->nDim + j]; 
+  }
+  printf("STOPS");
 }
 
 #undef MACRO_REALLOC
