@@ -146,7 +146,8 @@ template<class Scalar,
 void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview, 
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C);
+  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  bool onlyCalculateStructure=false);
 
 template<class Scalar,
          class LocalOrdinal, 
