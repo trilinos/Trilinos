@@ -170,7 +170,8 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="SEACAS">
-    <Dependency name="Pamgen" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Pamgen" type="ILO"/>
     <EmailAddresses>
       <Email address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
