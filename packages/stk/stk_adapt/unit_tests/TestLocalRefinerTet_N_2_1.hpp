@@ -17,7 +17,7 @@ namespace stk {
     public:
       TestLocalRefinerTet_N_2_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0, unsigned edge_mark_bitcode=1);
 
-      // ElementUnrefineCollection  buildTestUnrefList();
+      // ElementUnrefineCollection  buildTestUnrefineList();
 
     protected:
 
@@ -32,7 +32,7 @@ namespace stk {
 
 
       virtual void 
-      applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
                                               vector<NeededEntityType>& needed_entity_ranks);
 
 
@@ -48,7 +48,7 @@ namespace stk {
 
 
     void TestLocalRefinerTet_N_2_1::
-    applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
 

@@ -98,7 +98,7 @@ namespace stk {
 
                 if (!only_count && (doAllElements || elementIsGhost))
                   {
-                    applyNodeRegistryFunctionForSubEntities(function, element, needed_entity_ranks);
+                    apply(function, element, needed_entity_ranks);
                   }
                 
                 if (m_doProgress && (num_elem % progress_meter_when_to_post == 0) )
@@ -122,7 +122,7 @@ namespace stk {
     }
 
     void TestLocalRefiner::
-    applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 

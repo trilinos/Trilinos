@@ -219,7 +219,7 @@ namespace stk {
        */
 
       virtual void
-      applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element,
+      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element,
                                               vector<NeededEntityType>& needed_entity_ranks);
 
       /// =========>  Overrides  end
