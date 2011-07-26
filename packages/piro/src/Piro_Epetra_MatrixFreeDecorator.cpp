@@ -117,10 +117,7 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::MatrixFreeDecorator::createOutA
 
   int np = modelOutArgs.Np();
   int ng = modelOutArgs.Ng();
-  int np_sg = modelOutArgs.Np_sg();
-  int ng_sg = modelOutArgs.Ng_sg();
   outArgs.set_Np_Ng(np, ng);
-  outArgs.set_Np_Ng_sg(np_sg, ng_sg);
 
   for (int i=0; i<EME::NUM_E_OUT_ARGS_MEMBERS; i++) {
    const EME::EOutArgsMembers iarg = static_cast<EME::EOutArgsMembers>(i);
@@ -149,11 +146,17 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::MatrixFreeDecorator::createOutA
        outArgs.setSupports(OUT_ARG_DgDp, j, i, modelOutArgs.supports(OUT_ARG_DgDp, j, i));
      }
     
-  for (int i=0; i<np_sg; i++) 
-    for (int j=0; j<ng_sg; j++) 
-     if (!modelOutArgs.supports(OUT_ARG_DgDp_sg, j, i).none()) {
-       outArgs.setSupports(OUT_ARG_DgDp_sg, j, i, modelOutArgs.supports(OUT_ARG_DgDp_sg, j, i));
-     }
+  for (int i=0; i<ng; i++) {
+    outArgs.setSupports(OUT_ARG_g_sg, i, 
+			modelOutArgs.supports(OUT_ARG_g_sg, i));
+    outArgs.setSupports(OUT_ARG_DgDx_sg, i, 
+			modelOutArgs.supports(OUT_ARG_DgDx_sg, i));
+    outArgs.setSupports(OUT_ARG_DgDx_dot_sg, i, 
+			modelOutArgs.supports(OUT_ARG_DgDx_dot_sg, i));
+    for (int j=0; j<np; j++) 
+      outArgs.setSupports(OUT_ARG_DgDp_sg, i, j, 
+			  modelOutArgs.supports(OUT_ARG_DgDp_sg, i, j));
+  }
 
   // Add support for W
   outArgs.setSupports(OUT_ARG_W,true);

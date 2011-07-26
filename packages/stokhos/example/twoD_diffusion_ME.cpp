@@ -335,64 +335,12 @@ get_p_map(int l) const
 
 Teuchos::RCP<const Epetra_Map>
 twoD_diffusion_ME::
-get_p_sg_map(int l) const
-{
-  TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  twoD_diffusion_ME::get_p_sg_map():  " <<
-                     "Invalid parameter index l = " << l << std::endl);
-
-  return p_map;
-}
-
-Teuchos::RCP<const Epetra_Map>
-twoD_diffusion_ME::
-get_p_mp_map(int l) const
-{
-  TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  twoD_diffusion_ME::get_p_mp_map():  " <<
-                     "Invalid parameter index l = " << l << std::endl);
-
-  return p_map;
-}
-
-Teuchos::RCP<const Epetra_Map>
-twoD_diffusion_ME::
 get_g_map(int l) const
 {
   TEST_FOR_EXCEPTION(l != 0, 
 		     std::logic_error,
                      std::endl << 
                      "Error!  twoD_diffusion_ME::get_g_map():  " <<
-                     "Invalid parameter index l = " << l << std::endl);
-
-  return g_map;
-}
-
-Teuchos::RCP<const Epetra_Map>
-twoD_diffusion_ME::
-get_g_sg_map(int l) const
-{
-  TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  twoD_diffusion_ME::get_g_sg_map():  " <<
-                     "Invalid parameter index l = " << l << std::endl);
-
-  return g_map;
-}
-
-Teuchos::RCP<const Epetra_Map>
-twoD_diffusion_ME::
-get_g_mp_map(int l) const
-{
-  TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  twoD_diffusion_ME::get_g_mp_map():  " <<
                      "Invalid parameter index l = " << l << std::endl);
 
   return g_map;
@@ -406,32 +354,6 @@ get_p_names(int l) const
 		     std::logic_error,
                      std::endl << 
                      "Error!  twoD_diffusion_ME::get_p_names():  " <<
-                     "Invalid parameter index l = " << l << std::endl);
-
-  return p_names;
-}
-
-Teuchos::RCP<const Teuchos::Array<std::string> >
-twoD_diffusion_ME::
-get_p_sg_names(int l) const
-{
-  TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  twoD_diffusion_ME::get_p_sg_names():  " <<
-                     "Invalid parameter index l = " << l << std::endl);
-
-  return p_names;
-}
-
-Teuchos::RCP<const Teuchos::Array<std::string> >
-twoD_diffusion_ME::
-get_p_mp_names(int l) const
-{
-  TEST_FOR_EXCEPTION(l != 0, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  twoD_diffusion_ME::get_p_mp_names():  " <<
                      "Invalid parameter index l = " << l << std::endl);
 
   return p_names;
@@ -494,14 +416,14 @@ createInArgs() const
 
   // Stochastic InArgs
   inArgs.setSupports(IN_ARG_x_sg,true);
-  inArgs.set_Np_sg(1); // 1 SG parameter vector
+  inArgs.setSupports(IN_ARG_p_sg, 0, true); // 1 SG parameter vector
   inArgs.setSupports(IN_ARG_sg_basis,true);
   inArgs.setSupports(IN_ARG_sg_quadrature,true);
   inArgs.setSupports(IN_ARG_sg_expansion,true);
 
   // Multipoint InArgs
   inArgs.setSupports(IN_ARG_x_mp,true);
-  inArgs.set_Np_mp(1); // 1 SG parameter vector
+ inArgs.setSupports(IN_ARG_p_mp, 0, true); // 1 MP parameter vector
   
   return inArgs;
 }
@@ -521,14 +443,14 @@ createOutArgs() const
     outArgs.setSupports(OUT_ARG_WPrec,true);
   
   // Stochastic OutArgs
-  outArgs.set_Np_Ng_sg(1, 1);
   outArgs.setSupports(OUT_ARG_f_sg,true);
   outArgs.setSupports(OUT_ARG_W_sg,true);
+  outArgs.setSupports(OUT_ARG_g_sg, 0, true);
 
   // Multipoint OutArgs
-  outArgs.set_Np_Ng_mp(1, 1);
   outArgs.setSupports(OUT_ARG_f_mp,true);
   outArgs.setSupports(OUT_ARG_W_mp,true);
+  outArgs.setSupports(OUT_ARG_g_mp, 0, true);
 
   return outArgs;
 }

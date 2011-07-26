@@ -55,7 +55,7 @@ namespace Stokhos {
      * coefficient is generated from the supplied coefficient map \c coeff_map
      */
     ProductEpetraOperator(
-      const Teuchos::RCP<const Epetra_Map>& block_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map,
       const Teuchos::RCP<const Epetra_Map>& domain_base_map,
       const Teuchos::RCP<const Epetra_Map>& range_base_map,
       const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm);
@@ -68,7 +68,7 @@ namespace Stokhos {
      * This version supplies the generated product map \c product_map
      */
     ProductEpetraOperator(
-      const Teuchos::RCP<const Epetra_Map>& block_map,
+      const Teuchos::RCP<const Epetra_BlockMap>& block_map,
       const Teuchos::RCP<const Epetra_Map>& domain_base_map,
       const Teuchos::RCP<const Epetra_Map>& range_base_map,
       const Teuchos::RCP<const Epetra_Map>& range_product_map,

@@ -139,7 +139,7 @@ setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
   Teuchos::RCP<Teuchos::ParameterList> sgSolverParams = 
     Teuchos::rcp(&(sgParams.sublist("SG Solver Parameters")),false);
   Teuchos::ParameterList& sg_basisParams = sgParams.sublist("Basis");
-  int numParameters = sg_basisParams.get("Dimension", numParameters);
+  int dim = sg_basisParams.get<int>("Dimension");
 
   // Set up stochastic Galerkin model
   Teuchos::RCP<EpetraExt::ModelEvaluator> sg_model;
@@ -223,25 +223,18 @@ setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
       Piro::Epetra::Factory::createSolver(piroParams, mp_nonlinear_model);
 
     // Create MP inverse model evaluator to map p_mp -> g_mp
-    Teuchos::Array<int> non_mp_inverse_p_index = 
-      mp_nonlinear_model->get_non_p_mp_indices();
-    Teuchos::Array<int> mp_inverse_p_index = 
-      mp_nonlinear_model->get_p_mp_indices();
-    Teuchos::Array<int> non_mp_inverse_g_index = 
-      mp_nonlinear_model->get_non_g_mp_indices();
-    Teuchos::Array<int> mp_inverse_g_index = 
-      mp_nonlinear_model->get_g_mp_indices();
-    Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_p_maps = 
-      mp_nonlinear_model->get_p_mp_base_maps();
+    Teuchos::Array<int> mp_p_index_map = 
+      mp_nonlinear_model->get_p_mp_map_indices();
+    Teuchos::Array<int> mp_g_index_map = 
+      mp_nonlinear_model->get_g_mp_map_indices();
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_g_maps = 
       mp_nonlinear_model->get_g_mp_base_maps();
+    mp_g_index_map.push_back(base_g_maps.size());
+    base_g_maps.push_back(model->get_x_map());
     Teuchos::RCP<EpetraExt::ModelEvaluator> mp_inverse_solver =
       Teuchos::rcp(new Stokhos::MPInverseModelEvaluator(mp_solver,
-							mp_inverse_p_index, 
-							non_mp_inverse_p_index,
-							mp_inverse_g_index, 
-							non_mp_inverse_g_index,
-							base_p_maps, 
+							mp_p_index_map,
+							mp_g_index_map,
 							base_g_maps));
 
     // Create MP-based SG Quadrature model evaluator to calculate g_sg
@@ -268,40 +261,45 @@ setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
 					       sgSolverParams));
 
   // Set up stochastic parameters
-  Epetra_LocalMap p_sg_map(numParameters, 0, *sg_comm);
-  int sg_p_index;
-  if (sg_method == SG_AD || sg_method == SG_MPNI) {
-    sg_p_index = 0;
-  }
-  else {
-    // When SGQuadModelEvaluator is used, there are 2 SG parameter vectors
-    sg_p_index = 1;
-  }
-  Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p =
-    sg_nonlin_model->create_p_sg(sg_p_index);
-  Teuchos::ParameterList& basisParams = sgParams.sublist("Basis");
-  for (int i=0; i<numParameters; i++) {
-    std::ostringstream ss;
-    ss << "Basis " << i;
-    Teuchos::ParameterList& bp = basisParams.sublist(ss.str());
-    Teuchos::Array<double> initial_p_vals;
-    initial_p_vals = bp.get("Initial Expansion Coefficients",initial_p_vals);
-    if (initial_p_vals.size() == 0) {
-      sg_p->term(i,0)[i] = 0.0;
-      sg_p->term(i,1)[i] = 1.0;  // Set order 1 coeff to 1 for this RV
-    }
-    else
-      for (Teuchos::Array<double>::size_type j = 0; j<initial_p_vals.size(); j++)
-	(*sg_p)[j][i] = initial_p_vals[j];
-  }
-  sg_nonlin_model->set_p_sg_init(sg_p_index, *sg_p);
+  // One sublist for each stochastic parameter *vector*, and each parameter
+  // vector can provide an initial set of expansion coefficients in the basis.
+  // This decouples the stochastic parameters from the SG basis allowing e.g.,
+  // more stochastic parameters than fundamental r.v.'s in the basis
+  // (for correlation) or fewer.
+  Teuchos::ParameterList& sgParameters = sgParams.sublist("SG Parameters");
+  int num_param_vectors = sgParameters.get("Number of SG Parameter Vectors", 1);
+  for (int i=0; i<num_param_vectors; i++) {
+    std::stringstream ss;
+    ss << "SG Parameter Vector " << i;
+    Teuchos::ParameterList& pList = sgParameters.sublist(ss.str());
+    int p_vec = pList.get("Parameter Vector Index", 0);
+    
+    // Create sg parameter vector
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p =
+      sg_nonlin_model->create_p_sg(p_vec);
 
-  // Set other sg parameter vector when using quadrature
-  if (sg_method != SG_AD && sg_method != SG_MPNI) {
-    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p0 =
-    sg_nonlin_model->create_p_sg(0);
-    (*sg_p0)[0] = *(model->get_p_init(0));
-    sg_nonlin_model->set_p_sg_init(0, *sg_p0);
+    // Initalize sg parameter vector
+    int num_params = sg_p->coefficientMap()->NumMyElements();
+    for (int j=0; j<num_params; j++) {
+      std::stringstream ss2;
+      ss2 << "Parameter " << j << " Initial Expansion Coefficients";
+      Teuchos::Array<double> initial_p_vals;
+      initial_p_vals = pList.get(ss2.str(),initial_p_vals);
+      if (initial_p_vals.size() == 0 && dim == num_params) {
+	// Default to mean-zero linear expansion, ie, p_i = \xi_i
+	// This only makes sense if the stochastic dimension is equal to the
+	// number of parameters
+	sg_p->term(j,0)[j] = 0.0;
+	sg_p->term(j,1)[j] = 1.0;  // Set order 1 coeff to 1 for this RV
+      }
+      else
+	for (Teuchos::Array<double>::size_type l=0; l<initial_p_vals.size(); 
+	     l++)
+	  (*sg_p)[l][j] = initial_p_vals[l];
+    }
+
+    // Set sg parameter vector
+    sg_nonlin_model->set_p_sg_init(p_vec, *sg_p);
   }
 
   // Setup stochastic initial guess
@@ -414,28 +412,20 @@ setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
     sg_block_solver = sg_nonlin_model;
 
   // Create SG Inverse model evaluator
-  Teuchos::Array<int> non_sg_inverse_p_index = 
-    sg_nonlin_model->get_non_p_sg_indices();
-  Teuchos::Array<int> sg_inverse_p_index = sg_nonlin_model->get_p_sg_indices();
-  Teuchos::Array<int> non_sg_inverse_g_index = 
-    sg_nonlin_model->get_non_g_sg_indices();
-  Teuchos::Array<int> sg_inverse_g_index = sg_nonlin_model->get_g_sg_indices();
-  Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_p_maps = 
-    sg_nonlin_model->get_p_sg_base_maps();
+  Teuchos::Array<int> sg_p_index_map = sg_nonlin_model->get_p_sg_map_indices();
+  Teuchos::Array<int> sg_g_index_map = sg_nonlin_model->get_g_sg_map_indices();
   Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_g_maps = 
     sg_nonlin_model->get_g_sg_base_maps();
   // Add sg_u response function supplied by Piro::Epetra::NOXSolver
-  if (sg_method != SG_NI && sg_method != SG_MPNI && piroParams->get("Solver Type", "NOX") == "NOX") {
-    sg_inverse_g_index.push_back(sg_inverse_g_index[sg_inverse_g_index.size()-1]+1);
+  if (sg_method != SG_NI && sg_method != SG_MPNI && 
+      piroParams->get("Solver Type", "NOX") == "NOX") {
+    sg_g_index_map.push_back(base_g_maps.size());
     base_g_maps.push_back(model->get_x_map());
   }
   sg_solver = 
     Teuchos::rcp(new Stokhos::SGInverseModelEvaluator(sg_block_solver, 
-						      sg_inverse_p_index, 
-						      non_sg_inverse_p_index, 
-						      sg_inverse_g_index, 
-						      non_sg_inverse_g_index, 
-						      base_p_maps, 
+						      sg_p_index_map,
+						      sg_g_index_map,
 						      base_g_maps));
 }
 
@@ -465,21 +455,9 @@ Piro::Epetra::StokhosSolver::get_p_map(int l) const
 }
 
 Teuchos::RCP<const Epetra_Map> 
-Piro::Epetra::StokhosSolver::get_p_sg_map(int l) const
-{
-  return sg_solver->get_p_sg_map(l);
-}
-
-Teuchos::RCP<const Epetra_Map> 
 Piro::Epetra::StokhosSolver::get_g_map(int j) const
 {
   return sg_solver->get_g_map(j);
-}
-
-Teuchos::RCP<const Epetra_Map> 
-Piro::Epetra::StokhosSolver::get_g_sg_map(int j) const
-{
-  return sg_solver->get_g_sg_map(j);
 }
 
 Teuchos::RCP<const Epetra_Vector> 
@@ -492,12 +470,6 @@ Teuchos::RCP<const Epetra_Vector>
 Piro::Epetra::StokhosSolver::get_p_init(int l) const
 {
   return sg_solver->get_p_init(l);
-}
-
-Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>
-Piro::Epetra::StokhosSolver::get_p_sg_init(int l) const
-{
-  return sg_nonlin_model->get_p_sg_init(l);
 }
 
 EpetraExt::ModelEvaluator::InArgs 

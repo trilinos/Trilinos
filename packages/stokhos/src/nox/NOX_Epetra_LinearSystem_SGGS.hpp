@@ -167,7 +167,7 @@ namespace NOX {
       mutable Teuchos::RCP<Stokhos::SGOperator> sg_op;
       
       //! Pointer to the PCE expansion of Jacobian.
-      mutable Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
+      mutable Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly > sg_poly;
       
       //! Stores base map
       Teuchos::RCP<const Epetra_Map> base_map;

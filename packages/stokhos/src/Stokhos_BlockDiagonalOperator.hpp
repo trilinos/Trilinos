@@ -32,8 +32,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Operator.h"
 #include "EpetraExt_MultiComm.h"
-#include "Stokhos_ProductContainer.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_ProductEpetraOperator.hpp"
 
 namespace Stokhos {
     
@@ -62,14 +61,14 @@ namespace Stokhos {
 
     //! Setup operator
     virtual void setupOperator(
-      const Teuchos::RCP<Stokhos::ProductContainer<Epetra_Operator> >& ops);
+      const Teuchos::RCP<Stokhos::ProductEpetraOperator >& ops);
 
     //! Get multi-point ops
-    virtual Teuchos::RCP< Stokhos::ProductContainer<Epetra_Operator> > 
+    virtual Teuchos::RCP< Stokhos::ProductEpetraOperator > 
     getMPOps();
 
     //! Get multi-point ops
-    virtual Teuchos::RCP<const Stokhos::ProductContainer<Epetra_Operator> > 
+    virtual Teuchos::RCP<const Stokhos::ProductEpetraOperator > 
     getMPOps() const;
 
     //@}
@@ -161,7 +160,7 @@ namespace Stokhos {
     Teuchos::RCP<const Epetra_Map> range_mp_map;
 
     //! Stores operators
-    Teuchos::RCP<Stokhos::ProductContainer<Epetra_Operator> > block_ops;
+    Teuchos::RCP<Stokhos::ProductEpetraOperator > block_ops;
 
     //! Whether to use transpose
     bool useTranspose;

@@ -57,6 +57,17 @@ bool ModelEvaluator::InArgs::supports(EInArgsMembers arg) const
   return supports_[arg];
 }
 
+bool ModelEvaluator::InArgs::supports(EInArgs_p_sg arg, int l) const
+{
+  assert_l(l);
+  return supports_p_sg_[l];
+}
+
+bool ModelEvaluator::InArgs::supports(EInArgs_p_mp arg, int l) const
+{
+  assert_l(l);
+  return supports_p_mp_[l];
+}
 
 void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
 {
@@ -67,6 +78,18 @@ void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
   supports_[arg] = supports;
 }
 
+void ModelEvaluator::InArgs::_setSupports(EInArgs_p_sg arg, int l, bool supports)
+{
+  assert_l(l);
+  supports_p_sg_[l] = supports;
+}
+
+void ModelEvaluator::InArgs::_setSupports(EInArgs_p_mp arg, int l, bool supports)
+{
+  assert_l(l);
+  supports_p_mp_[l] = supports;
+}
+
 
 void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
 {
@@ -74,6 +97,28 @@ void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
     !supports_[arg], std::logic_error
     ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(arg): model = \'"<<modelEvalDescription_<<"\': Error, "
     "The argument arg = " << toString(arg) << " is not supported!"
+    );
+}
+
+void ModelEvaluator::InArgs::assert_supports(EInArgs_p_sg arg, int l) const
+{
+  assert_l(l);
+  TEST_FOR_EXCEPTION(
+    !supports_p_sg_[l], std::logic_error
+    ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(IN_ARG_p_sg,l): "
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument p_sg(l) with index l = " << l << " is not supported!"
+    );
+}
+
+void ModelEvaluator::InArgs::assert_supports(EInArgs_p_mp arg, int l) const
+{
+  assert_l(l);
+  TEST_FOR_EXCEPTION(
+    !supports_p_mp_[l], std::logic_error
+    ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(IN_ARG_p_mp,l): "
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument p_mp(l) with index l = " << l << " is not supported!"
     );
 }
 
@@ -143,10 +188,16 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDp arg, int j, int l) const
   return supports_DgDp_[ j*Np() + l ];
 }
 
+bool ModelEvaluator::OutArgs::supports(EOutArgs_g_sg arg, int j) const
+{
+  assert_j(j);
+  return supports_g_sg_[j];
+}
+
 const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDfDp_sg arg, int l) const
 {
-  assert_l_sg(l);
+  assert_l(l);
   return supports_DfDp_sg_[l];
 }
 
@@ -154,7 +205,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDfDp_sg arg, int l) const
 const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_sg arg, int j) const
 {
-  assert_j_sg(j);
+  assert_j(j);
   return supports_DgDx_dot_sg_[j];
 }
 
@@ -162,23 +213,28 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_sg arg, int j) const
 const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDgDx_sg arg, int j) const
 {
-  assert_j_sg(j);
+  assert_j(j);
   return supports_DgDx_sg_[j];
 }
 
 const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDgDp_sg arg, int j, int l) const
 {
-  assert_j_sg(j);
-  assert_l_sg(l);
-  return supports_DgDp_sg_[ j*Np_sg() + l ];
+  assert_j(j);
+  assert_l(l);
+  return supports_DgDp_sg_[ j*Np() + l ];
 }
 
+bool ModelEvaluator::OutArgs::supports(EOutArgs_g_mp arg, int j) const
+{
+  assert_j(j);
+  return supports_g_mp_[j];
+}
 
 const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDfDp_mp arg, int l) const
 {
-  assert_l_mp(l);
+  assert_l(l);
   return supports_DfDp_mp_[l];
 }
 
@@ -186,7 +242,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDfDp_mp arg, int l) const
 const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_mp arg, int j) const
 {
-  assert_j_mp(j);
+  assert_j(j);
   return supports_DgDx_dot_mp_[j];
 }
 
@@ -194,16 +250,16 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_mp arg, int j) const
 const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDgDx_mp arg, int j) const
 {
-  assert_j_mp(j);
+  assert_j(j);
   return supports_DgDx_mp_[j];
 }
 
 const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDgDp_mp arg, int j, int l) const
 {
-  assert_j_mp(j);
-  assert_l_mp(l);
-  return supports_DgDp_mp_[ j*Np_mp() + l ];
+  assert_j(j);
+  assert_l(l);
+  return supports_DgDp_mp_[ j*Np() + l ];
 }
 
 
@@ -253,6 +309,18 @@ void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
     std::fill_n(DfDp_.begin(),Np,Derivative());
     DfDp_properties_.resize(Np);
     std::fill_n(DfDp_properties_.begin(),Np,DerivativeProperties());
+
+    supports_DfDp_sg_.resize(Np);
+    DfDp_sg_.resize(Np);
+    std::fill_n(DfDp_sg_.begin(),Np,SGDerivative());
+    DfDp_sg_properties_.resize(Np);
+    std::fill_n(DfDp_sg_properties_.begin(),Np,DerivativeProperties());
+
+    supports_DfDp_mp_.resize(Np);
+    DfDp_mp_.resize(Np);
+    std::fill_n(DfDp_mp_.begin(),Np,MPDerivative());
+    DfDp_mp_properties_.resize(Np);
+    std::fill_n(DfDp_mp_properties_.begin(),Np,DerivativeProperties());
   }
   if(Ng) {
     g_.resize(Ng);
@@ -266,6 +334,32 @@ void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
     std::fill_n(DgDx_.begin(),Ng,Derivative());
     DgDx_properties_.resize(Ng);
     std::fill_n(DgDx_properties_.begin(),Ng,DerivativeProperties());
+
+    g_sg_.resize(Ng);
+    supports_g_sg_.resize(Ng);
+    supports_DgDx_dot_sg_.resize(Ng);
+    DgDx_dot_sg_.resize(Ng);
+    std::fill_n(DgDx_dot_sg_.begin(),Ng,SGDerivative());
+    DgDx_dot_sg_properties_.resize(Ng);
+    std::fill_n(DgDx_dot_sg_properties_.begin(),Ng,DerivativeProperties());
+    supports_DgDx_sg_.resize(Ng);
+    DgDx_sg_.resize(Ng);
+    std::fill_n(DgDx_sg_.begin(),Ng,SGDerivative());
+    DgDx_sg_properties_.resize(Ng);
+    std::fill_n(DgDx_sg_properties_.begin(),Ng,DerivativeProperties());
+
+    g_mp_.resize(Ng);
+    supports_g_mp_.resize(Ng);
+    supports_DgDx_dot_mp_.resize(Ng);
+    DgDx_dot_mp_.resize(Ng);
+    std::fill_n(DgDx_dot_mp_.begin(),Ng,MPDerivative());
+    DgDx_dot_mp_properties_.resize(Ng);
+    std::fill_n(DgDx_dot_mp_properties_.begin(),Ng,DerivativeProperties());
+    supports_DgDx_mp_.resize(Ng);
+    DgDx_mp_.resize(Ng);
+    std::fill_n(DgDx_mp_.begin(),Ng,MPDerivative());
+    DgDx_mp_properties_.resize(Ng);
+    std::fill_n(DgDx_mp_properties_.begin(),Ng,DerivativeProperties());
   }
   if(Np && Ng) {
     const int NpNg = Np*Ng;
@@ -274,73 +368,20 @@ void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
     std::fill_n(DgDp_.begin(),NpNg,Derivative());
     DgDp_properties_.resize(NpNg);
     std::fill_n(DgDp_properties_.begin(),NpNg,DerivativeProperties());
+
+    supports_DgDp_sg_.resize(NpNg);
+    DgDp_sg_.resize(NpNg);
+    std::fill_n(DgDp_sg_.begin(),NpNg,SGDerivative());
+    DgDp_sg_properties_.resize(NpNg);
+    std::fill_n(DgDp_sg_properties_.begin(),NpNg,DerivativeProperties());
+
+    supports_DgDp_mp_.resize(NpNg);
+    DgDp_mp_.resize(NpNg);
+    std::fill_n(DgDp_mp_.begin(),NpNg,MPDerivative());
+    DgDp_mp_properties_.resize(NpNg);
+    std::fill_n(DgDp_mp_properties_.begin(),NpNg,DerivativeProperties());
   }
 }
-
-void ModelEvaluator::OutArgs::_set_Np_Ng_sg(int Np_sg, int Ng_sg)
-{
-  if(Np_sg) {
-    supports_DfDp_sg_.resize(Np_sg);
-    DfDp_sg_.resize(Np_sg);
-    std::fill_n(DfDp_sg_.begin(),Np_sg,SGDerivative());
-    DfDp_sg_properties_.resize(Np_sg);
-    std::fill_n(DfDp_sg_properties_.begin(),Np_sg,DerivativeProperties());
-  }
-  if(Ng_sg) {
-    g_sg_.resize(Ng_sg);
-    supports_DgDx_dot_sg_.resize(Ng_sg);
-    DgDx_dot_sg_.resize(Ng_sg);
-    std::fill_n(DgDx_dot_sg_.begin(),Ng_sg,SGDerivative());
-    DgDx_dot_sg_properties_.resize(Ng_sg);
-    std::fill_n(DgDx_dot_sg_properties_.begin(),Ng_sg,DerivativeProperties());
-    supports_DgDx_sg_.resize(Ng_sg);
-    DgDx_sg_.resize(Ng_sg);
-    std::fill_n(DgDx_sg_.begin(),Ng_sg,SGDerivative());
-    DgDx_sg_properties_.resize(Ng_sg);
-    std::fill_n(DgDx_sg_properties_.begin(),Ng_sg,DerivativeProperties());
-  }
-  if(Np_sg && Ng_sg) {
-    const int NpNg_sg = Np_sg*Ng_sg;
-    supports_DgDp_sg_.resize(NpNg_sg);
-    DgDp_sg_.resize(NpNg_sg);
-    std::fill_n(DgDp_sg_.begin(),NpNg_sg,SGDerivative());
-    DgDp_sg_properties_.resize(NpNg_sg);
-    std::fill_n(DgDp_sg_properties_.begin(),NpNg_sg,DerivativeProperties());
-  }
-}
-
-void ModelEvaluator::OutArgs::_set_Np_Ng_mp(int Np_mp, int Ng_mp)
-{
-  if(Np_mp) {
-    supports_DfDp_mp_.resize(Np_mp);
-    DfDp_mp_.resize(Np_mp);
-    std::fill_n(DfDp_mp_.begin(),Np_mp,MPDerivative());
-    DfDp_mp_properties_.resize(Np_mp);
-    std::fill_n(DfDp_mp_properties_.begin(),Np_mp,DerivativeProperties());
-  }
-  if(Ng_mp) {
-    g_mp_.resize(Ng_mp);
-    supports_DgDx_dot_mp_.resize(Ng_mp);
-    DgDx_dot_mp_.resize(Ng_mp);
-    std::fill_n(DgDx_dot_mp_.begin(),Ng_mp,MPDerivative());
-    DgDx_dot_mp_properties_.resize(Ng_mp);
-    std::fill_n(DgDx_dot_mp_properties_.begin(),Ng_mp,DerivativeProperties());
-    supports_DgDx_mp_.resize(Ng_mp);
-    DgDx_mp_.resize(Ng_mp);
-    std::fill_n(DgDx_mp_.begin(),Ng_mp,MPDerivative());
-    DgDx_mp_properties_.resize(Ng_mp);
-    std::fill_n(DgDx_mp_properties_.begin(),Ng_mp,DerivativeProperties());
-  }
-  if(Np_mp && Ng_mp) {
-    const int NpNg_mp = Np_mp*Ng_mp;
-    supports_DgDp_mp_.resize(NpNg_mp);
-    DgDp_mp_.resize(NpNg_mp);
-    std::fill_n(DgDp_mp_.begin(),NpNg_mp,MPDerivative());
-    DgDp_mp_properties_.resize(NpNg_mp);
-    std::fill_n(DgDp_mp_properties_.begin(),NpNg_mp,DerivativeProperties());
-  }
-}
-
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
 {
@@ -380,59 +421,70 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp arg, int j, int l, cons
   supports_DgDp_[ j*Np() + l ] = supports;
 }
 
+void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_sg arg, int j, bool supports )
+{
+  assert_j(j);
+  supports_g_sg_[j] = supports;
+}
+
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_sg arg, int l, const DerivativeSupport& supports )
 {
-  assert_l_sg(l);
+  assert_l(l);
   supports_DfDp_sg_[l] = supports;
 }
 
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& supports )
 {
-  assert_j_sg(j);
+  assert_j(j);
   supports_DgDx_dot_sg_[j] = supports;
 }
 
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_sg arg, int j, const DerivativeSupport& supports )
 {
-  assert_j_sg(j);
+  assert_j(j);
   supports_DgDx_sg_[j] = supports;
 }
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& supports )
 {
-  assert_j_sg(j);
-  assert_l_sg(l);
-  supports_DgDp_sg_[ j*Np_sg() + l ] = supports;
+  assert_j(j);
+  assert_l(l);
+  supports_DgDp_sg_[ j*Np() + l ] = supports;
 }
 
+void ModelEvaluator::OutArgs::_setSupports( EOutArgs_g_mp arg, int j, bool supports )
+{
+  assert_j(j);
+  supports_g_mp_[j] = supports;
+}
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_mp arg, int l, const DerivativeSupport& supports )
 {
-  assert_l_mp(l);
+  assert_l(l);
   supports_DfDp_mp_[l] = supports;
 }
 
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_mp arg, int j, const DerivativeSupport& supports )
 {
-  assert_j_mp(j);
+  assert_j(j);
   supports_DgDx_dot_mp_[j] = supports;
 }
 
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_mp arg, int j, const DerivativeSupport& supports )
 {
-  assert_j_mp(j);
+  assert_j(j);
   supports_DgDx_mp_[j] = supports;
 }
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_mp arg, int j, int l, const DerivativeSupport& supports )
 {
-  assert_j_mp(j);
-  assert_l_mp(l);
-  supports_DgDp_mp_[ j*Np_mp() + l ] = supports;
+  assert_j(j);
+  assert_l(l);
+  supports_DgDp_mp_[ j*Np() + l ] = supports;
 }
 
 
@@ -496,7 +548,7 @@ void ModelEvaluator::OutArgs::_set_DgDx_sg_properties( int j, const DerivativePr
 void ModelEvaluator::OutArgs::_set_DgDp_sg_properties( int j, int l, const DerivativeProperties &properties )
 {
   assert_supports(OUT_ARG_DgDp_sg,j,l);
-  DgDp_sg_properties_[ j*Np_sg() + l ] = properties;
+  DgDp_sg_properties_[ j*Np() + l ] = properties;
 }
 
 
@@ -523,7 +575,7 @@ void ModelEvaluator::OutArgs::_set_DgDx_mp_properties( int j, const DerivativePr
 void ModelEvaluator::OutArgs::_set_DgDp_mp_properties( int j, int l, const DerivativeProperties &properties )
 {
   assert_supports(OUT_ARG_DgDp_mp,j,l);
-  DgDp_mp_properties_[ j*Np_mp() + l ] = properties;
+  DgDp_mp_properties_[ j*Np() + l ] = properties;
 }
 
 
@@ -543,7 +595,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp arg, int l) const
   assert_l(l);
   TEST_FOR_EXCEPTION(
     supports_DfDp_[l].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp,l): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DfDp(l) with index l = " << l << " is not supported!"
     );
@@ -555,7 +607,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot arg, int j) const
   assert_j(j);
   TEST_FOR_EXCEPTION(
     supports_DgDx_dot_[j].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot,j): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx_dot(j) with index j = " << j << " is not supported!"
     );
@@ -567,7 +619,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx arg, int j) const
   assert_j(j);
   TEST_FOR_EXCEPTION(
     supports_DgDx_[j].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx,j): "
+    ,"TEpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx(j) with index j = " << j << " is not supported!"
     );
@@ -577,20 +629,32 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx arg, int j) const
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) const
 {
   assert_j(j);
+  assert_l(l);
   TEST_FOR_EXCEPTION(
     supports_DgDp_[ j*Np() + l ].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp,j,l): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
     );
 }
 
+void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_sg arg, int j) const
+{
+  assert_j(j);
+  TEST_FOR_EXCEPTION(
+    !supports_g_sg_[j], std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_g_sg,j): "
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument g_sg(j) with index j = " << j << " is not supported!"
+    );
+}
+
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_sg arg, int l) const
 {
-  assert_l_sg(l);
+  assert_l(l);
   TEST_FOR_EXCEPTION(
     supports_DfDp_sg_[l].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp_sg,l): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp_sg,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DfDp_sg(l) with index l = " << l << " is not supported!"
     );
@@ -599,10 +663,10 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_sg arg, int l) const
 
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_sg arg, int j) const
 {
-  assert_j_sg(j);
+  assert_j(j);
   TEST_FOR_EXCEPTION(
     supports_DgDx_dot_sg_[j].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot_sg,j): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot_sg,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx_dot_sg(j) with index j = " << j << " is not supported!"
     );
@@ -611,10 +675,10 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_sg arg, int j) co
 
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_sg arg, int j) const
 {
-  assert_j_sg(j);
+  assert_j(j);
   TEST_FOR_EXCEPTION(
     supports_DgDx_sg_[j].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_sg,j): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_sg,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx_sg(j) with index j = " << j << " is not supported!"
     );
@@ -622,22 +686,33 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_sg arg, int j) const
 
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_sg arg, int j, int l) const
 {
-  assert_j_sg(j);
+  assert_j(j);
+  assert_l(l);
   TEST_FOR_EXCEPTION(
-    supports_DgDp_sg_[ j*Np_sg() + l ].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp_sg,j,l): "
+    supports_DgDp_sg_[ j*Np() + l ].none(), std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp_sg,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDp_sg(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
     );
 }
 
+void ModelEvaluator::OutArgs::assert_supports(EOutArgs_g_mp arg, int j) const
+{
+  assert_j(j);
+  TEST_FOR_EXCEPTION(
+    !supports_g_mp_[j], std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_g_mp,j): "
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument g_mp(j) with index j = " << j << " is not supported!"
+    );
+}
 
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_mp arg, int l) const
 {
-  assert_l_mp(l);
+  assert_l(l);
   TEST_FOR_EXCEPTION(
     supports_DfDp_mp_[l].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp_mp,l): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp_mp,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DfDp_mp(l) with index l = " << l << " is not supported!"
     );
@@ -646,10 +721,10 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_mp arg, int l) const
 
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_mp arg, int j) const
 {
-  assert_j_mp(j);
+  assert_j(j);
   TEST_FOR_EXCEPTION(
     supports_DgDx_dot_mp_[j].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot_mp,j): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot_mp,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx_dot_mp(j) with index j = " << j << " is not supported!"
     );
@@ -658,10 +733,10 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_mp arg, int j) co
 
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_mp arg, int j) const
 {
-  assert_j_mp(j);
+  assert_j(j);
   TEST_FOR_EXCEPTION(
     supports_DgDx_mp_[j].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_mp,j): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_mp,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx_mp(j) with index j = " << j << " is not supported!"
     );
@@ -669,10 +744,11 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_mp arg, int j) const
 
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_mp arg, int j, int l) const
 {
-  assert_j_mp(j);
+  assert_j(j);
+  assert_l(l);
   TEST_FOR_EXCEPTION(
-    supports_DgDp_mp_[ j*Np_mp() + l ].none(), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp_mp,j,l): "
+    supports_DgDp_mp_[ j*Np() + l ].none(), std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp_mp,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDp_mp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
     );
@@ -688,7 +764,7 @@ void ModelEvaluator::OutArgs::assert_l(int l) const
     );
   TEST_FOR_EXCEPTION(
     !( 0 <= l && l < Np() ), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_l(l): "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_l(l): "
     "model = \'"<<modelEvalDescription_<<"\': Error, "
     "The parameter subvector p(l) index l = " << l << " is not in the range [0,"<<Np()-1<<"]!"
     );
@@ -706,64 +782,6 @@ void ModelEvaluator::OutArgs::assert_j(int j) const
     !( 0 <= j && j < Ng() ), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
     "The auxiliary function g(j) index j = " << j << " is not in the range [0,"<<Ng()-1<<"]!"
-    );
-}
-
-void ModelEvaluator::OutArgs::assert_l_sg(int l) const
-{
-  TEST_FOR_EXCEPTION(
-    Np_sg()==0, std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_l_sg(l): model = \'"<<modelEvalDescription_<<"\':  Error, "
-    "no stochastic Galerkin auxiliary parameters subvectors p_sg(l) are supported!!"
-    );
-  TEST_FOR_EXCEPTION(
-    !( 0 <= l && l < Np_sg() ), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_l_sg(l): "
-    "model = \'"<<modelEvalDescription_<<"\': Error, "
-    "The stochastic Galerkin parameter subvector p_sg(l) index l = " << l << " is not in the range [0,"<<Np_sg()-1<<"]!"
-    );
-}
-
-void ModelEvaluator::OutArgs::assert_j_sg(int j) const
-{
-  TEST_FOR_EXCEPTION(
-    Ng_sg()==0, std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j_sg(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
-    "no stochastic Galerkin auxiliary functions g_sg(j) are supported!!"
-    );
-  TEST_FOR_EXCEPTION(
-    !( 0 <= j && j < Ng_sg() ), std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j_sg(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
-    "The stochastic Galerkin auxiliary function g_sg(j) index j = " << j << " is not in the range [0,"<<Ng_sg()-1<<"]!"
-    );
-}
-
-void ModelEvaluator::OutArgs::assert_l_mp(int l) const
-{
-  TEST_FOR_EXCEPTION(
-    Np_mp()==0, std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_l_mp(l): model = \'"<<modelEvalDescription_<<"\':  Error, "
-    "no stochastic Galerkin auxiliary parameters subvectors p_mp(l) are supported!!"
-    );
-  TEST_FOR_EXCEPTION(
-    !( 0 <= l && l < Np_mp() ), std::logic_error
-    ,"Thyra::ModelEvaluator::OutArgs::assert_l_mp(l): "
-    "model = \'"<<modelEvalDescription_<<"\': Error, "
-    "The stochastic Galerkin parameter subvector p_mp(l) index l = " << l << " is not in the range [0,"<<Np_mp()-1<<"]!"
-    );
-}
-
-void ModelEvaluator::OutArgs::assert_j_mp(int j) const
-{
-  TEST_FOR_EXCEPTION(
-    Ng_mp()==0, std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j_mp(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
-    "no stochastic Galerkin auxiliary functions g_mp(j) are supported!!"
-    );
-  TEST_FOR_EXCEPTION(
-    !( 0 <= j && j < Ng_mp() ), std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j_mp(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
-    "The stochastic Galerkin auxiliary function g_mp(j) index j = " << j << " is not in the range [0,"<<Ng_mp()-1<<"]!"
     );
 }
 
@@ -787,36 +805,12 @@ Teuchos::RefCountPtr<const Epetra_Map>
 ModelEvaluator::get_p_map(int l) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Epetra_Map>
-ModelEvaluator::get_p_sg_map(int l) const
-{ return Teuchos::null; }
-
-Teuchos::RefCountPtr<const Epetra_Map>
-ModelEvaluator::get_p_mp_map(int l) const
-{ return Teuchos::null; }
-
 Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
 ModelEvaluator::get_p_names(int l) const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
-ModelEvaluator::get_p_sg_names(int l) const
-{ return Teuchos::null; }
-
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
-ModelEvaluator::get_p_mp_names(int l) const
-{ return Teuchos::null; }
-
 Teuchos::RefCountPtr<const Epetra_Map>
 ModelEvaluator::get_g_map(int j) const
-{ return Teuchos::null; }
-
-Teuchos::RefCountPtr<const Epetra_Map>
-ModelEvaluator::get_g_sg_map(int j) const
-{ return Teuchos::null; }
-
-Teuchos::RefCountPtr<const Epetra_Map>
-ModelEvaluator::get_g_mp_map(int j) const
 { return Teuchos::null; }
 
 
@@ -892,52 +886,16 @@ ModelEvaluator::create_DfDp_op(int l) const
 { return Teuchos::null; }
 
 Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_DfDp_sg_op(int l) const
-{ return Teuchos::null; }
-
-Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_DfDp_mp_op(int l) const
-{ return Teuchos::null; }
-
-
-Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_DgDx_dot_op(int j) const
 { return Teuchos::null; }
-
-Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_DgDx_dot_sg_op(int j) const
-{ return Teuchos::null; }
-
-Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_DgDx_dot_mp_op(int j) const
-{ return Teuchos::null; }
-
 
 Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_DgDx_op(int j) const
 { return Teuchos::null; }
 
 Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_DgDx_sg_op(int j) const
-{ return Teuchos::null; }
-
-Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_DgDx_mp_op(int j) const
-{ return Teuchos::null; }
-
-
-Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_DgDp_op( int j, int l ) const
 { return Teuchos::null; }
-
-Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_DgDp_sg_op( int j, int l ) const
-{ return Teuchos::null; }
-
-Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_DgDp_mp_op( int j, int l ) const
-{ return Teuchos::null; }
-
 
 } // namespace EpetraExt
 

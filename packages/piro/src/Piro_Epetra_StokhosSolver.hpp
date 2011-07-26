@@ -78,10 +78,7 @@ namespace Epetra {
     //@{
     
     Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
-    Teuchos::RCP<const Epetra_Map> get_g_sg_map(int j) const;
-    /** \brief . */
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
-    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> get_p_sg_init(int l) const;
 
     /** \brief . */
     //  Teuchos::RCP<Epetra_Operator> create_W() const;
@@ -112,6 +109,11 @@ namespace Epetra {
     //! Set initial parameter polynomial
     void set_p_sg_init(int i, const Stokhos::EpetraVectorOrthogPoly& p_sg_in) {
       sg_nonlin_model->set_p_sg_init(i, p_sg_in);
+    }
+
+    //! Get initial parameter polynomial
+    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> get_p_sg_init(int l) const {
+      return sg_nonlin_model->get_p_sg_init(l);
     }
 
     //! Create vector orthog poly using x map and owned sg map

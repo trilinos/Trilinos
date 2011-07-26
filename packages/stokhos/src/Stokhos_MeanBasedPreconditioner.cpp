@@ -65,7 +65,7 @@ setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op,
 		      "Error!  setupPreconditioner() cannot be called when " <<
 		      "prec_factory is null!" << std::endl);
 
-   Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly = 
+   Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly > sg_poly = 
      sg_op->getSGPolynomial();
    mean_prec = prec_factory->compute(sg_poly->getCoeffPtr(0));
    label = std::string("Stokhos Mean-Based Preconditioner:\n") + 

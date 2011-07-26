@@ -32,9 +32,7 @@
 #define STOKHOS_SG_OPERATOR_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Operator.h"
-#include "Stokhos_VectorOrthogPoly.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_EpetraOperatorOrthogPoly.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
 
 namespace Stokhos {
@@ -54,14 +52,14 @@ namespace Stokhos {
 
     //! Setup operator
     virtual void setupOperator(
-      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly) = 0;
+      const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& poly) = 0;
 
     //! Get SG polynomial
-    virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    virtual Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > 
     getSGPolynomial() = 0;
 
     //! Get SG polynomial
-    virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    virtual Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly > 
     getSGPolynomial() const = 0;
 
   }; // class SGOperator

@@ -123,6 +123,9 @@ namespace Stokhos {
     //! Get product comm
     Teuchos::RCP<const EpetraExt::MultiComm> productComm() const;
 
+    //! Get coefficient map
+    Teuchos::RCP<const Epetra_BlockMap> coefficientMap() const;
+
     //! Reset to a new size
     /*!
      * This resizes array to fit new size.

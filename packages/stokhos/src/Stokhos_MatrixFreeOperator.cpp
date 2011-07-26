@@ -129,7 +129,7 @@ Stokhos::MatrixFreeOperator::
 void 
 Stokhos::MatrixFreeOperator::
 setupOperator(
-   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops)
+   const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& ops)
 {
   block_ops = ops;
   num_blocks = block_ops->size();
@@ -137,14 +137,14 @@ setupOperator(
     k_end = Cijk->find_k(num_blocks);
 }
 
-Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > 
 Stokhos::MatrixFreeOperator::
 getSGPolynomial()
 {
   return block_ops;
 }
 
-Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly > 
 Stokhos::MatrixFreeOperator::
 getSGPolynomial() const
 {

@@ -28,7 +28,7 @@ TEUCHOS_UNIT_TEST(interlaced_op, test)
    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
 
-   int rank = comm->MyPID();
+   //int rank = comm->MyPID();
    int numProc = comm->NumProc();
 
    int num_KL = 1;
@@ -77,9 +77,9 @@ TEUCHOS_UNIT_TEST(interlaced_op, test)
 
    Teuchos::RCP<Stokhos::EpetraSparse3Tensor> epetraCijk = 
          Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(basis,Cijk,sg_comm));
-   Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > W_sg_blocks = 
-         Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(basis, determRowMap));
-   for(unsigned int i=0; i<W_sg_blocks->size(); i++) {
+   Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly> W_sg_blocks = 
+     Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(basis, epetraCijk->getStochasticRowMap(), determRowMap, determRowMap, sg_comm));
+   for(int i=0; i<W_sg_blocks->size(); i++) {
       Teuchos::RCP<Epetra_CrsMatrix> crsMat = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*determGraph));
       crsMat->PutScalar(1.0 + i);
       W_sg_blocks->setCoeffPtr(i,crsMat); // allocate a bunch of matrices   

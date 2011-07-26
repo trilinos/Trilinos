@@ -31,6 +31,7 @@
 Stokhos::EpetraOperatorOrthogPoly::
 EpetraOperatorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
   const Teuchos::RCP<const Epetra_Map>& domain_base_map,
   const Teuchos::RCP<const Epetra_Map>& range_base_map,
   const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) : 
@@ -51,7 +52,7 @@ EpetraOperatorOrthogPoly(
   const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) :
   ProductContainer<Epetra_Operator>(block_map),
   VectorOrthogPoly<Epetra_Operator>(basis, block_map),
-  ProductEpetraOperator(block_map, cdomain_base_map, range_base_map, 
+  ProductEpetraOperator(block_map, domain_base_map, range_base_map, 
 			product_range_map, product_comm) 
 {
 }

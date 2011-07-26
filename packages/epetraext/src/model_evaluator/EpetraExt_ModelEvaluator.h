@@ -49,17 +49,17 @@ class Epetra_Operator;
 
 // Forward declaration of Stochastic Galerkin (SG) argument types
 namespace Stokhos {
-  template <typename coeff_type> class VectorOrthogPoly;
   class EpetraVectorOrthogPoly;
   class EpetraMultiVectorOrthogPoly;
+  class EpetraOperatorOrthogPoly;
   template <typename ordinal_type, typename scalar_type> class OrthogPolyBasis;
   template <typename ordinal_type, typename scalar_type> class Quadrature;
   template <typename ordinal_type, typename scalar_type> class StandardStorage;
   template <typename ordinal_type, typename scalar_type, typename node_type> class OrthogPolyExpansion;
 
-  template <typename coeff_type> class ProductContainer;
   class ProductEpetraVector;
   class ProductEpetraMultiVector;
+  class ProductEpetraOperator;
 }
 
 namespace EpetraExt {
@@ -76,10 +76,10 @@ public:
 
   typedef Teuchos::RCP<const Stokhos::ProductEpetraVector> mp_const_vector_t;
   typedef Teuchos::RCP<const Stokhos::ProductEpetraMultiVector> mp_const_multivector_t;
-  typedef Teuchos::RCP<const Stokhos::ProductContainer<Epetra_Operator> > mp_const_operator_t;
+  typedef Teuchos::RCP<const Stokhos::ProductEpetraOperator > mp_const_operator_t;
   typedef Teuchos::RCP<Stokhos::ProductEpetraVector> mp_vector_t;
   typedef Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_multivector_t;
-  typedef Teuchos::RCP<Stokhos::ProductContainer<Epetra_Operator> > mp_operator_t;
+  typedef Teuchos::RCP<Stokhos::ProductEpetraOperator > mp_operator_t;
 
   /** \brief.  */
   enum EInArgsMembers {
@@ -101,6 +101,16 @@ public:
   static const int NUM_E_IN_ARGS_MEMBERS=14;
 
   /** \brief . */
+  enum EInArgs_p_sg {
+    IN_ARG_p_sg   ///< .
+  };
+
+  /** \brief . */
+  enum EInArgs_p_mp {
+    IN_ARG_p_mp   ///< .
+  };
+
+  /** \brief . */
   class InArgs {
   public:
 
@@ -113,10 +123,6 @@ public:
     std::string modelEvalDescription() const;
     /** \brief .  */
     int Np() const;
-    /** \brief Number of stochastic Galerkin parameters  */
-    int Np_sg() const;
-    /** \brief Number of multi-point parameters  */
-    int Np_mp() const;
     /** \brief. */
     void set_x_dot( const Teuchos::RefCountPtr<const Epetra_Vector> &x_dot );
     /** \brief. */
@@ -190,22 +196,27 @@ public:
     void set_sg_expansion( const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double,Stokhos::StandardStorage<int,double> > >& exp );
     /** \brief. */
     bool supports(EInArgsMembers arg) const;
+    /** Whether p_sg is supported for parameter vector l */
+    bool supports(EInArgs_p_sg arg, int l) const;
+    /** Whether p_mp is supported for parameter vector l */
+    bool supports(EInArgs_p_mp arg, int l) const;
   protected:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
     /** \brief . */
     void _set_Np(int Np);
     /** \brief . */
-    void _set_Np_sg(int Np);
-    /** \brief . */
-    void _set_Np_mp(int Np);
-    /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
+    /** \brief . */
+    void _setSupports( EInArgs_p_sg arg, int l, bool supports );
+    /** \brief . */
+    void _setSupports( EInArgs_p_mp arg, int l, bool supports );
   private:
     // types
     typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Vector> > p_t;
     typedef Teuchos::Array<sg_const_vector_t > p_sg_t;
     typedef Teuchos::Array<mp_const_vector_t > p_mp_t;
+    typedef Teuchos::Array<bool> supports_p_sg_t;
     // data
     std::string modelEvalDescription_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_dot_;
@@ -226,8 +237,12 @@ public:
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > sg_quad_;
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double,Stokhos::StandardStorage<int,double> > > sg_exp_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
+    supports_p_sg_t supports_p_sg_; // Np
+    supports_p_sg_t supports_p_mp_; // Np
     // functions
     void assert_supports(EInArgsMembers arg) const;
+    void assert_supports(EInArgs_p_sg arg, int l) const;
+    void assert_supports(EInArgs_p_mp arg, int l) const;
     void assert_l(int l) const;
   };
 
@@ -494,7 +509,7 @@ public:
     /** \brief . */
     SGDerivative() {}
     /** \brief . */
-    SGDerivative( const Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_Operator> > &lo )
+    SGDerivative( const Teuchos::RefCountPtr< Stokhos::EpetraOperatorOrthogPoly > &lo )
       : lo_(lo) {}
      /** \brief . */
     SGDerivative(
@@ -505,7 +520,7 @@ public:
     SGDerivative( const SGDerivativeMultiVector &dmv )
       : dmv_(dmv) {}
     /** \brief . */
-    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_Operator> > getLinearOp() const
+    Teuchos::RefCountPtr< Stokhos::EpetraOperatorOrthogPoly > getLinearOp() const
       { return lo_; }
     /** \brief . */
     Teuchos::RefCountPtr< Stokhos::EpetraMultiVectorOrthogPoly > getMultiVector() const
@@ -520,7 +535,7 @@ public:
     bool isEmpty() const
         { return !lo_.get() && !dmv_.getMultiVector().get(); }
   private:
-    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_Operator> > lo_;
+    Teuchos::RefCountPtr< Stokhos::EpetraOperatorOrthogPoly > lo_;
     SGDerivativeMultiVector dmv_;
   };
 
@@ -634,6 +649,11 @@ public:
   };
 
   /** \brief . */
+  enum EOutArgs_g_sg {
+    OUT_ARG_g_sg   ///< .
+  };
+
+  /** \brief . */
   enum EOutArgsDgDx_dot_sg {
     OUT_ARG_DgDx_dot_sg   ///< .
   };
@@ -651,6 +671,11 @@ public:
   /** \brief . */
   enum EOutArgsDfDp_mp {
     OUT_ARG_DfDp_mp   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgs_g_mp {
+    OUT_ARG_g_mp   ///< .
   };
 
   /** \brief . */
@@ -676,7 +701,7 @@ public:
     typedef Teuchos::RefCountPtr<Stokhos::EpetraVectorOrthogPoly> sg_vector_t;
 
     //! Short-hand for stochastic Galerkin operator type
-    typedef Teuchos::RefCountPtr<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_operator_t;
+    typedef Teuchos::RefCountPtr<Stokhos::EpetraOperatorOrthogPoly > sg_operator_t;
 
     /** \brief. */
     OutArgs();
@@ -686,14 +711,6 @@ public:
     int Np() const;
     /** \brief .  */
     int Ng() const;
-    /** \brief Number of stochastic Galerkin parameters  */
-    int Np_sg() const;
-    /** \brief Number of stochastic Galerkin responses  */
-    int Ng_sg() const;
-    /** \brief Number of multi-point parameters  */
-    int Np_mp() const;
-    /** \brief Number of multi-point responses  */
-    int Ng_mp() const;
     /** \brief. */
     bool supports(EOutArgsMembers arg) const;
     /** \brief <tt>0 <= l && l < Np()</tt>.  */
@@ -704,21 +721,25 @@ public:
     const DerivativeSupport& supports(EOutArgsDgDx arg, int j) const;
     /** \brief <tt>0 <= j && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
-    /** \brief <tt>0 <= l && l < Np_sg()</tt>.  */
+    /** Whether g_sg is supported for response vector j */
+    bool supports(EOutArgs_g_sg arg, int j) const;
+    /** \brief <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDfDp_sg arg, int l) const;
-    /** \brief <tt>0 <= j && j < Ng_sg()</tt>.  */
+    /** \brief <tt>0 <= j && j < Ng()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDx_dot_sg arg, int j) const;
-    /** \brief <tt>0 <= j && j < Ng_sg()</tt>.  */
+    /** \brief <tt>0 <= j && j < Ng()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDx_sg arg, int j) const;
-    /** \brief <tt>0 <= j && j < Ng_sg()</tt> and <tt>0 <= l && l < Np_sg()</tt>.  */
+    /** \brief <tt>0 <= j && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp_sg arg, int j, int l) const;
-    /** \brief <tt>0 <= l && l < Np_mp()</tt>.  */
+    /** \brief <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDfDp_mp arg, int l) const;
-    /** \brief <tt>0 <= j && j < Ng_mp()</tt>.  */
+    /** Whether g_mp is supported for response vector j */
+    bool supports(EOutArgs_g_mp arg, int j) const;
+    /** \brief <tt>0 <= j && j < Ng()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDx_dot_mp arg, int j) const;
-    /** \brief <tt>0 <= j && j < Ng_mp()</tt>.  */
+    /** \brief <tt>0 <= j && j < Ng()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDx_mp arg, int j) const;
-    /** \brief <tt>0 <= j && j < Ng_mp()</tt> and <tt>0 <= l && l < Np_mp()</tt>.  */
+    /** \brief <tt>0 <= j && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp_mp arg, int j, int l) const;
     /** \brief. */
     void set_f( const Evaluation<Epetra_Vector> &f );
@@ -737,16 +758,16 @@ public:
     /** \brief Get <tt>g(j)</tt> where <tt>0 <= j && j < this->Ng()</tt>.  */
     Evaluation<Epetra_Vector> get_g(int j) const;
     /** \brief Set stochastic Galerkin vector polynomial response. */
-    /** <tt>0 <= j && j < this->Ng_sg()</tt>.  */
+    /** <tt>0 <= j && j < this->Ng()</tt>.  */
     void set_g_sg( int j, const sg_vector_t &g_sg_j );
     /** \brief Get stochastic Galerkin vector polynomial response. */
-    /** <tt>0 <= j && j < this->Ng_sg()</tt>.  */
+    /** <tt>0 <= j && j < this->Ng()</tt>.  */
     sg_vector_t get_g_sg(int j) const;
     /** \brief Set multi-point response. */
-    /** <tt>0 <= j && j < this->Ng_mp()</tt>.  */
+    /** <tt>0 <= j && j < this->Ng()</tt>.  */
     void set_g_mp( int j, const mp_vector_t &g_mp_j );
     /** \brief Get multi-point response. */
-    /** <tt>0 <= j && j < this->Ng_mp()</tt>.  */
+    /** <tt>0 <= j && j < this->Ng()</tt>.  */
     mp_vector_t get_g_mp(int j) const;
     /** \brief. */
     void set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W );
@@ -866,10 +887,6 @@ public:
     /** \brief . */
     void _set_Np_Ng(int Np, int Ng);
     /** \brief . */
-    void _set_Np_Ng_sg(int Np_sg, int Ng_sg);
-    /** \brief . */
-    void _set_Np_Ng_mp(int Np_mp, int Ng_mp);
-    /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
     /** \brief . */
     void _setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& );
@@ -880,6 +897,8 @@ public:
     /** \brief . */
     void _setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
+    void _setSupports( EOutArgs_g_sg arg, int j, bool supports );
+    /** \brief . */
     void _setSupports( EOutArgsDfDp_sg arg, int l, const DerivativeSupport& );
     /** \brief . */
     void _setSupports( EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& );
@@ -888,6 +907,8 @@ public:
     /** \brief . */
     void _setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
 
+    /** \brief . */
+    void _setSupports( EOutArgs_g_mp arg, int j, bool supports );
     /** \brief . */
     void _setSupports( EOutArgsDfDp_mp arg, int l, const DerivativeSupport& );
     /** \brief . */
@@ -934,6 +955,7 @@ public:
     typedef Teuchos::Array<MPDerivative> mp_deriv_t;
     typedef Teuchos::Array<DerivativeProperties> deriv_properties_t;
     typedef Teuchos::Array<DerivativeSupport> supports_t;
+    typedef Teuchos::Array<bool> supports_g_sg_t;
     // data
     std::string modelEvalDescription_;
     mutable bool isFailed_;
@@ -942,10 +964,12 @@ public:
     supports_t supports_DgDx_dot_; // Ng
     supports_t supports_DgDx_; // Ng
     supports_t supports_DgDp_; // Ng x Np
-    supports_t supports_DfDp_sg_; // Np_sg
-    supports_t supports_DgDx_dot_sg_; // Ng_sg
-    supports_t supports_DgDx_sg_; // Ng_sg
-    supports_t supports_DgDp_sg_; // Ng_sg x Np_sg
+    supports_g_sg_t supports_g_sg_; // Ng
+    supports_t supports_DfDp_sg_; // Np
+    supports_t supports_DgDx_dot_sg_; // Ng
+    supports_t supports_DgDx_sg_; // Ng
+    supports_t supports_DgDp_sg_; // Ng x Np
+    supports_g_sg_t supports_g_mp_; // Ng
     supports_t supports_DfDp_mp_; // Np_mp
     supports_t supports_DgDx_dot_mp_; // Ng_mp
     supports_t supports_DgDx_mp_; // Ng_mp
@@ -969,44 +993,42 @@ public:
     Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > f_poly_;
     sg_vector_t f_sg_;
     sg_operator_t W_sg_;
-    sg_deriv_t DfDp_sg_; // Np_sg
-    deriv_properties_t DfDp_sg_properties_; // Np_sg
-    sg_deriv_t DgDx_dot_sg_; // Ng_sg
-    sg_deriv_t DgDx_sg_; // Ng_sg
-    deriv_properties_t DgDx_dot_sg_properties_; // Ng_sg
-    deriv_properties_t DgDx_sg_properties_; // Ng_sg
-    sg_deriv_t DgDp_sg_; // Ng_sg x Np_sg
-    deriv_properties_t DgDp_sg_properties_; // Ng_sg x Np_sg
+    sg_deriv_t DfDp_sg_; // Np
+    deriv_properties_t DfDp_sg_properties_; // Np
+    sg_deriv_t DgDx_dot_sg_; // Ng
+    sg_deriv_t DgDx_sg_; // Ng
+    deriv_properties_t DgDx_dot_sg_properties_; // Ng
+    deriv_properties_t DgDx_sg_properties_; // Ng
+    sg_deriv_t DgDp_sg_; // Ng x Np
+    deriv_properties_t DgDp_sg_properties_; // Ng x Np
     mp_vector_t f_mp_;
     mp_operator_t W_mp_;
-    mp_deriv_t DfDp_mp_; // Np_mp
-    deriv_properties_t DfDp_mp_properties_; // Np_mp
-    mp_deriv_t DgDx_dot_mp_; // Ng_mp
-    mp_deriv_t DgDx_mp_; // Ng_mp
-    deriv_properties_t DgDx_dot_mp_properties_; // Ng_mp
-    deriv_properties_t DgDx_mp_properties_; // Ng_mp
-    mp_deriv_t DgDp_mp_; // Ng_mp x Np_mp
-    deriv_properties_t DgDp_mp_properties_; // Ng_mp x Np_mp
+    mp_deriv_t DfDp_mp_; // Np
+    deriv_properties_t DfDp_mp_properties_; // Np
+    mp_deriv_t DgDx_dot_mp_; // Ng
+    mp_deriv_t DgDx_mp_; // Ng
+    deriv_properties_t DgDx_dot_mp_properties_; // Ng
+    deriv_properties_t DgDx_mp_properties_; // Ng
+    mp_deriv_t DgDp_mp_; // Ng x Np
+    deriv_properties_t DgDp_mp_properties_; // Ng x Np
     // functions
     void assert_supports(EOutArgsMembers arg) const;
     void assert_supports(EOutArgsDfDp arg, int l) const;
     void assert_supports(EOutArgsDgDx_dot arg, int j) const;
     void assert_supports(EOutArgsDgDx arg, int j) const;
     void assert_supports(EOutArgsDgDp arg, int j, int l) const;
+    void assert_supports(EOutArgs_g_sg arg, int j) const;
     void assert_supports(EOutArgsDfDp_sg arg, int l) const;
     void assert_supports(EOutArgsDgDx_dot_sg arg, int j) const;
     void assert_supports(EOutArgsDgDx_sg arg, int j) const;
     void assert_supports(EOutArgsDgDp_sg arg, int j, int l) const;
+    void assert_supports(EOutArgs_g_mp arg, int j) const;
     void assert_supports(EOutArgsDfDp_mp arg, int l) const;
     void assert_supports(EOutArgsDgDx_dot_mp arg, int j) const;
     void assert_supports(EOutArgsDgDx_mp arg, int j) const;
     void assert_supports(EOutArgsDgDp_mp arg, int j, int l) const;
     void assert_l(int l) const;
     void assert_j(int j) const;
-    void assert_l_sg(int l) const;
-    void assert_j_sg(int j) const;
-    void assert_l_mp(int l) const;
-    void assert_j_mp(int j) const;
   };
 
   //@}
@@ -1031,12 +1053,6 @@ public:
   /** \breif . */
   virtual Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
 
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<const Epetra_Map> get_p_sg_map(int l) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<const Epetra_Map> get_p_mp_map(int l) const;
-
   /** \brief Get the names of the parameters associated with parameter
    * subvector l if available.
    *
@@ -1053,20 +1069,8 @@ public:
    */
   virtual Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
 
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_sg_names(int l) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_mp_names(int l) const;
-
   /** \breif . */
   virtual Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<const Epetra_Map> get_g_sg_map(int j) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<const Epetra_Map> get_g_mp_map(int j) const;
 
   //@}
 
@@ -1132,37 +1136,13 @@ public:
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int l) const;
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_sg_op(int l) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_mp_op(int l) const;
-
-  /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_sg_op(int j) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_mp_op(int j) const;
 
   /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_sg_op(int j) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_mp_op(int j) const;
-
-  /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_op( int j, int l ) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_sg_op( int j, int l ) const;
-
-  /** \brief . */
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_mp_op( int j, int l ) const;
 
   //@}
 
@@ -1200,11 +1180,11 @@ protected:
     /** \brief . */
     void set_Np(int Np);
     /** \brief . */
-    void set_Np_sg(int Np);
-    /** \brief . */
-    void set_Np_mp(int Np);
-    /** \brief . */
     void setSupports( EInArgsMembers arg, bool supports = true );
+    /** \brief . */
+    void setSupports( EInArgs_p_sg arg, int l, bool supports );
+    /** \brief . */
+    void setSupports( EInArgs_p_mp arg, int l, bool supports );
   };
 
   /** \brief . */
@@ -1214,10 +1194,6 @@ protected:
     void setModelEvalDescription( const std::string &modelEvalDescription );
     /** \brief . */
     void set_Np_Ng(int Np, int Ng);
-    /** \brief . */
-    void set_Np_Ng_sg(int Np_sg, int Ng_sg);
-    /** \brief . */
-    void set_Np_Ng_mp(int Np_mp, int Ng_mp);
     /** \brief . */
     void setSupports( EOutArgsMembers arg, bool supports = true );
     /** \brief . */
@@ -1229,6 +1205,8 @@ protected:
     /** \brief . */
     void setSupports(EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
+    void setSupports( EOutArgs_g_sg arg, int j, bool supports );
+    /** \brief . */
     void setSupports(EOutArgsDfDp_sg arg, int l, const DerivativeSupport& );
     /** \brief . */
     void setSupports(EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& );
@@ -1236,6 +1214,8 @@ protected:
     void setSupports(EOutArgsDgDx_sg arg, int j, const DerivativeSupport& );
     /** \brief . */
     void setSupports(EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
+    /** \brief . */
+    void setSupports( EOutArgs_g_mp arg, int j, bool supports );
     /** \brief . */
     void setSupports(EOutArgsDfDp_mp arg, int l, const DerivativeSupport& );
     /** \brief . */
@@ -1361,14 +1341,6 @@ int ModelEvaluator::InArgs::Np() const
 { return p_.size(); }
 
 inline
-int ModelEvaluator::InArgs::Np_sg() const
-{ return p_sg_.size(); }
-
-inline
-int ModelEvaluator::InArgs::Np_mp() const
-{ return p_mp_.size(); }
-
-inline
 void ModelEvaluator::InArgs::set_x_dot( const Teuchos::RefCountPtr<const Epetra_Vector> &x_dot )
 { assert_supports(IN_ARG_x_dot); x_dot_ = x_dot; }
 
@@ -1449,22 +1421,22 @@ Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_p(int l) c
 inline
 void ModelEvaluator::InArgs::set_p_sg( int l, 
 				       const ModelEvaluator::InArgs::sg_const_vector_t &p_sg_l )
-{ assert_l(l); p_sg_[l] = p_sg_l; }
+{ assert_supports(IN_ARG_p_sg, l); p_sg_[l] = p_sg_l; }
 
 inline
 ModelEvaluator::InArgs::sg_const_vector_t 
 ModelEvaluator::InArgs::get_p_sg(int l) const
-{ assert_l(l); return p_sg_[l]; }
+{ assert_supports(IN_ARG_p_sg, l); return p_sg_[l]; }
 
 inline
 void ModelEvaluator::InArgs::set_p_mp( int l, 
 				       const ModelEvaluator::mp_const_vector_t &p_mp_l )
-{ assert_l(l); p_mp_[l] = p_mp_l; }
+{ assert_supports(IN_ARG_p_mp, l); p_mp_[l] = p_mp_l; }
 
 inline
 ModelEvaluator::mp_const_vector_t 
 ModelEvaluator::InArgs::get_p_mp(int l) const
-{ assert_l(l); return p_mp_[l]; }
+{ assert_supports(IN_ARG_p_mp, l); return p_mp_[l]; }
 
 inline
 void ModelEvaluator::InArgs::set_t( double t )
@@ -1527,18 +1499,10 @@ inline
 void ModelEvaluator::InArgs::_set_Np(int new_Np)
 {
   p_.resize(new_Np);
-}
-
-inline
-void ModelEvaluator::InArgs::_set_Np_sg(int new_Np)
-{
   p_sg_.resize(new_Np);
-}
-
-inline
-void ModelEvaluator::InArgs::_set_Np_mp(int new_Np)
-{
   p_mp_.resize(new_Np);
+  supports_p_sg_.resize(new_Np);
+  supports_p_mp_.resize(new_Np);
 }
 
 //
@@ -1559,30 +1523,6 @@ inline
 int ModelEvaluator::OutArgs::Ng() const
 { 
   return g_.size();
-}
-
-inline
-int ModelEvaluator::OutArgs::Np_sg() const
-{
-  return DfDp_sg_.size();
-}
-
-inline
-int ModelEvaluator::OutArgs::Ng_sg() const
-{ 
-  return g_sg_.size();
-}
-
-inline
-int ModelEvaluator::OutArgs::Np_mp() const
-{
-  return DfDp_mp_.size();
-}
-
-inline
-int ModelEvaluator::OutArgs::Ng_mp() const
-{ 
-  return g_mp_.size();
 }
 
 inline
@@ -1610,7 +1550,7 @@ ModelEvaluator::OutArgs::get_g(int j) const
 inline
 void ModelEvaluator::OutArgs::set_g_sg( int j, const sg_vector_t &g_sg_j )
 {
-  assert_j_sg(j);
+  assert_supports(OUT_ARG_g_sg, j);
   g_sg_[j] = g_sg_j;
 }
 
@@ -1618,14 +1558,14 @@ inline
 ModelEvaluator::OutArgs::sg_vector_t
 ModelEvaluator::OutArgs::get_g_sg(int j) const
 {
-  assert_j_sg(j);
+  assert_supports(OUT_ARG_g_sg, j);
   return g_sg_[j];
 }
 
 inline
 void ModelEvaluator::OutArgs::set_g_mp( int j, const mp_vector_t &g_mp_j )
 {
-  assert_j_mp(j);
+  assert_supports(OUT_ARG_g_mp, j);
   g_mp_[j] = g_mp_j;
 }
 
@@ -1633,7 +1573,7 @@ inline
 ModelEvaluator::mp_vector_t
 ModelEvaluator::OutArgs::get_g_mp(int j) const
 {
-  assert_j_mp(j);
+  assert_supports(OUT_ARG_g_mp, j);
   return g_mp_[j];
 }
 
@@ -1888,7 +1828,7 @@ inline
 void ModelEvaluator::OutArgs::set_DgDp_sg( int j, int l, const SGDerivative &DgDp_sg_j_l )
 {
   assert_supports(OUT_ARG_DgDp_sg,j,l);
-  DgDp_sg_[ j*Np_sg() + l ] = DgDp_sg_j_l;
+  DgDp_sg_[ j*Np() + l ] = DgDp_sg_j_l;
 }
 
 inline
@@ -1896,7 +1836,7 @@ ModelEvaluator::SGDerivative
 ModelEvaluator::OutArgs::get_DgDp_sg(int j, int l) const
 {
   assert_supports(OUT_ARG_DgDp_sg,j,l);
-  return DgDp_sg_[ j*Np_sg() + l ];
+  return DgDp_sg_[ j*Np() + l ];
 }
 
 inline
@@ -1904,14 +1844,14 @@ ModelEvaluator::DerivativeProperties
 ModelEvaluator::OutArgs::get_DgDp_sg_properties(int j, int l) const
 {
   assert_supports(OUT_ARG_DgDp_sg,j,l);
-  return DgDp_sg_properties_[ j*Np_sg() + l ];
+  return DgDp_sg_properties_[ j*Np() + l ];
 }
 
 inline
 void ModelEvaluator::OutArgs::set_DgDp_mp( int j, int l, const MPDerivative &DgDp_mp_j_l )
 {
   assert_supports(OUT_ARG_DgDp_mp,j,l);
-  DgDp_mp_[ j*Np_mp() + l ] = DgDp_mp_j_l;
+  DgDp_mp_[ j*Np() + l ] = DgDp_mp_j_l;
 }
 
 inline
@@ -1919,7 +1859,7 @@ ModelEvaluator::MPDerivative
 ModelEvaluator::OutArgs::get_DgDp_mp(int j, int l) const
 {
   assert_supports(OUT_ARG_DgDp_mp,j,l);
-  return DgDp_mp_[ j*Np_mp() + l ];
+  return DgDp_mp_[ j*Np() + l ];
 }
 
 inline
@@ -1927,7 +1867,7 @@ ModelEvaluator::DerivativeProperties
 ModelEvaluator::OutArgs::get_DgDp_mp_properties(int j, int l) const
 {
   assert_supports(OUT_ARG_DgDp_mp,j,l);
-  return DgDp_mp_properties_[ j*Np_mp() + l ];
+  return DgDp_mp_properties_[ j*Np() + l ];
 }
 
 inline
@@ -1984,16 +1924,16 @@ void ModelEvaluator::InArgsSetup::set_Np(int new_Np)
 { this->_set_Np(new_Np); }
 
 inline
-void ModelEvaluator::InArgsSetup::set_Np_sg(int new_Np)
-{ this->_set_Np_sg(new_Np); }
-
-inline
-void ModelEvaluator::InArgsSetup::set_Np_mp(int new_Np)
-{ this->_set_Np_mp(new_Np); }
-
-inline
 void ModelEvaluator::InArgsSetup::setSupports( EInArgsMembers arg, bool new_supports )
 { this->_setSupports(arg,new_supports); }
+
+inline
+void ModelEvaluator::InArgsSetup::setSupports( EInArgs_p_sg arg, int l, bool new_supports )
+{ this->_setSupports(arg,l,new_supports); }
+
+inline
+void ModelEvaluator::InArgsSetup::setSupports( EInArgs_p_mp arg, int l, bool new_supports )
+{ this->_setSupports(arg,l,new_supports); }
 
 //
 // ModelEvaluator::OutArgsSetup
@@ -2008,14 +1948,6 @@ void ModelEvaluator::OutArgsSetup::setModelEvalDescription( const std::string &n
 inline
 void ModelEvaluator::OutArgsSetup::set_Np_Ng(int new_Np, int new_Ng)
 { this->_set_Np_Ng(new_Np,new_Ng); }
-
-inline
-void ModelEvaluator::OutArgsSetup::set_Np_Ng_sg(int new_Np_sg, int new_Ng_sg)
-{ this->_set_Np_Ng_sg(new_Np_sg, new_Ng_sg); }
-
-inline
-void ModelEvaluator::OutArgsSetup::set_Np_Ng_mp(int new_Np_mp, int new_Ng_mp)
-{ this->_set_Np_Ng_mp(new_Np_mp, new_Ng_mp); }
 
 inline
 void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsMembers arg, bool new_supports )
@@ -2038,6 +1970,10 @@ void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp arg, int j, int l, 
 { this->_setSupports(arg,j,l,new_supports); }
 
 inline
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgs_g_sg arg, int j, bool new_supports )
+{ this->_setSupports(arg,j,new_supports); }
+
+inline
 void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDfDp_sg arg, int l, const DerivativeSupport& new_supports )
 { this->_setSupports(arg,l,new_supports); }
 
@@ -2052,6 +1988,10 @@ void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx_sg arg, int j, cons
 inline
 void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& new_supports )
 { this->_setSupports(arg,j,l,new_supports); }
+
+inline
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgs_g_mp arg, int j, bool new_supports )
+{ this->_setSupports(arg,j,new_supports); }
 
 inline
 void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDfDp_mp arg, int l, const DerivativeSupport& new_supports )

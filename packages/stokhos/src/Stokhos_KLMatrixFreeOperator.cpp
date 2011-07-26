@@ -124,20 +124,20 @@ Stokhos::KLMatrixFreeOperator::~KLMatrixFreeOperator()
 void 
 Stokhos::KLMatrixFreeOperator::
 setupOperator(
-   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops)
+   const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& ops)
 {
   block_ops = ops;
   num_blocks = sg_basis->dimension() + 1;
 }
 
-Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > 
 Stokhos::KLMatrixFreeOperator::
 getSGPolynomial()
 {
   return block_ops;
 }
 
-Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Teuchos::RCP<const Stokhos::EpetraOperatorOrthogPoly > 
 Stokhos::KLMatrixFreeOperator::
 getSGPolynomial() const
 {

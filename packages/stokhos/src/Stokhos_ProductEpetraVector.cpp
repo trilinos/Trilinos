@@ -160,6 +160,12 @@ assignFromBlockVector(const Epetra_Vector& v)
   }
 }
 
+Teuchos::RCP<const Epetra_BlockMap> 
+Stokhos::ProductEpetraVector::
+coefficientMap() const {
+  return coeff_map;
+}
+
 Teuchos::RCP<const EpetraExt::MultiComm> 
 Stokhos::ProductEpetraVector::
 productComm() const {

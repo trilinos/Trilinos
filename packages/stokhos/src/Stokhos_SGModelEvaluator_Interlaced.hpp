@@ -140,34 +140,15 @@ namespace Stokhos {
 
     //! Get indices of SG parameters
     /*!
-     * These indices determine which parameter vectors that will be passed
-     * through InArgs correspond to the SG parameters.
+     * These indices determine which parameter vectors support SG
      */
-    Teuchos::Array<int> get_p_sg_indices() const;
-
-    //! Get indices of non-SG parameters
-    /*!
-     * These indices determine which parameter vectors that will be passed
-     * through InArgs correspond to the non-SG parameters.
-     */
-    Teuchos::Array<int> get_non_p_sg_indices() const;
+    Teuchos::Array<int> get_p_sg_map_indices() const;
 
     //! Get indices of SG responses
     /*!
-     * These indices determine which response vectors that will be passed
-     * through OutArgs correspond to the SG responses.
+     * These indices determine which response vectors support SG
      */
-    Teuchos::Array<int> get_g_sg_indices() const;
-
-    //! Get indices of non-SG responses
-    /*!
-     * These indices determine which response vectors that will be passed
-     * through OutArgs correspond to the non-SG responses.
-     */
-    Teuchos::Array<int> get_non_g_sg_indices() const;
-
-    //! Get base maps of SG parameters
-    Teuchos::Array< Teuchos::RCP<const Epetra_Map> > get_p_sg_base_maps() const;
+    Teuchos::Array<int> get_g_sg_map_indices() const;
 
     //! Get base maps of SG responses
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > get_g_sg_base_maps() const;
@@ -334,6 +315,9 @@ namespace Stokhos {
     //! Number of stochastic parameter vectors
     int num_p_sg;
 
+    //! Index map between block-p and p_sg maps
+    Teuchos::Array<int> sg_p_index_map;
+
     //! Block SG parameter map
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > sg_p_map;
 
@@ -345,6 +329,9 @@ namespace Stokhos {
 
     //! Number of stochastic response vectors
     int num_g_sg;
+
+    //! Index map between block-g and g_sg maps
+    Teuchos::Array<int> sg_g_index_map;
 
     //! Block SG response map
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > sg_g_map;
@@ -359,7 +346,7 @@ namespace Stokhos {
     mutable Teuchos::RCP< Stokhos::EpetraVectorOrthogPoly > f_sg_blocks;
 
     //! W stochastic Galerkin components
-    mutable Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > W_sg_blocks;
+    mutable Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > W_sg_blocks;
 
     mutable Teuchos::Array< Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > > dfdp_sg_blocks;
 

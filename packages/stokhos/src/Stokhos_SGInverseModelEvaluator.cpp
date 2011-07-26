@@ -30,67 +30,34 @@
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_EpetraVectorOrthogPoly.hpp"
 #include "Stokhos_EpetraMultiVectorOrthogPoly.hpp"
+#include "Stokhos_EpetraOperatorOrthogPoly.hpp"
 #include "Epetra_Map.h"
 #include "Teuchos_TestForException.hpp"
 
 Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator(
   const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
-  const Teuchos::Array<int>& sg_p_index_,
-  const Teuchos::Array<int>& non_sg_p_index_,
-  const Teuchos::Array<int>& sg_g_index_,
-  const Teuchos::Array<int>& non_sg_g_index_,
-  const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_p_maps_,
-  const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_g_maps_) 
-  : me(me_),
-    sg_p_index(sg_p_index_),
-    non_sg_p_index(non_sg_p_index_),
-    sg_g_index(sg_g_index_),
-    non_sg_g_index(non_sg_g_index_),
-    base_p_maps(base_p_maps_),
-    base_g_maps(base_g_maps_),
-    num_p_sg(sg_p_index.size()),
-    num_p(non_sg_p_index.size()),
-    num_g_sg(sg_g_index.size()),
-    num_g(non_sg_g_index.size()),
-    block_p(num_p_sg),
-    block_g(num_g_sg),
-    block_dgdp(num_g_sg)
+  const Teuchos::Array<int>& sg_p_index_map_,
+  const Teuchos::Array<int>& sg_g_index_map_,
+  const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_g_maps_) : 
+  me(me_),
+  sg_p_index_map(sg_p_index_map_),
+  sg_g_index_map(sg_g_index_map_),
+  base_g_maps(base_g_maps_),
+  num_p(0),
+  num_g(0),
+  num_p_sg(sg_p_index_map.size()),
+  num_g_sg(sg_g_index_map.size())
 {
-  TEST_FOR_EXCEPTION(
-    base_p_maps.size() != num_p_sg, std::logic_error,
-    std::endl 
-    << "Error!  Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator():"
-    << "  Base parameter map array size does not match size of index array!");
+  InArgs me_inargs = me->createInArgs();
+  OutArgs me_outargs = me->createOutArgs();
+  num_p = me_inargs.Np() - num_p_sg;
+  num_g = me_outargs.Ng();
+
   TEST_FOR_EXCEPTION(
     base_g_maps.size() != num_g_sg, std::logic_error,
     std::endl 
     << "Error!  Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator():"
     << "  Base response map array size does not match size of index array!");
-
-  InArgs me_inargs = me->createInArgs();
-  OutArgs me_outargs = me->createOutArgs();
-  
-  // Create parameter SG blocks
-  for (int i=0; i<num_p_sg; i++) {
-    Teuchos::RCP<const Epetra_Map> sg_p_map = me->get_p_map(sg_p_index[i]);
-    block_p[i] = Teuchos::rcp(new Epetra_Vector(*sg_p_map));
-  }
-
-  // Create response SG blocks
-  for (int i=0; i<num_g_sg; i++) {
-    Teuchos::RCP<const Epetra_Map> sg_g_map = me->get_g_map(sg_g_index[i]);
-    
-    // Create g SG blocks
-    block_g[i] = Teuchos::rcp(new Epetra_Vector(*sg_g_map));
-    
-    // Create dg/dp SG blocks
-    block_dgdp[i].resize(num_p);
-    for (int j=0; j<num_p; j++) {
-      Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(non_sg_p_index[j]);
-      block_dgdp[i][j] = 
-	Teuchos::rcp(new Epetra_MultiVector(*sg_g_map, p_map->NumMyElements()));
-    }
-  }
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -117,18 +84,7 @@ get_p_map(int l) const
     l >= num_p || l < 0, std::logic_error,
     std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_map():"
     << "  Invalid parameter index l = " << l << std::endl);
-  return me->get_p_map(non_sg_p_index[l]);
-}
-
-Teuchos::RCP<const Epetra_Map>
-Stokhos::SGInverseModelEvaluator::
-get_p_sg_map(int l) const
-{
-  TEST_FOR_EXCEPTION(
-    l >= num_p_sg || l < 0, std::logic_error,
-    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_sg_map():"
-    << "  Invalid parameter index l = " << l << std::endl);
-  return base_p_maps[l];
+  return me->get_p_map(l);
 }
 
 Teuchos::RCP<const Epetra_Map>
@@ -138,17 +94,6 @@ get_g_map(int l) const
   TEST_FOR_EXCEPTION(
     l >= num_g || l < 0, std::logic_error,
     std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_g_map():"
-    << "  Invalid response index l = " << l << std::endl);
-  return me->get_g_map(non_sg_g_index[l]);
-}
-
-Teuchos::RCP<const Epetra_Map>
-Stokhos::SGInverseModelEvaluator::
-get_g_sg_map(int l) const
-{
-  TEST_FOR_EXCEPTION(
-    l >= num_g_sg || l < 0, std::logic_error,
-    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_g_sg_map():"
     << "  Invalid response index l = " << l << std::endl);
   return base_g_maps[l];
 }
@@ -161,18 +106,7 @@ get_p_names(int l) const
     l >= num_p || l < 0, std::logic_error,
     std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_names():"
     << "  Invalid parameter index l = " << l << std::endl);
-  return me->get_p_names(non_sg_p_index[l]);
-}
-
-Teuchos::RCP<const Teuchos::Array<std::string> >
-Stokhos::SGInverseModelEvaluator::
-get_p_sg_names(int l) const
-{
-  TEST_FOR_EXCEPTION(
-    l >= num_p_sg || l < 0, std::logic_error,
-    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_sg_names():"
-    << "  Invalid parameter index l = " << l << std::endl);
-  return me->get_p_names(sg_p_index[l]);
+  return me->get_p_names(l);
 }
 
 Teuchos::RCP<const Epetra_Vector> 
@@ -183,7 +117,7 @@ get_p_init(int l) const
     l >= num_p || l < 0, std::logic_error,
     std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_init():"
     << "  Invalid parameter index l = " << l << std::endl);
-  return me->get_p_init(non_sg_p_index[l]);
+  return me->get_p_init(l);
 }
 
 EpetraExt::ModelEvaluator::InArgs
@@ -194,7 +128,8 @@ Stokhos::SGInverseModelEvaluator::createInArgs() const
 
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(num_p);
-  inArgs.set_Np_sg(num_p_sg); 
+  for (int i=0; i<num_p_sg; i++)
+    inArgs.setSupports(IN_ARG_p_sg, sg_p_index_map[i], true);
   inArgs.setSupports(IN_ARG_sg_basis, me_inargs.supports(IN_ARG_sg_basis));
   inArgs.setSupports(IN_ARG_sg_quadrature, 
 		     me_inargs.supports(IN_ARG_sg_quadrature));
@@ -213,20 +148,12 @@ Stokhos::SGInverseModelEvaluator::createOutArgs() const
   outArgs.setModelEvalDescription(this->description());
 
   outArgs.set_Np_Ng(num_p, num_g);
-  for (int i=0; i<num_g; i++)
+  for (int i=0; i<num_g_sg; i++) {
+    outArgs.setSupports(OUT_ARG_g_sg, sg_g_index_map[i], true);
     for (int j=0; j<num_p; j++)
-      outArgs.setSupports(OUT_ARG_DgDp, i, j, 
-			  me_outargs.supports(OUT_ARG_DgDp, 
-					      non_sg_g_index[i], 
-					      non_sg_p_index[j]));
-
-  outArgs.set_Np_Ng_sg(num_p, num_g_sg);
-  for (int i=0; i<num_g_sg; i++)
-    for (int j=0; j<num_p; j++)
-      outArgs.setSupports(OUT_ARG_DgDp_sg, i, j, 
-			  me_outargs.supports(OUT_ARG_DgDp, 
-					      sg_g_index[i], 
-					      non_sg_p_index[j]));
+      outArgs.setSupports(OUT_ARG_DgDp_sg, sg_g_index_map[i], j, 
+			  me_outargs.supports(OUT_ARG_DgDp, i, j));
+  }
   
   return outArgs;
 }
@@ -240,14 +167,13 @@ Stokhos::SGInverseModelEvaluator::evalModel(const InArgs& inArgs,
 
   // Pass parameters
   for (int i=0; i<num_p; i++)
-    me_inargs.set_p(non_sg_p_index[i], inArgs.get_p(i));
+    me_inargs.set_p(i, inArgs.get_p(i));
 
   // Pass SG parameters
   for (int i=0; i<num_p_sg; i++) {
-    InArgs::sg_const_vector_t p_sg = inArgs.get_p_sg(i);
+    InArgs::sg_const_vector_t p_sg = inArgs.get_p_sg(sg_p_index_map[i]);
     if (p_sg != Teuchos::null) {
-      p_sg->assignToBlockVector(*(block_p[i]));
-      me_inargs.set_p(sg_p_index[i], block_p[i]);
+      me_inargs.set_p(i+num_p, p_sg->getBlockVector());
     }
   }
 
@@ -262,44 +188,32 @@ Stokhos::SGInverseModelEvaluator::evalModel(const InArgs& inArgs,
   // Create underlying outargs
   OutArgs me_outargs = me->createOutArgs();
 
-  // Responses
-  for (int i=0; i<num_g; i++) {
-    // g
-    me_outargs.set_g(non_sg_g_index[i], outArgs.get_g(i));
-
-    // dg/dp
-    for (int j=0; j<num_p; j++)
-      if (!outArgs.supports(OUT_ARG_DgDp, i, j).none())
-	me_outargs.set_DgDp(non_sg_g_index[i], non_sg_p_index[j], 
-			    outArgs.get_DgDp(i,j));
-  }
-
-
   // SG Responses
   for (int i=0; i<num_g_sg; i++) {
+    int ii = sg_g_index_map[i];
+    
     // g
-    OutArgs::sg_vector_t g_sg = outArgs.get_g_sg(i);
+    OutArgs::sg_vector_t g_sg = outArgs.get_g_sg(ii);
     if (g_sg != Teuchos::null) {
-      g_sg->assignToBlockVector(*(block_g[i]));
-      me_outargs.set_g(sg_g_index[i], block_g[i]);
+      me_outargs.set_g(i, Teuchos::rcp_dynamic_cast<Epetra_Vector>(g_sg->getBlockVector()));
     }
 
     // dg/dp
     for (int j=0; j<num_p; j++) {
-      if (!outArgs.supports(OUT_ARG_DgDp_sg, i, j).none()) {
-	SGDerivative dgdp_sg = outArgs.get_DgDp_sg(i,j);
-	Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp_sg_mv
-	  = dgdp_sg.getMultiVector();
+      if (!outArgs.supports(OUT_ARG_DgDp_sg, ii, j).none()) {
+	SGDerivative dgdp_sg = outArgs.get_DgDp_sg(ii,j);
+	Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp_sg_mv = 
+	  dgdp_sg.getMultiVector();
+	Teuchos::RCP<Epetra_Operator> dgdp_sg_op =
+	  dgdp_sg.getLinearOp();
 	if (dgdp_sg_mv != Teuchos::null) {
-	  dgdp_sg_mv->assignToBlockMultiVector(*(block_dgdp[i][j]));
-	  me_outargs.set_DgDp(sg_g_index[i], non_sg_p_index[j], 
-			      Derivative(block_dgdp[i][j],
-					 dgdp_sg.getMultiVectorOrientation()));
+	  me_outargs.set_DgDp(
+	    i, j, Derivative(dgdp_sg_mv->getBlockMultiVector(),
+			     dgdp_sg.getMultiVectorOrientation()));
 	}
-	TEST_FOR_EXCEPTION(dgdp_sg.getLinearOp() != Teuchos::null, 
-			   std::logic_error,
-			   "Error!  Stokhos::SGInverseModelEvaluator::evalModel"
-			   << " cannot handle operator form of dg/dp!");
+	else if (dgdp_sg_op != Teuchos::null) {
+	  me_outargs.set_DgDp(i, j, Derivative(dgdp_sg_op));
+	}
       }
     }
 
@@ -307,25 +221,5 @@ Stokhos::SGInverseModelEvaluator::evalModel(const InArgs& inArgs,
 
   // Compute the functions
   me->evalModel(me_inargs, me_outargs);
-
-  // Copy block SG components
-  for (int i=0; i<num_g_sg; i++) {
-    // g
-    OutArgs::sg_vector_t g_sg = outArgs.get_g_sg(i);
-    if (g_sg != Teuchos::null) {
-      g_sg->assignFromBlockVector(*(block_g[i]));
-    }
-
-    // dg/dp
-    for (int j=0; j<num_p; j++) {
-      if (!outArgs.supports(OUT_ARG_DgDp_sg, i, j).none()) {
-	SGDerivative dgdp_sg = outArgs.get_DgDp_sg(i,j);
-	Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp_sg_mv
-	  = dgdp_sg.getMultiVector();
-	if (dgdp_sg_mv != Teuchos::null)
-	  dgdp_sg_mv->assignFromBlockMultiVector(*(block_dgdp[i][j]));
-      }
-    }
-  }
 
 }

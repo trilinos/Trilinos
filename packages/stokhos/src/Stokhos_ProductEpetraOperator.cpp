@@ -32,14 +32,14 @@
 
 Stokhos::ProductEpetraOperator::
 ProductEpetraOperator(
-  const Teuchos::RCP<const Epetra_Map>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
   const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
   const Teuchos::RCP<const Epetra_Map>& range_base_map_,
   const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm_) : 
   ProductContainer<Epetra_Operator>(block_map),
   domain_base_map(domain_base_map_),
   range_base_map(range_base_map_),
-  product_range_map(Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*range_base_map, *block_map, *product_comm))),
+  product_range_map(Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*range_base_map, *block_map, *product_comm_))),
   product_comm(product_comm_),
   useTranspose(false)
 {
@@ -47,7 +47,7 @@ ProductEpetraOperator(
 
 Stokhos::ProductEpetraOperator::
 ProductEpetraOperator(
-  const Teuchos::RCP<const Epetra_Map>& block_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& block_map,
   const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
   const Teuchos::RCP<const Epetra_Map>& range_base_map_,
   const Teuchos::RCP<const Epetra_Map>& product_range_map_,
