@@ -275,8 +275,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   lockQuorum_(1),
   recover_(true)
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-  , _timerSolve(Teuchos::TimeMonitor::getNewTimer("LOBPCGSolMgr::solve()")),
-  _timerLocking(Teuchos::TimeMonitor::getNewTimer("LOBPCGSolMgr locking"))
+  , _timerSolve(Teuchos::TimeMonitor::getNewTimer("Anasazi: LOBPCGSolMgr::solve()")),
+  _timerLocking(Teuchos::TimeMonitor::getNewTimer("Anasazi: LOBPCGSolMgr locking"))
 #endif
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");

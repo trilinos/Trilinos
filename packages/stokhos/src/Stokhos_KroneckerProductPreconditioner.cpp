@@ -199,7 +199,7 @@ Stokhos::KroneckerProductPreconditioner::
 ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Total Kronecker Product Prec Time");
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Kronecker Product Prec Time");
 #endif
 
   EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
@@ -230,7 +230,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   // Apply (G^{-1} x I)
   {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-    TEUCHOS_FUNC_TIME_MONITOR("G Preconditioner Apply Inverse");
+    TEUCHOS_FUNC_TIME_MONITOR("Stokhos: G Preconditioner Apply Inverse");
 #endif
     G_prec->ApplyInverse(*result_MVT, *result_MVT);
   }
@@ -247,7 +247,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   // Apply (I x A_0^{-1})
   {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-    TEUCHOS_FUNC_TIME_MONITOR("Mean Preconditioner Apply Inverse");
+    TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Mean Preconditioner Apply Inverse");
 #endif
     for (int i=0; i<NumMyElements; i++) {
       mean_prec->ApplyInverse(*(sg_result.GetBlock(i)), 

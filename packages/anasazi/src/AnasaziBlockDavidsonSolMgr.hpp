@@ -272,9 +272,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   inSituRestart_(false),
   numRestartBlocks_(1)
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-  , _timerSolve(Teuchos::TimeMonitor::getNewTimer("BlockDavidsonSolMgr::solve()")),
-  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("BlockDavidsonSolMgr restarting")),
-  _timerLocking(Teuchos::TimeMonitor::getNewTimer("BlockDavidsonSolMgr locking"))
+  , _timerSolve(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockDavidsonSolMgr::solve()")),
+  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockDavidsonSolMgr restarting")),
+  _timerLocking(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockDavidsonSolMgr locking"))
 #endif
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");

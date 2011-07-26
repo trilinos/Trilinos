@@ -158,7 +158,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
 {
   using Teuchos::outArg;
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF");
+  TEUCHOS_FUNC_TIME_MONITOR("Stratimikos: AmesosLOWSF");
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
@@ -216,7 +216,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
       amesosSolver;
     {
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF:InitConstruct",
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AmesosLOWSF:InitConstruct",
         InitConstruct);
 #endif
       switch(solverType_) {
@@ -290,7 +290,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // Do the initial factorization
     {
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF:Symbolic", Symbolic);
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AmesosLOWSF:Symbolic", Symbolic);
 #endif
       const int err = amesosSolver->SymbolicFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
@@ -299,7 +299,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     }
     {
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF:Factor", Factor);
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AmesosLOWSF:Factor", Factor);
 #endif
       const int err = amesosSolver->NumericFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
@@ -328,7 +328,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // Repivot if asked
     if(refactorizationPolicy_==Amesos::REPIVOT_ON_REFACTORIZATION) {
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF:Symbolic", Symbolic);
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AmesosLOWSF:Symbolic", Symbolic);
 #endif
       const int err = amesosSolver->SymbolicFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
@@ -337,7 +337,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     }
     {
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF::Factor", Factor);
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AmesosLOWSF::Factor", Factor);
 #endif
       const int err = amesosSolver->NumericFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,

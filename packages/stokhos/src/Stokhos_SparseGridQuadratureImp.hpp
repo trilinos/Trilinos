@@ -43,7 +43,7 @@ SparseGridQuadrature(
   coordinate_bases(product_basis->getCoordinateBases())
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Sparse Grid Generation");
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Sparse Grid Generation");
 #endif
 
   ordinal_type d = product_basis->dimension();

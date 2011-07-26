@@ -93,7 +93,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
   // Add counter to name so that all timers have unique names
   static int count=0;
   std::stringstream uniqueName;
-  uniqueName << "- Phalanx evaluator " << count++ <<": ";
+  uniqueName << "Phalanx: Evaluator " << count++ <<": ";
   evalTimers.push_back(
      Teuchos::TimeMonitor::getNewTimer(uniqueName.str() + p->getName()));
 #endif

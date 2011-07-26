@@ -258,8 +258,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _numIters(0),
   _verbosity(Anasazi::Errors),
   _inSituRestart(false),
-  _timerSolve(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchurSolMgr::solve()")),
-  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchurSolMgr restarting")),
+  _timerSolve(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr::solve()")),
+  _timerRestarting(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchurSolMgr restarting")),
   _printNum(-1)
 {
   TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
