@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,12 +45,12 @@
  * \file   Amesos2_Meta.hpp
  * \author Eric Bavier <etbavie@sandia.gov>
  * \date   Mon Jul 18 15:28:52 2011
- * 
- * \brief  Provides some simple meta-programming utilities for Amesos2. 
- * 
+ *
+ * \brief  Provides some simple meta-programming utilities for Amesos2.
+ *
  * The meta-programming utilities provided here might not be nearly as
  * flexible and complete as those provided in the Boost
- * Meta-Programming Library, but they are sifficient for the needs of
+ * Meta-Programming Library, but they are sufficient for the needs of
  * Amesos2.
  */
 
@@ -58,9 +58,18 @@
 #ifndef AMESOS2_META_HPP
 #define AMESOS2_META_HPP
 
+#include "Amesos2_config.h"
+
+
 namespace Amesos2 {
 
   namespace Meta {
+
+    /**
+     * \internal
+     * \defgroup amesos2_meta Amesos2 Meta-programming Functions
+     * @{
+     */
 
     template <class T, T val>
     struct integral_constant
@@ -80,20 +89,54 @@ namespace Amesos2 {
     typedef integral_constant<bool, true>  true_type;
     typedef integral_constant<bool, false> false_type;
 
-    
     ////////////////////////////////////////
     // Testing the same'ness of two types //
     ////////////////////////////////////////
 
+    /**
+     * \brief test same-ness of two types
+     */
     template <typename, typename>
-    struct is_same : public false_type 
+    struct is_same : public false_type
     {};
 
     template <typename T>
     struct is_same<T,T> : public true_type
     {};
 
-    
+
+
+    //////////////////////////////////////////
+    // Meta-functions for boolean operators //
+    //////////////////////////////////////////
+
+    template <bool b1, bool b2>
+    struct or : public false_type {};
+
+    template <bool b>
+    struct or<true,b> : public true_type {};
+
+    template <bool b>
+    struct or<b,true> : public true_type {};
+
+
+    template <bool b1, bool b2>
+    struct and : public false_type {};
+
+    template <>
+    struct and<true,true> : public true_type {};
+
+
+    template <bool b>
+    struct not {};
+
+    template <>
+    struct not<true> : false_type {};
+
+    template <>
+    struct not<false> : true_type {};
+
+
     //////////////////////////////////////
     // Evaluating to a conditional type //
     //////////////////////////////////////
@@ -111,7 +154,7 @@ namespace Amesos2 {
       typedef T2 type;
     };
 
-    
+
     ////////////////////////////////////////////
     // A meta-programming type-list structure //
     ////////////////////////////////////////////
@@ -125,7 +168,8 @@ namespace Amesos2 {
       typedef Tail tail;
     };
 
-    /* Utility meta-function for creating a type-list
+    /**
+     * \brief Utility meta-function for creating a type-list
      *
      * Example:
      *
@@ -167,9 +211,10 @@ namespace Amesos2 {
 
     /* More declarations for larger type lists may be added if necessary */
 
-    
-    /* A utility meta-function to determine whether a given type is
-     * found within a type-list
+
+    /**
+     * \brief A utility meta-function to determine whether a given
+     * type is found within a type-list
      *
      * \code
      * typedef make_list4<float,double,int,long> t_list;
@@ -193,12 +238,13 @@ namespace Amesos2 {
     template <typename list, typename elem>
     const bool type_list_contains<list,elem>::value
     = if_then_else<is_same<typename list::head, elem>::value,
-		   true_type,
-		   type_list_contains<typename list::tail,elem> >::type::value;
-  
-  
+                   true_type,
+                   type_list_contains<typename list::tail,elem> >::type::value;
+
+    /** @} */
+
   } // end namespace Meta
-  
+
 } // end namespace Amesos2
 
 #endif  // AMESOS2_META_HPP
