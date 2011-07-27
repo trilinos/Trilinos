@@ -491,6 +491,35 @@ Piro::Epetra::StokhosSolver::evalModel(const InArgs& inArgs,
   sg_solver->evalModel(inArgs, outArgs);
 }
 
+Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
+Piro::Epetra::StokhosSolver::create_g_sg(int l, Epetra_DataAccess CV, 
+					 const Epetra_Vector* v) const 
+{
+  OutArgs outargs = sg_nonlin_model->createOutArgs();
+  int ng = outargs.Ng();
+  if (sg_method != SG_NI && sg_method != SG_MPNI && 
+      piroParams->get("Solver Type", "NOX") == "NOX" && l == ng) {
+    return sg_nonlin_model->create_x_sg(CV, v);
+  }
+  else
+    return sg_nonlin_model->create_g_sg(l, CV, v);
+}
+
+Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> 
+Piro::Epetra::StokhosSolver::create_g_mv_sg(int l, int num_vecs, 
+					    Epetra_DataAccess CV, 
+					    const Epetra_MultiVector* v) const
+{
+  OutArgs outargs = sg_nonlin_model->createOutArgs();
+  int ng = outargs.Ng();
+  if (sg_method != SG_NI && sg_method != SG_MPNI && 
+      piroParams->get("Solver Type", "NOX") == "NOX" && l == ng) {
+    return sg_nonlin_model->create_x_mv_sg(num_vecs, CV, v);
+  }
+  else
+    return sg_nonlin_model->create_g_mv_sg(l, num_vecs, CV, v);
+}
+
 Teuchos::RCP<const Teuchos::ParameterList>
 Piro::Epetra::StokhosSolver::getValidSGParameters() const
 {

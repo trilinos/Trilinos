@@ -102,7 +102,8 @@ namespace Epetra {
     }
 
     //! Return initial SG x
-    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> get_x_sg_init() const {
+    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> 
+    get_x_sg_init() const {
       return sg_nonlin_model->get_x_sg_init();
     }
 
@@ -112,7 +113,8 @@ namespace Epetra {
     }
 
     //! Get initial parameter polynomial
-    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> get_p_sg_init(int l) const {
+    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> 
+    get_p_sg_init(int l) const {
       return sg_nonlin_model->get_p_sg_init(l);
     }
 
@@ -133,16 +135,12 @@ namespace Epetra {
     //! Create vector orthog poly using g map
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> 
     create_g_sg(int l, Epetra_DataAccess CV = Copy, 
-		const Epetra_Vector* v = NULL) const {
-      return sg_nonlin_model->create_g_sg(l, CV, v);
-    }
+		const Epetra_Vector* v = NULL) const;
 
     //! Create multi-vector orthog poly using g map
     Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> 
     create_g_mv_sg(int l, int num_vecs, Epetra_DataAccess CV = Copy, 
-		   const Epetra_MultiVector* v = NULL) const {
-      return sg_nonlin_model->create_g_mv_sg(l, num_vecs, CV, v);
-    }
+		   const Epetra_MultiVector* v = NULL) const;
     
   private:
     /** \brief . */

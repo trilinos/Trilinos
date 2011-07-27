@@ -1140,10 +1140,10 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="FEApp" dir="../demos/FEApp">
-    <LIB_REQUIRED_DEP_PACKAGES value="Sacado,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Stokhos"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Sacado,Epetra,EpetraExt,Stokhos,NOX,Piro"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="NOX,Piro"/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
