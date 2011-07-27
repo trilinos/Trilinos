@@ -169,8 +169,7 @@ int main(int argc, char *argv[]) {
 
   if( printLUStats && myRank == 0 ){
     Amesos2::Status solver_status = solver->getStatus();
-    *fos << "L nnz = " << solver_status.getLNNZ() << std::endl;
-    *fos << "U nnz = " << solver_status.getUNNZ() << std::endl;
+    *fos << "L+U nnz = " << solver_status.getNnzLU() << std::endl;
   }
   
   solver->solve();

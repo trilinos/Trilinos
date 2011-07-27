@@ -9,7 +9,10 @@
 #ifndef AMESOS2_EPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP
 #define AMESOS2_EPETRAROWMATRIX_ABSTRACTMATRIXADAPTER_DEF_HPP
 
+#include <Epetra_RowMatrix.h>
 #include <Epetra_Map.h>
+#include <Epetra_Comm.h>
+
 #include "Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_decl.hpp"
 
 

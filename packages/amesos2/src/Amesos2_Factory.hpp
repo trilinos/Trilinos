@@ -88,6 +88,7 @@
 
 #include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_MatrixTraits.hpp"
+#include "Amesos2_ctassert.hpp"
 
 #ifdef HAVE_AMESOS2_KLU2
 #include "Amesos2_Klu2_decl.hpp"
@@ -310,6 +311,15 @@ namespace Amesos2 {
                                                       Teuchos::RCP<Vector>       X,
                                                       Teuchos::RCP<const Vector> B )
     {
+      ctassert<
+        Meta::is_same<
+          typename MatrixTraits<Matrix>::scalar_t,
+          typename MultiVecAdapter<Vector>::scalar_t
+	>::value
+      > same_scalar_assertion;
+      (void)same_scalar_assertion; // This stops the compiler from warning about unused declared variables
+
+      // If our assertion did not fail, then create and return a new solver
       return rcp( new ConcreteSolver<Matrix,Vector>(A, X, B) );
     }
   };

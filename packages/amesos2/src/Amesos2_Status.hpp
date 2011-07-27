@@ -83,8 +83,7 @@ namespace Amesos2 {
 
       , last_phase_(CLEAN)
 
-      , l_nnz_(0)
-      , u_nnz_(0)
+      , lu_nnz_(0)
     { }
 
 
@@ -119,23 +118,14 @@ namespace Amesos2 {
     inline bool numericFactorizationDone() const
     { return( last_phase_ >= NUMFACT ); }
 
-    /** \brief Get the number of non-zero entries in the \f$L\f$ factor.
+    /** \brief Get the number of non-zero entries in the \f$L\f$ and \f$U\f$ factors.
      * 
      * Returns \c 0 if numeric factorization has not yet been performed,
      * or if the solver does not support getting statistics about the
      * factors.
      */
-    inline size_t getLNNZ() const
-    { return( l_nnz_ ); }
-
-    /** \brief Get the number of non-zero entries in the \f$U\f$ factor.
-     * 
-     * Returns \c 0 if numeric factorization has not yet been performed,
-     * or if the solver does not support getting statistics about the
-     * factors.
-     */
-    inline size_t getUNNZ() const
-    { return( u_nnz_ ); }
+    inline size_t getNnzLU() const
+    { return( lu_nnz_ ); }
 
 
   private:
@@ -155,11 +145,8 @@ namespace Amesos2 {
     /// The last phase of computation that was performed by the owning solver object
     EPhase last_phase_;
 
-    /// The number of non-zeros in the L factor
-    size_t l_nnz_;
-
-    /// The number of non-zeros in the U factor
-    size_t u_nnz_;
+    /// The number of non-zeros in the factors
+    size_t lu_nnz_;
 
   };                              // end class Amesos2::Status
 
