@@ -527,19 +527,14 @@ namespace Ioex {
     get_step_times();
     get_elemblocks();
     check_side_topology();
-
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-      get_nodeblocks();
-    }
+    
+    get_nodeblocks();
     get_sidesets();
-    {
-      Ioss::SerializeIO	serializeIO__(this);
-      get_nodesets();
-      get_commsets();
+    get_nodesets();
+    get_commsets();
 
-      add_region_fields();
-    }
+    add_region_fields();
+
     // This closes the file.  It will be automatically opened the next time the file is
     // accessed and it solves some issues with initial condition
     // data...
@@ -1099,8 +1094,11 @@ namespace Ioex {
       char * const element_type = TOPTR(all_element_type) + iblk * (MAX_STR_LENGTH+1);
 
       Ioss::ElementBlock *block = NULL;
-      std::string block_name = get_entity_name(get_file_pointer(), EX_ELEM_BLOCK, id, "block",
-					       maximumNameLength);
+      std::string block_name;
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+	block_name = get_entity_name(get_file_pointer(), EX_ELEM_BLOCK, id, "block", maximumNameLength);
+      }
 
       std::string save_type = element_type;
       std::string type = Ioss::Utils::fixup_element_type(element_type, my_node_count[iblk],
@@ -1241,23 +1239,26 @@ namespace Ioex {
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     assert(check_block_order(element_blocks));
 
-    for (int iblk = 0; iblk < elementBlockCount; iblk++) {
-      Ioss::ElementBlock *eb = element_blocks[iblk];
-      int blk_position =  eb->get_property("original_block_order").get_int();
-      int id =            eb->get_property("id").get_int();
-      int element_nodes = eb->get_property("topology_node_count").get_int();
-      int my_element_count = eb->get_property("entity_count").get_int();
-      if (my_element_count > 0) {
-	std::vector<int> conn(my_element_count * element_nodes);
-	ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, TOPTR(conn), NULL, NULL);
-	
-	for (int i=0; i < my_element_count * element_nodes; i++) {
-	  node_used[conn[i]-1] = blk_position+1;
-	}
+    {
+      Ioss::SerializeIO	serializeIO__(this);
+      for (int iblk = 0; iblk < elementBlockCount; iblk++) {
+	Ioss::ElementBlock *eb = element_blocks[iblk];
+	int blk_position =  eb->get_property("original_block_order").get_int();
+	int id =            eb->get_property("id").get_int();
+	int element_nodes = eb->get_property("topology_node_count").get_int();
+	int my_element_count = eb->get_property("entity_count").get_int();
+	if (my_element_count > 0) {
+	  std::vector<int> conn(my_element_count * element_nodes);
+	  ex_get_conn(get_file_pointer(), EX_ELEM_BLOCK, id, TOPTR(conn), NULL, NULL);
+	  
+	  for (int i=0; i < my_element_count * element_nodes; i++) {
+	    node_used[conn[i]-1] = blk_position+1;
+	  }
 
-	for (int i=0; i < nodeCount; i++) {
-	  if (node_used[i] == blk_position+1) {
-	    inv_con[i].push_back(blk_position);
+	  for (int i=0; i < nodeCount; i++) {
+	    if (node_used[i] == blk_position+1) {
+	      inv_con[i].push_back(blk_position);
+	    }
 	  }
 	}
       }
@@ -1886,7 +1887,6 @@ namespace Ioex {
 	      }
 
 	      // Add results fields 
-	      Ioss::SerializeIO	serializeIO__(this);
 	      add_results_fields(EX_SIDE_SET, side_block, my_side_count, iss);
 	    }
 	  }
@@ -1902,31 +1902,35 @@ namespace Ioex {
     if (elementBlockCount == 1) {
       block_ids[0] = 1;
     } else {
-      int number_sides;
-      int number_distribution_factors;
-      int error = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
-				   &number_sides, &number_distribution_factors);
-      if (error < 0) {
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-      }
-      
-      if (number_sides > 0) {
-	// Get the element and element side lists.
-	Ioss::IntVector element(number_sides);
-	Ioss::IntVector sides(number_sides);
+      {
+	Ioss::SerializeIO	serializeIO__(this);
 	
-	int ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
-	if (ierr < 0)
+	int number_sides;
+	int number_distribution_factors;
+	int error = ex_get_set_param(get_file_pointer(), EX_SIDE_SET, id,
+				     &number_sides, &number_distribution_factors);
+	if (error < 0) {
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	}
+      
+	if (number_sides > 0) {
+	  // Get the element and element side lists.
+	  Ioss::IntVector element(number_sides);
+	  Ioss::IntVector sides(number_sides);
 	
-	Ioss::ElementBlock *block = NULL;
-	for (int iel = 0; iel < number_sides; iel++) {
-	  int elem_id = element[iel];
-	  if (block == NULL || !block->contains(elem_id)) {
-	    block = get_region()->get_element_block(elem_id);
-	    assert(block != NULL);
-	    int block_order = block->get_property("original_block_order").get_int();
-	    block_ids[block_order] = 1;
+	  int ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, TOPTR(element), TOPTR(sides));
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	
+	  Ioss::ElementBlock *block = NULL;
+	  for (int iel = 0; iel < number_sides; iel++) {
+	    int elem_id = element[iel];
+	    if (block == NULL || !block->contains(elem_id)) {
+	      block = get_region()->get_element_block(elem_id);
+	      assert(block != NULL);
+	      int block_order = block->get_property("original_block_order").get_int();
+	      block_ids[block_order] = 1;
+	    }
 	  }
 	}
       }
@@ -2008,34 +2012,41 @@ namespace Ioex {
     // Get exodusII nodeset metadata
     if (nodesetCount > 0) {
       Ioss::IntVector nodeset_ids(nodesetCount);
-      int error = ex_get_ids(get_file_pointer(), EX_NODE_SET, TOPTR(nodeset_ids));
-      if (error < 0) {
-	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-      }
+      std::vector<Ioss::NodeSet*> nsets(nodesetCount);
 
-      for (int ins = 0; ins < nodesetCount; ins++) {
-	int id = nodeset_ids[ins];
-	int number_nodes;
-	int number_distribution_factors;
-
-	error = ex_get_set_param(get_file_pointer(), EX_NODE_SET, id,
-				 &number_nodes, &number_distribution_factors);
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+	int error = ex_get_ids(get_file_pointer(), EX_NODE_SET, TOPTR(nodeset_ids));
 	if (error < 0) {
 	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
 
-	std::string nodeset_name = get_entity_name(get_file_pointer(), EX_NODE_SET, id, "nodelist",
-						   maximumNameLength);
-	Ioss::NodeSet *nodeset = new Ioss::NodeSet(this, nodeset_name, number_nodes);
-	nodeset->property_add(Ioss::Property("id", id));
-	get_region()->add(nodeset);
+	for (int ins = 0; ins < nodesetCount; ins++) {
+	  int id = nodeset_ids[ins];
+	  int number_nodes;
+	  int number_distribution_factors;
+	  
+	  int error = ex_get_set_param(get_file_pointer(), EX_NODE_SET, id,
+				       &number_nodes, &number_distribution_factors);
+	  if (error < 0) {
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
 
-	add_results_fields(EX_NODE_SET, nodeset, number_nodes, ins);
-
-	get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
-	get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id));
+	  std::string nodeset_name = get_entity_name(get_file_pointer(), EX_NODE_SET, id, "nodelist",
+						     maximumNameLength);
+	  Ioss::NodeSet *nodeset = new Ioss::NodeSet(this, nodeset_name, number_nodes);
+	  nsets[ins] = nodeset;
+	  nodeset->property_add(Ioss::Property("id", id));
+	  get_region()->add(nodeset);
+	  get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
+	  get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id));
+	}
       }
 
+      for (int ins = 0; ins < nodesetCount; ins++) {
+	add_results_fields(EX_NODE_SET, nsets[ins],
+			   nsets[ins]->get_property("entity_count").get_int(), ins);
+      }
     }
   }
 
@@ -2053,6 +2064,7 @@ namespace Ioex {
     // nodesets, just return an empty container.
 
     if (isParallel) {
+      Ioss::SerializeIO	serializeIO__(this);
       // This is a parallel run. There should be communications data
       // Get nemesis commset metadata
       int my_node_count = 0;
@@ -2642,7 +2654,7 @@ namespace Ioex {
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
-      Ioss::SerializeIO	serializeIO__(this);
+    Ioss::SerializeIO	serializeIO__(this);
     size_t num_to_get = field.verify(data_size);
     if (num_to_get > 0) {
 
@@ -3873,8 +3885,8 @@ namespace Ioex {
 				     void *data, size_t data_size) const
   {
     {
-      ex_update(get_file_pointer());
       Ioss::SerializeIO	serializeIO__(this);
+      ex_update(get_file_pointer());
 
       int entity_count = ns->get_property("entity_count").get_int();
       size_t num_to_get = field.verify(data_size);
@@ -4700,22 +4712,24 @@ namespace Ioex {
       // Read and store the truth table (Should be there since we only
       // get to this routine if there are variables...)
       if (truth_table != NULL) {
+	{
 	  Ioss::SerializeIO	serializeIO__(this);
 
 	  int ierr = ex_get_truth_table(get_file_pointer(), type, block_count, nvar, truth_table);
 	  if (ierr < 0)
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	}
 
-	  // If parallel, then synchronize the truth table among all processors...
-	  // Need to know that block_X has variable_Y even if block_X is
-	  // empty on a specific processor...  The truth table contains 0
-	  // if the variable doesn't exist and 1 if it does, so we just
-	  // take the maximum at each location...
-	  // This is a collective call...
-	  if (isParallel) {
-	    util().global_array_minmax(truth_table, block_count * nvar,
-					     Ioss::ParallelUtils::DO_MAX);
-	  }
+	// If parallel, then synchronize the truth table among all processors...
+	// Need to know that block_X has variable_Y even if block_X is
+	// empty on a specific processor...  The truth table contains 0
+	// if the variable doesn't exist and 1 if it does, so we just
+	// take the maximum at each location...
+	// This is a collective call...
+	if (isParallel) {
+	  util().global_array_minmax(truth_table, block_count * nvar,
+				     Ioss::ParallelUtils::DO_MAX);
+	}
       }
 
       // Get the variable names and add as fields. Need to decode these
@@ -5366,13 +5380,17 @@ namespace Ioex {
       std::string block_name = block->name();
       int my_element_count = block->get_property("entity_count").get_int();
       
+
       // Get the attribute names. May not exist or may be blank...
       char **names = get_exodus_names(attribute_count, maximumNameLength);
       int id = block->get_property("id").get_int();
-      if (block->get_property("entity_count").get_int() != 0) {
-	int ierr = ex_get_attr_names(get_file_pointer(), EX_ELEM_BLOCK, id, &names[0]);
-	if (ierr < 0)
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      {
+	Ioss::SerializeIO	serializeIO__(this);
+	if (block->get_property("entity_count").get_int() != 0) {
+	  int ierr = ex_get_attr_names(get_file_pointer(), EX_ELEM_BLOCK, id, &names[0]);
+	  if (ierr < 0)
+	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	}
       }
 
       // Sync names across processors...
