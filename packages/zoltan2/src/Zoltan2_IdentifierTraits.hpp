@@ -278,7 +278,6 @@ struct IdentifierTraits<unsigned long long > {
   static inline bool isPacketType() { 
     return Teuchos::SerializationTraits<int, unsigned long long>::supportsDirectSerialization;
   }
-    return isPacket<unsigned long long>(); }
   static inline bool equal( const unsigned long long a, 
     const unsigned long long b) { return (a==b) ; }
   static inline bool is_valid_id_type() { return true; }

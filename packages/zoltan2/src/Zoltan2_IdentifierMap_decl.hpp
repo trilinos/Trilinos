@@ -19,7 +19,7 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Zoltan_Parameters.hpp>
+#include <Zoltan2_Environment.hpp>
 
 namespace Z2
 {
@@ -60,7 +60,7 @@ private:
 
   // Input communicator
 
-  Teuchos::RCP<Zoltan_Parameters> _params;
+  Teuchos::RCP<Zoltan2_Environment> _env;
 
   // Application global and local IDs
 

@@ -17,7 +17,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-#include <Zoltan2_AlltoAll.hpp>
+#include <Zoltan2_Partitioner.hpp>
 #include <Teuchos_GlobalMPISession.hpp>   
 #include <Teuchos_RCP.hpp>   
 #include <Teuchos_ArrayRCP.hpp>   
@@ -29,14 +29,14 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   int rank = session.getRank();
   int nprocs = session.getNProc();
-  bool pass = true;
+  int errcode = 0;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
 
   // In this test, our local IDs are ints and our global IDs are longs.
 
-  if (pass){
+  if (!errcode){
 
     // test of Z2::AlltoAll using a Scalar type (ints)
   
@@ -64,13 +64,13 @@ int main(int argc, char *argv[])
   
     for (int i=0; i < 2*nprocs; i+=2){
       if (inBuf[i] != myvals[0] && inBuf[i+1] != myvals[1]){
-        pass = false;
+        errcode = 1;
         break;
       }
     }
   }
 
-  if (pass){
+  if (!errcode){
 
     // test of Z2::AlltoAll using a non-Scalar type for which
     //  SerializationTraits are defined in Teuchos (std::pair).
@@ -99,13 +99,13 @@ int main(int argc, char *argv[])
   
     for (int i=0; i < nprocs; i++){
       if (inBufPair[i].first != myvals[0] && inBufPair[i].second != myvals[1]){
-        pass = false;
+        errcode = 1;
         break;
       }
     }
   }
 
-  if (pass){
+  if (!errcode){
 
     // test of Z2::AlltoAllv (different sized messages) using a Scalar type
 
@@ -148,14 +148,14 @@ int main(int argc, char *argv[])
     for (int p=0; p < nprocs; p++){
       for (int i=0; i < inMsgSizes[p]; i++){
         if (*inBuf++ != rank+p){
-          pass = false;
+          errcode = 1;
           break;
         }
       }
     }
   }
 
-  if (pass){
+  if (!errcode){
 
     // test of Z2::AlltoAllv using vectors - which can not
     //    be serialized by Teuchos.
@@ -203,18 +203,17 @@ int main(int argc, char *argv[])
       for (int i=0; i < inMsgSizes[p]; i++, inBuf++){
         std::vector<float> &v = *inBuf;
         if ( (v[0] != rank + p) || (v[1] != rank +p +0.5)){
-          pass = false;
+          errcode = 1;
           break;
         }
       }
     }
   }
 
-  if (!pass)
+  if (errcode)
     std::cout << "FAIL" << std::endl;
   else
     std::cout << "PASS" << std::endl;
 
-
-  return 0;
+  return errcode;
 }

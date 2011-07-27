@@ -20,8 +20,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Zoltan2_IdentifierTraits.hpp>
-#include <Zoltan2_Parameters.hpp>
-#include <Zoltan2_Util.hpp>
+#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_AlltoAll.hpp>
 
 namespace Z2
@@ -30,17 +29,17 @@ namespace Z2
 template<typename AppLID, typename AppGID, typename LNO, typename GNO> 
   IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap(
     Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
-    Teuchos::RCP<Zoltan2::Parameters> &params,
+    Zoltan2::Environment &env,
     typename Teuchos::ArrayRCP<AppGID> &gids, 
     typename Teuchos::ArrayRCP<AppLID> &lids) 
-         : _comm(in_comm), _params(params), _myGids(gids), _myLids(lids),
+         : _comm(in_comm), _env(env), _myGids(gids), _myLids(lids),
            _globalNumberOfIds(0), _localNumberOfIds(0), _haveLocalIds(false),
            _myRank(0), _numProcs(0)
 {
   _numProcs = _comm->getSize(); 
   _myRank = _comm->getRank(); 
 
-  Z2_GLOBAL_INPUT_ASSERTION( _comm, _params, 
+  Z2_GLOBAL_INPUT_ASSERTION( _comm, _env, 
            "application global ID type is not supported",
            IdentifierTraits<AppGID>::is_valid_id_type() == true,
            Z2_BASIC_ASSERTION);
@@ -61,13 +60,13 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       2, counts.getRawPtr(), counts.getRawPtr()+2);
   } 
   catch (const std::exception &e) {
-    Z2_THROW_OUTSIDE_ERROR(_params, e);
+    Z2_THROW_OUTSIDE_ERROR(_env, e);
   }
 
   _haveLocalIds = (counts[2] > 0);
   _globalNumberOfIds = counts[3];
 
-  Z2_GLOBAL_INPUT_ASSERTION( _comm, _params, 
+  Z2_GLOBAL_INPUT_ASSERTION( _comm, _env, 
        "number of global IDs does not equal number of local IDs",
       !_haveLocalIds || (counts[0] == _localNumberOfIds),
        Z2_BASIC_ASSERTION);
@@ -78,7 +77,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       p = new id2index_hash_t(_localNumberOfIds); 
     }
     catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(_params, e);
+      Z2_THROW_OUTSIDE_ERROR(_env, e);
     }
 
     AppLID *lidPtr = _myLids.get();  // for performance
@@ -88,7 +87,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         p->put(IdentifierTraits<AppLID>::key(lidPtr[i]), i);
       }
       catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(_params, e);
+        Z2_THROW_OUTSIDE_ERROR(_env, e);
       }
     }
 
@@ -132,7 +131,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         results.getRawPtr(), results.getRawPtr()+2);
     }
     catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(_params, e);
+      Z2_THROW_OUTSIDE_ERROR(_env, e);
     }
 
     if (results[2] != 1)       // min of consecutive flags
@@ -145,7 +144,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
           &globalMax);
       }
       catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(_params, e);
+        Z2_THROW_OUTSIDE_ERROR(_env, e);
       }
 
       if (globalMax - globalMin + 1 != static_cast<AppGID>(_globalNumberOfIds))
@@ -163,7 +162,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
             startGID);
         }
         catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(_params, e);
+          Z2_THROW_OUTSIDE_ERROR(_env, e);
         }
       
         for (int p=1; p < _numProcs; p++){
@@ -187,7 +186,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       _gnoDist = Teuchos::ArrayRCP<GNO>(_numProcs + 1, 0);
     }
     catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(_params, e);
+      Z2_THROW_OUTSIDE_ERROR(_env, e);
     }
 
     GNO myNum = static_cast<GNO>(_localNumberOfIds);
@@ -197,7 +196,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         _gnoDist.getRawPtr() + 1);
     }
     catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(_params, e);
+      Z2_THROW_OUTSIDE_ERROR(_env, e);
     }
   }
 
@@ -211,7 +210,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       p =  new id2index_hash_t(_localNumberOfIds);
     }
     catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(_params, e);
+      Z2_THROW_OUTSIDE_ERROR(_env, e);
     }
 
     AppGID *gidPtr = _myGids.get();  // for performance
@@ -221,7 +220,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         p->put(IdentifierTraits<AppGID>::key(gidPtr[i]), i);
       }
       catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(_params, e);
+        Z2_THROW_OUTSIDE_ERROR(_env, e);
       }
     }
 
@@ -232,7 +231,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   /*! Constructor */
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   IdentifierMap<AppLID,AppGID,LNO,GNO>::IdentifierMap()  
-         : _comm(), _params(), _myGids(), _myLids(),
+         : _comm(), _env(), _myGids(), _myLids(),
            _globalNumberOfIds(0), _localNumberOfIds(0), _haveLocalIds(false),
            _myRank(0), _numProcs(0)
 {
@@ -263,7 +262,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID,AppGID,LNO,GNO>::initialize(
     Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
-    Teuchos::RCP<Zoltan_Parameters > &params, 
+    Teuchos::RCP<Zoltan2_Environment> &params, 
     Teuchos::ArrayRCP<AppGID> &gids, 
     Teuchos::ArrayRCP<AppLID> &lids) 
 {
@@ -293,12 +292,12 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     return;
   }
 
-  Z2_LOCAL_INPUT_ASSERTION(_params, 
+  Z2_LOCAL_INPUT_ASSERTION(_env, 
     "invalid TranslationType", 
     (tt==TRANSLATE_GNO_TO_GID) || (tt==TRANSLATE_GID_TO_GNO), 
     Z2_BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(_params, 
+  Z2_LOCAL_INPUT_ASSERTION(_env, 
     "Destination array is too small",
     ((tt==TRANSLATE_GNO_TO_GID) && (gid.size() >= gno.size())) || ((tt==TRANSLATE_GID_TO_GNO) && (gno.size() >= gid.size())),
     Z2_BASIC_ASSERTION);
@@ -332,7 +331,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
           idx = _gidHash->get(Z2::IdentifierTraits<AppGID>::key(gid[i]));
         }
         catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(_params, e);
+          Z2_THROW_OUTSIDE_ERROR(_env, e);
         }
         
         gno[i] = firstGno + idx;
@@ -355,17 +354,17 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     return;
   }
 
-  Z2_LOCAL_INPUT_ASSERTION(_params, 
+  Z2_LOCAL_INPUT_ASSERTION(_env, 
     "invalid TranslationType", 
     (tt==TRANSLATE_GNO_TO_LID) || (tt==TRANSLATE_LID_TO_GNO), 
     Z2_BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(_params, 
+  Z2_LOCAL_INPUT_ASSERTION(_env, 
     "Destination array is too small",
     ((tt==TRANSLATE_GNO_TO_LID) && (lid.size() >= gno.size())) || ((tt==TRANSLATE_LID_TO_GNO) && (gno.size() >= lid.size())),
     Z2_BASIC_ASSERTION);
 
-  Z2_LOCAL_INPUT_ASSERTION(_params, 
+  Z2_LOCAL_INPUT_ASSERTION(_env, 
     "local ID translation is requested but none were provided",
      !_haveLocalIds,
     Z2_BASIC_ASSERTION);
@@ -381,7 +380,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       LNO idx = 0;
       if (_gnoDist.size() > 0) {// gnos are consecutive
 
-        Z2_LOCAL_INPUT_ASSERTION(_params, 
+        Z2_LOCAL_INPUT_ASSERTION(_env, 
           "invalid global number", 
           (gno[i] >= firstGno) && (gno[i] < endGno),
           Z2_BASIC_ASSERTION);
@@ -394,7 +393,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
             IdentifierTraits<AppGID>::key(static_cast<AppGID>(gno[i])));
         }
         catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(_params, e);
+          Z2_THROW_OUTSIDE_ERROR(_env, e);
         }
       }
       
@@ -408,7 +407,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         idx = _lidHash->get(IdentifierTraits<AppLID>::key(lid[i]));
       }
       catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(_params, e);
+        Z2_THROW_OUTSIDE_ERROR(_env, e);
       }
 
       if (_gnoDist.size() > 0)  // gnos are consecutive
@@ -436,7 +435,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     return;
   }
 
-  Z2_LOCAL_INPUT_ASSERTION(_params, 
+  Z2_LOCAL_INPUT_ASSERTION(_env, 
     "Destination array is too small", 
     (out_gno.size() >= len) && (out_proc.size() >= len),
     Z2_BASIC_ASSERTION);
@@ -490,13 +489,13 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       hashProc.reserve(_localNumberOfIds); 
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(_params, "", _localNumberOfIds, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(_env, _localNumberOfIds, false); 
 
     try{ 
       gidOutBuf.reserve(_localNumberOfIds); 
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(_params, "", _localNumberOfIds, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(_env, _localNumberOfIds, false); 
 
     for (teuchos_size_t i=0; i < _localNumberOfIds; i++){
       hashProc[i] = IdentifierTraits<AppGID>::hashCode(_myGids[i]) % _numProcs;
@@ -531,9 +530,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   try{
     AlltoAllv(*_comm, gidOutBuf, countOutBuf, gidInBuf, countInBuf);
   }
-  catch (const std::exception &e){
-    throw(e);
-  } 
+  catch (const std::exception &e)
+    Z2_THROW_ZOLTAN2_ERROR(_env, e);
 
   gidOutBuf.clear();
   
@@ -542,9 +540,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     try{
       AlltoAllv(*_comm, gnoOutBuf, countOutBuf, gnoInBuf, countInBuf);
     }
-    catch (const std::exception &e){
-      throw(e);
-    } 
+    catch (const std::exception &e)
+      Z2_THROW_ZOLTAN2_ERROR(_env, e);
   }
 
   gnoOutBuf.clear();
@@ -572,9 +569,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       try{
         gidToIndex.put(IdentifierTraits<AppGID>::key(gidInBuf[total]), total);
       }
-      catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(_params, e);
-      }
+      catch (const std::exception &e) 
+        Z2_THROW_OUTSIDE_ERROR(_env, e);
     }
   }
 
@@ -611,7 +607,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     try{
       gidIndices = new id2index_array_hash_t(tableSize);
     }
-    Z2_HANDLE_UNKNOWN_EXCEPTIONS("Teuchos::Hashtable constructor");
+    catch (const std::exception &e)
+      Z2_THROW_OUTSIDE_ERROR(_env, e)
   
     for (LNO i=0; i < len; i++){
 
@@ -622,9 +619,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         try{
           v = gidIndices->get(uniqueKey);
         }
-        catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(_params, e);
-        }
+        catch (const std::exception &e) 
+          Z2_THROW_OUTSIDE_ERROR(_env, e);
         
         teuchos_size_t n = v.size();
         if (n % sizeChunk == 0){
@@ -638,9 +634,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         try{
           gidIndices->put(uniqueKey, v);
         }
-        catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(_params, e);
-        }
+        catch (const std::exception &e) 
+          Z2_THROW_OUTSIDE_ERROR(_env, e);
       }
     }
   
@@ -654,13 +649,13 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       gidOutBuf.reserve(numberOfUniqueGids); 
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(_params, "", numberOfUniqueGids, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(_env, numberOfUniqueGids, false); 
 
     try{ 
       hashProc.reserve(numberOfUniqueGids);
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(_params, "", numberOfUniqueGids, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(_env, numberOfUniqueGids, false); 
   
     for (teuchos_size_t i=0; i < numberOfUniqueGids; i++){
       hashProc[i] = Teuchos::hashCode(uniqueGidQueries[i]) % _numProcs;
@@ -677,7 +672,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       gidLocation.reserve(numberOfUniqueGids);
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(_params, "", numberOfUniqueGids, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(_env, numberOfUniqueGids, false); 
   
     for (teuchos_size_t i=0; i < numberOfUniqueGids; i++){
       AppGID gid = IdentifierTraits<AppGID>::keyToGid(uniqueGidQueries[i]);
@@ -693,7 +688,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     AlltoAllv(*_comm, gidOutBuf, countOutBuf, gidInBuf, countInBuf);
   }
   catch (const std::exception &e)
-    throw(e)
+    Z2_THROW_ZOLTAN2_ERROR(_env, e)
 
   gidOutBuf.clear();
 
@@ -716,7 +711,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       gnoOutBuf.reserve(total);
     }
     catch(...)
-      Z2_LOCAL_MEMORY_ASSERTION(_params, "", total, false); 
+      Z2_LOCAL_MEMORY_ASSERTION(_env, total, false); 
   }
 
   if (total > 0){
@@ -730,9 +725,8 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
         try{
           index = gidToIndex.get(k);
         }
-        catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(_params, e);
-        }
+        catch (const std::exception &e) 
+          Z2_THROW_OUTSIDE_ERROR(_env, e);
         
         int proc = firstIndexToProc.upper_bound(index);
         procOutBuf[total] = proc-1;

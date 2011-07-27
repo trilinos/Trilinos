@@ -107,7 +107,7 @@ inline void DebugManager::print(int debugLevel, const char *output)
     if (debugLevel <= debugLevel_ && iPrint_)
         *myOS_ << output;
 //#endif
-};
+}
 
 inline void DebugManager::printInAllTasks(int debugLevel,
             const std::string &output)
@@ -132,5 +132,7 @@ inline void DebugManager::error(const std::string &output)
 {
     *myOS_ << "PID =" << myPID_ << " " << output;
 }
+
+} //namespace Z2
 
 #endif // _ZOLTAN2_DEBUG_MANAGER_HPP_

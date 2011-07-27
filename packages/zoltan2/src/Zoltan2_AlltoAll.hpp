@@ -17,7 +17,9 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Zoltan_Parameters.hpp>
+#include <Zoltan2_Environment.hpp>
+#include <Zoltan2_Exceptions.hpp>
+#include <Zoltan2_Memory.hpp>
 
 //
 // TODO: doxygen comments and error handling and timing
@@ -29,8 +31,8 @@ namespace Z2
 /*! \brief AlltoAll sends/receives a fixed number of objects to/from all processes.
  *
  * The data type T of the objects must be a type for which 
- * Teuchos::SerializationTraits are defined.  This
- * is most likely every data type including std::pair<T1,T2>. It does not
+ * Teuchos::SerializationTraits are defined.  This is most likely every 
+ * fundamental data type plus std::pair<T1,T2>. It does not
  * include std::vector<T2>.
  */
 
@@ -39,7 +41,7 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
               const Teuchos::ArrayView<T> &sendBuf,  // input
               LNO count,                             // input
               Teuchos::ArrayRCP<T> &recvBuf,         // output - allocated here
-              Teuchos::RCP<Zoltan_Parameters> &params) 
+              Zoltan2::Environment &env)
             
 {
   int nprocs = comm.getSize();
@@ -51,9 +53,7 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
 
   // Create a T-aligned receive buffer.
 
-  T *ptr = new T [nprocs * count];
-
-  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, nprocs*count, ptr != NULL);
+  Z2_SYNC_MEMORY_ALLOC(comm, env, T, ptr, nprocs * count);
 
   Teuchos::ArrayRCP<T> inBuf(ptr, 0, nprocs * count, true);
 
@@ -84,7 +84,7 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
         Teuchos::readySend<int, T>(comm, sendBuf.view(p*count, count), p);
       } 
       catch (const std::exception &e)
-        Z2_THROW_OUTSIDE_ERROR(params, e);
+        Z2_THROW_OUTSIDE_ERROR(env, e);
   }
 
   if (req.size() > 0){
@@ -92,7 +92,7 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
       Teuchos::waitAll<int>(comm, req);
     }
     catch (const std::exception &e)
-      Z2_THROW_OUTSIDE_ERROR(params, e);
+      Z2_THROW_OUTSIDE_ERROR(env, e);
   }
 
   recvBuf = inBuf;
@@ -101,8 +101,8 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
 /*! \brief AlltoAllv sends/receives a variable number of objects to/from all processes.
  *
  * The data type T of the objects must be a type for which 
- * Teuchos::SerializationTraits are defined.  This
- * is most likely every data type including std::pair<T1,T2>. It does not
+ * Teuchos::SerializationTraits are defined.  This is most likely every 
+ * fundamental data type plus std::pair<T1,T2>. It does not
  * include std::vector<T2>.
  */
 
@@ -112,7 +112,7 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
               const Teuchos::ArrayView<LNO> &sendCount,  // input
               Teuchos::ArrayRCP<T> &recvBuf,      // output, allocated here
               Teuchos::ArrayRCP<LNO> &recvCount,  // output, allocated here
-              Teuchos::RCP<Zoltan_Parameters > &params)  // output, allocated here
+              Zoltan2::Environment &env)  
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
@@ -121,7 +121,7 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
     AlltoAll<LNO, LNO>(comm, sendCount, 1, recvCount);
   }
   catch (const std::exception &e)
-    throw (e);
+    Z2_THROW_ZOLTAN2_ERROR(env, e);
 
   size_t totalIn=0, offsetIn=0, offsetOut=0;
 
@@ -133,11 +133,7 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
     }
   }
 
-  T *ptr = NULL;
-  if (totalIn)
-    ptr = new T [totalIn];
-
-  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, totalIn, !totalIn || (ptr != NULL));
+  Z2_SYNC_MEMORY_ALLOC(comm, env, T, ptr, totalIn);
 
   Teuchos::ArrayRCP<T> inBuf(ptr, 0, totalIn, true);
 
@@ -163,7 +159,7 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
         r  = Teuchos::ireceive<int, T>(comm, recvBufPtr, p);
       }
       catch (const std::exception &e){
-        Z2_THROW_OUTSIDE_ERROR(params, e);
+        Z2_THROW_OUTSIDE_ERROR(env, e);
       }
     
       req.push_back(r);
@@ -185,7 +181,7 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
         Teuchos::readySend<int, T>(comm, sendBuf.view(offsetOut, sendCount[p]), p);
       }
       catch(const std::exception &e)
-        Z2_THROW_OUTSIDE_ERROR(params, e);
+        Z2_THROW_OUTSIDE_ERROR(env, e);
     }
     offsetOut += sendCount[p];
   }
@@ -195,36 +191,37 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
       Teuchos::waitAll<int>(comm, req);
     }
     catch(const std::exception &e)
-      Z2_THROW_OUTSIDE_ERROR(params, e);
+      Z2_THROW_OUTSIDE_ERROR(env, e);
   }
 
   recvBuf = inBuf;
 }
 
 /*! \brief Serialization for std::vector<T>
-//
-// Teuchos::SerializationTraits exist for types that can be
-// sent in a Teuchos message, such as std::pair<T1, T2>.  It
-// does not exist for std::vector<T>, and it seems the serialization
-// interface does not make this possible.
-// 
-// These four methods are what the SerializationTraits interface
-// might look like if it could support type std::vector<T>.
-//
-// Buffer layout for std::vector<T> of size N, variable length vectors -
-//      LNO numberOfVectors      
-//      LNO offsetToStartsOfVectorElements[N] 
-//      T first element of first vector
-//        ...
-//      T last element of last vector
-//
-// Buffer layout for std::vector<T> of size N, identical length vectors -
-//      LNO numberOfVectors      
-//      T first element of first vector
-//        ...
-//      T last element of last vector
-//
-// Important: number of bytes returned is always a multiple of sizeof(T)
+ *
+ * Teuchos::SerializationTraits exist for types that can be
+ * sent in a Teuchos message, such as std::pair<T1, T2>.  It
+ * does not exist for std::vector<T>, and it seems the serialization
+ * interface does not make this possible.
+ * 
+ * These four methods are what the SerializationTraits interface
+ * might look like if it could support type std::vector<T>.
+ *
+ * Buffer layout for std::vector<T> of size N, variable length vectors -
+ *      LNO numberOfVectors      
+ *      LNO offsetToStartsOfVectorElements[N] 
+ *      T first element of first vector
+ *        ...
+ *      T last element of last vector
+ *
+ * Buffer layout for std::vector<T> of size N, identical length vectors -
+ *      LNO numberOfVectors      
+ *      T first element of first vector
+ *        ...
+ *      T last element of last vector
+ *
+ * Important: number of bytes returned is always a multiple of sizeof(T)
+ */
 
 template <typename T, typename LNO>
   LNO fromObjectsToIndirectBytes(const LNO count, 
@@ -342,11 +339,8 @@ template <typename T, typename LNO>
 /*! \brief AlltoAllv sends/receives a std::vector<T> to/from all processes.
  *
  * The vectors need not be the same length. The data type T must be a type 
- * for which Teuchos::SerializationTraits are defined.  This
- * is most likely every data type including std::pair<T1,T2>. It does not
- * include std::vector<T2>.
+ * for which Teuchos::SerializationTraits are defined.  
  */
-
 
 template <typename T, typename LNO>
 void AlltoAllv(const Teuchos::Comm<int>     &comm,
@@ -354,16 +348,14 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
   const Teuchos::ArrayView<LNO>             &sendCount,
   Teuchos::ArrayRCP<std::vector<T> >        &recvBuf,
   Teuchos::ArrayRCP<LNO>                    &recvCount,
+  Zoltan2::Environment &env,
   LNO            vLen=0)      // set if all vectors are the same length
 {
   int nprocs = comm.getSize();
   size_t totalSendSize = 0;
   LNO offset = 0;
 
-  // TODO these should be Teuchos::Ptr
-
-  LNO *sendSize = new LNO [nprocs];
-  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, nprocs, sendSize!= NULL);
+  Z2_SYNC_MEMORY_ALLOC(comm, env, LNO, sendSize, nprocs);
 
   for (int p=0; p < nprocs; p++){
     if (sendCount[p] > 0){
@@ -379,12 +371,7 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
     }
   }
 
-  T *buf = NULL;
-
-  if (totalSendSize > 0)
-    buf = new T [totalSendSize / sizeof(T)];
-  
-  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, totalSendSize, !totalSendSize || (buf!= NULL));
+  Z2_SYNC_MEMORY_ALLOC(comm, env, T, buf, totalSendSize/sizeof(T));
 
   std::vector<T> *vptr = sendBuf.getRawPtr();
 
@@ -404,14 +391,20 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
   Teuchos::ArrayRCP<T> recvT;
   Teuchos::ArrayRCP<LNO> recvSize;
 
-  AlltoAllv<T, LNO>(comm, sendTView, sendSizeView, recvT, recvSize);
+  try{
+    AlltoAllv<T, LNO>(comm, sendTView, sendSizeView, recvT, recvSize);
+  }
+  catch (const std::exception &e)
+    Z2_THROW_ZOLTAN2_ERROR(env, e);
 
-  delete [] buf;
+  if (buf)
+    delete [] buf;
+
   delete [] sendSize;
 
+  Z2_SYNC_MEMORY_ALLOC(comm, env, LNO, vectorCount, nprocs);
+
   LNO totalCount = 0;
-  LNO *vectorCount = new LNO [nprocs];
-  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, nprocs, vectorCount != NULL);
 
   buf = recvT.get();
   charBuf = reinterpret_cast<char *>(buf);
@@ -430,11 +423,7 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
     }
   }
 
-  std::vector<T> *inVectors = NULL;
-  if (totalCount)
-    inVectors = new std::vector<T> [totalCount];
-
-  Z2_GLOBAL_MEMORY_ASSERTION(comm, params, totalCount, !totalCount || (inVectors != NULL));
+  Z2_SYNC_MEMORY_ALLOC(comm, env, std::vector<T>, inVectors, totalCount);
 
   buf = recvT.get();
   charBuf = reinterpret_cast<char *>(buf);

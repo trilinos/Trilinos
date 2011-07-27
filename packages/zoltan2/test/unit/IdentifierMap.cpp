@@ -37,6 +37,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Zoltan2_Partitioner.hpp>
 
+using namespace std;
+
 #define nobjects 10000
 
 template< typename T1, typename T2>
@@ -53,7 +55,7 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   int nprocs = session.getNProc();
   int rank = session.getRank();
-  bool pass = true;
+  int errcode = 0;
 
   long numLocalObjects = nobjects /  nprocs;
   long leftOver = nobjects % nprocs;
@@ -63,7 +65,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
 
-  if (pass) {
+  if (!errcode) {
 
     // AppGID is long (a Teuchos Global Ordinal type).
     // AppGIDs are not consecutive
@@ -89,7 +91,10 @@ int main(int argc, char *argv[])
     try {
       idmap.initialize(comm, gids, lids);
     }
-    HANDLE_ZOLTAN2_LIBRARY_EXCEPTIONS(problem+":construction")
+    catch (std::exception &e){
+      std::cerr << rank << ") initialize error: " << e.what();
+      return 1;
+    }
 
     if (idmap.gnosAreGids() != true){
       std::cerr << problem << " gnosAreGids" << std::endl;
@@ -104,25 +109,32 @@ int main(int argc, char *argv[])
     try{
       idmap.gidTranslate(gidArray, gnoArray1, Z2::TRANSLATE_GID_TO_GNO);
     }
-    HANDLE_ZOLTAN2_LIBRARY_EXCEPTIONS(problem+":gidTranslate")
+    catch (std::exception &e){
+      std::cerr << rank << ") gidTranslate error: " << e.what();
+      return 1;
+    }
 
     Teuchos::ArrayView<int> lidArray = lids.view(0, numLocalObjects);
 
     try{
       idmap.lidTranslate(lidArray, gnoArray2, Z2::TRANSLATE_LID_TO_GNO);
     }
-    HANDLE_ZOLTAN2_LIBRARY_EXCEPTIONS(problem+":lidTranslate")
+    catch (std::exception &e){
+      std::cerr << rank << ") lidTranslate error: " << e.what();
+      return 1;
+    }
 
     for (int i=0; i < numLocalObjects; i++){
       if (gnoArray1[i] != gnoArray2[i]){
-        pass = false;
+        errcode = 1;
         break;
       }
     }
-
-    
-    
   }
 
-  return 0;
+  if (errcode){
+    std::cerr << rank << ") gno array is wrong" << std::endl;
+  }
+
+  return errcode;
 }
