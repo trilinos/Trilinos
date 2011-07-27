@@ -91,10 +91,10 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
     else if (!strncasecmp(hgp->redm_str, "agg", 3)) { /* == "agg-ipm" */
-      hgp->matching = pmatching_agg_ipm;
+        hgp->matching = pmatching_agg_ipm;
         hgp->match_array_type = 1;
     }
-    else if (!strncasecmp(hgp->redm_str, "rcb", 3)) { /* NEANEA */
+    else if (!strncasecmp(hgp->redm_str, "rcb", 3)) {
         hgp->matching = pmatching_rcb;
 	hgp->match_array_type = 1;
     }
@@ -2319,7 +2319,6 @@ ZOLTAN_FREE(&master_procs);
 }
 
 
-/* NEANEA it begins.... :) */
 /****************************************************************************/
 static int pmatching_rcb (ZZ *zz,
 			  HGraph *hg,
@@ -2329,9 +2328,22 @@ static int pmatching_rcb (ZZ *zz,
    int ierr = ZOLTAN_OK;
 
   char *yo = "pmatching_rcb";	     
-  int i, j, n, m, round, vindex;                        /* loop counters  */
+  int i, j, n, m, round, vindex;
+  ZZ *zz2 = Zoltan_Copy(zz);
+  /* --RCB arguments-- */
+  int num_import;                  /* Returned */
+  ZOLTAN_ID_PTR import_global_ids; /* Returned */
+  ZOLTAN_ID_PTR import_local_ids;  /* Returned */
+  int *import_procs;               /* Returned */
+  int *import_to_part;             /* Returned */
+  int num_export;                  /* Not computed */
+  ZOLTAN_ID_PTR export_global_ids; /* Not computed (want to use, though) */
+  ZOLTAN_ID_PTR export_local_ids;  /* Not computed */
+  int *export_procs;               /* Not computed */
+  int *export_to_part;             /* Not computed */
+  /* ----------------- */
 
-#ifdef KEEP_COOL_YOUR_TIME_WILL_COME
+#ifdef DONT_RUN
   int sendcnt, sendsize, reccnt=0, recsize, msgsize;       /* temp variables */
   int nRounds;                /* # of matching rounds to be performed;       */
   int nSend,             /* working buffers and their sizes */
@@ -2391,90 +2403,69 @@ static int pmatching_rcb (ZZ *zz,
 
   intptr_t *gno_locs=NULL;
 #endif
-  
-    /* NEANEA  using the wrapper, just like any other RCB user */
 
-    ZZ *zz2 = Zoltan_Copy(zz);
+  /* NEANEA Register new geometric callbacks and parameters */
+  if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) rcb_get_num_obj,
+		    (void *) hg) == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
+    goto End;
+  }
+
+  if (Zoltan_Set_Fn(zz2, ZOLTAN_OBJ_LIST_FN_TYPE,(void (*)()) rcb_get_obj_list,
+		    (void *) hg) == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
+    goto End;
+  }
+  if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) rcb_get_num_geom,
+		    (void *) hg) == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
+    goto End;
+  }
+
+  if (Zoltan_Set_Fn(zz2, ZOLTAN_GEOM_MULTI_FN_TYPE, (void (*)()) rcb_get_geom_multi,
+		    (void *) hg) == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
+    goto End;
+  }
     
-    /* Register own geometric callbacks and parameters */
+  char s[8]; 
+  sprintf(s, "%d", 1);
+  if (Zoltan_Set_Param(zz2, "NUM_GID_ENTRIES", s) == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
 
-    if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) rcb_get_num_obj,
-		      (void *) hg) == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
-      goto End;
-    }
-
-    if (Zoltan_Set_Fn(zz2, ZOLTAN_OBJ_LIST_FN_TYPE,(void (*)()) rcb_get_obj_list,
-		      (void *) hg) == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
-      goto End;
-    }
-    if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) rcb_get_num_geom,
-		      (void *) hg) == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
-      goto End;
-    }
-
-    if (Zoltan_Set_Fn(zz2, ZOLTAN_GEOM_MULTI_FN_TYPE, (void (*)()) rcb_get_geom_multi,
-		      (void *) hg) == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
-      goto End;
-    }
+  if (Zoltan_Set_Param(zz2, "NUM_LID_ENTRIES", s) == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
     
-    char s[8]; 
-    sprintf(s, "%d", 1);
-    if (Zoltan_Set_Param(zz2, "NUM_GID_ENTRIES", s) == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-      goto End;
-    }
+  /* NEANEA Num global parts should be a reduction by some factor */
+  if (Zoltan_Set_Param(zz2, "NUM_GLOBAL_PARTS", s) == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
 
-    if (Zoltan_Set_Param(zz2, "NUM_LID_ENTRIES", s) == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-      goto End;
-    }
-    
-    /* NEANEA Num global parts should be a reduction by some factor */
-    if (Zoltan_Set_Param(zz2, "NUM_GLOBAL_PARTS", s) == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-      goto End;
-    }
-
-    sprintf(s, "%d", -1);
-    /* Should be DEFAULT value (which we're assuming is -1 here) */
-    if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-      goto End;
-    }
+  sprintf(s, "%d", -1);
+  /* Should be DEFAULT value (setting to -1 here, but change later) */
+  if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
 	
-    if (Zoltan_Set_Param(zz2, "LB_METHOD", "RCB") == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-      goto End;
-    }
+  if (Zoltan_Set_Param(zz2, "LB_METHOD", "RCB") == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
      
-  
-    int num_import;                  /* Returned */
-    ZOLTAN_ID_PTR import_global_ids; /* Returned */
-    ZOLTAN_ID_PTR import_local_ids;  /* Returned */
-    int *import_procs;               /* Returned */
-    int *import_to_part;             /* Returned */
-    int num_export;                  /* Not computed */
-    ZOLTAN_ID_PTR export_global_ids; /* Not computed */
-    ZOLTAN_ID_PTR export_local_ids;  /* Not computed */
-    int *export_procs;               /* Not computed */
-    int *export_to_part;             /* Not computed */
+  /* NEANEA  using the wrapper (just like any other RCB user) */
+  ierr = Zoltan_RCB(zz2, hgp->part_sizes, &num_import, &import_global_ids,
+		    &import_local_ids, &import_procs, &import_to_part,
+		    &num_export, &export_global_ids, &export_local_ids,
+		    &export_to_part, &export_to_part);
 
-    ierr = Zoltan_RCB(zz2, hgp->part_sizes, &num_import, &import_global_ids,
-		      &import_local_ids, &import_procs, &import_to_part,
-		      &num_export, &export_global_ids, &export_local_ids,
-		      export_to_part, export_to_part);
 
-#ifdef BLOCK_ME_NOW
-
-    /* After running it through RCB, the data must be refactored to be */
-    /* in the same form as agg_ipm */
-    
-    /* NEANEA Move me */
-
+#ifdef DONT_RUN
 
     /************************ PHASE 3 & 4 ********************************/
     
@@ -2690,7 +2681,7 @@ static int pmatching_rcb (ZZ *zz,
   }                                             /* DONE: loop over rounds */
 #endif    
  End:
-  #ifdef STOPERRORING
+  #ifdef DONT_RUN
   MPI_Op_free(&phasethreeop);
   MPI_Type_free(&phasethreetype);
   ZOLTAN_FREE(&global_best);
@@ -2808,6 +2799,7 @@ static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
 
 static int rcb_get_num_geom(void *data, int *ierr) {
 /* Return number of values needed to express the geometry of the HG */
+
   HGraph *hg;
 
   if (data == NULL) {
@@ -2826,7 +2818,7 @@ static void rcb_get_geom_multi(void *data, int num_obj, int num_gid,
 			       ZOLTAN_ID_PTR local_id, int num_dim,
 			       double *coor, int *ierr) {
   /* Return coords by GNOs of object list */
-  /* NEANEA TODO */
+
     HGraph *hg;
     int local_obj;
     ZOLTAN_ID_TYPE glob;
@@ -2847,7 +2839,6 @@ static void rcb_get_geom_multi(void *data, int num_obj, int num_gid,
     for (j = 0; j < hg->nDim; j++)
       coor[i * hg->nDim + j] = hg->coor[glob * hg->nDim + j]; 
   }
-  printf("STOPS");
 }
 
 #undef MACRO_REALLOC
