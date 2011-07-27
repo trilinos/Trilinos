@@ -256,7 +256,6 @@ static void Zoltan_Hier_Edge_List_Multi_Fn(void *data, int num_gid_entries, int 
   int num_obj, ZOLTAN_ID_TYPE * global_id, ZOLTAN_ID_TYPE * local_id, int *num_edges,
   ZOLTAN_ID_TYPE * nbor_global_id, int *nbor_procs, int wgt_dim, float *ewgts, int *ierr) ;
 
-static void Zoltan_Hier_Check_Data(HierPartParams *, int *);
 
 /*****************************************************************************/
 
