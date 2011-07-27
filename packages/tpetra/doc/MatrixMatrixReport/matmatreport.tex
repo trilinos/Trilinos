@@ -1,0 +1,79 @@
+\documentclass{article}
+\newcommand{\mahts}[1]{\textsuperscript{#1}}
+\title{Evaluation of Tpetra's Matrix-Matrix Multiplication Routine}
+\author{Kurtis L. Nusbaum}
+\date{August 2011}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Over the course of the last year, a Matrix-Matrix Multiplication routine has been developed for the Tpetra package.
+The of this routine is based the same algorithm that is used in EpetraExt with some heavy modifications. Since it 
+achieved a working state two major optimizations have been in an effort to speed up the routine. This paper will
+discuss the optimizations made to the routine, it's current state, and where future work needs to be done.
+\end{abstract}
+\clearpage
+\tableofcontents
+\clearpage
+
+\section{Basic Outline of the Algorithm}
+The Tpetra Matrix-Matrix algorithm allows two matrices (A and B) to be multiplied. The result of this multiplication is then placed in a third matrix (C).
+The basic algorithm is as follows:
+\begin{enumerate}
+  \item Aprime and Bprime are created from A and B. If it has been specified that A should be transposed, an actual transpose of the matrix is created
+  and assigned to Aprime. Otherwise Aprime is simply equals to A. The same is done for creating Bprime.
+  \item A ``view'' of Aprime and a ``view'' of Bprime are created. These views provide fast access to informaiton that will be needed later in the
+  algorithm. In addition, any importations of off-elements is done. Namely, all the rows in Bprime that contain columns needed by the local copy of
+  Aprime are imported.
+  \item The sparsity pattern of C is determined by doing a dry run of the multiplication of Aprime and Bprime. In this run, column indicies for 
+  C are computed and used to construct a graph.
+  \item The actual multiplication of Aprime and Bprime is done by iterating through each row of Aprime. For each row in Aprime, every row in Bprime is
+  looped through and the appropriate calculations are done.
+  \item Unless indicated otherwise by the user, fillComplete is called on matrix C.
+\end{enumerate}
+
+\section{Removal of specific transpose mode kernels}
+In the original ExpetraExt algorithm there was actually a seperate kernel for each possible transpose combination (e.g. A\mahts{T}*B, A*B\mahts{T}, and A\mahts{T}*B\mahts{T}).
+Some of these kernels relied on a function calls find\_rows\_constaining\_columns. The relevant things to know about this function is that one of it's
+arguemnts was a matrix and during execution it created an array that was of size NumberOfColumns+2*NumberOfProcessors+NumberOfProcessors*NumberOfRows.
+Obviously this is not scalable because at anything but the lowest processor counts, this array quickly ballons to a size that won't fit in memory. We 
+decided to just remove this function and the specific transpose kernels. Tpetra has a very fast tranposer that we now use which allows us to take
+what ever the given matricies are, transpose them to the users specification, and then just use the regular A*B kernel.
+
+\section{Optimization}
+Two optimizations were implemented on top of the original working Tpetra Matrix-Matrix multiply.
+\subsection{Fixing the sort in fillComplete}
+As part of it's algorithm, the fillComplete function relies on a function called sort2. This function performs a sort on two arrays by sorting the first
+array and concurrently doing the same permuations on the second matrix, i.e. both arrays are sorted according to the ordering of the first array. The main
+use case for this function is sorting and indices arrray and moving the values in a values array so that they stay matched up with their associated index.
+
+Up until recently, the sort2 function relied on an insertion sort algorithm. We modified the function so that it first checks to see if the arrays are 
+already sorted (which happens quite often) and returns right away if they are. If the arrays are not sorted, a quicksort is preformed on the arrays.
+
+\subsection{Removing unnessecary computation in the graph building routine}
+The original algorithm from EptraExt used the same function for both building the graph of matrix C and calculating it's values. This means that while
+the graph was being calculated, so were are the vaules for matrix C. But when building the graph, all the results of the values calculation are just thrown
+out. It's not until the function is called again that the values calculated are actually inserted into matrix C. We modified this function so that it
+takes an argument which indicates whether or not we're just calculating the graph for matrix C. If we're just calculating the graph, all the value 
+calculation is skipped.
+
+\section{Performance}
+
+\subsection{Redsky}
+
+\subsection{Hopper}
+
+\subsection{Jaguar}
+
+
+\section{Areas for future improvement}
+\subsection{Kokkos Kernel}
+The actual computation kernel should be moved down into Kokkos where it can better take advantage node-parallelism. This should offer non-trivial speedups.
+
+\subsection{Improvment of underlying tpetra architecture}
+The biggest thing that will help the Matrix Multiply routine improving the underlying tpetra arhcitecture. No doubt the ineffiecient sort2 routine isn't the
+only problem with Tpetra at large. There have been reports from other scientists at sandia that things like the Tpetra Import class are not running as
+nearly as fast as their Epetra counterparts. These things need to be investigated.
+
+\end{document}
+

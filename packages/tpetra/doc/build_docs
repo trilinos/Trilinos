@@ -12,3 +12,7 @@ echo "Generating main tpetra doxygen documentation ..."
 echo
 
 doxygen Doxyfile
+
+pushd MatrixMatrixReport
+make
+popd
