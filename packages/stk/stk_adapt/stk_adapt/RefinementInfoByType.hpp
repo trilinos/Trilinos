@@ -6,6 +6,8 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <stdint.h>
+#include <limits>
 
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
@@ -20,11 +22,17 @@ namespace stk {
 
     struct RefinementInfoByType
     {
-      unsigned m_numOrigElems;
-      unsigned m_numNewElems;
+      //typedef uint64_t RefinementInfoCount ;
+      typedef unsigned RefinementInfoCount ;
+
+      RefinementInfoCount m_numOrigElems;
+      RefinementInfoCount m_numNewElems;
       shards::CellTopology m_topology;
+      RefinementInfoCount m_numOrigNodes;
+      RefinementInfoCount m_numNewNodes;
 
       static void printTable(std::ostream& os, std::vector< RefinementInfoByType >& refinementInfoByType, int iRefinePass, bool printAll = false);
+      static void countCurrentNodes(stk::percept::PerceptMesh& eMesh, std::vector< RefinementInfoByType >& refinementInfoByType);
 
     };
 

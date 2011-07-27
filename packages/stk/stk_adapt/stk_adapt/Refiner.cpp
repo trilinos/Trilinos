@@ -406,6 +406,8 @@ namespace stk {
 
               m_refinementInfoByType[irank].m_numNewElems = n_ele * m_breakPattern[irank]->getNumNewElemPerElem();
               m_refinementInfoByType[irank].m_topology = cell_topo;
+	      m_refinementInfoByType[irank].m_numOrigNodes = count[0];
+	      m_refinementInfoByType[irank].m_numNewNodes = 0; // can't predict this
             }
 
           // sum info from all procs
@@ -416,6 +418,7 @@ namespace stk {
               {
                 stk::all_reduce( pm, stk::ReduceSum<1>( &m_refinementInfoByType[irank].m_numOrigElems ) );
                 stk::all_reduce( pm, stk::ReduceSum<1>( &m_refinementInfoByType[irank].m_numNewElems ) );
+                stk::all_reduce( pm, stk::ReduceSum<1>( &m_refinementInfoByType[irank].m_numOrigNodes ) );
               }
           }
 
@@ -828,7 +831,7 @@ namespace stk {
 #endif
       //std::cout << "tmp m_nodeRegistry.m_gee_cnt= " << m_nodeRegistry->m_gee_cnt << std::endl;
       //std::cout << "tmp m_nodeRegistry.m_gen_cnt= " << m_nodeRegistry->m_gen_cnt << std::endl;
-
+      RefinementInfoByType::countCurrentNodes(m_eMesh, getRefinementInfoByType());
     } // doBreak
 
     
