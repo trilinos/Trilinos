@@ -540,7 +540,9 @@ int fei::MatrixGraph_Impl2::initConnectivity(int blockID,
                                   connectedIdentifiers, rlist) );
 
   for(int i=0; i<numIDs; ++i) {
+    if (pattern->getNumFieldsPerID()[i] > 0) {
       pattern->getRecordCollections()[i]->getRecordWithLocalID(rlist[i])->isInLocalSubdomain_ = true;
+    }
   }
 
   return(0);
@@ -692,7 +694,7 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::Pattern* pattern,
       for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
         CHK_ERR( vecSpace->addDOFs(fieldIDs[fieldOffset++],
                                                idTypes[i], 1, &id,
-                                               &(recordList[i])));
+                                               &recordList[i]));
       }
     }
   }
