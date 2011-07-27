@@ -58,8 +58,10 @@ namespace stk {
       //VectorFieldType* coordField = m_eMesh.getCoordinatesField();
 
       int markInfo = mark(element);
+#if 0
       if (markInfo <= 0)
         return;
+#endif
 
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
@@ -79,11 +81,11 @@ namespace stk {
               numSubDimNeededEntities = 1;
             }
 
-          if (1 == markInfo)
+          bool needNodes = (1 == markInfo);
             {
               for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
                 {
-                  (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
+                  (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, needNodes);
                 } // iSubDimOrd
             }
         } // ineed_ent
