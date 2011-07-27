@@ -2026,8 +2026,8 @@ namespace Ioex {
 	  int number_nodes;
 	  int number_distribution_factors;
 	  
-	  int error = ex_get_set_param(get_file_pointer(), EX_NODE_SET, id,
-				       &number_nodes, &number_distribution_factors);
+	  error = ex_get_set_param(get_file_pointer(), EX_NODE_SET, id,
+				   &number_nodes, &number_distribution_factors);
 	  if (error < 0) {
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
