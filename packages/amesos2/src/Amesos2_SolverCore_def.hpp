@@ -179,7 +179,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
     createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(X));
   const Teuchos::RCP<const MultiVecAdapter<Vector> > b =
     createConstMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(B));
-    
+
 #ifdef HAVE_AMESOS2_DEBUG
   // Check some required properties of X and B
   TEST_FOR_EXCEPTION(x->getGlobalLength() != matrixA_->getGlobalNumCols(),
@@ -191,18 +191,18 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
                      std::invalid_argument,
                      "MultiVector B must have length equal to the number of "
                      "global rows in A");
-  
+
   TEST_FOR_EXCEPTION(x->getGlobalNumVectors() != b->getGlobalNumVectors(),
                      std::invalid_argument,
                      "X and B MultiVectors must have the same number of vectors");
 #endif  // HAVE_AMESOS2_DEBUG
-  
+
   if( !status_.numericFactorizationDone() ){
     // This casting-away of constness is probably OK because this
     // function is meant to be "logically const"
     const_cast<type*>(this)->numericFactorization();
   }
-  
+
   static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*x), Teuchos::ptrInArg(*b));
   ++status_.numSolve_;
   status_.last_phase_ = SOLVE;
@@ -232,20 +232,33 @@ SolverCore<ConcreteSolver,Matrix,Vector>::matrixShapeOK()
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 void
 SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<const Matrix> a,
-						EPhase keep_phase )
+                                                EPhase keep_phase )
 {
   matrixA_ = createConstMatrixAdapter(a);
 
 #ifdef HAVE_AMESOS2_DEBUG
   TEST_FOR_EXCEPTION( (keep_phase != CLEAN) &&
-		      (globalNumRows_ != matrixA_->getGlobalNumRows() ||
-		       globalNumCols_ != matrixA_->getGlobalNumCols()),
-		      std::invalid_argument,
-		      "Dimensions of new matrix be the same as the old matrix if "
-		      "keeping any solver phase" );
+                      (globalNumRows_ != matrixA_->getGlobalNumRows() ||
+                       globalNumCols_ != matrixA_->getGlobalNumCols()),
+                      std::invalid_argument,
+                      "Dimensions of new matrix be the same as the old matrix if "
+                      "keeping any solver phase" );
 #endif
-  
+
   status_.last_phase_ = keep_phase;
+
+  // Reset phase counters
+  switch( status_.last_phase ){
+  case CLEAN:
+    status_.numPreOrder_ = 0;
+  case PREORDERING:
+    status_.numSymbolicFact_ = 0;
+  case SYMBFACT:
+    status_.numNumericFact_ = 0;
+  case NUMFACT:                 // probably won't ever happen by itself
+    status_.numSolve_ = 0;
+  case SOLVE:                   // probably won't ever happen
+  }
 
   // Re-get the matrix dimensions in case they have changed
   globalNumNonZeros_ = matrixA_->getGlobalNNZ();
@@ -266,7 +279,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
   if( parameterList->name() == "Amesos2" ){
     // Do everything here that is for generic status and control parameters
     control_.setControlParameters(parameterList);
-    
+
     // Finally, hook to the implementation's parameter list parser
     // First check if there is a dedicated sublist for this solver and use that if there is
     if( parameterList->isSublist(name()) ){
