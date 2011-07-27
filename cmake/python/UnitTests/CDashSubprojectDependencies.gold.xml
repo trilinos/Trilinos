@@ -1,4 +1,9 @@
 <Project name="Trilinos">
+  <SubProject name="TrilinosFramework">
+    <EmailAddresses>
+      <Email address="trilinosframework-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Teuchos">
     <EmailAddresses>
       <Email address="teuchos-regression@software.sandia.gov"/>
@@ -67,14 +72,15 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="Thyra">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="RTOp" type="LR"/>
-    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Teuchos" type="ILR"/>
+    <Dependency name="RTOp" type="ILR"/>
+    <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
     <EmailAddresses>
-      <Email address="thyra-regression@software.sandia.gov"/>
+      <Email address="thyra-boneheads@gmail.com"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Isorropia">
@@ -178,12 +184,11 @@
   <SubProject name="Stratimikos">
     <Dependency name="Teuchos" type="ILR"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Epetra" type="ILR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="ILO"/>
-    <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Thyra" type="LR"/>
+    <Dependency name="EpetraExt" type="ILR"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>

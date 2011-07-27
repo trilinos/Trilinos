@@ -68,16 +68,6 @@ namespace Stokhos {
     //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
     //@{ 
 
-#ifdef HAVE_STOKHOS_DAKOTA
-    //! Get sparse grid rule number as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual int getSparseGridRule() const { return 4; }
-
-#endif 
-
     /*! 
      * \brief Clone this object with the option of building a higher order
      * basis.
@@ -105,6 +95,9 @@ namespace Stokhos {
 				  Teuchos::Array<value_type>& delta) const;
 
     //@}
+
+    //! Copy constructor with specified order
+    LegendreBasis(ordinal_type p, const LegendreBasis& basis);
 
   private:
 

@@ -13,7 +13,7 @@ PACKAGE_ADD_EXECUTABLE(
   VbrMatrix_UnitTests
   SOURCES
     VbrMatrix_UnitTests
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetratestlib
   )
 

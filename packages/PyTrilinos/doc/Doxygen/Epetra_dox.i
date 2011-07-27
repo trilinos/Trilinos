@@ -17590,6 +17590,19 @@ In:  ScalarConstant - Value to use.
 
 Integer error code, set to 0 if successful. ";
 
+%feature("docstring")  Epetra_VbrMatrix::DirectSubmitBlockEntry "int
+Epetra_VbrMatrix::DirectSubmitBlockEntry(int GlobalBlockRow, int
+GlobalBlockCol, const double *values, int LDA, int NumRows, int
+NumCols, bool sum_into)
+
+Submit a block-entry directly into the matrix (without using a
+begin/end sequence)
+
+Experimental method which allows submitting a block-entry without
+first calling BeginInsertGlobalValues. This method copies the input
+data directly into the matrix storage. The block-entry is specified by
+global block-row and block-col indices. ";
+
 %feature("docstring")  Epetra_VbrMatrix::BeginInsertGlobalValues "int
 Epetra_VbrMatrix::BeginInsertGlobalValues(int BlockRow, int
 NumBlockEntries, int *BlockIndices)
@@ -20704,9 +20717,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 
 
 // File: Epetra__Util_8h.xml
-%feature("docstring")  Epetra_Util_binary_search "int
-Epetra_Util_binary_search(int item, const int *list, int len, int
-&insertPoint)
+%feature("docstring")  Epetra_Util_binary_search "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(int item, const
+int *list, int len, int &insertPoint)
 
 Utility function to perform a binary-search on a list of data.
 Important assumption: data is assumed to be sorted.

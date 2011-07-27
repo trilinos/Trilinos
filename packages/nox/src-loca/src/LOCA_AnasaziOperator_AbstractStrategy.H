@@ -125,8 +125,8 @@ namespace LOCA {
        * \brief Compute Rayleigh quotient
        */
       virtual NOX::Abstract::Group::ReturnType 
-      rayleighQuotient(const NOX::Abstract::Vector& evec_r,
-		       const NOX::Abstract::Vector& evec_i,
+      rayleighQuotient(NOX::Abstract::Vector& evec_r,
+		       NOX::Abstract::Vector& evec_i,
 		       double& rq_r, double& rq_i) const = 0;
 
     private:

@@ -308,26 +308,10 @@ namespace Tpetra {
       /// 
       global_size_t getGlobalNumRows() const;
 
-      /// \brief Number of global elements in the column map of this matrix.
-      ///
-      /// This is <it>not</it> the number of columns in the matrix as
-      /// a mathematical object.  This method returns the global sum
-      /// of the number of local elements in the column map on each
-      /// processor, which is the column map's getGlobalNumElements().
-      /// Since the column map is not one-to-one in general, that
-      /// global sum could be different than the number of columns in
-      /// the matrix.  If you want the number of rows in the matrix,
-      /// ask the domain map for its global number of elements, using
-      /// the following code:
-      /// <code>
-      /// global_size_t globalNumCols = getDomainMap()->getGlobalNumElements();
-      /// </code>
-      /// This method retains the behavior of Epetra, which also asks
-      /// the column map for the global number of columns, rather than
-      /// asking the domain map.
-      ///
-      /// \warning Undefined if isFillActive().
-      ///
+      //! \brief Number of global columns in the matrix.
+      /** Returns the number of entries in the domain map of the matrix.
+          \warning Undefined if isFillActive().
+      */
       global_size_t getGlobalNumCols() const;
 
       //! Returns the number of matrix rows owned on the calling node.
@@ -415,6 +399,15 @@ namespace Tpetra {
       //! Indicates that the graph is static, so that new entries cannot be added to this matrix. */
       bool isStaticGraph() const;
 
+      //! Returns the Frobenius norm of the matrix. 
+      /** Computes and returns the Frobenius norm of the matrix, defined as:
+        \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
+
+         If the matrix is fill-complete, then the computed value is cached; the cache is cleared whenever resumeFill() is called.
+         Otherwise, the value is computed every time the method is called.
+        */
+      typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const;
+
       //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
       /*!
         \param LocalRow - (In) Global row number for which indices are desired.
@@ -480,6 +473,12 @@ namespace Tpetra {
           the zero and non-zero diagonals owned by this node. */
       void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
 
+      /** \brief . */
+      void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+
+      /** \brief . */
+      void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+
       //@}
 
       //! @name Advanced templated methods
@@ -497,7 +496,7 @@ namespace Tpetra {
           will be accumulated into \c Y.
        */
       template <class DomainScalar, class RangeScalar>
-      void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+      void localMultiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
 
       //! Solves a linear system when the underlying matrix is triangular.
       /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
@@ -507,7 +506,7 @@ namespace Tpetra {
           Both are required to have constant stride. However, unlike multiply(), it is permissible for <tt>&X == &Y</tt>. No runtime checking will be performed in a non-debug build.
        */
       template <class DomainScalar, class RangeScalar>
-      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+      void localSolve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
           
       //@}
 
@@ -598,6 +597,16 @@ namespace Tpetra {
       //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
       TPETRA_DEPRECATED void getLocalRowView(LocalOrdinal LocalRow, ArrayRCP<const LocalOrdinal> &indices, ArrayRCP<const Scalar> &values) const;
 
+      //! Deprecated. Replaced by localMultiply().
+      template <class DomainScalar, class RangeScalar>
+      TPETRA_DEPRECATED 
+      void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+
+      //! Deprecated. Replaced by localSolve().
+      template <class DomainScalar, class RangeScalar>
+      TPETRA_DEPRECATED 
+      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+
       //@}
 
     private:
@@ -610,6 +619,7 @@ namespace Tpetra {
       typedef OrdinalTraits<LocalOrdinal>                     LOT;
       typedef OrdinalTraits<GlobalOrdinal>                    GOT;
       typedef ScalarTraits<Scalar>                             ST;
+      typedef typename ST::magnitudeType                Magnitude;
       typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       MV;
       typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             V;
       typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  Graph;
@@ -664,6 +674,9 @@ namespace Tpetra {
       // a wrapper around multiply, for use in apply; it contains a non-owning RCP to *this, therefore, it is not allowed 
       // to persist past the destruction of *this. therefore, WE MAY NOT SHARE THIS POINTER.
       RCP< const CrsMatrixMultiplyOp<Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > sameScalarMultiplyOp_;
+
+      // cached frobenius norm: -ST::one() means invalid
+      mutable Magnitude frobNorm_;
 
   }; // class CrsMatrix
 

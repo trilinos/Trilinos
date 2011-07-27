@@ -174,7 +174,7 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
   relconvtol_(true),
   numIters_(-1),
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-  _timerSolve(Teuchos::TimeMonitor::getNewTimer("RTRSolMgr::solve()")),
+  _timerSolve(Teuchos::TimeMonitor::getNewTimer("Anasazi: RTRSolMgr::solve()")),
 #endif
   pl_(pl)
 {

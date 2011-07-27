@@ -62,6 +62,11 @@ clp.add_option(
   "--file", dest="fileName", type="string", default="",
   help="File to have the copyright header replaced in." )
 
+clp.add_option(
+  "--script-mode", dest="scriptMode", action="store_true", default=False,
+  help="Enable script mode. This prevents the addition of c style comment " +
+       "markers at the begining and end of the copyright notice" )
+
 (options, args) = clp.parse_args()
 
 
@@ -74,6 +79,13 @@ if not options.copyrightHeader:
 
 if not options.fileName:
   raise Exception("Error, must set --fileName")
+
+if options.scriptMode == False:
+  commentBegin = "/*" + os.linesep
+  commentEnd   = "*/" + os.linesep
+else:
+  commentBegin = ""
+  commentEnd   = ""
 
 
 #
@@ -120,7 +132,8 @@ for line in fileLines:
 # file.
 
 if not foundExistingHeaderBlock:
-  newFileStr = "/*\n" + copyrightHeaderStr + "*/\n\n" + newFileStr
+  newFileStr = commentBegin + copyrightHeaderStr + commentEnd + os.linesep + \
+               newFileStr
 
 
 # D) Write the new file

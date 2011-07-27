@@ -834,8 +834,7 @@ namespace Iopg {
 
 	  // See if any processor has non-zero count for the topo_map counts
 	  // For the side_map, need the max value.
-	  util().global_array_minmax(&global_side_counts[0], global_side_counts.size(),
-				     Ioss::ParallelUtils::DO_MAX);
+	  util().global_array_minmax(global_side_counts, Ioss::ParallelUtils::DO_MAX);
 	}
 
 
@@ -1842,9 +1841,7 @@ namespace Iopg {
 
       // Synchronize among all processors....
       if (isParallel) {
-	util().global_array_minmax(&block_ids[0],
-					 block_ids.size(),
-					 Ioss::ParallelUtils::DO_MAX);
+	util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
       }
     }
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
@@ -1883,9 +1880,7 @@ namespace Iopg {
     
     // Synchronize among all processors....
     if (isParallel) {
-      util().global_array_minmax(&block_ids[0],
-				 block_ids.size(),
-				 Ioss::ParallelUtils::DO_MAX);
+      util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
     }
     
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();

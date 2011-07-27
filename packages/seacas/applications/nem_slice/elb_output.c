@@ -586,7 +586,7 @@ int write_vis(char *nemI_out_file,
 
   float *xptr, *yptr, *zptr;
 
-  char **elem_name=NULL;
+  char **elem_type=NULL;
   char  *var_names[] = {"proc"};
   int    ncnt, ecnt, pcnt, nsize, nsize_old, max_np_elem, nnodes, proc;
   int    vis_nelem_blks, pos, old_pos, bcnt, ccnt;
@@ -641,9 +641,9 @@ int write_vis(char *nemI_out_file,
   el_blk_ids = malloc((4*(mesh->num_el_blks)+2*mesh->num_elems+
                        vis_nelem_blks+1)
                       *sizeof(int));
-  elem_name  = array_alloc(2, mesh->num_el_blks, MAX_STR_LENGTH+1,
+  elem_type  = array_alloc(2, mesh->num_el_blks, MAX_STR_LENGTH+1,
                            sizeof(char));
-  if(!el_blk_ids || !elem_name)
+  if(!el_blk_ids || !elem_type)
   {
     Gen_Error(0, "fatal: insufficient memory");
     ex_close(exid_vis);
@@ -675,7 +675,7 @@ int write_vis(char *nemI_out_file,
    */
   for(ecnt=0; ecnt < mesh->num_el_blks; ecnt++)
   {
-    if(ex_get_elem_block(exid_inp, el_blk_ids[ecnt], elem_name[ecnt],
+    if(ex_get_elem_block(exid_inp, el_blk_ids[ecnt], elem_type[ecnt],
                          &el_cnt_blk[ecnt], &node_pel_blk[ecnt],
                          &nattr_el_blk[ecnt]) < 0)
     {
@@ -688,7 +688,7 @@ int write_vis(char *nemI_out_file,
     if(node_pel_blk[ecnt] > max_np_elem)
       nsize += el_cnt_blk[ecnt]*node_pel_blk[ecnt];
 
-    if(strcmp(elem_name[0], elem_name[ecnt]) == 0 && acc_vis != ELB_FALSE)
+    if(strcmp(elem_type[0], elem_type[ecnt]) == 0 && acc_vis != ELB_FALSE)
     {
       if(node_pel_blk[0] == node_pel_blk[ecnt])
         acc_vis = ELB_TRUE;
@@ -810,7 +810,7 @@ int write_vis(char *nemI_out_file,
        * element.
        */
       ecnt = (vis_el_blk_ptr[bcnt+1]-vis_el_blk_ptr[bcnt])/node_pel_blk[0];
-      if(ex_put_elem_block(exid_vis, bcnt+1, elem_name[0],
+      if(ex_put_elem_block(exid_vis, bcnt+1, elem_type[0],
                            ecnt, node_pel_blk[0], 0) < 0)
       {
         Gen_Error(0, "fatal: unable to output element block params");
@@ -833,8 +833,8 @@ int write_vis(char *nemI_out_file,
       free(tmp_connect);
     if(el_blk_ids)
       free(el_blk_ids);
-    if(elem_name)
-      free(elem_name);
+    if(elem_type)
+      free(elem_type);
 
   }
   else	/* For nodal results visualization of the partioning. */
@@ -905,7 +905,7 @@ int write_vis(char *nemI_out_file,
         return 0;
       }
 
-      if(ex_put_elem_block(exid_vis, el_blk_ids[ecnt], elem_name[ecnt],
+      if(ex_put_elem_block(exid_vis, el_blk_ids[ecnt], elem_type[ecnt],
                            el_cnt_blk[ecnt], node_pel_blk[ecnt],
                            nattr_el_blk[ecnt]) < 0)
       {
@@ -933,8 +933,8 @@ int write_vis(char *nemI_out_file,
     if(el_blk_ids)
       free(el_blk_ids);
 
-    if(elem_name)
-      free(elem_name);
+    if(elem_type)
+      free(elem_type);
 
     /* Allocate memory for the nodal values */
     node_vals = malloc(mesh->num_nodes * sizeof(float));

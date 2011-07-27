@@ -64,7 +64,7 @@ const int Overlap_default = 0;
 
 TEUCHOS_STATIC_SETUP()
 {
-  TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(Ifpack::EPrecType);
+  TEUCHOS_ADD_STRINGTOINTEGRALVALIDATOR_CONVERTER(Ifpack::EPrecType);
 }
 
 
@@ -431,9 +431,9 @@ void IfpackPreconditionerFactory::initializeTimers()
 {
   if(!overallTimer.get()) {
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-    overallTimer       = Teuchos::TimeMonitor::getNewTimer("IfpackPF");
-    creationTimer      = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Creation");
-    factorizationTimer = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Factorization");
+    overallTimer       = Teuchos::TimeMonitor::getNewTimer("Stratimikos: IfpackPF");
+    creationTimer      = Teuchos::TimeMonitor::getNewTimer("Stratimikos: IfpackPF:Creation");
+    factorizationTimer = Teuchos::TimeMonitor::getNewTimer("Stratimikos: IfpackPF:Factorization");
 #endif
   }
 }

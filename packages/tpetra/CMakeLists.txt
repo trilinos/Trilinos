@@ -60,7 +60,7 @@ ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_FLOAT
   HAVE_TPETRA_INST_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field float."
-  ${SS_FOR_DEV_PS_FOR_RELEASE}
+  ${SS_FOR_DEV_PS_FOR_RELEASE} AND ${HAVE_TEUCHOS_BLASFLOAT}
   )
 
 ADD_OPTION_AND_DEFINE(
@@ -81,14 +81,14 @@ ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_FLOAT
   HAVE_TPETRA_INST_COMPLEX_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field complex<float>."
-  ${SS_FOR_DEV_PS_FOR_RELEASE}
+  ${SS_FOR_DEV_PS_FOR_RELEASE} AND ${HAVE_COMPLEX_BLAS} AND ${HAVE_TEUCHOS_BLASFLOAT}
   )
 
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_DOUBLE
   HAVE_TPETRA_INST_COMPLEX_DOUBLE
   "If explicit instantiation is enabled, instantiate over scalar field complex<double>."
-  ${SS_FOR_DEV_PS_FOR_RELEASE}
+  ${SS_FOR_DEV_PS_FOR_RELEASE} AND ${HAVE_COMPLEX_BLAS}
   )
 
 ADD_OPTION_AND_DEFINE(

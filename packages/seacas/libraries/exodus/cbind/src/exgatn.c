@@ -64,10 +64,8 @@ int ex_get_attr_names( int   exoid,
 {
   int status;
   int varid, numattrdim, obj_id_ndx;
-  size_t num_attr, start[2], i;
-  char *ptr;
+  size_t num_attr, i;
   char errmsg[MAX_ERR_LENGTH];
-  int j;
   const char* dnumobjatt;
   const char* vattrbname;
 
@@ -167,39 +165,9 @@ int ex_get_attr_names( int   exoid,
 
   if (status == NC_NOERR) {
     /* read the names */
-    for (i=0; i < num_attr; i++) {
-      start[0] = i;
-      start[1] = 0;
-      
-      j = 0;
-      ptr = names[i];
-      
-      if ((status = nc_get_var1_text (exoid, varid, start, ptr)) != NC_NOERR) {
-        exerrval = status;
-        sprintf(errmsg,
-                "Error: failed to get names for %s %d in file id %d",
-                ex_name_of_object(obj_type), obj_id, exoid);
-        ex_err("ex_get_attr_names",errmsg,exerrval);
-        return (EX_FATAL);
-      }
-      
-      while ((*ptr++ != '\0') && (j < MAX_STR_LENGTH)) {
-        start[1] = ++j;
-        if ((status = nc_get_var1_text(exoid, varid, start, ptr)) != NC_NOERR) {
-          exerrval = status;
-          sprintf(errmsg,
-                  "Error: failed to get names for %s %d in file id %d",
-                  ex_name_of_object(obj_type), obj_id, exoid);
-          ex_err("ex_get_attr_names",errmsg,exerrval);
-          return (EX_FATAL);
-        }
-      }
-      --ptr;
-      if (ptr > names[i]) {
-	/*    get rid of trailing blanks */
-	while (--ptr >= names[i] && *ptr == ' ');
-      }
-      *(++ptr) = '\0';
+    status = ex_get_names_internal(exoid, varid, num_attr, names, obj_type, "ex_get_attr_names");
+    if (status != NC_NOERR) {
+      return (EX_FATAL);
     }
   } else {
     /* Names variable does not exist on the database; probably since this is an

@@ -180,11 +180,13 @@ int *garbage;
 
      
         estimated_requirements = N_nz;
-        if (N_nz*2 > N_nz) N_nz = N_nz*2;	/* check for overflow */
-						/* Add extra memory to N_nz. */
-                                                /* This extra memory is used */
-                                                /* as temporary space during */
-                                                /* overlapping calculation   */
+        if (options[AZ_overlap] != AZ_none && N_nz*2 > N_nz) {
+          N_nz = N_nz*2;	/* check for overflow */
+                          /* Add extra memory to N_nz. */
+                          /* This extra memory is used */
+                          /* as temporary space during */
+                          /* overlapping calculation   */
+        }
 
         /* Readjust N_nz by allocating auxilliary arrays and allocate */
         /* the MSR matrix to check that there is enough space.        */

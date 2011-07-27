@@ -13,7 +13,10 @@
 #include "fei_CSVec.hpp"
 #include "snl_fei_RecordCollection.hpp"
 #include "fei_TemplateUtils.hpp"
+#include "fei_impl_utils.hpp"
 
+#include <fstream>
+#include <sstream>
 #undef fei_file
 #define fei_file "fei_Vector_core.cpp"
 
@@ -31,6 +34,10 @@ fei::Vector_core::Vector_core(fei::SharedPtr<fei::VectorSpace> vecSpace,
     work_indices2_(),
     haveFEVector_(false),
     remotelyOwned_(),
+    sendProcs_(),
+    recvProcs_(),
+    recv_sizes_(),
+    sendRecvProcsNeedUpdated_(true),
     overlapAlreadySet_(false),
     dbgprefix_("Vcore: ")
 {
@@ -109,18 +116,21 @@ int fei::Vector_core::scatterToOverlap()
 
   //...and now the overlap is whatever is in our remotelyOwned_ vectors.
 
-  //first find out which procs we'll be receiving from.
-  std::vector<int> recvProcs;
-  for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
-    if ((int)i == fei::localProc(comm_)) continue;
-    if (remotelyOwned_[i]->size() == 0) continue;
-
-    recvProcs.push_back((int)i);
-  }
-
-  //find out the send-procs.
-  std::vector<int> sendProcs;
-  fei::mirrorProcs(comm_, recvProcs, sendProcs);
+//  if (sendRecvProcsNeedUpdated_) {
+    //first find out which procs we'll be receiving from.
+    std::vector<int> recvProcs;
+    for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
+      if ((int)i == fei::localProc(comm_)) continue;
+      if (remotelyOwned_[i]->size() == 0) continue;
+  
+      recvProcs.push_back((int)i);
+    }
+  
+    //find out the send-procs.
+    std::vector<int> sendProcs;
+    fei::mirrorProcs(comm_, recvProcs, sendProcs);
+    sendRecvProcsNeedUpdated_ = false;
+//  }
 
   //declare arrays to send from, and corresponding sizes
   std::vector<std::vector<int> > send_ints(sendProcs.size());
@@ -261,9 +271,9 @@ int fei::Vector_core::giveToVector(int numValues,
       //ignored... so we'll continue rather than throwing.
       continue;
     }
-    int proc = eqnComm_->getOwnerProc(ind);
     int local = ind - firstLocalOffset_;
     if (local < 0 || local >= numLocal_) {
+      int proc = eqnComm_->getOwnerProc(ind);
       if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
         FEI_OSTREAM& os = *output_stream_;
         os << dbgprefix_<<"giveToVector remote["<<proc<<"]("
@@ -313,91 +323,145 @@ int fei::Vector_core::assembleFieldData(int fieldID,
   return(0);
 }
 
+void pack_send_buffers(const std::vector<int>& sendProcs,
+                       const std::vector<fei::CSVec*>& remotelyOwned,
+                       std::vector<std::vector<char> >& send_chars)
+{
+  for(size_t i=0; i<sendProcs.size(); ++i) {
+    int proc = sendProcs[i];
+    fei::impl_utils::pack_indices_coefs(remotelyOwned[proc]->indices(),
+                       remotelyOwned[proc]->coefs(), send_chars[i]);
+
+    fei::set_values(*remotelyOwned[proc], 0.0);
+  }
+}
+
 int fei::Vector_core::gatherFromOverlap(bool accumulate)
 {
   if (fei::numProcs(comm_) == 1 || haveFEVector()) {
     return(0);
   }
 
+//int localproc = fei::localProc(comm_);
+//std::ostringstream osstr;
+//osstr << "proc."<<localproc;
+//std::string str=osstr.str();
+//static std::ofstream ofs(str.c_str());
+
 #ifndef FEI_SER
-  //first create the list of procs we'll be sending to.
-  std::vector<int> sendProcs;
-  for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
-    if ((int)i == fei::localProc(comm_)) continue;
-    if (remotelyOwned_[i]->size() == 0) continue;
+  //declare arrays to hold the buffers we'll be receiving.
+  std::vector<std::vector<char> > recv_chars;
+  std::vector<std::vector<char> > send_chars(sendProcs_.size());
 
-    sendProcs.push_back(i);
-  }
-
-  std::vector<int> recvProcs;
-  fei::mirrorProcs(comm_, sendProcs, recvProcs);
-
-  //declare arrays to hold the indices and coefs we'll be receiving.
-  std::vector<std::vector<int> > recv_ints(recvProcs.size());
-  std::vector<std::vector<double> > recv_doubles(recvProcs.size());
-  std::vector<int> recv_sizes(recvProcs.size());
-
-  std::vector<MPI_Request> mpiReqs(recvProcs.size()*2);
-  std::vector<MPI_Status> mpiStatuses(recvProcs.size()*2);
+  std::vector<MPI_Request> mpiReqs;
+  std::vector<MPI_Request> mpiReqs2;
+  std::vector<MPI_Status> mpiStatuses;
   int tag1 = 11111;
-  int tag2 = 11112;
+
+  if (sendRecvProcsNeedUpdated_) {
+    //first create the list of procs we'll be sending to.
+    for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
+      if ((int)i == fei::localProc(comm_)) continue;
+      if (remotelyOwned_[i]->size() == 0) continue;
+  
+      sendProcs_.push_back(i);
+    }
+  
+    std::vector<int> tmpSendProcs;
+    vecSpace_->getSendProcs(tmpSendProcs);
+    for(size_t i=0; i<tmpSendProcs.size(); ++i) {
+      bool found = false;
+      for(size_t j=0; j<sendProcs_.size(); ++j) {
+        if (sendProcs_[j] == tmpSendProcs[i]) {
+          found = true;
+          break;
+        }
+        if (sendProcs_[j] > tmpSendProcs[i]) {
+          sendProcs_.insert(sendProcs_.begin()+j, tmpSendProcs[i]);
+          found = true;
+          break;
+        }
+      }
+      if (!found) sendProcs_.push_back(tmpSendProcs[i]);
+    }
+
+    recvProcs_.clear();
+    fei::mirrorProcs(comm_, sendProcs_, recvProcs_);
+    sendRecvProcsNeedUpdated_ = false;
+  }
+  
+//  int num_remote_sends_needed = 0;
+//  for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
+//    if ((int)i==fei::localProc(comm_)) continue;
+//    if (remotelyOwned_[i]->size() > 0) num_remote_sends_needed++;
+//  }
+//  if (num_remote_sends_needed != (int)sendProcs_.size()) {
+//    std::cout << "proc " << fei::localProc(comm_)<<", num_remote_sends_needed="<<num_remote_sends_needed<<", sendProcs_.size()="<<sendProcs_.size()<<std::endl;
+//  }
+
+  send_chars.resize(sendProcs_.size());
+
+  pack_send_buffers(sendProcs_, remotelyOwned_, send_chars);
+
+  recv_sizes_.resize(recvProcs_.size());
+  mpiReqs.resize(recvProcs_.size());
+  mpiStatuses.resize(recvProcs_.size());
+  mpiReqs2.resize(recvProcs_.size());
+  mpiStatuses.resize(recvProcs_.size());
+  recv_chars.resize(recvProcs_.size());
+
 
   //post the recvs for the sizes.
-  for(size_t i=0; i<recvProcs.size(); ++i) {
-    int proc = recvProcs[i];
-    MPI_Irecv(&recv_sizes[i], 1, MPI_INT, proc,
+  for(size_t i=0; i<recvProcs_.size(); ++i) {
+    int proc = recvProcs_[i];
+    MPI_Irecv(&recv_sizes_[i], 1, MPI_INT, proc,
               tag1, comm_, &mpiReqs[i]);
   }
 
   //send the sizes of data we'll be sending.
-  for(unsigned i=0; i<sendProcs.size(); ++i) {
-    int proc = sendProcs[i];
-    int size = remotelyOwned_[proc]->size();
+  for(unsigned i=0; i<sendProcs_.size(); ++i) {
+    int proc = sendProcs_[i];
+    int size = send_chars[i].size();
+//std::cout<<"proc "<<fei::localProc(comm_)<<" sending "<<size<<" chars ("<<remotelyOwned_[proc]->indices().size()<<" indices/coefs) to proc "<<proc<<" accum="<<accumulate<<std::endl;
     MPI_Send(&size, 1, MPI_INT, proc, tag1, comm_);
   }
 
-  if (recvProcs.size() > 0) {
-    MPI_Waitall(recvProcs.size(), &mpiReqs[0], &mpiStatuses[0]);
-  }
-
   //now post the recvs for the data.
-  unsigned offset = 0;
-  for(size_t i=0; i<recvProcs.size(); ++i) {
-    int proc = recvProcs[i];
-    int size = recv_sizes[i];
-    std::vector<int>& recv_ints_i = recv_ints[i];
-    std::vector<double>& recv_doubles_i = recv_doubles[i];
-    recv_ints_i.resize(size);
-    recv_doubles_i.resize(size);
-    MPI_Irecv(&(recv_ints_i[0]), size, MPI_INT, proc,
-              tag1, comm_, &mpiReqs[offset++]);
-    MPI_Irecv(&(recv_doubles_i[0]), size, MPI_DOUBLE, proc,
-              tag2, comm_, &mpiReqs[offset++]);
+  for(size_t i=0; i<recvProcs_.size(); ++i) {
+    int index;
+    MPI_Status status;
+    MPI_Waitany(mpiReqs.size(), &mpiReqs[0], &index, &status);
+
+    recv_chars[index].resize(recv_sizes_[index]);
+    MPI_Irecv(&(recv_chars[index][0]), recv_sizes_[index], MPI_CHAR, recvProcs_[index],
+              tag1, comm_, &mpiReqs2[index]);
   }
 
   //now send the outgoing data.
-  for(size_t i=0; i<sendProcs.size(); ++i) {
-    int proc = sendProcs[i];
-    int size = remotelyOwned_[proc]->size();
-    int* indices = &(remotelyOwned_[proc]->indices())[0];
-    MPI_Send(indices, size, MPI_INT, proc, tag1, comm_);
-    double* coefs = &(remotelyOwned_[proc]->coefs())[0];
-    MPI_Send(coefs, size, MPI_DOUBLE, proc, tag2, comm_);
-
-    fei::set_values(*remotelyOwned_[proc], 0.0);
+  for(size_t i=0; i<sendProcs_.size(); ++i) {
+    int proc = sendProcs_[i];
+    int size = send_chars[i].size();
+    MPI_Send(&(send_chars[i][0]), size, MPI_CHAR, proc, tag1, comm_);
   }
 
-  if (recvProcs.size() > 0) {
-    MPI_Waitall(recvProcs.size()*2, &mpiReqs[0], &mpiStatuses[0]);
+  std::vector<int> indices;
+  std::vector<double> coefs;
+  int numRecvProcs = recvProcs_.size();
+  for(size_t i=0; i<recvProcs_.size(); ++i) {
+    int index;
+    MPI_Status status;
+    MPI_Waitany(numRecvProcs, &mpiReqs2[0], &index, &status);
   }
 
   //now store the data we've received.
-  for(size_t i=0; i<recvProcs.size(); ++i) {
-    int num = recv_sizes[i];
-    std::vector<int>& recv_ints_i = recv_ints[i];
-    std::vector<double>& recv_doubles_i = recv_doubles[i];
-    int err = giveToUnderlyingVector(num, &(recv_ints_i[0]),
-                                     &(recv_doubles_i[0]), accumulate, 0);
+  for(size_t i=0; i<recvProcs_.size(); ++i) {
+    fei::impl_utils::unpack_indices_coefs(recv_chars[i], indices, coefs);
+    int num = indices.size();
+    if (num == 0) continue;
+//ofs<<"proc "<<fei::localProc(comm_)<<" recvd "<<num<<"inds/coefs from proc "<<recvProcs_[i]<<" accum="<<accumulate<<std::endl;
+//for(int ii=0; ii<num;++ii)ofs<<"   "<<indices[ii]<<" "<<coefs[ii]<<std::endl;
+    int err = giveToUnderlyingVector(num, &(indices[0]),
+                                     &(coefs[0]), accumulate, 0);
     if (err != 0) {
       FEI_COUT << "fei::Vector_core::gatherFromOverlap ERROR storing recvd data" << FEI_ENDL;
       return(err);

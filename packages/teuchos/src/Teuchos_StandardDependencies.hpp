@@ -1,28 +1,41 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                    Teuchos: Common Tools Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -379,7 +392,7 @@ private:
  * \relates StringVisualDependency
  */
 template<>
-class DummyObjectGetter<StringVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringVisualDependency>{
 
 public:
 
@@ -481,7 +494,7 @@ protected:
  * \relates BoolVisualDependency
  */
 template<>
-class DummyObjectGetter<BoolVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolVisualDependency>{
 
 public:
 
@@ -607,7 +620,7 @@ private:
  * \relates ConditionVisualDependency
  */
 template<>
-class DummyObjectGetter<ConditionVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<ConditionVisualDependency>{
 
 public:
 
@@ -845,6 +858,161 @@ RCP<NumberVisualDependency<T> >
 }
 
 /**
+ * \brief An abstract base class for all dependencies which modify the 
+ * dimensional attributes of an Array parameter.
+ */
+template<class DependeeType, class DependentType>
+class ArrayModifierDependency : public Dependency{
+public:
+
+  /** @name Constructor(s) */
+  //@{
+
+  /** \brief Constructs an ArrayModifierDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependent The dependent parameter.
+   * @param func The function to be used when calculating the amount an
+   * array dimension should be modified.
+   */
+  ArrayModifierDependency(
+    RCP<const ParameterEntry> dependee,
+    RCP<ParameterEntry> dependent,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+  /** \brief Constructs an ArrayModifierDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependents The dependent parameter.
+   * @param func The function to be used when calculating the amount an
+   * array dimension should be modified.
+   */
+  ArrayModifierDependency(
+    RCP<const ParameterEntry> dependee,
+    ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+  //@}
+
+  /** @name Getters */
+  //@{
+
+  /** \brief Retrieves the function being used to calculate the amount by
+   * which an arrays dimensional attribute should be modified.
+   *
+   * @return The funciton being used to calculate the amount by which
+   * an arrays dimensional attribute should be modified.
+   */
+  inline RCP<const SimpleFunctionObject<DependeeType> > 
+    getFunctionObject() const
+  {
+    return func_;
+  }
+
+  //@}
+
+  /** @name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  virtual void evaluate();
+
+protected:
+
+  /** \brief . */
+  virtual void validateDep() const;
+  
+  //@}
+
+  /** @name Pure virtual functions */
+  //@{
+
+  /**
+   * \brief Modifies a particular attribute of the array according to the
+   * specific semantics of the dependency.
+   *
+   * @param newAmount The new value of the attribute which is being modified.
+   * @param dependentToModify The dependent containing the array to be modified.
+   */
+  virtual void modifyArray(
+    DependeeType newAmount, 
+    RCP<ParameterEntry> dependentToModify) = 0;
+
+  /**
+   * \brief Returns the error message that should be displayed if the 
+   * dependent has taken on a value that, when run through the funciton given
+   * in the constructor, returns a negative value.
+   *
+   * @return Error message to be displayed when the dependnt has a bad value.
+   */
+  virtual std::string getBadDependentValueErrorMessage() const=0;
+
+  //@}
+private:
+
+  /** \name Private Members */
+  //@{
+  
+  /** \brief The function used to calculate the amount by which
+   * an arrays dimensional attribute should be modified.
+   */
+  RCP<const SimpleFunctionObject<DependeeType> > func_;
+
+  //}
+};
+
+template<class DependeeType, class DependentType>
+ArrayModifierDependency<DependeeType,DependentType>::ArrayModifierDependency(
+  RCP<const ParameterEntry> dependee,
+  RCP<ParameterEntry> dependent,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  Dependency(dependee, dependent),
+  func_(func)
+{}
+
+template<class DependeeType, class DependentType>
+ArrayModifierDependency<DependeeType,DependentType>::ArrayModifierDependency(
+  RCP<const ParameterEntry> dependee,
+  ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  Dependency(dependee, dependents),
+  func_(func)
+{}
+
+template<class DependeeType, class DependentType>
+void ArrayModifierDependency<DependeeType,DependentType>::validateDep() const{
+  TEST_FOR_EXCEPTION(
+    typeid(DependeeType) != getFirstDependee()->getAny().type(),
+    InvalidDependencyException,
+    "Ay no! The dependee parameter types don't match." << std::endl <<
+    "Dependee Template Type: " << TypeNameTraits<DependeeType>::name() <<
+    std::endl <<
+    "Dependee Parameter Type: " << getFirstDependee()->getAny().typeName()
+    << std::endl << std::endl);
+}
+
+template<class DependeeType, class DependentType>
+void ArrayModifierDependency<DependeeType,DependentType>::evaluate(){
+  DependeeType newAmount = Dependency::getFirstDependeeValue<DependeeType>();
+  if(!this->getFunctionObject().is_null()){
+    newAmount = this->getFunctionObject()->runFunction(newAmount);
+  }
+
+  TEST_FOR_EXCEPTION(newAmount < OrdinalTraits<DependeeType>::zero(),
+    Exceptions::InvalidParameterValue,
+    getBadDependentValueErrorMessage());
+
+  for(
+    Dependency::ParameterEntryList::iterator it = this->getDependents().begin();
+    it != this->getDependents().end(); 
+    ++it)
+  {
+    modifyArray(newAmount, *it);
+  }
+}
+
+
+/**
  * \brief A NumberArrayLengthDependency says the following about the 
  * relationship between two parameters:
  * The length of the dependent's array depends on the value 
@@ -867,7 +1035,9 @@ RCP<NumberVisualDependency<T> >
  *
  */
 template<class DependeeType, class DependentType>
-class NumberArrayLengthDependency : public Dependency{
+class NumberArrayLengthDependency : 
+  public ArrayModifierDependency<DependeeType, DependentType>
+{
 
 public:
 
@@ -885,8 +1055,7 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<SimpleFunctionObject<DependeeType> > func=null);
-
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
 
   /**
    * \brief Constructs a NumberArrayLengthDependency.
@@ -898,60 +1067,33 @@ public:
    */
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
-    ParameterEntryList dependent,
-    RCP<SimpleFunctionObject<DependeeType> > func=null);
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
 
   //@}
 
   /** \name Overridden from Dependency */
   //@{
-
-  /** \brief . */
-  void evaluate();
   
   /** \brief . */
   std::string getTypeAttributeValue() const;
   
   //@}
 
-  /** \name Getters */
-  //@{
-
-  /** \brief Const version of function getter. */
-  RCP<const SimpleFunctionObject<DependeeType> > 
-    getFunctionObject() const;
-
-  //@}
-
 protected:
 
-  /** \name Overridden from Dependency */
+  /** \name Overridden from ArrayModifierDependency */
   //@{
 
-  void validateDep() const;
+  virtual void validateDep() const;
   
-  //@}
-  //
-private:
+  /** \brief .  */
+  void modifyArray(
+    DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
+  
+  /** \brief . */
+  std::string getBadDependentValueErrorMessage() const;
 
-  /** \name Private Members */
-  //@{
-  
-  /**
-   * \brief The function used to calculate the new value of the
-   * arrays length.
-   */
-    RCP<SimpleFunctionObject<DependeeType> > func_;
-  
-  /**
-   * \brief Modifies the length of an array.
-   *
-   * @param newLength The new length the array should be.
-   * @param dependentValue The index of the dependent array that is going to be changed.
-   */
-  void modifyArrayLength(
-    DependeeType newLength, RCP<ParameterEntry> dependentToModify);
-  
   //@}
   
 };
@@ -960,9 +1102,8 @@ template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RCP<SimpleFunctionObject<DependeeType> > func):
-  Dependency(dependee, dependent),
-  func_(func)
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  ArrayModifierDependency<DependeeType, DependentType>(dependee, dependent, func)
 {
   validateDep();
 }
@@ -970,10 +1111,9 @@ NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDepen
 template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
-  ParameterEntryList dependents,
-  RCP<SimpleFunctionObject<DependeeType> > func):
-  Dependency(dependee, dependents),
-  func_(func)
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  ArrayModifierDependency<DependeeType, DependentType>(dependee, dependents, func)
 {
   validateDep();
 }
@@ -989,26 +1129,18 @@ const
     TypeNameTraits<DependentType>::name() +")";
 }
 
-template<class DependeeType, class DependentType>
-RCP<const SimpleFunctionObject<DependeeType> >
-NumberArrayLengthDependency<DependeeType, DependentType>::getFunctionObject()
-const
-{
-  return func_.getConst();
-}
-
 template <class DependeeType, class DependentType>
 void 
-NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
-  DependeeType newLength, RCP<ParameterEntry> dependentToModify)
+NumberArrayLengthDependency<DependeeType, DependentType>::modifyArray(
+  DependeeType newAmount, RCP<ParameterEntry> dependentToModify)
 {
   const Array<DependentType> originalArray = 
     any_cast<Array<DependentType> >(dependentToModify->getAny()); 
-  Array<DependentType> newArray(newLength);
+  Array<DependentType> newArray(newAmount);
   DependeeType i;
   for(
     i=OrdinalTraits<DependeeType>::zero(); 
-    i<originalArray.size() && i<newLength; 
+    i<originalArray.size() && i<newAmount; 
     ++i)
   {
     newArray[i] = originalArray[i];
@@ -1019,28 +1151,17 @@ NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
 }
 
 template<class DependeeType, class DependentType>
-void 
-NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
-  DependeeType newLength = getFirstDependeeValue<DependeeType>();
-  if(!func_.is_null()){
-    newLength = func_->runFunction(newLength);
-  }
-
-  TEST_FOR_EXCEPTION(newLength < OrdinalTraits<DependeeType>::zero(),
-    Exceptions::InvalidParameterValue,
+std::string 
+NumberArrayLengthDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage() const{
+    std::ostringstream os;
+    os <<
     "Ruh Roh Shaggy! Looks like a dependency tried to set the length "
     "of the Array(s) to a negative number. Silly. You can't have "
     "an Array with a negative length!" << std::endl << std::endl <<
     "Error:" << std::endl <<
     "An attempt was made to set the length of an Array to a negative "
-    "number by a NumberArrayLengthDependency" << std::endl << std::endl);
-  for(
-    ParameterEntryList::iterator it = getDependents().begin(); 
-    it != getDependents().end(); 
-    ++it)
-  {
-    modifyArrayLength(newLength, *it);
-  }
+    "number by a NumberArrayLengthDependency" << std::endl << std::endl;
+    return os.str();
 }
 
 template<class DependeeType, class DependentType>
@@ -1048,18 +1169,11 @@ void
 NumberArrayLengthDependency<DependeeType, DependentType>::validateDep() 
   const
 {
-  TEST_FOR_EXCEPTION(
-    typeid(DependeeType) != getFirstDependee()->getAny().type(),
-    InvalidDependencyException,
-    "Ay no! The dependee parameter types don't match." << std::endl <<
-    "Dependee Template Type: " << TypeNameTraits<DependeeType>::name() <<
-    std::endl <<
-    "Dependee Parameter Type: " << getFirstDependee()->getAny().typeName()
-    << std::endl << std::endl);
-
+  ArrayModifierDependency<DependeeType, DependentType>::validateDep();
   for(
-    ConstParameterEntryList::const_iterator it = getDependents().begin(); 
-    it != getDependents().end(); 
+    Dependency::ConstParameterEntryList::const_iterator it = 
+      this->getDependents().begin(); 
+    it != this->getDependents().end(); 
     ++it)
   {
     TEST_FOR_EXCEPTION(
@@ -1260,7 +1374,7 @@ private:
  * \relates StringValidatorDependency
  */
 template<>
-class DummyObjectGetter<StringValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringValidatorDependency>{
 
 public:
 
@@ -1387,7 +1501,7 @@ private:
  * \relates BoolValidatorDependency
  */
 template<>
-class DummyObjectGetter<BoolValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<BoolValidatorDependency>{
 
 public:
 
@@ -1708,6 +1822,420 @@ RCP<RangeValidatorDependency<T> >
     DummyObjectGetter<ParameterEntry>::getDummyObject(),
     dummyMap));
 }
+
+/**
+ * \brief A dependency in which some attribute of a TwoDArray in a parameter 
+ * depends on the value of another parameter.
+ */
+template<class DependeeType, class DependentType>
+class TwoDArrayModifierDependency : 
+  public ArrayModifierDependency<DependeeType, DependentType>
+{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a TwoDArrayModifierDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependent The dependent parameter.
+   * @param func A function specifying how the TwoDArrays
+   * new attribute's value should be calculated from the dependees value.
+   */
+  TwoDArrayModifierDependency(
+    RCP<const ParameterEntry> dependee,
+    RCP<ParameterEntry> dependent,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null):
+    ArrayModifierDependency<DependeeType, DependentType>(
+      dependee,
+      dependent,
+      func)
+  {}
+
+
+  /**
+   * \brief Constructs a TwoDArrayModifierDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependents The dependents.
+   * @param func A function specifying how the TwoDArrays
+   * new attribute's value should be calculated from the dependees value.
+   */
+  TwoDArrayModifierDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null):
+    ArrayModifierDependency<DependeeType, DependentType>(
+      dependee,
+      dependents,
+      func)
+  {}
+
+  //@}
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+
+  virtual void validateDep() const;
+  
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+void 
+TwoDArrayModifierDependency<DependeeType, DependentType>::validateDep() 
+  const
+{
+  ArrayModifierDependency<DependeeType, DependentType>::validateDep();
+  for(
+    Dependency::ConstParameterEntryList::const_iterator it = 
+      this->getDependents().begin(); 
+    it != this->getDependents().end(); 
+    ++it)
+  {
+    TEST_FOR_EXCEPTION(
+      typeid(Teuchos::TwoDArray<DependentType>) != (*it)->getAny().type(),
+        InvalidDependencyException,
+        "Ay no! The dependent parameter types don't match." << std::endl <<
+        "Dependent Template Type: " << 
+        TypeNameTraits<DependentType>::name() << std::endl <<
+        "Dependent Parameter Type: " << 
+        (*it)->getAny().typeName() << std::endl << std::endl);
+  }
+}
+
+
+/**
+ * \brief A dependency in which the number of rows in a parameter 
+ * with a TwoDArray depends on the value of another parameter.
+ *
+ * Please see TwoDRowDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
+ */
+template<class DependeeType, class DependentType>
+class TwoDRowDependency : 
+  public TwoDArrayModifierDependency<DependeeType, DependentType>
+{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a TwoDRowDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependent The dependent parameter.
+   * @param func A function specifying how the TwoDArrays
+   * number of rows should be calculated from the dependees value.
+   */
+  TwoDRowDependency(
+    RCP<const ParameterEntry> dependee,
+    RCP<ParameterEntry> dependent,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+
+  /**
+   * \brief Constructs a TwoDRowDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependents The dependents.
+   * @param func A function specifying how the TwoDArrays
+   * number of rows should be calculated from the dependees value.
+   */
+  TwoDRowDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const;
+  
+  //@}
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+  
+  /** \brief . */
+  void modifyArray(
+    DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
+  
+  /** \brief . */
+  std::string getBadDependentValueErrorMessage() const;
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
+  RCP<const ParameterEntry> dependee,
+  RCP<ParameterEntry> dependent,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  TwoDArrayModifierDependency<DependeeType, DependentType>(
+    dependee, dependent, func)
+{
+  this->validateDep();
+}
+
+template<class DependeeType, class DependentType>
+TwoDRowDependency<DependeeType, DependentType>::TwoDRowDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  TwoDArrayModifierDependency<DependeeType, DependentType>(
+    dependee, dependents, func)
+{
+  this->validateDep();
+}
+
+
+template<class DependeeType, class DependentType>
+std::string 
+TwoDRowDependency<DependeeType, DependentType>::getTypeAttributeValue()
+const
+{
+  return "TwoDRowDependency(" +
+    TypeNameTraits<DependeeType>::name() + ", " +
+    TypeNameTraits<DependentType>::name() +")";
+}
+
+template <class DependeeType, class DependentType>
+void 
+TwoDRowDependency<DependeeType, DependentType>::modifyArray(
+  DependeeType newAmount, 
+  RCP<ParameterEntry> dependentToModify)
+{
+  TwoDArray<DependentType> originalArray = 
+    any_cast<TwoDArray<DependentType> >(dependentToModify->getAny()); 
+  originalArray.resizeRows(newAmount);
+  dependentToModify->setValue(originalArray,
+    false, dependentToModify->docString(), dependentToModify->validator());
+}
+
+template<class DependeeType, class DependentType>
+std::string 
+TwoDRowDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage() const{
+  std::ostringstream os;
+  os <<
+    "Ruh Roh Shaggy! Looks like a dependency tried to set the number of "
+    "rows in TwoDArray(s) to a negative number. Silly. You can't have "
+    "a TwoDArray with a negative number of rows!" << std::endl << std::endl <<
+    "Error:" << std::endl <<
+    "An attempt was made to set the number of rows of a TwoDArray to a negative "
+    "number by a TwoDRowDependency" << std::endl << std::endl;
+  return os.str();
+}
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * TwoDRowDependency.
+ *
+ * \relates TwoDRowDependency
+ */
+template<class DependeeType, class DependentType>
+class DummyObjectGetter<TwoDRowDependency<DependeeType, DependentType> >{
+
+public:
+
+  /** \name GetterFunctions */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NumberArrayLengthDependency.
+  */
+  static RCP<TwoDRowDependency<DependeeType, DependentType> >
+    getDummyObject();
+  
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+RCP<TwoDRowDependency<DependeeType, DependentType> >
+  DummyObjectGetter<TwoDRowDependency<DependeeType, DependentType> >::getDummyObject()
+{
+  return rcp(
+    new TwoDRowDependency<DependeeType, DependentType>(
+    rcp(new ParameterEntry(ScalarTraits<DependeeType>::zero())),
+    rcp(new ParameterEntry(TwoDArray<DependentType>(1,1)))));
+}
+
+
+/**
+ * \brief A dependency in which the number of rows in a parameter 
+ * with a TwoDArray depends on the value of another parameter.
+ *
+ * Please see TwoDColDependencyXMLConverter for documentation
+ * regarding the XML representation of this Dependency.
+ */
+template<class DependeeType, class DependentType>
+class TwoDColDependency : 
+  public TwoDArrayModifierDependency<DependeeType, DependentType>
+{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a TwoDColDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependent The dependent parameter.
+   * @param func A function specifying how the TwoDArrays
+   * number of cols should be calculated from the dependees value.
+   */
+  TwoDColDependency(
+    RCP<const ParameterEntry> dependee,
+    RCP<ParameterEntry> dependent,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+
+  /**
+   * \brief Constructs a TwoDColDependency.
+   *
+   * @param dependee The dependee parameter.
+   * @param dependents The dependents.
+   * @param func A function specifying how the TwoDArrays
+   * number of cols should be calculated from the dependees value.
+   */
+  TwoDColDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > func=null);
+
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const;
+  
+  //@}
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+  
+  /** \brief . */
+  void modifyArray(
+    DependeeType newAmount, RCP<ParameterEntry> dependentToModify);
+  
+  /** \brief . */
+  std::string getBadDependentValueErrorMessage() const;
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+TwoDColDependency<DependeeType, DependentType>::TwoDColDependency(
+  RCP<const ParameterEntry> dependee,
+  RCP<ParameterEntry> dependent,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  TwoDArrayModifierDependency<DependeeType, DependentType>(
+    dependee, dependent, func)
+{
+  this->validateDep();
+}
+
+template<class DependeeType, class DependentType>
+TwoDColDependency<DependeeType, DependentType>::TwoDColDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > func):
+  TwoDArrayModifierDependency<DependeeType, DependentType>(
+    dependee, dependents, func)
+{
+  this->validateDep();
+}
+
+
+template<class DependeeType, class DependentType>
+std::string 
+TwoDColDependency<DependeeType, DependentType>::getTypeAttributeValue()
+const
+{
+  return "TwoDColDependency(" +
+    TypeNameTraits<DependeeType>::name() + ", " +
+    TypeNameTraits<DependentType>::name() +")";
+}
+
+template <class DependeeType, class DependentType>
+void 
+TwoDColDependency<DependeeType, DependentType>::modifyArray(
+  DependeeType newAmount, 
+  RCP<ParameterEntry> dependentToModify)
+{
+  TwoDArray<DependentType> originalArray = 
+    any_cast<TwoDArray<DependentType> >(dependentToModify->getAny()); 
+  originalArray.resizeCols(newAmount);
+  dependentToModify->setValue(originalArray,
+    false, dependentToModify->docString(), dependentToModify->validator());
+}
+
+template<class DependeeType, class DependentType>
+std::string 
+TwoDColDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage() const{
+  std::ostringstream os;
+  os <<
+    "Ruh Roh Shaggy! Looks like a dependency tried to set the number of "
+    "cols in TwoDArray(s) to a negative number. Silly. You can't have "
+    "a TwoDArray with a negative number of cols!" << std::endl << std::endl <<
+    "Error:" << std::endl <<
+    "An attempt was made to set the number of colums  of a TwoDArrayArray to a negative "
+    "number by a TwoDColDependency" << std::endl << std::endl;
+  return os.str();
+}
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * TwoDColDependency.
+ *
+ * \relates TwoDColDependency
+ */
+template<class DependeeType, class DependentType>
+class DummyObjectGetter<TwoDColDependency<DependeeType, DependentType> >{
+
+public:
+
+  /** \name GetterFunctions */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NumberArrayLengthDependency.
+  */
+  static RCP<TwoDColDependency<DependeeType, DependentType> >
+    getDummyObject();
+  
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+RCP<TwoDColDependency<DependeeType, DependentType> >
+  DummyObjectGetter<TwoDColDependency<DependeeType, DependentType> >::getDummyObject()
+{
+  return rcp(
+    new TwoDColDependency<DependeeType, DependentType>(
+    rcp(new ParameterEntry(ScalarTraits<DependeeType>::zero())),
+    rcp(new ParameterEntry(TwoDArray<DependentType>(1,1)))));
+}
+
 
 
 } //namespace Teuchos

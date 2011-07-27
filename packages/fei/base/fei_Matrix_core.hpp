@@ -221,6 +221,9 @@ class Matrix_core : protected fei::Logger {
 
   std::map<int,FillableMat*> remotelyOwned_;
   mutable FillableMat* remotelyOwned_last_requested_;
+  std::vector<int> sendProcs_;
+  std::vector<int> recvProcs_;
+  bool sendRecvProcsNeedUpdated_;
   mutable int proc_last_requested_;
 
   bool haveBlockMatrix_;

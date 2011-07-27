@@ -72,7 +72,7 @@ ENDIF()
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
-IF (Anasazi_ENABLE_Thyra)
+IF (Anasazi_ENABLE_ThyraCore)
   ADD_SUBDIRECTORY(thyra)
 ENDIF()
 

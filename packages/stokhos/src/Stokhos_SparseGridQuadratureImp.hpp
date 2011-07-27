@@ -43,7 +43,7 @@ SparseGridQuadrature(
   coordinate_bases(product_basis->getCoordinateBases())
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Sparse Grid Generation");
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Sparse Grid Generation");
 #endif
 
   ordinal_type d = product_basis->dimension();
@@ -150,8 +150,19 @@ void
 Stokhos::SparseGridQuadrature<ordinal_type,value_type>::
 getMyPoints( int order, int dim, double x[] )
 {
-  if (sgq->coordinate_bases[dim]->getSparseGridRule() == 1)
+  if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
+      Pecos::CLENSHAW_CURTIS)
     webbur::clenshaw_curtis_compute_points(order, x);
+  else if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
+	   Pecos::GAUSS_PATTERSON)
+    webbur::patterson_lookup_points(order, x);
+  else if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
+	   Pecos::GENZ_KEISTER) {
+    webbur::hermite_genz_keister_lookup_points(order, x);
+    double factor = 1.0/std::sqrt(2.0);
+    for (int i=0; i<order; i++)
+      x[i] *= factor;
+  }
   else {
     Teuchos::Array<double> quad_points;
     Teuchos::Array<double> quad_weights;
@@ -169,10 +180,25 @@ void
 Stokhos::SparseGridQuadrature<ordinal_type,value_type>::
 getMyWeights( int order, int dim, double w[] )
 {
-  if (sgq->coordinate_bases[dim]->getSparseGridRule() == 1) {
+  if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
+      Pecos::CLENSHAW_CURTIS) {
     webbur::clenshaw_curtis_compute_weights(order, w);
     for (int i=0; i<order; i++)
       w[i] *= 0.5;
+  }
+  else if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
+	   Pecos::GAUSS_PATTERSON) {
+    webbur::patterson_lookup_weights(order, w);
+    for (int i=0; i<order; i++)
+      w[i] *= 0.5;
+  }
+  else if (sgq->coordinate_bases[dim]->getSparseGridRule() == 
+	   Pecos::GENZ_KEISTER) {
+    webbur::hermite_genz_keister_lookup_weights(order, w);
+    double pi = 4.0*std::atan(1.0);
+    double factor = 1.0/std::sqrt(pi);
+    for (int i=0; i<order; i++)
+      w[i] *= factor;
   }
   else {
     Teuchos::Array<double> quad_points;

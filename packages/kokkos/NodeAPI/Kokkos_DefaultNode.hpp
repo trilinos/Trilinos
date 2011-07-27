@@ -19,15 +19,13 @@ namespace Kokkos {
     */
   class DefaultNode {
     public:
-#ifdef HAVE_KOKKOS_THREADPOOL
+#if defined(HAVE_KOKKOS_THREADPOOL)
       typedef TPINode DefaultNodeType;
-#else
-#ifdef HAVE_KOKKOS_TBB
+#elif defined(HAVE_KOKKOS_TBB)
       typedef TBBNode DefaultNodeType;
 #else
       //! Typedef specifying the default node type.
       typedef SerialNode DefaultNodeType;
-#endif
 #endif
 
       //! \brief Return a pointer to the default node.

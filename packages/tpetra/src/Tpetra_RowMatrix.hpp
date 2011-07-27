@@ -50,6 +50,11 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class RowMatrix : virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     public:
+      typedef Scalar        scalar_type;
+      typedef LocalOrdinal  local_ordinal_type;
+      typedef GlobalOrdinal global_ordinal_type;
+      typedef Node          node_type;
+
       //! @name Destructor Method
       //@{ 
 
@@ -135,6 +140,7 @@ namespace Tpetra {
       //! Returns \c true if fillComplete() has been called.
       virtual bool isFillComplete() const = 0;
 
+
       //@}
 
       //! @name Extraction Methods
@@ -204,6 +210,39 @@ namespace Tpetra {
       /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
           the zero and non-zero diagonals owned by this node. */
       virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const = 0;
+
+      //@}
+      
+      //! \name Mathematical Methods
+      //@{
+
+      /**
+       * \brief Scales the RowMatrix on the left with the Vector x.
+       *
+       * This matrix will be scaled such that A(i,j) = x(i)*A(i,j) 
+       * where i denoes the global row number of A and 
+       * j denotes the global column number of A.
+       *
+       * \param x A vector to left scale this matrix.
+       */
+      virtual void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) =0;
+
+      /**
+       * \brief Scales the RowMatrix on the right with the Vector x.
+       *
+       * This matrix will be scaled such that A(i,j) = x(j)*A(i,j) 
+       * where i denoes the global row number of A and 
+       * j denotes the global column number of A.
+       *
+       * \param x A vector to right scale this matrix.
+       */
+      virtual void rightScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) =0;
+
+      //! Returns the Frobenius norm of the matrix. 
+      /** Computes and returns the Frobenius norm of the matrix, defined as:
+        \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
+        */
+      virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const = 0;
 
       //@}
 

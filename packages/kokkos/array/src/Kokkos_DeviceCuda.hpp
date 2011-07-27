@@ -44,8 +44,6 @@
 #include <typeinfo>
 #include <vector>
 
-#include <Kokkos_ArrayForwardDeclarations.hpp>
-
 #include <Kokkos_MemoryView.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
 
@@ -56,6 +54,8 @@
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
+
+class MDArrayIndexMapLeft ;
 
 class DeviceCuda {
 private:
@@ -123,7 +123,7 @@ public:
   void allocate_memory_view( MemoryView< ValueType , DeviceCuda > & lhs ,
                              size_t count , const std::string & label )
     {
-      clear_memory_view( lhs );  
+      clear_memory_view( lhs );
       lhs.m_ptr_on_device = (ValueType *)
         allocate_memory( label, typeid(ValueType), sizeof(ValueType), count );
       lhs.m_tracker.insert( lhs.m_tracker );
@@ -139,9 +139,12 @@ public:
   static void wait_functor_completion();
 
   /*--------------------------------*/
-
   /** \brief  Initialize the selected cuda device */
   static void initialize( int cuda_device_id = 0 );
+
+  /*--------------------------------*/
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
 
   static size_type maximum_warp_count();
   static size_type maximum_grid_count();
@@ -150,8 +153,9 @@ public:
   static size_type * reduce_multiblock_scratch_space();
   static size_type * reduce_multiblock_scratch_flag();
 
-#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
-  static const std::vector<cudaStream_t> & streams();
+  static size_type      stream_count();
+  static cudaStream_t & stream( size_type );
+
 #endif
 
   /*--------------------------------*/

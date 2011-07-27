@@ -1,7 +1,17 @@
 
 INCLUDE(PackageMacros)
 
-PACKAGE( Thyra ENABLE_SHADOWING_WARNINGS )
+#
+# A) Forward delcare the package so that certain options are also defined for
+# subpackages
+#
+
+PACKAGE_DECL(Thyra ENABLE_SHADOWING_WARNINGS)
+
+#
+# B) Define the common options for Thyra first so they can be used by
+# subpackages as well.
+#
 
 PACKAGE_ADD_DEBUG_OPTION()
 
@@ -44,19 +54,19 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors enabled."
   "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
+#
+# C) Process the subpackages for Thyra
+#
+
+PACKAGE_PROCESS_SUBPACKAGES()
+
+#
+# D) If Thyra itself is enabled, process the Thyra package
+#
+
+PACKAGE_DEF()
+
 ADD_SUBDIRECTORY(src)
-
-# Add the targets for building the test library so that other packages can use
-# the same test library without requiring Thyra tests be enabled.
-
-ADD_SUBDIRECTORY(test/nonlinear/models)
-
-# This does not enable anything in the models directory
-PACKAGE_ADD_TEST_DIRECTORIES(test)
-
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
-
-ADD_SUBDIRECTORY(adapters)
 
 PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
 

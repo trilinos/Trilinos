@@ -1,607 +1,881 @@
 //============================================================================
-// Name        : parallel_HK.cpp
+// Name        : Isorropia_EpetraMatcher.cpp
 // Author      : Arif Khan
 // Email       : khan58@purdue.edu
 // Copyright   : Sandia National Labs
-// Description : Parallel Hopkroft_Karp in C++/openMP, Ansi-style
+// Description : Parallel Matching in C++/openMP
 //============================================================================
 
 #include"Isorropia_EpetraMatcher.hpp"
-#include <Isorropia_Epetra.hpp>
-
-#ifdef HAVE_EPETRA
-//#ifdef HAVE_MPI
-//#include <Epetra_MpiComm.h>
-//#else
-#include <Epetra_SerialComm.h>
-//#endif
-#include <Epetra_Map.h>
-#include <Epetra_CrsMatrix.h>
-#include <Epetra_Import.h>
-#ifdef HAVE_EPETRAEXT
-#include <EpetraExt_CrsMatrixIn.h>
-#endif
-
-#endif
-
+#include<algorithm>
 using namespace std;
-//__sync_fetch_and_add(&a,1);
 
-matcher::matcher(char * infile)
+#define stat
+#ifdef stat
+int minL,maxL;
+vector<int> med;
+#endif
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrixPtr,const Teuchos::ParameterList& paramlist)
 {
-	int i;
-	process_mtx_compressed(infile);
-	finish=false;
-
-	Node t;
-	t.layer_num=-1;
-	t.scanned=1;
-	t.edgelist.clear();
-	
-	for(i=0;i<U;i++)
-	{	
-		LU.push_back(t);
-		mateU.push_back(-1);
-	}
-	for(i=0;i<V;i++)
-	{	
-		LV.push_back(t);
-		mateV.push_back(-1);
-		vlayered.push_back(0);
-	}
+    int rc=0,i;
+    
+    rc=matrixPtr->ExtractCrsDataPointers(CRS_pointers_,CRS_indices_,CRS_vals_);
+    
+    if(rc!=0)
+        cout<<"Input Processing Failed"<<endl;
+        
+    U_=matrixPtr->NumGlobalRows();
+    V_=matrixPtr->NumGlobalCols();
+    E_=matrixPtr->NumGlobalNonzeros();
+    
+    choice_=1;
+    if(paramlist.isParameter("PHKDW"))
+        choice_=1;
+    else 
+        if(paramlist.isParameter("PHK"))
+            choice_=2;
+        else
+            if(paramlist.isParameter("PDFS"))
+                choice_=3;
+            else
+                if(paramlist.isParameter("PPF"))
+                    choice_=4;
+    
+    #ifdef stat
+    cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
+    cout<<"choice: "<<choice_<<endl;
+    #endif
+    
+    finish_=false;
+    avgDegU_=E_/U_+1;
+    mateU_=new int[U_];
+    mateV_=new int[V_];
+        
+    if(choice_==1 || choice_==2)
+    {
+        LU_=new int[U_];
+        LV_=new int[V_];
+        Queue_=new int[U_];
+    }
+    if(choice_==1 || choice_==4)
+        lookahead_=new int[U_];
+    
+    if(choice_==3 || choice_==4)
+        unmatchedU_=new int[U_];
+    
+    for(i=0;i<U_;i++)
+    {   
+        mateU_[i]=-1;
+        if(choice_==1 || choice_==4)
+            lookahead_[i]=CRS_pointers_[i];
+        if(choice_==1 || choice_==2)
+        {   
+            LU_[i]=-1;
+            Queue_[i]=-1;
+        }
+        if(choice_==3||choice_==4)
+            unmatchedU_[i]=i;
+    }
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    scannedV_=new omp_lock_t[V_];
+    #endif
+    parent_=new int[V_];
+    
+    for(i=0;i<V_;i++)
+    {   
+        #ifdef ISORROPIA_HAVE_OMP
+        omp_init_lock(&scannedV_[i]);
+        #endif
+        mateV_[i]=-1;
+        parent_[i]=-1;
+        if(choice_==1 || choice_==2)
+            LV_[i]=-1;
+    }
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel
+    numThread_=omp_get_num_threads();
+    #endif
 }
 
-matcher::~matcher() {
-	mateU.clear();
-	mateV.clear();
-	del_m.clear();
-	LV.clear();
-	LU.clear();
-	vlayered.clear();
-	graph.clear();
-}
-
-void matcher::process_mtx_compressed(char *fname)
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::ParameterList& paramlist)
 {
-	/*****************************************/
-	int rc=0;
-	#ifdef HAVE_EPETRAEXT
-	 int localProc = 0;
-	
-	/*#ifdef HAVE_MPI
-		int numProcs;
-	 	MPI_Init(&argc, &argv);
-	  	MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
-	  	MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-	  	const Epetra_MpiComm Comm(MPI_COMM_WORLD);
-	  	const Epetra_MpiComm Comm;
-	#else*/
-	  const Epetra_SerialComm Comm;
-	//#endif
-
-	  Epetra_CrsMatrix *matrixPtr;
-	  rc = EpetraExt::MatrixMarketFileToCrsMatrix(fname, Comm, matrixPtr);
-	  if (rc < 0){
-		 if (localProc==0){
-		   cout << "error reading input file" << std::endl << "FAIL" << std::endl;
-		 }
-		 exit(1);
-	  }
-	  else
-	  		cout<<"Crs Matrix Created!!!...."<<endl;
-	#else
-	  fail = 0;
-	  if (localProc == 0){
-		 std::cout << "Test not run because it requires EPETRA_EXT" << std::endl;
-	  }
-	#endif
-
-	
-	rc=matrixPtr->ExtractCrsDataPointers(CRS_Pointers,CRS_Indices,CRS_Vals);
-	if(rc==0)
-		cout<<"Input Processing Done"<<endl;
-	else
-		cout<<"Input Processing Failed"<<endl;
-		
-	/*for(int i=0;i<matrixPtr->NumGlobalRows();i++)
-	{
-		for(int j=*(CRS_Pointers+i);j<*(CRS_Pointers+i+1);j++)
-			cout<<*(CRS_Indices+j)<<" ";
-		cout<<endl;
-	}*/
-	
-	U=matrixPtr->NumGlobalRows();
-	V=matrixPtr->NumGlobalCols();
-	E=matrixPtr->NumGlobalNonzeros();
-	cout<<"(U,V,E):"<<U<<","<<V<<","<<E<<endl;
+    int rc=0,i;
+    
+    rc=matrixPtr->ExtractCrsDataPointers(CRS_pointers_,CRS_indices_,CRS_vals_);
+    
+    if(rc==0)
+        cout<<"Input Processing Done"<<endl;
+    else
+        cout<<"Input Processing Failed"<<endl;
+        
+    U_=matrixPtr->NumGlobalRows();
+    V_=matrixPtr->NumGlobalCols();
+    E_=matrixPtr->NumGlobalNonzeros();
+    cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
+    
+    choice_=1;
+    if(paramlist.isParameter("PHKDW"))
+        choice_=1;
+    else 
+        if(paramlist.isParameter("PHK"))
+            choice_=2;
+        else
+            if(paramlist.isParameter("PDFS"))
+                choice_=3;
+            else
+                if(paramlist.isParameter("PPF"))
+                    choice_=4;
+    
+    cout<<"choice: "<<choice_<<endl;
+    finish_=false;
+    avgDegU_=E_/U_+1;
+    mateU_=new int[U_];
+    mateV_=new int[V_];
+        
+    if(choice_==1 || choice_==2)
+    {
+        LU_=new int[U_];
+        LV_=new int[V_];
+        Queue_=new int[U_];
+    }
+    if(choice_==1 || choice_==4)
+        lookahead_=new int[U_];
+    
+    if(choice_==3 || choice_==4)
+        unmatchedU_=new int[U_];
+    
+    for(i=0;i<U_;i++)
+    {   
+        mateU_[i]=-1;
+        if(choice_==1 || choice_==4)
+            lookahead_[i]=CRS_pointers_[i];
+        if(choice_==1 || choice_==2)
+        {   
+            LU_[i]=-1;
+            Queue_[i]=-1;
+        }
+        if(choice_==3||choice_==4)
+            unmatchedU_[i]=i;
+    }
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    scannedV_=new omp_lock_t[V_];
+    #endif
+    parent_=new int[V_];
+    
+    for(i=0;i<V_;i++)
+    {   
+        #ifdef ISORROPIA_HAVE_OMP
+        omp_init_lock(&scannedV_[i]);
+        #endif
+        mateV_[i]=-1;
+        parent_[i]=-1;
+        if(choice_==1 || choice_==2)
+            LV_[i]=-1;
+    }
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel
+    numThread_=omp_get_num_threads();
+    #endif
 }
 
-
-int matcher::vlayer_clear()
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& paramlist)
 {
-	int i;
-	
-	#ifdef ISORROPIA_HAVE_OMP
-	#pragma omp parallel for
-	#endif
-	for(i=0;i<V;i++)
-		vlayered[i]=0;
-		
-	return 1;
+    
 }
 
-int matcher::is_intersect(int k)
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph> graphPtr,const Teuchos::ParameterList& paramlist)
 {
-	unsigned int i;
-	int flag=0;
-
-	#ifdef ISORROPIA_HAVE_OMP
-	#pragma omp parallel for
-	#endif
-	for(i=0;i<vlist.size();i++)
-		if(mateV[vlist[i]]==-1)
-			flag=1;
-	
-	if(flag==1)
-		return 1;
-	return 0;
+    
 }
 
-void matcher::delete_matched_v()
+
+Isorropia_EpetraMatcher::~Isorropia_EpetraMatcher() 
 {
-	int i;
-	
-	#ifdef ISORROPIA_HAVE_OMP
-	#pragma omp parallel for
-	#endif
-	for(i=0;i<V;i++)
-		if(LV[i].layer_num==k_star)
-			if(mateV[i]!=-1) // !=-1 means already has a mate,i.e., this node is matched...so remove it
-				LV[i].scanned=1; // removing it and make it scanned=1 actually equivalent
+    delete [] mateU_;
+    delete [] mateV_;
+    
+    if(choice_==1 || choice_==2)
+    {   
+        delete [] LU_;
+        delete [] LV_;
+        delete [] Queue_;
+    }
+    if(choice_==1 ||choice_==4)
+        delete [] lookahead_;
+    if(choice_==3 ||choice_==4)
+        delete [] unmatchedU_;
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    for(int i=0;i<V_;i++)
+        omp_destroy_lock(&scannedV_[i]);
+    #endif
+    
 }
 
-void matcher::update_vlayered(int k)
+void Isorropia_EpetraMatcher::extractRowPermutationCopy(int len, int& size, int* array) const
 {
-	int i;
-	if(vlist.size()>0)
-		vlist.clear();
-	
-	#ifdef ISORROPIA_HAVE_OMP
-	#pragma omp parallel for schedule(dynamic, 126)
-	#endif
-	for(i=0;i<V;i++)
-	{		
-		if(LV[i].layer_num==k)
-		{	
-			vlayered[i]=1;     // updating_valayered...
-			
-			#ifdef ISORROPIA_HAVE_OMP
-			#pragma omp critical
-			#endif
-			vlist.push_back(i); //critical section
-		}
-	}
+    const int *ptr=&mateU_[0];
+    size=MIN(size,len);
+    memcpy (array, ptr, size * sizeof(int));
 }
-
-int matcher::construct_layered_graph()
+void Isorropia_EpetraMatcher::extractColumnPermutationCopy(int len, int& size, int* array) const
 {
-	int k,t,flag,i,j;
-	k=k_star=0;
-	
-	vlayer_clear();
-	
-	Node tmp;
-	tmp.layer_num=-1;
-	tmp.scanned=1;
-	
-	#ifdef ISORROPIA_HAVE_OMP
-	#pragma omp parallel for
-	#endif
-	for(i=0;i<V;i++)
-	{	
-		LV[i].layer_num=-1;
-		LV[i].scanned=1;
-	}
-	
-	// Creating L0
-	if(icm>1)
-	{
-		#ifdef ISORROPIA_HAVE_OMP
-		#pragma omp parallel for
-		#endif
-		for(i=0;i<U;i++)     // if mateU[i]==-1 it means that it is not matched
-		{
-			if(mateU[i]==-1)
-			{
-				LU[i].layer_num=0;
-				LU[i].scanned=0;
-			}
-			else
-			{
-				LU[i].layer_num=-1;
-				LU[i].scanned=1;
-			}
-		}
-	}
-	
-	//BFS layer construction
-	k=k_star=0;
-	int counting;
-	while(true)  //change condition
-	{
-		nvlist.clear();
-		counting=0;
-		flag=0;
-		
-		//omp_set_num_threads(8);			
-		if(k==0)                
-		{
-				if(icm==1)
-				{
-					#ifdef ISORROPIA_HAVE_OMP
-					#pragma omp parallel for private(j,t)
-					#endif
-					for(i=0;i<U;i++)
-					{
-						LU[i].layer_num=0;
-						LU[i].scanned=0;
-						LU[i].edgelist.clear();
-						
-						for(t=*(CRS_Pointers+i);t<*(CRS_Pointers+i+1);t++)
-						//for(t=graph[1][i];t<graph[1][i+1];t++)
-						{
-							//j=graph[0][t];
-							j=*(CRS_Indices+t);						
-							if(mateU[i]!=j && vlayered[j]==0) //there is a edge & not in Matching & not in Layers
-							{	
-								LV[j].layer_num=k+1;
-								LV[j].scanned=0;
-								LU[i].edgelist.push_back(j);
-								flag=1;
-							}	
-						}
-					}
-				}
-				else
-				{
-					#ifdef ISORROPIA_HAVE_OMP
-					#pragma omp parallel for private(j,t)
-					#endif
-					for(i=0;i<U;i++)
-					{
-						if(LU[i].layer_num==0)
-						{
-							LU[i].edgelist.clear();
-							for(t=*(CRS_Pointers+i);t<*(CRS_Pointers+i+1);t++)
-							//for(t=graph[1][i];t<graph[1][i+1];t++)
-							{
-								//j=graph[0][t];
-								j=*(CRS_Indices+t);		
-								
-								if(mateU[i]!=j && vlayered[j]==0) //there is a edge & not in Matching & not in Layers
-								{	
-									LV[j].layer_num=k+1;
-									LV[j].scanned=0;
-									LU[i].edgelist.push_back(j);
-									flag=1;
-								}	
-							}
-						}
-					}
-				}
-		}
-		else
-		{
-			flag=0;
-			
-			#ifdef ISORROPIA_HAVE_OMP
-			#pragma omp parallel for private(j,t)
-			#endif
-			for(i=0;i<(signed)vlist.size();i++)
-			{
-				int id=mateV[vlist[i]];
-				LU[id].edgelist.clear();
-				for(t=*(CRS_Pointers+id);t<*(CRS_Pointers+id+1);t++)
-				//for(t=graph[1][id];t<graph[1][id+1];t++)
-				{
-					//j=graph[0][t];
-					j=*(CRS_Indices+t);
-						
-					if(mateU[id]!=j && vlayered[j]==0) //there is a edge & not in Matching & not in Layers
-					{	
-						LV[j].layer_num=k+1;
-						LV[j].scanned=0;
-						LU[id].edgelist.push_back(j);
-						flag=1;
-					}	
-				}
-			}
-		}
-		
-		vlist.clear();
-				
-		//omp_set_num_threads(24);			
-		update_vlayered(k+1);  // updating new inserted V nodes.*/
-						
-		if(flag==0)
-		{
-			finish=true;
-			return k;
-		}
-
-		if(is_intersect(k+1)==1) //Lk+1 intersect V0 not empty
-		{	
-			k_star=k+1;
-			break;
-		}
-		else  //build k+2.....
-		{
-			
-			//omp_set_num_threads(8);				
-			
-			#ifdef ISORROPIA_HAVE_OMP
-			#pragma omp parallel for private(j)
-			#endif
-			for(j=0;j<(signed)vlist.size();j++)
-			{
-				int id=mateV[vlist[j]];
-				//cout<<"Construction..."<<endl;
-				LU[id].layer_num=k+2;
-				LU[id].scanned=0;
-				LV[vlist[j]].edgelist.clear();
-				LV[vlist[j]].edgelist.push_back(id);
-			}
-		}
-		k=k+2;
-	}
-	vlayer_clear();
-	return k_star;
+    const int *ptr=&mateV_[0];
+    size=MIN(size,len);
+    memcpy (array, ptr, size * sizeof(int));
 }
 
-int matcher::recursive_path_finder(int k, int p, vector<int>* path)
+void Isorropia_EpetraMatcher::getMatchedEdges(int len,int& size,int* array) const
 {
-	int i,ind,res=0;
-	path->push_back(p);
-	
-	if(k==k_star)
-		return 1;
-
-	if(k%2==0) // Layers where vertices are from set U
-	{
-		for(i=0;(unsigned)i<LU[p].edgelist.size();i++)
-		{
-			ind=LU[p].edgelist[i];
-			
-			res=0;
-			
-			#ifdef ISORROPIA_HAVE_OMP
-			#pragma omp critical
-			#endif
-			if(LV[ind].scanned==0)              /// I am locking the whole L 
-			{	
-				LV[ind].scanned=1;
-				res=1;
-			}
-				
-			if(res==1 && recursive_path_finder(k+1,ind,path)==1)
-					return 1;	
-			
-		}
-	}
-	else
-		if(recursive_path_finder(k+1,LV[p].edgelist[0],path)==1)
-			return 1;
-				
-	path->pop_back();
-	return 0;
+    int i,j;
+    j=0;
+    for(i=0;i<U_;i++)
+    {   
+        if(mateU_[i]!=-1)
+        {   
+            array[j]=i;
+            array[j+1]=mateU_[i];
+            j++;
+        }
+    }
 }
-
-int matcher::iterative_path_finder(int k, int p, vector<int>* path)
+int Isorropia_EpetraMatcher::getNumberOfMatchedVertices()
 {
-	int i,ind,res=0,cur_p,cur_k,last_k;
-	stack <vector<int> > st;
-	vector<int> temp;
-		
-	temp.clear();
-	temp.push_back(k);
-	temp.push_back(p);
-	st.push(temp);
-	last_k=-1;        
-	
-	while(!st.empty())
-	{
-		temp=st.top();
-		st.pop();
-		cur_k=temp[0];
-		cur_p=temp[1];
-		
-		if(cur_k<last_k)
-		{	
-			path->pop_back(); 
-			path->pop_back();
-		}
-		last_k=cur_k;
-		
-		if(cur_k==k_star)
-		{	
-			res=0;
-			
-			#ifdef ISORROPIA_HAVE_OMP
-			#pragma omp critical
-			#endif
-			if(LV[cur_p].scanned==0)
-			{
-				LV[cur_p].scanned=1;
-				res=1;
-			}
-			if(res==1)
-			{
-				path->push_back(cur_p);
-				return 1;
-			}
-			
-		}
-		
-		if((cur_k%2)==0)
-		{	
-			path->push_back(cur_p);
-
-			for(i=0;(unsigned)i<LU[cur_p].edgelist.size();i++)
-			{
-				ind=LU[cur_p].edgelist[i];
-				vector<int> t;
-				t.push_back(cur_k+1);
-				t.push_back(ind);
-				st.push(t);
-				
-			}
-		}
-		else
-		{
-			res=0;
-			
-			#ifdef ISORROPIA_HAVE_OMP
-			#pragma omp critical
-			#endif
-			if(LV[cur_p].scanned==0)
-			{
-				LV[cur_p].scanned=1;
-				res=1;
-			}
-			if(res==1)
-			{
-				path->push_back(cur_p);
-				ind=LV[cur_p].edgelist[0];
-				vector<int> t;
-				t.push_back(cur_k+1);
-				t.push_back(ind);
-				st.push(t);
-			}
-		}	
-	}
-	
-	return 0;
+    return 2*matched_;
 }
-
-void matcher::find_set_del_M()
+Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
 {
-	int i;
-	delete_matched_v();
-	del_m.clear();
-	
-	//omp_set_num_threads(2);
-	
-	#ifdef ISORROPIA_HAVE_OMP
-	#pragma omp parallel for
-	#endif
-	for(i=0;i<U;i++)
-	{
-		if(LU[i].layer_num==0)
-		{	
-			LU[i].scanned=1;
-			vector<int>* path=new vector<int>;
-			if(k_star>2000)
-			{	
-				if(iterative_path_finder(0,i,path)==1)
-					
-					#ifdef ISORROPIA_HAVE_OMP
-					#pragma omp critical
-					#endif
-					del_m.push_back(*path);
-			}
-			else
-			{	
-				if(recursive_path_finder(0,i,path)==1)
-					
-					#ifdef ISORROPIA_HAVE_OMP
-					#pragma omp critical
-					#endif
-					del_m.push_back(*path);
-			}
-			delete path;
-		}
-	}
+    return NULL;
 }
-
-bool matcher::remove_edge(int s, int t)
+Epetra_Map* Isorropia_EpetraMatcher::getPermutedColumnMap()
 {
-	mateV[s]=-1;
-	mateU[t]=-1;
-	return true;
+    return NULL;
 }
 
-void matcher::add_edge(int s, int t)
+void Isorropia_EpetraMatcher::filler()
 {
-	mateU[s]=t;
-	mateV[t]=s;
+    int i,j,rowfill,colfill,flag;
+    
+    vector<int> temp(U_,-1);
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel for
+    #endif
+    for(i=0;i<U_;i++)
+        temp[i]=mateU_[i];
+    
+    rowfill=U_-matched_;
+    
+    j=0;
+    while(rowfill>0)
+    {
+        for(i=0;i<U_;i++)
+        {   
+            if(mateU_[i]==-1)
+            {
+                flag=0;
+                for(;j<V_;j++)
+                {   
+                    if(mateV_[j]==-1)
+                    {
+                        mateU_[i]=j;
+                        j++;
+                        rowfill--;
+                        flag=1;
+                        break;
+                    }
+                }
+                if(flag==0)         
+                {
+                    mateU_[i]=j;
+                    j++;
+                    rowfill--;
+                }
+            }
+        }
+    }
+    
+    colfill=V_-matched_;
+    
+    j=0;
+    while(colfill>0)
+    {
+        for(i=0;i<V_;i++)
+        {   
+            if(mateV_[i]==-1)
+            {
+                flag=0;
+                for(;j<U_;j++)
+                {   
+                    if(temp[j]==-1)
+                    {
+                        mateV_[i]=j;
+                        j++;
+                        colfill--;
+                        flag=1;
+                        break;
+                    }
+                }
+                if(flag==0)         
+                {
+                    mateV_[i]=j;
+                    j++;
+                    colfill--;
+                }
+            }
+        }
+    }
 }
 
-int matcher::augment_matching()
+void Isorropia_EpetraMatcher::delete_matched_v()
 {
-	int i,j,count;
-
-	count=del_m.size();
-	
-	#ifdef ISORROPIA_HAVE_OMP
-	#pragma omp parallel for private(j)
-	#endif
-	for(i=0;i<count;i++)
-	{
-		for(j=1;(unsigned)j<del_m[i].size()-2;j=j+2)
-		{
-			if(!remove_edge(del_m[i][j],del_m[i][j+1]))
-				cout<<"Error: Remove Edge...not found"<<endl;
-		}
-			
-		for(j=0;(unsigned)j<del_m[i].size()-1;j=j+2)
-			add_edge(del_m[i][j],del_m[i][j+1]);
-	}
-	del_m.clear();
-	return count;
+    #ifdef ISORROPIA_HAVE_OMP
+    int i,j;
+    #pragma omp parallel for private(j)
+    for(i=Qst_;i<Qend_;i++)
+    {   
+        j=Queue_[i];
+        if(LV_[j]==k_star_ && mateV_[j]!=-1)
+            omp_test_lock(&scannedV_[j]);
+    }
+    #endif
 }
 
-bool matcher::U0_empty()
+int Isorropia_EpetraMatcher::augment_matching(int tv)
 {
-	int i,flag=0;
-	
-	#ifdef ISORROPIA_HAVE_OMP
-	#pragma omp parallel for
-	#endif
-	for(i=0;i<U;i++)
-		if(mateU[i]==-1)
-			flag=1;
-	if(flag==1)
-		return false;
-	else return true;
+    int u,v,t,lnt=1;
+    v=tv;
+    while(true)
+    {
+        u=parent_[v];
+        t=mateU_[u];
+        mateV_[v]=u;
+        mateU_[u]=v;
+        if(t==-1)
+            break;
+        lnt+=2;
+        v=t;
+    }
+    
+    return lnt;
 }
 
-vector<int> matcher::get_matching()
+int Isorropia_EpetraMatcher::construct_layered_graph()
 {
-	int totc=0,count;
-	time_t t1,t2,t3,t4,t_st,t_end;
-	time(&t_st);
-	icm=0;
-	while(true)
-	{
-		icm++;
-		time(&t1);
-		construct_layered_graph();
-		//cout<<"bfs"<<endl;
-		time(&t2);
-		if(finish || U0_empty())
-			break;
-		find_set_del_M();
-		//cout<<"dfs"<<endl;
-		time(&t3);
-		count=augment_matching();
-		time(&t4);
-		totc+=count;
-		cout<<"["<<icm<<"] Layers="<<k_star+1<<" BFS="<<difftime(t2,t1)<<" DFS="<<difftime(t3,t2)<<" Time="<<difftime(t4,t1)<<" matched="<<count<<" size="<<totc<<endl;
-	}
-	time(&t_end);
-	
-	cout<<"Total time is less than "<<(t_end-t_st)+1<<" seconds"<<endl;
-	/// Returning the matched edges in int*
-	return mateU;
+    int k,i,j,t,tst,tend,fflag,s,tid,mem,pqind;
+    Qst_=Qend_=tst=tend=k=fflag=0;
+    #ifdef stat
+    maxL=0;
+    minL=U_+V_+1;
+    #endif
+    int* Qsize=new int[numThread_];
+    int** localQ=new int*[numThread_];
+    int* startInd=new int[numThread_];
+    
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel for
+    #endif
+    for(i=0;i<V_;i++)
+    {   
+        #ifdef ISORROPIA_HAVE_OMP
+        omp_unset_lock(&scannedV_[i]);
+        #endif
+        LV_[i]=-1;
+    }
+    
+    for(i=0;i<U_;i++)    
+    {
+        if(mateU_[i]==-1)
+        {
+            LU_[i]=0;
+            Queue_[Qend_++]=i;
+        }
+        else
+            LU_[i]=-1;
+    }
+    
+    if((Qend_-Qst_)==0)
+    {   
+        finish_=true;
+        return 0;
+    }
+    else
+        BFSInd_=Qend_;
+    
+    while(true)
+    {
+        //mem=MIN(((avgDegU_*(Qend_-Qst_))/numThread_),V_);
+        mem=V_;
+        for(i=0;i<numThread_;i++)
+        {
+            startInd[i]=0;
+            Qsize[i]=mem;
+            localQ[i]=new int[mem];
+        }
+        
+        #ifdef ISORROPIA_HAVE_OMP
+        #pragma omp parallel for private(i,t,j,pqind,tid)
+        #endif
+        for(s=Qst_;s<Qend_;s++)
+        {
+            #ifdef ISORROPIA_HAVE_OMP
+            tid=omp_get_thread_num();
+            #endif
+            
+            pqind=startInd[tid];
+                    
+            i=Queue_[s];
+            for(t=CRS_pointers_[i];t<CRS_pointers_[i+1];t++) 
+            {
+                j=CRS_indices_[t];                      
+                if(mateU_[i]!=j)
+                {   
+                    if(mateV_[j]==-1)
+                    {   
+                        fflag=1;
+                        LV_[j]=k+1;
+                    }
+                    else
+                    {
+                        if(fflag==0 && (LV_[j]==-1 || LV_[j]==k+1))
+                        {
+                            if(LV_[j]==-1)
+                            {   
+                                if(Qsize[tid]==pqind)
+                                {
+                                    int newsize=pqind+avgDegU_;
+                                    Qsize[tid]=newsize;
+                                    int * temp=new int[newsize];
+                                    for(i=0;i<pqind;i++)
+                                        temp[i]=localQ[tid][i];
+                                    delete [] localQ[tid];
+                                    localQ[tid]=temp;
+                                        
+                                }
+                                    
+                                localQ[tid][pqind++]=mateV_[j];
+                            }
+                            LU_[mateV_[j]]=k+2;
+                            LV_[j]=k+1;
+                        }
+                    }
+                }   
+            }
+            #ifdef ISORROPIA_HAVE_OMP
+            #pragma omp flush
+            #endif
+            startInd[tid]=pqind;
+        }   
+        
+        Qst_=Qend_;
+        tst=Qst_;
+        for(int ii=0;ii<numThread_;ii++)
+            for(int jj=0;jj<startInd[ii];jj++)
+                Queue_[tst++]=localQ[ii][jj];
+        Qend_=tst;  
+        
+        for(i=0;i<numThread_;i++)
+            delete [] localQ[i];
+        
+        if(fflag>0)
+        {   
+            k_star_=k+1;
+            break;
+        }
+        else
+            k=k+2;
+        
+        if((Qend_-Qst_)==0)
+        {
+            finish_=true;
+            break;
+        }
+    }
+    
+    delete [] startInd;
+    delete [] Qsize;
+    return k_star_;
 }
+
+
+int Isorropia_EpetraMatcher::recursive_path_finder(int k, int p)
+{
+    int i,ind,res=0,lock=0;
+    
+    if(k>k_star_)
+        return -1;
+            
+    for(i=CRS_pointers_[p];i<CRS_pointers_[p+1];i++)
+    {
+        ind=CRS_indices_[i];
+        if(LV_[ind]==k+1)
+        {
+            #ifdef ISORROPIA_HAVE_OMP
+            lock=omp_test_lock(&scannedV_[ind]);
+            #endif
+            if(lock>0)
+            {
+                parent_[ind]=p;
+                if(mateV_[ind]==-1)
+                    return ind;
+                else
+                {
+                    res=recursive_path_finder(k+2,mateV_[ind]);
+                    if(res!=-1)
+                        return res;
+                }
+            }
+        }
+    }
+    
+    return -1;
+}
+
+int Isorropia_EpetraMatcher::dfs_path_finder(int u)
+{
+    int i,ind=-1,res=0,lock=0;
+    
+    if(choice_==1 || choice_==4)
+    {
+        for(i=lookahead_[u];i<CRS_pointers_[u+1];i++)
+        {
+            ind=CRS_indices_[i];
+            assert(ind>=0 && ind<V_);
+            if(mateV_[ind]==-1)
+            {
+                #ifdef ISORROPIA_HAVE_OMP
+                lock=omp_test_lock(&scannedV_[ind]);
+                #endif
+                if(lock>0)
+                {
+                    parent_[ind]=u;
+                    lookahead_[u]=i+1;
+                    return ind;
+                }
+            }
+        }
+    
+    
+        if(icm_%2==1)   
+        {   
+            for(i=CRS_pointers_[u];i<CRS_pointers_[u+1];i++)
+            {
+                ind=CRS_indices_[i];
+                assert(ind>=0 && ind<V_);
+                #ifdef ISORROPIA_HAVE_OMP
+                lock=omp_test_lock(&scannedV_[ind]);
+                #endif
+                if(lock>0)
+                {
+                    parent_[ind]=u;
+                    res=dfs_path_finder(mateV_[ind]);
+                    if(res!=-1)
+                        return res;
+                }
+            }
+        }
+        else
+        {
+            for(i=CRS_pointers_[u+1]-1;i>=CRS_pointers_[u];i--)
+            {
+                ind=CRS_indices_[i];
+                assert(ind>=0 && ind<V_);
+                #ifdef ISORROPIA_HAVE_OMP
+                lock=omp_test_lock(&scannedV_[ind]);
+                #endif
+                if(lock>0)
+                {
+                    parent_[ind]=u;
+                    res=dfs_path_finder(mateV_[ind]);
+                    if(res!=-1)
+                        return res;
+                }
+            }
+        }
+    }
+    else
+    {   
+        for(i=CRS_pointers_[u];i<CRS_pointers_[u+1];i++)
+        {
+            ind=CRS_indices_[i];
+            assert (ind>=0 && ind<V_);
+            #ifdef ISORROPIA_HAVE_OMP
+            lock=omp_test_lock(&scannedV_[ind]);
+            #endif
+            if(lock>0)
+            {
+                parent_[ind]=u;
+                if(mateV_[ind]==-1)
+                    return ind;
+                else
+                {
+                    res=dfs_path_finder(mateV_[ind]);
+                    if(res!=-1)
+                        return res;
+                }
+            }
+        }
+    }
+    return -1;
+}
+
+int Isorropia_EpetraMatcher::find_set_del_M()
+{
+    int i,j,count=0;
+    delete_matched_v();
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel for private(j)
+    #endif
+    for(i=0;i<BFSInd_;i++)
+    {
+        
+        j=recursive_path_finder(0,Queue_[i]);
+        if(j!=-1)
+        {   
+            int lnt=augment_matching(j);
+            #ifdef stat
+            #ifdef ISORROPIA_HAVE_OMP
+            #pragma omp atomic
+            #endif
+            count++;
+            #ifdef ISORROPIA_HAVE_OMP
+            #pragma omp critical
+            #endif
+            {
+                maxL=maxL>lnt?maxL:lnt;
+                minL=minL<lnt?minL:lnt;
+                med.push_back(lnt);
+            }
+            #endif
+        }
+                
+    }
+    return count;
+}
+
+int Isorropia_EpetraMatcher::DW_phase()
+{
+    int i,count=0;
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel for
+    #endif
+    for(i=0;i<V_;i++)
+    {   
+        #ifdef ISORROPIA_HAVE_OMP
+        omp_unset_lock(&scannedV_[i]);
+        #endif
+    }
+    
+    #ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel for
+    #endif
+    for(i=0;i<BFSInd_;i++)
+    {
+        int u=Queue_[i];
+        if(mateU_[u]==-1)
+        {   
+            int ind=dfs_path_finder(u);
+            if(ind!=-1)
+            {   
+                int lnt=augment_matching(ind);
+                #ifdef stat
+                #ifdef ISORROPIA_HAVE_OMP
+                #pragma omp atomic
+                #endif
+                count++;
+                
+                #ifdef ISORROPIA_HAVE_OMP
+                #pragma omp critical
+                #endif
+                {
+                    maxL=maxL>lnt?maxL:lnt;
+                    minL=minL<lnt?minL:lnt;
+                    med.push_back(lnt);
+                }
+                #endif
+            }
+        }
+    }
+    return count;
+}
+
+int Isorropia_EpetraMatcher::dfs_augment()
+{
+
+    int i,flag=0,flag1=0,count=0,totc=0,index=U_;
+    icm_=0;
+    #ifdef stat
+    vector<int> med;
+    #endif
+    while(true)
+    {
+        icm_++;
+        
+        #ifdef ISORROPIA_HAVE_OMP
+        #pragma omp parallel for
+        #endif
+        for(i=0;i<V_;i++)
+        {   
+            #ifdef ISORROPIA_HAVE_OMP
+            omp_unset_lock(&scannedV_[i]);
+            #endif
+        }
+            
+        
+        flag=flag1=count=0;
+        #ifdef stat
+        maxL=0;
+        minL=U_+V_+1;
+        #endif
+        
+        #ifdef ISORROPIA_HAVE_OMP
+        #pragma omp parallel for
+        #endif
+        for(i=0;i<index;i++)
+        {
+            
+            #ifdef ISORROPIA_HAVE_OMP
+            #pragma omp flush
+            #endif
+            flag=1;
+            int u=unmatchedU_[i];
+            int ind=dfs_path_finder(u);
+            if(ind!=-1)
+            {   
+                #ifdef ISORROPIA_HAVE_OMP
+                #pragma omp flush
+                #endif
+                flag1=1;
+                int lnt=augment_matching(ind);
+                #ifdef stat
+                #ifdef ISORROPIA_HAVE_OMP
+                #pragma omp atomic
+                #endif
+                count++;
+                #ifdef ISORROPIA_HAVE_OMP
+                #pragma omp critical
+                #endif
+                {
+                    maxL=maxL>lnt?maxL:lnt;
+                    minL=minL<lnt?minL:lnt;
+                    med.push_back(lnt);
+                }
+                #endif
+            }
+        }
+            
+        if(flag==0 || flag1==0)
+            break;
+        else
+        {   
+            #ifdef stat
+            sort(med.begin(),med.end());
+            totc+=count;
+            //cout<<"["<<icm_<<"] unmatched="<<index<<" matched="<<count<<" size="<<totc<<" minL= "<<minL<<" maxL="<<maxL<<" medL="<<med[count/2]<<endl;
+            cout<<icm_<<","<<index<<","<<count<<","<<(index*1.0)/count<<","<<minL<<","<<med[count/2]<<","<<maxL<<endl;
+            med.clear();
+            #endif
+            
+            int cur=0;
+            
+            for(i=0;i<index;i++)
+            {
+                if(mateU_[unmatchedU_[i]]==-1)
+                    unmatchedU_[cur++]=unmatchedU_[i];
+            }
+            index=cur;
+            
+        }
+    }
+    
+    return totc;
+}
+
+int Isorropia_EpetraMatcher::match_dfs()
+{
+    int totc=0;
+    icm_=0;
+    double start,end;
+    #ifdef ISORROPIA_HAVE_OMP
+    start=omp_get_wtime();
+    #endif
+    totc=dfs_augment();
+    #ifdef ISORROPIA_HAVE_OMP
+    end=omp_get_wtime();
+    #endif
+    
+        
+    #ifdef stat
+    cout<<"Total time: "<<(end-start)<<" seconds"<<" matching="<<totc<<endl;
+    #endif
+    return 0;
+}
+
+int Isorropia_EpetraMatcher::match_hk()
+{
+    int totc=0,count=0;
+    icm_=0;
+    double start,end;
+    #ifdef ISORROPIA_HAVE_OMP
+    start=omp_get_wtime();
+    #endif
+    
+    
+    while(true)
+    {
+        icm_++;
+        //cout<<"bfs"<<endl;
+        construct_layered_graph();
+        if(finish_)
+            break;
+        //cout<<"dfs"<<endl;
+        count=find_set_del_M();
+        if(choice_==1)
+        {   
+            //cout<<"dw"<<endl;
+            count+=DW_phase();
+        }
+        #ifdef stat
+        totc+=count;
+        sort(med.begin(),med.end());
+        //cout<<"["<<icm_<<"] unmatched="<<BFSInd_<<" matched="<<count<<" size="<<totc<<" minL= "<<minL<<" maxL="<<maxL<<" medL="<<med[count/2]<<endl;
+        cout<<icm_<<","<<BFSInd_<<","<<count<<","<<(BFSInd_*1.0)/count<<","<<minL<<","<<med[count/2]<<","<<maxL<<endl;
+        med.clear();
+        #endif
+    }
+    #ifdef ISORROPIA_HAVE_OMP
+    end=omp_get_wtime();
+    #endif
+    
+    
+    #ifdef stat 
+    cout<<"Total time: "<<(end-start)<<" seconds"<<" matching="<<totc<<endl;
+    #endif
+    return 0;
+}
+
+int Isorropia_EpetraMatcher::match()
+{
+    switch(choice_)
+    {
+        case 1:match_hk(); 
+                 break;
+        case 2:match_hk(); 
+                 break;
+        case 3:match_dfs(); 
+                 break;
+        case 4:match_dfs(); 
+                 break;
+        default:match_hk();
+    }
+    return 0;
+}
+
 

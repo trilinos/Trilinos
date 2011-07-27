@@ -605,6 +605,34 @@ int Epetra_VbrMatrix::SetupForSubmits(int BlockRow, int NumBlockEntries,
 }
 
 //==========================================================================
+int Epetra_VbrMatrix::DirectSubmitBlockEntry(int GlobalBlockRow, int GlobalBlockCol,
+                                             const double *values, int LDA,
+                                             int NumRows, int NumCols, bool sum_into)
+{
+  int ierr = 0;
+  int LocalBlockRow = LRID(GlobalBlockRow); // Normalize row range
+  int Loc;
+  bool found = Graph_->FindGlobalIndexLoc(LocalBlockRow, GlobalBlockCol,0,Loc);
+  if (found) {
+    if (Entries_[LocalBlockRow][Loc]==0) {
+      Entries_[LocalBlockRow][Loc] =
+        new Epetra_SerialDenseMatrix(Copy, const_cast<double*>(values), LDA, NumRows, NumCols, false);
+    }
+    else {
+      Epetra_SerialDenseMatrix* target = Entries_[LocalBlockRow][Loc];
+ 
+      target->CopyMat(values, LDA, NumRows, NumCols,
+                      target->A_, target->LDA_, sum_into);
+    }
+  }
+  else {
+    ierr = -2;
+  }
+  EPETRA_CHK_ERR(ierr);
+  return ierr;
+}
+
+//==========================================================================
 int Epetra_VbrMatrix::SubmitBlockEntry(double *values, int LDA,
 				       int NumRows, int NumCols)
 {
@@ -674,9 +702,8 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues()
       int ColDim = src->N();
 
       if (Entries_[CurBlockRow_][Loc]==0) {
-	Entries_[CurBlockRow_][Loc] = src;
+        Entries_[CurBlockRow_][Loc] = src;
         need_to_delete_temp_entry = false;
-//	  new Epetra_SerialDenseMatrix(RowDim, ColDim, false);
       }
       else {
         Epetra_SerialDenseMatrix* target = Entries_[CurBlockRow_][Loc];

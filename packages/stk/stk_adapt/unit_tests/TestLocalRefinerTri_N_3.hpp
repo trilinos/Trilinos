@@ -162,7 +162,7 @@ namespace stk {
                         stk::mesh::Entity *node = elem_nodes[inode].entity();
                         double *coord = stk::mesh::field_data( *m_eMesh.getCoordinatesField(), *node );
                         //if (coord[0] > 2.1 || coord[1] > 2.1)
-                        if (coord[0] > 1.1 || coord[1] > 1.1)
+                        if (coord[0] > 1.0001 || coord[1] > 1.0001)
                           {
                             found = false;
                             break;

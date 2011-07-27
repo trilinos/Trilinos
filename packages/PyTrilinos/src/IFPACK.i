@@ -298,6 +298,7 @@ __version__ = Version().split()[3]
 ////////////////////////////
 // IFPACK factory support //
 ////////////////////////////
+%ignore operator>>(std::istream &, Ifpack::EPrecType &);
 %newobject Ifpack::Create;
 %rename(Factory) Ifpack;
 %include "Ifpack.h"

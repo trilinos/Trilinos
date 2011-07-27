@@ -100,7 +100,7 @@ Stokhos::ApproxGaussSeidelPreconditioner::
 ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Total Approximate Gauss-Seidel Time");
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Approximate Gauss-Seidel Time");
 #endif
 
   // We have to be careful if Input and Result are the same vector.
@@ -140,7 +140,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     {
       // Apply deterministic preconditioner
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR("Total AGS Deterministic Preconditioner Time");
+      TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total AGS Deterministic Preconditioner Time");
 #endif
       mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
     }
@@ -195,7 +195,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       {
 	// Apply deterministic preconditioner
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-	TEUCHOS_FUNC_TIME_MONITOR("Total AGS Deterministic Preconditioner Time");
+	TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total AGS Deterministic Preconditioner Time");
 #endif
 	mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
       }

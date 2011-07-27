@@ -137,7 +137,9 @@ int    *node2vtx;		/* mapping from mesh nodes to comm_graph vtxs */
     sfree(indices);
     indices = NULL;
 
-
+    loc1 = 0;
+    loc2 = 0;
+    
     /* Everything is now set up.  Swap sets across wires until no more improvement. */
 
     while (best_desire > 0) {

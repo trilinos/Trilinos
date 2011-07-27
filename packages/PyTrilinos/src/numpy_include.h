@@ -42,7 +42,7 @@
 // import_array().
 
 #include <Python.h>
-#define PY_ARRAY_UNIQUE_SYMBOL PyTrilinos
+#define PY_ARRAY_UNIQUE_SYMBOL PyTrilinos_NumPy
 #include <numpy/arrayobject.h>
 
 #ifdef NUMPY_NOPREFIX

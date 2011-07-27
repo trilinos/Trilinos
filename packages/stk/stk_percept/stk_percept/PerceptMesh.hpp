@@ -64,7 +64,7 @@ namespace stk {
     static const unsigned EntityRankEnd = 6;
 
     // explanation: to know which of the two possible family trees are present we identify them by a shifted ID
-    const stk::mesh::EntityId FAMILY_TREE_MAX_ENTITY_FOR_SHIFT=1000000000000000u;  // 1e15
+    const stk::mesh::EntityId FAMILY_TREE_MAX_ENTITY_FOR_SHIFT = 1000000000000000ull;  // 1e15
 
     enum FamiltyTreeLevel {
       FAMILY_TREE_LEVEL_0 = 0,
@@ -333,6 +333,17 @@ namespace stk {
               }
             return true;
           }
+      }
+
+      bool hasFamilyTree(const stk::mesh::Entity& element)
+      {
+        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+        if (element_to_family_tree_relations.size()==0 )
+          {
+            return false;
+          }
+        return true;
       }
 
       /// if the element is a parent at any level, return true

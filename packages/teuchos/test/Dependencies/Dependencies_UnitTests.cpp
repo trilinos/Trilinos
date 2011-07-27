@@ -1,28 +1,41 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                    Teuchos: Common Tools Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -589,6 +602,96 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	TEST_ASSERT(!conVisDep->isDependentVisible());
 }
 
+/**
+ * Test the TwoDRowDependency.
+ */
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testTwoDRowDependency){
+	RCP<ParameterList> My_deplist = RCP<ParameterList>(new ParameterList);
+	RCP<DependencySheet> depSheet1 = 
+    RCP<DependencySheet>(new DependencySheet);
+
+	ParameterList
+	rowNumDepList = My_deplist->sublist(
+    "2D Row Depdency List", false,
+    "2D Row Dependecy testing list.");
+	rowNumDepList.set("Num rows", 10, "num rows setter");
+  TwoDArray<double> variableRowsArray(11,2,16.5);
+	RCP<EnhancedNumberValidator<double> > 
+	varRowArrayVali = RCP<EnhancedNumberValidator<double> >(
+  		new EnhancedNumberValidator<double>(10,50,4) 
+	);
+	rowNumDepList.set(
+    "Variable Row Array", variableRowsArray, "variable row array",
+	  RCP<TwoDArrayNumberValidator<double> >(
+      new TwoDArrayNumberValidator<double>(varRowArrayVali)));
+
+	RCP<TwoDRowDependency<int, double> >
+	  arrayRowDep = rcp(
+  		new TwoDRowDependency<int, double>(
+		  rowNumDepList.getEntryRCP("Num rows"),
+			rowNumDepList.getEntryRCP("Variable Row Array") ,
+      rcp(new AdditionFunction<int>(1))
+		)
+	);
+	depSheet1->addDependency(arrayRowDep);
+  TwoDArray<double> curArray = 
+    rowNumDepList.get<TwoDArray<double> >("Variable Row Array");
+	TEST_EQUALITY_CONST(curArray.getNumRows(),11);
+	rowNumDepList.set("Num rows", 12);
+	arrayRowDep()->evaluate();
+  curArray = 
+    rowNumDepList.get<TwoDArray<double> >("Variable Row Array");
+	TEST_EQUALITY_CONST(curArray.getNumRows(),13);
+	rowNumDepList.set("Num rows", -2);
+	TEST_THROW(arrayRowDep()->evaluate(), 
+    Exceptions::InvalidParameterValue);
+}
+
+/**
+ * Test the TwoDColDependency.
+ */
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testTwoDColDependency){
+	RCP<ParameterList> My_deplist = RCP<ParameterList>(new ParameterList);
+	RCP<DependencySheet> depSheet1 = 
+    RCP<DependencySheet>(new DependencySheet);
+
+	ParameterList
+	colNumDepList = My_deplist->sublist(
+    "2D Col Depdency List", false,
+    "2D Col Dependecy testing list.");
+	colNumDepList.set("Num cols", 2, "num cols setter");
+  TwoDArray<double> variableColsArray(11,3,16.5);
+	RCP<EnhancedNumberValidator<double> > 
+	varColArrayVali = RCP<EnhancedNumberValidator<double> >(
+  		new EnhancedNumberValidator<double>(10,50,4) 
+	);
+	colNumDepList.set(
+    "Variable Col Array", variableColsArray, "variable col array",
+	  RCP<TwoDArrayNumberValidator<double> >(
+      new TwoDArrayNumberValidator<double>(varColArrayVali)));
+
+	RCP<TwoDColDependency<int, double> >
+	  arrayColDep = rcp(
+  		new TwoDColDependency<int, double>(
+		  colNumDepList.getEntryRCP("Num cols"),
+			colNumDepList.getEntryRCP("Variable Col Array") ,
+      rcp(new AdditionFunction<int>(1))
+		)
+	);
+	depSheet1->addDependency(arrayColDep);
+  TwoDArray<double> curArray = 
+    colNumDepList.get<TwoDArray<double> >("Variable Col Array");
+	TEST_EQUALITY_CONST(curArray.getNumCols(),3);
+	colNumDepList.set("Num cols", 4);
+	arrayColDep()->evaluate();
+  curArray = 
+    colNumDepList.get<TwoDArray<double> >("Variable Col Array");
+	TEST_EQUALITY_CONST(curArray.getNumCols(),5);
+	colNumDepList.set("Num cols", -2);
+	TEST_THROW(arrayColDep()->evaluate(), 
+    Exceptions::InvalidParameterValue);
+}
+
 
 /**
  * Test the ArrayLengthDependency.
@@ -603,7 +706,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testArrayLengthDep){
     "Number Array Length Dependency List", false,
     "Number Array Length Dependecy testing list.");
 	numberArrayLengthDepList.set("Array Length", 10, "array length setter");
-	Array<double> variableLengthArray(10,23.0);
+	Array<double> variableLengthArray(11,23.0);
 	RCP<EnhancedNumberValidator<double> > 
 	varLengthArrayVali = RCP<EnhancedNumberValidator<double> >(
   		new EnhancedNumberValidator<double>(10,50,4) 
@@ -617,20 +720,21 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testArrayLengthDep){
 	  arrayLengthDep(
   		new NumberArrayLengthDependency<int, double>(
 			numberArrayLengthDepList.getEntryRCP("Array Length"),
-			numberArrayLengthDepList.getEntryRCP("Variable Length Array") 
+			numberArrayLengthDepList.getEntryRCP("Variable Length Array"),
+      rcp(new AdditionFunction<int>(1))
 		)
 	);
 	depSheet1->addDependency(arrayLengthDep);
   Array<double> curArray = 
     numberArrayLengthDepList.get<Array<double> >("Variable Length Array");
-	TEST_ASSERT(curArray.length() ==10);
+	TEST_ASSERT(curArray.length() ==11);
 	numberArrayLengthDepList.set("Array Length", 12);
 	arrayLengthDep()->evaluate();
   curArray = 
     numberArrayLengthDepList.get<Array<double> >("Variable Length Array");
   out << curArray.length() << std::endl;
-	TEST_ASSERT(curArray.length() ==12);
-	numberArrayLengthDepList.set("Array Length", -1);
+	TEST_ASSERT(curArray.length() ==13);
+	numberArrayLengthDepList.set("Array Length", -2);
 	TEST_THROW(arrayLengthDep()->evaluate(), 
     Exceptions::InvalidParameterValue);
 }

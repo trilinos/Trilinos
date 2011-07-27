@@ -134,7 +134,7 @@ namespace Tpetra {
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
     // We will compute solution into the to-be-exported MV
     if (importer != null) {
-      matrix_->template solve<OpScalar,OpScalar>(*X,*importMV_,Teuchos::NO_TRANS);
+      matrix_->template localSolve<OpScalar,OpScalar>(*X,*importMV_,Teuchos::NO_TRANS);
       // Make sure target is zero: necessary because we are adding.
       Y_in.putScalar(ST::zero());  
       Y_in.doExport(*importMV_, *importer, ADD);
@@ -145,11 +145,11 @@ namespace Tpetra {
       if (Y_in.isConstantStride() == false) {
         // generate a strided copy of Y
         MV Y(Y_in);
-        matrix_->template solve<OpScalar,OpScalar>(*X,Y,Teuchos::NO_TRANS);
+        matrix_->template localSolve<OpScalar,OpScalar>(*X,Y,Teuchos::NO_TRANS);
         Y_in = Y;
       }
       else {
-        matrix_->template solve<OpScalar,OpScalar>(*X,Y_in,Teuchos::NO_TRANS);
+        matrix_->template localSolve<OpScalar,OpScalar>(*X,Y_in,Teuchos::NO_TRANS);
       }
     }
   }
@@ -212,7 +212,7 @@ namespace Tpetra {
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
     // We will compute solution into the to-be-exported MV; get a view
     if (exporter != null) {
-      matrix_->template solve<OpScalar,OpScalar>(*X,*exportMV_,Teuchos::CONJ_TRANS);
+      matrix_->template localSolve<OpScalar,OpScalar>(*X,*exportMV_,Teuchos::CONJ_TRANS);
       // Make sure target is zero: necessary because we are adding
       Y_in.putScalar(ST::zero());  
       Y_in.doExport(*importMV_, *importer, ADD);
@@ -222,11 +222,11 @@ namespace Tpetra {
       if (Y_in.isConstantStride() == false) {
         // generate a strided copy of Y
         MV Y(Y_in);
-        matrix_->template solve<OpScalar,OpScalar>(*X,Y,Teuchos::CONJ_TRANS);
+        matrix_->template localSolve<OpScalar,OpScalar>(*X,Y,Teuchos::CONJ_TRANS);
         Y_in = Y;
       }
       else {
-        matrix_->template solve<OpScalar,OpScalar>(*X,Y_in,Teuchos::CONJ_TRANS);
+        matrix_->template localSolve<OpScalar,OpScalar>(*X,Y_in,Teuchos::CONJ_TRANS);
       }
     }
   }
@@ -270,6 +270,11 @@ Tpetra::createCrsMatrixSolveOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatSca
   \
   template Teuchos::RCP< Tpetra::CrsMatrixSolveOp<OPSCALAR,MATSCALAR,LO,GO,NODE> > \
   createCrsMatrixSolveOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MATSCALAR,LO,GO,NODE> > &A); \
+  \
+  template void CrsMatrix<MATSCALAR,LO,GO,NODE>::localSolve<OPSCALAR,OPSCALAR>( \
+        const MultiVector<OPSCALAR,LO,GO,NODE> &X, \
+              MultiVector<OPSCALAR,LO,GO,NODE> &Y, \
+              Teuchos::ETransp mode) const; \
   \
   template void CrsMatrix<MATSCALAR,LO,GO,NODE>::solve<OPSCALAR,OPSCALAR>( \
         const MultiVector<OPSCALAR,LO,GO,NODE> &X, \

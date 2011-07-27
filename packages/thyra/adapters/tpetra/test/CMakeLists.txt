@@ -5,7 +5,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TpetraThyraWrappersUnitTests
   SOURCES
     TpetraThyraWrappers_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS "--no-run-linear-op-tester"
   )
   # Above is a defect that needs to be fixed in Tpetra ...
@@ -22,5 +22,5 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   SOURCES
     Simple2DTpetraModelEvaluator_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   )

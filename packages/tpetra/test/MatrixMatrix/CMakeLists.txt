@@ -5,7 +5,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrix_UnitTests
   SOURCES 
     MatrixMatrix_UnitTests.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
   DEPLIBS tpetraext tpetrainout
 )
@@ -30,6 +30,7 @@ rectQRa.mtx rectQRb.mtx rectQRc.mtx
 rectTransAdda.mtx rectTransAddb.mtx rectTransAddc.mtx
 rectAtransIa.mtx rectAtransIb.mtx rectAtransIc.mtx
 smallRectAIa.mtx smallRectAIb.mtx smallRectAIc.mtx
+denserATa.mtx denserATc.mtx
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix/matrices
 DEST_DIR ${PACKAGE_BINARY_DIR}/test/MatrixMatrix/matrices
 EXEDEPS MatrixMatrix_UnitTests

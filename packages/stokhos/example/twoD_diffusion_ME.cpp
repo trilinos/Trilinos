@@ -560,14 +560,15 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
       basis->evaluateBases(point, basis_vals);
       A->PutScalar(0.0);
       for (int k=0;k<A_k.size();k++)
-    	EpetraExt::MatrixMatrix::Add((*A_k[k]), false, basis_vals[k], *A, 
-    				     1.0);
+    	EpetraExt::MatrixMatrix::Add((*A_k[k]), false, basis_vals[k], *A, 1.0);
     }
     else {
       *A = *(A_k[0]);
       for (int k=1;k<A_k.size();k++)
 	EpetraExt::MatrixMatrix::Add((*A_k[k]), false, (*p)[k-1], *A, 1.0);
     }
+    A->FillComplete();
+    A->OptimizeStorage();
   }
 
   // Residual  
@@ -582,6 +583,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     Teuchos::RCP<Epetra_CrsMatrix> jac =
       Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W, true);
     *jac = *A;
+    jac->FillComplete();
+    jac->OptimizeStorage();
   }
 
   // Preconditioner
@@ -654,6 +657,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
       Teuchos::RCP<Epetra_CrsMatrix> jac = 
 	Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_sg->getCoeffPtr(i), true);
       *jac = *A_k[i];
+      jac->FillComplete();
+      jac->OptimizeStorage();
     }
   }
 
@@ -700,6 +705,9 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 	  EpetraExt::MatrixMatrix::Add((*A_k[k]), false, (*p_mp)[i][k-1], *A, 
 				       1.0);
       }
+
+      A->FillComplete();
+      A->OptimizeStorage();
       
       // Compute residual
       if (f_mp != Teuchos::null) {
@@ -713,6 +721,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 	  Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_mp->getCoeffPtr(i), 
 						      true);
 	*jac = *A;
+	jac->FillComplete();
+	jac->OptimizeStorage();
       }
     }
   }

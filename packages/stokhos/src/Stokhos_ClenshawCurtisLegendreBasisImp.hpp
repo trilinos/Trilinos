@@ -31,8 +31,31 @@
 template <typename ordinal_type, typename value_type>
 Stokhos::ClenshawCurtisLegendreBasis<ordinal_type, value_type>::
 ClenshawCurtisLegendreBasis(ordinal_type p, bool normalize, bool isotropic_) :
-  RecurrenceBasis<ordinal_type, value_type>("Legendre", p, normalize),
+  RecurrenceBasis<ordinal_type, value_type>("Clenshaw-Curtis Legendre", 
+					    p, normalize),
   isotropic(isotropic_)
+{
+  // Compute coefficients in 3-term recurrsion
+  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
+
+  // Setup rest of recurrence basis
+  this->setup();
+
+#ifdef HAVE_STOKHOS_DAKOTA
+  this->setSparseGridRule(Pecos::CLENSHAW_CURTIS);
+  if (isotropic)
+    this->setSparseGridGrowthRule(Pecos::FULL_EXPONENTIAL);
+  else
+    this->setSparseGridGrowthRule(Pecos::MODERATE_EXPONENTIAL);
+#endif
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::ClenshawCurtisLegendreBasis<ordinal_type, value_type>::
+ClenshawCurtisLegendreBasis(ordinal_type p, 
+			    const ClenshawCurtisLegendreBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>(p, basis),
+  isotropic(basis.isotropic)
 {
   // Compute coefficients in 3-term recurrsion
   computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
@@ -75,5 +98,6 @@ Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> >
 Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>::
 cloneWithOrder(ordinal_type p) const
 {
-   return Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(p,this->normalize,isotropic));
+  return 
+    Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(p,*this));
 }

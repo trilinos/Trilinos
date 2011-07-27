@@ -29,13 +29,13 @@
 # ************************************************************************
 # @HEADER
 
-# This example creates a (distributed) tridiagonal matrix, a vector for the
-# solution and one for the right-handi. Then, it solves the corresponding
-# linear system using Amesos' LAPACK. Note, however, that any Amesos supported
-# (and enabled at configure time) solver can be adopted; simply change the
-# value of the variable `Type'
+# This example creates a (distributed) tridiagonal matrix, and vectors for the
+# solution and the right-hand side. Then, it solves the corresponding linear
+# system using Amesos' LAPACK. Note, however, that any Amesos supported (and
+# enabled at configure time) solver can be adopted; simply change the value of
+# the variable `Type'
 #
-# Last updated on 25-Jul-5
+# Last updated on 25-Jul-05
 # Author Marzio Sala, SNL 9214
 
 #
@@ -61,74 +61,76 @@ from testutil import fromPyTrilinosImport
 Epetra = fromPyTrilinosImport('Epetra', options.testharness)
 Amesos = fromPyTrilinosImport('Amesos', options.testharness)
 
-# dimension of the problem
-NumGlobalRows = 10
-Comm = Epetra.PyComm()
-numProc = Comm.NumProc()
-iAmRoot = Comm.MyPID() == 0
-Map = Epetra.Map(NumGlobalRows, 0, Comm)
-LHS_exact = Epetra.Vector(Map)
-LHS = Epetra.Vector(Map)
-RHS = Epetra.Vector(Map)
-Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
 
-NumLocalRows = Map.NumMyElements()
+def main():
+  # dimension of the problem
+  numGlobalRows = 10
+  comm          = Epetra.PyComm()
+  numProc       = comm.NumProc()
+  iAmRoot       = comm.MyPID() == 0
+  map           = Epetra.Map(numGlobalRows, 0, comm)
+  numLocalRows  = map.NumMyElements()
+  LHS_exact     = Epetra.Vector(map)
+  LHS           = Epetra.Vector(map)
+  RHS           = Epetra.Vector(map)
+  matrix        = Epetra.CrsMatrix(Epetra.Copy, map, 0)
 
-# Populates the matrix by inserting one row at-a-time. Indices and Values
-# are defined as Python's lists (of the same length).
-for ii in range(0, NumLocalRows):
-  i = Map.GID(ii)
-  if i == 0:
-    Indices = [i, i + 1]
-    Values  = [2.0, -1.0]
-  elif i == NumGlobalRows - 1:
-    Indices = [i, i - 1]
-    Values  = [2.0, -1.0]
-  else:
-    Indices = [  i,  i - 1, i + 1]
-    Values  = [2.0,   -1.0,  -1.0]
-  Matrix.InsertGlobalValues(i, Values, Indices)
-ierr = Matrix.FillComplete()
+  # Populates the matrix by inserting one row at-a-time. Indices and Values
+  # are defined as Python's lists (of the same length).
+  for ii in range(0, numLocalRows):
+    i = map.GID(ii)
+    if i == 0:
+      indices = [i, i + 1]
+      values  = [2.0, -1.0]
+    elif i == numGlobalRows - 1:
+      indices = [i, i - 1]
+      values  = [2.0, -1.0]
+    else:
+      indices = [  i,  i - 1, i + 1]
+      values  = [2.0,   -1.0,  -1.0]
+    matrix.InsertGlobalValues(i, values, indices)
+  matrix.FillComplete()
 
-# Builds a solution that is `i' at node `i', then the
-# corresponding right-hand side, then set the solution to 0
-for i in range(0, NumLocalRows):
-  LHS[i] = i
-Matrix.Multiply(False, LHS, RHS)
-LHS.PutScalar(0.0)
+  # Builds a solution that is `i' at node `i', then the
+  # corresponding right-hand side, then set the solution to 0
+  for i in range(0, numLocalRows):
+    LHS[i] = i
+  matrix.Multiply(False, LHS, RHS)
+  LHS.PutScalar(0.0)
 
-Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
-Factory = Amesos.Factory()
+  problem = Epetra.LinearProblem(matrix, LHS, RHS)
+  factory = Amesos.Factory()
 
-# Creates the solver using the Amesos' factory
-Type = "Amesos_Lapack"
-if Factory.Query(Type) == False:
-  print "Selected solver (%s) not supported" % (Type)
-  Epetra.Finalize()
-  raise "Solver not supported"
-Solver = Factory.Create(Type, Problem)
+  # Creates the solver using the Amesos' factory
+  type = "Amesos_Lapack"
+  if factory.Query(type) == False:
+    raise "Selected solver (%s) not supported" % (type)
+  solver = factory.Create(type, problem)
 
-# Setting parameters using a Python' dictionary. The list of supported
-# parameters can be found on the user's guide.
-AmesosList = {"PrintTiming" : True,
-              "PrintStatus" : True
-              }
-Solver.SetParameters(AmesosList)
+  # Setting parameters using a Python dictionary. The list of supported
+  # parameters can be found on the user's guide.
+  amesosList = {"PrintTiming" : True,
+                "PrintStatus" : True
+                }
+  solver.SetParameters(amesosList)
 
-# Note: we don't check here the return parameters for brevity. 
-Solver.SymbolicFactorization()
-Solver.NumericFactorization()
-Solver.Solve()
+  # Note: we don't check here the return parameters for brevity. 
+  solver.SymbolicFactorization()
+  solver.NumericFactorization()
+  ierr = solver.Solve()
 
-del Solver
+  #del solver
 
-error = 0.0
-for i in range(0, NumLocalRows):
-  error = error + abs(LHS[i] - i)
-if iAmRoot:
-  print "Using %s, ||x - x_ex||_1 = %e" % (Type, error)
+  error = 0.0
+  for i in range(0, numLocalRows):
+    error = error + abs(LHS[i] - i)
+  if iAmRoot:
+    print "Using %s, ||x - x_ex||_1 = %e" % (type, error)
 
-# Exit with a code that indicates the total number of successes
-successes = Comm.SumAll(1)
-if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
-sys.exit(numProc-successes)
+  # Exit with a code that indicates the total number of successes
+  failures = comm.SumAll(ierr)
+  if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+  sys.exit(failures)
+
+if __name__ == "__main__":
+    main()

@@ -39,7 +39,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_STACKTRACE)
 IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
 
   SET(PASS_REGEXS
-    "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:39"
+    "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:52"
     "Throw number = 1"
     "Throw test that evaluated to true: true"
     "This is an exception I throw!"
@@ -74,7 +74,7 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
     TEST_0 EXEC TestForException_throwTest
       ARGS  --no-enable-stacktrace
       PASS_REGULAR_EXPRESSION_ALL
-        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:39"
+        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:52"
         "Throw number = 1"
         "Throw test that evaluated to true: true"
         "This is an exception I throw!"

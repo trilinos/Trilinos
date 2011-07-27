@@ -7,8 +7,6 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#include <Kokkos_DefaultNode.hpp>
-
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_RTI.hpp>
@@ -126,7 +124,7 @@ namespace TpetraExamples {
       RCP<const Mat> AT = convertHelp<T,S,LO,GO,Node>::doit(A);
       //
       db->set<RCP<const Op>>("A", AT                    );
-      db->set("numIters", params.get<int>("numIters",5) );
+      db->set("numIters", params.get<int>("numIters",A->getGlobalNumRows()) );
       db->set("tolerance",params.get<double>("tolerance",1e-7));
       db->set("verbose",  params.get<int>("verbose",0) );
       db->set("bx",       Tpetra::createVector<T>(map)  );
@@ -190,10 +188,15 @@ namespace TpetraExamples {
     }
     const T tolerance = db.get<double>("tolerance", 0.0);
     const int verbose = db.get<int>("verbose",0);
-    static RCP<Time> timer;
+    static RCP<Time> timer, Atimer;
     if (timer == null) {
       timer = Teuchos::TimeMonitor::getNewTimer(
-                      "recurisveFPCG<"+Teuchos::TypeNameTraits<T>::name()+">"
+                      "recursiveFPCG<"+Teuchos::TypeNameTraits<T>::name()+">"
+              );
+    }
+    if (Atimer == null) {
+      Atimer = Teuchos::TimeMonitor::getNewTimer(
+                      "A<"+Teuchos::TypeNameTraits<T>::name()+">"
               );
     }
 
@@ -235,7 +238,9 @@ namespace TpetraExamples {
     int k;
     for (k=0; k<numIters; ++k) 
     {
+      Atimer->start();
       A->apply(*p,*Ap);                                           // Ap = A*p
+      Atimer->stop();
       T pAp = TPETRA_REDUCE2( p, Ap,     
                               p*Ap, ZeroOp<T>, plus<T>() );       // p'*Ap
       const T alpha = zr / pAp;

@@ -122,6 +122,8 @@
 ///////////////////////////////////
 // Epetra_NumPyIntVector support //
 ///////////////////////////////////
+namespace PyTrilinos
+{
 %feature("docstring")
 Epetra_NumPyIntVector::ExtractCopy
 "Return a numpy.ndarray that is a copy of the IntVector."
@@ -142,10 +144,10 @@ Epetra_NumPyIntVector::Values
 {
   Epetra_NumPyIntVector(PyObject * arg1)
   {
-    int                     res   = 0;
-    Epetra_IntVector      * eiv   = NULL;
-    Epetra_NumPyIntVector * enpiv = NULL;
-    Epetra_BlockMap       * bmap  = NULL;
+    int                                 res   = 0;
+    Epetra_IntVector                  * eiv   = NULL;
+    PyTrilinos::Epetra_NumPyIntVector * enpiv = NULL;
+    Epetra_BlockMap                   * bmap  = NULL;
 
 #ifdef HAVE_TEUCHOS
     Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
@@ -172,7 +174,7 @@ Epetra_NumPyIntVector::Values
 
     if (SWIG_CheckState(res))
     {
-      enpiv = new Epetra_NumPyIntVector(*bmap);
+      enpiv = new PyTrilinos::Epetra_NumPyIntVector(*bmap);
     }
     else
     {
@@ -201,11 +203,11 @@ Epetra_NumPyIntVector::Values
 
       if (SWIG_CheckState(res))
       {
-	enpiv = new Epetra_NumPyIntVector(*eiv);
+	enpiv = new PyTrilinos::Epetra_NumPyIntVector(*eiv);
       }
       else
       {
-	enpiv = new Epetra_NumPyIntVector(arg1);
+	enpiv = new PyTrilinos::Epetra_NumPyIntVector(arg1);
       }
     }
     if (enpiv == NULL)
@@ -222,10 +224,10 @@ Epetra_NumPyIntVector::Values
 
   Epetra_NumPyIntVector(PyObject * arg1, PyObject * arg2)
   {
-    int                     res     = 0;
-    bool                    zeroOut = true;
-    Epetra_NumPyIntVector * enpiv   = NULL;
-    Epetra_BlockMap       * bmap    = NULL;
+    int                                 res     = 0;
+    bool                                zeroOut = true;
+    PyTrilinos::Epetra_NumPyIntVector * enpiv   = NULL;
+    Epetra_BlockMap                   * bmap    = NULL;
 
 #ifdef HAVE_TEUCHOS
     Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
@@ -255,11 +257,11 @@ Epetra_NumPyIntVector::Values
       if (PyBool_Check(arg2))
       {
 	zeroOut = (arg2 == Py_True) ? true : false;
-	enpiv = new Epetra_NumPyIntVector(*bmap, zeroOut);
+	enpiv = new PyTrilinos::Epetra_NumPyIntVector(*bmap, zeroOut);
       }
       else
       {
-	enpiv = new Epetra_NumPyIntVector(*bmap, arg2);
+	enpiv = new PyTrilinos::Epetra_NumPyIntVector(*bmap, arg2);
       }
     }
     if (enpiv == NULL)
@@ -278,6 +280,7 @@ Epetra_NumPyIntVector::Values
 %ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(PyObject*);
 %ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap&, bool);
 %ignore Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap&, PyObject*);
+}  // Namespace PyTrilinos
 %include "Epetra_NumPyIntVector.h"
 %pythoncode
 %{
@@ -402,6 +405,8 @@ _Epetra.NumPyIntVector_swigregister(IntVector)
 /////////////////////////////////////
 // Epetra_NumPyMultiVector support //
 /////////////////////////////////////
+namespace PyTrilinos
+{
 %feature("docstring")
 Epetra_NumPyMultiVector::ExtractCopy
 "Return a numpy.ndarray that is a copy of the MultiVector."
@@ -433,6 +438,7 @@ Epetra_NumPyMultiVector::MaxValue
 Epetra_NumPyMultiVector::MeanValue
 "Return a numpy.ndarray of the mean values of the MultiVector."
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
+}  // Namespace PyTrilinos
 %include "Epetra_NumPyMultiVector.h"
 %pythoncode
 %{
@@ -642,6 +648,8 @@ _Epetra.NumPyMultiVector_swigregister(MultiVector)
 ////////////////////////////////
 // Epetra_NumPyVector support //
 ////////////////////////////////
+namespace PyTrilinos
+{
 %feature("docstring")
 Epetra_NumPyVector::ExtractCopy
 "Return a numpy.ndarray that is a copy of the Vector."
@@ -695,10 +703,10 @@ Epetra_NumPyVector::SumIntoMyValues
 {
   Epetra_NumPyVector(PyObject * arg1)
   {
-    int                  res  = 0;
-    Epetra_Vector      * ev   = NULL;
-    Epetra_NumPyVector * enpv = NULL;
-    Epetra_BlockMap    * bmap = NULL;
+    int                              res  = 0;
+    Epetra_Vector                  * ev   = NULL;
+    PyTrilinos::Epetra_NumPyVector * enpv = NULL;
+    Epetra_BlockMap                * bmap = NULL;
 
 #ifdef HAVE_TEUCHOS
     Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
@@ -725,7 +733,7 @@ Epetra_NumPyVector::SumIntoMyValues
 
     if (SWIG_CheckState(res))
     {
-      enpv = new Epetra_NumPyVector(*bmap);
+      enpv = new PyTrilinos::Epetra_NumPyVector(*bmap);
     }
     else
     {
@@ -753,11 +761,11 @@ Epetra_NumPyVector::SumIntoMyValues
 #endif
       if (SWIG_CheckState(res))
       {
-	enpv = new Epetra_NumPyVector(*ev);
+	enpv = new PyTrilinos::Epetra_NumPyVector(*ev);
       }
       else
       {
-	enpv = new Epetra_NumPyVector(arg1);
+	enpv = new PyTrilinos::Epetra_NumPyVector(arg1);
       }
     }
     if (enpv == NULL)
@@ -774,12 +782,12 @@ Epetra_NumPyVector::SumIntoMyValues
 
   Epetra_NumPyVector(PyObject * arg1, PyObject * arg2)
   {
-    int                  res     = 0;
-    bool                 zeroOut = true;
-    Epetra_BlockMap    * bmap    = NULL;
-    Epetra_Vector      * ev      = NULL;
-    Epetra_NumPyVector * enpv    = NULL;
-    Epetra_DataAccess    cv;
+    int                              res     = 0;
+    bool                             zeroOut = true;
+    Epetra_BlockMap                * bmap    = NULL;
+    Epetra_Vector                  * ev      = NULL;
+    PyTrilinos::Epetra_NumPyVector * enpv    = NULL;
+    Epetra_DataAccess                cv;
 
 #ifdef HAVE_TEUCHOS
     Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
@@ -809,11 +817,11 @@ Epetra_NumPyVector::SumIntoMyValues
       if (PyBool_Check(arg2))
       {
 	zeroOut = (arg2 == Py_True) ? true : false;
-	enpv = new Epetra_NumPyVector(*bmap, zeroOut);
+	enpv = new PyTrilinos::Epetra_NumPyVector(*bmap, zeroOut);
       }
       else
       {
-	enpv = new Epetra_NumPyVector(*bmap, arg2);
+	enpv = new PyTrilinos::Epetra_NumPyVector(*bmap, arg2);
       }
     }
     else
@@ -845,7 +853,7 @@ Epetra_NumPyVector::SumIntoMyValues
 #endif
 	if (SWIG_CheckState(res))
 	{
-	  enpv = new Epetra_NumPyVector(cv, *ev);
+	  enpv = new PyTrilinos::Epetra_NumPyVector(cv, *ev);
 	}
       }
     }
@@ -867,6 +875,7 @@ Epetra_NumPyVector::SumIntoMyValues
 %ignore Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap&, bool);
 %ignore Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap&, PyObject*);
 %ignore Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess, const Epetra_Vector&);
+}
 %include "Epetra_NumPyVector.h"
 %pythoncode
 %{
@@ -1031,6 +1040,8 @@ _Epetra.NumPyVector_swigregister(Vector)
 ////////////////////////////////
 // Epetra_NumPyFEVector support //
 ////////////////////////////////
+namespace PyTrilinos
+{
 %feature("docstring")
 Epetra_NumPyFEVector::ExtractCopy
 "Return a numpy.ndarray that is a copy of the FEVector."
@@ -1068,6 +1079,7 @@ Epetra_NumPyFEVector::ReplaceGlobalValues
 Epetra_NumPyFEVector::SumIntoGlobalValues
 "Sum into global values at specified indices (and offset)"
 %rename(NumPyFEVector) Epetra_NumPyFEVector;
+}  // Namespace PyTrilinos
 %include "Epetra_NumPyFEVector.h"
 %pythoncode
 %{

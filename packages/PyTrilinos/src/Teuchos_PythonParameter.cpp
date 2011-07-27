@@ -37,14 +37,14 @@ typedef int Py_ssize_t;
 
 // ****************************************************************** //
 
-namespace Teuchos
+namespace PyTrilinos
 {
 
 // ****************************************************************** //
 
-bool setPythonParameter(ParameterList     & plist,
-			const std::string & name,
-			PyObject          * value)
+bool setPythonParameter(Teuchos::ParameterList & plist,
+			const std::string      & name,
+			PyObject               * value)
 {
   static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::RCP< Teuchos::ParameterList >*");
   void * argp;
@@ -74,10 +74,10 @@ bool setPythonParameter(ParameterList     & plist,
   // Dictionary values
   else if (PyDict_Check(value))
   {  
-    // Convert the python dictionary to a ParameterList
-    ParameterList * sublist = pyDictToNewParameterList(value);
+    // Convert the python dictionary to a Teuchos::ParameterList
+    Teuchos::ParameterList * sublist = pyDictToNewParameterList(value);
 
-    // Store the ParameterList
+    // Store the Teuchos::ParameterList
     plist.set(name,*sublist);
     delete sublist;
   }
@@ -85,24 +85,26 @@ bool setPythonParameter(ParameterList     & plist,
   // None object not allowed: this is a python type not usable by
   // Trilinos solver packages, so we reserve it for the
   // getPythonParameter() function to indicate that the requested
-  // parameter does not exist in the given ParameterList
+  // parameter does not exist in the given Teuchos::ParameterList
   else if (value == Py_None)
   {
     return false;
   }
 
-  // ParameterList values
+  // Teuchos::ParameterList values
   else if (SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_TPL_ptr, 0, &newmem)))
   {
     if (newmem & SWIG_CAST_NEW_MEMORY)
     { 
-      RCP< ParameterList > tempshared = *reinterpret_cast< RCP< ParameterList > * >(argp);
-      delete reinterpret_cast< RCP< ParameterList > * >(argp);
+      Teuchos::RCP< Teuchos::ParameterList > tempshared =
+	*reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
+      delete reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
       plist.set(name, *(tempshared.get()));
     }
     else
     {
-      RCP< ParameterList > * smartarg = reinterpret_cast< RCP< ParameterList > * >(argp);
+      Teuchos::RCP< Teuchos::ParameterList > * smartarg =
+	reinterpret_cast< Teuchos::RCP< Teuchos::ParameterList > * >(argp);
       if (smartarg) plist.set(name, *(smartarg->get()));
     }
   }
@@ -119,54 +121,55 @@ bool setPythonParameter(ParameterList     & plist,
 
 // **************************************************************** //
 
-PyObject * getPythonParameter(const ParameterList & plist,
-			      const std::string   & name)
+PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
+			      const std::string            & name)
 {
   static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::RCP< Teuchos::ParameterList >*");
 
   // If parameter does not exist, return None
   if (!plist.isParameter(name)) return Py_BuildValue("");
 
-  // Get the parameter entry.  I now deal with the ParameterEntry
-  // objects so that I can query the ParameterList without setting
+  // Get the parameter entry.  I now deal with the Teuchos::ParameterEntry
+  // objects so that I can query the Teuchos::ParameterList without setting
   // the used flag to true.
-  const ParameterEntry * entry = plist.getEntryPtr(name);
+  const Teuchos::ParameterEntry * entry = plist.getEntryPtr(name);
 
   // Boolean parameter values
   if (entry->isType<bool>())
   {
-    bool value = any_cast<bool>(entry->getAny(false));
+    bool value = Teuchos::any_cast< bool >(entry->getAny(false));
     return PyBool_FromLong((long)value);
   }
   // Integer parameter values
   else if (entry->isType<int>())
   {
-    int value = any_cast<int>(entry->getAny(false));
+    int value = Teuchos::any_cast< int >(entry->getAny(false));
     return PyInt_FromLong((long)value);
   }
   // Double parameter values
   else if (entry->isType<double>())
   {
-    double value = any_cast<double>(entry->getAny(false));
+    double value = Teuchos::any_cast< double >(entry->getAny(false));
     return PyFloat_FromDouble(value);
   }
   // String parameter values
-  else if (entry->isType<std::string>())
+  else if (entry->isType< std::string >())
   {
-    std::string value = any_cast<std::string>(entry->getAny(false));
+    std::string value = Teuchos::any_cast< std::string >(entry->getAny(false));
     return PyString_FromString(value.c_str());
   }
   // Char * parameter values
   else if (entry->isType<char *>())
   {
-    char * value = any_cast<char *>(entry->getAny(false));
+    char * value = Teuchos::any_cast< char * >(entry->getAny(false));
     return PyString_FromString(value);
   }
-  // ParameterList values
+  // Teuchos::ParameterList values
   else if (entry->isList())
   {
-    ParameterList & value = getValue<ParameterList>(*entry);
-    RCP< ParameterList > * valuercp = new RCP< ParameterList >(&value,false);
+    Teuchos::ParameterList & value = Teuchos::getValue< Teuchos::ParameterList >(*entry);
+    Teuchos::RCP< Teuchos::ParameterList > * valuercp =
+      new Teuchos::RCP< Teuchos::ParameterList >(&value,false);
     return SWIG_NewPointerObj((void*)valuercp, swig_TPL_ptr, SWIG_POINTER_OWN);
   }
   // All  other types are unsupported
@@ -175,20 +178,20 @@ PyObject * getPythonParameter(const ParameterList & plist,
 
 // **************************************************************** //
 
-bool isEquivalent(PyObject * dict, const ParameterList & plist)
+bool isEquivalent(PyObject * dict, const Teuchos::ParameterList & plist)
 {
-  PyObject * key   = NULL;
-  PyObject * value = NULL;
-  PyObject * param = NULL;
-  Py_ssize_t pos   = 0;
-  string     name;
+  PyObject  * key   = NULL;
+  PyObject  * value = NULL;
+  PyObject  * param = NULL;
+  Py_ssize_t  pos   = 0;
+  std::string name;
 
   // The dict pointer must point to a dictionary
   if (!PyDict_Check(dict)) goto fail;
 
-  // Check that all entries in ParameterList are also in the
+  // Check that all entries in Teuchos::ParameterList are also in the
   // python dictionary
-  for (ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++)
+  for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++)
   {
     name  = plist.name(i);
     value = PyDict_GetItemString(dict,name.c_str());
@@ -207,11 +210,11 @@ bool isEquivalent(PyObject * dict, const ParameterList & plist)
     }
   }
   // Check that all entries in the python dictionary are also in
-  // the ParameterList
+  // the Teuchos::ParameterList
   while (PyDict_Next(dict, &pos, &key, &value))
   {
     if (!PyString_Check(key)) goto fail;
-    name = string(PyString_AsString(key));
+    name = std::string(PyString_AsString(key));
     if (!plist.isParameter(name)) goto fail;
     if (plist.isSublist(name))
     {
@@ -236,15 +239,16 @@ bool isEquivalent(PyObject * dict, const ParameterList & plist)
 
 // **************************************************************** //
 
-bool updatePyDictWithParameterList(PyObject * dict, const ParameterList & plist,
-				   ResponseToIllegalParameters flag)
+bool updatePyDictWithParameterList(PyObject                     * dict,
+				   const Teuchos::ParameterList & plist,
+				   ResponseToIllegalParameters    flag)
 {
   static char  illegalParam[ ] = "Illegal Parameters";
   PyObject   * value   = NULL;
   PyObject   * param   = NULL;
   bool         result  = true;
   const char * nameStr = NULL;
-  string       name;
+  std::string  name;
 
   // The dict pointer must point to a dictionary
   if (!PyDict_Check(dict))
@@ -253,9 +257,9 @@ bool updatePyDictWithParameterList(PyObject * dict, const ParameterList & plist,
     goto fail;
   }
 
-  // Iterate over all entries in ParameterList and ensure they are
+  // Iterate over all entries in Teuchos::ParameterList and ensure they are
   // mirrored in the python dictionary
-  for (ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++)
+  for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++)
   {
     name    = plist.name(i);
     nameStr = name.c_str();
@@ -325,15 +329,16 @@ bool updatePyDictWithParameterList(PyObject * dict, const ParameterList & plist,
 
 // **************************************************************** //
 
-bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist,
+bool updateParameterListWithPyDict(PyObject                  * dict,
+				   Teuchos::ParameterList    & plist,
 				   ResponseToIllegalParameters flag)
 {
   static char illegalKey[ ] = "Illegal Keys";
-  PyObject *  key    = NULL;
-  PyObject *  value  = NULL;
+  PyObject  * key    = NULL;
+  PyObject  * value  = NULL;
   Py_ssize_t  pos    = 0;
   bool        result = true;
-  string      name;
+  std::string name;
 
   // The dict pointer must point to a dictionary
   if (!PyDict_Check(dict))
@@ -343,7 +348,7 @@ bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist,
   }
 
   // Iterate over all items in the python dictionary and ensure they
-  // are synchronized with the ParameterList
+  // are synchronized with the Teuchos::ParameterList
   while (PyDict_Next(dict, &pos, &key, &value))
   {
 
@@ -354,7 +359,7 @@ bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist,
       goto fail;
     }
 
-    name = string(PyString_AsString(key));
+    name = std::string(PyString_AsString(key));
     if (!setPythonParameter(plist, name, value))
     {
       // If value is not settable, behavior is determined by flag
@@ -366,11 +371,11 @@ bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist,
 	result = false;
 	if (plist.isParameter(illegalKey))
 	{
-	  const ParameterEntry * entry = plist.getEntryPtr(name);
-	  if (entry->isType<string>())
+	  const Teuchos::ParameterEntry * entry = plist.getEntryPtr(name);
+	  if (entry->isType< std::string >())
 	  {
-	    string names = any_cast<string>(entry->getAny(false));
-	    plist.set(illegalKey, names + string(", ") + name);
+	    std::string names = Teuchos::any_cast< std::string >(entry->getAny(false));
+	    plist.set(illegalKey, names + std::string(", ") + name);
 	  }
 	  else
 	  {
@@ -401,7 +406,8 @@ bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist,
 
 // **************************************************************** //
 
-bool synchronizeParameters(PyObject * dict, ParameterList & plist,
+bool synchronizeParameters(PyObject                  * dict,
+			   Teuchos::ParameterList    & plist,
 			   ResponseToIllegalParameters flag)
 {
   bool result = updatePyDictWithParameterList(dict,plist,flag);
@@ -411,11 +417,11 @@ bool synchronizeParameters(PyObject * dict, ParameterList & plist,
 
 // **************************************************************** //
 
-ParameterList *
-pyDictToNewParameterList(PyObject * dict,
+Teuchos::ParameterList *
+pyDictToNewParameterList(PyObject                  * dict,
 			 ResponseToIllegalParameters flag)
 {
-  ParameterList * plist = 0;
+  Teuchos::ParameterList * plist = 0;
   // The dict pointer must point to a dictionary
   if (!PyDict_Check(dict))
   {
@@ -423,9 +429,9 @@ pyDictToNewParameterList(PyObject * dict,
     goto fail;
   }
 
-  // Create a new ParameterList and synchronize it with the python
+  // Create a new Teuchos::ParameterList and synchronize it with the python
   // dictionary
-  plist = new ParameterList();
+  plist = new Teuchos::ParameterList();
   if (!updateParameterListWithPyDict(dict,*plist,flag))
   {
     // If update failed, behavior is determined by flag
@@ -449,11 +455,11 @@ pyDictToNewParameterList(PyObject * dict,
 
 // **************************************************************** //
 
-PyObject * parameterListToNewPyDict(const ParameterList & plist,
-				    ResponseToIllegalParameters flag)
+PyObject * parameterListToNewPyDict(const Teuchos::ParameterList & plist,
+				    ResponseToIllegalParameters    flag)
 {
 
-  // Create a new dictionary and synchronize it with the ParameterList
+  // Create a new dictionary and synchronize it with the Teuchos::ParameterList
   PyObject * dict = PyDict_New();
   if (!updatePyDictWithParameterList(dict,plist))
   {
@@ -475,4 +481,4 @@ PyObject * parameterListToNewPyDict(const ParameterList & plist,
   return NULL;
 }    // parameterListToNewPyDict
 
-}    // namespace Teuchos
+}    // Namespace PyTrilinos

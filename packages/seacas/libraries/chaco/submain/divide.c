@@ -72,6 +72,8 @@ int       striping;		/* partition by striping into pieces? */
     void      count_weights(), bpm_improve(), countup_vtx_sep();
     double    find_maxdeg();
 
+    maxdeg = 0;
+    
     if (DEBUG_TRACE > 0) {
 	printf("<Entering divide, nvtxs = %d, nedges = %d>\n", nvtxs, nedges);
     }

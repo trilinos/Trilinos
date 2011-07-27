@@ -324,7 +324,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
 {
 
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("BelosLOWS");
+  TEUCHOS_FUNC_TIME_MONITOR("Stratimikos: BelosLOWS");
 #endif
 
   using Teuchos::rcp;

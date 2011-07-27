@@ -57,6 +57,7 @@ int Excn::ExodusFile::ioWordSize_ = 0;
 int Excn::ExodusFile::cpuWordSize_ = 0;
 std::string Excn::ExodusFile::outputFilename_;
 bool Excn::ExodusFile::keepOpen_ = false;
+int Excn::ExodusFile::maximumNameLength_ = 32;
 
 namespace {
   int get_free_descriptor_count();
@@ -79,6 +80,8 @@ Excn::ExodusFile::ExodusFile(int processor)
 	   << "' - exiting" << std::endl;
       exit(1);
     }
+    ex_set_max_name_length(fileids_[processor], maximumNameLength_);
+    
     SMART_ASSERT(io_word_size_var  == ioWordSize_);
     SMART_ASSERT(cpu_word_size == cpuWordSize_);
   }
@@ -171,6 +174,11 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si, int start_part, int
 	std::cerr << "Cannot open file '" << filenames_[p] << "'" << std::endl;
 	return false;
       }
+
+      int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+      if (max_name_length > maximumNameLength_)
+	maximumNameLength_ = max_name_length;
+
       ex_close(exoid);
 
       if (io_word_size_var < (int)sizeof(float))
@@ -189,6 +197,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si, int start_part, int
 	std::cerr << "Cannot open file '" << filenames_[p] << "'" << std::endl;
 	return false;
       }
+      ex_set_max_name_length(fileids_[p], maximumNameLength_);
       SMART_ASSERT(ioWordSize_ == io_word_size_var)(ioWordSize_)(io_word_size_var);
     }
     
@@ -241,6 +250,14 @@ bool Excn::ExodusFile::create_output(const SystemInterface& si, int cycle)
     std::cerr << "Cannot open file '" << outputFilename_ << "'" << std::endl;
     return false;
   }
+
+  // EPU Can add a name of "processor_id_epu" which is 16 characters long.
+  // Make sure maximumNameLength_ is at least that long...
+  
+  if (maximumNameLength_ < 16)
+    maximumNameLength_ = 16;
+  ex_set_max_name_length(outputId_, maximumNameLength_);
+
   std::cout << "IO Word size is " << ioWordSize_ << " bytes.\n";
   return true;
 }

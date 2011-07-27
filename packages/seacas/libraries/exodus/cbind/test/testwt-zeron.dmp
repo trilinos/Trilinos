@@ -4,6 +4,7 @@ dimensions:
 	len_line = 81 ;
 	four = 4 ;
 	time_step = UNLIMITED ; // (10 currently)
+	len_name = 33 ;
 	num_dim = 3 ;
 	num_el_blk = 7 ;
 	num_qa_rec = 2 ;
@@ -14,17 +15,18 @@ variables:
 	int eb_status(num_el_blk) ;
 	int eb_prop1(num_el_blk) ;
 		eb_prop1:name = "ID" ;
-	char eb_names(num_el_blk, len_string) ;
-	char coor_names(num_dim, len_string) ;
+	char eb_names(num_el_blk, len_name) ;
+	char coor_names(num_dim, len_name) ;
 	char qa_records(num_qa_rec, four, len_string) ;
 	char info_records(num_info, len_line) ;
-	char name_glo_var(num_glo_var, len_string) ;
+	char name_glo_var(num_glo_var, len_name) ;
 	float vals_glo_var(time_step, num_glo_var) ;
 
 // global attributes:
 		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
 		:title = "This is a test" ;
+		:maximum_name_length = 32 ;
 data:
 
  time_whole = 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ;

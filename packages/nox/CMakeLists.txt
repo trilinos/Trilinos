@@ -110,9 +110,16 @@ COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
 
 # Thyra
 COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA
-  DEP_OPTIONS_NAMES NOX_ENABLE_Thyra
+  DEP_OPTIONS_NAMES NOX_ENABLE_ThyraCore 
   DOCSTR "Enables support for Thyra implementation of Abstract Group"
     " and Vector classes.  Defaults to ON if Thyra is enabled,"
+    " otherwise defaults to OFF"
+  )
+
+COMBINED_OPTION( NOX_ENABLE_THYRA_EPETRA_ADAPTERS
+  DEP_OPTIONS_NAMES NOX_ENABLE_ThyraCore NOX_ENABLE_ThyraEpetraAdapters NOX_ENABLE_ThyraEpetraExtAdapters
+  DOCSTR "Enables support for the Thyra Epetra(Ext) adapters "
+    " Defaults to ON if the Thyra Epetra(Ext) adapters are both enabled,"
     " otherwise defaults to OFF"
   )
 

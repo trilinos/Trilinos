@@ -13,7 +13,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests
   SOURCES
     CrsMatrix_UnitTests
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -24,7 +24,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_BlockExtraction
   SOURCES
     CrsMatrix_BlockExtraction
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   # ARGS ${ARGS}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -45,7 +45,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_InOutTests
   SOURCES
     CrsMatrix_InOutTests
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
   STANDARD_PASS_OUTPUT

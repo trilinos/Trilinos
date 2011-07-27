@@ -4,7 +4,7 @@ INCLUDE(PackageAddExecutableAndTest)
 #   BasicPerfTest
 #   SOURCES
 #     BasicPerfTest
-#     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+#     ${TEUCHOS_STD_UNIT_TEST_MAIN}
 #   # ARGS 
 #   COMM serial # mpi
 #   STANDARD_PASS_OUTPUT

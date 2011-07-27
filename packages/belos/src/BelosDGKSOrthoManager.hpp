@@ -679,7 +679,7 @@ namespace Belos {
     dep_flg = blkOrtho( X, MX, C, Q );
 
     // If a dependency has been detected in this block, then perform
-    // the more expensive single-std::vector orthogonalization.
+    // the more expensive single-vector orthogonalization.
     if (dep_flg) {
       rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
@@ -694,7 +694,7 @@ namespace Belos {
       rank = findBasis( X, MX, B, false );
       if (rank < xc) {
 	// A dependency was found during orthonormalization of X,
-	// rerun orthogonalization using more expensive single-std::vector orthogonalization.
+	// rerun orthogonalization using more expensive single-vector orthogonalization.
 	rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
 	// Copy tmpX back into X.
@@ -748,7 +748,7 @@ namespace Belos {
     //
     // X  : Vectors to be transformed
     //
-    // MX : Image of the block std::vector X by the mass matrix
+    // MX : Image of the block vector X by the mass matrix
     //
     // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independently.
     //
@@ -902,13 +902,13 @@ namespace Belos {
       int numX = j;
       bool addVec = false;
 
-      // Get a view of the std::vector currently being worked on.
+      // Get a view of the vector currently being worked on.
       std::vector<int> index(1);
       index[0] = numX;
       Teuchos::RCP<MV> Xj = MVT::CloneViewNonConst( X, index );
       Teuchos::RCP<MV> MXj;
       if ((this->_hasOp)) {
-        // MXj is a view of the current std::vector in MX
+        // MXj is a view of the current vector in MX
         MXj = MVT::CloneViewNonConst( *MX, index );
       }
       else {
@@ -934,7 +934,7 @@ namespace Belos {
       Teuchos::SerialDenseMatrix<int,ScalarType> product(numX, 1);
       std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
       //
-      // Save old MXj std::vector and compute Op-norm
+      // Save old MXj vector and compute Op-norm
       //
       Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
       MVT::MvDot( *Xj, *MXj, oldDot );
@@ -982,14 +982,14 @@ namespace Belos {
         // Compute Op-norm with old MXj
       MVT::MvDot( *Xj, *oldMXj, newDot );
 
-      // Check to see if the new std::vector is dependent.
+      // Check to see if the new vector is dependent.
       if (completeBasis) {
 	//
 	// We need a complete basis, so add random vectors if necessary
 	//
 	if ( SCT::magnitude(newDot[0]) < SCT::magnitude(sing_tol_*oldDot[0]) ) {
 	  
-	  // Add a random std::vector and orthogonalize it against previous vectors in block.
+	  // Add a random vector and orthogonalize it against previous vectors in block.
 	  addVec = true;
 #ifdef ORTHO_DEBUG
 	  std::cout << "Belos::DGKSOrthoManager::findBasis() --> Random for column " << numX << std::endl;
@@ -1018,7 +1018,7 @@ namespace Belos {
 	  MVT::MvDot( *tempXj, *tempMXj, newDot );
 	  //
 	  if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
-	    // Copy std::vector into current column of _basisvecs
+	    // Copy vector into current column of _basisvecs
 	    MVT::MvAddMv( ONE, *tempXj, ZERO, *tempXj, *Xj );
 	    if (this->_hasOp) {
 	      MVT::MvAddMv( ONE, *tempMXj, ZERO, *tempMXj, *MXj );
@@ -1038,7 +1038,7 @@ namespace Belos {
 	}
       }
       
-      // If we haven't left this method yet, then we can normalize the new std::vector Xj.
+      // If we haven't left this method yet, then we can normalize the new vector Xj.
       // Normalize Xj.
       // Xj <- Xj / std::sqrt(newDot)
       ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
@@ -1051,7 +1051,7 @@ namespace Belos {
         }
       }
 
-      // If we've added a random std::vector, enter a zero in the j'th diagonal element.
+      // If we've added a random vector, enter a zero in the j'th diagonal element.
       if (addVec) {
 	(*B)(j,j) = ZERO;
       }
@@ -1059,7 +1059,7 @@ namespace Belos {
 	(*B)(j,j) = diag;
       }
 
-      // Save the coefficients, if we are working on the original std::vector and not a randomly generated one
+      // Save the coefficients, if we are working on the original vector and not a randomly generated one
       if (!addVec) {
 	for (int i=0; i<numX; i++) {
 	  (*B)(i,j) = product(i,0);
@@ -1204,7 +1204,7 @@ namespace Belos {
 	qcs.push_back( MVT::GetNumberVecs( *lastQ ) );
       }
       
-      // Get a view of the current std::vector in X to orthogonalize.
+      // Get a view of the current vector in X to orthogonalize.
       indX[0] = j;
       Xj = MVT::CloneViewNonConst( X, indX );
       if (this->_hasOp) {
@@ -1283,7 +1283,7 @@ namespace Belos {
 	dep_flg = true;
       }
       
-      // Normalize the new std::vector if it's not dependent
+      // Normalize the new vector if it's not dependent
       if (!dep_flg) {
 	ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 	
@@ -1297,7 +1297,7 @@ namespace Belos {
 	(*B)(j,j) = diag;
       }
       else {
-	// Create a random std::vector and orthogonalize it against all previous columns of Q.
+	// Create a random vector and orthogonalize it against all previous columns of Q.
 	Teuchos::RCP<MV> tempXj = MVT::Clone( X, 1 );
 	Teuchos::RCP<MV> tempMXj;
 	MVT::MvRandom( *tempXj );
@@ -1337,14 +1337,14 @@ namespace Belos {
 	// Compute the Op-norms after the correction step.
 	MVT::MvDot( *tempXj, *tempMXj, newDot );
 	
-	// Copy std::vector into current column of Xj
+	// Copy vector into current column of Xj
 	if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
 	  ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 	  
 	  // Enter value on diagonal of B.
 	  (*B)(j,j) = ZERO;
 
-	  // Copy std::vector into current column of _basisvecs
+	  // Copy vector into current column of _basisvecs
 	  MVT::MvAddMv( ONE/diag, *tempXj, ZERO, *tempXj, *Xj );
 	  if (this->_hasOp) {
 	    MVT::MvAddMv( ONE/diag, *tempMXj, ZERO, *tempMXj, *MXj );

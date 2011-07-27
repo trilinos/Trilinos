@@ -142,7 +142,6 @@ int main(int argc, char *argv[])
   //
   // Create the residual vectors
   RCP< MyMultiVec<ST> > R = rcp( new MyMultiVec<ST>(dim,blockSize) );
-  MVT::MvScale(*R,0.0);
   // 
   // Create an eigenvalue problem
   RCP< Eigenproblem<ST,MV,OP> > problem = 

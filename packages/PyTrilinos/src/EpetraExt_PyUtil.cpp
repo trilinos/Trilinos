@@ -42,6 +42,9 @@
 // System includes
 #include <algorithm>
 
+namespace PyTrilinos
+{
+
 ////////////////////////////////////////////////////////////////////////
 
 EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector>
@@ -419,7 +422,8 @@ getDerivativeItemObjectAttr(PyObject * object, CONST char * name, int i)
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArgs)
+PyObject *
+convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArgs)
 {
   static
   PyObject * classInArgs 	= NULL;
@@ -427,6 +431,7 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   PyObject * classTupleOfVector = NULL;
   PyObject * inArgsObj   	= NULL;
   PyObject * obj         	= NULL;
+  PyObject * tupleOfVector      = NULL;
   int        res                = 0;
   int        Np                 = 0;
   Teuchos::RCP<const Epetra_Vector> xPtr;
@@ -494,8 +499,11 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_x))
   {
     xPtr = inArgs.get_x();
-    res  = PyObject_SetAttrString(inArgsObj, "x",
-				  convertEpetraVectorToPython(&xPtr));
+    obj  = convertEpetraVectorToPython(&xPtr);
+    if (!obj) goto fail;
+    res  = PyObject_SetAttrString(inArgsObj, "x", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res < 0) goto fail;
   }
 
@@ -503,8 +511,11 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot))
   {
     x_dotPtr = inArgs.get_x_dot();
-    res      = PyObject_SetAttrString(inArgsObj, "x_dot",
-				      convertEpetraVectorToPython(&x_dotPtr));
+    obj      = convertEpetraVectorToPython(&x_dotPtr);
+    if (!obj) goto fail;
+    res      = PyObject_SetAttrString(inArgsObj, "x_dot", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res < 0) goto fail;
   }
 
@@ -520,9 +531,11 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
 			     convertEpetraVectorToPython(&pPtr));
       if (res) goto fail;
     }
-    res = PyObject_SetAttrString(inArgsObj, "p",
-				 PyObject_CallObject(classTupleOfVector, obj));
+    tupleOfVector = PyObject_CallObject(classTupleOfVector, obj);
+    res = PyObject_SetAttrString(inArgsObj, "p", tupleOfVector);
+    Py_DECREF(tupleOfVector);
     Py_DECREF(obj);
+    obj = NULL;
     if (res) goto fail;
   }
 
@@ -538,8 +551,8 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertEvaluationToPython(
-    const EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval)
+PyObject *
+convertEvaluationToPython(const EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval)
 {
   static
   PyObject 	* classEvaluation = NULL;
@@ -564,9 +577,12 @@ PyObject * convertEvaluationToPython(
   vector = eval.get();
   if (vector)
   {
-    smartarg = new Teuchos::RCP< Epetra_Vector>(vector, false);
-    res = PyObject_SetAttrString(evalObj, "vector",
-				 convertEpetraVectorToPython(smartarg));
+    smartarg = new Teuchos::RCP< Epetra_Vector >(vector, false);
+    obj = convertEpetraVectorToPython(smartarg);
+    if (!obj) goto fail;
+    res = PyObject_SetAttrString(evalObj, "vector", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     delete smartarg;
     if (res < 0) goto fail;
   }
@@ -596,7 +612,8 @@ PyObject * convertEvaluationToPython(
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertDerivativePropertiesToPython(
+PyObject *
+convertDerivativePropertiesToPython(
     const EpetraExt::ModelEvaluator::DerivativeProperties & dProps)
 {
   static
@@ -665,7 +682,8 @@ PyObject * convertDerivativePropertiesToPython(
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertDerivativeMultiVectorToPython(
+PyObject *
+convertDerivativeMultiVectorToPython(
     const EpetraExt::ModelEvaluator::DerivativeMultiVector & derivMV)
 {
   static
@@ -689,8 +707,11 @@ PyObject * convertDerivativeMultiVectorToPython(
 
   // mutiVector attribute
   smartarg = new Teuchos::RCP< Epetra_MultiVector >(derivMV.getMultiVector());
-  res = PyObject_SetAttrString(derivMVObj, "multiVector",
-			       convertEpetraMultiVectorToPython(smartarg));
+  obj = convertEpetraMultiVectorToPython(smartarg);
+  if (!obj) goto fail;
+  res = PyObject_SetAttrString(derivMVObj, "multiVector", obj);
+  Py_DECREF(obj);
+  obj = NULL;
   delete smartarg;
   if (res < 0) goto fail;
 
@@ -709,8 +730,11 @@ PyObject * convertDerivativeMultiVectorToPython(
   if (res < 0) goto fail;
 
   // paramIndexes attribute
-  res = PyObject_SetAttrString(derivMVObj, "paramIndexes",
-			       convertArrayOfIntToPython(derivMV.getParamIndexes()));
+  obj = convertArrayOfIntToPython(derivMV.getParamIndexes());
+  if (!obj) goto fail;
+  res = PyObject_SetAttrString(derivMVObj, "paramIndexes", obj);
+  Py_DECREF(obj);
+  obj = NULL;
   if (res < 0) goto fail;
 
   return derivMVObj;
@@ -748,8 +772,11 @@ convertDerivativeToPython(const EpetraExt::ModelEvaluator::Derivative & deriv)
   eo = deriv.getLinearOp();
   if (!eo.is_null())
   {
-    res = PyObject_SetAttrString(derivObj, "operator",
-				 convertEpetraOperatorToPython(&eo));
+    obj = convertEpetraOperatorToPython(&eo);
+    if (!obj) goto fail;
+    res = PyObject_SetAttrString(derivObj, "operator", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res < 0) goto fail;
   }
 
@@ -757,8 +784,11 @@ convertDerivativeToPython(const EpetraExt::ModelEvaluator::Derivative & deriv)
   dmv = deriv.getDerivativeMultiVector();
   if (dmv.getMultiVector().get())
   {
-    res = PyObject_SetAttrString(derivObj, "derivativeMultiVector",
-				 convertDerivativeMultiVectorToPython(dmv));
+    obj = convertDerivativeMultiVectorToPython(dmv);
+    if (!obj) goto fail;
+    res = PyObject_SetAttrString(derivObj, "derivativeMultiVector", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res < 0) goto fail;
   }
 
@@ -772,13 +802,15 @@ convertDerivativeToPython(const EpetraExt::ModelEvaluator::Derivative & deriv)
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & outArgs)
+PyObject *
+convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & outArgs)
 {
   static
   PyObject * classOutArgs 	    = NULL;
   static
   PyObject * classTupleOfEvaluation = NULL;
   PyObject * obj          	    = NULL;
+  PyObject * tupleOfEval            = NULL;
   PyObject * outArgsObj   	    = NULL;
   int        res	            = 0;
   int        Ng 	            = 0;
@@ -820,8 +852,9 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
 			    convertEvaluationToPython(outArgs.get_g(i)));
       if (res) goto fail;
     }
-    res = PyObject_SetAttrString(outArgsObj, "g",
-				 PyObject_CallObject(classTupleOfEvaluation, obj));
+    tupleOfEval = PyObject_CallObject(classTupleOfEvaluation, obj);
+    res = PyObject_SetAttrString(outArgsObj, "g", tupleOfEval);
+    Py_DECREF(tupleOfEval);
     Py_DECREF(obj);
     obj = NULL;
     if (res) goto fail;
@@ -830,8 +863,11 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   // f attribute
   if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_f))
   {
-    res = PyObject_SetAttrString(outArgsObj, "f",
-				 convertEvaluationToPython(outArgs.get_f()));
+    obj = convertEvaluationToPython(outArgs.get_f());
+    if (!obj) goto fail;
+    res = PyObject_SetAttrString(outArgsObj, "f", obj);
+    Py_DECREF(obj);
+    obj = NULL;
     if (res) goto fail;
   }
 
@@ -841,8 +877,11 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
     WPtr = outArgs.get_W();
     if (!WPtr.is_null())
     {
-      res = PyObject_SetAttrString(outArgsObj, "W",
-				   convertEpetraOperatorToPython(&WPtr));
+      obj = convertEpetraOperatorToPython(&WPtr);
+      if (!obj) goto fail;
+      res = PyObject_SetAttrString(outArgsObj, "W", obj);
+      Py_DECREF(obj);
+      obj = NULL;
       if (res) goto fail;
     }
   }
@@ -852,8 +891,11 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   {
     if (!WPtr.is_null())
     {
-      res = PyObject_SetAttrString(outArgsObj, "W_properties",
-				   convertDerivativePropertiesToPython(outArgs.get_W_properties()));
+      obj = convertDerivativePropertiesToPython(outArgs.get_W_properties());
+      if (!obj) goto fail;
+      res = PyObject_SetAttrString(outArgsObj, "W_properties", obj);
+      Py_DECREF(obj);
+      obj = NULL;
       if (res) goto fail;
     }
   }  
@@ -868,43 +910,48 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
 
 ////////////////////////////////////////////////////////////////////////
 
-EpetraExt::ModelEvaluator::InArgs
-EpetraExt::convertInArgsFromPython(PyObject * source)
+}  // Namespace PyTrilinos
+
+namespace EpetraExt
 {
-  EpetraExt::ModelEvaluator::InArgsSetup result;
+
+ModelEvaluator::InArgs
+convertInArgsFromPython(PyObject * source)
+{
+  ModelEvaluator::InArgsSetup result;
 
   // description attribute
-  result.setModelEvalDescription(std::string(getStringObjectAttr(source, "description")));
+  result.setModelEvalDescription(std::string(PyTrilinos::getStringObjectAttr(source, "description")));
 
   // x attribute
-  if (objectAttrIsTrue(source, "x"))
-    result.setSupports(EpetraExt::ModelEvaluator::IN_ARG_x, true);
+  if (PyTrilinos::objectAttrIsTrue(source, "x"))
+    result.setSupports(ModelEvaluator::IN_ARG_x, true);
   else
   {
     try
     {
-      result.set_x(getConstEpetraVectorObjectAttr(source, "x"));
-      result.setSupports(EpetraExt::ModelEvaluator::IN_ARG_x, true);
+      result.set_x(PyTrilinos::getConstEpetraVectorObjectAttr(source, "x"));
+      result.setSupports(ModelEvaluator::IN_ARG_x, true);
     }
-    catch(PythonException &e) { }
+    catch(PyTrilinos::PythonException &e) { }
   }
 
   // x_dot attribute
-  if (objectAttrIsTrue(source, "x_dot"))
-    result.setSupports(EpetraExt::ModelEvaluator::IN_ARG_x_dot, true);
+  if (PyTrilinos::objectAttrIsTrue(source, "x_dot"))
+    result.setSupports(ModelEvaluator::IN_ARG_x_dot, true);
   else
   {
     try
     {
-      result.set_x(getConstEpetraVectorObjectAttr(source, "x_dot"));
-      result.setSupports(EpetraExt::ModelEvaluator::IN_ARG_x_dot, true);
+      result.set_x(PyTrilinos::getConstEpetraVectorObjectAttr(source, "x_dot"));
+      result.setSupports(ModelEvaluator::IN_ARG_x_dot, true);
     }
-    catch(PythonException &e) { }
+    catch(PyTrilinos::PythonException &e) { }
   }
 
   // p attribute
   PyObject * pObj = PyObject_GetAttrString(source, "p");
-  if (!pObj) throw PythonException();
+  if (!pObj) throw PyTrilinos::PythonException();
   if (PyInt_Check(pObj))
   {
     result.set_Np((int)PyInt_AsLong(pObj));
@@ -914,31 +961,31 @@ EpetraExt::convertInArgsFromPython(PyObject * source)
   {
     int Np = (int) PySequence_Length(pObj);
     Py_DECREF(pObj);
-    if (Np < 0) throw PythonException();
+    if (Np < 0) throw PyTrilinos::PythonException();
     result.set_Np(Np);
     for (int i=0; i < Np; ++i)
-      result.set_p(i, getConstEpetraVectorItemObjectAttr(source, "p", i));
+      result.set_p(i, PyTrilinos::getConstEpetraVectorItemObjectAttr(source, "p", i));
   }
 
   // t attribute
-  if (!objectAttrIsNone(source, "t"))
+  if (!PyTrilinos::objectAttrIsNone(source, "t"))
   {
-    result.set_t(getFloatObjectAttr(source, "t"));
-    result.setSupports(EpetraExt::ModelEvaluator::IN_ARG_t, true);
+    result.set_t(PyTrilinos::getFloatObjectAttr(source, "t"));
+    result.setSupports(ModelEvaluator::IN_ARG_t, true);
   }
 
   // alpha attribute
-  if (!objectAttrIsNone(source, "alpha"))
+  if (!PyTrilinos::objectAttrIsNone(source, "alpha"))
   {
-    result.set_t(getFloatObjectAttr(source, "alpha"));
-    result.setSupports(EpetraExt::ModelEvaluator::IN_ARG_alpha, true);
+    result.set_t(PyTrilinos::getFloatObjectAttr(source, "alpha"));
+    result.setSupports(ModelEvaluator::IN_ARG_alpha, true);
   }
 
   // beta attribute
-  if (!objectAttrIsNone(source, "beta"))
+  if (!PyTrilinos::objectAttrIsNone(source, "beta"))
   {
-    result.set_t(getFloatObjectAttr(source, "beta"));
-    result.setSupports(EpetraExt::ModelEvaluator::IN_ARG_beta, true);
+    result.set_t(PyTrilinos::getFloatObjectAttr(source, "beta"));
+    result.setSupports(ModelEvaluator::IN_ARG_beta, true);
   }
 
   return result;
@@ -946,19 +993,19 @@ EpetraExt::convertInArgsFromPython(PyObject * source)
 
 ////////////////////////////////////////////////////////////////////////
 
-EpetraExt::ModelEvaluator::OutArgs
-EpetraExt::convertOutArgsFromPython(PyObject * source)
+ModelEvaluator::OutArgs
+convertOutArgsFromPython(PyObject * source)
 {
   int Np = 0;
   int Ng = 0;
-  EpetraExt::ModelEvaluator::OutArgsSetup result;
+  ModelEvaluator::OutArgsSetup result;
 
   // description attribute
-  result.setModelEvalDescription(std::string(getStringObjectAttr(source, "description")));
+  result.setModelEvalDescription(std::string(PyTrilinos::getStringObjectAttr(source, "description")));
 
   // Number of p: Np
   PyObject * DfDpObj = PyObject_GetAttrString(source, "DfDp");
-  if (!DfDpObj) throw PythonException();
+  if (!DfDpObj) throw PyTrilinos::PythonException();
   if (PyInt_Check(DfDpObj))
   {
     Np = (int) PyInt_AsLong(DfDpObj);
@@ -968,12 +1015,12 @@ EpetraExt::convertOutArgsFromPython(PyObject * source)
   {
     Np = (int) PySequence_Length(DfDpObj);
     Py_DECREF(DfDpObj);
-    if (Np < 0) throw PythonException();
+    if (Np < 0) throw PyTrilinos::PythonException();
   }
 
   // Number of g: Ng
   PyObject * gObj = PyObject_GetAttrString(source, "g");
-  if (!gObj) throw PythonException();
+  if (!gObj) throw PyTrilinos::PythonException();
   if (PyInt_Check(gObj))
   {
     Ng = (int) PyInt_AsLong(gObj);
@@ -983,7 +1030,7 @@ EpetraExt::convertOutArgsFromPython(PyObject * source)
   {
     Ng = (int) PySequence_Length(gObj);
     Py_DECREF(gObj);
-    if (Ng < 0) throw PythonException();
+    if (Ng < 0) throw PyTrilinos::PythonException();
   }
 
   // Size attributes
@@ -991,42 +1038,42 @@ EpetraExt::convertOutArgsFromPython(PyObject * source)
 
   // g attribute
   gObj = PyObject_GetAttrString(source, "g");
-  if (!gObj) throw PythonException();
+  if (!gObj) throw PyTrilinos::PythonException();
   bool dataProvided = (!PyInt_Check(gObj));
   Py_DECREF(gObj);
   if (dataProvided)
   {
     for (int i=0; i < Ng; ++i)
-      result.set_g(i, getEvaluationItemObjectAttr(source, "g", i));
+      result.set_g(i, PyTrilinos::getEvaluationItemObjectAttr(source, "g", i));
   }
 
   // f attribute
-  if (objectAttrIsTrue(source, "f"))
-    result.setSupports(EpetraExt::ModelEvaluator::OUT_ARG_f, true);
+  if (PyTrilinos::objectAttrIsTrue(source, "f"))
+    result.setSupports(ModelEvaluator::OUT_ARG_f, true);
   else
   {
     try
     {
-      result.set_f(getEvaluationObjectAttr(source, "f"));
-      result.setSupports(EpetraExt::ModelEvaluator::OUT_ARG_f, true);
+      result.set_f(PyTrilinos::getEvaluationObjectAttr(source, "f"));
+      result.setSupports(ModelEvaluator::OUT_ARG_f, true);
     }
-    catch(PythonException &e)
+    catch(PyTrilinos::PythonException &e)
     {
       PyErr_Clear();
     }
   }
 
   // W attribute
-  if (objectAttrIsTrue(source, "W"))
-    result.setSupports(EpetraExt::ModelEvaluator::OUT_ARG_W, true);
+  if (PyTrilinos::objectAttrIsTrue(source, "W"))
+    result.setSupports(ModelEvaluator::OUT_ARG_W, true);
   else
   {
     try
     {
-      result.set_f(getEvaluationObjectAttr(source, "W"));
-      result.setSupports(EpetraExt::ModelEvaluator::OUT_ARG_W, true);
+      result.set_f(PyTrilinos::getEvaluationObjectAttr(source, "W"));
+      result.setSupports(ModelEvaluator::OUT_ARG_W, true);
     }
-    catch(PythonException &e)
+    catch(PyTrilinos::PythonException &e)
     {
       PyErr_Clear();
     }
@@ -1034,60 +1081,60 @@ EpetraExt::convertOutArgsFromPython(PyObject * source)
 
   // DfDp attribute
   DfDpObj = PyObject_GetAttrString(source, "DfDp");
-  if (!DfDpObj) throw PythonException();
+  if (!DfDpObj) throw PyTrilinos::PythonException();
   dataProvided = (!PyInt_Check(DfDpObj));
   Py_DECREF(DfDpObj);
   if (dataProvided)
   {
     for (int i=0; i < Np; ++i)
     {
-      result.set_DfDp(i, getDerivativeItemObjectAttr(source, "DfDp", i));
-      result.set_DfDp_properties(i, getDerivativePropertiesItemObjectAttr(source,
+      result.set_DfDp(i, PyTrilinos::getDerivativeItemObjectAttr(source, "DfDp", i));
+      result.set_DfDp_properties(i, PyTrilinos::getDerivativePropertiesItemObjectAttr(source,
 									  "DfDp_properties", i));
     }
   }
 
   // DgDx attribute
   PyObject * DgDxObj = PyObject_GetAttrString(source, "DgDx");
-  if (!DgDxObj) throw PythonException();
+  if (!DgDxObj) throw PyTrilinos::PythonException();
   dataProvided = (!PyInt_Check(DgDxObj));
   Py_DECREF(DgDxObj);
   if (dataProvided)
   {
     for (int i=0; i < Ng; ++i)
     {
-      result.set_DgDx(i, getDerivativeItemObjectAttr(source, "DgDx", i));
-      result.set_DgDx_properties(i, getDerivativePropertiesItemObjectAttr(source,
+      result.set_DgDx(i, PyTrilinos::getDerivativeItemObjectAttr(source, "DgDx", i));
+      result.set_DgDx_properties(i, PyTrilinos::getDerivativePropertiesItemObjectAttr(source,
 							   "DgDx_properties", i));
     }
   }
 
   // DgDx_dot attribute
   PyObject * DgDx_dotObj = PyObject_GetAttrString(source, "DgDx_dot");
-  if (!DgDx_dotObj) throw PythonException();
+  if (!DgDx_dotObj) throw PyTrilinos::PythonException();
   dataProvided = (!PyInt_Check(DgDx_dotObj));
   Py_DECREF(DgDx_dotObj);
   if (dataProvided)
   {
     for (int i=0; i < Ng; ++i)
     {
-      result.set_DgDx_dot(i, getDerivativeItemObjectAttr(source, "DgDx_dot", i));
-      result.set_DgDx_dot_properties(i, getDerivativePropertiesItemObjectAttr(source,
+      result.set_DgDx_dot(i, PyTrilinos::getDerivativeItemObjectAttr(source, "DgDx_dot", i));
+      result.set_DgDx_dot_properties(i, PyTrilinos::getDerivativePropertiesItemObjectAttr(source,
 							   "DgDx_dot_properties", i));
     }
   }
 
   // DgDp attribute
   // PyObject * DgDpObj = PyObject_GetAttrString(source, "DgDp");
-  // if (!DgDpObj) throw PythonException();
+  // if (!DgDpObj) throw PyTrilinos::PythonException();
   // bool dataProvided = (!PyInt_Check(DgDpObj));
   // Py_DECREF(DgDpObj);
   // if (dataProvided)
   // {
   //   for (int i=0; i < Ng; ++i)
   //   {
-  //     result.set_DgDp(i, getDerivativeItemObjectAttr(source, "DgDp", i));
-  //     result.set_DgDp_properties(i, getDerivativePropertiesItemObjectAttr(source,
+  //     result.set_DgDp(i, PyTrilinos::getDerivativeItemObjectAttr(source, "DgDp", i));
+  //     result.set_DgDp_properties(i, PyTrilinos::getDerivativePropertiesItemObjectAttr(source,
   //							   "DgDp_properties", i));
   //   }
   // }
@@ -1095,9 +1142,14 @@ EpetraExt::convertOutArgsFromPython(PyObject * source)
   return result;
 }
 
+}  // Namespace PyTrilinos
+
 ////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_TEUCHOS
+
+namespace PyTrilinos
+{
 
 PyObject * convertArrayOfIntToPython(const Teuchos::Array<int> & tai)
 {
@@ -1131,5 +1183,7 @@ PyObject * convertArrayOfIntToPython(const Teuchos::Array<int> & tai)
   Py_XDECREF(args);
   return NULL;
 }
+
+}  // Namespace PyTrilinos
 
 #endif   // HAVE_TEUCHOS

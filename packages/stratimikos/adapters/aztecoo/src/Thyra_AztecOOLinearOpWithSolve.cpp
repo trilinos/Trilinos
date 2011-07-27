@@ -542,7 +542,7 @@ AztecOOLinearOpWithSolve::solveImpl(
   typedef SolveStatus<double> SS;
 
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("AztecOOLOWS");
+  TEUCHOS_FUNC_TIME_MONITOR("Stratimikos: AztecOOLOWS");
 #endif
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
@@ -630,7 +630,7 @@ AztecOOLinearOpWithSolve::solveImpl(
   for( int j = 0; j < m; ++j ) {
 
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF("AztecOOLOWS:SingleSolve", SingleSolve);
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stratimikos: AztecOOLOWS:SingleSolve", SingleSolve);
 #endif
 
     //

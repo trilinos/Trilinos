@@ -133,9 +133,9 @@ int ex_create_int (const char *path,
 		   int  *io_ws,
 		   int   run_version)
 {
-  int exoid, time_dim, dims[1];
+  int exoid, dims[1];
   int status;
-  int dimid;
+  int dimid, time_dim;
   int old_fill;
   int lio_ws;
   int filesiz;
@@ -315,6 +315,7 @@ int ex_create_int (const char *path,
     return (EX_FATAL);
   }
 
+  /* The name string length dimension is delayed until the ex_put_init function */
 
   /* create line length dimension */
   if ((status = nc_def_dim(exoid, DIM_LIN, (MAX_LINE_LENGTH+1), &dimid)) != NC_NOERR) {

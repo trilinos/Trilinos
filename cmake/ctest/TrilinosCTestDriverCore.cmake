@@ -407,7 +407,7 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
   # D) Print the final status
   #
 
-  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+  PACKAGE_ARCH_PRINT_ENABLED_SE_PACKAGE_LIST(
     "\nDirectly modified or failing non-disabled packages that need to be tested" ON FALSE)
 
 ENDMACRO()

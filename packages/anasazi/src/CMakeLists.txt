@@ -6,9 +6,13 @@ INCLUDE(PackageLibraryMacros)
 #
 
 # Enabling a define if the Thyra Epetra adapter is defined.
-ASSERT_DEFINED(Thyra_ENABLE_Epetra)
-IF(Thyra_ENABLE_Epetra)
+ASSERT_DEFINED(Anasazi_ENABLE_ThyraEpetraAdapters)
+IF(Anasazi_ENABLE_ThyraEpetraAdapters)
   SET(HAVE_EPETRA_THYRA 1)
+ENDIF()
+
+IF(Anasazi_ENABLE_ThyraCore)
+  SET(HAVE_ANASAZI_THYRA 1)
 ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TSQR)
@@ -121,8 +125,8 @@ APPEND_SET(HEADERS
   AnasaziRTRSolMgr.hpp
   )
 
-ASSERT_DEFINED(Anasazi_ENABLE_Thyra)
-IF (Anasazi_ENABLE_Thyra)
+ASSERT_DEFINED(Anasazi_ENABLE_ThyraCore)
+IF (Anasazi_ENABLE_ThyraCore)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../thyra/src)
   APPEND_SET(HEADERS
     ../thyra/src/AnasaziThyraAdapter.hpp

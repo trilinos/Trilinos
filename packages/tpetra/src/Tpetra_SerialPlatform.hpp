@@ -37,11 +37,11 @@ namespace Tpetra {
 
 	//! \brief A implementation of the Platform class for serial platforms.
   /*!
-     This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
-     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
-     type, if omitted, defaults to the \c LocalOrdinal type.
+    This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
+    The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
+    type, if omitted, defaults to the \c LocalOrdinal type.
    */
-  template<class Node=Kokkos::DefaultNode::DefaultNodeType>
+  template <class Node>
 	class SerialPlatform : public Teuchos::Describable {
   public:
     //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.
@@ -49,11 +49,14 @@ namespace Tpetra {
     //! @name Constructor/Destructor Methods
     //@{ 
 
-    //! Constructor
-    explicit SerialPlatform(const Teuchos::RCP<Node> &node);
+    //! Node-accepting constructor
+    explicit SerialPlatform(const RCP<Node> &node) {
+      node_ = node;
+      comm_ = rcp(new Teuchos::SerialComm<int>() );
+    }
 
     //! Destructor
-    ~SerialPlatform();
+    ~SerialPlatform() {}
 
     //@}
 
@@ -61,10 +64,14 @@ namespace Tpetra {
     //@{ 
 
     //! Comm Instance
-    const Teuchos::RCP< const Teuchos::SerialComm<int> > getComm() const;
+    RCP< const Comm<int> > getComm() const {
+      return comm_;
+    }
 
     //! Get Get a node for parallel computation.
-    const Teuchos::RCP<Node> getNode() const;
+    RCP<Node> getNode() const {
+      return node_; 
+    }
 
     //@}
     private:
@@ -72,31 +79,67 @@ namespace Tpetra {
 
     protected: 
     //! Teuchos::Comm object instantiated for the platform.
-    Teuchos::RCP<const Teuchos::SerialComm<int> > comm_;
+    RCP<const Teuchos::SerialComm<int> > comm_;
     //! Node object instantiated for the platform.
-    Teuchos::RCP<Node> node_;
+    RCP<Node> node_;
   };
 
-  template<class Node>
-  SerialPlatform<Node>::SerialPlatform(const Teuchos::RCP<Node> &node) 
-  : node_(node) {
-    comm_ = Teuchos::rcp(new Teuchos::SerialComm<int>() );
-  }
 
-  template<class Node>
-  SerialPlatform<Node>::~SerialPlatform() {}
+  template <>
+	class SerialPlatform<Kokkos::DefaultNode::DefaultNodeType> : public Teuchos::Describable {
+  private:
+    SerialPlatform(const SerialPlatform<Kokkos::DefaultNode::DefaultNodeType> &platform);
 
-  template<class Node>
-  const Teuchos::RCP< const Teuchos::SerialComm<int> >
-  SerialPlatform<Node>::getComm() const {
-    return comm_;
-  }
+  protected: 
+    //! Teuchos::Comm object instantiated for the platform.
+    RCP<const Teuchos::SerialComm<int> > comm_;
+    //! Node object instantiated for the platform.
+    RCP<Kokkos::DefaultNode::DefaultNodeType> dnode_;
 
-  template<class Node>
-  const Teuchos::RCP< Node >
-  SerialPlatform<Node>::getNode() const { 
-    return node_; 
-  }
+  public:
+    //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.
+    typedef Kokkos::DefaultNode::DefaultNodeType NodeType;
+    //! @name Constructor/Destructor Methods
+    //@{ 
+
+    //! Default constructor uses Kokkos default node
+    SerialPlatform() {
+      // will construct the node late
+      dnode_ = null;
+      comm_ = rcp(new Teuchos::SerialComm<int>() );
+    }
+
+    //! Node-accepting constructor
+    explicit SerialPlatform(const RCP<Kokkos::DefaultNode::DefaultNodeType> &node) {
+      dnode_ = node;
+      comm_ = rcp(new Teuchos::SerialComm<int>() );
+    }
+
+    //! Destructor
+    ~SerialPlatform() {}
+
+    //@}
+
+    //! @name Class Creation and Accessor Methods
+    //@{ 
+
+    //! Comm Instance
+    RCP< const Teuchos::SerialComm<int> > getComm() const {
+      return comm_;
+    }
+
+    //! Get Get a node for parallel computation.
+    RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const {
+      RCP<Kokkos::DefaultNode::DefaultNodeType> def = dnode_;
+      if (def == null) {
+        def = Kokkos::DefaultNode::getDefaultNode(); 
+      }
+      return def;
+    }
+
+    //@}
+
+  };
 
 } // namespace Tpetra
 

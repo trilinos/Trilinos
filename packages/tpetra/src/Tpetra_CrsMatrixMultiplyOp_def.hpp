@@ -172,9 +172,9 @@ namespace Tpetra {
     // We will compute solution into the to-be-exported MV
     if (exporter != null) {
       // Do actual computation
-      matrix_->template multiply<OpScalar,OpScalar>(*X, *exportMV_, Teuchos::NO_TRANS, alpha, ST::zero());
+      matrix_->template localMultiply<OpScalar,OpScalar>(*X, *exportMV_, Teuchos::NO_TRANS, alpha, ST::zero());
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) *out << "Export vector after multiply()..." << std::endl;
+      if (myImageID == 0) *out << "Export vector after localMultiply()..." << std::endl;
       exportMV_->describe(*out,Teuchos::VERB_EXTREME);
 #endif
       if (Y_is_overwritten) Y_in.putScalar(ST::zero());
@@ -192,15 +192,15 @@ namespace Tpetra {
       if (Y_in.isConstantStride() == false || X.getRawPtr() == &Y_in) {
         // generate a strided copy of Y 
         MV Y(Y_in);
-        matrix_->template multiply<OpScalar,OpScalar>(*X, Y, Teuchos::NO_TRANS, alpha, beta);
+        matrix_->template localMultiply<OpScalar,OpScalar>(*X, Y, Teuchos::NO_TRANS, alpha, beta);
         Y_in = Y;
       }
       else {
-        matrix_->template multiply<OpScalar,OpScalar>(*X, Y_in, Teuchos::NO_TRANS, alpha, beta);
+        matrix_->template localMultiply<OpScalar,OpScalar>(*X, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     }
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-    if (myImageID == 0) *out << "Y_in vector after multiply/export..." << std::endl;
+    if (myImageID == 0) *out << "Y_in vector after local multiply/export..." << std::endl;
     Y_in.describe(*out,Teuchos::VERB_EXTREME);
 #endif
     // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
@@ -305,9 +305,9 @@ namespace Tpetra {
     // We will compute solution into the to-be-exported MV; get a view
     if (importer != null) {
       // Do actual computation
-      matrix_->template multiply<OpScalar,OpScalar>(*X, *importMV_, Teuchos::CONJ_TRANS, alpha, ST::zero());
+      matrix_->template localMultiply<OpScalar,OpScalar>(*X, *importMV_, Teuchos::CONJ_TRANS, alpha, ST::zero());
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) *out << "Import vector after multiply()..." << std::endl;
+      if (myImageID == 0) *out << "Import vector after localMultiply()..." << std::endl;
       importMV_->describe(*out,Teuchos::VERB_EXTREME);
 #endif
       if (Y_is_overwritten) Y_in.putScalar(ST::zero());
@@ -326,15 +326,15 @@ namespace Tpetra {
       if (Y_in.isConstantStride() == false || X.getRawPtr() == &Y_in) {
         // generate a strided copy of Y
         MV Y(Y_in);
-        matrix_->template multiply<OpScalar,OpScalar>(*X, Y, Teuchos::CONJ_TRANS, alpha, beta);
+        matrix_->template localMultiply<OpScalar,OpScalar>(*X, Y, Teuchos::CONJ_TRANS, alpha, beta);
         Y_in = Y;
       }
       else {
-        matrix_->template multiply<OpScalar,OpScalar>(*X, Y_in, Teuchos::CONJ_TRANS, alpha, beta);
+        matrix_->template localMultiply<OpScalar,OpScalar>(*X, Y_in, Teuchos::CONJ_TRANS, alpha, beta);
       }
     }
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-    if (myImageID == 0) *out << "Y_in vector after multiply/export..." << std::endl;
+    if (myImageID == 0) *out << "Y_in vector after local multiply/export..." << std::endl;
     Y_in.describe(*out,Teuchos::VERB_EXTREME);
 #endif
     // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
@@ -386,6 +386,13 @@ Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<Mat
   \
   template Teuchos::RCP< Tpetra::CrsMatrixMultiplyOp<OPSCALAR,MATSCALAR,LO,GO,NODE> > \
   createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MATSCALAR,LO,GO,NODE> > &A); \
+  \
+  template void CrsMatrix<MATSCALAR,LO,GO,NODE>::localMultiply<OPSCALAR,OPSCALAR>( \
+        const MultiVector<OPSCALAR,LO,GO,NODE> &X, \
+              MultiVector<OPSCALAR,LO,GO,NODE> &Y, \
+              Teuchos::ETransp mode,               \
+              OPSCALAR alpha, OPSCALAR beta        \
+              ) const; \
   \
   template void CrsMatrix<MATSCALAR,LO,GO,NODE>::multiply<OPSCALAR,OPSCALAR>( \
         const MultiVector<OPSCALAR,LO,GO,NODE> &X, \

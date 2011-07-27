@@ -153,9 +153,9 @@ int main(int argc, char* argv[]){
   //I'll have to come back to this later. But RowMatrixTransposer is working right.
   //And all my other tests are telling me ADD works right too.
   //KLN 06/14/2011
-  /*Tpetra::MatrixMatrix::Add(AT,false,1.0,*TestMatrix,false,-1.0,diffMatrix);
+  Tpetra::MatrixMatrix::Add(AT,false,-1.0,*TestMatrix,false, 1.0,diffMatrix);
   diffMatrix->fillComplete();
-  diffMatrix->describe(*out, Teuchos::VERB_EXTREME);
+  //diffMatrix->describe(*out, Teuchos::VERB_EXTREME);
   double diffNorm = getNorm(*diffMatrix);
   double realNorm = getNorm(AT);
   double epsilon = diffNorm/realNorm;
@@ -166,8 +166,8 @@ int main(int argc, char* argv[]){
     *out << "Epsilon: " << epsilon << std::endl;
     return 1;
   }
-*/
   
+
 
 
 	return 0;

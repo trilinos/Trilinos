@@ -36,7 +36,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "netcdf.h"
 #include "exodusII.h"
 #include "exodusII_int.h"
 
@@ -112,114 +111,115 @@ void ex_err(const char *module_name,
 
   else if (exoptval & EX_VERBOSE) /* check see if we really want to hear this */
   {
-    fprintf(stderr, "[%s] %s\n",module_name,message);
-    if (exoptval & EX_VERBOSE)
-      fprintf(stderr, "    exerrval = %d\n",err_num);
+    fprintf(stderr, "Exodus Library Error: [%s]\n\t%s\n",module_name,message);
     switch (err_num) {
     case NC_SYSERR:
-      fprintf (stderr," System error -- Usually disk full or filesystem issue\n");
+      fprintf (stderr,"\t[%d] System error -- Usually disk full or filesystem issue\n", err_num);
       break;
     case NC_ESTS:
-      fprintf (stderr," In FORTRAN interface, string too small\n");
+      fprintf (stderr,"\t[%d] In FORTRAN interface, string too small\n", err_num);
       break;
     case NC_EMAXNAME:
-      fprintf (stderr," length of name exceeds NC_MAX_NAME\n");
+      fprintf (stderr,"\t[%d] length of name exceeds NC_MAX_NAME\n", err_num);
       break;
     case NC_EMAXDIMS:
-      fprintf (stderr," netcdf constraint NC_MAX_DIMS exceeded\n");
+      fprintf (stderr,"\t[%d] netcdf constraint NC_MAX_DIMS exceeded\n", err_num);
       break;
     case NC_EMAXVARS:
-      fprintf (stderr," netcdf constraint NC_MAX_VARS exceeded\n");
+      fprintf (stderr,"\t[%d] netcdf constraint NC_MAX_VARS exceeded\n", err_num);
       break;
     case NC_EBADID:
-      fprintf (stderr," Not a netcdf id\n");
+      fprintf (stderr,"\t[%d] Not a netcdf id\n", err_num);
       break;
     case NC_ENFILE:
-      fprintf (stderr," Too many exodus (netcdf) files open\n");
+      fprintf (stderr,"\t[%d] Too many exodus (netcdf) files open\n", err_num);
       break;
     case NC_EEXIST:
-      fprintf (stderr," exodus (netcdf) file exists && NC_NOCLOBBER\n");
+      fprintf (stderr,"\t[%d] exodus (netcdf) file exists && NC_NOCLOBBER\n", err_num);
       break;
     case NC_EINVAL:
-      fprintf (stderr," Invalid Argument\n");
+      fprintf (stderr,"\t[%d] Invalid Argument\n", err_num);
       break;
     case NC_EPERM:
-      fprintf (stderr," Write to read only\n");
+      fprintf (stderr,"\t[%d] Write to read only\n", err_num);
       break;
     case NC_ENOTINDEFINE:
-      fprintf (stderr," Operation not allowed in data mode\n");
+      fprintf (stderr,"\t[%d] Operation not allowed in data mode\n", err_num);
       break;
     case NC_EINDEFINE:
-      fprintf (stderr," Operation not allowed in define mode\n");
+      fprintf (stderr,"\t[%d] Operation not allowed in define mode\n", err_num);
       break;
     case NC_EINVALCOORDS:
-      fprintf (stderr," Index exceeds dimension bound\n");
+      fprintf (stderr,"\t[%d] Index exceeds dimension bound\n", err_num);
       break;
     case NC_ENAMEINUSE:
-      fprintf (stderr," String match to name in use\n");
+      fprintf (stderr,"\t[%d] String match to name in use\n", err_num);
       break;
     case NC_ENOTATT:
-      fprintf (stderr," Attribute not found\n");
+      fprintf (stderr,"\t[%d] Attribute not found\n", err_num);
       break;
     case NC_EMAXATTS:
-      fprintf (stderr," NC_MAX_ATTRS exceeded\n");
+      fprintf (stderr,"\t[%d] NC_MAX_ATTRS exceeded\n", err_num);
       break;
     case NC_EBADTYPE:
-      fprintf (stderr," Not a netcdf data type\n");
+      fprintf (stderr,"\t[%d] Not a netcdf data type\n", err_num);
       break;
     case NC_EBADDIM:
-      fprintf (stderr," Invalid dimension id or name\n");
+      fprintf (stderr,"\t[%d] Invalid dimension id or name\n", err_num);
       break;
     case NC_EUNLIMPOS:
-      fprintf (stderr," NC_UNLIMITED in the wrong index\n");
+      fprintf (stderr,"\t[%d] NC_UNLIMITED in the wrong index\n", err_num);
       break;
     case NC_ENOTVAR:
-      fprintf (stderr," Variable not found\n");
+      fprintf (stderr,"\t[%d] Variable not found\n", err_num);
       break;
     case NC_EGLOBAL:
-      fprintf (stderr," Action prohibited on NC_GLOBAL varid\n");
+      fprintf (stderr,"\t[%d] Action prohibited on NC_GLOBAL varid\n", err_num);
       break;
     case NC_ENOTNC:
-      fprintf (stderr," Not an exodus (netcdf) file\n");
+      fprintf (stderr,"\t[%d] Not an exodus (netcdf) file\n", err_num);
       break;
     case NC_EUNLIMIT:
-      fprintf (stderr," NC_UNLIMITED size already in use\n");
+      fprintf (stderr,"\t[%d] NC_UNLIMITED size already in use\n", err_num);
       break;
     case NC_ENORECVARS:
-      fprintf (stderr," nc_rec op when there are no record vars\n");
+      fprintf (stderr,"\t[%d] nc_rec op when there are no record vars\n", err_num);
       break;
     case NC_ECHAR:
-      fprintf (stderr," Attempt to convert between text & numbers\n");
+      fprintf (stderr,"\t[%d] Attempt to convert between text & numbers\n", err_num);
       break;
     case NC_EEDGE:
-      fprintf (stderr," Start+count exceeds dimension bound\n");
+      fprintf (stderr,"\t[%d] Start+count exceeds dimension bound\n", err_num);
       break;
     case NC_ESTRIDE:
-      fprintf (stderr," Illegal stride\n");
+      fprintf (stderr,"\t[%d] Illegal stride\n", err_num);
       break;
     case NC_EBADNAME:
-      fprintf (stderr," Attribute or variable name contains illegal characters\n");
+      fprintf (stderr,"\t[%d] Attribute or variable name contains illegal characters\n", err_num);
       break;
     case NC_ERANGE:
-      fprintf (stderr," Math result not representable\n");
+      fprintf (stderr,"\t[%d] Math result not representable\n", err_num);
       break;
     case NC_ENOMEM:
-      fprintf (stderr," Memory allocation (malloc) failure\n");
+      fprintf (stderr,"\t[%d] Memory allocation (malloc) failure\n", err_num);
       break;
     case NC_EVARSIZE:
-      fprintf (stderr," One or more variable sizes violate format constraints\n");
+      fprintf (stderr,"\t[%d] One or more variable sizes violate format constraints\n", err_num);
       break;
     case NC_EDIMSIZE:
-      fprintf (stderr," Invalid dimension size\n");
+      fprintf (stderr,"\t[%d] Invalid dimension size\n", err_num);
       break;
     case NC_ETRUNC:
-      fprintf (stderr," File likely truncated or possibly corrupted\n");
+      fprintf (stderr,"\t[%d] File likely truncated or possibly corrupted\n", err_num);
       break;
     case NC_EAXISTYPE:
-      fprintf (stderr," Unknown axis type.\n");
+      fprintf (stderr,"\t[%d] Unknown axis type.\n", err_num);
       break;
     case EX_MSG:
       break;
+    default:
+      if (exoptval & EX_VERBOSE)
+	fprintf(stderr, "    exerrval = %d\n",err_num);
     }
   } 
   /* save the error message for replays */

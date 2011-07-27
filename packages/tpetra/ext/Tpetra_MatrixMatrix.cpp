@@ -20,7 +20,6 @@
 namespace Tpetra {
 
 #if defined(HAVE_TPETRA_INST_FLOAT)
-  TPETRA_SPARSEDOT_INSTANT(float,int)
   TPETRA_MATRIXMATRIX_INSTANT(float,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(float,int,int,Kokkos::TBBNode)
@@ -34,7 +33,6 @@ namespace Tpetra {
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-  TPETRA_SPARSEDOT_INSTANT(double,int)
   TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TBBNode)
@@ -48,7 +46,6 @@ namespace Tpetra {
 #endif
 
 #if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-  TPETRA_SPARSEDOT_INSTANT(std::complex<float>,int)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::TBBNode)
@@ -63,7 +60,6 @@ namespace Tpetra {
 #endif
 
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-  TPETRA_SPARSEDOT_INSTANT(std::complex<double>,int)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MATRIXMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::TBBNode)

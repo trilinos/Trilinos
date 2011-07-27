@@ -469,15 +469,6 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
 	grp->applyJacobianInverseMultiVector(*piroParams, dfdp_nox, dxdp_nox);
 	dxdp_nox.scale(-1.0);
 	
-	if (observer != Teuchos::null &&
-	    piroParams->sublist("VTK").get("Visualize Sensitivities", false) ==
-	    true) {
-	  for (int k=0; k<numParameters; k++) {
-	    Epetra_Vector* sv = dxdp_nox.getEpetraMultiVector()(k);
-	    observer->observeSolution(*sv);
-	  }
-	}
-	
 	// (3) Calculate dg/dp = dg/dx*dx/dp + dg/dp
 	// This may be the transpose of what we want since we specified
 	// we want dg/dp by column in createOutArgs(). 

@@ -55,6 +55,12 @@
 const double Epetra_Util::chopVal_ = 1.0e-15;
 
 //=========================================================================
+double Epetra_Util::Chop(const double & Value){
+  if (std::abs(Value) < chopVal_) return 0;
+  return Value;
+}
+
+//=========================================================================
 unsigned int Epetra_Util::RandomInt() {
 
   const int a = 16807;

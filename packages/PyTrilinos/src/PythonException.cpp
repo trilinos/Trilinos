@@ -28,6 +28,9 @@
 
 #include "PythonException.h"
 
+namespace PyTrilinos
+{
+
 PythonException::PythonException() :
   std::runtime_error("")
 {
@@ -81,3 +84,4 @@ void PythonException::restore()
   errorMsg       = NULL;
 }
 
+}  // Namespace PyTrilinos

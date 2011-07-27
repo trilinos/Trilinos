@@ -43,27 +43,35 @@
 //     Hermite polynomial.
 
 #include "Stokhos.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 int main(int argc, char **argv)
 {
+  using Teuchos::Array;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  // If applicable, set up MPI.
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv);
+
   try {
 
     // Basis of dimension 3, order 5
     const int d = 3;
     const int p = 5;
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+    Array< RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
     for (int i=0; i<d; i++) {
-      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p-i));
+      bases[i] = rcp(new Stokhos::HermiteBasis<int,double>(p-i));
     }
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+    RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
+      rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
     // Quadrature method
-    Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    RCP<const Stokhos::Quadrature<int,double> > quad = 
+      rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
 
     // Triple product tensor
-    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+    RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
       basis->computeTripleProductTensor(basis->size());
 
     // Expansion method
@@ -99,7 +107,7 @@ int main(int argc, char **argv)
     double std_dev = v.standard_deviation();
 
     // Evaluate PCE and function at a point = 0.25 in each dimension
-    Teuchos::Array<double> pt(d); 
+    Array<double> pt(d); 
     for (int i=0; i<d; i++) 
       pt[i] = 0.25;
     double up = u.evaluate(pt);

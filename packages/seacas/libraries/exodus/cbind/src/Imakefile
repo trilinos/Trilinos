@@ -34,11 +34,11 @@
 
 XCOMM Use include files locates in exodusii/cbind/include
 INCLUDES = IncRef-I../include
-REQUIREDLIBS = -L$(USRLIBDIR) $(NETCDF)
+REQUIREDLIBS = -L$(SHLIBDIR) $(NETCDF)
 
 #ifndef BuildSharedExodusLibrary
 #define BuildSharedExodusLibrary NO
-#endif  BuildSharedExodusLibrary
+#endif  
 
 #define DoNormalLib YES
 #define DoSharedLib BuildSharedExodusLibrary
@@ -46,7 +46,7 @@ REQUIREDLIBS = -L$(USRLIBDIR) $(NETCDF)
 SOREV = 4
 #define SoRev SOREV
 
-DEFINES = -DEX_ERR_STR $(PICFLAGS)
+DEFINES = $(PICFLAGS)
 
 SRCS =  exclos.c   exggvt.c   exgpa.c    exgvp.c    expfrm.c   expqa.c	 \
 	excn2s.c   exgids.c   exgp.c     exgvv.c    expinf.c   expset.c	 \

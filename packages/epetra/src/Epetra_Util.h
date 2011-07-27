@@ -172,10 +172,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
 						  bool high_rank_proc_owns_shared=false);
 
   //! Epetra_Util Chop method.  Return zero if input Value is less than ChopValue
-  static double Chop(const double & Value){
-    if (std::abs(Value) < chopVal_) return 0;
-    return Value;
-  };
+  static double Chop(const double & Value);
+//  {
+//    if (std::abs(Value) < chopVal_) return 0;
+//    return Value;
+//  };
 
   static const double chopVal_;
 
@@ -203,7 +204,7 @@ inline Epetra_Util::~Epetra_Util(){}
     maintained.
     @return offset Location in list at which item was found. -1 if not found.
 */
-int Epetra_Util_binary_search(int item,
+EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(int item,
                               const int* list,
                               int len,
                               int& insertPoint);

@@ -35,6 +35,9 @@
 
 using std::size_t;
 
+namespace PyTrilinos
+{
+
 FILEstream::FILEstream(FILE   *fptr,
 		       size_t buff_sz,
 		       size_t put_back) :
@@ -93,3 +96,5 @@ std::streambuf::int_type FILEstream::sync()
     return -1;
   return 0;
 }
+
+}  // Namespace PyTrilinos

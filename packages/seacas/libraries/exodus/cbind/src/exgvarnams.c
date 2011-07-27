@@ -95,7 +95,7 @@ int ex_get_variable_names (int   exoid,
 			   int   num_vars,
 			   char *var_names[])
 {
-  int i, varid, status;
+  int varid, status;
   char errmsg[MAX_ERR_LENGTH];
   const char* vvarname;
 
@@ -137,7 +137,7 @@ int ex_get_variable_names (int   exoid,
     sprintf(errmsg,
       "Warning: invalid variable type %d requested from file id %d",
 	    obj_type, exoid);
-    ex_err("ex_get_var_param",errmsg,exerrval);
+    ex_err("ex_get_variable_names",errmsg,exerrval);
     return (EX_WARN);
   }
 
@@ -151,36 +151,9 @@ int ex_get_variable_names (int   exoid,
   }
 
   /* read the variable names */
-
-  /*
-   * See if reading into contiguous memory in which case we can load 
-   * all values in one call.  If not, we must load each name individually.
-   */
-  if ((size_t)(&var_names[num_vars-1][0] - &var_names[0][0]) ==
-      sizeof(char)*(MAX_STR_LENGTH+1)*(num_vars-1)) {
-    status = nc_get_var_text(exoid, varid, &var_names[0][0]);
-    if (status != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-              "Error: failed to get results variable names from file id %d", exoid);
-      ex_err("ex_get_var_names",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-  } else {
-    for (i=0; i<num_vars; i++) {
-      size_t start[2];
-      size_t count[2];
-      start[0] = i;  count[0] = 1;
-      start[1] = 0;  count[1] = MAX_STR_LENGTH+1;
-      status = nc_get_vara_text(exoid, varid, start, count, var_names[i]);
-      if (status != NC_NOERR) {
-        exerrval = status;
-        sprintf(errmsg,
-                "Error: failed to get results variable names from file id %d", exoid);
-        ex_err("ex_get_var_names",errmsg,exerrval);
-        return (EX_FATAL);
-      }
-    }
+  status = ex_get_names_internal(exoid, varid, num_vars, var_names, obj_type, "ex_get_variable_names");
+  if (status != NC_NOERR) {
+    return (EX_FATAL);
   }
   return (EX_NOERR);
 }

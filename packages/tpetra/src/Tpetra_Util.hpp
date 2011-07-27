@@ -34,12 +34,15 @@
 #include <algorithm>
 #include <Teuchos_Utils.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <sstream>
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
 //! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
 #define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)                                 \
 {                                                                                                     \
-  std::string err = Teuchos::typeName(*this) + msg;                                                   \
+  std::ostringstream errStream;                                                                       \
+  errStream << Teuchos::typeName(*this) << msg;                                                       \
+  std::string err = errStream.str();                                                                  \
   if (TPETRA_PRINTS_EFFICIENCY_WARNINGS && (throw_exception_test)) {                                  \
     std::cerr << err << std::endl;                                                                    \
   }                                                                                                   \
@@ -55,7 +58,9 @@
 //! Handle an abuse warning, according to HAVE_TPETRA_THROW_ABUSE_WARNINGS and HAVE_TPETRA_PRINT_ABUSE_WARNINGS
 #define TPETRA_ABUSE_WARNING(throw_exception_test,Exception,msg)                               \
 {                                                                                              \
-  std::string err = Teuchos::typeName(*this) + msg;                                            \
+  std::ostringstream errStream;                                                                \
+  errStream << Teuchos::typeName(*this) << msg;                                                \
+  std::string err = errStream.str();                                                           \
   if (TPETRA_PRINTS_ABUSE_WARNINGS && (throw_exception_test)) {                                \
     std::cerr << err << std::endl;                                                             \
   }                                                                                            \
@@ -139,91 +144,231 @@ namespace Tpetra {
   }
 
 
-  /** sort function for two arrays
-     The values in sortVals will be sorted in ascending order.
-     The same permutation required to sort sortVals will be applied
-     to otherVals.
+  namespace SortDetails{
+
+
+  /**
+   * \brief Determines whether or not a data structure is already sorted.
+   *
+   * @param first An iterator pointing to the beginning of the 
+   * data structure.
+   * @param last An iterator pointing to the end of the data structure.
+   * @return True if the datasctructure is already sorted, false otherwise.
+   */
+  template<class IT1>
+  bool isAlreadySorted(const IT1& first, const IT1& last){
+    typedef typename std::iterator_traits<IT1>::difference_type DT;
+    DT myit =OrdinalTraits<DT>::one();
+    const DT sz  = last - first;
+    for(;myit < sz; ++myit){
+      if(first[myit] < first[myit-1]){
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * \brief Determines the pivot point as part of the quicksort routine.
+   *
+   * @param first An iterator pointing to the beginning of the array segment
+   * we are trying to find a pivot for.
+   * @param last An iterator pointing to the ending of the array segment
+   * we are trying to find a pivot for.
+   * @return The pivot point for the given array segment.
+   */
+  template<class IT>
+  IT getPivot(const IT& first, const IT& last){
+    IT pivot(first+(last-first)/2);
+    if(*first<=*pivot && *(last-1)<=*first) pivot=first;
+    else if(*(last-1)<=*pivot && *first<= *(last-1)) pivot = last-1;
+    return pivot; 
+  }
+
+  /**
+   * \brief Preforms the partition operation that is part of the quicksort routine
+   * for two arrays
+   *
+   * @param first1 An iterator pointing to the beginning of the first array.
+   * @param last1 An iterator pointing to the end of the first array.
+   * @param first2 An iterator pointing to the beginning of the second array.
+   * @param last2 An iterator pointing to the end of the second array.
+   * @param pivot A pivot point calculated by the pivot function.
+   * @return An iterator pointing to where the partition should be made.
+   */
+  template<class IT1, class IT2>
+  IT1 partition2(
+    const IT1& first1,
+    const IT1& last1,
+    const IT2& first2,
+    const IT2& last2,
+    const IT1& pivot)
+  {
+    typename std::iterator_traits<IT1>::value_type piv(*pivot);
+    std::swap(*pivot, *(last1-1));
+    std::swap(first2[(pivot-first1)], *(last2-1));
+    IT1 store1=first1;
+    for(IT1 it=first1; it!=last1-1; ++it){
+      if(*it<=piv){
+        std::swap(*store1, *it);
+        std::swap(first2[(store1-first1)], first2[(it-first1)]);
+        ++store1;
+      }
+    }
+    std::swap(*(last1-1), *store1);
+    std::swap(*(last2-1), first2[store1-first1]);
+    return store1;
+  }
+
+  /**
+   * \brief Preforms the partition operation that is part of the quicksort routine
+   * for three arrays
+   *
+   * @param first1 An iterator pointing to the beginning of the first array.
+   * @param last1 An iterator pointing to the end of the first array.
+   * @param first2 An iterator pointing to the beginning of the second array.
+   * @param last2 An iterator pointing to the end of the second array.
+   * @param first3 An iterator pointing to the beginning of the third array.
+   * @param last3 An iterator pointing to the end of the third array.
+   * @param pivot A pivot point calculated by the pivot function.
+   * @return An iterator pointing to where the partition should be made.
+   */
+  template<class IT1, class IT2, class IT3>
+  IT1 partition3(
+    const IT1& first1,
+    const IT1& last1,
+    const IT2& first2,
+    const IT2& last2,
+    const IT3& first3,
+    const IT3& last3,
+    const IT1& pivot)
+  {
+    typename std::iterator_traits<IT1>::value_type piv(*pivot);
+    std::swap(*pivot, *(last1-1));
+    std::swap(first2[(pivot-first1)], *(last2-1));
+    std::swap(first3[(pivot-first1)], *(last3-1));
+    IT1 store1=first1;
+    for(IT1 it=first1; it!=last1-1; ++it){
+      if(*it<=piv){
+        std::swap(*store1, *it);
+        std::swap(first2[(store1-first1)], first2[(it-first1)]);
+        std::swap(first3[(store1-first1)], first3[(it-first1)]);
+        ++store1;
+      }
+    }
+    std::swap(*(last1-1), *store1);
+    std::swap(*(last2-1), first2[store1-first1]);
+    std::swap(*(last3-1), first3[store1-first1]);
+    return store1;
+  }
+
+  /**
+   * \brief Prefoms a quick sort on the two arrays using the permutations
+   * that are done on the first array on the second array as well.
+   *
+   * @param first1 An iterator pointing to the beginning of the first array.
+   * @param last1 An iterator pointing to the end of the first array.
+   * @param first2 An iterator pointing to the beginning of the second array.
+   * @param last2 An iterator pointing to the end of the second array.
+   */
+  template<class IT1, class IT2>
+  void quicksort2(
+    const IT1& first1,
+    const IT1& last1,
+    const IT2& first2,
+    const IT2& last2)
+  {
+    typedef typename std::iterator_traits<IT1>::difference_type DT;
+    DT DT1 = OrdinalTraits<DT>::one();
+    if(last1-first1 > DT1){
+      IT1 pivot = getPivot(first1, last1);
+      pivot = partition2(first1, last1, first2, last2, pivot);
+      quicksort2(first1, pivot, first2, first2+(pivot-first1));
+      quicksort2(pivot+1, last1, first2+(pivot-first1)+1, last2);
+    }
+  }
+
+  /**
+   * \brief Prefoms a quick sort on the three arrays using the permutations
+   * that are done on the first array on the second and third arrays as well.
+   *
+   * @param first1 An iterator pointing to the beginning of the first array.
+   * @param last1 An iterator pointing to the end of the first array.
+   * @param first2 An iterator pointing to the beginning of the second array.
+   * @param last2 An iterator pointing to the end of the second array.
+   * @param first3 An iterator pointing to the beginning of the third array.
+   * @param last3 An iterator pointing to the end of the third array.
+   */
+  template<class IT1, class IT2, class IT3>
+  void quicksort3(
+    const IT1& first1,
+    const IT1& last1,
+    const IT2& first2,
+    const IT2& last2,
+    const IT3& first3,
+    const IT3& last3)
+  {
+    typedef typename std::iterator_traits<IT1>::difference_type DT;
+    DT DT1 = OrdinalTraits<DT>::one();
+    if(last1-first1 > DT1){
+      IT1 pivot = getPivot(first1, last1);
+      pivot = partition3(first1, last1, first2, last2, first3, last3, pivot);
+      quicksort3(first1, pivot, first2, first2+(pivot-first1), first3, first3+(pivot-first1));
+      quicksort3(pivot+1, last1, first2+(pivot-first1)+1, last2, first3+(pivot-first1)+1, last3);
+    }
+  }
+
+
+  } //end namespace SortDetails
+
+
+  /** 
+   * \brief Sort function for two arrays.
+   *
+   * The values in sortVals will be sorted in ascending order.
+   * The same permutation required to sort sortVals will be applied
+   * to otherVals.
+   * 
+   * @param first1 An iterator pointing to the beginning of the first array.
+   * @param last1 An iterator pointing to the end of the first array.
+   * @param first2 An iterator pointing to the beginning of the second array.
    */
   template<class IT1, class IT2>
   void sort2(const IT1 &first1, const IT1 &last1, const IT2 &first2) {
-    sort2Shell(first1,last1,first2);
+    if(SortDetails::isAlreadySorted(first1, last1)){
+      return;
+    }
+    SortDetails::quicksort2(first1, last1, first2, first2+(last1-first1));
   }
 
-  /** sort function for three arrays
-     The values in sortVals will be sorted in ascending order.
-     The same permutation required to sort sortVals will be applied
-     to otherVals.
+  
+  /** 
+   * \brief Sort function for three arrays
+   *
+   * The values in sortVals will be sorted in ascending order.
+   * The same permutation required to sort sortVals will be applied
+   * to otherVals.
+   *
+   * @param first1 An iterator pointing to the beginning of the first array.
+   * @param last1 An iterator pointing to the end of the first array.
+   * @param first2 An iterator pointing to the beginning of the second array.
+   * @param first3 An iterator pointing to the beginning of the third array.
    */
   template<class IT1, class IT2, class IT3>
   void sort3(const IT1 &first1, const IT1 &last1, const IT2 &first2, const IT3 &first3)
   {
-    sort3Shell(first1, last1, first2, first3);
+    if(SortDetails::isAlreadySorted(first1, last1)){
+      return;
+    }
+    SortDetails::quicksort3(first1, last1, first2, first2+(last1-first1), first3, first3+(last1-first1));
   }
 
-
-  template<class IT1, class IT2>
-  void sort2Shell(const IT1 &first1, const IT1 &last1, const IT2 &first2)
-  {
-    typedef typename std::iterator_traits<IT1>::difference_type DT;
-    const DT sz  = last1 - first1;
-    const DT DT0 = OrdinalTraits<DT>::zero();
-    for (DT i = DT0; i < sz; ++i){
-      DT m = sz/2;
-      while (m > DT0){
-        DT max = sz - m;
-        for (DT j = DT0; j < max; ++j){
-          for (DT k = j; k >= DT0; k-=m){
-            if (first1[k+m] >= first1[k]){
-              break;
-            }
-            std::swap( first1[k+m], first1[k] );
-            std::swap( first2[k+m], first2[k] );
-          }
-        }
-        m = m/2;
-      }
-    }
-#ifdef HAVE_TPETRA_DEBUG
-    for (DT i=DT0; i < sz-1; ++i) {
-      TEST_FOR_EXCEPTION( first1[i] > first1[i+1], std::logic_error,
-          "Tpetra::sort2Shell(): internal Tpetra error. Please contact Tpetra team.");
-    }
-#endif
-  }
-
-
-  template<class IT1, class IT2, class IT3>
-  void sort3Shell(const IT1 &first1, const IT1 &last1, const IT2 &first2, const IT3 &first3)
-  {
-    typedef typename std::iterator_traits<IT1>::difference_type DT;
-    const DT sz  = last1 - first1;
-    const DT DT0 = OrdinalTraits<DT>::zero();
-    for (DT i = DT0; i < sz; ++i){
-      DT m = sz/2;
-      while (m > DT0){
-        DT max = sz - m;
-        for (DT j = DT0; j < max; ++j){
-          for (DT k = j; k >= DT0; k-=m){
-            if (first1[k+m] >= first1[k]){
-              break;
-            }
-            std::swap( first1[k+m], first1[k] );
-            std::swap( first2[k+m], first2[k] );
-            std::swap( first3[k+m], first3[k] );
-          }
-        }
-        m = m/2;
-      }
-    }
-#ifdef HAVE_TPETRA_DEBUG
-    for (DT i=DT0; i < sz-1; ++i) {
-      TEST_FOR_EXCEPTION( first1[i] > first1[i+1], std::logic_error,
-          "Tpetra::sort3Shell(): internal Tpetra error. Please contact Tpetra team.");
-    }
-#endif
-  }
-
-
+  /**
+   * \brief Preforms a binary search.
+   *
+   * Preforms a binary search for value amount the entries between
+   * the first iterator and the last iterator.
+   */
   template<class IT1, class T>
   IT1 binary_serach(IT1 first, IT1 last, const T& value){
 	first = std::lower_bound(first,last,value);

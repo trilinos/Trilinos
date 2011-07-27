@@ -22,37 +22,70 @@
 namespace TpetraExamples {
 
   /** \class mprec_mult 
-    \brief mprec_mult is a function object that takes two arguments of a specified precision and multiplies them using a different precision.
+   * \brief Function object multiplying two different types in a third type's precision.
+   *
+   * mprec_mult's operator() converts its two arguments, of types Arg1
+   * resp. Arg2, into MultPrec objects.  It then uses MultPrec's
+   * operator* to multiply them, and returns the result as a MultPrec
+   * object.
+   *
+   * \tparam Arg1 Type of the operator's first argument.
+   * \tparam Arg2 Type of the operator's second argument.
+   * \tparam MultPrec Type in which the multiplication is performed,
+   *   and the return type.
    */
   template <class Arg1, class Arg2, class MultPrec>
   class mprec_mult : public std::binary_function<Arg1,Arg2,MultPrec> {
   public:
     mprec_mult() {}
-    inline MultPrec operator()(const Arg1& x, const Arg2& y) const {return (MultPrec)(x) * (MultPrec)(y);}
+    inline MultPrec 
+    operator() (const Arg1& x, const Arg2& y) const {
+      return (MultPrec)(x) * (MultPrec)(y);
+    }
   };
 
   /** \class pair_op 
-    \brief pair_op is a reduction function object that takes two arguments of a specified precision and multiplies them using a different precision.
+   * \brief Reduction function object that combines pairs of T1, T2.
+   *
+   * A pair_op takes a binary operator "op" of type Op, whose
+   * arguments may be of types T1 or T2.  It uses op to combine the
+   * elements of two pairs of (T1,T2) pairwise: the first element of
+   * the first pair with the first element of the second pair, and the
+   * second element of the first pair with the second element of the
+   * second pair.
+   *
+   * \tparam T1 Type of the first element in the input pairs.
+   * \tparam T2 Type of the second element in the input pairs.
+   * \tparam Op A binary operator for which operator()(T1,T1) and
+   *   operator()(T2,T2) are syntactically correct.
    */
   template <class T1, class T2, class Op>
-  class pair_op : public std::binary_function<std::pair<T1,T2>,std::pair<T1,T2>,std::pair<T1,T2>> {
+  class pair_op : 
+    public std::binary_function<std::pair<T1,T2>, std::pair<T1,T2>, std::pair<T1,T2>> {
   private:
     Op op_;
   public:
     pair_op(Op op) : op_(op) {}
-    inline std::pair<T1,T2> operator()(const std::pair<T1,T2>& a, const std::pair<T1,T2>& b) const {
-      return std::make_pair(op_(a.first,b.first),op_(a.second,b.second));
+    inline std::pair<T1,T2> 
+    operator() (const std::pair<T1,T2>& a, const std::pair<T1,T2>& b) const {
+      return std::make_pair (op_ (a.first, b.first), op_ (a.second, b.second));
     }
   };
 
+  /// \fn make_pair_op
+  /// \brief Nonmember constructor for \c pair_op.
   template <class T1, class T2, class Op>
-  pair_op<T1,T2,Op> make_pair_op(Op op) { return pair_op<T1,T2,Op>(op); }
+  pair_op<T1,T2,Op> make_pair_op (Op op) { 
+    return pair_op<T1,T2,Op>(op); 
+  }
 
 }
 
 namespace Tpetra {
   namespace RTI {
-    // specialization for pair
+    //
+    // Specialization of ZeroOp for a pair of two different types.
+    //
     template <class T1, class T2>
     class ZeroOp<std::pair<T1,T2>> {
       public:
@@ -66,6 +99,9 @@ namespace Tpetra {
 
 int main(int argc, char *argv[])
 {
+  //
+  // Set up MPI, if applicable.
+  //
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
@@ -139,7 +175,8 @@ int main(int argc, char *argv[])
                                          std::plus<float>()
                                        ) );
   if (verbose) {
-    std::cout << std::left << "dot( ones, twos ) result == " << fresult << ", expected value is " << numGlobalRows*2.0f << std::endl;
+    std::cout << std::left << "dot( ones, twos ) result == " << fresult 
+	      << ", expected value is " << numGlobalRows*2.0f << std::endl;
   }
 
   //

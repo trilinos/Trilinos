@@ -36,6 +36,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Element_Linear2D.hpp"
 #include "MeshBuilder.hpp"
 #include "Epetra_SerialComm.h"
@@ -46,6 +47,8 @@ int main(int argc, char *argv[])
 {
   using namespace std;
   using namespace Teuchos;
+  
+  Teuchos::GlobalMPISession mpi_session(&argc, &argv);
   
   try {
     

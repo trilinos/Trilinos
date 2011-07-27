@@ -47,8 +47,8 @@
 #include "stddef.h"
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.04f
-#define EX_API_VERS_NODOT 504
+#define EX_API_VERS 5.10f
+#define EX_API_VERS_NODOT 510
 #define EX_VERS EX_API_VERS
 
 
@@ -138,6 +138,9 @@ extern "C" {
     EX_INQ_EDGE_MAP        = 45,     /**< inquire number of edge maps                     */
     EX_INQ_FACE_MAP        = 46,     /**< inquire number of face maps                     */
     EX_INQ_COORD_FRAMES    = 47,     /**< inquire number of coordinate frames */
+    EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH  = 48,     /**< inquire size of MAX_NAME_LENGTH dimension on database */
+    EX_INQ_DB_MAX_USED_NAME_LENGTH  = 49,     /**< inquire size of MAX_NAME_LENGTH dimension on database */
+    EX_INQ_MAX_READ_NAME_LENGTH = 50,     /**< inquire client-specified max size of returned names */
     EX_INQ_INVALID         = -1};
 
   typedef enum ex_inquiry ex_inquiry;
@@ -162,6 +165,7 @@ extern "C" {
     EX_FACE_MAP    = 12,          /**< face map property code     */
     
     EX_GLOBAL      = 13,          /**< global "block" for variables*/
+    EX_COORDINATE  = 15,          /**< kluge so some internal wrapper functions work */
     EX_INVALID     = -1};             
   typedef enum ex_entity_type ex_entity_type;
   
@@ -176,14 +180,21 @@ extern "C" {
   };
   typedef enum ex_options ex_options;
   
+  /** The value used to indicate that an entity (block, nset, sset)
+      has not had its id set to a valid value
+  */
+#define EX_INVALID_ID -1
+
   /**
    * \defgroup StringLengths maximum string lengths;
    * constants that are used as netcdf dimensions must be of type long
    * @{ 
    */
-  /** Maximum length of an entity name, attribute name, variable name,
-      QA record, element type name */
+  /** Maximum length of QA record, element type name */
 #define MAX_STR_LENGTH          32L 
+  /** Maximum length of an entity name, attribute name, variable name */
+#define MAX_NAME_LENGTH         MAX_STR_LENGTH
+  
   /** Maximum length of the database title or an information record */
 #define MAX_LINE_LENGTH         80L
   /** Maximum length of an error message passed to ex_err() function. Typically, internal use only */
@@ -792,6 +803,12 @@ extern "C" {
   EXODUS_EXPORT int ex_inquire(int exoid, int inquiry, int*, void*, char*);
   EXODUS_EXPORT int ex_inquire_int(int exoid, int inquiry);
 
+  /** Note that the max name length setting is global at this time; not specific
+   * to a particular database; however, the exoid option is passed to give
+   * flexibility in the future to implement this on a database-by-database basis.
+   */
+  EXODUS_EXPORT int ex_set_max_name_length(int exoid, int length);
+
   EXODUS_EXPORT int ex_get_varid_var(int   exoid,
 				     int   time_step,
 				     int   varid,
@@ -801,7 +818,28 @@ extern "C" {
   /* ERROR CODE DEFINITIONS AND STORAGE                                       */
   extern int exerrval;     /**< shared error return value                */
   extern int exoptval;     /**< error reporting flag (default is quiet)  */
-  
+
+  /**
+   * For output databases, the maximum length of any entity, variable,
+   * property, attribute, or coordinate name to be written (not
+   * including the NULL terminator). If a name is longer than this
+   * value, a warning message will be output to stderr and the name
+   * will be truncated.  Must be set (via call to
+   * 'ex_set_max_name_length(exoid, int len)' prior to calling ex_create.
+   *
+   * For input databases, the size of the name arrays that the client
+   * code will be passing to API routines that retrieve names (not
+   * including the NULL terminator). This defaults to 32 for
+   * compatibility with older clients. The value used at the time of
+   * creation of the database can be queried by ex_inquire with the
+   * EX_INQ_DB_MAX_NAME_LENGTH argument. The current value for this
+   * variable can be queried with EX_INQ_CUR_MAX_NAME_LENGTH argument.
+   *
+   * Note that this is a global setting for all databases. If you are
+   * accessing multiple databases, they will all use the same value.
+   */
+   extern int ex_max_name_length; 
+				    
   char* ex_name_of_object(ex_entity_type obj_type);
   ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
 

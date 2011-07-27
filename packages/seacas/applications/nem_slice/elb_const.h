@@ -44,7 +44,7 @@
 /* Maximum length of a filename */
 #define MAX_FNL 1024
 
-#define ELB_VERSION	"3.36"
+#define ELB_VERSION	"3.37"
 #define UTIL_NAME	"nem_slice"
 #define ELB_FALSE	0
 #define ELB_TRUE	1
@@ -175,8 +175,7 @@ struct Weight_Description
    * the default value at the top of this file is used. */
   char  exo_filename[MAX_FNL+1];
 
-  /* MAX_STR_LENGTH is defined in exodusII.h */
-  char  exo_varname[MAX_STR_LENGTH];
+  char  exo_varname[NC_MAX_NAME];
   int   exo_tindx;
   int   exo_vindx;
 

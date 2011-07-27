@@ -256,7 +256,10 @@ const std::string FileInfo::basename() const
 const std::string FileInfo::realpath() const
 {
   char *path = ::realpath(filename_.c_str(), NULL);
-  return std::string(path);
+  if (path)
+    return std::string(path);
+  else
+    return filename_;
 }
 
 bool FileInfo::remove_file()

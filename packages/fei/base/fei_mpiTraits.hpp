@@ -24,6 +24,14 @@ namespace fei {
   /** Simple trait struct for querying the mpi-data-type of
    an intrinsic type. */
   template<>
+    struct mpiTraits<char> {
+      /** mpi type query */
+      static MPI_Datatype mpi_type() {return(MPI_CHAR);};
+    };
+
+  /** Simple trait struct for querying the mpi-data-type of
+   an intrinsic type. */
+  template<>
     struct mpiTraits<float> {
       /** mpi type query */
       static MPI_Datatype mpi_type() {return(MPI_FLOAT);};

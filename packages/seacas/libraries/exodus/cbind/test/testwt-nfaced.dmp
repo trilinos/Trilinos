@@ -4,6 +4,7 @@ dimensions:
 	len_line = 81 ;
 	four = 4 ;
 	time_step = UNLIMITED ; // (0 currently)
+	len_name = 33 ;
 	num_dim = 3 ;
 	num_nodes = 14 ;
 	num_elem = 3 ;
@@ -27,9 +28,9 @@ variables:
 	float coordx(num_nodes) ;
 	float coordy(num_nodes) ;
 	float coordz(num_nodes) ;
-	char eb_names(num_el_blk, len_string) ;
-	char fa_names(num_fa_blk, len_string) ;
-	char coor_names(num_dim, len_string) ;
+	char eb_names(num_el_blk, len_name) ;
+	char fa_names(num_fa_blk, len_name) ;
+	char coor_names(num_dim, len_name) ;
 	int fbconn1(num_nod_per_fa1) ;
 		fbconn1:elem_type = "nsided" ;
 	int fbepecnt1(num_fa_in_blk1) ;
@@ -47,6 +48,7 @@ variables:
 		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
 		:title = "This is a test" ;
+		:maximum_name_length = 32 ;
 data:
 
  eb_status = 1 ;

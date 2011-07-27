@@ -140,8 +140,8 @@ namespace LOCA {
        * the eigenvector \f$z\f$.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      rayleighQuotient(const NOX::Abstract::Vector& evec_r,
-		       const NOX::Abstract::Vector& evec_i,
+      rayleighQuotient(NOX::Abstract::Vector& evec_r,
+		       NOX::Abstract::Vector& evec_i,
 		       double& rq_r, double& rq_i) const;
 
     protected:
@@ -153,7 +153,7 @@ namespace LOCA {
       string myLabel;
 
       //! Stores parameters relating to the operator
-      Teuchos::RCP<Teuchos::ParameterList> eigenParams;
+      mutable Teuchos::RCP<Teuchos::ParameterList> eigenParams;
 
       //! Stores linear solver parameters
       Teuchos::RCP<Teuchos::ParameterList> solverParams;

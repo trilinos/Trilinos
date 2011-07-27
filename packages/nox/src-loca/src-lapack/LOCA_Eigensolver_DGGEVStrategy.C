@@ -87,22 +87,6 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 
   bool hasMassMatrix = true;
  
-  // Check to make sure we have dggev available if we need generalized 
-  // eigenvalues.
-#if defined(HAVE_LAPACK_GGEV) || defined(HAVE_LAPACK_GEGV)
-  // Do nothing
-#else
-  if (hasMassMatrix) {
-    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
-      globalData->locaErrorCheck->printWarning(
-	"LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues",
-	"LAPACK Generalized eigensolver (dggev) requested but not available!");
-    }
-    return LOCA::Abstract::Group::Ok;
-  }
-
-#endif
-
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
     globalData->locaUtils->out() 
       << std::endl << globalData->locaUtils->fill(64,'=') << std::endl
@@ -160,10 +144,8 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
     // Copy mass matrix since lapack routines overwrite it
     M = massMatrix;
 
-#if defined(HAVE_LAPACK_GGEV) || defined(HAVE_LAPACK_GEGV)
     DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
 	      vr, &n, vr, &n, &work0, &lwork, &info);
-#endif
   }
   else {
     DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai, 
@@ -176,10 +158,8 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 
   // Calculate eigenvalues, eigenvectors
   if (hasMassMatrix) {
-#if defined(HAVE_LAPACK_GGEV) || defined(HAVE_LAPACK_GEGV)
     DGGEV_F77("N", "V", &n, &J(0,0), &lda, &M(0,0), &ldb, alphar, alphai, beta,
 	      vr, &n, vr, &n, work, &lwork, &info);
-#endif
   }
   else {
     DGEEV_F77("N", "V", &n, &J(0,0), &lda, alphar, alphai, 

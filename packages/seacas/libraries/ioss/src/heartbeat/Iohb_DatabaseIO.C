@@ -270,7 +270,7 @@ namespace Iohb {
   {
     return -1;
   }
-  int DatabaseIO::get_field_internal(const Ioss::SideSet* /* es */, const Ioss::Field& /* field */,
+  int DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
@@ -352,7 +352,7 @@ namespace Iohb {
   {
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::SideBlock* /* nb */, const Ioss::Field& /* field */,
+  int DatabaseIO::put_field_internal(const Ioss::SideBlock* /* fb */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
@@ -368,7 +368,7 @@ namespace Iohb {
   {
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::SideSet* /* es */, const Ioss::Field& /* field */,
+  int DatabaseIO::put_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;

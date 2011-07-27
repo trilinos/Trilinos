@@ -41,6 +41,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 // From test/Utilities directory
 #include "Traits.hpp"
@@ -59,6 +60,8 @@ int main(int argc, char *argv[])
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
+
+  Teuchos::GlobalMPISession mpi_session(&argc, &argv);
   
   try {
     

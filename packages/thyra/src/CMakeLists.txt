@@ -1,89 +1,12 @@
 
 INCLUDE(PackageLibraryMacros)
 
-#
-# A) Package-specific configuration options
-#
-
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
-
-#
-# B) Define the header and source files (and directories)
-#
-
 SET(HEADERS "")
 SET(SOURCES "")
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_vector/fundamental)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(HEADERS ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_vector/extended)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/operator_vector/client_support)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/operator_vector/adapter_support)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_solve/fundamental)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_solve/extended)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/operator_solve/client_support)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/nonlinear/model_evaluator/fundamental)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/nonlinear/model_evaluator/client_support)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/nonlinear/solvers/fundamental)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/nonlinear/solvers/client_support)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-# Must glob the binary dir last to get all of the auto-generated headers
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_Config.h )
-
-SET_AND_INC_DIRS(DIR ${PACKAGE_SOURCE_DIR}/example/operator_vector)
-APPEND_SET(HEADERS ${DIR}/sillyModifiedGramSchmidt.hpp)
-
-#
-# C) Define the targets for package's library(s)
-#
 
 PACKAGE_ADD_LIBRARY(
   thyra

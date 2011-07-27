@@ -89,7 +89,7 @@ namespace Excn {
   class Internals
     {
     public:
-      explicit Internals(int exoid);
+      explicit Internals(int exoid, int maximum_name_length);
 
       int write_meta_data(const Mesh &mesh,
 			  const std::vector<Block>   &blocks,
@@ -121,6 +121,7 @@ namespace Excn {
       int elementMapVarID[2];
       int commIndexVar;
       int elemCommIndexVar;
+      int maximumNameLength; 
     };
 }
 #endif /* SEACAS_Internals_h */

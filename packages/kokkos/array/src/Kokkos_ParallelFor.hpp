@@ -41,7 +41,6 @@
 #define KOKKOS_PARALLELFOR_HPP
 
 #include <cstddef>
-#include <Kokkos_ArrayForwardDeclarations.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 namespace Kokkos {
@@ -99,23 +98,6 @@ void parallel_for( const size_t work_count ,
 }
 
 } // namespace Kokkos
-
-//----------------------------------------------------------------------------
-// Partial specializations for known devices
-
-#if defined( KOKKOS_DEVICE_HOST )
-#include <DeviceHost/Kokkos_DeviceHost_ParallelFor.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_TPI )
-#include <DeviceTPI/Kokkos_DeviceTPI_ParallelFor.hpp>
-#endif
-
-#if defined( KOKKOS_DEVICE_CUDA )
-#include <DeviceCuda/Kokkos_DeviceCuda_ParallelFor.hpp>
-#endif
-
-//----------------------------------------------------------------------------
 
 #endif /* KOKKOS_DEVICEHOST_PARALLELFOR_HPP */
 

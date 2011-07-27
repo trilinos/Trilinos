@@ -73,10 +73,8 @@ int ex_get_coord_names (int    exoid,
                         char **coord_names)
 {
   int status;
-  size_t i;
-  int j, ndimdim, varid;
-  size_t num_dim, start[2];
-  char *ptr;
+  int ndimdim, varid;
+  size_t num_dim;
   char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0;
@@ -112,38 +110,9 @@ int ex_get_coord_names (int    exoid,
 
 
   /* read the coordinate names */
-  for (i=0; i<num_dim; i++) {
-    start[0] = i;
-    start[1] = 0;
-
-    j = 0;
-    ptr = coord_names[i];
-
-    if ((status = nc_get_var1_text(exoid, varid, start, ptr)) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-	      "Error: failed to get coordinate names in file id %d", exoid);
-      ex_err("ex_get_coord_names",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-
- 
-    while ((*ptr++ != '\0') && (j < MAX_STR_LENGTH)) {
-      start[1] = ++j;
-      if ((status = nc_get_var1_text(exoid, varid, start, ptr)) != NC_NOERR) {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to get coordinate names in file id %d", exoid);
-	ex_err("ex_get_coord_names",errmsg,exerrval);
-	return (EX_FATAL);
-      }
-    }
-    --ptr;
-    if (ptr > coord_names[i]) {
-      /*    get rid of trailing blanks */
-      while (--ptr >= coord_names[i] && *ptr == ' ');
-    }
-    *(++ptr) = '\0';
+  status = ex_get_names_internal(exoid, varid, num_dim, coord_names, EX_COORDINATE, "ex_get_coord_names");
+  if (status != NC_NOERR) {
+    return (EX_FATAL);
   }
   return (EX_NOERR);
 }

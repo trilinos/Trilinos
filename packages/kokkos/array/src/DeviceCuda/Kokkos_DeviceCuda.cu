@@ -72,7 +72,7 @@ public:
   Impl::MemoryInfoSet       m_allocations ;
   struct cudaDeviceProp     m_cudaProp ;
   int                       m_cudaDev ;
-  unsigned                  m_maxWarp ;
+  unsigned                  m_maxWarpCount ;
   unsigned                  m_maxBlock ;
   std::vector<cudaStream_t> m_streams ;
   DeviceCuda::size_type   * m_reduceScratchSpace ;
@@ -107,7 +107,7 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   : m_allocations()
   , m_cudaProp()
   , m_cudaDev( cuda_device_id )
-  , m_maxWarp( 0 )
+  , m_maxWarpCount( 0 )
   , m_maxBlock( 0 )
   , m_streams()
   , m_reduceScratchSpace( 0 )
@@ -144,25 +144,32 @@ DeviceCuda_Impl::DeviceCuda_Impl( int cuda_device_id )
   // Maximum number of warps,
   // at most one warp per thread in a warp for reduction.
 
-  // m_maxWarp = Impl::DeviceCudaTraits::WarpSize ;
+  // m_maxWarpCount = Impl::DeviceCudaTraits::WarpSize ;
   // while ( m_cudaProp.maxThreadsPerBlock <
-  //         Impl::DeviceCudaTraits::WarpSize * m_maxWarp ) {
-  //   m_maxWarp >>= 1 ;
+  //         Impl::DeviceCudaTraits::WarpSize * m_maxWarpCount ) {
+  //   m_maxWarpCount >>= 1 ;
   // }
 
-  m_maxWarp = 8 ; // For performance use fewer warps and more blocks...
+  m_maxWarpCount = 8 ; // For performance use fewer warps and more blocks...
 
   //----------------------------------
-  // Set the maximum number of blocks to the maximum number of
-  // resident blocks per multiprocessor times the number of
-  // multiprocessors on the device.  Once a block is active on
-  // a multiprocessor then let it do all the work that it can.
+  {
+    // Set the maximum number of blocks to the maximum number of
+    // resident blocks per multiprocessor times the number of
+    // multiprocessors on the device.  Once a block is active on
+    // a multiprocessor then let it do all the work that it can.
 
-  enum { MaxResidentBlocksPerMultiprocessor = 8 };
+    enum { MaxResidentBlocksPerMultiprocessor = 8 };
 
-  m_maxBlock = m_cudaProp.multiProcessorCount *
-               MaxResidentBlocksPerMultiprocessor ;
+    const unsigned minBlock = m_cudaProp.multiProcessorCount *
+                              MaxResidentBlocksPerMultiprocessor ;
 
+    m_maxBlock = 1 ;
+    while ( m_maxBlock < minBlock &&
+            ( m_maxBlock << 1 ) <= m_cudaProp.maxGridSize[0] ) {
+      m_maxBlock <<= 1 ;
+    }
+  }
   //----------------------------------
   // Allocate a parallel stream for each multiprocessor
   // to support concurrent heterogeneous multi-functor execution.
@@ -296,7 +303,7 @@ DeviceCuda::size_type
 DeviceCuda::maximum_warp_count()
 {
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
-  return s.m_maxWarp ;
+  return s.m_maxWarpCount ;
 }
 
 DeviceCuda::size_type
@@ -307,12 +314,27 @@ DeviceCuda::maximum_grid_count()
   return s.m_maxBlock ;
 }
 
-const std::vector<cudaStream_t> &
-DeviceCuda::streams()
+DeviceCuda::size_type
+DeviceCuda::stream_count()
 {
   DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
 
-  return s.m_streams ;
+  return s.m_streams.size();
+}
+
+cudaStream_t &
+DeviceCuda::stream( DeviceCuda::size_type i )
+{
+  DeviceCuda_Impl & s = DeviceCuda_Impl::singleton();
+
+  if ( s.m_streams.size() <= i ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::DeviceCuda::streams( " << i << " ) ERROR "
+        << "stream_count = " << s.m_streams.size() ;
+    throw std::logic_error( msg.str() );
+  }
+
+  return s.m_streams[i] ;
 }
 
 /*--------------------------------------------------------------------------*/

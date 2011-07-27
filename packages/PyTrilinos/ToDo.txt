@@ -2,10 +2,13 @@
 PyTrilinos To Do List
 =====================
 
+Amesos unit tests
+New Amesos TPL support
+Anasazi unit tests
+AztecOO BasicRowMatrix unit tests?
+
 * General
   - Automate documentation
-  - Trilinos 10.6 website/documentation
-  - Move all compiled C++ code into PyTrilinos namespace
 
 * Teuchos
   - Unit tests
@@ -23,7 +26,6 @@ PyTrilinos To Do List
   - Examples
 
 * Isorropia
-  - Create new wrappers
   - Unit tests
   - Examples
 
