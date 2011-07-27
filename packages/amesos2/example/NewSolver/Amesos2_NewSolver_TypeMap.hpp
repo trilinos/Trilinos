@@ -151,12 +151,12 @@ namespace Teuchos {
 } // end namespace Teuchos
 
 
-namespace Amesos {
+namespace Amesos2 {
 
   // forward declaration due to circular reference
   template <class, class> class NewSolver;
 
-  /* Specialize the Amesos::TypeMap struct for NewSolver types.
+  /* Specialize the Amesos2::TypeMap struct for NewSolver types.
    *
    * Additional nested types may be added without harm.  For an example, look at
    * Amesos2_Superlu_TypeMap.hpp
@@ -215,6 +215,6 @@ namespace Amesos {
   };
 #endif	// HAVE_TEUCHOS_COMPLEX
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_NEWSOLVER_TYPEMAP_HPP

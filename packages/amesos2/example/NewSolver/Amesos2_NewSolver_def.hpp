@@ -12,7 +12,7 @@
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_NewSolver_decl.hpp"
 
-namespace Amesos {
+namespace Amesos2 {
 
 
   template <class Matrix, class Vector>
@@ -20,7 +20,7 @@ namespace Amesos {
 				      Teuchos::RCP<const Matrix> A,
 				      Teuchos::RCP<Vector>       X,
 				      Teuchos::RCP<const Vector> B)
-    : SolverCore<Amesos::NewSolver,Matrix,Vector>(A, X, B) // instantiate superclass
+    : SolverCore<Amesos2::NewSolver,Matrix,Vector>(A, X, B) // instantiate superclass
     , nzvals_()
     , colind_()
     , rowptr_()
@@ -120,8 +120,7 @@ namespace Amesos {
 
   template <class Matrix, class Vector>
   void
-  NewSolver<Matrix,Vector>::setParameters_impl(
-					       const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
+  NewSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
   {
     /*
      * Set solver-specific parameters
@@ -161,6 +160,18 @@ namespace Amesos {
     }
   }
 
+  template <class Matrix, class Vector>
+  Teuchos::RCP<const Teuchos::ParameterList>
+  Newsolver<Matrix,Vector>::getValidParameters_impl() const
+  {
+    using Teuchos::ParameterList;
+
+    ParameterList valid_params;
+
+    // valid_params.set("Parameter", default_value, doc_string);
+
+    return Teuchos::rcpFromRef( valid_params );
+  }
 
   template <class Matrix, class Vector>
   bool
@@ -186,6 +197,6 @@ namespace Amesos {
   const char* NewSolver<Matrix,Vector>::name = "NewSolver";
 
 
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_NEWSOLVER_DEF_HPP

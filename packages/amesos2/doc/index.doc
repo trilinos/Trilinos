@@ -45,9 +45,10 @@ small examples of usage -->
 
 \subsection Amesos2_sclasses Amesos2 Solver-interface Classes
 
-Amesos::Solver provides the uniform solver interface for all the supported third party solvers. Users can use the non-member functions 
-\c Amesos::query to query for a solver and 
-\c Amesos::create to create a solver. (Please see Amesos2_Factory_decl.hpp for details)
+Amesos2::Solver provides the uniform solver interface for all the
+supported third party solvers. Users can use the non-member functions
+\c Amesos2::query to query for a solver and \c Amesos2::create to
+create a solver. (Please see Amesos2_Factory_decl.hpp for details)
 
 There is currently Amesos2 support for the following list of
 third-party solver libraries.
@@ -62,7 +63,7 @@ third-party solver libraries.
 A templated version of KLU (KLU2) will be included in Amesos2.
 
 In order to enable a solver's use in Amesos2 you must also enable the
-solver's third-party library in Trilinos. 
+solver's third-party library in Trilinos.
 
 \subsection Amesos2_aclasses Amesos2 Adapter Classes
 
@@ -82,17 +83,17 @@ supported, please ask the Amesos2 developers about adding support.
   <li> Matrix adapters exist for the following matrix classes
     <ul>
       <li> Tpetra::RowMatrix implementing classes:
-	<ul>
-	  <li> Tpetra::CrsMatrix</li>
-	</ul>
+        <ul>
+          <li> Tpetra::CrsMatrix</li>
+        </ul>
       </li>
       <li> Epetra_RowMatrix implementing classes:
-	<ul>
-	  <li> Epetra_CrsMatrix</li>
-<!--	  <li> Epetra_JadMatrix</li>
-	  <li> Epetra_MsrMatrix</li>
-	  <li> Epetra_VbrMatrix</li> -->
-	</ul>
+        <ul>
+          <li> Epetra_CrsMatrix</li>
+<!--      <li> Epetra_JadMatrix</li>
+          <li> Epetra_MsrMatrix</li>
+          <li> Epetra_VbrMatrix</li> -->
+        </ul>
       </li>
     </ul>
   </li>
@@ -105,4 +106,3 @@ supported, please ask the Amesos2 developers about adding support.
 </ul>
 
 */
-

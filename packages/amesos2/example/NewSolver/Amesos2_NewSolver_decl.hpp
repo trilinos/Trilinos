@@ -18,7 +18,7 @@
 #include "Amesos2_NewSolver_TypeMap.hpp"
 
 
-namespace Amesos {
+namespace Amesos2 {
 
 
   /** \brief Amesos2 interface to the NewSolver package.
@@ -31,9 +31,9 @@ namespace Amesos {
    */
   template <class Matrix,
 	    class Vector>
-  class NewSolver : public SolverCore<Amesos::NewSolver, Matrix, Vector> 
+  class NewSolver : public SolverCore<Amesos2::NewSolver, Matrix, Vector> 
   {
-    friend class SolverCore<Amesos::NewSolver,Matrix,Vector>; // Give our base access
+    friend class SolverCore<Amesos2::NewSolver,Matrix,Vector>; // Give our base access
     // to our private
     // implementation funcs
   public:
@@ -65,7 +65,7 @@ namespace Amesos {
      * \brief Initialize from Teuchos::RCP.
      *
      * \warning Should not be called directly!  Use instead
-     * Amesos::create() to initialize a NewSolver interface.
+     * Amesos2::create() to initialize a NewSolver interface.
      */
     NewSolver(Teuchos::RCP<const Matrix> A,
 	      Teuchos::RCP<Vector>       X,
@@ -191,6 +191,6 @@ namespace Amesos {
 			     std::complex<double> > supported_scalars;
 };
   
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif	// AMESOS2_NEWSOLVER_DECL_HPP

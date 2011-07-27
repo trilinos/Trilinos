@@ -20,38 +20,38 @@
 #include "Amesos2_NewSolver_TypeMap.hpp"
 
 
-/*
- * External declarations of the NewSolver functions in namespace New_Solver
- */
-namespace New_Solver {
+namespace Amesos2 {
 
-  extern "C" {
+  /*
+   * External declarations of the NewSolver functions in namespace New_Solver
+   */
+  namespace New_Solver {
 
-    /*
-     * Include solver headers for different data types in different namespaces.
-     */
-    namespace S {
-      // include here single-precision real definition headers
-    }
+    extern "C" {
 
-    namespace D {
-      // include here double-precision real definition headers
-    }
+      /*
+       * Include solver headers for different data types in different namespaces.
+       */
+      namespace S {
+	// include here single-precision real definition headers
+      }
 
-    namespace C {
-      // include here single-precision complex definition headers
-    }
+      namespace D {
+	// include here double-precision real definition headers
+      }
 
-    namespace Z {
-      // include here double-precision complex definition headers
-    }
+      namespace C {
+	// include here single-precision complex definition headers
+      }
 
-  } // end extern "C"
+      namespace Z {
+	// include here double-precision complex definition headers
+      }
 
-} // end namespace New_Solver
+    } // end extern "C"
 
+  } // end namespace New_Solver
 
-namespace Amesos {
 
   /** 
    * Helper class which passes on function calls to the appropriate
@@ -221,7 +221,6 @@ namespace Amesos {
    * etc. for as many types as need supporting
    */
 
-
-} // end namespace Amesos
+} // end namespace Amesos2
 
 #endif  // AMESOS2_NEWSOLVER_FUNCTIONMAP_HPP
