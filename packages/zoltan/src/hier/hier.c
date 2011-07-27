@@ -891,7 +891,7 @@ int Zoltan_Hier(
   int *input_parts=NULL;
   int *hier_import_procs=NULL, *hier_import_to_part=NULL;
   int *hier_export_procs=NULL, *hier_export_to_part=NULL;
-  int *fromProc, *toPart = NULL;
+  int *fromProc = NULL, *toPart = NULL;
   ZOLTAN_ID_TYPE *global_ids=NULL, *local_ids=NULL;
   ZOLTAN_ID_TYPE *inGids=NULL, *inLids=NULL, *appids=NULL;
   ZOLTAN_ID_TYPE *hier_import_gids=NULL, *hier_import_lids=NULL;
