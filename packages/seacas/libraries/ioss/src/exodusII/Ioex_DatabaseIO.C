@@ -5321,21 +5321,26 @@ namespace Ioex {
 
     // Flush the files buffer to disk...
     // If a history file, then only flush if there is more
-    // than 90 seconds since the last flush to avoid
+    // than 10 seconds since the last flush to avoid
     // the flush eating up cpu time for small fast jobs...
     // NOTE: If decide to do this on all files, need to sync across
     // processors to make sure they all flush at same time.
 
     // GDS: 2011/03/30 -- Use for all non-parallel files, but shorten
-    // time for non history files.  Assume that can afford to lose ~90
+    // time for non history files.  Assume that can afford to lose ~10
     // seconds worth of data...  (Flush was taking long time on some
     // /scratch filesystems at SNL for short regression tests with
     // lots of steps)
+    // GDS: 2011/07/27 -- shorten from 90 to 10.  Developers running
+    // small jobs were not able to view output until job
+    // finished. Hopefully the netcdf no-fsync fix along with this fix
+    // results in negligible impact on runtime with more syncs.
+
     bool do_flush = true;
     if (dbUsage == Ioss::WRITE_HISTORY || !isParallel) {
       assert (myProcessor == 0);
       time_t cur_time = time(NULL);
-      if (cur_time - timeLastFlush >= 90) {
+      if (cur_time - timeLastFlush >= 10) {
 	timeLastFlush = cur_time;
 	do_flush = true;
       } else {
