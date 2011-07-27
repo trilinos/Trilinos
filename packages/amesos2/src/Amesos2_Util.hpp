@@ -68,13 +68,16 @@
 #include "Amesos2_TypeDecl.hpp"
 #include "Amesos2_Meta.hpp"
 
+
 namespace Amesos2 {
 
-  /**
-   * \defgroup amesos2_util Amesos2 Utilities
-   */
-
   namespace Util {
+
+    /**
+     * \internal
+     * \defgroup amesos2_util Amesos2 Utilities
+     * @{
+     */
 
     using Teuchos::RCP;
     using Teuchos::ArrayView;
@@ -379,8 +382,7 @@ namespace Amesos2 {
     };
 #endif	// DOXYGEN_SHOULD_SKIP_THIS
 
-    /** \internal
-     *
+    /**
      * \brief A generic base class for the CRS and CCS helpers.
      *
      * S, GO, and GS are the desired types.  They are also the types
@@ -530,8 +532,7 @@ namespace Amesos2 {
     };
 #endif	// DOXYGEN_SHOULD_SKIP_THIS
 
-    /** \internal
-     * 
+    /**
      * \brief A generic helper class for getting a CCS representation
      * of a Matrix.
      *
@@ -572,8 +573,7 @@ namespace Amesos2 {
     struct get_ccs_helper : get_cxs_helper<Matrix,S,GO,GS,get_ccs_func<Matrix> >
     {};
 
-    /** \internal
-     * 
+    /**
      * \brief Similar to get_ccs_helper , but used to get a CRS
      * representation of the given matrix.
      *
@@ -789,6 +789,8 @@ namespace Amesos2 {
 	vals[i] = binary_op(vals[i], s[s_i]);
       }
     }
+
+    /** @} */
 
   } // end namespace Util
 

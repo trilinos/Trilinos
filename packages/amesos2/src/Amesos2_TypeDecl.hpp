@@ -13,8 +13,13 @@
 
 namespace Amesos2 {
 
+  /**
+   * \brief Used to indicate a phase in the direct solution.
+   *
+   * \ingroup amesos2_enums
+   */
   typedef enum {
-    CLEAN = 0,
+    CLEAN,
     PREORDERING,
     SYMBFACT,
     NUMFACT,
@@ -60,6 +65,8 @@ namespace Amesos2 {
    * An enum of this type is expected by the Matrix adapters' getCrs
    * and getCcs functions to describe the layout of the
    * representation on the calling processors.
+   *
+   * \ingroup amesos2_enums
    */
   typedef enum {
     DISTRIBUTED,                /**< no processor has a view of the entire matrix, only local pieces */
@@ -76,7 +83,7 @@ namespace Amesos2 {
    * the indices of the representation must be in sorted order or
    * can have an arbitrary order.
    *
-   * \ingroup amesos2_utils
+   * \ingroup amesos2_enums
    */
   typedef enum {
     SORTED_INDICES,             /**< row/col indices need to appear in sorted order */
