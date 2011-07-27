@@ -295,8 +295,8 @@ Superlumt<Matrix,Vector>::numericFactorization_impl()
     }
 
     // Set the number of non-zero values in the L and U factors
-    this->setLNNZ(as<size_t>(((SLUMT::SCformat*)data_.L.Store)->nnz));
-    this->setUNNZ(as<size_t>(((SLUMT::NCformat*)data_.U.Store)->nnz));
+    this->setNnzLU( as<size_t>(((SLUMT::SCformat*)data_.L.Store)->nnz +
+			       ((SLUMT::NCformat*)data_.U.Store)->nnz) );
   }
 
   // Check output

@@ -55,7 +55,6 @@
 
 #include "Amesos2_MatrixAdapter_def.hpp"
 #include "Amesos2_MultiVecAdapter_def.hpp"
-// #include "Amesos2_MultiVecAdapter.hpp"
 
 #include "Amesos2_Util.hpp"
 
@@ -414,35 +413,35 @@ SolverCore<ConcreteSolver,Matrix,Vector>::printTiming(
       << std::endl;
 
   out << p << "Number of pre-orderings = "
-      << getNumPreOrder()
+      << status_.getNumPreOrder()
       << std::endl;
   out << p << "Time for pre-ordering = "
       << preTime << " (s), avg = "
-      << preTime / getNumPreOrder() << " (s)"
+      << preTime / status_.getNumPreOrder() << " (s)"
       << std::endl;
 
   out << p << "Number of symbolic factorizations = "
-      << getNumSymbolicFact()
+      << status_.getNumSymbolicFact()
       << std::endl;
   out << p << "Time for sym fact = "
       << symTime << " (s), avg = "
-      << symTime / getNumSymbolicFact() << " (s)"
+      << symTime / status_.getNumSymbolicFact() << " (s)"
       << std::endl;
 
   out << p << "Number of numeric factorizations = "
-      << getNumNumericFact()
+      << status_.getNumNumericFact()
       << std::endl;
   out << p << "Time for num fact = "
       << numTime << " (s), avg = "
-      << numTime / getNumNumericFact() << " (s)"
+      << numTime / status_.getNumNumericFact() << " (s)"
       << std::endl;
 
   out << p << "Number of solve phases = "
-      << getNumSolve()
+      << status_.getNumSolve()
       << std::endl;
   out << p << "Time for solve = "
       << solTime << " (s), avg = "
-      << solTime / getNumSolve() << " (s)"
+      << solTime / status_.getNumSolve() << " (s)"
       << std::endl;
 
   out << p << "Total time spent in Amesos2 = "

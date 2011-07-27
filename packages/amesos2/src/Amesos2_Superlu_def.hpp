@@ -111,7 +111,7 @@ Superlu<Matrix,Vector>::~Superlu( )
   }
 
   // Storage is initialized in solve_impl()
-  if ( this->getNumSolve() > 0 && this->root_ ){
+  if ( this->status_.getNumSolve() > 0 && this->root_ ){
     /* Cannot use SLU::Destroy_Dense_Matrix routine here, since it attempts to
      * free the array of non-zero values, but that array has already been
      * deallocated by the MultiVector object.  So we release just the Store
@@ -178,7 +178,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   // Cleanup old L and U matrices if we are not reusing a symbolic
   // factorization.  Stores and other data will be allocated in gstrf.
   // Only rank 0 has valid pointers
-  if ( !same_symbolic_ && this->getNumNumericFact() > 0 && this->root_ ){
+  if ( !same_symbolic_ && this->status_.getNumNumericFact() > 0 && this->root_ ){
     SLU::Destroy_SuperNode_Matrix( &(data_.L) );
     SLU::Destroy_CompCol_Matrix( &(data_.U) );
   }
@@ -245,8 +245,8 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
     SLU::Destroy_CompCol_Permuted( &(data_.AC) );
 
     // Set the number of non-zero values in the L and U factors
-    this->setLNNZ(as<size_t>(((SLU::SCformat*)data_.L.Store)->nnz));
-    this->setUNNZ(as<size_t>(((SLU::NCformat*)data_.U.Store)->nnz));
+    this->setNnzLU( as<size_t>(((SLU::SCformat*)data_.L.Store)->nnz +
+			       ((SLU::NCformat*)data_.U.Store)->nnz) );
   }
 
   /* All processes should have the same error code */
@@ -300,7 +300,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     data_.berr.resize(nrhs);
 
     // Clean up old X and B stores if they have already been created
-    if( this->getNumSolve() > 0 ){
+    if( this->status_.getNumSolve() > 0 ){
       SLU::Destroy_SuperMatrix_Store( &(data_.X) );
       SLU::Destroy_SuperMatrix_Store( &(data_.B) );
     }

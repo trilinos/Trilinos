@@ -288,22 +288,6 @@ namespace Amesos2 {
     virtual Status& getStatus() const = 0;
 
 
-    /// Returns the number of pre-orderings performed by this object.
-    virtual int getNumPreOrder( void ) const = 0;
-    
-
-    /// Returns the number of symbolic factorizations performed by this object.
-    virtual int getNumSymbolicFact( void ) const = 0;
-
-
-    /// Returns the number of numeric factorizations performed by this object.
-    virtual int getNumNumericFact( void ) const = 0;
-
-
-    /// Returns the number of solves performed by this object.
-    virtual int getNumSolve( void ) const = 0;
-
-
     /// Return the name of this solver.
     virtual std::string name( void ) const = 0;
 

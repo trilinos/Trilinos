@@ -161,7 +161,7 @@ namespace Amesos2 {
      * Note: the function definitions are the same regardless whether
      * complex or real, so we arbitrarily use the D namespace
      */
-    if ( this->getNumPreOrder() > 0 ){
+    if ( this->status_.getNumPreOrder() > 0 ){
       free( data_.sizes );
       free( data_.fstVtxSep );
     }
@@ -173,7 +173,7 @@ namespace Amesos2 {
     }
 
     // LU data is initialized in numericFactorization_impl()
-    if ( this->getNumNumericFact() > 0 ){
+    if ( this->status_.getNumNumericFact() > 0 ){
       function_map::Destroy_LU(this->globalNumRows_, &(data_.grid), &(data_.lu));
     }
     function_map::LUstructFree(&(data_.lu));
@@ -235,7 +235,7 @@ namespace Amesos2 {
       // get_perm_c_parmetis.  Delete them before calling that
       // function again.  These arrays will also be dealloc'd in the
       // deconstructor.
-      if( this->getNumPreOrder() > 0 ){
+      if( this->status_.getNumPreOrder() > 0 ){
 	free( data_.sizes );
 	free( data_.fstVtxSep );
       }

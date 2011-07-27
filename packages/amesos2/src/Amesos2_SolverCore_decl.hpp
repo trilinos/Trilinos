@@ -367,21 +367,6 @@ namespace Amesos2 {
     inline Status& getStatus() const { return( status_ ); }
 
 
-    /// Returns the number of pre-orderings performed by this object.
-    inline int getNumPreOrder() const { return( status_.getNumPreOrder() ); }
-
-
-    /// Returns the number of symbolic factorizations performed by this object.
-    inline int getNumSymbolicFact() const { return( status_.getNumSymbolicFact() ); }
-
-
-    /// Returns the number of numeric factorizations performed by this object.
-    inline int getNumNumericFact() const { return( status_.getNumNumericFact() ); }
-
-
-    /// Returns the number of solves performed by this object.
-    inline int getNumSolve() const { return( status_.getNumSolve() ); }
-
     //@} End Accessor methods
 
 
@@ -456,21 +441,13 @@ namespace Amesos2 {
 
   protected:
 
-    /** \brief Set the number of non-zero values in the \f$L\f$ factor
+    /** \brief Set the number of non-zero values in the \f$L\f$ and \f$U\f$ factors
      *
      * Concrete solver classes may call this method if they wish to
-     * (or are able to) report the number of non-zero values in the
-     * \f$L\f$ factor.
+     * (or are able to) report the number of conbined non-zero count
+     * for the \f$L\f$ and \f$U\f$ factors.
      */
-    void setLNNZ(size_t nnz){ status_.l_nnz_ = nnz; }
-
-    /** \brief Set the number of non-zero values in the \f$U\f$ factor
-     *
-     * Concrete solver classes may call this method if they wish to
-     * (or are able to) report the number of non-zero values in the
-     * \f$U\f$ factor.
-     */
-    void setUNNZ(size_t nnz){ status_.u_nnz_ = nnz; }
+    void setNnzLU(size_t nnz){ status_.lu_nnz_ = nnz; }
 
     /// The LHS operator
     Teuchos::RCP<const MatrixAdapter<Matrix> > matrixA_;
