@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#if defined(SIERRA_PTMALLOC3_ALLOCATOR)
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
 size_t malloc_used();
 size_t malloc_footprint();
 size_t malloc_max_footprint();

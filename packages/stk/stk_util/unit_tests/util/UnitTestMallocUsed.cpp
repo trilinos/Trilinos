@@ -16,7 +16,7 @@
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_8)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 8;
     
   size_t start = malloc_used();
@@ -39,7 +39,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_8)
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_16)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 16;
     
   size_t start = malloc_used();
@@ -62,7 +62,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_16)
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_32)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 32;
     
   size_t start = malloc_used();
@@ -85,7 +85,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_32)
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1024)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024;
     
   size_t start = malloc_used();
@@ -108,7 +108,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1024)
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100x1024)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024;
 
   for (size_t i = 0; i != 100; ++i)  {
@@ -134,7 +134,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100x1024)
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1M)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024*1024;
     
   size_t start = malloc_used();
@@ -157,7 +157,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1M)
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_100M)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 100*1024*1024;
     
   size_t start = malloc_used();
@@ -180,7 +180,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_100M)
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_32)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 32;
 
   size_t start = malloc_used();
@@ -206,7 +206,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_32)
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1024)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024;
 
   size_t start = malloc_used();
@@ -232,7 +232,7 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1024)
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1M)
 {
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024*1024;
 
   size_t start = malloc_used();
@@ -283,7 +283,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
   int i, r, loop, pass, subpass;
   int start_time, end_time;
   ptrdiff_t start_mem, end_mem;
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   ptrdiff_t start_footprint, end_footprint;
 #endif
   struct tms tms;
@@ -298,7 +298,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
 
   times(&tms);
   start_time = tms.tms_utime;
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   free(malloc(1));
   
   start_mem = malloc_used();
@@ -307,7 +307,9 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
   start_mem = (ptrdiff_t) sbrk(0);
 #endif
 
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR
+  std::cout << "Modified ptmalloc3 allocator: ";
+#elif defined SIERRA_PTMALLOC2_ALLOCATOR
   std::cout << "Modified ptmalloc3 allocator: ";
 #else
   std::cout << "Default allocator: ";
@@ -319,7 +321,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
   
   std::cout << std::endl;
   
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   std::cout << "Start used " << start_mem << std::endl;
   std::cout << "Start footprint " << start_footprint << std::endl;
 #endif
@@ -327,7 +329,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
   std::cout << std::endl
             << std::setw(14) << "elapsed" << "       "
     
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
             << std::setw(14) << "footprint" << "   "
             << std::setw(14) << "max_footprint" << "   "
 #endif
@@ -372,7 +374,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
 
     times(&tms);
     end_time = tms.tms_utime;
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
     end_mem = malloc_used();
     end_footprint = malloc_footprint();
 #else
@@ -381,7 +383,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
 
     elapsed = ((double)end_time - (double)start_time);
     std::cout << std::setw(14) << elapsed << " ticks "
-#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+#if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
               << std::setw(14) << (end_footprint - start_footprint)/1024 << " K "
               << std::setw(14) << malloc_max_footprint()/1024 << " K "
 #endif
