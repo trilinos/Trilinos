@@ -84,14 +84,16 @@
 
 #include "Amesos2_config.h"
 
-#include "Teuchos_ScalarTraits.hpp"
-
+#include "Amesos2_Solver.hpp"
 #include "Amesos2_SolverTraits.hpp"
+
+#include "Teuchos_ScalarTraits.hpp"
+#include "Amesos2_MultiVecAdapter.hpp"
 #include "Amesos2_MatrixTraits.hpp"
 #include "Amesos2_ctassert.hpp"
 
 #ifdef HAVE_AMESOS2_KLU2
-#include "Amesos2_Klu2_decl.hpp"
+#include "Amesos2_Klu2.hpp"
 #endif
 #ifdef HAVE_AMESOS2_SUPERLUDIST // Distributed-memory SuperLU
 #include "Amesos2_Superludist.hpp"
@@ -101,6 +103,9 @@
 #endif
 #ifdef HAVE_AMESOS2_SUPERLU     // Sequential SuperLU
 #include "Amesos2_Superlu.hpp"
+#endif
+#ifdef HAVE_AMESOS2_PARDISOMKL	// MKL version of Pardiso
+#include "Amesos2_PardisoMKL.hpp"
 #endif
 
 namespace Amesos2 {
@@ -501,20 +506,6 @@ struct throw_no_scalar_support_exception {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_MUMPS
-    if((solverName == "amesos2_mumps") || (solverName == "mumps")){
-      return handle_solver_type_support<Mumps,Matrix,Vector>::apply(A, X, B);
-      // return( rcp(new Mumps<Matrix,Vector>(A, X, B)) );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_UMFPACK
-    if((solverName == "amesos2_umfpack") || (solverName == "umfpack")){
-      return handle_solver_type_support<Umfpack,Matrix,Vector>::apply(A, X, B);
-      // return( rcp(new Umfpack<Matrix,Vector>(A, X, B)) );
-    }
-#endif
-
 #ifdef HAVE_AMESOS2_SUPERLUDIST
     if((solverName == "amesos2_superludist") ||
        (solverName == "superludist") ||
@@ -543,24 +534,13 @@ struct throw_no_scalar_support_exception {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_DSCPACK
-    if((solverName == "amesos2_dscpack") || (solverName == "dscpack")){
-      return handle_solver_type_support<Dscpack,Matrix,Vector>::apply(A, X, B);
-      // return( rcp(new Dscpack<Matrix,Vector>(A, X, B)) );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_PARDISO
-    if((solverName == "amesos2_pardiso") || (solverName == "pardiso")){
-      return handle_solver_type_support<Pardiso,Matrix,Vector>::apply(A, X, B);
+#ifdef HAVE_AMESOS2_PARDISOMKL
+    if((solverName == "amesos2_pardiso_mkl") ||
+       (solverName == "pardiso_mkl") ||
+       (solverName == "amesos2_pardisomkl")  ||
+       (solverName == "pardisomkl")){
+      return handle_solver_type_support<PardisoMKL,Matrix,Vector>::apply(A, X, B);
       // return( rcp(new Pardiso<Matrix,Vector>(A, X, B)) );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_TAUCS
-    if((solverName == "amesos2_taucs") || (solverName == "taucs")){
-      return handle_solver_type_support<Taucs,Matrix,Vector>::apply(A, X, B);
-      // return( rcp(new Taucs<Matrix,Vector>(A, X, B)) );
     }
 #endif
 

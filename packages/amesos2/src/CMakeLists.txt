@@ -185,6 +185,21 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist) # This naming syntax is consistent with 
     )
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
+  APPEND_SET(HEADER
+    Amesos2_PardisoMKL.hpp
+    Amesos2_PardisoMKL_FunctionMap.hpp
+    Amesos2_PardisoMKL_TypeMap.hpp
+    Amesos2_PardisoMKL_decl.hpp
+    Amesos2_PardisoMKL_def.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_PardisoMKL.cpp
+  )
+ENDIF()
+
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   APPEND_SET(HEADERS
     Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.hpp

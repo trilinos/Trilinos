@@ -110,31 +110,35 @@ namespace Amesos2 {
     // Meta-functions for boolean operators //
     //////////////////////////////////////////
 
-    template <bool b1, bool b2>
-    struct or : public false_type {};
-
-    template <bool b>
-    struct or<true,b> : public true_type {};
-
-    template <bool b>
-    struct or<b,true> : public true_type {};
-
+    /* Must define these with the '_' suffix because they are
+     * otherwise keywords in C++
+     */
 
     template <bool b1, bool b2>
-    struct and : public false_type {};
+    struct or_ : public false_type {};
+
+    template <bool b>
+    struct or_<true,b> : public true_type {};
+
+    template <bool b>
+    struct or_<b,true> : public true_type {};
+
+
+    template <bool b1, bool b2>
+    struct and_ : public false_type {};
 
     template <>
-    struct and<true,true> : public true_type {};
+    struct and_<true,true> : public true_type {};
 
 
     template <bool b>
-    struct not {};
+    struct not_ {};
 
     template <>
-    struct not<true> : false_type {};
+    struct not_<true> : false_type {};
 
     template <>
-    struct not<false> : true_type {};
+    struct not_<false> : true_type {};
 
 
     //////////////////////////////////////

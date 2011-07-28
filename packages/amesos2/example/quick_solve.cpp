@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 
   // Before we do anything, check that the solver is enabled
   if( !Amesos2::query(solver_name) ){
-    std::cerr << "SuperLU_DIST not enabled.  Exiting..." << std::endl;
+    std::cerr << solver_name << " not enabled.  Exiting..." << std::endl;
     return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
 				// failure, which it isn't really
   }

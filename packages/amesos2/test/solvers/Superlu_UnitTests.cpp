@@ -181,9 +181,9 @@ namespace {
     // eventually calls the same/only Solver constructor
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("SuperLU",eye,X,B);
 
-    TEST_ASSERT( solver->getNumSymbolicFact() == 0 );
-    TEST_ASSERT( solver->getNumNumericFact() == 0 );
-    TEST_ASSERT( solver->getNumSolve() == 0 );
+    TEST_ASSERT( solver->getStatus().getNumSymbolicFact() == 0 );
+    TEST_ASSERT( solver->getStatus().getNumNumericFact() == 0 );
+    TEST_ASSERT( solver->getStatus().getNumSolve() == 0 );
 
     // The following should all pass at compile time
     TEST_ASSERT( (is_same<MAT,typename SOLVER::matrix_type>::value) );

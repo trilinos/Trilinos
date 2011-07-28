@@ -248,7 +248,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<const Matrix>
   status_.last_phase_ = keep_phase;
 
   // Reset phase counters
-  switch( status_.last_phase ){
+  switch( status_.last_phase_ ){
   case CLEAN:
     status_.numPreOrder_ = 0;
   case PREORDERING:
@@ -258,6 +258,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<const Matrix>
   case NUMFACT:                 // probably won't ever happen by itself
     status_.numSolve_ = 0;
   case SOLVE:                   // probably won't ever happen
+    break;
   }
 
   // Re-get the matrix dimensions in case they have changed

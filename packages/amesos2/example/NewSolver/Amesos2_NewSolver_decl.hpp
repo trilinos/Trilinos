@@ -28,6 +28,7 @@ namespace Amesos2 {
    * about the solver itself, what scalar and ordinal types are
    * supported, etc.
    *
+   * \ingroup amesos2_solver_interfaces 
    */
   template <class Matrix,
 	    class Vector>
@@ -114,7 +115,7 @@ namespace Amesos2 {
      * \throw std::runtime_error NewSolver is not able to solve the system.
      */
     int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
-		   const Teuchos::Ptr<const MultiVecAdapter<Vector> > B);
+		   const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
 
 
     /**
@@ -128,8 +129,7 @@ namespace Amesos2 {
      * of this comment should be copied into the amesos2_parameters
      * section in Amesos2.hpp.
      */
-    void setParameters_impl(
-			    const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
+    void setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
 
   
     /**

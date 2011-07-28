@@ -93,3 +93,6 @@
 
 /* Define if you want to build amesos2-superludist */
 #cmakedefine HAVE_AMESOS2_SUPERLUDIST
+
+/* Define if you want to build amesos2-pardisomkl */
+#cmakedefine HAVE_AMESOS2_PARDISOMKL

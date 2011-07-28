@@ -120,7 +120,7 @@ STRIP_FROM_PATH        =
 # to NO (the default) then the documentation will be excluded.
 # Set it to YES to include the internal documentation.
 
-INTERNAL_DOCS          = NO
+INTERNAL_DOCS          = YES
 
 # If the CLASS_DIAGRAMS tag is set to YES (the default) Doxygen will
 # generate a class diagram (in Html and LaTeX) for classes with base or
@@ -240,6 +240,17 @@ REFERENCED_BY_RELATION = YES
 # function will be listed.
 
 REFERENCES_RELATION    = YES
+
+# When TYPEDEF_HIDES_STRUCT is enabled, a typedef of a struct, union,
+# or enum is documented as struct, union, or enum with the name of the
+# typedef. So typedef struct TypeS {} TypeT, will appear in the
+# documentation as a struct with name TypeT. When disabled the typedef
+# will appear as a member of a file, namespace, or class. And the
+# struct will be named TypeS. This can typically be useful for C code
+# in case the coding convention dictates that all compound types are
+# typedef'ed and only the typedef is referenced, never the tag name.
+
+TYPEDEF_HIDES_STRUCT   = YES
 
 #---------------------------------------------------------------------------
 # configuration options related to warning and progress messages
@@ -694,3 +705,10 @@ MAX_DOT_GRAPH_DEPTH    = 3
 # used. If set to NO the values of all tags below this one will be ignored.
 
 SEARCHENGINE           = NO
+
+# This tag can be used to set the number of enum values (range
+# [0,1..20]) that doxygen will group on one line in the generated HTML
+# documentation. Note that a value of 0 will completely suppress the
+# enum values from appearing in the overview section.
+
+ENUM_VALUES_PER_LINE   = 1

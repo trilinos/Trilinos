@@ -262,7 +262,7 @@ namespace Amesos2 {
 	typedef typename M::global_size_t mat_gs_t;
 	typename ArrayView<GS>::size_type i, size = pointers.size();
 	Teuchos::Array<mat_gs_t> pointers_tmp(size);
-	mat_gs_t nnz_tmp;
+	mat_gs_t nnz_tmp = 0;
 
 	Op::apply(mat, nzvals, indices, pointers_tmp, nnz_tmp, map, ordering);
 

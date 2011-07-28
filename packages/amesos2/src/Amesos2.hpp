@@ -264,6 +264,10 @@
  * \subsection superlu_dist_parameters SuperLU_DIST
  *
  * \copydetails Amesos2::Superludist::setParameters_impl()
+ *
+ * \subsection pardiso_mkl_parameters Pardiso MKL
+ *
+ * \copydetails Amesos2::PardisoMKL::setParameters_impl()
  */
 
 

@@ -6,8 +6,8 @@ INCLUDE(PackageMacros)
 
 PACKAGE(Amesos2)
 
-SET(${PACKAGE_NAME_UC}_VERSION "0.2d")
-SET(${PACKAGE_NAME_UC}_RELEASE_DATE "07/18/2011")
+SET(${PACKAGE_NAME_UC}_VERSION "0.3d")
+SET(${PACKAGE_NAME_UC}_RELEASE_DATE "07/28/2011")
 
 #
 # B) Set up package-specific options
@@ -44,6 +44,8 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Epetra
 #
 # Add options to enable TPL solver interfaces
 #
+# Try to keep the option names consistent with the Trilinos TPL names
+#
 
 # ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KLU2
 #   HAVE_AMESOS2_KLU2
@@ -63,6 +65,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLUMT
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLUDist
   HAVE_${PACKAGE_NAME_UC}_SUPERLUDIST
   "Enable SuperLU_DIST functionality.  Requires the SuperLUDist TPL"
+  OFF )
+
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PARDISO_MKL
+  HAVE_${PACKAGE_NAME_UC}_PARDISOMKL
+  "Enable Pardiso MKL functionality.  Requires the Pardiso MKL TPL"
   OFF )
 
 

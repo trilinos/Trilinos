@@ -204,6 +204,8 @@ namespace Amesos2 {
     RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
 
     ArrayView<const global_ordinal_t> node_elements = rmap->getNodeElementList();
+    if( node_elements.size() == 0 ) return; // no more contribution
+    
     typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;
     row_end = node_elements.end();
 
@@ -335,6 +337,8 @@ namespace Amesos2 {
     TEUCHOS_ASSERT( *colmap == *cmap );
 
     ArrayView<global_ordinal_t> node_elements = cmap->getNodeElementList();
+    if( node_elements.size() == 0 ) return; // no more contribution
+    
     typename ArrayView<global_ordinal_t>::iterator col_it, col_end;
     col_end = node_elements.end();
 

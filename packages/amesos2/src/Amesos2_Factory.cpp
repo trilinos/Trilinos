@@ -63,24 +63,6 @@ namespace Amesos2 {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_KLU
-    if((solverName == "amesos2_klu") || (solverName == "klu")){
-      return( true );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_MUMPS
-    if((solverName == "amesos2_mumps") || (solverName == "mumps")){
-      return( true );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_UMFPACK
-    if((solverName == "amesos2_umfpack") || (solverName == "umfpack")){
-      return( true );
-    }
-#endif
-
 #ifdef HAVE_AMESOS2_SUPERLUDIST
     if((solverName == "amesos2_superludist") ||
        (solverName == "superludist") ||
@@ -106,20 +88,11 @@ namespace Amesos2 {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_DSCPACK
-    if((solverName == "amesos2_dscpack") || (solverName == "dscpack")){
-      return( true );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_PARDISO
-    if((solverName == "amesos2_pardiso") || (solverName == "pardiso")){
-      return( true );
-    }
-#endif
-
-#ifdef HAVE_AMESOS2_TAUCS
-    if((solverName == "amesos2_taucs") || (solverName == "taucs")){
+#ifdef HAVE_AMESOS2_PARDISOMKL 
+    if((solverName == "amesos2_pardiso_mkl") ||
+       (solverName == "pardiso_mkl") ||
+       (solverName == "amesos2_pardisomkl")  ||
+       (solverName == "pardisomkl")){
       return( true );
     }
 #endif
