@@ -109,9 +109,9 @@ namespace stk {
 
                   int markInfo = mark(element, iSubDimOrd, node0, node1, coord0, coord1, edge_marks);
 
-                  if (1 == markInfo)
+                  bool needNodes = (1 == markInfo);
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, needNodes);
                     }
                 }
 

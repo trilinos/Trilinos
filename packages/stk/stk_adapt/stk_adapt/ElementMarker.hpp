@@ -63,6 +63,7 @@ namespace stk {
         return;
 #endif
 
+
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
           unsigned numSubDimNeededEntities = 0;
