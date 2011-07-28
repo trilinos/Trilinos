@@ -4,15 +4,15 @@
 # Quick and dirty build for unit testing with Host (serial) and TPI devices.
 # To be replace with CMake integration.
 
-set INC_PATH="-I../../../ThreadPool/src -I. -I../src"
+set INC_PATH="-I../../../../ThreadPool/src -I. -I../../src"
 
-set GCC_SOURCES="../src/impl/*.cpp ../src/DeviceHost/*.cpp main.cpp testHost.cpp testTPI.cpp vanilla.cpp vanillaMP.cpp vanillaCuda.cpp UseCase_14_Common.cpp"
+set GCC_SOURCES="../../src/impl/*.cpp ../../src/DeviceHost/*.cpp main.cpp testHost.cpp testTPI.cpp vanilla.cpp vanillaMP.cpp vanillaCuda.cpp UseCase_14_Common.cpp"
 
 set LIB=""
 
 #-----------------------------------------------------------------------------
 
-set GCC_SOURCES="${GCC_SOURCES} ../../../ThreadPool/src/*.c ../src/DeviceTPI/*.cpp"
+set GCC_SOURCES="${GCC_SOURCES} ../../../../ThreadPool/src/*.c ../../src/DeviceTPI/*.cpp"
 
 set LIB="${LIB} -lpthread"
 
@@ -26,9 +26,9 @@ set LIB="${LIB} -lpthread"
 #	-lib -o libCuda.a ../../src/DeviceCuda/*.cu testCuda.cu UseCase_14_Common.cu
 
 /usr/local/cuda/bin/nvcc -arch=sm_20  ${INC_PATH} -O3 -lib -o libCuda.a \
-       ../src/DeviceCuda/*.cu testCuda.cu UseCase_14_Common.cu
+       ../../src/DeviceCuda/*.cu testCuda.cu UseCase_14_Common.cu
 
- set LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda"
+set LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda"
 
 #set GCC_SOURCES="${GCC_SOURCES} PerfTestCudaStub.cpp"
 

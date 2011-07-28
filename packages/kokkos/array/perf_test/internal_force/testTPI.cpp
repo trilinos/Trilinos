@@ -33,7 +33,7 @@ namespace test{
       double min = 100000;
 
       for(int j = 0; j < runs; j++){
-        double time = internal_force_test<double>( n );
+        double time = internal_force_test<double, Kokkos::DeviceTPI>( n );
 
         if ( 0 == j || time < min)
           min = time;

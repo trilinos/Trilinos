@@ -29,12 +29,12 @@ int main( int argc , char ** argv ){
     runs = 1;
 
 /************************************************************/
-/*  argument 1 specifies the number of threads used by     */
-/*  TPI and OpenMP; agrument 2 sets the number of runs    */
-/*  to be averaged for the output timings          */
-/*                              */
-/*  Ex: to run with 8 threads and average 10 runs(LINUX):  */  
-/*  ./fe_test.exe 8 10                    */  
+/*  argument 1 specifies the number of threads used by     	*/
+/*  TPI and OpenMP; agrument 2 sets the number of runs    	*/
+/*  to be averaged for the output timings          			*/
+/*                             				 				*/
+/*  Ex: to run with 8 threads and average 10 runs(LINUX):  	*/  
+/*  ./fe_test.exe 8 10                    					*/  
 /************************************************************/
   
   std::cout << std::endl << "\t\tStarting..." << std::endl;
@@ -48,5 +48,6 @@ int main( int argc , char ** argv ){
   test::test_Cuda(beg, end, runs);  
 
   return 0;
+
 }
 

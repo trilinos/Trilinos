@@ -26,7 +26,7 @@ namespace test{
 
       for(int j = 0; j < runs; j++){
 
-        double time = internal_force_test<double>( n );
+        double time = internal_force_test<double, Kokkos::DeviceHost>( n );
 
         if ( 0 == j || time < min )
           min = time;

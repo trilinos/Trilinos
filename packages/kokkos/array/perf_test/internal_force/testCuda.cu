@@ -41,15 +41,15 @@ namespace test{
 
       for(int j = 0; j < runs; j++){
 
-        double time = internal_force_test<double>( n );
+        double time = internal_force_test<double, Kokkos::DeviceCuda>( n );
 
         if ( 0 == j || time < min)
           min = time;
       }
 
       std::cout <<   std::setw(8) << n << ", " << 
-              std::setw(8) << 1000 * min << ", " << 
-              std::setw(8) << min / n << std::endl;
+					  std::setw(8) << 1000 * min << ", " << 
+					  std::setw(8) << min / n << std::endl;
 
     }//for
   }
