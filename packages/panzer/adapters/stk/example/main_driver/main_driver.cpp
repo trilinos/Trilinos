@@ -8,6 +8,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_Assert.hpp"
 
 #include "Kokkos_DefaultNode.hpp"
 
@@ -20,6 +21,8 @@
 #include "user_app_BCStrategy_Factory.hpp"
 #include "user_app_NOXObserverFactory_Epetra.hpp"
 #include "user_app_RythmosObserverFactory_Epetra.hpp"
+
+#include <Ioss_SerializeIO.h>
 
 #include <string>
 #include <iostream>
@@ -49,10 +52,12 @@ int main(int argc, char *argv[])
     
     // Parse the command line arguments
     std::string input_file_name = "user_app.xml";
+    int exodus_io_num_procs = 0;
     {
       Teuchos::CommandLineProcessor clp;
       
       clp.setOption("i", &input_file_name, "User_App input xml filename");
+      clp.setOption("exodus-io-num-procs", &exodus_io_num_procs, "Number of processes that can access the file system at the same time to read their portion of a sliced exodus file in parallel.  Defaults to 0 - implies all processes for the run can access the file system at the same time.");
       
       Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = 
 	clp.parse(argc,argv,&std::cerr);
@@ -60,6 +65,10 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL, 
 			 std::runtime_error, "Failed to parse command line!");
     }
+
+    TEUCHOS_ASSERT(exodus_io_num_procs <= comm->getSize());
+    if (exodus_io_num_procs != 0)
+      Ioss::SerializeIO::setGroupFactor(exodus_io_num_procs);
 
     // Parse the input file and broadcast to other processes
     Teuchos::RCP<Teuchos::ParameterList> input_params = Teuchos::rcp(new Teuchos::ParameterList("User_App Parameters"));

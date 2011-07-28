@@ -30,7 +30,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(main_driver_files
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
-  main_driver_energy-ss
+  main_driver_energy-ss --exodus-io-num-procs=1
   TEST_0 EXEC main_driver 
     ARGS  --i=energy-ss.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
