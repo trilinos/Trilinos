@@ -15,8 +15,16 @@ extern "C" {
 
 #if defined(SIERRA_PTMALLOC3_ALLOCATOR)
 size_t malloc_used();
+size_t malloc_footprint();
+size_t malloc_max_footprint();
 #else
 inline size_t malloc_used() {
+  return 0;
+}
+inline size_t malloc_footprint() {
+  return 0;
+}
+inline size_t malloc_max_footprint() {
   return 0;
 }
 #endif

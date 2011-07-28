@@ -7,6 +7,8 @@
 /*------------------------------------------------------------------------*/
 
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/times.h>
 
 #include <stk_util/util/MallocUsed.h>
 
@@ -252,4 +254,145 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1M)
   STKUNIT_EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
+}
+
+#define MAXP	4000
+#define SUBP	200
+#define NPASS	25
+#define NLOOP	12
+
+int lrand()
+{
+  static unsigned long long next = 0;
+  next = next * 0x5deece66dLL + 11;
+  return (int)((next >> 16) & 0x7fffffff);
+}
+
+int rsize()
+{
+  int rv = 8 << (lrand() % 24);
+  rv = lrand() & (rv-1);
+  return rv;
+}
+
+STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
+{
+  void *pointers[MAXP];
+  int size[MAXP];
+
+  int i, r, loop, pass, subpass;
+  int start_time, end_time;
+  ptrdiff_t start_mem, end_mem;
+#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+  ptrdiff_t start_footprint, end_footprint;
+#endif
+  struct tms tms;
+  double elapsed;
+  size_t absmax=0, curmax=0;
+  int realloc_mask = -1;
+  size_t allocations = 0;
+  size_t allocations_size = 0;
+  size_t frees = 0;
+  
+  memset(pointers, 0, MAXP*sizeof(pointers[0]));
+
+  times(&tms);
+  start_time = tms.tms_utime;
+#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+  free(malloc(1));
+  
+  start_mem = malloc_used();
+  start_footprint = malloc_footprint();
+#else
+  start_mem = (ptrdiff_t) sbrk(0);
+#endif
+
+#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+  std::cout << "Modified ptmalloc3 allocator: ";
+#else
+  std::cout << "Default allocator: ";
+#endif
+
+#ifndef NDEBUG
+  std::cout << "(debug)" << std::endl;
+#endif
+  
+  std::cout << std::endl;
+  
+#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+  std::cout << "Start used " << start_mem << std::endl;
+  std::cout << "Start footprint " << start_footprint << std::endl;
+#endif
+
+  std::cout << std::endl
+            << std::setw(14) << "elapsed" << "       "
+    
+#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+            << std::setw(14) << "footprint" << "   "
+            << std::setw(14) << "max_footprint" << "   "
+#endif
+            << std::setw(14) << "used " << "   "
+            << std::setw(14) << "curmax" << " " << std::endl;
+
+  for (loop=0; loop<NLOOP; loop++) {
+    for (pass=0; pass<NPASS; pass++) {
+      for (subpass=0; subpass<SUBP; subpass++) {
+	for (i=0; i<MAXP; i++) {
+	  int rno = rand();
+	  if (rno & 8) {
+	    if (pointers[i]) {
+	      if (!(rno & realloc_mask)) {
+		r = rsize();
+		curmax -= size[i];
+		curmax += r;
+		pointers[i] = realloc(pointers[i], rsize());
+		size[i] = r;
+		if (absmax < curmax) absmax = curmax;
+	      }
+	      else {
+		curmax -= size[i];
+		free(pointers[i]);
+		pointers[i] = 0;
+                ++frees;
+	      }
+	    }
+	    else {
+	      r = rsize();
+	      curmax += r;
+	      pointers[i] = malloc(r);
+	      size[i] = r;
+              ++allocations;
+              allocations_size += r;
+	      if (absmax < curmax) absmax = curmax;
+	    }
+	  }
+	}
+      }
+    }
+
+    times(&tms);
+    end_time = tms.tms_utime;
+#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+    end_mem = malloc_used();
+    end_footprint = malloc_footprint();
+#else
+    end_mem = (ptrdiff_t) sbrk(0);
+#endif
+
+    elapsed = ((double)end_time - (double)start_time);
+    std::cout << std::setw(14) << elapsed << " ticks "
+#ifdef SIERRA_PTMALLOC3_ALLOCATOR
+              << std::setw(14) << (end_footprint - start_footprint)/1024 << " K "
+              << std::setw(14) << malloc_max_footprint()/1024 << " K "
+#endif
+              << std::setw(14) << (end_mem - start_mem)/1024 << " K "
+              << std::setw(14) << curmax/1024 << " K" << std::endl;
+  }
+
+  std::cout << allocations << " allocations of " << allocations_size/1024 << " K " << std::endl
+            << frees << " frees" << std::endl;
+  
+  for (i=0; i<MAXP; i++)
+    if (pointers[i])
+      free(pointers[i]);
 }
