@@ -1,4 +1,5 @@
 \documentclass{article}
+\usepackage{verbatim}
 \newcommand{\mahts}[1]{\textsuperscript{#1}}
 \title{Evaluation of Tpetra's Matrix-Matrix Multiplication Routine}
 \author{Kurtis L. Nusbaum}
@@ -63,17 +64,63 @@ calculation is skipped.
 
 \subsection{Hopper}
 
-\subsection{Jaguar}
-
 
 \section{Areas for future improvement}
+\subsection{Improvment of underlying tpetra architecture}
+The most important thing that will help the Matrix Multiply routine improving the underlying tpetra arhcitecture. No doubt the ineffiecient sort2 routine 
+isn't the only problem with Tpetra at large. There have been reports from other scientists at sandia that things like the Tpetra Import class are not 
+running as nearly as fast as their Epetra counterparts. These things need to be investigated, and, if need be, fixed.
+
 \subsection{Kokkos Kernel}
 The actual computation kernel should be moved down into Kokkos where it can better take advantage node-parallelism. This should offer non-trivial speedups.
 
-\subsection{Improvment of underlying tpetra architecture}
-The biggest thing that will help the Matrix Multiply routine improving the underlying tpetra arhcitecture. No doubt the ineffiecient sort2 routine isn't the
-only problem with Tpetra at large. There have been reports from other scientists at sandia that things like the Tpetra Import class are not running as
-nearly as fast as their Epetra counterparts. These things need to be investigated.
+\subsection{Possible Implementation of ML's Algorithm}
+ML has a matrix-multiply routine that employs a complex hashing scheme inorder to speed up lookup times for column indicies. ML's matrix-matrix
+multiplication algorithm is fast, but it's not clear to the current tpetra developers how much the hasing scheme has to do with ML's speed. That said, it
+is definently worth investigating. ML's hashing scheme is complex. Figure~\ref{hashalgo} outlines in psuedo code the algorithm as current tpetra developers 
+understand it.
+
+\begin{figure}
+\centering
+{\footnotesize
+\begin{verbatim}
+1. For matrix B only, create a hashtable where given a globalid, 
+we get a unique hastag. i.e. hash[gid] = hashtag
+Note that in Serial we don't actually need a "hash", local id's should suffice
+2.Create a "reverse" map, one where we can do rmap[hastag] = gid
+3. Allocate an array called acc_index with the same size as the hash table
+4. Allocate two arrays called acc_col and acc_val whose size is 
+equal to the maximum number of row entries in matrix A.
+5. For each row i in A{
+  acc_index.fill(-1)
+  ArrayView cur_A_cols;
+  ArrayView cur_A_vals;
+  A->getRowView(i, cur_A_cols, cur_A_vals);
+  curr_acc_ptr=0;
+  for each column k in row A[i]{
+    ArrayView cur_B_cols;
+    ArrayView cur_B_vals;
+    (B or Bimport)->getRowView(k, cur_B_cols, cur_B_vals);
+    for(j=0; j< cur_B_cols.size(); ++j){
+      cur_acc_index = hashtable(getGlobalElement(cur_B_cols[j])) //precomputing this might be useful
+      if(acc_index(cur_acc_index) == -1){
+        acc_col[cur_acc_prt] = cur_acc_index  //Probably should just put in gid actually
+        acc_val[cur_acc_ptr] = cur_B_vals[j]*cur_A_vals[k]
+        acc_index[curr_acc_index]=cur_acc_ptr++
+      }
+      else{
+        acc_val[acc_index(cur_acc_index)] += cur_B_vals[j]*cur_A_vals[k]
+      }
+    }
+  }
+  c.insertGlobalVals(i, (Globla_ids_of_hashes(acc_col))(0, curr_acc_ptr), acc_val(0,cur_acc_ptr))
+}
+
+\end{verbatim}
+}
+\caption[Hash based algorithm]{ML's hash based algorithm for matrix matrix multiply}
+\label{hashalgo}
+\end{figure}
 
 \end{document}
 
