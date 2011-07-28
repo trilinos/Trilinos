@@ -60,6 +60,8 @@ namespace fei {
       row-dimension for block's contributions */
     fei::Pattern* getRowPattern() { return(pattern_); }
 
+    void setRowPattern(fei::Pattern* pattern) { pattern_ = pattern; }
+
     /** get pattern that defines the layout of dofs in the
       column-dimension for block's contributions. probably null
      if this block is made up of symmetric contributions. */
@@ -69,6 +71,8 @@ namespace fei {
       column-dimension for block's contributions. probably null
      if this block is made up of symmetric contributions. */
     fei::Pattern* getColPattern() { return(colPattern_); }
+
+    void setColPattern(fei::Pattern* pattern) { colPattern_ = pattern; }
 
     /** get map of connectivity-ids with associated offsets
     */
@@ -85,21 +89,21 @@ namespace fei {
       { return(connectivityOffsets_); }
 
     /** get array of row-connectivities */
-    std::vector<Record<int>*>& getRowConnectivities()
+    std::vector<int>& getRowConnectivities()
       { return(connectivities_); }
 
     /** get array of column-connectivities */
-    std::vector<Record<int>*>& getColConnectivities()
+    std::vector<int>& getColConnectivities()
       { return(colConnectivities_); }
 
     /** get row-connectivity for a specified ID */
-    const Record<int>*const* getRowConnectivity(int ID) const;
+    const int* getRowConnectivity(int ID) const;
     /** get column-connectivity for a specified ID */
-    const Record<int>*const* getColConnectivity(int ID) const;
+    const int* getColConnectivity(int ID) const;
     /** get row-connectivity for a specified ID */
-    Record<int>** getRowConnectivity(int ID);
+    int* getRowConnectivity(int ID);
     /** get column-connectivity for a specified ID */
-    Record<int>** getColConnectivity(int ID);
+    int* getColConnectivity(int ID);
 
     /** query whether block is symmetric */
     bool isSymmetric() const { return( isSymmetric_ ); }
@@ -129,9 +133,9 @@ namespace fei {
     std::vector<int> connectivityOffsets_;
 
     int numRecordsPerConnectivity_;
-    std::vector<Record<int>*> connectivities_;
+    std::vector<int> connectivities_;
     int numRecordsPerColConnectivity_;
-    std::vector<Record<int>*> colConnectivities_;
+    std::vector<int> colConnectivities_;
 
     int fieldID_;
     bool haveFieldID_;

@@ -37,7 +37,7 @@ namespace stk {
 
 
     void TestLocalRefinerTri_N_2::
-    applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
 
@@ -100,7 +100,7 @@ namespace stk {
                        ( (coord0[0] < vx && vx < coord1[0]) || (coord1[0] < vx && vx < coord0[0]) )
                        )
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                     }
                 }
 
@@ -108,7 +108,7 @@ namespace stk {
         } // ineed_ent
     }
 
-    ElementUnrefineCollection TestLocalRefinerTri_N_2::buildTestUnrefList()
+    ElementUnrefineCollection TestLocalRefinerTri_N_2::buildTestUnrefineList()
     {
       ElementUnrefineCollection elements_to_unref;
 

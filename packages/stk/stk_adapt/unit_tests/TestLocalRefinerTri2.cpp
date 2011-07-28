@@ -32,7 +32,7 @@ namespace stk {
     }
 
     void TestLocalRefinerTri2::
-    applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
@@ -90,14 +90,14 @@ namespace stk {
                     {
                   if ( std::abs(coord0[0]-coord1[0]) > 1.e-3 && std::abs(coord0[1]-coord1[1]) > 1.e-3 )
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                     }
                     }
                   else
                     {
                       if ( std::abs(coord0[0]-coord1[0]) < 1.e-3 && std::abs(coord0[1]-coord1[1]) > 1.e-3 )
                         {
-                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                         }
                     }
                 }

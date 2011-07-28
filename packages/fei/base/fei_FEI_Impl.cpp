@@ -1305,13 +1305,15 @@ int fei::FEI_Impl::fillNodeset(int blockID) const
     throw std::runtime_error(osstr.str());
   }
 
-  std::vector<fei::Record<int>*>& nodes = block->getRowConnectivities();
+  int nodeType = 0;
+  snl_fei::RecordCollection* nodeRecords = NULL;
+  matGraph_->getRowSpace()->getRecordCollection(nodeType, nodeRecords);
+  std::vector<int>& nodes = block->getRowConnectivities();
 
   nodeset_.clear();
 
-  fei::Record<int>** nodesPtr = &nodes[0];
   for(unsigned i=0; i<nodes.size(); ++i) {
-    nodeset_.insert(nodesPtr[i]->getID());
+    nodeset_.insert(nodeRecords->getRecordWithLocalID(nodes[i])->getID());
   }
 
   nodeset_filled_ = true;

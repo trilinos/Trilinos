@@ -140,12 +140,10 @@ packLocalFieldMasks(std::vector<fei::FieldMask*>& fieldMasks,
 
     std::vector<int>& fieldIDs = fieldMasks[i]->getFieldIDs();
     std::vector<int>& fieldSizes = fieldMasks[i]->getFieldSizes();
-    std::vector<int>& fieldInstances = fieldMasks[i]->getFieldInstances();
 
     for(int j=0; j<numFields; ++j) {
       localFieldMasks[offset+j] = fieldIDs[j];
       localFieldMasks[offset+numFields+j] = fieldSizes[j];
-      localFieldMasks[offset+numFields*2+j] = fieldInstances[j];
     }
     offset += numFields*3;
   }
@@ -164,16 +162,12 @@ addFieldMasks(std::vector<int>& msg, std::vector<fei::FieldMask*>& fieldMasks)
     int numIndices = msgPtr[offset++];
     int* fieldIDs = NULL;
     int* fieldSizes = NULL;
-    int* fieldInstances = NULL;
     if (numFields > 0) {
       fieldIDs = &(msgPtr[offset]);
       fieldSizes = &(msgPtr[offset+numFields]);
-      fieldInstances = &(msgPtr[offset+numFields*2]);
     }
 
-    int maskID = fei::FieldMask::calculateMaskID(numFields,
-						     fieldIDs,
-						     fieldInstances);
+    int maskID = fei::FieldMask::calculateMaskID(numFields, fieldIDs);
 
     bool maskAlreadyExists = false;
     for(unsigned j=0; j<fieldMasks.size(); ++j) {
@@ -185,9 +179,7 @@ addFieldMasks(std::vector<int>& msg, std::vector<fei::FieldMask*>& fieldMasks)
 
     if (!maskAlreadyExists) {
       fei::FieldMask* newmask = new fei::FieldMask(numFields,
-							   fieldIDs,
-							   fieldSizes,
-							   fieldInstances);
+							   fieldIDs, fieldSizes);
       if (numFields < 1) {
 	newmask->setNumIndices(numIndices);
       }
@@ -267,11 +259,9 @@ int snl_fei::RecordMsgHandler::mergeMaskIDs(int srcProc, std::vector<int>& msg)
       int numFields = mask->getNumFields();
       std::vector<int>& fieldIDs = mask->getFieldIDs();
       std::vector<int>& fieldSizes = mask->getFieldSizes();
-      std::vector<int>& fieldInstances = mask->getFieldInstances();
 
       for(int nf=0; nf<numFields; ++nf) {
 	recordCollection_->initRecords(fieldIDs[nf], fieldSizes[nf],
-				       fieldInstances[nf],
 				       1, &ID, fieldMasks_);
       }
     }

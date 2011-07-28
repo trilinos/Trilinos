@@ -161,6 +161,8 @@ namespace stk {
 
       void check_db(std::string msg="") ;
 
+      NodeRegistry& getNodeRegistry() { return *m_nodeRegistry; }
+      percept::PerceptMesh& getMesh() { return m_eMesh; }
     protected:
 
       void check_db_ownership_consistency();
@@ -183,7 +185,7 @@ namespace stk {
       virtual unsigned
       doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
                        vector< ColorerSetType >& elementColors, unsigned elementType,
-                       vector<NeededEntityType>& needed_entity_ranks,
+                       vector<NeededEntityType>& needed_entity_ranks,  
                        bool only_count=false, bool doAllElements=true) ;
 
       /** Create a list of nodes from the new nodes that can be easily deciphered by the UniformRefinerPattern.
@@ -217,7 +219,7 @@ namespace stk {
        */
 
       virtual void
-      applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element,
+      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element,
                                               vector<NeededEntityType>& needed_entity_ranks);
 
       /// =========>  Overrides  end
@@ -231,7 +233,10 @@ namespace stk {
       removeOldElements(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern );
 
       void
-      removeOldElements( elements_to_be_destroyed_type& elements_to_be_destroyed);
+      removeElements( elements_to_be_destroyed_type& elements_to_be_destroyed);
+
+      void
+      removeEmptyElements();
 
       void
       addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);

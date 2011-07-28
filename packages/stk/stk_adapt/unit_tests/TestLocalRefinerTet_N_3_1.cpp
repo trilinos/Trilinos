@@ -1,43 +1,18 @@
-#ifndef stk_adapt_TestLocalRefinerTet_N_2_1_hpp
-#define stk_adapt_TestLocalRefinerTet_N_2_1_hpp
 
-#include <stk_adapt/Refiner.hpp>
+#include <unit_tests/TestLocalRefinerTet_N_3_1.hpp>
 
 namespace stk {
   namespace adapt {
 
-    //========================================================================================================================
-    //========================================================================================================================
-    //========================================================================================================================
-    /**
-     * A test implementation that marks some edges randomly to test RefinerPattern_Tri3_Tri3_N_3
-     */
-    class TestLocalRefinerTet_N_2_1 : public Refiner
-    {
-    public:
-      TestLocalRefinerTet_N_2_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0, unsigned edge_mark_bitcode=1);
+    // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3_1 in UnitTestLocalRefiner.cpp)
 
-      // ElementUnrefineCollection  buildTestUnrefineList();
-
-    protected:
-
-      virtual void 
-      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
-            vector<NeededEntityType>& needed_entity_ranks);
-
-
-      unsigned m_edge_mark_bitcode;
-    };
-
-    // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3 in UnitTestLocalRefiner.cpp)
-
-    TestLocalRefinerTet_N_2_1::TestLocalRefinerTet_N_2_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field, unsigned edge_mark_bitcode) : 
+    TestLocalRefinerTet_N_3_1::TestLocalRefinerTet_N_3_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field, unsigned edge_mark_bitcode) : 
       Refiner(eMesh, bp, proc_rank_field), m_edge_mark_bitcode(edge_mark_bitcode)
     {
     }
 
 
-    void TestLocalRefinerTet_N_2_1::
+    void TestLocalRefinerTet_N_3_1::
     apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
@@ -115,12 +90,18 @@ namespace stk {
                     }
 
 #endif
-                  // mark first m_edge_mark_bitcode edges 
-                  std::cout << "tmp TestLocalRefinerTet_N_2_1 element.identifier() = " << element.identifier() 
-                            << " m_edge_mark_bitcode= " << m_edge_mark_bitcode << std::endl;
+                  // mark only the first element
 
-                  if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode) && element.identifier() == 1)
-                    (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
+
+                  if ( ((1 << iSubDimOrd) & m_edge_mark_bitcode ) && 1 == element.identifier()  )
+                    {
+                      if (1)
+                        {
+                          std::cout << "tmp TestLocalRefinerTet_N_3_1 element.identifier() = " << element.identifier() 
+                                    << " edge_mark_bitcode = " << m_edge_mark_bitcode << "  iSubDimOrd= " << iSubDimOrd << std::endl;
+                        }
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
+                    }
 
                 }
 
@@ -129,6 +110,7 @@ namespace stk {
     }
 
 
+
   }
 }
-#endif
+

@@ -52,6 +52,8 @@ namespace snl_fei {
     /** get the identifier-type that the fei uses to reference constraints */ 
     int getIDType() const { return( idType_ ); }
 
+    snl_fei::RecordCollection* getRecordCollection() { return recordCollection_; }
+
     /** set the identifier-type that the fei uses to reference constraints.
       power-users only, this is a dangerous function with side-effects */ 
     void setIDType(int idType) { idType_ = idType; }
@@ -102,10 +104,13 @@ namespace snl_fei {
 
 
     /** get master mesh-objects */
-    std::vector<RecordType>& getMasters() { return( masters_ ); }
+    std::vector<int>& getMasters() { return( masters_ ); }
 
     /** get identifier-types of master mesh-objects */
     std::vector<int>& getMasterIDTypes() { return( masterIDTypes_ ); }
+
+    /** get record-collections for masters */
+    std::vector<snl_fei::RecordCollection*>& getMasterRecordCollections() { return masterRecordCollections_; }
 
     /** get field-identifiers of master mesh-objects */
     std::vector<int>& getMasterFieldIDs() { return( masterFields_ ); }
@@ -135,6 +140,7 @@ namespace snl_fei {
 
     int constraintID_;
     int idType_;
+    snl_fei::RecordCollection* recordCollection_;
     bool isPenalty_;
 
     int eqnNumber_;
@@ -144,8 +150,9 @@ namespace snl_fei {
     int slaveField_;
     int offsetIntoSlaveField_;
 
-    std::vector<RecordType> masters_;
+    std::vector<int> masters_;
     std::vector<int> masterIDTypes_;
+    std::vector<snl_fei::RecordCollection*> masterRecordCollections_;
     std::vector<int> masterFields_;
     std::vector<double> masterWeights_;
 
@@ -161,6 +168,7 @@ template<class RecordType>
 inline snl_fei::Constraint<RecordType>::Constraint(int id, bool isPenaltyConstr)
   : constraintID_(id),
     idType_(0),
+    recordCollection_(NULL),
     isPenalty_(isPenaltyConstr),
     eqnNumber_(-1),
     blkEqnNumber_(-1),
@@ -169,6 +177,7 @@ inline snl_fei::Constraint<RecordType>::Constraint(int id, bool isPenaltyConstr)
     offsetIntoSlaveField_(0),
     masters_(),
     masterIDTypes_(),
+    masterRecordCollections_(),
     masterFields_(),
     masterWeights_(),
     rhsValue_(0.0)
@@ -192,6 +201,7 @@ inline snl_fei::Constraint<RecordType>::Constraint(int id,
                                             fei::VectorSpace* vspace)
   : constraintID_(id),
     idType_(constraintIDType),
+    recordCollection_(NULL),
     isPenalty_(isPenaltyConstr),
     eqnNumber_(-1),
     blkEqnNumber_(-1), 
@@ -200,6 +210,7 @@ inline snl_fei::Constraint<RecordType>::Constraint(int id,
     offsetIntoSlaveField_(offsetIntoSlaveField),
     masters_(),
     masterIDTypes_(),
+    masterRecordCollections_(),
     masterFields_(),
     masterWeights_(),
     rhsValue_(rhsValue)
@@ -224,6 +235,7 @@ inline snl_fei::Constraint<fei::Record<int>*>::Constraint(int id,
                                             fei::VectorSpace* vspace)
   : constraintID_(id),
     idType_(constraintIDType),
+    recordCollection_(NULL),
     isPenalty_(isPenaltyConstr),
     eqnNumber_(-1),
     blkEqnNumber_(-1), 
@@ -232,18 +244,23 @@ inline snl_fei::Constraint<fei::Record<int>*>::Constraint(int id,
     offsetIntoSlaveField_(offsetIntoSlaveField),
     masters_(),
     masterIDTypes_(),
+    masterRecordCollections_(),
     masterFields_(),
     masterWeights_(),
     rhsValue_(rhsValue)
 {
   int weightsOffset = 0;
+  snl_fei::RecordCollection* recordCollection = NULL;
+  vspace->getRecordCollection(idType_, recordCollection);
+  recordCollection_ = recordCollection;
   for(int i=0; i<numIDs; ++i) {
-    snl_fei::RecordCollection* recordCollection = NULL;
     vspace->getRecordCollection(idTypes[i],recordCollection);
+    masterRecordCollections_.push_back(recordCollection);
 
-    vspace->addDOFs(fieldIDs[i], 1, idTypes[i], 1, &(IDs[i]));
-    fei::Record<int>* rec = recordCollection->getRecordWithID(IDs[i]);
-
+    vspace->addDOFs(fieldIDs[i], idTypes[i], 1, &(IDs[i]));
+    int rec_local_id = recordCollection->getLocalID(IDs[i]);
+    fei::Record<int>* rec = recordCollection->getRecordWithLocalID(rec_local_id);
+    
     unsigned fieldSize = vspace->getFieldSize(fieldIDs[i]);
 
     if (isSlave && i == offsetOfSlave) {
@@ -254,7 +271,7 @@ inline snl_fei::Constraint<fei::Record<int>*>::Constraint(int id,
       weightsOffset += fieldSize;
     }
     else {
-      getMasters().push_back(rec);
+      getMasters().push_back(rec_local_id);
       getMasterIDTypes().push_back(idTypes[i]);
       getMasterFieldIDs().push_back(fieldIDs[i]);
 
@@ -282,6 +299,7 @@ inline snl_fei::Constraint<RecordType>::Constraint(const Constraint<RecordType>&
     offsetIntoSlaveField_(0),
     masters_(),
     masterIDTypes_(),
+    masterRecordCollections_(),
     masterFields_(),
     masterWeights_(),
     rhsValue_(0.0)

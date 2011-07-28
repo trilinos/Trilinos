@@ -14,14 +14,6 @@ add_entity( STKGenericMesh & mesh )
   return NULL;
 }
 
-// Not supported by stk_mesh.
-inline STKGenericMesh::entity_local_id
-add_entity( const STKGenericMesh::entity_value & entity_value, STKGenericMesh & mesh )
-{
-  ThrowRequireMsg(false, "Error!  STK_Mesh only supports add_entity with a stk::mesh::EntityKey!");
-  return NULL;
-}
-
 // An API that is almost the same as the Generic Mesh API:
 inline STKGenericMesh::entity_local_id
 add_entity( const EntityKey & entity_key, STKGenericMesh & mesh )
@@ -42,19 +34,6 @@ add_entity(  PartInputIterator first, PartInputIterator last,
   return NULL;
 }
 
-
-// Not supported by stk_mesh.
-template <typename PartInputIterator>
-inline STKGenericMesh::entity_local_id
-add_entity( const STKGenericMesh::entity_value & entity_value,
-              PartInputIterator first, PartInputIterator last,
-              STKGenericMesh & mesh )
-{
-  ThrowRequireMsg(false, "Error!  STK_Mesh only supports add_entity with a stk::mesh::EntityKey!");
-  return NULL;
-}
-
-
 // An API that is almost the same as the Generic Mesh API:
 template <typename PartInputIterator>
 inline STKGenericMesh::entity_local_id
@@ -64,33 +43,10 @@ add_entity( const EntityKey & entity_key,
 {
   PartVector part_vector;
   std::copy(first,last,std::back_inserter(part_vector));
-  STKGenericMesh::entity_value & entity = mesh.m_bulk_data.declare_entity( entity_rank(entity_key), entity_id(entity_key), part_vector );
+  Entity & entity = mesh.m_bulk_data.declare_entity( entity_rank(entity_key), entity_id(entity_key), part_vector );
   STKGenericMesh::entity_descriptor entity_lid = & entity;
   return entity_lid;
 }
-
-
-
-// Get a const reference to the Entity from the entity_local_id.
-inline const STKGenericMesh::entity_value & get_entity(
-    STKGenericMesh::entity_local_id entity_lid,
-    const STKGenericMesh & mesh
-    )
-{
-  return *entity_lid;
-}
-
-
-// This function is exactly the same as the one above because of the typedefs.
-// Get a const reference to the Entity from the entity_descriptor.
-//inline const STKGenericMesh::entity_value & get_entity(
-//    STKGenericMesh::entity_descriptor entity_d,
-//    const STKGenericMesh & mesh
-//    )
-//{
-//  return *entity_d;
-//}
-
 
 // destroy_entity:
 inline void remove_entity( STKGenericMesh::entity_local_id entity_lid, STKGenericMesh & mesh )
@@ -111,19 +67,6 @@ inline STKGenericMesh::relation_descriptor add_relation(
 }
 
 
-// Not supported by stk_mesh.
-inline STKGenericMesh::relation_descriptor add_relation(
-    STKGenericMesh::entity_local_id entity_from,
-    STKGenericMesh::entity_local_id entity_to,
-    const STKGenericMesh::relation_value & relation,
-    STKGenericMesh & mesh
-    )
-{
-  ThrowRequireMsg(false, "Error!  STK_Mesh only supports add_relation with a stk::mesh::RelationIdentifier!");
-  return NULL;
-}
-
-
 // An API that is almost the same as the Generic Mesh API:
 inline STKGenericMesh::relation_descriptor add_relation(
     STKGenericMesh::entity_local_id x_entity_from,
@@ -132,10 +75,10 @@ inline STKGenericMesh::relation_descriptor add_relation(
     STKGenericMesh & mesh
     )
 {
-  const STKGenericMesh::entity_value & entity_from = get_entity(x_entity_from,mesh);
-  const STKGenericMesh::entity_value & entity_to   = get_entity(x_entity_to,mesh);
-  STKGenericMesh::entity_value & nonconst_entity_from = const_cast<STKGenericMesh::entity_value&>(entity_from);
-  STKGenericMesh::entity_value & nonconst_entity_to = const_cast<STKGenericMesh::entity_value&>(entity_to);
+  const Entity & entity_from = get_entity(x_entity_from,mesh);
+  const Entity & entity_to   = get_entity(x_entity_to,mesh);
+  Entity & nonconst_entity_from = const_cast<Entity&>(entity_from);
+  Entity & nonconst_entity_to = const_cast<Entity&>(entity_to);
   mesh.m_bulk_data.declare_relation(nonconst_entity_from,nonconst_entity_to,relation_id);
   Internal_STK_Relation_Descriptor_Adapter relation_d(x_entity_from, x_entity_to, relation_id);
   return relation_d;
@@ -262,8 +205,7 @@ inline std::pair<
 inline STKGenericMesh::bucket_descriptor
 get_bucket( STKGenericMesh::entity_descriptor entity, STKGenericMesh & mesh )
 {
-  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
-  return NULL;
+  return &entity->bucket();
 }
 
 
@@ -321,15 +263,13 @@ get_buckets( STKGenericMesh::part_descriptor part_descriptor, STKGenericMesh & m
 }
 
 
-
 // Generic API:  add this part to the Mesh.
 inline STKGenericMesh::part_descriptor
-add_part( const STKGenericMesh::part_value & part_value, STKGenericMesh & mesh )
+add_part( const STKGenericMesh::part_descriptor & part, STKGenericMesh & mesh )
 {
   ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
   return NULL;
 }
-
 
 
 // Generic API:  remove this part from the Mesh.
@@ -338,7 +278,6 @@ remove_part( STKGenericMesh::part_descriptor part_descriptor, STKGenericMesh & m
 {
   ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
 }
-
 
 
 // Move entity so it
@@ -355,13 +294,12 @@ move_entity( STKGenericMesh::entity_descriptor entity_descriptor,
   PartVector remove_parts;
   std::copy(add_first,add_last,std::back_inserter(add_parts));
   std::copy(remove_first,remove_last,std::back_inserter(remove_parts));
-  STKGenericMesh::entity_value & entity = get_entity(entity_descriptor, mesh);
+  Entity & entity = get_entity(entity_descriptor, mesh);
   mesh.m_bulk_data.change_entity_parts( entity, add_parts, remove_parts );
-  STKGenericMesh::bucket_value & bucket = entity.bucket();
+  Bucket & bucket = entity.bucket();
   STKGenericMesh::bucket_descriptor bucket_d = &bucket;
   return bucket_d;
 }
-
 
 
 // Generic API:  Get all parts on the mesh.
@@ -387,8 +325,14 @@ get_parts(
     STKGenericMesh::bucket_descriptor bucket_descriptor, STKGenericMesh & mesh
     )
 {
-  ThrowRequireMsg(false, "Error!  This function is not implemented yet!");
-  return std::pair<STKGenericMesh::bucket_part_descriptor_iterator,STKGenericMesh::bucket_part_descriptor_iterator>(NULL,NULL);
+  return bucket_descriptor->superset_part_ordinals();
+}
+
+inline
+STKGenericMesh::part_descriptor
+get_part_descriptor(STKGenericMesh::bucket_part_descriptor descriptor, STKGenericMesh & mesh)
+{
+  return &(mesh.m_bulk_data.mesh_meta_data().get_part(descriptor));
 }
 
 // Generic API:  Begin modification cycle. Returns true if cycle was not already in progress

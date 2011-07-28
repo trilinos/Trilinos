@@ -6,6 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_sstream.hpp>
+
 #include "fei_trilinos_macros.hpp"
 
 #ifdef HAVE_FEI_AMESOS
@@ -73,6 +75,28 @@ int Solver_Amesos::solve(fei::LinearSystem* linearSystem,
 
   int err = solve(linearSystem, preconditioningMatrix, numParams, paramStrings,
 		  iterationsTaken, status);
+
+  int olevel = 0;
+  parameterSet.getIntParamValue("outputLevel", olevel);
+
+  std::string param2;
+  parameterSet.getStringParamValue("FEI_OUTPUT_LEVEL", param2);
+
+  if (olevel >= 3 || param2 == "MATRIX_FILES") {
+    std::string param1;
+    parameterSet.getStringParamValue("debugOutput", param1);
+
+    FEI_OSTRINGSTREAM osstr;
+    if (!param1.empty()) {
+      osstr << param1 << "/";
+    }
+    else osstr << "./";
+
+    static int counter = 1;
+    osstr << "x_Amesos.vec.slv"<<counter++;
+    fei::SharedPtr<fei::Vector> feix = linearSystem->getSolutionVector();
+    feix->writeToFile(osstr.str().c_str());
+  }
 
   delete [] paramStrings;
   

@@ -497,6 +497,7 @@ namespace stk {
                   }
                 //breaker.setPassNumber(iBreak);
                 breaker.doBreak();
+		//RefinementInfoByType::countCurrentNodes(eMesh, breaker.getRefinementInfoByType());
                 if (!eMesh.getRank())
                   {
                     std::cout << std::endl;
@@ -513,7 +514,12 @@ namespace stk {
             t1 =  stk::wall_time(); 
             cpu1 = stk::cpu_time();
 
+	    stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
+	    std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
             eMesh.saveAs(output_mesh);
+	    stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
+	    std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
+
           }
 
 #if 0

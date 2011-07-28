@@ -250,7 +250,7 @@ namespace moab {
         // a tie-breaker for a pair of edges that have the same length - add all the vertex handles
         //   and choose one case or the other depending on if the sum is odd or even
 
-#if 1
+#if 0
 
 #define VH(iedge) (permuted_hash[tet_edges[iedge][0]] + permuted_hash[tet_edges[iedge][1]])
 #define CMP_VH(ie,je) ((VH(ie)+VH(je)) % 2 == 0)

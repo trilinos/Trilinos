@@ -17,23 +17,13 @@ namespace stk {
     public:
       TestLocalRefinerTet_N_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
 
-      // ElementUnrefineCollection  buildTestUnrefList();
+      // ElementUnrefineCollection  buildTestUnrefineList();
 
     protected:
 
-      // not needed
-#if 0
-      virtual unsigned
-      doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
-                       vector< ColorerSetType >& elementColors, unsigned elementType,
-                       vector<NeededEntityType>& needed_entity_ranks,
-                       bool only_count=false, bool doAllElements=true);
-#endif
-
-
       virtual void 
-      applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
-                                              vector<NeededEntityType>& needed_entity_ranks);
+      apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+            vector<NeededEntityType>& needed_entity_ranks);
 
 
     };
@@ -47,7 +37,7 @@ namespace stk {
 
 
     void TestLocalRefinerTet_N_1::
-    applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
 
@@ -120,12 +110,12 @@ namespace stk {
                         )
                       )
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd,  true);
                     }
 
 #endif
                   // mark all edges
-                  (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                  (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd,  true);
 
                 }
 
@@ -134,7 +124,7 @@ namespace stk {
     }
 
 #if 0
-    ElementUnrefineCollection TestLocalRefinerTet_N_1::buildTestUnrefList()
+    ElementUnrefineCollection TestLocalRefinerTet_N_1::buildTestUnrefineList()
     {
       ElementUnrefineCollection elements_to_unref;
 

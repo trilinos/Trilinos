@@ -52,7 +52,7 @@ void test_misc_FieldMask()
   fei::FieldMask fieldMask;
 
   for(int i=fieldIDs.size()-1; i>= 0; --i) {
-    fieldMask.addField(fieldIDs[i], fieldSizes[i], 1);
+    fieldMask.addField(fieldIDs[i], fieldSizes[i]);
   }
 
   std::vector<int>& maskFields = fieldMask.getFieldIDs();
@@ -68,8 +68,8 @@ void test_misc_FieldMask()
 
   int checkOffset = 0;
   for(unsigned j=0; j<fieldIDs.size(); ++j) {
-    int offset = -1, numInstances = -1;
-    fieldMask.getFieldEqnOffset(fieldIDs[j], offset, numInstances);
+    int offset = -1;
+    fieldMask.getFieldEqnOffset(fieldIDs[j], offset);
     if (offset != checkOffset) {
       throw std::runtime_error("FieldMask offset test failed.");
     }
@@ -83,7 +83,7 @@ void test_misc_FieldMask()
 
   bool exc_caught = false;
   try {
-    fieldMask.addField(-1, 0, 1);
+    fieldMask.addField(-1, 0);
   }
   catch (...) {
     exc_caught = true;
@@ -93,7 +93,7 @@ void test_misc_FieldMask()
     throw std::runtime_error("FieldMask failed to throw on negative fieldID.");
   }
 
-  fieldMask.addField(2, 2, 1);
+  fieldMask.addField(2, 2);
 
   if (fieldMask.getNumFields() != numFields) {
     throw std::runtime_error("FieldMask getNumFields test failed.");
@@ -103,11 +103,10 @@ void test_misc_FieldMask()
   int fieldid2 = 1;
   int fieldid3 = 2;
   int fieldsize = 1;
-  int numinstances=1;
 
-  fei::FieldMask fm1(1, &fieldid1, &fieldsize, &numinstances);
-  fei::FieldMask fm2(1, &fieldid2, &fieldsize, &numinstances);
-  fei::FieldMask fm3(1, &fieldid3, &fieldsize, &numinstances);
+  fei::FieldMask fm1(1, &fieldid1, &fieldsize);
+  fei::FieldMask fm2(1, &fieldid2, &fieldsize);
+  fei::FieldMask fm3(1, &fieldid3, &fieldsize);
 
   fei::FieldMask fm12(fm1);
   fm12.addField(fieldid2, fieldsize);
@@ -125,7 +124,7 @@ void test_misc_FieldMask()
   }
 
   if (fm12.getMaskID() !=
-      fei::FieldMask::calculateMaskID(fm1, fieldid2, numinstances)){
+      fei::FieldMask::calculateMaskID(fm1, fieldid2)){
     throw std::runtime_error("FieldMask getMaskID3 test failed.");
   }
 
@@ -134,7 +133,7 @@ void test_misc_FieldMask()
   }
 
   if (fm123.getMaskID() != 
-      fei::FieldMask::calculateMaskID(fm12, fieldid3, numinstances)){
+      fei::FieldMask::calculateMaskID(fm12, fieldid3)){
     throw std::runtime_error("FieldMask getMaskID5 test failed.");
   }
 
@@ -160,39 +159,39 @@ void test_misc_RecordCollection()
 
   snl_fei::RecordCollection recColl(0);
 
-  fei::Record<int>** records = new fei::Record<int>*[1];
+  int* records = new int[1];
 
-  recColl.initRecords(fieldID0, fieldSize, 1, 1, &ID0,
+  recColl.initRecords(fieldID0, fieldSize, 1, &ID0,
 		      fieldMasks, records);
 
-  recColl.initRecords(fieldID1, fieldSize, 1, 1, &ID0,
+  recColl.initRecords(fieldID1, fieldSize, 1, &ID0,
 		      fieldMasks, records);
 
-  recColl.initRecords(fieldID2, fieldSize, 1, 1, &ID0,
+  recColl.initRecords(fieldID2, fieldSize, 1, &ID0,
 		      fieldMasks, records);
 
-  recColl.initRecords(fieldID0, fieldSize, 1, 1, &ID1,
+  recColl.initRecords(fieldID0, fieldSize, 1, &ID1,
 		      fieldMasks, records);
 
-  recColl.initRecords(fieldID1, fieldSize, 1, 1, &ID1,
+  recColl.initRecords(fieldID1, fieldSize, 1, &ID1,
 		      fieldMasks, records);
 
-  recColl.initRecords(fieldID2, fieldSize, 1, 1, &ID1,
+  recColl.initRecords(fieldID2, fieldSize, 1, &ID1,
 		      fieldMasks, records);
 
   if (fieldMasks.size() != 5) {
     throw std::runtime_error("RecordCollection fieldMasks.length test failed.");
   }
 
-  snl_fei::RecordCollection::map_type& rmap = recColl.getRecords();
+  std::vector<fei::Record<int> >& rvec = recColl.getRecords();
 
-  snl_fei::RecordCollection::map_type::iterator
-    r_iter = rmap.begin(),
-    r_end = rmap.end();
+  std::vector<fei::Record<int> >::iterator
+    r_iter = rvec.begin(),
+    r_end = rvec.end();
 
   int numIndices = 0;
   for(; r_iter != r_end; ++r_iter) {
-    numIndices += (*r_iter).second->getFieldMask()->getNumIndices();
+    numIndices += (*r_iter).getFieldMask()->getNumIndices();
   }
 
   if (numIndices != 6) {

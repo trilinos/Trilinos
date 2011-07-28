@@ -9,6 +9,7 @@
 
 #include <stk_adapt/Refiner.hpp>
 
+#include <stk_percept/MeshUtil.hpp>
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
 #include <stk_adapt/geometry/GeometryKernelOpenNURBS.hpp>
@@ -20,7 +21,6 @@
 
 namespace stk {
   namespace adapt {
-
     using namespace std;
     using namespace percept;
 
@@ -129,7 +129,10 @@ namespace stk {
       //m_eMesh.getBulkData()->modification_begin();
       std::string oldPartName = breakPattern->getOldElementsPartName()+toString(rank);
       mesh::Part *oldPart = m_eMesh.getFEM_meta_data()->get_part(oldPartName);
-      //std::cout << "tmp addOldElementsToPart:: oldPartName= " << oldPartName << std::endl;
+#define DEBUG_REMOVE_OLD_PARTS 0
+
+      if (DEBUG_REMOVE_OLD_PARTS) std::cout << "tmp addOldElementsToPart:: oldPartName= " << oldPartName << std::endl;
+
       if (!oldPart)
         {
           std::cout << "oldPartName= " << oldPartName << std::endl;
@@ -279,7 +282,7 @@ namespace stk {
     }
 
     void Refiner::
-    applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
 
@@ -310,7 +313,7 @@ namespace stk {
               //SubDimCell_SDSEntityType subDimEntity;
               //getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
 
-              (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+              (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
 
             } // iSubDimOrd
         } // ineed_ent
@@ -326,19 +329,6 @@ namespace stk {
       m_nodeRegistry->dumpDB("start of doBreak");
 
       if (0) doPrintSizes();
-
-      //NodeRegistry nr (m_eMesh);
-      //m_nodeRegistry = &nr;
-
-//       if (m_nodeRegistry)
-//         {
-//           delete m_nodeRegistry;
-//         }
-
-//        if (!m_nodeRegistry)
-//          {
-//            m_nodeRegistry = new NodeRegistry (m_eMesh);
-//          }
 
       CommDataType buffer_entry;
 
@@ -416,6 +406,8 @@ namespace stk {
 
               m_refinementInfoByType[irank].m_numNewElems = n_ele * m_breakPattern[irank]->getNumNewElemPerElem();
               m_refinementInfoByType[irank].m_topology = cell_topo;
+	      m_refinementInfoByType[irank].m_numOrigNodes = count[0];
+	      m_refinementInfoByType[irank].m_numNewNodes = 0; // can't predict this
             }
 
           // sum info from all procs
@@ -426,6 +418,7 @@ namespace stk {
               {
                 stk::all_reduce( pm, stk::ReduceSum<1>( &m_refinementInfoByType[irank].m_numOrigElems ) );
                 stk::all_reduce( pm, stk::ReduceSum<1>( &m_refinementInfoByType[irank].m_numNewElems ) );
+                stk::all_reduce( pm, stk::ReduceSum<1>( &m_refinementInfoByType[irank].m_numOrigNodes ) );
               }
           }
 
@@ -621,7 +614,7 @@ namespace stk {
 
                 bool count_only = false;
                 bool doAllElements = false;   // ghost elements only
-                num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks, count_only, doAllElements);
+                num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, elementType, needed_entity_ranks,  count_only, doAllElements);
               }
             }
 
@@ -714,51 +707,6 @@ namespace stk {
           ///  Global node loop operations:  this is where we perform ops like adding new nodes to the right parts, interpolating fields, etc.
           /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-          /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.]... ");
-#if !STK_ADAPT_URP_LOCAL_NODE_COMPS
-          if (0)
-          {
-            EXCEPTWATCH;
-            //if (ranks[irank] == ranks[0])
-            // only need to do this once: the map is fully built and we loop over the map's faces/edges, which are fixed after the getFromRemote step
-            if (irank == 0)
-              {
-                if (0)
-                  {
-                    shards::CellTopology cell_topo(m_breakPattern[irank]->getFromTopology());
-
-                    if (1) std::cout << "tmp Refiner:: calling addToExistingPartsNew() irank = " << irank << " ranks[irank] = " << ranks[irank]
-                                     << " cell_topo= " << cell_topo.getName()
-                                     << std::endl;
-                  }
-
-                m_nodeRegistry->addToExistingPartsNew();
-                //std::cout << "tmp makeCentroid... " << std::endl;
-                m_nodeRegistry->makeCentroid(m_eMesh.getCoordinatesField());
-                //std::cout << "tmp makeCentroid...done " << std::endl;
-                //std::cout << "tmp interpolateFields... " << std::endl;
-                //FIXME m_nodeRegistry->interpolateFields();
-                //std::cout << "tmp interpolateFields...done " << std::endl;
-              }
-          }
-#endif
-          /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.] ...done ");
-
-          // this is for testing removing old elements as early as possible for memory reasons
-          // FIXME - remove old elements on the fly?
-          if (0 && m_doRemove)
-            {
-              EXCEPTWATCH;
-
-              /**/                                                TRACE_PRINT( "Refiner: remove old elements...start " );
-
-              removeOldElements(ranks[irank], m_breakPattern[irank]);
-              renameNewParts(ranks[irank], m_breakPattern[irank]);
-              fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
-
-              /**/                                                TRACE_PRINT( "Refiner: remove old elements...done " );
-            }
-
           if (TRACE_STAGE_PRINT && !m_eMesh.getRank()) {
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL, "CONNECT_LOCAL");
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_createNewNeededNodes, "CONNECT_LOCAL_createNewNeededNodes");
@@ -766,11 +714,6 @@ namespace stk {
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_URP_createOrGetNode, "CONNECT_LOCAL_URP_createOrGetNode");
             Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_URP_declare_relation, "CONNECT_LOCAL_URP_declare_relation");
           }
-
-          /**/                                                TRACE_PRINT("Refiner: modification_end...start... ");
-          //FIXME FIXME FIXME
-          //bulkData.modification_end();
-          /**/                                                TRACE_PRINT("Refiner: modification_end...done ");
 
         } // irank
 
@@ -793,7 +736,6 @@ namespace stk {
       // m_eMesh.dumpElements();
 #endif
       /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.] ...done ");
-
 
       /***********************/                           TRACE_PRINT("Refiner: fixElementSides1 ");
       fixElementSides1();
@@ -849,14 +791,9 @@ namespace stk {
             }
 
         }
-      else  // m_doRemove
-        {
-          if (0)
-            {
-              for (unsigned irank = 0; irank < ranks.size(); irank++)
-                removeFromOldPart(ranks[irank], m_breakPattern[irank]);
-            }
-        }
+
+      // remove any elements that are empty (these can exist when doing local refinement)
+      removeEmptyElements();
 
       /**/                                                TRACE_PRINT("Refiner: modification_end...start... ");
       bulkData.modification_end();
@@ -894,8 +831,7 @@ namespace stk {
 #endif
       //std::cout << "tmp m_nodeRegistry.m_gee_cnt= " << m_nodeRegistry->m_gee_cnt << std::endl;
       //std::cout << "tmp m_nodeRegistry.m_gen_cnt= " << m_nodeRegistry->m_gen_cnt << std::endl;
-
-
+      RefinementInfoByType::countCurrentNodes(m_eMesh, getRefinementInfoByType());
     } // doBreak
 
     
@@ -937,9 +873,42 @@ namespace stk {
 #if PERCEPT_USE_FAMILY_TREE
       removeFamilyTrees();
 #endif
-      //std::cout << "tmp removeOldElements(parents) " << std::endl;
-      removeOldElements(parents);
+      //std::cout << "tmp removeElements(parents) " << std::endl;
+      removeElements(parents);
       m_eMesh.getBulkData()->modification_end();
+
+    }
+
+    void Refiner::removeEmptyElements()
+    {
+
+      elements_to_be_destroyed_type list;
+
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+
+      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        {
+          stk::mesh::Bucket & bucket = **k ;
+
+          const unsigned num_elements_in_bucket = bucket.size();
+          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+            {
+              stk::mesh::Entity& element = bucket[iElement];
+              if (0 == element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK).size())
+                {
+#if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
+                  list.push_back(&element);
+#else
+                  list.insert(&element);
+#endif
+                }
+            }
+        }
+
+      //m_eMesh.getBulkData()->modification_begin();
+      //std::cout << "tmp removeElements(parents) " << std::endl;
+      removeElements(list);
+      //m_eMesh.getBulkData()->modification_end();
 
     }
 
@@ -1364,7 +1333,7 @@ namespace stk {
       if (m_doProgress)
         {
           m_doProgress = false;
-          progress_meter_num_total = doForAllElements(rank, function, elementColors, elementType, needed_entity_ranks, true, doAllElements);
+          progress_meter_num_total = doForAllElements(rank, function, elementColors, elementType, needed_entity_ranks,  true, doAllElements);
           m_doProgress = true;
           ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "NodeRegistry passes");
           notifyObservers(&pd);
@@ -1407,8 +1376,7 @@ namespace stk {
 
               if (!only_count && (doAllElements || elementIsGhost))
                 {
-                  //m_nodeRegistry->doForAllSubEntities(function, element, needed_entity_ranks);
-                  applyNodeRegistryFunctionForSubEntities(function, element, needed_entity_ranks);
+                  apply(function, element, needed_entity_ranks);
                 }
 
               if (m_doProgress && (num_elem % progress_meter_when_to_post == 0) )
@@ -2226,7 +2194,7 @@ namespace stk {
             }
         }
       //std::cout << "tmp P[" << m_eMesh.getRank() << "] removing family_trees, size() = "  << elements_to_be_destroyed.size() << std::endl;
-      removeOldElements(elements_to_be_destroyed);
+      removeElements(elements_to_be_destroyed);
     }
 
     void Refiner::
@@ -2307,11 +2275,11 @@ namespace stk {
                 }
             }
         }
-      removeOldElements(elements_to_be_destroyed);
+      removeElements(elements_to_be_destroyed);
 
     }
 
-    void Refiner::removeOldElements(elements_to_be_destroyed_type& elements_to_be_destroyed)
+    void Refiner::removeElements(elements_to_be_destroyed_type& elements_to_be_destroyed)
     {
       elements_to_be_destroyed_type elements_to_be_destroyed_pass2;
 
@@ -2321,8 +2289,8 @@ namespace stk {
 
           if (0)
             {
-              std::cout << "tmp removeOldElements removing element_p = " << element_p << std::endl;
-              if (element_p) std::cout << "tmp removeOldElements removing id= " << element_p->identifier() << std::endl;
+              std::cout << "tmp removeElements removing element_p = " << element_p << std::endl;
+              if (element_p) std::cout << "tmp removeElements removing id= " << element_p->identifier() << std::endl;
             }
 
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
@@ -2332,12 +2300,12 @@ namespace stk {
 #else
               elements_to_be_destroyed_pass2.insert(element_p);
 #endif
-              //throw std::logic_error("Refiner::removeOldElements couldn't remove element");
+              //throw std::logic_error("Refiner::removeElements couldn't remove element");
 
             }
         }
 
-      //std::cout << "tmp Refiner::removeOldElements pass2 size = " << elements_to_be_destroyed_pass2.size() << std::endl;
+      //std::cout << "tmp Refiner::removeElements pass2 size = " << elements_to_be_destroyed_pass2.size() << std::endl;
       for (elements_to_be_destroyed_type::iterator itbd = elements_to_be_destroyed_pass2.begin();
            itbd != elements_to_be_destroyed_pass2.end();  ++itbd)
         {
@@ -2345,11 +2313,11 @@ namespace stk {
           if ( ! m_eMesh.getBulkData()->destroy_entity( element_p ) )
             {
               CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(*element_p));
-              std::cout << "tmp Refiner::removeOldElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
+              std::cout << "tmp Refiner::removeElements couldn't remove element in pass2,...\n tmp destroy_entity returned false: cell= " << cell_topo.getName() << std::endl;
               const mesh::PairIterRelation elem_relations = element_p->relations(element_p->entity_rank()+1);
               std::cout << "tmp elem_relations.size() = " << elem_relations.size() << std::endl;
 
-              throw std::logic_error("Refiner::removeOldElements couldn't remove element, destroy_entity returned false.");
+              throw std::logic_error("Refiner::removeElements couldn't remove element, destroy_entity returned false.");
             }
         }
     }
@@ -2657,6 +2625,10 @@ namespace stk {
     Refiner::
     unrefineTheseElements(ElementUnrefineCollection& elements_to_unref)
     {
+      if (m_alwaysInitNodeRegistry)
+        {
+          throw std::logic_error("Refiner::unrefineTheseElements: to use urefinement, you must have setAlwaysInitializeNodeRegistry(false)");
+        }
       m_eMesh.getBulkData()->modification_begin();
       const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
 

@@ -42,14 +42,8 @@ void copy_remotelyowned_ids_into_CommMap(int myProc,
                                          const snl_fei::RecordCollection& records,
                                          fei::CommMap<int>::Type& procs_to_shared_ids)
 {
-  typedef snl_fei::RecordCollection::map_type map_type;
-  const map_type& rmap = records.getRecords();
-
-  map_type::const_iterator
-    r_iter = rmap.begin(), r_end = rmap.end();
-
-  for(; r_iter!=r_end; ++r_iter) {
-    int ID = r_iter->first;
+  for(int i=0; i<records.getNumRecords(); ++i) {
+    int ID = records.getRecordWithLocalID(i)->getID();
     int proc = lindecomp.which_proc(ID);
     if (proc != myProc) {
       addItemsToCommMap(proc, 1, &ID, procs_to_shared_ids);
@@ -68,14 +62,13 @@ void set_shared_ids(MPI_Comm comm,
   if (numProcs < 2) return;
   int myProc = fei::localProc(comm);
 
-  typedef snl_fei::RecordCollection::map_type map_type;
-  const map_type& rmap = records.getRecords();
+  const std::map<int,int>& rmap = records.getGlobalToLocalMap();
   int local_rmap_size = rmap.size();
   int global_rmap_size = 0;
   fei::GlobalMax(comm, local_rmap_size, global_rmap_size);
   if (global_rmap_size == 0) return;
 
-  map_type::const_iterator highest = rmap.end();
+  std::map<int,int>::const_iterator highest = rmap.end();
   if (local_rmap_size > 0) --highest;
 
   int lowest_local_id = local_rmap_size>0 ? rmap.begin()->first : 0;

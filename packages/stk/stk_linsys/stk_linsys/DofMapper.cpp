@@ -87,7 +87,7 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
       ids[num_ids++] = impl::entityid_to_int(entity.identifier());
     }
 
-    int err = m_fei_vecspace->addDOFs(field_id, 1, idType, num_ids, &ids[0]);
+    int err = m_fei_vecspace->addDOFs(field_id, idType, num_ids, &ids[0]);
     if (err != 0) throw_fei_err("stk::linsys::DofMapper::add_dof_mappings ERROR: fei::VectorSpace::addDOFs returned error-code=",err);
   }
 

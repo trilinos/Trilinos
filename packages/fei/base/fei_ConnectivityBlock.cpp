@@ -10,7 +10,6 @@
 
 #include <fei_defs.h>
 
-#include <fei_Record.hpp>
 #include <fei_Pattern.hpp>
 
 #include <fei_ConnectivityBlock.hpp>
@@ -173,7 +172,7 @@ fei::ConnectivityBlock::~ConnectivityBlock()
 }
 
 //----------------------------------------------------------------------------
-const fei::Record<int>*const* fei::ConnectivityBlock::getRowConnectivity(int ID) const
+const int* fei::ConnectivityBlock::getRowConnectivity(int ID) const
 {
   std::map<int,int>::const_iterator
     iter = connIDsOffsetMap_.find(ID);
@@ -182,12 +181,12 @@ const fei::Record<int>*const* fei::ConnectivityBlock::getRowConnectivity(int ID)
   }
 
   int ind = iter->second;
-  const Record<int>*const* ptr = &connectivities_[0];
+  const int* ptr = &connectivities_[0];
   return( ptr + ind*numRecordsPerConnectivity_);
 }
 
 //----------------------------------------------------------------------------
-fei::Record<int>** fei::ConnectivityBlock::getRowConnectivity(int ID)
+int* fei::ConnectivityBlock::getRowConnectivity(int ID)
 {
   std::map<int,int>::const_iterator
     iter = connIDsOffsetMap_.find(ID);
@@ -196,12 +195,12 @@ fei::Record<int>** fei::ConnectivityBlock::getRowConnectivity(int ID)
   }
 
   int ind = iter->second;
-  Record<int>** ptr = &connectivities_[0];
+  int* ptr = &connectivities_[0];
   return( ptr + ind*numRecordsPerConnectivity_);
 }
 
 //----------------------------------------------------------------------------
-const fei::Record<int>*const* fei::ConnectivityBlock::getColConnectivity(int ID) const
+const int* fei::ConnectivityBlock::getColConnectivity(int ID) const
 {
   std::map<int,int>::const_iterator
     iter = connIDsOffsetMap_.find(ID);
@@ -210,12 +209,12 @@ const fei::Record<int>*const* fei::ConnectivityBlock::getColConnectivity(int ID)
   }
 
   int ind = iter->second;
-  const Record<int>*const* ptr = &colConnectivities_[0];
+  const int* ptr = &colConnectivities_[0];
   return(ptr+ind*numRecordsPerColConnectivity_);
 }
 
 //----------------------------------------------------------------------------
-fei::Record<int>** fei::ConnectivityBlock::getColConnectivity(int ID)
+int* fei::ConnectivityBlock::getColConnectivity(int ID)
 {
   std::map<int,int>::const_iterator
     iter = connIDsOffsetMap_.find(ID);
@@ -224,7 +223,7 @@ fei::Record<int>** fei::ConnectivityBlock::getColConnectivity(int ID)
   }
 
   int ind = iter->second;
-  Record<int>** ptr = &colConnectivities_[0];
+  int* ptr = &colConnectivities_[0];
   return(ptr+ind*numRecordsPerColConnectivity_);
 }
 

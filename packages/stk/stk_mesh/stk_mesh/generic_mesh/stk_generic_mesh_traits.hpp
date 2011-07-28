@@ -30,24 +30,22 @@ struct Internal_STK_Generic_Mesh_Adapter
 
   // persistant through modifications (up to change owner):
   typedef Entity *     entity_local_id;
+  typedef const Entity * const_entity_local_id;
   // not-persistant through modifications (up to change owner):
   typedef Entity *     entity_descriptor;
   // entity_descriptor_iterator de-references to an entity_descriptor:
   typedef Entity *     entity_descriptor_iterator;
-  typedef Entity       entity_value;
   typedef EntityId     entity_size_type;
 
 
   typedef Part *       part_descriptor;
   // part_descriptor_iterator de-references to a part_descriptor:
   typedef Part *       part_descriptor_iterator;
-  typedef Part         part_value;
   typedef PartOrdinal  part_size_type; // not used yet
 
   typedef Bucket *     bucket_descriptor;
   // bucket_descriptor_iterator de-references to a bucket_descriptor:
   typedef Bucket *     bucket_descriptor_iterator;
-  typedef Bucket       bucket_value; // not used yet
   typedef Ordinal      bucket_size_type; // not used yet
   // potentially heavy bucket_descriptor_iterator:
   typedef Bucket *     selected_bucket_descriptor_iterator;
@@ -57,7 +55,8 @@ struct Internal_STK_Generic_Mesh_Adapter
   typedef Ordinal      part_bucket_size_type; // not used yet
 
   // potentially heavy part_descriptor_iterator:
-  typedef Part *       bucket_part_descriptor_iterator;
+  typedef const Ordinal *    bucket_part_descriptor_iterator;
+  typedef Ordinal      bucket_part_descriptor;
   typedef Ordinal      bucket_part_size_type; // not used yet
 
   // potentially heavy entity_descriptor_iterator:
@@ -67,7 +66,6 @@ struct Internal_STK_Generic_Mesh_Adapter
   typedef Internal_STK_Relation_Descriptor_Adapter    relation_descriptor;
   typedef Internal_STK_Relation_Descriptor_Adapter *  relation_descriptor_iterator;
   typedef Internal_STK_Relation_Descriptor_Adapter *  selected_relation_descriptor_iterator;
-  typedef Relation          relation_value; // not used yet
   typedef Ordinal           relation_size_type; // not used yet
 
   inline part_descriptor             universal_part() { return & m_bulk_data.mesh_meta_data().universal_part(); }
