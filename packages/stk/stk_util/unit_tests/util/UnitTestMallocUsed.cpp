@@ -310,7 +310,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
 #if defined SIERRA_PTMALLOC3_ALLOCATOR
   std::cout << "Modified ptmalloc3 allocator: ";
 #elif defined SIERRA_PTMALLOC2_ALLOCATOR
-  std::cout << "Modified ptmalloc3 allocator: ";
+  std::cout << "Modified ptmalloc2 allocator: ";
 #else
   std::cout << "Default allocator: ";
 #endif
