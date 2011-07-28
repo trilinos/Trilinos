@@ -545,7 +545,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   if (nwgt && (!tmpwgts || !phg->vwgt)) MEMORY_ERROR;
 
   if (phg->nDim > 0) {
-    nCoords = phg->nVtx * phg->nDim;
+    nCoords = (phg->nVtx + nRepartVtx) * phg->nDim;
 
     tmpcoords = (double *)ZOLTAN_CALLOC(sizeof(double), nCoords);
     phg->coor = (double *)ZOLTAN_MALLOC(sizeof(double) * nCoords);
