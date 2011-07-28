@@ -259,11 +259,11 @@ optional user data (user_length) must be consistent for all processors.
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;comm</i></td>
 <td>MPI comm duplicated and stored specifying directory processors.</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;num_gid_entries</i></td>
-<td>Length of GID.</td>
+<td>Length (number of ZOLTAN_ID_TYPE) of GID.</td>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;num_lid_entries</i></td>
-<td>Length of local ID or zero to ignore local IDs.</td></tr>
+<td>Length (number of ZOLTAN_ID_TYPE) of local ID or zero to ignore local IDs.</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;user_length</i></td>
-<td>Length of user defined data field (optional, may be zero).</td></tr>
+<td>Length (number of char) of user defined data field (optional, may be zero).</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;table_length</i></td>
 <td>Length of hash table (zero forces default value of <b>100,000</b> slots).
 For large problems, this value should be increased to approximately 
@@ -441,7 +441,7 @@ int <b>Zoltan_DD_Update</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>user</i>,
+char *<i>user</i>,
 int *<i>part</i>,
 int <i>count</i>);
 </td>
@@ -454,7 +454,7 @@ int <i>count</i>);
 int <b>Zoltan_DD::Update</b>(
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>user</i>,
+char *<i>user</i>,
 int *<i>part</i>,
 const int & <i>count</i>);
 </td>
@@ -511,7 +511,7 @@ int <b>Zoltan_DD_Find</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>data</i>,
+char *<i>data</i>,
 int *<i>part</i>,
 int <i>count</i>,
 int *<i>owner</i>);
@@ -525,7 +525,7 @@ int *<i>owner</i>);
 int <b>Zoltan_DD::Find</b>(
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
-<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>data</i>,
+char *<i>data</i>,
 int *<i>part</i>,
 const int & <i>count</i>,
 int *<i>owner</i>) const;
