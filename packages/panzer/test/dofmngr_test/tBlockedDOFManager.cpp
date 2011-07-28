@@ -10,6 +10,7 @@
 
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
+#include "Panzer_PauseToAttach.hpp"
 
 #include "UnitTest_ConnManager.hpp"
 
@@ -237,9 +238,9 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
          = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
-   dofManager.addField("block_0","Ux",patternC1);
-   dofManager.addField("block_0","Uy",patternC1);
-   dofManager.addField("block_0","P",patternC1);
+   dofManager.addField("block_0","Ux", patternC1);
+   dofManager.addField("block_0","Uy", patternC1);
+   dofManager.addField("block_0","P",  patternC1);
    dofManager.addField("block_2","rho",patternC1);
 
    // set up a blocking structure
@@ -252,6 +253,33 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    dofManager.setFieldOrder(fieldOrder);
 
    dofManager.buildGlobalUnknowns();
+
+   std::vector<BlockedDOFManager<short,int>::GlobalOrdinal> ownedAndShared, owned;
+   dofManager.getOwnedAndSharedIndices(ownedAndShared);
+   dofManager.getOwnedIndices(owned);
+
+   for(std::size_t i=0;i<ownedAndShared.size();i++)
+      out << "(" << ownedAndShared[i].first << ","
+                 << ownedAndShared[i].second << "), ";
+   out << std::endl;
+
+   const std::vector<RCP<panzer::DOFManager<short,int> > > & subManagers = 
+         dofManager.getFieldDOFManagers();
+   for(std::size_t i=0;i<subManagers.size();i++) {
+      std::stringstream ss;
+ 
+      subManagers[i]->printFieldInformation(ss);
+
+      out << "******************************************************************" 
+          << ss.str() 
+          << "******************************************************************" 
+          << std::endl;
+   }
+
+   if(myRank==0)
+   {  TEST_EQUALITY(ownedAndShared.size(),39); }
+   else
+   {  TEST_EQUALITY(ownedAndShared.size(),28); }
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)

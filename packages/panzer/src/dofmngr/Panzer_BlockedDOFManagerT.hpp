@@ -98,13 +98,29 @@ BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(cons
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinal> & indices) const
 {
-   // TODO
+   // loop over field block manager and grab indices
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+      std::vector<GlobalOrdinalT> fieldBlockOwned;
+
+      fieldBlockManagers_[fbm]->getOwnedIndices(fieldBlockOwned);
+
+      for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
+         indices.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
+   }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinal> & indices) const
 {
-   // TODO
+   // loop over field block manager and grab indices
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+      std::vector<GlobalOrdinalT> fieldBlockOwned;
+
+      fieldBlockManagers_[fbm]->getOwnedAndSharedIndices(fieldBlockOwned);
+
+      for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
+         indices.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
+   }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -391,15 +407,19 @@ int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getNumFields() const
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
 {
-   if(!fieldsRegistered())
+   if(!fieldsRegistered()) {
+      std::cout << "register fields in" << std::endl;
       registerFields();
+   }
 
    // save the geometry pattern
    geomPattern_ = geomPattern;
 
    // build global unknowns for each field block
-   for(std::size_t fb=0;fb<fieldBlockManagers_.size();fb++)
+   for(std::size_t fb=0;fb<fieldBlockManagers_.size();fb++) {
+      std::cout << "building field block fb = " << fb << std::endl;
       fieldBlockManagers_[fb]->buildGlobalUnknowns(geomPattern_);
+   }
 }
 
 // build the global unknown numberings
@@ -409,8 +429,12 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 {
-   if(!fieldsRegistered())
+   if(!fieldsRegistered()) {
+      std::cout << "register fields out" << std::endl;
       registerFields();
+   }
+
+   std::cout << "Build geometric layout" << std::endl;
 
    // build the pattern for the ID layout on the mesh
    std::vector<RCP<const FieldPattern> > patVector;
@@ -420,8 +444,12 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
       patVector.push_back(f2p_itr->second);
    aggFieldPattern->buildPattern(patVector);
 
+   std::cout << "Build connectivity" << std::endl;
+
    // setup connectivity mesh
    connMngr_->buildConnectivity(*aggFieldPattern);
+
+   std::cout << "Build sub unknowns" << std::endl;
 
    // using new geometric pattern, build global unknowns
    buildGlobalUnknowns(aggFieldPattern);

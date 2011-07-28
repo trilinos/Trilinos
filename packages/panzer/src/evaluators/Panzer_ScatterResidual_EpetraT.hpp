@@ -79,7 +79,7 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   std::vector<typename Traits::GlobalOrdinal> GIDs;
+   std::vector<GO> GIDs;
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
@@ -185,7 +185,7 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   std::vector<typename Traits::GlobalOrdinal> GIDs;
+   std::vector<GO> GIDs;
    std::vector<int> LIDs;
    std::vector<double> jacRow;
  

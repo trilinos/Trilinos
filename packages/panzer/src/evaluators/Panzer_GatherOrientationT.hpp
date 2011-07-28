@@ -60,7 +60,7 @@ template<typename EvalT,typename Traits,typename LO,typename GO>
 void panzer::GatherOrientation<EvalT, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   std::vector<typename Traits::GlobalOrdinal> GIDs;
+   std::vector<GO> GIDs;
    std::vector<int> LIDs;
    std::vector<double> orientation;
  

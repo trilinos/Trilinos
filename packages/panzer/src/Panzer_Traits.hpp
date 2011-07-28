@@ -24,14 +24,9 @@
 #include "Phalanx_TypeStrings.hpp"
 
 namespace panzer {
-  template <typename LocalOrdinalT,typename GlobalOrdinalT>
-  class UniqueGlobalIndexer;
 
   struct Traits : public PHX::TraitsBase {
 
-    typedef int LocalOrdinal; 
-    typedef int GlobalOrdinal; 
-    
     // ******************************************************************
     // *** Scalar Types
     // ******************************************************************
