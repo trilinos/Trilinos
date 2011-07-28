@@ -246,6 +246,10 @@ int  idx 			/* index of vector param, -1 if scalar */
           tmp = ZOLTAN_LB_NO_LISTS;      /* no lists */
           status = 3;
         }
+        else if (strcmp(result.sval, "CANDIDATE_LISTS")==0) {
+          tmp = ZOLTAN_LB_CANDIDATE_LISTS;   /* candidates needed in matching */
+          status = 3;
+        }
         else{
           tmp = ZOLTAN_LB_RETURN_LISTS_DEF;
           sprintf(msg, "Unknown return_lists option %s.", result.sval);
@@ -385,6 +389,9 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
     break;
   case ZOLTAN_LB_COMPLETE_EXPORT_LISTS:
     printf("PARTITION ASSIGNMENTS\n");
+    break;
+  case ZOLTAN_LB_CANDIDATE_LISTS:
+    printf("CANDIDATE LISTS\n");
     break;
   case ZOLTAN_LB_NO_LISTS:
     printf("NONE\n");

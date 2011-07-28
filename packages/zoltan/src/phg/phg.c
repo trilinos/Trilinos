@@ -1146,6 +1146,12 @@ int *outparts         = zhg->Output_Parts;
 
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) 
     goto End;
+  else if (zz->LB.Return_Lists == ZOLTAN_LB_CANDIDATE_LISTS) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Candidate Lists not supported in PHG."
+                                     "change RETURN_LISTS parameter");
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
 
   /* Count number of objects with new partitions or new processors. */
   *num_exp = 0;

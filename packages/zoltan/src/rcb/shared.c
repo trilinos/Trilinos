@@ -358,8 +358,8 @@ int Zoltan_RB_Send_Outgoing(
   MPI_Comm local_comm,
   int proclower,                    /* smallest processor for Tflops_Special */
   int numprocs,                     /* number of processors for Tflops_Special*/
-  int partlower,                    /* smallest partition # in set 0 */
-  int partmid                       /* smallest partition # in set 1 */
+  int partlower,                    /* smallest part # in set 0 */
+  int partmid                       /* smallest part # in set 1 */
 )
 {
 /* Routine to determine new processors for outgoing dots. */
@@ -373,7 +373,7 @@ int Zoltan_RB_Send_Outgoing(
 
   /* outgoing = number of dots to ship to partner */
   /* dottop = number of dots that have never migrated */
-  /* Also, update partition assignments. */
+  /* Also, update part assignments. */
 
   for (i = 0, keep = 0, outgoing = 0; i < *dotnum; i++) {
     if ((*dotmark)[i] != set)
@@ -451,11 +451,11 @@ int Zoltan_RB_Send_To_Part(
 )
 {
 /* When parallel partitioning is done, send dots that are on the wrong
- * processor for their partition to the correct processor.
- * This situation arises when a processor has zero partitions assigned to
+ * processor for their part to the correct processor.
+ * This situation arises when a processor has zero parts assigned to
  * it, yet has participated in the parallel partitioning and has, as a result,
  * stored some dots.  
- * (e.g., three processors, two partitions, NUM_LOCAL_PARTS = 1 on 
+ * (e.g., three processors, two parts, NUM_LOCAL_PARTS = 1 on 
  * procs 1 and 2.  Procs 0 and 1 are in set 0 during parallel partitioning, so
  * Proc 0 may have some dots after the parallel partitioning.  Those dots 
  * must be sent to proc 1.
@@ -1044,8 +1044,8 @@ int Zoltan_RB_Remap(
 )
 {
 char *yo = "Zoltan_RB_Remap";
-int *old_part = NULL;    /* Array of old partition assignments for dots */
-int *new_part = NULL;    /* Array of new partition assignments for dots;
+int *old_part = NULL;    /* Array of old part assignments for dots */
+int *new_part = NULL;    /* Array of new part assignments for dots;
                             initially determined by partitioning algorithm;
                             may be reset by Zoltan_LB_Remap.  */
 int *proc = NULL;        /* Array of processor assignments for dots;
@@ -1075,7 +1075,7 @@ int i;
     proc[i] = dotpt->Proc[i];
   }
 
-  /* Remap partitions to reduce data movement. */
+  /* Remap parts to reduce data movement. */
   ierr = Zoltan_LB_Remap(zz, &new_map, *dotnum, proc, old_part, new_part, 0);
   if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_LB_Remap");
@@ -1083,7 +1083,7 @@ int i;
   }
   
   if (new_map) {
-    /* Partitions are being remapped; need to move the dots to new procs. */
+    /* Parts are being remapped; need to move the dots to new procs. */
     for (i = 0; i < *dotnum; i++)
       dotpt->Part[i] = new_part[i];
 
@@ -1142,7 +1142,7 @@ int Zoltan_RB_Return_Arguments(
   ZOLTAN_ID_PTR *import_local_ids,   /* local IDs of objects to be imported. */
   int **import_procs,                /* processors from which objects will be 
                                         imported. */
-  int **import_to_part,              /* partitions to which objects will be 
+  int **import_to_part,              /* parts to which objects will be 
                                         imported. */
   int dotnum                         /* number of dots on this processor */
 )
@@ -1160,12 +1160,12 @@ int num_lid_entries = zz->Num_LID;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   /* Compute number of objects to import.  Include those that change only
-     partition but not processor. */
+     part but not processor. */
 
   *num_import = 0;
   for (i = 0; i < dotnum; i++)  
     if (dotpt->Proc[i] != zz->Proc ||   /* imported from other processors */
-        dotpt->Input_Part[i] != dotpt->Part[i])   /* partition change only */
+        dotpt->Input_Part[i] != dotpt->Part[i])   /* part change only */
       (*num_import)++;
 
   *import_global_ids = *import_local_ids = NULL;
@@ -1187,7 +1187,7 @@ int num_lid_entries = zz->Num_LID;
 
     for (i = 0, j = 0; j < dotnum; j++) {
       if (dotpt->Proc[j] != zz->Proc ||    /* imported from other processors */
-          dotpt->Input_Part[j] != dotpt->Part[j]) {  /* partition change only */
+          dotpt->Input_Part[j] != dotpt->Part[j]) {  /* part change only */
         ZOLTAN_SET_GID(zz, &((*import_global_ids)[i*num_gid_entries]),
                            &(gidpt[j*num_gid_entries]));
         if (num_lid_entries)
@@ -1199,7 +1199,6 @@ int num_lid_entries = zz->Num_LID;
       }
     }
   }
-
 
 
 End:
@@ -1249,15 +1248,15 @@ int Zoltan_RB_Tree_Gatherv(
 ) 
 {
 /* Routine to build arguments to MPI_Allgatherv for consolidating trees
-   for KEEP_CUTS=1.  Scans partitions array to assign unique processor owners to
-   partitions; this is important when a partition is spread across multiple
+   for KEEP_CUTS=1.  Scans parts array to assign unique processor owners to
+   parts; this is important when a part is spread across multiple
    processors.
    Can't do more in common due to different tree types
    for RCB and RIB.  */
 
-int np;       /* number of partitions on a processor */
-int fp;       /* first partition on a processor */
-int prev_fp;  /* previous first partition.  If fp == prev_fp, partition fp
+int np;       /* number of parts on a processor */
+int fp;       /* first part on a processor */
+int prev_fp;  /* previous first part.  If fp == prev_fp, part fp
                  is spread across multiple processors.  Include its entry
                  only on the first processor holding fp. */
 int ierr = ZOLTAN_OK;
@@ -1271,7 +1270,7 @@ int i, cnt;
     ierr = Zoltan_LB_Proc_To_Part(zz, i, &np, &fp);
     if (ierr >= 0) {
       if (np > 0 && fp != prev_fp) {
-        /* processor i has some partitions, and the parts start on proc i */
+        /* processor i has some parts, and the parts start on proc i */
         if (i == zz->Proc) *sendcount = np * size;
         recvcount[i] = np * size;
         displ[i] = cnt * size;
@@ -1329,8 +1328,8 @@ int Zoltan_RB_check_geom_output(
   ZZ *zz, 
   struct Dot_Struct *dotpt,
   float *part_sizes,
-  int np,               /* number of partitions on processor */
-  int fp,               /* first partition on processor */
+  int np,               /* number of parts on processor */
+  int fp,               /* first part on processor */
   int dotnum,
   int dotorig,
   void *rcbbox_arg)
@@ -1366,7 +1365,7 @@ int Zoltan_RB_check_geom_output(
     }
   }
   
-  /* check that result is within Imbalance_Tol of partition size target */
+  /* check that result is within Imbalance_Tol of part size target */
 
   wtpp = (double *) ZOLTAN_MALLOC(2*(1+ngp)*sizeof(double));
 
@@ -1386,7 +1385,7 @@ int Zoltan_RB_check_geom_output(
         if (wtsum[i] > tolerance) {
           if (zz->Debug_Level > ZOLTAN_DEBUG_NONE) {
             sprintf(msg, 
-                    "Weight of partition %d = %f > tolerance %f for weight %d.", 
+                    "Weight of part %d = %f > tolerance %f for weight %d.", 
                     i, wtsum[i], tolerance, dd);
             ZOLTAN_PRINT_WARN(proc, yo, msg);
           }
@@ -1410,7 +1409,7 @@ int Zoltan_RB_check_geom_output(
         if (wtsum[i] > tolerance) {
           if (zz->Debug_Level > ZOLTAN_DEBUG_NONE) {
             sprintf(msg, 
-                    "Weight of partition %d = %f > tolerance %f for weight 0.", 
+                    "Weight of part %d = %f > tolerance %f for weight 0.", 
                     i, wtsum[i], tolerance);
             ZOLTAN_PRINT_WARN(proc, yo, msg);
           }
@@ -1949,6 +1948,155 @@ static int send_receive_doubles(double *c, int outgoing, int total, char *sendbu
   }
 
   return Zoltan_Comm_Do(cobj, message_tag, sendbuf, sizeof(double), (char *)(c + next));
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int Zoltan_RB_Candidates_Copy_Input(
+  ZZ *zz,                            /* Load-balancing structure */
+  int dotnum,                        /* number of dots on this processor */
+  ZOLTAN_ID_PTR gidpt,               /* pointer to array of global IDs. */
+  ZOLTAN_ID_PTR lidpt,               /* pointer to array of local IDs. */
+  struct Dot_Struct *dotpt,          /* pointer to array of Dots. */
+  int *num_input,             /* output: number of objs on this proc. */
+  ZOLTAN_ID_PTR *input_gids,  /* output: global IDs of objs on this proc. */
+  ZOLTAN_ID_PTR *input_lids,  /* output: local IDs of objs on this proc. */
+  int **input_procs,          /* output: NULL; not used for CANDIDATE_LISTS */
+  int **input_to_part         /* output: NULL; not used for CANDIDATE_LISTS */
+)
+{
+/*
+ * For CANDIDATE_LISTS output, the GIDs as input through the callback
+ * functions are returned in the import lists.  We copy them now.
+ */
+char *yo = "Zoltan_RB_Candidates_Copy_Input";
+int ierr = ZOLTAN_OK;
+int num_gid_entries = zz->Num_GID;
+int num_lid_entries = zz->Num_LID;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  *num_input = dotnum;
+  *input_gids = *input_lids = NULL;
+  *input_procs = *input_to_part = NULL;
+
+  if (*num_input && 
+     (!Zoltan_Special_Malloc(zz, (void **)input_gids, dotnum,
+                               ZOLTAN_SPECIAL_MALLOC_GID)
+     || !Zoltan_Special_Malloc(zz, (void **)input_lids, dotnum,
+                               ZOLTAN_SPECIAL_MALLOC_LID))) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
+
+  memcpy(*input_gids, gidpt, dotnum*num_gid_entries*sizeof(ZOLTAN_ID_TYPE));
+  memcpy(*input_lids, lidpt, dotnum*num_lid_entries*sizeof(ZOLTAN_ID_TYPE));
+
+End:
+  if (ierr < 0) {
+    Zoltan_Special_Free(zz, (void **)input_gids, ZOLTAN_SPECIAL_MALLOC_GID);
+    Zoltan_Special_Free(zz, (void **)input_lids, ZOLTAN_SPECIAL_MALLOC_LID);
+  }
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  return(ierr);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int Zoltan_RB_Candidates_Output(
+  ZZ *zz,                          /* Load-balancing structure */
+  int dotnum,                      /* number of dots on this processor */
+  ZOLTAN_ID_PTR gidpt,             /* pointer to array of global IDs currently
+                                      on this proc. */
+  ZOLTAN_ID_PTR lidpt,             /* pointer to array of local IDs currently
+                                      on this proc. */
+  struct Dot_Struct *dotpt,        /* pointer to array of Dots currently
+                                      on this proc. */
+  int num_input,                   /* number of global IDs input on this proc */
+  ZOLTAN_ID_PTR input_gids,        /* array of global IDs input on this proc */
+  int *num_candidate_gids,         /* output: # of objs input on this proc */
+  ZOLTAN_ID_PTR *candidate_gids    /* output: global IDs of candidates for 
+                                              each input obj. */
+)
+{
+/*
+ * Function to build the return arguments expected by Zoltan when
+ * RETURN_LISTS=CANDIDATE_LISTS (used in matching only).
+ * For each part, determine a candidate among all dots assigned to the part.
+ * Then, for each input GID, return the candidate for its part in the 
+ * candidate_gids array.
+ */
+char *yo = "Zoltan_RB_Candidates_Output";
+int i;
+int maxdotnum;
+int ierr = ZOLTAN_OK;
+int num_gid_entries = zz->Num_GID;
+struct Zoltan_DD_Struct *dd = NULL;
+ZOLTAN_ID_PTR dot_candidates = NULL;
+int prevpart;
+ZOLTAN_ID_PTR current_candidate;
+ZOLTAN_ID_PTR current_dot_candidate;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  *num_candidate_gids = num_input;
+  *candidate_gids = NULL;
+
+  /* Build data directory to find the candidates; RCB has dots distributed
+   * according to RCB distribution, but need candidates according to the
+   * input distribution
+   */
+
+  MPI_Allreduce(&dotnum, &maxdotnum, 1, MPI_INT, MPI_MAX, zz->Communicator);
+  ierr = Zoltan_DD_Create(&dd, zz->Communicator, num_gid_entries, 
+                          0, num_gid_entries*sizeof(ZOLTAN_ID_TYPE), 
+                          maxdotnum, 0);
+
+  /* Select candidates for each part; store them for each GID. */
+  dot_candidates = (ZOLTAN_ID_PTR) 
+                   ZOLTAN_MALLOC(dotnum*num_gid_entries*sizeof(ZOLTAN_ID_TYPE));
+  prevpart = -1;
+  for (current_dot_candidate = dot_candidates, i = 0; i < dotnum; i++) {
+    printf("%d KDDKDD gid %d part %d\n", zz->Proc, gidpt[i*num_gid_entries], dotpt->Part[i]);
+    if (dotpt->Part[i] != prevpart) {
+      /* Assuming dots are grouped according to part number. */
+      /* Then candidate is first dot in new part */
+      current_candidate = &(gidpt[i*num_gid_entries]);
+      prevpart = dotpt->Part[i];
+    }
+    ZOLTAN_SET_GID(zz, current_dot_candidate, current_candidate);
+    current_dot_candidate += num_gid_entries;
+  }
+
+  /* Update directory with candidates */
+  ierr = Zoltan_DD_Update(dd, gidpt, NULL, (char*)dot_candidates, NULL, dotnum);
+
+  /* Find candidates for input GIDs */
+  if (num_input && 
+      !Zoltan_Special_Malloc(zz, (void **)candidate_gids, num_input,
+                               ZOLTAN_SPECIAL_MALLOC_GID)) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+  }
+
+  ierr = Zoltan_DD_Find(dd, input_gids, NULL, (char*)*candidate_gids, NULL,
+                        num_input, NULL); /* KDD Can proc (last arg) be NULL? */
+
+End:
+
+  Zoltan_DD_Destroy(&dd);
+  ZOLTAN_FREE(&dot_candidates);
+
+  if (ierr < 0) 
+    Zoltan_Special_Free(zz, (void **)candidate_gids, ZOLTAN_SPECIAL_MALLOC_GID);
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  return(ierr);
 }
 
 #ifdef __cplusplus

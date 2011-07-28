@@ -2329,18 +2329,21 @@ static int pmatching_rcb (ZZ *zz,
 
   char *yo = "pmatching_rcb";	     
   int i, j, n, m, round, vindex;
-  ZZ *zz2 = Zoltan_Copy(zz);
+  ZZ *zz2 = Zoltan_Create(hg->comm->Communicator);
+  char s[8]; 
+  int changes, num_gid_entries, num_lid_entries;
   /* --RCB arguments-- */
   int num_import;                  /* Returned */
-  ZOLTAN_ID_PTR import_global_ids; /* Returned */
-  ZOLTAN_ID_PTR import_local_ids;  /* Returned */
-  int *import_procs;               /* Returned */
-  int *import_to_part;             /* Returned */
-  int num_export;                  /* Not computed */
-  ZOLTAN_ID_PTR export_global_ids; /* Not computed (want to use, though) */
-  ZOLTAN_ID_PTR export_local_ids;  /* Not computed */
-  int *export_procs;               /* Not computed */
-  int *export_to_part;             /* Not computed */
+  ZOLTAN_ID_PTR import_global_ids = NULL; /* Returned */
+  ZOLTAN_ID_PTR import_local_ids = NULL;  /* Returned */
+  int *import_procs = NULL;               /* Returned */
+  int *import_to_part = NULL;             /* Returned */
+  int num_export;                  /* Returned: number of input GIDs */
+  ZOLTAN_ID_PTR export_global_ids = NULL; /* Returned:  candidates for each
+                                             input GID */
+  ZOLTAN_ID_PTR export_local_ids = NULL;  /* Not computed */
+  int *export_procs = NULL;               /* Not computed */
+  int *export_to_part = NULL;             /* Not computed */
   /* ----------------- */
 
 #ifdef DONT_RUN
@@ -2428,7 +2431,6 @@ static int pmatching_rcb (ZZ *zz,
     goto End;
   }
     
-  char s[8]; 
   sprintf(s, "%d", 1);
   if (Zoltan_Set_Param(zz2, "NUM_GID_ENTRIES", s) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
@@ -2441,6 +2443,7 @@ static int pmatching_rcb (ZZ *zz,
   }
     
   /* NEANEA Num global parts should be a reduction by some factor */
+  sprintf(s, "%d", zz->Num_Proc); /* KDDKDD JUST FOR TESTING!!! NOT CORRECT */
   if (Zoltan_Set_Param(zz2, "NUM_GLOBAL_PARTS", s) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
@@ -2452,18 +2455,34 @@ static int pmatching_rcb (ZZ *zz,
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
+
+  if (Zoltan_Set_Param(zz2, "RETURN_LISTS", "CANDIDATE_LISTS")== ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
 	
   if (Zoltan_Set_Param(zz2, "LB_METHOD", "RCB") == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
+
      
   /* NEANEA  using the wrapper (just like any other RCB user) */
-  ierr = Zoltan_RCB(zz2, hgp->part_sizes, &num_import, &import_global_ids,
+  ierr = Zoltan_LB_Partition(zz2, &changes, &num_gid_entries, &num_lid_entries,
+                    &num_import, &import_global_ids,
 		    &import_local_ids, &import_procs, &import_to_part,
 		    &num_export, &export_global_ids, &export_local_ids,
 		    &export_to_part, &export_to_part);
 
+
+{/* KDDKDD */
+  int kdd;
+  printf("%d KDDKDD Sanity Check %d == %d ? \n", zz->Proc, num_import, num_export);
+  for (kdd = 0; kdd < num_import; kdd++) {
+    printf("%d KDDKDD Input (%d %d)  Candidate %d\n", zz->Proc, import_global_ids[kdd], import_local_ids[kdd], export_global_ids[kdd]);
+  }
+/* KDDKDD */
+}
 
 #ifdef DONT_RUN
 
@@ -2771,7 +2790,8 @@ static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
        vertices by the number of local vertices (as per rcb_get_num_obj) */
     for (i = 0; i < local_obj; i++) {
       global_id[i] = VTX_LNO_TO_GNO(hg, (((hg->comm->myProc_y) * local_obj) + i));
-      local_id[i] = i;
+      local_id[i] = i;    /* KDDKDD:  could use argument above here and save
+                             call to VTX_LNO_TO_GNO in geom_multi callback */
     }
   }
 
@@ -2789,12 +2809,13 @@ static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
     for (i = 0; i < local_obj; i++) {
       global_id[i] = VTX_LNO_TO_GNO(hg, modifier +
 				    ((((hg->comm->myProc_y) * local_obj) + i)));
-      local_id[i] = i;
+      local_id[i] = i;   /* KDDKDD could use argument above here and save 
+                            call to VTX_LNO_TO_GNO in geom_multi callback */
     }
   }
 
   if (wdim > 0)
-    memcpy(wgt, hg->vwgt, sizeof(float) * local_obj * wdim);
+    memcpy(wgt, hg->vwgt, sizeof(float) * local_obj * wdim);  /* KDDKDD problem here; not getting weights for the specific vertices passed; getting weights for the first local_obj vertices */
 }
 
 static int rcb_get_num_geom(void *data, int *ierr) {

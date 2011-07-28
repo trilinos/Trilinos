@@ -83,6 +83,7 @@ typedef enum Zoltan_LB_Method {
 #define ZOLTAN_LB_EXPORT_LISTS 2
 #define ZOLTAN_LB_COMPLETE_EXPORT_LISTS 3
 #define ZOLTAN_LB_ALL_LISTS 4
+#define ZOLTAN_LB_CANDIDATE_LISTS 5
 
 /*
  ******************************************************

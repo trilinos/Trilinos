@@ -270,6 +270,7 @@ int Zoltan_HSFC(
       for (j = 0; j < dim; j++)
          out[j] = (dots[i].x[j] - d->bbox_lo[j]) / d->bbox_extent[j];
       dots[i].fsfc = d->fhsfc (zz, out);      /* Note, this is a function call */
+/* printf("KDDKDD %f %f %f \n", dots[i].fsfc, dots[i].x[0], dots[i].x[1]);*/
       }
 
    /* Initialize grand partition to equally spaced intervals on [0,1] */
@@ -566,6 +567,10 @@ EndReporting:
 
    if (!zz->LB.Return_Lists)
       *num_export = -1;
+   else if (zz->LB.Return_Lists == ZOLTAN_LB_CANDIDATE_LISTS) {
+      ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "Candidate Lists not supported in HSFC;"
+                                       "change RETURN_LISTS parameter");
+   }
    else if (*num_export > 0) {
       /* allocate storage for export information and fill in data */
       if (zz->Num_GID > 0) {
