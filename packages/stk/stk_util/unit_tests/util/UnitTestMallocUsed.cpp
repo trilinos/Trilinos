@@ -306,6 +306,11 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
 #endif
 
 #if defined SIERRA_PTMALLOC3_ALLOCATOR
+<<<<<<< HEAD
+=======
+  std::cout << "Modified ptmalloc3 allocator: ";
+#elif defined SIERRA_PTMALLOC2_ALLOCATOR
+>>>>>>> (From Sierra) Add malloc_used(), malloc_footprint() and malloc_max_footprint() to ptmalloc2
   std::cout << "Modified ptmalloc3 allocator: ";
 #elif defined SIERRA_PTMALLOC2_ALLOCATOR
   std::cout << "Modified ptmalloc2 allocator: ";
