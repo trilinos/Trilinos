@@ -19,7 +19,6 @@
 \definecolor{klnBlue}{rgb}{.2,.1,.7}
 \newcommand{\KLN}[1]{\textcolor{klnBlue}{KLN: #1}}
 
-\newcommand{\mahts}[1]{\textsuperscript{#1}}
 \newcommand{\Aprime}{\ensuremath{A'}\xspace}
 \newcommand{\Bprime}{\ensuremath{B'}\xspace}
 \title{Evaluation of Tpetra's Matrix-Matrix Multiplication Routine}
@@ -48,7 +47,6 @@ discuss the optimizations made to the routine, it's current state, and where fut
 
 
 \section{Basic Outline of the Algorithm}
-\JJH{I'd suggest adding citations throughout.}
 The Tpetra matrix-matrix multiply algorithm allows two matrices ($A$ and $B$) to be multiplied. The result of this 
 multiplication is then placed in a third matrix ($C$).
 The basic algorithm is as follows:
@@ -70,15 +68,20 @@ The basic algorithm is as follows:
 \section{Optimization}
 
 \subsection{Fixing FillComplete's Sort}
-As part of its algorithm, the \verb!fillComplete! function relies on a function called sort2. This function performs a sort 
+As part of its algorithm, the \verb!fillComplete! function relies on a function called \verb!sort2!. This function performs a sort 
 on two arrays by sorting the first array and concurrently doing the same permutations on the second array, 
 i.e. both arrays are sorted according to the ordering of the first array. The main use case for this function is sorting 
 an indices array and moving the values in a values array so that they stay matched up with their associated index.
 
-Up until recently, the sort2 function relied on an insertion sort algorithm. We modified the function so that it first 
+Up until recently, the \verb!sort2! function relied on an insertion sort algorithm. We modified the function so that it first 
 checks to see if the arrays are already sorted (which happens quite often) and returns right away if they are. 
-If the arrays are not sorted, a quicksort is performed on the arrays.
+If the arrays are not sorted, a quicksort is performed on the arrays. This means that for the section of our matrix-matrix
+multiply routine where we call \verb!fillComplete! we went from running on average $0(n^2)+C$ to running on average
+$0(nlog(n))+C$ where $C$ is a constant representing all the other computation done in the \verb!fillComplete! routine.
+It's also worth noting that since our \verb!sort2! function checks first to see if the arrays are already in order, we avoid
+the worst case runtime for the quicksort routine.
 \JJH{Can you quantify the difference in performance that just this change makes?}
+\KLN{So I added what I think quantifies it. Is that what you're looking for?}
 
 \subsection{Removal of Specific Transpose Mode Kernels}
 In the original ExpetraExt algorithm there was actually a separate kernel for each possible transpose combination 
@@ -111,7 +114,7 @@ $Nnzm$ less operations?}
 We conducted a series of weak-scaling studies on the Hopper NERSC machine. Hopper is a Cray XE6 with 24 cores
 per-node~\footnote{For more machine information regarding Hopper, please visit \url{http://www.nersc.gov/systems/hopper-cray-xe6}}.
 We define weak-scailing as increasing the problem size while holding the amount of work each node does constant. We define
-weak-scailing effciency as $TimeInSerial/TimeInParallel$.
+weak-scailing effciency as $Time_{serial}/Time_{parallel}$.
 
 \subsection{Comparison of Development Stages}
 Figure~\ref{tpetracomptime} and Figure~\ref{tpetracompeff} show the test results of comparing the Tpetra matrix-matrix multiply 
@@ -121,7 +124,7 @@ $110^3$ number of rows from each matrix (this means each core has approximately 
 Then the two matrices were multiplied together. The multiplication is what 
 we timed. We ran these experiments three times for each node count, and then averaged the results.
 The red line represents the routine as it was when we first got the routine working. The blue line is from after 
-we sort2 algorithm problem had been fixed and we removed the specific transpose mode kernels. 
+we \verb!sort2! algorithm problem had been fixed and we removed the specific transpose mode kernels. 
 And the purple line represents the routine after all optimizations had been applied.
 As can be clearly seen, the optimizations we applied helped the algorithm substantially.
 
@@ -174,6 +177,7 @@ but the EpetraExt algorithm was taking even longer (over ten minutes on a single
 waste our limited computing resources. ML is not included in these results because it does not have a transpose mode.
 \JJH{ML matrices could be transposed first, however, then multiplied together.  This is basically what Tpetra does with
 the rowMatrixTranposer.}
+\KLN{True. So should I say that?}
 
 \begin{figure}
 \includegraphics[scale=.4]{atranstime.jpg}
