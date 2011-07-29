@@ -3,7 +3,7 @@
 
 #include <functional>
 
-#include <stk_adapt/Refiner.hpp>
+#include <stk_adapt/Marker.hpp>
 
 namespace stk {
   namespace adapt {
