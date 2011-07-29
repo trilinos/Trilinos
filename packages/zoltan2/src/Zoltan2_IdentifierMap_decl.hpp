@@ -87,6 +87,8 @@ private:
   int _myRank;
   int _numProcs;
 
+  void setupMap();
+
 public:
 
   /*! Constructor - Must be called by all processes 
@@ -125,7 +127,7 @@ public:
   /*! Return true if we are using the application global IDs 
    *  for our internal global numbers 
    */
-  bool gnosAreGids();
+  bool gnosAreGids() const;
 
   /*! Map the application global IDs to internal global numbers or vice versa.
 
@@ -143,7 +145,7 @@ public:
    */
   void gidTranslate(Teuchos::ArrayView<AppGID> gid, 
                     Teuchos::ArrayView<GNO> gno,
-                    TranslationType tt);
+                    TranslationType tt) const;
 
   /*! Map application local IDs to internal global numbers or vice versa.
 
@@ -159,7 +161,7 @@ public:
    */
   void lidTranslate(Teuchos::ArrayView<AppLID> lid, 
                     Teuchos::ArrayView<GNO> gno,
-                    TranslationType tt);
+                    TranslationType tt) const;
 
   /*! Map application global IDs to internal global numbers.
 
@@ -175,7 +177,7 @@ public:
    */
   void gidGlobalTranslate( Teuchos::ArrayView<const AppGID> in_gid,
                            Teuchos::ArrayView<GNO> out_gno,
-                           Teuchos::ArrayView<int> out_proc);
+                           Teuchos::ArrayView<int> out_proc) const;
 
 };
 

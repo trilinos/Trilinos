@@ -148,6 +148,9 @@ int main(int argc, char *argv[])
   if (errcode){
     std::cerr << rank << ") gno array is wrong" << std::endl;
   }
+  else{
+    std::cout << rank << ") PASS" << std::endl;
+  }
 
   return errcode;
 }

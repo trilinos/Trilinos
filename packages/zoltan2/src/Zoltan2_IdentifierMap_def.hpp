@@ -31,190 +31,11 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     Teuchos::RCP<Zoltan2::Environment> &env,
     typename Teuchos::ArrayRCP<AppGID> &gids, 
     typename Teuchos::ArrayRCP<AppLID> &lids) 
-         : _comm(in_comm), _env(env), _myGids(gids), _myLids(lids),
+         : _comm(in_comm),  _env(env), _myGids(gids), _myLids(lids),
            _globalNumberOfIds(0), _localNumberOfIds(0), _haveLocalIds(false),
            _myRank(0), _numProcs(0)
 {
-  _numProcs = _comm->getSize(); 
-  _myRank = _comm->getRank(); 
-
-  Z2_GLOBAL_INPUT_ASSERTION( *_comm, *_env, 
-           "application global ID type is not supported",
-           IdentifierTraits<AppGID>::is_valid_id_type() == true,
-           Z2_BASIC_ASSERTION);
-
-  _localNumberOfIds = _myGids.size();
-
-  typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
-  typedef typename Teuchos::Hashtable<double, LNO> id2index_hash_t;
-
-  Teuchos::Tuple<teuchos_size_t, 4> counts;
-
-  counts[0] = _myLids.size();
-  counts[1] = _localNumberOfIds;
-  counts[2] = counts[3] = 0;
-
-  try{
-    Teuchos::reduceAll<int, teuchos_size_t>(*_comm, Teuchos::REDUCE_SUM, 
-      2, counts.getRawPtr(), counts.getRawPtr()+2);
-  } 
-  catch (const std::exception &e) {
-    Z2_THROW_OUTSIDE_ERROR(*_env, e);
-  }
-
-  _haveLocalIds = (counts[2] > 0);
-  _globalNumberOfIds = counts[3];
-
-  Z2_GLOBAL_INPUT_ASSERTION( *_comm, *_env, 
-       "number of global IDs does not equal number of local IDs",
-      !_haveLocalIds || (counts[0] == _localNumberOfIds),
-       Z2_BASIC_ASSERTION);
-
-  if (_haveLocalIds){   // hash LID to index in LID vector
-    id2index_hash_t *p = NULL;
-    Z2_SYNC_MEMORY_ALLOC(*_comm, *_env, id2index_hash_t, p, _localNumberOfIds);
-
-    AppLID *lidPtr = _myLids.get();  // for performance
-
-    for (teuchos_size_t i=0; i < _localNumberOfIds; i++){
-      try{
-        p->put(IdentifierTraits<AppLID>::key(lidPtr[i]), i);
-      }
-      catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(*_env, e);
-      }
-    }
-
-    _lidHash = Teuchos::RCP<id2index_hash_t>(p);
-  }
-
-  // If the application's global ID data type (AppGID) is a Teuchos Ordinal,
-  // we will be able to use it as our internal global numbers (GNO).  
-  // Otherwise we will have to map their global IDs to valid global numbers.
-
-  if (IdentifierTraits<AppGID>::isGlobalOrdinalType()){
-
-    // Are the AppGIDs consecutive and increasing with process rank? 
-    // If so GID/proc lookups can be optimized.
-
-    AppGID min(0), max(0), globalMin(0), globalMax(0);
-    AppGID *gidPtr = _myGids.get();  // for performance
-    min = max = gidPtr[0];
-    AppGID checkVal = min;
-    bool consecutive = true;
-  
-    for (teuchos_size_t i=1; i < _localNumberOfIds; i++){
-      if (consecutive && (gidPtr[i] != ++checkVal)){
-        consecutive=false;
-        break;
-      }
-      if (gidPtr[i] < min)
-        min = gidPtr[i];
-      else if (gidPtr[i] > max)
-        max = gidPtr[i];
-    }
-
-    Teuchos::Tuple<AppGID, 4> results;
-
-    results[0] = static_cast<AppGID>(consecutive ? 1 : 0);
-    results[1] = min;
-    results[2] = results[3] = 0;
-
-    try{
-      Teuchos::reduceAll<int, AppGID>(*_comm, Teuchos::REDUCE_MIN, 2, 
-        results.getRawPtr(), results.getRawPtr()+2);
-    }
-    catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(*_env, e);
-    }
-
-    if (results[2] != 1)       // min of consecutive flags
-      consecutive=false;
-
-    if (consecutive){
-      globalMin = results[3];
-      try{
-        Teuchos::reduceAll<int, AppGID>(*_comm, Teuchos::REDUCE_MAX, 1, &max, 
-          &globalMax);
-      }
-      catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(*_env, e);
-      }
-
-      if (globalMax - globalMin + 1 != static_cast<AppGID>(_globalNumberOfIds))
-        consecutive = false;   // there are gaps in the gids
-  
-      if (consecutive){
-        AppGID myStart = _myGids[0];
-
-        _gnoDist = Teuchos::ArrayRCP<GNO>(_numProcs + 1);
-
-        AppGID *startGID = static_cast<AppGID *>(_gnoDist.getRawPtr());
-      
-        try{
-          Teuchos::gatherAll<int, AppGID>(*_comm, 1, &myStart, _numProcs, 
-            startGID);
-        }
-        catch (const std::exception &e) {
-          Z2_THROW_OUTSIDE_ERROR(*_env, e);
-        }
-      
-        for (int p=1; p < _numProcs; p++){
-          if (startGID[p] < startGID[p-1]){
-            consecutive = false;  // gids do not increase with process rank
-            break;
-          }
-        }
-        if (consecutive){
-          startGID[_numProcs] = globalMax + 1;
-        }
-      }
-    }
-  }
-  else{
-
-    // AppGIDs are not Ordinals.  We map them to consecutive 
-    // global numbers starting with 0. 
-
-    try{
-      _gnoDist = Teuchos::ArrayRCP<GNO>(_numProcs + 1, 0);
-    }
-    catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(*_env, e);
-    }
-
-    GNO myNum = static_cast<GNO>(_localNumberOfIds);
-
-    try{
-      Teuchos::scan<int, GNO>(*_comm, Teuchos::REDUCE_SUM, 1, &myNum, 
-        _gnoDist.getRawPtr() + 1);
-    }
-    catch (const std::exception &e) {
-      Z2_THROW_OUTSIDE_ERROR(*_env, e);
-    }
-  }
-
-  if (_gnoDist.size() == 0){
-
-    // We need a hash table mapping the application global ID
-    // to its index in _myGids.
-
-    id2index_hash_t *p =  NULL;
-    Z2_ASYNC_MEMORY_ALLOC(*_comm, *_env, id2index_hash_t, p, _localNumberOfIds);
-
-    AppGID *gidPtr = _myGids.get();  // for performance
-
-    for (teuchos_size_t i=0; i < _localNumberOfIds; i++){
-      try{
-        p->put(IdentifierTraits<AppGID>::key(gidPtr[i]), i);
-      }
-      catch (const std::exception &e) {
-        Z2_THROW_OUTSIDE_ERROR(*_env, e);
-      }
-    }
-
-    _gidHash = Teuchos::RCP<id2index_hash_t>(p);
-  }
+  setupMap();
 }
 
   /*! Constructor */
@@ -253,17 +74,31 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
     Teuchos::RCP<Zoltan2::Environment> &env,
     Teuchos::ArrayRCP<AppGID> &gids, 
-    Teuchos::ArrayRCP<AppLID> &lids) 
+    Teuchos::ArrayRCP<AppLID> &lids)
 {
   _gnoDist.release();
   _gidHash.release();
   _lidHash.release();
+  _comm.release();
+  _env.release();
+  _myGids.release();
+  _myLids.release();
 
-  IdentifierMap(in_comm, env, gids, lids);
+  _comm = in_comm;
+  _env = env;
+  _myGids = gids;
+  _myLids = lids;
+  _globalNumberOfIds = 0; 
+  _localNumberOfIds = 0; 
+  _haveLocalIds=false;;
+  _myRank = 0; 
+  _numProcs = 0;
+
+  setupMap();
 }
 
 template<typename AppLID, typename AppGID, typename LNO, typename GNO>
-  bool IdentifierMap<AppLID, AppGID, LNO, GNO>::gnosAreGids()
+  bool IdentifierMap<AppLID, AppGID, LNO, GNO>::gnosAreGids() const
 {
   return IdentifierTraits<AppGID>::isGlobalOrdinalType();
 }
@@ -272,7 +107,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidTranslate(
     Teuchos::ArrayView<AppGID> gid, 
     Teuchos::ArrayView<GNO> gno,
-    TranslationType tt)
+    TranslationType tt) const
 {
   typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
   teuchos_size_t len=gid.size();
@@ -336,7 +171,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID, AppGID, LNO, GNO>::lidTranslate(
     Teuchos::ArrayView<AppLID> lid, 
     Teuchos::ArrayView<GNO> gno, 
-    TranslationType tt)
+    TranslationType tt) const
 {
   typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
   teuchos_size_t len=lid.size();
@@ -357,7 +192,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
 
   Z2_LOCAL_INPUT_ASSERTION(*_comm, *_env, 
     "local ID translation is requested but none were provided",
-     !_haveLocalIds,
+     _haveLocalIds,
     Z2_BASIC_ASSERTION);
 
   GNO firstGno(0), endGno(0);
@@ -366,7 +201,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
     endGno = _gnoDist[_myRank+1];
   }
   
-  if (TRANSLATE_GNO_TO_LID){
+  if (tt == TRANSLATE_GNO_TO_LID){
     for (teuchos_size_t i=0; i < len; i++){
       LNO idx = 0;
       if (_gnoDist.size() > 0) {// gnos are consecutive
@@ -413,7 +248,7 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
   void IdentifierMap<AppLID, AppGID, LNO, GNO>::gidGlobalTranslate(
     Teuchos::ArrayView<const AppGID> in_gid,
     Teuchos::ArrayView<GNO> out_gno,
-    Teuchos::ArrayView<int> out_proc)
+    Teuchos::ArrayView<int> out_proc) const
 {
   typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
   typedef typename Teuchos::Hashtable<double, LNO> id2index_hash_t;
@@ -773,6 +608,202 @@ template<typename AppLID, typename AppGID, typename LNO, typename GNO>
       out_gno[v[j]] = gno;
       out_proc[v[j]] = gidProc;
     }
+  }
+}
+
+
+template<typename AppLID, typename AppGID, typename LNO, typename GNO> 
+  void IdentifierMap<AppLID,AppGID,LNO,GNO>::setupMap(void)
+{
+  _numProcs = _comm->getSize(); 
+  _myRank = _comm->getRank(); 
+
+  Z2_GLOBAL_INPUT_ASSERTION( *_comm, *_env, 
+           "application global ID type is not supported",
+           IdentifierTraits<AppGID>::is_valid_id_type() == true,
+           Z2_BASIC_ASSERTION);
+
+  _localNumberOfIds = _myGids.size();
+
+  typedef typename Teuchos::Array<GNO>::size_type teuchos_size_t;
+  typedef typename Teuchos::Hashtable<double, LNO> id2index_hash_t;
+
+  Teuchos::Tuple<teuchos_size_t, 4> counts;
+
+  counts[0] = _myLids.size();
+  counts[1] = _localNumberOfIds;
+  counts[2] = counts[3] = 0;
+
+  try{
+    Teuchos::reduceAll<int, teuchos_size_t>(*_comm, Teuchos::REDUCE_SUM, 
+      2, counts.getRawPtr(), counts.getRawPtr()+2);
+  } 
+  catch (const std::exception &e) {
+    Z2_THROW_OUTSIDE_ERROR(*_env, e);
+  }
+
+  _haveLocalIds = (counts[2] > 0);
+  _globalNumberOfIds = counts[3];
+
+  Z2_GLOBAL_INPUT_ASSERTION( *_comm, *_env, 
+       "number of global IDs does not equal number of local IDs",
+      !_haveLocalIds || (counts[0] == _localNumberOfIds),
+       Z2_BASIC_ASSERTION);
+
+  if (_haveLocalIds){   // hash LID to index in LID vector
+    id2index_hash_t *p = NULL;
+    if (_localNumberOfIds){
+      try{
+        p = new id2index_hash_t(_localNumberOfIds);
+      }
+      catch (const std::exception &e) 
+        Z2_LOCAL_MEMORY_ASSERTION(*_comm, *_env, _localNumberOfIds, false); 
+    }
+
+    AppLID *lidPtr = _myLids.get();  // for performance
+
+    for (teuchos_size_t i=0; i < _localNumberOfIds; i++){
+      try{
+        p->put(IdentifierTraits<AppLID>::key(lidPtr[i]), i);
+      }
+      catch (const std::exception &e) 
+        Z2_THROW_OUTSIDE_ERROR(*_env, e);
+    }
+
+    _lidHash = Teuchos::RCP<id2index_hash_t>(p);
+  }
+
+  // If the application's global ID data type (AppGID) is a Teuchos Ordinal,
+  // we will be able to use it as our internal global numbers (GNO).  
+  // Otherwise we will have to map their global IDs to valid global numbers.
+
+  if (IdentifierTraits<AppGID>::isGlobalOrdinalType()){
+
+    // Are the AppGIDs consecutive and increasing with process rank? 
+    // If so GID/proc lookups can be optimized.
+
+    AppGID min(0), max(0), globalMin(0), globalMax(0);
+    AppGID *gidPtr = _myGids.get();  // for performance
+    min = max = gidPtr[0];
+    AppGID checkVal = min;
+    bool consecutive = true;
+  
+    for (teuchos_size_t i=1; i < _localNumberOfIds; i++){
+      if (consecutive && (gidPtr[i] != ++checkVal)){
+        consecutive=false;
+        break;
+      }
+      if (gidPtr[i] < min)
+        min = gidPtr[i];
+      else if (gidPtr[i] > max)
+        max = gidPtr[i];
+    }
+
+    Teuchos::Tuple<AppGID, 4> results;
+
+    results[0] = static_cast<AppGID>(consecutive ? 1 : 0);
+    results[1] = min;
+    results[2] = results[3] = 0;
+
+    try{
+      Teuchos::reduceAll<int, AppGID>(*_comm, Teuchos::REDUCE_MIN, 2, 
+        results.getRawPtr(), results.getRawPtr()+2);
+    }
+    catch (const std::exception &e) {
+      Z2_THROW_OUTSIDE_ERROR(*_env, e);
+    }
+
+    if (results[2] != 1)       // min of consecutive flags
+      consecutive=false;
+
+    if (consecutive){
+      globalMin = results[3];
+      try{
+        Teuchos::reduceAll<int, AppGID>(*_comm, Teuchos::REDUCE_MAX, 1, &max, 
+          &globalMax);
+      }
+      catch (const std::exception &e) {
+        Z2_THROW_OUTSIDE_ERROR(*_env, e);
+      }
+
+      if (globalMax - globalMin + 1 != static_cast<AppGID>(_globalNumberOfIds))
+        consecutive = false;   // there are gaps in the gids
+  
+      if (consecutive){
+        AppGID myStart = _myGids[0];
+
+        _gnoDist = Teuchos::ArrayRCP<GNO>(_numProcs + 1);
+
+        AppGID *startGID = static_cast<AppGID *>(_gnoDist.getRawPtr());
+      
+        try{
+          Teuchos::gatherAll<int, AppGID>(*_comm, 1, &myStart, _numProcs, 
+            startGID);
+        }
+        catch (const std::exception &e) {
+          Z2_THROW_OUTSIDE_ERROR(*_env, e);
+        }
+      
+        for (int p=1; p < _numProcs; p++){
+          if (startGID[p] < startGID[p-1]){
+            consecutive = false;  // gids do not increase with process rank
+            break;
+          }
+        }
+        if (consecutive){
+          startGID[_numProcs] = globalMax + 1;
+        }
+      }
+    }
+  }
+  else{
+
+    // AppGIDs are not Ordinals.  We map them to consecutive 
+    // global numbers starting with 0. 
+
+    try{
+      _gnoDist = Teuchos::ArrayRCP<GNO>(_numProcs + 1, 0);
+    }
+    catch (const std::exception &e) {
+      Z2_THROW_OUTSIDE_ERROR(*_env, e);
+    }
+
+    GNO myNum = static_cast<GNO>(_localNumberOfIds);
+
+    try{
+      Teuchos::scan<int, GNO>(*_comm, Teuchos::REDUCE_SUM, 1, &myNum, 
+        _gnoDist.getRawPtr() + 1);
+    }
+    catch (const std::exception &e) {
+      Z2_THROW_OUTSIDE_ERROR(*_env, e);
+    }
+  }
+
+  if (_gnoDist.size() == 0){
+
+    // We need a hash table mapping the application global ID
+    // to its index in _myGids.
+
+    id2index_hash_t *p = NULL;
+    if (_localNumberOfIds){
+      try{
+        p = new id2index_hash_t(_localNumberOfIds);
+      }
+      catch (const std::exception &e) 
+        Z2_LOCAL_MEMORY_ASSERTION(*_comm, *_env, _localNumberOfIds, false); 
+    }
+
+    AppGID *gidPtr = _myGids.get();  // for performance
+
+    for (teuchos_size_t i=0; i < _localNumberOfIds; i++){
+      try{
+        p->put(IdentifierTraits<AppGID>::key(gidPtr[i]), i);
+      }
+      catch (const std::exception &e) {
+        Z2_THROW_OUTSIDE_ERROR(*_env, e);
+      }
+    }
+    _gidHash = Teuchos::RCP<id2index_hash_t>(p);
   }
 }
 
