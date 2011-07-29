@@ -102,7 +102,7 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
       start out in the optimized-storage state, i.e., isFillComplete()==true.
       The graph provided to this constructor must be already filled.
-      (If blkGraph->isFillComplete() != true, an exception is thrown.)
+      (If blkGraph->isFillComplete() == false, an exception is thrown.)
 
       Entries in the input BlockCrsGraph correspond to block-entries in the
       VbrMatrix. In other words, the VbrMatrix will have a block-row corresponding
@@ -154,7 +154,7 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   */
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
 
-  //! Returns the (point-entry) Map associated with the range of this operator, which must be compatible with Y.getMap().
+  //! Returns the (point-entry) Map associated with the range of this operator.
   /*! Note that this is a point-entry map, not a block-map.
   */
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
@@ -229,6 +229,12 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
     If the specified block-entry already exists in the matrix, it will be
     over-written (replaced) by the input block-entry.
 
+    Note that if globalBlockRow is not owned by the local processor (as
+    indicated by getBlockRowMap()) then the block-entry is held in
+    temporary storage until globalAssemble() is called (which is called
+    internally by fillComplete()) and then globalAssemble() performans
+    the communication needed to move the data to the owning processor.
+
     This method may be called any time (before or after fillComplete()).
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
@@ -250,6 +256,12 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
 
     If the specified block-entry already exists in the matrix, the contents of the
     input block-entry will be added to the values that are already present.
+
+    Note that if globalBlockRow is not owned by the local processor (as
+    indicated by getBlockRowMap()) then the block-entry is held in
+    temporary storage until globalAssemble() is called (which is called
+    internally by fillComplete()) and then globalAssemble() performans
+    the communication needed to move the data to the owning processor.
 
     This method may be called any time (before or after fillComplete()).
   */
@@ -273,6 +285,12 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
     If the specified block-entry already exists in the matrix, it will be
     over-written (replaced) by the input block-entry.
 
+    Note that if globalBlockRow is not owned by the local processor (as
+    indicated by getBlockRowMap()) then the block-entry is held in
+    temporary storage until globalAssemble() is called (which is called
+    internally by fillComplete()) and then globalAssemble() performans
+    the communication needed to move the data to the owning processor.
+
     This method may be called any time (before or after fillComplete()).
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
@@ -294,6 +312,12 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
 
     If the specified block-entry already exists in the matrix, the contents of the
     input block-entry will be added to the values that are already present.
+
+    Note that if globalBlockRow is not owned by the local processor (as
+    indicated by getBlockRowMap()) then the block-entry is held in
+    temporary storage until globalAssemble() is called (which is called
+    internally by fillComplete()) and then globalAssemble() performans
+    the communication needed to move the data to the owning processor.
 
     This method may be called any time (before or after fillComplete()).
   */
@@ -317,6 +341,7 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   //! Transition the matrix to the packed, optimized-storage state.
   /*!
     This method also sets the domain and range maps.
+    This method internally calls globalAssemble().
   */
   void fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap);
 
