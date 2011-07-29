@@ -15,8 +15,8 @@
 #include <Tpetra_VbrMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <TpetraExt_BlockExtraction.hpp>
-#include <Tpetra_MMHelpers.hpp>
-#include <Tpetra_MatrixMatrix.hpp>
+#include <TpetraExt_MMHelpers.hpp>
+#include <TpetraExt_MatrixMatrix.hpp>
 #include <Tpetra_MatrixIO.hpp>
 
 #include <Tpetra_BlockMap.hpp>
@@ -33,8 +33,8 @@
 #include <Tpetra_VbrMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <TpetraExt_BlockExtraction.hpp>
-#include <Tpetra_MMHelpers.hpp>
-#include <Tpetra_MatrixMatrix.hpp>
+#include <TpetraExt_MMHelpers.hpp>
+#include <TpetraExt_MatrixMatrix.hpp>
 #include <Tpetra_MatrixIO.hpp>
 
 
