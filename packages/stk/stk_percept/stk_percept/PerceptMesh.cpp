@@ -1080,7 +1080,26 @@ namespace stk {
 
       if(stride) {
         const stk::mesh::FieldBase::Restriction & r = field->restriction(entity.entity_rank(), stk::mesh::fem::FEMMetaData::get(*field).universal_part());
-        *stride = r.dimension() ;
+        static const stk::mesh::FieldBase::Restriction empty ;
+
+        if (r == empty)
+          {
+            unsigned nfr = field->restrictions().size();
+            for (unsigned ifr = 0; ifr < nfr; ifr++)
+              {
+                const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
+                //unsigned field_rank = fr.entity_rank();
+                unsigned field_dimension = fr.dimension() ;
+                if (field_dimension > 0)
+                  {
+                    *stride = field_dimension;
+                  }
+              }
+          }
+        else
+          {
+            *stride = r.dimension() ;
+          }
       }
 
       switch(rank)

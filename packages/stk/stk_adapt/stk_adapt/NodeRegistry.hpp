@@ -1118,6 +1118,10 @@ namespace stk {
         }
         if (field_rank != stk::mesh::fem::FEMMetaData::NODE_RANK)
           {
+            if (field_rank == m_eMesh.element_rank())
+              {
+                
+              }
             return;
           }
 

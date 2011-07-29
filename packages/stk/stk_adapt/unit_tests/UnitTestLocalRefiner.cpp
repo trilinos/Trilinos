@@ -1570,6 +1570,43 @@ namespace stk {
         virtual void fini_elementOp() {}
       };
 
+      class SetUnrefineField : public percept::ElementOp
+      {
+        percept::PerceptMesh& m_eMesh;
+      public:
+        SetUnrefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
+        virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        {
+          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          unsigned num_node = elem_nodes.size();
+          double *f_data = PerceptMesh::field_data_entity(field, element);
+          VectorFieldType* coordField = m_eMesh.getCoordinatesField();
+                
+          bool found = true;
+          for (unsigned inode=0; inode < num_node; inode++)
+            {
+              mesh::Entity & node = * elem_nodes[ inode ].entity();
+              double *coord_data = PerceptMesh::field_data(coordField, node);
+
+              //std::cout << "tmp coord_data= " << coord_data[0] << std::endl;
+
+              if (coord_data[0] > 1.1 || coord_data[1] > 1.1)
+                {
+                  found=false;
+                  break;
+                }
+            }
+          if (found)
+            f_data[0] = -1.0;
+          else
+            f_data[0] = 0.0;
+
+          return false;  // don't terminate the loop
+        }
+        virtual void init_elementOp() {}
+        virtual void fini_elementOp() {}
+      };
+
       STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_5_FieldBased)
       {
         EXCEPTWATCH;
@@ -1594,12 +1631,16 @@ namespace stk {
             int scalarDimension = 0; // a scalar
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             stk::mesh::FieldBase* refine_field = eMesh.addField("refine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* unrefine_field = eMesh.addField("unrefine_field", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             fixture.generate_mesh();
 
             SetRefineField set_ref_field(eMesh);
             eMesh.elementOpLoop(set_ref_field, refine_field);
+
+            SetUnrefineField set_unref_field(eMesh);
+            eMesh.elementOpLoop(set_unref_field, unrefine_field);
             
             save_or_diff(eMesh, output_files_loc+"local_tri_N_5_FieldBased_0_"+post_fix[p_size]+".e");
 
@@ -1607,7 +1648,7 @@ namespace stk {
 
             PredicateBasedMarker<ElementFieldBasedRefinePredicate, ElementFieldBasedUnrefinePredicate>
               breaker(ElementFieldBasedRefinePredicate(univ_selector, refine_field, 0.0),
-                      ElementFieldBasedUnrefinePredicate(univ_selector, refine_field, 0.0),
+                      ElementFieldBasedUnrefinePredicate(univ_selector, unrefine_field, 0.0),
                       eMesh, break_tri_to_tri_N, proc_rank_field);
 
             breaker.setRemoveOldElements(false);
@@ -1622,7 +1663,7 @@ namespace stk {
 
             eMesh.saveAs(output_files_loc+"local_tri_N_5_FieldBased_1_"+post_fix[p_size]+".e");
 
-#if 0
+#if 1
             for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)
               {
                 std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;

@@ -586,6 +586,8 @@ namespace stk {
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 
+            interpolateElementFields(eMesh, element, newElement);
+
             {
               if (!elems[ielem].get<0>())
                 {
