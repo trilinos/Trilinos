@@ -1,5 +1,7 @@
 all:
 	pdflatex matmatreport
 	pdflatex matmatreport
+	bibtex matmatreport
+	pdflatex matmatreport
 clean:
-	rm *toc *aux *log *pdf
+	rm -f *toc *aux *log *pdf *bbl
