@@ -4,4 +4,4 @@ all:
 	bibtex matmatreport
 	pdflatex matmatreport
 clean:
-	rm -f *toc *aux *log *pdf *bbl
+	rm -f *toc *aux *log *pdf *bbl *blg *out
