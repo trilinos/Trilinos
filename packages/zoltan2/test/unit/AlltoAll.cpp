@@ -13,26 +13,43 @@
 // TODO: doxygen comments
 //     make this a real unit test that gives helpful information if it fails
 //     and uses different template values
+//     make this work if !HAVE_MPI
 
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <string>
 #include <Zoltan2_Partitioner.hpp>
 #include <Teuchos_GlobalMPISession.hpp>   
 #include <Teuchos_RCP.hpp>   
 #include <Teuchos_ArrayRCP.hpp>   
 #include <Teuchos_Comm.hpp>   
+#include <Teuchos_ParameterList.hpp>   
 #include <Teuchos_DefaultComm.hpp>   
+
+using namespace std;
 
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
+  
   int rank = session.getRank();
   int nprocs = session.getNProc();
   int errcode = 0;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
+
+  Teuchos::ParameterList problemParams;
+  problemParams.set(std::string("ERROR_CHECK_LEVEL"), 1);
+
+  Teuchos::ParameterList libConfig;
+  libConfig.set(std::string("DEBUG_OSTREAM"), &std::cout);
+  libConfig.set(std::string("ERROR_OSTREAM"), &std::cerr);
+  libConfig.set(std::string("DEBUG_LEVEL"), 0);
+        
+  Teuchos::RCP<Zoltan2::Environment> envPtr = 
+    Teuchos::rcp(new Zoltan2::Environment(problemParams, libConfig));
 
   // In this test, our local IDs are ints and our global IDs are longs.
 
@@ -51,7 +68,7 @@ int main(int argc, char *argv[])
   
     Teuchos::ArrayRCP<int> recvBuf;
     
-    Z2::AlltoAll<int, int>(*comm, 
+    Z2::AlltoAll<int, int>(*comm, *envPtr,
         sendBufView,    // ints to send from this process to all the others
         2,              // two ints per process
         recvBuf);       // will be allocated and filled in AlltoAll
@@ -86,7 +103,7 @@ int main(int argc, char *argv[])
   
     Teuchos::ArrayRCP< std::pair<int, int> > recvBufPair;
     
-    Z2::AlltoAll<std::pair<int, int> , int>(*comm, 
+    Z2::AlltoAll<std::pair<int, int> , int>(*comm, *envPtr,
         sendBufPair,    // ints to send from this process to all the others
         1,              // one pair per process
         recvBufPair);   // will be allocated and filled in AlltoAll
@@ -133,7 +150,7 @@ int main(int argc, char *argv[])
     Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<int> recvBuf;
     
-    Z2::AlltoAllv<int, int>(*comm, 
+    Z2::AlltoAllv<int, int>(*comm, *envPtr,
                   sendBuf,    
                   sendCount,   
                   recvBuf,
@@ -186,7 +203,7 @@ int main(int argc, char *argv[])
     Teuchos::ArrayRCP<int> recvCount;
     Teuchos::ArrayRCP<std::vector<float> > recvBuf;
     
-    Z2::AlltoAllv<float , int>(*comm, 
+    Z2::AlltoAllv<float , int>(*comm, *envPtr,
         sendBuf,    
         sendCount,   
         recvBuf,

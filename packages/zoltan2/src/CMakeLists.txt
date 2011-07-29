@@ -37,13 +37,18 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  Zoltan2_IdentifierTraits.hpp
-  Zoltan2_IdentifierMap.hpp
-  Zoltan2_IdentifierMap_def.hpp
-  Zoltan2_IdentifierMap_decl.hpp
-  Zoltan2_Partitioner.hpp
-  Zoltan2_Hash.hpp
   Zoltan2_AlltoAll.hpp
+  Zoltan2_Exceptions.hpp
+  Zoltan2_IdentifierMap.hpp
+  Zoltan2_Parameters.hpp
+  Zoltan2_DebugManager.hpp
+  Zoltan2_IdentifierMap_decl.hpp
+  Zoltan2_IdentifierTraits.hpp
+  Zoltan2_Partitioner.hpp
+  Zoltan2_Environment.hpp
+  Zoltan2_IdentifierMap_def.hpp
+  Zoltan2_Memory.hpp
+  Zoltan2_Util.hpp
   )
 
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
@@ -62,13 +67,16 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/ThreadPool/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/ThreadPool/src)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/triutils/src)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/triutils/src)
-INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/zoltan/src)
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/zoltan/src)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/preCopyrightTrilinos/zoltan2/src)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/preCopyrightTrilinos/zoltan2/src)
 
 # Set sources
 
 APPEND_SET(SOURCES
   Zoltan2_Version.cpp
+  Zoltan2_Util.cpp
+  Zoltan2_Environment.cpp
+  Zoltan2_DebugManager.cpp
   )
 
 PACKAGE_ADD_LIBRARY(

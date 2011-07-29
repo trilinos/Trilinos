@@ -14,14 +14,9 @@
 // loop.
 //#define ZOLTAN2_DEBUG
 
-#include "Zoltan2_config.h" // Just for HAVE_MPI
-
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 namespace Z2
 {
@@ -30,13 +25,20 @@ class DebugManager
 {
     public:
 
-    DebugManager (int debugLevel = 0,
-     const Teuchos::RCP< std::ostream > &os = Teuchos::rcp(&std::cout,false)
+    DebugManager ( 
+     Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm(),
+     int debugLevel = 0,
+     std::ostream *os = &std::cout
      );
 
     virtual ~DebugManager() {};
 
-    inline void setOStream(const Teuchos::RCP<std::ostream> &os)
+    inline void setComm(const Teuchos::RCP<Teuchos::Comm<int> > &comm)
+    {
+      comm_ = comm;
+    }
+
+    inline void setOStream(std::ostream *os)
     {
         myOS_ = os;
     };
@@ -52,7 +54,9 @@ class DebugManager
             return myBHS_;
     }
 
-    inline Teuchos::RCP<std::ostream> getOStream() { return myOS_; };
+    inline Teuchos::RCP<const Teuchos::Comm<int> > getComm() const { return comm_; };
+    inline std::ostream *getOStream() const { return myOS_; };
+    inline int getDebugLevel() const { return debugLevel_; };
 
     inline void print(int debugLevel, const std::string &output);
 
@@ -69,69 +73,13 @@ class DebugManager
 
     private:
 
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     int debugLevel_;
-    Teuchos::RCP<std::ostream> myOS_;
+    std::ostream *myOS_;
     Teuchos::oblackholestream myBHS_;
     bool iPrint_;
     int myPID_;
 };
-
-
-DebugManager::DebugManager(int debugLevel, const Teuchos::RCP<std::ostream> &os)
-    :
-    debugLevel_(debugLevel),
-    myOS_(os)
-{
-#ifdef HAVE_MPI
-        int mpiStarted = 0;
-        MPI_Initialized(&mpiStarted);
-        if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &myPID_);
-        else myPID_=0;
-#else
-        myPID_ = 0;
-#endif
-        iPrint_ = (myPID_ == 0);
-}
-
-inline void DebugManager::print(int debugLevel, const std::string &output)
-{
-//#ifdef ZOLTAN2_DEBUG
-    if (debugLevel <= debugLevel_ && iPrint_)
-        *myOS_ << output;
-//#endif
-}
-
-inline void DebugManager::print(int debugLevel, const char *output)
-{
-//#ifdef ZOLTAN2_DEBUG
-    if (debugLevel <= debugLevel_ && iPrint_)
-        *myOS_ << output;
-//#endif
-}
-
-inline void DebugManager::printInAllTasks(int debugLevel,
-            const std::string &output)
-{
-//#ifdef ZOLTAN2_DEBUG
-    if (debugLevel <= debugLevel_)
-        *myOS_ << "PID =" << myPID_ << " " << output;
-//#endif
-}
-
-inline void DebugManager::printInAllTasks(int debugLevel,
-            const char *output)
-{
-//#ifdef ZOLTAN2_DEBUG
-    if (debugLevel <= debugLevel_)
-        *myOS_ << "PID =" << myPID_ << " " << output;
-//#endif
-}
-
-// Errors show up for all PIDs, even in release builds
-inline void DebugManager::error(const std::string &output)
-{
-    *myOS_ << "PID =" << myPID_ << " " << output;
-}
 
 } //namespace Z2
 

@@ -15,6 +15,7 @@
 #include <vector>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Zoltan2_Environment.hpp>
@@ -38,11 +39,10 @@ namespace Z2
 
 template <typename T, typename LNO>
 void AlltoAll(const Teuchos::Comm<int> &comm,
+              Zoltan2::Environment &env,
               const Teuchos::ArrayView<T> &sendBuf,  // input
               LNO count,                             // input
-              Teuchos::ArrayRCP<T> &recvBuf,         // output - allocated here
-              Zoltan2::Environment &env)
-            
+              Teuchos::ArrayRCP<T> &recvBuf)         // output - allocated here
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
@@ -53,6 +53,7 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
 
   // Create a T-aligned receive buffer.
 
+  T *ptr = NULL;
   Z2_SYNC_MEMORY_ALLOC(comm, env, T, ptr, nprocs * count);
 
   Teuchos::ArrayRCP<T> inBuf(ptr, 0, nprocs * count, true);
@@ -65,10 +66,19 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
 
   // Post receives
 
+  Teuchos::RCP<Teuchos::CommRequest> r;
+
   for (int p=0; p < nprocs; p++){
     if (p != rank){
       Teuchos::ArrayRCP<T> recvBufPtr(inBuf.get() + p*count, 0, count, false);
-      req.push_back(Teuchos::ireceive<int, T>(comm, recvBufPtr, p));
+      try{
+        r  = Teuchos::ireceive<int, T>(comm, recvBufPtr, p);
+      }
+      catch (const std::exception &e){
+        Z2_THROW_OUTSIDE_ERROR(env, e);
+      }
+    
+      req.push_back(r);
     }
   }
 
@@ -108,17 +118,17 @@ void AlltoAll(const Teuchos::Comm<int> &comm,
 
 template <typename T, typename LNO>
 void AlltoAllv(const Teuchos::Comm<int> &comm,
+              Zoltan2::Environment &env,  
               const Teuchos::ArrayView<T> &sendBuf,      // input
               const Teuchos::ArrayView<LNO> &sendCount,  // input
               Teuchos::ArrayRCP<T> &recvBuf,      // output, allocated here
-              Teuchos::ArrayRCP<LNO> &recvCount,  // output, allocated here
-              Zoltan2::Environment &env)  
+              Teuchos::ArrayRCP<LNO> &recvCount)  // output, allocated here
 {
   int nprocs = comm.getSize();
   int rank = comm.getRank();
 
   try{
-    AlltoAll<LNO, LNO>(comm, sendCount, 1, recvCount);
+    AlltoAll<LNO, LNO>(comm, env, sendCount, 1, recvCount);
   }
   catch (const std::exception &e)
     Z2_THROW_ZOLTAN2_ERROR(env, e);
@@ -133,6 +143,7 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
     }
   }
 
+  T *ptr = NULL;
   Z2_SYNC_MEMORY_ALLOC(comm, env, T, ptr, totalIn);
 
   Teuchos::ArrayRCP<T> inBuf(ptr, 0, totalIn, true);
@@ -146,7 +157,7 @@ void AlltoAllv(const Teuchos::Comm<int> &comm,
 
   // Post receives
 
-  Teuchos::CommRequest r;
+  Teuchos::RCP<Teuchos::CommRequest> r;
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> > req(nprocs-1);
 
   offsetIn = 0;
@@ -344,17 +355,18 @@ template <typename T, typename LNO>
 
 template <typename T, typename LNO>
 void AlltoAllv(const Teuchos::Comm<int>     &comm,
+  Zoltan2::Environment &env,
   const Teuchos::ArrayView<std::vector<T> > &sendBuf,
   const Teuchos::ArrayView<LNO>             &sendCount,
   Teuchos::ArrayRCP<std::vector<T> >        &recvBuf,
   Teuchos::ArrayRCP<LNO>                    &recvCount,
-  Zoltan2::Environment &env,
   LNO            vLen=0)      // set if all vectors are the same length
 {
   int nprocs = comm.getSize();
   size_t totalSendSize = 0;
   LNO offset = 0;
 
+  LNO *sendSize = NULL;
   Z2_SYNC_MEMORY_ALLOC(comm, env, LNO, sendSize, nprocs);
 
   for (int p=0; p < nprocs; p++){
@@ -371,6 +383,7 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
     }
   }
 
+  T *buf = NULL;
   Z2_SYNC_MEMORY_ALLOC(comm, env, T, buf, totalSendSize/sizeof(T));
 
   std::vector<T> *vptr = sendBuf.getRawPtr();
@@ -392,7 +405,7 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
   Teuchos::ArrayRCP<LNO> recvSize;
 
   try{
-    AlltoAllv<T, LNO>(comm, sendTView, sendSizeView, recvT, recvSize);
+    AlltoAllv<T, LNO>(comm, env, sendTView, sendSizeView, recvT, recvSize);
   }
   catch (const std::exception &e)
     Z2_THROW_ZOLTAN2_ERROR(env, e);
@@ -402,6 +415,7 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
 
   delete [] sendSize;
 
+  LNO *vectorCount = NULL;
   Z2_SYNC_MEMORY_ALLOC(comm, env, LNO, vectorCount, nprocs);
 
   LNO totalCount = 0;
@@ -423,6 +437,7 @@ void AlltoAllv(const Teuchos::Comm<int>     &comm,
     }
   }
 
+  std::vector<T> *inVectors = NULL;
   Z2_SYNC_MEMORY_ALLOC(comm, env, std::vector<T>, inVectors, totalCount);
 
   buf = recvT.get();

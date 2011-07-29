@@ -11,6 +11,7 @@
 // @HEADER
 
 // TODO: doxygen comments
+
 // TODO: just testing that the test compiles and looks reasonable
 //   We need to test the validity of the values returned in check_traits.
 

@@ -13,6 +13,8 @@
 // TODO: doxygen comments
 // TODO Z2 could should throw errors and we should catch them
 // TODO rewrite using Teuchos Unittest
+//     make this work if !HAVE_MPI
+
 //
 // 3 cases:
 //   Application GID is a Teuchos Global Ordinal type
@@ -65,6 +67,17 @@ int main(int argc, char *argv[])
   Teuchos::RCP<const Teuchos::Comm<int> > comm = 
     Teuchos::DefaultComm<int>::getComm();
 
+  Teuchos::ParameterList problemParams; 
+  problemParams.set(std::string("ERROR_CHECK_LEVEL"), 1);
+
+  Teuchos::ParameterList libConfig;
+  libConfig.set(std::string("DEBUG_OSTREAM"), &std::cout);
+  libConfig.set(std::string("ERROR_OSTREAM"), &std::cerr);
+  libConfig.set(std::string("DEBUG_LEVEL"), 0);
+    
+  Teuchos::RCP<Zoltan2::Environment> envPtr = 
+    Teuchos::rcp(new Zoltan2::Environment(problemParams, libConfig));
+
   if (!errcode) {
 
     // AppGID is long (a Teuchos Global Ordinal type).
@@ -89,7 +102,7 @@ int main(int argc, char *argv[])
     Z2::IdentifierMap<int, long, int, long> idmap;
 
     try {
-      idmap.initialize(comm, gids, lids);
+      idmap.initialize(comm, envPtr, gids, lids);
     }
     catch (std::exception &e){
       std::cerr << rank << ") initialize error: " << e.what();

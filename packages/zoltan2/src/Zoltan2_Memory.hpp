@@ -13,22 +13,27 @@
 
   Memory allocation macros.
 
-  If we wanted to do clever memory management, we would do it here.
+  If we wanted to do clever memory management, we would do it here.  This
+  would probably require the Zoltan2::Environment object, which is why
+  it is passed.
 */
+
 
 namespace Z2{
 
-#ifdef ZOLTAN2_OMIT_ALL_ERROR_CHECKING
+#ifdef Z2_OMIT_ALL_ERROR_CHECKING
 
-#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, nbytes) \
+#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, nbytes){ \
   datatype *ptrname = NULL; \
   if (nbytes) \
-    ptrname = new datatype [nbytes]; 
+    ptrname = new datatype [nbytes]; \
+}
 
-#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, nbytes) \
+#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, nbytes){ \
   datatype *ptrname = NULL; \
   if (nbytes) \
-    ptrname = new datatype [nbytes]; 
+    ptrname = new datatype [nbytes]; \
+}
 
 #else
 
@@ -37,33 +42,31 @@ namespace Z2{
     All throw an error if any failed.
  */
 
-#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) \
-  datatype *ptrname = NULL; \
-  if (num) \
-    ptrname = new datatype [num]; \
+#define Z2_SYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) {\
+  ptrname = NULL; \
   int fail = 0, gfail=0; \
-  if (num>0 && !ptrname) fail = 1;  \
-  MPI_Allreduce(&fail, &gfail, 1, MPI_INT, MPI_MAX, comm);  \
-  if (gfail > 0) { \
-    ostringstream oss; \
-    if (fail > 0){  \
-      oss << "(" << comm.getRank() << ") " << ___FILE___ << ":" << __LINE__ << " " << (num) << std::endl;\
-    } \
-    throw(std::bad_alloc(oss.str()); \
+  if ((num) > 0){ \
+    ptrname = new datatype [num]; \
+    if (!ptrname) fail = 1;  \
   } \
+  Teuchos::reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, 1, &fail, &gfail); \
+  if (gfail > 0) { \
+    if (fail > 0) \
+      *(env)._errorOStream << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
+    throw std::bad_alloc(); \
+  } \
+}
 
 /*! Allocate memory, throw error if it fails.
  */
 
-#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) \
-{ \
-  datatype *ptrname = NULL; \
-  if (num > 0) {\
+#define Z2_ASYNC_MEMORY_ALLOC(comm, env, datatype, ptrname, num) { \
+  ptrname = NULL; \
+  if ((num) > 0) {\
     ptrname = new datatype [num]; \
     if (!ptrname) { \
-      ostringstream oss; \
-      oss << "(" << comm.getRank() << ") " << ___FILE___ << ":" << __LINE__ << " " << (num) << std::endl;\
-      throw(std::bad_alloc(oss.str()); \
+      *(env)._errorOStream << (comm).getRank() << ": " << __FILE__ << ", " << __LINE__ << ", size " << num << std::endl; \
+      throw std::bad_alloc(); \
     } \
   } \
 }

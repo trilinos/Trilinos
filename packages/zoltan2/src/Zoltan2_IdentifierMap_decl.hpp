@@ -58,9 +58,9 @@ private:
 
   Teuchos::RCP<const Teuchos::Comm<int> > _comm;
 
-  // Input communicator
+  // Problem parameters, library configuration.
 
-  Teuchos::RCP<Zoltan2_Environment> _env;
+  Teuchos::RCP<Zoltan2::Environment> _env;
 
   // Application global and local IDs
 
@@ -97,9 +97,10 @@ public:
    *  only takes Teuchos::Comm<int>. 
    */
 
-  explicit IdentifierMap(Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
-                         typename Teuchos::ArrayRCP<AppGID> &gids, 
-                         typename Teuchos::ArrayRCP<AppLID> &lids);
+  explicit IdentifierMap( Teuchos::RCP<const Teuchos::Comm<int> > &in_comm, 
+                          Teuchos::RCP<Zoltan2::Environment > &env, 
+                          typename Teuchos::ArrayRCP<AppGID> &gids, 
+                          typename Teuchos::ArrayRCP<AppLID> &lids);
 
   /*! Constructor 
       This constructor does not need to be called by all processes.
@@ -117,6 +118,7 @@ public:
 
   /*! Initialize object if not done in the constructor */
   void initialize(Teuchos::RCP<const Teuchos::Comm<int> > &in_comm,
+                  Teuchos::RCP<Zoltan2::Environment > &env,
                   Teuchos::ArrayRCP<AppGID> &gids,
                   Teuchos::ArrayRCP<AppLID> &lids);
 
