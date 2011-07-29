@@ -40,8 +40,6 @@
  */
 namespace stk_example_io {
 
-  static const size_t spatial_dimension = 3;
-
   /// Declare "coordinates" field and put it on the universal part. This
   /// example also defines all Ioss::Field::TRANSIENT fields that exist on the
   /// Ioss::Nodeblock as fields on the universal part.
@@ -222,6 +220,8 @@ namespace stk_example_io {
 
     //----------------------------------
     // Process Entity Types. Subsetting is possible.
+
+    static size_t spatial_dimension = in_region.get_property("spatial_dimension").get_int();
 
     stk::mesh::fem::FEMMetaData fem_meta_data( spatial_dimension );
     stk::mesh::MetaData &meta_data = fem_meta_data.get_meta_data(fem_meta_data);
