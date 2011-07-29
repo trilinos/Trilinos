@@ -16,14 +16,7 @@
 
 // include some intrepid basis functions
 // 2D basis 
-#include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
-
-// 3D basis 
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
 
 #include "Intrepid_FieldContainer.hpp"
 
@@ -117,7 +110,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
 
@@ -235,7 +228,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
 
    RCP<const panzer::FieldPattern> patternC1 
-         = buildFieldPattern<Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    dofManager.addField("T",patternC1); // add it to all three blocks
    dofManager.addField("block_0","Ux", patternC1);
@@ -279,7 +272,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    if(myRank==0)
    {  TEST_EQUALITY(ownedAndShared.size(),39); }
    else
-   {  TEST_EQUALITY(ownedAndShared.size(),28); }
+   {  TEST_EQUALITY(ownedAndShared.size(),30); }
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
