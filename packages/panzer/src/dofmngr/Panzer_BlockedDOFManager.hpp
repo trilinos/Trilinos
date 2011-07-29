@@ -343,6 +343,20 @@ protected:
 
    MPI_Comm mpiComm_;
    int maxSubFieldNum_;
+
+   /** Maps: elem block ids ==> (fieldNum ==> gidFieldOffsets vector) 
+     * This uses lazy evaluation for construction.
+     */
+   mutable std::map<std::string,std::map<int,std::vector<int> > > gidFieldOffsets_;
+
+   struct LessThan
+   { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
+   typedef std::map<Teuchos::Tuple<int,3>, std::pair<std::vector<int>,std::vector<int> >,LessThan> TupleToVectorPairMap;
+
+   /** Maps: elem block ids ==> ( (fieldNum,subcellDim,subcellId) ==> closure vector pair)
+     * This uses lazy evaluation for construction.
+     */
+   mutable std::map<std::string,TupleToVectorPairMap> gidFieldOffsets_closure_;
 };
 
 }

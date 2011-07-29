@@ -157,6 +157,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
          dofManager.getFieldDOFManagers();
    TEST_EQUALITY(subManagers.size(),fieldOrder.size());
 
+
    TEST_EQUALITY(subManagers[0]->getNumFields(),2);
    TEST_EQUALITY(subManagers[0]->getFieldPattern("block_0","Ux"),patternC1);
    TEST_EQUALITY(subManagers[0]->getFieldPattern("block_0","Uy"),patternC1);
@@ -184,6 +185,13 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    TEST_EQUALITY(subManagers[1]->getFieldNum("P")+1*2,   dofManager.getFieldNum("P"));
    TEST_EQUALITY(subManagers[2]->getFieldNum("rho")+2*2, dofManager.getFieldNum("rho"));
    TEST_EQUALITY(subManagers[2]->getFieldNum("T")+2*2,   dofManager.getFieldNum("T"));
+
+   // check field order of sub managers
+   for(int i=0;i<3;i++) { 
+      std::vector<std::string> subFieldOrder; 
+      subManagers[i]->getFieldOrder(subFieldOrder); 
+      TEST_ASSERT(subFieldOrder==fieldOrder[i]); 
+   }
 
    // check field blocks, notice we are copying here
    std::vector<int> blk0fn = dofManager.getBlockFieldNumbers("block_0"); std::sort(blk0fn.begin(),blk0fn.end());
@@ -213,6 +221,92 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    #else
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
+
+   // panzer::pauseToAttach();
+
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcp_dynamic_cast;
+
+   int myRank = eComm->MyPID();
+   int numProc = eComm->NumProc();
+
+   RCP<ConnManager<short,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   BlockedDOFManager<short,int> dofManager; 
+   dofManager.setConnManager(connManger,MPI_COMM_WORLD);
+
+   TEST_EQUALITY(dofManager.getMaxSubFieldNumber(),-1);
+
+   RCP<const panzer::FieldPattern> patternC1 
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+
+   dofManager.addField("T",patternC1); // add it to all three blocks
+   dofManager.addField("block_0","Ux", patternC1);
+   dofManager.addField("block_0","Uy", patternC1);
+   dofManager.addField("block_0","P",  patternC1);
+   dofManager.addField("block_2","rho",patternC1);
+
+   // set up a blocking structure
+   std::vector<std::vector<std::string> > fieldOrder(3);
+   fieldOrder[0].push_back("Ux");
+   fieldOrder[0].push_back("Uy");
+   fieldOrder[1].push_back("P");
+   fieldOrder[2].push_back("rho");
+   fieldOrder[2].push_back("T");
+   dofManager.setFieldOrder(fieldOrder);
+
+   dofManager.buildGlobalUnknowns();
+   if(myRank==0)
+      dofManager.printFieldInformation(out);
+
+   TEST_ASSERT(dofManager.getGeometricFieldPattern()!=Teuchos::null);
+
+   std::vector<BlockedDOFManager<short,int>::GlobalOrdinal> ownedAndShared, owned;
+   std::vector<bool> ownedAndShared_bool, owned_bool;
+   dofManager.getOwnedAndSharedIndices(ownedAndShared);
+   dofManager.getOwnedIndices(owned);
+   if(myRank==0)
+   { TEST_EQUALITY(ownedAndShared.size(),39); }
+   else
+   { TEST_EQUALITY(ownedAndShared.size(),30); }
+
+   int sum = 0;
+   int mySize = (int) owned.size();
+   eComm->SumAll(&mySize,&sum,1);
+   TEST_EQUALITY(sum,51);
+
+   // give it a shuffle to make it interesting
+   std::random_shuffle(owned.begin(),owned.end());
+   std::random_shuffle(ownedAndShared.begin(),ownedAndShared.end());
+   dofManager.ownedIndices(owned,owned_bool);
+   dofManager.ownedIndices(ownedAndShared,ownedAndShared_bool);
+
+   bool ownedCheck = true;
+   for(std::size_t i=0;i<owned_bool.size();i++) 
+      ownedCheck &= owned_bool[i];
+   TEST_ASSERT(ownedCheck);
+
+   ownedCheck = true;
+   for(std::size_t i=0;i<ownedAndShared_bool.size();i++) {
+      bool isOwned = std::find(owned.begin(),owned.end(),ownedAndShared[i])!=owned.end();
+
+      ownedCheck &= (isOwned==ownedAndShared_bool[i]);
+   }
+   TEST_ASSERT(ownedCheck);
+
+   // at this point we assume unknowns are unique! WRONG THING TO DO!
+}
+
+TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   #else
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+   #endif
+
+   // panzer::pauseToAttach();
 
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -247,32 +341,59 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
    dofManager.buildGlobalUnknowns();
 
-   std::vector<BlockedDOFManager<short,int>::GlobalOrdinal> ownedAndShared, owned;
-   dofManager.getOwnedAndSharedIndices(ownedAndShared);
-   dofManager.getOwnedIndices(owned);
+   // check from element block 0
+   if(myRank==0) {
+      std::vector<std::pair<int,int> > gids;
+      dofManager.getElementGIDs(1,gids);
 
-   for(std::size_t i=0;i<ownedAndShared.size();i++)
-      out << "(" << ownedAndShared[i].first << ","
-                 << ownedAndShared[i].second << "), ";
-   out << std::endl;
+      TEST_EQUALITY(gids.size(),16);
+      for(std::size_t i=0; i<8;i++) TEST_EQUALITY(gids[i].first,0);
+      for(std::size_t i=8; i<12;i++) TEST_EQUALITY(gids[i].first,1);
+      for(std::size_t i=12;i<16;i++) TEST_EQUALITY(gids[i].first,2);
+   }
+   else if(myRank==1) {
+      std::vector<std::pair<int,int> > gids;
+      dofManager.getElementGIDs(1,gids);
 
-   const std::vector<RCP<panzer::DOFManager<short,int> > > & subManagers = 
-         dofManager.getFieldDOFManagers();
-   for(std::size_t i=0;i<subManagers.size();i++) {
-      std::stringstream ss;
- 
-      subManagers[i]->printFieldInformation(ss);
-
-      out << "******************************************************************" 
-          << ss.str() 
-          << "******************************************************************" 
-          << std::endl;
+      TEST_EQUALITY(gids.size(),16);
+      for(std::size_t i=0; i<8;i++) TEST_EQUALITY(gids[i].first,0);
+      for(std::size_t i=8; i<12;i++) TEST_EQUALITY(gids[i].first,1);
+      for(std::size_t i=12;i<16;i++) TEST_EQUALITY(gids[i].first,2);
    }
 
-   if(myRank==0)
-   {  TEST_EQUALITY(ownedAndShared.size(),39); }
-   else
-   {  TEST_EQUALITY(ownedAndShared.size(),30); }
+   // check from element block 1 
+   if(myRank==0) {
+      std::vector<std::pair<int,int> > gids;
+      dofManager.getElementGIDs(4,gids);
+
+      TEST_EQUALITY(gids.size(),4);
+      for(std::size_t i=0;i<4;i++)
+         TEST_EQUALITY(gids[i+0].first,2);
+   }
+   else if(myRank==1) {
+      std::vector<std::pair<int,int> > gids;
+      dofManager.getElementGIDs(3,gids);
+
+      TEST_EQUALITY(gids.size(),4);
+      for(std::size_t i=0;i<4;i++)
+         TEST_EQUALITY(gids[i+0].first,2);
+   }
+
+   // check from element block 2 
+   if(myRank==0) {
+      std::vector<std::pair<int,int> > gids;
+      dofManager.getElementGIDs(3,gids);
+
+      TEST_EQUALITY(gids.size(),8);
+      for(std::size_t i=0;i<4;i++) {
+         TEST_EQUALITY(gids[i+0].first,2);
+         TEST_EQUALITY(gids[i+1].first,2);
+      }
+   }
+
+   // WARNING: More full tests of actutal DOFs are required
+   //          however, since its built on the DOFManager we
+   //          should be OK.
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)

@@ -407,16 +407,22 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT loca
    std::string blockId = connMngr_->getBlockId(localElmtId);
    std::size_t blockIndex = blockIdToIndex(blockId);
    int dof = matrixGraph_->getConnectivityNumIndices(blockIndex);
-   std::vector<int> indices(dof);
 
-   // get elements indices
-   int localSize = -1;
-   matrixGraph_->getConnectivityIndices(blockIndex,localElmtId,dof,&indices[0],localSize);
-
-   // copy the indices
-   gids.resize(dof);
-   for(std::size_t i=0;i<indices.size();i++)
-      gids[i] = (GlobalOrdinal) indices[i];
+   // getConnectivityNumIndices returns -1 if no block is found or
+   // has been initialized. So if this DOFManager has no fields on
+   // the block it should be ignored (hence dof>0)
+   if(dof>0) {
+      std::vector<int> indices(dof);
+   
+      // get elements indices
+      int localSize = -1;
+      matrixGraph_->getConnectivityIndices(blockIndex,localElmtId,dof,&indices[0],localSize);
+   
+      // copy the indices
+      gids.resize(dof);
+      for(std::size_t i=0;i<indices.size();i++)
+         gids[i] = (GlobalOrdinal) indices[i];
+   }
 }
 
 /** \brief Get a vector containg the orientation of the GIDs relative to the neighbors.

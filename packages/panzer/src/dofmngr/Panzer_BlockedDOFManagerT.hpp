@@ -73,7 +73,15 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getBlo
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinal> & gids) const
 {
-   // TODO
+   // loop over field block manager and grab indices
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+      std::vector<GlobalOrdinalT> fieldBlockOwned;
+
+      fieldBlockManagers_[fbm]->getElementGIDs(localElmtId,fieldBlockOwned);
+
+      for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
+         gids.push_back(std::make_pair(fbm,fieldBlockOwned[i]));
+   }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -85,6 +93,19 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementOrientation(Loca
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets(const std::string & blockId,int fieldNum) const
 {
+   typedef std::map<std::string,std::map<int,std::vector<int> > > FieldOffsetsMap;
+  
+   FieldOffsetsMap::iterator blockItr = gidFieldOffsets_.find(blockId);
+   TEST_FOR_EXCEPTION(blockItr==gidFieldOffsets_.end(),std::logic_error,
+                      "BlockedDOFManager::getGIDFieldOffsets no such block \""+blockId+"\"");
+   std::map<int,std::vector<int> > & fieldToVectorMap = blockItr->second;
+   std::map<int,std::vector<int> >::const_iterator itr = fieldToVectorMap.find(fieldNum);
+
+   // we have found the vector, return the precomputed one
+   if(itr!=fieldToVectorMap.end())
+      return itr->second;
+  
+   // we have not found the vector, now we need to build one
    // TODO
 }
 
@@ -126,7 +147,42 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(s
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
 {
-   // TODO
+   isOwned.clear();
+
+   std::vector<std::vector<GlobalOrdinalT> > blockIndices(fieldBlockManagers_.size());
+   for(std::size_t i=0;i<indices.size();i++)
+      blockIndices[indices[i].first].push_back(indices[i].second); 
+ 
+   // build bool vector stating if each sub block is owned
+   std::vector<std::vector<bool> > blockIsOwned(fieldBlockManagers_.size());
+   std::vector<std::vector<bool>::const_iterator> blockItrs(fieldBlockManagers_.size());
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+      fieldBlockManagers_[fbm]->ownedIndices(blockIndices[fbm],blockIsOwned[fbm]);
+
+      // setup iterators to boolean vectors
+      blockItrs[fbm] = blockIsOwned[fbm].begin();
+   }
+
+   // loop over indices, consider their block and look it up
+   // in iterator vector
+   for(std::size_t i=0;i<indices.size();i++) {
+      int block = indices[i].first;
+
+      // set owned status from iterator of block
+      bool owned = *blockItrs[block];
+      isOwned.push_back(owned);
+
+      // increment block iterator
+      blockItrs[block]++;
+   }
+
+   // quick error sanity check
+   TEUCHOS_ASSERT(isOwned.size()==indices.size());
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+      TEST_FOR_EXCEPTION(blockItrs[fbm]!=blockIsOwned[fbm].end(),std::logic_error,
+                       "BlockedDOFManager::ownedIndices: Did not consume all sub block boolean entries as expected.");
+   }
+    
 }
 
 
@@ -173,7 +229,8 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > BlockedDOFManager<Local
    connMngr_ = Teuchos::null;
    ownedGIDHashTable_.clear(); 
 
-   // TODO: Loop over sub dofmanagers wiping them out as well
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++)
+      fieldBlockManagers_[fbm]->resetIndices();
 
    return connMngr;
 }
@@ -366,6 +423,9 @@ addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
    TEST_FOR_EXCEPTION(correctFlag!=activeFields.size(),std::logic_error,
                       "BlockedDOFManager::addFieldsToFieldBlockManager detected inconsistincies in the active fields.");
 
+   // set field order
+   fieldBlockManager.setFieldOrder(activeFields);
+
    // register added fields
    fieldBlockManager.registerFields();
 }
@@ -461,7 +521,22 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::printFieldInformation(std:
    os << "BlockedDOFManager Field Information: " << std::endl;
    
    if(fieldsRegistered()) {
-      // TODO
+      // Print field block DOF managers
+      for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+         os << "*************************************************\n";
+         os << "Field Block Index = " << fbm << std::endl;
+         fieldBlockManagers_[fbm]->printFieldInformation(os);
+
+         // print out mapping between sub field IDs and blocked field IDs
+         os << "   Field String to Field Id (blocked/sub):\n";
+         for(std::size_t i=0;i<fieldOrder_[fbm].size();i++) {
+            std::string fieldString = fieldOrder_[fbm][i];
+            int fieldNum = getFieldNum(fieldString);
+            os << "      \"" << fieldString << "\" is field ID " << fieldNum 
+               << "/" << fieldBlockManagers_[fbm]->getFieldNum(fieldString) << std::endl;
+         }
+         os << std::endl;
+      }
    }
    else {
       // fields are not registered
