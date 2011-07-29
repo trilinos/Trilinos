@@ -76,6 +76,8 @@ be used to communicate values of different type.
      specific implementation of Tpetra::RowMatrix, utilizing compressed row storage format. Both of these
      classes derive from Tpetra::Operator, the base class for linear operators.
 
+ -  Block-entry classes: Tpetra::BlockMap, Tpetra::BlockCrsGraph, Tpetra::VbrMatrix, Tpetra::BlockMultiVector
+
  - Import/Export classes:  Tpetra::Import and Tpetra::Export <br>
      Allows efficient transfer of objects built using one mapping 
      to a new object with a new mapping.  Supports local and global permutations,
