@@ -1069,6 +1069,43 @@ namespace stk {
       return fdata;
     }
 
+    // static
+    double * PerceptMesh::
+    field_data_entity(const stk::mesh::FieldBase *field, const stk::mesh::Entity& entity, unsigned *stride)
+    {
+      EXCEPTWATCH;
+      // this "rank" is not the same as the entity_rank, it is the "rank" of the data in the field, 0 for scalar, 1 for vector, 2 for tensor, etc
+      unsigned rank = field->rank();
+      double * fdata = 0;
+
+      if(stride) {
+        const stk::mesh::FieldBase::Restriction & r = field->restriction(entity.entity_rank(), stk::mesh::fem::FEMMetaData::get(*field).universal_part());
+        *stride = r.dimension() ;
+      }
+
+      switch(rank)
+        {
+        case 0:
+          {
+            fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , entity );
+          }
+          break;
+        case 1:
+          {
+            fdata = stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , entity );
+          }
+          break;
+        default:
+          {
+            // error
+            std::ostringstream msg;
+            msg << "PerceptMesh::field_data unknown field rank = " << rank << "\n";
+            throw new std::runtime_error(msg.str());
+          }
+        }
+      return fdata;
+    }
+
 
     // static
     double * PerceptMesh::

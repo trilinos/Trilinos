@@ -682,6 +682,7 @@ namespace stk {
 
       static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
       static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity& node, unsigned *stride=0);
+      static double * field_data_entity(const stk::mesh::FieldBase *field, const mesh::Entity& entity, unsigned *stride=0);
 
       static inline double *
       field_data_inlined(const mesh::FieldBase *field, const mesh::Entity& node)

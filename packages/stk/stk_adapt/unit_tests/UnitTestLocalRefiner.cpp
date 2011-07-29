@@ -33,6 +33,9 @@
 #include <unit_tests/TestLocalRefinerTri_N_3_EdgeMarker.hpp>
 #include <unit_tests/TestLocalRefinerTri_N_3_ElementMarker.hpp>
 
+#include <stk_adapt/FieldBasedMarkerPredicate.hpp>
+#include <stk_adapt/PredicateBasedMarker.hpp>
+
 #include <unit_tests/TestLocalRefinerTet_N_1.hpp>
 #include <unit_tests/TestLocalRefinerTet_N_2.hpp>
 #include <unit_tests/TestLocalRefinerTet_N_2_1.hpp>
@@ -55,6 +58,8 @@
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
+
+#include <stk_percept/function/ElementOp.hpp>
 
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 #include <stk_percept/RunEnvironment.hpp>
@@ -86,6 +91,7 @@ namespace stk {
     namespace unit_tests {
 
       static int printInfoLevel = 0;
+      static std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
       /// configuration: you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
       /// The following defines where to put the input and output files created by this set of functions
@@ -951,7 +957,6 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size <= 3)
           {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
             // start_demo_local_refiner_break_tri_to_tri_1
 
@@ -1013,7 +1018,6 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size <= 3)
           {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
             // start_demo_local_refiner_break_tri_to_tri_2
 
@@ -1081,7 +1085,6 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size <= 3)
           {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
             // start_demo_local_refiner_break_tri_to_tri_2
 
@@ -1155,7 +1158,6 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size <= 3)
           {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
             // start_demo_local_refiner_break_tri_to_tri_2
 
@@ -1255,7 +1257,6 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size <= 3)
           {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
             // start_demo_local_refiner_break_tri_to_tri_2
 
@@ -1391,7 +1392,6 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size <= 3)
           {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
             // start_demo_local_refiner_break_tri_to_tri_2
 
@@ -1466,7 +1466,6 @@ namespace stk {
         const unsigned p_size = stk::parallel_machine_size( pm );
         if (p_size <= 3)
           {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
 
             // start_demo_local_refiner_break_tri_to_tri_2
 
@@ -1522,6 +1521,117 @@ namespace stk {
             // FIXME
             eMesh.saveAs( output_files_loc+"local_tri_N_3_1_ElementMarker_1_unref_"+post_fix[p_size]+".e");
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_ElementMarker_1_unref_"+post_fix[p_size]+".e");
+#endif
+            // end_demo
+          }
+
+      }
+#endif
+
+      //=============================================================================
+      //=============================================================================
+      //=============================================================================
+
+#if 1
+      class SetRefineField : public percept::ElementOp
+      {
+        percept::PerceptMesh& m_eMesh;
+      public:
+        SetRefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
+        virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        {
+          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          unsigned num_node = elem_nodes.size();
+          double *f_data = PerceptMesh::field_data_entity(field, element);
+          VectorFieldType* coordField = m_eMesh.getCoordinatesField();
+                
+          bool found = true;
+          for (unsigned inode=0; inode < num_node; inode++)
+            {
+              mesh::Entity & node = * elem_nodes[ inode ].entity();
+              double *coord_data = PerceptMesh::field_data(coordField, node);
+
+              //std::cout << "tmp coord_data= " << coord_data[0] << std::endl;
+
+              if (coord_data[0] > 1.1)
+                {
+                  found=false;
+                  break;
+                }
+            }
+          if (found)
+            f_data[0] = 1.0;
+          else
+            f_data[0] = 0.0;
+
+          return false;  // don't terminate the loop
+        }
+        virtual void init_elementOp() {}
+        virtual void fini_elementOp() {}
+      };
+
+      STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_5_FieldBased)
+      {
+        EXCEPTWATCH;
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        if (p_size <= 3)
+          {
+            // start_demo_local_refiner_break_tri_to_tri_2
+
+            const unsigned n = 2;
+            const unsigned nx = n , ny = n;
+
+            bool createEdgeSets = false;
+            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
+
+            bool isCommitted = false;
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
+
+            Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
+            int scalarDimension = 0; // a scalar
+            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* refine_field = eMesh.addField("refine_field", eMesh.element_rank(), scalarDimension);
+            eMesh.commit();
+
+            fixture.generate_mesh();
+
+            SetRefineField set_ref_field(eMesh);
+            eMesh.elementOpLoop(set_ref_field, refine_field);
+            
+            save_or_diff(eMesh, output_files_loc+"local_tri_N_5_FieldBased_0_"+post_fix[p_size]+".e");
+
+            stk::mesh::Selector univ_selector(eMesh.getFEM_meta_data()->universal_part());
+
+            PredicateBasedMarker<ElementFieldBasedRefinePredicate, ElementFieldBasedUnrefinePredicate>
+              breaker(ElementFieldBasedRefinePredicate(univ_selector, refine_field, 0.0),
+                      ElementFieldBasedUnrefinePredicate(univ_selector, refine_field, 0.0),
+                      eMesh, break_tri_to_tri_N, proc_rank_field);
+
+            breaker.setRemoveOldElements(false);
+            breaker.setAlwaysInitializeNodeRegistry(false);
+            for (int ipass=0; ipass < 4; ipass++)
+              {
+                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
+                breaker.doBreak();
+                std::cout << "P[" << eMesh.getRank() << "] done... ipass= " << ipass << std::endl;
+                eMesh.saveAs(output_files_loc+"local_tri_N_5_FieldBased_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
+              }
+
+            eMesh.saveAs(output_files_loc+"local_tri_N_5_FieldBased_1_"+post_fix[p_size]+".e");
+
+#if 0
+            for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)
+              {
+                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
+                ElementUnrefineCollection elements_to_unref = breaker.buildUnrefineList();
+                breaker.unrefineTheseElements(elements_to_unref);
+                eMesh.saveAs(output_files_loc+"local_tri_N_5_FieldBased_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
+              }
+
+            eMesh.saveAs( output_files_loc+"local_tri_N_5_FieldBased_1_unref_"+post_fix[p_size]+".e");
 #endif
             // end_demo
           }

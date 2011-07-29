@@ -29,8 +29,6 @@ namespace stk {
 
     };
 
-    // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3 in UnitTestLocalRefiner.cpp)
-
     Marker::Marker(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
       Refiner(eMesh, bp, proc_rank_field)
     {
