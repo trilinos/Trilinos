@@ -37,6 +37,7 @@
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_BlockMap.hpp"
 #include "Tpetra_BlockCrsGraph.hpp"
+#include "Tpetra_VbrUtils.hpp"
 
 /** \file Tpetra_VbrMatrix_decl.hpp
 
@@ -116,6 +117,7 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   //@}
 
   //! @name Advanced Mathematical operations
+  //@{
 
   //! Multiply this matrix by a MultiVector.
   /*! \c X is required to be post-imported, i.e., described by the column map
@@ -125,8 +127,6 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   */
   template <class DomainScalar, class RangeScalar>
       void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
-
-  //@}
 
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
@@ -325,6 +325,9 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
     This method internally calls fillComplete(getBlockRowMap(),getBlockRowMap()).
   */
   void fillComplete();
+
+  //! Communicate non-local contributions to the processors that own those contributions.
+  void globalAssemble();
   //@}
 
   //! @name Extraction Methods
@@ -505,22 +508,19 @@ class VbrMatrix : public Tpetra::DistObject<char, LocalOrdinal, GlobalOrdinal, N
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedVec_;
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > exportedVec_;
 
-  typedef typename std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > MapGlobalArrayRCP;
-  typedef typename std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > MapLocalArrayRCP;
+  typedef typename std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > RowGlobalCols;
 
-  //We use 2 arrays (well, array-of-maps, array-of-array-of-arrays...) to
-  //represent the variable-block-row matrix in un-packed '2D' form.
+  //We use an array-of-maps to represent the variable-block-row matrix in
+  //un-packed '2D' form.
   //
-  //Note that these arrays are assumed to be resident in CPU (host) memory.
-  //It doesn't make sense to copy this kind of data back and forth to a separate
+  //This unpacked data is assumed to be resident in CPU (host) memory.
+  //It doesn't make sense to copy this data back and forth to a separate
   //compute device (e.g., a GPU), since we don't support doing matrix-vector
   //products until after fillComplete is called, at which time contiguous
   //arrays are allocated on the device and matrix data is copied into them.
-  Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > col_ind_2D_global_;
-  Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > values2D_;
+  Teuchos::RCP<Teuchos::Array<RowGlobalCols> > data_2D_;
 
-  Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > nonlocal_col_ind_2D_global_;
-  Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > nonlocal_values2D_;
+  VbrUtils::VbrData<LocalOrdinal,GlobalOrdinal,Scalar> nonlocal_data_;
 
   bool is_fill_completed_;
   bool is_storage_optimized_;

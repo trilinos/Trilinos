@@ -41,7 +41,9 @@ namespace Tpetra {
 //-----------------------------------------------------------------
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node> >
-makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap, const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& ptColMap)
+makeBlockColumnMap(
+    const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap,
+    const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& ptColMap)
 {
   global_size_t numGlobalBlocks = Teuchos::OrdinalTraits<global_size_t>::invalid();
   Teuchos::ArrayView<const GlobalOrdinal> blockIDs = ptColMap->getNodeElementList();
@@ -82,7 +84,7 @@ makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,Global
   typedef Tpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> LOVec;
 
   Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > blkPtMap =
-      convertBlockMapToPointMap(blockMap);
+      convertBlockMapToPointMap(*blockMap);
 
   LOVec source_sizes(blkPtMap, blockSizes());
   GOVec source_points(blkPtMap, points());
@@ -112,7 +114,7 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::BlockCrsGraph(
    blkRangeMap_()
 {
   ptGraph_ = Teuchos::rcp(new CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(
-          convertBlockMapToPointMap(blkRowMap), maxNumEntriesPerRow, pftype));
+          convertBlockMapToPointMap(*blkRowMap), maxNumEntriesPerRow, pftype));
 }
 
 //-------------------------------------------------------------------
@@ -155,8 +157,8 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::fillComplete(const Teuchos::RCP<
   blkDomainMap_ = blkDomainMap;
   blkRangeMap_  = blkRangeMap;
 
-  ptGraph_->fillComplete(convertBlockMapToPointMap(blkDomainMap),
-                         convertBlockMapToPointMap(blkRangeMap), os);
+  ptGraph_->fillComplete(convertBlockMapToPointMap(*blkDomainMap),
+                         convertBlockMapToPointMap(*blkRangeMap), os);
 
   //Now we need to take the point-column-map from ptGraph_ and create a
   //corresponding block-column-map.
