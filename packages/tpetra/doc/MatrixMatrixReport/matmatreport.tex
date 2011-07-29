@@ -27,11 +27,11 @@ The basic algorithm is as follows:
   \item Aprime and Bprime are created from A and B. If it has been specified that A should be transposed, an actual 
   transpose of the matrix is created and assigned to Aprime. Otherwise Aprime is simply equals to A. The same is done for 
   creating Bprime.
-  \item A ``view'' of Aprime and a ``view'' of Bprime are created. These views provide fast access to informaiton that 
+  \item A ``view'' of Aprime and a ``view'' of Bprime are created. These views provide fast access to information that 
   will be needed later in the algorithm. In addition, any importations of off-processor elements is done. Namely, all the 
   rows in Bprime that contain columns needed by the local copy of Aprime are imported.
   \item The sparsity pattern of C is determined by doing a dry run of the multiplication of Aprime and Bprime. In this run, 
-  column indicies for C are computed and used to construct a graph.
+  column indices for C are computed and used to construct a graph.
   \item The actual multiplication of Aprime and Bprime is done by iterating through each row of Aprime. For each row in 
   Aprime, every row in Bprime is looped through and the appropriate calculations are done.
   \item Unless indicated otherwise by the user, fillComplete is called on matrix C.
@@ -40,20 +40,20 @@ The basic algorithm is as follows:
 \section{Optimization}
 
 \section{Removal of Specific Transpose Mode Kernels}
-In the original ExpetraExt algorithm there was actually a seperate kernel for each possible transpose combination 
+In the original ExpetraExt algorithm there was actually a separate kernel for each possible transpose combination 
 (e.g. A\mahts{T}*B, A*B\mahts{T}, and A\mahts{T}*B\mahts{T}).
-Some of these kernels relied on a function calls find\_rows\_constaining\_columns. The relevant things to know about this 
-function is that one of it's arguemnts was a matrix and during execution it created an array that was of size 
+Some of these kernels relied on a function calls find\_rows\_containing\_columns. The relevant things to know about this 
+function is that one of it's arguments was a matrix and during execution it created an array that was of size 
 NumberOfColumns+2*NumberOfProcessors+NumberOfProcessors*NumberOfRows.
-Obviously this is not scalable. At anything but the lowest processor counts, this array quickly ballons to a size that 
+Obviously this is not scalable. At anything but the lowest processor counts, this array quickly balloons to a size that 
 won't fit in memory. We decided to just remove this function and the specific transpose kernels. Tpetra has a very fast 
-tranposer that we now use instead. We take what ever the given matricies are, transpose them to the users specification, 
-and then just use the regular A*B kernel. This has \emph{significant} performance benifits when doing operations like 
+transposer that we now use instead. We take what ever the given matrices are, transpose them to the users specification, 
+and then just use the regular A*B kernel. This has \emph{significant} performance benefits when doing operations like 
 A\mahts{T}*B.
 
 \subsection{Fixing FillComplete's Sort}
 As part of it's algorithm, the fillComplete function relies on a function called sort2. This function performs a sort 
-on two arrays by sorting the first array and concurrently doing the same permuations on the second matrix, 
+on two arrays by sorting the first array and concurrently doing the same permutations on the second array, 
 i.e. both arrays are sorted according to the ordering of the first array. The main use case for this function is sorting 
 an indices arrray and moving the values in a values array so that they stay matched up with their associated index.
 
@@ -64,20 +64,20 @@ If the arrays are not sorted, a quicksort is preformed on the arrays.
 \subsection{Streamlining the Graph Building Routine}
 The original algorithm from EptraExt used the same function for both building the graph of matrix C and calculating it's 
 values by doing two passes through the function with different data. 
-As a result, on the first pass through the fuction when the graph was being calculate, the vaules for matrix C were also 
+As a result, on the first pass through the function when the graph was being calculate, the values for matrix C were also 
 calculate, but thrown out. It's not until the second pass through the function 
 that the values calculated are actually inserted into matrix C. We modified this function so that it
 takes an argument which indicates whether or not we're just calculating the graph for matrix C. If we're just calculating 
 the graph, all the value calculation is skipped.
 
 \section{Performance}
-We conducted a seires of weak-scailing studies on the Hopper NERSC machine. Hopper is a Cray XE6 with 24 cores
-per-node~\footnote{For more machine infomation regarding Hopper, please visit \url{https://www.nersc.gov/systems/hopper-cray-xe6}}.
+We conducted a series of weak-scaling studies on the Hopper NERSC machine. Hopper is a Cray XE6 with 24 cores
+per-node~\footnote{For more machine infomation regarding Hopper, please visit \url{http://www.nersc.gov/systems/hopper-cray-xe6}}.
 
-\subsection{Comparison of Developement Stages}
+\subsection{Comparison of Development Stages}
 Figure~\ref{tpetracomptime} and Figure~\ref{tpetracompeff} show the test results of comparing the Tpetra matrix multiply 
 routine at various stages of it's 
-developement.  The tests were as such: Two matricies were constructed using a Laplace3D stencil. Each node was assigned 
+development.  The tests were as such: Two matrices were constructed using a 3D Laplace stencil. Each node was assigned 
 $110^3$ number of rows from each matrix. Then the two matrices were multiplied together. The multiplication is what 
 we timed. We ran these experiments three times for each node count, and then averaged the results.
 The red line represents the routine as it was when we first got the routine working. The blue line is from after 
@@ -86,14 +86,14 @@ As can be clearly seen, the optimizations we applied helped the algorithm substa
 
 \begin{figure}
 \includegraphics[scale=.4]{tpetratime.jpg}
-\caption[Time Comparison]{A comparison of the tpetra matrix multiply routine's runtime 
+\caption[Time Comparison]{A comparison of the Tpetra matrix multiply routine's runtime 
 throughout various stages of it's development}
 \label{tpetracomptime}
 \end{figure}
 
 \begin{figure}
 \includegraphics[scale=.4]{tpetraeff.jpg}
-\caption[Efficiency Comparison]{A comparison of the tpetra matrix multiply routine's scailing efficiency
+\caption[Efficiency Comparison]{A comparison of the Tpetra matrix multiply routine's scaling efficiency
 throughout various stages of it's development}
 \label{tpetracompeff}
 \end{figure}
@@ -101,12 +101,12 @@ throughout various stages of it's development}
 
 \subsection{Tpetra vs. EpetraExt vs. ML}
 Figure~\ref{totaltime} and Figure~\ref{totaleff} show the test results of comparing the Tpetra matrix multiply routine 
-(with all of it's optimizations) compared to the other matrix multiply routines in Trilinos (namely the original EpetraExt 
+(with all of it's optimizations) to the other matrix multiply routines in Trilinos (namely the original EpetraExt 
 routine and two ML routines). These tests were conducted in the same manner as our development stages comparison. 
 The encouraging thing about these results is that the Tpetra algorithm is as-good-as if not better than the EpetraExt 
-algorithm at scale. It should be noted that the ML lines are cut short because at the next step in our testing, 
-they would fail due to a memory error. So we could not run tests for greater problem sizes with ML. It's also worth noting
-that in terms of efficiency, Tpetra seems to scale much better than all the rest.
+algorithm at scale. It should be noted that the ML lines are cut short because at the next problem size in our testing, 
+they would fail due to a memory error. Consequently, we could not run tests for greater problem sizes with ML. 
+It's also worth noting that in terms of efficiency, Tpetra seems to scale much better than all the rest.
 
 \begin{figure}
 \includegraphics[scale=.4]{totaltime.jpg}
@@ -116,18 +116,17 @@ that in terms of efficiency, Tpetra seems to scale much better than all the rest
 
 \begin{figure}
 \includegraphics[scale=.4]{totaleff.jpg}
-\caption[Effciency Comparison]{A comparison of various Trilinos matrix multiply routines' scailing efficency}
+\caption[Efficiency Comparison]{A comparison of various Trilinos matrix multiply routines' scaling efficiency}
 \label{totaleff}
 \end{figure}
 
 \subsection{Transpose Mode Tests}
-Since Tpetra and EpetraExt differ widly when it comes to transpose modes, we decided to compare the two. We did the same
+Since Tpetra and EpetraExt differ wildly when it comes to transpose modes, we decided to compare the two. We did the same
 tesing procedure as in the development stages comparison, except that we requested A be transposed. Figure~\ref{transtime}
-and Figure~\ref{transeff} show the results. To say that the Tpetra
-algorithm scales better than the EpetraExt one would be a gross understatment. We attempted ot conduct a similar 
-experiment where we transposed B instead of A, but the EpetraExt algorithm was taking even longer (over ten minutes on a 
-single node of Hopper) and we didn't want to waste our limited computing resources. ML is not included in these results
-because it does not have a transpose mode.
+and Figure~\ref{transeff} show the results. To say that the Tpetra algorithm scales better than the EpetraExt algorithm
+would be a gross understatement. We attempted to conduct a similar experiment where we transposed B instead of A, 
+but the EpetraExt algorithm was taking even longer (over ten minutes on a single node of Hopper) and we didn't want to 
+waste our limited computing resources. ML is not included in these results because it does not have a transpose mode.
 
 \begin{figure}
 \includegraphics[scale=.4]{atranstime.jpg}
@@ -137,15 +136,15 @@ because it does not have a transpose mode.
 
 \begin{figure}
 \includegraphics[scale=.4]{atranseff.jpg}
-\caption[Efficiency Comparison]{A comparison of matrix matrix multiple scailing efficiencies in Tpetra and EpetraExt using transpose mode}
+\caption[Efficiency Comparison]{A comparison of matrix matrix multiple scaling efficiencies in Tpetra and EpetraExt using transpose mode}
 \label{transeff}
 \end{figure}
 
-\section{Areas for future improvement}
-\subsection{Improvment of Underlying Tpetra Architecture}
-The most important thing that will help the matrix multiply routine is to improve the underlying tpetra arhcitecture. 
-No doubt the ineffiecient sort2 routine is the only problem with Tpetra at large. There have been reports from other 
-scientists at sandia that things like the Tpetra Import/Export classes are not running as nearly as fast as their Epetra 
+\section{Areas for Future Improvement}
+\subsection{Improvement of Underlying Tpetra Architecture}
+The most important thing that will help the matrix multiply routine is to improve the underlying Tpetra architecture. 
+No doubt the inefficient sort2 routine is the only problem with Tpetra at large. There have been reports from other 
+scientists at Sandia that things like the Tpetra Import/Export classes are not running as nearly as fast as their Epetra 
 counterparts. These things need to be investigated, and fixed if necessary.
 
 \subsection{Kokkos Kernel}
@@ -153,11 +152,11 @@ The actual computation kernel should be moved down into Kokkos where it can bett
 This should offer non-trivial speedups and not be very difficult to implement.
 
 \subsection{Possible Implementation of ML's Algorithm}
-ML has a matrix multiply routine that employs a complex hashing scheme inorder to speed up lookup times for 
-column indicies. ML's matrix matrix multiplication algorithm is fast, but it's not clear to the current tpetra developers 
-how much the hasing scheme has to do with ML's speed. That said, it is definently worth investigating. ML's hashing scheme 
-is complex. Figure~\ref{hashalgo} outlines in psuedo code the algorithm as current tpetra developers 
-understand it. While maybe not as easy as implementing a kokkos kernel, this shouldn't be that difficult to write.
+ML has a matrix multiply routine that employs a complex hashing scheme in order to speed up lookup times for 
+column indices. ML's matrix matrix multiplication algorithm is fast, but it's not clear to the current Tpetra developers 
+how much the hashing scheme has to do with ML's speed. That said, it is definitely worth investigating. ML's hashing scheme 
+is complex. Figure~\ref{hashalgo} outlines in pseudo code the algorithm as current Tpetra developers 
+understand it. While maybe not as easy as implementing a Kokkos kernel, this shouldn't be that difficult to write.
 
 \begin{figure}
 \centering
