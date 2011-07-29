@@ -53,6 +53,10 @@
 #ifndef AMESOS2_SUPERLU_DEF_HPP
 #define AMESOS2_SUPERLU_DEF_HPP
 
+#include <Teuchos_Tuple.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
+
 #include "Amesos2_SolverCore_def.hpp"
 #include "Amesos2_Superlu_decl.hpp"
 
@@ -246,7 +250,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 
     // Set the number of non-zero values in the L and U factors
     this->setNnzLU( as<size_t>(((SLU::SCformat*)data_.L.Store)->nnz +
-			       ((SLU::NCformat*)data_.U.Store)->nnz) );
+                               ((SLU::NCformat*)data_.U.Store)->nnz) );
   }
 
   /* All processes should have the same error code */
@@ -380,140 +384,44 @@ Superlu<Matrix,Vector>::matrixShapeOK_impl() const
 
 template <class Matrix, class Vector>
 void
-Superlu<Matrix,Vector>::setParameters_impl(
-  const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
+Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
 {
-  if( this->control_.useTranspose_ ){
-    data_.options.Trans = SLU::TRANS;
-  }
-  // The Superlu user guide uses "Trans" as the option name, so we will honor
-  // that parameter as well.  Since the Control class doesn't recognize this
-  // parameter, we check for it ourselves.
-  else if ( parameterList->isParameter("Trans") ){
-    std::string fact = parameterList->template get<std::string>("Trans");
-    if( fact == "TRANS" ){
-      data_.options.Trans = SLU::TRANS;
-    } else if ( fact == "NOTRANS" ){
-      data_.options.Trans = SLU::NOTRANS;
-    } else if ( fact == "CONJ" ) {
-      data_.options.Trans = SLU::CONJ;
+  using Teuchos::RCP;
+  using Teuchos::getIntegralValue;
+  using Teuchos::ParameterEntryValidator;
 
-      // TODO: Fix this!
-      TEST_FOR_EXCEPTION( fact == "CONJ" && Teuchos::ScalarTraits<scalar_type>::isComplex,
-                          std::invalid_argument,
-                          "Amesos2::Superlu does not currently support solution of complex "
-                          "systems with conjugate transpose" );
-    }
-  } else {                      // default to no transpose if no parameter given
-    data_.options.Trans = SLU::NOTRANS;
-  }
+  RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
-  if( parameterList->isParameter("Equil") ){
-    if ( parameterList->template isType<bool>("Equil") ){
-      bool equil = parameterList->template get<bool>("Equil");
-      if( equil ){
-        data_.options.Equil = SLU::YES;
-      } else {
-        data_.options.Equil = SLU::NO;
-      }
-    } else if ( parameterList->template isType<std::string>("Equil") ) {
-      std::string equil = parameterList->template get<std::string>("Equil");
-      if ( equil == "YES" || equil == "yes" ){
-        data_.options.Equil = SLU::YES;
-      } else if ( equil == "NO" || equil == "no" ) {
-        data_.options.Equil = SLU::NO;
-      }
-    }
+  data_.options.Trans = this->control_.useTranspose_ ? SLU::TRANS : SLU::NOTRANS;
+  // The SuperLU transpose option can override the Amesos2 option
+  if( parameterList->isParameter("Trans") ){
+    RCP<const ParameterEntryValidator> trans_validator = valid_params->getEntry("Trans").validator();
+    parameterList->getEntry("Trans").setValidator(trans_validator);
+
+    data_.options.Trans = getIntegralValue<SLU::trans_t>(*parameterList, "Trans");
   }
 
   if( parameterList->isParameter("IterRefine") ){
-    std::string refine = parameterList->template get<std::string>("IterRefine");
-    if( refine == "NO" ){
-      data_.options.IterRefine = SLU::NOREFINE;
-    } else if ( refine == "SINGLE" ) {
-      data_.options.IterRefine = SLU::SINGLE;
-    } else if ( refine == "DOUBLE" ) {
-      data_.options.IterRefine = SLU::DOUBLE;
-    } else if ( refine == "EXTRA" ) {
-      data_.options.IterRefine = SLU::EXTRA;
-    } else {
-      TEST_FOR_EXCEPTION(
-        true,
-        std::invalid_argument,
-        "Unrecognized value for 'IterRefine' key.");
-    }
-  }
+    RCP<const ParameterEntryValidator> refine_validator = valid_params->getEntry("IterRefine").validator();
+    parameterList->getEntry("IterRefine").setValidator(refine_validator);
 
-  if( parameterList->isParameter("SymmetricMode") ){
-    if ( parameterList->template isType<bool>("SymmetricMode") ){
-      bool sym = parameterList->template get<bool>("SymmetricMode");
-      if( sym ){
-        data_.options.SymmetricMode = SLU::YES;
-      } else {
-        data_.options.SymmetricMode = SLU::NO;
-      }
-    } else if ( parameterList->template isType<std::string>("SymmetricMode") ) {
-      std::string sym = parameterList->template get<std::string>("SymmetricMode");
-      if ( sym == "YES" || sym == "yes" ){
-        data_.options.SymmetricMode = SLU::YES;
-      } else if ( sym == "NO" || sym == "no" ) {
-        data_.options.SymmetricMode = SLU::NO;
-      }
-    }
-  }
-
-  if( parameterList->isParameter("DiagPivotThresh") ){
-    double diag_pivot_thresh = parameterList->template get<double>("DiagPivotThresh");
-    data_.options.DiagPivotThresh = diag_pivot_thresh;
-    TEST_FOR_EXCEPTION( diag_pivot_thresh < 0 || diag_pivot_thresh > 1,
-                        std::invalid_argument,
-                        "Invalid value given for 'DiagPivotThresh' parameter" );
+    data_.options.IterRefine = getIntegralValue<SLU::IterRefine_t>(*parameterList, "IterRefine");
   }
 
   if( parameterList->isParameter("ColPerm") ){
-    std::string method = parameterList->template get<std::string>("ColPerm");
-    if( method == "NATURAL" ){
-      data_.options.ColPerm = SLU::NATURAL;
-    } else if ( method == "MMD_AT_PLUS_A" ) {
-      data_.options.ColPerm = SLU::MMD_AT_PLUS_A;
-    } else if ( method == "MMD_ATA" ) {
-      data_.options.ColPerm = SLU::MMD_ATA;
-    } else if ( method == "COLAMD" ) {
-      data_.options.ColPerm = SLU::COLAMD;
-    } else if ( method == "MY_PERMC" ) {
-      data_.options.ColPerm = SLU::MY_PERMC;
+    RCP<const ParameterEntryValidator> colperm_validator = valid_params->getEntry("ColPerm").validator();
+    parameterList->getEntry("ColPerm").setValidator(colperm_validator);
 
-      // Now we also expect to find a parameter in parameterList called
-      // "perm_c"
-      TEST_FOR_EXCEPTION(
-        !parameterList->isParameter("perm_c"),
-        std::invalid_argument,
-        "MY_PERMC option specified without accompanying 'perm_c' parameter.");
-
-      data_.perm_c = parameterList->template get<Teuchos::Array<int> >("perm_c");
-
-      TEST_FOR_EXCEPTION(
-        Teuchos::as<global_size_type>(data_.perm_c.size()) == this->globalNumCols_,
-        std::length_error,
-        "'perm_c' parameter not of correct length.");
-    } else {
-      TEST_FOR_EXCEPTION(
-        true,
-        std::invalid_argument,
-        "Unrecognized value for 'ColPerm' key.");
-    }
+    data_.options.ColPerm = getIntegralValue<SLU::colperm_t>(*parameterList, "ColPerm");
   }
 
-  // We also recognize a lone 'perm_c' parameter, assuming that ColPerm = MY_PERMC
-  if( parameterList->isParameter("perm_c") ){
-    data_.options.ColPerm = SLU::MY_PERMC;
-    data_.perm_c = parameterList->template get<Teuchos::Array<int> >("perm_c");
+  data_.options.DiagPivotThresh = parameterList->get<double>("DiagPivotThresh", 1.0);
 
-    TEST_FOR_EXCEPTION(
-      Teuchos::as<global_size_type>(data_.perm_c.size()) == this->globalNumCols_,
-      std::length_error,
-      "'perm_c' parameter not of correct length.");
-  }
+  bool equil = parameterList->get<bool>("Equil", true);
+  data_.options.Equil = equil ? SLU::YES : SLU::NO;
+
+  bool symmetric_mode = parameterList->get<bool>("SymmetricMode", false);
+  data_.options.SymmetricMode = symmetric_mode ? SLU::YES : SLU::NO;
 }
 
 
@@ -521,18 +429,73 @@ template <class Matrix, class Vector>
 Teuchos::RCP<const Teuchos::ParameterList>
 Superlu<Matrix,Vector>::getValidParameters_impl() const
 {
+  using std::string;
+  using Teuchos::tuple;
   using Teuchos::ParameterList;
+  using Teuchos::EnhancedNumberValidator;
+  using Teuchos::setStringToIntegralParameter;
+  using Teuchos::stringToIntegralParameterEntryValidator;
 
-  ParameterList valid_params;
+  static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
-  valid_params.set("Trans","NOTRANS");
-  valid_params.set("Equil",true);
-  valid_params.set("IterRefine","NO");
-  valid_params.set("DiagPivotThresh",1.0); // partial pivoting
-  valid_params.set("ColPerm","COLAMD");
-  valid_params.set("SymmetricMode",false);
+  if( is_null(valid_params) ){
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-  return Teuchos::rcpFromRef( valid_params );
+    setStringToIntegralParameter<SLU::trans_t>("Trans", "NOTRANS",
+                                               "Solve for the transpose system or not",
+                                               tuple<string>("TRANS","NOTRANS","CONJ"),
+                                               tuple<string>("Solve with transpose",
+                                                             "Do not solve with transpose",
+                                                             "Solve with the conjugate transpose"),
+                                               tuple<SLU::trans_t>(SLU::TRANS,
+                                                                   SLU::NOTRANS,
+                                                                   SLU::CONJ),
+                                               pl.getRawPtr());
+
+    setStringToIntegralParameter<SLU::IterRefine_t>("IterRefine", "NOREFINE",
+                                                    "Type of iterative refinement to use",
+                                                    tuple<string>("NOREFINE", "SINGLE", "DOUBLE"),
+                                                    tuple<string>("Do not use iterative refinement",
+                                                                  "Do single iterative refinement",
+                                                                  "Do double iterative refinement"),
+                                                    tuple<SLU::IterRefine_t>(SLU::NOREFINE,
+                                                                             SLU::SINGLE,
+                                                                             SLU::DOUBLE),
+                                                    pl.getRawPtr());
+
+    // Note: MY_PERMC not yet supported
+    setStringToIntegralParameter<SLU::colperm_t>("ColPerm", "COLAMD",
+                                                 "Specifies how to permute the columns of the "
+                                                 "matrix for sparsity preservation",
+                                                 tuple<string>("NATURAL", "MMD_AT_PLUS_A",
+                                                               "MMD_ATA", "COLAMD"),
+                                                 tuple<string>("Natural ordering",
+                                                               "Minimum degree ordering on A^T + A",
+                                                               "Minimum degree ordering on A^T A",
+                                                               "Approximate minimum degree column ordering"),
+                                                 tuple<SLU::colperm_t>(SLU::NATURAL,
+                                                                       SLU::MMD_AT_PLUS_A,
+                                                                       SLU::MMD_ATA,
+                                                                       SLU::COLAMD),
+                                                 pl.getRawPtr());
+
+    Teuchos::RCP<EnhancedNumberValidator<double> > diag_pivot_thresh_validator
+      = Teuchos::rcp( new EnhancedNumberValidator<double>(0.0, 1.0) );
+    pl->set("DiagPivotThresh", 1.0,
+            "Specifies the threshold used for a diagonal entry to be an acceptable pivot",
+            diag_pivot_thresh_validator); // partial pivoting
+
+    pl->set("Equil", true, "Whether to equilibrate the system before solve");
+
+    pl->set("SymmetricMode", false,
+            "Specifies whether to use the symmetric mode. "
+            "Gives preference to diagonal pivots and uses "
+            "an (A^T + A)-based column permutation.");
+
+    valid_params = pl;
+  }
+
+  return valid_params;
 }
 
 
@@ -569,9 +532,9 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #endif
 
     Util::get_ccs_helper<
-      MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
-                                                      nzvals_(), rowind_(), colptr_(),
-                                                      nnz_ret, ROOTED, ARBITRARY);
+    MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
+                                                    nzvals_(), rowind_(), colptr_(),
+                                                    nnz_ret, ROOTED, ARBITRARY);
   }
 
   // Get the SLU data type for this type of matrix
@@ -597,7 +560,7 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template<class Matrix, class Vector>
 const char* Superlu<Matrix,Vector>::name = "SuperLU";
-
+  
 
 } // end namespace Amesos2
 

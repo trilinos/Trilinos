@@ -175,16 +175,13 @@ private:
    *
    * <ul>
    *   <li> \c "Trans" : { \c "NOTRANS" | \c "TRANS" |
-   *     \c "CONJ" }.  Will also recognize the \c "Transpose" : { \c true
-   *     | \c false } option which is equivalent to \c "TRANS" and
-   *     \c "NOTRANS" , respectively.</li>
-   *   <li> \c "Equil" : { \c "YES" | \c "NO" } or, equivalently, { \c true | \c false }.
-   *     Specifies whether the solver to equilibrate the matrix before solving.</li>
+   *     \c "CONJ" }.  Specifies whether to solve with the transpose system.</li>
+   *   <li> \c "Equil" : { \c true | \c false }.  Specifies whether
+   *     the solver to equilibrate the matrix before solving.</li>
    *   <li> \c "IterRefine" : { \c "NO" | \c "SINGLE" | \c "DOUBLE" | \c "EXTRA"
    *     }. Specifies whether to perform iterative refinement, and in
    *     what precision to compute the residual.</li>
-   *   <li> \c "SymmetricMode" : { \c "Yes" | \c "NO" } or, equivalently,
-   *     { \c true | \c false }.
+   *   <li> \c "SymmetricMode" : { \c true | \c false }.</li>
    *   <li> \c "DiagPivotThresh" : \c double value. Specifies the threshold
    *     used for a diagonal to be considered an acceptable pivot.</li>
    *   <li> \c "ColPerm" which takes one of the following:

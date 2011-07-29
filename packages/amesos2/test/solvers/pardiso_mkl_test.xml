@@ -1,7 +1,7 @@
 <ParameterList name="test_params">
   <ParameterList name="arc130.mtx">
     <Parameter name="complex" type="bool" value="false"/>
-    <ParameterList name="PardisoMKL">
+    <ParameterList name="PARDISOMKL">
       
       <!-- Next test Tpetra objects -->
       <ParameterList name="tpetra">
@@ -32,7 +32,7 @@
 
   <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
   <ParameterList name="young1c.mtx">
-    <ParameterList name="PardisoMKL">
+    <ParameterList name="PARDISOMKL">
       <ParameterList name="tpetra">
 	<ParameterList name="run0">
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>

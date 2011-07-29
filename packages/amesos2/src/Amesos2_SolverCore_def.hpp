@@ -278,6 +278,10 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
 #endif
 
   if( parameterList->name() == "Amesos2" ){
+    // First, validate the parameterList
+    Teuchos::RCP<const Teuchos::ParameterList> valid_params = getValidParameters();
+    parameterList->validateParameters(*valid_params);
+
     // Do everything here that is for generic status and control parameters
     control_.setControlParameters(parameterList);
 
@@ -285,9 +289,6 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
     // First check if there is a dedicated sublist for this solver and use that if there is
     if( parameterList->isSublist(name()) ){
       static_cast<solver_type*>(this)->setParameters_impl(Teuchos::sublist(parameterList, name()));
-    } else {
-      // See if there is anything in the parent sublist that the solver recognizes
-      static_cast<solver_type*>(this)->setParameters_impl(parameterList);
     }
   }
 
@@ -308,14 +309,18 @@ SolverCore<ConcreteSolver,Matrix,Vector>::getValidParameters() const
   using Teuchos::rcp;
 
   RCP<ParameterList> control_params = rcp(new ParameterList("Amesos2 Control"));
-  control_params->set("Transpose",false);
-  control_params->set("AddToDiag","");
-  control_params->set("AddZeroToDiag",false);
-  control_params->set("MatrixProperty","general");
-  control_params->set("ScaleMethod",0);
+  control_params->set("Transpose", false, "Whether to solve with the matrix transpose");
+  //  control_params->set("AddToDiag", "");
+  //  control_params->set("AddZeroToDiag", false);
+  //  control_params->set("MatrixProperty", "general");
+  //  control_params->set("Reindex", false);
 
   RCP<const ParameterList>
     solver_params = static_cast<const solver_type*>(this)->getValidParameters_impl();
+  // inject the "Transpose" parameter into the solver's valid parameters
+  Teuchos::rcp_const_cast<ParameterList>(solver_params)->set("Transpose", false,
+							     "Whether to solve with the "
+							     "matrix transpose");
 
   RCP<ParameterList> amesos2_params = rcp(new ParameterList("Amesos2"));
   amesos2_params->setParameters(*control_params);

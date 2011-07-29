@@ -20,7 +20,7 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_EXPERIMENTAL
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_VERBOSE_DEBUG
   HAVE_${PACKAGE_NAME_UC}_VERBOSE_DEBUG
-  "Enable output during debug-mode"
+  "Enable verbose output during debug-mode"
   OFF )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
@@ -28,50 +28,14 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
   "Enable performance timers"
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_EpetraExt
-  HAVE_${PACKAGE_NAME_UC}_EPETRAEXT
-  "Enable EpetraExt functionality (for examples and testing)"
-# ${Trilinos_ENABLE_EpetraExt} )  # How to set to ON if enabled in Trilinos?
-  OFF )
-
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Epetra
-  HAVE_${PACKAGE_NAME_UC}_EPETRA
-  "Enable support for Epetra matrix and multivector objects"
-#  ${Trilinos_ENABLE_Epetra} )
-  OFF )
-
-
 #
-# Add options to enable TPL solver interfaces
+# TPL Solver interfaces are enabled automatically based on Trilinos
+# TPL configuration.
 #
-# Try to keep the option names consistent with the Trilinos TPL names
+# Config options such as Amesos2_ENABLE_XXXXXX are automatically
+# generated in case a user would wish to explicitely disable Amesos2
+# support for an otherwise enabled third-part solver library
 #
-
-# ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KLU2
-#   HAVE_AMESOS2_KLU2
-#   "Enable KLU2 functionality."
-#   ON )
-
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLU
-  HAVE_${PACKAGE_NAME_UC}_SUPERLU
-  "Enable SuperLU functionality.  Requires the SuperLU TPL."
-  ON )
-
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLUMT
-  HAVE_${PACKAGE_NAME_UC}_SUPERLUMT
-  "Enable SuperLU_MT functionality.  Requires the SuperLUMT TPL"
-  OFF )
-
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLUDist
-  HAVE_${PACKAGE_NAME_UC}_SUPERLUDIST
-  "Enable SuperLU_DIST functionality.  Requires the SuperLUDist TPL"
-  OFF )
-
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PARDISO_MKL
-  HAVE_${PACKAGE_NAME_UC}_PARDISOMKL
-  "Enable Pardiso MKL functionality.  Requires the Pardiso MKL TPL"
-  OFF )
-
 
 PACKAGE_ADD_DEBUG_OPTION()
 

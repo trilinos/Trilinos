@@ -2,7 +2,7 @@
 //
 // ***********************************************************************
 //
-//           Amesos2: Templated Direct Sparse Solver Package 
+//           Amesos2: Templated Direct Sparse Solver Package
 //                  Copyright 2010 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -44,7 +44,7 @@
 #include "Amesos2_Factory.hpp"
 
 namespace Amesos2 {
-  
+
   /**********************
    *   QUERY function   *
    **********************/
@@ -88,7 +88,7 @@ namespace Amesos2 {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_PARDISOMKL 
+#ifdef HAVE_AMESOS2_PARDISO_MKL
     if((solverName == "amesos2_pardiso_mkl") ||
        (solverName == "pardiso_mkl") ||
        (solverName == "amesos2_pardisomkl")  ||
@@ -108,7 +108,7 @@ namespace Amesos2 {
     std::string rtn = s;
     for (size_t i=0; i<rtn.length(); ++i)
       {
-	rtn[i] = tolower(rtn[i],loc);
+        rtn[i] = tolower(rtn[i],loc);
       }
     return rtn;
   }

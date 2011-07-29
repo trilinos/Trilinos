@@ -104,7 +104,7 @@
 #ifdef HAVE_AMESOS2_SUPERLU     // Sequential SuperLU
 #include "Amesos2_Superlu.hpp"
 #endif
-#ifdef HAVE_AMESOS2_PARDISOMKL	// MKL version of Pardiso
+#ifdef HAVE_AMESOS2_PARDISO_MKL // MKL version of Pardiso
 #include "Amesos2_PardisoMKL.hpp"
 #endif
 
@@ -320,7 +320,7 @@ namespace Amesos2 {
         Meta::is_same<
           typename MatrixTraits<Matrix>::scalar_t,
           typename MultiVecAdapter<Vector>::scalar_t
-	>::value
+        >::value
       > same_scalar_assertion;
       (void)same_scalar_assertion; // This stops the compiler from warning about unused declared variables
 
@@ -338,22 +338,22 @@ namespace Amesos2 {
  * such a case we throw a runtime exception.
  */
 template < template <class,class> class ConcreteSolver,
-	   class Matrix,
-	   class Vector >
+           class Matrix,
+           class Vector >
 struct throw_no_scalar_support_exception {
   static Teuchos::RCP<Solver<Matrix,Vector> > apply(Teuchos::RCP<const Matrix> A,
-						    Teuchos::RCP<Vector>       X,
-						    Teuchos::RCP<const Vector> B )
+                                                    Teuchos::RCP<Vector>       X,
+                                                    Teuchos::RCP<const Vector> B )
   {
     // typedef ConcreteSolver<Matrix,Vector> concretesolver_matrix_vector;
     typedef typename MatrixTraits<Matrix>::scalar_t scalar_t;
     TEST_FOR_EXCEPTION( true,
-			std::invalid_argument,
-			"The requested Amesos2 "
-			// << concretesolver_matrix_vector::name <<
-			" solver interface does not support the " <<
-			Teuchos::ScalarTraits<scalar_t>::name() <<
-			" scalar type." );
+                        std::invalid_argument,
+                        "The requested Amesos2 "
+                        // << concretesolver_matrix_vector::name <<
+                        " solver interface does not support the " <<
+                        Teuchos::ScalarTraits<scalar_t>::name() <<
+                        " scalar type." );
   }
 };
 
@@ -409,9 +409,9 @@ struct throw_no_scalar_support_exception {
   /////////////////
   // Definitions //
   /////////////////
-  
+
   template <class Matrix,
-	    class Vector >
+            class Vector >
   Solver<Matrix,Vector>*
   create(Matrix* A, Vector* X, Vector* B)
   {
@@ -422,11 +422,11 @@ struct throw_no_scalar_support_exception {
 
 
   template <class Matrix,
-	    class Vector >
+            class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(Teuchos::RCP<const Matrix> A,
-	 Teuchos::RCP<Vector>       X,
-	 Teuchos::RCP<const Vector> B)
+         Teuchos::RCP<Vector>       X,
+         Teuchos::RCP<const Vector> B)
   {
     std::string solver = "Klu2";
     return( create(solver, A, X, B) );
@@ -434,7 +434,7 @@ struct throw_no_scalar_support_exception {
 
 
   template <class Matrix,
-	    class Vector >
+            class Vector >
   Solver<Matrix,Vector>*
   create(const char* solverName, const Matrix* A, Vector* X, const Vector* B)
   {
@@ -445,12 +445,12 @@ struct throw_no_scalar_support_exception {
 
 
   template <class Matrix,
-	    class Vector >
+            class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const char* solverName,
-	 const Teuchos::RCP<const Matrix> A,
-	 const Teuchos::RCP<Vector>       X,
-	 const Teuchos::RCP<const Vector> B)
+         const Teuchos::RCP<const Matrix> A,
+         const Teuchos::RCP<Vector>       X,
+         const Teuchos::RCP<const Vector> B)
   {
     std::string solver = solverName;
     return( create(solver, A, X, B) );
@@ -458,17 +458,17 @@ struct throw_no_scalar_support_exception {
 
 
   template <class Matrix,
-	    class Vector >
+            class Vector >
   Solver<Matrix,Vector>*
   create(const std::string solverName, const Matrix* A){
     return( create(solverName, rcp(A,false),
-		   Teuchos::RCP<Vector>(),
-		   Teuchos::RCP<const Vector>()).getRawPtr() );
+                   Teuchos::RCP<Vector>(),
+                   Teuchos::RCP<const Vector>()).getRawPtr() );
   }
 
 
   template <class Matrix,
-	    class Vector >
+            class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const std::string solverName, const Teuchos::RCP<const Matrix> A){
     return( create(solverName, A, Teuchos::RCP<Vector>(), Teuchos::RCP<const Vector>()) );
@@ -476,7 +476,7 @@ struct throw_no_scalar_support_exception {
 
 
   template <class Matrix,
-	    class Vector >
+            class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const std::string solverName, const Matrix* A, Vector* X, const Vector* B)
   {
@@ -484,19 +484,19 @@ struct throw_no_scalar_support_exception {
     return( create(solverName, rcp(A,false), rcp(X,false), rcp(B,false)) );
   }
 
-  
+
   template <class Matrix,
-	    class Vector >
+            class Vector >
   Teuchos::RCP<Solver<Matrix,Vector> >
   create(const std::string solver_name,
-	 const Teuchos::RCP<const Matrix> A,
-	 const Teuchos::RCP<Vector>       X,
-	 const Teuchos::RCP<const Vector> B)
+         const Teuchos::RCP<const Matrix> A,
+         const Teuchos::RCP<Vector>       X,
+         const Teuchos::RCP<const Vector> B)
   {
     std::string solverName = tolower(solver_name); // for easy string checking
 
     // Check for our native solver first.  Treat KLU and KLU2 as equals.
-    // 
+    //
     // We use compiler guards in case a user does want to disable KLU2
 #ifdef HAVE_AMESOS2_KLU2
     if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
@@ -534,7 +534,7 @@ struct throw_no_scalar_support_exception {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_PARDISOMKL
+#ifdef HAVE_AMESOS2_PARDISO_MKL
     if((solverName == "amesos2_pardiso_mkl") ||
        (solverName == "pardiso_mkl") ||
        (solverName == "amesos2_pardisomkl")  ||

@@ -901,7 +901,7 @@ bool test_tpetra(const string& mm_file,
       ParameterList run_list = Teuchos::getValue<ParameterList>(tpetra_runs.entry(run_it));
       ParameterList solve_params_copy(solve_params);
       if( run_list.isSublist("run_params") ){
-	solve_params_copy.setParameters( run_list.sublist("run_params") );
+	solve_params_copy.sublist(solver_name).setParameters( run_list.sublist("run_params") );
       }
 
       string scalar, mag, lo, go, node;

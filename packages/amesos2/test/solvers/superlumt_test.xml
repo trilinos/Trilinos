@@ -2,14 +2,14 @@
   <!-- Any of the test driver's command-line parameters may also be specified here -->
   <ParameterList name="arc130.mtx">
     <Parameter name="complex" type="bool" value="false"/>
-    <ParameterList name="Superlumt">
+    <ParameterList name="SuperLU_MT">
       
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
 	<Parameter name="defaultrun" type="bool" value="true"/>
 	<ParameterList name="equilibration">
 	  <ParameterList name="run_params">
-	    <Parameter name="Equil" type="string" value="YES"/>
+	    <Parameter name="Equil" type="bool" value="true"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="NATURAL ordering">
@@ -36,7 +36,7 @@
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="run_params">
-	    <Parameter name="Equil" type="string" value="YES"/>
+	    <Parameter name="Equil" type="bool" value="true"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="run0 - 2 threads - equilibrate">
@@ -45,7 +45,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="run_params">
 	    <Parameter name="nprocs" type="int" value="2"/>
-	    <Parameter name="Equil" type="string" value="YES"/>
+	    <Parameter name="Equil" type="bool" value="true"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="run0 - 4 threads - equilibrate">
@@ -53,7 +53,7 @@
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="run_params">
-	    <Parameter name="Equil" type="string" value="YES"/>
+	    <Parameter name="Equil" type="bool" value="true"/>
 	    <Parameter name="nprocs" type="int" value="4"/>
 	  </ParameterList>
 	</ParameterList>
@@ -70,7 +70,7 @@
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="run_params">
-	    <Parameter name="Equil" type="string" value="YES"/>
+	    <Parameter name="Equil" type="bool" value="true"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="run3">
@@ -98,7 +98,7 @@
       <ParameterList name="solver_params">
 	<Parameter name="ColPerm" type="string" value="COLAMD"/>
       </ParameterList>
-    </ParameterList> <!-- end Superlumt -->
+    </ParameterList> <!-- end SuperLU_MT -->
     <ParameterList name="all_solver_params">
       <Parameter name="Transpose" type="bool" value="false"/>
     </ParameterList>
@@ -106,7 +106,7 @@
 
   <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
   <ParameterList name="young1c.mtx">
-    <ParameterList name="Superlumt">
+    <ParameterList name="SuperLU_MT">
       <ParameterList name="tpetra">
 	<ParameterList name="run0">
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>

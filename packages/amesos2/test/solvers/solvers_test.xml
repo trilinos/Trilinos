@@ -3,7 +3,7 @@
   <ParameterList name="arc130.mtx">
     <!-- Optional parameter, used for debugging and for deciding whether to use epetra -->
     <Parameter name="complex" type="bool" value="false"/>
-    <ParameterList name="Superlu">
+    <ParameterList name="SuperLU">
       
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
@@ -66,9 +66,9 @@
       </ParameterList>
       <ParameterList name="solver_params">
 	<Parameter name="ColPerm" type="string" value="COLAMD"/>
-	<Parameter name="IterRefine" type="string" value="NO"/>
+	<Parameter name="IterRefine" type="string" value="NOREFINE"/>
       </ParameterList>
-    </ParameterList> <!-- end Superlu -->
+    </ParameterList> <!-- end SuperLU -->
     <ParameterList name="all_solver_params">
       <Parameter name="Transpose" type="bool" value="false"/>
     </ParameterList>
@@ -77,7 +77,7 @@
   <!-- For this matrix, no solver parameters are given, so the defaults will be used -->
   <ParameterList name="young1c.mtx">
     <!-- <Parameter name="complex" type="bool" value="true"/> -->
-    <ParameterList name="Superlu">
+    <ParameterList name="SuperLU">
       <ParameterList name="tpetra">
 	<ParameterList name="run0">
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>

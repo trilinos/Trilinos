@@ -130,12 +130,6 @@ void Control::setControlParameters(
         oss.str());
     }
 
-    // Scaling method: 0: none, 1: use method's default, 2: use
-    // the method's 1st alternative, 3: etc.
-    if( parameterList->isParameter("ScaleMethod") ){
-      scaleMethod_ = parameterList->get<int>("ScaleMethod");
-    }
-
     // If true, the Amesos2 class should reindex the matrix to
     // standard indexing (i.e. 0-(n-1)).  At present, only
     // Amesos2::Klu supports this option.

@@ -2,7 +2,7 @@
    \file   Amesos2_PardisoMKL_decl.hpp
    \author Eric Bavier <etbavie@sandia.gov>
    \date   Wed Jul 27 12:52:30 MDT 2011
-   
+
    \brief  A template class that does nothing useful besides show developers
            what, in general, needs to be done to add a new solver interface to
            the Amesos2 collection.
@@ -12,10 +12,13 @@
 #ifndef AMESOS2_PARDISOMKL_DECL_HPP
 #define AMESOS2_PARDISOMKL_DECL_HPP
 
+#include <map>
+
+#include <Teuchos_StandardParameterEntryValidators.hpp>
+
 #include "Amesos2_SolverTraits.hpp"
 #include "Amesos2_SolverCore.hpp"
 #include "Amesos2_PardisoMKL_FunctionMap.hpp"
-//#include "Amesos2_PardisoMKL_TypeMap.hpp"
 
 
 namespace Amesos2 {
@@ -29,11 +32,11 @@ namespace Amesos2 {
    * both real and complex.  Access to to Pardiso's 64-bit integer
    * routines is also provided.
    *
-   * \ingroup amesos2_solver_interfaces 
+   * \ingroup amesos2_solver_interfaces
    */
   template <class Matrix,
-	    class Vector>
-  class PardisoMKL : public SolverCore<Amesos2::PardisoMKL, Matrix, Vector> 
+            class Vector>
+  class PardisoMKL : public SolverCore<Amesos2::PardisoMKL, Matrix, Vector>
   {
     friend class SolverCore<Amesos2::PardisoMKL,Matrix,Vector>; // Give our base access
                                                                 // to our private
@@ -41,7 +44,7 @@ namespace Amesos2 {
   public:
 
     /// The name of this solver interface
-    static const char* name;	// declaration. Initialization outside.
+    static const char* name;    // declaration. Initialization outside.
 
     typedef PardisoMKL<Matrix,Vector>                                       type;
     typedef SolverCore<Amesos2::PardisoMKL,Matrix,Vector>             super_type;
@@ -70,7 +73,7 @@ namespace Amesos2 {
 
 
     /// \name Constructor/Destructor methods
-    //@{ 
+    //@{
 
     /**
      * \brief Initialize from Teuchos::RCP.
@@ -79,9 +82,9 @@ namespace Amesos2 {
      * Amesos2::create() to initialize a PardisoMKL interface.
      */
     PardisoMKL(Teuchos::RCP<const Matrix> A,
-	       Teuchos::RCP<Vector>       X,
-	       Teuchos::RCP<const Vector> B);
-  
+               Teuchos::RCP<Vector>       X,
+               Teuchos::RCP<const Vector> B);
+
 
     /// Destructor
     ~PardisoMKL( );
@@ -89,7 +92,7 @@ namespace Amesos2 {
     //@}
 
   private:
-  
+
     /**
      * \brief Performs pre-ordering on the matrix to increase efficiency.
      *
@@ -112,7 +115,7 @@ namespace Amesos2 {
 
     /**
      * \brief PardisoMKL specific numeric factorization
-     * 
+     *
      * \throw std::runtime_error PardisoMKL is not able to factor the matrix
      */
     int numericFactorization_impl();
@@ -129,7 +132,7 @@ namespace Amesos2 {
      * \throw std::runtime_error PardisoMKL is not able to solve the system.
      */
     int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
-		   const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
+                   const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
 
 
     /**
@@ -159,7 +162,7 @@ namespace Amesos2 {
      */
     void setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
 
-  
+
     /**
      * \return a const Teuchos::ParameterList of all valid parameters
      * (set to their default values) for this solver.
@@ -181,7 +184,7 @@ namespace Amesos2 {
     ////////// Internal routines (not called from outside) //////////
 
     /** \internal
-     * 
+     *
      * \brief Throws an appropriate runtime error in the event that
      * error < 0 .
      *
@@ -221,7 +224,7 @@ namespace Amesos2 {
      * for A, X, and B that can be used with solvers expecting a
      * compressed-row representation of the matrix A.
      */
-   
+
     /// Stores the values of the nonzero entries for PardisoMKL
     Teuchos::Array<solver_scalar_type> nzvals_;
     /// Stores the location in \c Ai_ and Aval_ that starts row j
@@ -255,30 +258,32 @@ namespace Amesos2 {
     static const int_t maxfct_;
     static const int_t mnum_;
 
-    
+
     static const bool complex_
     = Meta::or_<Meta::is_same<solver_scalar_type, PMKL::_MKL_Complex8>::value,
-		Meta::is_same<solver_scalar_type, PMKL::_DOUBLE_COMPLEX_t>::value>::value;
-    
-};				// End class PardisoMKL
+                Meta::is_same<solver_scalar_type, PMKL::_DOUBLE_COMPLEX_t>::value>::value;
 
-  
+    mutable std::map<int,Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > > validators;
+
+};                              // End class PardisoMKL
+
+
 // Specialize the solver_traits struct for PardisoMKL.
 template <>
 struct solver_traits<PardisoMKL> {
 #ifdef HAVE_TEUCHOS_COMPLEX
   typedef Meta::make_list6<float,
-			   double,
-			   std::complex<float>,
-			   std::complex<double>,
-			   PMKL::_MKL_Complex8,
-			   PMKL::_DOUBLE_COMPLEX_t> supported_scalars;
+                           double,
+                           std::complex<float>,
+                           std::complex<double>,
+                           PMKL::_MKL_Complex8,
+                           PMKL::_DOUBLE_COMPLEX_t> supported_scalars;
 #else
 typedef Meta::make_list2<float,
-			 double> supported_scalars;
+                         double> supported_scalars;
 #endif
 };
-  
+
 } // end namespace Amesos
 
-#endif	// AMESOS2_PARDISOMKL_DECL_HPP
+#endif  // AMESOS2_PARDISOMKL_DECL_HPP

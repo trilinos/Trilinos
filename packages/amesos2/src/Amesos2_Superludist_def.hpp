@@ -52,6 +52,8 @@
 #ifndef AMESOS2_SUPERLUDIST_DEF_HPP
 #define AMESOS2_SUPERLUDIST_DEF_HPP
 
+#include <Teuchos_Tuple.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
 
 #include "Amesos2_SolverCore_def.hpp"
@@ -64,8 +66,8 @@ namespace Amesos2 {
 
   template <class Matrix, class Vector>
   Superludist<Matrix,Vector>::Superludist(Teuchos::RCP<const Matrix> A,
-					  Teuchos::RCP<Vector> X,
-					  Teuchos::RCP<const Vector> B)
+                                          Teuchos::RCP<Vector> X,
+                                          Teuchos::RCP<const Vector> B)
     : SolverCore<Amesos2::Superludist,Matrix,Vector>(A, X, B)
     , nzvals_()                 // initialization to empty arrays
     , colind_()
@@ -74,7 +76,22 @@ namespace Amesos2 {
     , xvals_()
     , in_grid_(false)
   {
-    // Set some default parameters
+    ////////////////////////////////////////////
+    // Set up the SuperLU_DIST processor grid //
+    ////////////////////////////////////////////
+
+    int nprocs = this->getComm()->getSize();
+    SLUD::int_t nprow, npcol;
+    get_default_grid_size(nprocs, nprow, npcol);
+    data_.mat_comm = dynamic_cast<const Teuchos::MpiComm<int>* >(this->matrixA_->getComm().getRawPtr())->getRawMpiComm()->operator()();
+    SLUD::superlu_gridinit(data_.mat_comm, nprow, npcol, &(data_.grid));
+
+    ////////////////////////////////////////////////////////
+    // Set Some default parameters.                       //
+    //                                                    //
+    // Must do this after grid has been created in        //
+    // case user specifies the nprow and npcol parameters //
+    ////////////////////////////////////////////////////////
     Teuchos::RCP<Teuchos::ParameterList> default_params
       = Teuchos::parameterList( *(this->getValidParameters()) );
     this->setParameters(default_params);
@@ -89,18 +106,10 @@ namespace Amesos2 {
     data_.perm_r.resize(this->globalNumRows_);
     data_.perm_c.resize(this->globalNumCols_);
 
-    ////////////////////////////////////////////
-    // Set up the SuperLU_DIST processor grid //
-    ////////////////////////////////////////////
-
-    int nprocs = this->getComm()->getSize();
-    SLUD::int_t nprow, npcol;
-    get_default_grid_size(nprocs, nprow, npcol);
-    data_.mat_comm = dynamic_cast<const Teuchos::MpiComm<int>* >(this->matrixA_->getComm().getRawPtr())->getRawMpiComm()->operator()();
-    SLUD::superlu_gridinit(data_.mat_comm, nprow, npcol, &(data_.grid));
-
-    // Set up a communicator for the parallel column ordering and
-    // parallel symbolic factorization.
+    ////////////////////////////////////////////////////////////////
+    // Set up a communicator for the parallel column ordering and //
+    // parallel symbolic factorization.                           //
+    ////////////////////////////////////////////////////////////////
     data_.symb_comm = MPI_COMM_NULL;
     int color = MPI_UNDEFINED;
     int my_rank = this->rank_;
@@ -118,7 +127,7 @@ namespace Amesos2 {
     // Set up a row map that maps to only processors that are in the    //
     // SuperLU processor grid.  This will be used for redistributing A. //
     //////////////////////////////////////////////////////////////////////
-  
+
     int my_weight = 0;
     if( this->rank_ < nprow * npcol ){
       in_grid_ = true; my_weight = 1; // I am in the grid, and I get some of the matrix rows
@@ -126,14 +135,14 @@ namespace Amesos2 {
     // TODO: might only need to initialize if parallel symbolic factorization is requested.
     superlu_rowmap_
       = Tpetra::createWeightedContigMapWithNode<local_ordinal_type,
-                                                global_ordinal_type,
-                                                node_type>(my_weight,
-                                                           this->globalNumRows_,
-                                                           this->getComm(),
-                                                           Kokkos::DefaultNode::getDefaultNode());
-     // TODO: the node above should technically come from the matrix
-     // itself.  Might need to add a getNode method to the matrix
-     // adapter.
+      global_ordinal_type,
+      node_type>(my_weight,
+                 this->globalNumRows_,
+                 this->getComm(),
+                 Kokkos::DefaultNode::getDefaultNode());
+    // TODO: the node above should technically come from the matrix
+    // itself.  Might need to add a getNode method to the matrix
+    // adapter.
 
     //////////////////////////////////
     // Do some other initialization //
@@ -183,19 +192,19 @@ namespace Amesos2 {
     // Pslu_freeable struct which will never be free'd by
     // SuperLU_DIST.
     if ( this->status_.symbolicFactorizationDone() &&
-	 !this->status_.numericFactorizationDone() ){
+         !this->status_.numericFactorizationDone() ){
       if ( data_.pslu_freeable.xlsub != NULL ){
-	free( data_.pslu_freeable.xlsub );
-	free( data_.pslu_freeable.lsub );
+        free( data_.pslu_freeable.xlsub );
+        free( data_.pslu_freeable.lsub );
       }
       if ( data_.pslu_freeable.xusub != NULL ){
-	free( data_.pslu_freeable.xusub );
-	free( data_.pslu_freeable.usub );
+        free( data_.pslu_freeable.xusub );
+        free( data_.pslu_freeable.usub );
       }
       if ( data_.pslu_freeable.supno_loc != NULL ){
-	free( data_.pslu_freeable.supno_loc );
-	free( data_.pslu_freeable.xsup_beg_loc );
-	free( data_.pslu_freeable.xsup_end_loc );
+        free( data_.pslu_freeable.supno_loc );
+        free( data_.pslu_freeable.xsup_beg_loc );
+        free( data_.pslu_freeable.xsup_end_loc );
       }
       free( data_.pslu_freeable.globToLoc );
     }
@@ -209,8 +218,8 @@ namespace Amesos2 {
       function_map::SolveFinalize(&(data_.options), &(data_.solve_struct));
 
     SLUD::superlu_gridexit(&(data_.grid)); // TODO: are there any
-					   // cases where grid
-					   // wouldn't be initialized?
+                                           // cases where grid
+                                           // wouldn't be initialized?
 
     if ( data_.symb_comm != MPI_COMM_NULL ) MPI_Comm_free(&(data_.symb_comm));
   }
@@ -227,7 +236,7 @@ namespace Amesos2 {
     SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
     for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
 
-    // loadA_impl();			// Refresh matrix values
+    // loadA_impl();                    // Refresh matrix values
 
     if( in_grid_ ){
       // If this function has been called at least once, then the
@@ -236,24 +245,24 @@ namespace Amesos2 {
       // function again.  These arrays will also be dealloc'd in the
       // deconstructor.
       if( this->status_.getNumPreOrder() > 0 ){
-	free( data_.sizes );
-	free( data_.fstVtxSep );
+        free( data_.sizes );
+        free( data_.fstVtxSep );
       }
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor preOrderTime( this->timers_.preOrderTime_ );
 #endif
-      
+
       float info = 0.0;
       info = SLUD::get_perm_c_parmetis( &(data_.A),
-					data_.perm_r.getRawPtr(), data_.perm_c.getRawPtr(),
-					data_.grid.nprow * data_.grid.npcol, data_.domains,
-					&(data_.sizes), &(data_.fstVtxSep),
-					&(data_.grid), &(data_.symb_comm) );
-      
+                                        data_.perm_r.getRawPtr(), data_.perm_c.getRawPtr(),
+                                        data_.grid.nprow * data_.grid.npcol, data_.domains,
+                                        &(data_.sizes), &(data_.fstVtxSep),
+                                        &(data_.grid), &(data_.symb_comm) );
+
       TEST_FOR_EXCEPTION( info > 0.0,
-			  std::runtime_error,
-			  "SuperLU_DIST pre-ordering ran out of memory after allocating "
-			  << info << " bytes of memory" );
+                          std::runtime_error,
+                          "SuperLU_DIST pre-ordering ran out of memory after allocating "
+                          << info << " bytes of memory" );
     }
 
     // Ordering will be applied directly before numeric factorization,
@@ -269,30 +278,30 @@ namespace Amesos2 {
   int
   Superludist<Matrix,Vector>::symbolicFactorization_impl()
   {
-    // loadA_impl();			// Refresh matrix values
-    
+    // loadA_impl();                    // Refresh matrix values
+
     if( in_grid_ ){
 
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor symFactTime( this->timers_.symFactTime_ );
 #endif
-      
+
       float info = 0.0;
       info = SLUD::symbfact_dist((data_.grid.nprow) * (data_.grid.npcol),
-				 data_.domains, &(data_.A), data_.perm_c.getRawPtr(),
-				 data_.perm_r.getRawPtr(), data_.sizes,
-				 data_.fstVtxSep, &(data_.pslu_freeable),
-				 &(data_.grid.comm), &(data_.symb_comm),
-				 &(data_.mem_usage));
-      
+                                 data_.domains, &(data_.A), data_.perm_c.getRawPtr(),
+                                 data_.perm_r.getRawPtr(), data_.sizes,
+                                 data_.fstVtxSep, &(data_.pslu_freeable),
+                                 &(data_.grid.comm), &(data_.symb_comm),
+                                 &(data_.mem_usage));
+
       TEST_FOR_EXCEPTION( info > 0.0,
-			  std::runtime_error,
-			  "SuperLU_DIST symbolic factorization ran out of memory after"
-			  " allocating " << info << " bytes of memory" );
+                          std::runtime_error,
+                          "SuperLU_DIST symbolic factorization ran out of memory after"
+                          " allocating " << info << " bytes of memory" );
     }
     same_symbolic_ = false;
     same_solve_struct_ = false;
-    
+
     return EXIT_SUCCESS;
   }
 
@@ -302,7 +311,7 @@ namespace Amesos2 {
   Superludist<Matrix,Vector>::numericFactorization_impl(){
     using Teuchos::as;
 
-    // loadA_impl();			// Refresh the matrix values
+    // loadA_impl();                    // Refresh the matrix values
 
     // if( data_.options.Equil == SLUD::YES ){
     //   // Apply the scalings computed in preOrdering
@@ -318,46 +327,46 @@ namespace Amesos2 {
       // Apply the column ordering, so that AC is the column-permuted A, and compute etree
       size_t nnz_loc = ((SLUD::NRformat_loc*)data_.A.Store)->nnz_loc;
       for( size_t i = 0; i < nnz_loc; ++i ) colind_[i] = data_.perm_c[colind_[i]];
-      
+
       // Distribute data from the symbolic factorization
       if( same_symbolic_ ){
-	// Note: with the SamePattern_SameRowPerm options, it does not
-	// matter that the glu_freeable member has never been
-	// initialized, because it is never accessed.  It is a
-	// placeholder arg.  The real work is done in data_.lu
-	function_map::pdistribute(SLUD::SamePattern_SameRowPerm,
-				  as<SLUD::int_t>(this->globalNumRows_), // aka "n"
-				  &(data_.A), &(data_.scale_perm),
-				  &(data_.glu_freeable), &(data_.lu),
-				  &(data_.grid));
+        // Note: with the SamePattern_SameRowPerm options, it does not
+        // matter that the glu_freeable member has never been
+        // initialized, because it is never accessed.  It is a
+        // placeholder arg.  The real work is done in data_.lu
+        function_map::pdistribute(SLUD::SamePattern_SameRowPerm,
+                                  as<SLUD::int_t>(this->globalNumRows_), // aka "n"
+                                  &(data_.A), &(data_.scale_perm),
+                                  &(data_.glu_freeable), &(data_.lu),
+                                  &(data_.grid));
       } else {
-	function_map::dist_psymbtonum(SLUD::DOFACT,
-				      as<SLUD::int_t>(this->globalNumRows_), // aka "n"
-				      &(data_.A), &(data_.scale_perm),
-				      &(data_.pslu_freeable), &(data_.lu),
-				      &(data_.grid));
+        function_map::dist_psymbtonum(SLUD::DOFACT,
+                                      as<SLUD::int_t>(this->globalNumRows_), // aka "n"
+                                      &(data_.A), &(data_.scale_perm),
+                                      &(data_.pslu_freeable), &(data_.lu),
+                                      &(data_.grid));
       }
 
       // Retrieve the normI of A (required by gstrf).
       double anorm = function_map::plangs((char *)"I", &(data_.A), &(data_.grid));
-      
+
       int info = 0;
       {
 #ifdef HAVE_AMESOS2_TIMERS
-	Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+        Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 #endif
-	
-	function_map::gstrf(&(data_.options), this->globalNumRows_,
-			    this->globalNumCols_, anorm, &(data_.lu),
-			    &(data_.grid), &(data_.stat), &info);
+
+        function_map::gstrf(&(data_.options), this->globalNumRows_,
+                            this->globalNumCols_, anorm, &(data_.lu),
+                            &(data_.grid), &(data_.stat), &info);
       }
 
       // Check output
       TEST_FOR_EXCEPTION( info > 0,
-			  std::runtime_error,
-			  "L and U factors have been computed but U("
-			  << info << "," << info << ") is exactly zero "
-			  "(i.e. U is singular)");
+                          std::runtime_error,
+                          "L and U factors have been computed but U("
+                          << info << "," << info << ") is exactly zero "
+                          "(i.e. U is singular)");
     }
 
     // The other option, that info_st < 0, denotes invalid parameters
@@ -374,7 +383,7 @@ namespace Amesos2 {
   template <class Matrix, class Vector>
   int
   Superludist<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
-					 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
+                                         const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
   {
     using Teuchos::as;
 
@@ -397,23 +406,23 @@ namespace Amesos2 {
 #endif
 
       {
-	// The input dense matrix for B should be distributed in the
-	// same manner as the superlu_dist matrix.  That is, if a
-	// processor has m_loc rows of A, then it should also have
-	// m_loc rows of B (and the same rows).  We accomplish this by
-	// distributing the multivector rows with the same Map that
-	// the matrix A's rows are distributed.
+        // The input dense matrix for B should be distributed in the
+        // same manner as the superlu_dist matrix.  That is, if a
+        // processor has m_loc rows of A, then it should also have
+        // m_loc rows of B (and the same rows).  We accomplish this by
+        // distributing the multivector rows with the same Map that
+        // the matrix A's rows are distributed.
 #ifdef HAVE_AMESOS2_TIMERS
-	Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+        Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-	// get grid-distributed mv data.  The multivector data will be
-	// distributed across the processes in the SuperLU_DIST grid.
-	typedef Util::get_1d_copy_helper<MultiVecAdapter<Vector>,slu_type> copy_helper;
-	copy_helper::do_get(B,
-			    bvals_(),
-			    local_len_rhs,
-			    Teuchos::ptrInArg(*superlu_rowmap_));
+        // get grid-distributed mv data.  The multivector data will be
+        // distributed across the processes in the SuperLU_DIST grid.
+        typedef Util::get_1d_copy_helper<MultiVecAdapter<Vector>,slu_type> copy_helper;
+        copy_helper::do_get(B,
+                            bvals_(),
+                            local_len_rhs,
+                            Teuchos::ptrInArg(*superlu_rowmap_));
       }
     }         // end block for conversion time
 
@@ -429,41 +438,41 @@ namespace Amesos2 {
       //   Util::scale(bxvals_(), as<size_t>(len_rhs), ldbx_, data_.C(),
       //            SLUD::slu_mt_mult<slu_type,magnitude_type>());
       // }
-      
+
       // Initialize the SOLVEstruct_t.
       //
       // We are able to reuse the solve struct if we have not changed
       // the sparsity pattern of L and U since the last solve
       if( !same_solve_struct_ ){
-	if( data_.options.SolveInitialized == SLUD::YES ){
-	  function_map::SolveFinalize(&(data_.options), &(data_.solve_struct));
-	}
-	function_map::SolveInit(&(data_.options), &(data_.A), data_.perm_r.getRawPtr(),
-				data_.perm_c.getRawPtr(), as<SLUD::int_t>(nrhs), &(data_.lu),
-				&(data_.grid), &(data_.solve_struct));
-	// Flag that we can reuse this solve_struct unless another
-	// symbolicFactorization is called between here and the next
-	// solve.
-	same_solve_struct_ = true;
+        if( data_.options.SolveInitialized == SLUD::YES ){
+          function_map::SolveFinalize(&(data_.options), &(data_.solve_struct));
+        }
+        function_map::SolveInit(&(data_.options), &(data_.A), data_.perm_r.getRawPtr(),
+                                data_.perm_c.getRawPtr(), as<SLUD::int_t>(nrhs), &(data_.lu),
+                                &(data_.grid), &(data_.solve_struct));
+        // Flag that we can reuse this solve_struct unless another
+        // symbolicFactorization is called between here and the next
+        // solve.
+        same_solve_struct_ = true;
       }
-      
+
       int ierr = 0; // returned error code
       {
 #ifdef HAVE_AMESOS2_TIMERS
-	Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+        Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-	
-	function_map::gstrs(as<SLUD::int_t>(this->globalNumRows_), &(data_.lu),
-			    &(data_.scale_perm), &(data_.grid), bvals_.getRawPtr(),
-			    as<SLUD::int_t>(local_len_rhs), as<SLUD::int_t>(first_global_row_b),
-			    as<SLUD::int_t>(local_len_rhs), as<int>(nrhs),
-			    &(data_.solve_struct), &(data_.stat), &ierr);
+
+        function_map::gstrs(as<SLUD::int_t>(this->globalNumRows_), &(data_.lu),
+                            &(data_.scale_perm), &(data_.grid), bvals_.getRawPtr(),
+                            as<SLUD::int_t>(local_len_rhs), as<SLUD::int_t>(first_global_row_b),
+                            as<SLUD::int_t>(local_len_rhs), as<int>(nrhs),
+                            &(data_.solve_struct), &(data_.stat), &ierr);
       } // end block for solve time
-      
+
       TEST_FOR_EXCEPTION( ierr < 0,
-			  std::runtime_error,
-			  "Argument " << -ierr << " to gstrs had an illegal value" );
-      
+                          std::runtime_error,
+                          "Argument " << -ierr << " to gstrs had an illegal value" );
+
       // "Un-scale" the solution so that it is a solution of the original system
       // if( data_.options.trans == SLUD::NOTRANS ){
       //   if( data_.colequ ){    // column equilibration has been done on AC
@@ -476,19 +485,19 @@ namespace Amesos2 {
       //   Util::scale(bxvals_(), as<size_t>(len_rhs), ldbx_, data_.R(),
       //            SLUD::slu_mt_mult<slu_type,magnitude_type>());
       // }
-      {				// permute B to a solution of the original system
+      {                         // permute B to a solution of the original system
 #ifdef HAVE_AMESOS2_TIMERS
-	Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+        Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
-	SLUD::int_t ld = as<SLUD::int_t>(local_len_rhs);
-	function_map::permute_Dense_Matrix(as<SLUD::int_t>(first_global_row_b),
-					   as<SLUD::int_t>(local_len_rhs),
-					   data_.solve_struct.row_to_proc,
-					   data_.solve_struct.inv_perm_c,
-					   bvals_.getRawPtr(), ld,
-					   xvals_.getRawPtr(), ld,
-					   as<int>(nrhs),
-					   &(data_.grid));
+        SLUD::int_t ld = as<SLUD::int_t>(local_len_rhs);
+        function_map::permute_Dense_Matrix(as<SLUD::int_t>(first_global_row_b),
+                                           as<SLUD::int_t>(local_len_rhs),
+                                           data_.solve_struct.row_to_proc,
+                                           data_.solve_struct.inv_perm_c,
+                                           bvals_.getRawPtr(), ld,
+                                           xvals_.getRawPtr(), ld,
+                                           as<int>(nrhs),
+                                           &(data_.grid));
       }
     }
 
@@ -500,9 +509,9 @@ namespace Amesos2 {
 
       typedef Util::put_1d_data_helper<MultiVecAdapter<Vector>,slu_type> put_helper;
       put_helper::do_put(X,
-			 xvals_(),
-			 local_len_rhs,
-			 Teuchos::ptrInArg(*superlu_rowmap_));
+                         xvals_(),
+                         local_len_rhs,
+                         Teuchos::ptrInArg(*superlu_rowmap_));
     }
 
     return EXIT_SUCCESS;
@@ -523,195 +532,134 @@ namespace Amesos2 {
   Superludist<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
   {
     using Teuchos::as;
+    using Teuchos::RCP;
+    using Teuchos::getIntegralValue;
+    using Teuchos::ParameterEntryValidator;
+
+    RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
     if( parameterList->isParameter("npcol") || parameterList->isParameter("nprow") ){
-      TEST_FOR_EXCEPTION( parameterList->isParameter("nprow") &&
-			  parameterList->isParameter("npcol"),
-			  std::invalid_argument,
-			  "nprow and npcol must be set together" );
+      TEST_FOR_EXCEPTION( !(parameterList->isParameter("nprow") &&
+                            parameterList->isParameter("npcol")),
+                          std::invalid_argument,
+                          "nprow and npcol must be set together" );
+
       SLUD::int_t nprow = parameterList->template get<SLUD::int_t>("nprow");
       SLUD::int_t npcol = parameterList->template get<SLUD::int_t>("npcol");
 
       TEST_FOR_EXCEPTION( nprow * npcol > this->getComm()->getSize(),
-			  std::invalid_argument,
-			  "nprow and npcol combination invalid" );
+                          std::invalid_argument,
+                          "nprow and npcol combination invalid" );
 
-      // De-allocate the default grid that was initialized in the constructor
-      SLUD::superlu_gridexit(&(data_.grid));
-      // Create a new grid
-      SLUD::superlu_gridinit(data_.mat_comm, nprow, npcol, &(data_.grid));
+      if( (npcol != data_.grid.npcol) || (nprow != data_.grid.nprow) ){
+        // De-allocate the default grid that was initialized in the constructor
+        SLUD::superlu_gridexit(&(data_.grid));
+        // Create a new grid
+        SLUD::superlu_gridinit(data_.mat_comm, nprow, npcol, &(data_.grid));
+      } // else our grid has not changed size since the last initialization
     }
 
     TEST_FOR_EXCEPTION( this->control_.useTranspose_,
-			std::invalid_argument,
-			"SuperLU_DIST does not support solving the tranpose system" );
+                        std::invalid_argument,
+                        "SuperLU_DIST does not support solving the tranpose system" );
 
-    if ( parameterList->isParameter("Trans") ){
-      std::string fact = parameterList->template get<std::string>("Trans");
-      TEST_FOR_EXCEPTION( fact == "TRANS" || fact == "CONJ",
-			  std::invalid_argument,
-			  "SuperLU_DIST does not support solving the transpose system" );
-    }
-    // The 'fact' parameter is in the options struct, but it seems to
-    // be more for adherance to the same interface as the other
-    // SuperLU's.  The documentation and the code suggest that the
-    // option is not supported.
-    data_.options.Trans = SLUD::NOTRANS; // Should always be set this way
+    data_.options.Trans = SLUD::NOTRANS; // should always be set this way;
 
-
-    // TODO: Act upon this parameter
-    if( parameterList->isParameter("Equil") ){
-      if ( parameterList->template isType<bool>("Equil") ){
-	bool equil = parameterList->template get<bool>("Equil");
-	if( equil ){
-	  data_.options.Equil = SLUD::YES;
-	} else {
-	  data_.options.Equil = SLUD::NO;
-	}
-      } else if ( parameterList->template isType<std::string>("Equil") ) {
-	std::string equil = parameterList->template get<std::string>("Equil");
-	if ( equil == "YES" || equil == "yes" ){
-	  data_.options.Equil = SLUD::YES;
-	} else if ( equil == "NO" || equil == "no" ) {
-	  data_.options.Equil = SLUD::NO;
-	}
-      }
-    }
-
-    if( parameterList->isParameter("PrintStat") ){
-      if ( parameterList->template isType<bool>("PrintStat") ){
-	bool sym = parameterList->template get<bool>("PrintStat");
-	if( sym ){
-	  data_.options.PrintStat = SLUD::YES;
-	} else {
-	  data_.options.PrintStat = SLUD::NO;
-	}
-      } else if ( parameterList->template isType<std::string>("PrintStat") ) {
-	std::string sym = parameterList->template get<std::string>("PrintStat");
-	if ( sym == "YES" || sym == "yes" ){
-	  data_.options.PrintStat = SLUD::YES;
-	} else if ( sym == "NO" || sym == "no" ) {
-	  data_.options.PrintStat = SLUD::NO;
-	}
-      }
-    }
+    // TODO: Uncomment when supported
+    // bool equil = parameterList->get<bool>("Equil", true);
+    // data_.options.Equil = equil ? SLUD::YES : SLUD::NO;
+    data_.options.Equil = SLUD::NO;
 
     if( parameterList->isParameter("ColPerm") ){
-      std::string col_perm_method = parameterList->template get<std::string>("ColPerm");
+      RCP<const ParameterEntryValidator> colperm_validator = valid_params->getEntry("ColPerm").validator();
+      parameterList->getEntry("ColPerm").setValidator(colperm_validator);
 
-      TEST_FOR_EXCEPTION( col_perm_method != "PARMETIS" && col_perm_method != "NATURAL",
-			  std::invalid_argument,
-			  "Amesos2::Superludist only supports natural column orderings "
-			  "or parallel ordering with ParMETIS" );
-
-      if( col_perm_method == "NATURAL" ){
-	data_.options.ColPerm = SLUD::NATURAL;
-      } else if ( col_perm_method == "MMD_AT_PLUS_A" ) {
-	data_.options.ColPerm = SLUD::MMD_AT_PLUS_A;
-      } else if ( col_perm_method == "MMD_ATA" ) {
-	data_.options.ColPerm = SLUD::MMD_ATA;
-      } else if ( col_perm_method == "COLAMD" ) {
-	data_.options.ColPerm = SLUD::COLAMD;
-      } else if ( col_perm_method == "METIS_AT_PLUS_A" ) {
-	data_.options.ColPerm = SLUD::METIS_AT_PLUS_A;
-      } else if ( col_perm_method == "PARMETIS" ) {
-	data_.options.ColPerm = SLUD::PARMETIS;
-      } else if ( col_perm_method == "MY_PERMC" ) {
-	data_.options.ColPerm = SLUD::MY_PERMC;
-
-	// Now we also expect to find a parameter in parameterList called
-	// "perm_c"
-	TEST_FOR_EXCEPTION( !parameterList->isParameter("perm_c"),
-			    std::invalid_argument,
-			    "MY_PERMC option specified without accompanying 'perm_c' parameter.");
-
-	data_.perm_c = parameterList->template get<Teuchos::Array<int> >("perm_c");
-
-	TEST_FOR_EXCEPTION( as<global_size_type>(data_.perm_c.size()) != this->globalNumCols_,
-			    std::length_error,
-			    "'perm_c' parameter not of correct length.");
-      } else {
-	TEST_FOR_EXCEPTION( true, std::invalid_argument,
-			    "Unrecognized value for 'ColPerm' parameter.");
-      }
+      data_.options.ColPerm = getIntegralValue<SLUD::colperm_t>(*parameterList, "ColPerm");
     }
 
-    // We also recognize a lone 'perm_c' parameter, assuming that ColPerm = MY_PERMC
-    if( parameterList->isParameter("perm_c") ){
-      data_.options.ColPerm = SLUD::MY_PERMC;
-      data_.perm_c = parameterList->template get<Teuchos::Array<int> >("perm_c");
-
-      TEST_FOR_EXCEPTION( as<global_size_type>(data_.perm_c.size()) == this->globalNumCols_,
-			  std::length_error,
-			  "'perm_c' parameter not of correct length." );
-    }
-
-    // Always use a "NATURAL" RowPerm to avoid a serial bottleneck
+    // Always use the "NOROWPERM" option to avoid a serial bottleneck
     // with the weighted bipartite matching algorithm used for the
     // "LargeDiag" RowPerm.  Note the inconsistency with the SuperLU
-    // User guide (which states that the value should be "NATURAL")
+    // User guide (which states that the value should be "NATURAL").
     data_.options.RowPerm = SLUD::NOROWPERM;
 
-    if( parameterList->isParameter("IterRefine") ){
-      std::string refine = parameterList->template get<std::string>("IterRefine");
-      if( refine == "NO" ){
-	data_.options.IterRefine = SLUD::NOREFINE;
-      } else if ( refine == "SINGLE" ) {
-	data_.options.IterRefine = SLUD::SINGLE;
-      } else if ( refine == "DOUBLE" ) {
-	data_.options.IterRefine = SLUD::DOUBLE;
-      } else if ( refine == "EXTRA" ) {
-	data_.options.IterRefine = SLUD::EXTRA;
-      } else {
-	TEST_FOR_EXCEPTION( true,
-			    std::invalid_argument,
-			    "Unrecognized value for 'IterRefine' parameter.");
-      }
-    }
+    // TODO: Uncomment when supported
+    // if( parameterList->isParameter("IterRefine") ){
+    //   RCP<const ParameterEntryValidator> iter_refine_validator = valid_params->getEntry("IterRefine").validator();
+    //   parameterList->getEntry("IterRefine").setValidator(iter_refine_validator);
 
-    if( parameterList->isParameter("ReplaceTinyPivot") ){
-      if( parameterList->template isType<bool>("ReplaceTinyPivot") ){
-	bool replace = parameterList->template get<bool>("ReplaceTinyPivot");
-	if( replace ){
-	  data_.options.ReplaceTinyPivot = SLUD::YES;
-	} else {
-	  data_.options.ReplaceTinyPivot = SLUD::NO;
-	}
-      } else if ( parameterList->template isType<std::string>("ReplaceTinyPivot") ){
-	std::string replace = parameterList->template get<std::string>("ReplaceTinyPivot");
-	if( replace == "YES" || replace == "yes" ){
-	  data_.options.ReplaceTinyPivot = SLUD::YES;
-	} else if( replace == "NO" || replace == "no" ){
-	  data_.options.ReplaceTinyPivot = SLUD::NO;
-	}
-      }
-    }
+    //   data_.options.IterRefine = getIntegralValue<SLUD::IterRefine_t>(*parameterList, "IterRefine");
+    // }
+    data_.options.IterRefine = SLUD::NOREFINE;
+
+    bool replace_tiny = parameterList->get<bool>("ReplaceTinyPivot", true);
+    data_.options.ReplaceTinyPivot = replace_tiny ? SLUD::YES : SLUD::NO;
   }
 
 
-  /** \internal
-   *
-   * Using the "NO" (don't do any row permutation) option for RowPerm
-   * eliminates a sequential bottleneck in the SuperLU_DIST code.  If
-   * the other option ("LargeDiag") is used, then SuperLU_DIST must
-   * gather the matrix to processor 0 in order to perform a sequential
-   * bipartite matching algorithm.  Disregard the SuperLU_DIST
-   * documentation that says that "NATURAL" is a valid option.
-   */
   template <class Matrix, class Vector>
   Teuchos::RCP<const Teuchos::ParameterList>
   Superludist<Matrix,Vector>::getValidParameters_impl() const
   {
+    using std::string;
+    using Teuchos::tuple;
     using Teuchos::ParameterList;
+    using Teuchos::EnhancedNumberValidator;
+    using Teuchos::setStringToIntegralParameter;
+    using Teuchos::stringToIntegralParameterEntryValidator;
 
-    Teuchos::RCP<ParameterList> valid_params = Teuchos::rcp(new ParameterList());
+    static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
-    valid_params->set("Equil", false); // TODO: change to true when supported
-    valid_params->set("ReplaceTinyPivot", true);
-    valid_params->set("ColPerm", "PARMETIS");
-    valid_params->set("IterRefine", "DOUBLE");
-    valid_params->set("Trans", "NOTRANS");
-    valid_params->set("PrintStat", false);
+    if( is_null(valid_params) ){
+      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+
+      Teuchos::RCP<EnhancedNumberValidator<SLUD::int_t> > col_row_validator
+        = Teuchos::rcp( new EnhancedNumberValidator<SLUD::int_t>() );
+      col_row_validator->setMin(1);
+
+      pl->set("npcol", data_.grid.npcol,
+              "Number of columns in the processor grid. "
+              "Must be set with nprow", col_row_validator);
+      pl->set("nprow", data_.grid.nprow,
+              "Number of rows in the SuperLU_DIST processor grid. "
+              "Must be set together with npcol", col_row_validator);
+
+      // validator will catch any value besides NOTRANS
+      setStringToIntegralParameter<SLUD::trans_t>("Trans", "NOTRANS",
+                                                  "Solve for the transpose system or not",
+                                                  tuple<string>("NOTRANS"),
+                                                  tuple<string>("Do not solve with transpose"),
+                                                  tuple<SLUD::trans_t>(SLUD::NOTRANS),
+                                                  pl.getRawPtr());
+
+      // TODO: uncomment when supported
+      // pl->set("Equil", false, "Whether to equilibrate the system before solve");
+
+      // TODO: uncomment when supported
+      // setStringToIntegralParameter<SLUD::IterRefine_t>("IterRefine", "NOREFINE",
+      //                                                     "Type of iterative refinement to use",
+      //                                                     tuple<string>("NOREFINE", "DOUBLE"),
+      //                                                     tuple<string>("Do not use iterative refinement",
+      //                                                                   "Do double iterative refinement"),
+      //                                                     tuple<SLUD::IterRefine_t>(SLUD::NOREFINE,
+      //                                                                               SLUD::DOUBLE),
+      //                                                     pl.getRawPtr());
+
+      pl->set("ReplaceTinyPivot", true,
+              "Specifies whether to replace tiny diagonals during LU factorization");
+
+      setStringToIntegralParameter<SLUD::colperm_t>("ColPerm", "PARMETIS",
+                                                    "Specifies how to permute the columns of the "
+                                                    "matrix for sparsity preservation",
+                                                    tuple<string>("NATURAL", "PARMETIS"),
+                                                    tuple<string>("Natural ordering",
+                                                                  "ParMETIS ordering on A^T + A"),
+                                                    tuple<SLUD::colperm_t>(SLUD::NATURAL,
+                                                                           SLUD::PARMETIS),
+                                                    pl.getRawPtr());
+
+      valid_params = pl;
+    }
 
     return valid_params;
   }
@@ -720,13 +668,13 @@ namespace Amesos2 {
   template <class Matrix, class Vector>
   void
   Superludist<Matrix,Vector>::get_default_grid_size(int nprocs,
-						    SLUD::int_t& nprow,
-						    SLUD::int_t& npcol) const {
+                                                    SLUD::int_t& nprow,
+                                                    SLUD::int_t& npcol) const {
     TEST_FOR_EXCEPTION( nprocs < 1,
-			std::invalid_argument,
-			"Number of MPI processes must be at least 1" );
+                        std::invalid_argument,
+                        "Number of MPI processes must be at least 1" );
     SLUD::int_t c, r = 1;
-      while( r*r <= nprocs ) r++;
+    while( r*r <= nprocs ) r++;
     nprow = npcol = --r;                // fall back to square grid
     c = nprocs / r;
     while( (r--)*c != nprocs ){
@@ -754,7 +702,7 @@ namespace Amesos2 {
     using SLUD::int_t;
 
 #ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+    Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
 
     // Cleanup old store memory if it's non-NULL
@@ -762,56 +710,56 @@ namespace Amesos2 {
       SLUD::Destroy_SuperMatrix_Store_dist( &(data_.A) );
       data_.A.Store = NULL;
     }
-    
+
     Teuchos::RCP<const MatrixAdapter<Matrix> > redist_mat
       = this->matrixA_->get(ptrInArg(*superlu_rowmap_));
-    
+
     int_t l_nnz, l_rows, g_rows, g_cols, fst_global_row;
     l_nnz  = as<int_t>(redist_mat->getLocalNNZ());
     l_rows = as<int_t>(redist_mat->getLocalNumRows());
     g_rows = as<int_t>(redist_mat->getGlobalNumRows());
-    g_cols = g_rows;		// we deal with square matrices
+    g_cols = g_rows;            // we deal with square matrices
     fst_global_row = as<int_t>(superlu_rowmap_->getMinGlobalIndex());
 
     nzvals_.resize(l_nnz);
     colind_.resize(l_nnz);
     rowptr_.resize(l_rows + 1);
-    
+
     int_t nnz_ret = 0;
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
-      
+
       Util::get_crs_helper<
-        MatrixAdapter<Matrix>,
-	slu_type, int_t, int_t >::do_get(redist_mat.ptr(),
-					 nzvals_(), colind_(), rowptr_(),
-					 nnz_ret,
-					 ptrInArg(*superlu_rowmap_),
-					 ARBITRARY);
-    }
-    
-    TEST_FOR_EXCEPTION( nnz_ret != l_nnz,
-			std::runtime_error,
-			"Did not get the expected number of non-zero vals");
-    
-    // Get the SLU data type for this type of matrix
-    SLUD::Dtype_t dtype = type_map::dtype;
-
-    if( in_grid_ ){
-      function_map::create_CompRowLoc_Matrix(&(data_.A),
-					     g_rows, g_cols,
-					     l_nnz, l_rows, fst_global_row,
-					     nzvals_.getRawPtr(),
-					     colind_.getRawPtr(),
-					     rowptr_.getRawPtr(),
-					     SLUD::SLU_NR_loc,
-					     dtype, SLUD::SLU_GE);
-    }
-
-    return true;
+      MatrixAdapter<Matrix>,
+        slu_type, int_t, int_t >::do_get(redist_mat.ptr(),
+                                         nzvals_(), colind_(), rowptr_(),
+                                         nnz_ret,
+                                         ptrInArg(*superlu_rowmap_),
+                                         ARBITRARY);
   }
+
+    TEST_FOR_EXCEPTION( nnz_ret != l_nnz,
+                        std::runtime_error,
+                        "Did not get the expected number of non-zero vals");
+
+  // Get the SLU data type for this type of matrix
+  SLUD::Dtype_t dtype = type_map::dtype;
+
+  if( in_grid_ ){
+    function_map::create_CompRowLoc_Matrix(&(data_.A),
+                                           g_rows, g_cols,
+                                           l_nnz, l_rows, fst_global_row,
+                                           nzvals_.getRawPtr(),
+                                           colind_.getRawPtr(),
+                                           rowptr_.getRawPtr(),
+                                           SLUD::SLU_NR_loc,
+                                           dtype, SLUD::SLU_GE);
+  }
+
+  return true;
+}
 
 
   template<class Matrix, class Vector>
