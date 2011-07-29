@@ -6,6 +6,11 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file Zoltan2_AlltoAll.hpp
+
+    \brief AlltoAll communication methods
+*/
+
 #ifndef _ZOLTAN2_ALLTOALL_HPP_
 #define _ZOLTAN2_ALLTOALL_HPP_
 

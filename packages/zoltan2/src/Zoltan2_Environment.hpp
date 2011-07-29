@@ -6,6 +6,12 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file Zoltan2_Environment.hpp
+
+    \brief The declarations for the Environment object.
+*/
+
+
 #ifndef _ZOLTAN2_ENVIRONMENT_DECL_HPP_
 #define _ZOLTAN2_ENVIRONMENT_DECL_HPP_
 
@@ -32,7 +38,7 @@ namespace Zoltan2 {
   This is object is passed to almost every method in the library.  We may want
   to have a memory manager here as well.
 
-  TODO: add teuchos validators
+  TODO: add teuchos validators, and all the other parameters
   TODO: Do we need to template on AppLID and AppGID for fixed vertices?
 */
 

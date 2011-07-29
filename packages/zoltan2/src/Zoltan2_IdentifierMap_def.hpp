@@ -8,11 +8,14 @@
 // ***********************************************************************
 // @HEADER
 
+/*! \file Zoltan2_IdentifierMap_def.hpp
+
+    \brief Definitions for the IdentifierMap class.
+*/
+
+
 #ifndef _ZOLTAN2_IDENTIFIERMAP_DEF_HPP_
 #define _ZOLTAN2_IDENTIFIERMAP_DEF_HPP_
-
-/*! \file Zoltan2_IdentifierMap.hpp
-*/
 
 #include <vector>
 #include <map>

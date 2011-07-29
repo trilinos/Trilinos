@@ -5,6 +5,10 @@
 //
 // ***********************************************************************
 // @HEADER
+/*! \file Zoltan2_Environment.cpp
+
+    \brief The definition of the Environment object.
+*/
 
 #ifndef _ZOLTAN2_ENVIRONMENT_DEF_HPP_
 #define _ZOLTAN2_ENVIRONMENT_DEF_HPP_

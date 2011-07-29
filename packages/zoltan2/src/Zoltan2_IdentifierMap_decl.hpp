@@ -9,7 +9,9 @@
 #ifndef _ZOLTAN2_IDENTIFIERMAP_DECL_HPP_
 #define _ZOLTAN2_IDENTIFIERMAP_DECL_HPP_
 
-/*! \file Zoltan2_IdentifierMap.hpp
+/*! \file Zoltan2_IdentifierMap_decl.hpp
+
+    \brief Declarations for the IdentifierMap class.
 */
 
 #include <vector>

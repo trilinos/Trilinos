@@ -20,6 +20,10 @@
 
 namespace Z2
 {
+/*! Zoltan2::DebugManager
+    \brief Methods to display debugging statements.
+
+*/
 
 class DebugManager
 {
