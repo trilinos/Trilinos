@@ -566,14 +566,14 @@ void ILUT<MatrixType>::apply(
   if (mode == Teuchos::NO_TRANS)
   {
     // solves LU Y = X
-    L_->solve(*Xcopy,Y,Teuchos::NO_TRANS);
-    U_->solve(Y,Y,Teuchos::NO_TRANS);
+    L_->localSolve(*Xcopy,Y,Teuchos::NO_TRANS);
+    U_->localSolve(Y,Y,Teuchos::NO_TRANS);
   }
   else
   {
     // solves U(trans) L(trans) Y = X
-    U_->solve(*Xcopy,Y,mode);
-    L_->solve(Y,Y,mode);
+    U_->localSolve(*Xcopy,Y,mode);
+    L_->localSolve(Y,Y,mode);
   }
 
   ++NumApply_;
