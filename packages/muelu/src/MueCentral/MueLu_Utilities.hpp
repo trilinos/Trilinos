@@ -34,7 +34,7 @@
 #include <Cthulhu_TpetraCrsMatrix.hpp>
 #include <Cthulhu_TpetraVector.hpp>
 #include <Cthulhu_TpetraMultiVector.hpp>
-#include "Tpetra_MatrixMatrix.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_RowMatrixTransposer_decl.hpp"
 #include "Tpetra_RowMatrixTransposer_def.hpp"
