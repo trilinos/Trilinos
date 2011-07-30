@@ -32,14 +32,6 @@ namespace {
   bool testMpi = true;
   double errorTolSlack = 1e+1;
 
-#define TEST_IS_COMPATIBLE(m1,m2,is_compat)               \
-{                                                         \
-    TEST_EQUALITY_CONST(m1.isCompatible(m1), true);       \
-    TEST_EQUALITY_CONST(m2.isCompatible(m2), true);       \
-    TEST_EQUALITY_CONST(m1.isCompatible(m2), is_compat);  \
-    TEST_EQUALITY_CONST(m2.isCompatible(m1), is_compat);  \
-}
-
 #define TEST_IS_SAME_AS(m1,m2,is_sameas)               \
 {                                                      \
     TEST_EQUALITY_CONST(m1.isSameAs(m1), true);        \
@@ -126,6 +118,43 @@ namespace {
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BlockMap, OverlapConstBlkSize, LO, GO )
+  {
+    typedef Map<LO,GO> M;
+    typedef BlockMap<LO,GO> BM;
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    // create a distributed overlapping map
+    // this map will have the following entries:
+    Array<GO> myGlobal(2);
+    myGlobal[0] = myImageID*2;
+    myGlobal[1] = myImageID*2+1;
+    if (numImages > 1 && myImageID > 0) {
+      myGlobal.insert(myGlobal.begin(), myImageID*2-1);
+    }
+    
+    if (numImages > 1 && myImageID < numImages-1) {
+      myGlobal.push_back(myImageID*2+2);
+    }
+
+    const size_t numGlobalEntries = numImages*4 - 2;
+    const GO indexBase = 0;
+    // create a BlockMap with each block having size 2
+    LO blkSize = 2;
+    Array<LO> blkSzs(myGlobal.size(),blkSize);
+    Array<LO> firstPt(myGlobal.size());
+    typedef typename Array<GO>::size_type Tsize_t;
+    for(Tsize_t i=0; i<myGlobal.size(); ++i) {
+      firstPt[i] = myGlobal[i]*2;
+    }
+    BM blkmap(Teuchos::OrdinalTraits<global_size_t>::invalid(),
+              myGlobal(), blkSzs(), firstPt(), indexBase, comm);
+
+    TEST_EQUALITY(blkmap.getGlobalNumBlocks(), numGlobalEntries);
   }
 
   ////
@@ -249,33 +278,15 @@ namespace {
   // INSTANTIATIONS
   //
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
 #   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockMap, ContigConstBlkSize, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockMap, OverlapConstBlkSize, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockMap, ContigNonConstBlkSize, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockMap, ConstructorBadLengths1, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockMap, ConstructorBadLengths2, LO, GO )
 
-    UNIT_TEST_GROUP_ORDINAL( char , int )
+//    UNIT_TEST_GROUP_ORDINAL( char , int )
     UNIT_TEST_GROUP_ORDINAL( int , int )
-
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockMap, ContigConstBlkSize, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockMap, ContigNonConstBlkSize, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockMap, ConstructorBadLengths1, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BlockMap, ConstructorBadLengths2, LO, GO )
-
-    // UNIT_TEST_GROUP_ORDINAL(char , int)
-
-    UNIT_TEST_GROUP_ORDINAL(int , int)
 
     // typedef short int ShortInt;
     // UNIT_TEST_GROUP_ORDINAL(ShortInt, int)
@@ -288,7 +299,5 @@ namespace {
       // UNIT_TEST_GROUP_ORDINAL(char , LongLongInt)
       // UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
 #   endif
-
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

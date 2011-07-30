@@ -1117,8 +1117,8 @@ namespace {
 
 //    vbr->fillComplete();
 
-    Tpetra::Import<LO,GO,Node> importer(convertBlockMapToPointMap(rowmap_src),
-                                        convertBlockMapToPointMap(rowmap_dest));
+    Tpetra::Import<LO,GO,Node> importer(convertBlockMapToPointMap(*rowmap_src),
+                                        convertBlockMapToPointMap(*rowmap_dest));
 
     //Construct the matrix that will be imported into:
     RCP<MAT> vbr_dest = rcp( new MAT(rowmap_dest, maxEntriesPerRow,DynamicProfile) );
@@ -1133,6 +1133,130 @@ namespace {
       Teuchos::ArrayRCP<const Scalar> blockEntry;
       LO tmp;
       vbr_dest->getGlobalBlockEntryView(row, col, tmp, tmp, blockEntry);
+      TEST_COMPARE_FLOATING_ARRAYS( expected_blockEntry, blockEntry, 2*Teuchos::ScalarTraits<Scalar>::eps());
+    }
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, Overlap0, LO, GO, Scalar, Node )
+  {
+    //This test creates a distributed matrix with 1 block-row per proc.
+    //Block-equations each have 2 point-equations.
+    //Each block-row will have just 1 block-column, with block-index==0.
+    //Each proc will put a block-entry into the matrix for its own
+    //block-row, and also one for each neighboring proc (proc-1 and proc+1).
+    //This will create a matrix with overlapping data, which gets
+    //assembled to the owning processors by globalAssemble which is called
+    //by fillComplete.
+
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 1;
+    const LO blockSize = 2;
+    RCP<const BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+
+    typedef typename Array<GO>::size_type Tsize_t;
+    const size_t maxEntriesPerRow = 1;
+
+    // create the matrix
+    RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
+
+    // fill the matrix
+    GO row = comm->getRank();
+    GO col = 0;
+    Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, 1);
+    vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+
+    if (comm->getRank() > 0) {
+      GO row = comm->getRank()-1;
+      Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, 1);
+      vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+    }
+
+    if (comm->getRank() < comm->getSize()-1) {
+      GO row = comm->getRank()+1;
+      Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, 1);
+      vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+    }
+
+    vbr->fillComplete();
+
+    double num_contributions = 1;//self
+    if (comm->getRank() > 0) ++num_contributions;//proc-1 contributed to my row
+    if (comm->getRank() < comm->getSize()-1) ++num_contributions;//proc+1 contributed to my row
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
+    for(Tsize_t i=0; i<blk_rows.size(); ++i) {
+      GO row = blk_rows[i];
+      GO col = row;
+      Teuchos::Array<Scalar> expected_blockEntry(blockSize*blockSize, num_contributions);
+      Teuchos::ArrayRCP<const Scalar> blockEntry;
+      LO tmp;
+      vbr->getGlobalBlockEntryView(row, col, tmp, tmp, blockEntry);
+      TEST_COMPARE_FLOATING_ARRAYS( expected_blockEntry, blockEntry, 2*Teuchos::ScalarTraits<Scalar>::eps());
+    }
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, Overlap1, LO, GO, Scalar, Node )
+  {
+    //This test creates a (block-diagonal) matrix that is distributed,
+    //then fills it by loading all data on proc 0, then verifies that after
+    //fillComplete (which calls globalAssemble) the data is spread out to
+    //the other procs.
+
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+
+    //For now, this is just a 2-proc test:
+    if (comm->getSize() != 2) return;
+
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 2;
+
+    const LO blockSize = 2;
+    const size_t maxEntriesPerRow = 1;
+    RCP<const BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+
+    typedef typename Array<GO>::size_type Tsize_t;
+
+    // create the matrix
+    RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
+
+    // fill the matrix
+    if (comm->getRank() == 0) {
+      for(int i=0; i<int(comm->getSize()*numLocalBlocks); ++i) {
+        GO row = i;
+        GO col = row;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+      }
+    }
+
+    vbr->fillComplete();
+
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
+    for(Tsize_t i=0; i<blk_rows.size(); ++i) {
+      GO row = blk_rows[i];
+      GO col = row;
+      Teuchos::Array<Scalar> expected_blockEntry(blockSize*blockSize, row+col+1);
+      Teuchos::ArrayRCP<const Scalar> blockEntry;
+      LO tmp;
+      vbr->getGlobalBlockEntryView(row, col, tmp, tmp, blockEntry);
       TEST_COMPARE_FLOATING_ARRAYS( expected_blockEntry, blockEntry, 2*Teuchos::ScalarTraits<Scalar>::eps());
     }
   }
@@ -1274,7 +1398,9 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applyTransParallel, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applyParallelMV, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, CtorBCrsGraph, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Import1, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Import1, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Overlap0, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Overlap1, LO, GO, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode )

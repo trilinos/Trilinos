@@ -437,18 +437,18 @@ void RILUK<MatrixType>::apply(
 
   if (mode == Teuchos::NO_TRANS) {
 
-    L_->solve(*X1, *Y1,mode);
+    L_->localSolve(*X1, *Y1,mode);
     Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
-    U_->solve(*Y1, *Y1,mode); // Solve Uy = y
+    U_->localSolve(*Y1, *Y1,mode); // Solve Uy = y
     if (isOverlapped_) {
       // Export computed Y values if needed
       Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);
     }
   }
   else {
-    U_->solve(*X1, *Y1,mode); // Solve Uy = y
+    U_->localSolve(*X1, *Y1,mode); // Solve Uy = y
     Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
-    L_->solve(*Y1, *Y1,mode);
+    L_->localSolve(*Y1, *Y1,mode);
     if (isOverlapped_) {Y.doExport(*Y1,*U_->getGraph()->getImporter(), OverlapMode_);} // Export computed Y values if needed
   } 
 
