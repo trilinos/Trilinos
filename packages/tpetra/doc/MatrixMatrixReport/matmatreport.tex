@@ -129,14 +129,14 @@ And the purple line represents the routine after all optimizations had been appl
 As can be clearly seen, the optimizations we applied helped the algorithm substantially.
 
 \begin{figure}
-\includegraphics[scale=.4]{tpetratime.jpg}
+\includegraphics[scale=.4]{tpetraDevData/time.jpg}
 \caption[Time Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's runtime 
 throughout various stages of its development. Note this is a simple $C=A*B$; so we are running in non-transpose mode.}
 \label{tpetracomptime}
 \end{figure}
 
 \begin{figure}
-\includegraphics[scale=.4]{tpetraeff.jpg}
+\includegraphics[scale=.4]{tpetraDevData/eff.jpg}
 \caption[Efficiency Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's scaling efficiency
 throughout various stages of its development. Note this is a simple $C=A*B$; so we are running in non-transpose mode.}
 \label{tpetracompeff}
@@ -144,7 +144,7 @@ throughout various stages of its development. Note this is a simple $C=A*B$; so 
 
 
 \subsection{Tpetra vs. EpetraExt vs. ML}
-Figure~\ref{totaltime} and Figure~\ref{totaleff} show the test results of comparing the Tpetra matrix-matrix multiply routine 
+Figure~\ref{alltime} and Figure~\ref{alleff} show the test results of comparing the Tpetra matrix-matrix multiply routine 
 (with all of its optimizations) to the other matrix-matrix multiply routines in Trilinos~\cite{1089021} (namely the original EpetraExt 
 routine and a slightly modified version ML's Epetra matrix-matrix multiply routine~\footnote{The only difference between the ML's Epetra matrix-matrix
 multiply and the one we used in our test is that we modified the routine to use ML's matrix storage when assembling matrix $C$ rather than Epetra's}). 
@@ -157,15 +157,15 @@ It's also worth noting that in terms of efficiency, Tpetra seems to scale much b
 \JJH{Scaling of ML appears to have the same trend.}
 
 \begin{figure}
-\includegraphics[scale=.4]{totaltime.jpg}
+\includegraphics[scale=.4]{allMatsData/time.jpg}
 \caption[Time Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' runtime}
-\label{totaltime}
+\label{alltime}
 \end{figure}
 
 \begin{figure}
-\includegraphics[scale=.4]{totaleff.jpg}
+\includegraphics[scale=.4]{allMatsData/eff.jpg}
 \caption[Efficiency Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' scaling efficiency}
-\label{totaleff}
+\label{alleff}
 \end{figure}
 
 \subsection{Transpose Mode Tests}
@@ -180,13 +180,13 @@ the rowMatrixTranposer.}
 \KLN{True. So should I say that?}
 
 \begin{figure}
-\includegraphics[scale=.4]{atranstime.jpg}
+\includegraphics[scale=.4]{atransData/time.jpg}
 \caption[Time Comparison]{A comparison of matrix-matrix multiple runtime in Tpetra and EpetraExt using transpose mode}
 \label{transtime}
 \end{figure}
 
 \begin{figure}
-\includegraphics[scale=.4]{atranseff.jpg}
+\includegraphics[scale=.4]{atransData/eff.jpg}
 \caption[Efficiency Comparison]{A comparison of matrix-matrix multiple scaling efficiencies in Tpetra and EpetraExt using transpose mode}
 \label{transeff}
 \end{figure}
