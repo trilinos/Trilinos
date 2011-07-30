@@ -1021,13 +1021,13 @@ namespace stk {
 	if (blocks.size() > 0) {
 	  for (size_t j = 0; j < blocks.size(); j++) {
 	    mesh::Part & side_block_part = *blocks[j];
-            mesh::Selector selector = ( meta.locally_owned_part() | meta.globally_shared_part() ) & side_block_part;
+            mesh::Selector selector = meta.locally_owned_part() & side_block_part;
 	    size_t num_side = count_selected_entities(selector, bulk_data.buckets(type));
 
 	    define_side_block(side_block_part, sset, type, num_side, spatial_dimension);
 	  }
 	} else {
-          mesh::Selector selector = ( meta.locally_owned_part() | meta.globally_shared_part() ) & part;
+          mesh::Selector selector = meta.locally_owned_part() & part;
 	  size_t num_side = count_selected_entities(selector, bulk_data.buckets(type));
 	  define_side_block(part, sset, type, num_side, spatial_dimension);
 	}
@@ -1094,7 +1094,7 @@ namespace stk {
 	  throw std::runtime_error( msg.str() );
 	}
 
-        mesh::Selector selector = ( meta.locally_owned_part() | meta.globally_shared_part() ) & part;
+        mesh::Selector selector = meta.locally_owned_part() & part;
 	const size_t num_elems = count_selected_entities( selector, bulk.buckets(elem_rank));
 
 	int spatial_dim = io_region.get_property("spatial_dimension").get_int();
