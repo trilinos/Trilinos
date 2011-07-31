@@ -91,7 +91,7 @@ RCP<SmootherPrototype> gimmeCoarseProto(Cthulhu::UnderlyingLib lib, const std::s
       coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
 #else
       std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
-      return EXIT_FAILURE;
+      return Teuchos::null; // TODO test for exception //EXIT_FAILURE;
 #endif // HAVE_MUELU_AMESOS2
     } else if(coarseSolver=="ifpack2") {
 #if defined(HAVE_MUELU_IFPACK2)
