@@ -29,7 +29,7 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
  public:
   
   // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
-  typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+  typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
 
   //! @name Constructor/Destructor Methods
   //@{
@@ -72,7 +72,7 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
                  const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
     CTHULHU_DEBUG_ME;
-    CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, pointMap, tPointMap, "Cthulhu::TpetraBlockMap constructors only accept Cthulhu::TpetraMap as input arguments.");
+    CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, pointMap, tPointMap, "Cthulhu::TpetraBlockMap constructors only accept Cthulhu::TpetraMap as input arguments.");
     map_ = rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(tPointMap->getTpetra_Map(), myGlobalBlockIDs, myBlockSizes, node));
   }
 
@@ -149,7 +149,7 @@ private:
 // template<class LocalOrdinal,class GlobalOrdinal,class Node>
 // Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> >
 // convertTpetraBlockMapToTpetraPointMap(const Teuchos::RCP<const Cthulhu::TpetraBlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap) { CTHULHU_DEBUG_ME;
-//   return rcp(new TpetraMap(convertTpetraBlockMapToTpetraPointMap(blockMap.getTpetra_BlockMap())));
+//   return rcp(new TpetraMapClass(convertTpetraBlockMapToTpetraPointMap(blockMap.getTpetra_BlockMap())));
 // }
 
 }//namespace Cthulhu

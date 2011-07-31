@@ -25,11 +25,11 @@ namespace Cthulhu {
 
   class ExportFactory {
     
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-    typedef Export<LocalOrdinal, GlobalOrdinal, Node> Export;
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> MapClass;
+    typedef Export<LocalOrdinal, GlobalOrdinal, Node> ExportClass;
 #ifdef HAVE_CTHULHU_TPETRA
-    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
-    typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TpetraExport;
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
+    typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TpetraExportClass;
 #endif
 
   private:
@@ -39,12 +39,12 @@ namespace Cthulhu {
   public:
     
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<Export> Build(const Teuchos::RCP<const Map> &source, const Teuchos::RCP<const Map> &target) {
+    static RCP<ExportClass> Build(const Teuchos::RCP<const MapClass> &source, const Teuchos::RCP<const MapClass> &target) {
 #ifdef HAVE_CTHULHU_TPETRA
-      const RCP<const TpetraMap> &tSource = Teuchos::rcp_dynamic_cast<const TpetraMap>(source);
-      const RCP<const TpetraMap> &tTarget = Teuchos::rcp_dynamic_cast<const TpetraMap>(target);
+      const RCP<const TpetraMapClass> &tSource = Teuchos::rcp_dynamic_cast<const TpetraMapClass>(source);
+      const RCP<const TpetraMapClass> &tTarget = Teuchos::rcp_dynamic_cast<const TpetraMapClass>(target);
       if (tSource != null && tTarget != null)
-        return rcp( new TpetraExport(tSource, tTarget) );
+        return rcp( new TpetraExportClass(tSource, tTarget) );
 #endif
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map to an EpetraMap or a TpetraMap.");
     }
@@ -54,11 +54,11 @@ namespace Cthulhu {
   template <>
   class ExportFactory<int, int, Kokkos::DefaultNode::DefaultNodeType> {
     
-    typedef Map<int, int, Kokkos::DefaultNode::DefaultNodeType> Map;
-    typedef Export<int, int, Kokkos::DefaultNode::DefaultNodeType> Export;
+    typedef Map<int, int, Kokkos::DefaultNode::DefaultNodeType> MapClass;
+    typedef Export<int, int, Kokkos::DefaultNode::DefaultNodeType> ExportClass;
 #ifdef HAVE_CTHULHU_TPETRA
-    typedef TpetraMap<int, int, Kokkos::DefaultNode::DefaultNodeType> TpetraMap;
-    typedef TpetraExport<int, int, Kokkos::DefaultNode::DefaultNodeType> TpetraExport;
+    typedef TpetraMap<int, int, Kokkos::DefaultNode::DefaultNodeType> TpetraMapClass;
+    typedef TpetraExport<int, int, Kokkos::DefaultNode::DefaultNodeType> TpetraExportClass;
 #endif
 
   private:
@@ -68,13 +68,13 @@ namespace Cthulhu {
   public:
     
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<Export> Build(const Teuchos::RCP<const Map> &source, const Teuchos::RCP<const Map> &target) {
+    static RCP<ExportClass> Build(const Teuchos::RCP<const MapClass> &source, const Teuchos::RCP<const MapClass> &target) {
 #ifdef HAVE_CTHULHU_TPETRA
       {
-        const RCP<const TpetraMap> &tSource = Teuchos::rcp_dynamic_cast<const TpetraMap>(source);
-        const RCP<const TpetraMap> &tTarget = Teuchos::rcp_dynamic_cast<const TpetraMap>(target);
+        const RCP<const TpetraMapClass> &tSource = Teuchos::rcp_dynamic_cast<const TpetraMapClass>(source);
+        const RCP<const TpetraMapClass> &tTarget = Teuchos::rcp_dynamic_cast<const TpetraMapClass>(target);
         if (tSource != null && tTarget != null)
-          return rcp( new TpetraExport(tSource, tTarget) );
+          return rcp( new TpetraExportClass(tSource, tTarget) );
       }
 #endif
 #ifdef HAVE_CTHULHU_EPETRA

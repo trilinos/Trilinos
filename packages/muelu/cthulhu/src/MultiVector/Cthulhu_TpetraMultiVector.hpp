@@ -37,7 +37,7 @@ namespace Cthulhu {
   class TpetraMultiVector : public virtual Cthulhu::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
     // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
-    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
 
   public:
 
@@ -47,7 +47,7 @@ namespace Cthulhu {
     //! Basic TpetraMultiVector constuctor.
     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t NumVectors, bool zeroOut=true) {
       CTHULHU_DEBUG_ME;
-      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, map, tMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, map, tMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
       vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), NumVectors, zeroOut));
     }
 
@@ -60,7 +60,7 @@ namespace Cthulhu {
     /*! Post-condition: constantStride() == true */
     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors) {
       CTHULHU_DEBUG_ME;
-      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, map, tMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, map, tMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
       vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), A, LDA, NumVectors));
     } 
 
@@ -68,7 +68,7 @@ namespace Cthulhu {
     /*! Post-condition: constantStride() == true */
     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) { 
       CTHULHU_DEBUG_ME;
-      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, map, tMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, map, tMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
       vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), ArrayOfPtrs, NumVectors));
     } 
   
@@ -381,7 +381,7 @@ namespace Cthulhu {
     // From DistObject
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { 
       CTHULHU_DEBUG_ME; 
-      return rcp( new TpetraMap(vec_->getMap()) ); 
+      return rcp( new TpetraMapClass(vec_->getMap()) );
     }
 
 //     const RCP<const Comm<int> > getComm() const {

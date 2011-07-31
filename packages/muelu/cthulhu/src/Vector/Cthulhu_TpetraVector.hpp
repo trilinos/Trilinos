@@ -38,7 +38,7 @@ namespace Cthulhu {
     // friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
     // The following typedef is used by the CTHULHU_DYNAMIC_CAST() macro.
-    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+    //typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass; //not needed??
     
   public:
 

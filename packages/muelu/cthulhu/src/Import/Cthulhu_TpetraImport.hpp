@@ -28,7 +28,7 @@ namespace Cthulhu {
   class TpetraImport: public Import<LocalOrdinal, GlobalOrdinal, Node> {
 
     // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
-    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
     typedef TpetraImport<LocalOrdinal, GlobalOrdinal, Node> TTpetraImport;
 
   public:
@@ -40,8 +40,8 @@ namespace Cthulhu {
     TpetraImport(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, 
             const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target)       
     { CTHULHU_DEBUG_ME;
-      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, source, tSource, "Cthulhu::TpetraImport constructors only accept Cthulhu::TpetraMap as input arguments.");
-      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, target, tTarget, "Cthulhu::TpetraImport constructors only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, source, tSource, "Cthulhu::TpetraImport constructors only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, target, tTarget, "Cthulhu::TpetraImport constructors only accept Cthulhu::TpetraMap as input arguments.");
       import_ = rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(tSource->getTpetra_Map(), tTarget->getTpetra_Map()));
     }
  
@@ -90,10 +90,10 @@ namespace Cthulhu {
     inline Teuchos::ArrayView<const int> getExportImageIDs() const { CTHULHU_DEBUG_ME; return import_->getExportImageIDs(); }
 
     //! Returns the Source Map used to construct this importer.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getSourceMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMap(import_->getSourceMap())); };
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getSourceMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMapClass(import_->getSourceMap())); };
 
     //! Returns the Target Map used to construct this importer.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getTargetMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMap(import_->getTargetMap())); };
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getTargetMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMapClass(import_->getTargetMap())); };
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     inline Distributor & getDistributor() const { CTHULHU_DEBUG_ME; return import_->getDistributor(); }

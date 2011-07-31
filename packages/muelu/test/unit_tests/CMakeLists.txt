@@ -26,9 +26,9 @@ APPEND_SET(SOURCES
   GenericPRFactory.cpp
   TentativePFactory.cpp
   Aggregates.cpp
-  UCAggregationFactory.cpp
   CoalesceDropFactory.cpp
   Memory.cpp
+  #UCAggregationFactory.cpp
 )
 
 ### Tests that require other Trilinos packages

@@ -20,14 +20,14 @@
 // This factory creates Cthulhu::Map. User have to specify the exact class of object that he want to create (ie: a Cthulhu::TpetraMap or a Cthulhu::EpetraMap).
 
 namespace Cthulhu {
-  
+
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class MapFactory {
     
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+    typedef Map<LocalOrdinal,GlobalOrdinal, Node> MapClass;
 
 #ifdef HAVE_CTHULHU_TPETRA
-    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+    typedef TpetraMap< LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
 #endif
 
   private:
@@ -42,11 +42,11 @@ namespace Cthulhu {
      *   possible.
      */
     //TODO: replace Tpetra::LocalGlobal by Cthulhu::LocalGlobal
-    static RCP<Map> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+    static Teuchos::RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                           Cthulhu::LocalGlobal lg=Cthulhu::GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)
-        return rcp( new TpetraMap(numGlobalElements, indexBase, comm, lg, node) );
+        return Teuchos::rcp( new TpetraMapClass(numGlobalElements, indexBase, comm, lg, node) );
 #endif
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
     }
@@ -60,11 +60,11 @@ namespace Cthulhu {
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    static RCP<Map> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, 
+    static Teuchos::RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
                           const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)       
-        return rcp( new TpetraMap(numGlobalElements, numLocalElements, indexBase, comm, node) );
+        return rcp( new TpetraMapClass(numGlobalElements, numLocalElements, indexBase, comm, node) );
 #endif
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
     }
@@ -76,11 +76,11 @@ namespace Cthulhu {
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    static RCP<Map> Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, 
+    static Teuchos::RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase,
                           const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMap(numGlobalElements, elementList, indexBase, comm, node) );
+        return rcp( new TpetraMapClass(numGlobalElements, elementList, indexBase, comm, node) );
 #endif
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
     }
@@ -93,7 +93,7 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    Teuchos::RCP<const Map>
+    Teuchos::RCP<const MapClass>
     createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
@@ -108,11 +108,11 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    Teuchos::RCP< const Map >
+    Teuchos::RCP< const MapClass >
     createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMap(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+        return rcp(new TpetraMapClass(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
 #endif
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
     }
@@ -123,12 +123,12 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    Teuchos::RCP< const Map >
+    Teuchos::RCP< const MapClass >
     createUniformContigMapWithNode(UnderlyingLib lib, global_size_t numElements,
                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMap(Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+        return rcp(new TpetraMapClass(Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
 #endif
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
     }
@@ -141,7 +141,7 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    Teuchos::RCP< const Map>
+    Teuchos::RCP< const MapClass>
     createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
@@ -158,7 +158,7 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    Teuchos::RCP< const Map >
+    Teuchos::RCP< const MapClass >
     createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
@@ -173,12 +173,12 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    Teuchos::RCP< const Map >
+    Teuchos::RCP< const MapClass >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, 
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMap(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
+        return rcp(new TpetraMapClass(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
 #endif
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
     }
@@ -190,7 +190,7 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    Teuchos::RCP< const Map >
+    Teuchos::RCP< const MapClass >
     createWeightedContigMapWithNode(UnderlyingLib lib, int thisNodeWeight, global_size_t numElements, 
                                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
 
@@ -201,10 +201,10 @@ namespace Cthulhu {
   template <>
   class MapFactory<int, int, Kokkos::DefaultNode::DefaultNodeType> {
       
-    typedef Map<int, int> Map;
+    typedef Map<int, int> MapClass;
 
 #ifdef HAVE_CTHULHU_TPETRA
-    typedef TpetraMap<int, int> TpetraMap;
+    typedef TpetraMap<int, int> TpetraMapClass;
 #endif
 
   private:
@@ -219,11 +219,11 @@ namespace Cthulhu {
      *   possible.
      */
     //TODO: replace Tpetra::LocalGlobal by Cthulhu::LocalGlobal
-    static RCP<Map> Build(UnderlyingLib lib, global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+    static RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                           LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)
-        return rcp( new TpetraMap(numGlobalElements, indexBase, comm, lg, node) );
+        return rcp( new TpetraMapClass(numGlobalElements, indexBase, comm, lg, node) );
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
@@ -241,11 +241,11 @@ namespace Cthulhu {
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    static RCP<Map> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, int indexBase, 
+    static RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, int indexBase,
                           const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)       
-        return rcp( new TpetraMap(numGlobalElements, numLocalElements, indexBase, comm, node) );
+        return rcp( new TpetraMapClass(numGlobalElements, numLocalElements, indexBase, comm, node) );
 
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
@@ -262,11 +262,11 @@ namespace Cthulhu {
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    static RCP<Map> Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, 
+    static RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase,
                           const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMap(numGlobalElements, elementList, indexBase, comm, node) );
+        return rcp( new TpetraMapClass(numGlobalElements, elementList, indexBase, comm, node) );
 
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
@@ -284,11 +284,11 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    static Teuchos::RCP<const Map>
+    static Teuchos::RCP<const MapClass>
     createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMap(Tpetra::createLocalMap<int,int>(numElements, comm)));
+        return rcp( new TpetraMapClass(Tpetra::createLocalMap<int,int>(numElements, comm)));
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
@@ -303,11 +303,11 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    static Teuchos::RCP< const Map >
+    static Teuchos::RCP< const MapClass >
     createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMap(Tpetra::createLocalMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
+        return rcp(new TpetraMapClass(Tpetra::createLocalMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
@@ -328,12 +328,12 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    static Teuchos::RCP< const Map >
+    static Teuchos::RCP< const MapClass >
     createUniformContigMapWithNode(UnderlyingLib lib, global_size_t numElements,
                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMap(Tpetra::createUniformContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
+        return rcp(new TpetraMapClass(Tpetra::createUniformContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
@@ -356,11 +356,11 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    static Teuchos::RCP< const Map>
+    static Teuchos::RCP< const MapClass>
     createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMap(Tpetra::createUniformContigMap<int,int>(numElements, comm)));
+        return rcp( new TpetraMapClass(Tpetra::createUniformContigMap<int,int>(numElements, comm)));
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
@@ -377,11 +377,11 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    static Teuchos::RCP< const Map >
+    static Teuchos::RCP< const MapClass >
     createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMap(Tpetra::createContigMap<int,int>(numElements, localNumElements, comm)));
+        return rcp( new TpetraMapClass(Tpetra::createContigMap<int,int>(numElements, localNumElements, comm)));
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
@@ -396,12 +396,12 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    static Teuchos::RCP< const Map >
+    static Teuchos::RCP< const MapClass >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, 
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMap(Tpetra::createContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, localNumElements, comm, node)));
+        return rcp( new TpetraMapClass(Tpetra::createContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, localNumElements, comm, node)));
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
@@ -423,7 +423,7 @@ namespace Cthulhu {
 
     \relates TpetraMap
     */
-    static Teuchos::RCP< const Map >
+    static Teuchos::RCP< const MapClass >
     createWeightedContigMapWithNode(UnderlyingLib lib, int thisNodeWeight, global_size_t numElements, 
                                     const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { CTHULHU_DEBUG_ME;
       

@@ -30,11 +30,11 @@ namespace Cthulhu {
 
   class MultiVectorFactory {
     
-    typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> MapClass;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorClass;
 #ifdef HAVE_CTHULHU_TPETRA
-    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
-    typedef TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
+    typedef TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVectorClass;
 #endif
 
   private:
@@ -44,11 +44,11 @@ namespace Cthulhu {
   public:
     
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<MultiVector> Build(const Teuchos::RCP<const Map> &map, size_t NumVectors, bool zeroOut=true) {
+    static Teuchos::RCP<MultiVectorClass> Build(const Teuchos::RCP<const MapClass> &map, size_t NumVectors, bool zeroOut=true) {
 #ifdef HAVE_CTHULHU_TPETRA
-      const RCP<const TpetraMap> &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(map);
+      const RCP<const TpetraMapClass> &tMap = Teuchos::rcp_dynamic_cast<const TpetraMapClass>(map);
       if (tMap != null)
-        return rcp( new TpetraMultiVector(map, NumVectors, zeroOut) );
+        return rcp( new TpetraMultiVectorClass(map, NumVectors, zeroOut) );
 #endif
 
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map. The exact type of the Map 'map' is unknown.");
@@ -63,11 +63,11 @@ namespace Cthulhu {
   template <>
   class MultiVectorFactory<double, int, int, Kokkos::DefaultNode::DefaultNodeType> {
   
-    typedef Map<int, int> Map;
-    typedef MultiVector<double, int, int> MultiVector;
+    typedef Map<int, int> MapClass;
+    typedef MultiVector<double, int, int> MultiVectorClass;
 #ifdef HAVE_CTHULHU_TPETRA
-    typedef TpetraMap<int, int> TpetraMap;
-    typedef TpetraMultiVector<double, int, int> TpetraMultiVector;
+    typedef TpetraMap<int, int> TpetraMapClass;
+    typedef TpetraMultiVector<double, int, int> TpetraMultiVectorClass;
 #endif
 
   private:
@@ -77,11 +77,11 @@ namespace Cthulhu {
   public:
     
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<MultiVector> Build(const Teuchos::RCP<const Map> &map, size_t NumVectors, bool zeroOut=true) {
+    static RCP<MultiVectorClass> Build(const Teuchos::RCP<const MapClass> &map, size_t NumVectors, bool zeroOut=true) {
 #ifdef HAVE_CTHULHU_TPETRA
-      const RCP<const TpetraMap> &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(map);
+      const RCP<const TpetraMapClass> &tMap = Teuchos::rcp_dynamic_cast<const TpetraMapClass>(map);
       if (tMap != null)
-        return rcp( new TpetraMultiVector(map, NumVectors, zeroOut) );
+        return rcp( new TpetraMultiVectorClass(map, NumVectors, zeroOut) );
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
       const RCP<const EpetraMap> &eMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(map);

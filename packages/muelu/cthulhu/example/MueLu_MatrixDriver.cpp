@@ -22,6 +22,11 @@
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
+//#define CTHULHU_MAPFACTORY_SHORT
+#include <Cthulhu_UseShortNamesOrdinal.hpp>
+
+
+
 /*
   This driver simply generates a Cthulhu matrix, prints it to screen, and exits.
 
@@ -65,6 +70,8 @@ int main(int argc, char* argv[])
 
 //   Teuchos::ParameterList pl;
 //   pl.set("Num Threads",numThreads);
+
+  //typedef Cthulhu::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
 
   const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
 
