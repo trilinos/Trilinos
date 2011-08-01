@@ -490,9 +490,7 @@
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="TR"/>
     <Dependency name="Amesos" type="LR"/>
-    <Dependency name="Pamgen" type="ILO"/>
-    <Dependency name="SEACAS" type="LO"/>
-    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="LR"/>
     <EmailAddresses>
       <Email address="moertel-regression@software.sandia.gov"/>
