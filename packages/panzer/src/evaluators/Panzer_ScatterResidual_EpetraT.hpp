@@ -199,7 +199,7 @@ evaluateFields(typename Traits::EvalData workset)
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer->A;
 
    // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
+   //       The "getGIDFieldOffsets" may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
 
@@ -224,7 +224,6 @@ evaluateFields(typename Traits::EvalData workset)
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,rowBasisNum);
             int rowOffset = elmtOffset[rowBasisNum];
             int row = LIDs[rowOffset];
-            int gRow = GIDs[rowOffset];
     
             // Sum residual
             if(r!=Teuchos::null)
@@ -235,10 +234,10 @@ evaluateFields(typename Traits::EvalData workset)
             
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
                jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
-            TEUCHOS_ASSERT_EQUALITY(jacRow.size(),GIDs.size());
+            // TEUCHOS_ASSERT_EQUALITY(jacRow.size(),GIDs.size());
     
             // Sum Jacobian
-            int err = Jac->SumIntoGlobalValues(gRow, scatterField.size(), &jacRow[0],&GIDs[0]);
+            int err = Jac->SumIntoMyValues(row, scatterField.size(), &jacRow[0],&LIDs[0]);
             TEUCHOS_ASSERT_EQUALITY(err,0);
          } // end rowBasisNum
       } // end fieldIndex

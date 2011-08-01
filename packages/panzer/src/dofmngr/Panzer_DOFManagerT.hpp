@@ -400,6 +400,37 @@ bool DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<st
 // "Get" functions
 /////////////////////////////////////////////////////////////////////
 
+namespace {
+// hide these functions
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+inline void getGIDsFromMatrixGraph(int blockIndex,int dof,LocalOrdinalT localElmtId,
+                                   fei::MatrixGraph & mg,std::vector<GlobalOrdinalT> & gids)
+{
+   std::vector<int> indices(dof);
+
+   // get elements indices
+   int localSize = -1;
+   mg.getConnectivityIndices(blockIndex,localElmtId,dof,&indices[0],localSize);
+   
+   // copy the indices
+   gids.resize(dof);
+   for(std::size_t i=0;i<indices.size();i++)
+      gids[i] = (GlobalOrdinalT) indices[i];
+}
+
+template <typename LocalOrdinalT>
+inline void getGIDsFromMatrixGraph(int blockIndex,int dof,LocalOrdinalT localElmtId,
+                                   fei::MatrixGraph & mg,std::vector<int> & gids)
+{
+   // get elements indices
+   gids.resize(dof);
+   int localSize = -1;
+   mg.getConnectivityIndices(blockIndex,localElmtId,dof,&gids[0],localSize);
+}
+
+}
+
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids) const
 {
@@ -412,16 +443,8 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT loca
    // has been initialized. So if this DOFManager has no fields on
    // the block it should be ignored (hence dof>0)
    if(dof>0) {
-      std::vector<int> indices(dof);
-   
-      // get elements indices
-      int localSize = -1;
-      matrixGraph_->getConnectivityIndices(blockIndex,localElmtId,dof,&indices[0],localSize);
-   
-      // copy the indices
-      gids.resize(dof);
-      for(std::size_t i=0;i<indices.size();i++)
-         gids[i] = (GlobalOrdinal) indices[i];
+
+      getGIDsFromMatrixGraph(blockIndex,dof,localElmtId,*matrixGraph_,gids);
    }
 }
 
