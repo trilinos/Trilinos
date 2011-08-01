@@ -29,8 +29,9 @@ gnuplot plotcommand.gnu
 rm -f plotcommand.gnu
 if [ $1 == "time" ]
 then
-convert -density 150 -geometry 100% -rotate 90 time.ps time.jpg
+ps2pdf time.ps time.pdf
+rm time.ps
 else
-convert -density 150 -geometry 100% -rotate 90 eff.ps eff.jpg
+ps2pdf eff.ps eff.pdf
+rm eff.ps
 fi
-rm *.ps

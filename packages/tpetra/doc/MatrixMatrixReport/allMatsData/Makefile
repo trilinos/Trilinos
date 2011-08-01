@@ -1,10 +1,10 @@
-all: time.jpg eff.jpg
+all: time.pdf eff.pdf
 
-time.jpg:
+time.pdf:
 	./allPostProcess.sh time
 	
-eff.jpg:
+eff.pdf:
 	./allPostProcess.sh eff
 
 clean:
-	rm *jpg
+	rm time.pdf eff.pdf
