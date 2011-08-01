@@ -111,6 +111,7 @@ $Nnzm$ less operations?}
 
 
 \section{Performance}
+\label{perfSect}
 We conducted a series of weak-scaling studies on the Hopper NERSC machine. Hopper is a Cray XE6 with 24 cores
 per-node~\footnote{For more machine information regarding Hopper, please visit \url{http://www.nersc.gov/systems/hopper-cray-xe6}}.
 We define weak-scailing as increasing the problem size while holding the amount of work each node does constant. We define
@@ -209,6 +210,7 @@ how much the hashing scheme has to do with ML's speed. That said, it is definite
 is complex. Figure~\ref{hashalgo} outlines in pseudo code the algorithm as current Tpetra developers 
 understand it. While maybe not as easy as implementing a Kokkos kernel, this shouldn't be that difficult to write.
 
+
 \begin{figure}
 \centering
 {\footnotesize
@@ -250,6 +252,27 @@ equal to the maximum number of row entries in matrix A.
 \caption[Hash based algorithm]{ML's hash based algorithm for matrix-matrix multiply}
 \label{hashalgo}
 \end{figure}
+
+\subsection{Serial Test Motivations}
+Table~\ref{serialTable} shows the results of running three Trilinos-based matrix-matrix multiply algorithms in 
+serial. These tests were conducted identically as to the ones in section~\ref{perfSect} with the exception of being run on a single core of 
+hopper. Since this test in serial, all runtimes should be void of any time that might be attributed to communication.
+The discrepancy between the EpetraExt and ML runtime has been known for quite some time and is beleived to be
+attributed to ML's hashing scheme by several scientists at Sandia National Labs. We believe the discrepancy between 
+Tpetra and EpetraExt has do to with Tpetra's \verb!fillComplete! funciton since most everything else in this simple test 
+is relatively the same between the Tpetra algorithm and the EpetraExt algorithm. This leads us to believe that
+by improving Tpetra's underlying architecture (i.e. refining \verb!fillComplete!) and implementing ML's hashing
+scheme, we should be able to make Tpetra's matirx-matrix mulitpliation routine run at the same level as ML.
+
+\begin{table}
+\begin{tabular}{ | l | l | l | l | }
+\hline
+ & Tpetra & EpetraExt & ML \\ \hline
+Time (Seconds) & 1.4 & 0.9 & 0.3 \\ \hline
+\end{tabular}
+\caption{Serial Matrix-Matrix Multiplication Runtimes}
+\label{serailTable}
+\end{table}
 
 \end{document}
 
