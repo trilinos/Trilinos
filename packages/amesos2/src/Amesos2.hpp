@@ -268,6 +268,10 @@
  * \subsection pardiso_mkl_parameters Pardiso MKL
  *
  * \copydetails Amesos2::PardisoMKL::setParameters_impl()
+ *
+ * \subsection lapack_parameters LAPACK
+ *
+ * \copydetails Amesos2::Lapack::setParameters_impl()
  */
 
 

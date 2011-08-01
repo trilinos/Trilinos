@@ -180,20 +180,20 @@ private:
    * The following SuperLU_MT parameters/options are recognized:
    *
    * <ul>
-   *   <li> \c "nprocs"(int) : Specifies the number of threads to be spawned.
+   *   <li> \c "nprocs" (int) : Specifies the number of threads to be spawned.
    *     Default is 1.</li>
    *   <li> \c "trans" : { \c "NOTRANS" | \c "TRANS" |
    *     \c "CONJ" }.  Will also recognize the \c "Transpose" : { \c true
    *     | \c false } option which is equivalent to \c "TRANS" and
    *     \c "NOTRANS" , respectively.</li>
-   *   <li> \c "panel_size" : Specifies the number of consecutive
+   *   <li> \c "panel_size" (int) : Specifies the number of consecutive
    *     columns to be treated as a unit of task.</li>
-   *   <li> \c "relax" : Specifies the number of columns to be grouped as a relaxed
+   *   <li> \c "relax" (int) : Specifies the number of columns to be grouped as a relaxed
    *     supernode.</li>
-   *   <li> \c "Equil" : { \c "YES" | \c "NO" } or, equivalently, { \c true | \c false }.
-   *     Specifies whether the solver to equilibrate the matrix before solving.</li>
-   *   <li> \c "SymmetricMode" : { \c "Yes" | \c "NO" } or, equivalently,
-   *     { \c true | \c false }.
+   *   <li> \c "Equil" : { \c true | \c false }.  Specifies whether
+   *     the solver to equilibrate the matrix before solving.</li>
+   *   <li> \c "SymmetricMode" : { \c true | \c false }.  Specifies
+   *   whether to use the symmetric mode.</li>
    *   <li> \c "DiagPivotThresh" : \c double value. Specifies the threshold
    *     used for a diagonal to be considered an acceptable pivot.</li>
    *   <li> \c "ColPerm" which takes one of the following:

@@ -21,12 +21,13 @@
 namespace Amesos2 {
 
 
-  /** \brief Amesos2 interface to the Lapack package.
+  /** \brief Amesos2 interface to the LAPACK.
    *
-   * Describe here anything you would like about the Lapack solver:
-   * what sorts of problems it is good at solving, other documentation
-   * about the solver itself, what scalar and ordinal types are
-   * supported, etc.
+   * This Amesos2 interface uses a sequential, dense solver based on
+   * the LAPACK routines.  This interface exists mostly for
+   * pedagogical purposes (to contrast sparse and dense solver
+   * performance), but could be useful in cases where the input matrix
+   * is sparse but "almost dense".
    *
    * \ingroup amesos2_solver_interfaces 
    */
@@ -35,8 +36,8 @@ namespace Amesos2 {
   class Lapack : public SolverCore<Amesos2::Lapack, Matrix, Vector> 
   {
     friend class SolverCore<Amesos2::Lapack,Matrix,Vector>; // Give our base access
-    // to our private
-    // implementation funcs
+                                                            // to our private
+                                                            // implementation funcs
   public:
 
     /// The name of this solver interface
@@ -77,23 +78,19 @@ namespace Amesos2 {
   private:
   
     /**
-     * \brief Performs pre-ordering on the matrix to increase efficiency.
+     * \brief No-op.
      */
     int preOrdering_impl();
 
 
     /**
-     * \brief Perform symbolic factorization of the matrix using Lapack.
-     *
-     * Called first in the sequence before numericFactorization.
-     *
-     * \throw std::runtime_error Lapack is not able to factor the matrix.
+     * \brief No-op
      */
     int symbolicFactorization_impl();
 
 
     /**
-     * \brief Lapack specific numeric factorization
+     * \brief Perform numeric factorization using LAPACK
      * 
      * \throw std::runtime_error Lapack is not able to factor the matrix
      */
@@ -103,8 +100,8 @@ namespace Amesos2 {
     /**
      * \brief Lapack solve.
      *
-     * Uses the symbolic and numeric factorizations, along with the RHS vector
-     * \c B to solve the sparse system of equations.
+     * Uses the numeric factorization, along with the RHS vector \c B
+     * to solve the system of equations.
      *
      * The solution of the system is placed in X.
      *
@@ -121,7 +118,12 @@ namespace Amesos2 {
 
 
     /**
-     * TODO
+     * The LAPACK interface supports the following parameters:
+     *
+     * <ul>
+     *   <li> \c "Equilibrate" (bool) : equilibrate the matrix before
+     *   factorization.  The default is \c true .</li>
+     * </ul>
      */
     void setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
 
@@ -176,10 +178,18 @@ namespace Amesos2 {
   
   // Specialize the solver_traits struct for Lapack.
   //
-  // All scalar types are supported through Teuchos::LAPACK 
+  // Specializations of Teuchos::LAPACK only exist for real and
+  // complex float and double types.
   template <>
   struct solver_traits<Lapack> {
-    typedef Meta::nil_t supported_scalars;
+#ifdef HAVE_TEUCHOS_COMPLEX
+    typedef Meta::make_list4<float,
+			     double,
+			     std::complex<float>,
+			     std::complex<double> >supported_scalars;
+#else
+    typedef Meta::make_list2<float, double> supported_scalars;
+#endif
 };
   
 } // end namespace Amesos2

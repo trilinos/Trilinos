@@ -65,10 +65,12 @@ namespace Amesos2 {
     // Set here so that solver_ can refresh it's internal state
     solver_.setMatrix( Teuchos::rcpFromRef(lu_) );
 
-    solver_.factor();
+    int factor_ierr = solver_.factor();
 
-    // std::cout << "After factorization : " << std::endl;
-    // lu_.print(std::cout);
+    TEST_FOR_EXCEPTION( factor_ierr != 0,
+			std::runtime_error,
+			"Lapack factor routine returned error code "
+			<< factor_ierr );
 
     return( 0 );
   }
@@ -168,7 +170,7 @@ namespace Amesos2 {
     solver_.solveWithTranspose( parameterList->get<bool>("Transpose",
 							 this->control_.useTranspose_) );
 
-    solver_.factorWithEquilibration( parameterList->get<bool>("Equilibrate", false) );
+    solver_.factorWithEquilibration( parameterList->get<bool>("Equilibrate", true) );
 
     // solver_.solveToRefinedSolution( parameterList->get<bool>("Refine", false) );
   }
@@ -184,7 +186,7 @@ namespace Amesos2 {
     if( is_null(valid_params) ){
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-      pl->set("Equilibrate", false, "Whether to equilibrate the input matrix");
+      pl->set("Equilibrate", true, "Whether to equilibrate the input matrix");
 
       // TODO: Refinement does not seem to be working with the SerialDenseSolver.  Not sure why.
       // pl->set("Refine", false, "Whether to apply iterative refinement");

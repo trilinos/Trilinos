@@ -208,9 +208,10 @@ private:
    *     <li> \c "PARMETIS" : use the ParMETIS TPL to order the columns. (default)</li>
    *     </ul>
    *   </li>
-   *   <li> \c "ReplaceTinyPivot" : { \c "YES" | \c "NO" } or, equivalently,
-   *     { \c true | \c false }.  Specifies whether to replace tiny diagonals with
-   *     \f$\sqrt{\epsilon}\cdot\| A \|\f$ during LU factorization. (default: \c true)</li>
+   *   <li> \c "ReplaceTinyPivot" : { \c true | \c false }.  Specifies
+   *     whether to replace tiny diagonals with
+   *     \f$\sqrt{\epsilon}\cdot\| A \|\f$ during LU
+   *     factorization. (default: \c true)</li>
    * </ul>
    */
   /*
