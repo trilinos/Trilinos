@@ -56,6 +56,8 @@ public:
   typedef ValueType           value_type ;
   typedef KOKKOS_MACRO_DEVICE device_type ;
 
+  typedef ValueView< value_type , DeviceHost > HostView ;
+
   /*------------------------------------------------------------------*/
 
 #if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
