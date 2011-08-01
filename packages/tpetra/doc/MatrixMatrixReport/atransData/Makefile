@@ -1,10 +1,10 @@
-all: time.jpg eff.jpg
+all: time.pdf eff.pdf
 
-time.jpg:
+time.pdf:
 	./atransPostProcess.sh time
 	
-eff.jpg:
+eff.pdf:
 	./atransPostProcess.sh eff
 
 clean:
-	rm *jpg
+	rm time.pdf eff.pdf

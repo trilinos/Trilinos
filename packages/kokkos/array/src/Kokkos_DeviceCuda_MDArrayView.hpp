@@ -60,6 +60,8 @@ public:
   typedef DeviceCuda::default_mdarray_map map_option ;
   typedef DeviceCuda::size_type           size_type ;
 
+  typedef MDArrayView< value_type , DeviceHost , map_option > HostView ;
+
   /*------------------------------------------------------------------*/
   /** \brief  Not contiguous due to the need to pad for memory alignment */
   enum { Contiguous = false };

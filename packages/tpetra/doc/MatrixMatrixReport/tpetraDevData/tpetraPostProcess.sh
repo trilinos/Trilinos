@@ -6,7 +6,7 @@ EFFOUT="eff.ps"
 echo "set term postscript color  \\" >> plotcommand.gnu
 echo "dashed dashlength 3.0 linewidth 3.0 " >> plotcommand.gnu
 echo "set key bottom right" >> plotcommand.gnu
-echo "set data style linespoints" >> plotcommand.gnu
+echo "set style data linespoints" >> plotcommand.gnu
 echo "set style line 4 linecolor rgb \"purple\" " >> plotcommand.gnu
 echo "set style line 3 linecolor rgb \"red\" " >> plotcommand.gnu
 echo "set style line 2 linecolor rgb \"blue\" " >> plotcommand.gnu
@@ -29,8 +29,9 @@ gnuplot plotcommand.gnu
 rm -f plotcommand.gnu
 if [ $1 == "time" ]
 then
-convert -density 150 -geometry 100% -rotate 90 time.ps time.jpg
+ps2pdf time.ps time.pdf
+rm time.ps
 else
-convert -density 150 -geometry 100% -rotate 90 eff.ps eff.jpg
+ps2pdf eff.ps eff.pdf
+rm eff.ps
 fi
-rm *.ps

@@ -1,9 +1,11 @@
-\documentclass{article}
+\documentclass[pdf,12pt, strict]{SANDreport}
 \usepackage{verbatim}
 \usepackage{url}
 \usepackage{graphicx}
 \usepackage{xspace}
+\usepackage{fancyvrb}
 
+\begin{comment}
 \usepackage[pdftex, pdfpagemode=none, pdfstartview=FitH]{hyperref}
 \hypersetup{
   pdfauthor = {Kurtis L. Nusbaum},
@@ -12,8 +14,9 @@
   colorlinks= {true},
   citecolor = {blue},
 }
+\end{comment}
 
-\usepackage[usenames]{color}
+%\usepackage[usenames]{color}
 \definecolor{jhuGreen}{rgb}{0,.7,.4}
 \newcommand{\JJH}[1]{\textcolor{jhuGreen}{JJH: #1}}
 \definecolor{klnBlue}{rgb}{.2,.1,.7}
@@ -23,7 +26,11 @@
 \newcommand{\Bprime}{\ensuremath{B'}\xspace}
 \title{Evaluation of Tpetra's Matrix-Matrix Multiplication Routine}
 \author{Kurtis L. Nusbaum}
-\date{August 2011}
+\date{}
+
+\SANDnum{SANDXXX-XXX}
+\SANDprintDate{August 2011}
+\SANDauthor{Kurtis L. Nusbaum}
 \begin{document}
 \maketitle
 
@@ -34,9 +41,19 @@ achieved a working state, several major optimizations have been made in an effor
 discuss the optimizations made to the routine, its current state, and where future work needs to be done.
 \end{abstract}
 \clearpage
+\section*{Acknoledgment}
+Thanks to all of those at Sandia who helped provide the tools needed to compile this report. A special thanks to Dr. Chris Siefert and Dr. Mark Hoemmen whose
+guidance was invaluable, and to Dr. Mike Heroux for funding this project. Thank you to the entire Trilinos community whose help is always appreciated. And thanks
+to NERSC whose wonderful Hopper machine was used to run the tests found in this report.
+
+The format of this report is based on information found in~\cite{Sand98-0730}.
+\cleardoublepage
 \tableofcontents
+\listoffigures
+\listoftables
 \clearpage
 
+\SANDmain
 \section{Introduction}
 Over the course of the last year, a matrix-matrix multiplication routine has been developed for the 
 Tpetra~\cite{TpetraHomePage}
@@ -106,15 +123,16 @@ that the values calculated are actually inserted into matrix $C$. We modified th
 takes an argument which indicates whether or not we're just calculating the graph for matrix $C$. If we're just calculating 
 the graph, all the value calculation is skipped.
 \JJH{Can you quantify the difference in performance that just this change makes?}
-\KLN{Yes. So how ever many actualy $A_ij*B_ji$, let's call that $Nnzm$. How do I say intelligently that we do
+\KLN{Yes. So how ever many actually $A_ij*B_ji$, let's call that $Nnzm$. How do I say intelligently that we do
 $Nnzm$ less operations?}
 
 
 \section{Performance}
+\label{perfSect}
 We conducted a series of weak-scaling studies on the Hopper NERSC machine. Hopper is a Cray XE6 with 24 cores
 per-node~\footnote{For more machine information regarding Hopper, please visit \url{http://www.nersc.gov/systems/hopper-cray-xe6}}.
-We define weak-scailing as increasing the problem size while holding the amount of work each node does constant. We define
-weak-scailing effciency as $Time_{serial}/Time_{parallel}$.
+We define weak-scaling as increasing the problem size while holding the amount of work each node does constant. We define
+weak-scaling efficiency as $Time_{serial}/Time_{parallel}$.
 
 \subsection{Comparison of Development Stages}
 Figure~\ref{tpetracomptime} and Figure~\ref{tpetracompeff} show the test results of comparing the Tpetra matrix-matrix multiply 
@@ -129,15 +147,17 @@ And the purple line represents the routine after all optimizations had been appl
 As can be clearly seen, the optimizations we applied helped the algorithm substantially.
 
 \begin{figure}
-\includegraphics[scale=.4]{tpetraDevData/time.jpg}
-\caption[Time Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's runtime 
+\centering
+\includegraphics[scale=.4]{tpetraDevData/time.pdf}
+\caption[Tpetra Development Time Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's runtime 
 throughout various stages of its development. Note this is a simple $C=A*B$; so we are running in non-transpose mode.}
 \label{tpetracomptime}
 \end{figure}
 
 \begin{figure}
-\includegraphics[scale=.4]{tpetraDevData/eff.jpg}
-\caption[Efficiency Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's scaling efficiency
+\centering
+\includegraphics[scale=.4]{tpetraDevData/eff.pdf}
+\caption[Tpetra Development Efficiency Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's scaling efficiency
 throughout various stages of its development. Note this is a simple $C=A*B$; so we are running in non-transpose mode.}
 \label{tpetracompeff}
 \end{figure}
@@ -157,14 +177,16 @@ It's also worth noting that in terms of efficiency, Tpetra seems to scale much b
 \JJH{Scaling of ML appears to have the same trend.}
 
 \begin{figure}
-\includegraphics[scale=.4]{allMatsData/time.jpg}
-\caption[Time Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' runtime}
+\centering
+\includegraphics[scale=.4]{allMatsData/time.pdf}
+\caption[All Algorithms Time Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' runtime}
 \label{alltime}
 \end{figure}
 
 \begin{figure}
-\includegraphics[scale=.4]{allMatsData/eff.jpg}
-\caption[Efficiency Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' scaling efficiency}
+\centering
+\includegraphics[scale=.4]{allMatsData/eff.pdf}
+\caption[All Algorithms Efficiency Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' scaling efficiency}
 \label{alleff}
 \end{figure}
 
@@ -180,21 +202,23 @@ the rowMatrixTranposer.}
 \KLN{True. So should I say that?}
 
 \begin{figure}
-\includegraphics[scale=.4]{atransData/time.jpg}
-\caption[Time Comparison]{A comparison of matrix-matrix multiple runtime in Tpetra and EpetraExt using transpose mode}
+\centering
+\includegraphics[scale=.4]{atransData/time.pdf}
+\caption[Transpose Time Comparison]{A comparison of matrix-matrix multiple runtime in Tpetra and EpetraExt using transpose mode}
 \label{transtime}
 \end{figure}
 
 \begin{figure}
-\includegraphics[scale=.4]{atransData/eff.jpg}
-\caption[Efficiency Comparison]{A comparison of matrix-matrix multiple scaling efficiencies in Tpetra and EpetraExt using transpose mode}
+\centering
+\includegraphics[scale=.4]{atransData/eff.pdf}
+\caption[Transpose Efficiency Comparison]{A comparison of matrix-matrix multiple scaling efficiencies in Tpetra and EpetraExt using transpose mode}
 \label{transeff}
 \end{figure}
 
 \section{Areas for Future Improvement}
 \subsection{Improvement of Underlying Tpetra Architecture}
 The most important thing that will help the matrix-matrix multiply routine is to improve the underlying Tpetra architecture. 
-Undoubtedly the inefficient sort2 routine was not the only problem with Tpetra at large. There have been reports from other 
+Undoubtedly the inefficient \verb!sort2! routine was not the only problem with Tpetra at large. There have been reports from other 
 scientists at Sandia that things like the Tpetra Import/Export classes are not running as nearly as fast as their Epetra 
 counterparts. These things need to be investigated, and fixed if necessary.
 
@@ -208,6 +232,7 @@ column indices. ML's matrix-matrix multiplication algorithm is fast, but it's no
 how much the hashing scheme has to do with ML's speed. That said, it is definitely worth investigating. ML's hashing scheme 
 is complex. Figure~\ref{hashalgo} outlines in pseudo code the algorithm as current Tpetra developers 
 understand it. While maybe not as easy as implementing a Kokkos kernel, this shouldn't be that difficult to write.
+
 
 \begin{figure}
 \centering
@@ -251,5 +276,53 @@ equal to the maximum number of row entries in matrix A.
 \label{hashalgo}
 \end{figure}
 
-\end{document}
+\subsection{Serial Test Motivations}
+\KLN{I feel like this is the best spot for this subsection, but I could also see how one might argue that it should be placed before
+the other three subsections. what do you think?}
+Table~\ref{serialTable} shows the results of running the three Trilinos-based matrix-matrix multiply algorithms in 
+serial. These tests were conducted identically to the ones in section~\ref{perfSect} with the exception of being run on a single core of 
+Hopper. Since this test in serial, all run times should be void of any time that might be attributed to communication.
+The discrepancy between the EpetraExt and ML runtime has been known for quite some time and is believed to be
+attributed to ML's hashing scheme by several scientists at Sandia National Labs. We believe the discrepancy between 
+Tpetra's and EpetraExt's time has do to with Tpetra's \verb!fillComplete! function since most everything else in this simple test 
+is relatively the same between the Tpetra algorithm and the EpetraExt algorithm. This leads us to believe that
+by improving Tpetra's underlying architecture (i.e. refining \verb!fillComplete!) and implementing ML's hashing
+scheme, we should be able to make Tpetra's matrix-matrix multiplication routine run at the same level as ML.
 
+\begin{table}
+\centering
+\begin{tabular}{ | l | l | l | l | }
+\hline
+ & Tpetra & EpetraExt & ML \\ \hline
+Time (Seconds) & 1.4 & 0.9 & 0.3 \\ \hline
+\end{tabular}
+\caption{Serial Matrix-Matrix Multiplication Run Times}
+\label{serialTable}
+\end{table}
+
+\clearpage
+\providecommand*{\phantomsection}{}
+\phantomsection
+\addcontentsline{toc}{section}{References}
+\bibliographystyle{plain}
+\bibliography{matmatreport}
+
+\appendix
+\section{Trilinos Configure Script}
+Figure~\ref{triConf} shows the script that was used to configure the build of Trilinos on Hopper that was used for testing.
+\begin{figure}
+\centering
+{\footnotesize
+\VerbatimInput{../../../../sampleScripts/linux-hopper-tpetra-cmake}
+}
+\caption{Configure script used for Trilinos}
+\label{triConf}
+\end{figure}
+\begin{SANDdistribution}[NM]
+
+\SANDdistInternal{1}{1318}{Kurits Nusbaum}{01426}
+\SANDdistInternal{1}{1320}{Dr. Michael Heroux}{01426}
+\end{SANDdistribution}
+
+
+\end{document}

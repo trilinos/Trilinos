@@ -64,6 +64,8 @@ public:
   typedef MapOption                       map_option ;
   typedef typename device_type::size_type size_type ;
 
+  typedef MDArrayView< value_type , DeviceHost , map_option > HostView ;
+
   /*------------------------------------------------------------------*/
   enum { Contiguous = true };
 

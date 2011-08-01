@@ -113,6 +113,8 @@ public:
   typedef MapOption                       map_option ;
   typedef typename DeviceType::size_type  size_type ;
 
+  typedef MDArrayView< value_type , DeviceHost , map_option > HostView ;
+
   /*------------------------------------------------------------------*/
   /** \brief  True if the array type has contiguous memory
    *          If contiguous then can get a pointer to the memory.

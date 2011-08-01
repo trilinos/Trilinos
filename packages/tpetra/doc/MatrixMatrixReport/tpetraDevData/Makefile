@@ -1,10 +1,10 @@
-all: time.jpg eff.jpg
+all: time.pdf eff.pdf
 
-time.jpg:
+time.pdf:
 	./tpetraPostProcess.sh time
 	
-eff.jpg:
+eff.pdf:
 	./tpetraPostProcess.sh eff
 
 clean:
-	rm *jpg
+	rm time.pdf eff.pdf

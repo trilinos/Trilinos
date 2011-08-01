@@ -249,8 +249,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
   MultiVector R ;
   double seconds ;
 
-  ModifiedGramSchmidt(
-    const Kokkos::MultiVectorView<Scalar,Kokkos::DeviceHost> & A )
+  ModifiedGramSchmidt( const typename MultiVector::HostView & A )
   : Q( Kokkos::create_multivector<Scalar,device_type>( A.length(), A.count()) )
   , R( Kokkos::create_multivector<Scalar,device_type>( A.count() , A.count()) )
   {
