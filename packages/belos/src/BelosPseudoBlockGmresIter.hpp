@@ -281,15 +281,23 @@ namespace Belos {
     //! Reset the iteration count.
     void resetNumIters( int iter = 0 ) { iter_ = iter; }
     
-    /// \brief Get the norms of the residuals native to the solver.
+    /// \brief Get the norms of the "native" residual vectors.
     ///
     /// If norms != NULL, fill *norms with the native residual norms.
     /// There are numRHS_ of them.  *norms will be resized if it has
     /// too few entries to hold the data.
     ///
+    /// For an explanation of "native" vs. "exact" (also known as
+    /// "implicit" vs. "explicit") residuals, see the documentation of
+    /// \c PseudoBlockGmresSolMgr::isLOADetected().  In brief:
+    /// "Native" residuals are cheaper to compute than "exact"
+    /// residuals, but the two may differ, especially when using a
+    /// left preconditioner. 
+    ///
     /// \return Teuchos::null (always, regardless whether norms ==
     ///   NULL).  We only return something in order to satisfy the
-    ///   Iteration interface.
+    ///   Iteration interface.  \c PseudoBlockGmresSolMgr knows that
+    ///   this method always returns null.
     Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
     
     //! Get the current update to the linear system.
@@ -494,7 +502,7 @@ namespace Belos {
   PseudoBlockGmresIter<ScalarType,MV,OP>::
   getNativeResiduals (std::vector<MagnitudeType> *norms) const 
   {
-    typedef Teuchos::ScalarTraits<ScalarType>::magnitude STM;
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitude STM;
 
     if (norms)
       { // Resize the incoming std::vector if necessary.  The type
