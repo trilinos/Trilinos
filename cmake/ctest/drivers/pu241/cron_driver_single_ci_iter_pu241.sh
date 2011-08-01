@@ -4,9 +4,8 @@ echo
 echo "Starting continuous integration Trilinos testing iteration on pu241: `date`"
 echo
 
-export PATH="${PATH}:/opt/casldev/env"
-eval `vera_dev_env.py load casl`
-eval `vera_dev_env.py load intel/12`
+module load casl
+module load intel/12.0.4
 umask u=rwx,g=rwx,o=
 
 BASEDIR=/home/casl-vri-admin/CIDashboards
