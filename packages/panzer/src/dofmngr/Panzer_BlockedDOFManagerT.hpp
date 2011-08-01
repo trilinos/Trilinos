@@ -44,6 +44,23 @@ int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::stri
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
+std::string BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldString(int number) const
+{
+   std::map<int,std::string>::const_iterator itr = fieldNumToStr_.find(number);
+
+   // return based on what was found
+   if(itr==fieldNumToStr_.end()) {
+      std::stringstream ss; ss << number; // itoa() in c-language
+      // incorrect field name
+      TEST_FOR_EXCEPTION(true,std::logic_error,
+                         "BlockedDOFManager::getFieldString No field with number \"" + ss.str() + "\" has been added");
+   }
+   else {
+      return itr->second;
+   }
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
 bool BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::fieldInBlock(const std::string & field,const std::string & block) const
 {
    // try  to find element block
@@ -73,6 +90,14 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getBlo
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinal> & gids) const
 {
+   // WARNING: there is an assumed ordering being used here it
+   // corresponds directly to the blockGIDOffset_ map and (as
+   // a result) the getBlockGIDOffset function. However for 
+   // the sake of speed this conversion is implicit. 
+   //  
+   // Any changes to the order should be reflected in the
+   // blockGIDOffset_ map.
+
    // loop over field block manager and grab indices
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
       std::vector<GlobalOrdinalT> fieldBlockOwned;
@@ -96,24 +121,114 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGID
    typedef std::map<std::string,std::map<int,std::vector<int> > > FieldOffsetsMap;
   
    FieldOffsetsMap::iterator blockItr = gidFieldOffsets_.find(blockId);
-   TEST_FOR_EXCEPTION(blockItr==gidFieldOffsets_.end(),std::logic_error,
-                      "BlockedDOFManager::getGIDFieldOffsets no such block \""+blockId+"\"");
-   std::map<int,std::vector<int> > & fieldToVectorMap = blockItr->second;
-   std::map<int,std::vector<int> >::const_iterator itr = fieldToVectorMap.find(fieldNum);
+   if(blockItr!=gidFieldOffsets_.end()) {
+      std::map<int,std::vector<int> > & fieldToVectorMap = blockItr->second;
+      std::map<int,std::vector<int> >::const_iterator itr = fieldToVectorMap.find(fieldNum);
 
-   // we have found the vector, return the precomputed one
-   if(itr!=fieldToVectorMap.end())
-      return itr->second;
+      // we have found the vector, return the precomputed one
+      if(itr!=fieldToVectorMap.end())
+         return itr->second;
+   }
+   else {
+      std::vector<std::string> elementBlocks;
+      getElementBlockIds(elementBlocks);
+      TEST_FOR_EXCEPTION(std::find(elementBlocks.begin(),elementBlocks.end(),blockId)==elementBlocks.end(),std::logic_error,
+                         "BlockedDOFManager::getGIDFieldOffsets: Block ID \""+blockId+"\" does not exist");
+
+      gidFieldOffsets_[blockId] = std::map<int,std::vector<int> >();
+      blockItr = gidFieldOffsets_.find(blockId);
+   }
+
+   // grab relevant map from iterator
+   std::map<int,std::vector<int> > & fieldToVectorMap = blockItr->second;
   
    // we have not found the vector, now we need to build one
-   // TODO
+   ////////////////////////////////////////////////////////////////
+
+   // first grab all pieces that are needed for extracting GIDs from sub system
+   int fieldBlock = getFieldBlock(fieldNum);
+   Teuchos::RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
+
+   // grab offsets for sub dof manager. Notice you must convert to field number used by sub manager!
+   const std::vector<int> & subGIDOffsets 
+         = dofManager->getGIDFieldOffsets(blockId,dofManager->getFieldNum(getFieldString(fieldNum)));
+
+   // increment offsets to correspond with blocked system
+   int gidOffset = getBlockGIDOffset(blockId,fieldBlock); 
+   std::vector<int> & finalFieldOffsets = fieldToVectorMap[fieldNum];
+   finalFieldOffsets.resize(subGIDOffsets.size());
+   for(std::size_t i=0;i<finalFieldOffsets.size();i++)
+      finalFieldOffsets[i] = gidOffset+subGIDOffsets[i];
+
+   return finalFieldOffsets;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+bool BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::LessThan
+::operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const 
+{
+   if(a[0] < b[0]) return true;
+   if(a[0] > b[0]) return false;
+
+   // a[0]==b[0]  
+   if(a[1] < b[1]) return true;
+   if(a[1] > b[1]) return false;
+
+   // a[1]==b[1] && a[0]==b[0] 
+   if(a[2] < b[2]) return true;
+   if(a[2] > b[2]) return false;
+
+   // a[2]==b[2] && a[1]==b[1] && a[0]==b[0]
+   return false; // these are equal to, but not less than!
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 const std::pair<std::vector<int>,std::vector<int> > & 
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getGIDFieldOffsets_closure(const std::string & blockId,int fieldNum,int subcellDim,int subcellId) const
 {
-   // TODO
+   typename std::map<std::string,TupleToVectorPairMap>::iterator blockItr = gidFieldOffsets_closure_.find(blockId);
+   if(blockItr!=gidFieldOffsets_closure_.end()) {
+      TupleToVectorPairMap & fieldToTupleMap = blockItr->second;
+      typename TupleToVectorPairMap::const_iterator itr =
+            fieldToTupleMap.find(Teuchos::tuple(fieldNum,subcellDim,subcellId));
+
+      // we have found the vector, return the precomputed one
+      if(itr!=fieldToTupleMap.end())
+         return itr->second;
+   }
+   else {
+      std::vector<std::string> elementBlocks;
+      getElementBlockIds(elementBlocks);
+      TEST_FOR_EXCEPTION(std::find(elementBlocks.begin(),elementBlocks.end(),blockId)==elementBlocks.end(),std::logic_error,
+                         "BlockedDOFManager::getGIDFieldOffsets: Block ID \""+blockId+"\" does not exist");
+
+      gidFieldOffsets_closure_[blockId] = TupleToVectorPairMap();
+      blockItr = gidFieldOffsets_closure_.find(blockId);
+   }
+
+   // grab relevant map from iterator
+   TupleToVectorPairMap & fieldToTupleMap = blockItr->second;
+  
+   // we have not found the vector, now we need to build one
+   ////////////////////////////////////////////////////////////////
+
+   // first grab all pieces that are needed for extracting GIDs from sub system
+   int fieldBlock = getFieldBlock(fieldNum);
+   Teuchos::RCP<const DOFManager<LocalOrdinalT,GlobalOrdinalT> > dofManager = fieldBlockManagers_[fieldBlock];
+
+   // grab offsets for sub dof manager. Notice you must convert to field number used by sub manager!
+   const std::pair<std::vector<int>,std::vector<int> > & subGIDOffsets_closure
+         = dofManager->getGIDFieldOffsets_closure(blockId,dofManager->getFieldNum(getFieldString(fieldNum)),subcellDim,subcellId);
+
+   // increment offsets to correspond with blocked system
+   int gidOffset = getBlockGIDOffset(blockId,fieldBlock); 
+   std::pair<std::vector<int>,std::vector<int> > & finalFieldOffsets = fieldToTupleMap[Teuchos::tuple(fieldNum,subcellDim,subcellId)];
+   finalFieldOffsets.first.resize(subGIDOffsets_closure.first.size());
+   finalFieldOffsets.second = subGIDOffsets_closure.second;
+   for(std::size_t i=0;i<finalFieldOffsets.first.size();i++)
+      finalFieldOffsets.first[i] = gidOffset+subGIDOffsets_closure.first[i];
+
+   return finalFieldOffsets;
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -228,6 +343,7 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > BlockedDOFManager<Local
 
    connMngr_ = Teuchos::null;
    ownedGIDHashTable_.clear(); 
+   blockGIDOffset_.clear();
 
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++)
       fieldBlockManagers_[fbm]->resetIndices();
@@ -264,6 +380,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
 {
    fieldBlockManagers_.clear();
    fieldStrToNum_.clear();
+   fieldNumToStr_.clear();
    fieldNumToFieldBlk_.clear();
    maxSubFieldNum_ = -1;
    
@@ -366,6 +483,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::registerFields()
 
          // build up map data
          fieldStrToNum_[activeFields[f]] = fieldNum;
+         fieldNumToStr_[fieldNum] = activeFields[f];
          fieldNumToFieldBlk_[fieldNum] = fldBlk; 
       }
 
@@ -480,6 +598,19 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const 
       std::cout << "building field block fb = " << fb << std::endl;
       fieldBlockManagers_[fb]->buildGlobalUnknowns(geomPattern_);
    }
+
+   // build field block offsets: this helps fast construction
+   // of GID offset vectors. GIDs are ordering by field block.
+   std::vector<std::string> elementBlocks;
+   getElementBlockIds(elementBlocks);
+   for(std::size_t eb=0;eb<elementBlocks.size();eb++) {
+      int offset = 0;
+      for(std::size_t fb=0;fb<fieldBlockManagers_.size();fb++) {
+         int cnt = fieldBlockManagers_[fb]->getElementBlockGIDCount(elementBlocks[eb]);
+         blockGIDOffset_[std::make_pair(elementBlocks[eb],fb)] = offset;
+         offset += cnt;
+      }
+   }
 }
 
 // build the global unknown numberings
@@ -489,12 +620,8 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
 {
-   if(!fieldsRegistered()) {
-      std::cout << "register fields out" << std::endl;
+   if(!fieldsRegistered())
       registerFields();
-   }
-
-   std::cout << "Build geometric layout" << std::endl;
 
    // build the pattern for the ID layout on the mesh
    std::vector<RCP<const FieldPattern> > patVector;
@@ -504,12 +631,8 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
       patVector.push_back(f2p_itr->second);
    aggFieldPattern->buildPattern(patVector);
 
-   std::cout << "Build connectivity" << std::endl;
-
    // setup connectivity mesh
    connMngr_->buildConnectivity(*aggFieldPattern);
-
-   std::cout << "Build sub unknowns" << std::endl;
 
    // using new geometric pattern, build global unknowns
    buildGlobalUnknowns(aggFieldPattern);

@@ -63,6 +63,21 @@ public:
      */
    int getFieldNum(const std::string & str) const; // ?
 
+   /** \brief Get the string name associated with a field number.
+     *
+     * Get the string used for access to this
+     * field. 
+     *
+     * \param[in] int A unique integer associated with the
+     *                field.
+     * 
+     * \returns Human readable name of the field
+     *
+     * \note This method will throw if invalid field number is 
+     *       passed in as an argument.
+     */
+   std::string getFieldString(int num) const;
+
    /** What are the blockIds included in this connection manager?
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
@@ -296,6 +311,28 @@ public:
      */ 
    inline int getMaxSubFieldNumber() const
    { return maxSubFieldNum_; }
+ 
+   /** Get field block associated with this field number.
+     *
+     * \note No bounds checking is performed in this method
+     */
+   int getFieldBlock(int fieldNum) const
+   { return fieldNumToFieldBlk_.find(fieldNum)->second; }
+
+   /** Get GID offset for a particular field block.
+     *
+     * \note No bounds checking is performed in this method
+     */
+   int getBlockGIDOffset(const std::string & elementBlock,int fieldBlock) const
+   { 
+      std::map<std::pair<std::string,int>,int>::const_iterator itr = 
+            blockGIDOffset_.find(std::make_pair(elementBlock,fieldBlock));
+
+      if(itr==blockGIDOffset_.end())
+         return -1;
+      else
+         return itr->second;
+   }
 
 protected:
   
@@ -307,6 +344,7 @@ protected:
    void addFieldsToFieldBlockManager(const std::vector<std::string> & activeFields,
                                      DOFManager<LocalOrdinalT,GlobalOrdinalT> & fieldBlockManager) const;
 
+
    // computes connectivity
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 
    
@@ -314,6 +352,9 @@ protected:
    //@{ 
    //! field string ==> field number
    std::map<std::string,int> fieldStrToNum_;
+
+   //! field number ==> field string
+   std::map<int,std::string> fieldNumToStr_;
 
    //! field number ==> field block
    std::map<int,int> fieldNumToFieldBlk_;
@@ -326,6 +367,9 @@ protected:
 
    //! block ID ==> field numbers
    std::map<std::string,std::vector<int> > blockIdToFieldNumbers_;
+
+   //! (element block,field block) ==> gid offset
+   std::map<std::pair<std::string,int>,int> blockGIDOffset_;
 
    //@}
 

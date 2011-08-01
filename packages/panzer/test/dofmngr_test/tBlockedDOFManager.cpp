@@ -294,7 +294,35 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    }
    TEST_ASSERT(ownedCheck);
 
-   // at this point we assume unknowns are unique! WRONG THING TO DO!
+   // WARNING: at this point we assume unknowns are unique! WRONG THING TO DO!
+
+   {
+      int fb0 = dofManager.getBlockGIDOffset("block_0",0);
+      int fb1 = dofManager.getBlockGIDOffset("block_0",1);
+      int fb2 = dofManager.getBlockGIDOffset("block_0",2);
+
+      TEST_EQUALITY(fb0,0);
+      TEST_EQUALITY(fb1,8);
+      TEST_EQUALITY(fb2,12);
+   }
+   {
+      int fb0 = dofManager.getBlockGIDOffset("block_1",0);
+      int fb1 = dofManager.getBlockGIDOffset("block_1",1);
+      int fb2 = dofManager.getBlockGIDOffset("block_1",2);
+
+      TEST_EQUALITY(fb0,0);
+      TEST_EQUALITY(fb1,0);
+      TEST_EQUALITY(fb2,0);
+   }
+   {
+      int fb0 = dofManager.getBlockGIDOffset("block_2",0);
+      int fb1 = dofManager.getBlockGIDOffset("block_2",1);
+      int fb2 = dofManager.getBlockGIDOffset("block_2",2);
+
+      TEST_EQUALITY(fb0,0);
+      TEST_EQUALITY(fb1,0);
+      TEST_EQUALITY(fb2,0);
+   }
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
@@ -394,6 +422,80 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    // WARNING: More full tests of actutal DOFs are required
    //          however, since its built on the DOFManager we
    //          should be OK.
+
+   {
+      const std::vector<int> *p1=0,*p2=0;
+
+      // test that pointers are the same
+      p1 = &dofManager.getGIDFieldOffsets("block_0",dofManager.getFieldNum("Ux"));
+      p2 = &dofManager.getGIDFieldOffsets("block_0",dofManager.getFieldNum("Ux"));
+
+      TEST_EQUALITY(p1,p2);
+   }
+
+   // test getGIDFieldOffsets
+   {
+      const std::vector<int> * vec = 0;
+   
+      // block 0
+      vec = &dofManager.getGIDFieldOffsets("block_0",dofManager.getFieldNum("Ux"));
+      TEST_EQUALITY(vec->size(),4);
+      TEST_EQUALITY((*vec)[0],0); TEST_EQUALITY((*vec)[1],2); TEST_EQUALITY((*vec)[2],4); TEST_EQUALITY((*vec)[3],6);
+      vec = &dofManager.getGIDFieldOffsets("block_0",dofManager.getFieldNum("P"));
+      TEST_EQUALITY(vec->size(),4);
+      TEST_EQUALITY((*vec)[0],8+0); TEST_EQUALITY((*vec)[1],8+1); TEST_EQUALITY((*vec)[2],8+2); TEST_EQUALITY((*vec)[3],8+3);
+      vec = &dofManager.getGIDFieldOffsets("block_0",dofManager.getFieldNum("T"));
+      TEST_EQUALITY(vec->size(),4);
+      TEST_EQUALITY((*vec)[0],12+0); TEST_EQUALITY((*vec)[1],12+1); TEST_EQUALITY((*vec)[2],12+2); TEST_EQUALITY((*vec)[3],12+3);
+   
+      // block 1
+      vec = &dofManager.getGIDFieldOffsets("block_1",dofManager.getFieldNum("T"));
+      TEST_EQUALITY(vec->size(),4);
+      TEST_EQUALITY((*vec)[0],0); TEST_EQUALITY((*vec)[1],1); TEST_EQUALITY((*vec)[2],2); TEST_EQUALITY((*vec)[3],3);
+   
+      // block 2
+      vec = &dofManager.getGIDFieldOffsets("block_2",dofManager.getFieldNum("rho"));
+      TEST_EQUALITY(vec->size(),4);
+      TEST_EQUALITY((*vec)[0],0); TEST_EQUALITY((*vec)[1],2); TEST_EQUALITY((*vec)[2],4); TEST_EQUALITY((*vec)[3],6);
+      vec = &dofManager.getGIDFieldOffsets("block_2",dofManager.getFieldNum("T"));
+      TEST_EQUALITY(vec->size(),4);
+      TEST_EQUALITY((*vec)[0],1); TEST_EQUALITY((*vec)[1],3); TEST_EQUALITY((*vec)[2],5); TEST_EQUALITY((*vec)[3],7);
+   }
+
+   // test getGIDFieldOffsets_closure
+   {
+      const std::pair<std::vector<int>,std::vector<int> > *p1=0,*p2=0;
+
+      // test that pointers are the same
+      p1 = &dofManager.getGIDFieldOffsets_closure("block_0",dofManager.getFieldNum("Ux"),1,0);
+      p2 = &dofManager.getGIDFieldOffsets_closure("block_0",dofManager.getFieldNum("Ux"),1,0);
+      TEST_EQUALITY(p1,p2);
+
+      p1 = &dofManager.getGIDFieldOffsets_closure("block_0",dofManager.getFieldNum("Ux"),1,3);
+      TEST_ASSERT(p1!=p2);
+
+      p1 = &dofManager.getGIDFieldOffsets_closure("block_0",dofManager.getFieldNum("Ux"),1,3);
+      p2 = &dofManager.getGIDFieldOffsets_closure("block_0",dofManager.getFieldNum("Ux"),1,3);
+      TEST_EQUALITY(p1,p2);
+   }
+
+   { 
+      const std::pair<std::vector<int>,std::vector<int> > * vec = 0;
+      const std::pair<std::vector<int>,std::vector<int> > * sub_vec = 0;
+
+      Teuchos::RCP<const DOFManager<short,int> > subManager;
+   
+      // block 0
+      subManager = dofManager.getFieldDOFManagers()[2];
+      vec = &dofManager.getGIDFieldOffsets_closure("block_2",dofManager.getFieldNum("T"),1,0);
+      sub_vec = &subManager->getGIDFieldOffsets_closure("block_2",subManager->getFieldNum("T"),1,0);
+      TEST_EQUALITY(vec->first.size(),sub_vec->first.size());
+      TEST_EQUALITY(vec->second.size(),sub_vec->second.size());
+      for(std::size_t i=0;i<vec->second.size();i++) 
+         TEST_EQUALITY(vec->second[i],sub_vec->second[i]);
+      for(std::size_t i=0;i<vec->first.size();i++) 
+         TEST_EQUALITY(vec->first[i],dofManager.getBlockGIDOffset("block_2",2)+sub_vec->first[i]);
+   }
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)

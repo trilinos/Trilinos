@@ -333,6 +333,20 @@ public:
      */
    void registerFields();
 
+   /** How any GIDs are associate with a particular element block
+     */
+   inline int getElementBlockGIDCount(const std::string & blockId) const
+   { return getElementBlockGIDCount(blockIdToIndex(blockId)); }
+
+   /** How any GIDs are associate with a particular element block
+     */
+   inline int getElementBlockGIDCount(std::size_t blockIndex) const
+   { int cnt = matrixGraph_->getConnectivityNumIndices(blockIndex); 
+     if(cnt<0)
+        return 0;
+     return cnt;
+   }
+
 protected:
    
    /** Get ordered field IDs associated with a particular element

@@ -406,7 +406,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT loca
    // get information about number of indicies
    std::string blockId = connMngr_->getBlockId(localElmtId);
    std::size_t blockIndex = blockIdToIndex(blockId);
-   int dof = matrixGraph_->getConnectivityNumIndices(blockIndex);
+   int dof = getElementBlockGIDCount(blockIndex);
 
    // getConnectivityNumIndices returns -1 if no block is found or
    // has been initialized. So if this DOFManager has no fields on
