@@ -42,8 +42,8 @@ discuss the optimizations made to the routine, its current state, and where futu
 \end{abstract}
 \clearpage
 \section*{Acknoledgment}
-Thanks to all of those at Sandia who helped provide the tools needed to compile this report. A special thanks to Dr. Chris Siefert and Dr. Mark Hoemenn whose
-guidance was invaluable, and to Dr. Mike Heroux for funding this project. Thank you to the entire Trilinos community whose help is alwasy appreciated. And thanks
+Thanks to all of those at Sandia who helped provide the tools needed to compile this report. A special thanks to Dr. Chris Siefert and Dr. Mark Hoemmen whose
+guidance was invaluable, and to Dr. Mike Heroux for funding this project. Thank you to the entire Trilinos community whose help is always appreciated. And thanks
 to NERSC whose wonderful Hopper machine was used to run the tests found in this report.
 
 The format of this report is based on information found in~\cite{Sand98-0730}.
@@ -123,7 +123,7 @@ that the values calculated are actually inserted into matrix $C$. We modified th
 takes an argument which indicates whether or not we're just calculating the graph for matrix $C$. If we're just calculating 
 the graph, all the value calculation is skipped.
 \JJH{Can you quantify the difference in performance that just this change makes?}
-\KLN{Yes. So how ever many actualy $A_ij*B_ji$, let's call that $Nnzm$. How do I say intelligently that we do
+\KLN{Yes. So how ever many actually $A_ij*B_ji$, let's call that $Nnzm$. How do I say intelligently that we do
 $Nnzm$ less operations?}
 
 
@@ -131,8 +131,8 @@ $Nnzm$ less operations?}
 \label{perfSect}
 We conducted a series of weak-scaling studies on the Hopper NERSC machine. Hopper is a Cray XE6 with 24 cores
 per-node~\footnote{For more machine information regarding Hopper, please visit \url{http://www.nersc.gov/systems/hopper-cray-xe6}}.
-We define weak-scailing as increasing the problem size while holding the amount of work each node does constant. We define
-weak-scailing effciency as $Time_{serial}/Time_{parallel}$.
+We define weak-scaling as increasing the problem size while holding the amount of work each node does constant. We define
+weak-scaling efficiency as $Time_{serial}/Time_{parallel}$.
 
 \subsection{Comparison of Development Stages}
 Figure~\ref{tpetracomptime} and Figure~\ref{tpetracompeff} show the test results of comparing the Tpetra matrix-matrix multiply 
@@ -218,7 +218,7 @@ the rowMatrixTranposer.}
 \section{Areas for Future Improvement}
 \subsection{Improvement of Underlying Tpetra Architecture}
 The most important thing that will help the matrix-matrix multiply routine is to improve the underlying Tpetra architecture. 
-Undoubtedly the inefficient sort2 routine was not the only problem with Tpetra at large. There have been reports from other 
+Undoubtedly the inefficient \verb!sort2! routine was not the only problem with Tpetra at large. There have been reports from other 
 scientists at Sandia that things like the Tpetra Import/Export classes are not running as nearly as fast as their Epetra 
 counterparts. These things need to be investigated, and fixed if necessary.
 
@@ -279,23 +279,24 @@ equal to the maximum number of row entries in matrix A.
 \subsection{Serial Test Motivations}
 \KLN{I feel like this is the best spot for this subsection, but I could also see how one might argue that it should be placed before
 the other three subsections. what do you think?}
-Table~\ref{serialTable} shows the results of running three Trilinos-based matrix-matrix multiply algorithms in 
-serial. These tests were conducted identically as to the ones in section~\ref{perfSect} with the exception of being run on a single core of 
-hopper. Since this test in serial, all runtimes should be void of any time that might be attributed to communication.
-The discrepancy between the EpetraExt and ML runtime has been known for quite some time and is beleived to be
+Table~\ref{serialTable} shows the results of running the three Trilinos-based matrix-matrix multiply algorithms in 
+serial. These tests were conducted identically to the ones in section~\ref{perfSect} with the exception of being run on a single core of 
+Hopper. Since this test in serial, all run times should be void of any time that might be attributed to communication.
+The discrepancy between the EpetraExt and ML runtime has been known for quite some time and is believed to be
 attributed to ML's hashing scheme by several scientists at Sandia National Labs. We believe the discrepancy between 
-Tpetra and EpetraExt has do to with Tpetra's \verb!fillComplete! funciton since most everything else in this simple test 
+Tpetra's and EpetraExt's time has do to with Tpetra's \verb!fillComplete! function since most everything else in this simple test 
 is relatively the same between the Tpetra algorithm and the EpetraExt algorithm. This leads us to believe that
 by improving Tpetra's underlying architecture (i.e. refining \verb!fillComplete!) and implementing ML's hashing
-scheme, we should be able to make Tpetra's matirx-matrix mulitpliation routine run at the same level as ML.
+scheme, we should be able to make Tpetra's matrix-matrix multiplication routine run at the same level as ML.
 
 \begin{table}
+\centering
 \begin{tabular}{ | l | l | l | l | }
 \hline
  & Tpetra & EpetraExt & ML \\ \hline
 Time (Seconds) & 1.4 & 0.9 & 0.3 \\ \hline
 \end{tabular}
-\caption{Serial Matrix-Matrix Multiplication Runtimes}
+\caption{Serial Matrix-Matrix Multiplication Run Times}
 \label{serialTable}
 \end{table}
 
