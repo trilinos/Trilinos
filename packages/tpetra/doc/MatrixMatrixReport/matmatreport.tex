@@ -147,15 +147,17 @@ And the purple line represents the routine after all optimizations had been appl
 As can be clearly seen, the optimizations we applied helped the algorithm substantially.
 
 \begin{figure}
+\centering
 \includegraphics[scale=.4]{tpetraDevData/time.jpg}
-\caption[Time Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's runtime 
+\caption[Tpetra Development Time Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's runtime 
 throughout various stages of its development. Note this is a simple $C=A*B$; so we are running in non-transpose mode.}
 \label{tpetracomptime}
 \end{figure}
 
 \begin{figure}
+\centering
 \includegraphics[scale=.4]{tpetraDevData/eff.jpg}
-\caption[Efficiency Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's scaling efficiency
+\caption[Tpetra Development Efficiency Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's scaling efficiency
 throughout various stages of its development. Note this is a simple $C=A*B$; so we are running in non-transpose mode.}
 \label{tpetracompeff}
 \end{figure}
@@ -175,14 +177,16 @@ It's also worth noting that in terms of efficiency, Tpetra seems to scale much b
 \JJH{Scaling of ML appears to have the same trend.}
 
 \begin{figure}
+\centering
 \includegraphics[scale=.4]{allMatsData/time.jpg}
-\caption[Time Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' runtime}
+\caption[All Algorithms Time Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' runtime}
 \label{alltime}
 \end{figure}
 
 \begin{figure}
+\centering
 \includegraphics[scale=.4]{allMatsData/eff.jpg}
-\caption[Efficiency Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' scaling efficiency}
+\caption[All Algorithms Efficiency Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' scaling efficiency}
 \label{alleff}
 \end{figure}
 
@@ -198,14 +202,16 @@ the rowMatrixTranposer.}
 \KLN{True. So should I say that?}
 
 \begin{figure}
+\centering
 \includegraphics[scale=.4]{atransData/time.jpg}
-\caption[Time Comparison]{A comparison of matrix-matrix multiple runtime in Tpetra and EpetraExt using transpose mode}
+\caption[Transpose Time Comparison]{A comparison of matrix-matrix multiple runtime in Tpetra and EpetraExt using transpose mode}
 \label{transtime}
 \end{figure}
 
 \begin{figure}
+\centering
 \includegraphics[scale=.4]{atransData/eff.jpg}
-\caption[Efficiency Comparison]{A comparison of matrix-matrix multiple scaling efficiencies in Tpetra and EpetraExt using transpose mode}
+\caption[Transpose Efficiency Comparison]{A comparison of matrix-matrix multiple scaling efficiencies in Tpetra and EpetraExt using transpose mode}
 \label{transeff}
 \end{figure}
 
@@ -296,7 +302,7 @@ Time (Seconds) & 1.4 & 0.9 & 0.3 \\ \hline
 \clearpage
 \providecommand*{\phantomsection}{}
 \phantomsection
-\addcontentsline{toc}{chapter}{References}
+\addcontentsline{toc}{section}{References}
 \bibliographystyle{plain}
 \bibliography{matmatreport}
 
