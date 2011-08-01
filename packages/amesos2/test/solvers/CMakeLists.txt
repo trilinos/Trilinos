@@ -78,6 +78,22 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
     )
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_LAPACK)
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyLapackFiles
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers/
+    SOURCE_FILES lapack_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  PACKAGE_ADD_TEST(
+    Solver_Test
+    NAME LAPACK_Solver_Test
+    ARGS "--xml-params=lapack_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    COMM serial mpi
+    )
+ENDIF()
+
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyFiles
   SOURCE_FILES solvers_test.xml

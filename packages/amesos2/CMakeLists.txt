@@ -37,6 +37,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
 # support for an otherwise enabled third-part solver library
 #
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_LAPACK
+  HAVE_${PACKAGE_NAME_UC}_LAPACK
+  "Enable the dense serial solver interface"
+  OFF )
+
 PACKAGE_ADD_DEBUG_OPTION()
 
 PACKAGE_ADD_EXPLICIT_INSTANTIATION_OPTION()

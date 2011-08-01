@@ -8,13 +8,13 @@
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
 	<ParameterList name="single iterrefine">
-	  <!-- For epetra, we cannot specify types, so run_params are the most meaningful -->
-	  <ParameterList name="run_params">
+	  <!-- For epetra, we cannot specify types, so solver_run_params are the most meaningful -->
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="IterRefine" type="string" value="SINGLE"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="double iterrefine">
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="IterRefine" type="string" value="DOUBLE"/>
 	  </ParameterList>
 	</ParameterList>
@@ -36,7 +36,7 @@
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <!-- Optional parameter list whose values override those in the "solver_params" parameter list -->
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="IterRefine" type="string" value="SINGLE"/>
 	  </ParameterList>
 	</ParameterList>
@@ -44,7 +44,7 @@
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="IterRefine" type="string" value="DOUBLE"/>
 	  </ParameterList>
 	</ParameterList>
@@ -62,6 +62,14 @@
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	</ParameterList>
+	<ParameterList name="run6 - transpose">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="amesos2_params">
+	    <Parameter name="Transpose" type="bool" value="true"/>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
       <ParameterList name="solver_params">

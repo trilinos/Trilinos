@@ -738,14 +738,17 @@ bool test_epetra(const string& mm_file,
     // an empty parameters list or any plain Parameter causes a default test for epetra
     if( epetra_runs.entry(run_it).isList() ){
       ParameterList run_list = Teuchos::getValue<ParameterList>(epetra_runs.entry(run_it));
-      if( run_list.isSublist("run_params") ){
+      if( run_list.isSublist("solver_run_params") ){
+	ParameterList solve_params_copy(solve_params);
+	solve_params_copy.sublist(solver_name).setParameters( run_list.sublist("solver_run_params") );
+	if( run_list.isSublist("amesos2_params") ){
+	  solve_params_copy.setParameters( run_list.sublist("amesos2_params") );
+	}
+
 	string run_name = epetra_runs.name(run_it);
 	if( verbosity > 1 ){
 	  *fos << "    Doing epetra test run `" << run_name << "' ... " << std::flush;
 	}
-
-	ParameterList solve_params_copy(solve_params);
-	solve_params_copy.sublist(solver_name).setParameters( run_list.sublist("run_params") );
 	success &= do_epetra_test(mm_file, solver_name, solve_params_copy);
       } else {
 	do_default = true;
@@ -900,8 +903,11 @@ bool test_tpetra(const string& mm_file,
     if( tpetra_runs.entry(run_it).isList() ){
       ParameterList run_list = Teuchos::getValue<ParameterList>(tpetra_runs.entry(run_it));
       ParameterList solve_params_copy(solve_params);
-      if( run_list.isSublist("run_params") ){
-	solve_params_copy.sublist(solver_name).setParameters( run_list.sublist("run_params") );
+      if( run_list.isSublist("solver_run_params") ){
+	solve_params_copy.sublist(solver_name).setParameters( run_list.sublist("solver_run_params") );
+      }
+      if( run_list.isSublist("amesos2_params") ){
+	solve_params_copy.setParameters( run_list.sublist("amesos2_params") );
       }
 
       string scalar, mag, lo, go, node;

@@ -96,3 +96,6 @@
 
 /* Define if you want to build amesos2-pardisomkl */
 #cmakedefine HAVE_AMESOS2_PARDISO_MKL
+
+/* Define if you want to build amesos2-lapack */
+#cmakedefine HAVE_AMESOS2_LAPACK

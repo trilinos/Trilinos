@@ -8,22 +8,22 @@
       <ParameterList name="epetra">
 	<Parameter name="defaultrun" type="bool" value="true"/>
 	<ParameterList name="equilibration">
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="Equil" type="bool" value="true"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="NATURAL ordering">
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="ColPerm" type="string" value="NATURAL"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="MMD_ATA ordering">
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="ColPerm" type="string" value="MMD_ATA"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="MMD_AT_PLUS_A ordering">
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="ColPerm" type="string" value="MMD_AT_PLUS_A"/>
 	  </ParameterList>
 	</ParameterList>
@@ -35,7 +35,7 @@
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="Equil" type="bool" value="true"/>
 	  </ParameterList>
 	</ParameterList>
@@ -43,7 +43,7 @@
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="nprocs" type="int" value="2"/>
 	    <Parameter name="Equil" type="bool" value="true"/>
 	  </ParameterList>
@@ -52,7 +52,7 @@
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="Equil" type="bool" value="true"/>
 	    <Parameter name="nprocs" type="int" value="4"/>
 	  </ParameterList>
@@ -61,7 +61,7 @@
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="Transpose" type="bool" value="true"/>
 	  </ParameterList>
 	</ParameterList>
@@ -69,7 +69,7 @@
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="Equil" type="bool" value="true"/>
 	  </ParameterList>
 	</ParameterList>
@@ -82,7 +82,7 @@
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="nprocs" type="int" value="4"/>
 	  </ParameterList>
 	</ParameterList>
@@ -90,7 +90,7 @@
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="nprocs" type="int" value="4"/>
 	  </ParameterList>
 	</ParameterList>
@@ -131,7 +131,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="Magnitude" type="string" value="double"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="nprocs" type="int" value="2"/>
 	  </ParameterList>
 	</ParameterList>
@@ -140,7 +140,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="Magnitude" type="string" value="double"/>
-	  <ParameterList name="run_params">
+	  <ParameterList name="solver_run_params">
 	    <Parameter name="nprocs" type="int" value="4"/>
 	  </ParameterList>
 	</ParameterList>

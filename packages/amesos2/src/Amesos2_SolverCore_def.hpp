@@ -288,6 +288,10 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
     // Finally, hook to the implementation's parameter list parser
     // First check if there is a dedicated sublist for this solver and use that if there is
     if( parameterList->isSublist(name()) ){
+      // Have control look through the solver's parameter list to see if
+      // there is anything it recognizes (mostly the "Transpose" parameter)
+      control_.setControlParameters(Teuchos::sublist(parameterList, name()));
+
       static_cast<solver_type*>(this)->setParameters_impl(Teuchos::sublist(parameterList, name()));
     }
   }

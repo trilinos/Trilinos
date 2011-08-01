@@ -42,7 +42,7 @@ namespace Amesos2 {
     /// The name of this solver interface
     static const char* name;	// declaration. Initialization outside.
 
-    typedef Newsolver<Matrix,Vector>                                     type;
+    typedef NewSolver<Matrix,Vector>                                     type;
     typedef SolverCore<Amesos2::NewSolver,Matrix,Vector>           super_type;
 
     // Since typedef's are not inheritted, go grab them
@@ -51,7 +51,7 @@ namespace Amesos2 {
     typedef typename super_type::global_ordinal_type      global_ordinal_type;
     typedef typename super_type::global_size_type            global_size_type;
 
-    typedef TypeMap<Amesos2::Newsolver,scalar_type>                  type_map;
+    typedef TypeMap<Amesos2::NewSolver,scalar_type>                  type_map;
 
     typedef typename type_map::type                        solver_scalar_type;
     typedef typename type_map::magnitude_type           solver_magnitude_type;

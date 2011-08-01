@@ -97,6 +97,13 @@ namespace Amesos2 {
     }
 #endif
 
+#ifdef HAVE_AMESOS2_LAPACK
+    if((solverName == "amesos2_lapack") ||
+       (solverName == "lapack")){
+      return( true );
+    }
+#endif
+
     // Otherwise, the solver is not available
     return( false );
   }

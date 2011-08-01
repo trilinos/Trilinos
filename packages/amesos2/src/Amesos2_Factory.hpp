@@ -107,6 +107,9 @@
 #ifdef HAVE_AMESOS2_PARDISO_MKL // MKL version of Pardiso
 #include "Amesos2_PardisoMKL.hpp"
 #endif
+#ifdef HAVE_AMESOS2_LAPACK
+#include "Amesos2_Lapack.hpp"
+#endif
 
 namespace Amesos2 {
 
@@ -502,7 +505,6 @@ struct throw_no_scalar_support_exception {
     if((solverName == "amesos2_klu2") || (solverName == "klu2") ||
        (solverName == "amesos2_klu")  || (solverName == "klu")){
       return handle_solver_type_support<Klu2,Matrix,Vector>::apply(A, X, B);
-      // return( rcp(new Klu2<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
@@ -512,7 +514,6 @@ struct throw_no_scalar_support_exception {
        (solverName == "amesos2_superlu_dist") ||
        (solverName == "superlu_dist")){
       return handle_solver_type_support<Superludist,Matrix,Vector>::apply(A, X, B);
-      // return( rcp(new Superludist<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
@@ -522,7 +523,6 @@ struct throw_no_scalar_support_exception {
        (solverName == "amesos2_superlu_mt") ||
        (solverName == "superlu_mt")){
       return handle_solver_type_support<Superlumt,Matrix,Vector>::apply(A, X, B);
-      // return( rcp(new Superlumt<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
@@ -530,7 +530,6 @@ struct throw_no_scalar_support_exception {
     if((solverName == "amesos2_superlu") ||
        (solverName == "superlu")){
       return handle_solver_type_support<Superlu,Matrix,Vector>::apply(A, X, B);
-      // return( rcp(new Superlu<Matrix,Vector>(A, X, B)) );
     }
 #endif
 
@@ -540,7 +539,13 @@ struct throw_no_scalar_support_exception {
        (solverName == "amesos2_pardisomkl")  ||
        (solverName == "pardisomkl")){
       return handle_solver_type_support<PardisoMKL,Matrix,Vector>::apply(A, X, B);
-      // return( rcp(new Pardiso<Matrix,Vector>(A, X, B)) );
+    }
+#endif
+
+#ifdef HAVE_AMESOS2_LAPACK
+    if((solverName == "amesos2_lapack") ||
+       (solverName == "lapack")){
+      return handle_solver_type_support<Lapack,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 

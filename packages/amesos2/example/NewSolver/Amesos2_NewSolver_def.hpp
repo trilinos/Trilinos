@@ -162,7 +162,7 @@ namespace Amesos2 {
 
   template <class Matrix, class Vector>
   Teuchos::RCP<const Teuchos::ParameterList>
-  Newsolver<Matrix,Vector>::getValidParameters_impl() const
+  NewSolver<Matrix,Vector>::getValidParameters_impl() const
   {
     using Teuchos::ParameterList;
 
