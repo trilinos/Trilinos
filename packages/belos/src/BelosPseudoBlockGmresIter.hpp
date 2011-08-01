@@ -502,7 +502,7 @@ namespace Belos {
   PseudoBlockGmresIter<ScalarType,MV,OP>::
   getNativeResiduals (std::vector<MagnitudeType> *norms) const 
   {
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitude STM;
+    typedef typename Teuchos::ScalarTraits<ScalarType> STS;
 
     if (norms)
       { // Resize the incoming std::vector if necessary.  The type
@@ -515,7 +515,7 @@ namespace Belos {
 	for (int j = 0; j < numRHS_; ++j) 
 	  {
 	    const ScalarType curNativeResid = (*Z_[j])(curDim_);
-	    (*norms)[j] = STM::magnitude (curNativeResid);
+	    (*norms)[j] = STS::magnitude (curNativeResid);
 	  }
     }
     return Teuchos::null;
