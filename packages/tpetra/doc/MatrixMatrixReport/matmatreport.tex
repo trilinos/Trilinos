@@ -32,12 +32,14 @@
 \SANDprintDate{August 2011}
 \SANDauthor{Kurtis L. Nusbaum}
 \begin{document}
+\VerbatimFootnotes
+
 \maketitle
 
 \begin{abstract}
 Over the course of the last year, a matrix-matrix multiplication routine has been developed for the Tpetra package.
 This routine is based the same algorithm that is used in EpetraExt with some heavy modifications. Since it 
-achieved a working state, several major optimizations have been made in an effort to speed up the routine. This paper will
+achieved a working state, several major optimizations have been made in an effort to speed up the routine. This report will
 discuss the optimizations made to the routine, its current state, and where future work needs to be done.
 \end{abstract}
 \clearpage
@@ -45,7 +47,7 @@ discuss the optimizations made to the routine, its current state, and where futu
 Thanks to all of those at Sandia who helped provide the tools needed to compile this report. A special thanks to Dr. Chris Siefert, Dr. Mark Hoemmen, and Dr. 
 Johnathan Hu whose
 guidance was invaluable, and to Dr. Mike Heroux for funding this project. Thank you to the entire Trilinos community whose help is always appreciated. And thanks
-to NERSC whose wonderful Hopper machine was used to run the tests found in this report.
+to NERSC, whose wonderful Hopper machine was used to run the tests found in this report.
 
 The format of this report is based on information found in~\cite{Sand98-0730}.
 \cleardoublepage
@@ -60,7 +62,7 @@ Over the course of the last year, a matrix-matrix multiplication routine has bee
 Tpetra~\cite{TpetraHomePage}
 package. This routine is based the same algorithm that is used in EpetraExt~\cite{EpetraExtHomePage} 
 with some heavy modifications. Since it achieved a working state, several major optimizations have been made in an 
-effort to speed up the routine. This paper will
+effort to speed up the routine. This report will
 discuss the optimizations made to the routine, it's current state, and where future work needs to be done.
 
 
@@ -98,8 +100,6 @@ multiply routine where we call \verb!fillComplete! we went from running on avera
 $O(nlog(n))$.
 It's also worth noting that since our \verb!sort2! function checks first to see if the arrays are already in order, we avoid
 the worst case runtime for the quicksort routine.
-\JJH{Can you quantify the difference in performance that just this change makes?}
-\KLN{So I added what I think quantifies it. Is that what you're looking for?}
 
 \subsection{Removal of Specific Transpose Mode Kernels}
 In the original ExpetraExt algorithm there was actually a separate kernel for each possible transpose combination 
@@ -110,40 +110,36 @@ $N_c+ 2N_p + N_p N_r$, where
 $N_c$, $N_p$, and $N_r$ are the number of local columns, processors, and local rows, respectively.
 Obviously this is not scalable. At anything but the lowest processor counts, this array quickly balloons to a size that 
 won't fit in memory. We decided to remove this function and the specific transpose kernels. Instead, we explicitly transpose the matrices if needed
-and use the AB kernel those matrices. This has \emph{significant} performance benefits when doing operations like $A^TB$.
+and use the $A \times B$ kernel on those matrices. This has \emph{significant} performance benefits when doing operations like $A^TB$.
 
 \subsection{Streamlining the Graph Building Routine}
 The original algorithm from EpetraExt used the same function for both building the graph of matrix $C$ and calculating its 
-values by doing two passes through the function with different data. 
+values by doing two passes through the same function with different data. 
 As a result, on the first pass through the function when the graph was being calculated, the values for matrix $C$ were also 
 calculated, but thrown out. It's not until the second pass through the function 
 that the values calculated are actually inserted into matrix $C$. We modified this function so that it
 takes an argument which indicates whether or not we're just calculating the graph for matrix $C$. If we're just calculating 
 the graph, all the value calculation is skipped. This saves the routine $O(Numrows*maxNNZ(A)*maxNNZ(B))$ operations where $maxNNZ$ is the maximum number
 of non-zeros in the rows of a given matrix.
-\JJH{Can you quantify the difference in performance that just this change makes?}
-\KLN{Yes. So how ever many actually $A_ij*B_ji$, let's call that $Nnzm$. How do I say intelligently that we do
-$Nnzm$ less operations?}
-
 
 \section{Performance}
 \label{perfSect}
 We conducted a series of weak-scaling studies on the Hopper NERSC machine. Hopper is a Cray XE6 with 24 cores
 per-node~\footnote{For more machine information regarding Hopper, please visit \url{http://www.nersc.gov/systems/hopper-cray-xe6}}.
-We define weak-scaling as increasing the problem size while holding the amount of work each node does constant. We define
+We define weak-scaling as increasing the problem size while holding the amount of work done on each node does constant. We define
 weak-scaling efficiency as $Time_{serial}/Time_{parallel}$.
 
 \subsection{Comparison of Development Stages}
 Figure~\ref{tpetracomptime} and Figure~\ref{tpetracompeff} show the test results of comparing the Tpetra matrix-matrix multiply 
 routine at various stages of its 
-development.  The tests were as such: Two matrices were constructed, each  using a 3D Laplace stencil. Each node was assigned 
+development.  The tests were as such: Two matrices were constructed, each using a 3D Laplace stencil. Each node was assigned 
 $110^3$ number of rows from each matrix (this means each core has approximately 55500 rows). 
 We then timed the cost of multiplying these two matrices together. We ran these experiments three times for each node count, and then averaged the results.
 The red line represents the routine as it was when we first got the routine working. The blue line is from after 
-we \verb!sort2! algorithm problem had been fixed and we removed the specific transpose mode kernels. 
+the \verb!sort2! algorithm problem had been fixed and we removed the specific transpose mode kernels. 
 And the purple line represents the routine after all optimizations had been applied.
 As can be clearly seen, the optimizations we applied helped the algorithm substantially. After all of our optimizations were applied, the matrix-matrix multiply
-routine was running in half the time it was originally.
+routine was running in roughly half the time it was originally.
 
 \begin{figure}
 \centering
@@ -172,8 +168,6 @@ The encouraging thing about these results is that the Tpetra algorithm is as goo
 algorithm at scale. It should be noted that the ML lines are cut short because at the next problem size in our testing, 
 they would fail due to a memory error. Consequently, we could not run tests for greater problem sizes with ML. 
 \JJH{Where did this memory error occur?  ML has been run on pretty big problems in the past ....}
-It's also worth noting that in terms of efficiency, Tpetra seems to scale much better than all the rest.
-\JJH{Scaling of ML appears to have the same trend.}
 
 \begin{figure}
 \centering
