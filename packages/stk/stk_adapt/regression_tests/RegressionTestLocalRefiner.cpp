@@ -76,14 +76,36 @@ namespace stk
       //=============================================================================
       //=============================================================================
 
-      static void normalize(double plane_normal[3], double normal[3])
+
+      static void normalize(double input_normal[3], double normal[3])
       {
-        double sum = std::sqrt(plane_normal[0]*plane_normal[0]+
-                               plane_normal[1]*plane_normal[1]+
-                               plane_normal[2]*plane_normal[2]);
-        normal[0] = plane_normal[0] / sum;
-        normal[1] = plane_normal[1] / sum;
-        normal[2] = plane_normal[2] / sum;
+        double sum = std::sqrt(input_normal[0]*input_normal[0]+
+                               input_normal[1]*input_normal[1]+
+                               input_normal[2]*input_normal[2]);
+        normal[0] = input_normal[0] / sum;
+        normal[1] = input_normal[1] / sum;
+        normal[2] = input_normal[2] / sum;
+      }
+
+      static void normalize(double input_output_normal[3])
+      {
+        normalize(input_output_normal, input_output_normal);
+      }
+
+      static double distance(double c0[3], double c1[3])
+      {
+        return std::sqrt((c0[0]-c1[0])*(c0[0]-c1[0]) + (c0[1]-c1[1])*(c0[1]-c1[1]) + (c0[2]-c1[2])*(c0[2]-c1[2]) );
+      }
+
+      static void difference(double v01[3], double c0[3], double c1[3])
+      {
+        v01[0] = c0[0] - c1[0];
+        v01[1] = c0[1] - c1[1];
+        v01[2] = c0[2] - c1[2];
+      }
+      static double dot(double c0[3], double c1[3])
+      {
+        return c0[0]*c1[0] + c0[1]*c1[1] + c0[2]*c1[2];
       }
 
       static double plane_dot_product(double plane_point[3], double plane_normal[3], double point[3])
@@ -97,6 +119,7 @@ namespace stk
           }
         return dot;
       }
+
 
 #if 0
       static void project_point_to_plane(double plane_point[3], double plane_normal[3], double point[3], double projected_point[3])
@@ -139,11 +162,11 @@ namespace stk
                   mesh::Entity & node_j = * elem_nodes[ jnode ].entity();
                   double *coord_data_j = PerceptMesh::field_data(coordField, node_j);
 
-                  double dot_i = plane_dot_product(plane_point, plane_normal, coord_data_i);
-                  double dot_j = plane_dot_product(plane_point, plane_normal, coord_data_j);
+                  double dot_0 = plane_dot_product(plane_point, plane_normal, coord_data_i);
+                  double dot_1 = plane_dot_product(plane_point, plane_normal, coord_data_j);
 
                   // if edge crosses the plane...
-                  if (dot_i*dot_j < 0)
+                  if (dot_0*dot_1 < 0)
                     {
                       found=true;
                       break;
@@ -283,11 +306,11 @@ namespace stk
               //double plane_normal[3] = {1, .5, -.5};
               double plane_normal[3] = {1, 0, 0};
 
-              double dot_i = plane_dot_product(plane_point, plane_normal, coord0);
-              double dot_j = plane_dot_product(plane_point, plane_normal, coord1);
+              double dot_0 = plane_dot_product(plane_point, plane_normal, coord0);
+              double dot_1 = plane_dot_product(plane_point, plane_normal, coord1);
 
               // if edge crosses the plane...
-              if (dot_i*dot_j < 0)
+              if (dot_0*dot_1 < 0)
                 {
                   return true;
                 }
@@ -395,15 +418,18 @@ namespace stk
       static double shock_function(double x)
       {
         // normalize by width
-        double width = 0.2;
+        double width = 1./15.0;
         x /= width;
         return std::tanh(x);
       }
 
       struct ShockBasedRefinePredicate : public EdgeBasedMarkerPredicate {
       
-        ShockBasedRefinePredicate(stk::mesh::Selector& selector, stk::mesh::FieldBase *field, double tolerance) :
-          EdgeBasedMarkerPredicate(selector, field, tolerance) {}
+        percept::PerceptMesh& m_eMesh;
+        stk::mesh::FieldBase * m_nodal_refine_field;
+
+        ShockBasedRefinePredicate(stk::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh, stk::mesh::Selector& selector, stk::mesh::FieldBase *field, double tolerance) :
+          EdgeBasedMarkerPredicate(selector, field, tolerance), m_eMesh(eMesh),m_nodal_refine_field(nodal_refine_field) {}
 
         /// Return true for refine, false for ignore
         bool operator()(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
@@ -415,14 +441,34 @@ namespace stk
               //double plane_normal[3] = {1, .5, -.5};
               double plane_normal[3] = {1, 0, 0};
 
-              double dot_i = plane_dot_product(plane_point, plane_normal, coord0);
-              double dot_j = plane_dot_product(plane_point, plane_normal, coord1);
+#if 0
+              double proj_pt_0[3]={0,0,0};
+              double proj_pt_1[3]={0,0,0};
+              project_point_to_plane(plane_point, plane_normal, coord0, proj_pt_0);
+              project_point_to_plane(plane_point, plane_normal, coord1, proj_pt_1);
+#endif
 
-              dot_i = shock_function(dot_i);
-              dot_j = shock_function(dot_j);
+              double dot_0 = plane_dot_product(plane_point, plane_normal, coord0);
+              double dot_1 = plane_dot_product(plane_point, plane_normal, coord1);
 
-              // if edge crosses the plane...
-              if (std::abs(dot_i - dot_j) > 0.1)
+              double v01[3] = {0,0,0};
+              difference(v01, coord1, coord0);
+              normalize(v01);
+              normalize(plane_normal);
+              double v01dotn = std::abs(dot(v01, plane_normal));
+
+              double d01p = std::abs(dot_0)+std::abs(dot_1);
+              dot_0 = shock_function(dot_0);
+              dot_1 = shock_function(dot_1);
+
+              double *fd0 = m_eMesh.field_data(m_nodal_refine_field, node0);
+              double *fd1 = m_eMesh.field_data(m_nodal_refine_field, node1);
+              fd0[0] = dot_0;
+              fd1[0] = dot_1;
+              
+              double d01 = distance(coord0, coord1);
+
+              if ( (1 + 0*v01dotn + 0*(d01p/(d01+1.e-10)))*std::abs(dot_0 - dot_1) > 0.1)  // 0.2
                 {
                   return true;
                 }
@@ -471,6 +517,7 @@ namespace stk
             stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
             stk::mesh::FieldBase* refine_field = eMesh.addField("refine_field", eMesh.element_rank(), scalarDimension);
             stk::mesh::FieldBase* unrefine_field = eMesh.addField("unrefine_field", eMesh.element_rank(), scalarDimension);
+            stk::mesh::FieldBase* nodal_refine_field = eMesh.addField("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
             if (0)
@@ -487,7 +534,7 @@ namespace stk
             stk::mesh::Selector univ_selector(eMesh.getFEM_meta_data()->universal_part());
 
             PredicateBasedEdgeMarker<ShockBasedRefinePredicate, ShockBasedUnrefinePredicate>
-              breaker(ShockBasedRefinePredicate(univ_selector, refine_field, 0.0),
+              breaker(ShockBasedRefinePredicate(nodal_refine_field, eMesh, univ_selector, refine_field, 0.0),
                       ShockBasedUnrefinePredicate(univ_selector, unrefine_field, 0.0),
                       eMesh, break_tet_to_tet_N, proc_rank_field);
 
