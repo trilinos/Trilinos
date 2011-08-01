@@ -1,9 +1,11 @@
-\documentclass{article}
+\documentclass[pdf,12pt, strict]{SANDreport}
 \usepackage{verbatim}
 \usepackage{url}
 \usepackage{graphicx}
 \usepackage{xspace}
+\usepackage{fancyvrb}
 
+\begin{comment}
 \usepackage[pdftex, pdfpagemode=none, pdfstartview=FitH]{hyperref}
 \hypersetup{
   pdfauthor = {Kurtis L. Nusbaum},
@@ -12,8 +14,9 @@
   colorlinks= {true},
   citecolor = {blue},
 }
+\end{comment}
 
-\usepackage[usenames]{color}
+%\usepackage[usenames]{color}
 \definecolor{jhuGreen}{rgb}{0,.7,.4}
 \newcommand{\JJH}[1]{\textcolor{jhuGreen}{JJH: #1}}
 \definecolor{klnBlue}{rgb}{.2,.1,.7}
@@ -23,7 +26,11 @@
 \newcommand{\Bprime}{\ensuremath{B'}\xspace}
 \title{Evaluation of Tpetra's Matrix-Matrix Multiplication Routine}
 \author{Kurtis L. Nusbaum}
-\date{August 2011}
+\date{}
+
+\SANDnum{SANDXXX-XXX}
+\SANDprintDate{August 2011}
+\SANDauthor{Kurtis L. Nusbaum}
 \begin{document}
 \maketitle
 
@@ -34,9 +41,19 @@ achieved a working state, several major optimizations have been made in an effor
 discuss the optimizations made to the routine, its current state, and where future work needs to be done.
 \end{abstract}
 \clearpage
+\section*{Acknoledgment}
+Thanks to all of those at Sandia who helped provide the tools needed to compile this report. A special thanks to Dr. Chris Siefert and Dr. Mark Hoemenn whose
+guidance was invaluable, and to Dr. Mike Heroux for funding this project. Thank you to the entire Trilinos community whose help is alwasy appreciated. And thanks
+to NERSC whose wonderful Hopper machine was used to run the tests found in this report.
+
+The format of this report is based on information found in~\cite{Sand98-0730}.
+\cleardoublepage
 \tableofcontents
+\listoffigures
+\listoftables
 \clearpage
 
+\SANDmain
 \section{Introduction}
 Over the course of the last year, a matrix-matrix multiplication routine has been developed for the 
 Tpetra~\cite{TpetraHomePage}
@@ -254,6 +271,8 @@ equal to the maximum number of row entries in matrix A.
 \end{figure}
 
 \subsection{Serial Test Motivations}
+\KLN{I feel like this is the best spot for this subsection, but I could also see how one might argue that it should be placed before
+the other three subsections. what do you think?}
 Table~\ref{serialTable} shows the results of running three Trilinos-based matrix-matrix multiply algorithms in 
 serial. These tests were conducted identically as to the ones in section~\ref{perfSect} with the exception of being run on a single core of 
 hopper. Since this test in serial, all runtimes should be void of any time that might be attributed to communication.
@@ -271,8 +290,27 @@ scheme, we should be able to make Tpetra's matirx-matrix mulitpliation routine r
 Time (Seconds) & 1.4 & 0.9 & 0.3 \\ \hline
 \end{tabular}
 \caption{Serial Matrix-Matrix Multiplication Runtimes}
-\label{serailTable}
+\label{serialTable}
 \end{table}
 
-\end{document}
+\clearpage
+\providecommand*{\phantomsection}{}
+\phantomsection
+\addcontentsline{toc}{chapter}{References}
+\bibliographystyle{plain}
+\bibliography{matmatreport}
 
+\appendix
+\section{Trilinos Configure Script}
+Below is the script that was used to configure the build of Trilinos on Hopper that was used for testing.
+\begin{Verbatim}[frame=single]
+hopper script goes here
+\end{Verbatim}
+\begin{SANDdistribution}[NM]
+
+\SANDdistInternal{1}{1318}{Kurits Nusbaum}{01426}
+\SANDdistInternal{1}{1320}{Dr. Michael Heroux}{01426}
+\end{SANDdistribution}
+
+
+\end{document}

@@ -17,7 +17,7 @@ atrans:
 
 
 clean:
-	rm -f *toc *aux *log *pdf *bbl *blg *out
+	rm -f *toc *aux *log matmatreport.pdf *bbl *blg *out *lof *lot
 	make -C tpetraDevData clean
 	make -C allMatsData clean
 	make -C atransData clean
