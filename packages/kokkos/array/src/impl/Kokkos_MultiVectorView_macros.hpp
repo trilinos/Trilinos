@@ -53,9 +53,10 @@ namespace Kokkos {
 template< typename ValueType >
 class MultiVectorView< ValueType , KOKKOS_MACRO_DEVICE > {
 public:
-  typedef ValueType              value_type ;
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
+  typedef ValueType                  value_type ;
+  typedef KOKKOS_MACRO_DEVICE        device_type ;
+  typedef device_type::memory_space  memory_space ;
+  typedef device_type::size_type     size_type ;
 
   typedef MultiVectorView< value_type , DeviceHost > HostView ;
 
@@ -123,7 +124,7 @@ public:
     , m_ptr_on_device( rhs.m_ptr_on_device)
     , m_length(        rhs.m_length )
     , m_count(         rhs.m_count )
-    { device_type::assign_memory_view( m_memory , rhs.m_memory ); }
+    { memory_space::assign_memory_view( m_memory , rhs.m_memory ); }
 
   /** \brief  Assign to a view of the rhs.
    *          If the old view is the last view
@@ -133,7 +134,7 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MultiVectorView & operator = ( const MultiVectorView & rhs )
     {
-      device_type::assign_memory_view( m_memory , rhs.m_memory );
+      memory_space::assign_memory_view( m_memory , rhs.m_memory );
       m_ptr_on_device = rhs.m_ptr_on_device ;
       m_length        = rhs.m_length ;
       m_count         = rhs.m_count  ;
@@ -147,7 +148,7 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ~MultiVectorView()
     {
-      device_type::clear_memory_view( m_memory );
+      memory_space::clear_memory_view( m_memory );
       m_ptr_on_device = 0 ;
       m_length        = 0 ;
       m_count         = 0 ;
@@ -166,7 +167,7 @@ public:
     , m_count(  m_ptr_on_device ? iEnd - iBeg : 0 )
     {
       if ( m_ptr_on_device ) {
-        device_type::assign_memory_view( m_memory , rhs.m_memory );
+        memory_space::assign_memory_view( m_memory , rhs.m_memory );
       }
       else if ( rhs.m_ptr_on_device ) {
         KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iEnd , rhs.m_count ) );
@@ -183,7 +184,7 @@ public:
     , m_count(  m_ptr_on_device ? 1 : 0 )
     {
       if ( m_ptr_on_device ) {
-        device_type::assign_memory_view( m_memory , rhs.m_memory );
+        memory_space::assign_memory_view( m_memory , rhs.m_memory );
       }
       else if ( rhs.m_ptr_on_device ) {
         KOKKOS_MACRO_DEVICE_CAN_THROW( Impl::multivector_require_range( iBeg , iBeg + 1 , rhs.m_count ) );
@@ -192,7 +193,7 @@ public:
 
 private:
 
-  MemoryView< value_type , device_type > m_memory ;
+  MemoryView< value_type , memory_space > m_memory ;
   ValueType * m_ptr_on_device ;
   size_type   m_length ;
   size_type   m_count ;
@@ -205,7 +206,7 @@ private:
     , m_length( arg_length )
     , m_count( arg_count )
     {
-      device_type::allocate_memory_view( m_memory ,
+      memory_space::allocate_memory_view( m_memory ,
                                          arg_length * arg_count , label );
       m_ptr_on_device = m_memory.ptr_on_device();
     }
