@@ -7,7 +7,7 @@ echo "set term postscript color  \\" >> plotcommand.gnu
 echo "dashed dashlength 3.0 linewidth 3.0 " >> plotcommand.gnu
 echo "set yrange [0:]" >> plotcommand.gnu
 echo "set key bottom right" >> plotcommand.gnu
-echo "set data style linespoints" >> plotcommand.gnu
+echo "set style data linespoints" >> plotcommand.gnu
 echo "set style line 2 linecolor rgb \"orange\" " >> plotcommand.gnu
 echo "set style line 3 linecolor rgb \"red\" " >> plotcommand.gnu
 echo "set style line 4 linecolor rgb \"purple\" " >> plotcommand.gnu
