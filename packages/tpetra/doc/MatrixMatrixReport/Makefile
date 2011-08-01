@@ -1,7 +1,7 @@
 all: buildGraphs
 	pdflatex matmatreport
-	pdflatex matmatreport
 	bibtex matmatreport
+	pdflatex matmatreport
 	pdflatex matmatreport
 
 buildGraphs: justtpetra allmats atrans
