@@ -2435,7 +2435,6 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
               marksize = *nColor;
               *nColor = -1;
               for (i=1; i<globnumofcolor+1; i++) {
-                  nStart, nEnd;
                   if (recoloring_permutation == REVERSE) {
                       nStart = colorindex[globnumofcolor-i];
                       nEnd = colorindex[globnumofcolor-i+1];
