@@ -67,6 +67,80 @@
 namespace Teuchos {
 
 
+// very bad public functions
+
+
+template<class T>
+inline
+RCPNode* RCP_createNewRCPNodeRawPtrNonowned( T* p )
+{
+  return new RCPNodeTmpl<T,DeallocNull<T> >(p, DeallocNull<T>(), false);
+}
+
+
+template<class T>
+inline
+RCPNode* RCP_createNewRCPNodeRawPtrNonownedUndefined( T* p )
+{
+  return new RCPNodeTmpl<T,DeallocNull<T> >(p, DeallocNull<T>(), false, null);
+}
+
+
+template<class T>
+inline
+RCPNode* RCP_createNewRCPNodeRawPtr( T* p, bool has_ownership_in )
+{
+  return new RCPNodeTmpl<T,DeallocDelete<T> >(p, DeallocDelete<T>(), has_ownership_in);
+}
+
+
+template<class T, class Dealloc_T>
+inline
+RCPNode* RCP_createNewDeallocRCPNodeRawPtr(
+  T* p, Dealloc_T dealloc, bool has_ownership_in
+  )
+{
+  return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
+}
+
+
+template<class T, class Dealloc_T>
+inline
+RCPNode* RCP_createNewDeallocRCPNodeRawPtrUndefined(
+  T* p, Dealloc_T dealloc, bool has_ownership_in
+  )
+{
+  return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in, null);
+}
+
+
+template<class T>
+inline
+RCP<T>::RCP( T* p, const RCPNodeHandle& node)
+  : ptr_(p), node_(node)
+{}
+
+
+template<class T>
+inline
+T* RCP<T>::access_private_ptr() const
+{  return ptr_; }
+
+
+template<class T>
+inline
+RCPNodeHandle& RCP<T>::nonconst_access_private_node()
+{  return node_; }
+
+
+template<class T>
+inline
+const RCPNodeHandle& RCP<T>::access_private_node() const
+{  return node_; }
+
+
+
+
 // Constructors/destructors/initializers
 
 
@@ -484,79 +558,6 @@ int RCP<T>::count() const
 {
   return node_.count();
 }
-
-
-// very bad public functions
-
-
-template<class T>
-inline
-RCPNode* RCP_createNewRCPNodeRawPtrNonowned( T* p )
-{
-  return new RCPNodeTmpl<T,DeallocNull<T> >(p, DeallocNull<T>(), false);
-}
-
-
-template<class T>
-inline
-RCPNode* RCP_createNewRCPNodeRawPtrNonownedUndefined( T* p )
-{
-  return new RCPNodeTmpl<T,DeallocNull<T> >(p, DeallocNull<T>(), false, null);
-}
-
-
-template<class T>
-inline
-RCPNode* RCP_createNewRCPNodeRawPtr( T* p, bool has_ownership_in )
-{
-  return new RCPNodeTmpl<T,DeallocDelete<T> >(p, DeallocDelete<T>(), has_ownership_in);
-}
-
-
-template<class T, class Dealloc_T>
-inline
-RCPNode* RCP_createNewDeallocRCPNodeRawPtr(
-  T* p, Dealloc_T dealloc, bool has_ownership_in
-  )
-{
-  return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
-}
-
-
-template<class T, class Dealloc_T>
-inline
-RCPNode* RCP_createNewDeallocRCPNodeRawPtrUndefined(
-  T* p, Dealloc_T dealloc, bool has_ownership_in
-  )
-{
-  return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in, null);
-}
-
-
-template<class T>
-inline
-RCP<T>::RCP( T* p, const RCPNodeHandle& node)
-  : ptr_(p), node_(node)
-{}
-
-
-template<class T>
-inline
-T* RCP<T>::access_private_ptr() const
-{  return ptr_; }
-
-
-template<class T>
-inline
-RCPNodeHandle& RCP<T>::nonconst_access_private_node()
-{  return node_; }
-
-
-template<class T>
-inline
-const RCPNodeHandle& RCP<T>::access_private_node() const
-{  return node_; }
-
 
 }  // end namespace Teuchos
 
