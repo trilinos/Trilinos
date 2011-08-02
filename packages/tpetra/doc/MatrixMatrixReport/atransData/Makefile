@@ -7,4 +7,4 @@ eff.pdf:
 	./atransPostProcess.sh eff
 
 clean:
-	rm time.pdf eff.pdf
+	rm -f time.pdf eff.pdf
