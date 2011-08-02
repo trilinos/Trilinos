@@ -18,8 +18,8 @@ namespace stk {
     template<class RefinePredicate, class UnrefinePredicate>
     class PredicateBasedEdgeMarker : public EdgeMarker
     {
-      RefinePredicate& m_predicate_refine;
-      UnrefinePredicate& m_predicate_unrefine;
+      RefinePredicate m_predicate_refine;
+      UnrefinePredicate m_predicate_unrefine;
 
     public:
 
