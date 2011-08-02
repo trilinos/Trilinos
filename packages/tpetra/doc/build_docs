@@ -13,6 +13,12 @@ echo
 
 doxygen Doxyfile
 
+gplotVersion=`gnuplot --version | cut -f2 -d " " | cut -f1 -d "."`
+if [ $gplotVersion -lt 4 ]
+then
+echo "You must have gunplot version 4 or greater to build the MatrixMatrix Report."
+else
 pushd MatrixMatrixReport
 make
 popd
+fi

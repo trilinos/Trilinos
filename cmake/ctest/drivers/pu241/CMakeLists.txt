@@ -49,6 +49,12 @@ ELSE()
       )
   
     TRILINOS_DRIVER_ADD_DASHBOARD(
+      SERIAL_DEBUG_ICPC_TRILINOS
+      ctest_linux_nightly_serial_debug_icpc_12.0.4_trilinos.cmake
+      TIMEOUT_MINUTES 240
+      )
+  
+    TRILINOS_DRIVER_ADD_DASHBOARD(
       SERIAL_RELEASE_ICPC_TRILINOS
       ctest_linux_nightly_serial_release_icpc_12.0.4_trilinos.cmake
       TIMEOUT_MINUTES 240

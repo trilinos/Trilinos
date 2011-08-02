@@ -81,6 +81,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Netcdf          ""    SS
   y12m            ""    SS
   SuperLUDist     ""    SS
+  SuperLUMT	  ""	SS
   SuperLU         ""    SS
   Zlib            ""    SS
   UMFPACK         ""    SS

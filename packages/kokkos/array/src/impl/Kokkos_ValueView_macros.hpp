@@ -53,10 +53,11 @@ namespace Kokkos {
 template< typename ValueType >
 class ValueView< ValueType , KOKKOS_MACRO_DEVICE > {
 public:
-  typedef ValueType           value_type ;
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef ValueType                  value_type ;
+  typedef KOKKOS_MACRO_DEVICE        device_type ;
+  typedef device_type::memory_space  memory_space ;
 
-  typedef ValueView< value_type , DeviceHost > HostView ;
+  typedef ValueView< value_type , DeviceHost >  HostView ;
 
   /*------------------------------------------------------------------*/
 
@@ -96,7 +97,7 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ValueView( const ValueView & rhs )
     : m_memory()
-    { device_type::assign_memory_view( m_memory , rhs.m_memory ); }
+    { memory_space::assign_memory_view( m_memory , rhs.m_memory ); }
 
   /** \brief  Assign to a view of the rhs.
    *          If the old view is the last view
@@ -105,13 +106,13 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   ValueView & operator = ( const ValueView & rhs )
-    { device_type::assign_memory_view( m_memory , rhs.m_memory ); return *this ; }
+    { memory_space::assign_memory_view( m_memory , rhs.m_memory ); return *this ; }
   
   /**  \brief  Destroy this view of the value.
    *           If the last view then allocated memory is deallocated.
    */
   ~ValueView()
-    { device_type::clear_memory_view( m_memory ); }
+    { memory_space::clear_memory_view( m_memory ); }
 
   /*------------------------------------------------------------------*/
 
@@ -130,12 +131,12 @@ public:
 
 private:
 
-  MemoryView< value_type , device_type > m_memory ;
+  MemoryView< value_type , memory_space > m_memory ;
 
   inline
   explicit ValueView( const std::string & label )
     : m_memory()
-    { device_type::allocate_memory_view( m_memory , 1 , label ); }
+    { memory_space::allocate_memory_view( m_memory , 1 , label ); }
 
   template< typename V , class D >
   friend

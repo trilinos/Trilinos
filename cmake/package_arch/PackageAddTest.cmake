@@ -154,10 +154,10 @@ INCLUDE(PackageAddTestHelpers)
 #   CATEGORIES <category1> <category2> ...
 #
 #     If specified, gives the specific categories of the test.  Valid test
-#     categories include BASIC, NIGHLY, and PERFORMANCE.  Other test
+#     categories include BASIC, NIGHTLY, and PERFORMANCE.  Other test
 #     categories will be added as needed.  By default, the category is BASIC.
 #     When the category is BASIC it will also match
-#     ${PROJECT_NAME}_TEST_CATEGORIES==NIGHLY.
+#     ${PROJECT_NAME}_TEST_CATEGORIES==NIGHTLY.
 #
 #   HOSTTYPE <hosttype1> <hosttype2> ...
 #

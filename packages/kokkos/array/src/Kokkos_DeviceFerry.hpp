@@ -80,6 +80,11 @@ public:
 
   /** \brief  On the ferry device use unsigned int for indexing */
   typedef unsigned int         size_type ;
+
+  /** \brief  The Ferry device uses the Ferry memory space */
+  typedef DeviceFerry          memory_space ;
+
+  /** \brief  Default mdarray map is index from right */
   typedef MDArrayIndexMapRight  default_mdarray_map ;
 
   /*--------------------------------*/

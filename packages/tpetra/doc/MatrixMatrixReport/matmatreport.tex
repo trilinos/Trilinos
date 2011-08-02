@@ -1,50 +1,40 @@
-\documentclass[pdf,12pt, strict]{SANDreport}
+\documentclass[pdf,12pt]{SANDreport}
 \usepackage{verbatim}
 \usepackage{url}
 \usepackage{graphicx}
 \usepackage{xspace}
 \usepackage{fancyvrb}
 
-\begin{comment}
-\usepackage[pdftex, pdfpagemode=none, pdfstartview=FitH]{hyperref}
-\hypersetup{
-  pdfauthor = {Kurtis L. Nusbaum},
-  pdftitle = {Evaluation of Tpetra's Matrix-Matrix Multiplication Routine},
-  pdfkeywords = {multigrid, MueLu, Trilinos, software design, matrix-matrix multiplication},
-  colorlinks= {true},
-  citecolor = {blue},
-}
-\end{comment}
-
-%\usepackage[usenames]{color}
-\definecolor{jhuGreen}{rgb}{0,.7,.4}
-\newcommand{\JJH}[1]{\textcolor{jhuGreen}{JJH: #1}}
-\definecolor{klnBlue}{rgb}{.2,.1,.7}
-\newcommand{\KLN}[1]{\textcolor{klnBlue}{KLN: #1}}
-
 \newcommand{\Aprime}{\ensuremath{A'}\xspace}
 \newcommand{\Bprime}{\ensuremath{B'}\xspace}
-\title{Evaluation of Tpetra's Matrix-Matrix Multiplication Routine}
+\title{Evaluation of Tpetra's Sparse Matrix-Matrix Multiplication Routine}
 \author{Kurtis L. Nusbaum}
 \date{}
 
-\SANDnum{SANDXXX-XXX}
+\SANDnum{SANDXXXX-XXXX}
 \SANDprintDate{August 2011}
 \SANDauthor{Kurtis L. Nusbaum}
 \begin{document}
+\VerbatimFootnotes
+
 \maketitle
 
 \begin{abstract}
-Over the course of the last year, a matrix-matrix multiplication routine has been developed for the Tpetra package.
-This routine is based the same algorithm that is used in EpetraExt with some heavy modifications. Since it 
-achieved a working state, several major optimizations have been made in an effort to speed up the routine. This paper will
+Over the course of the last year, a sparse matrix-matrix multiplication routine has been developed for the Tpetra package.
+This routine is based the same algorithm that is used in EpetraExt with heavy modifications. Since it 
+achieved a working state, several major optimizations have been made in an effort to speed up the routine. This report will
 discuss the optimizations made to the routine, its current state, and where future work needs to be done.
 \end{abstract}
 \clearpage
-\section*{Acknoledgment}
-Thanks to all of those at Sandia who helped provide the tools needed to compile this report. A special thanks to Dr. Chris Siefert and Dr. Mark Hoemmen whose
-guidance was invaluable, and to Dr. Mike Heroux for funding this project. Thank you to the entire Trilinos community whose help is always appreciated. And thanks
-to NERSC whose wonderful Hopper machine was used to run the tests found in this report.
+\section*{Acknowledgments}
+Thanks to all of those at Sandia National Labs who helped provide the tools needed to compile this report. 
+A special thanks to Dr.\ Chris 
+Siefert, Dr.\ Mark Hoemmen, and Dr.\ Johnathan Hu whose guidance was invaluable. Thanks to Dr.\ Mike Heroux for funding this 
+project. Thank you to the entire Trilinos community whose help is always appreciated. Thanks to St.\ John's University
+for providing resources which helped create the material that this report evaluates. 
+
+This research used resources of the National Energy Research Scientific Computing Center, which is supported by the
+Office of Science of the U.S.\ Department of Energy under Contract No.\ DE-AC02-05CH11231.
 
 The format of this report is based on information found in~\cite{Sand98-0730}.
 \cleardoublepage
@@ -55,184 +45,205 @@ The format of this report is based on information found in~\cite{Sand98-0730}.
 
 \SANDmain
 \section{Introduction}
-Over the course of the last year, a matrix-matrix multiplication routine has been developed for the 
+Over the course of the last year, a sparse matrix-matrix multiplication routine has been developed for the 
 Tpetra~\cite{TpetraHomePage}
-package. This routine is based the same algorithm that is used in EpetraExt~\cite{EpetraExtHomePage} 
-with some heavy modifications. Since it achieved a working state, several major optimizations have been made in an 
-effort to speed up the routine. This paper will
-discuss the optimizations made to the routine, it's current state, and where future work needs to be done.
+package. This routine is based on the same algorithm that is used in EpetraExt~\cite{EpetraExtHomePage} 
+with heavy modifications. Since it achieved a working state, several major optimizations have been made in an 
+effort to speed up the routine. This report will
+discuss the optimizations made to the routine, its current state, and where future work needs to be done.
 
 
 \section{Basic Outline of the Algorithm}
-The Tpetra matrix-matrix multiply algorithm allows two matrices ($A$ and $B$) to be multiplied. The result of this 
+The Tpetra sparse matrix-matrix multiply algorithm allows two matrices ($A$ and $B$) to be multiplied. The result of this 
 multiplication is then placed in a third matrix ($C$).
 The basic algorithm is as follows:
 \begin{enumerate}
-  \item \Aprime and \Bprime are created from $A$ and $B$, respectively. If it has been specified that $A$ should be transposed, an actual 
-  transpose of the matrix is created and assigned to \Aprime. Otherwise \Aprime is simply equals to $A$. The same is done for 
-  creating \Bprime.
+  \item \Aprime and \Bprime are created from $A$ and $B$, respectively. If it has been specified that $A$ should be 
+  transposed, an actual 
+  transpose of the matrix is created and assigned to \Aprime. Otherwise \Aprime is simply set equal to $A$. The same is 
+  done for creating \Bprime.
   \item A ``view'' of \Aprime and a ``view'' of \Bprime are created. These views provide fast access to information that 
-  will be needed later in the algorithm. In addition, any importations of off-processor elements is done. Namely, all the 
+  will be needed later in the algorithm. In addition, any imports of off-processor elements are done. Namely, all the 
   rows in \Bprime that contain columns needed by the local copy of \Aprime are imported.
   \item The sparsity pattern of $C$ is determined by doing a symbolic multiplication of \Aprime and \Bprime, i.e., no actual
-  numeric computations are done. In this run, 
-  column indices for $C$ are computed and used to construct a graph.
+  value computations are done. In this step, column indices for $C$ are computed and used to construct a graph.
   \item The actual multiplication of \Aprime and \Bprime is done by iterating through each row of \Aprime. For each row in 
   \Aprime, every row in \Bprime is looped through and the appropriate calculations are done.
   \item Unless indicated otherwise by the user, \verb!fillComplete! is called on matrix $C$.
 \end{enumerate}
 
-\section{Optimization}
+\section{Optimizations}
 
 \subsection{Fixing FillComplete's Sort}
-As part of its algorithm, the \verb!fillComplete! function relies on a function called \verb!sort2!. This function performs a sort 
-on two arrays by sorting the first array and concurrently doing the same permutations on the second array, 
-i.e. both arrays are sorted according to the ordering of the first array. The main use case for this function is sorting 
+As part of its algorithm, the \verb!fillComplete! function relies on a function called \verb!sort2!. This function performs 
+a sort on two arrays by sorting the first array and concurrently doing the same permutations on the second array, 
+i.e., both arrays are sorted according to the ordering of the first array. The main use case for this function is sorting 
 an indices array and moving the values in a values array so that they stay matched up with their associated index.
 
-Up until recently, the \verb!sort2! function relied on an insertion sort algorithm. We modified the function so that it first 
-checks to see if the arrays are already sorted (which happens quite often) and returns right away if they are. 
-If the arrays are not sorted, a quicksort is performed on the arrays. This means that for the section of our matrix-matrix
-multiply routine where we call \verb!fillComplete! we went from running on average $0(n^2)+C$ to running on average
-$0(nlog(n))+C$ where $C$ is a constant representing all the other computation done in the \verb!fillComplete! routine.
-It's also worth noting that since our \verb!sort2! function checks first to see if the arrays are already in order, we avoid
-the worst case runtime for the quicksort routine.
-\JJH{Can you quantify the difference in performance that just this change makes?}
-\KLN{So I added what I think quantifies it. Is that what you're looking for?}
+Up until recently, the \verb!sort2! function relied on an insertion sort algorithm. We modified the function so that it 
+first checks to see if the arrays are already sorted (which happens quite often) and returns right away if they are. 
+If the arrays are not sorted, a quicksort is performed on the arrays. This means that for the section of our sparse
+matrix-matrix multiply routine where we call \verb!fillComplete! we went from running on average $O(n^2)$ operations to 
+running on average $O(n \log(n))$ operations.
+It's also worth noting that since our \verb!sort2! function checks first to see if the arrays are already in order, we 
+avoid the worst case runtime for the quicksort routine.
 
 \subsection{Removal of Specific Transpose Mode Kernels}
-In the original ExpetraExt algorithm there was actually a separate kernel for each possible transpose combination 
+In the original ExpetraExt algorithm there were separate multiplication kernels for each possible transpose combination 
 (e.g., $A^TB$, $AB^T$, and $A^TB^T$).
-Some of these kernels relied on a function called \verb!find_rows_containing_columns!. The relevant things to know about this 
-function is that one of its arguments was a matrix and during execution it created an array that was of size 
+Some of these kernels relied on a function called \verb!find_rows_containing_columns!. The relevant trait to know about this 
+function is that during execution it created an array that was of size 
 $N_c+ 2N_p + N_p N_r$, where
-$N_c$, $N_p$, and $N_r$ are the number of columns, processors, and rows, respectively.
+$N_c$, $N_p$, and $N_r$ are the number of local columns, processors, and local rows, respectively.
 Obviously this is not scalable. At anything but the lowest processor counts, this array quickly balloons to a size that 
-won't fit in memory. We decided to just remove this function and the specific transpose kernels. Tpetra has a very fast 
-transposer that we now use instead. We take what ever the given matrices are, transpose them to the users specification, 
-and then just use the regular $AB$ kernel. This has \emph{significant} performance benefits when doing operations like 
-$A^TB$.
-
+won't fit in memory. We decided to remove this function and the specific transpose kernels. Instead, we explicitly 
+transpose the matrices using Tpetra's \verb!RowMatrixTransposer! if needed
+and use the $A \times B$ kernel on those matrices. This has \emph{significant}~\footnote{See section~\ref{perfSect} for 
+details} performance benefits when doing operations like $A^TB$.
 
 \subsection{Streamlining the Graph Building Routine}
 The original algorithm from EpetraExt used the same function for both building the graph of matrix $C$ and calculating its 
-values by doing two passes through the function with different data. 
+values by doing two passes through the same function with different data. 
 As a result, on the first pass through the function when the graph was being calculated, the values for matrix $C$ were also 
 calculated, but thrown out. It's not until the second pass through the function 
 that the values calculated are actually inserted into matrix $C$. We modified this function so that it
 takes an argument which indicates whether or not we're just calculating the graph for matrix $C$. If we're just calculating 
-the graph, all the value calculation is skipped.
-\JJH{Can you quantify the difference in performance that just this change makes?}
-\KLN{Yes. So how ever many actually $A_ij*B_ji$, let's call that $Nnzm$. How do I say intelligently that we do
-$Nnzm$ less operations?}
-
+the graph, all the value calculation is skipped. This saves the routine 
+$O(Numrows \times nnzMax(A) \times nnzMax(B))$ operations where $nnzMax$ is the maximum number of non zeros in the rows of a 
+given matrix.
 
 \section{Performance}
 \label{perfSect}
 We conducted a series of weak-scaling studies on the Hopper NERSC machine. Hopper is a Cray XE6 with 24 cores
-per-node~\footnote{For more machine information regarding Hopper, please visit \url{http://www.nersc.gov/systems/hopper-cray-xe6}}.
-We define weak-scaling as increasing the problem size while holding the amount of work each node does constant. We define
-weak-scaling efficiency as $Time_{serial}/Time_{parallel}$.
+per node~\footnote{For more machine information regarding Hopper, please visit 
+\url{http://www.nersc.gov/systems/hopper-cray-xe6}}. We define weak scaling as increasing the problem size while holding 
+the amount of work done on each node constant. We define weak scaling efficiency as $Time_{serial}/Time_{parallel}$.
+It is worth noting that none of the testing done below involving Tpetra utilizes any Kokkos~\cite{KokkosHomePage} kernels. 
 
 \subsection{Comparison of Development Stages}
-Figure~\ref{tpetracomptime} and Figure~\ref{tpetracompeff} show the test results of comparing the Tpetra matrix-matrix multiply 
-routine at various stages of its 
-development.  The tests were as such: Two matrices were constructed using a 3D Laplace stencil. Each node was assigned 
+Figure~\ref{tpetracomptime} and Figure~\ref{tpetracompeff} show the test results of comparing the Tpetra sparse 
+matrix-matrix multiply routine at various stages of its 
+development. The tests were as such: Two matrices were constructed, each using a 3D Laplace stencil. Each node was assigned 
 $110^3$ number of rows from each matrix (this means each core has approximately 55500 rows). 
-Then the two matrices were multiplied together. The multiplication is what 
-we timed. We ran these experiments three times for each node count, and then averaged the results.
-The red line represents the routine as it was when we first got the routine working. The blue line is from after 
-we \verb!sort2! algorithm problem had been fixed and we removed the specific transpose mode kernels. 
-And the purple line represents the routine after all optimizations had been applied.
-As can be clearly seen, the optimizations we applied helped the algorithm substantially.
+We then timed the cost of multiplying these two matrices together. We ran these experiments three times for each node 
+count, and then averaged the results. The red line represents the routine as it was when we first got the routine working. 
+The blue line is from after the \verb!sort2! algorithm problem had been fixed and we removed the specific transpose mode 
+kernels. And the purple line represents the routine after all optimizations had been applied.
+As can be clearly seen, the optimizations we applied helped the algorithm substantially. After all of our optimizations 
+were applied, the sparse matrix-matrix multiply routine was running in roughly half the time it was originally.
 
 \begin{figure}
 \centering
-\includegraphics[scale=.4]{tpetraDevData/time.pdf}
-\caption[Tpetra Development Time Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's runtime 
-throughout various stages of its development. Note this is a simple $C=A*B$; so we are running in non-transpose mode.}
+\includegraphics[scale=.5]{tpetraDevData/time.pdf}
+\caption[Tpetra Development Time Comparison]{A comparison of the Tpetra sparse matrix-matrix multiply routine's runtime 
+throughout various stages of its development. Note this is a simple $C=A \times B$; so we are running in non-transpose mode.}
 \label{tpetracomptime}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[scale=.4]{tpetraDevData/eff.pdf}
-\caption[Tpetra Development Efficiency Comparison]{A comparison of the Tpetra matrix-matrix multiply routine's scaling efficiency
-throughout various stages of its development. Note this is a simple $C=A*B$; so we are running in non-transpose mode.}
+\includegraphics[scale=.5]{tpetraDevData/eff.pdf}
+\caption[Tpetra Development Efficiency Comparison]{A comparison of the Tpetra sparse matrix-matrix multiply routine's 
+scaling efficiency
+throughout various stages of its development. Note this is a simple $C=A \times B$; so we are running in non-transpose mode.}
 \label{tpetracompeff}
 \end{figure}
 
 
 \subsection{Tpetra vs. EpetraExt vs. ML}
-Figure~\ref{alltime} and Figure~\ref{alleff} show the test results of comparing the Tpetra matrix-matrix multiply routine 
-(with all of its optimizations) to the other matrix-matrix multiply routines in Trilinos~\cite{1089021} (namely the original EpetraExt 
-routine and a slightly modified version ML's Epetra matrix-matrix multiply routine~\footnote{The only difference between the ML's Epetra matrix-matrix
-multiply and the one we used in our test is that we modified the routine to use ML's matrix storage when assembling matrix $C$ rather than Epetra's}). 
-These tests were conducted in the same manner as our development stages comparison. 
+Figure~\ref{alltime} and Figure~\ref{alleff} show the test results of comparing the Tpetra sparse matrix-matrix multiply 
+routine (with all of its optimizations) to other sparse matrix-matrix multiply routines in Trilinos~\cite{1089021} 
+(namely the original 
+EpetraExt routine and a slightly modified version ML's Epetra sparse matrix-matrix multiply 
+routine~\footnote{The only difference 
+between the ML's \verb!Epetra_MatMat_Mult! and the one we used in our test is that we modified the routine to use ML's
+matrix storage when assembling matrix $C$ rather than Epetra's}). 
+These tests were conducted in the same manner as above. 
 The encouraging thing about these results is that the Tpetra algorithm is as good as if not better than the EpetraExt 
 algorithm at scale. It should be noted that the ML lines are cut short because at the next problem size in our testing, 
 they would fail due to a memory error. Consequently, we could not run tests for greater problem sizes with ML. 
-\JJH{Where did this memory error occur?  ML has been run on pretty big problems in the past ....}
-It's also worth noting that in terms of efficiency, Tpetra seems to scale much better than all the rest.
-\JJH{Scaling of ML appears to have the same trend.}
 
 \begin{figure}
 \centering
-\includegraphics[scale=.4]{allMatsData/time.pdf}
-\caption[All Algorithms Time Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' runtime}
+\includegraphics[scale=.5]{allMatsData/time.pdf}
+\caption[All Algorithms Time Comparison]{A comparison of various Trilinos sparse matrix-matrix multiply routines' runtime. The
+ML line is cut short due to a memory error that prevented testing at higher node counts.}
 \label{alltime}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[scale=.4]{allMatsData/eff.pdf}
-\caption[All Algorithms Efficiency Comparison]{A comparison of various Trilinos matrix-matrix multiply routines' scaling efficiency}
+\includegraphics[scale=.5]{allMatsData/eff.pdf}
+\caption[All Algorithms Efficiency Comparison]{A comparison of various Trilinos sparse matrix-matrix multiply routines' scaling 
+efficiency. The ML line is cut short due to a memory error that prevented testing at higher node counts.}
 \label{alleff}
 \end{figure}
 
 \subsection{Transpose Mode Tests}
 Since Tpetra and EpetraExt differ wildly when it comes to transpose modes, we decided to compare the two. We did the same
-tesing procedure as in the development stages comparison, except that we requested A be transposed. Figure~\ref{transtime}
+testing procedure as above, except that we requested A be transposed~\footnote{One could first explicitly transpose a 
+matrix and then give it to the ML algorithm which does not have a transpose mode. We did not do this because the point of 
+this test was to compare EpetraExt and Tpetra.}. Figure~\ref{transtime}
 and Figure~\ref{transeff} show the results. To say that the Tpetra algorithm scales better than the EpetraExt algorithm
-would be a gross understatement. We attempted to conduct a similar experiment where we transposed B instead of A, 
+would be a gross understatement. The Tpetra algorithm levels off at about a 5 second runtime, where as EpetraExt 
+algorithm's runtime seems to grow exponentially. We attempted to conduct a similar experiment where we transposed B 
+instead of A, 
 but the EpetraExt algorithm was taking even longer (over ten minutes on a single node of Hopper) and we didn't want to 
-waste our limited computing resources. ML is not included in these results because it does not have a transpose mode.
-\JJH{ML matrices could be transposed first, however, then multiplied together.  This is basically what Tpetra does with
-the rowMatrixTranposer.}
-\KLN{True. So should I say that?}
+waste our limited computing resources. 
 
 \begin{figure}
 \centering
-\includegraphics[scale=.4]{atransData/time.pdf}
-\caption[Transpose Time Comparison]{A comparison of matrix-matrix multiple runtime in Tpetra and EpetraExt using transpose mode}
+\includegraphics[scale=.5]{atransData/time.pdf}
+\caption[Transpose Time Comparison]{A comparison of sparse matrix-matrix multiple runtime in Tpetra and EpetraExt using transpose mode}
 \label{transtime}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[scale=.4]{atransData/eff.pdf}
-\caption[Transpose Efficiency Comparison]{A comparison of matrix-matrix multiple scaling efficiencies in Tpetra and EpetraExt using transpose mode}
+\includegraphics[scale=.5]{atransData/eff.pdf}
+\caption[Transpose Efficiency Comparison]{A comparison of sparse matrix-matrix multiple scaling efficiencies in Tpetra and EpetraExt using transpose mode}
 \label{transeff}
 \end{figure}
 
 \section{Areas for Future Improvement}
-\subsection{Improvement of Underlying Tpetra Architecture}
-The most important thing that will help the matrix-matrix multiply routine is to improve the underlying Tpetra architecture. 
-Undoubtedly the inefficient \verb!sort2! routine was not the only problem with Tpetra at large. There have been reports from other 
-scientists at Sandia that things like the Tpetra Import/Export classes are not running as nearly as fast as their Epetra 
-counterparts. These things need to be investigated, and fixed if necessary.
 
-\subsection{Kokkos Kernel}
-The actual computation kernel should be moved down into Kokkos where it can better take advantage node-parallelism. 
-This should offer non-trivial speedups and not be very difficult to implement.
+\subsection{Serial Test Motivations}
+Table~\ref{serialTable} shows the results of running three Trilinos-based sparse matrix-matrix multiply algorithms in 
+serial. These tests were conducted identically to the ones in section~\ref{perfSect} with the exception of being run on a 
+single \emph{core} of Hopper. Since this test was in serial, all run times should be void of any time that might be 
+attributed to communication. The discrepancy between the EpetraExt and ML has been known for quite some time and 
+is believed by several scientists at Sandia National Labs to be attributed to a hashing schemed that the ML algorithm 
+employs. We believe the discrepancy between Tpetra's and EpetraExt's time has do to with Tpetra's 
+\verb!fillComplete! function since most everything else in this simple test 
+is relatively the same between the Tpetra algorithm and the EpetraExt algorithm. This leads us to believe that
+by improving Tpetra's underlying architecture (i.e. refining \verb!fillComplete!) and implementing ML's hashing
+scheme, we should be able to make Tpetra's sparse matrix-matrix multiplication routine run at the same level as ML.
+
+\begin{table}
+\centering
+\begin{tabular}{ | l | l | l | l | }
+\hline
+ & Tpetra & EpetraExt & ML \\ \hline
+Time (Seconds) & 1.4 & 0.9 & 0.3 \\ \hline
+\end{tabular}
+\caption{Serial Matrix-Matrix Multiplication Run Times}
+\label{serialTable}
+\end{table}
+
+\subsection{Improvement of Underlying Tpetra Architecture}
+The most important thing that will help the sparse matrix-matrix multiply routine is to improve the implementation of the
+underlying Tpetra architecture. 
+Undoubtedly the inefficient \verb!sort2! routine we found is not the only problem with Tpetra at large. There have been 
+reports from other scientists at Sandia National Labs that things like the Tpetra Import/Export classes are not running as 
+nearly as fast as their Epetra counterparts. In addition, Tpetra has no performance tests. Consquently, the performance of 
+almost all of tpetra is unknown. These things need to be investigated, and fixed if necessary.
 
 \subsection{Possible Implementation of ML's Algorithm}
-ML has a matrix-matrix multiply routine that employs a complex hashing scheme in order to speed up lookup times for 
-column indices. ML's matrix-matrix multiplication algorithm is fast, but it's not clear to the current Tpetra developers 
-how much the hashing scheme has to do with ML's speed. That said, it is definitely worth investigating. ML's hashing scheme 
-is complex. Figure~\ref{hashalgo} outlines in pseudo code the algorithm as current Tpetra developers 
-understand it. While maybe not as easy as implementing a Kokkos kernel, this shouldn't be that difficult to write.
-
+ML's sparse matrix-matrix multiply routine uses a complex hashing scheme in order to speed lookup times for 
+column indices. Overall, ML's sparse matrix-matrix multiplication algorithm is fast, and several scientist's at Sandia National 
+Labs believe this is mainly due to the hashing scheme. Figure~\ref{hashalgo} outlines, in pseudo code, the 
+algorithm as current Tpetra developers understand it. Implementing this algorithm in the Tpetra sparse matrix-matrix multiply 
+routine should not be all that difficult and could potentially provide great speed improvments.
 
 \begin{figure}
 \centering
@@ -272,33 +283,18 @@ equal to the maximum number of row entries in matrix A.
 
 \end{verbatim}
 }
-\caption[Hash based algorithm]{ML's hash based algorithm for matrix-matrix multiply}
+\caption[Hash based algorithm]{ML's hash based algorithm for sparse matrix-matrix multiply}
 \label{hashalgo}
 \end{figure}
 
-\subsection{Serial Test Motivations}
-\KLN{I feel like this is the best spot for this subsection, but I could also see how one might argue that it should be placed before
-the other three subsections. what do you think?}
-Table~\ref{serialTable} shows the results of running the three Trilinos-based matrix-matrix multiply algorithms in 
-serial. These tests were conducted identically to the ones in section~\ref{perfSect} with the exception of being run on a single core of 
-Hopper. Since this test in serial, all run times should be void of any time that might be attributed to communication.
-The discrepancy between the EpetraExt and ML runtime has been known for quite some time and is believed to be
-attributed to ML's hashing scheme by several scientists at Sandia National Labs. We believe the discrepancy between 
-Tpetra's and EpetraExt's time has do to with Tpetra's \verb!fillComplete! function since most everything else in this simple test 
-is relatively the same between the Tpetra algorithm and the EpetraExt algorithm. This leads us to believe that
-by improving Tpetra's underlying architecture (i.e. refining \verb!fillComplete!) and implementing ML's hashing
-scheme, we should be able to make Tpetra's matrix-matrix multiplication routine run at the same level as ML.
+\subsection{Kokkos Kernel}
+While not necessarily indicated by the serial tests, writing a Kokkos kernel for the matrix-multiply routine could improve
+performance. The implementation of such a kernel should be fairly trivial and provide significant speedups by taking
+advantage of node-level parallelism.
 
-\begin{table}
-\centering
-\begin{tabular}{ | l | l | l | l | }
-\hline
- & Tpetra & EpetraExt & ML \\ \hline
-Time (Seconds) & 1.4 & 0.9 & 0.3 \\ \hline
-\end{tabular}
-\caption{Serial Matrix-Matrix Multiplication Run Times}
-\label{serialTable}
-\end{table}
+\section{Contributions}
+All matrix multiplication code was adapted from EpetraExt for use in Tpetra by Kurtis Nusbaum. Test code was written by 
+Jonathan Hu, Chris Siefert, Jeremie Gaidamour, and Kurtis Nusbaum.
 
 \clearpage
 \providecommand*{\phantomsection}{}
@@ -320,8 +316,11 @@ Figure~\ref{triConf} shows the script that was used to configure the build of Tr
 \end{figure}
 \begin{SANDdistribution}[NM]
 
-\SANDdistInternal{1}{1318}{Kurits Nusbaum}{01426}
+\SANDdistInternal{1}{1318}{Kurtis Nusbaum}{01426}
 \SANDdistInternal{1}{1320}{Dr. Michael Heroux}{01426}
+\SANDdistInternal{1}{0378}{Dr. Christopher Siefert}{01443}
+\SANDdistInternal{1}{9159}{Dr. Jonathan Hu}{01426}
+\SANDdistInternal{1}{1320}{Dr. Jeremie Gaidamour}{01426}
 \end{SANDdistribution}
 
 
