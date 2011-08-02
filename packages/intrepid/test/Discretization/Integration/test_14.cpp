@@ -46,9 +46,11 @@ using namespace Intrepid;
 /*
   Computes integrals of monomials over a given reference cell.
 */
-long double evalQuad(std::vector<int> power, int dimension, int order, std::vector<EIntrepidBurkardt> rule, std::vector<EIntrepidGrowth> growth) {
+long double evalQuad(std::vector<int> power, int dimension, int order, 
+		     std::vector<EIntrepidBurkardt> rule, 
+		     std::vector<EIntrepidGrowth> growth) {
  
-  CubatureTensorSorted<long double> lineCub(dimension,order,rule,growth,false);  
+  CubatureTensorSorted<long double> lineCub(dimension,order,rule,growth,false);
   int size = lineCub.getNumPoints();
   FieldContainer<long double> cubPoints(size,dimension);
   FieldContainer<long double> cubWeights(size);

@@ -206,10 +206,7 @@ Scalar AdaptiveSparseGrid<Scalar,UserVector>::refine_grid(
   Teuchos::RCP<UserVector> s = integralValue.Create();
   // Initialize iterator at end of inOldIndex
   std::set<std::vector<int> >::iterator it1(oldIndex.end()); 
-  
-  if (oldIndex.end()!=oldIndex.begin()) 
-    it1--;  
- 
+
   // Initialize iterator at end of inActiveIndex
   typename std::multimap<Scalar,std::vector<int> >::iterator it;
 
@@ -222,7 +219,8 @@ Scalar AdaptiveSparseGrid<Scalar,UserVector>::refine_grid(
   eta                   -= G;          // Update global error indicator
   std::vector<int> index = it->second; // Get Corresponding index
   activeIndex.erase(it);               // Erase Index from active index set
-  oldIndex.insert(it1,index); it1++;   // Insert Index into old index set
+  // Insert Index into old index set
+  oldIndex.insert(it1,index); it1 = oldIndex.end();   
 
   // Refinement process
   for (int k=0; k<dimension; k++) {
@@ -289,8 +287,7 @@ Scalar AdaptiveSparseGrid<Scalar,UserVector>::refine_grid(
 
   // Initialize iterator at end of inOldIndex
   std::set<std::vector<int> >::iterator it1(oldIndex.end());  
-  if (oldIndex.end()!=oldIndex.begin()) 
-    it1--;
+
   // Initialize iterator at end of inActiveIndex
   typename std::multimap<Scalar,std::vector<int> >::iterator it;
 
@@ -303,7 +300,8 @@ Scalar AdaptiveSparseGrid<Scalar,UserVector>::refine_grid(
   eta                   -= G;          // Update global error indicator
   std::vector<int> index = it->second; // Get Corresponding index
   activeIndex.erase(it);               // Erase Index from active index set
-  oldIndex.insert(it1,index); it1++;   // Insert Index into old index set
+  // Insert Index into old index set
+  oldIndex.insert(it1,index); it1 = oldIndex.end(); 
   
   // Refinement process
   for (int k=0; k<dimension; k++) {

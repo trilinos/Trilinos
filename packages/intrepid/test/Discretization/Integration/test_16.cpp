@@ -49,11 +49,11 @@ using namespace Intrepid;
 long double evalQuad(std::vector<int> power, int dimension, 
 		     std::vector<int> order, 
 		     std::vector<EIntrepidBurkardt> rule) {
- 
+
   CubatureTensorSorted<long double> lineCub(dimension,order,rule,false);
   order[0]--; order[1]--;
   CubatureTensorSorted<long double> lineCub1(dimension,order,rule,false);  
-  lineCub.update(1.0,lineCub1,1.0);
+  lineCub.update(1.0,lineCub1,1.0); 
 
   int size = lineCub.getNumPoints();
   FieldContainer<long double> cubPoints(size,dimension);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   int         maxDeg      = 0;    
   long double analyticInt = 0;
   long double testInt     = 0;
-  int         maxOrder    = 30;
+  int         maxOrder    = 20;
   std::vector<int> power(2,0);
   std::vector<EIntrepidBurkardt> rule1(2,BURK_CLENSHAWCURTIS);
   std::vector<int> order(2,0);

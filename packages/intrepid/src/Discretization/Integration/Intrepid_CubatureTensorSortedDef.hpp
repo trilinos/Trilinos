@@ -79,6 +79,7 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
   TEST_FOR_EXCEPTION((dimension!=(int)numPoints1D.size()||
 		      dimension!=(int)rule1D.size()),std::out_of_range,
            ">>> ERROR (CubatureTensorSorted): Dimension mismatch for inputs.");
+
   dimension_ = dimension;  
   degree_.resize(dimension);
   std::vector<int> degree(1,0);
@@ -92,7 +93,6 @@ CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorSorted(
     newRule = kron_prod<Scalar>(newRule,rule1);
   }
   numPoints_ = newRule.getNumPoints();
-
   typename std::map<std::vector<Scalar>,int>::iterator it;
   points_.clear(); weights_.clear();
   int loc = 0;
@@ -390,7 +390,7 @@ CubatureTensorSorted<Scalar> kron_prod(CubatureTensorSorted<Scalar> & rule1,
 	weight  = rule1.getWeight(node)*rule2.getWeight(node2);
 	node.push_back(node2);
 	TPrule.insert(it,node,weight);
-	it++;
+	it = TPrule.end();
       }
     }
     return TPrule;

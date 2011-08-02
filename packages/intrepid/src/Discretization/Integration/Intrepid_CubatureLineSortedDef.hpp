@@ -43,7 +43,7 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
   rule_type_ = rule;
  
   if (rule==BURK_CHEBYSHEV1||rule==BURK_CHEBYSHEV2||
-      rule==BURK_LAGUERRE||rule==BURK_LEGENDRE||
+      rule==BURK_LAGUERRE  ||rule==BURK_LEGENDRE  ||
       rule==BURK_HERMITE) {
     numPoints_ = (degree+1)/2+1;
   }
@@ -137,7 +137,7 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
   for (int i=0; i<numPoints_; i++) {
     points_.insert(it,std::pair<Scalar,int>(nodes[i],i));
     weights_.push_back(weights[i]);
-    it++;
+    it = points_.end();
   }
 } // end constructor
   
@@ -227,7 +227,7 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
     IntrepidBurkardtRules::laguerre_compute<Scalar>(numPoints_,
 					nodes.getRawPtr(),weights.getRawPtr());
   }
-
+  
   if (isNormalized) {
     Scalar sum = 0.0;
     for (int i=0; i<numPoints_; i++) {
@@ -237,13 +237,12 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
       weights[i] /= sum;
     }
   }
-
   points_.clear(); weights_.clear();
   typename std::map<Scalar,int>::iterator it(points_.begin());
   for (int i=0; i<numPoints; i++) {
     points_.insert(it,std::pair<Scalar,int>(nodes[i],i));
     weights_.push_back(weights[i]);
-    it++;
+    it = points_.end(); 
   }
 } // end constructor
   

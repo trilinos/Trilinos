@@ -76,7 +76,8 @@ long double evalQuad(std::vector<int> power, int dimension, std::vector<int> ord
   return Q;
 }
 
-long double evalInt(int dimension, std::vector<int> power, std::vector<EIntrepidBurkardt> rule) {
+long double evalInt(int dimension, std::vector<int> power, 
+		    std::vector<EIntrepidBurkardt> rule) {
   long double I = 1.0;
 
   for (int i=0; i<dimension; i++) {

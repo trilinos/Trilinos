@@ -168,7 +168,6 @@ long double adaptSG(StdVector<long double> & iv,
 
   // Initialize the old index set
   std::set<std::vector<int> > oldIndex;
-
   // Perform Adaptation
   while (eta > TOL) {
     eta = AdaptiveSparseGrid<long double,StdVector<long double> >::refine_grid(

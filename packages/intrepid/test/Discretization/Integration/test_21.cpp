@@ -143,7 +143,7 @@ void adaptSG(StdVector<long double> & iv,
   bool isNormalized = problem_data.isNormalized();
   CubatureTensorSorted<long double> cubRule(
             dimension,index,rule1D,growth1D,isNormalized);
-
+  std::cout << "BEFORE\n";
   // Perform Adaptation
   while (eta > TOL) {
     if (flag==1) {
@@ -153,6 +153,7 @@ void adaptSG(StdVector<long double> & iv,
       eta = AdaptiveSparseGrid<long double,StdVector<long double> >::refine_grid(activeIndex,oldIndex,iv,cubRule,eta,problem_data);
      }
   }
+  std::cout << "AFTER\n";
 }
 
 int main(int argc, char *argv[]) {
