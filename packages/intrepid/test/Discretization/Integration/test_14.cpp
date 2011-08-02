@@ -254,14 +254,19 @@ int main(int argc, char *argv[]) {
 	      long double abstol  = (analyticInt == 0.0 ? reltol : std::fabs(reltol*analyticInt) );
 	      long double absdiff = std::fabs(analyticInt - testInt);
 	      *outStream << "Cubature order (" << std::setw(2) << std::left 
-			 << l1 << ", " << std::setw(2) << std::left << l2 << ") integrating "
-			 << "x^" << std::setw(2) << std::left << j << "y^" << std::setw(2) << std::left 
-			 << k <<  ":" << "   " << std::scientific << std::setprecision(16) << testInt 
-			 << "   " << analyticInt << "   " << std::setprecision(4) << absdiff << "   " 
+			 << l1 << ", " << std::setw(2) << std::left << l2
+			 << ") integrating "
+			 << "x^" << std::setw(2) << std::left << j << "y^" 
+			 << std::setw(2) << std::left 
+			 << k <<  ":" << "   " << std::scientific 
+			 << std::setprecision(16) << testInt 
+			 << "   " << analyticInt << "   " 
+			 << std::setprecision(4) << absdiff << "   " 
 			 << "<?" << "   " << abstol << "\n";
 	      if (absdiff > abstol) {
 		errorFlag++;
-		*outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
+		*outStream << std::right << std::setw(104) 
+			   << "^^^^---FAILURE!\n";
 	      }
 	    } // end for k
 	    *outStream << "\n";
@@ -279,8 +284,8 @@ int main(int argc, char *argv[]) {
 	    maxDegy = 1;
 	  }
 	  else {
-	    maxDegx = 1.5*l1-0.5;
-	    maxDegy = 1.5*l2-0.5;
+	    maxDegx = (int)(1.5*(double)l1-0.5);
+	    maxDegy = (int)(1.5*(double)l2-0.5);
 	  }
 
 	  order = i;
@@ -294,14 +299,19 @@ int main(int argc, char *argv[]) {
 	      long double abstol  = (analyticInt == 0.0 ? reltol : std::fabs(reltol*analyticInt) );
 	      long double absdiff = std::fabs(analyticInt - testInt);
 	      *outStream << "Cubature order (" << std::setw(2) << std::left 
-			 << l1 << ", " << std::setw(2) << std::left << l2 << ") integrating "
-			 << "x^" << std::setw(2) << std::left << j << "y^" << std::setw(2) << std::left 
-			 << k <<  ":" << "   " << std::scientific << std::setprecision(16) << testInt 
-			 << "   " << analyticInt << "   " << std::setprecision(4) << absdiff << "   " 
+			 << l1 << ", " << std::setw(2) << std::left << l2 
+			 << ") integrating "
+			 << "x^" << std::setw(2) << std::left << j << "y^" 
+			 << std::setw(2) << std::left 
+			 << k <<  ":" << "   " << std::scientific 
+			 << std::setprecision(16) << testInt 
+			 << "   " << analyticInt << "   " 
+			 << std::setprecision(4) << absdiff << "   " 
 			 << "<?" << "   " << abstol << "\n";
 	      if (absdiff > abstol) {
 		errorFlag++;
-		*outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
+		*outStream << std::right << std::setw(104) 
+			   << "^^^^---FAILURE!\n";
 	      }
 	    } // end for k
 	    *outStream << "\n";
@@ -319,8 +329,8 @@ int main(int argc, char *argv[]) {
 	    maxDegy = 1;
 	  }
 	  else {
-	    maxDegx = 1.5*l1-0.5;
-	    maxDegy = 1.5*l2-0.5;
+	    maxDegx = (int)(1.5*(double)l1-0.5);
+	    maxDegy = (int)(1.5*(double)l2-0.5);
 	  }
 
 	  order = i;
@@ -334,14 +344,19 @@ int main(int argc, char *argv[]) {
 	      long double abstol  = (analyticInt == 0.0 ? reltol : std::fabs(reltol*analyticInt) );
 	      long double absdiff = std::fabs(analyticInt - testInt);
 	      *outStream << "Cubature order (" << std::setw(2) << std::left 
-			 << l1 << ", " << std::setw(2) << std::left << l2 << ") integrating "
-			 << "x^" << std::setw(2) << std::left << j << "y^" << std::setw(2) << std::left 
-			 << k <<  ":" << "   " << std::scientific << std::setprecision(16) << testInt 
-			 << "   " << analyticInt << "   " << std::setprecision(4) << absdiff << "   " 
+			 << l1 << ", " << std::setw(2) << std::left << l2
+			 << ") integrating "
+			 << "x^" << std::setw(2) << std::left << j << "y^" 
+			 << std::setw(2) << std::left 
+			 << k <<  ":" << "   " << std::scientific 
+			 << std::setprecision(16) << testInt 
+			 << "   " << analyticInt << "   " 
+			 << std::setprecision(4) << absdiff << "   " 
 			 << "<?" << "   " << abstol << "\n";
 	      if (absdiff > abstol) {
 		errorFlag++;
-		*outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
+		*outStream << std::right << std::setw(104) 
+			   << "^^^^---FAILURE!\n";
 	      }
 	    } // end for k
 	    *outStream << "\n";

@@ -178,7 +178,7 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
   else if (rule==BURK_PATTERSON) { // Gauss-Patterson
     bool correctNumPoints = false;
     for (int i=0; i<8; i++) {
-      int l = pow(2,i+1)-1;
+      int l = (int)pow(2.0,(double)i+1.0)-1;
       if (numPoints==l) {
 	correctNumPoints = true;
 	break;
@@ -186,7 +186,8 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
     }
     TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
 	">>> ERROR (CubatureLineSorted): Number of points must be numPoints = 1, 3, 7, 15, 31, 63, 127, 255.");
-    degree_ = 1.5*numPoints+0.5;;
+    Scalar degree = 1.5*(double)numPoints+0.5;
+    degree_ = (int)degree;
     IntrepidBurkardtRules::patterson_lookup<Scalar>(numPoints_,
                                         nodes.getRawPtr(),weights.getRawPtr());
   }
@@ -211,7 +212,8 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
     }
     TEST_FOR_EXCEPTION((correctNumPoints==false),std::out_of_range,
        ">>> ERROR (CubatureLineSorted): Number of points must be numPoints = 1, 3, 9, 35, 37, 41, 43.");
-    degree_ = 1.5*numPoints+0.5;
+    Scalar degree = 1.5*(double)numPoints+0.5;
+    degree_ = (int)degree;
     IntrepidBurkardtRules::hermite_genz_keister_lookup<Scalar>(numPoints_,
 					nodes.getRawPtr(),weights.getRawPtr());
     if (numPoints_>=37) {
@@ -444,7 +446,7 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
 	return 1;
       }
       else {
-	return pow(2,level)+1;
+	return (int)pow(2.0,(double)level)+1;
       }
     }
   }
@@ -473,7 +475,7 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
       return o;
     }
     else if (growth==GROWTH_FULLEXP) {
-      return pow(2,level+1)-1;
+      return (int)pow(2.0,(double)level+1.0)-1;
     }
   }
 
@@ -513,7 +515,7 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
       }
     }
     else if (growth==GROWTH_FULLEXP) {
-      return pow(2,level+1)-1;
+      return (int)pow(2.0,(double)level+1.0)-1;
     }
   }
 
@@ -542,7 +544,7 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
       return o;
     }
     else if (growth==GROWTH_FULLEXP) {
-      return pow(2,level+1)-1;
+      return (int)pow(2.0,(double)level+1.0)-1;
     }
   }
 
@@ -571,7 +573,7 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
       return o;
     }
     else if (growth==GROWTH_FULLEXP) {
-      return pow(2,level+1)-1;
+      return (int)pow(2.0,(double)level+1.0)-1;
     }
   }
   
@@ -600,7 +602,7 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
       return o;
     }
     else if (growth==GROWTH_FULLEXP) {
-      return pow(2,level+1)-1;
+      return (int)pow(2.0,(double)level+1.0)-1;
     }
   }
 
@@ -629,7 +631,7 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
       return o;
     }
     else if (growth==GROWTH_FULLEXP) {
-      return pow(2,level+1)-1;
+      return (int)pow(2.0,(double)level+1.0)-1;
     }
   }
 
@@ -659,7 +661,7 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
       return o;
     }
     else if (growth==GROWTH_FULLEXP) {
-      return pow(2,level+1)-1;
+      return (int)pow(2.0,(double)level+1.0)-1;
     }
   }
   
@@ -735,7 +737,7 @@ int growthRule1D(int index, EIntrepidGrowth growth, EIntrepidBurkardt rule) {
 	return 1;
       }
       else {
-	return pow(2,level)+1;
+	return (int)pow(2.0,(double)level)+1;
       }
     }
   }
