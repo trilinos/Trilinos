@@ -7,6 +7,9 @@
 /*------------------------------------------------------------------------*/
 
 #ifndef MALLOCUSED_H
+
+#include <stdlib.h>
+
 #define MALLOCUSED_H
 
 #ifdef __cplusplus

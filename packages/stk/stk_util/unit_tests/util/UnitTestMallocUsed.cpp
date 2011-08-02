@@ -6,8 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stdlib.h>
-#include <unistd.h>
 #include <sys/times.h>
 
 #include <stk_util/util/MallocUsed.h>
