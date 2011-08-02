@@ -43,7 +43,6 @@
 #include <sstream>
 
 #include <Kokkos_DeviceTBB.hpp>
-#include <impl/Kokkos_MemoryInfo.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -53,8 +52,6 @@ namespace {
 
 class DeviceTBB_Impl {
 public:
-  Impl::MemoryInfoSet m_allocations ;
-
   ~DeviceTBB_Impl();
 
   static DeviceTBB_Impl & singleton();
@@ -67,12 +64,7 @@ DeviceTBB_Impl & DeviceTBB_Impl::singleton()
 }
 
 DeviceTBB_Impl::~DeviceTBB_Impl()
-{
-  if ( ! m_allocations.empty() ) {
-    std::cerr << "Kokkos::DeviceTBB memory leaks:" << std::endl ;
-    m_allocations.print( std::cerr );
-  }
-}
+{}
 
 }
 
@@ -87,63 +79,6 @@ void DeviceTBB::initialize(size_type nthreads )
 void DeviceTBB::finalize()
 {
 //	init.terminate();
-}
-
-/*--------------------------------------------------------------------------*/
-
-void * DeviceTBB::allocate_memory(
-  const std::string    & label ,
-  const std::type_info & type ,
-  const size_t member_size ,
-  const size_t member_count )
-{
-  DeviceTBB_Impl & s = DeviceTBB_Impl::singleton();
-
-  Impl::MemoryInfo tmp ;
-
-  tmp.m_type  = & type ;
-  tmp.m_label = label ;
-  tmp.m_size  = member_size ;
-  tmp.m_count = member_count ;
-  tmp.m_ptr   = calloc( member_size , member_count );
-
-  const bool ok_alloc  = 0 != tmp.m_ptr ;
-  const bool ok_insert = ok_alloc && s.m_allocations.insert( tmp );
-
-  if ( ! ok_alloc || ! ok_insert ) {
-    std::ostringstream msg ;
-    msg << "Kokkos::DeviceTBB::allocate_memory( " << label
-        << " , " << type.name()
-        << " , " << member_size
-        << " , " << member_count
-        << " ) FAILED " ;
-    if ( ok_alloc ) { msg << "memory allocation" ; }
-    else            { msg << "with internal error" ; }
-    throw std::runtime_error( msg.str() );
-  }
-
-  return tmp.m_ptr ;
-}
-
-void DeviceTBB::deallocate_memory( void * ptr )
-{
-  DeviceTBB_Impl & s = DeviceTBB_Impl::singleton();
-
-  if ( ! s.m_allocations.erase( ptr ) ) {
-    std::ostringstream msg ;
-    msg << "Kokkos::DeviceTBB::deallocate_memory( " << ptr
-        << " ) FAILED memory allocated by this device" ;
-    throw std::runtime_error( msg.str() );
-  }
-
-  free( ptr );
-}
-
-void DeviceTBB::print_memory_view( std::ostream & o )
-{
-  DeviceTBB_Impl & s = DeviceTBB_Impl::singleton();
-
-  s.m_allocations.print( o );
 }
 
 /*--------------------------------------------------------------------------*/

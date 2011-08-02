@@ -75,6 +75,8 @@ public:
   typedef ValueType  value_type ;
   typedef DeviceType device_type ;
 
+  typedef ValueView< value_type , DeviceHost > HostView ;
+
   /*------------------------------------------------------------------*/
   /** \brief  Access value */
   value_type & operator* () const ;
