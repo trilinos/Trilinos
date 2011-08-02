@@ -2087,8 +2087,8 @@ typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
   UNIT_TEST_DOUBLE(int, int)
 #endif
 
-# if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
     UNIT_TEST_COMPLEX_FLOAT(int, int)
-# endif 
+#endif 
 
 }
