@@ -57,7 +57,7 @@ long double evalQuad(int order, int power, EIntrepidBurkardt rule) {
 
   long double Q = 0.0;
   for (int i=0; i<size; i++) {
-    Q += cubWeights(i)*powl(cubPoints(i),power);
+    Q += cubWeights(i)*powl(cubPoints(i),(long double)power);
   }
   return Q;
 

@@ -109,10 +109,10 @@ public:
   void eval_integrand(UserVector & output, std::vector<Scalar> & input) {
     int    dimension = (int)alpha.size();
     Scalar total     = 0.0;
-    Scalar point     = 0;
+    Scalar point     = 0.0;
     for (int i=0; i<dimension; i++) {
       point     = 0.5*input[i]+0.5;
-      total    += std::pow(alpha[i]*(point-beta[i]),2);
+      total    += std::pow(alpha[i]*(point-beta[i]),2.0);
     }
     output.clear(); output.resize(1,std::exp(-total));
   }  

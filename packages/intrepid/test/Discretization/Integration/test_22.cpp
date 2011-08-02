@@ -67,7 +67,7 @@ long double evalQuad(std::vector<int> power, int dimension, int order,
   if (size%2) {
     Q  = cubWeights(mid);
     for (int i=0; i<dimension; i++) {
-      Q *= powl(cubPoints(mid,i),power[i]);
+      Q *= powl(cubPoints(mid,i),(long double)power[i]);
     }
   }
 
@@ -75,8 +75,8 @@ long double evalQuad(std::vector<int> power, int dimension, int order,
     long double value1 = cubWeights(i);
     long double value2 = cubWeights(size-i-1);
     for (int j=0; j<dimension; j++) {
-      value1 *= powl(cubPoints(i,j),power[j]);
-      value2 *= powl(cubPoints(size-i-1,j),power[j]);
+      value1 *= powl(cubPoints(i,j),(long double)power[j]);
+      value2 *= powl(cubPoints(size-i-1,j),(long double)power[j]);
     }
     Q += value1+value2;
   }

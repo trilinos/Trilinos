@@ -126,11 +126,11 @@ public:
     Scalar prod2     = (1.0-x)*point[0];
     
     for (int i=1; i<dimension; i++) {
-      prod1 = std::pow(gamma*(1.0-x),i); prod2 = 1.0-x;
+      prod1 = std::pow(gamma*(1.0-x),(double)i); prod2 = 1.0-x;
       for (int j=0; j<i; j++) {
 	prod2 *= point[j];
 	if (j<i-1) {
-	  prod1 *= std::pow(point[j],i-(j+1));
+	  prod1 *= std::pow(point[j],(double)(i-(j+1)));
 	}
       }
       (*etmp)[0] =  prod1*(1.0-prod2);
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
   // internal variables:
   int         errorFlag   = 0;
   long double TOL         = INTREPID_TOL;
-  int dimension = 8;
+  int dimension           = 8;
   std::vector<EIntrepidBurkardt> rule1D(dimension,BURK_PATTERSON);
   std::vector<EIntrepidGrowth>   growth1D(dimension,GROWTH_FULLEXP);
   int                            maxLevel = 7;

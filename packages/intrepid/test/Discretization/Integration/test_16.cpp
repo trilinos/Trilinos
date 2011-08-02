@@ -46,7 +46,9 @@ using namespace Intrepid;
 /*
   Computes integrals of monomials over a given reference cell.
 */
-long double evalQuad(std::vector<int> power, int dimension, std::vector<int> order, std::vector<EIntrepidBurkardt> rule) {
+long double evalQuad(std::vector<int> power, int dimension, 
+		     std::vector<int> order, 
+		     std::vector<EIntrepidBurkardt> rule) {
  
   CubatureTensorSorted<long double> lineCub(dimension,order,rule,false);
   order[0]--; order[1]--;
@@ -63,7 +65,7 @@ long double evalQuad(std::vector<int> power, int dimension, std::vector<int> ord
   if (size%2) {
     Q  = cubWeights(mid);
     for (int i=0; i<dimension; i++) {
-      Q *= powl(cubPoints(mid,i),power[i]);
+      Q *= powl(cubPoints(mid,i),(long double)power[i]);
     }
   }
 
@@ -71,15 +73,16 @@ long double evalQuad(std::vector<int> power, int dimension, std::vector<int> ord
     long double value1 = cubWeights(i);
     long double value2 = cubWeights(size-i-1);
     for (int j=0; j<dimension; j++) {
-      value1 *= powl(cubPoints(i,j),power[j]);
-      value2 *= powl(cubPoints(size-i-1,j),power[j]);
+      value1 *= powl(cubPoints(i,j),(long double)power[j]);
+      value2 *= powl(cubPoints(size-i-1,j),(long double)power[j]);
     }
     Q += value1+value2;
   }
   return Q;
 }
 
-long double evalInt(int dimension, std::vector<int> power, std::vector<EIntrepidBurkardt> rule) {
+long double evalInt(int dimension, std::vector<int> power, 
+		    std::vector<EIntrepidBurkardt> rule) {
   long double I = 1.0;
 
   for (int i=0; i<dimension; i++) {
@@ -180,7 +183,7 @@ int main(int argc, char *argv[]) {
 
 
   // internal variables:
-  int dimension = 2;
+  int dimension           = 2;
   int         errorFlag   = 0;
   long double reltol      = 1.0e+02*INTREPID_TOL;
   int         maxDeg      = 0;    
@@ -202,15 +205,19 @@ int main(int argc, char *argv[]) {
 	power[0] = j;
 	for (int k=0; k <= maxDeg; k++) {
 	  power[1] = k;
-	  analyticInt = 2*evalInt(dimension, power, rule1);
+	  analyticInt = 2.0*evalInt(dimension, power, rule1);
 	  testInt     = evalQuad(power,dimension,order,rule1);
 	  
 	  long double abstol  = (analyticInt == 0.0 ? reltol : std::fabs(reltol*analyticInt) );
 	  long double absdiff = std::fabs(analyticInt - testInt);
-	  *outStream << "Cubature order " << std::setw(2) << std::left << i << " integrating "
-		     << "x^" << std::setw(2) << std::left << j << "y^" << std::setw(2) << std::left 
-		     << k <<  ":" << "   " << std::scientific << std::setprecision(16) << testInt 
-		     << "   " << analyticInt << "   " << std::setprecision(4) << absdiff << "   " 
+	  *outStream << "Cubature order " << std::setw(2) << std::left << i 
+		     << " integrating "
+		     << "x^" << std::setw(2) << std::left << j << "y^" 
+		     << std::setw(2) << std::left 
+		     << k <<  ":" << "   " << std::scientific 
+		     << std::setprecision(16) << testInt 
+		     << "   " << analyticInt << "   " << std::setprecision(4) 
+		     << absdiff << "   " 
 		     << "<?" << "   " << abstol << "\n";
 	  if (absdiff > abstol) {
 	    errorFlag++;
