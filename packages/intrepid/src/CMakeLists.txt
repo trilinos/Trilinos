@@ -46,6 +46,8 @@ APPEND_SET(HEADERS
   Shared/Intrepid_ArrayToolsDefScalar.hpp
   Shared/Intrepid_ArrayToolsDefTensor.hpp
   Shared/Intrepid_ArrayTools.hpp
+  Shared/Intrepid_BurkardtRules.hpp
+  Shared/Intrepid_BurkardtRulesDef.hpp
   Shared/Intrepid_FieldContainerDef.hpp
   Shared/Intrepid_FieldContainer.hpp
   Shared/Intrepid_PointToolsDef.hpp
@@ -65,7 +67,11 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Discretization/Integration)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Discretization/FunctionSpaceTools)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Discretization/Basis)
-APPEND_SET(HEADERS
+APPEND_SET(HEADERS  
+  Discretization/Integration/Intrepid_AdaptiveSparseGridInterfaceDef.hpp
+  Discretization/Integration/Intrepid_AdaptiveSparseGridInterface.hpp
+  Discretization/Integration/Intrepid_AdaptiveSparseGridDef.hpp
+  Discretization/Integration/Intrepid_AdaptiveSparseGrid.hpp
   Discretization/Integration/Intrepid_Cubature.hpp
   Discretization/Integration/Intrepid_CubatureDirectDef.hpp
   Discretization/Integration/Intrepid_CubatureDirect.hpp
@@ -79,11 +85,15 @@ APPEND_SET(HEADERS
   Discretization/Integration/Intrepid_CubatureCompositeTet.hpp
   Discretization/Integration/Intrepid_CubatureGenSparseDef.hpp
   Discretization/Integration/Intrepid_CubatureGenSparse.hpp
+  Discretization/Integration/Intrepid_CubatureLineSortedDef.hpp
+  Discretization/Integration/Intrepid_CubatureLineSorted.hpp
   Discretization/Integration/Intrepid_CubatureSparseDef.hpp
   Discretization/Integration/Intrepid_CubatureSparse.hpp
   Discretization/Integration/Intrepid_CubatureSparseHelper.hpp
   Discretization/Integration/Intrepid_CubatureTensorDef.hpp
   Discretization/Integration/Intrepid_CubatureTensor.hpp
+  Discretization/Integration/Intrepid_CubatureTensorSortedDef.hpp
+  Discretization/Integration/Intrepid_CubatureTensorSorted.hpp
   Discretization/Integration/Intrepid_CubaturePolylib.hpp
   Discretization/Integration/Intrepid_CubaturePolylibDef.hpp
   Discretization/Integration/Intrepid_DefaultCubatureFactoryDef.hpp
@@ -171,6 +181,7 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_OrthogonalBases.hpp
   Discretization/Basis/Intrepid_OrthogonalBasesDef.hpp
   Discretization/Basis/Intrepid_ProductTopology.hpp
+  Discretization/Basis/Intrepid_ProductTopologyDef.hpp
   )
 
 #
