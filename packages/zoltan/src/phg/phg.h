@@ -58,6 +58,7 @@ struct PHGPartParamsStruct {
                                     Zoltan_PHG; lists part_sizes (%ages) 
                                     for all requested partitions. */
   int kway;                      /* 1 -> direct kway, 0->recursive bisection */
+  int rcb_red;                   /* Reduction factor using RCB */
   int redl;                      /* Reduction limit (constant). */
   int nCand;                     /* Maximum number of candidates per round;
                                     currently only used in agglomerative matching */

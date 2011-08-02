@@ -107,6 +107,8 @@ static PARAM_VARS PHG_params[] = {
     /* When to move data to fewer processors. */
   {"PHG_REPART_MULTIPLIER",           NULL,  "FLOAT",  0},
     /* Multiplier for communication to migration trade-off in repartitioning. */
+  {"HYBRID_REDUCTION_FACTOR",        NULL,  "INT",    0}, /* NEANEA */
+    /* Factor by which to reduce the number of parts when using RCB matching. */
   {"PATOH_ALLOC_POOL0",               NULL,  "INT",    0},
     /* Memory allocation parameter for Patoh. */
   {"PATOH_ALLOC_POOL1",               NULL,  "INT",    0},   
@@ -731,6 +733,7 @@ int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_SCALING", &hgp->vtx_scaling);
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_METHOD", hgp->refinement_str);
   Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY", &hgp->kway);
+  Zoltan_Bind_Param(PHG_params, "HYBRID_REDUCTION_FACTOR", &hgp->rcb_red); /* NEANEA */
 #ifdef CEDRIC_2D_PARTITIONS
   Zoltan_Bind_Param(PHG_params, "PHG_KEEP_TREE", &hgp->keep_tree);
 #endif /* CEDRIC_2D_PARTITIONS */
@@ -815,6 +818,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->nProc_x_req = -1;
   hgp->nProc_y_req = -1;
   hgp->kway = 0;
+  hgp->rcb_red == zz->Num_Proc; /* NEANEA probably change */
   hgp->fm_loop_limit = 10;
   hgp->fm_max_neg_move = 250;  
   hgp->refinement_quality = 1;
