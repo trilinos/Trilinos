@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
     *outStream << "Gauss-Patterson Cubature \n";
     *outStream << "Integrates functions on [-1,1] weighted by w(x) = 1\n";
     for (int l = 1; l<=7; l++) {
-      int i = pow(2,l+1)-1;
+      int i = (int)pow(2.0,(double)l+1.0)-1;
       Teuchos::Array<long double> nodes(i), weights(i);
       IntrepidBurkardtRules::patterson_lookup(i,nodes.getRawPtr(),weights.getRawPtr());
       for (int j=0; j<=(1.5*i+0.5); j++) {
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
       Teuchos::Array<long double> nodes(i), weights(i);
       IntrepidBurkardtRules::hermite_genz_keister_lookup(i,nodes.getRawPtr(),weights.getRawPtr());      
 
-      int max = 1.5*i+0.5;
+      int max = (int)(1.5*(double)i+0.5);
       if (i==1) max = 1;
       for (int j=0; j<=max; j++) { 
 	if (j%2)

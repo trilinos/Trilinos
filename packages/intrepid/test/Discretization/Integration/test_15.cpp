@@ -129,10 +129,13 @@ int main(int argc, char *argv[]) {
       for (int j=0; j <= maxDeg; j++) {
 	testInt             = evalQuad(i,j,rule);
 	long double absdiff = std::fabs(testInt);
-	*outStream << "Cubature order " << std::setw(2) << std::left << i << " integrating "
+	*outStream << "Cubature order " << std::setw(2) << std::left << i 
+		   << " integrating "
 		   << "x^" << std::setw(2) << std::left << j <<  ":" << "   "
-		   << std::scientific << std::setprecision(16) << testInt << "   " << analyticInt 
-		   << "   " << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol 
+		   << std::scientific << std::setprecision(16) << testInt 
+		   << "   " << analyticInt 
+		   << "   " << std::setprecision(4) << absdiff << "   " 
+		   << "<?" << "   " << abstol 
 		   << "\n";
 	if (absdiff > abstol) {
 	  errorFlag++;

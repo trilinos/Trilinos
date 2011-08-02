@@ -237,11 +237,11 @@ int main(int argc, char *argv[]) {
       }
       else if (rule==BURK_PATTERSON) {
 	for (int i=0; i < 3; i++) {
-	  int l = std::pow(2,i+1)-1;
+	  int l = (int)std::pow(2.0,(double)i+1.0)-1;
 	  if (i==0) 
 	    maxDeg = 1;
 	  else
-	    maxDeg = 1.5*l+0.5;
+	    maxDeg = (int)(1.5*(double)l+0.5);
 	  
 	  order[0] = l; order[1] = l;
 	  for (int j=0; j <= maxDeg; j++) {	    
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
 	  if (i==0) 
 	    maxDeg = 1;
 	  else
-	    maxDeg = 1.5*l+0.5;
+	    maxDeg = (int)(1.5*(double)l+0.5);
 
 	  order[0] = l; order[1] = l;
 	  for (int j=0; j <= maxDeg; j++) {	    
