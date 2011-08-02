@@ -15,7 +15,7 @@ namespace test{
 int main( int argc , char ** argv ){
 
   int threads, runs;
-  int beg = 10;
+  int beg = 20;
   int end = 21;
 
   if (argc > 1)

@@ -252,7 +252,8 @@ void * DeviceCuda_Impl::allocate_memory(
     else            { msg << "with internal error" ; }
     throw std::runtime_error( msg.str() );
   }
-
+  cudaMemset(tmp.m_ptr,0,member_size *member_count);
+  cudaThreadSynchronize();
   return tmp.m_ptr ;
 }
 

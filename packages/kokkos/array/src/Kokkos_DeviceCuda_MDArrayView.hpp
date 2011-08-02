@@ -100,7 +100,11 @@ public:
   /** \brief  Because memory is contiguous this is exposed */
   inline
   __device__
-  value_type * ptr_on_device() const { return m_memory.ptr_on_device(); }
+  value_type * ptr_on_device() const {
+	if (rank() == 1) 
+		throw std::runtime_error("Rank is not equation to 1");
+
+	 return m_memory.ptr_on_device(); }
 #endif
 
   /*------------------------------------------------------------------*/
