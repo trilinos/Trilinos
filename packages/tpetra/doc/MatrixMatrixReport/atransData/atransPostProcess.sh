@@ -1,7 +1,7 @@
 touch plotcommand.gnu
-TIMETITLE="Runtime vs. Number Of Nodes for Matrix-Matrix Multiply (lower is better)"
+TIMETITLE="Weak Scaling Runtime vs. Number Of Nodes for Matrix-Matrix Multiply (lower is better)"
 TIMEOUT="time.ps"
-EFFTITLE="Scale efficiency vs. Number Of Nodes for Matrix-Matrix Multiply (higher is better)"
+EFFTITLE="Weak Scailing Scale efficiency vs. Number Of Nodes for Matrix-Matrix Multiply (higher is better)"
 EFFOUT="eff.ps" 
 echo "set term postscript color  \\" >> plotcommand.gnu
 echo "dashed dashlength 3.0 linewidth 3.0 " >> plotcommand.gnu
