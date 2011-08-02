@@ -167,7 +167,6 @@ These tests were conducted in the same manner as above.
 The encouraging thing about these results is that the Tpetra algorithm is as good as if not better than the EpetraExt 
 algorithm at scale. It should be noted that the ML lines are cut short because at the next problem size in our testing, 
 they would fail due to a memory error. Consequently, we could not run tests for greater problem sizes with ML. 
-\JJH{Where did this memory error occur?  ML has been run on pretty big problems in the past ....}
 
 \begin{figure}
 \centering
@@ -185,9 +184,11 @@ they would fail due to a memory error. Consequently, we could not run tests for 
 
 \subsection{Transpose Mode Tests}
 Since Tpetra and EpetraExt differ wildly when it comes to transpose modes, we decided to compare the two. We did the same
-testing procedure as in the development stages comparison, except that we requested A be transposed. Figure~\ref{transtime}
+testing procedure as above, except that we requested A be transposed. Figure~\ref{transtime}
 and Figure~\ref{transeff} show the results. To say that the Tpetra algorithm scales better than the EpetraExt algorithm
-would be a gross understatement. We attempted to conduct a similar experiment where we transposed B instead of A, 
+would be a gross understatement. The Tpetra algorithm levels off at about a 5 second runtime, where as the EpetraExt 
+algorithm's runtime seems to grow exponentially. We attempted to conduct a similar experiment where we transposed B 
+instead of A, 
 but the EpetraExt algorithm was taking even longer (over ten minutes on a single node of Hopper) and we didn't want to 
 waste our limited computing resources. ML is not included in these results because it does not have a transpose mode.
 \JJH{ML matrices could be transposed first, however, then multiplied together.  This is basically what Tpetra does with
@@ -211,14 +212,14 @@ the rowMatrixTranposer.}
 \section{Areas for Future Improvement}
 
 \subsection{Serial Test Motivations}
-\KLN{I feel like this is the best spot for this subsection, but I could also see how one might argue that it should be placed before
-the other three subsections. what do you think?}
 Table~\ref{serialTable} shows the results of running the three Trilinos-based matrix-matrix multiply algorithms in 
-serial. These tests were conducted identically to the ones in section~\ref{perfSect} with the exception of being run on a single core of 
-Hopper. Since this test in serial, all run times should be void of any time that might be attributed to communication.
-The discrepancy between the EpetraExt and ML runtime has been known for quite some time and is believed to be
-attributed to ML's hashing scheme by several scientists at Sandia National Labs. We believe the discrepancy between 
-Tpetra's and EpetraExt's time has do to with Tpetra's \verb!fillComplete! function since most everything else in this simple test 
+serial. These tests were conducted identically to the ones in section~\ref{perfSect} with the exception of being run on a 
+single \emph{core} of Hopper. Since this test was in serial, all run times should be void of any time that might be 
+attributed to communication. The discrepancy between the EpetraExt and ML runtime has been known for quite some time and 
+is believed 
+by several scientists at Sandia National Labs to be attributed to a hashing schemed that the ML algorithm employs. We 
+believe the discrepancy between Tpetra's and EpetraExt's time has do to with Tpetra's \verb!fillComplete! function since 
+most everything else in this simple test 
 is relatively the same between the Tpetra algorithm and the EpetraExt algorithm. This leads us to believe that
 by improving Tpetra's underlying architecture (i.e. refining \verb!fillComplete!) and implementing ML's hashing
 scheme, we should be able to make Tpetra's matrix-matrix multiplication routine run at the same level as ML.
@@ -236,16 +237,17 @@ Time (Seconds) & 1.4 & 0.9 & 0.3 \\ \hline
 
 \subsection{Improvement of Underlying Tpetra Architecture}
 The most important thing that will help the matrix-matrix multiply routine is to improve the underlying Tpetra architecture. 
-Undoubtedly the inefficient \verb!sort2! routine was not the only problem with Tpetra at large. There have been reports from other 
-scientists at Sandia that things like the Tpetra Import/Export classes are not running as nearly as fast as their Epetra 
-counterparts. These things need to be investigated, and fixed if necessary.
+Undoubtedly the inefficient \verb!sort2! routine was not the only problem with Tpetra at large. There have been reports 
+from other scientists at Sandia that things like the Tpetra Import/Export classes are not running as nearly as fast as 
+their Epetra counterparts. In addition, Tpetra has no performance tests. Consquently, the performance of almost all of
+tpetra is unknown. These things need to be investigated, and fixed if necessary.
 
 \subsection{Possible Implementation of ML's Algorithm}
-ML has a matrix-matrix multiply routine that employs a complex hashing scheme in order to speed up lookup times for 
-column indices. ML's matrix-matrix multiplication algorithm is fast, but it's not clear to the current Tpetra developers 
-how much the hashing scheme has to do with ML's speed. That said, it is definitely worth investigating. ML's hashing scheme 
-is complex. Figure~\ref{hashalgo} outlines in pseudo code the algorithm as current Tpetra developers 
-understand it. Implementing this algorithm should not be all that difficult.
+ML's matrix-matrix multiply routine a complex hashing scheme in order to speed up lookup times for 
+column indices. ML's matrix-matrix multiplication algorithm is fast, and several scientist's at Sandia believe it's this
+hashing that give it such an edge. Figure~\ref{hashalgo} outlines in pseudo code the 
+algorithm as current Tpetra developers understand it. Implementing this algorithm in the Tpetra matrix-matrix multiply 
+routine should not be all that difficult and could potentially provide great speed improvments.
 
 \begin{figure}
 \centering
@@ -290,13 +292,13 @@ equal to the maximum number of row entries in matrix A.
 \end{figure}
 
 \subsection{Kokkos Kernel}
-The actual computation kernel should be moved down into Kokkos where it can better take advantage node-parallelism. 
-This should offer non-trivial speedups and not be very difficult to implement.
-
+While not necessarily indicated by the serial tests, writing a Kokkos kernel for the matrix-multiply routine could improve
+performance. The implementation of such a kernel should be fairly trivial and provide significant speedups by taking
+advantage of node-level parallelism.
 
 \section{Contributions}
-All matrix multiplication code was adapted from EpetraExt for use in Tpetra by Kurtis Nusbaum. Test code was written by Johnathan Hu, Chris Siefter, 
-Jeremie Gaidamour, and Kurtis Nusbaum.
+All matrix multiplication code was adapted from EpetraExt for use in Tpetra by Kurtis Nusbaum. Test code was written by 
+Johnathan Hu, Chris Siefter, Jeremie Gaidamour, and Kurtis Nusbaum.
 
 \clearpage
 \providecommand*{\phantomsection}{}
