@@ -674,8 +674,6 @@
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LR"/>
-    <Dependency name="Pamgen" type="ILO"/>
-    <Dependency name="SEACAS" type="LO"/>
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="LR"/>
