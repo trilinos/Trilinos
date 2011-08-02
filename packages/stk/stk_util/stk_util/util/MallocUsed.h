@@ -6,11 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef MALLOCUSED_H
+#ifndef STK_UTIL_UTIL_MALLOCUSED_H
+#define STK_UTIL_UTIL_MALLOCUSED_H
 
 #include <stdlib.h>
-
-#define MALLOCUSED_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,4 +35,4 @@ inline size_t malloc_max_footprint() {
 } /* extern "C" */
 #endif
 
-#endif /* MALLOCUSED_H */
+#endif /* STK_UTIL_UTIL_MALLOCUSED_H */
