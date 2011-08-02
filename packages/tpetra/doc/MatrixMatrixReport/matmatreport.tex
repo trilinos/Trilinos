@@ -5,26 +5,9 @@
 \usepackage{xspace}
 \usepackage{fancyvrb}
 
-\begin{comment}
-\usepackage[pdftex, pdfpagemode=none, pdfstartview=FitH]{hyperref}
-\hypersetup{
-  pdfauthor = {Kurtis L. Nusbaum},
-  pdftitle = {Evaluation of Tpetra's Sparse Matrix-Matrix Multiplication Routine},
-  pdfkeywords = {multigrid, MueLu, Trilinos, software design, matrix-matrix multiplication},
-  colorlinks= {true},
-  citecolor = {blue},
-}
-\end{comment}
-
-%\usepackage[usenames]{color}
-\definecolor{jhuGreen}{rgb}{0,.7,.4}
-\newcommand{\JJH}[1]{\textcolor{jhuGreen}{JJH: #1}}
-\definecolor{klnBlue}{rgb}{.2,.1,.7}
-\newcommand{\KLN}[1]{\textcolor{klnBlue}{KLN: #1}}
-
 \newcommand{\Aprime}{\ensuremath{A'}\xspace}
 \newcommand{\Bprime}{\ensuremath{B'}\xspace}
-\title{Evaluation of Tpetra's Matrix-Matrix Multiplication Routine}
+\title{Evaluation of Tpetra's Sparse Matrix-Matrix Multiplication Routine}
 \author{Kurtis L. Nusbaum}
 \date{}
 
@@ -38,7 +21,7 @@
 
 \begin{abstract}
 Over the course of the last year, a sparse matrix-matrix multiplication routine has been developed for the Tpetra package.
-This routine is based the same algorithm that is used in EpetraExt with some modifications. Since it 
+This routine is based the same algorithm that is used in EpetraExt with heavy modifications. Since it 
 achieved a working state, several major optimizations have been made in an effort to speed up the routine. This report will
 discuss the optimizations made to the routine, its current state, and where future work needs to be done.
 \end{abstract}
@@ -46,8 +29,8 @@ discuss the optimizations made to the routine, its current state, and where futu
 \section*{Acknowledgments}
 Thanks to all of those at Sandia National Labs who helped provide the tools needed to compile this report. 
 A special thanks to Dr.\ Chris 
-Siefert, Dr.\ Mark Hoemmen, and Dr.\ Johnathan Hu whose guidance was invaluable. Thanks to Dr. Mike Heroux for funding this 
-project. Thank you to the entire Trilinos community whose help is always appreciated. Thanks to St. John's University
+Siefert, Dr.\ Mark Hoemmen, and Dr.\ Johnathan Hu whose guidance was invaluable. Thanks to Dr.\ Mike Heroux for funding this 
+project. Thank you to the entire Trilinos community whose help is always appreciated. Thanks to St.\ John's University
 for providing resources which helped create the material that this report evaluates. 
 
 This research used resources of the National Energy Research Scientific Computing Center, which is supported by the
@@ -65,7 +48,7 @@ The format of this report is based on information found in~\cite{Sand98-0730}.
 Over the course of the last year, a sparse matrix-matrix multiplication routine has been developed for the 
 Tpetra~\cite{TpetraHomePage}
 package. This routine is based on the same algorithm that is used in EpetraExt~\cite{EpetraExtHomePage} 
-with some modifications. Since it achieved a working state, several major optimizations have been made in an 
+with heavy modifications. Since it achieved a working state, several major optimizations have been made in an 
 effort to speed up the routine. This report will
 discuss the optimizations made to the routine, its current state, and where future work needs to be done.
 
