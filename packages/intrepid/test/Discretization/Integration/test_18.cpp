@@ -113,8 +113,8 @@ public:
     Scalar point     = 0;
     for (int i=0; i<dimension; i++) {
       point     = 0.5*input[i]+0.5;
-      total    *= ( 1.0/std::pow(alpha[i],2.0)
-		   +    std::pow(point-beta[i],2.0) );
+      total    *= ( 1.0/powl(alpha[i],(long double)2.0)
+		    +   powl(point-beta[i],(long double)2.0) );
     }
     output.clear(); output.resize(1,1.0/total);
   }  

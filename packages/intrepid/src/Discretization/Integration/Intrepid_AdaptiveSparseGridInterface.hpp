@@ -75,7 +75,7 @@ protected:
 public:  
   /** \brief Destructor.
   */
-  ~AdaptiveSparseGridInterface() {}
+  ~AdaptiveSparseGridInterface();
 
   /** \brief Constructor starts with index [1,...,1].     
 

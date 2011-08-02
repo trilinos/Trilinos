@@ -126,11 +126,11 @@ public:
     Scalar prod2     = (1.0-x)*point[0];
     
     for (int i=1; i<dimension; i++) {
-      prod1 = std::pow(gamma*(1.0-x),(double)i); prod2 = 1.0-x;
+      prod1 = powl(gamma*(1.0-x),(long double)i); prod2 = 1.0-x;
       for (int j=0; j<i; j++) {
 	prod2 *= point[j];
 	if (j<i-1) {
-	  prod1 *= std::pow(point[j],(double)(i-(j+1)));
+	  prod1 *= powl(point[j],(long double)(i-(j+1)));
 	}
       }
       (*etmp)[0] =  prod1*(1.0-prod2);

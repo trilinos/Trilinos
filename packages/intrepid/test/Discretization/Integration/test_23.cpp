@@ -107,7 +107,7 @@ public:
 	  dimension,rule1D,growth1D,maxLevel,isNormalized) {}
 
   void eval_integrand(UserVector & output, std::vector<Scalar> & input) {
-    output.clear(); output.resize(1,std::pow(input[0]+input[1],6.0));
+    output.clear(); output.resize(1,powl(input[0]+input[1],(long double)6.0));
   }  
   Scalar error_indicator(UserVector & input) {
     int dimension = (int)input.size();
@@ -160,7 +160,7 @@ long double evalQuad(CubatureTensorSorted<long double> & lineCub) {
   
   long double Q = 0.0;
   for (int k=0; k<size; k++) 
-    Q += cubWeights(k)*std::pow(cubPoints(k,0)+cubPoints(k,1),6.0);
+    Q += cubWeights(k)*powl(cubPoints(k,0)+cubPoints(k,1),(long double)6.0);
 
   return Q;
 }
