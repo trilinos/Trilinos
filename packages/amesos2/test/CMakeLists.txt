@@ -18,6 +18,5 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyMatrixTestFiles
                ./matrices/amesos2_test_mat2.mtx
                ./matrices/amesos2_test_mat3.mtx
                ./matrices/amesos2_test_mat4.mtx
-               ./solvers/solvers_test.xml
   )
 

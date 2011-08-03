@@ -180,16 +180,19 @@ namespace Amesos2 {
   //
   // Specializations of Teuchos::LAPACK only exist for real and
   // complex float and double types.
+  //
+  // TODO: Reinstate the complex support once the bug in
+  // Teuchos::SerialDenseSolver has been fixed
   template <>
   struct solver_traits<Lapack> {
-#ifdef HAVE_TEUCHOS_COMPLEX
-    typedef Meta::make_list4<float,
-			     double,
-			     std::complex<float>,
-			     std::complex<double> >supported_scalars;
-#else
+// #ifdef HAVE_TEUCHOS_COMPLEX
+//     typedef Meta::make_list4<float,
+// 			     double,
+// 			     std::complex<float>,
+// 			     std::complex<double> >supported_scalars;
+// #else
     typedef Meta::make_list2<float, double> supported_scalars;
-#endif
+// #endif
 };
   
 } // end namespace Amesos2

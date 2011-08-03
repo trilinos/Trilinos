@@ -1,34 +1,40 @@
 INCLUDE(PackageAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE(
   Solver_Test
-  NAME General_Solver_Test
-  SOURCES
-    Solver_Test
-  ARGS "--xml-params=solvers_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
+  SOURCES Solver_Test
   )
 
+##### SuperLu Tests #####
+
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUFiles
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers
+    SOURCE_FILES superlu_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  PACKAGE_ADD_TEST(
+    Solver_Test
+    NAME SuperLU_Solver_Test
+    ARGS "--xml-params=superlu_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    COMM serial mpi
+    )
+
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Superlu_UnitTests
     SOURCES
       Superlu_UnitTests
       ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
     COMM serial mpi
+    CATEGORIES NIGHTLY
     STANDARD_PASS_OUTPUT
     )
-
-  # PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  #   Superlu_Solve_Tests
-  #   SOURCES
-  #     Superlu_Solve_Tests
-  #     ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
-  #   COMM serial mpi
-  #   STANDARD_PASS_OUTPUT
-  #   )
 ENDIF()
+
+
+##### SuperLU_MT Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUMTFiles
@@ -46,6 +52,9 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
     )
 ENDIF()
 
+
+##### SuperLU_DIST Tests #####
+
 IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUDistFiles
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers/
@@ -61,6 +70,9 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
     COMM mpi
     )
 ENDIF()
+
+
+##### PARDISO_MKL Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyPardisoMKLFiles
@@ -78,6 +90,9 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
     )
 ENDIF()
 
+
+##### LAPACK Tests #####
+
 IF (${PACKAGE_NAME}_ENABLE_LAPACK)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyLapackFiles
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers/
@@ -93,12 +108,3 @@ IF (${PACKAGE_NAME}_ENABLE_LAPACK)
     COMM serial mpi
     )
 ENDIF()
-
-
-PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyFiles
-  SOURCE_FILES solvers_test.xml
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  EXEDEPS Solver_Test
-  )
-

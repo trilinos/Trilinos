@@ -15,7 +15,7 @@ General TODO
 ============
 
  - Remove Amesos2_ENABLE_XXXX configure options in CMakeLists.txt
-   because they are auto-generated from the Dependencies file.
+   because they are auto-generated from the Dependencies file. (DONE)
 
  - When refreshing the internal values of A, need to check that the
    dimensions still line up, and if not, resize internal arrays and
@@ -55,7 +55,7 @@ General TODO
  - Remove the printStatus method. (DONE)
 
  - LAPACK support (ScaLAPACK would be nice, but more involved.  Only
-   upon request).
+   upon request). (LAPACK DONE)
 
  - Add Amesos2_ENABLE_Timers option which is off by default.  Will
    have to put ifdef guards around all timer activity. (DONE)
