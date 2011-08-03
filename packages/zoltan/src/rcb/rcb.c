@@ -456,6 +456,7 @@ static int rcb_fn(
   double max_box;                   /* largest length of bbox */
   char msg[128];                    /* buffer for error messages */
   double pt[3];
+  int *dindx = NULL, *tmpdindx = NULL;
 
   /* MPI data types and user functions */
 
@@ -512,6 +513,12 @@ static int rcb_fn(
     ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RCB_Build_Structure.");
     goto End;
   }
+#ifdef KDDKDD_DEBUG
+  {int gnvtx;
+   MPI_Allreduce(&pdotnum, &gnvtx, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  printf("%d KDDKDD RCB GDOT %d\n", zz->Proc, gnvtx);
+  }
+#endif
 
   rcb = (RCB_STRUCT *) (zz->LB.Data_Structure);
 
@@ -564,12 +571,6 @@ static int rcb_fn(
                                            num_import,
                                            import_global_ids, import_local_ids,
                                            import_procs, import_to_part);
-{
-int kdd;
-printf("%d KDDKDD After Candidates_Copy_Input %d\n", zz->Proc, *num_import);
-for (kdd = 0; kdd < *num_import; kdd++)
-printf("%d KDDKDD %d %d\n", zz->Proc, kdd, (*import_global_ids)[kdd]);
-}
     if (ierr < 0) {
        ZOLTAN_PRINT_ERROR(proc,yo,
                           "Error returned from Zoltan_RB_Return_Arguments.");
@@ -1095,8 +1096,8 @@ printf("%d KDDKDD %d %d\n", zz->Proc, kdd, (*import_global_ids)[kdd]);
    * more partitions if needed. */
 
   if (num_parts > 1) {
-    int *dindx = (int *) ZOLTAN_MALLOC(dotnum * 2 * sizeof(int));
-    int *tmpdindx = dindx + dotnum;
+    dindx = (int *) ZOLTAN_MALLOC(dotnum * 2 * sizeof(int));
+    tmpdindx = dindx + dotnum;
     if (allocflag) {
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&dotlist);
@@ -1131,7 +1132,6 @@ printf("%d KDDKDD %d %d\n", zz->Proc, kdd, (*import_global_ids)[kdd]);
                counters, treept, dim_spec, level,
                coord, wgts, part_sizes, wgtscale, rcb->Num_Dim, pivot_choice, 
                max_aspect_ratio);
-    ZOLTAN_FREE(&dindx);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from serial_rcb");
       goto End;
@@ -1199,8 +1199,8 @@ EndReporting:
   }
   else if (zz->LB.Return_Lists == ZOLTAN_LB_CANDIDATE_LISTS) {
     /* Select a candidate for each part and return it in the export_GIDs. */
-    ierr = Zoltan_RB_Candidates_Output(zz, 
-                                       dotnum, rcb->Global_IDs, rcb->Local_IDs,
+    ierr = Zoltan_RB_Candidates_Output(zz, dotnum, dindx,
+                                       rcb->Global_IDs, rcb->Local_IDs,
                                        &rcb->Dots, 
                                        *num_import, *import_global_ids,
                                        num_export, export_global_ids);
@@ -1210,6 +1210,7 @@ EndReporting:
        goto End;
     }
   }
+  ZOLTAN_FREE(&dindx);
 
   if (gen_tree) {
     int *displ, *recvcount;
