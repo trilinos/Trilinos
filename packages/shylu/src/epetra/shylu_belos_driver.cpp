@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
 
     bool verbose = false, proc_verbose = true;
-    bool leftprec = true;      // left preconditioning or right.
+    bool leftprec = false;      // left preconditioning or right.
     int frequency = -1;        // frequency of status test output.
     int blocksize = 1;         // blocksize
     int numrhs = 1;            // number of right-hand sides to solve for
