@@ -1,6 +1,6 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "Tpetra_MatrixMatrix.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include <cmath>
 

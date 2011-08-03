@@ -16,7 +16,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixSolveOp.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
-#include "Tpetra_MatrixMatrix.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
@@ -2087,8 +2087,8 @@ typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
   UNIT_TEST_DOUBLE(int, int)
 #endif
 
-# if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+#if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
     UNIT_TEST_COMPLEX_FLOAT(int, int)
-# endif 
+#endif 
 
 }

@@ -1,0 +1,4 @@
+This report requires the following software to compile:
+-pdflatex
+-ps2pdf
+-gnuplot (version 4.2 or higher)

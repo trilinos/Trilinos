@@ -110,7 +110,8 @@ extern int Zoltan_RB_Candidates_Copy_Input(ZZ *, int, ZOLTAN_ID_PTR,
   ZOLTAN_ID_PTR, struct Dot_Struct *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   int **, int **);
 
-extern int Zoltan_RB_Candidates_Output(ZZ *, int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
+extern int Zoltan_RB_Candidates_Output(ZZ *, int, int *, 
+  ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
   struct Dot_Struct *, int, ZOLTAN_ID_PTR, int *, ZOLTAN_ID_PTR *);
 
 

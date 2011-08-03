@@ -59,10 +59,13 @@ template< typename ValueType , class MapOption >
 class MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapOption >
 {
 public:
-  typedef ValueType                       value_type ;
-  typedef KOKKOS_MACRO_DEVICE             device_type ;
-  typedef MapOption                       map_option ;
-  typedef typename device_type::size_type size_type ;
+  typedef ValueType                           value_type ;
+  typedef KOKKOS_MACRO_DEVICE                 device_type ;
+  typedef MapOption                           map_option ;
+  typedef typename device_type::memory_space  memory_space ;
+  typedef typename device_type::size_type     size_type ;
+
+  typedef MDArrayView< value_type , DeviceHost , map_option > HostView ;
 
   /*------------------------------------------------------------------*/
   enum { Contiguous = true };
@@ -193,7 +196,7 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MDArrayView( const MDArrayView & rhs )
     : m_memory(), m_map( rhs.m_map )
-    { device_type::assign_memory_view( m_memory , rhs.m_memory); }
+    { memory_space::assign_memory_view( m_memory , rhs.m_memory); }
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
@@ -203,7 +206,7 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   MDArrayView & operator = ( const MDArrayView & rhs )
     {
-      device_type::assign_memory_view( m_memory , rhs.m_memory );
+      memory_space::assign_memory_view( m_memory , rhs.m_memory );
       m_map = rhs.m_map ;
       return *this ;
     }
@@ -235,7 +238,7 @@ public:
 
 private:
 
-  MemoryView< value_type , device_type >            m_memory ;
+  MemoryView< value_type , memory_space >           m_memory ;
   Impl::MDArrayIndexMap< device_type , map_option > m_map ;
 
   inline
@@ -244,7 +247,7 @@ private:
                size_t n4 , size_t n5 , size_t n6 , size_t n7 )
     : m_memory()
     , m_map( nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 )
-    { device_type::allocate_memory_view( m_memory , m_map.size() , label ); }
+    { memory_space::allocate_memory_view( m_memory , m_map.size() , label ); }
 
   template< typename V , class D , class M >
   friend

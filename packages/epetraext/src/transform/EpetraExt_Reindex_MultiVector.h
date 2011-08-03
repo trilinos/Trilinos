@@ -62,6 +62,8 @@ class MultiVector_Reindex : public ViewTransform<Epetra_MultiVector> {
    */
   NewTypeRef operator()( OriginalTypeRef orig );
 
+  NewTypeRCP transform( OriginalTypeRef orig );
+
 };
 
 } //namespace EpetraExt

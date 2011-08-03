@@ -178,9 +178,62 @@ namespace Belos {
       return numIters_;
     }
   
-    /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
-        \note This flag will be reset the next time solve() is called.
-     */
+    /// \brief Whether a "loss of accuracy" was detected during the last solve().
+    ///
+    /// The GMRES algorithm (which Pseudoblock GMRES implements) uses
+    /// two different residual norms to predict convergence:
+    /// "implicit" (also called "native") and "explicit" (also called
+    /// "exact," not to be confused with "exact arithmetic").  The
+    /// "implicit" residuals are computed by the solver via a
+    /// recurrence relation (the Arnoldi relation, in the case of
+    /// GMRES).  The "explicit" residuals are computed directly as $B
+    /// - A X_k$.  Implicit residuals are much cheaper to compute,
+    /// since they are available almost "for free" from the recurrence
+    /// relation.  In contrast, computing exact residuals requires
+    /// computing the current approximate solution \f$X_k\f$, applying
+    /// the global operator \f$A\f$ to \f$X_k\f$, and then computing
+    /// the norm of the resulting vector(s) via a global reduction.
+    /// Thus, GMRES favors using the cheaper implicit residuals to
+    /// predict convergence.  Users typically want convergence with
+    /// respect to explicit residuals, though.
+    ///
+    /// Implicit and explicit residuals may differ due to rounding
+    /// error.  However, the difference between implicit and explicit
+    /// residuals matters most when using a left (or split)
+    /// preconditioner.  In that case, the implicit residuals are
+    /// those of the left-preconditioned problem \f$M_L^{-1} A X =
+    /// M_L^{-1} B\f$ instead of the original problem \f$A X = B\f$.
+    /// The implicit residual norms may thus differ significantly from
+    /// the explicit residual norms, even if one could compute without
+    /// rounding error.
+    ///
+    /// When using a left preconditioner, Pseudoblock GMRES tries to
+    /// detect if the implicit residuals have converged but the
+    /// explicit residuals have not.  In that case, it will reduce the
+    /// convergence tolerance and iterate a little while longer to
+    /// attempt to reduce the explicit residual norm.  However, if
+    /// that doesn't work, it declares a "loss of accuracy" for the
+    /// affected right-hand side(s), and stops iterating on them.
+    /// (Not all right-hand sides may have experienced a loss of
+    /// accuracy.)  Thus, the affected right-hand sides may or may not
+    /// have converged to the desired residual norm tolerance.
+    /// Calling this method tells you whether a "loss of accuracy"
+    /// (LOA) occurred during the last \c solve() invocation.
+    ///
+    /// When <i>not</i> using a left preconditioner, Pseudoblock GMRES
+    /// will iterate until both the implicit and explicit residuals
+    /// converge.  (It does not start testing the explicit residuals
+    /// until the implicit residuals have converged.  This avoids
+    /// whenever possible the cost of computing explicit residuals.)
+    /// Implicit and explicit residuals may differ due to rounding
+    /// error, even though they are identical when no rounding error
+    /// occurs.  In this case, the algorithm does <i>not</i> report a
+    /// "loss of accuracy," since it continues iterating until the
+    /// explicit residuals converge.
+    ///
+    /// \note Calling \c solve() again resets the flag that reports
+    ///   whether a loss of accuracy was detected.  Thus, you should
+    ///   call this method immediately after calling \c solve().
     bool isLOADetected() const { return loaDetected_; }
   
     //@}
@@ -978,7 +1031,15 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           if ( convTest_->getStatus() == Passed ) {
         
             if ( expConvTest_->getLOADetected() ) {
-              // we don't have convergence but we will deflate out the linear systems and move on.
+	      // Oops!  There was a loss of accuracy (LOA) for one or
+	      // more right-hand sides.  That means the implicit
+	      // (a.k.a. "native") residuals claim convergence,
+	      // whereas the explicit (hence expConvTest_, i.e.,
+	      // "explicit convergence test") residuals have not
+	      // converged.
+	      //
+	      // We choose to deal with this situation by deflating
+	      // out the affected right-hand sides and moving on.
               loaDetected_ = true;
               printer_->stream(Warnings) <<
                 "Belos::PseudoBlockGmresSolMgr::solve(): Warning! Solver has experienced a loss of accuracy!" << std::endl;

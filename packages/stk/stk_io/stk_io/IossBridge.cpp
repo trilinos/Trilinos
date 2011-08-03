@@ -1021,13 +1021,13 @@ namespace stk {
 	if (blocks.size() > 0) {
 	  for (size_t j = 0; j < blocks.size(); j++) {
 	    mesh::Part & side_block_part = *blocks[j];
-            mesh::Selector selector = ( meta.locally_owned_part() | meta.globally_shared_part() ) & side_block_part;
+            mesh::Selector selector = meta.locally_owned_part() & side_block_part;
 	    size_t num_side = count_selected_entities(selector, bulk_data.buckets(type));
 
 	    define_side_block(side_block_part, sset, type, num_side, spatial_dimension);
 	  }
 	} else {
-          mesh::Selector selector = ( meta.locally_owned_part() | meta.globally_shared_part() ) & part;
+          mesh::Selector selector = meta.locally_owned_part() & part;
 	  size_t num_side = count_selected_entities(selector, bulk_data.buckets(type));
 	  define_side_block(part, sset, type, num_side, spatial_dimension);
 	}
@@ -1094,7 +1094,7 @@ namespace stk {
 	  throw std::runtime_error( msg.str() );
 	}
 
-        mesh::Selector selector = ( meta.locally_owned_part() | meta.globally_shared_part() ) & part;
+        mesh::Selector selector = meta.locally_owned_part() & part;
 	const size_t num_elems = count_selected_entities( selector, bulk.buckets(elem_rank));
 
 	int spatial_dim = io_region.get_property("spatial_dimension").get_int();
@@ -1206,14 +1206,19 @@ namespace stk {
 
       size_t get_entities(stk::mesh::Part &part,
 			  const stk::mesh::BulkData &bulk,
-			  std::vector<mesh::Entity*> &entities)
+			  std::vector<mesh::Entity*> &entities,
+			  bool include_shared=true)
       {
 	mesh::MetaData & meta = mesh::MetaData::get(part);
 	mesh::EntityRank type = part_primary_entity_rank(part);
 	if (invalid_rank(type))
 	  type = node_rank(meta);
 
-        mesh::Selector selector = part & ( meta.locally_owned_part() | meta.globally_shared_part() );
+	mesh::Selector own_share = meta.locally_owned_part();
+	if (include_shared)
+	  own_share |= meta.globally_shared_part();
+	
+        mesh::Selector selector = part & own_share;
 	get_selected_entities(selector, bulk.buckets(type), entities);
 	return entities.size();
       }
@@ -1226,7 +1231,7 @@ namespace stk {
 	const mesh::MetaData & meta_data = mesh::MetaData::get(*part);
 
 	std::vector<mesh::Entity *> sides ;
-	size_t num_sides = get_entities(*part, bulk_data, sides);
+	size_t num_sides = get_entities(*part, bulk_data, sides, false);
 
 	std::vector<int> side_ids(num_sides);
 	std::vector<int> elem_side_ids(num_sides*2);
@@ -1300,7 +1305,7 @@ namespace stk {
 	// Similarly for the element "ids" field related to bulk data
 	// using element ids.
 	std::vector<mesh::Entity *> nodes ;
-	size_t num_nodes = get_entities(part, bulk, nodes);
+	size_t num_nodes = get_entities(part, bulk, nodes, true);
 
 	std::vector<int> node_ids(num_nodes);
 	for(size_t i=0; i<num_nodes; ++i) {
@@ -1337,7 +1342,7 @@ namespace stk {
 
 	assert(part != NULL);
 	std::vector<mesh::Entity *> elements;
-	size_t num_elems = get_entities(*part, bulk, elements);
+	size_t num_elems = get_entities(*part, bulk, elements, false);
 
 	const CellTopologyData * cell_topo =
               stk::io::get_cell_topology(*part) ?
@@ -1400,7 +1405,7 @@ namespace stk {
 	assert(part != NULL);
 
 	std::vector<stk::mesh::Entity *> nodes ;
-	size_t num_nodes = get_entities(*part, bulk, nodes);
+	size_t num_nodes = get_entities(*part, bulk, nodes, true);
 
 	std::vector<int> node_ids(num_nodes);
 

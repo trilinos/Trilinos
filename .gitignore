@@ -76,3 +76,16 @@ packages/Sundance/doc/latex/
 linux-intrepid-debug
 linux-sundance-opt
 linux-sundance-debug
+
+
+packages/tpetra/doc/MatrixMatrixReport/matmatreport.aux
+packages/tpetra/doc/MatrixMatrixReport/matmatreport.bbl
+packages/tpetra/doc/MatrixMatrixReport/matmatreport.blg
+packages/tpetra/doc/MatrixMatrixReport/matmatreport.lof
+packages/tpetra/doc/MatrixMatrixReport/matmatreport.lot
+packages/tpetra/doc/MatrixMatrixReport/matmatreport.toc
+packages/tpetra/doc/MatrixMatrixReport/matmatreport.log
+packages/tpetra/doc/MatrixMatrixReport/matmatreport.pdf
+packages/tpetra/doc/MatrixMatrixReport/tpetraDevData/*pdf
+packages/tpetra/doc/MatrixMatrixReport/allMatsData/*pdf
+packages/tpetra/doc/MatrixMatrixReport/atransData/*pdf

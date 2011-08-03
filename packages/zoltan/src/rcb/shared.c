@@ -2011,6 +2011,10 @@ End:
 int Zoltan_RB_Candidates_Output(
   ZZ *zz,                          /* Load-balancing structure */
   int dotnum,                      /* number of dots on this processor */
+  int *dindx,                      /* Index that provides grouping of dots
+                                      by part; non-NULL only if serial_rcb
+                                      was invoked (i.e., if there are more
+                                      than one parts on a proc). */
   ZOLTAN_ID_PTR gidpt,             /* pointer to array of global IDs currently
                                       on this proc. */
   ZOLTAN_ID_PTR lidpt,             /* pointer to array of local IDs currently
@@ -2038,9 +2042,7 @@ int ierr = ZOLTAN_OK;
 int num_gid_entries = zz->Num_GID;
 struct Zoltan_DD_Struct *dd = NULL;
 ZOLTAN_ID_PTR dot_candidates = NULL;
-int prevpart;
 ZOLTAN_ID_PTR current_candidate;
-ZOLTAN_ID_PTR current_dot_candidate;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -2060,17 +2062,32 @@ ZOLTAN_ID_PTR current_dot_candidate;
   /* Select candidates for each part; store them for each GID. */
   dot_candidates = (ZOLTAN_ID_PTR) 
                    ZOLTAN_MALLOC(dotnum*num_gid_entries*sizeof(ZOLTAN_ID_TYPE));
-  prevpart = -1;
-  for (current_dot_candidate = dot_candidates, i = 0; i < dotnum; i++) {
-    printf("%d KDDKDD gid %d part %d\n", zz->Proc, gidpt[i*num_gid_entries], dotpt->Part[i]);
-    if (dotpt->Part[i] != prevpart) {
-      /* Assuming dots are grouped according to part number. */
-      /* Then candidate is first dot in new part */
-      current_candidate = &(gidpt[i*num_gid_entries]);
-      prevpart = dotpt->Part[i];
+  if (dindx) {
+    int prevpart = -1;
+for (i = 0; i < dotnum; i++) printf("%d KDDKDD SANITY %d dindx %d gid %d part %d\n", zz->Proc, i, dindx[i], gidpt[dindx[i]], dotpt->Part[dindx[i]]);
+    /* there are more than one part on this proc. */
+    /* use dindx to access dots grouped by part */
+    for (i = 0; i < dotnum; i++) {
+      if (dotpt->Part[dindx[i]] != prevpart) {
+        /* Assuming dots are grouped according to part number. */
+        /* Then candidate is first dot in new part */
+        current_candidate = &(gidpt[dindx[i]*num_gid_entries]);
+        prevpart = dotpt->Part[dindx[i]];
+      }
+      printf("%d KDDKDD gid %d part %d candidate %d\n", zz->Proc, gidpt[dindx[i]*num_gid_entries], dotpt->Part[dindx[i]], *current_candidate);
+      ZOLTAN_SET_GID(zz, &(dot_candidates[dindx[i]*num_gid_entries]), current_candidate);
     }
-    ZOLTAN_SET_GID(zz, current_dot_candidate, current_candidate);
-    current_dot_candidate += num_gid_entries;
+  }
+  else {  
+    /* dindx is NULL; all dots on this proc are in a single part */
+    /* use first dot as candidate */
+    ZOLTAN_ID_PTR current_dot_candidate = dot_candidates;
+    current_candidate = &(gidpt[0]);
+    for (i = 0; i < dotnum; i++) {
+      printf("%d KDDKDD gid %d part %d candidate %d\n", zz->Proc, gidpt[i*num_gid_entries], dotpt->Part[i], *current_candidate);
+      ZOLTAN_SET_GID(zz, current_dot_candidate, current_candidate);
+      current_dot_candidate += num_gid_entries;
+    }
   }
 
   /* Update directory with candidates */

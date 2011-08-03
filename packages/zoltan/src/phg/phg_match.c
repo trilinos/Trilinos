@@ -2391,16 +2391,29 @@ static int pmatching_rcb (ZZ *zz,
     goto End;
   }
 
-  sprintf(s, "%d", -1);
+#ifdef KDDKDD_DEBUG
+  /* KDDKDD */
+  {ZOLTAN_GNO_TYPE gnvtx;
+  MPI_Datatype tmp = Zoltan_mpi_gno_type();
+  MPI_Allreduce(&(hg->nVtx), &gnvtx, 1, tmp, MPI_SUM, hg->comm->row_comm);
+  sprintf(s, "%d", (int)(0.2 * (int)gnvtx));
+  printf("%d KDDKDD GNVTX %s %d \n", zz->Proc, s, (int)gnvtx);
+  }
+  /* KDDKDD */
+#endif
+
   /* Should be DEFAULT value (setting to -1 here, but change later) */
-  if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
+  if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", "-1") == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
 
-  sprintf(s, "%d", 1);
-  /* Should be DEFAULT value (setting to -1 here, but change later) */
-  if (Zoltan_Set_Param(zz2, "OBJ_WEIGHT_DIM", s) == ZOLTAN_FATAL) {
+  if (Zoltan_Set_Param(zz2, "OBJ_WEIGHT_DIM", "1") == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
+
+  if (Zoltan_Set_Param(zz2, "REMAP", "0") == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
@@ -2422,6 +2435,14 @@ static int pmatching_rcb (ZZ *zz,
 		    &import_local_ids, &import_procs, &import_to_part,
 		    &num_export, &candidate_ids, &export_local_ids,
 		    &export_procs, &export_to_part);
+
+{/* KDDKDD */
+  int kdd;
+  for (kdd = 0; kdd < num_import; kdd++) {
+    printf("%d KDDKDD Input (%d %d)  Candidate %d\n", zz->Proc, import_global_ids[kdd], import_local_ids[kdd], export_global_ids[kdd]);
+  }
+/* KDDKDD */
+}
 
   if(!(procmatch = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC(hg->nVtx, sizeof(ZOLTAN_GNO_TYPE))))
     MEMORY_ERROR;

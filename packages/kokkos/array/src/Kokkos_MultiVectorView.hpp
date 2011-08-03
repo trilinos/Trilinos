@@ -88,6 +88,8 @@ public:
   typedef DeviceType                      device_type ;
   typedef typename DeviceType::size_type  size_type ;
 
+  typedef MultiVectorView< value_type , DeviceHost > HostView ;
+
   /*------------------------------------------------------------------*/
   /** \brief  Query length of vectors */
   size_type length() const ;

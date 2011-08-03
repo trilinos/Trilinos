@@ -29,25 +29,21 @@
 #ifndef TPETRA_MATRIXMATRIX_DEF_HPP
 #define TPETRA_MATRIXMATRIX_DEF_HPP
 
-#include "Tpetra_MatrixMatrix_decl.hpp"
+#include "TpetraExt_MatrixMatrix_decl.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Array.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MMHelpers_def.hpp"
+#include "TpetraExt_MMHelpers_def.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
-#include "MatrixMarket_Tpetra.hpp"
 
-#ifdef DOXYGEN_USE_ONLY
-  //#include "Tpetra_MMMultiply_decl.hpp"
-#endif
 
-/*! \file Tpetra_MatrixMatrix_def.hpp 
+/*! \file TpetraExt_MatrixMatrix_def.hpp 
 
     The implementations for the members of class Tpetra::MatrixMatrixMultiply and related non-member constructors.
  */
@@ -57,7 +53,6 @@ namespace Tpetra {
 
 namespace MatrixMatrix{
 
-// CGB: check this...
 template <class Scalar, 
            class LocalOrdinal,
            class GlobalOrdinal,
@@ -174,13 +169,13 @@ void Multiply(
 
 
   //If the result matrix C is not already FillComplete'd, we will do a
-  //preprocessing step to create the nonzero structure, then call FillComplete,
+  //preprocessing step to create the nonzero structure,
   if (!C.isFillComplete()) {
     CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsgraphbuilder(C.getRowMap());
 
     //pass the graph-builder object to the multiplication kernel to fill in all
     //the nonzero positions that will be used in the result matrix.
-    MMdetails::mult_A_B(Aview, Bview, crsgraphbuilder);
+    MMdetails::mult_A_B(Aview, Bview, crsgraphbuilder, true);
 
     //now insert all of the nonzero positions into the result matrix.
     insert_matrix_locations(crsgraphbuilder, C);
@@ -383,7 +378,8 @@ template<class Scalar,
 void mult_A_B(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Aview, 
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Bview, 
-  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C)
+  CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+  bool onlyCalculateStructure)
 {
   LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
   LocalOrdinal C_lastCol = Bview.colMap->getMaxLocalIndex();
@@ -404,7 +400,8 @@ void mult_A_B(
   size_t C_numCols_import = C_lastCol_import - C_firstCol_import + OrdinalTraits<LocalOrdinal>::one();
 
   if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
-  Array<Scalar> dwork = Array<Scalar>(C_numCols);
+
+  Array<Scalar> dwork = onlyCalculateStructure ? Array<Scalar>() : Array<Scalar>(C_numCols);
   Array<GlobalOrdinal> iwork = Array<GlobalOrdinal>(C_numCols);
 
   Array<Scalar> C_row_i = dwork;
@@ -432,7 +429,7 @@ void mult_A_B(
     }
 
     ArrayView<const LocalOrdinal> Aindices_i = Aview.indices[i];
-    ArrayView<const Scalar> Aval_i  = Aview.values[i];
+    ArrayView<const Scalar> Aval_i  = onlyCalculateStructure ? null : Aview.values[i];
 
     GlobalOrdinal global_row = Aview.rowMap->getGlobalElement(i);
 
@@ -445,22 +442,26 @@ void mult_A_B(
 
     for(k=OrdinalTraits<size_t>::zero(); k<Aview.numEntriesPerRow[i]; ++k) {
       LocalOrdinal Ak = Bview.rowMap->getLocalElement(Aview.colMap->getGlobalElement(Aindices_i[k]));
-      Scalar Aval = Aval_i[k];
+      Scalar Aval = onlyCalculateStructure ? Teuchos::as<Scalar>(0) : Aval_i[k];
 
       ArrayView<const LocalOrdinal> Bcol_inds = Bview.indices[Ak];
-      ArrayView<const Scalar> Bvals_k = Bview.values[Ak];
+      ArrayView<const Scalar> Bvals_k = onlyCalculateStructure ? null : Bview.values[Ak];
 
       C_row_i_length = OrdinalTraits<size_t>::zero();
 
       if (Bview.remote[Ak]) {
         for(j=OrdinalTraits<size_t>::zero(); j<Bview.numEntriesPerRow[Ak]; ++j) {
-          C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+          if(!onlyCalculateStructure){
+            C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+          }
           C_cols[C_row_i_length++] = bcols_import[Bcol_inds[j]];
         }
       }
       else {
         for(j=OrdinalTraits<size_t>::zero(); j<Bview.numEntriesPerRow[Ak]; ++j) {
-          C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+          if(!onlyCalculateStructure){
+            C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+          }
           C_cols[C_row_i_length++] = bcols[Bcol_inds[j]];
         }
       }
@@ -470,9 +471,15 @@ void mult_A_B(
       //
 
       C_filled ?
-        C.sumIntoGlobalValues(global_row, C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length), C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length))
+        C.sumIntoGlobalValues(
+          global_row, 
+          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length), 
+          onlyCalculateStructure ? null : C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length))
         :
-        C.insertGlobalValues(global_row, C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length), C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length));
+        C.insertGlobalValues(
+          global_row, 
+          C_cols.view(OrdinalTraits<size_t>::zero(), C_row_i_length), 
+          onlyCalculateStructure ? null : C_row_i.view(OrdinalTraits<size_t>::zero(), C_row_i_length));
 
     }
   }

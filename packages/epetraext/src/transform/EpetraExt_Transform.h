@@ -35,6 +35,8 @@
 
 #include <EpetraExt_ConfigDefs.h>
 
+#include <Teuchos_RCP.hpp>
+
 namespace EpetraExt {
 
 ///
@@ -55,10 +57,12 @@ class Transform
 
   typedef T  OriginalType;
   typedef T* OriginalTypePtr;
+  typedef Teuchos::RCP<T> OriginalTypeRCP;
   typedef T& OriginalTypeRef;
 
   typedef U  NewType;
   typedef U* NewTypePtr;
+  typedef Teuchos::RCP<U> NewTypeRCP;
   typedef U& NewTypeRef;
 
   //@}

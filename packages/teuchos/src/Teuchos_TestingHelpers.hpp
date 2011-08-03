@@ -505,7 +505,7 @@ Teuchos::relErr( const Scalar &s1, const Scalar &s2 )
       ST::magnitude(
         RelErrSmallNumber<ST::hasMachineParameters,Scalar>::smallNumber()
         )
-      + std::max( ST::magnitude(s1), ST::magnitude(s1) )
+      + std::max( ST::magnitude(s1), ST::magnitude(s2) )
       );
 }
 

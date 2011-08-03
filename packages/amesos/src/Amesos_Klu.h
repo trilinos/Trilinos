@@ -320,8 +320,8 @@ private:
   double *SerialXBvalues_ ;
   double *SerialBvalues_ ;
   //! Serial versions of the LHS and RHS (may point to the original vector if serial)
-  Epetra_MultiVector* SerialB_ ;
-  Epetra_MultiVector* SerialX_ ;
+  Teuchos::RCP<Epetra_MultiVector> SerialB_ ;
+  Teuchos::RCP<Epetra_MultiVector> SerialX_ ;
   //! Serial versions of the LHS and RHS (if necessary)
   Teuchos::RCP<Epetra_MultiVector> SerialXextract_;
   Teuchos::RCP<Epetra_MultiVector> SerialBextract_;
