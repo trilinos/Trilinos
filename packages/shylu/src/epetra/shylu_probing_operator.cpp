@@ -23,6 +23,8 @@ ShyLU_Probing_Operator::ShyLU_Probing_Operator(Epetra_CrsMatrix *G,
     ResetTempVectors(nvectors);
     nvectors_ = nvectors;
 
+    cntApply = 0;
+
 #ifdef TIMING_OUTPUT
     using Teuchos::RCP;
     using Teuchos::Time;
@@ -50,14 +52,22 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
 
     int nvectors = X.NumVectors();
     bool local = (G_->Comm().NumProc() == 1);
+    int err;
     //cout << "No of colors after probing" << nvectors << endl;
 
 #ifdef TIMING_OUTPUT
     matvec_time_->start();
 #endif
 
-    G_->Multiply(false, X, *temp2);
-    C_->Multiply(false, X, *temp);
+    err = G_->Multiply(false, X, *temp2);
+    assert(err == 0);
+    err = C_->Multiply(false, X, *temp);
+    assert(err == 0);
+
+#ifdef DEBUG
+    if (cntApply == 0)
+        cout << "C1(:, 1)" << *temp << endl;
+#endif
 
 #ifdef TIMING_OUTPUT
     matvec_time_->stop();
@@ -83,7 +93,7 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     localize_time_->start();
 #endif
 
-    int err;
+    //int err;
     int lda;
     double *values;
     if (!local)
@@ -121,6 +131,12 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     LP_->SetLHS(localX.getRawPtr());
     solver_->Solve();
 
+#ifdef DEBUG
+    if (cntApply == 0)
+        cout << "localX" << *localX << endl;
+#endif
+
+
 #ifdef TIMING_OUTPUT
     trisolve_time_->stop();
     dist_time_->start();
@@ -157,6 +173,11 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
         R_->Multiply(false, *localX, Y);
     }
 
+#ifdef DEBUG
+    if (cntApply == 0)
+        cout << " R * localX" << Y << endl;
+#endif
+
 #ifdef TIMING_OUTPUT
     matvec2_time_->stop();
     update_time_->start();
@@ -170,6 +191,7 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     update_time_->stop();
     apply_time_->stop();
 #endif
+    cntApply++;
     return 0;
 }
 

@@ -42,6 +42,8 @@ class ShyLU_Probing_Operator : public virtual Epetra_Operator
 
     void ResetTempVectors(int nvectors);
 
+    mutable int cntApply;
+
     Epetra_CrsMatrix *G_;
     Epetra_CrsMatrix *R_;
     Epetra_LinearProblem *LP_;
