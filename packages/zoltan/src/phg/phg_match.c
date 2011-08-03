@@ -2386,6 +2386,7 @@ static int pmatching_rcb (ZZ *zz,
     
   /* Num global parts is a reduction by a factor */
   sprintf(s, "%d", ((int) (hgp->rcb_red * hg->nVtx)));
+  /* int tst = zz->Get_Num_Obj(hg, &ierr); NEED TO GET TOTAL NUM PARTS TO CALCULATE REDUCTION */
   if (Zoltan_Set_Param(zz2, "NUM_GLOBAL_PARTS", s) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
@@ -2436,6 +2437,7 @@ static int pmatching_rcb (ZZ *zz,
 		    &num_export, &candidate_ids, &export_local_ids,
 		    &export_procs, &export_to_part);
 
+  #ifdef KDD_DEBUG
 {/* KDDKDD */
   int kdd;
   for (kdd = 0; kdd < num_import; kdd++) {
@@ -2443,7 +2445,8 @@ static int pmatching_rcb (ZZ *zz,
   }
 /* KDDKDD */
 }
-
+#endif
+ 
   if(!(procmatch = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC(hg->nVtx, sizeof(ZOLTAN_GNO_TYPE))))
     MEMORY_ERROR;
 
