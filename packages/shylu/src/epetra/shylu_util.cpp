@@ -7,6 +7,7 @@
 */
 
 #include <assert.h>
+#include <fstream>
 
 #include "Isorropia_config.h" // Just for HAVE_MPI
 
@@ -290,6 +291,18 @@ void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
     ostringstream ssmsg1;
     ostringstream ssmsg2;
 
+#ifdef DUMP_MATRICES
+    ostringstream fnamestr;
+    fnamestr << s1 << ".mat";
+    string fname = fnamestr.str();
+    ofstream outD(fname.c_str());
+
+    ostringstream fnamestrR;
+    fnamestrR << s2 << ".mat";
+    string fnameR = fnamestrR.str();
+    ofstream outR(fnameR.c_str());
+#endif
+
     ssmsg1 << s1;
     ssmsg2 << s2;
     for (int i = 0; i < nrows; i++)
@@ -306,16 +319,30 @@ void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
             assert(lcnt < Lnr);
             LeftElems[lcnt++] = gid;
             ssmsg1 << gid << " ";
+#ifdef DUMP_MATRICES
+            outD << gid << endl;
+#endif
         }
         else
         {
             assert(rcnt < Rnr);
             RightElems[rcnt++] = gid; 
             ssmsg2 << gid << " ";
+#ifdef DUMP_MATRICES
+            outR << gid << endl;
+#endif
         }
     }
-    //cout << ssmsg1.str() << endl;
-    //cout << ssmsg2.str() << endl; // TODO: Enable it only in debug mode
+
+#ifdef DUMP_MATRICES
+    outD.close();
+    outR.close();
+#endif
+
+#ifdef DEBUG
+    cout << ssmsg1.str() << endl;
+    cout << ssmsg2.str() << endl;
+#endif
     ssmsg1.clear(); ssmsg1.str("");
     ssmsg2.clear(); ssmsg2.str("");
 
