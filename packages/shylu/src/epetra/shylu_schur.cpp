@@ -4,6 +4,7 @@
 //#include "EpetraExt_Transpose_RowMatrix.h"
 #include "Epetra_Vector.h"
 #include "shylu_probing_operator.h"
+#include <EpetraExt_Reindex_CrsMatrix.h>
 
 /* Apply an identity matrix to the Schur complement operator. Drop the entries
    entries using a relative threshold. Assemble the result in a Crs Matrix
@@ -243,6 +244,22 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
 
     cout << "#local rows" << g_localElems << "#non zero local cols" << c_localcolElems << endl;
 
+#ifdef DEBUG
+    cout << "DEBUG MODE" << endl;
+    int nrows = C->RowMap().NumMyElements();
+    assert(nrows == localDRowMap->NumGlobalElements());
+
+    int gids[nrows], gids1[nrows];
+    C_localRMap.MyGlobalElements(gids);
+    localDRowMap->MyGlobalElements(gids1);
+    cout << "Comparing R's domain map with D's row map" << endl;
+
+    for (int i = 0; i < nrows; i++)
+    {
+       assert(gids[i] == gids1[i]);
+    }
+#endif
+
     int nentries1, gid;
     // maxentries is the maximum of all three possible matrices as the arrays
     // are reused between the three
@@ -263,7 +280,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     for (i = 0; i < c_localElems ; i++)
     {
         gid = c_rows[i];
-        err = C->ExtractGlobalRowCopy(gid, maxentries, nentries1, values1, indices1);
+        err = C->ExtractGlobalRowCopy(gid, maxentries, nentries1, values1,
+                                        indices1);
         assert (err == 0);
         //if (nentries1 > 0) // TODO: Later
         //{
@@ -271,7 +289,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
         assert (err == 0);
         //}
     }
-    localC.FillComplete(C_localCMap, C_localRMap);
+    localC.FillComplete(G_localRMap, C_localRMap);
+
     //cout << "Created local C matrix" << endl;
 
     Epetra_CrsMatrix localR(Copy, R_localRMap, R->MaxNumEntries(), false);
@@ -281,7 +300,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
         R->ExtractGlobalRowCopy(gid, maxentries, nentries1, values1, indices1);
         localR.InsertGlobalValues(gid, nentries1, values1, indices1);
     }
-    localR.FillComplete(R_localCMap, R_localRMap);
+    localR.FillComplete(*localDRowMap, R_localRMap);
     //cout << "Created local R matrix" << endl;
 
     // Sbar - Approximate Schur complement
@@ -322,6 +341,20 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     int nvectors = 16;
     ShyLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
                                         localDRowMap, nvectors);
+
+#ifdef DUMP_MATRICES
+    //ostringstream fnamestr;
+    //fnamestr << "localC" << C->Comm().MyPID() << ".mat";
+    //string Cfname = fnamestr.str();
+    //EpetraExt::RowMatrixToMatlabFile(Cfname.c_str(), localC);
+
+    //Epetra_Map defMapg(-1, g_localElems, 0, localG.Comm());
+    //EpetraExt::ViewTransform<Epetra_CrsMatrix> * ReIdx_MatTransg =
+                        //new EpetraExt::CrsMatrix_Reindex( defMapg );
+    //Epetra_CrsMatrix t2G = (*ReIdx_MatTransg)( localG );
+    //ReIdx_MatTransg->fwd();
+    //EpetraExt::RowMatrixToMatlabFile("localG.mat", t2G);
+#endif
 
     //cout << " totalElems in Schur Complement" << totalElems << endl;
     //cout << myPID << " localElems" << localElems << endl;
@@ -366,8 +399,10 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
             //cout << "Changing row to 1.0 " << g_rows[cindex] << endl;
         }
 
-        //if (mypid == 0)
-        //cout << probevec << endl;
+#ifdef DEBUG
+        if (i == 0 && mypid == 0)
+        cout << "Probe Vector " << probevec << endl;
+#endif
 
 #ifdef TIMING_OUTPUT
         app_time.start();
@@ -376,8 +411,11 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
 #ifdef TIMING_OUTPUT
         app_time.stop();
 #endif
-        //if (mypid == 0)
-        //cout << Scol << endl;
+
+#ifdef DEBUG
+        if ( i == 0 && mypid == 0)
+            cout << "Result vector" << Scol << endl;
+#endif
 
         Scol.MaxValue(maxvalue);
         for (int k = 0; k < nvectors; k++) //TODO:Need to switch these loops
@@ -404,7 +442,12 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
                 }
                 else
                 {
-                    if (vecvalues[j] != 0.0) dropped++;
+                    if (vecvalues[j] != 0.0)
+                    {
+                        dropped++;
+                        //cout << "vecvalues[j]" << vecvalues[j] <<
+                                // " max" << maxvalue[k] << endl;
+                    }
                 }
             }
         }
@@ -472,6 +515,16 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
 #endif
     probeop.PrintTimingInfo();
     Sbar->FillComplete();
+
+#ifdef DUMP_MATRICES
+    Epetra_Map defMap2(-1, g_localElems, 0, C->Comm());
+    EpetraExt::ViewTransform<Epetra_CrsMatrix> * ReIdx_MatTrans2 =
+                        new EpetraExt::CrsMatrix_Reindex( defMap2 );
+    Epetra_CrsMatrix t2S = (*ReIdx_MatTrans2)( *Sbar );
+    ReIdx_MatTrans2->fwd();
+    EpetraExt::RowMatrixToMatlabFile("Schur.mat", t2S);
+#endif
+
     cout << "#dropped entries" << dropped << endl;
     delete[] values;
     delete[] indices;
