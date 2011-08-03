@@ -124,6 +124,10 @@ namespace Amesos2 {
     data_.A.Store  = NULL;
     data_.AC.Store = NULL;
     data_.BX.Store = NULL;
+    data_.L.Store  = NULL;
+    data_.U.Store  = NULL;
+
+    data_.stat.ops = NULL;
   }
 
 
@@ -147,7 +151,7 @@ namespace Amesos2 {
       SLUMT::D::Destroy_CompCol_Permuted( &(data_.AC) ); // free's colbeg, colend, and Store
     }
 
-    if ( this->status_.getNumNumericFact() > 0 && this->root_ ){ // only root allocated these Objects.
+    if ( data_.L.Store != NULL ){ // will only ever be true for this->root_
       SLUMT::D::Destroy_SuperNode_SCP( &(data_.L) );
       SLUMT::D::Destroy_CompCol_NCP( &(data_.U) );
 
@@ -155,8 +159,6 @@ namespace Amesos2 {
       free( data_.options.etree );
       free( data_.options.colcnt_h );
       free( data_.options.part_super_h );
-
-      SLUMT::D::StatFree( &(data_.stat) ) ;
     }
 
 
@@ -169,6 +171,9 @@ namespace Amesos2 {
        */
       SLUMT::D::Destroy_SuperMatrix_Store( &(data_.BX) );
     }
+    
+    if ( data_.stat.ops != NULL )
+      SLUMT::D::StatFree( &(data_.stat) );
   }
 
   template<class Matrix, class Vector>
@@ -208,6 +213,8 @@ namespace Amesos2 {
       // pointers
       SLUMT::D::Destroy_SuperNode_Matrix( &(data_.L) );
       SLUMT::D::Destroy_CompCol_NCP( &(data_.U) );
+      data_.L.Store = NULL;
+      data_.U.Store = NULL;
     }
 
     return(0);
@@ -269,8 +276,8 @@ namespace Amesos2 {
 
 
       // Allocate and initialize status variable
-      if ( this->status_.getNumNumericFact() > 0 ) SLUMT::D::StatFree( &(data_.stat) );
       const int n = as<int>(this->globalNumCols_); // n is the number of columns in A
+      if( data_.stat.ops != NULL ){ SLUMT::D::StatFree( &(data_.stat) ); data_.stat.ops = NULL; }
       SLUMT::D::StatAlloc(n, data_.options.nprocs, data_.options.panel_size,
                           data_.options.relax, &(data_.stat));
       SLUMT::D::StatInit(n, data_.options.nprocs, &(data_.stat));

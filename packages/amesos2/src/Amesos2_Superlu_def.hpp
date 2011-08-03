@@ -90,6 +90,10 @@ Superlu<Matrix,Vector>::Superlu(
 
   data_.equed = 'N';            // No equilibration
   data_.A.Store = NULL;
+  data_.L.Store = NULL;
+  data_.U.Store = NULL;
+  data_.X.Store = NULL;
+  data_.B.Store = NULL;
 }
 
 
@@ -109,20 +113,9 @@ Superlu<Matrix,Vector>::~Superlu( )
   }
 
   // only root allocated these SuperMatrices.
-  if ( this->status_.getNumNumericFact() && this->root_ ){
+  if ( data_.L.Store != NULL ){	// will only be true for this->root_
     SLU::Destroy_SuperNode_Matrix( &(data_.L) );
     SLU::Destroy_CompCol_Matrix( &(data_.U) );
-  }
-
-  // Storage is initialized in solve_impl()
-  if ( this->status_.getNumSolve() > 0 && this->root_ ){
-    /* Cannot use SLU::Destroy_Dense_Matrix routine here, since it attempts to
-     * free the array of non-zero values, but that array has already been
-     * deallocated by the MultiVector object.  So we release just the Store
-     * instead.
-     */
-    SLU::Destroy_SuperMatrix_Store( &(data_.X) );
-    SLU::Destroy_SuperMatrix_Store( &(data_.B) );
   }
 }
 
@@ -182,9 +175,11 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   // Cleanup old L and U matrices if we are not reusing a symbolic
   // factorization.  Stores and other data will be allocated in gstrf.
   // Only rank 0 has valid pointers
-  if ( !same_symbolic_ && this->status_.getNumNumericFact() > 0 && this->root_ ){
+  if ( !same_symbolic_ && data_.L.Store != NULL ){
     SLU::Destroy_SuperNode_Matrix( &(data_.L) );
     SLU::Destroy_CompCol_Matrix( &(data_.U) );
+    data_.L.Store = NULL;
+    data_.U.Store = NULL;
   }
 
   if( same_symbolic_ ) data_.options.Fact = SLU::SamePattern_SameRowPerm;
@@ -303,12 +298,6 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     data_.ferr.resize(nrhs);
     data_.berr.resize(nrhs);
 
-    // Clean up old X and B stores if they have already been created
-    if( this->status_.getNumSolve() > 0 ){
-      SLU::Destroy_SuperMatrix_Store( &(data_.X) );
-      SLU::Destroy_SuperMatrix_Store( &(data_.B) );
-    }
-
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
@@ -338,7 +327,13 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
       data_.ferr.getRawPtr(), data_.berr.getRawPtr(), &(data_.mem_usage),
       &(data_.stat), &ierr);
     }
-  } // end block for solve time
+
+    // Cleanup X and B stores
+    SLU::Destroy_SuperMatrix_Store( &(data_.X) );
+    SLU::Destroy_SuperMatrix_Store( &(data_.B) );
+    data_.X.Store = NULL;
+    data_.B.Store = NULL;
+  }
 
   /* All processes should have the same error code */
   Teuchos::broadcast(*(this->getComm()), 0, &ierr);
@@ -366,6 +361,7 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
                                          as<size_t>(ld_rhs),
                                          ROOTED);
   }
+
 
   return(ierr);
 }
