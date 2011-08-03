@@ -125,9 +125,12 @@ namespace stk {
       typedef std::vector<NodeIdsOnSubDimEntityTypeQuantum> base_type;
       typedef std::vector<stk::mesh::EntityId> entity_id_vector_type;
       entity_id_vector_type m_entity_id_vector;
+      unsigned m_mark;
 
       NodeIdsOnSubDimEntityType(unsigned sz=1, NodeIdsOnSubDimEntityTypeQuantum allValues=0) : base_type(sz,allValues),
-                                                                                               m_entity_id_vector(sz,0u) {}
+                                                                                               m_entity_id_vector(sz,0u),
+                                                                                               m_mark(0u)  {}
+
       void resize(size_t sz)
       {
         m_entity_id_vector.resize(sz);
@@ -333,6 +336,8 @@ namespace stk {
     //========================================================================================================================
     class NodeRegistry
     {
+      static const unsigned NR_MARK_NONE = 1u;
+      static const unsigned NR_MARK = 2u;
 
     public:
       //========================================================================================================================
@@ -408,6 +413,8 @@ namespace stk {
           std::cout << "P[" << m_eMesh.getRank() << "] tmp NodeRegistry::endRegistration start" << std::endl;
 
         //putInESMap();
+
+        removeUnmarkedSubDimEntities();
 
         m_eMesh.getBulkData()->modification_begin();
         this->createNewNodesInParallel();
@@ -548,6 +555,41 @@ namespace stk {
           }
       }
 
+      /// when a sub-dim entity is visited during node registration but is flagged as not being marked, and thus not requiring 
+      ///   any new nodes, we flag it with NR_MARK_NONE, then remove it here
+      void removeUnmarkedSubDimEntities()
+      {
+        EXCEPTWATCH;
+        SubDimCellToDataMap::iterator iter;
+
+        for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
+          {
+            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            if (nodeIds_onSE.size())
+              {
+                unsigned mark = nodeIds_onSE.m_mark;
+                unsigned is_marked = mark & NR_MARK;
+                unsigned is_not_marked = mark & NR_MARK_NONE;
+#if 0
+                if (!(is_marked || is_not_marked)) 
+                  {
+                    std::cout << "is_not_marked = " << is_not_marked << " is_marked= " << is_marked << std::endl;
+                    throw std::logic_error("removeUnmarkedSubDimEntities::err1");
+                  }
+#endif
+                //nodeIds_onSE.m_mark = 0u;
+                if (!is_marked && is_not_marked)
+                  {
+                    //std::cout << "tmp SRK FOUND NR_MARK " << NR_MARK << " " << NR_MARK_NONE << std::endl;
+                    nodeIds_onSE.resize(0);
+                  }
+              }
+          }
+      }
+
       bool is_empty( const stk::mesh::Entity& element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd);
 
       /// Register the need for a new node on the sub-dimensional entity @param subDimEntity on element @param element.
@@ -572,23 +614,33 @@ namespace stk {
           || (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
 
 #define DEBUG_NR_UNREF 0
-            if (DEBUG_NR_UNREF)
-              {
-                std::cout << "registerNeedNewNode:: is_empty= " << is_empty << " should_put_in= " << should_put_in << " needed_entity_rank= " 
-                          << needed_entity_rank.first << " subDimEntity= ";
+        if (DEBUG_NR_UNREF)
+          {
+            std::cout << "registerNeedNewNode:: is_empty= " << is_empty << " should_put_in= " << should_put_in << " needed_entity_rank= " 
+                      << needed_entity_rank.first << " subDimEntity= ";
                           
-                for (unsigned k=0; k < subDimEntity.size(); k++)
-                  {
-                    std::cout << " " << subDimEntity[k]->identifier() << " ";
-                  }
-#if 0
-                for (unsigned k=0; k < subDimEntity.size(); k++)
-                  {
-                    std::cout << " " << (stk::mesh::EntityId) subDimEntity[k] << " ";
-                  }
-#endif
-                std::cout << std::endl;
+            for (unsigned k=0; k < subDimEntity.size(); k++)
+              {
+                std::cout << " " << subDimEntity[k]->identifier() << " ";
               }
+#if 0
+            for (unsigned k=0; k < subDimEntity.size(); k++)
+              {
+                std::cout << " " << (stk::mesh::EntityId) subDimEntity[k] << " ";
+              }
+#endif
+            std::cout << std::endl;
+          }
+
+        if (!is_empty)
+          {
+            unsigned& mark = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_mark;
+            if (needNodes)
+              mark |= NR_MARK;
+            else
+              mark |= NR_MARK_NONE;
+          }
+
 
         /// once it's in, the assertion should be:
         ///   owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
@@ -599,10 +651,15 @@ namespace stk {
             // CHECK
 
             unsigned numNewNodes = needed_entity_rank.second;
-            if (!needNodes) numNewNodes = 0;
-            SubDimCellData data(NodeIdsOnSubDimEntityType(numNewNodes, 0u), stk::mesh::EntityKey(element.entity_rank(), element.identifier()) );
-            putInMap(subDimEntity,  data);
 
+            NodeIdsOnSubDimEntityType nid_new(numNewNodes, 0u);
+            if (needNodes)
+              nid_new.m_mark |= NR_MARK;
+            else
+              nid_new.m_mark |= NR_MARK_NONE;
+
+            SubDimCellData data(nid_new, stk::mesh::EntityKey(element.entity_rank(), element.identifier()) );
+            putInMap(subDimEntity,  data);
 
             if (0 && DEBUG_NR_UNREF)
               {
@@ -674,6 +731,7 @@ namespace stk {
             unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
 
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            unsigned nidsz = nodeIds_onSE.size();
 
             // error check
             bool isNotOK = (element.identifier() < owning_elementId) && (element.entity_rank() > owning_elementRank) ;
@@ -707,7 +765,11 @@ namespace stk {
                                             element.key()
                                             );
 
-                unsigned nidsz = nodeIds_onSE.size();
+                if (nodeIds_onSE.m_entity_id_vector.size() != nodeIds_onSE.size())
+                  {
+                    throw std::logic_error("NodeRegistry::checkForRemote logic err #0.1");
+                  }
+
                 for (unsigned iid = 0; iid < nidsz; iid++)
                   {
                     if (nodeIds_onSE[iid] == 0)
@@ -715,10 +777,6 @@ namespace stk {
                         throw std::logic_error("logic: hmmm #5.0");
                       }
 
-                    if (nodeIds_onSE.m_entity_id_vector.size() != nodeIds_onSE.size())
-                      {
-                        throw std::logic_error("NodeRegistry::checkForRemote logic err #0.1");
-                      }
                     if (!nodeIds_onSE.m_entity_id_vector[iid])
                       {
                         throw std::logic_error("NodeRegistry::checkForRemote logic err #0.2");
@@ -1060,6 +1118,10 @@ namespace stk {
         }
         if (field_rank != stk::mesh::fem::FEMMetaData::NODE_RANK)
           {
+            if (field_rank == m_eMesh.element_rank())
+              {
+                
+              }
             return;
           }
 
@@ -1833,10 +1895,6 @@ namespace stk {
         unsigned proc_rank = comm_all.parallel_rank();
 
         vector<stk::mesh::EntityProc> nodes_to_ghost;
-
-        if (proc_rank == 0)
-          {
-          }
 
         CommDataType buffer_entry;
         NodeIdsOnSubDimEntityType nodeIds_onSE;

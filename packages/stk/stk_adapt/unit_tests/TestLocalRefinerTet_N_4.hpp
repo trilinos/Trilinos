@@ -104,6 +104,7 @@ namespace stk {
                   const double vz = 1.21;
 
                   // choose to refine or not 
+                  bool do_refine = false;
                   if (
                       ( std::fabs(coord0[0]-coord1[0]) > 1.e-3 &&
                         ( (coord0[0] < vx && vx < coord1[0]) || (coord1[0] < vx && vx < coord0[0]) )
@@ -120,8 +121,10 @@ namespace stk {
 #endif
                       )
                     {
-                      (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
+                      do_refine = true;
                     }
+
+                  (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, do_refine);
                 }
 
             } // iSubDimOrd
