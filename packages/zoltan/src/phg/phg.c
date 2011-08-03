@@ -107,7 +107,7 @@ static PARAM_VARS PHG_params[] = {
     /* When to move data to fewer processors. */
   {"PHG_REPART_MULTIPLIER",           NULL,  "FLOAT",  0},
     /* Multiplier for communication to migration trade-off in repartitioning. */
-  {"HYBRID_REDUCTION_FACTOR",        NULL,  "INT",    0}, /* NEANEA */
+  {"HYBRID_REDUCTION_FACTOR",        NULL,  "FLOAT",    0}, /* NEANEA */
     /* Factor by which to reduce the number of parts when using RCB matching. */
   {"PATOH_ALLOC_POOL0",               NULL,  "INT",    0},
     /* Memory allocation parameter for Patoh. */
@@ -818,7 +818,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->nProc_x_req = -1;
   hgp->nProc_y_req = -1;
   hgp->kway = 0;
-  hgp->rcb_red == zz->Num_Proc; /* NEANEA probably change */
+  hgp->rcb_red == 0.5; /* NEANEA probably change */
   hgp->fm_loop_limit = 10;
   hgp->fm_max_neg_move = 250;  
   hgp->refinement_quality = 1;

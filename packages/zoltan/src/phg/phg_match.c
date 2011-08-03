@@ -2328,13 +2328,13 @@ static int pmatching_rcb (ZZ *zz,
    int ierr = ZOLTAN_OK;
 
   char *yo = "pmatching_rcb";	     
-  int i;
   ZZ *zz2 = Zoltan_Create(hg->comm->Communicator);
+  int i;
   char s[8]; 
   int changes, num_gid_entries, num_lid_entries;
   ZOLTAN_GNO_TYPE *procmatch;
-  int diff;
-  int modifier;
+  MPI_Datatype zoltan_gno_mpi_type;
+
   /* --RCB arguments-- */
   int num_import;                         /* Returned */
   ZOLTAN_ID_PTR import_global_ids = NULL; /* Returned */
@@ -2384,8 +2384,8 @@ static int pmatching_rcb (ZZ *zz,
     goto End;
   }
     
-  /* Num global parts is a reduction by some factor */
-  sprintf(s, "%d", hgp->rcb_red); 
+  /* Num global parts is a reduction by a factor */
+  sprintf(s, "%d", ((int) (hgp->rcb_red * hg->nVtx)));
   if (Zoltan_Set_Param(zz2, "NUM_GLOBAL_PARTS", s) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
@@ -2394,6 +2394,13 @@ static int pmatching_rcb (ZZ *zz,
   sprintf(s, "%d", -1);
   /* Should be DEFAULT value (setting to -1 here, but change later) */
   if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
+
+  sprintf(s, "%d", 1);
+  /* Should be DEFAULT value (setting to -1 here, but change later) */
+  if (Zoltan_Set_Param(zz2, "OBJ_WEIGHT_DIM", s) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
@@ -2425,8 +2432,10 @@ static int pmatching_rcb (ZZ *zz,
   for (i = 0; i < num_import; i++)
     procmatch[import_local_ids[i]] = candidate_ids[i];
 
-  MPI_Allreduce(procmatch, match, hg->nVtx, ZOLTAN_ID_MPI_TYPE, MPI_SUM, hg->comm->col_comm);
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+  MPI_Allreduce(procmatch, match, hg->nVtx, zoltan_gno_mpi_type, MPI_SUM, hg->comm->col_comm);
 
+#ifdef DEBUGGGGG
  {/* KDDKDD */
    int kdd;
    printf("%d KDDKDD Sanity Check %d == %d ? \n", zz->Proc, num_import, num_export);
@@ -2434,8 +2443,9 @@ static int pmatching_rcb (ZZ *zz,
      printf("%d KDDKDD Input (%d %d)  Candidate %d\n", zz->Proc, import_global_ids[kdd], import_local_ids[kdd], candidate_ids[kdd]); 
    } 
  /* KDDKDD */
+
  } 
-    
+#endif    
  End:
   Zoltan_Destroy(&zz2);
   ZOLTAN_FREE(&procmatch);
@@ -2477,10 +2487,9 @@ static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
   /* Return GNOs, LNOs, and weights */
   
   HGraph *hg;
-  int local_obj;  /* Number of endemic objects on this processor */
+  int local_obj;  /* Number of objects endemic to this processor */
   int count, diff, idx;
-  int modifier;   /* Modify the offset for uneven vertex distro */
-  int i;
+  int i, j;
   
   if (data == NULL) { 
     *ierr = ZOLTAN_FATAL; 
@@ -2492,46 +2501,19 @@ static void rcb_get_obj_list(void *data, int num_gid, int num_lid,
 
   count = hg->nVtx / hg->comm->nProc_y;
   diff  = hg->nVtx % hg->comm->nProc_y;
-
   local_obj =  hg->comm->myProc_y < diff? count + 1 : count;
   idx = (count * hg->comm->myProc_y) + (hg->comm->myProc_y > diff ?
 					diff : hg->comm->myProc_y);
+  
   for (i = 0; i < local_obj; i++) {
     global_id[i] = VTX_LNO_TO_GNO(hg, (idx + i));
     local_id[i] = idx + i;
   }
-  /* if((diff == 0) || (hg->comm->myProc_y < diff) || (diff == local_obj)) { */
-  /*   /\* If every processor in a coln has the same number of vertices, */
-  /*      the number of local vertices(local_obj) will evenly divide */
-  /*      the total number of vertices *\/ */
-  /*   /\* Or if the processor has +1 vertex than another in its coln, it will */
-  /*      have an ID smaller than or equal to those of the other processors in */
-  /*      the coln, and less than the modulus from dividing the number of total */
-  /*      vertices by the number of local vertices (as per rcb_get_num_obj) *\/ */
-  
-  /* } */
-
-  /* else if (hg->comm->myProc_y >= diff) { */
-  /*   /\* If the processor has -1 vertex than another int its coln, it will have */
-  /*      an ID larger than or equal to those of other processors in the coln, */
-  /*      as well as the modulus from dividing the total number of verticies by */
-  /*      the number of local vertices *\/ */
-  /*   /\* Or if the processor is the first processor in the coln with fewer than */
-  /*      another (a "cusp"), it will have an ID that's +1 from the closest */
-  /*      processor with more vertices than it. The value of its ID will also */
-  /*      be equal to the modulus from dividing the number of total vertices by */
-  /*      the number of local vertices *\/ */
-  /*   modifier = hg->comm->myProc_y - diff + 1; */
-  /*   for (i = 0; i < local_obj; i++) { */
-  /*     global_id[i] = VTX_LNO_TO_GNO(hg, modifier + */
-  /* 				    ((((hg->comm->myProc_y) * local_obj) + i))); */
-  /*     local_id[i] = i;   /\* KDDKDD could use argument above here and save  */
-  /*                           call to VTX_LNO_TO_GNO in geom_multi callback *\/ */
-  /*   } */
-  /* } */
 
   if (wdim > 0)
-    memcpy(wgt, hg->vwgt, sizeof(float) * local_obj * wdim);  /* KDDKDD problem here; not getting weights for the specific vertices passed; getting weights for the first local_obj vertices */
+    for (i = 0; i < local_obj; i++)
+      for (j = 0; j < wdim; j++)
+	wgt[(i * wdim) + j] = hg->vwgt[local_id[i] * wdim + j];
 }
 
 static int rcb_get_num_geom(void *data, int *ierr) {
