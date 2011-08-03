@@ -130,6 +130,8 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
     cout << msg << " #columns in S ="<< Snc << endl;
     cout << msg << " #rows in S ="<< Snr << endl;
 
+    ostringstream pidstr;
+    pidstr <<  myPID ;
     // Create a row map for the D and S blocks [
     DRowElems = new int[Dnr];
     SRowElems = new int[Snr];
@@ -139,7 +141,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
     {
         cout << "In first BlockElems" << endl;
         findBlockElems(A, nrows, rows, gvals, Dnr, DRowElems, Snr, SRowElems,
-                    msg + "D Rows ", msg + "S Rows", false) ;
+                    "D"+pidstr.str()+"Rows", "S"+pidstr.str()+"Rows", false) ;
     }
     else
     {
@@ -169,7 +171,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
     // Assemble column ids in two arrays (for D and C blocks)
         cout << "In Second BlockElems" << endl;
     findBlockElems(A, ncols, cols, gvals, Dnc, DColElems, Snc, SColElems,
-                    msg + "D Cols ", msg + "S Cols", true) ;
+                    "D"+pidstr.str()+"Cols", "S"+pidstr.str()+"Cols", true) ;
 
     // Create the local column map 
     Epetra_Map LocalDColMap(-1, Dnc, DColElems, 0, LComm);
@@ -549,15 +551,6 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_data *data, shylu_config
         max_resid = max(max_resid, abs(resid[i]));
 
     cout << "Maximum residual = " << max_resid << endl;*/
-
-
-#ifdef DUMP_MATRICES
-    if (myPID == 1)
-    {
-        EpetraExt::MultiVectorToMatlabFile("LHS.mat", *X);
-        EpetraExt::RowMatrixToMatlabFile("D.mat", D);
-    }
-#endif
 
     if (config->schurApproxMethod == 1)
     {
