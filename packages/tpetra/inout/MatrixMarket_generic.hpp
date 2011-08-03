@@ -42,7 +42,7 @@
 #ifndef __MatrixMarket_generic_hpp
 #define __MatrixMarket_generic_hpp
 
-#include "Teuchos_ScalarTraits.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 #ifdef HAVE_TEUCHOS_COMPLEX
 #  include <complex>
 #endif // HAVE_TEUCHOS_COMPLEX

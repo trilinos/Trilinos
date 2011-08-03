@@ -51,7 +51,6 @@
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
 #include "MatrixMarket_util.hpp"
-#include "Teuchos_StandardCatchMacros.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -132,7 +131,7 @@ namespace Tpetra {
     class Reader {
     public:
       typedef SparseMatrixType sparse_matrix_type;
-      typedef Teuchos::RCP<sparse_matrix_type> sparse_matrix_ptr;
+      typedef RCP<sparse_matrix_type> sparse_matrix_ptr;
 
       /// \typedef scalar_type
       /// \brief Type of the entries of the sparse matrix.
@@ -155,11 +154,11 @@ namespace Tpetra {
       /// \brief The MultiVector type associated with SparseMatrixType.
       typedef MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> multivector_type;
 
-      typedef Teuchos::RCP<node_type> node_ptr;
-      typedef Teuchos::Comm<int> comm_type;
-      typedef Teuchos::RCP<const comm_type> comm_ptr;
+      typedef RCP<node_type> node_ptr;
+      typedef Comm<int> comm_type;
+      typedef RCP<const comm_type> comm_ptr;
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-      typedef Teuchos::RCP<const map_type> map_ptr;
+      typedef RCP<const map_type> map_ptr;
 
     private:
 
@@ -179,13 +178,11 @@ namespace Tpetra {
       ///
       /// \return Range map to be used for constructing a CrsMatrix.
       ///
-      static Teuchos::RCP<const map_type>
-      makeRangeMap (const Teuchos::RCP<const comm_type>& pComm,
-                    const Teuchos::RCP<node_type>& pNode,
+      static RCP<const map_type>
+      makeRangeMap (const RCP<const comm_type>& pComm,
+                    const RCP<node_type>& pNode,
                     const global_ordinal_type numRows)
       {
-        using Teuchos::rcp;
-
         // A conventional, uniformly partitioned, contiguous map.
         return rcp (new map_type (static_cast<global_size_t> (numRows), 
                                   static_cast<global_ordinal_type> (0),
@@ -224,14 +221,12 @@ namespace Tpetra {
       ///
       /// \return If pRowMap is null, a new row map, otherwise pRowMap.
       ///
-      static Teuchos::RCP<const map_type>
-        makeRowMap (const Teuchos::RCP<const map_type>& pRowMap, 
-                    const Teuchos::RCP<const comm_type>& pComm,
-                    const Teuchos::RCP<node_type>& pNode,
+      static RCP<const map_type>
+        makeRowMap (const RCP<const map_type>& pRowMap, 
+                    const RCP<const comm_type>& pComm,
+                    const RCP<node_type>& pNode,
                     const global_ordinal_type numRows)
         {
-          using Teuchos::rcp;
-
           // If the caller didn't provide a map, return a conventional,
           // uniformly partitioned, contiguous map.
           if (pRowMap.is_null()) {
@@ -361,21 +356,14 @@ namespace Tpetra {
                   ArrayRCP<size_type>& myRowPtr,
                   ArrayRCP<global_ordinal_type>& myColInd,
                   ArrayRCP<scalar_type>& myValues,
-                  const Teuchos::RCP<const map_type>& pRowMap,
+                  const RCP<const map_type>& pRowMap,
                   ArrayRCP<size_t>& numEntriesPerRow,
                   ArrayRCP<size_type>& rowPtr,
                   ArrayRCP<global_ordinal_type>& colInd,
                   ArrayRCP<scalar_type>& values,
                   const bool debug=false)
       {
-         using Teuchos::arcp;
-         using Teuchos::ArrayRCP;
-         using Teuchos::Array;
-         using Teuchos::ArrayView;
          using Teuchos::CommRequest;
-         using Teuchos::Comm;
-         using Teuchos::RCP;
-         using Teuchos::rcpFromRef;
          using Teuchos::receive;
          using Teuchos::send;
          using std::cerr;
@@ -760,18 +748,15 @@ namespace Tpetra {
       /// graph of the matrix, so that you can't add new entries.)
       /// 
       static sparse_matrix_ptr
-      makeMatrix (Teuchos::ArrayRCP<size_t>& myNumEntriesPerRow,
-                  Teuchos::ArrayRCP<size_type>& myRowPtr,
-                  Teuchos::ArrayRCP<global_ordinal_type>& myColInd,
-                  Teuchos::ArrayRCP<scalar_type>& myValues,
+      makeMatrix (ArrayRCP<size_t>& myNumEntriesPerRow,
+                  ArrayRCP<size_type>& myRowPtr,
+                  ArrayRCP<global_ordinal_type>& myColInd,
+                  ArrayRCP<scalar_type>& myValues,
                   const map_ptr& pRowMap,
                   const map_ptr& pRangeMap,
                   const map_ptr& pDomainMap,
                   const bool callFillComplete = true)
       {
-        using Teuchos::ArrayRCP;
-        using Teuchos::ArrayView;
-        using Teuchos::rcp;
         using std::cerr;
         using std::endl;
 
@@ -902,15 +887,13 @@ namespace Tpetra {
       /// \param pComm [in, global] Communicator.
       ///
       /// \return Banner [non-null and valid only on Rank 0]
-      static Teuchos::RCP<const Banner>
+      static RCP<const Banner>
       readBanner (std::istream& in,
                   size_t& lineNumber,
                   const comm_ptr& pComm,
                   const bool tolerant=false,
                   const bool debug=false)
       {
-        using Teuchos::RCP;
-        using Teuchos::rcp;
         using std::cerr;
         using std::endl;
 
@@ -981,10 +964,10 @@ namespace Tpetra {
       /// create domain, range, and column Maps.)
       ///
       /// \return (numRows, numCols, numNonzeros)
-      static Teuchos::Tuple<global_ordinal_type, 3>
+      static Tuple<global_ordinal_type, 3>
       readCoordDims (std::istream& in,
                      size_t& lineNumber,
-                     const Teuchos::RCP<const Banner>& pBanner,
+                     const RCP<const Banner>& pBanner,
                      const comm_ptr& pComm,
                      const bool tolerant = false,
                      const bool debug = false)
@@ -992,7 +975,7 @@ namespace Tpetra {
         // Packed coordinate matrix dimensions (numRows, numCols,
         // numNonzeros); computed on Rank 0 and broadcasted to all MPI
         // ranks.
-        Teuchos::Tuple<global_ordinal_type, 3> dims;
+        Tuple<global_ordinal_type, 3> dims;
 
         // Read in the coordinate matrix dimensions from the input
         // stream.  "success" tells us whether reading in the
@@ -1081,17 +1064,15 @@ namespace Tpetra {
       ///   only] that optionally symmetrizes the entries of the
       ///   sparse matrix.
       ///
-      static Teuchos::RCP<adder_type>
-      makeAdder (const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                 Teuchos::RCP<const Banner>& pBanner, 
-                 const Teuchos::Tuple<global_ordinal_type, 3>& dims,
+      static RCP<adder_type>
+      makeAdder (const RCP<const Comm<int> >& pComm,
+                 RCP<const Banner>& pBanner, 
+                 const Tuple<global_ordinal_type, 3>& dims,
                  const bool tolerant=false,
                  const bool debug=false)
       {
         if (Teuchos::rank (*pComm) == 0)
           {
-            using Teuchos::RCP;
-            using Teuchos::rcp;
             typedef Raw::Adder<scalar_type, global_ordinal_type> raw_adder_type;
 
             RCP<raw_adder_type> pRaw (new raw_adder_type (dims[0], dims[1], 
@@ -1100,7 +1081,7 @@ namespace Tpetra {
             return rcp (new adder_type (pRaw, pBanner->symmType()));
           }
         else
-          return Teuchos::null;
+          return null;
       }
 
     public:
@@ -1131,8 +1112,8 @@ namespace Tpetra {
       ///   anyone else.
       static sparse_matrix_ptr
       readSparseFile (const std::string& filename,
-                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-                      const Teuchos::RCP<node_type>& pNode,
+                      const RCP<const Comm<int> >& pComm, 
+                      const RCP<node_type>& pNode,
                       const bool callFillComplete=true,
                       const bool tolerant=false,
                       const bool debug=false)
@@ -1175,16 +1156,12 @@ namespace Tpetra {
       ///   anyone else.
       static sparse_matrix_ptr
       readSparse (std::istream& in,        
-                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm, 
-                  const Teuchos::RCP<node_type>& pNode,
+                  const RCP<const Comm<int> >& pComm, 
+                  const RCP<node_type>& pNode,
                   const bool callFillComplete=true,
                   const bool tolerant=false,
                   const bool debug=false)
       {
-        using Teuchos::RCP;
-        using Teuchos::rcp;
-        using Teuchos::Tuple;
-        using Teuchos::null;
         using std::cerr;
         using std::endl;
         typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -1329,7 +1306,7 @@ namespace Tpetra {
                      << endl;
               }
             // Packed coordinate matrix dimensions (numRows, numCols).
-            Teuchos::Tuple<global_ordinal_type, 2> updatedDims;
+            Tuple<global_ordinal_type, 2> updatedDims;
             if (myRank == 0)
               { // If one or more bottom rows of the matrix contain no
                 // entries, then the Adder will report that the number
@@ -1376,7 +1353,7 @@ namespace Tpetra {
                 //
                 // Broadcast the Adder's idea of the matrix dimensions
                 // from Proc 0 to all processes.
-                Teuchos::Tuple<global_ordinal_type, 2> addersDims;
+                Tuple<global_ordinal_type, 2> addersDims;
                 if (myRank == 0)
                   {
                     addersDims[0] = pAdder->getAdder()->numRows();
@@ -1690,11 +1667,11 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static Teuchos::RCP<multivector_type>
+      static RCP<multivector_type>
       readDenseFile (const std::string& filename,
-                     const Teuchos::RCP<const comm_type>& pComm, 
-                     const Teuchos::RCP<node_type>& pNode,
-                     Teuchos::RCP<const map_type> pMap, // not a ref, so we can assign to it.
+                     const RCP<const comm_type>& pComm, 
+                     const RCP<node_type>& pNode,
+                     RCP<const map_type> pMap, // not a ref, so we can assign to it.
                      const bool tolerant=false,
                      const bool debug=false)
       {
@@ -1757,19 +1734,14 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
-      static Teuchos::RCP<multivector_type>
+      static RCP<multivector_type>
       readDense (std::istream& in,
-                 const Teuchos::RCP<const comm_type>& pComm,
-                 const Teuchos::RCP<node_type>& pNode,
-                 Teuchos::RCP<const map_type> pMap, // not a ref, so we can assign to it.
+                 const RCP<const comm_type>& pComm,
+                 const RCP<node_type>& pNode,
+                 RCP<const map_type> pMap, // not a ref, so we can assign to it.
                  const bool tolerant=false,
                  const bool debug=false)
       {
-        using Teuchos::ArrayRCP;
-        using Teuchos::RCP;
-        using Teuchos::rcp;
-        using Teuchos::Tuple;
-        using Teuchos::null;
         using std::cerr;
         using std::endl;
 
@@ -1804,7 +1776,7 @@ namespace Tpetra {
         // data type: "real" == 0, "complex" == 1, and "integer" == 0
         // (same as "real").  We don't allow pattern matrices (i.e.,
         // graphs) since they only make sense for sparse data.
-        Teuchos::Tuple<GO, 3> dims;
+        Tuple<GO, 3> dims;
         dims[0] = 0;
         dims[1] = 0;
 
@@ -2215,7 +2187,7 @@ namespace Tpetra {
     class Writer {
     public:
       typedef SparseMatrixType sparse_matrix_type;
-      typedef Teuchos::RCP<sparse_matrix_type> sparse_matrix_ptr;
+      typedef RCP<sparse_matrix_type> sparse_matrix_ptr;
 
       /// \typedef scalar_type
       /// \brief Type of the entries of the sparse matrix.
@@ -2262,7 +2234,7 @@ namespace Tpetra {
       ///
       static void
       writeSparseFile (const std::string& filename,
-                       const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+                       const RCP<const sparse_matrix_type>& pMatrix,
                        const bool debug=false)
       {
         const int myRank = Teuchos::rank (*(pMatrix->getComm()));
@@ -2300,11 +2272,9 @@ namespace Tpetra {
       ///
       static void
       writeSparse (std::ostream& out,
-                   const Teuchos::RCP<const sparse_matrix_type>& pMatrix,
+                   const RCP<const sparse_matrix_type>& pMatrix,
                    const bool debug=false)
       {
-        using Teuchos::Comm;
-        using Teuchos::RCP;
         using std::cerr;
         using std::endl;
         typedef typename Teuchos::ScalarTraits<scalar_type> STS;
@@ -2470,7 +2440,7 @@ namespace Tpetra {
           }
           else // newMatrix is locally indexed
           {
-            typedef Teuchos::OrdinalTraits<global_ordinal_type> OTG;
+            typedef OrdinalTraits<global_ordinal_type> OTG;
             RCP<const map_type> pColMap = newMatrix->getColMap ();
 
             for (local_ordinal_type localRowIndex = pGatherRowMap->getMinLocalIndex();
@@ -2527,7 +2497,7 @@ namespace Tpetra {
       ///
       static void
       writeDenseFile (const std::string& filename,
-                      const Teuchos::RCP<const multivector_type>& X)
+                      const RCP<const multivector_type>& X)
       {
         const int myRank = Teuchos::rank (*(X->getComm()));
         std::ofstream out;        
@@ -2553,11 +2523,8 @@ namespace Tpetra {
       ///
       static void
       writeDense (std::ostream& out,
-                  const Teuchos::RCP<const multivector_type>& X)
+                  const RCP<const multivector_type>& X)
       {
-        using Teuchos::ArrayRCP;
-        using Teuchos::Comm;
-        using Teuchos::RCP;
         using std::endl;
 
         typedef typename Teuchos::ScalarTraits<scalar_type> STS;
