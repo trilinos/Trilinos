@@ -7,7 +7,7 @@
 
 \newcommand{\Aprime}{\ensuremath{A'}\xspace}
 \newcommand{\Bprime}{\ensuremath{B'}\xspace}
-\title{Evaluation of Tpetra's Sparse Matrix-Matrix Multiplication Routine}
+\title{Optimizing Tpetra's Sparse Matrix-Matrix Multiplication Routine}
 \author{Kurtis L. Nusbaum}
 \date{}
 
@@ -29,7 +29,7 @@ discuss the optimizations made to the routine, its current state, and where futu
 \section*{Acknowledgments}
 Thanks to all of those at Sandia National Labs who helped provide the tools needed to compile this report. 
 A special thanks to Dr.\ Chris Baker, Dr.\ Chris 
-Siefert, Dr.\ Mark Hoemmen, and Dr.\ Johnathan Hu whose guidance was invaluable. Thanks to Dr.\ Mike Heroux for funding this 
+Siefert, Dr.\ Mark Hoemmen, and Dr.\ Jonathan Hu whose guidance was invaluable. Thanks to Dr.\ Mike Heroux for funding this 
 project. Thank you to the entire Trilinos community whose help is always appreciated. Thanks to St.\ John's University
 for providing resources which helped create the material that this report evaluates. 
 
@@ -239,7 +239,7 @@ The most important thing that will help the sparse matrix-matrix multiply routin
 underlying Tpetra architecture. 
 Undoubtedly the inefficient \verb!sort2! routine we found is not the only problem with Tpetra at large. There have been 
 reports from other scientists at Sandia National Labs that things like the Tpetra Import/Export classes are not running as 
-nearly as fast as their Epetra counterparts. In addition, Tpetra has no performance tests. Consquently, the performance of 
+nearly as fast as their Epetra counterparts. In addition, Tpetra has no performance tests. Consequently, the performance of 
 almost all of tpetra is unknown. These things need to be investigated, and fixed if necessary.
 
 \subsection{Possible Implementation of ML's Algorithm}
@@ -256,7 +256,7 @@ multiply routine should not be all that difficult and could potentially provide 
 1. For matrix B only, create a hashtable where given a globalid, 
 we get a unique hashtag. i.e. hash[gid] = hashtag
 Note that in Serial we don't actually need a "hash", local id's should suffice
-2.Create a "reverse" map, one where we can do rmap[hastag] = gid
+2.Create a "reverse" map, one where we can do rmap[hashtag] = gid
 3. Allocate an array called acc_index with the same size as the hash table
 4. Allocate two arrays called acc_col and acc_val whose size is 
 equal to the maximum number of row entries in matrix A.
@@ -273,7 +273,7 @@ equal to the maximum number of row entries in matrix A.
     for(j=0; j< cur_B_cols.size(); ++j){
       cur_acc_index = hashtable(getGlobalElement(cur_B_cols[j])) //precomputing this might be useful
       if(acc_index(cur_acc_index) == -1){
-        acc_col[cur_acc_prt] = cur_acc_index  //Probably should just put in gid actually
+        acc_col[cur_acc_ptr] = cur_acc_index  //Probably should just put in gid actually
         acc_val[cur_acc_ptr] = cur_B_vals[j]*cur_A_vals[k]
         acc_index[curr_acc_index]=cur_acc_ptr++
       }
