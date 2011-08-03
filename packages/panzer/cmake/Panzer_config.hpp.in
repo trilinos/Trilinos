@@ -6,5 +6,5 @@
 #cmakedefine PANZER_STK_DEBUG
 #cmakedefine HAVE_IOSS
 #cmakedefine HAVE_TEKO
-#cmakedefine ALBANY_IOSS
+#cmakedefine HAVE_STOKHOS
 #cmakedefine PANZER_EXPLICIT_TEMPLATE_INSTANTIATION

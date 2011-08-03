@@ -22,20 +22,28 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   "Build with debug code enabled."
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
-  HAVE_IOSS
-  "Build with IOSS code enabled."
-  ON )
+# optional package specific configurations
+############################################################
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Teko
-  HAVE_TEKO
-  "Build with IOSS code enabled."
-  ON )
+IF(${PACKAGE_NAME}_ENABLE_SEACAS)
+   GLOBAL_SET(HAVE_IOSS ON)
+ELSE()
+   GLOBAL_SET(HAVE_IOSS OFF)
+ENDIF()
 
-#ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
-#  ALBANY_IOSS
-#  "Build with Albany's IOSS code enabled."
-#  ON )
+IF(${PACKAGE_NAME}_ENABLE_Stokhos)
+   GLOBAL_SET(HAVE_STOKHOS ON)
+ELSE()
+   GLOBAL_SET(HAVE_STOKHOS OFF)
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_Teko)
+   GLOBAL_SET(HAVE_TEKO ON)
+ELSE()
+   GLOBAL_SET(HAVE_TEKO OFF)
+ENDIF()
+
+############################################################
 
 COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_SOLVER_DRIVERS_EPETRA
   DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_Stratimikos ${PACKAGE_NAME}_ENABLE_Piro ${PACKAGE_NAME}_ENABLE_NOX ${PACKAGE_NAME}_ENABLE_Rythmos
