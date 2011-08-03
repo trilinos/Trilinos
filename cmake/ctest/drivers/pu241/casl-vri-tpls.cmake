@@ -21,3 +21,7 @@ SET(HDF5_LIBRARY_DIRS   /opt/gcc-4.5.1/tpls/hdf5/lib     CACHE FILEPATH "")
 SET(HDF5_INCLUDE_DIRS   /opt/gcc-4.5.1/tpls/hdf5/include CACHE FILEPATH "")
 SET(SILO_LIBRARY_DIRS   /opt/gcc-4.5.1/tpls/silo/lib     CACHE FILEPATH "")
 SET(SILO_INCLUDE_DIRS   /opt/gcc-4.5.1/tpls/silo/include CACHE FILEPATH "")
+SET(TBB_LIBRARY_DIRS    /opt/intel/Compiler/composerxe-2011.4.191/tbb/lib/intel64/cc4.1.0_libc2.4_kernel2.6.16.21  CACHE FILEPATH "")
+SET(TBB_INCLUDE_DIRS    /opt/intel/Compiler/composerxe-2011.4.191/tbb/include                                      CACHE FILEPATH "")
+
+
