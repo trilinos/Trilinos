@@ -97,7 +97,7 @@ $N_c$, $N_p$, and $N_r$ are the number of local columns, processors, and local r
 Obviously this is not scalable. At anything but the lowest processor counts, this array quickly balloons to a size that 
 won't fit in memory. We decided to remove this function and the specific transpose kernels. Instead, we explicitly 
 transpose the matrices using Tpetra's \verb!RowMatrixTransposer! if needed
-and use the $A \times B$ kernel on those matrices. This has \emph{significant}~\footnote{See section~\ref{perfSect} for 
+and use the $A \times B$ kernel on those matrices. This has \emph{significant}\footnote{See Section~\ref{perfSect} for 
 details} performance benefits when doing operations like $A^T \times B$.
 
 \subsection{Streamlining the Graph Building Routine}
@@ -114,10 +114,10 @@ of a given matrix.
 \section{Performance}
 \label{perfSect}
 We conducted a series of weak scaling studies on the Hopper NERSC machine. Hopper is a Cray XE6 with 24 cores
-per node~\footnote{For more machine information regarding Hopper, please visit 
+per node\footnote{For more machine information regarding Hopper, please visit 
 \url{http://www.nersc.gov/systems/hopper-cray-xe6}}. We define weak scaling as increasing the problem size while holding 
 the amount of work done on each \emph{node} constant. We define weak scaling efficiency as $Time_{serial}/Time_{parallel}$,
-where $Time_{serial}$ is the amount of time required to run on a signel node~\footnote{Strictly speaking, $Time_{serial}$
+where $Time_{serial}$ is the amount of time required to run on a single node\footnote{Strictly speaking, $Time_{serial}$
 is not actually serial runtime in our tests because a single node on hopper has 24 cores. That said, it's worth 
 noting that none of the testing done below involving Tpetra utilizes any Kokkos~\cite{KokkosHomePage} kernels.  
 This means that we're not taking advantage of any node-level parallelism.} and $Time_{parallel}$ is the amount of time to run
@@ -158,7 +158,7 @@ Figure~\ref{alltime} and Figure~\ref{alleff} show the test results of comparing 
 routine (with all of its optimizations) to other sparse matrix-matrix multiply routines in Trilinos~\cite{1089021} 
 (namely the original 
 EpetraExt routine and a slightly modified version ML's Epetra sparse matrix-matrix multiply 
-routine~\footnote{The only difference 
+routine\footnote{The only difference 
 between the ML's \verb!Epetra_MatMat_Mult! and the one we used in our test is that we modified the routine to use ML's
 matrix storage when assembling matrix $C$ rather than Epetra's}). 
 These tests were conducted in the same manner as above. 
@@ -184,12 +184,12 @@ scaling efficiency. The ML line is cut short due to a memory error that prevente
 
 \subsection{Transpose Mode Tests}
 Since Tpetra and EpetraExt differ wildly when it comes to transpose modes, we decided to compare the two. We did the same
-testing procedure as above, except that we requested A be transposed~\footnote{One could first explicitly transpose a 
+testing procedure as above, except that we requested A be transposed\footnote{One could first explicitly transpose a 
 matrix and then give it to the ML algorithm which does not have a transpose mode. We did not do this because the point of 
 this test was to compare EpetraExt and Tpetra.}. Figure~\ref{transtime}
 and Figure~\ref{transeff} show the results. To say that the Tpetra algorithm scales better than the EpetraExt algorithm
 would be a gross understatement. The Tpetra algorithm levels off at about a 5 second runtime, where as EpetraExt 
-algorithm's runtime seems to grow exponentially. We attempted to conduct a similar experiment where we transposed B 
+algorithm's runtime seems to grow quadratically. We attempted to conduct a similar experiment where we transposed B 
 instead of A, but the EpetraExt algorithm was taking even longer (over ten minutes on a single node of Hopper) and we 
 didn't want to waste our limited computing resources. 
 
