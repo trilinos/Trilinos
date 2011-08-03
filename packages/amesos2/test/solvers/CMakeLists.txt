@@ -9,7 +9,7 @@ PACKAGE_ADD_EXECUTABLE(
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES superlu_test.xml
     EXEDEPS Solver_Test
     )
@@ -38,7 +38,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUMTFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES superlumt_test.xml
     EXEDEPS Solver_Test
     )
@@ -57,7 +57,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUDistFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers/
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES superludist_test.xml
     EXEDEPS Solver_Test
     )
@@ -76,7 +76,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyPardisoMKLFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers/
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES pardiso_mkl_test.xml
     EXEDEPS Solver_Test
     )
@@ -95,7 +95,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_LAPACK)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(SolverTestCopyLapackFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/test/solvers/
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES lapack_test.xml
     EXEDEPS Solver_Test
     )
