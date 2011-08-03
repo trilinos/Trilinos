@@ -95,7 +95,7 @@ public:
     {
       this->setOpNameBase("ROpMinIndexGreaterThanBound");
       bound(bound_in);
-      initReductObjValue(
+      this->initReductObjValue(
         ScalarIndex<Scalar>(+ScalarTraits<Scalar>::rmax(), -1));
     }
   /** \brief . */
