@@ -14,11 +14,13 @@
 #include <Epetra_SerialComm.h>
 #include <Epetra_Time.h>
 #include <Epetra_Import.h>
+#include <Epetra_Export.h>
 #include <Epetra_Map.h>
 #include <Epetra_LocalMap.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Vector.h>
+#include <EpetraExt_MMHelpers.h>
 #include <EpetraExt_MatrixMatrix.h>
 
 #include <EpetraExt_BlockMapIn.h>
@@ -28,7 +30,7 @@
 namespace EpetraExt {
 extern
 Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
-                                      const Epetra_Map* colmap);
+                                      const Epetra_Map& column_map);
 }
 
 int read_input_file(Epetra_Comm& Comm,
@@ -220,8 +222,7 @@ int test_find_rows(Epetra_Comm& Comm)
     return(err);
   }
 
-  Epetra_Map* map_rows = EpetraExt::find_rows_containing_cols(matrix,
-							      &colmap);
+  Epetra_Map* map_rows = EpetraExt::find_rows_containing_cols(matrix, colmap);
 
   if (map_rows->NumMyElements() != numglobalrows) {
     return(-1);
@@ -470,6 +471,9 @@ int run_test(Epetra_Comm& Comm,
     if (localProc == 0) {
       std::cout << "Test Failed, inf_norm = " << inf_norm << std::endl;
     }
+Comm.Barrier();
+std::cout << "C"<<std::endl;
+std::cout << *C<<std::endl;
   }
 
   delete A;
@@ -625,7 +629,7 @@ int two_proc_test(Epetra_Comm& Comm,
   if (thisproc == 1) myrow = 7;
   Epetra_Map rowmap(numGlobalRows, numMyRows, &myrow, 0, Comm);
 
-  //set up a domain-std::map with columns 0 - 4 on proc 0,
+  //set up a domain-map with columns 0 - 4 on proc 0,
   //and columns 5 - 9 on proc 1.
   int numGlobalCols = 10;
   int numMyCols = 5;
@@ -648,7 +652,11 @@ int two_proc_test(Epetra_Comm& Comm,
     coefs[i] = 1.0*i;
   }
 
-  int err = A.InsertGlobalValues(myrow, numGlobalCols, coefs, mycols);
+  int numCols = numGlobalCols - 2;
+  int offset = 0;
+  if (thisproc == 1) offset = 2;
+
+  int err = A.InsertGlobalValues(myrow, numCols, &coefs[offset], &mycols[offset]);
 
   err += B.InsertGlobalValues(myrow, numMyCols, &(coefs[thisproc*numMyCols]),
                        &(mycols[thisproc*numMyCols]));

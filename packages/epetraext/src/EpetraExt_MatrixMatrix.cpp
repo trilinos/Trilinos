@@ -783,75 +783,6 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
   return(0);
 }
 
-int distribute_list(const Epetra_Comm& Comm,
-                    int lenSendList,
-                    const int* sendList,
-                    int& maxSendLen,
-                    int*& recvList)
-{
-  maxSendLen = 0; 
-  Comm.MaxAll(&lenSendList, &maxSendLen, 1);
-  int numProcs = Comm.NumProc();
-  recvList = new int[numProcs*maxSendLen];
-  int* send = new int[maxSendLen];
-  for(int i=0; i<lenSendList; ++i) {
-    send[i] = sendList[i];
-  }
-
-  Comm.GatherAll(send, recvList, maxSendLen);
-  delete [] send;
-
-  return(0);
-}
-
-Epetra_Map* create_map_from_imported_rows(const Epetra_Map* map,
-					  int totalNumSend,
-					  int* sendRows,
-					  int numProcs,
-					  int* numSendPerProc)
-{
-  //Perform sparse all-to-all communication to send the row-GIDs
-  //in sendRows to appropriate processors according to offset
-  //information in numSendPerProc.
-  //Then create and return a map containing the rows that we
-  //received on the local processor.
-
-  Epetra_Distributor* distributor = map->Comm().CreateDistributor();
-
-  int* sendPIDs = totalNumSend>0 ? new int[totalNumSend] : NULL;
-  int offset = 0;
-  for(int i=0; i<numProcs; ++i) {
-    for(int j=0; j<numSendPerProc[i]; ++j) {
-      sendPIDs[offset++] = i;
-    }
-  }
-
-  int numRecv = 0;
-  int err = distributor->CreateFromSends(totalNumSend, sendPIDs,
-					 true, numRecv);
-  assert( err == 0 );
-
-  char* c_recv_objs = numRecv>0 ? new char[numRecv*sizeof(int)] : NULL;
-  int num_c_recv = numRecv*(int)sizeof(int);
-
-  err = distributor->Do(reinterpret_cast<char*>(sendRows),
-			(int)sizeof(int), num_c_recv, c_recv_objs);
-  assert( err == 0 );
-
-  int* recvRows = reinterpret_cast<int*>(c_recv_objs);
-
-  //Now create a map with the rows we've received from other processors.
-  Epetra_Map* import_rows = new Epetra_Map(-1, numRecv, recvRows,
-					   map->IndexBase(), map->Comm());
-
-  delete [] c_recv_objs;
-  delete [] sendPIDs;
-
-  delete distributor;
-
-  return( import_rows );
-}
-
 int form_map_union(const Epetra_Map* map1,
 		   const Epetra_Map* map2,
 		   const Epetra_Map*& mapunion)
@@ -914,131 +845,93 @@ int form_map_union(const Epetra_Map* map1,
 }
 
 Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
-                                      const Epetra_Map* colmap)
+                                      const Epetra_Map& column_map)
 {
   //The goal of this function is to find all rows in the matrix M that contain
-  //column-indices which are in 'colmap'. A map containing those rows is
-  //returned.
+  //column-indices which are in 'column_map'. A map containing those rows is
+  //returned. (The returned map will then be used as the source row-map for
+  //importing those rows into an overlapping distribution.)
 
-  int numProcs = colmap->Comm().NumProc();
-  int localProc = colmap->Comm().MyPID();
+  std::pair<int,int> my_col_range = get_col_range(column_map);
 
-  if (numProcs < 2) {
-    Epetra_Map* result_map = NULL;
-
-    int err = form_map_union(&(M.RowMap()), NULL,
-                             (const Epetra_Map*&)result_map);
-    if (err != 0) {
-      return(NULL);
-    }
-    return(result_map);
+  const Epetra_Comm& Comm = M.RowMap().Comm();
+  int num_procs = Comm.NumProc();
+  int my_proc = Comm.MyPID();
+  std::vector<int> send_procs;
+  send_procs.reserve(num_procs-1);
+  std::vector<int> col_ranges;
+  col_ranges.reserve(2*(num_procs-1));
+  for(int p=0; p<num_procs; ++p) {
+    if (p == my_proc) continue;
+    send_procs.push_back(p);
+    col_ranges.push_back(my_col_range.first);
+    col_ranges.push_back(my_col_range.second);
   }
 
-  int MnumRows = M.NumMyRows();
-  int numCols = colmap->NumMyElements();
+  Epetra_Distributor* distor = Comm.CreateDistributor();
 
-  int* iwork = new int[numCols+2*numProcs+numProcs*MnumRows];
-  int iworkOffset = 0;
+  int num_recv_procs = 0;
+  int num_send_procs = send_procs.size();
+  bool deterministic = true;
+  int* send_procs_ptr = send_procs.size()>0 ? &send_procs[0] : NULL;
+  distor->CreateFromSends(num_send_procs, send_procs_ptr, deterministic, num_recv_procs);
 
-  int* cols = &(iwork[iworkOffset]); iworkOffset += numCols;
+  int len_import_chars = 0;
+  char* import_chars = NULL;
 
-  cols[0] = numCols;
-  colmap->MyGlobalElements( &(cols[1]) );
-
-  //cols are not necessarily sorted at this point, so we'll make sure
-  //they are sorted.
-  Epetra_Util util;
-  util.Sort(true, numCols, &(cols[1]), 0, NULL, 0, NULL);
-
-  int* all_proc_cols = NULL;
-  
-  int max_num_cols;
-  distribute_list(colmap->Comm(), numCols+1, cols, max_num_cols, all_proc_cols);
-
-  const Epetra_CrsGraph& Mgraph = M.Graph();
-  const Epetra_Map& Mrowmap = M.RowMap();
-  const Epetra_Map& Mcolmap = M.ColMap();
-  int MminMyLID = Mrowmap.MinLID();
-
-  int* procNumCols = &(iwork[iworkOffset]); iworkOffset += numProcs;
-  int* procNumRows = &(iwork[iworkOffset]); iworkOffset += numProcs;
-  int* procRows_1D = &(iwork[iworkOffset]);
-  int** procCols = new int*[numProcs];
-  int** procRows = new int*[numProcs];
-  int i, err;
+  char* export_chars = col_ranges.size()>0 ? reinterpret_cast<char*>(&col_ranges[0]) : NULL;
+  int err = distor->Do(export_chars, 2*sizeof(int), len_import_chars, import_chars);
+  if (err != 0) {
+    std::cout << "ERROR returned from Distributor::Do."<<std::endl;
+  }
+ 
+  int* IntImports = reinterpret_cast<int*>(import_chars);
+  int num_import_pairs = len_import_chars/(2*sizeof(int));
   int offset = 0;
-  for(i=0; i<numProcs; ++i) {
-    procNumCols[i] = all_proc_cols[offset];
-    procCols[i] = &(all_proc_cols[offset+1]);
-    offset += max_num_cols;
-
-    procNumRows[i] = 0;
-    procRows[i] = &(procRows_1D[i*MnumRows]);
-  }
-
-  int* Mindices;
-
-  for(int row=0; row<MnumRows; ++row) {
-    int localRow = MminMyLID+row;
-    int globalRow = Mrowmap.GID(localRow);
-    int MnumCols;
-    err = Mgraph.ExtractMyRowView(localRow, MnumCols, Mindices);
-    if (err != 0) {
-      cerr << "proc "<<localProc<<", error in Mgraph.ExtractMyRowView, row "
-           <<localRow<<endl;
-      return(NULL);
-    }
-
-    for(int j=0; j<MnumCols; ++j) {
-      int colGID = Mcolmap.GID(Mindices[j]);
-
-      for(int p=0; p<numProcs; ++p) {
-        if (p==localProc) continue;
-
-        int insertPoint;
-        int foundOffset = Epetra_Util_binary_search(colGID, procCols[p],
-                                                    procNumCols[p], insertPoint);
-        if (foundOffset > -1) {
-          int numRowsP = procNumRows[p];
-          int* prows = procRows[p];
-          if (numRowsP < 1 || prows[numRowsP-1] < globalRow) {
-            prows[numRowsP] = globalRow;
-            procNumRows[p]++;
-          }
-        }
-      }
+  std::vector<int> send_procs2;
+  send_procs2.reserve(num_procs);
+  std::vector<int> proc_col_ranges;
+  std::pair<int,int> M_col_range = get_col_range(M);
+  for(int i=0; i<num_import_pairs; ++i) {
+    int first_col = IntImports[offset++];
+    int last_col =  IntImports[offset++];
+    if (first_col <= M_col_range.second && last_col >= M_col_range.first) {
+      send_procs2.push_back(send_procs[i]);
+      proc_col_ranges.push_back(first_col);
+      proc_col_ranges.push_back(last_col);
     }
   }
 
-  //Now make the contents of procRows occupy a contiguous section
-  //of procRows_1D.
-  offset = procNumRows[0];
-  for(i=1; i<numProcs; ++i) {
-    for(int j=0; j<procNumRows[i]; ++j) {
-      procRows_1D[offset++] = procRows[i][j];
-    }
-  }
+  std::vector<int> send_rows;
+  std::vector<int> rows_per_send_proc;
+  pack_outgoing_rows(M, proc_col_ranges, send_rows, rows_per_send_proc);
 
-  int totalNumSend = offset;
-  //Next we will do a sparse all-to-all communication to send the lists of rows
-  //to the appropriate processors, and create a map with the rows we've received
-  //from other processors.
-  Epetra_Map* recvd_rows =
-    create_map_from_imported_rows(&Mrowmap, totalNumSend,
-                                  procRows_1D, numProcs, procNumRows);
+  Epetra_Distributor* distor2 = Comm.CreateDistributor();
+
+  int* send_procs2_ptr = send_procs2.size()>0 ? &send_procs2[0] : NULL;
+  num_recv_procs = 0;
+  err = distor2->CreateFromSends(send_procs2.size(), send_procs2_ptr, deterministic, num_recv_procs);
+
+  export_chars = send_rows.size()>0 ? reinterpret_cast<char*>(&send_rows[0]) : NULL;
+  int* rows_per_send_proc_ptr = rows_per_send_proc.size()>0 ? &rows_per_send_proc[0] : NULL;
+  len_import_chars = 0;
+  err = distor2->Do(export_chars, (int)sizeof(int), rows_per_send_proc_ptr, len_import_chars, import_chars);
+
+  int* recvd_row_ints = reinterpret_cast<int*>(import_chars);
+  int num_recvd_rows = len_import_chars/sizeof(int);
+
+  Epetra_Map recvd_rows(-1, num_recvd_rows, recvd_row_ints, column_map.IndexBase(), Comm);
+
+  delete distor;
+  delete distor2;
+  delete [] import_chars;
 
   Epetra_Map* result_map = NULL;
 
-  err = form_map_union(&(M.RowMap()), recvd_rows, (const Epetra_Map*&)result_map);
+  err = form_map_union(&(M.RowMap()), &recvd_rows, (const Epetra_Map*&)result_map);
   if (err != 0) {
     return(NULL);
   }
-
-  delete [] iwork;
-  delete [] procCols;
-  delete [] procRows;
-  delete [] all_proc_cols;
-  delete recvd_rows;
 
   return(result_map);
 }
@@ -1132,7 +1025,7 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
     //local portion of the domain-map. (We'll import any remote rows
     //that fit this criteria onto the local processor.)
     if (transposeA) {
-      workmap1 = find_rows_containing_cols(A, domainMap_A);
+      workmap1 = find_rows_containing_cols(A, *domainMap_A);
       targetMap_A = workmap1;
     }
   }
@@ -1159,7 +1052,7 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
     //local processor.
     if (transposeB) {
       EPETRA_CHK_ERR( form_map_union(colmap_op_A, domainMap_B, mapunion1) );
-      workmap2 = find_rows_containing_cols(B, mapunion1);
+      workmap2 = find_rows_containing_cols(B, *mapunion1);
       targetMap_B = workmap2;
     }
   }
