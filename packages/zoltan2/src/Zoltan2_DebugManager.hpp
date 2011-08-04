@@ -30,7 +30,8 @@ class DebugManager
     public:
 
     DebugManager ( 
-     Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm(),
+     Teuchos::RCP<const Teuchos::Comm<int> > comm =
+                 Teuchos::DefaultComm<int>::getComm(),
      int debugLevel = 0,
      std::ostream *os = &std::cout
      );
@@ -58,8 +59,13 @@ class DebugManager
             return myBHS_;
     }
 
-    inline Teuchos::RCP<const Teuchos::Comm<int> > getComm() const { return comm_; };
+    inline Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
+    {
+        return comm_;
+    };
+
     inline std::ostream *getOStream() const { return myOS_; };
+
     inline int getDebugLevel() const { return debugLevel_; };
 
     inline void print(int debugLevel, const std::string &output);
