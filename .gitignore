@@ -65,6 +65,9 @@ XPETRA_MPI_THREADED/
 ALL_OMP_GCC/
 XPETRA_THREADED_GCC/
 XPETRA_THREADED/
+MPI_DEBUG/
+SERIAL_DEBUG/
+SERIAL_RELEASE/
 
 /build
 packages/tpetra/test/MatrixMatrix/matrices/*.m

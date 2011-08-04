@@ -818,7 +818,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->nProc_x_req = -1;
   hgp->nProc_y_req = -1;
   hgp->kway = 0;
-  hgp->rcb_red == 0.5; /* NEANEA probably change */
+  hgp->rcb_red == 0.1; /* NEANEA */
   hgp->fm_loop_limit = 10;
   hgp->fm_max_neg_move = 250;  
   hgp->refinement_quality = 1;

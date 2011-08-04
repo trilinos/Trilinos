@@ -2331,7 +2331,7 @@ static int pmatching_rcb (ZZ *zz,
   ZZ *zz2 = Zoltan_Create(hg->comm->Communicator);
   int i;
   char s[8]; 
-  int changes, num_gid_entries, num_lid_entries;
+  int changes, num_gid_entries, num_lid_entries, local_vtx;
   ZOLTAN_GNO_TYPE *procmatch;
   MPI_Datatype zoltan_gno_mpi_type;
 
@@ -2384,10 +2384,15 @@ static int pmatching_rcb (ZZ *zz,
     goto End;
   }
     
-  /* Num global parts is a reduction by a factor */
-  sprintf(s, "%d", ((int) (hgp->rcb_red * hg->nVtx)));
-  /* int tst = zz->Get_Num_Obj(hg, &ierr); NEED TO GET TOTAL NUM PARTS TO CALCULATE REDUCTION */
-  if (Zoltan_Set_Param(zz2, "NUM_GLOBAL_PARTS", s) == ZOLTAN_FATAL) {
+
+  if ((hgp->rcb_red <= 0) || (hgp->rcb_red > 1)) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid hybrid reduction factor. Using default value 0.1.");
+      hgp->rcb_red = 0.1;
+  }
+  /* Parts are reduced by a factor, result should not be 0 */  
+  local_vtx = (int)(hgp->rcb_red * hg->nVtx);
+  sprintf(s, "%d", (local_vtx == 0) ? 1 : local_vtx);
+  if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
@@ -2402,12 +2407,6 @@ static int pmatching_rcb (ZZ *zz,
   }
   /* KDDKDD */
 #endif
-
-  /* Should be DEFAULT value (setting to -1 here, but change later) */
-  if (Zoltan_Set_Param(zz2, "NUM_LOCAL_PARTS", "-1") == ZOLTAN_FATAL) {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
-    goto End;
-  }
 
   if (Zoltan_Set_Param(zz2, "OBJ_WEIGHT_DIM", "1") == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
@@ -2437,7 +2436,7 @@ static int pmatching_rcb (ZZ *zz,
 		    &num_export, &candidate_ids, &export_local_ids,
 		    &export_procs, &export_to_part);
 
-  #ifdef KDD_DEBUG
+#ifdef KDDKDD_DEBUG
 {/* KDDKDD */
   int kdd;
   for (kdd = 0; kdd < num_import; kdd++) {
@@ -2459,7 +2458,7 @@ static int pmatching_rcb (ZZ *zz,
   zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
   MPI_Allreduce(procmatch, match, hg->nVtx, zoltan_gno_mpi_type, MPI_SUM, hg->comm->col_comm);
 
-#ifdef DEBUGGGGG
+#ifdef KDDKDD_DEBUG
  {/* KDDKDD */
    int kdd;
    printf("%d KDDKDD Sanity Check %d == %d ? \n", zz->Proc, num_import, num_export);

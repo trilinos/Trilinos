@@ -39,6 +39,8 @@
 #include "Intrepid_ProductTopology.hpp"
 #include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
 #include "Teuchos_Array.hpp"
+#include "Intrepid_TensorBasis.hpp"
+#include "Intrepid_Utils.hpp"
 
 namespace Intrepid {
   
@@ -48,15 +50,14 @@ namespace Intrepid {
 	    a tensor product of points
 */
 template<class Scalar, class ArrayScalar> 
-class Basis_HGRAD_QUAD_Cn_FEM : public Basis<Scalar, ArrayScalar> {
+class Basis_HGRAD_QUAD_Cn_FEM : public TensorBasis<Scalar,ArrayScalar>
+{
 private:
-
+  
   /** \brief Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
    */
   void initializeTags();
   
-  Teuchos::Array<Teuchos::RCP<Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> > > bases_;
-
 public:
 
   /** \brief Constructor.

@@ -47,7 +47,9 @@ using namespace Intrepid;
 /*
   Computes integrals of monomials over a given reference cell.
 */
-long double evalQuad(std::vector<int> power, int dimension, std::vector<int> order, std::vector<EIntrepidBurkardt> rule) {
+long double evalQuad(std::vector<int> power, 
+		     int dimension, std::vector<int> order, 
+		     std::vector<EIntrepidBurkardt> rule) {
  
   CubatureTensorSorted<long double> lineCub(dimension,order,rule,false);  
   int size = lineCub.getNumPoints();
@@ -192,11 +194,11 @@ int main(int argc, char *argv[]) {
   *outStream << "\nIntegrals of monomials on a reference line (edge):\n";
   // compute and compare integrals
   try {
-    for (EIntrepidBurkardt rule=BURK_CHEBYSHEV1; rule <= BURK_LAGUERRE; rule++) {   
+    for (EIntrepidBurkardt rule=BURK_CHEBYSHEV1;rule<=BURK_LAGUERRE;rule++) {   
       *outStream << "Testing " << EIntrepidBurkardtToString(rule) << "\n";
       // compute integrals
       if (rule==BURK_HERMITE)
-	maxOrder = 9;
+	maxOrder = 8;
       else if (rule==BURK_TRAPEZOIDAL) 
 	maxOrder = 2;
       else 
@@ -205,10 +207,15 @@ int main(int argc, char *argv[]) {
       rule1[0] = rule; rule1[1] = rule;
       if (rule!=BURK_PATTERSON&&rule!=BURK_GENZKEISTER) {
 	for (int i=1; i <= maxOrder; i++) {
-	  if (rule==BURK_CHEBYSHEV1||rule==BURK_CHEBYSHEV2||rule==BURK_LEGENDRE||
-	      rule==BURK_LAGUERRE||rule==BURK_HERMITE)
+	  if ( rule==BURK_CHEBYSHEV1 ||
+	       rule==BURK_CHEBYSHEV2 ||
+	       rule==BURK_LEGENDRE   ||
+	       rule==BURK_LAGUERRE   ||
+	       rule==BURK_HERMITE      )
 	    maxDeg = 2*i-1;
-	  else if (rule==BURK_CLENSHAWCURTIS||rule==BURK_FEJER2||rule==BURK_TRAPEZOIDAL) 
+	  else if ( rule==BURK_CLENSHAWCURTIS ||
+		    rule==BURK_FEJER2         ||
+		    rule==BURK_TRAPEZOIDAL      ) 
 	    maxDeg = i-1;
 	  
 	  order[0] = i; order[1] = i;
@@ -221,14 +228,19 @@ int main(int argc, char *argv[]) {
 	      
 	      long double abstol  = (analyticInt == 0.0 ? reltol : std::fabs(reltol*analyticInt) );
 	      long double absdiff = std::fabs(analyticInt - testInt);
-	      *outStream << "Cubature order " << std::setw(2) << std::left << i << " integrating "
-			 << "x^" << std::setw(2) << std::left << j << "y^" << std::setw(2) << std::left 
-			 << k <<  ":" << "   " << std::scientific << std::setprecision(16) << testInt 
-			 << "   " << analyticInt << "   " << std::setprecision(4) << absdiff << "   " 
+	      *outStream << "Cubature order " << std::setw(2) 
+			 << std::left << i << " integrating "
+			 << "x^" << std::setw(2) << std::left << j 
+			 << "y^" << std::setw(2) << std::left 
+			 << k <<  ":" << "   " << std::scientific 
+			 << std::setprecision(16) << testInt 
+			 << "   " << analyticInt << "   " 
+			 << std::setprecision(4) << absdiff << "   " 
 			 << "<?" << "   " << abstol << "\n";
 	      if (absdiff > abstol) {
 		errorFlag++;
-		*outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
+		*outStream << std::right << std::setw(104) 
+			   << "^^^^---FAILURE!\n";
 	      }
 	    } // end for k
 	    *outStream << "\n";
@@ -254,14 +266,19 @@ int main(int argc, char *argv[]) {
 	      
 	      long double abstol  = (analyticInt == 0.0 ? reltol : std::fabs(reltol*analyticInt) );
 	      long double absdiff = std::fabs(analyticInt - testInt);
-	      *outStream << "Cubature order " << std::setw(2) << std::left << l << " integrating "
-			 << "x^" << std::setw(2) << std::left << j << "y^" << std::setw(2) << std::left 
-			 << k <<  ":" << "   " << std::scientific << std::setprecision(16) << testInt 
-			 << "   " << analyticInt << "   " << std::setprecision(4) << absdiff << "   " 
+	      *outStream << "Cubature order " << std::setw(2) 
+			 << std::left << l << " integrating "
+			 << "x^" << std::setw(2) << std::left << j 
+			 << "y^" << std::setw(2) << std::left 
+			 << k <<  ":" << "   " << std::scientific 
+			 << std::setprecision(16) << testInt 
+			 << "   " << analyticInt << "   " 
+			 << std::setprecision(4) << absdiff << "   " 
 			 << "<?" << "   " << abstol << "\n";
 	      if (absdiff > abstol) {
 		errorFlag++;
-		*outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
+		*outStream << std::right << std::setw(104) 
+			   << "^^^^---FAILURE!\n";
 	      }
 	    } // end for k
 	    *outStream << "\n";
@@ -288,14 +305,19 @@ int main(int argc, char *argv[]) {
 	      
 	      long double abstol  = (analyticInt == 0.0 ? reltol : std::fabs(reltol*analyticInt) );
 	      long double absdiff = std::fabs(analyticInt - testInt);
-	      *outStream << "Cubature order " << std::setw(2) << std::left << l << " integrating "
-			 << "x^" << std::setw(2) << std::left << j << "y^" << std::setw(2) << std::left 
-			 << k <<  ":" << "   " << std::scientific << std::setprecision(16) << testInt 
-			 << "   " << analyticInt << "   " << std::setprecision(4) << absdiff << "   " 
+	      *outStream << "Cubature order " << std::setw(2) 
+			 << std::left << l << " integrating "
+			 << "x^" << std::setw(2) << std::left << j 
+			 << "y^" << std::setw(2) << std::left 
+			 << k <<  ":" << "   " << std::scientific 
+			 << std::setprecision(16) << testInt 
+			 << "   " << analyticInt << "   " 
+			 << std::setprecision(4) << absdiff << "   " 
 			 << "<?" << "   " << abstol << "\n";
 	      if (absdiff > abstol) {
 		errorFlag++;
-		*outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
+		*outStream << std::right << std::setw(104) 
+			   << "^^^^---FAILURE!\n";
 	      }
 	    } // end for k
 	    *outStream << "\n";

@@ -38,6 +38,7 @@
 #include "Intrepid_ProductTopology.hpp"
 #include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
 #include "Teuchos_Array.hpp"
+#include "Intrepid_TensorBasis.hpp"
 
 namespace Intrepid {
   
@@ -54,15 +55,12 @@ namespace Intrepid {
  */
   
 template<class Scalar, class ArrayScalar> 
-class Basis_HGRAD_HEX_Cn_FEM : public Basis<Scalar, ArrayScalar> {
+class Basis_HGRAD_HEX_Cn_FEM : public TensorBasis<Scalar, ArrayScalar> {
 private:
   
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
    */
   void initializeTags();
-
-  /** \brief bases for each coordinate direction */
-  Teuchos::Array< Teuchos::RCP< Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar > > > bases_;
 
   
 public:
