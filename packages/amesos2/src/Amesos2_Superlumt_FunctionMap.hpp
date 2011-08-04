@@ -238,11 +238,11 @@ namespace Amesos2 {
      * column condition number is output in \c colcnd .
      */
     static void gsequ(SLUMT::SuperMatrix* A,
-		      typename type_map::magnitude_type* r,
-		      typename type_map::magnitude_type* c,
-		      typename type_map::magnitude_type* rowcnd,
-		      typename type_map::magnitude_type* colcnd,
-		      typename type_map::magnitude_type* amax,
+		      type_map::magnitude_type* r,
+		      type_map::magnitude_type* c,
+		      type_map::magnitude_type* rowcnd,
+		      type_map::magnitude_type* colcnd,
+		      type_map::magnitude_type* amax,
 		      int* info)
     {
       SLUMT::S::sgsequ(A, r, c, rowcnd, colcnd, amax, info);
@@ -257,11 +257,11 @@ namespace Amesos2 {
      * COL , or \c BOTH .
      */
     static void laqgs(SLUMT::SuperMatrix* A,
-		      typename type_map::magnitude_type* r,
-		      typename type_map::magnitude_type* c,
-		      typename type_map::magnitude_type rowcnd,
-		      typename type_map::magnitude_type colcnd,
-		      typename type_map::magnitude_type amax,
+		      type_map::magnitude_type* r,
+		      type_map::magnitude_type* c,
+		      type_map::magnitude_type rowcnd,
+		      type_map::magnitude_type colcnd,
+		      type_map::magnitude_type amax,
 		      SLUMT::equed_t* equed)
     {
       SLUMT::S::slaqgs(A, r, c, rowcnd, colcnd, amax, equed);
@@ -323,22 +323,22 @@ namespace Amesos2 {
     }
 
     static void gsequ(SLUMT::SuperMatrix* A,
-		      typename type_map::magnitude_type* r,
-		      typename type_map::magnitude_type* c,
-		      typename type_map::magnitude_type* rowcnd,
-		      typename type_map::magnitude_type* colcnd,
-		      typename type_map::magnitude_type* amax,
+		      type_map::magnitude_type* r,
+		      type_map::magnitude_type* c,
+		      type_map::magnitude_type* rowcnd,
+		      type_map::magnitude_type* colcnd,
+		      type_map::magnitude_type* amax,
 		      int* info)
     {
       SLUMT::D::dgsequ(A, r, c, rowcnd, colcnd, amax, info);
     }
 
     static void laqgs(SLUMT::SuperMatrix* A,
-		      typename type_map::magnitude_type* r,
-		      typename type_map::magnitude_type* c,
-		      typename type_map::magnitude_type rowcnd,
-		      typename type_map::magnitude_type colcnd,
-		      typename type_map::magnitude_type amax,
+		      type_map::magnitude_type* r,
+		      type_map::magnitude_type* c,
+		      type_map::magnitude_type rowcnd,
+		      type_map::magnitude_type colcnd,
+		      type_map::magnitude_type amax,
 		      SLUMT::equed_t* equed)
     {
       SLUMT::D::dlaqgs(A, r, c, rowcnd, colcnd, amax, equed);
