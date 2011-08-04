@@ -30,6 +30,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TestForException_throwTest
   SOURCES
     TestForException_throwTest.cpp
+    SimpleThrowFunctions.cpp
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "This is an exception I throw"
   )
@@ -39,7 +40,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_STACKTRACE)
 IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
 
   SET(PASS_REGEXS
-    "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:52"
+    "teuchos/test/MemoryManagement/SimpleThrowFunctions.cpp:50"
     "Throw number = 1"
     "Throw test that evaluated to true: true"
     "This is an exception I throw!"
@@ -53,10 +54,6 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
   ELSEIF (${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS)
     APPEND_SET(PASS_REGEXS
       "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_.()"
-      )
-  ELSE()
-    APPEND_SET(PASS_REGEXS
-      "in func_a()"
       )
   ENDIF()
 

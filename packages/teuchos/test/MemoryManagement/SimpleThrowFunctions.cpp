@@ -41,42 +41,17 @@
 // @HEADER
 */
 
-#include "Teuchos_TestForException.hpp"
-#include "Teuchos_StandardCatchMacros.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-
 #include "SimpleThrowFunctions.hpp"
+#include "Teuchos_TestForException.hpp"
 
 
-int main(int argc, char* argv[])
+void func_a()
 {
+  TEST_FOR_EXCEPTION(true, std::logic_error, "This is an exception I throw!");
+}
 
-  using Teuchos::CommandLineProcessor;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  CommandLineProcessor clp(false); // Don't throw exceptions
-
-  bool enableStackTrace = true;
-
-  clp.setOption("enable-stacktrace", "no-enable-stacktrace", &enableStackTrace,
-    "Determine if stacktracing is shown or not on exception throw." );
-
-  CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
-
-  if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-    std::cerr << "\nEnd Result: TEST FAILED" << std::endl;
-    return parse_return;
-  }
-  
-  TestForException_setEnableStacktrace(enableStackTrace);
-
-  bool success = true;
-  
-  try {
-    func_b();
-  }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success)
-  return (success ? 0 : 1);
+void func_b()
+{
+  func_a();
 }
