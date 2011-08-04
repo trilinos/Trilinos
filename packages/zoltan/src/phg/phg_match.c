@@ -2386,8 +2386,8 @@ static int pmatching_rcb (ZZ *zz,
     
 
   if ((hgp->rcb_red <= 0) || (hgp->rcb_red > 1)) {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid hybrid reduction factor. Using default value 0.5.");
-      hgp->rcb_red = 0.5;
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid hybrid reduction factor. Using default value 0.1.");
+      hgp->rcb_red = 0.1;
   }
   /* Parts are reduced by a factor, result should not be 0 */  
   local_vtx = (int)(hgp->rcb_red * hg->nVtx);
