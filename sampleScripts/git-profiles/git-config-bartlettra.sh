@@ -1,7 +1,7 @@
 # Set your username
 eg config --global user.name "Roscoe A. Bartlett"
 # Set your email address
-eg config --global user.email rabartl@sandia.gov
+eg config --global user.email bartlettra@ornl.gov
 # Use colorized output when it makes sense
 eg config --global color.ui true
 # Set up some shortcut commands
