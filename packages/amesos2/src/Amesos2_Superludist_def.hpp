@@ -118,7 +118,7 @@ namespace Amesos2 {
      * value will be used for creating an MPI communicator for the
      * pre-ordering and symbolic factorization methods.
      */
-    data_.domains = (int) ( pow(2, ((int) (log10((double)nprow*npcol)/log10(2.0)))) );
+    data_.domains = (int) ( pow(2.0, floor(log10((double)nprow*npcol)/log10(2.0))) );
 
     if( this->rank_ < data_.domains ) color = 0;
     MPI_Comm_split (data_.mat_comm, color, my_rank, &(data_.symb_comm));

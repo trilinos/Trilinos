@@ -57,9 +57,8 @@
 #  include <Epetra_Map.h>
 #  ifdef HAVE_MPI
 #    include <Epetra_MpiComm.h>
-#  else
-#    include <Epetra_SerialComm.h>
 #  endif
+#  include <Epetra_SerialComm.h>
 #endif
 
 #ifdef HAVE_AMESOS2_EPETRA
@@ -76,23 +75,13 @@ Amesos2::Util::to_teuchos_comm(Teuchos::RCP<const Epetra_Comm> c)
   if( mpiEpetraComm.get() ) {
     Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
       rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
-    set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
-    Teuchos::RCP<const Teuchos::MpiComm<int> >
-      mpiComm = rcp(new Teuchos::MpiComm<int>(rawMpiComm));
-    return mpiComm;
-  }
-#else
-  Teuchos::RCP<const Epetra_SerialComm>
-    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm>(c);
-  if( serialEpetraComm.get() ) {
-    Teuchos::RCP<const Teuchos::SerialComm<int> >
-      serialComm = rcp(new Teuchos::SerialComm<int>());
-    set_extra_data( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg(serialComm) );
-    return serialComm;
-  }
-#endif	// HAVE_MPI
-
-  return(Teuchos::null);
+    return Teuchos::createMpiComm<int>(rawMpiComm);
+  } else
+#endif
+    if( rcp_dynamic_cast<const Epetra_SerialComm>(c) != Teuchos::null )
+      return Teuchos::createSerialComm<int>();
+    else
+      return(Teuchos::null);
 }
 
 const Teuchos::RCP<const Epetra_Comm>

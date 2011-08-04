@@ -528,8 +528,8 @@ namespace Amesos2 {
 
     static void SolveInit(SLUD::superlu_options_t* options, SLUD::SuperMatrix* A,
 			  SLUD::int_t* perm_r, SLUD::int_t* perm_c, SLUD::int_t nrhs,
-			  typename type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
-			  typename type_map::SOLVEstruct_t* solve_struct)
+			  type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
+			  type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::Z::zSolveInit(options, A, perm_r, perm_c, nrhs, lu, grid, solve_struct);
     }
@@ -556,44 +556,6 @@ namespace Amesos2 {
     }
   };
 #endif	// HAVE_TEUCHOS_COMPLEX
-
-  /* \endcond SuperLU_DIST_function_specializations */
-
-  // SLUD::DiagScale_t get_diag_scale(char eq){
-  //   switch( eq ){
-  //   case 'N':
-  //     return SLUD::NOEQUIL;
-  //   case 'R':
-  //     return SLUD::ROW;
-  //   case 'C':
-  //     return SLUD::COL;
-  //   case 'B':
-  //     return SLUD::BOTH;
-  //   default:
-  //     TEST_FOR_EXCEPTION( true,
-  // 			  std::invalid_argument,
-  // 			  "Control should never reach this point. "
-  // 			  "Pleace contact the Amesos2 developers." );
-  //   }
-  // }
-
-  // char get_equed(SLUD::DiagScale_t ds){
-  //   switch( ds ){
-  //   case SLUD::NOEQUIL:
-  //     return 'N';
-  //   case SLUD::ROW:
-  //     return 'R';
-  //   case SLUD::COL:
-  //     return 'C';
-  //   case SLUD::BOTH:
-  //     return 'B';
-  //   default:
-  //     TEST_FOR_EXCEPTION( true,
-  // 			  std::invalid_argument,
-  // 			  "Control should never reach this point. "
-  // 			  "Pleace contact the Amesos2 developers." );
-  //   }
-  // }
 
 } // end namespace Amesos2
 
