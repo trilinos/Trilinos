@@ -152,7 +152,7 @@ computeMean(Epetra_Vector& v) const
 
 void
 Stokhos::EpetraVectorOrthogPoly::
-computeStandardDeviation(Epetra_Vector& v) const
+computeVariance(Epetra_Vector& v) const
 {
   Epetra_Vector *v_local = NULL;
   bool is_parallel = (this->map_->Comm().NumProc() > 1) && 
@@ -176,11 +176,16 @@ computeStandardDeviation(Epetra_Vector& v) const
   // Compute total variance by summing across all processors
   if (is_parallel)
     this->map_->Comm().SumAll(v_local->Values(), v.Values(), v.MyLength());
+}
+
+void
+Stokhos::EpetraVectorOrthogPoly::
+computeStandardDeviation(Epetra_Vector& v) const
+{
+  // Compute variance
+  computeVariance(v);
 
   // Compute standard deviation
   for (int i=0; i<v.MyLength(); i++)
     v[i] = std::sqrt(v[i]);
-
-  if (is_parallel)
-    delete v_local;
 }

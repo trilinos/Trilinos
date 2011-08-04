@@ -148,7 +148,7 @@ computeMean(Epetra_MultiVector& v) const
 
 void
 Stokhos::EpetraMultiVectorOrthogPoly::
-computeStandardDeviation(Epetra_MultiVector& v) const
+computeVariance(Epetra_MultiVector& v) const
 {
   const Teuchos::Array<double>& nrm2 = this->basis_->norm_squared();
   v.PutScalar(0.0);
@@ -157,6 +157,14 @@ computeStandardDeviation(Epetra_MultiVector& v) const
     i_gid = this->map_->GID(i);
     v.Multiply(nrm2[i_gid], *(this->coeff_[i]), *(this->coeff_[i]), 1.0);
   }
+}
+
+void
+Stokhos::EpetraMultiVectorOrthogPoly::
+computeStandardDeviation(Epetra_MultiVector& v) const
+{
+  computeVariance(v);
+
   for (int j=0; j<v.NumVectors(); j++)
     for (int i=0; i<v.MyLength(); i++)
       v[j][i] = std::sqrt(v[j][i]);

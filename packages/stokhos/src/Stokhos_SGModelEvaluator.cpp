@@ -386,7 +386,7 @@ Stokhos::SGModelEvaluator::create_DgDx_op(int j) const
       Teuchos::RCP<Epetra_MultiVector> mv = 
 	Teuchos::rcp(new Epetra_MultiVector(*g_map, x_map->NumMyElements()));
       Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
       sg_blocks->setCoeffPtr(i, block);
     }
   else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
@@ -394,7 +394,7 @@ Stokhos::SGModelEvaluator::create_DgDx_op(int j) const
       Teuchos::RCP<Epetra_MultiVector> mv = 
 	Teuchos::rcp(new Epetra_MultiVector(*x_map, g_map->NumMyElements()));
       Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
       sg_blocks->setCoeffPtr(i, block);
     }
   else
@@ -435,7 +435,7 @@ Stokhos::SGModelEvaluator::create_DgDx_dot_op(int j) const
       Teuchos::RCP<Epetra_MultiVector> mv = 
 	Teuchos::rcp(new Epetra_MultiVector(*g_map, x_map->NumMyElements()));
       Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
       sg_blocks->setCoeffPtr(i, block);
     }
   else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
@@ -444,7 +444,7 @@ Stokhos::SGModelEvaluator::create_DgDx_dot_op(int j) const
 	Teuchos::rcp(new Epetra_MultiVector(*x_map, g_map->NumMyElements()));
       
       Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
       sg_blocks->setCoeffPtr(i, block);
     }
   else
@@ -506,7 +506,7 @@ Stokhos::SGModelEvaluator::create_DgDp_op(int j, int i) const
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*g_map, p_map->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
 	sg_blocks->setCoeffPtr(l, block);
       }
     else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
@@ -514,7 +514,7 @@ Stokhos::SGModelEvaluator::create_DgDp_op(int j, int i) const
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*p_map, g_map->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
 	sg_blocks->setCoeffPtr(l, block);
       }
     else
@@ -576,7 +576,7 @@ Stokhos::SGModelEvaluator::create_DfDp_op(int i) const
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*f_map, p_map->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
 	sg_blocks->setCoeffPtr(l, block);
       }
     else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
@@ -584,7 +584,7 @@ Stokhos::SGModelEvaluator::create_DfDp_op(int i) const
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*p_map, f_map->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
 	sg_blocks->setCoeffPtr(l, block);
       }
     else
@@ -826,7 +826,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 			   sg_basis, overlapped_stoch_row_map));
 	  for (unsigned int l=0; l<num_sg_blocks; l++) {
 	    Teuchos::RCP<Stokhos::EpetraMultiVectorOperator> mv_op =
-	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(dfdp_op_sg->getCoeffPtr(i), true);
+	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(dfdp_op_sg->getCoeffPtr(l), true);
 	    dfdp_sg->setCoeffPtr(l, mv_op->getMultiVector());
 	  }
 	  if (me_outargs.supports(OUT_ARG_DfDp_sg,ii).supports(DERIV_MV_BY_COL))
@@ -902,17 +902,20 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 	if (me_outargs.supports(OUT_ARG_DgDx, ii).supports(DERIV_LINEAR_OP))
 	  me_outargs.set_DgDx_sg(ii, sg_blocks);
 	else {
+	  Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> dgdx_sg = 
+	    Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+			   sg_basis, overlapped_stoch_row_map));
 	  for (unsigned int k=0; k<num_sg_blocks; k++) {
 	    Teuchos::RCP<Epetra_MultiVector> mv = 
 	      Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(
 		sg_blocks->getCoeffPtr(k), true)->getMultiVector();
-	    dgdx_sg_blocks[i]->setCoeffPtr(k, mv);
+	    dgdx_sg->setCoeffPtr(k, mv);
 	  }
 	  if (me_outargs.supports(OUT_ARG_DgDx_sg, ii).supports(DERIV_MV_BY_COL))
-	    me_outargs.set_DgDx_sg(ii, SGDerivative(dgdx_sg_blocks[i],
+	    me_outargs.set_DgDx_sg(ii, SGDerivative(dgdx_sg,
 						    DERIV_MV_BY_COL));
 	  else
-	    me_outargs.set_DgDx_sg(ii, SGDerivative(dgdx_sg_blocks[i],
+	    me_outargs.set_DgDx_sg(ii, SGDerivative(dgdx_sg,
 						    DERIV_TRANS_MV_BY_ROW));
 	}
       }
@@ -973,7 +976,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 			     sg_basis, overlapped_stoch_row_map));
 	    for (unsigned int l=0; l<num_sg_blocks; l++) {
 	      Teuchos::RCP<Stokhos::EpetraMultiVectorOperator> mv_op =
-		Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(dgdp_op_sg->getCoeffPtr(i), true);
+		Teuchos::rcp_dynamic_cast<Stokhos::EpetraMultiVectorOperator>(dgdp_op_sg->getCoeffPtr(l), true);
 	      dgdp_sg->setCoeffPtr(l, mv_op->getMultiVector());
 	    }
 	    if (me_outargs.supports(OUT_ARG_DgDp_sg,ii,jj).supports(DERIV_MV_BY_COL))

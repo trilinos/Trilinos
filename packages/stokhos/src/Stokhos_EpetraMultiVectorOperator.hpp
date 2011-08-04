@@ -58,11 +58,13 @@ namespace Stokhos {
 
     //! Constructor 
     EpetraMultiVectorOperator(
-      const Teuchos::RCP<const Epetra_MultiVector>& multi_vec);
+      const Teuchos::RCP<const Epetra_MultiVector>& multi_vec,
+      bool is_multi_vec_transposed);
 
     //! Constructor 
     EpetraMultiVectorOperator(
-      const Teuchos::RCP<Epetra_MultiVector>& multi_vec);
+      const Teuchos::RCP<Epetra_MultiVector>& multi_vec,
+      bool is_multi_vec_transposed);
     
     //! Destructor
     virtual ~EpetraMultiVectorOperator();
@@ -141,12 +143,15 @@ namespace Stokhos {
 
     //! Non-const multi-vector
     Teuchos::RCP<Epetra_MultiVector> nonconst_multi_vec;
+    
+    //! Whether the multivector is already transposed
+    bool is_multi_vec_transposed;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Range map
-    Teuchos::RCP<Epetra_Map> range_map;
+    //! Domain map ( = number of columns of multi_vec)
+    Teuchos::RCP<Epetra_Map> domain_map;
 
   }; // class EpetraMultiVectorOperator
   

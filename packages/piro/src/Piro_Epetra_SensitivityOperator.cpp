@@ -35,6 +35,10 @@
 #include "Epetra_Vector.h"
 #include "NOX_Epetra_MultiVector.H"
 
+#include "Stokhos_MatrixFreeOperator.hpp"
+#include "Stokhos_EpetraMultiVectorOperator.hpp"
+#include "Stokhos_EpetraOperatorOrthogPoly.hpp"
+
 Piro::Epetra::SensitivityOperator::
 SensitivityOperator(
   const Teuchos::RCP<const Epetra_Map>& g_map_,
@@ -182,7 +186,7 @@ applyForward(const Epetra_MultiVector& Input,
   int m = Input.NumVectors();
 
   // Calculate Result = dg/dp*Input
-  Teuchos::RCP<Epetra_Operator> dgdp_lo = dgdx.getLinearOp();
+  Teuchos::RCP<Epetra_Operator> dgdp_lo = dgdp.getLinearOp();
   Teuchos::RCP<Epetra_MultiVector> dgdp_mv = dgdp.getMultiVector();
   if (dgdp_lo != Teuchos::null) {
     dgdp_lo->Apply(Input, Result);
@@ -274,7 +278,7 @@ applyAdjoint(const Epetra_MultiVector& Input,
   // each operator
 
   // Calculate Result = dg/dp^T*Input
-  Teuchos::RCP<Epetra_Operator> dgdp_lo = dgdx.getLinearOp();
+  Teuchos::RCP<Epetra_Operator> dgdp_lo = dgdp.getLinearOp();
   Teuchos::RCP<Epetra_MultiVector> dgdp_mv = dgdp.getMultiVector();
   if (dgdp_lo != Teuchos::null) {
     dgdp_lo->Apply(Input, Result);
@@ -333,7 +337,7 @@ applyAdjoint(const Epetra_MultiVector& Input,
     tls_strategy->applyJacobianTransposeInverse(*piroParams, w_nox, y_nox);
   }
 
-  // Compute Result = Result - df/dp*y
+  // Compute Result = Result - df/dp^T*y
   Teuchos::RCP<Epetra_Operator> dfdp_lo = dfdp.getLinearOp();
   Teuchos::RCP<Epetra_MultiVector> dfdp_mv = dfdp.getMultiVector();
   if (dfdp_lo != Teuchos::null) {

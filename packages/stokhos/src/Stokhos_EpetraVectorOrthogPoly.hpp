@@ -138,6 +138,9 @@ namespace Stokhos {
     //! Compute mean
     void computeMean(Epetra_Vector& v) const;
 
+    //! Compute variance
+    void computeVariance(Epetra_Vector& v) const;
+
     //! Compute standard deviation
     void computeStandardDeviation(Epetra_Vector& v) const;
 

@@ -127,6 +127,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_SGModelEvaluator.hpp
   Stokhos_SGQuadModelEvaluator.hpp
   Stokhos_SGInverseModelEvaluator.hpp
+  Stokhos_ResponseStatisticModelEvaluator.hpp
   Stokhos_ProductContainer.hpp
   Stokhos_ProductContainerImp.hpp
   Stokhos_VectorOrthogPoly.hpp
@@ -195,6 +196,7 @@ SET(SOURCES ${SOURCES}
   Stokhos_SGModelEvaluator.cpp
   Stokhos_SGQuadModelEvaluator.cpp
   Stokhos_SGInverseModelEvaluator.cpp
+  Stokhos_ResponseStatisticModelEvaluator.cpp
   Stokhos_PCECovarianceOp.cpp
   Stokhos_PCEAnasaziKL.cpp
   Stokhos_EpetraMultiVectorOperator.cpp

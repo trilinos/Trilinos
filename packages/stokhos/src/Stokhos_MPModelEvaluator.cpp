@@ -298,7 +298,7 @@ Stokhos::MPModelEvaluator::create_DgDx_op(int j) const
       Teuchos::RCP<Epetra_MultiVector> mv = 
 	Teuchos::rcp(new Epetra_MultiVector(*g_map, x_map->NumMyElements()));
       Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
       mp_blocks->setCoeffPtr(i, block);
     }
   else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
@@ -306,7 +306,7 @@ Stokhos::MPModelEvaluator::create_DgDx_op(int j) const
       Teuchos::RCP<Epetra_MultiVector> mv = 
 	Teuchos::rcp(new Epetra_MultiVector(*x_map, g_map->NumMyElements()));
       Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
       mp_blocks->setCoeffPtr(i, block);
     }
   else
@@ -345,7 +345,7 @@ Stokhos::MPModelEvaluator::create_DgDx_dot_op(int j) const
       Teuchos::RCP<Epetra_MultiVector> mv = 
 	Teuchos::rcp(new Epetra_MultiVector(*g_map, x_map->NumMyElements()));
       Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
       mp_blocks->setCoeffPtr(i, block);
     }
   else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
@@ -354,7 +354,7 @@ Stokhos::MPModelEvaluator::create_DgDx_dot_op(int j) const
 	Teuchos::rcp(new Epetra_MultiVector(*x_map, g_map->NumMyElements()));
       
       Teuchos::RCP<Epetra_Operator> block = 
-	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
       mp_blocks->setCoeffPtr(i, block);
     }
   else
@@ -413,7 +413,7 @@ Stokhos::MPModelEvaluator::create_DgDp_op(int j, int i) const
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*g_map, p_map->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
 	mp_blocks->setCoeffPtr(l, block);
       }
     else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
@@ -421,7 +421,7 @@ Stokhos::MPModelEvaluator::create_DgDp_op(int j, int i) const
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*p_map, g_map->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
 	mp_blocks->setCoeffPtr(l, block);
       }
     else
@@ -480,7 +480,7 @@ Stokhos::MPModelEvaluator::create_DfDp_op(int i) const
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*f_map, p_map->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,false));
 	mp_blocks->setCoeffPtr(l, block);
       }
     else if (ds.supports(DERIV_TRANS_MV_BY_ROW))
@@ -488,7 +488,7 @@ Stokhos::MPModelEvaluator::create_DfDp_op(int i) const
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*p_map, f_map->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
-	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
+	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv,true));
 	mp_blocks->setCoeffPtr(l, block);
       }
     else
