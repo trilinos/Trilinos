@@ -56,7 +56,7 @@ CubatureLineSorted<Scalar,ArrayPoint,ArrayWeight>::CubatureLineSorted(
   else if (rule==BURK_PATTERSON) {
     int l = 0, o = (degree-0.5)/1.5;
     for (int i=0; i<8; i++) {
-      l = pow(2,i+1)-1;
+      l = (int)pow(2.0,(double)i+1.0)-1;
       if (l>=o) {
 	numPoints_ = l;
 	break;

@@ -46,9 +46,12 @@ using namespace Intrepid;
 /*
   Computes integrals of monomials over a given reference cell.
 */
-long double evalQuad(std::vector<int> power, int dimension, std::vector<int> order, std::vector<EIntrepidBurkardt> rule, std::vector<EIntrepidGrowth> growth) {
+long double evalQuad(std::vector<int> power, 
+		     int dimension, std::vector<int> order, 
+		     std::vector<EIntrepidBurkardt> rule, 
+		     std::vector<EIntrepidGrowth> growth) {
  
-  CubatureTensorSorted<long double> lineCub(dimension,order,rule,growth,false);  
+  CubatureTensorSorted<long double> lineCub(dimension,order,rule,growth,false); 
   int size = lineCub.getNumPoints();
   FieldContainer<long double> cubPoints(size,dimension);
   FieldContainer<long double> cubWeights(size);
@@ -77,7 +80,8 @@ long double evalQuad(std::vector<int> power, int dimension, std::vector<int> ord
     else {
       for (int j=0; j<mid2; j++) {
 	Qi += cubWeights(locMid-j)*powl(cubPoints(locMid-j,1),power[1]) 
-	  +cubWeights(locMid+j+1)*powl(cubPoints(locMid+j+1,1),power[1]); cnt += 2;
+	  +cubWeights(locMid+j+1)*powl(cubPoints(locMid+j+1,1),power[1]); 
+	cnt += 2;
       }
     }
     Qi *= powl(cubPoints(locMid,0),power[0]);
@@ -107,7 +111,8 @@ long double evalQuad(std::vector<int> power, int dimension, std::vector<int> ord
   */
 }
 
-long double evalInt(int dimension, std::vector<int> power, std::vector<EIntrepidBurkardt> rule) {
+long double evalInt(int dimension, std::vector<int> power, 
+		    std::vector<EIntrepidBurkardt> rule) {
   long double I = 1.0;
 
   for (int i=0; i<dimension; i++) {
@@ -225,20 +230,24 @@ int main(int argc, char *argv[]) {
   *outStream << "\nIntegrals of monomials on a reference line (edge):\n";
   // compute and compare integrals
   try {
-    for (EIntrepidBurkardt rule=BURK_CHEBYSHEV1; rule <= BURK_LAGUERRE; rule++) {   
+    for (EIntrepidBurkardt rule=BURK_CHEBYSHEV1;rule<=BURK_LAGUERRE;rule++) {   
       // compute integrals
       rule1[0] = rule; rule1[1] = rule;
-      if (rule!=BURK_PATTERSON&&rule!=BURK_GENZKEISTER&&rule!=BURK_TRAPEZOIDAL) {
+      if (rule!=BURK_PATTERSON&&rule!=BURK_GENZKEISTER&&rule!=BURK_TRAPEZOIDAL){
 	*outStream << "Testing " << EIntrepidBurkardtToString(rule) << "\n";
 	for (int i=1; i <= maxOrder; i++) {
 	  l1 = growthRule1D(i,growth[0],rule);
 	  l2 = growthRule1D(i,growth[1],rule);
-	  if (rule==BURK_CHEBYSHEV1||rule==BURK_CHEBYSHEV2||rule==BURK_LEGENDRE||
-	      rule==BURK_LAGUERRE||rule==BURK_HERMITE) {
+	  if ( rule==BURK_CHEBYSHEV1 ||
+	       rule==BURK_CHEBYSHEV2 ||
+	       rule==BURK_LEGENDRE   ||
+	       rule==BURK_LAGUERRE   ||
+	       rule==BURK_HERMITE      ) {
 	    maxDegx = 2*l1-1;
 	    maxDegy = 2*l2-1;
 	  }
-	  else if (rule==BURK_CLENSHAWCURTIS||rule==BURK_FEJER2) {
+	  else if ( rule==BURK_CLENSHAWCURTIS ||
+		    rule==BURK_FEJER2           ) {
 	    maxDegx = l1-1;
 	    maxDegy = l2-1;
 	  }

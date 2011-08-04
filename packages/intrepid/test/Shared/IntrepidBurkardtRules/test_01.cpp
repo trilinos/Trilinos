@@ -347,13 +347,14 @@ int main(int argc, char *argv[]) {
     }
     *outStream << "\n";
 
-    maxOrder = 14;
+    maxOrder = 10;
 
     *outStream << "Gauss-Hermite Cubature \n";
     *outStream << "Integrates functions on (-oo,oo) weighted by w(x) = exp(-x^2)\n";
     for (int i = 1; i<=maxOrder; i++) {
       Teuchos::Array<long double> nodes(i), weights(i);
-      IntrepidBurkardtRules::hermite_compute(i,nodes.getRawPtr(),weights.getRawPtr());      
+      IntrepidBurkardtRules::hermite_compute(i,nodes.getRawPtr(),
+					     weights.getRawPtr());      
       for (int j=0; j<=2*i-1; j++) { 
 	if (j%2)
 	  analyticInt = 0.0;
@@ -362,10 +363,14 @@ int main(int argc, char *argv[]) {
 	testInt = evalQuad(i,j,nodes.getRawPtr(),weights.getRawPtr());
 	long double abstol = (analyticInt == 0.0 ? reltol : std::fabs(reltol*analyticInt) );
 	long double absdiff = std::fabs(analyticInt - testInt);
-	*outStream << "Cubature order " << std::setw(2) << std::left << i << " integrating "
-		   << "x^" << std::setw(2) << std::left << j << ":" << "   "
-		   << std::scientific << std::setprecision(16) << testInt << "   " 
-		   << analyticInt << "   " << std::setprecision(4) << absdiff << "   " << "<?" 
+	*outStream << "Cubature order " << std::setw(2) << std::left << i 
+		   << " integrating "
+		   << "x^" << std::setw(2) << std::left << j << ":" 
+		   << "   "
+		   << std::scientific << std::setprecision(16) << testInt 
+		   << "   " 
+		   << analyticInt << "   " << std::setprecision(4) 
+		   << absdiff << "   " << "<?" 
 		   << "   " << abstol << "\n";
 	if (absdiff > abstol) {
 	  errorFlag++;
@@ -379,15 +384,15 @@ int main(int argc, char *argv[]) {
 
     *outStream << "Hermite-Genz-Keister Cubature \n";
     *outStream << "Integrates functions on (-oo,oo) weighted by w(x) = exp(-x^2)\n";
-    int order[8] = {1,3,9,19,35,37,41,43};
-    for (int l = 0; l<8; l++) {
+    int order[4] = {1,3, 9,19};
+    int max[4]   = {1,5,15,29};
+    for (int l = 0; l<4; l++) {
       int i = order[l];
+      int m = max[l];
       Teuchos::Array<long double> nodes(i), weights(i);
-      IntrepidBurkardtRules::hermite_genz_keister_lookup(i,nodes.getRawPtr(),weights.getRawPtr());      
-
-      int max = (int)(1.5*(double)i+0.5);
-      if (i==1) max = 1;
-      for (int j=0; j<=max; j++) { 
+      IntrepidBurkardtRules::hermite_genz_keister_lookup(i,nodes.getRawPtr(),
+							 weights.getRawPtr());  
+      for (int j=0; j<=m; j++) { 
 	if (j%2)
 	  analyticInt = 0.0;
 	else
