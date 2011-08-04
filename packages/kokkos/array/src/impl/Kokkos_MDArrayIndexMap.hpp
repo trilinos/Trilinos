@@ -37,70 +37,30 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_DEVICETBB_MDARRAYVIEW_HPP
-#define KOKKOS_DEVICETBB_MDARRAYVIEW_HPP
-
-#include <Kokkos_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-
-#include <Kokkos_DeviceTBB_macros.hpp>
-#include <impl/Kokkos_MDArrayView_macros.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#ifndef KOKKOS_IMPL_MDARRAYINDEXMAP_HPP
+#define KOKKOS_IMPL_MDARRAYINDEXMAP_HPP
 
 namespace Kokkos {
 namespace Impl {
 
-/*------------------------------------------------------------------------*/
-/** \brief  Copy Host to TBB specialization with same map and contiguous */
+enum { MDArrayMaxRank = 8 };
 
-template< typename ValueType , class MapOpt >
-class MDArrayDeepCopy< ValueType ,
-                       DeviceTBB ,  MapOpt , true ,
-                       DeviceHost , MapOpt , true >
-{
+class MDArrayIndexMapRight ;
+class MDArrayIndexMapLeft ;
+
+template < class MemorySpace , class MDArrayMapOption , unsigned Align = 1 >
+class MDArrayIndexMap ;
+
+/** \brief  Memory alignment requirement for MDArray */
+template < class ScalarType , class MemorySpace >
+class MDArrayIndexMapAlign {
 public:
-  typedef MDArrayView< ValueType , DeviceTBB ,  MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceTBB , void , void , 0 > functor_type ;
-
-  static void run( const dst_type & dst , const src_type & src )
-  {
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
-
-  }
+  enum { value = 1 };
 };
-
-
-/** \brief  Copy TBB to Host specialization with same map and contiguou */
-template< typename ValueType , class MapOpt >
-class MDArrayDeepCopy< ValueType ,
-                       DeviceHost , MapOpt , true ,
-                       DeviceTBB ,  MapOpt , true >
-{
-public:
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceTBB , MapOpt > src_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceTBB , void , void , 0 > functor_type ;
-
-  static void run( const dst_type & dst , const src_type & src )
-  {
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
-
-  }
-};
-
-/*------------------------------------------------------------------------*/
 
 } // namespace Impl
 } // namespace Kokkos
 
-
-#endif /* #ifndef KOKKOS_DEVICETBB_MDARRAYVIEW_HPP */
+#endif /* KOKKOS_IMPL_MDARRAYINDEXMAP_HPP */
 
 

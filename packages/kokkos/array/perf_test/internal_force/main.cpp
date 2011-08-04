@@ -5,11 +5,11 @@ namespace test{
 
   void test_Host(int b, int e, int r);
   void test_TPI(int b, int e, int r, int t);
-  void test_Cuda(int b, int e, int r);
+//  void test_Cuda(int b, int e, int r);
 
   void test_Original_Host(int b, int e, int r);
   void test_Original_MP(int b, int e, int r, int t);
-  void test_Original_Cuda(int b, int e, int r);
+//  void test_Original_Cuda(int b, int e, int r);
 }
 
 int main( int argc , char ** argv ){
@@ -41,11 +41,11 @@ int main( int argc , char ** argv ){
   
   test::test_Original_Host(beg, end, runs);  
   test::test_Original_MP(beg, end, runs, threads);  
-  test::test_Original_Cuda(beg, end, runs);
+//  test::test_Original_Cuda(beg, end, runs);
 
   test::test_Host(beg, end, runs);
   test::test_TPI (beg, end, runs, threads);
-  test::test_Cuda(beg, end, runs);  
+//  test::test_Cuda(beg, end, runs);  
 
   return 0;
 

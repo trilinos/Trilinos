@@ -45,6 +45,7 @@
 #include <string>
 
 #include <Kokkos_MemoryView.hpp>
+#include <impl/Kokkos_MDArrayIndexMap.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
 
 #define KOKKOS_DEVICE_HOST  Kokkos::DeviceHost
@@ -53,9 +54,7 @@
 
 namespace Kokkos {
 
-class MDArrayIndexMapRight ;
-
-class DeviceHost {
+class HostMemory {
 private:
 
   static void * allocate_memory( const std::string & label ,
@@ -69,14 +68,8 @@ private:
 
 public:
 
-  /** \brief  On the host device use size_t for indexing */
-  typedef size_t                size_type ;
-
-  /** \brief  The Host device uses the Host memory space */
-  typedef DeviceHost            memory_space ;
-
-  /** \brief  Default mdarray map is index from right */
-  typedef MDArrayIndexMapRight  default_mdarray_map ;
+  /** \brief  Preferred size and indexing type. */
+  typedef size_t size_type ;
 
   /*--------------------------------*/
   /** \brief  Clear the memory view setting it to the NULL view.
@@ -85,7 +78,7 @@ public:
    */
   template< typename ValueType >
   static
-  void clear_memory_view( MemoryView< ValueType , DeviceHost > & lhs )
+  void clear_memory_view( MemoryView< ValueType , HostMemory > & lhs )
     {
       if ( lhs.m_tracker.remove_and_query_is_last() ) {
         deallocate_memory( lhs.m_ptr_on_device );
@@ -98,8 +91,8 @@ public:
    */
   template< typename ValueType >
   static
-  void assign_memory_view(       MemoryView< ValueType , DeviceHost > & lhs ,
-                           const MemoryView< ValueType , DeviceHost > & rhs )
+  void assign_memory_view(       MemoryView< ValueType , HostMemory > & lhs ,
+                           const MemoryView< ValueType , HostMemory > & rhs )
     {
       clear_memory_view( lhs );
       // If launching a kernel then the view is untracked.
@@ -112,7 +105,7 @@ public:
   /** \brief  Allocate memory to be viewed by 'lhs' */
   template< typename ValueType >
   static
-  void allocate_memory_view( MemoryView< ValueType , DeviceHost > & lhs ,
+  void allocate_memory_view( MemoryView< ValueType , HostMemory > & lhs ,
                              size_t count , const std::string & label )
     {
       clear_memory_view( lhs );
@@ -133,12 +126,47 @@ public:
   /*--------------------------------*/
 };
 
+//----------------------------------------------------------------------------
+
+template < class MemorySpace = HostMemory ,
+           class MDArrayMap  = Impl::MDArrayIndexMapRight  >
+class Serial {
+public:
+
+  /** \brief  The Host device uses the Host memory space */
+  typedef MemorySpace memory_space ;
+
+  /** \brief  Preferred size and indexing type. */
+  typedef typename MemorySpace::size_type  size_type ;
+
+  /** \brief  Preferred mdarray map. */
+  typedef MDArrayMap mdarray_map ;
+
+  /*--------------------------------*/
+
+  inline
+  static void set_dispatch_functor()
+    { memory_space::set_dispatch_functor(); }
+
+  inline
+  static void clear_dispatch_functor()
+    { memory_space::clear_dispatch_functor(); }
+
+  inline
+  static void wait_functor_completion() {}
+
+  /*--------------------------------*/
+};
+
+typedef Serial<> DeviceHost ;
+
 } // namespace Kokkos
 
 /*--------------------------------------------------------------------------*/
 
 #include <Kokkos_DeviceHost_macros.hpp>
 #include <impl/Kokkos_MemoryView_macros.hpp>
+#include <impl/Kokkos_BasicFunctors_macros.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 
 #endif /* #define KOKKOS_DEVICEHOST_HPP */

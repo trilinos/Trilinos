@@ -37,28 +37,45 @@
  *************************************************************************
  */
 
-#if ! defined( KOKKOS_DEVICE_TPI ) || \
-    defined( KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION ) || \
-    defined( KOKKOS_MACRO_DEVICE ) || \
-    defined( KOKKOS_MACRO_DEVICE_FUNCTION ) || \
-    defined( KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION )
+#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOS_MACRO_DEVICE)                  || \
+    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#error "Including <Kokkos_DeviceTPI.hpp> with macros already defined"
+#error "Including <impl/Kokkos_BasicFunctors_macros.hpp> without macros defined"
 
 #else
 
-#define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
-#define KOKKOS_MACRO_DEVICE                       Kokkos::DeviceTPI
-#define KOKKOS_MACRO_DEVICE_MEMORY                Kokkos::HostMemory
-#define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
-#define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
-#define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr
+namespace Kokkos {
+namespace Impl {
 
-#if ! defined( KOKKOS_ARRAY_BOUNDS_CHECK )
-#define KOKKOS_MACRO_CHECK( expr )  /* */
-#else
-#define KOKKOS_MACRO_CHECK( expr )  expr
-#endif
+template< typename ValueType , class DeviceType >
+class DeepCopyContiguous ;
+
+template< typename ValueType >
+class DeepCopyContiguous< ValueType , KOKKOS_MACRO_DEVICE >
+{
+private:
+  ValueType * dst ;
+  ValueType * src ;
+
+public:
+  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef device_type::size_type  size_type ;
+
+  DeepCopyContiguous( const DeepCopyContiguous & rhs )
+    : dst( rhs.dst ), src( rhs.src ) {}
+
+  DeepCopyContiguous( ValueType * arg_dst , ValueType * arg_src )
+    : dst( arg_dst ), src( arg_src ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type iwork ) const
+  { dst[ iwork ] = src[ iwork ]; }
+};
+
+}
+}
 
 #endif
 

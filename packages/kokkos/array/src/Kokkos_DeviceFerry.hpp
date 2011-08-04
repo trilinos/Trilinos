@@ -52,12 +52,9 @@
 #include <Kokkos_DeviceFerry_macros.hpp>
 
 
-
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
-
-	class MDArrayIndexMapRight;
 
 class DeviceFerry {
 private:
@@ -85,7 +82,7 @@ public:
   typedef DeviceFerry          memory_space ;
 
   /** \brief  Default mdarray map is index from right */
-  typedef MDArrayIndexMapRight  default_mdarray_map ;
+  typedef Impl::MDArrayIndexMapRight  mdarray_map ;
 
   /*--------------------------------*/
 

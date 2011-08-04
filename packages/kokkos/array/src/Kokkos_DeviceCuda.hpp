@@ -55,7 +55,25 @@
 
 namespace Kokkos {
 
-class MDArrayIndexMapLeft ;
+#if 0
+class CudaMemory {
+
+};
+
+template< class MemorySpace = CudaMemory ,
+          class MDArrayMap  = Impl::MDArrayIndexMapLeft >
+class CudaParallel {
+private:
+  enum { OK_memory_space = Impl::StaticAssert<
+                           Impl::SameType< MemorySpace , CudaMemory >::value }
+public:
+
+};
+
+typedef CudaParallel<> DeviceCuda ;
+
+#endif
+
 
 class DeviceCuda {
 private:
@@ -78,7 +96,7 @@ public:
   typedef DeviceCuda            memory_space ;
 
   /** \brief  Default mdarray map is index from left */
-  typedef MDArrayIndexMapLeft  default_mdarray_map ;
+  typedef Impl::MDArrayIndexMapLeft  mdarray_map ;
 
 
   /*--------------------------------*/

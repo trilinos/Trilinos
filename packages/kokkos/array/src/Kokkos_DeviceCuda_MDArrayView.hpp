@@ -52,15 +52,15 @@
 namespace Kokkos {
 
 template< typename ValueType >
-class MDArrayView< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map >
+class MDArrayView< ValueType , DeviceCuda , DeviceCuda::mdarray_map >
 {
 public:
-  typedef ValueType                       value_type ;
-  typedef DeviceCuda                      device_type ;
-  typedef DeviceCuda::default_mdarray_map map_option ;
-  typedef DeviceCuda::size_type           size_type ;
+  typedef ValueType                value_type ;
+  typedef DeviceCuda               device_type ;
+  typedef DeviceCuda::mdarray_map  mdarray_map ;
+  typedef DeviceCuda::size_type    size_type ;
 
-  typedef MDArrayView< value_type , DeviceHost , map_option > HostView ;
+  typedef MDArrayView< value_type , Serial< HostMemory , mdarray_map > > HostView ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Not contiguous due to the need to pad for memory alignment */
@@ -268,12 +268,10 @@ public:
 
 private:
 
-  enum { MAX_RANK = 8 };
-
   MemoryView< value_type , device_type >  m_memory ;
   size_type                               m_rank ;
   size_type                               m_stride ;
-  size_type                               m_dims[ MAX_RANK ];
+  size_type                               m_dims[ MDArrayMaxRank ];
 
   inline
   MDArrayView( const std::string & label ,
@@ -337,14 +335,14 @@ namespace Impl {
 
 /** \brief  Deep copy device to device */
 template< typename ValueType >
-class MDArrayDeepCopy< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map , false ,
-                                   DeviceCuda , DeviceCuda::default_mdarray_map , false >
+class MDArrayDeepCopy< ValueType , DeviceCuda , DeviceCuda::mdarray_map , false ,
+                                   DeviceCuda , DeviceCuda::mdarray_map , false >
 {
 public:
   typedef DeviceCuda            device_type ;
   typedef DeviceCuda::size_type size_type ;
 
-  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map > array_type ;
+  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::mdarray_map > array_type ;
 
         ValueType * const dst ;
   const ValueType * const src ;
@@ -373,13 +371,13 @@ public:
 /** \brief  Copy Host to Cuda specialization */
 template< typename ValueType >
 class MDArrayDeepCopy< ValueType ,
-                       DeviceCuda , DeviceCuda::default_mdarray_map , false ,
-                       DeviceHost , DeviceCuda::default_mdarray_map , true >
+                       DeviceCuda , DeviceCuda::mdarray_map , false ,
+                       DeviceHost , DeviceCuda::mdarray_map , true >
 {
 public:
   typedef DeviceCuda::size_type                          size_type ;
-  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map > dst_type ;
-  typedef MDArrayView< ValueType , DeviceHost , DeviceCuda::default_mdarray_map > src_type ;
+  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::mdarray_map > dst_type ;
+  typedef MDArrayView< ValueType , DeviceHost , DeviceCuda::mdarray_map > src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
@@ -404,13 +402,13 @@ public:
 /** \brief  Copy Cuda to Host specialization */
 template< typename ValueType >
 class MDArrayDeepCopy< ValueType ,
-                       DeviceHost , DeviceCuda::default_mdarray_map , true ,
-                       DeviceCuda , DeviceCuda::default_mdarray_map , false >
+                       DeviceHost , DeviceCuda::mdarray_map , true ,
+                       DeviceCuda , DeviceCuda::mdarray_map , false >
 {
 public:
   typedef DeviceCuda::size_type                          size_type ;
-  typedef MDArrayView< ValueType , DeviceHost , DeviceCuda::default_mdarray_map > dst_type ;
-  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map > src_type ;
+  typedef MDArrayView< ValueType , DeviceHost , DeviceCuda::mdarray_map > dst_type ;
+  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::mdarray_map > src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {

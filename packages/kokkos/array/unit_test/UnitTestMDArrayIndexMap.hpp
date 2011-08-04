@@ -57,11 +57,12 @@ template<>
 class UnitTestMDArrayIndexMap< KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef KOKKOS_MACRO_DEVICE device_type ;
+  typedef KOKKOS_MACRO_DEVICE        device_type ;
+  typedef device_type::memory_space  memory_space ;
 
   typedef Kokkos::MDArrayView< int , device_type > array_type ;
-  typedef Kokkos::Impl::MDArrayIndexMap< device_type , Kokkos::MDArrayIndexMapRight > map_right_type ;
-  typedef Kokkos::Impl::MDArrayIndexMap< device_type , Kokkos::MDArrayIndexMapLeft > map_left_type ;
+  typedef Kokkos::Impl::MDArrayIndexMap< memory_space , Kokkos::Impl::MDArrayIndexMapRight > map_right_type ;
+  typedef Kokkos::Impl::MDArrayIndexMap< memory_space , Kokkos::Impl::MDArrayIndexMapLeft > map_left_type ;
 
   enum { NP = 1000 , N1 = 10 , N2 = 20 };
 
@@ -103,8 +104,13 @@ public:
     , m_map_left(  NP , N1 , N2 , 0 , 0 , 0 , 0 , 0 )
     , m_map_right( NP , N1 , N2 , 0 , 0 , 0 , 0 , 0 )
   {
-    typedef Kokkos::MDArrayView< int , Kokkos::DeviceHost , Kokkos::MDArrayIndexMapLeft >  h_array_left_type ;
-    typedef Kokkos::MDArrayView< int , Kokkos::DeviceHost , Kokkos::MDArrayIndexMapRight >  h_array_right_type ;
+    typedef Kokkos::Serial< Kokkos::HostMemory ,
+                            Kokkos::Impl::MDArrayIndexMapLeft >  host_left ;
+    typedef Kokkos::Serial< Kokkos::HostMemory ,
+                            Kokkos::Impl::MDArrayIndexMapRight > host_right ;
+
+    typedef Kokkos::MDArrayView< int , host_left >  h_array_left_type ;
+    typedef Kokkos::MDArrayView< int , host_right > h_array_right_type ;
 
     h_array_left_type  h_left  = Kokkos::create_mdarray< h_array_left_type >(  NP , N1 , N2 );
     h_array_right_type h_right = Kokkos::create_mdarray< h_array_right_type >( NP , N1 , N2 );
