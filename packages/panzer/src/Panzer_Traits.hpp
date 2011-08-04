@@ -1,6 +1,8 @@
 #ifndef PANZER_TRAITS_HPP
 #define PANZER_TRAITS_HPP
 
+#include "Panzer_config.hpp"
+
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
@@ -12,6 +14,7 @@
 
 // Scalar types
 #include "Sacado.hpp"
+#include "Sacado_PCE_OrthogPoly.hpp"
 
 // traits Base Class
 #include "Phalanx_Traits_Base.hpp"
@@ -22,6 +25,12 @@
 
 // Debugging information
 #include "Phalanx_TypeStrings.hpp"
+
+// add embedded UQ
+#ifdef HAVE_STOKHOS
+   #include "Sacado_PCE_OrthogPoly.hpp"
+   #include "Stokhos_StandardStorage.hpp"
+#endif
 
 namespace panzer {
 
@@ -34,13 +43,27 @@ namespace panzer {
     // Scalar types we plan to use
     typedef double RealType;
     typedef Sacado::Fad::DFad<double> FadType;
+
+    #ifdef HAVE_STOKHOS
+       typedef Stokhos::StandardStorage<int,RealType> SGStorageType;
+       typedef Sacado::PCE::OrthogPoly<RealType,SGStorageType> SGType;
+       typedef Sacado::Fad::DFad<SGType> SGFadType;
+    #endif
     
     // ******************************************************************
     // *** Evaluation Types
     // ******************************************************************
     struct Residual { typedef RealType ScalarT; };
     struct Jacobian { typedef FadType ScalarT;  };
-    typedef Sacado::mpl::vector<Residual, Jacobian> EvalTypes;
+    #ifdef HAVE_STOKHOS
+       struct SGResidual { typedef SGType ScalarT; };
+       struct SGJacobian { typedef SGFadType ScalarT;  };
+    #endif
+    typedef Sacado::mpl::vector<Residual, Jacobian
+                                #ifdef HAVE_STOKHOS
+                                   , SGResidual, SGJacobian
+                                #endif
+                               > EvalTypes;
 
     // ******************************************************************
     // *** Data Types
@@ -54,10 +77,19 @@ namespace panzer {
     // Jacobian (default scalar type is Fad<double, double>)
     typedef Sacado::mpl::vector< FadType > JacobianDataTypes;
 
+    #ifdef HAVE_STOKHOS
+       typedef Sacado::mpl::vector< SGType > SGResidualDataTypes;
+       typedef Sacado::mpl::vector< SGFadType > SGJacobianDataTypes;
+    #endif
+
     // Maps the key EvalType a vector of DataTypes
     typedef boost::mpl::map<
       boost::mpl::pair<Residual, ResidualDataTypes>,
       boost::mpl::pair<Jacobian, JacobianDataTypes>
+      #ifdef HAVE_STOKHOS
+         , boost::mpl::pair<SGResidual, SGResidualDataTypes>
+         , boost::mpl::pair<SGJacobian, SGJacobianDataTypes>
+      #endif
     >::type EvalToDataMap;
 
     // ******************************************************************
@@ -96,6 +128,14 @@ namespace PHX {
   template<> struct TypeString<panzer::Traits::Jacobian> 
   { static const std::string value; };
 
+  #ifdef HAVE_STOKHOS
+     template<> struct TypeString<panzer::Traits::SGResidual> 
+     { static const std::string value; };
+   
+     template<> struct TypeString<panzer::Traits::SGJacobian> 
+     { static const std::string value; };
+  #endif 
+
   // Data Types
   template<> struct TypeString<double> 
   { static const std::string value; };
@@ -103,6 +143,13 @@ namespace PHX {
   template<> struct TypeString< Sacado::Fad::DFad<double> > 
   { static const std::string value; };
 
+  #ifdef HAVE_STOKHOS
+     template<> struct TypeString<panzer::Traits::SGType> 
+     { static const std::string value; };
+   
+     template<> struct TypeString< panzer::Traits::SGFadType> 
+     { static const std::string value; };
+  #endif 
 }
 
 #endif

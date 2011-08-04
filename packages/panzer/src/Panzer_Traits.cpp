@@ -19,3 +19,15 @@ const std::string PHX::TypeString<double>::value = "double";
 
 const std::string PHX::TypeString< Sacado::Fad::DFad<double> >::value = 
   "Sacado::Fad::DFad<double>";
+
+#ifdef HAVE_STOKHOS
+
+   const std::string PHX::TypeString<panzer::Traits::SGResidual>::value = "SGJacobian";
+
+   const std::string PHX::TypeString<panzer::Traits::SGJacobian>::value = "SGJacobian";
+
+   const std::string PHX::TypeString<panzer::Traits::SGType>::value = "SGType";
+
+   const std::string PHX::TypeString<panzer::Traits::SGFadType>::value = "Sacado::Fad::DFad<SGType>";
+
+#endif

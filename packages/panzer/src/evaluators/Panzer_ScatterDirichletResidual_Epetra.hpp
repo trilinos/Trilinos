@@ -7,6 +7,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "Panzer_config.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
@@ -147,6 +148,8 @@ private:
 // **************************************************************
 
 #include "Panzer_ScatterDirichletResidual_EpetraT.hpp"
+
+#include "Panzer_ScatterDirichletResidual_EpetraSG.hpp"
 
 // **************************************************************
 #endif

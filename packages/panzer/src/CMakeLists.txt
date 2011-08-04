@@ -115,6 +115,8 @@ APPEND_SET(HEADERS
   evaluators/Panzer_DOFGradientT.hpp
   evaluators/Panzer_GatherSolution_Epetra.hpp
   evaluators/Panzer_GatherSolution_EpetraT.hpp
+  evaluators/Panzer_GatherSolution_EpetraSG.hpp
+  evaluators/Panzer_GatherSolution_EpetraSGT.hpp
   evaluators/Panzer_GlobalStatistics.hpp
   evaluators/Panzer_GlobalStatisticsT.hpp
   evaluators/Panzer_Integrator_BasisTimesScalar.hpp
@@ -125,10 +127,16 @@ APPEND_SET(HEADERS
   evaluators/Panzer_ScalarToVectorT.hpp
   evaluators/Panzer_ScatterResidual_Epetra.hpp
   evaluators/Panzer_ScatterResidual_EpetraT.hpp
+  evaluators/Panzer_ScatterResidual_EpetraSG.hpp
+  evaluators/Panzer_ScatterResidual_EpetraSGT.hpp
   evaluators/Panzer_ScatterDirichletResidual_Epetra.hpp
   evaluators/Panzer_ScatterDirichletResidual_EpetraT.hpp
+  evaluators/Panzer_ScatterDirichletResidual_EpetraSG.hpp
+  evaluators/Panzer_ScatterDirichletResidual_EpetraSGT.hpp
   evaluators/Panzer_ScatterInitialCondition_Epetra.hpp
   evaluators/Panzer_ScatterInitialCondition_EpetraT.hpp
+  evaluators/Panzer_ScatterInitialCondition_EpetraSG.hpp
+  evaluators/Panzer_ScatterInitialCondition_EpetraSGT.hpp
   evaluators/Panzer_TestScatter.hpp
   evaluators/Panzer_TestScatterT.hpp
   evaluators/Panzer_Sum.hpp
