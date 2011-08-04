@@ -38,7 +38,7 @@ class Level;
     //! amesos2-specific key phrase that denote smoother type (same as SmootherBase::Type_)
     std::string amesos2Type_;
     //! pointer to Amesos2 solver object
-    RCP<Amesos::Solver<MAT,MV> > prec_;
+    RCP<Amesos2::Solver<MAT,MV> > prec_;
     //! matrix operator 
     Teuchos::RCP<Operator> A_;
     //! parameter list that is used by Amesos2 internally
@@ -109,7 +109,7 @@ class Level;
 //       RCP<Tpetra_MultiVector> tB = Utils::MV2NonConstTpetraMV(B_);
 //      prec_ = Amesos::create<MAT,MV>(amesos2Type_, tA, tX, tB);
   
-      prec_ = Amesos::create<MAT,MV>(amesos2Type_, tA);
+      prec_ = Amesos2::create<MAT,MV>(amesos2Type_, tA);
 
       if (prec_ == Teuchos::null) {
         std::string msg = "Amesos::create returns Teuchos::null";
