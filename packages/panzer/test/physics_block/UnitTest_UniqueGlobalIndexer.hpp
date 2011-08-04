@@ -78,7 +78,7 @@ public:
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
      */
-   virtual void getElementGIDs(short localElmtId,std::vector<int> & gids) const;
+   virtual void getElementGIDs(short localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
 
    virtual void getElementOrientation(short localElmtId,std::vector<double> & gidsOrientation) const
    { TEUCHOS_ASSERT(false); }

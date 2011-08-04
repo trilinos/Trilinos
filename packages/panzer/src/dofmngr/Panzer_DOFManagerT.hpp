@@ -432,10 +432,16 @@ inline void getGIDsFromMatrixGraph(int blockIndex,int dof,LocalOrdinalT localElm
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids) const
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids,const std::string & blockIdHint) const
 {
+   // this short circuits any lookup, and improves efficiency
+   std::string blockId;
+   if(blockIdHint!="") 
+      blockId = blockIdHint;
+   else
+      blockId = connMngr_->getBlockId(localElmtId);
+
    // get information about number of indicies
-   std::string blockId = connMngr_->getBlockId(localElmtId);
    std::size_t blockIndex = blockIdToIndex(blockId);
    int dof = getElementBlockGIDCount(blockIndex);
 

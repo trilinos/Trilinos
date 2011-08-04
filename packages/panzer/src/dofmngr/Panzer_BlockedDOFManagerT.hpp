@@ -88,7 +88,7 @@ const std::vector<int> & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getBlo
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinal> & gids) const
+void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinal> & gids,const std::string & blockIdHint) const
 {
    // WARNING: there is an assumed ordering being used here it
    // corresponds directly to the blockGIDOffset_ map and (as
@@ -102,7 +102,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdina
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
       std::vector<GlobalOrdinalT> fieldBlockOwned;
 
-      fieldBlockManagers_[fbm]->getElementGIDs(localElmtId,fieldBlockOwned);
+      fieldBlockManagers_[fbm]->getElementGIDs(localElmtId,fieldBlockOwned,blockIdHint);
 
       for(std::size_t i=0;i<fieldBlockOwned.size();i++) 
          gids.push_back(std::make_pair(fbm,fieldBlockOwned[i]));

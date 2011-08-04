@@ -50,7 +50,7 @@ const std::vector<short> & UniqueGlobalIndexer::getElementBlock(const std::strin
    return *elements_;
 }
 
-void UniqueGlobalIndexer::getElementGIDs(short localElmtId,std::vector<int> & gids) const
+void UniqueGlobalIndexer::getElementGIDs(short localElmtId,std::vector<int> & gids,const std::string & blockId) const
 {
    gids.resize(8);
 
