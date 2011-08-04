@@ -30,10 +30,12 @@
 #define EPETRAEXT_MMHELPERS_H
 
 #include <EpetraExt_ConfigDefs.h>
+#include <Epetra_DistObject.h>
+#include <Epetra_Map.h>
+#include <vector>
 #include <set>
 #include <map>
 
-class Epetra_Map;
 class Epetra_CrsMatrix;
 
 namespace EpetraExt {
@@ -118,6 +120,19 @@ class CrsWrapper_GraphBuilder : public CrsWrapper {
 
 void insert_matrix_locations(CrsWrapper_GraphBuilder& graphbuilder,
                               Epetra_CrsMatrix& C);
+
+void pack_outgoing_rows(const Epetra_CrsMatrix& mtx,
+                        const std::vector<int>& proc_col_ranges,
+                        std::vector<int>& send_rows,
+                        std::vector<int>& rows_per_send_proc);
+
+inline
+std::pair<int,int> get_col_range(const Epetra_Map& emap)
+{
+  return std::make_pair(emap.MinMyGID(),emap.MaxMyGID());
+}
+
+std::pair<int,int> get_col_range(const Epetra_CrsMatrix& mtx);
 
 }//namespace EpetraExt
 
