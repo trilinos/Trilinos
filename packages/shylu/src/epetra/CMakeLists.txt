@@ -1,0 +1,65 @@
+
+INCLUDE(PackageLibraryMacros)
+
+
+#
+# A) Package-specific configuration options
+#
+
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+
+
+SET(CURRENT_PACKAGE ShyLU)
+CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
+
+
+#
+# B) Define the header and source files (and include directories)
+#
+
+SET(HEADERS "")
+SET(SOURCES "")
+
+
+# Set the base Trilinos directory in order to find Trilinos_version.h
+
+ASSERT_DEFINED(PROJECT_SOURCE_DIR)
+ASSERT_DEFINED(PROJECT_BINARY_DIR)
+
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
+
+#
+# Include packages/src directory
+#
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  )
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+APPEND_SET(HEADERS
+  shylu_debug_manager.hpp
+  Ifpack_ShyLU.h
+  shylu_util.h
+  shylu.h
+  shylu_probing_operator.h
+  )
+
+# Set sources
+
+APPEND_SET(SOURCES
+  shylu_factor.cpp
+  Ifpack_ShyLU.cpp
+  shylu_probing_operator.cpp
+  shylu_util.cpp
+  shylu_solve.cpp
+  shylu_schur.cpp
+  )
+
+PACKAGE_ADD_LIBRARY(shylu
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  )

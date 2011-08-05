@@ -22,8 +22,8 @@ PACKAGE(ShyLU)
 # C) Add the libraries, tests, and examples
 #
 
-#ADD_SUBDIRECTORY(src)
-#
+ADD_SUBDIRECTORY(src)
+
 #PACKAGE_ADD_TEST_DIRECTORIES(test)
 #
 #PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
