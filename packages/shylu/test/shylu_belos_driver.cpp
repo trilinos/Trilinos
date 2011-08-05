@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
     string prec_type = Teuchos::getParameter<string>(pLUList, "preconditioner");
     int maxiters = Teuchos::getParameter<int>(pLUList, "Outer Solver MaxIters");
     MT tol = Teuchos::getParameter<double>(pLUList, "Outer Solver Tolerance");
-    string rhsFileName = Teuchos::getParameter<string>(pLUList, "rhs_file");
+    string rhsFileName = pLUList.get<string>("rhs_file", "");
 
     if (myPID == 0)
     {
@@ -142,13 +142,18 @@ int main(int argc, char *argv[])
 
     // Create input vectors
     Epetra_Map vecMap(n, 0, Comm);
-    err = EpetraExt::MatrixMarketFileToMultiVector(rhsFileName.c_str(),
-                                     vecMap, b1);
+    if (rhsFileName != "")
+    {
+        err = EpetraExt::MatrixMarketFileToMultiVector(rhsFileName.c_str(),
+                                         vecMap, b1);
+    }
+    else
+    {
+        b1 = new Epetra_MultiVector(vecMap, 1, false);
+        b1->PutScalar(1.0);
+    }
 
     Epetra_MultiVector x(vecMap, 1);
-    Epetra_MultiVector b(vecMap, 1, false);
-
-    b.PutScalar(1.0); // TODO : Accept it as input
 
     // Partition the matrix with hypergraph partitioning and redisstribute
     Isorropia::Epetra::Partitioner *partitioner = new
@@ -164,7 +169,6 @@ int main(int argc, char *argv[])
     RCP<Epetra_CrsMatrix> rcpA(A, false);
 
     rd.redistribute(x, newX);
-    //rd.redistribute(b, newB);
     rd.redistribute(*b1, newB);
     RCP<Epetra_MultiVector> rcpx (newX, false);
     RCP<Epetra_MultiVector> rcpb (newB, false);

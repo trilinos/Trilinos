@@ -110,6 +110,8 @@ int main(int argc, char *argv[])
     //cout <<"Done reading the matrix"<< endl;
     int n = A->NumGlobalRows();
     //cout <<"n="<< n << endl;
+
+    // Create input vectors
     Epetra_Map vecMap(n, 0, Comm);
     if (rhsFileName != "")
     {
@@ -122,7 +124,6 @@ int main(int argc, char *argv[])
         b1->PutScalar(1.0);
     }
 
-    // Create input vectors
     Epetra_MultiVector x(vecMap, 1);
     //cout << "Created the vectors" << endl;
 
@@ -139,7 +140,6 @@ int main(int argc, char *argv[])
     A = newA;
 
     rd.redistribute(x, newX);
-    //rd.redistribute(b, newB);
     rd.redistribute(*b1, newB);
 
     Epetra_LinearProblem problem(A, newX, newB);
