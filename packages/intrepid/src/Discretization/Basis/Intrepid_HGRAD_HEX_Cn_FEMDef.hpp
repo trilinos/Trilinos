@@ -42,8 +42,24 @@ namespace Intrepid {
 								      const int orderz ,
 								      const ArrayScalar &pts_x ,
 								      const ArrayScalar &pts_y ,
-								      const ArrayScalar &pts_z )
+								      const ArrayScalar &pts_z ):
+    ptsx_( pts_x.dimension(0) , 1 ),
+    ptsy_( pts_y.dimension(0) , 1 ),
+    ptsz_( pts_z.dimension(0) , 1 )
   {
+    for (int i=0;i<pts_x.dimension(0);i++)
+      {
+	ptsx_(i,0) = pts_x(i,0);
+      }
+    for (int i=0;i<pts_y.dimension(0);i++)
+      {
+	ptsy_(i,0) = pts_y(i,0);
+      }
+    for (int i=0;i<pts_z.dimension(0);i++)
+      {
+	ptsz_(i,0) = pts_z(i,0);
+      }
+
     Array<Array<RCP<Basis<Scalar,ArrayScalar> > > > bases(1);
     bases[0].resize(3);
 
@@ -71,7 +87,10 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayScalar>
   Basis_HGRAD_HEX_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_HEX_Cn_FEM( const int order , 
-								      const EPointType & pointType )
+								      const EPointType & pointType ):
+    ptsx_( order+1 , 1 ),
+    ptsy_( order+1 , 1 ),
+    ptsz_( order+1 , 1 )
   {
     Array<Array<RCP<Basis<Scalar,ArrayScalar> > > > bases(1);
     bases[0].resize(3);
@@ -89,6 +108,20 @@ namespace Intrepid {
     this -> basisType_         = BASIS_FEM_FIAT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    // get points
+    EPointType pt = (pointType==POINTTYPE_EQUISPACED)?pointType:POINTTYPE_WARPBLEND;
+    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( ptsx_ ,
+							    shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
+							    order ,
+							    0 ,
+							    pt );
+    for (int i=0;i<order+1;i++)
+      {
+	ptsy_(i,0) = ptsx_(i,0);
+	ptsz_(i,0) = ptsx_(i,0);
+      }
+
   }
 
   template<class Scalar, class ArrayScalar>
@@ -363,6 +396,24 @@ void Basis_HGRAD_HEX_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
                       ">>> ERROR (Basis_HGRAD_HEX_Cn_FEM): FEM Basis calling an FVD member function");
 }
 
+  template<class Scalar,class ArrayScalar>
+  void Basis_HGRAD_HEX_Cn_FEM<Scalar, ArrayScalar>::getDofCoords( ArrayScalar & dofCoords ) const
+  {
+    int cur = 0;
+    for (int k=0;k<ptsz_.dimension(0);k++)
+      {
+	for (int j=0;j<ptsy_.dimension(0);j++)
+	  {
+	    for (int i=0;i<ptsx_.dimension(0);i++)
+	      {
+		dofCoords(cur,0) = ptsx_(i);
+		dofCoords(cur,1) = ptsy_(j);
+		dofCoords(cur,2) = ptsz_(k);
+		cur++;
+	      }
+	  }
+      }
+  }
   
 }// namespace Intrepid
 

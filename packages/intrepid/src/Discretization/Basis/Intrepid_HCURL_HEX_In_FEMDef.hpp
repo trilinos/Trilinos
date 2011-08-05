@@ -42,7 +42,9 @@ namespace Intrepid {
 								      const ArrayScalar & ptsClosed ,
 								      const ArrayScalar & ptsOpen):
     closedBasis_( order , ptsClosed ),
-    openBasis_( order-1 , ptsOpen )
+    openBasis_( order-1 , ptsOpen ) ,
+    closedPts_( ptsClosed ),
+    openPts_( ptsOpen )    
   {
     this -> basisDegree_       = order;
     this -> basisCardinality_  = 3 * closedBasis_.getCardinality() 
@@ -56,7 +58,9 @@ namespace Intrepid {
   template<class Scalar, class ArrayScalar>
   Basis_HCURL_HEX_In_FEM<Scalar,ArrayScalar>::Basis_HCURL_HEX_In_FEM( int order , const EPointType &pointType ):
     closedBasis_( order , pointType==POINTTYPE_SPECTRAL?POINTTYPE_SPECTRAL:POINTTYPE_EQUISPACED ),
-    openBasis_( order-1 , pointType==POINTTYPE_SPECTRAL?POINTTYPE_SPECTRAL_OPEN:POINTTYPE_EQUISPACED )
+    openBasis_( order-1 , pointType==POINTTYPE_SPECTRAL?POINTTYPE_SPECTRAL_OPEN:POINTTYPE_EQUISPACED ),
+    closedPts_( order+1 , 1 ),
+    openPts_( order , 1 )
   {
     this -> basisDegree_       = order;
     this -> basisCardinality_  = 3 * closedBasis_.getCardinality() 
@@ -65,6 +69,26 @@ namespace Intrepid {
     this -> basisType_         = BASIS_FEM_FIAT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( closedPts_ ,
+                                                            shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
+                                                            order ,
+                                                            0 ,
+                                                            pointType==POINTTYPE_SPECTRAL?POINTTYPE_WARPBLEND:POINTTYPE_EQUISPACED );
+
+    if (pointType == POINTTYPE_SPECTRAL)
+      {
+	PointTools::getGaussPoints<Scalar,FieldContainer<Scalar> >( openPts_ ,
+								    order - 1 );
+      }
+    else
+      {
+	PointTools::getLattice<Scalar,FieldContainer<Scalar> >( openPts_ ,
+								shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
+								order - 1,
+								0 ,
+								POINTTYPE_EQUISPACED );
+      }
   }
   
   template<class Scalar, class ArrayScalar>
@@ -412,6 +436,58 @@ namespace Intrepid {
 							      const EOperator        operatorType) const {
     TEST_FOR_EXCEPTION( (true), std::logic_error,
 			">>> ERROR (Basis_HCURL_HEX_In_FEM): FEM Basis calling an FVD member function");
+  }
+
+ template<class Scalar, class ArrayScalar>
+ void Basis_HCURL_HEX_In_FEM<Scalar,ArrayScalar>::getDofCoords(ArrayScalar & DofCoords) const
+  {
+    // x-component basis functions
+    int cur = 0;
+
+    for (int k=0;k<closedPts_.dimension(0);k++)
+      {
+        for (int j=0;j<closedPts_.dimension(0);j++)
+          {
+            for (int i=0;i<openPts_.dimension(0);i++)
+              {
+                DofCoords(cur,0) = openPts_(i,0);
+                DofCoords(cur,1) = closedPts_(j,0);
+                DofCoords(cur,2) = closedPts_(k,0);
+                cur++;
+              }
+          }
+      }
+   // y-component basis functions
+    for (int k=0;k<closedPts_.dimension(0);k++)
+      {
+        for (int j=0;j<openPts_.dimension(0);j++)
+          {
+            for (int i=0;i<closedPts_.dimension(0);i++)
+              {
+                DofCoords(cur,0) = closedPts_(i,0);
+                DofCoords(cur,1) = openPts_(j,0);
+                DofCoords(cur,2) = closedPts_(k,0);
+                cur++;
+              }
+          }
+      }
+
+    // z-component basis functions
+    for (int k=0;k<openPts_.dimension(0);k++)
+      {
+        for (int j=0;j<closedPts_.dimension(0);j++)
+          {
+            for (int i=0;i<closedPts_.dimension(0);i++)
+              {
+                DofCoords(cur,0) = closedPts_(i,0);
+                DofCoords(cur,1) = closedPts_(j,0);
+                DofCoords(cur,2) = openPts_(k,0);
+                cur++;
+              }
+          }
+      }
+
+    return;
   }
   
 }// namespace Intrepid

@@ -61,7 +61,9 @@ namespace Intrepid {
 	    the DoF are attached to the edge itself.
 */
 template<class Scalar, class ArrayScalar> 
-class Basis_HGRAD_LINE_Cn_FEM: public Basis<Scalar, ArrayScalar> {
+class Basis_HGRAD_LINE_Cn_FEM: 
+    public Basis<Scalar, ArrayScalar>, 
+    public DofCoordsInterface<ArrayScalar> {
 private:
   /** \brief Holds the points defining the Lagrange basis */
   FieldContainer<Scalar> latticePts_;
@@ -81,7 +83,10 @@ private:
   void initializeTags();
   
 public:
-  
+  /** \brief Destructor
+   */
+  ~Basis_HGRAD_LINE_Cn_FEM( ) { }
+
   /** \brief  Constructor.
   */
   Basis_HGRAD_LINE_Cn_FEM(int order , const ArrayScalar &pts );  
@@ -113,6 +118,9 @@ public:
                  const ArrayScalar &    inputPoints,
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
+
+  /** \brief implements the dofcoords interface */
+  virtual void getDofCoords( ArrayScalar & DofCoords ) const;
 
 };
 

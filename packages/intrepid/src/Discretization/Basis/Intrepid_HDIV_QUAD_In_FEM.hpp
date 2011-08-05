@@ -51,7 +51,9 @@ namespace Intrepid {
  */
   
 template<class Scalar, class ArrayScalar> 
-class Basis_HDIV_QUAD_In_FEM : public Basis<Scalar, ArrayScalar> {
+class Basis_HDIV_QUAD_In_FEM : 
+    public Basis<Scalar, ArrayScalar> ,
+    public DofCoordsInterface<ArrayScalar> {
 private:
   
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
@@ -61,7 +63,14 @@ private:
   Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> closedBasis_;
   Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> openBasis_;
 
+  FieldContainer<double> closedPts_;
+  FieldContainer<double> openPts_;
+
+
 public:
+  /** \brief Destructor
+   */
+  virtual ~Basis_HDIV_QUAD_In_FEM() {;}
 
   /** \brief  Constructor.
       \param order     [in] - order of polynomial space
@@ -100,6 +109,15 @@ public:
                  const ArrayScalar &    inputPoints,
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
+
+  /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
+              <strong>reference cell</strong>; defined for interpolatory bases.
+
+      \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
+                                     dimensioned (F,D)
+   */
+   virtual void getDofCoords(ArrayScalar & DofCoords) const;
+  
 };
 }// namespace Intrepid
 

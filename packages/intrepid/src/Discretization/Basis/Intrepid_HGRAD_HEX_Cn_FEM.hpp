@@ -55,8 +55,14 @@ namespace Intrepid {
  */
   
 template<class Scalar, class ArrayScalar> 
-class Basis_HGRAD_HEX_Cn_FEM : public TensorBasis<Scalar, ArrayScalar> {
+class Basis_HGRAD_HEX_Cn_FEM : 
+    public TensorBasis<Scalar, ArrayScalar> ,
+    public DofCoordsInterface<ArrayScalar>
+{
 private:
+  FieldContainer<double> ptsx_;
+  FieldContainer<double> ptsy_;
+  FieldContainer<double> ptsz_;
   
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
    */
@@ -64,6 +70,9 @@ private:
 
   
 public:
+  /** \brief Destructor.
+   */
+  virtual ~Basis_HGRAD_HEX_Cn_FEM( ) {;}
 
   /** \brief  Constructor.
     */
@@ -98,6 +107,9 @@ public:
                  const ArrayScalar &    inputPoints,
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
+
+  /** \brief implement the DofCoordsInterface interface */
+  virtual void getDofCoords( ArrayScalar & DofCoords) const;
 };
 }// namespace Intrepid
 
