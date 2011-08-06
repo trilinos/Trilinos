@@ -42,16 +42,7 @@ namespace Cthulhu {
       CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
       vec_ = rcp(new Epetra_MultiVector(eMap->getEpetra_BlockMap(), NumVectors, zeroOut));
-      read_only_ = false;
     }
-
-    //////////////////////////////////////////////////////////////////////////////////
-    // LRIESEN - we want a Cthulhu::MV that holds a reference to a const Epetra::MV.
-    // There may be a better design for this - a separate ConstEpetraMultiVector class maybe.
-
-    EpetraMultiVector(Teuchos::RCP<const Epetra::MultiVector> &mv): ro_vec_(mv) { read_only_ = true;}
-
-    //////////////////////////////////////////////////////////////////////////////////
 
 #ifdef CTHULHU_NOT_IMPLEMENTED    
     //! EpetraMultiVector copy constructor.
@@ -61,13 +52,13 @@ namespace Cthulhu {
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
-    EpetraMultiVector(const Teuchos::RCP<const Map<int,int> > &map, const Teuchos::ArrayView<const double> &A, size_t LDA, size_t NumVectors):read_only(false){ CTHULHU_DEBUG_ME; } 
+    EpetraMultiVector(const Teuchos::RCP<const Map<int,int> > &map, const Teuchos::ArrayView<const double> &A, size_t LDA, size_t NumVectors) { CTHULHU_DEBUG_ME; } 
 #endif // CTHULHU_NOT_IMPLEMENTED
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
-    EpetraMultiVector(const Teuchos::RCP<const Map<int,int> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const double> > &ArrayOfPtrs, size_t NumVectors):read_only(false){ CTHULHU_DEBUG_ME; } 
+    EpetraMultiVector(const Teuchos::RCP<const Map<int,int> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const double> > &ArrayOfPtrs, size_t NumVectors) { CTHULHU_DEBUG_ME; } 
 #endif // CTHULHU_NOT_IMPLEMENTED
   
     EpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector> &vec) : vec_(vec) { CTHULHU_DEBUG_ME; }
@@ -471,9 +462,6 @@ scalarThis) {
   private:
     RCP< Epetra_MultiVector > vec_;
 
-    // lriesen
-    RCP< const Epetra_MultiVector > ro_vec_;
-    bool read_only;
 
   }; // class EpetraMultiVector
 

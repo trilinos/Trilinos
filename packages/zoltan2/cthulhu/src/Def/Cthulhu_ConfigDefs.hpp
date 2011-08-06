@@ -39,10 +39,7 @@
 
 // end of undoing autoconf's work section
 
-//   LRIESEN commented out to build with zoltan2
-//#include <Cthulhu_config.hpp>
-//   LRIESEN commented out to build with zoltan2
-
+#include <Cthulhu_config.hpp>
 #include <Teuchos_ConfigDefs.hpp>
 #include <Kokkos_ConfigDefs.hpp>
 
