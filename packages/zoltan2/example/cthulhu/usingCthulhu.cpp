@@ -131,7 +131,6 @@ int main(int argc, char *argv[])
   Teuchos::RCP<const Cthulhu::TpetraMap<LO, GO> >  tmap = 
     Teuchos::rcp(new Cthulhu::TpetraMap<LO, GO>(globalNumRows, base, comm));
 
-  // Got runtime errors if column map was not specified
   Cthulhu::TpetraCrsMatrix<Scalar, LO, GO> tmtx(tmap, maxRowSize);
 
   // Populate both matrices using the same interface.
