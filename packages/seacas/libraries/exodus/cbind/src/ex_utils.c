@@ -104,7 +104,7 @@ int ex_set_max_name_length(int exoid, int length)
 void ex_update_max_name_length(int exoid, int length)
 {
   int status;
-  int db_length;
+  int db_length = 0;
   /* Get current value of the maximum_name_length attribute... */
   if ((status = nc_get_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &db_length)) != NC_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
@@ -180,7 +180,6 @@ int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
 int ex_put_name_internal(int exoid, int varid, size_t index, const char *name,
 			 ex_entity_type obj_type, const char *subtype, const char *routine)
 {
-  size_t i;
   int status;
   size_t start[2], count[2];
   char errmsg[MAX_ERR_LENGTH];
@@ -257,7 +256,7 @@ int ex_get_name_internal(int exoid, int varid, size_t index, char *name,
   if (status != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg, "Error: failed to get %s name at index %d from file id %d",
-	    ex_name_of_object(obj_type), index, exoid);
+	    ex_name_of_object(obj_type), (int)index, exoid);
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -675,7 +674,7 @@ int ex_id_lkup( int exoid,
     /* check if values in stored arrays are filled with non-zeroes */
     filled = TRUE;
     for (i=0;i<dim_len;i++) {
-      if (id_vals[i] == 0 || id_vals[i] == NC_FILL_INT) {
+      if (id_vals[i] == EX_INVALID_ID || id_vals[i] == NC_FILL_INT) {
         filled = FALSE;
         break; /* id array hasn't been completely filled with valid ids yet */
       }

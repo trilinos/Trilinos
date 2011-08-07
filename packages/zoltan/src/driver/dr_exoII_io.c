@@ -628,7 +628,7 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
 
       /* Initialize adjacency entries to -1 for each side. */
       for (nscnt = 0; nscnt < nsides; nscnt++) {
-        elements[ielem].adj[nscnt] = ZOLTAN_INVALID;
+        elements[ielem].adj[nscnt] = ZOLTAN_ID_INVALID;
         elements[ielem].adj_proc[nscnt] = -1;
         elements[ielem].edge_wgt[nscnt] = 0;
       }
@@ -756,6 +756,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   int  ierr, nrecv;
   int  msg = 200;
   int  sid;
+  int  i;
   ELEM_INFO_PTR elements = mesh->elements;
   ZOLTAN_COMM_OBJ *comm_obj;
 

@@ -42,8 +42,8 @@
 
 PROJECT_NAME           = TrilinosCouplings
 
-INPUT                  = ../src index.doc
+INPUT                  = ../src index.doc ../examples/scaling
 
-EXAMPLE_PATH           = ../examples
+EXAMPLE_PATH           = ../example
 
 GENERATE_TAGFILE       = ../../common/tag_files/trilinoscouplings.tag

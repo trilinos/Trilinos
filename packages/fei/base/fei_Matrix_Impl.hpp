@@ -672,10 +672,10 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
   bool symmetric = cblock->isSymmetric();
   const fei::Pattern* pattern = cblock->getRowPattern();
   const fei::Pattern* colpattern = symmetric ? NULL : cblock->getColPattern();
-  const fei::Record<int>*const* rowConn = cblock->getRowConnectivity(connectivityID);
+  const int* rowConn = cblock->getRowConnectivity(connectivityID);
 
   fei::SharedPtr<fei::VectorSpace> rspace = mgraph->getRowSpace();
-  rspace->getGlobalIndices(pattern, rowConn, work_indices2_);
+  rspace->getGlobalIndicesL(pattern, rowConn, work_indices2_);
 
   int numRowIndices = work_indices2_.size();
   int* rowIndices = &work_indices2_[0];
@@ -702,10 +702,14 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
     int i, *nodeNumbers = &work_indices_[0];
     int* dof_ids = nodeNumbers+numIDs;
 
+    int nodeType = 0;
+    snl_fei::RecordCollection* records = NULL;
+    rspace->getRecordCollection(nodeType, records);
     int foffset = 0;
     int doffset = 0;
     for(i=0; i<numIDs; ++i) {
-      nodeNumbers[i] = rowConn[i]->getNumber();
+      fei::Record<int>* rec = records->getRecordWithLocalID(rowConn[i]);
+      nodeNumbers[i] = rec->getNumber();
       for(int ii=0; ii<fieldsPerID[i]; ++ii) {
         int fieldSize = rspace->getFieldSize(fieldIDs[foffset]);
         int dof_id = fdofmap.get_dof_id(fieldIDs[foffset++], 0);
@@ -758,7 +762,8 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
       int ptRowOffset = 0;
       for(i=0; i<numIDs; ++i) {
 
-        if (rowConn[i]->getOwnerProc() == localProc()) {
+        fei::Record<int>* record = records->getRecordWithLocalID(rowConn[i]);
+        if (record->getOwnerProc() == localProc()) {
 
           int numColIDs = numIDs;
           int* colNodeNums = nodeNumbers;
@@ -813,11 +818,11 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
 
   int numColIndices = symmetric ? numRowIndices : colpattern->getNumIndices();
   int* colIndices = rowIndices;
-  const fei::Record<int>*const* colConn = NULL;
+  const int* colConn = NULL;
 
   if (!symmetric) {
     colConn = cblock->getColConnectivity(connectivityID);
-    mgraph->getColSpace()->getGlobalIndices(colpattern,
+    mgraph->getColSpace()->getGlobalIndicesL(colpattern,
                                             colConn, work_indices_);
     colIndices = &work_indices_[0];
   }
@@ -1131,8 +1136,8 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     }
 
     for(int j=0; j<numCols; ++j) {
-      int blockCol = pointBlockMap->eqnToBlkEqn(cols[j]);
-      int blkOffset= pointBlockMap->getBlkEqnOffset(blockCol, cols[j]);
+      int blockCol, blkOffset;
+      CHK_ERR( pointBlockMap->getPtEqnInfo(cols[j], blockCol, blkOffset) );
 
       for(int jj=0; jj<blockRowLength; ++jj) {
 

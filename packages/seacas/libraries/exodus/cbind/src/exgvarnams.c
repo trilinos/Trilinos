@@ -95,7 +95,7 @@ int ex_get_variable_names (int   exoid,
 			   int   num_vars,
 			   char *var_names[])
 {
-  int i, varid, status;
+  int varid, status;
   char errmsg[MAX_ERR_LENGTH];
   const char* vvarname;
 

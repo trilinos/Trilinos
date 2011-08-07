@@ -156,6 +156,10 @@ class Vector_core : protected fei::Logger {
   bool haveFEVector_;
 
   std::vector<CSVec*> remotelyOwned_;
+  std::vector<int> sendProcs_;
+  std::vector<int> recvProcs_;
+  std::vector<int> recv_sizes_;
+  bool sendRecvProcsNeedUpdated_;
 
   bool overlapAlreadySet_;
   std::string dbgprefix_;

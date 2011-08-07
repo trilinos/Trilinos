@@ -46,6 +46,9 @@ void pack_FillableMat(const fei::FillableMat& mat,
                       std::vector<int>& intdata,
                       std::vector<double>& doubledata);
 
+void pack_FillableMat(const fei::FillableMat& mat,
+                      std::vector<char>& intdata);
+
 /** unpack a pair of std::vector objects into an fei::FillableMat object.
     The std::vector objects are assumed to have been produced by the
     function pack_FillableMat(...).
@@ -55,6 +58,21 @@ void unpack_FillableMat(const std::vector<int>& intdata,
                         fei::FillableMat& mat,
                         bool clear_mat_on_entry = true,
                         bool overwrite_entries = true);
+
+void unpack_FillableMat(const std::vector<char>& intdata,
+                        fei::FillableMat& mat,
+                        bool clear_mat_on_entry = true,
+                        bool overwrite_entries = true);
+
+void unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat);
+
+void pack_indices_coefs(const std::vector<int>& indices,
+                        const std::vector<double>& coefs,
+                        std::vector<char>& buffer);
+
+void unpack_indices_coefs(const std::vector<char>& buffer,
+                          std::vector<int>& indices,
+                          std::vector<double>& coefs);
 
 void separate_BC_eqns(const fei::FillableMat& mat,
                     std::vector<int>& bcEqns,

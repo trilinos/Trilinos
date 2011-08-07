@@ -125,9 +125,12 @@ namespace stk {
       typedef std::vector<NodeIdsOnSubDimEntityTypeQuantum> base_type;
       typedef std::vector<stk::mesh::EntityId> entity_id_vector_type;
       entity_id_vector_type m_entity_id_vector;
+      unsigned m_mark;
 
       NodeIdsOnSubDimEntityType(unsigned sz=1, NodeIdsOnSubDimEntityTypeQuantum allValues=0) : base_type(sz,allValues),
-                                                                                               m_entity_id_vector(sz,0u) {}
+                                                                                               m_entity_id_vector(sz,0u),
+                                                                                               m_mark(0u)  {}
+
       void resize(size_t sz)
       {
         m_entity_id_vector.resize(sz);
@@ -333,6 +336,8 @@ namespace stk {
     //========================================================================================================================
     class NodeRegistry
     {
+      static const unsigned NR_MARK_NONE = 1u;
+      static const unsigned NR_MARK = 2u;
 
     public:
       //========================================================================================================================
@@ -408,6 +413,8 @@ namespace stk {
           std::cout << "P[" << m_eMesh.getRank() << "] tmp NodeRegistry::endRegistration start" << std::endl;
 
         //putInESMap();
+
+        removeUnmarkedSubDimEntities();
 
         m_eMesh.getBulkData()->modification_begin();
         this->createNewNodesInParallel();
@@ -548,12 +555,47 @@ namespace stk {
           }
       }
 
+      /// when a sub-dim entity is visited during node registration but is flagged as not being marked, and thus not requiring 
+      ///   any new nodes, we flag it with NR_MARK_NONE, then remove it here
+      void removeUnmarkedSubDimEntities()
+      {
+        EXCEPTWATCH;
+        SubDimCellToDataMap::iterator iter;
+
+        for (iter = m_cell_2_data_map.begin(); iter != m_cell_2_data_map.end(); ++iter)
+          {
+            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            if (nodeIds_onSE.size())
+              {
+                unsigned mark = nodeIds_onSE.m_mark;
+                unsigned is_marked = mark & NR_MARK;
+                unsigned is_not_marked = mark & NR_MARK_NONE;
+#if 0
+                if (!(is_marked || is_not_marked)) 
+                  {
+                    std::cout << "is_not_marked = " << is_not_marked << " is_marked= " << is_marked << std::endl;
+                    throw std::logic_error("removeUnmarkedSubDimEntities::err1");
+                  }
+#endif
+                //nodeIds_onSE.m_mark = 0u;
+                if (!is_marked && is_not_marked)
+                  {
+                    //std::cout << "tmp SRK FOUND NR_MARK " << NR_MARK << " " << NR_MARK_NONE << std::endl;
+                    nodeIds_onSE.resize(0);
+                  }
+              }
+          }
+      }
+
       bool is_empty( const stk::mesh::Entity& element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd);
 
       /// Register the need for a new node on the sub-dimensional entity @param subDimEntity on element @param element.
       /// If the element is a ghost element, the entity is still registered: the locality/ownership of the new entity
       /// can be determined by the locality of the element (ghost or not).
-      bool registerNeedNewNode(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd)
+      bool registerNeedNewNode(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes)
       {
         static SubDimCell_SDSEntityType subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd);
@@ -572,23 +614,33 @@ namespace stk {
           || (element.entity_rank() > stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>()));
 
 #define DEBUG_NR_UNREF 0
-            if (DEBUG_NR_UNREF)
-              {
-                std::cout << "registerNeedNewNode:: is_empty= " << is_empty << " should_put_in= " << should_put_in << " needed_entity_rank= " 
-                          << needed_entity_rank.first << " subDimEntity= ";
+        if (DEBUG_NR_UNREF)
+          {
+            std::cout << "registerNeedNewNode:: is_empty= " << is_empty << " should_put_in= " << should_put_in << " needed_entity_rank= " 
+                      << needed_entity_rank.first << " subDimEntity= ";
                           
-                for (unsigned k=0; k < subDimEntity.size(); k++)
-                  {
-                    std::cout << " " << subDimEntity[k]->identifier() << " ";
-                  }
-#if 0
-                for (unsigned k=0; k < subDimEntity.size(); k++)
-                  {
-                    std::cout << " " << (stk::mesh::EntityId) subDimEntity[k] << " ";
-                  }
-#endif
-                std::cout << std::endl;
+            for (unsigned k=0; k < subDimEntity.size(); k++)
+              {
+                std::cout << " " << subDimEntity[k]->identifier() << " ";
               }
+#if 0
+            for (unsigned k=0; k < subDimEntity.size(); k++)
+              {
+                std::cout << " " << (stk::mesh::EntityId) subDimEntity[k] << " ";
+              }
+#endif
+            std::cout << std::endl;
+          }
+
+        if (!is_empty)
+          {
+            unsigned& mark = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_mark;
+            if (needNodes)
+              mark |= NR_MARK;
+            else
+              mark |= NR_MARK_NONE;
+          }
+
 
         /// once it's in, the assertion should be:
         ///   owning_elementId < non_owning_elementId && owning_elementRank >= non_owning_elementRank
@@ -598,9 +650,16 @@ namespace stk {
             // new SubDimCellData SDC_DATA_OWNING_ELEMENT_KEY
             // CHECK
 
-            SubDimCellData data(NodeIdsOnSubDimEntityType(needed_entity_rank.second, 0u), stk::mesh::EntityKey(element.entity_rank(), element.identifier()) );
-            putInMap(subDimEntity,  data);
+            unsigned numNewNodes = needed_entity_rank.second;
 
+            NodeIdsOnSubDimEntityType nid_new(numNewNodes, 0u);
+            if (needNodes)
+              nid_new.m_mark |= NR_MARK;
+            else
+              nid_new.m_mark |= NR_MARK_NONE;
+
+            SubDimCellData data(nid_new, stk::mesh::EntityKey(element.entity_rank(), element.identifier()) );
+            putInMap(subDimEntity,  data);
 
             if (0 && DEBUG_NR_UNREF)
               {
@@ -632,7 +691,7 @@ namespace stk {
       ///   1. counts buffer in prep for sending (just does a pack)
       ///   2. packs the buffer (after buffers are alloc'd)
       ///   3. returns the new node after all communications are done
-      bool checkForRemote(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd)
+      bool checkForRemote(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes_notUsed)
       {
         EXCEPTWATCH;
         static SubDimCellData empty_SubDimCellData;
@@ -672,6 +731,7 @@ namespace stk {
             unsigned owning_elementRank = stk::mesh::entity_rank(nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>());
 
             NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            unsigned nidsz = nodeIds_onSE.size();
 
             // error check
             bool isNotOK = (element.identifier() < owning_elementId) && (element.entity_rank() > owning_elementRank) ;
@@ -705,7 +765,11 @@ namespace stk {
                                             element.key()
                                             );
 
-                unsigned nidsz = nodeIds_onSE.size();
+                if (nodeIds_onSE.m_entity_id_vector.size() != nodeIds_onSE.size())
+                  {
+                    throw std::logic_error("NodeRegistry::checkForRemote logic err #0.1");
+                  }
+
                 for (unsigned iid = 0; iid < nidsz; iid++)
                   {
                     if (nodeIds_onSE[iid] == 0)
@@ -713,10 +777,6 @@ namespace stk {
                         throw std::logic_error("logic: hmmm #5.0");
                       }
 
-                    if (nodeIds_onSE.m_entity_id_vector.size() != nodeIds_onSE.size())
-                      {
-                        throw std::logic_error("NodeRegistry::checkForRemote logic err #0.1");
-                      }
                     if (!nodeIds_onSE.m_entity_id_vector[iid])
                       {
                         throw std::logic_error("NodeRegistry::checkForRemote logic err #0.2");
@@ -758,9 +818,9 @@ namespace stk {
         return true; // FIXME
       }
 
-      bool getFromRemote(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd)
+      bool getFromRemote(const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes_notUsed)
       {
-        return checkForRemote(element, needed_entity_rank, iSubDimOrd);
+        return checkForRemote(element, needed_entity_rank, iSubDimOrd, needNodes_notUsed);
       }
 
 
@@ -1058,6 +1118,10 @@ namespace stk {
         }
         if (field_rank != stk::mesh::fem::FEMMetaData::NODE_RANK)
           {
+            if (field_rank == m_eMesh.element_rank())
+              {
+                
+              }
             return;
           }
 
@@ -1445,7 +1509,7 @@ namespace stk {
                           element_p = elementId;
                           if (!element_p)
                             {
-                              throw std::runtime_error("addToExistingParts: bad elem found 2");
+                              throw std::runtime_error("addToExistingPartsNew: bad elem found 2");
                             }
                         }
 
@@ -1488,12 +1552,22 @@ namespace stk {
 
                             if (!c_node)
                               {
-                                std::cout << "addToExistingParts: " <<  nodeIds_onSE[i_nid] << " i_nid= " << i_nid << " nidsz= " << nidsz
-                                          << std::endl;
-                                throw std::runtime_error("addToExistingParts: bad node found 0.3");
+                                // note, this is ok - a null node here can come from a ghost element
+                                if (1)
+                                {
+                                  continue;
+                                }
+                                else
+                                {
+                                  std::cout << "addToExistingPartsNew: " <<  nodeIds_onSE[i_nid] << " i_nid= " << i_nid << " nidsz= " << nidsz
+                                            << std::endl;
+                                  throw std::runtime_error("addToExistingParts: bad node found 0.3");
+                                }
                               }
-
-                            m_eMesh.getBulkData()->change_entity_parts( *c_node, add_parts, remove_parts );
+  
+                            // only try to add to part if I am the owner
+                            if (c_node->owner_rank() == m_eMesh.getParallelRank())
+                              m_eMesh.getBulkData()->change_entity_parts( *c_node, add_parts, remove_parts );
 
                             if (0)
                               {
@@ -1546,7 +1620,13 @@ namespace stk {
       ;
 #endif
 
-      typedef bool (NodeRegistry::*ElementFunctionPrototype)( const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd);
+      /// @param needNodes should be true in general; it's used by registerNeedNewNode to generate actual data or not on the subDimEntity
+      ///   For local refinement, subDimEntity's needs are not always known uniquely by the pair {elementId, iSubDimOrd}; for example, in
+      ///   an element-based marking scheme, the shared face between two elements may be viewed differently.  So, we need the ability to
+      ///   override the default behavior of always creating new nodes on the subDimEntity, but still allow the entity to be created in 
+      ///   the NodeRegistry databse.
+
+      typedef bool (NodeRegistry::*ElementFunctionPrototype)( const stk::mesh::Entity& element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes);
 
       /// this is a helper method that loops over all sub-dimensional entities whose rank matches on of those in @param needed_entity_ranks
       ///    and registers that sub-dimensional entity as needing a new node.
@@ -1584,7 +1664,7 @@ namespace stk {
                 /// note: at this level of granularity we can do single edge refinement, hanging nodes, etc.
                 //SubDimCell_SDSEntityType subDimEntity;
                 //getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
-                (this->*function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                (this ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
 
               } // iSubDimOrd
           } // ineed_ent
@@ -1815,10 +1895,6 @@ namespace stk {
         unsigned proc_rank = comm_all.parallel_rank();
 
         vector<stk::mesh::EntityProc> nodes_to_ghost;
-
-        if (proc_rank == 0)
-          {
-          }
 
         CommDataType buffer_entry;
         NodeIdsOnSubDimEntityType nodeIds_onSE;
@@ -2119,8 +2195,9 @@ namespace stk {
                       {
                         bool isGhost = m_eMesh.isGhostElement(*owning_element);
 
-                        std::cout << "clear_element_owner_data: owning_elementId = " << owning_elementId 
-                                  << " isGhost= " << isGhost << std::endl;
+                        if (0)
+                          std::cout << "clear_element_owner_data: owning_elementId = " << owning_elementId 
+                                    << " isGhost= " << isGhost << std::endl;
 
                         // FIXME
                         NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();

@@ -66,7 +66,7 @@ int test_VectorSpace::test0()
 				  &numSharingProcsPerID, &sharingProc) );
   }
 
-  CHK_ERR( vspace.addDOFs(fieldIDs[localProc_], 1, idType,
+  CHK_ERR( vspace.addDOFs(fieldIDs[localProc_], idType,
 				      1, &ID) );
 
   CHK_ERR( vspace.initComplete() );
@@ -449,13 +449,13 @@ test_VectorSpace::create_VectorSpace(MPI_Comm comm,
   vectorSpace.defineIDTypes(idTypes.size(),
 			    &idTypes[0]);
 
-  vectorSpace.addDOFs(fieldIDs[0], 1,
+  vectorSpace.addDOFs(fieldIDs[0],
 				  idTypes[0],
 				  ids.size(),
 				  &ids[0]);
 
   if (initSolnBothFields) {
-    vectorSpace.addDOFs(fieldIDs[1], 1,
+    vectorSpace.addDOFs(fieldIDs[1],
 				    idTypes[0],
 				    ids.size(),
 				    &ids[0]);

@@ -4,10 +4,10 @@ echo
 echo "Starting nightly Trilinos testing on pu241: `date`"
 echo
 
-export PATH="${PATH}:/opt/casldev/env"
-eval `vera_dev_env.py load casl`
-# eval `vera_dev_env.py load vera` # sets cdash dropsite to casl-dev.ornl.gov
-eval `vera_dev_env.py load intel/12`
+. /usr/share/Modules/init/bash
+module use /opt/casl_vri_dev_env/fissile_four/modules
+module load casl-dev
+module load intel/12.0.4
 umask u=rwx,g=rwx,o=
 
 BASEDIR=/home/casl-vri-admin/Dashboards

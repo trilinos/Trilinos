@@ -206,7 +206,7 @@ cuda_reduce_global_contribute( const DriverType & driver )
 
       const size_type last_block_flag =
         driver.m_global_block_count ==
-        1 + atomicInc( driver.m_scratch_flag , driver.m_global_block_count + 1 );
+        1 + atomicInc(driver.m_scratch_flag,driver.m_global_block_count+1);
 
       // Inform the entire block of the last_block status:
       shared_data[ shared_flag_offset ] = last_block_flag ;
@@ -299,7 +299,7 @@ static void cuda_parallel_reduce( const DriverType driver )
   // then must read the previous value into
   // the to-be-updated thread #0 value.
 
-  if ( driver.m_mapped_block_recycle ) {
+  if ( driver.m_stream_block_recycle ) {
     cuda_reduce_global_recycle< DriverType >( driver );
   }
 
@@ -311,7 +311,7 @@ static void cuda_parallel_reduce( const DriverType driver )
     size_type iwork =
       threadIdx.x + blockDim.x * (
       threadIdx.y + blockDim.y * (
-      blockIdx.x + driver.m_mapped_block_offset ) );
+      blockIdx.x + driver.m_work_block_offset ) );
 
     for ( ; iwork < work_count ; iwork += work_stride ) {
       driver.m_work_functor( iwork , value );
@@ -336,6 +336,7 @@ static void cuda_parallel_reduce( const DriverType driver )
     // If the last block then reduce partial result
     // contributions from all blocks to a single result.
     if ( last_block ) {
+
       cuda_reduce_global_complete< DriverType >( driver );
     }
   }
@@ -382,9 +383,11 @@ public:
   const FinalizeType m_work_finalize ;
   const size_type    m_work_count ;
   const size_type    m_work_stride ;
+
+  const size_type    m_work_block_offset ;
   const size_type    m_global_block_count ;
-  const size_type    m_mapped_block_offset ;
-  const size_type    m_mapped_block_recycle ;
+  const size_type    m_stream_block_offset ;
+  const size_type    m_stream_block_recycle ;
 
   // Scratch space for multi-block reduction
   // m_scratch_warp  == number of warps required
@@ -427,12 +430,12 @@ public:
   __device__
   size_type * scratch_data_for_block() const
   {
-    const size_type mapped_block_id = m_mapped_block_offset + blockIdx.x ;
+    const size_type stream_block_id = m_stream_block_offset + blockIdx.x ;
 
     return m_scratch_space +
       shared_data_offset(
-        mapped_block_id &  WarpIndexMask  /* for threadIdx.x */ ,
-        mapped_block_id >> WarpIndexShift /* for threadIdx.y */ );
+        stream_block_id &  WarpIndexMask  /* for threadIdx.x */ ,
+        stream_block_id >> WarpIndexShift /* for threadIdx.y */ );
   }
 
 
@@ -442,22 +445,24 @@ public:
                   const FinalizeType & finalize ,
                   const size_type      work_count ,
                   const size_type      work_stride ,
-                  const size_type      grid_block_count ,
+                  const size_type      work_block_offset ,
                   const size_type      global_block_count ,
-                  const size_type      mapped_block_offset ,
-                  const size_type      mapped_block_recycle )
+                  const size_type      stream_block_count ,
+                  const size_type      stream_block_offset ,
+                  const size_type      stream_block_recycle )
     : m_work_functor(  functor )
     , m_work_finalize( finalize )
     , m_work_count(    work_count )
     , m_work_stride(   work_stride )
+    , m_work_block_offset( work_block_offset )
     , m_global_block_count(   global_block_count )
-    , m_mapped_block_offset(  mapped_block_offset )
-    , m_mapped_block_recycle( mapped_block_recycle )
+    , m_stream_block_offset(  stream_block_offset )
+    , m_stream_block_recycle( stream_block_recycle )
     , m_scratch_space( device_type::reduce_multiblock_scratch_space() )
     , m_scratch_flag(  device_type::reduce_multiblock_scratch_flag() )
-    , m_scratch_warp( ( grid_block_count >> WarpIndexShift ) +
-                      ( grid_block_count &  WarpIndexMask ? 1 : 0 ) )
-    , m_scratch_upper( ValueWordStride * ( grid_block_count + m_scratch_warp - 1 ) )
+    , m_scratch_warp( ( stream_block_count >> WarpIndexShift ) +
+                      ( stream_block_count &  WarpIndexMask ? 1 : 0 ) )
+    , m_scratch_upper( ValueWordStride * ( stream_block_count + m_scratch_warp - 1 ) )
   {}
 
 public:
@@ -504,7 +509,9 @@ public:
 
     device_type::set_dispatch_functor();
 
-    self_type driver( functor , finalize , work_count , work_stride , grid.x , grid.x , 0 , 0 );
+    self_type driver( functor , finalize ,
+                      work_count , work_stride , 0 ,
+                      grid.x , grid.x , 0 , 0 );
 
     device_type::clear_dispatch_functor();
 
@@ -583,12 +590,14 @@ public:
   virtual
   void execute( const FinalizeType & finalize ,
                 const size_type      block_count ,
+                const size_type      block_offset ,
                 const size_type      warp_count ,
                 const size_type      shmem_size ,
                 cudaStream_t       & cuda_stream ,
                 const size_type      global_block_count ,
-                const size_type      mapped_block_offset ,
-                const size_type      mapped_block_recycle ) const = 0 ;
+                const size_type      stream_block_count ,
+                const size_type      stream_block_offset ,
+                const size_type      stream_block_recycle ) const = 0 ;
 };
 
 template < class FunctorType , class ReduceTraits , class FinalizeType >
@@ -616,24 +625,29 @@ public:
   virtual
   void execute( const FinalizeType & finalize ,
                 const size_type      block_count ,
+                const size_type      block_offset ,
                 const size_type      warp_count ,
                 const size_type      shmem_size ,
                 cudaStream_t       & cuda_stream ,
                 const size_type      global_block_count ,
-                const size_type      mapped_block_offset ,
-                const size_type      mapped_block_recycle ) const
+                const size_type      stream_block_count ,
+                const size_type      stream_block_offset ,
+                const size_type      stream_block_recycle ) const
   {
     typedef ParallelReduce< FunctorType , ReduceTraits , FinalizeType , DeviceCuda >  driver_type ;
 
     const dim3 grid( block_count , 1 , 1 );
     const dim3 block( Impl::DeviceCudaTraits::WarpSize , warp_count , 1 );
-    const size_type work_stride = block.x * block.y * grid.x * base_type::m_stream_count ;
+    const size_type work_stride =
+      block.x * block.y * grid.x * base_type::m_stream_count ;
 
     DeviceCuda::set_dispatch_functor();
 
-    driver_type driver( m_functor , finalize , m_work_count , work_stride ,
-                        block_count , global_block_count ,
-                        mapped_block_offset , mapped_block_recycle );
+    driver_type driver( m_functor , finalize ,
+                        m_work_count , work_stride , block_offset ,
+                        global_block_count ,
+                        std::min( global_block_count , stream_block_count ),
+                        stream_block_offset , stream_block_recycle );
 
     device_type::clear_dispatch_functor();
 
@@ -754,11 +768,14 @@ public:
 
     typename MemberVector::iterator m ;
 
+    const size_type stream_block_count = m_blocks_per_stream * m_stream_count ;
+
     size_type global_block_count = 0 ;
 
     for ( m = m_member_functors.begin() ; m != m_member_functors.end() ; ++m ) {
       global_block_count += (*m)->m_stream_count ;
     }
+
     global_block_count *= m_blocks_per_stream ;
 
     size_type k = 0 ;
@@ -768,13 +785,23 @@ public:
 
       for ( size_type j = 0 ; j < member.m_stream_count ; ++j , ++k ) {
 
-        const size_type work_block_offset  = m_blocks_per_stream * j ;
-        const size_type work_block_recycle = m_stream_count <= k ;
+        // This functor may span multiple streams,
+        // provide a block offset for the multiple streams
+        const size_type work_block_offset    = m_blocks_per_stream * j ;
 
-        cudaStream_t & s = device_type::stream( k % m_stream_count );
+        const size_type stream_offset = k % m_stream_count ;
+        const size_type stream_block_offset =
+          m_blocks_per_stream * stream_offset ;
 
-        member.execute( result , m_blocks_per_stream , m_warps_per_block , m_shmem_size , s ,
-                        global_block_count , work_block_offset , work_block_recycle );
+        const size_type stream_block_recycle = m_stream_count <= k ;
+
+        cudaStream_t & s = device_type::stream( stream_offset );
+
+        member.execute( result , m_blocks_per_stream , work_block_offset ,
+                        m_warps_per_block , m_shmem_size , s ,
+                        global_block_count ,
+                        stream_block_count ,
+                        stream_block_offset , stream_block_recycle );
       }
     }
   }

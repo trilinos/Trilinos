@@ -296,7 +296,7 @@ void generate_element_ids(RegionVector &part_mesh,
   // the index will always? increase for increasing part numbers...
   std::vector<std::pair<int,int> > index(global_element_map.size());
   for (size_t i=0; i < index.size(); i++) {
-    index[i] = std::make_pair(global_element_map[i],i);
+    index[i] = std::make_pair(global_element_map[i],(int)i);
   }
 
   std::sort(index.begin(), index.end());

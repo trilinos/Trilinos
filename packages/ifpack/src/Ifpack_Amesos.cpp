@@ -46,6 +46,7 @@ static bool FirstTime = true;
 Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix_in) :
   Matrix_(Teuchos::rcp( Matrix_in, false )),
   Label_("Amesos_Klu"),
+  IsEmpty_(false),
   IsInitialized_(false),
   IsComputed_(false),
   UseTranspose_(false),
@@ -66,6 +67,7 @@ Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix_in) :
 Ifpack_Amesos::Ifpack_Amesos(const Ifpack_Amesos& rhs) :
   Matrix_(Teuchos::rcp( &rhs.Matrix(), false )),
   Label_(rhs.Label()),
+  IsEmpty_(false),
   IsInitialized_(false),
   IsComputed_(false),
   NumInitialize_(rhs.NumInitialize()),
@@ -111,6 +113,7 @@ int Ifpack_Amesos::SetParameters(Teuchos::ParameterList& List_in)
 int Ifpack_Amesos::Initialize()
 {
 
+  IsEmpty_ = false;
   IsInitialized_ = false;
   IsComputed_ = false;
 
@@ -132,12 +135,17 @@ int Ifpack_Amesos::Initialize()
   if (Matrix_->NumGlobalRows() != Matrix_->NumGlobalCols())
     IFPACK_CHK_ERR(-1);
 
-  // at least one nonzero
-  //if (Matrix_->NumMyNonzeros() == 0) 
-  //  IFPACK_CHK_ERR(-1);
+  // if the matrix has a dimension of 0, this is an empty preconditioning object.
+  if (Matrix_->NumGlobalRows() == 0) {
+    IsEmpty_ = true;
+    IsInitialized_ = true;
+    ++NumInitialize_;
+    return(0);
+  }
 
   Problem_->SetOperator(const_cast<Epetra_RowMatrix*>(Matrix_.get()));
 
+  // create timer, which also starts it.
   if (Time_ == Teuchos::null)
     Time_ = Teuchos::rcp( new Epetra_Time(Comm()) );
 
@@ -188,6 +196,12 @@ int Ifpack_Amesos::Compute()
   if (!IsInitialized())
     IFPACK_CHK_ERR(Initialize());
 
+  if (IsEmpty_) {
+    IsComputed_ = true;
+    ++NumCompute_;
+    return(0);
+  }
+
   IsComputed_ = false;
   Time_->ResetStartTime();
 
@@ -227,6 +241,10 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 int Ifpack_Amesos::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
+  if (IsEmpty_) {
+    ++NumApplyInverse_;
+    return(0);
+  }
 
   if (IsComputed() == false)
     IFPACK_CHK_ERR(-1);

@@ -86,6 +86,11 @@ SerializeIO::SerializeIO(
 
   else if (s_groupFactor > 0) {
     if (m_manualOwner == -1) {
+#ifdef HAVE_MPI
+      do {
+	MPI_Barrier(util.communicator());
+      } while (++s_owner != s_groupRank);
+#endif
       m_databaseIO->openDatabase();
     }
     else {
@@ -110,6 +115,13 @@ SerializeIO::~SerializeIO()
   else if (s_groupFactor > 0) {
     if (m_manualOwner == -1) {
       m_databaseIO->closeDatabase();
+      s_owner = s_groupRank;
+#ifdef HAVE_MPI
+      const Ioss::ParallelUtils util = m_databaseIO->util();
+      do {
+	MPI_Barrier(util.communicator());
+      } while (++s_owner != s_groupSize);
+#endif
       s_owner = -1;
     }
     else {

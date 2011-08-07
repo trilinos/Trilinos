@@ -329,7 +329,7 @@ Epetra_Operator::ApplyInverse;
   }
   else
   {
-    $result = convertEpetraOperatorToPython(&$1);
+    $result = PyTrilinos::convertEpetraOperatorToPython(&$1);
   }
 }
 %typemap(out) Teuchos::RCP< const Epetra_Operator >
@@ -340,20 +340,20 @@ Epetra_Operator::ApplyInverse;
   }
   else
   {
-    $result = convertEpetraOperatorToPython(&$1);
+    $result = PyTrilinos::convertEpetraOperatorToPython(&$1);
   }
 }
 %typemap(directorin) Epetra_Operator &
 {
   Teuchos::RCP< Epetra_Operator > *smartinput = new
     Teuchos::RCP< Epetra_Operator >(&$1_name, false);
-  $input = convertEpetraOperatorToPython(smartinput);
+  $input = PyTrilinos::convertEpetraOperatorToPython(smartinput);
   delete smartinput;
 }
 #else
 %typemap(directorin) Epetra_Operator &
 {
-  $input = convertEpetraOperatorToPython(&$1_name, SWIG_POINTER_OWN);
+  $input = PyTrilinos::convertEpetraOperatorToPython(&$1_name, SWIG_POINTER_OWN);
 }
 #endif
 

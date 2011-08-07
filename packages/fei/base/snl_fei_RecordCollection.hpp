@@ -15,6 +15,7 @@
 #include <fei_Record.hpp>
 
 #include <map>
+#include <vector>
 
 #undef fei_file
 #define fei_file "snl_fei_RecordCollection.hpp"
@@ -39,54 +40,47 @@ namespace snl_fei {
     /** Destructor */
     virtual ~RecordCollection();
 
-    /** alias for map container */
-    typedef std::map<int,fei::Record<int>*> map_type;
-
     /** initialize records for specified IDs */
     void initRecords(int numIDs,
 		     const int* IDs,
 		     std::vector<fei::FieldMask*>& fieldMasks,
-		     fei::Record<int>** records=NULL);
+		     int* recordLocalIDs=NULL);
 
     /** initialize records for specified IDs with specified fieldID */
     void initRecords(int fieldID,
 		    int fieldSize,
-		    int numInstances,
 		    int numIDs,
 		    const int* IDs,
 		    std::vector<fei::FieldMask*>& fieldMasks,
-		    bool skipIDsWithThisField=true);
-
-    /** initialize records for specified IDs with specified fieldID */
-    void initRecords(int fieldID,
-		    int fieldSize,
-		    int numInstances,
-		    int numIDs,
-		    const int* IDs,
-		    std::vector<fei::FieldMask*>& fieldMasks,
-		    fei::Record<int>** records,
-		    bool skipIDsWithThisField=true);
+		    int* recordLocalIDs=NULL);
 
     /** set owner-proc attribute for specified IDs, to be the
        lowest-numbered sharing processor */
     void setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs);
 
     /** Query the number of records in this collection */
-    size_t getNumRecords()
+    size_t getNumRecords() const
     {
-      return( records_.size() );
+      return( m_records.size() );
     }
 
-    /** Get the map containing the records */
-    map_type& getRecords()
+    /** Get the map of global-to-local ids */
+    std::map<int,int>& getGlobalToLocalMap()
+    { return m_global_to_local; }
+
+    const std::map<int,int>& getGlobalToLocalMap() const
+    { return m_global_to_local; }
+
+    /** Get the vector containing the records */
+    std::vector<fei::Record<int> >& getRecords()
     {
-      return( records_ );
+      return( m_records );
     }
 
-    /** Get the map containing the records */
-    const map_type& getRecords() const
+    /** Get the vector containing the records */
+    const std::vector<fei::Record<int> >& getRecords() const
     {
-      return( records_ );
+      return( m_records );
     }
 
     /** Get record with the specified ID. Returns NULL if not found. */
@@ -94,6 +88,21 @@ namespace snl_fei {
 
     /** Get record with the specified ID. Returns NULL if not found. */
     const fei::Record<int>* getRecordWithID(int ID) const;
+
+    fei::Record<int>* getRecordWithLocalID(int lid)
+    { return &m_records[lid]; }
+
+    const fei::Record<int>* getRecordWithLocalID(int lid) const
+    { return &m_records[lid]; }
+
+    int getLocalID(int global_id) const
+    {
+      std::map<int,int>::const_iterator iter = m_global_to_local.find(global_id);
+      if (iter == m_global_to_local.end()) {
+        return -1;
+      }
+      return iter->second;
+    }
 
     /** Get global equation index for specified ID */
     int getGlobalIndex(int ID,
@@ -108,18 +117,17 @@ namespace snl_fei {
 
     /** specify an output-stream for debug information */
     void setDebugOutput(FEI_OSTREAM* dbgOut)
-      {
-	dbgOut_ = dbgOut;
-	debugOutput_ = true;
-      }
+    {
+      dbgOut_ = dbgOut;
+      debugOutput_ = true;
+    }
 
   private:
 
-    map_type records_;
+    std::vector<fei::Record<int> > m_records;
+    std::map<int,int> m_global_to_local;
 
     int localProc_;
-
-    fei_Pool_alloc<fei::Record<int> > recordPool_;
 
     bool debugOutput_;
     FEI_OSTREAM* dbgOut_;

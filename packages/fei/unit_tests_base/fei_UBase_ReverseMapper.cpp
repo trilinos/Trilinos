@@ -36,9 +36,9 @@ TEUCHOS_UNIT_TEST(ReverseMapper, test1)
   std::vector<int> ids(10);
   for(size_t i=0; i<ids.size(); ++i) ids[i] = i;
 
-  vspace.addDOFs(fieldIDs[0], 1, idTypes[0], ids.size(), &ids[0]);
-  vspace.addDOFs(fieldIDs[1], 1, idTypes[0], ids.size(), &ids[0]);
-  vspace.addDOFs(fieldIDs[0], 1, idTypes[1], ids.size(), &ids[0]);
+  vspace.addDOFs(fieldIDs[0], idTypes[0], ids.size(), &ids[0]);
+  vspace.addDOFs(fieldIDs[1], idTypes[0], ids.size(), &ids[0]);
+  vspace.addDOFs(fieldIDs[0], idTypes[1], ids.size(), &ids[0]);
 
   vspace.initComplete();
 

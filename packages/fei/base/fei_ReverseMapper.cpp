@@ -30,15 +30,11 @@ ReverseMapper::ReverseMapper(const VectorSpace& vspace)
       throw std::runtime_error("fei::ReverseMapper ERROR, failed to retrieve record-collection.");
     }
 
-    const snl_fei::RecordCollection::map_type&
-        recordmap = recordcollection->getRecords();
+    const std::vector<fei::Record<int> >&
+        records = recordcollection->getRecords();
 
-    snl_fei::RecordCollection::map_type::const_iterator
-      r_iter = recordmap.begin(),
-      r_end  = recordmap.end();
-
-    for(; r_iter != r_end; ++r_iter) {
-      const fei::Record<int>* record = r_iter->second;
+    for(size_t i=0; i<records.size(); ++i) {
+      const fei::Record<int>* record = &records[i];
 
       const fei::FieldMask* fm = record->getFieldMask();
       const std::vector<int>& fieldIDs = fm->getFieldIDs();
@@ -47,8 +43,8 @@ ReverseMapper::ReverseMapper(const VectorSpace& vspace)
       int offsetIntoEqnNumbers = record->getOffsetIntoEqnNumbers();
 
       for(size_t i=0; i<fieldIDs.size(); ++i) {
-        int offset2 = 0, numInstances = 1;
-        fm->getFieldEqnOffset(fieldIDs[i], offset2, numInstances);
+        int offset2 = 0;
+        fm->getFieldEqnOffset(fieldIDs[i], offset2);
 
         EqnRecord erec;
         erec.IDType = idTypes[idt];

@@ -60,6 +60,8 @@ public:
   typedef DeviceCuda             device_type ;
   typedef device_type::size_type size_type ;
 
+  typedef MultiVectorView< value_type , DeviceHost > HostView ;
+
   enum { Contiguous = false };
 
   /*------------------------------------------------------------------*/

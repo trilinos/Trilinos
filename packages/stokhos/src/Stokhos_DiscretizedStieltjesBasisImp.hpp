@@ -51,6 +51,27 @@ DiscretizedStieltjesBasis(const std::string& label,
   this->setup();
 }
 
+template <typename ordinal_type, typename value_type>
+Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
+DiscretizedStieltjesBasis(const ordinal_type& p, 
+			  const DiscretizedStieltjesBasis& basis) :
+  RecurrenceBasis<ordinal_type,value_type>(p, basis),
+  scaleFactor(basis.scaleFactor),
+  leftEndPt_(basis.leftEndPt_),
+  rightEndPt_(basis.rightEndPt_),
+  weightFn_(basis.weightFn_)
+{   
+  // Set up quadrature points for discretized stieltjes procedure
+  Teuchos::RCP<const Stokhos::LegendreBasis<ordinal_type,value_type> > quadBasis = 
+    Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(this->p));
+  quadBasis->getQuadPoints(200*this->p, quad_points, quad_weights, quad_values);
+
+  // Compute coefficients in 3-term recurrsion
+  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);
+
+  // Setup rest of recurrence basis
+  this->setup();
+}
 
 template <typename ordinal_type, typename value_type>
 Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
@@ -200,6 +221,5 @@ Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> >
 Stokhos::DiscretizedStieltjesBasis<ordinal_type, value_type>::
 cloneWithOrder(ordinal_type p) const
 {
-   return Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>(this->name,p,this->weightFn_,
-                        this->leftEndPt_,this->rightEndPt_,this->normalize));
+   return Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>(p,*this));
 }

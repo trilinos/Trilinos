@@ -275,20 +275,35 @@ namespace Belos {
     //! @name Status methods
     //@{ 
     
-    //! \brief Get the current iteration count.
+    //! Get the current iteration count.
     int getNumIters() const { return iter_; }
     
-    //! \brief Reset the iteration count.
+    //! Reset the iteration count.
     void resetNumIters( int iter = 0 ) { iter_ = iter; }
     
-    //! Get the norms of the residuals native to the solver.
-    //! \return A std::vector of length blockSize containing the native residuals.
+    /// \brief Get the norms of the "native" residual vectors.
+    ///
+    /// If norms != NULL, fill *norms with the native residual norms.
+    /// There are numRHS_ of them.  *norms will be resized if it has
+    /// too few entries to hold the data.
+    ///
+    /// For an explanation of "native" vs. "exact" (also known as
+    /// "implicit" vs. "explicit") residuals, see the documentation of
+    /// \c PseudoBlockGmresSolMgr::isLOADetected().  In brief:
+    /// "Native" residuals are cheaper to compute than "exact"
+    /// residuals, but the two may differ, especially when using a
+    /// left preconditioner. 
+    ///
+    /// \return Teuchos::null (always, regardless whether norms ==
+    ///   NULL).  We only return something in order to satisfy the
+    ///   Iteration interface.  \c PseudoBlockGmresSolMgr knows that
+    ///   this method always returns null.
     Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
     
     //! Get the current update to the linear system.
     /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
       This method forces its computation.  Other solvers, like CG, update the solution
-      each iteration, so this method will return a zero std::vector indicating that the linear
+      each iteration, so this method will return a zero vector indicating that the linear
       problem contains the current solution.
     */
     Teuchos::RCP<MV> getCurrentUpdate() const;
@@ -359,7 +374,7 @@ namespace Belos {
     std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > > sn_;
     std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,MagnitudeType> > > cs_;
     
-    // Pointers to a work std::vector used to improve aggregate performance.
+    // Pointers to a work vector used to improve aggregate performance.
     Teuchos::RCP<MV> U_vec_, AU_vec_;    
 
     // Pointers to the current right-hand side and solution multivecs being solved for.
@@ -481,21 +496,27 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the native residuals stored in this iteration.  
-  // Note:  No residual std::vector will be returned by Gmres.
+  // Note:  No residual vector will be returned by Gmres.
   template <class ScalarType, class MV, class OP>
-  Teuchos::RCP<const MV> PseudoBlockGmresIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
+  Teuchos::RCP<const MV> 
+  PseudoBlockGmresIter<ScalarType,MV,OP>::
+  getNativeResiduals (std::vector<MagnitudeType> *norms) const 
   {
-    //
-    // NOTE: Make sure the incoming std::vector is the correct size!
-    //
-    if ( norms && (int)norms->size() < numRHS_ )                         
-      norms->resize( numRHS_ );                                          
+    typedef typename Teuchos::ScalarTraits<ScalarType> STS;
 
-    if (norms) {
-      Teuchos::BLAS<int,ScalarType> blas;
-      for (int j=0; j<numRHS_; j++) {
-        (*norms)[j] = Teuchos::ScalarTraits<ScalarType>::magnitude( (*Z_[j])(curDim_) );
-      }
+    if (norms)
+      { // Resize the incoming std::vector if necessary.  The type
+	// cast avoids the compiler warning resulting from a signed /
+	// unsigned integer comparison.
+	if (static_cast<int> (norms->size()) < numRHS_)
+	  norms->resize (numRHS_); 
+
+	Teuchos::BLAS<int, ScalarType> blas;
+	for (int j = 0; j < numRHS_; ++j) 
+	  {
+	    const ScalarType curNativeResid = (*Z_[j])(curDim_);
+	    (*norms)[j] = STS::magnitude (curNativeResid);
+	  }
     }
     return Teuchos::null;
   }
@@ -537,11 +558,11 @@ namespace Belos {
     // If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
     V_.resize(numRHS_);
     for (int i=0; i<numRHS_; ++i) {
-      // Create a new std::vector if we need to.
+      // Create a new vector if we need to.
       if (V_[i] == Teuchos::null || MVT::GetNumberVecs(*V_[i]) < numBlocks_+1 ) {
         V_[i] = MVT::Clone(*tmp,numBlocks_+1);
       }
-      // Check that the newstate std::vector is consistent.
+      // Check that the newstate vector is consistent.
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[i]) != MVT::GetVecLength(*V_[i]),
                           std::invalid_argument, errstr );
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[i]) < newstate.curDim,
@@ -572,7 +593,7 @@ namespace Belos {
     // Check size of Z
     Z_.resize(numRHS_);
     for (int i=0; i<numRHS_; ++i) {
-      // Create a std::vector if we need to.
+      // Create a vector if we need to.
       if (Z_[i] == Teuchos::null) {
 	Z_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>() );
       }
@@ -580,7 +601,7 @@ namespace Belos {
 	Z_[i]->shapeUninitialized(numBlocks_+1, 1); 
       }
       
-      // Check that the newstate std::vector is consistent.
+      // Check that the newstate vector is consistent.
       TEST_FOR_EXCEPTION(newstate.Z[i]->numRows() < curDim_, std::invalid_argument, errstr);
       
       // Put data into Z_, make sure old information is not still hanging around.
@@ -695,7 +716,7 @@ namespace Belos {
     int searchDim = numBlocks_;
     //
     // Associate each initial block of V_[i] with U_vec[i]
-    // Reset the index std::vector (this might have been changed if there was a restart)
+    // Reset the index vector (this might have been changed if there was a restart)
     //
     std::vector<int> index(1);
     std::vector<int> index2(1);
@@ -734,7 +755,7 @@ namespace Belos {
 	index[i] = i; 
       }
       //
-      // Orthogonalize next Krylov std::vector for each right-hand side.
+      // Orthogonalize next Krylov vector for each right-hand side.
       //
       for (int i=0; i<numRHS_; ++i) {
 	//
@@ -764,7 +785,7 @@ namespace Belos {
 	//
 	ortho_->projectAndNormalize( *V_new, h_array, r_new, V_array );
 	//
-	// NOTE:  V_new is a copy of the iter+1 std::vector in V_[i], so the normalized std::vector has to be
+	// NOTE:  V_new is a copy of the iter+1 vector in V_[i], so the normalized vector has to be
 	// be copied back in when V_new is changed.  
 	//
 	index2[0] = curDim_+1;
@@ -773,7 +794,7 @@ namespace Belos {
       }
       // 
       // Now _AU_vec is the new _U_vec, so swap these two vectors.
-      // NOTE: This alleviates the need for allocating a std::vector for AU_vec each iteration.
+      // NOTE: This alleviates the need for allocating a vector for AU_vec each iteration.
       // 
       Teuchos::RCP<MV> tmp_AU_vec = U_vec;
       U_vec = AU_vec;

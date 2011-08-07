@@ -3,15 +3,45 @@ using namespace std;
 
 int main(int argc, char** argv) {
 
-	vector<int> mt;
-	
 	if(argc>1)
 	{	
-		matcher pm(argv[1]);
-		mt=pm.get_matching();
-		/*for(int i=0;i<32;i++)
-			cout<<mt[i]<<" ";
-		cout<<endl;*/
+		int rc=0;
+		int localProc = 0;
+		
+		#ifdef HAVE_EPETRAEXT
+		/*#ifdef HAVE_MPI
+			int numProcs;
+		 	MPI_Init(&argc, &argv);
+		  	MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
+		  	MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+		  	const Epetra_MpiComm Comm(MPI_COMM_WORLD);
+		  	const Epetra_MpiComm Comm;
+		#else*/
+		  const Epetra_SerialComm Comm;
+		//#endif
+
+		  Epetra_CrsMatrix *matrixPtr;
+		  rc = EpetraExt::MatrixMarketFileToCrsMatrix(argv[1], Comm, matrixPtr);
+		  
+		  if (rc < 0){
+			 if (localProc==0){
+				cout << "error reading input file" << std::endl << "FAIL" << std::endl;
+			 }
+			 exit(1);
+		  }
+		  else
+		  		cout<<"Crs Matrix Created!!!...."<<endl;
+		#else
+		  fail = 0;
+		  if (localProc == 0){
+			 cout << "Test not run because it requires EPETRA_EXT" << std::endl;
+		  }
+		#endif
+		
+		Teuchos::ParameterList paramlist;
+		paramlist.set(argv[2],4);
+		Isorropia_EpetraMatcher pm(matrixPtr,paramlist);
+		pm.match();
 	}
 	else
 		cout<<"Specify input file.."<<endl;

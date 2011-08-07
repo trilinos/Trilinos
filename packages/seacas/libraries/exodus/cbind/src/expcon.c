@@ -75,7 +75,6 @@ int ex_put_coord_names (int   exoid,
                         char *coord_names[])
 {
   int status;
-  size_t i;
   int ndimdim, varid;
   size_t num_dim;
   char errmsg[MAX_ERR_LENGTH];

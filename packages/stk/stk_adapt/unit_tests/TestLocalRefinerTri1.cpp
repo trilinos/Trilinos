@@ -32,7 +32,7 @@ namespace stk {
     }
 
     void TestLocalRefinerTri1::
-    applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
@@ -82,7 +82,7 @@ namespace stk {
               // arbitrarily mark the first edge if no edges are marked
               if (num_marked <= 1)
                 {
-                  (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], which_edge_marked );
+                  (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], which_edge_marked, true );
                 }
               
             }

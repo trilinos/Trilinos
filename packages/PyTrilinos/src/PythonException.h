@@ -63,6 +63,9 @@
 #include <Python.h>
 #include <stdexcept>
 
+namespace PyTrilinos
+{
+
 class PythonException : public std::runtime_error
 {
 public:
@@ -76,5 +79,7 @@ private:
   PyObject * errorTraceback;
   char     * errorMsg;
 };
+
+}  // Namespace PyTrilinos
 
 #endif

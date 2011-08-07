@@ -604,4 +604,5 @@ int ex_put_name_internal(int exoid, int varid, size_t index, const char *name,
 int ex_put_names_internal(int exoid, int varid, size_t count, char**names,
 			  ex_entity_type type, const char *subtype, const char *routine);
 void ex_trim_internal(char *name);
+void ex_update_max_name_length(int exoid, int length);
 #endif

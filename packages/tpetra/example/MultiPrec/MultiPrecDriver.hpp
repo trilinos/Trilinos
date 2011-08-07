@@ -89,8 +89,12 @@ class MultiPrecDriver {
       // check that residual is as requested
       *out << "|b - A*x|/|b|: " << enrm / bnrm << endl;
       const double tolerance = db->get<double>("tolerance");
-      if (enrm / bnrm > tolerance) {
-        testPassed = false;
+      if (MPStack::bottom) {
+        // give a little slack
+        if (enrm / bnrm > 5*tolerance) testPassed = false;
+      }
+      else {
+        if (enrm / bnrm > tolerance) testPassed = false;
       }
     }
 
@@ -119,9 +123,13 @@ class MultiPrecDriver {
       // check that residual is as requested
       *out << "|b - A*x|/|b|: " << enrm / bnrm << endl;
       const double tolerance = db->get<double>("tolerance");
-      if (enrm / bnrm > tolerance) {
-        testPassed = false;
-      } 
+      if (MPStack::bottom) {
+        // give a little slack
+        if (enrm / bnrm > 5*tolerance) testPassed = false;
+      }
+      else {
+        if (enrm / bnrm > tolerance) testPassed = false;
+      }
     }    
          
          

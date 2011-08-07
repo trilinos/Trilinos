@@ -97,27 +97,6 @@ namespace Stokhos {
     //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
     //@{ 
 
-    //! Get sparse grid rule number as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual ordinal_type getRule() const { return 4; }
-
-    //! Get quadrature weight factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadWeightFactor() const { return 0.5; }
-
-    //! Get quadrature point factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadPointFactor() const { return 1.0; }
-
     /*! 
      * \brief Clone this object with the option of building a higher order
      * basis.
@@ -145,6 +124,9 @@ namespace Stokhos {
 				  Teuchos::Array<value_type>& delta) const;
 
     //@}
+
+    //! Copy constructor with specified order
+    JacobiBasis(ordinal_type p, const JacobiBasis& basis);
 
   private:
 

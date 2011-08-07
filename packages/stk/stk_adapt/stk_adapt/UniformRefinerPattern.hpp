@@ -201,6 +201,8 @@ namespace stk {
       /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
       void set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement, unsigned ordinal, unsigned *numChild=0);
 
+      void interpolateElementFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement);
+
       /// optionally overridden (must be overridden if sidesets are to work properly) to provide info on which sub pattern
       /// should be used to refine side sets (and edge sets)
       virtual void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
@@ -962,6 +964,8 @@ namespace stk {
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 
+            interpolateElementFields(eMesh, element, newElement);
+
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
                 stk::mesh::EntityId eid = elems[ielem][inode];
@@ -1471,6 +1475,8 @@ namespace stk {
               }
 
             set_parent_child_relations(eMesh, element, newElement, iChild);
+
+            interpolateElementFields(eMesh, element, newElement);
 
             element_pool++;
           }
@@ -2734,6 +2740,7 @@ namespace stk {
 // local refinement - for testing only right now
 #include "RefinerPattern_Tri3_Tri3_2.hpp"
 #include "RefinerPattern_Tri3_Tri3_N.hpp"
+#include "RefinerPattern_Tet4_Tet4_N.hpp"
 
 
 namespace stk {
@@ -2794,6 +2801,8 @@ namespace stk {
 
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,      2  >            Local_Tri3_Tri3_2;
     typedef  RefinerPattern<shards::Triangle<3>,      shards::Triangle<3>,     -1  >            Local_Tri3_Tri3_N;
+
+    typedef  RefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,  -1  >            Local_Tet4_Tet4_N;
 
   }
 }

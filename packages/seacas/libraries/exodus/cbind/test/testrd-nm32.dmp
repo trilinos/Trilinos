@@ -1,0 +1,1130 @@
+
+after ex_open
+         I/O word size 4
+after ex_get_init, error =   0
+database parameters:
+title =  'This is a test'
+num_dim =   3
+num_nodes =  33
+num_elem =   7
+num_elem_blk =   7
+num_node_sets =   2
+num_side_sets =   5
+
+after ex_get_coord, error =   0
+x coords = 
+  0.0
+  1.0
+  1.0
+  0.0
+  1.0
+  2.0
+  2.0
+  1.0
+  0.0
+ 10.0
+ 10.0
+  1.0
+  1.0
+ 10.0
+ 10.0
+  1.0
+  0.0
+  1.0
+ 10.0
+  7.0
+  3.0
+  6.0
+  0.0
+  3.0
+  6.0
+  0.0
+  2.7
+  6.0
+  5.7
+  3.7
+  0.0
+ 10.0
+ 10.0
+y coords = 
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  0.0
+  0.0
+ 10.0
+ 10.0
+ 10.0
+ 10.0
+  0.0
+  0.0
+  0.0
+  5.0
+  0.0
+  0.0
+  0.0
+  2.0
+  2.0
+  2.0
+  1.7
+  1.7
+  1.7
+  0.0
+  0.0
+  0.0
+ 10.0
+z coords = 
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+-10.0
+-10.0
+  0.0
+  0.0
+-10.0
+-10.0
+  0.0
+  5.0
+  2.0
+  3.0
+  6.0
+  0.0
+  0.0
+  6.0
+  2.0
+  0.0
+  2.7
+  3.3
+  1.7
+  2.3
+  0.0
+  0.0
+ 10.0
+
+after ex_get_coord_names, error =   0
+x coord name = 'X coordinate name that is padded'
+y coord name = 'Y coordinate name that is padded'
+z coord name = 'Z coordinate name that is padded'
+num nodal attributes = 2
+ after ex_get_attr_names, error = 0
+nodal attribute 0 = 'Node_attr_1'
+  0.0
+  1.0
+  1.0
+  0.0
+  1.0
+  2.0
+  2.0
+  1.0
+  0.0
+ 10.0
+ 10.0
+  1.0
+  1.0
+ 10.0
+ 10.0
+  1.0
+  0.0
+  1.0
+ 10.0
+  7.0
+  3.0
+  6.0
+  0.0
+  3.0
+  6.0
+  0.0
+  2.7
+  6.0
+  5.7
+  3.7
+  0.0
+ 10.0
+ 10.0
+nodal attribute 1 = 'Node_attr_2'
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  0.0
+  0.0
+ 10.0
+ 10.0
+ 10.0
+ 10.0
+  0.0
+  0.0
+  0.0
+  5.0
+  0.0
+  0.0
+  0.0
+  2.0
+  2.0
+  2.0
+  1.7
+  1.7
+  1.7
+  0.0
+  0.0
+  0.0
+ 10.0
+
+after ex_get_map, error =   0
+elem_map(0) = 1 
+elem_map(1) = 2 
+elem_map(2) = 3 
+elem_map(3) = 4 
+elem_map(4) = 5 
+elem_map(5) = 6 
+elem_map(6) = 7 
+
+after ex_get_elem_blk_ids, error =   0
+
+after ex_get_names, error =   0
+
+after ex_get_elem_block, error = 0
+element block id = 10
+element type = 'quad'
+num_elem_in_block =  1
+num_nodes_per_elem =  4
+num_attr =  1
+name = 'Very long name for block_1 that'
+
+after ex_get_elem_block, error = 0
+element block id = 11
+element type = 'quad'
+num_elem_in_block =  1
+num_nodes_per_elem =  4
+num_attr =  1
+name = 'Very long name for block_2 that'
+
+after ex_get_elem_block, error = 0
+element block id = 12
+element type = 'hex'
+num_elem_in_block =  1
+num_nodes_per_elem =  8
+num_attr =  1
+name = 'Very long name for block_3 that'
+
+after ex_get_elem_block, error = 0
+element block id = 13
+element type = 'tetra'
+num_elem_in_block =  1
+num_nodes_per_elem =  4
+num_attr =  1
+name = 'Very long name for block_4 that'
+
+after ex_get_elem_block, error = 0
+element block id = 14
+element type = 'wedge'
+num_elem_in_block =  1
+num_nodes_per_elem =  6
+num_attr =  1
+name = 'Very long name for block_5 that'
+
+after ex_get_elem_block, error = 0
+element block id = 15
+element type = 'tetra'
+num_elem_in_block =  1
+num_nodes_per_elem =  8
+num_attr =  1
+name = 'Very long name for block_6 that'
+
+after ex_get_elem_block, error = 0
+element block id = 16
+element type = 'tri'
+num_elem_in_block =  1
+num_nodes_per_elem =  3
+num_attr =  1
+name = 'Very long name for block_7 that'
+
+after ex_inquire, error = 0
+
+There are  3 properties for each element block
+after ex_get_prop_names, error = 0
+element block  1, property( 2): 'MATERIAL_PROPERTY_LONG_NAME_32CH'=    10
+element block  2, property( 2): 'MATERIAL_PROPERTY_LONG_NAME_32CH'=    20
+element block  3, property( 2): 'MATERIAL_PROPERTY_LONG_NAME_32CH'=    30
+element block  4, property( 2): 'MATERIAL_PROPERTY_LONG_NAME_32CH'=    40
+element block  5, property( 2): 'MATERIAL_PROPERTY_LONG_NAME_32CH'=    50
+element block  6, property( 2): 'MATERIAL_PROPERTY_LONG_NAME_32CH'=    60
+element block  7, property( 2): 'MATERIAL_PROPERTY_LONG_NAME_32CH'=    70
+element block  1, property( 3): 'DENSITY'=     0
+element block  2, property( 3): 'DENSITY'=     0
+element block  3, property( 3): 'DENSITY'=     0
+element block  4, property( 3): 'DENSITY'=     0
+element block  5, property( 3): 'DENSITY'=     0
+element block  6, property( 3): 'DENSITY'=     0
+element block  7, property( 3): 'DENSITY'=     0
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 10
+  1
+  2
+  3
+  4
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 11
+  5
+  6
+  7
+  8
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 12
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 13
+ 17
+ 18
+ 19
+ 20
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 14
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 15
+ 17
+ 18
+ 19
+ 20
+ 27
+ 28
+ 30
+ 29
+
+after ex_get_elem_conn, error = 0
+connect array for elem block 16
+ 31
+ 32
+ 33
+
+ after ex_get_elem_attr, error = 0
+ after ex_get_elem_attr_names, error = 0
+element block 10 attribute 'The name for the attribute repre' = 3.1416
+
+ after ex_get_elem_attr, error = 0
+ after ex_get_elem_attr_names, error = 0
+element block 11 attribute 'The name for the attribute repre' = 6.1416
+
+ after ex_get_elem_attr, error = 0
+ after ex_get_elem_attr_names, error = 0
+element block 12 attribute 'The name for the attribute repre' = 6.1416
+
+ after ex_get_elem_attr, error = 0
+ after ex_get_elem_attr_names, error = 0
+element block 13 attribute 'The name for the attribute repre' = 6.1416
+
+ after ex_get_elem_attr, error = 0
+ after ex_get_elem_attr_names, error = 0
+element block 14 attribute 'The name for the attribute repre' = 6.1416
+
+ after ex_get_elem_attr, error = 0
+ after ex_get_elem_attr_names, error = 0
+element block 15 attribute 'The name for the attribute repre' = 6.1416
+
+ after ex_get_elem_attr, error = 0
+ after ex_get_elem_attr_names, error = 0
+element block 16 attribute 'The name for the attribute repre' = 6.1416
+
+after ex_get_node_set_ids, error =   0
+
+after ex_get_names, error =   0
+
+after ex_get_node_set_param, error =   0
+
+node set 20 parameters: 
+num_nodes =  5
+name = 'nset_1'
+
+after ex_get_node_set, error =   0
+
+after ex_get_node_set_dist_fact, error =   0
+
+node list for node set 20
+100
+101
+102
+103
+104
+dist factors for node set 20
+ 1.00
+ 2.00
+ 3.00
+ 4.00
+ 5.00
+num nodeset attributes for nodeset 20 = 1
+ after ex_get_attr_names, error = 0
+nodeset attribute 0 = 'Nodeset_attribute'
+  0.0
+  1.0
+  1.0
+  0.0
+  1.0
+
+after ex_get_node_set_param, error =   0
+
+node set 21 parameters: 
+num_nodes =  3
+name = 'nset_2'
+
+after ex_get_node_set, error =   0
+
+after ex_get_node_set_dist_fact, error =   0
+
+node list for node set 21
+200
+201
+202
+dist factors for node set 21
+ 1.10
+ 2.10
+ 3.10
+num nodeset attributes for nodeset 21 = 0
+
+after ex_inquire, error = 0
+
+There are  3 properties for each node set
+after ex_get_prop_names, error = 0
+node set  1, property( 1): 'ID'=    20
+node set  2, property( 1): 'ID'=    21
+node set  1, property( 2): 'FACE'=     4
+node set  2, property( 2): 'FACE'=     5
+node set  1, property( 3): 'VELOCITY'=  1000
+node set  2, property( 3): 'VELOCITY'=  2000
+
+after ex_inquire, error =   0
+
+after ex_inquire: EX_INQ_NS_NODE_LEN = 8, error =   0
+
+after ex_inquire: EX_INQ_NS_DF_LEN = 8, error =   0
+
+after ex_get_concat_node_sets, error =   0
+
+concatenated node set info
+ids = 
+ 20
+ 21
+num_nodes_per_set = 
+  5
+  3
+node_ind = 
+  0
+  5
+node_list = 
+100
+101
+102
+103
+104
+200
+201
+202
+dist_fact = 
+1.000
+2.000
+3.000
+4.000
+5.000
+1.100
+2.100
+3.100
+
+after ex_get_side_set_ids, error =   0
+
+after ex_get_names, error =   0
+
+after ex_get_side_set_param, error =   0
+side set 30 parameters:
+name = 'sset_1'
+num_sides =   2
+num_dist_factors =   4
+
+after ex_get_side_set, error =   0
+
+after ex_get_side_set_node_list, error =   0
+
+after ex_get_side_set_dist_fact, error =   0
+element list for side set 30
+  2
+  2
+side list for side set 30
+  4
+  2
+node list for side set 30
+  8
+  5
+  6
+  7
+dist factors for side set 30
+30.000
+30.100
+30.200
+30.300
+
+after ex_get_side_set_param, error =   0
+side set 31 parameters:
+name = 'sset_2'
+num_sides =   2
+num_dist_factors =   4
+
+after ex_get_side_set, error =   0
+
+after ex_get_side_set_node_list, error =   0
+
+after ex_get_side_set_dist_fact, error =   0
+element list for side set 31
+  1
+  2
+side list for side set 31
+  2
+  3
+node list for side set 31
+  2
+  3
+  7
+  8
+dist factors for side set 31
+31.000
+31.100
+31.200
+31.300
+
+after ex_get_side_set_param, error =   0
+side set 32 parameters:
+name = 'sset_3'
+num_sides =   7
+num_dist_factors =   0
+
+after ex_get_side_set, error =   0
+
+after ex_get_side_set_node_list, error =   0
+element list for side set 32
+  3
+  3
+  3
+  3
+  3
+  3
+  3
+side list for side set 32
+  5
+  3
+  3
+  2
+  4
+  1
+  6
+node list for side set 32
+  9
+ 12
+ 11
+ 10
+ 11
+ 12
+ 16
+ 15
+ 11
+ 12
+ 16
+ 15
+ 10
+ 11
+ 15
+ 14
+  9
+ 13
+ 16
+ 12
+  9
+ 10
+ 14
+ 13
+ 13
+ 14
+ 15
+ 16
+no dist factors for side set 32
+
+after ex_get_side_set_param, error =   0
+side set 33 parameters:
+name = 'sset_4'
+num_sides =   8
+num_dist_factors =   0
+
+after ex_get_side_set, error =   0
+
+after ex_get_side_set_node_list, error =   0
+element list for side set 33
+  4
+  4
+  4
+  4
+  6
+  6
+  6
+  6
+side list for side set 33
+  1
+  2
+  3
+  4
+  1
+  2
+  3
+  4
+node list for side set 33
+ 17
+ 18
+ 20
+ 18
+ 19
+ 20
+ 17
+ 20
+ 19
+ 17
+ 19
+ 18
+ 17
+ 18
+ 20
+ 27
+ 18
+ 19
+ 20
+ 28
+ 17
+ 20
+ 19
+ 29
+ 17
+ 19
+ 18
+ 30
+no dist factors for side set 33
+
+after ex_get_side_set_param, error =   0
+side set 34 parameters:
+name = 'sset_5'
+num_sides =  10
+num_dist_factors =   0
+
+after ex_get_side_set, error =   0
+
+after ex_get_side_set_node_list, error =   0
+element list for side set 34
+  5
+  5
+  5
+  5
+  5
+  7
+  7
+  7
+  7
+  7
+side list for side set 34
+  1
+  2
+  3
+  4
+  5
+  1
+  2
+  3
+  4
+  5
+node list for side set 34
+ 21
+ 22
+ 25
+ 24
+ 22
+ 23
+ 26
+ 25
+ 21
+ 24
+ 26
+ 23
+ 21
+ 23
+ 22
+ 24
+ 25
+ 26
+ 31
+ 32
+ 33
+ 33
+ 32
+ 31
+ 31
+ 32
+ 32
+ 33
+ 33
+ 31
+no dist factors for side set 34
+
+after ex_inquire, error = 0
+
+There are  2 properties for each side set
+after ex_get_prop_names, error = 0
+side set  1, property( 1): 'ID'=    30
+side set  2, property( 1): 'ID'=    31
+side set  3, property( 1): 'ID'=    32
+side set  4, property( 1): 'ID'=    33
+side set  5, property( 1): 'ID'=    34
+side set  1, property( 2): 'COLOR'=   100
+side set  2, property( 2): 'COLOR'=   101
+side set  3, property( 2): 'COLOR'=     0
+side set  4, property( 2): 'COLOR'=     0
+side set  5, property( 2): 'COLOR'=     0
+
+after ex_inquire: EX_INQ_SIDE_SETS = 5,  error = 0
+
+after ex_inquire: EX_INQ_SS_ELEM_LEN = 29,  error = 0
+
+after ex_inquire: EX_INQ_SS_NODE_LEN = 94,  error = 0
+
+after ex_inquire: EX_INQ_SS_DF_LEN = 8,  error = 0
+
+after ex_get_concat_side_sets, error =   0
+concatenated side set info
+ids = 
+ 30
+ 31
+ 32
+ 33
+ 34
+num_elem_per_set = 
+  2
+  2
+  7
+  8
+ 10
+num_dist_per_set = 
+  4
+  4
+  0
+  0
+  0
+elem_ind = 
+  0
+  2
+  4
+ 11
+ 19
+dist_ind = 
+  0
+  4
+  8
+  8
+  8
+elem_list = 
+  2
+  2
+  1
+  2
+  3
+  3
+  3
+  3
+  3
+  3
+  3
+  4
+  4
+  4
+  4
+  6
+  6
+  6
+  6
+  5
+  5
+  5
+  5
+  5
+  7
+  7
+  7
+  7
+  7
+side_list = 
+  4
+  2
+  2
+  3
+  5
+  3
+  3
+  2
+  4
+  1
+  6
+  1
+  2
+  3
+  4
+  1
+  2
+  3
+  4
+  1
+  2
+  3
+  4
+  5
+  1
+  2
+  3
+  4
+  5
+dist_fact = 
+30.000
+30.100
+30.200
+30.300
+31.000
+31.100
+31.200
+31.300
+
+after ex_get_qa, error =   0
+QA records = 
+ 'TESTWT'
+ 'testwt'
+ '07/07/93'
+ '15:41:33'
+ ''
+ ''
+ ''
+ ''
+
+after ex_inquire, error =   0
+
+after ex_get_info, error =   0
+info records = 
+ 'This is the first information record.'
+ ''
+ ''
+
+after ex_get_var_param, error =   0
+
+after ex_get_var_names, error =   0
+There are  1 global variables; their names are :
+ 'glo_vars'
+
+after ex_get_var_param, error =   0
+
+after ex_get_var_names, error =   0
+There are  2 nodal variables; their names are :
+ 'node_variable_a_somewhat_long_na'
+ 'node_variable_a_much_longer_name'
+
+after ex_get_var_param, error =   0
+
+after ex_get_var_names, error =   0
+There are  3 element variables; their names are :
+ 'the_stress_on_the_elements_in_th'
+ 'ele_var1'
+ 'ele_var2'
+
+after ex_get_elem_var_tab, error =   0
+This is the element variable truth table:
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+
+after ex_get_var_param, error =   0
+
+after ex_get_var_names, error =   0
+There are  3 nodeset variables; their names are :
+ 'ns_var0'
+ 'ns_var1'
+ 'ns_var2'
+
+after ex_get_nset_var_tab, error =   0
+This is the nodeset variable truth table:
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+
+after ex_get_var_param, error =   0
+
+after ex_get_var_names, error =   0
+There are  3 sideset variables; their names are :
+ 'ss_var0'
+ 'ss_var1'
+ 'ss_var2'
+
+after ex_get_sset_var_tab, error =   0
+This is the sideset variable truth table:
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+
+after ex_inquire, error =   0
+There are 10 time steps in the database.
+
+after ex_get_time, error =   0
+time value at time step  3 = 0.030
+
+after ex_get_all_times, error =   0
+time values at all time steps are:
+0.010
+0.020
+0.030
+0.040
+0.050
+0.060
+0.070
+0.080
+0.090
+0.100
+
+after ex_get_glob_vars, error =   0
+global variable values at time step  3
+0.060
+
+after ex_get_glob_var_time, error =   0
+global variable  1 values through time:
+0.020
+0.040
+0.060
+0.080
+0.100
+0.120
+0.140
+0.160
+0.180
+0.200
+
+after ex_get_nodal_var, error =   0
+nodal variable  1 values at time step  3
+1.030
+1.060
+1.090
+1.120
+1.150
+1.180
+1.210
+1.240
+1.270
+1.300
+1.330
+1.360
+1.390
+1.420
+1.450
+1.480
+1.510
+1.540
+1.570
+1.600
+1.630
+1.660
+1.690
+1.720
+1.750
+1.780
+1.810
+1.840
+1.870
+1.900
+1.930
+1.960
+1.990
+
+after ex_get_nodal_var_time, error =   0
+nodal variable  1 values for node  1 through time:
+1.010
+1.020
+1.030
+1.040
+1.050
+1.060
+1.070
+1.080
+1.090
+1.100
+
+ after ex_get_elem_blk_ids, error =   0
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 10 at time step  3
+4.030
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 11 at time step  3
+5.030
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 12 at time step  3
+6.030
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 13 at time step  3
+7.030
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 14 at time step  3
+8.030
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 15 at time step  3
+9.030
+
+after ex_get_elem_var, error =   0
+element variable  1 values of element block 16 at time step  3
+10.030
+
+after ex_get_elem_var_time, error =   0
+element variable  2 values for element  2 through time:
+6.010
+6.020
+6.030
+6.040
+6.050
+6.060
+6.070
+6.080
+6.090
+6.100
+
+ after ex_get_side_set_ids, error =   0
+
+after ex_get_sset_var, error =   0
+sideset variable  2 values of sideset 30 at time step  3
+7.030
+7.060
+
+after ex_get_sset_var, error =   0
+sideset variable  2 values of sideset 31 at time step  3
+8.030
+8.060
+
+after ex_get_sset_var, error =   0
+sideset variable  2 values of sideset 32 at time step  3
+9.030
+9.060
+9.090
+9.120
+9.150
+9.180
+9.210
+
+after ex_get_sset_var, error =   0
+sideset variable  2 values of sideset 33 at time step  3
+10.030
+10.060
+10.090
+10.120
+10.150
+10.180
+10.210
+10.240
+
+after ex_get_sset_var, error =   0
+sideset variable  2 values of sideset 34 at time step  3
+11.030
+11.060
+11.090
+11.120
+11.150
+11.180
+11.210
+11.240
+11.270
+11.300
+
+ after ex_get_node_set_ids, error =   0
+
+after ex_get_nset_var, error =   0
+nodeset variable  2 values of nodeset 20 at time step  3
+9.030
+9.060
+9.090
+9.120
+9.150
+
+after ex_get_nset_var, error =   0
+nodeset variable  2 values of nodeset 21 at time step  3
+10.030
+10.060
+10.090
+
+after ex_close, error =   0

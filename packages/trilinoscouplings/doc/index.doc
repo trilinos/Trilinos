@@ -7,31 +7,78 @@
 <ul>
 <li>\ref trilinoscouplings_intro
 <li>\ref trilinoscouplings_startup
+<li>\ref trilinoscouplings_scaling_ex
 <li>\ref trilinoscouplings_browser
 </ul>
 
 \section trilinoscouplings_intro Introduction 
-The Trilinos/packages/trilinoscouplings package was created as a tool for developers
-wishing to utilize the Autotools configure/build process for a new or existing
-package.  Before beginning this process, approval must be obtained from the
-Trilinos Project Leader.
+The Trilinos/packages/trilinoscouplings package is used by developers to combine
+multiple Trilinos packages together to test integrated capabilities.
 
-See packages/trilinoscouplings/README for more details
 
-\section trilinoscouplings_startup Overview of trilinoscouplings
+\section trilinoscouplings_startup Overview of TrilinosCouplings
 
-trilinoscouplings contains two classes:
+TrilinosCouplings contains the following classes 
 
 <ul> 
 
-<li> Newp_Hello 
-<li> Newp_Jambo (only if configured with --enable-newp_swahili)
-
+   <li> <a class="el" href="classEpetraExt_1_1AmesosAMDGlobal__CrsGraph.html">AmesosAMDGlobal_CrsGraph</a> </li>
+   <li> <a class="el" href="classEpetraExt_1_1AmesosBTF__CrsGraph.html">AmesosBTF_CrsGraph</a> </li>
+   <li> <a class="el" href="classEpetraExt_1_1AmesosBTF__CrsMatrix.html">AmesosBTF_CrsMatrix</a> </li>
+   <li> <a class="el" href="classEpetraExt_1_1AmesosBTFGlobal__LinearProblem.html">AmesosBTFGlobal_LinearProblem</a> </li>
+   <li> <a class="el" href="classEpetraExt_1_1Isorropia__CrsGraph.html">Isorropia_CrsGraph</a> </li>
+   <li> Ml_Nox_Fineinterface
+   <li> ML_Nox_Preconditioner
+   <li> NLNML_ConstrainedMultiLevelOperator
+   <li> NLNML_finelevelnoxinterface
+   <li> NLNML_NonlinearLevel
+   <li> NLNML_Preconditioner
+   <li> NLNML_PrePostOperator
 
 </ul>
 
-This documentations should not be taken as a guide.  I made it work
-with doxygen and illustrated one or two features.  Nothing more.
+\section trilinoscouplings_scaling_ex Scaling Examples
+
+A following set of drivers that solve PDEs using the finite element method have been developed to test Trilinos package capabilities and to use in scaling tests. 
+
+<ul>
+ <li> <a class = "el" href="example__Poisson_8cpp.html"> example_Poisson.cpp </a> 
+        Solves a Poisson equation for a scalar quantity on a hexahedral mesh and calculates the error in the result.
+
+ <li> <a class = "el" href="example__Poisson__stk_8cpp.html"> example_Poisson_stk.cpp </a> 
+        Solves a Poisson equation for a scalar quantity on a hexahedral or tetrahedral mesh and calculates the error in the result. 
+        This example differs from the previous in the mesh manager used. Note that this example does not currently run on multiple processors. 
+
+ <li> <a class = "el" href="example__CurlLSFEM_8cpp.html"> example_CurlLSFEM.cpp </a> 
+        Solves a div-curl system of equations for a vector quantity on a hexahedral mesh using a curl-conforming basis and calculates the error in the result. 
+
+ <li> <a class = "el" href="example__DivLSFEM_8cpp.html"> example_DivLSFEM.cpp </a> 
+        Solves a div-curl system of equations for a vector quantity on a hexahedral mesh using a div-conforming basis and calculates the error in the result. 
+
+ <li> <a class = "el" href="example__StabilizedADR_8cpp.html"> example_StabilizedADR.cpp </a> 
+        Solves an advection-diffusion-reaction equation for a scalar quantity on a hexahedral mesh and calculates the error in the result.
+
+</ul>
+
+
+The drivers use the following Trilinos packages
+
+<ul>
+
+ <li> <a href="http://trilinos.sandia.gov/packages/epetra/index.html"> Epetra </a> 
+ <li> <a href="http://trilinos.sandia.gov/packages/epetraext/index.html"> EpetraExt </a> 
+ <li> <a href="http://trilinos.sandia.gov/packages/intrepid/index.html">Intrepid </a> 
+ <li> <a href="http://trilinos.sandia.gov/packages/isorropia/index.html">Isorropia </a> 
+ <li> <a href="http://trilinos.sandia.gov/packages/ml/index.html">ML </a>
+ <li> <a href="http://trilinos.sandia.gov/packages/pamgen/index.html">Pamgen </a>
+ <li> <a href="http://trilinos.sandia.gov/packages/shards/index.html">Shards </a> 
+ <li> <a href="http://trilinos.sandia.gov/packages/stk/index.html">STK </a>
+ <li> <a href="http://trilinos.sandia.gov/packages/teuchos/index.html">Teuchos </a> 
+
+</ul>
+
+
+
 
 \section trilinoscouplings_browser Browse all of trilinoscouplings as a single doxygen collection
 

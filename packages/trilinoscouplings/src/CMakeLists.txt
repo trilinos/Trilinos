@@ -124,11 +124,13 @@ IF(HAVE_TRILINOSCOUPLINGS_EPETRAEXT)
     APPEND_SET(HEADERS
       epetraext/EpetraExt_AmesosBTF_CrsGraph.h
       epetraext/EpetraExt_AmesosBTF_CrsMatrix.h 
+      epetraext/EpetraExt_AmesosAMDGlobal_CrsGraph.h 
       )
 
     APPEND_SET(SOURCES
       epetraext/EpetraExt_AmesosBTF_CrsGraph.cpp
       epetraext/EpetraExt_AmesosBTF_CrsMatrix.cpp
+      epetraext/EpetraExt_AmesosAMDGlobal_CrsGraph.cpp 
       )
   ENDIF()
 

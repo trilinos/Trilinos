@@ -50,6 +50,9 @@ class Amesos_StandardIndex
   //! Convert MultiVector to a MultiVector indexed from 0 to n-1 
   Epetra_MultiVector* StandardizeIndex( Epetra_MultiVector* OriginalMultiVector );
 
+  //! Convert MultiVector to a MultiVector indexed from 0 to n-1 
+  Teuchos::RCP<Epetra_MultiVector> StandardizeIndex( Epetra_MultiVector & OriginalMultiVector );
+
   //! Convert CrsMatrix to a CrsMatrix indexed from 0 to n-1 
   Epetra_CrsMatrix* StandardizeIndex( Epetra_CrsMatrix* OriginalCrsMatrix );
 

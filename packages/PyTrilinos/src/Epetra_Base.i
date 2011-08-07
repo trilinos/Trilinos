@@ -104,7 +104,7 @@ except ImportError:
     $action
     if (PyErr_Occurred()) SWIG_fail;
   }
-  catch(PythonException & e)
+  catch(PyTrilinos::PythonException & e)
   {
     e.restore();
     SWIG_fail;
@@ -225,14 +225,14 @@ except ImportError:
 // Output a plain pointer
 %typemap(out) CONST Epetra_##CLASS *
 {
-  Teuchos::RCP< CONST Epetra_NumPy##CLASS > *smartresult = 0;
+  Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS > *smartresult = 0;
   if ($1)
   {
-    CONST Epetra_NumPy##CLASS * npa = new CONST Epetra_NumPy##CLASS(*$1);
-    smartresult = new Teuchos::RCP< CONST Epetra_NumPy##CLASS >(npa, bool($owner));
+    CONST PyTrilinos::Epetra_NumPy##CLASS * npa = new CONST PyTrilinos::Epetra_NumPy##CLASS(*$1);
+    smartresult = new Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS >(npa, bool($owner));
   }
   %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-                                 $descriptor(Teuchos::RCP< Epetra_NumPy##CLASS > *),
+                                 $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *),
 				 $owner | SWIG_POINTER_OWN));
 }
 
@@ -246,21 +246,24 @@ except ImportError:
 }
 %typemap(argout) Epetra_##CLASS *&
 {
-  Epetra_NumPy##CLASS * npa$argnum = new Epetra_NumPy##CLASS(**$1);
-  Teuchos::RCP< Epetra_NumPy##CLASS > *smartobj$argnum =
-    new Teuchos::RCP< Epetra_NumPy##CLASS >(npa$argnum);
+  PyTrilinos::Epetra_NumPy##CLASS * npa$argnum = new PyTrilinos::Epetra_NumPy##CLASS(**$1);
+  Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *smartobj$argnum =
+    new Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS >(npa$argnum);
   PyObject * obj = SWIG_NewPointerObj((void*)smartobj$argnum,
-			   $descriptor(Teuchos::RCP< Epetra_NumPy##CLASS > *), SWIG_POINTER_OWN);
+			   $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *),
+				      SWIG_POINTER_OWN);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 
 // Director input of a plain reference
 %typemap(directorin) CONST Epetra_##CLASS &
 %{
-  Teuchos::RCP< CONST Epetra_NumPy##CLASS > *temp$argnum = new
-    Teuchos::RCP< CONST Epetra_NumPy##CLASS >(new Epetra_NumPy##CLASS(View,$1_name), false);
+  Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS > *temp$argnum = new
+    Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS >
+    (new PyTrilinos::Epetra_NumPy##CLASS(View,$1_name), false);
   $input = SWIG_NewPointerObj((void*)temp$argnum,
-			      $descriptor(Teuchos::RCP< Epetra_NumPy##CLASS > *), SWIG_POINTER_OWN);
+			      $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *),
+			      SWIG_POINTER_OWN);
 %}
 
 %enddef
@@ -277,8 +280,8 @@ except ImportError:
   if ($1 == NULL) $result = Py_BuildValue("");
   else
   {
-    Epetra_NumPy##CLASS * npa = new Epetra_NumPy##CLASS(*$1);
-    $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##CLASS*), $owner);
+    PyTrilinos::Epetra_NumPy##CLASS * npa = new PyTrilinos::Epetra_NumPy##CLASS(*$1);
+    $result = SWIG_NewPointerObj(npa, $descriptor(PyTrilinos::Epetra_NumPy##CLASS*), $owner);
   }
 }
 
@@ -292,8 +295,9 @@ except ImportError:
 }
 %typemap(argout) Epetra_##CLASS *&
 {
-  Epetra_NumPy##CLASS * npa$argnum = new Epetra_NumPy##CLASS(**$1);
-  PyObject * obj = SWIG_NewPointerObj((void*)(npa$argnum), $descriptor(Epetra_NumPy##CLASS*),
+  PyTrilinos::Epetra_NumPy##CLASS * npa$argnum = new PyTrilinos::Epetra_NumPy##CLASS(**$1);
+  PyObject * obj = SWIG_NewPointerObj((void*)(npa$argnum),
+				      $descriptor(PyTrilinos::Epetra_NumPy##CLASS*),
 				      SWIG_POINTER_OWN);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
@@ -301,8 +305,10 @@ except ImportError:
 // Director input of a plain reference
 %typemap(directorin) CONST Epetra_##CLASS &
 %{
-  Epetra_NumPy##CLASS *npa$argnum = new Epetra_NumPy##CLASS(View,$1_name);
-  $input = SWIG_NewPointerObj(npa$argnum, $descriptor(Epetra_NumPy##CLASS*), SWIG_POINTER_OWN);
+  PyTrilinos::Epetra_NumPy##CLASS *npa$argnum = new PyTrilinos::Epetra_NumPy##CLASS(View,$1_name);
+  $input = SWIG_NewPointerObj(npa$argnum,
+			      $descriptor(PyTrilinos::Epetra_NumPy##CLASS*),
+			      SWIG_POINTER_OWN);
 %}
 
 %enddef
@@ -313,7 +319,7 @@ except ImportError:
 #define EMPTYHACK
 %define %teuchos_rcp_epetra_numpy(CLASS)
   %teuchos_rcp(Epetra_##CLASS)
-  %teuchos_rcp(Epetra_NumPy##CLASS)
+  %teuchos_rcp(PyTrilinos::Epetra_NumPy##CLASS)
   %teuchos_rcp_epetra_numpy_overrides(EMPTYHACK, CLASS)
   %teuchos_rcp_epetra_numpy_overrides(const, CLASS)
 %enddef
@@ -432,7 +438,7 @@ or it will hang your code."
       else
       {
 	std::FILE * f = PyFile_AsFile(pf);
-	FILEstream buffer(f);
+	PyTrilinos::FILEstream buffer(f);
 	std::ostream os(&buffer);
 	self->Print(os);
 	os.flush();
@@ -482,6 +488,7 @@ or it will hang your code."
 // warnings for doing this.  Now I use %include, coupled with a bunch
 // of %ignores, because I want a simple python base class without the
 // C-style LAPACK interface.
+%teuchos_rcp(Epetra_LAPACK)
 %rename(LAPACK) Epetra_LAPACK;
 %ignore Epetra_LAPACK::GECON;
 %ignore Epetra_LAPACK::GEEQU;

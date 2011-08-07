@@ -81,7 +81,7 @@ int Zoltan_Get_Coordinates(
   ZOLTAN_ID_PTR lid;   /* Temporary pointers to local IDs; used to pass 
                           NULL to query functions when NUM_LID_ENTRIES == 0. */
   double dist[3];
-  double im[3][3];
+  double im[3][3] = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
   double deg_ratio;
   double x;
   int order[3];

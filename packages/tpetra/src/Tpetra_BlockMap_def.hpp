@@ -30,6 +30,7 @@
 #define TPETRA_BLOCKMAP_DEF_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Distributor.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
 #include "Tpetra_BlockMap_decl.hpp"
@@ -178,8 +179,13 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
 
   pointMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(Teuchos::OrdinalTraits<global_size_t>::invalid(), myGlobalPoints(), indexBase, comm, node));
 
+  global_size_t global_sum;
+  Teuchos::reduceAll<int,global_size_t>(*comm, Teuchos::REDUCE_SUM,
+                Teuchos::as<global_size_t>(myGlobalBlockIDs.size()), Teuchos::outArg(global_sum));
+  globalNumBlocks_ = global_sum;
+
   iter = blockSizes.begin();
-  LocalOrdinal firstBlockSize = *iter;
+  LocalOrdinal firstBlockSize = iter==iend ? 0 : *iter;
   LocalOrdinal firstPoint = pointMap_->getMinLocalIndex();
   LocalOrdinal numLocalBlocks = myGlobalBlockIDs.size();
   pbuf_firstPointInBlock_ = node->template allocBuffer<LocalOrdinal>(numLocalBlocks+1);
@@ -204,8 +210,8 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
 
   typename Teuchos::Array<GlobalOrdinal>::const_iterator
     b_iter = myGlobalBlockIDs_.begin(), b_end = myGlobalBlockIDs_.end();
-  GlobalOrdinal id = *b_iter;
-  ++b_iter;
+  GlobalOrdinal id = b_iter==b_end ? 0 : *b_iter;
+  if (b_iter != b_end) ++b_iter;
   blockIDsAreContiguous_ = true;
   for(; b_iter != b_end; ++b_iter) {
     if (*b_iter != id+1) {
@@ -285,9 +291,49 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 void
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getRemoteBlockInfo(
+    const Teuchos::ArrayView<const GlobalOrdinal>& GBIDs,
+    const Teuchos::ArrayView<GlobalOrdinal>& firstGlobalPointInBlocks,
+    const Teuchos::ArrayView<LocalOrdinal>& blockSizes) const
+{
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > pbmap =
+      convertBlockMapToPointMap(*this);
+
+  Teuchos::Array<int> remoteProcs(GBIDs.size());
+  pbmap->getRemoteIndexList(GBIDs(), remoteProcs());
+
+  Tpetra::Distributor distor(pbmap->getComm());
+
+  Tpetra::ArrayRCP<GlobalOrdinal> exportGBIDs;
+  Tpetra::ArrayRCP<int> exportProcs;
+
+  distor.createFromRecvs(GBIDs(), remoteProcs(), exportGBIDs, exportProcs);
+
+  Tpetra::Array<GlobalOrdinal> exportFirstPointInBlocks(exportGBIDs.size());
+  Tpetra::Array<LocalOrdinal> exportSizes(exportGBIDs.size());
+
+  typename Teuchos::ArrayRCP<GlobalOrdinal>::const_iterator
+    iter = exportGBIDs.begin(),
+    iter_end = exportGBIDs.end();
+  for(int i=0; iter!=iter_end; ++iter, ++i) {
+    GlobalOrdinal gbid = *iter;
+    LocalOrdinal lbid = getLocalBlockID(gbid);
+    exportFirstPointInBlocks[i] = getFirstGlobalPointInLocalBlock(lbid);
+    exportSizes[i] = getLocalBlockSize(lbid);
+  }
+
+  size_t numPackets = 1;
+  distor.doPostsAndWaits(exportFirstPointInBlocks().getConst(),
+                         numPackets, firstGlobalPointInBlocks);
+
+  distor.doPostsAndWaits(exportSizes().getConst(), numPackets, blockSizes);
+}
+
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+void
 BlockMap<LocalOrdinal,GlobalOrdinal,Node>::setup_noncontig_mapping()
 {
-  //ouch, need to use a hash (unordered_map) here...
+  //possibly need to use a hash (unordered_map) here...
   typedef typename Teuchos::Array<GlobalOrdinal>::size_type Tsize_t;
   for(Tsize_t i=0; i<myGlobalBlockIDs_.size(); ++i) {
     LocalOrdinal li = i;

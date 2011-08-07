@@ -271,8 +271,22 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
                        ohg->VtxWeightDim*sizeof(float), (char *) nhg->vwgt);
         if (ncomm->myProc!=-1)  /* ncomm's first row now bcast to other rows */
             MPI_Bcast(nhg->vwgt, nVtx*ohg->VtxWeightDim, MPI_FLOAT, 0, ncomm->col_comm);
-    }    
+    }
 
+    /* NEANEA communicate coordinates */
+    if (ohg->nDim) {
+      if (nVtx) {
+	nhg->coor = (double *) ZOLTAN_MALLOC(nVtx * ohg->nDim * sizeof(double));
+	if (!nhg->coor) MEMORY_ERROR;
+      }
+
+      --msg_tag;
+      Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->coor, ohg->nDim * sizeof(double),
+		     (char *) nhg->coor);
+      if (ncomm->myProc != -1) /* ncomm's first row bcast to other rows */
+	MPI_Bcast(nhg->coor, nVtx * ohg->nDim, MPI_DOUBLE, 0, ncomm->col_comm);
+    }
+    
     /* communicate fixed vertices, if any */
     if (hgp->UseFixedVtx) {
         if (nVtx){
@@ -382,6 +396,7 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
             nhg->vedge[cnt[pins[2*i]]++] = pins[2*i+1];
         
         nhg->info               = ohg->info;
+	nhg->nDim               = ohg->nDim;
         nhg->VtxWeightDim       = ohg->VtxWeightDim;
         nhg->EdgeWeightDim      = ohg->EdgeWeightDim;
 

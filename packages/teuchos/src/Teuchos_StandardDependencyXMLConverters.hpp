@@ -772,22 +772,12 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
     dependee, dependents, rangesAndValidators, defaultValidator));
 }
 
-/** \brief An xml converter for NumberArrayLengthDependencies.
- *
- * The valid XML representation of a NumberArrayLengthDependency is:
- * \code
-    <Dependency 
-      type="NumberArrayLengthDependency(dependee_number_type, type_of_array_values)"
-    >
-      <Dependee parameterId="Id of dependee parameter"/>
-      <Dependent parameterId="Id of dependent parameter"/>
-      ...Any other dependent parameters...
-      ...Optional Function tag...
-    </Dependency>
- \endcode
+/**
+ * \brief A converter used to convert ArrayModifierDepdencies to and from
+ * xml.
  */
 template<class DependeeType, class DependentType>
-class NumberArrayLengthDependencyXMLConverter : public DependencyXMLConverter{
+class ArrayModifierDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
 
@@ -811,11 +801,36 @@ public:
   
   //@}
 
+protected:
+
+  /**
+   * \brief Obtains a concrete ArrayModifierDependency given a
+   * dependee, dependtns, and a funciton object.
+   *
+   * Because ArrayModifierDependency is an abstact class with pure virtual
+   * methods we need to be able to get a concrete object to actually 
+   * return. This is the reponsibility of any classes subclassing this one.
+   *
+   * @param dependee The dependee to be used in the construction of the
+   * concrete dependency.
+   * @param dependents The dependts to be used in the construction of the
+   * concrete dependency.
+   * @param function The function object to be used in the construction of the
+   * concrete dependency.
+   * @return A concrete dependency object.which subclasses 
+   * ArrayModifierDependency.
+   */
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  getConcreteDependency(
+    RCP<const ParameterEntry> dependee,
+    const Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > function) const = 0;
+
 };
 
 template<class DependeeType, class DependentType>
 RCP<Dependency> 
-NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertXML(
+ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertXML(
   const XMLObject& xmlObj, 
   const Dependency::ConstParameterEntryList dependees,
   const Dependency::ParameterEntryList dependents,
@@ -824,7 +839,7 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertXML
 {
   TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
-    "A NumberArrayLengthDependency can only have 1 dependee!" <<
+    "A ArrayModifierDependency can only have 1 dependee!" <<
     std::endl << std::endl);
   RCP<SimpleFunctionObject<DependeeType> > functionObject = null;
   int functionIndex = xmlObj.findFirstChild(FunctionObject::getXMLTagName());
@@ -832,21 +847,20 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertXML
     functionObject = rcp_dynamic_cast<SimpleFunctionObject<DependeeType> >(
       FunctionObjectXMLConverterDB::convertXML(xmlObj.getChild(functionIndex)));
   }
-  return rcp(
-    new NumberArrayLengthDependency<DependeeType, DependentType>(
-      *(dependees.begin()), dependents, functionObject));
+  return 
+    getConcreteDependency(*(dependees.begin()), dependents, functionObject);
 }
 
 template<class DependeeType, class DependentType>
 void
-NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertDependency(
+ArrayModifierDependencyXMLConverter<DependeeType, DependentType>::convertDependency(
     const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     ValidatortoIDMap& validatorIDsMap) const
 {
-  RCP<const NumberArrayLengthDependency<DependeeType, DependentType> > castedDep =
-    rcp_dynamic_cast<const NumberArrayLengthDependency<DependeeType, DependentType> >(
+  RCP<const ArrayModifierDependency<DependeeType, DependentType> > castedDep =
+    rcp_dynamic_cast<const ArrayModifierDependency<DependeeType, DependentType> >(
       dependency);
   RCP<const SimpleFunctionObject<DependeeType> > functionObject = 
     castedDep->getFunctionObject();
@@ -858,8 +872,145 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertDep
 }
 
 
+/** \brief An xml converter for NumberArrayLengthDependencies.
+ *
+ * The valid XML representation of a NumberArrayLengthDependency is:
+ * \code
+    <Dependency 
+      type="NumberArrayLengthDependency(dependee_number_type, type_of_array_values)"
+    >
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependent parameters...
+      ...Optional Function tag...
+    </Dependency>
+ \endcode
+ */
+template<class DependeeType, class DependentType>
+class NumberArrayLengthDependencyXMLConverter : 
+  public ArrayModifierDependencyXMLConverter<DependeeType, DependentType>{
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  getConcreteDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > function) const;
+  //@}
+
+};
+
+template<class DependeeType, class DependentType>
+RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::getConcreteDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > function) const
+{
+return rcp(
+    new NumberArrayLengthDependency<DependeeType, DependentType>(
+      dependee, dependents, function));
+}
+
+
+/**
+ * \brief A class for converting TwoDRowDependencies
+ * to and from XML.
+ *
+ * The valid XML representation of a TwoDRowDependency is:
+ * \code
+    <Dependency 
+      type="TwoDRowDependency(dependee_number_type, type_of_array_values)"
+    >
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependent parameters...
+      ...Optional Function tag...
+    </Dependency>
+ \endcode
+ */
+template<class DependeeType, class DependentType>
+class TwoDRowDependencyXMLConverter :
+  public ArrayModifierDependencyXMLConverter<DependeeType, DependentType>
+{
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  getConcreteDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > function) const;
+  //@}
+
+};
+
+template<class DependeeType, class DependentType>
+RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+TwoDRowDependencyXMLConverter<DependeeType, DependentType>::getConcreteDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > function) const
+{
+return rcp(
+    new TwoDRowDependency<DependeeType, DependentType>(
+      dependee, dependents, function));
+}
+
+/**
+ * \brief A class for converting TwoDColDependencies
+ * to and from XML.
+ *
+ * The valid XML representation of a TwoDColDependency is:
+ * \code
+    <Dependency 
+      type="TwoDColDependency(dependee_number_type, type_of_array_values)"
+    >
+      <Dependee parameterId="Id of dependee parameter"/>
+      <Dependent parameterId="Id of dependent parameter"/>
+      ...Any other dependent parameters...
+      ...Optional Function tag...
+    </Dependency>
+ \endcode
+ */
+template<class DependeeType, class DependentType>
+class TwoDColDependencyXMLConverter :
+  public ArrayModifierDependencyXMLConverter<DependeeType, DependentType>
+{
+
+protected:
+
+  /** \name Overridden from ArrayModifierDependency */
+  //@{
+  virtual RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+  getConcreteDependency(
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
+    RCP<const SimpleFunctionObject<DependeeType> > function) const;
+  //@}
+
+};
+
+template<class DependeeType, class DependentType>
+RCP<ArrayModifierDependency<DependeeType, DependentType> > 
+TwoDColDependencyXMLConverter<DependeeType, DependentType>::getConcreteDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RCP<const SimpleFunctionObject<DependeeType> > function) const
+{
+return rcp(
+    new TwoDColDependency<DependeeType, DependentType>(
+      dependee, dependents, function));
+}
+
+
+
 } // namespace Teuchos
 
 
 #endif // TEUCHOS_STANDARDDEPENDENCYXMLCONVERTERS_HPP
-

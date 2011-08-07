@@ -117,7 +117,7 @@ functions that include the macro:
             <li>These templates are specialized to use the Fortran BLAS routines for
             scalar types \c float and \c double.
 
-            <li>If Teuchos is configured with \c --enable-teuchos-std::complex then these templates
+            <li>If Teuchos is configured with \c -DTeuchos_ENABLE_COMPLEX:BOOL=ON then these templates
             are specialized for scalar types \c std::complex<float> and \c std::complex<double> also.
     </ol>
 */

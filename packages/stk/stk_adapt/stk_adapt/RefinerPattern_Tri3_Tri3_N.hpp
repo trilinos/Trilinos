@@ -99,7 +99,7 @@ namespace stk {
       static void triangulate_face(PerceptMesh& eMesh, stk::mesh::Entity *elem_nodes[3], unsigned edge_marks[3], 
                                    vector<tri_tuple_type_local>& elems)
       {
-        const CellTopologyData * const cell_topo_data = shards::getCellTopologyData< shards::Triangle<6> >();
+        const CellTopologyData * const cell_topo_data = shards::getCellTopologyData< shards::Triangle<3> >();
 
         CellTopology cell_topo(cell_topo_data);
         VectorFieldType* coordField = eMesh.getCoordinatesField();
@@ -360,6 +360,8 @@ namespace stk {
             eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
+
+            interpolateElementFields(eMesh, element, newElement);
 
             {
               if (!elems[ielem].get<0>())

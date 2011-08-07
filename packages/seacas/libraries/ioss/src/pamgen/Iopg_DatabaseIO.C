@@ -1841,9 +1841,7 @@ namespace Iopg {
 
       // Synchronize among all processors....
       if (isParallel) {
-	util().global_array_minmax(&block_ids[0],
-					 block_ids.size(),
-					 Ioss::ParallelUtils::DO_MAX);
+	util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
       }
     }
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
@@ -1882,9 +1880,7 @@ namespace Iopg {
     
     // Synchronize among all processors....
     if (isParallel) {
-      util().global_array_minmax(&block_ids[0],
-				 block_ids.size(),
-				 Ioss::ParallelUtils::DO_MAX);
+      util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
     }
     
     Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();

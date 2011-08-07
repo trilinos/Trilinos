@@ -308,7 +308,6 @@ void fei::VectorSpace::defineIDTypes(int numIDTypes,
 
 //----------------------------------------------------------------------------
 int fei::VectorSpace::addDOFs(int fieldID,
-                                          int numInstancesOfThisFieldPerID,
                                           int idType,
                                           int numIDs,
                                           const int* IDs)
@@ -316,8 +315,8 @@ int fei::VectorSpace::addDOFs(int fieldID,
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
     os << dbgprefix_<<"addDOFs, fID=" << fieldID
-       <<", idT="<<idType <<", ninst="
-       << numInstancesOfThisFieldPerID << " {";
+       <<", idT="<<idType
+       << " {";
     for(int j=0; j<numIDs; ++j) {
       os << IDs[j] << " ";
       if (j>0 && j%20==0) os << FEI_ENDL << dbgprefix_;
@@ -332,7 +331,6 @@ int fei::VectorSpace::addDOFs(int fieldID,
 
   unsigned fieldSize = getFieldSize(fieldID);
   recordCollections_[idx]->initRecords(fieldID, fieldSize,
-                                       numInstancesOfThisFieldPerID,
                                        numIDs, IDs,
                                        fieldMasks_);
   newInitData_ = true;
@@ -343,17 +341,16 @@ int fei::VectorSpace::addDOFs(int fieldID,
 
 //----------------------------------------------------------------------------
 int fei::VectorSpace::addDOFs(int fieldID,
-                                          int numInstancesOfThisFieldPerID,
-                                          int idType,
-                                          int numIDs,
-                                          const int* IDs,
-                                          fei::Record<int>** records)
+                              int idType,
+                              int numIDs,
+                              const int* IDs,
+                              int* records)
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
     os << dbgprefix_<<"addDOFs*, fID=" << fieldID
-       <<", idT="<<idType <<", ninst="
-       << numInstancesOfThisFieldPerID << " {";
+       <<", idT="<<idType
+       << " {";
     for(int j=0; j<numIDs; ++j) {
       os << IDs[j] << " ";
       if (j>0 && j%20==0) os << FEI_ENDL << dbgprefix_;
@@ -374,10 +371,8 @@ int fei::VectorSpace::addDOFs(int fieldID,
 
   unsigned fieldSize = getFieldSize(fieldID);
   recordCollections_[idx]->initRecords(fieldID, fieldSize,
-                                       numInstancesOfThisFieldPerID,
                                        numIDs, IDs,
-                                       fieldMasks_,
-                                       records);
+                                       fieldMasks_, records);
   newInitData_ = true;
   sharedRecordsSynchronized_ = false;
 
@@ -416,7 +411,7 @@ int fei::VectorSpace::addDOFs(int idType,
 int fei::VectorSpace::addDOFs(int idType,
                                           int numIDs,
                                           const int* IDs,
-                                          fei::Record<int>** records)
+                                          int* records)
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -565,6 +560,27 @@ int fei::VectorSpace::addVectorSpace(fei::VectorSpace* inputSpace)
   sharedRecordsSynchronized_ = false;
 
   return(0);
+}
+
+//----------------------------------------------------------------------------
+void fei::VectorSpace::getSendProcs(std::vector<int>& sendProcs) const
+{
+  sendProcs.clear();
+  std::set<int> sendSet;
+
+  std::map<int,fei::SharedIDs<int> >::const_iterator
+    s_it = sharedIDTables_.begin(),
+    s_end= sharedIDTables_.end();
+  for(; s_it!=s_end; ++s_it) {
+    const std::vector<int>& owners = s_it->second.getOwningProcs();
+    for(size_t i=0; i<owners.size(); ++i) {
+      sendSet.insert(owners[i]);
+    }
+  }
+
+  for(std::set<int>::iterator it=sendSet.begin(); it!=sendSet.end(); ++it) {
+    if (fei::localProc(comm_) != *it) sendProcs.push_back(*it);
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -872,6 +888,52 @@ void fei::VectorSpace::getGlobalIndices(const fei::Pattern* pattern,
 }
 
 //----------------------------------------------------------------------------
+void fei::VectorSpace::getGlobalIndicesL(const fei::Pattern* pattern,
+                                        const int* records,
+                                        std::vector<int>& indices)
+{
+  int numRecords = pattern->getNumIDs();
+  int numIndices = pattern->getNumIndices();
+  const snl_fei::RecordCollection*const* recordCollections = pattern->getRecordCollections();
+  indices.resize(numIndices);
+  int* indices_ptr = &indices[0];
+
+  fei::Pattern::PatternType pType = pattern->getPatternType();
+
+  if (pType == fei::Pattern::GENERAL ||
+      pType == fei::Pattern::SINGLE_IDTYPE) {
+    const int* numFieldsPerID = pattern->getNumFieldsPerID();
+    const int* fieldIDs = pattern->getFieldIDs();
+    int totalNumFields = pattern->getTotalNumFields();
+
+    std::vector<int> fieldSizes(totalNumFields);
+
+    for(int j=0; j<totalNumFields; ++j) {
+      fieldSizes[j] = getFieldSize(fieldIDs[j]);
+    }
+
+    getGlobalIndicesL(numRecords, recordCollections, records, numFieldsPerID,
+                     fieldIDs, &(fieldSizes[0]),
+                     numIndices, indices_ptr, numIndices);
+  }
+  else if (pType == fei::Pattern::SIMPLE) {
+    const int* fieldIDs = pattern->getFieldIDs();
+    const int* idTypes = pattern->getIDTypes();
+
+    int fieldID = fieldIDs[0];
+    unsigned fieldSize = getFieldSize(fieldID);
+
+    getGlobalIndicesL(numRecords, recordCollections, records,
+                     fieldID, fieldSize,
+                     numIndices, indices_ptr, numIndices);
+  }
+  else if (pType == fei::Pattern::NO_FIELD) {
+    const int* idTypes = pattern->getIDTypes();
+    getGlobalBlkIndicesL(numRecords, recordCollections, records, numIndices, indices_ptr, numIndices);
+  }
+}
+
+//----------------------------------------------------------------------------
 void fei::VectorSpace::getGlobalIndices(int numRecords,
                                         const fei::Record<int>*const* records,
                                         int fieldID,
@@ -900,11 +962,11 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
     for(int i=0; i<len; ++i) {
       const fei::Record<int>* record = records[i];
 
-      int eqnOffset = 0, numInstances = 0;
+      int eqnOffset = 0;
       int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
 
       const fei::FieldMask* fieldMask = record->getFieldMask();
-      fieldMask->getFieldEqnOffset(fieldID, eqnOffset, numInstances);
+      fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
       indices[numIndices++] = eqnNumbers[eqnOffset];
     }
   }
@@ -914,10 +976,67 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
 
       int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
 
-      int eqnOffset = 0, numInstances = 0;
+      int eqnOffset = 0;
       if (!simpleProblem_) {
         const fei::FieldMask* fieldMask = record->getFieldMask();
-        fieldMask->getFieldEqnOffset(fieldID, eqnOffset, numInstances);
+        fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+      }
+
+      for(int fs=0; fs<fieldSize; ++fs) {
+        indices[numIndices++] = eqnNumbers[eqnOffset+fs];
+      }
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+void fei::VectorSpace::getGlobalIndicesL(int numRecords,
+                             const snl_fei::RecordCollection*const* recordCollections,
+                                        const int* records,
+                                        int fieldID,
+                                        int fieldSize,
+                                        int indicesAllocLen,
+                                        int* indices,
+                                        int& numIndices)
+{
+  numIndices = 0;
+  int* eqnPtr = &eqnNumbers_[0];
+
+  int len = numRecords;
+  if (len*fieldSize >= indicesAllocLen) {
+    len = indicesAllocLen/fieldSize;
+  }
+
+  if (fieldSize == 1 && simpleProblem_) {
+    for(int i=0; i<len; ++i) {
+      const fei::Record<int>* record = recordCollections[i]->getRecordWithLocalID(records[i]);
+      indices[numIndices++] = *(eqnPtr+record->getOffsetIntoEqnNumbers());
+    }    
+    return;
+  }
+
+  if (fieldSize == 1) {
+    for(int i=0; i<len; ++i) {
+      const fei::Record<int>* record = recordCollections[i]->getRecordWithLocalID(records[i]);
+
+      int eqnOffset = 0;
+      int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
+
+      const fei::FieldMask* fieldMask = record->getFieldMask();
+      fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
+      indices[numIndices++] = eqnNumbers[eqnOffset];
+    }
+  }
+  else {
+    for(int i=0; i<len; ++i) {
+      const fei::Record<int>* record = recordCollections[i]->getRecordWithLocalID(records[i]);
+
+      int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
+
+      int eqnOffset = 0;
+      if (!simpleProblem_) {
+        const fei::FieldMask* fieldMask = record->getFieldMask();
+        fieldMask->getFieldEqnOffset(fieldID, eqnOffset);
       }
 
       for(int fs=0; fs<fieldSize; ++fs) {
@@ -948,9 +1067,45 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
     int* eqnNumbers = eqnPtr + record->getOffsetIntoEqnNumbers();
 
     for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
-      int eqnOffset = 0, numInstances = 0;
+      int eqnOffset = 0;
       if (!simpleProblem_) {
-        fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset, numInstances);
+        fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
+      }
+
+      for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
+        indices[numIndices++] = eqnNumbers[eqnOffset+fs];
+      }
+
+      ++fld_offset;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
+void fei::VectorSpace::getGlobalIndicesL(int numRecords,
+                                        const snl_fei::RecordCollection*const* recordCollections,
+                                        const int* records,
+                                        const int* numFieldsPerID,
+                                        const int* fieldIDs,
+                                        const int* fieldSizes,
+                                        int indicesAllocLen,
+                                        int* indices,
+                                        int& numIndices)
+{
+  numIndices = 0;
+  int fld_offset = 0;
+  int* eqnPtr = &eqnNumbers_[0];
+
+  for(int i=0; i<numRecords; ++i) {
+    const fei::Record<int>* record = recordCollections[i]->getRecordWithLocalID(records[i]);
+
+    const fei::FieldMask* fieldMask = record->getFieldMask();
+    int* eqnNumbers = eqnPtr + record->getOffsetIntoEqnNumbers();
+
+    for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
+      int eqnOffset = 0;
+      if (!simpleProblem_) {
+        fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset);
       }
 
       for(int fs=0; fs<fieldSizes[fld_offset]; ++fs) {
@@ -973,6 +1128,23 @@ void fei::VectorSpace::getGlobalBlkIndices(int numRecords,
   for(int i=0; i<numRecords; ++i) {
     if (numIndices < indicesAllocLen) {
       indices[numIndices++] = records[i]->getNumber();
+    }
+    else ++numIndices;
+  }
+}
+
+//----------------------------------------------------------------------------
+void fei::VectorSpace::getGlobalBlkIndicesL(int numRecords,
+                             const snl_fei::RecordCollection*const* recordCollections,
+                                           const int* records,
+                                           int indicesAllocLen,
+                                           int* indices,
+                                           int& numIndices)
+{
+  numIndices = 0;
+  for(int i=0; i<numRecords; ++i) {
+    if (numIndices < indicesAllocLen) {
+      indices[numIndices++] = recordCollections[i]->getRecordWithLocalID(records[i])->getNumber();
     }
     else ++numIndices;
   }
@@ -1213,12 +1385,19 @@ int fei::VectorSpace::getOwnedAndSharedIDs(int idType,
   if (idx < 0) return(-1);
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
-
-  snl_fei::RecordCollection::map_type& rmap = records->getRecords();
-
-  numLocalIDs = rmap.size();
-
-  fei::copyKeysToArray(rmap, lenList, IDs);
+  std::map<int,int>& global_to_local = records->getGlobalToLocalMap();
+  std::map<int,int>::iterator
+    it = global_to_local.begin(),
+    end = global_to_local.end();
+  numLocalIDs = records->getNumRecords();
+  int len = numLocalIDs;
+  if (lenList < len) len = lenList;
+  int i=0;
+  for(; it!=end; ++it) {
+    int local_id = it->second;
+    IDs[i++] = records->getRecordWithLocalID(local_id)->getID();
+    if (i >= len) break;
+  }
 
   return(0);
 }
@@ -1234,16 +1413,15 @@ int fei::VectorSpace::getOwnedIDs(int idType,
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
 
-  snl_fei::RecordCollection::map_type& rmap = records->getRecords();
+  std::map<int,int>& global_to_local = records->getGlobalToLocalMap();
+  std::map<int,int>::iterator
+    it = global_to_local.begin(),
+    end = global_to_local.end();
 
   numLocalIDs = 0;
 
-  snl_fei::RecordCollection::map_type::iterator
-    r_iter = rmap.begin(),
-    r_end  = rmap.end();
-
-  for(; r_iter != r_end; ++r_iter) {
-    fei::Record<int>& thisrecord = *((*r_iter).second);
+  for(; it!=end; ++it) {
+    fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
 
     if (thisrecord.getOwnerProc() == fei::localProc(comm_)) {
       if (numLocalIDs < lenList) {
@@ -1771,15 +1949,13 @@ void fei::VectorSpace::runRecords(fei::Record_Operator<int>& record_op)
 {
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
+    std::map<int,int>& g2l = records->getGlobalToLocalMap();
+    std::map<int,int>::iterator
+      it = g2l.begin(),
+      end= g2l.end();
 
-    snl_fei::RecordCollection::map_type& rmap = records->getRecords();
-
-    snl_fei::RecordCollection::map_type::iterator
-      r_iter = rmap.begin(),
-      r_end  = rmap.end();
-
-    for(; r_iter != r_end; ++r_iter) {
-      fei::Record<int>& thisrecord = *((*r_iter).second);
+    for(; it!=end; ++it) {
+      fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
 
       record_op(thisrecord);
     }
@@ -1832,16 +2008,14 @@ int fei::VectorSpace::setLocalEqnNumbers()
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
 
-    snl_fei::RecordCollection::map_type& rmap = records->getRecords();
-
-    snl_fei::RecordCollection::map_type::iterator
-      r_iter = rmap.begin(),
-      r_end = rmap.end();
+    const std::map<int,int>& rmap = records->getGlobalToLocalMap();
+    std::map<int,int>::const_iterator
+      it = rmap.begin(), it_end = rmap.end();
 
     int* eqnNumPtr = &eqnNumbers_[0];
 
-    for(; r_iter != r_end; ++r_iter) {
-      fei::Record<int>& thisrecord = *((*r_iter).second);
+    for(; it!=it_end; ++it) {
+      fei::Record<int>& thisrecord = *records->getRecordWithLocalID(it->second);
 
       fei::FieldMask* mask = thisrecord.getFieldMask();
 

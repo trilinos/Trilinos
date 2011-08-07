@@ -62,5 +62,19 @@ operator()( OriginalTypeRef orig )
   return *NewMV;
 }
 
+MultiVector_Reindex::NewTypeRCP
+MultiVector_Reindex::transform(OriginalTypeRef orig)
+{
+  //test std::map, must have same number of local and global elements as original row std::map
+  assert( orig.Map().NumMyElements() == NewRowMap_.NumMyElements() );
+
+  std::vector<double*> MyValues(1);
+  int MyLDA;
+  int NumVectors = orig.NumVectors();
+  orig.ExtractView( &MyValues[0], &MyLDA );
+
+  return Teuchos::rcp(new Epetra_MultiVector( View, NewRowMap_, MyValues[0], MyLDA, NumVectors ));
+}
+
 } // namespace EpetraExt
 

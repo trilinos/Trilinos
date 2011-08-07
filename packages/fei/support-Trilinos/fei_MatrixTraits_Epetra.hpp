@@ -238,23 +238,15 @@ namespace snl_fei {
                      int LDA,
                      const double* values)
     {
-      int err, *nc_cols = const_cast<int*>(blockCols);
-      double* nc_values = const_cast<double*>(values);
-
-      err = mat->BeginSumIntoGlobalValues(blockRow, numBlockCols, nc_cols);
-      if (err != 0) return(err);
-
-      int voffset = 0;
+      int err, voffset = 0;
       for(int j=0; j<numBlockCols; ++j) {
-        err = mat->SubmitBlockEntry(&(nc_values[voffset]), LDA,
-                                    rowDim, colDims[j]);
+        err = mat->DirectSubmitBlockEntry(blockRow, blockCols[j],
+                                          &(values[voffset]), LDA,
+                                         rowDim, colDims[j], true/*sum_into*/);
         if (err != 0) return(err);
 
         voffset += colDims[j]*LDA;
       }
-
-      err = mat->EndSubmitEntries();
-      if (err != 0) return(err);
 
       return(0);
     }
@@ -268,23 +260,15 @@ namespace snl_fei {
                       int LDA,
                       const double* values)
     {
-      int* nc_cols = const_cast<int*>(blockCols);
-      double* nc_values = const_cast<double*>(values);
-
-      int err = mat->BeginReplaceGlobalValues(blockRow, numBlockCols, nc_cols);
-      if (err != 0) return(err);
-
-      int voffset = 0;
+      int err, voffset = 0;
       for(int j=0; j<numBlockCols; ++j) {
-        err = mat->SubmitBlockEntry(&(nc_values[voffset]), LDA,
-                                    rowDim, colDims[j]);
+        err = mat->DirectSubmitBlockEntry(blockRow, blockCols[j],
+                                         &(values[voffset]), LDA,
+                                    rowDim, colDims[j], false/*replace*/);
         if (err != 0) return(err);
 
         voffset += colDims[j]*LDA;
       }
-
-      err = mat->EndSubmitEntries();
-      if (err != 0) return(err);
 
       return(0);
     }
@@ -298,19 +282,12 @@ namespace snl_fei {
                      const int* colDims,
                      const double* const* values)
       {
-        int* nc_cols = const_cast<int*>(cols);
-        double** nc_values = const_cast<double**>(values);
-        int err = mat->BeginSumIntoGlobalValues(row,numCols,nc_cols);
-        if (err != 0) {
-          return(err);
-        }
+        int err = 0;
         for(int i=0; i<numCols; ++i) {
-          err = mat->SubmitBlockEntry(nc_values[i], LDAs[i], rowDim, colDims[i]);
-          if (err != 0) {
-            return(err);
-          }
+          err = mat->DirectSubmitBlockEntry(row, cols[i], values[i],
+                                            LDAs[i], rowDim, colDims[i], true);
+          if (err != 0) return(err);
         }
-        err = mat->EndSubmitEntries();
 
         return(err);
       }
@@ -324,15 +301,12 @@ namespace snl_fei {
                       const int* colDims,
                       const double* const* values)
       {
-        int* nc_cols = const_cast<int*>(cols);
-        double** nc_values = const_cast<double**>(values);
-        int err = mat->BeginReplaceGlobalValues(row, numCols, nc_cols);
-        if (err != 0) return(err);
+        int err = 0;
         for(int i=0; i<numCols; ++i) {
-          err = mat->SubmitBlockEntry(nc_values[i], LDAs[i], rowDim, colDims[i]);
+          err = mat->DirectSubmitBlockEntry(row, cols[i], values[i],
+                                          LDAs[i], rowDim, colDims[i], false);
           if (err != 0) return(err);
         }
-        err = mat->EndSubmitEntries();
 
         return(err);
       }

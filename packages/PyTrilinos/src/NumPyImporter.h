@@ -31,6 +31,9 @@
 
 #include "numpy_include.h"
 
+namespace PyTrilinos
+{
+
 // Singleton class that ensures that the numpy (macro) function
 // import_array() gets called once and only once.
 
@@ -52,7 +55,6 @@ private:
   
 };
 
-// Static initialization
-//NumPyImporter NumPyImporter::m_singleton;
+}  // Namespace PyTrilinos
 
 #endif // NUMPYIMPORTER_H

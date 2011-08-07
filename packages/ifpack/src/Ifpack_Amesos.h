@@ -369,6 +369,8 @@ private:
 
   //! Contains the label of \c this object.
   string Label_;
+  //! If true, the linear system on this processor is empty, thus the preconditioner is null operation.
+  bool IsEmpty_;
   //! If true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
   //! If true, the preconditioner has been successfully computed.

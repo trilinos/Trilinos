@@ -426,11 +426,11 @@ SerialDenseSolver<OrdinalType,ScalarType>::SerialDenseSolver()
     LDAF_(0),
     INFO_(0),
     LWORK_(0),
-    ANORM_(ScalarTraits<ScalarType>::zero()),
-    RCOND_(ScalarTraits<ScalarType>::zero()),
-    ROWCND_(ScalarTraits<ScalarType>::zero()),
-    COLCND_(ScalarTraits<ScalarType>::zero()),
-    AMAX_(ScalarTraits<ScalarType>::zero()),
+    ANORM_(ScalarTraits<MagnitudeType>::zero()),
+    RCOND_(ScalarTraits<MagnitudeType>::zero()),
+    ROWCND_(ScalarTraits<MagnitudeType>::zero()),
+    COLCND_(ScalarTraits<MagnitudeType>::zero()),
+    AMAX_(ScalarTraits<MagnitudeType>::zero()),
     A_(0),
     AF_(0)
 {
@@ -738,7 +738,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::equilibrateRHS()
   if (R_.size()==0) ierr = computeEquilibrateScaling(); // Compute R and C if needed.
   if (ierr!=0) return(ierr);     // Can't count on R and C being computed.
 
-  ScalarType * R_tmp = &R_[0];
+  MagnitudeType * R_tmp = &R_[0];
   if (transpose_) R_tmp = &C_[0];
 
   OrdinalType LDB = RHS_->stride(), NRHS = RHS_->numCols();
@@ -766,7 +766,7 @@ int SerialDenseSolver<OrdinalType,ScalarType>::unequilibrateLHS()
 
   if (!equilibratedB_) return(0); // Nothing to do
 
-  ScalarType * C_tmp = &C_[0];
+  MagnitudeType * C_tmp = &C_[0];
   if (transpose_) C_tmp = &R_[0];
 
   OrdinalType LDX = RHS_->stride(), NRHS = RHS_->numCols();

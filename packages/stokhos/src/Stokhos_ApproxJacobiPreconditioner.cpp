@@ -118,7 +118,7 @@ Stokhos::ApproxJacobiPreconditioner::
 ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Total Approximate Jacobi Time");
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total Approximate Jacobi Time");
 #endif
 
   // We have to be careful if Input and Result are the same vector.
@@ -154,7 +154,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     // Apply deterministic preconditioner
     for(int i=0; i<myBlockRows; i++) {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR("Total AJ Deterministic Preconditioner Time");
+      TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total AJ Deterministic Preconditioner Time");
 #endif
       mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)),
 			      *(result_block.GetBlock(i)));

@@ -275,6 +275,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
   */
     int Scale(double ScalarConstant);
 
+    //! Submit a block-entry directly into the matrix (without using a begin/end sequence)
+    /** Experimental method which allows submitting a block-entry without first
+      calling BeginInsertGlobalValues. This method copies the input data directly
+      into the matrix storage.
+      The block-entry is specified by global block-row and block-col indices.
+    */
+    int DirectSubmitBlockEntry(int GlobalBlockRow, int GlobalBlockCol,
+                               const double *values, int LDA,
+                               int NumRows, int NumCols, bool sum_into);
 
   //! Initiate insertion of a list of elements in a given global row of the matrix, values are inserted via SubmitEntry().
   /*!

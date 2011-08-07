@@ -43,12 +43,31 @@ namespace Intrepid {
 								      const ArrayScalar &pts_x ,
 								      const ArrayScalar &pts_y ,
 								      const ArrayScalar &pts_z ):
-    bases_( 3 )
+    ptsx_( pts_x.dimension(0) , 1 ),
+    ptsy_( pts_y.dimension(0) , 1 ),
+    ptsz_( pts_z.dimension(0) , 1 )
   {
+    for (int i=0;i<pts_x.dimension(0);i++)
+      {
+	ptsx_(i,0) = pts_x(i,0);
+      }
+    for (int i=0;i<pts_y.dimension(0);i++)
+      {
+	ptsy_(i,0) = pts_y(i,0);
+      }
+    for (int i=0;i<pts_z.dimension(0);i++)
+      {
+	ptsz_(i,0) = pts_z(i,0);
+      }
 
-    bases_[0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( orderx , pts_x ) );
-    bases_[1] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( ordery , pts_y ) );
-    bases_[2] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( orderz , pts_z ) );
+    Array<Array<RCP<Basis<Scalar,ArrayScalar> > > > bases(1);
+    bases[0].resize(3);
+
+    bases[0][0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( orderx , pts_x ) );
+    bases[0][1] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( ordery , pts_y ) );
+    bases[0][2] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( orderz , pts_z ) );
+
+    this->setBases( bases );
 
     this->basisCardinality_ = (orderx+1)*(ordery+1)*(orderz+1);
     if (orderx >= ordery && orderx >= orderz ) {
@@ -69,18 +88,40 @@ namespace Intrepid {
   template<class Scalar, class ArrayScalar>
   Basis_HGRAD_HEX_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_HEX_Cn_FEM( const int order , 
 								      const EPointType & pointType ):
-    bases_( 3 )
+    ptsx_( order+1 , 1 ),
+    ptsy_( order+1 , 1 ),
+    ptsz_( order+1 , 1 )
   {
-    bases_[0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( order , pointType ) );
+    Array<Array<RCP<Basis<Scalar,ArrayScalar> > > > bases(1);
+    bases[0].resize(3);
+
+    bases[0][0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM< Scalar , ArrayScalar >( order , pointType ) );
     // basis is same in each direction, so I only need to instantiate it once!
-    bases_[1] = bases_[0];
-    bases_[2] = bases_[0];
+    bases[0][1] = bases[0][0];
+    bases[0][2] = bases[0][0];
+
+    this->setBases( bases );
+
     this->basisCardinality_ = (order+1)*(order+1)*(order+1);
     this->basisDegree_ = order;
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
     this -> basisType_         = BASIS_FEM_FIAT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
+
+    // get points
+    EPointType pt = (pointType==POINTTYPE_EQUISPACED)?pointType:POINTTYPE_WARPBLEND;
+    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( ptsx_ ,
+							    shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
+							    order ,
+							    0 ,
+							    pt );
+    for (int i=0;i<order+1;i++)
+      {
+	ptsy_(i,0) = ptsx_(i,0);
+	ptsz_(i,0) = ptsx_(i,0);
+      }
+
   }
 
   template<class Scalar, class ArrayScalar>
@@ -104,9 +145,9 @@ namespace Intrepid {
        tags[tagSize*i+3] = this->getCardinality();
      }
 
-    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &xBasis_ = *bases_[0];
-    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &yBasis_ = *bases_[1];
-    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &zBasis_ = *bases_[2];
+    Basis<Scalar,ArrayScalar> &xBasis_ = *this->bases_[0][0];
+    Basis<Scalar,ArrayScalar> &yBasis_ = *this->bases_[0][1];
+    Basis<Scalar,ArrayScalar> &zBasis_ = *this->bases_[0][2];
 
 
     // now let's try to do it "right"
@@ -197,16 +238,16 @@ namespace Intrepid {
 							       const EOperator operatorType ) const 
   {
 #ifdef HAVE_INTREPID_DEBUG
-  Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-                                                      inputPoints,
-                                                      operatorType,
-                                                      this -> getBaseCellTopology(),
-                                                      this -> getCardinality() );
+    Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
+							inputPoints,
+							operatorType,
+							this -> getBaseCellTopology(),
+							this -> getCardinality() );
 #endif
-
-    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &xBasis_ = *bases_[0];
-    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &yBasis_ = *bases_[1];
-    Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> &zBasis_ = *bases_[2];
+    
+    Basis<Scalar,ArrayScalar> &xBasis_ = *this->bases_[0][0];
+    Basis<Scalar,ArrayScalar> &yBasis_ = *this->bases_[0][1];
+    Basis<Scalar,ArrayScalar> &zBasis_ = *this->bases_[0][2];
 
 
     FieldContainer<Scalar> xInputPoints(inputPoints.dimension(0),1);
@@ -355,6 +396,24 @@ void Basis_HGRAD_HEX_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
                       ">>> ERROR (Basis_HGRAD_HEX_Cn_FEM): FEM Basis calling an FVD member function");
 }
 
+  template<class Scalar,class ArrayScalar>
+  void Basis_HGRAD_HEX_Cn_FEM<Scalar, ArrayScalar>::getDofCoords( ArrayScalar & dofCoords ) const
+  {
+    int cur = 0;
+    for (int k=0;k<ptsz_.dimension(0);k++)
+      {
+	for (int j=0;j<ptsy_.dimension(0);j++)
+	  {
+	    for (int i=0;i<ptsx_.dimension(0);i++)
+	      {
+		dofCoords(cur,0) = ptsx_(i);
+		dofCoords(cur,1) = ptsy_(j);
+		dofCoords(cur,2) = ptsz_(k);
+		cur++;
+	      }
+	  }
+      }
+  }
   
 }// namespace Intrepid
 

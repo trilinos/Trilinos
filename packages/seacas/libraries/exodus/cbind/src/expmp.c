@@ -49,6 +49,8 @@
 
 #include "exodusII.h"
 #include "exodusII_int.h"
+#include <assert.h>
+#include <stdlib.h>
 
 /*!
  * defines the number of node and element maps. It is more efficient
@@ -66,6 +68,7 @@ int ex_put_map_param (int   exoid,
                       int   num_elem_maps)
 {
   int dim[2], dimid, strdim, varid, status;
+  int var_nm_id, var_em_id;
   int i;
   char errmsg[MAX_ERR_LENGTH];
 
@@ -85,24 +88,22 @@ int ex_put_map_param (int   exoid,
   if ( (num_node_maps > 0) || (num_elem_maps > 0) ) {
 
       /* inquire previously defined dimensions  */
-      if ((status = nc_inq_dimid (exoid, DIM_STR_NAME, &strdim)) != NC_NOERR)
-	{
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "Error: failed to get string length in file id %d",exoid);
-	  ex_err("ex_put_map_param",errmsg,exerrval);
-	  return (EX_FATAL);
-	}
+      if ((status = nc_inq_dimid (exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
+	exerrval = status;
+	sprintf(errmsg,
+		"Error: failed to get string length in file id %d",exoid);
+	ex_err("ex_put_map_param",errmsg,exerrval);
+	return (EX_FATAL);
+      }
       
       /* put file into define mode */
-      if ((status = nc_redef (exoid)) != NC_NOERR)
-	{
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "Error: failed to put file id %d into define mode", exoid);
-	  ex_err("ex_put_map_param",errmsg,exerrval);
-	  return (EX_FATAL);
-	}
+      if ((status = nc_redef (exoid)) != NC_NOERR) {
+	exerrval = status;
+	sprintf(errmsg,
+		"Error: failed to put file id %d into define mode", exoid);
+	ex_err("ex_put_map_param",errmsg,exerrval);
+	return (EX_FATAL);
+      }
       
       
       /* node maps: */
@@ -119,7 +120,7 @@ int ex_put_map_param (int   exoid,
 
 	  /* node maps id array: */
 	  dim[0] = dimid;
-	  if ((status = nc_def_var(exoid, VAR_NM_PROP(1), NC_INT, 1, dim, &varid)) != NC_NOERR)
+	  if ((status = nc_def_var(exoid, VAR_NM_PROP(1), NC_INT, 1, dim, &var_nm_id)) != NC_NOERR)
 	    {
 	      exerrval = status;
 	      sprintf(errmsg,
@@ -130,7 +131,7 @@ int ex_put_map_param (int   exoid,
 	    }
 
 	  /*   store property name as attribute of property array variable */
-	  if ((status=nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID")) != NC_NOERR)
+	  if ((status=nc_put_att_text(exoid, var_nm_id, ATT_PROP_NAME, 3, "ID")) != NC_NOERR)
 	    {
 	      exerrval = status;
 	      sprintf(errmsg,
@@ -199,7 +200,7 @@ int ex_put_map_param (int   exoid,
 
 	  /* element maps id array: */
 	  dim[0] = dimid;
-	  if ((status = nc_def_var(exoid, VAR_EM_PROP(1), NC_INT, 1, dim, &varid)) != NC_NOERR)
+	  if ((status = nc_def_var(exoid, VAR_EM_PROP(1), NC_INT, 1, dim, &var_em_id)) != NC_NOERR)
 	    {
 	      exerrval = status;
 	      sprintf(errmsg,
@@ -210,7 +211,7 @@ int ex_put_map_param (int   exoid,
 	    }
 
 	  /*   store property name as attribute of property array variable */
-	  if ((status=nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID")) != NC_NOERR)
+	  if ((status=nc_put_att_text(exoid, var_em_id, ATT_PROP_NAME, 3, "ID")) != NC_NOERR)
 	    {
 	      exerrval = status;
 	      sprintf(errmsg,
@@ -270,15 +271,31 @@ int ex_put_map_param (int   exoid,
 	}
 
       /* leave define mode */
-      if ((status = nc_enddef (exoid)) != NC_NOERR)
-	{
-	  exerrval = status;
-	  sprintf(errmsg,
-		  "Error: failed to complete variable definitions in file id %d",exoid);
-	  ex_err("ex_put_map_param",errmsg,exerrval);
-	  return (EX_FATAL);
-	}
+      if ((status = nc_enddef (exoid)) != NC_NOERR) {
+	exerrval = status;
+	sprintf(errmsg,
+		"Error: failed to complete variable definitions in file id %d",exoid);
+	ex_err("ex_put_map_param",errmsg,exerrval);
+	return (EX_FATAL);
+      }
 
+      /* Fill the id arrays with EX_INVALID_ID */
+      {
+	int maxset = num_node_maps > num_elem_maps ? num_node_maps : num_elem_maps;
+	int *invalid_ids = malloc(maxset*sizeof(int));
+	for (i=0; i < maxset; i++) {
+	  invalid_ids[i] = EX_INVALID_ID;
+	}
+	if (num_node_maps > 0) {
+	  status = nc_put_var_int(exoid, var_nm_id, invalid_ids);
+	  assert(status == NC_NOERR);
+	}
+	if (num_elem_maps > 0) {
+	  status = nc_put_var_int(exoid, var_em_id, invalid_ids);
+	  assert(status == NC_NOERR);
+	}
+	free(invalid_ids);
+      }
     }
 
   return (EX_NOERR);

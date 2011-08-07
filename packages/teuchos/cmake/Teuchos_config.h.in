@@ -29,6 +29,8 @@
 
 #cmakedefine HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM
 
+#cmakedefine HAVE_COMPLEX_BLAS
+
 /* define if the compiler supports access of protected templated nested
    classes in derived classes */
 #cmakedefine HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS
@@ -38,6 +40,9 @@
 
 /* Define if want to build teuchos-blasfloat */
 #cmakedefine HAVE_TEUCHOS_BLASFLOAT
+
+/* Define if Lapack has _LARND methods */
+#cmakedefine HAVE_TEUCHOS_LAPACKLARND
 
 /* Define if want to build teuchos-boost */
 #cmakedefine HAVE_TEUCHOS_BOOST

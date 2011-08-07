@@ -19,61 +19,34 @@
 
 //----------------------------------------------------------------------------
 snl_fei::RecordCollection::RecordCollection(int localProc)
-  : records_(),
+  : m_records(),
+    m_global_to_local(),
     localProc_(localProc),
-    recordPool_(),
     debugOutput_(false),
     dbgOut_(NULL)
 {
+  m_records.reserve(2000);
 }
 
 //----------------------------------------------------------------------------
 snl_fei::RecordCollection::RecordCollection(const RecordCollection& src)
-  : records_(),
+  : m_records(src.m_records),
+    m_global_to_local(src.m_global_to_local),
     localProc_(src.localProc_),
-    recordPool_(),
     debugOutput_(src.debugOutput_),
     dbgOut_(src.dbgOut_)
 {
-  map_type& srcRecords =
-    const_cast<map_type&>(src.records_);
-  map_type::iterator
-    iter = srcRecords.begin(),
-    iter_end = srcRecords.end();
-
-  map_type::iterator records_end = records_.end();
-
-  static fei::Record<int> dummyRecord;
-
-  for(; iter != iter_end; ++iter) {
-    map_type::value_type srcpair = *iter;
-    int srcID = srcpair.first;
-    fei::Record<int>* srcRec = srcpair.second;
-
-    fei::Record<int>* record = recordPool_.allocate(1);
-    recordPool_.construct(record,dummyRecord);
-    *record = *srcRec;
-    records_.insert(records_end, map_type::value_type(srcID, record));
-  }
 }
 
 //----------------------------------------------------------------------------
 snl_fei::RecordCollection::~RecordCollection()
 {
-  map_type::iterator
-    iter = records_.begin(),
-    iter_end = records_.end();
-
-  for(; iter != iter_end; ++iter) {
-    map_type::value_type pair = *iter;
-    recordPool_.deallocate(pair.second,1);
-  }
 }
 
 //----------------------------------------------------------------------------
 void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
                                             std::vector<fei::FieldMask*>& fieldMasks,
-                                            fei::Record<int>** records)
+                                            int* recordLocalIDs)
 {
   int maskID = 0;
   fei::FieldMask* mask = NULL;
@@ -89,154 +62,34 @@ void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
     fieldMasks.push_back(mask);
   }
 
-  static fei::Record<int> dummyRecord;
-
   for(int i=0; i<numIDs; ++i) {
-    fei::Record<int>* record = NULL;
-
-    map_type::iterator riter = records_.lower_bound(IDs[i]);
-    if (riter != records_.end()) {
-      if ((*riter).first != IDs[i]) {
-        record = recordPool_.allocate(1);
-        recordPool_.construct(record,dummyRecord);
-
-        record->setID(IDs[i]);
-        record->setFieldMask(mask);
-        record->setOwnerProc(localProc_);
-
-        records_.insert(riter, map_type::value_type(IDs[i], record));
-      }
-      else {
-        record = (*riter).second;
-
-        record->setFieldMask(mask);
-      }
+    int local_id;
+    std::map<int,int>::iterator iter = m_global_to_local.lower_bound(IDs[i]);
+    if (iter == m_global_to_local.end() || iter->first != IDs[i]) {
+      //record doesn't exist, so we'll add a new one.
+      local_id = m_records.size();
+      m_global_to_local.insert(iter, std::make_pair(IDs[i], local_id));
+      fei::Record<int> record;
+      record.setID(IDs[i]);
+      record.setFieldMask(mask);
+      record.setOwnerProc(localProc_);
+      m_records.push_back(record);
     }
     else {
-      record = recordPool_.allocate(1);
-      recordPool_.construct(record,dummyRecord);
-
-      record->setID(IDs[i]);
-      record->setFieldMask(mask);
-      record->setOwnerProc(localProc_);
-
-      records_.insert(riter, map_type::value_type(IDs[i], record));
+      local_id = iter->second;
     }
 
-    if (records != NULL) {
-      records[i] = record;
-    }
+    if (recordLocalIDs != NULL) recordLocalIDs[i] = local_id;
   }
 }
 
 //----------------------------------------------------------------------------
 void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
-                                            int numInstances,
-                                            int numIDs, const int* IDs,
-                                            std::vector<fei::FieldMask*>& fieldMasks,
-                                            bool skipIDsWithThisField)
-{
-  int maskID = fei::FieldMask::calculateMaskID(1, &fieldID,
-                                                      &numInstances);
-  fei::FieldMask* mask = NULL;
-  for(unsigned m=0; m<fieldMasks.size(); ++m) {
-    if (maskID == fieldMasks[m]->getMaskID()) {
-      mask = fieldMasks[m]; break;
-    }
-  }
-
-  if (mask == NULL) {
-    mask = new fei::FieldMask(1, &fieldID, &fieldSize, &numInstances);
-    maskID = mask->getMaskID();
-    fieldMasks.push_back(mask);
-  }
-
-  fei::FieldMask* lastMask = mask;
-  int lastMaskID = maskID;
-  static fei::Record<int> dummyRecord;
-
-  for(int i=0; i<numIDs; ++i) {
-    fei::Record<int>* record = NULL;
-
-    map_type::iterator riter = records_.lower_bound(IDs[i]);
-
-    if (riter != records_.end()) {
-      if ((*riter).first != IDs[i]) {
-        record = recordPool_.allocate(1);
-        recordPool_.construct(record,dummyRecord);
-
-        record->setID(IDs[i]);
-        record->setFieldMask(mask);
-        record->setOwnerProc(localProc_);
-
-        records_.insert(riter, map_type::value_type(IDs[i], record));
-      }
-      else {
-        record = (*riter).second;
-
-        int thisMaskID = record->getFieldMask()->getMaskID();
-
-        if (skipIDsWithThisField) {
-          if (maskID == thisMaskID) continue;
-          if (record->getFieldMask()->hasFieldID(fieldID)) continue;
-        }
-
-        if (lastMaskID == thisMaskID) {
-          record->setFieldMask(lastMask);
-          continue;
-        }
-
-        fei::FieldMask* thisMask = record->getFieldMask();
-        int newMaskID = fei::FieldMask::calculateMaskID(*thisMask,
-                                                            fieldID, numInstances);
-        if (lastMaskID == newMaskID) {
-          record->setFieldMask(lastMask);
-          continue;
-        }
-
-        bool newMaskAlreadyExists = false;
-        for(unsigned m=0; m<fieldMasks.size(); ++m) {
-          if (newMaskID == fieldMasks[m]->getMaskID()) {
-            lastMask = fieldMasks[m];
-            lastMaskID = lastMask->getMaskID();
-            record->setFieldMask(lastMask);
-            newMaskAlreadyExists = true;
-            break;
-          }
-        }
-
-        if (!newMaskAlreadyExists) {
-          fei::FieldMask* newmask = new fei::FieldMask(*record->getFieldMask());
-          newmask->addField(fieldID, fieldSize, numInstances);
-          record->setFieldMask(newmask);
-          fieldMasks.push_back(newmask);
-          lastMask = newmask;
-          lastMaskID = lastMask->getMaskID();
-        }
-      }
-    }
-    else {
-      record = recordPool_.allocate(1);
-      recordPool_.construct(record,dummyRecord);
-      record->setID(IDs[i]);
-      record->setFieldMask(mask);
-      record->setOwnerProc(localProc_);
-
-      records_.insert(riter, map_type::value_type(IDs[i], record));
-    }
-  }
-}
-
-//----------------------------------------------------------------------------
-void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
-                                              int numInstances,
                                               int numIDs, const int* IDs,
                                               std::vector<fei::FieldMask*>& fieldMasks,
-                                              fei::Record<int>** records,
-                                              bool skipIDsWithThisField)
+                                              int* recordLocalIDs)
 {
-  int maskID = fei::FieldMask::calculateMaskID(1, &fieldID,
-                                                      &numInstances);
+  int maskID = fei::FieldMask::calculateMaskID(1, &fieldID);
   fei::FieldMask* mask = NULL;
   for(unsigned m=0; m<fieldMasks.size(); ++m) {
     if (maskID == fieldMasks[m]->getMaskID()) {
@@ -245,94 +98,76 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
   }
 
   if (mask == NULL) {
-    mask = new fei::FieldMask(1, &fieldID, &fieldSize, &numInstances);
+    mask = new fei::FieldMask(1, &fieldID, &fieldSize);
     maskID = mask->getMaskID();
     fieldMasks.push_back(mask);
   }
 
-  fei::FieldMask* lastMask = mask;
   int lastMaskID = maskID;
-  static fei::Record<int> dummyRecord;
-
-  map_type::iterator rend = records_.end();
+  fei::FieldMask* lastMask = mask;
 
   for(int i=0; i<numIDs; ++i) {
-    fei::Record<int>* record = NULL;
-    int ID = IDs[i];
+    int local_id;
+    std::map<int,int>::iterator iter = m_global_to_local.lower_bound(IDs[i]);
+    if (iter == m_global_to_local.end() || iter->first != IDs[i]) {
+      //record doesn't exist, so we'll add a new one.
+      local_id = m_records.size();
+      m_global_to_local.insert(iter, std::make_pair(IDs[i], local_id));
+      fei::Record<int> record;
+      record.setID(IDs[i]);
+      record.setFieldMask(mask);
+      record.setOwnerProc(localProc_);
+      m_records.push_back(record);
 
-    map_type::iterator riter = records_.lower_bound(ID);
-
-    if (riter != rend) {
-      const map_type::value_type& rval = *riter;
-
-      if (rval.first != ID) {
-        record = recordPool_.allocate(1);
-        recordPool_.construct(record,dummyRecord);
-
-        record->setID(ID);
-        record->setFieldMask(mask);
-        record->setOwnerProc(localProc_);
-
-        records_.insert(riter, map_type::value_type(ID, record));
-
-        records[i] = record;
-      }
-      else {
-        record = rval.second;
-
-        records[i] = record;
-
-        int thisMaskID = record->getFieldMask()->getMaskID();
-
-        if (skipIDsWithThisField) {
-          if (maskID == thisMaskID) continue;
-          if (record->getFieldMask()->hasFieldID(fieldID)) continue;
-        }
-
-        if (lastMaskID == thisMaskID) {
-          record->setFieldMask(lastMask);
-          continue;
-        }
-
-        fei::FieldMask* thisMask = record->getFieldMask();
-        int newMaskID = fei::FieldMask::calculateMaskID(*thisMask,
-                                                            fieldID, numInstances);
-        if (lastMaskID == newMaskID) {
-          record->setFieldMask(lastMask);
-          continue;
-        }
-
-        bool newMaskAlreadyExists = false;
-        for(unsigned m=0; m<fieldMasks.size(); ++m) {
-          if (newMaskID == fieldMasks[m]->getMaskID()) {
-            lastMask = fieldMasks[m];
-            lastMaskID = lastMask->getMaskID();
-            record->setFieldMask(lastMask);
-            newMaskAlreadyExists = true;
-            break;
-          }
-        }
-
-        if (!newMaskAlreadyExists) {
-          fei::FieldMask* newmask = new fei::FieldMask(*record->getFieldMask());
-          newmask->addField(fieldID, fieldSize, numInstances);
-          record->setFieldMask(newmask);
-          fieldMasks.push_back(newmask);
-          lastMask = newmask;
-          lastMaskID = lastMask->getMaskID();
-        }
+      if (recordLocalIDs != NULL) {
+        recordLocalIDs[i] = local_id;
       }
     }
     else {
-      record = recordPool_.allocate(1);
-      recordPool_.construct(record,dummyRecord);
-      record->setID(ID);
-      record->setFieldMask(mask);
-      record->setOwnerProc(localProc_);
+      local_id = iter->second;
+      fei::Record<int>& record = m_records[local_id];
 
-      records_.insert(riter, map_type::value_type(ID, record));
+      if (recordLocalIDs != NULL) {
+        recordLocalIDs[i] = local_id;
+      }
 
-      records[i] = record;
+      int thisMaskID = record.getFieldMask()->getMaskID();
+
+      fei::FieldMask* thisMask = record.getFieldMask();
+      if (maskID == thisMaskID || thisMask->hasFieldID(fieldID)) {
+        continue;
+      }
+
+      if (lastMaskID == thisMaskID) {
+        record.setFieldMask(lastMask);
+       continue;
+      }
+
+      int newMaskID = fei::FieldMask::calculateMaskID(*thisMask, fieldID);
+      if (lastMaskID == newMaskID) {
+        record.setFieldMask(lastMask);
+        continue;
+      }
+
+      bool newMaskAlreadyExists = false;
+      for(unsigned m=0; m<fieldMasks.size(); ++m) {
+        if (newMaskID == fieldMasks[m]->getMaskID()) {
+          lastMask = fieldMasks[m];
+          lastMaskID = lastMask->getMaskID();
+          record.setFieldMask(lastMask);
+          newMaskAlreadyExists = true;
+          break;
+        }
+      }
+
+      if (!newMaskAlreadyExists) {
+        fei::FieldMask* newmask = new fei::FieldMask(*record.getFieldMask());
+        newmask->addField(fieldID, fieldSize);
+        record.setFieldMask(newmask);
+        fieldMasks.push_back(newmask);
+        lastMask = newmask;
+        lastMaskID = lastMask->getMaskID();
+      }
     }
   }
 }
@@ -348,16 +183,11 @@ setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs)
 
   std::vector<int>& owningProcs = sharedIDs.getOwningProcs();
 
-  map_type::iterator rend = records_.end();
-
-  int i;
+  int i=0;
   for(i=0, s_it = s_beg; s_it != s_end; ++i, ++s_it) {
-    fei::Record<int>* record = NULL;
     int sh_id = s_it->first;
-    map_type::iterator riter = records_.find(sh_id);
-    if (riter == rend) continue;
-
-    record = (*riter).second;
+    fei::Record<int>* record = getRecordWithID(sh_id);
+    if (record == NULL) continue;
 
     int proc = owningProcs[i];
 
@@ -372,26 +202,24 @@ setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs)
 
 fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID)
 {
-  map_type::iterator rend = records_.end();
-  map_type::iterator riter = records_.find(ID);
+  std::map<int,int>::iterator iter = m_global_to_local.find(ID);
 
-  if (riter == rend) {
+  if (iter == m_global_to_local.end()) {
     return( NULL );
   }
 
-  return(riter->second);
+  return(&m_records[iter->second]);
 }
 
 const fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID) const
 {
-  map_type::const_iterator rend = records_.end();
-  map_type::const_iterator riter = records_.find(ID);
+  std::map<int,int>::const_iterator iter = m_global_to_local.find(ID);
 
-  if (riter == rend) {
+  if (iter == m_global_to_local.end()) {
     return( NULL );
   }
 
-  return(riter->second);
+  return(&m_records[iter->second]);
 }
 
 int snl_fei::RecordCollection::getGlobalBlkIndex(int ID, int& globalBlkIndex)
@@ -423,22 +251,14 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
   }
 
   fei::FieldMask* mask = record->getFieldMask();
-  int numInstances = 0;
   int offset = 0;
   try {
-    mask->getFieldEqnOffset(fieldID, offset, numInstances);
+    mask->getFieldEqnOffset(fieldID, offset);
   }
   catch (...) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "failed to get eqn-offset for fieldID " << fieldID
           << " on record with ID " << ID << ".";
-    throw std::runtime_error(osstr.str());
-  }
-
-  if (fieldOffset >= numInstances) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "snl_fei::RecordCollection::getGlobalIndex: fieldOffset ("<<fieldOffset
-          << ") should be less than numInstances ("<<numInstances<<").";
     throw std::runtime_error(osstr.str());
   }
 

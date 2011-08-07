@@ -84,7 +84,7 @@ void get_entities_with_given_subcell(
 // Check if 3d element topology topo is degenerate
 bool is_degenerate( const fem::CellTopology & topo)
 {
-  return topo.getSideCount() <= 3;
+  return topo.getSideCount() < 3;
 }
 
 // Check if entity has a specific relation to an entity of subcell_rank

@@ -610,8 +610,8 @@ int Amesos_Klu::SymbolicFactorization()
      if( ! Problem_->GetRHS() )  AMESOS_CHK_ERR( -15 ) ;
      if( ! Problem_->GetLHS()->NumVectors() ) AMESOS_CHK_ERR( -15 ) ;
      if( ! Problem_->GetRHS()->NumVectors() ) AMESOS_CHK_ERR( -15 ) ; 
-     SerialB_ = Problem_->GetRHS() ;
-     SerialX_ = Problem_->GetLHS() ;
+     SerialB_ = Teuchos::rcp(Problem_->GetRHS(),false) ;
+     SerialX_ = Teuchos::rcp(Problem_->GetLHS(),false) ;
      NumVectors_ = SerialX_->NumVectors();
      if (MyPID_ == 0) {
        AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
@@ -680,6 +680,11 @@ int Amesos_Klu::Solve()
 {
   Epetra_MultiVector* vecX = 0 ;
   Epetra_MultiVector* vecB = 0 ;
+
+#ifdef HAVE_AMESOS_EPETRAEXT
+  Teuchos::RCP<Epetra_MultiVector> vecX_rcp;
+  Teuchos::RCP<Epetra_MultiVector> vecB_rcp;
+#endif
   
 #ifdef Bug_8212
   //  This demonstrates Bug #2812 - Valgrind does not catch this
@@ -699,8 +704,8 @@ int Amesos_Klu::Solve()
 
   if ( !TrustMe_  ) { 
 
-    SerialB_ = Problem_->GetRHS() ;
-    SerialX_ = Problem_->GetLHS() ;
+    SerialB_ = Teuchos::rcp(Problem_->GetRHS(),false);
+    SerialX_ = Teuchos::rcp(Problem_->GetLHS(),false);
     
     Epetra_MultiVector* OrigVecX ;
     Epetra_MultiVector* OrigVecB ;
@@ -718,8 +723,11 @@ int Amesos_Klu::Solve()
     
     if ( Reindex_ ) { 
 #ifdef HAVE_AMESOS_EPETRAEXT
-      vecX = StdIndexDomain_->StandardizeIndex( OrigVecX ) ;
-      vecB = StdIndexRange_->StandardizeIndex( OrigVecB ) ;
+      vecX_rcp = StdIndexDomain_->StandardizeIndex( *OrigVecX ) ;
+      vecB_rcp = StdIndexRange_->StandardizeIndex( *OrigVecB ) ;
+
+      vecX = &*vecX_rcp;
+      vecB = &*vecB_rcp;
 #else
       AMESOS_CHK_ERR( -13 ) ; // Amesos_Klu can't handle non-standard indexing without EpetraExt 
 #endif
@@ -738,8 +746,20 @@ int Amesos_Klu::Solve()
     //  Copy B to the serial version of B
     //
     if (UseDataInPlace_ == 1) {
+#ifdef HAVE_AMESOS_EPETRAEXT
+      if(vecX_rcp==Teuchos::null)
+         SerialX_ = Teuchos::rcp(vecX,false);
+      else
+         SerialX_ = vecX_rcp;
+
+      if(vecB_rcp==Teuchos::null)
+         SerialB_ = Teuchos::rcp(vecB,false);
+      else 
+         SerialB_ = vecB_rcp;
+#else
       SerialB_ = vecB;
       SerialX_ = vecX;
+#endif
       NumVectors_ = Problem_->GetRHS()->NumVectors() ; 
     } else {
       assert (UseDataInPlace_ == 0);
@@ -760,8 +780,8 @@ int Amesos_Klu::Solve()
       if ( SerialBextract_->Import(*vecB,*UseImport,Insert) )
 	AMESOS_CHK_ERR( -1 ) ; // internal error
       
-      SerialB_ = &*SerialBextract_ ;
-      SerialX_ = &*SerialXextract_ ;
+      SerialB_ = Teuchos::rcp(&*SerialBextract_,false) ;
+      SerialX_ = Teuchos::rcp(&*SerialXextract_,false) ;
     }
     
     VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_, 0);

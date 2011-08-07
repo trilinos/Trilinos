@@ -129,8 +129,8 @@ LOCA::AnasaziOperator::ShiftInvert::transformEigenvalue(double& ev_r,
 
 NOX::Abstract::Group::ReturnType 
 LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient(
-				         const NOX::Abstract::Vector& evec_r,
-					 const NOX::Abstract::Vector& evec_i,
+				         NOX::Abstract::Vector& evec_r,
+					 NOX::Abstract::Vector& evec_i,
 					 double& rq_r, double& rq_i) const
 {
   string callingFunction = 
@@ -191,6 +191,12 @@ LOCA::AnasaziOperator::ShiftInvert::rayleighQuotient(
   // Compute z^T J z / z^T M z
   rq_r = (rq_r*m_r + rq_i*m_i) / m;
   rq_i = (rq_i*m_r - rq_r*m_i) / m;
+
+  if (eigenParams->get("Normalize Eigenvectors with Mass Matrix",false)) {
+    double scl = 1.0 / sqrt(sqrt(m));
+    evec_r.scale(scl);
+    evec_i.scale(scl);
+  }
 
   return finalStatus;
 }

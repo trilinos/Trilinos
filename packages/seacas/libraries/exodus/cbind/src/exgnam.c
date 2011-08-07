@@ -64,7 +64,6 @@ int ex_get_name (int   exoid,
 {
   int status;
   int varid, ent_ndx;
-  size_t start[2], count[2];
   char errmsg[MAX_ERR_LENGTH];
   char *vobj = NULL;
   const char *routine = "ex_get_name";

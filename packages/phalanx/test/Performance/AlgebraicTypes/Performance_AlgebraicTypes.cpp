@@ -34,6 +34,7 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 // Inefficient vector/tensor objects
 #include "Special_AlgebraicTypes.hpp"
@@ -49,6 +50,8 @@ int main(int argc, char* argv[])
 
   using namespace std;
   using namespace Teuchos;
+
+  GlobalMPISession mpi_session(&argc, &argv);
 
   const int num_samples = 1;
   const int num_loops = 500000;

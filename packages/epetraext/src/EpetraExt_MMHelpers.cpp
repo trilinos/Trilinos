@@ -203,5 +203,76 @@ void insert_matrix_locations(CrsWrapper_GraphBuilder& graphbuilder,
   }
 }
 
+void pack_outgoing_rows(const Epetra_CrsMatrix& mtx,
+                        const std::vector<int>& proc_col_ranges,
+                        std::vector<int>& send_rows,
+                        std::vector<int>& rows_per_send_proc)
+{
+  const Epetra_Map& rowmap = mtx.RowMap();
+  int numrows = mtx.NumMyRows();
+  const Epetra_CrsGraph& graph = mtx.Graph();
+  int rowlen = 0;
+  int* col_indices = NULL;
+  int num_col_ranges = proc_col_ranges.size()/2;
+  rows_per_send_proc.resize(num_col_ranges);
+  send_rows.clear();
+  for(int nc=0; nc<num_col_ranges; ++nc) {
+    int first_col = proc_col_ranges[nc*2];
+    int last_col = proc_col_ranges[nc*2+1];
+    int num_send_rows = 0;
+    for(int i=0; i<numrows; ++i) {
+      int grow = rowmap.GID(i);
+      if (mtx.Filled()) {
+        const Epetra_Map& colmap = mtx.ColMap();
+        graph.ExtractMyRowView(i, rowlen, col_indices);
+        if (rowlen > 0) {
+          int begin = colmap.GID(col_indices[0]);
+          int end = colmap.GID(col_indices[rowlen-1]);
+          if (first_col <= end && last_col >= begin) {
+            ++num_send_rows;
+            send_rows.push_back(grow);
+          }
+        }
+      }
+      else {
+        graph.ExtractGlobalRowView(grow, rowlen, col_indices);
+        for(int j=0; j<rowlen; ++j) {
+          if (first_col <= col_indices[j] && last_col >= col_indices[j]) {
+            ++num_send_rows;
+            send_rows.push_back(grow);
+            break;
+          }
+        }
+      }
+    }
+    rows_per_send_proc[nc] = num_send_rows;
+  }
+}
+
+std::pair<int,int> get_col_range(const Epetra_CrsMatrix& mtx)
+{
+  std::pair<int,int> col_range;
+  if (mtx.Filled()) {
+    col_range = get_col_range(mtx.ColMap());
+  }
+  else {
+    const Epetra_Map& row_map = mtx.RowMap();
+    col_range.first = row_map.MaxMyGID();
+    col_range.second = row_map.MinMyGID();
+    int rowlen = 0;
+    int* col_indices = NULL;
+    const Epetra_CrsGraph& graph = mtx.Graph();
+    for(int i=0; i<row_map.NumMyElements(); ++i) {
+      graph.ExtractGlobalRowView(row_map.GID(i), rowlen, col_indices);
+      for(int j=0; j<rowlen; ++j) {
+        if (col_indices[j] < col_range.first) col_range.first = col_indices[j];
+        if (col_indices[j] > col_range.second) col_range.second = col_indices[j];
+      }
+    }
+  }
+
+  return col_range;
+}
+
 }//namespace EpetraExt
 

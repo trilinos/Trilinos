@@ -289,6 +289,10 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 
   /* Create export lists */
   if (zz->LB.Return_Lists){
+    if (zz->LB.Return_Lists == ZOLTAN_LB_CANDIDATE_LISTS) {
+      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Candidate Lists not supported in GRAPH;"
+                                       "change RETURN_LISTS parameter.");
+    }
     part->num_exp = nsend;
     if (nsend > 0) {
       if (!Zoltan_Special_Malloc(zz,(void **)part->exp_gids,nsend,ZOLTAN_SPECIAL_MALLOC_GID)) {

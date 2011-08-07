@@ -153,14 +153,15 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
-#ifdef HAVE_STOKHOS_DAKOTA
     //! Get sparse grid rule number as defined by Dakota's \c webbur package
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
-     * basis.  This isn't exactly the right rule (depending on what Pecos
-     * basis is chosen), but will work.
+     * basis. 
      */
-    virtual int getSparseGridRule() const { return 10; }
+    virtual int getSparseGridRule() const { return sparse_grid_rule; }
+
+    //! Set sparse grid rule
+    virtual void setSparseGridRule(int rule) { sparse_grid_rule = rule; }
 
     /*! 
      * \brief Get sparse grid rule growth rule as defined by 
@@ -168,12 +169,14 @@ namespace Stokhos {
      */
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
-     * basis.  This isn't exactly the right rule (depending on what Pecos
-     * basis is chosen), but will work.
+     * basis. 
      */
     virtual int getSparseGridGrowthRule() const { 
-      return Pecos::MODERATE_LINEAR; };
-#endif 
+      return sparse_grid_growth_rule; };
+
+    //! Set sparse grid growth rule
+    virtual void setSparseGridGrowthRule(int rule) { 
+      sparse_grid_growth_rule = rule; }
 
     /*! 
      * \brief Clone this object with the option of building a higher order
@@ -194,6 +197,12 @@ namespace Stokhos {
 					     Teuchos::Array<value_type>& vals,
 					     Teuchos::Array<value_type>& derivs) const;
 
+  protected:
+
+    //! Copy constructor with specified order
+    PecosOneDOrthogPolyBasis(ordinal_type p, 
+			     const PecosOneDOrthogPolyBasis& basis);
+
   private:
 
     // Prohibit copying
@@ -212,6 +221,12 @@ namespace Stokhos {
 
     //! Order of basis
     ordinal_type p;
+
+    //! Sparse grid rule (as determined by Pecos)
+    int sparse_grid_rule;
+
+    //! Sparse grid growth rule (as determined by Pecos)
+    int sparse_grid_growth_rule;
 
     //! Norms
     Teuchos::Array<value_type> norms;

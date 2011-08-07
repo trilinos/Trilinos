@@ -880,7 +880,7 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
  * \relates AnyNumberParameterEntryValidator
  */
 template<>
-class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<AnyNumberParameterEntryValidator>{
+class TEUCHOS_LIB_DLL_EXPORT TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<AnyNumberParameterEntryValidator>{
 
 public:
 
@@ -1444,7 +1444,7 @@ private:
  * \relates FileNameValidator
  */
 template<>
-class DummyObjectGetter<FileNameValidator>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<FileNameValidator>{
 
 public:
 
@@ -1538,7 +1538,7 @@ private:
  * \relates StringValidator
  */
 template<>
-class DummyObjectGetter<StringValidator>{
+class TEUCHOS_LIB_DLL_EXPORT DummyObjectGetter<StringValidator>{
 
 public:
 

@@ -70,17 +70,27 @@ void run_test_tpi_gramschmidt(int,int);
 void run_test_cuda_hexgrad(int,int);
 void run_test_cuda_gramschmidt(int,int);
 
+void run_test_tbb_hexgrad(int,int);
+void run_test_tbb_gramschmidt(int,int);
+
+void run_test_ferry_hexgrad(int,int);
+void run_test_ferry_gramschmidt(int,int);
+
 }
 
 int main( int argc , char ** argv )
 {
-  Test::run_test_host_hexgrad( 10 , 20 );
-  Test::run_test_tpi_hexgrad(  10 , 24 );
-  Test::run_test_cuda_hexgrad( 10 , 24 );
-
- Test::run_test_host_gramschmidt( 10 , 20 );
-  Test::run_test_tpi_gramschmidt(  10 , 24 );
-  Test::run_test_cuda_gramschmidt( 10 , 24 );
+	Test::run_test_host_hexgrad( 10 , 20 );
+	Test::run_test_tpi_hexgrad(  10 , 24 );
+ 	Test::run_test_cuda_hexgrad( 10 , 24 );
+ 	Test::run_test_tbb_hexgrad(  10 , 24 );
+ 	Test::run_test_ferry_hexgrad( 10 , 20);
+ 
+  	Test::run_test_host_gramschmidt( 10 , 20 );
+  	Test::run_test_tpi_gramschmidt(  10 , 26 );
+  	Test::run_test_cuda_gramschmidt( 10 , 24 );
+ 	Test::run_test_tbb_gramschmidt( 10 , 26);
+ 	Test::run_test_ferry_gramschmidt(10 , 15);
 
   return 0 ;
 }

@@ -205,7 +205,7 @@ TEUCHOS_UNIT_TEST(Reducer, test_Reducer_test1)
   int idType = 0;
   vspace->defineIDTypes(1, &idType);
 
-  vspace->addDOFs(fieldID, 1, idType, eqns.size(), &eqns[0]);
+  vspace->addDOFs(fieldID, idType, eqns.size(), &eqns[0]);
 
   mgraph->initComplete();
 

@@ -64,7 +64,8 @@ static void write_dummy_names(int exoid, ex_entity_type obj_type)
   size_t num_entity;
   size_t i;
   
-  ex_get_dimension(exoid, ex_dim_num_objects(obj_type), ex_name_of_object(obj_type),
+  ex_get_dimension(exoid, ex_dim_num_objects(obj_type),
+		   ex_name_of_object(obj_type),
 		   &num_entity, &varid, routine);
   
   for (i = 0; i < num_entity; i++) {
@@ -196,27 +197,35 @@ static int ex_write_map_params(int exoid, const char *map_name, const char *map_
   return NC_NOERR;
 }
 
-static void zero_id_status(int exoid, const char *var_stat, const char *var_id,
-			   int count, int *ids)
+static void invalidate_id_status(int exoid, const char *var_stat,
+				 const char *var_id, int count, int *ids)
 {
   int status;
   int i;
   int id_var, stat_var;
   
   if (count > 0) {
-    for (i=0; i < count; i++) {
-      ids[i] = 0;
+    if (var_id != 0) {
+      for (i=0; i < count; i++) {
+	ids[i] = EX_INVALID_ID;
+      }
+
+      status = nc_inq_varid(exoid, var_id,   &id_var);
+      assert(status == NC_NOERR);
+      status = nc_put_var_int(exoid, id_var,   ids);
+      assert(status == NC_NOERR);
     }
 
-    status = nc_inq_varid(exoid, var_id,   &id_var);
-    assert(status == NC_NOERR);
-    status = nc_inq_varid(exoid, var_stat, &stat_var);
-    assert(status == NC_NOERR);
+    if (var_stat != 0) {
+      for (i=0; i < count; i++) {
+	ids[i] = 0;
+      }
 
-    status = nc_put_var_int(exoid, id_var,   ids);
-    assert(status == NC_NOERR);
-    status = nc_put_var_int(exoid, stat_var, ids);
-    assert(status == NC_NOERR);
+      status = nc_inq_varid(exoid, var_stat, &stat_var);
+      assert(status == NC_NOERR);
+      status = nc_put_var_int(exoid, stat_var, ids);
+      assert(status == NC_NOERR);
+    }
   }
 }
 
@@ -291,7 +300,7 @@ int ex_put_init_ext (int   exoid,
   }
 
   {
-    int max_so_far = 0;
+    int max_so_far = 32;
     if ((status=nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -492,9 +501,9 @@ int ex_put_init_ext (int   exoid,
     return (EX_FATAL);
   }
   
-  /* Fill the id and status arrays with zeros */
+  /* Fill the id and status arrays with EX_INVALID_ID */
   {
-    int *zeros = NULL;
+    int *invalid_ids = NULL;
     int maxset = model->num_elem_blk;
     if (maxset < model->num_edge_blk)  maxset = model->num_edge_blk;
     if (maxset < model->num_face_blk)  maxset = model->num_face_blk;
@@ -503,9 +512,13 @@ int ex_put_init_ext (int   exoid,
     if (maxset < model->num_face_sets) maxset = model->num_face_sets;
     if (maxset < model->num_side_sets) maxset = model->num_side_sets;
     if (maxset < model->num_elem_sets) maxset = model->num_elem_sets;
+    if (maxset < model->num_node_maps) maxset = model->num_node_maps;
+    if (maxset < model->num_edge_maps) maxset = model->num_edge_maps;
+    if (maxset < model->num_face_maps) maxset = model->num_face_maps;
+    if (maxset < model->num_elem_maps) maxset = model->num_elem_maps;
 
     /* allocate space for id/status array */
-    if (!(zeros = malloc(maxset*sizeof(int)))) {
+    if (!(invalid_ids = malloc(maxset*sizeof(int)))) {
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
 	      "Error: failed to allocate memory for id/status array for file id %d", exoid);
@@ -513,18 +526,31 @@ int ex_put_init_ext (int   exoid,
       return (EX_FATAL);
     }
     
-    zero_id_status(exoid, VAR_STAT_EL_BLK, VAR_ID_EL_BLK, model->num_elem_blk, zeros);
-    zero_id_status(exoid, VAR_STAT_ED_BLK, VAR_ID_ED_BLK, model->num_edge_blk, zeros);
-    zero_id_status(exoid, VAR_STAT_FA_BLK, VAR_ID_FA_BLK, model->num_face_blk, zeros);
-    
-    zero_id_status(exoid, VAR_NS_STAT,  VAR_NS_IDS,  model->num_node_sets, zeros);
-    zero_id_status(exoid, VAR_ES_STAT,  VAR_ES_IDS,  model->num_edge_sets, zeros);
-    zero_id_status(exoid, VAR_FS_STAT,  VAR_FS_IDS,  model->num_face_sets, zeros);
-    zero_id_status(exoid, VAR_SS_STAT,  VAR_SS_IDS,  model->num_side_sets, zeros);
-    zero_id_status(exoid, VAR_ELS_STAT, VAR_ELS_IDS, model->num_elem_sets, zeros);
-    if (zeros != NULL) {
-      free(zeros);
-      zeros = NULL;
+    invalidate_id_status(exoid, VAR_STAT_EL_BLK, VAR_ID_EL_BLK,
+			 model->num_elem_blk, invalid_ids);
+    invalidate_id_status(exoid, VAR_STAT_ED_BLK, VAR_ID_ED_BLK,
+			 model->num_edge_blk, invalid_ids);
+    invalidate_id_status(exoid, VAR_STAT_FA_BLK, VAR_ID_FA_BLK,
+			 model->num_face_blk, invalid_ids);
+    invalidate_id_status(exoid, VAR_NS_STAT,  VAR_NS_IDS,
+			 model->num_node_sets, invalid_ids);
+    invalidate_id_status(exoid, VAR_ES_STAT,  VAR_ES_IDS,
+			 model->num_edge_sets, invalid_ids);
+    invalidate_id_status(exoid, VAR_FS_STAT,  VAR_FS_IDS,
+			 model->num_face_sets, invalid_ids);
+    invalidate_id_status(exoid, VAR_SS_STAT,  VAR_SS_IDS,
+			 model->num_side_sets, invalid_ids);
+    invalidate_id_status(exoid, VAR_ELS_STAT, VAR_ELS_IDS,
+			 model->num_elem_sets, invalid_ids);
+
+    invalidate_id_status(exoid, 0, VAR_NM_PROP(1),  model->num_node_maps, invalid_ids);
+    invalidate_id_status(exoid, 0, VAR_EDM_PROP(1), model->num_edge_maps, invalid_ids);
+    invalidate_id_status(exoid, 0, VAR_FAM_PROP(1), model->num_face_maps, invalid_ids);
+    invalidate_id_status(exoid, 0, VAR_EM_PROP(1),  model->num_elem_maps, invalid_ids);
+
+    if (invalid_ids != NULL) {
+      free(invalid_ids);
+      invalid_ids = NULL;
     }
   }
 

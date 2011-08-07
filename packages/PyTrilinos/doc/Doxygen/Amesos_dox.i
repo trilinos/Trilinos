@@ -195,7 +195,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_BaseSolver::Solve "virtual int
 Amesos_BaseSolver::Solve()=0
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -221,7 +221,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_BaseSolver::SetUseTranspose "virtual
 int Amesos_BaseSolver::SetUseTranspose(bool UseTranspose)=0
 
-If set true, X will be set to the solution of AT X = B (not A X = B).
+If set true, X will be set to the solution of AT X = B (not A X = B)
 
 If the implementation of this interface does not support transpose
 use, this method should return a value of -1.
@@ -409,7 +409,7 @@ Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Btf::Solve "int Amesos_Btf::Solve()
 
-Solves A X = B (or AT X = B).
+Solves A X = B (or AT X = B)
 
 Foreach block i:    For each block j      Compute x_i -= A_{i,j} x_j
 Call Solve(x_i,b_i)     Broadcast x_i
@@ -577,14 +577,14 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_Component::Lsolve "virtual int
 Amesos_Component::Lsolve()=0
 
-Solves L X = B (or LT x = B).
+Solves L X = B (or LT x = B)
 
 Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Component::Usolve "virtual int
 Amesos_Component::Usolve()=0
 
-Solves L X = B (or LT x = B).
+Solves L X = B (or LT x = B)
 
 Integer error code, set to 0 if successful. ";
 
@@ -724,14 +724,14 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_ComponentBaseSolver::Lsolve "virtual
 int Amesos_ComponentBaseSolver::Lsolve()=0
 
-Solves L X = B (or LT x = B).
+Solves L X = B (or LT x = B)
 
 Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_ComponentBaseSolver::LsolveStart "*
 virtual int Amesos_ComponentBaseSolver::LsolveStart()=0
 
-Solves the triangular part of L X1 = B (or LT x = B).
+Solves the triangular part of L X1 = B (or LT x = B)
 
 Integer error code, set to 0 if successful, -1 if unimplimented. ";
 
@@ -745,14 +745,14 @@ Integer error code, set to 0 if successful, -1 if unimplimented. ";
 %feature("docstring")  Amesos_ComponentBaseSolver::Usolve "virtual
 int Amesos_ComponentBaseSolver::Usolve()=0
 
-Solves U X = B (or UT x = B).
+Solves U X = B (or UT x = B)
 
 Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_ComponentBaseSolver::UsolveStart "*
 virtual int Amesos_ComponentBaseSolver::UsolveStart()=0
 
-Solves the triangular part of U X1 = B (or LT x = B).
+Solves the triangular part of U X1 = B (or LT x = B)
 
 Integer error code, set to 0 if successful, -1 if unimplimented. ";
 
@@ -766,7 +766,7 @@ Integer error code, set to 0 if successful, -1 if unimplimented. ";
 %feature("docstring")  Amesos_ComponentBaseSolver::SetRowPermutation "virtual int Amesos_ComponentBaseSolver::SetRowPermutation(int
 *RowPermutation)=0
 
-Solves U X = B (or UT x = B).
+Solves U X = B (or UT x = B)
 
 Integer error code, set to 0 if successful. SetRowPermutation ";
 
@@ -936,7 +936,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_Dscpack::Solve "int
 Amesos_Dscpack::Solve()
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -979,7 +979,7 @@ DSCPACK only works with symetric matrices. ";
 %feature("docstring")  Amesos_Dscpack::SetUseTranspose "int
 Amesos_Dscpack::SetUseTranspose(bool UseTranspose)
 
-If set true, X will be set to the solution of AT X = B (not A X = B).
+If set true, X will be set to the solution of AT X = B (not A X = B)
 
 If the implementation of this interface does not support transpose
 use, this method should return a value of -1.
@@ -1153,7 +1153,7 @@ Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Klu::Solve "int Amesos_Klu::Solve()
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -1359,7 +1359,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_Lapack::Solve "int
 Amesos_Lapack::Solve()
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -1405,7 +1405,7 @@ on symmetric matrices whould return false for non-symmetric matrices.
 %feature("docstring")  Amesos_Lapack::SetUseTranspose "int
 Amesos_Lapack::SetUseTranspose(bool UseTranspose_in)
 
-If set true, X will be set to the solution of AT X = B (not A X = B).
+If set true, X will be set to the solution of AT X = B (not A X = B)
 
 If the implementation of this interface does not support transpose
 use, this method should return a value of -1.
@@ -1857,7 +1857,7 @@ Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Mumps::Solve "int Amesos_Mumps::Solve()
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -1888,7 +1888,7 @@ Destroys all data associated with  this object. ";
 %feature("docstring")  Amesos_Mumps::SetUseTranspose "int
 Amesos_Mumps::SetUseTranspose(bool UseTranspose_in)
 
-If set true, X will be set to the solution of AT X = B (not A X = B).
+If set true, X will be set to the solution of AT X = B (not A X = B)
 
 If the implementation of this interface does not support transpose
 use, this method should return a value of -1.
@@ -2195,7 +2195,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_Paraklete::Solve "int
 Amesos_Paraklete::Solve()
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -2234,7 +2234,7 @@ PARAKLETE only works with square matrices. ";
 %feature("docstring")  Amesos_Paraklete::SetUseTranspose "int
 Amesos_Paraklete::SetUseTranspose(bool UseTranspose_in)
 
-SetUseTranpose().
+SetUseTranpose()
 
 If SetUseTranspose() is set to true, $A^T X = B$ is computed. ";
 
@@ -2336,7 +2336,7 @@ Performs NumericFactorization on the matrix A. ";
 %feature("docstring")  Amesos_Pardiso::Solve "int
 Amesos_Pardiso::Solve()
 
-Solves A X = B (or AT X = B). ";
+Solves A X = B (or AT X = B) ";
 
 %feature("docstring")  Amesos_Pardiso::GetProblem "const
 Epetra_LinearProblem* Amesos_Pardiso::GetProblem() const
@@ -2354,7 +2354,7 @@ PARDISO only works with square matrices. ";
 %feature("docstring")  Amesos_Pardiso::SetUseTranspose "int
 Amesos_Pardiso::SetUseTranspose(bool UseTranspose)
 
-SetUseTranpose().
+SetUseTranpose()
 
 If SetUseTranspose() is set to true, $A^T X = B$ is computed. ";
 
@@ -2591,7 +2591,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_Scalapack::Solve "int
 Amesos_Scalapack::Solve()
 
-Solves A X = B (or AT X = B).
+Solves A X = B (or AT X = B)
 
 preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -2851,7 +2851,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_Superlu::Solve "int
 Amesos_Superlu::Solve()
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -2897,7 +2897,7 @@ on symmetric matrices whould return false for non-symmetric matrices.
 %feature("docstring")  Amesos_Superlu::SetUseTranspose "int
 Amesos_Superlu::SetUseTranspose(bool UseTranspose)
 
-If set true, X will be set to the solution of AT X = B (not A X = B).
+If set true, X will be set to the solution of AT X = B (not A X = B)
 
 If the implementation of this interface does not support transpose
 use, this method should return a value of -1.
@@ -3077,7 +3077,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_Superludist::Solve "int
 Amesos_Superludist::Solve()
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -3270,7 +3270,7 @@ Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Taucs::Solve "int Amesos_Taucs::Solve()
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -3817,7 +3817,7 @@ Integer error code, set to 0 if successful. ";
 %feature("docstring")  Amesos_Umfpack::Solve "int
 Amesos_Umfpack::Solve()
 
-Solves A X = B (or AT x = B).
+Solves A X = B (or AT x = B)
 
 <br >Preconditions:  GetProblem().GetOperator() != 0 (return -1)
 
@@ -3860,7 +3860,7 @@ UMFPACK only works with square matrices. ";
 %feature("docstring")  Amesos_Umfpack::SetUseTranspose "int
 Amesos_Umfpack::SetUseTranspose(bool UseTranspose_in)
 
-If set true, X will be set to the solution of AT X = B (not A X = B).
+If set true, X will be set to the solution of AT X = B (not A X = B)
 
 If the implementation of this interface does not support transpose
 use, this method should return a value of -1.
@@ -4034,9 +4034,6 @@ Epetra_RowMatrix &A) ";
 
 
 // File: Amesos__Klu_8cpp.xml
-%feature("docstring")  deallocFunctorDeleteWithCommon "DeallocFunctorDeleteWithCommon<T,DeleteFunctor>
-@9::deallocFunctorDeleteWithCommon(const RCP< klu_common > &common,
-DeleteFunctor deleteFunctor) ";
 
 
 // File: Amesos__Klu_8h.xml
@@ -4072,10 +4069,6 @@ DeleteFunctor deleteFunctor) ";
 
 
 // File: Amesos__Paraklete_8cpp.xml
-%feature("docstring")  deallocFunctorDeleteWithCommon "DeallocFunctorDeleteWithCommon<T,DeleteFunctor>
-@19::deallocFunctorDeleteWithCommon(const RCP< paraklete_common >
-&common, DeleteFunctor deleteFunctor) ";
-
 %feature("docstring")  my_handler "void my_handler(int status, char
 *file, int line, char *msg) ";
 
@@ -4189,8 +4182,8 @@ taucs_supernodal_factor_free_ptr(taucs_ccs_matrix
 // File: Amesos__Utils_8h.xml
 
 
-// File: dir_72d24986c3418f33bee15c4542df91f7.xml
+// File: dir_25619facb131199a9ac01607470cb94c.xml
 
 
-// File: dir_b9b9014cfcf2ede017e7b803611b3f61.xml
+// File: dir_0b7ccc221d1448fd2902bb281f2b4eff.xml
 

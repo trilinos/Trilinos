@@ -1,5 +1,5 @@
 #include "Kokkos_SerialNode.hpp"
-#include "Tpetra_MatrixMatrix.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Vector.hpp"

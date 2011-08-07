@@ -30,71 +30,87 @@ USA
 #ifndef _Isorropia_EpetraMatcher_hpp_
 #define _Isorropia_EpetraMatcher_hpp_
 
+#include <Isorropia_Epetra.hpp>
+
+#ifdef HAVE_EPETRA
+//#ifdef HAVE_MPI
+//#include <Epetra_MpiComm.h>
+//#else
+#include <Epetra_SerialComm.h>
+//#endif
+#include <Epetra_Map.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_Import.h>
+#ifdef HAVE_EPETRAEXT
+#include <EpetraExt_CrsMatrixIn.h>
+#endif
+#ifdef ISORROPIA_HAVE_OMP
+#include <omp.h>
+#endif
+#endif
+
 #include <Isorropia_ConfigDefs.hpp>
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <list>
 #include <vector>
-#ifdef ISORROPIA_HAVE_OMP
-#include <omp.h>
+
+#ifdef MIN
+#undef MIN
 #endif
-#include <ctime>
-#include <stack>
-#include <set>
+
+#define MIN(a,b) ((a)<(b)?(a):(b))
 
 namespace std{
-class Node
-{
+class Isorropia_EpetraMatcher {
+private:
+    int* mateU_;
+    int* mateV_;
+    int* Queue_;
+    int* LV_;
+    int* LU_;
+    int* unmatchedU_;
+    int *parent_;
+    int *lookahead_;
+    int *CRS_pointers_;
+    int *CRS_indices_;
+    double *CRS_vals_;
+    bool finish_;
+    int U_,V_,E_,avgDegU_,k_star_,icm_,BFSInd_,numThread_,Qst_,Qend_,matched_,choice_;
+
+#ifdef ISORROPIA_HAVE_OMP
+    omp_lock_t *scannedV_;
+#endif
+
+
 public:
-	int layer_num;
-	int scanned;
-	vector<int> edgelist;
-};
+    /// Interface Functions
+    Isorropia_EpetraMatcher(const Epetra_CrsMatrix*, const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Isorropia_EpetraMatcher(const Epetra_CrsGraph *,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    void extractRowPermutationCopy(int, int&, int* ) const;
+    void extractColumnPermutationCopy(int, int&, int*) const;
+    void getMatchedEdges(int,int&,int*) const;
+    int getNumberOfMatchedVertices();
+    Epetra_Map* getPermutedRowMap();
+    Epetra_Map* getPermutedColumnMap();
 
-class matcher {
-public:
-	//input is MTX format
-	//graph is compressed row storage of the input
-	//vlayered is a vector of v's already in any layer.
-	//mateU and mateV are vectors which stores the matched vertices in U and V
+    virtual ~Isorropia_EpetraMatcher();
 
-	vector<Node> LU;
-	vector<Node> LV;
-	vector<int> vlayered;
-	vector<vector<int> > del_m;
-	vector<vector<int> > graph;
-	vector<int> mateU;
-	vector<int> mateV;
-	vector<int> vlist;
-	set<int> nvlist;
-	int *CRS_Pointers;
-	int *CRS_Indices;
-	double *CRS_Vals;
-	int U,V,E;
-	int k_star;
-	int icm;
-	bool finish;
-
-	/// Other Functions
-	matcher(char *);
-	virtual ~matcher();
-	void process_mtx_compressed(char *);
-	int vlayer_clear();
-	int is_intersect(int);
-	void delete_matched_v();
-	bool remove_edge(int, int);
-	void add_edge(int, int);
-
-	// HK functions
-	vector<int> get_matching();
-	int construct_layered_graph();
-	void find_set_del_M();
-	int recursive_path_finder(int, int, vector<int>*);
-	int iterative_path_finder(int, int, vector<int>*);
-	int augment_matching();
-	void update_vlayered(int);
-	bool U0_empty();
+    //Matching Functions
+    void delete_matched_v();
+    void filler();
+    int match();
+    int match_dfs();
+    int match_hk();
+    int construct_layered_graph();
+    int find_set_del_M();
+    int recursive_path_finder(int, int);
+    int dfs_path_finder(int);
+    int dfs_augment();
+    int augment_matching(int);
+    int DW_phase();
 };
 } //namespace std
 #endif

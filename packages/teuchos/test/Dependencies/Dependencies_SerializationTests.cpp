@@ -524,97 +524,100 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, ConditionVisualDepSerialization){
     complexConVisDep->getCondition()->getTypeAttributeValue());
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
-  Teuchos_Dependencies, 
-  NumberArrayLengthDepSerialization, 
-  DependeeType,
-  DependentType)
-{
-  std::string dependee1 = "dependee param";
-  std::string dependee2 = "dependee param2";
-  std::string dependent1 = "dependent param1";
-  std::string dependent2 = "dependent param2";
-  ParameterList myDepList("Number Array LenthDep List");
-  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
-  myDepList.set(dependee1, ScalarTraits<DependeeType>::one());
-  myDepList.set(dependee2, ScalarTraits<DependeeType>::one());
-  myDepList.set(dependent1, Array<DependentType>(8));
-  myDepList.set(dependent2, Array<DependentType>(5));
+#define ArrayModifierTest(DEPENDENCYTYPE, ARRAY_TYPE) \
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( \
+  Teuchos_Dependencies,  \
+  DEPENDENCYTYPE##_serialization_tests,  \
+  DependeeType, \
+  DependentType) \
+{ \
+  std::string dependee1 = "dependee param"; \
+  std::string dependee2 = "dependee param2"; \
+  std::string dependent1 = "dependent param1"; \
+  std::string dependent2 = "dependent param2"; \
+  ParameterList myDepList("Array modifier dep list"); \
+  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet); \
+  myDepList.set(dependee1, ScalarTraits<DependeeType>::one()); \
+  myDepList.set(dependee2, ScalarTraits<DependeeType>::one()); \
+  myDepList.set(dependent1, ARRAY_TYPE<DependentType>()); \
+  myDepList.set(dependent2, ARRAY_TYPE<DependentType>()); \
+ \
+ \
+  RCP<DEPENDENCYTYPE<DependeeType, DependentType> > basicArrayDep = \
+    rcp(new DEPENDENCYTYPE<DependeeType, DependentType>( \
+      myDepList.getEntryRCP(dependee1), \
+      myDepList.getEntryRCP(dependent1))); \
+ \
+  DependeeType one = ScalarTraits< DependeeType >::one(); \
+  RCP<AdditionFunction< DependeeType > > functionTester =  \
+    rcp(new AdditionFunction<DependeeType>(one)); \
+ \
+  RCP<DEPENDENCYTYPE<DependeeType, DependentType> > funcArrayDep = \
+    rcp(new DEPENDENCYTYPE<DependeeType, DependentType>( \
+      myDepList.getEntryRCP(dependee2), \
+      myDepList.getEntryRCP(dependent2), \
+      functionTester)); \
+   \
+ \
+  myDepSheet->addDependency(basicArrayDep); \
+  myDepSheet->addDependency(funcArrayDep); \
+ \
+  RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet); \
+ \
+  XMLParameterListWriter plWriter; \
+  XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet); \
+  out << xmlOut.toString(); \
+ \
+  RCP<ParameterList> readInList =  \
+    writeThenReadPL(myDepList, myDepSheet, readInDepSheet);  \
+ \
+  RCP<ParameterEntry> readinDependee1 = readInList->getEntryRCP(dependee1); \
+  RCP<ParameterEntry> readinDependent1 = readInList->getEntryRCP(dependent1); \
+  RCP<ParameterEntry> readinDependee2 = readInList->getEntryRCP(dependee2); \
+  RCP<ParameterEntry> readinDependent2 = readInList->getEntryRCP(dependent2); \
+   \
+  RCP<Dependency> readinDep1 = \
+    *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin()); \
+  RCP<Dependency> readinDep2 = \
+    *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin()); \
+ \
+  typedef DEPENDENCYTYPE<DependeeType, DependentType> deptype; \
+  BASIC_DEPENDENCY_TEST(readinDep1, deptype, 1, 1); \
+  VERIFY_DEPENDEE(readinDep1, readinDependee1); \
+  VERIFY_DEPENDENT(readinDep1, readinDependent1); \
+ \
+  BASIC_DEPENDENCY_TEST(readinDep2, deptype, 1, 1); \
+  VERIFY_DEPENDEE(readinDep2, readinDependee2); \
+  VERIFY_DEPENDENT(readinDep2, readinDependent2); \
+ \
+  RCP<DEPENDENCYTYPE<DependeeType, DependentType> > castedDep1 = \
+    rcp_dynamic_cast<DEPENDENCYTYPE<DependeeType, DependentType> >( \
+      readinDep1); \
+  TEST_ASSERT(castedDep1 != null); \
+ \
+  RCP<DEPENDENCYTYPE<DependeeType, DependentType> > castedDep2 = \
+    rcp_dynamic_cast<DEPENDENCYTYPE<DependeeType, DependentType> >( \
+      readinDep2); \
+  TEST_ASSERT(castedDep2 != null); \
+ \
+  RCP<const SimpleFunctionObject< DependeeType > > readInFunc = \
+    castedDep2->getFunctionObject(); \
+  TEST_ASSERT(readInFunc != null); \
+ \
+  RCP<const AdditionFunction< DependeeType > > castedFunc =  \
+    rcp_dynamic_cast<const AdditionFunction< DependeeType > >(readInFunc); \
+  TEST_ASSERT(castedFunc != null); \
+  TEST_EQUALITY( \
+    castedFunc->getModifiyingOperand(),  \
+    functionTester->getModifiyingOperand()); \
+} 
 
-
-  RCP<NumberArrayLengthDependency<DependeeType, DependentType> > basicArrayDep =
-    rcp(new NumberArrayLengthDependency<DependeeType, DependentType>(
-      myDepList.getEntryRCP(dependee1),
-      myDepList.getEntryRCP(dependent1)));
-
-  DependeeType one = ScalarTraits< DependeeType >::one();
-  RCP<AdditionFunction< DependeeType > > functionTester = 
-    rcp(new AdditionFunction<DependeeType>(one));
-
-  RCP<NumberArrayLengthDependency<DependeeType, DependentType> > funcArrayDep =
-    rcp(new NumberArrayLengthDependency<DependeeType, DependentType>(
-      myDepList.getEntryRCP(dependee2),
-      myDepList.getEntryRCP(dependent2),
-      functionTester));
-  
-
-  myDepSheet->addDependency(basicArrayDep);
-  myDepSheet->addDependency(funcArrayDep);
-
-  RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
-
-  XMLParameterListWriter plWriter;
-  XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet);
-  out << xmlOut.toString();
-
-  RCP<ParameterList> readInList = 
-    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
-
-  RCP<ParameterEntry> readinDependee1 = readInList->getEntryRCP(dependee1);
-  RCP<ParameterEntry> readinDependent1 = readInList->getEntryRCP(dependent1);
-  RCP<ParameterEntry> readinDependee2 = readInList->getEntryRCP(dependee2);
-  RCP<ParameterEntry> readinDependent2 = readInList->getEntryRCP(dependent2);
-  
-  RCP<Dependency> readinDep1 =
-    *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
-  RCP<Dependency> readinDep2 =
-    *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
-
-  typedef NumberArrayLengthDependency<DependeeType, DependentType> deptype;
-  BASIC_DEPENDENCY_TEST(readinDep1, deptype, 1, 1);
-  VERIFY_DEPENDEE(readinDep1, readinDependee1);
-  VERIFY_DEPENDENT(readinDep1, readinDependent1);
-
-  BASIC_DEPENDENCY_TEST(readinDep2, deptype, 1, 1);
-  VERIFY_DEPENDEE(readinDep2, readinDependee2);
-  VERIFY_DEPENDENT(readinDep2, readinDependent2);
-
-  RCP<NumberArrayLengthDependency<DependeeType, DependentType> > castedDep1 =
-    rcp_dynamic_cast<NumberArrayLengthDependency<DependeeType, DependentType> >(
-      readinDep1);
-  TEST_ASSERT(castedDep1 != null);
-
-  RCP<NumberArrayLengthDependency<DependeeType, DependentType> > castedDep2 =
-    rcp_dynamic_cast<NumberArrayLengthDependency<DependeeType, DependentType> >(
-      readinDep2);
-  TEST_ASSERT(castedDep2 != null);
-
-  RCP<const SimpleFunctionObject< DependeeType > > readInFunc =
-    castedDep2->getFunctionObject();
-  TEST_ASSERT(readInFunc != null);
-
-  RCP<const AdditionFunction< DependeeType > > castedFunc = 
-    rcp_dynamic_cast<const AdditionFunction< DependeeType > >(readInFunc);
-  TEST_ASSERT(castedFunc != null);
-  TEST_EQUALITY(
-    castedFunc->getModifiyingOperand(), 
-    functionTester->getModifiyingOperand());
-}
+ArrayModifierTest(NumberArrayLengthDependency, Array)
 
 #define NUM_ARRAY_LENGTH_TEST(DependeeType, DependentType) \
 TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
   Teuchos_Dependencies, \
-  NumberArrayLengthDepSerialization, \
+  NumberArrayLengthDependency_serialization_tests, \
   DependeeType, \
   DependentType) 
 
@@ -638,6 +641,68 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
 NUM_ARRAY_LENGTH_TEST_GROUP(int)
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 NUM_ARRAY_LENGTH_TEST_GROUP(llint)
+#endif
+
+ArrayModifierTest(TwoDRowDependency, TwoDArray)
+
+#define TWODROW_TEST(DependeeType, DependentType) \
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
+  Teuchos_Dependencies, \
+  TwoDRowDependency_serialization_tests, \
+  DependeeType, \
+  DependentType) 
+
+// Need to fix array serialization so we can test this with
+// a dependent type of strings. Right now an array of emptyr strings does not
+// seralize correctly
+// KLN 09.17/2010
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#define TWODROW_TEST_GROUP(DependeeType) \
+  TWODROW_TEST(DependeeType, int) \
+  TWODROW_TEST(DependeeType, float) \
+  TWODROW_TEST(DependeeType, double) \
+  TWODROW_TEST(DependeeType, llint) 
+#else
+#define TWODROW_TEST_GROUP(DependeeType) \
+  TWODROW_TEST(DependeeType, int) \
+  TWODROW_TEST(DependeeType, double) \
+  TWODROW_TEST(DependeeType, float)
+#endif
+
+TWODROW_TEST_GROUP(int)
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+TWODROW_TEST_GROUP(llint)
+#endif
+
+ArrayModifierTest(TwoDColDependency, TwoDArray)
+
+#define TWODCOL_TEST(DependeeType, DependentType) \
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
+  Teuchos_Dependencies, \
+  TwoDColDependency_serialization_tests, \
+  DependeeType, \
+  DependentType) 
+
+// Need to fix array serialization so we can test this with
+// a dependent type of strings. Right now an array of emptyr strings does not
+// seralize correctly
+// KLN 09.17/2010
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#define TWODCOL_TEST_GROUP(DependeeType) \
+  TWODCOL_TEST(DependeeType, int) \
+  TWODCOL_TEST(DependeeType, float) \
+  TWODCOL_TEST(DependeeType, double) \
+  TWODCOL_TEST(DependeeType, llint) 
+#else
+#define TWODCOL_TEST_GROUP(DependeeType) \
+  TWODCOL_TEST(DependeeType, int) \
+  TWODCOL_TEST(DependeeType, double) \
+  TWODCOL_TEST(DependeeType, float)
+#endif
+
+TWODCOL_TEST_GROUP(int)
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+TWODCOL_TEST_GROUP(llint)
 #endif
 
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringValidatorDepSerialization){

@@ -431,9 +431,9 @@ void IfpackPreconditionerFactory::initializeTimers()
 {
   if(!overallTimer.get()) {
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
-    overallTimer       = Teuchos::TimeMonitor::getNewTimer("IfpackPF");
-    creationTimer      = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Creation");
-    factorizationTimer = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Factorization");
+    overallTimer       = Teuchos::TimeMonitor::getNewTimer("Stratimikos: IfpackPF");
+    creationTimer      = Teuchos::TimeMonitor::getNewTimer("Stratimikos: IfpackPF:Creation");
+    factorizationTimer = Teuchos::TimeMonitor::getNewTimer("Stratimikos: IfpackPF:Factorization");
 #endif
   }
 }

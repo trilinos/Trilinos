@@ -263,6 +263,10 @@ package:
 %teuchos_rcp(Anasazi::EpetraMultiVec)
 %teuchos_rcp(Anasazi::EpetraGenOp)
 %teuchos_rcp(Anasazi::EpetraSymOp)
+%teuchos_rcp(Anasazi::EpetraOp)
+%teuchos_rcp(Anasazi::EpetraSymMVOp)
+%teuchos_rcp(Anasazi::EpetraWSymMVOp)
+%teuchos_rcp(Anasazi::EpetraW2SymMVOp)
 %teuchos_rcp(Anasazi::StatusTest< double, Epetra_MultiVector, Epetra_Operator >)
 %teuchos_rcp(Anasazi::StatusTestCombo< double, Epetra_MultiVector, Epetra_Operator >)
 %teuchos_rcp(Anasazi::StatusTestMaxIters< double, Epetra_MultiVector, Epetra_Operator >)
@@ -390,6 +394,7 @@ namespace std { struct ostream; }
 // Anasazi Operator support //
 //////////////////////////////
 %include "AnasaziOperator.hpp"
+%teuchos_rcp(Anasazi::Operator< double >)
 %template (OperatorDouble)
   Anasazi::Operator<double>;
 

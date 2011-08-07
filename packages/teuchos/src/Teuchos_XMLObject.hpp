@@ -220,19 +220,19 @@ private:
 
 
 template<>
-bool XMLObject::getRequired<bool>(const std::string& name) const;
+TEUCHOS_LIB_DLL_EXPORT bool XMLObject::getRequired<bool>(const std::string& name) const;
 
 template<>
-int XMLObject::getRequired<int>(const std::string& name) const;
+TEUCHOS_LIB_DLL_EXPORT int XMLObject::getRequired<int>(const std::string& name) const;
 
 template<>
-double XMLObject::getRequired<double>(const std::string& name) const;
+TEUCHOS_LIB_DLL_EXPORT double XMLObject::getRequired<double>(const std::string& name) const;
 
 template<>
-std::string XMLObject::getRequired<std::string>(const std::string& name) const;
+TEUCHOS_LIB_DLL_EXPORT std::string XMLObject::getRequired<std::string>(const std::string& name) const;
 
 template<>
-void XMLObject::addAttribute<const std::string&>(const std::string& name, const std::string& value);
+TEUCHOS_LIB_DLL_EXPORT void XMLObject::addAttribute<const std::string&>(const std::string& name, const std::string& value);
 
 
 /** \brief Write XMLObject to \c os stream.

@@ -144,7 +144,7 @@ SET(Dakota_INCLUDE_DIRS
 
 SET(DAKOTA_LIBS
     dakota pecos lhs surfpack conmin
-    ddace fsudace jega opt
+    ddace fsudace jega optpp
     psuade newmat ncsuopt sparsegrid 
     colin interfaces momh scolib pebbl tinyxml
     utilib 3po hopspack 

@@ -56,7 +56,7 @@ namespace Teuchos {
 
 /** \brief An xml converter for BoolLogicConditions
  */
-class TEUCHOS_LIB_DLL_EXPORT BoolLogicConditionConverter : public ConditionXMLConverter{
+class BoolLogicConditionConverter : public ConditionXMLConverter{
 
 public:
 
@@ -102,7 +102,7 @@ public:
     </Condition>
  \endcode
  */
-class TEUCHOS_LIB_DLL_EXPORT OrConditionConverter : public BoolLogicConditionConverter{
+class OrConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
@@ -126,7 +126,7 @@ public:
     </Condition>
  \endcode
  */
-class TEUCHOS_LIB_DLL_EXPORT AndConditionConverter : public BoolLogicConditionConverter{
+class AndConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
@@ -151,7 +151,7 @@ public:
     </Condition>
  \endcode
  */
-class TEUCHOS_LIB_DLL_EXPORT EqualsConditionConverter : public BoolLogicConditionConverter{
+class EqualsConditionConverter : public BoolLogicConditionConverter{
 
 public:
 
@@ -175,7 +175,7 @@ public:
     </Condition>
  \endcode
  */
-class TEUCHOS_LIB_DLL_EXPORT NotConditionConverter : public ConditionXMLConverter{
+class NotConditionConverter : public ConditionXMLConverter{
 
 public:
 
@@ -272,7 +272,7 @@ private:
     </Condition>
  \endcode
  */
-class TEUCHOS_LIB_DLL_EXPORT StringConditionConverter : public ParameterConditionConverter{
+class StringConditionConverter : public ParameterConditionConverter{
 
 public:
 
@@ -320,7 +320,7 @@ private:
     <Condition type="BoolCondition" parameterId="Id of parameter"/>
    \endcode
  */
-class TEUCHOS_LIB_DLL_EXPORT BoolConditionConverter : public ParameterConditionConverter{
+class BoolConditionConverter : public ParameterConditionConverter{
 
 public:
 
@@ -350,7 +350,7 @@ public:
  \endcode
  */
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT NumberConditionConverter : public ParameterConditionConverter{
+class NumberConditionConverter : public ParameterConditionConverter{
 
 public:
 

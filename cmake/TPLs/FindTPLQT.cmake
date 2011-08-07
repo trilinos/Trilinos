@@ -33,7 +33,7 @@ IF(TPL_QT_LIBRARIES)
 ENDIF()
 
 
-FIND_PACKAGE(Qt4 4.5.0 COMPONENTS QtCore QtGui QtTest REQUIRED)
+FIND_PACKAGE(Qt4 4.5.0 COMPONENTS QtCore QtGui QtTest QtXml REQUIRED)
 if(NOT QT4_FOUND)
 	message("                             ____")
 	message("                     __,-~~/~    `---.")
@@ -67,11 +67,11 @@ IF(NOT(TPL_QT_LIBRARY_DIRS))
 ENDIF()
 
 IF(NOT(TPL_QT_LIBRARIES))
-	SET(TPL_QT_LIBRARIES ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTTEST_LIBRARY})
+	SET(TPL_QT_LIBRARIES ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTTEST_LIBRARY} ${QT_QTXML_LIBRARY})
 ENDIF()
 
 TPL_DECLARE_LIBRARIES( QT
-  REQUIRED_HEADERS QMainWindow QDialog QAbstratItemModel QTreeView QItemDelegate QPushButton QGridLayout QSpinBox QComboBox QLineEdit QLabel QScrollArea QDir QXmlStreamWriter QXmlStreamReader QStringList
-  REQUIRED_LIBS_NAMES QtCore QtGui
+  REQUIRED_HEADERS QMainWindow QDialog QAbstratItemModel QTreeView QItemDelegate QPushButton QGridLayout QSpinBox QComboBox QLineEdit QLabel QScrollArea QDir QXmlStreamWriter QXmlStreamReader QStringList QDomElement
+  REQUIRED_LIBS_NAMES QtCore QtGui QtXml
   )
 

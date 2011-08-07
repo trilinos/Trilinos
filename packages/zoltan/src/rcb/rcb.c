@@ -91,6 +91,7 @@ extern "C" {
 /* function prototypes */
 
 static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
+  int *, ZOLTAN_ID_PTR *,
   double, int, int, int, int, int, int, int, int, int, int, double, int, int,
   int, float *);
 static void print_rcb_tree(ZZ *, int, int, struct rcb_tree *);
@@ -156,7 +157,7 @@ int Zoltan_RCB(
   float *part_sizes,            /* Input:  Array of size zz->LB.Num_Global_Parts
                                    * zz->Obj_Weight_Dim
                                    containing the percentage of work to be
-                                   assigned to each partition.               */
+                                   assigned to each part.               */
   int *num_import,              /* Returned value:  Number of non-local 
                                    objects assigned to this
                                    processor in the new decomposition.       */
@@ -169,7 +170,7 @@ int Zoltan_RCB(
   int **import_procs,           /* Returned value:  array of processor IDs for
                                    processors owning the non-local objects in
                                    this processor's new decomposition.       */
-  int **import_to_part,         /* Returned value:  array of partitions to
+  int **import_to_part,         /* Returned value:  array of parts to
                                    which imported objects should be assigned. */
   int *num_export,              /* Not computed, set to -1 */
   ZOLTAN_ID_PTR *export_global_ids, /* Not computed. */
@@ -277,7 +278,8 @@ int Zoltan_RCB(
     }
 
     ierr = rcb_fn(zz, num_import, import_global_ids, import_local_ids,
-		 import_procs, import_to_part, overalloc, reuse, wgtflag,
+		 import_procs, import_to_part, num_export, export_global_ids,
+                 overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
                  rectilinear_blocks, obj_wgt_comp, mcnorm, 
                  max_aspect_ratio, recompute_box, average_cuts, pivot_choice,
@@ -292,18 +294,39 @@ static int rcb_fn(
   ZZ *zz,                       /* The Zoltan structure with info for
                                    the RCB balancer.                         */
   int *num_import,              /* Number of non-local objects assigned to this
-                                   processor in the new decomposition.       */
+                                   processor in the new decomposition.      
+                                   When LB.Return_Lists==CANDIDATE_LISTS,
+                                   num_import returns the number of input
+                                   objects as given by ZOLTAN_NUM_OBJ_FN. */
   ZOLTAN_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
                                    non-local objects in this processor's new
-                                   decomposition.                            */
+                                   decomposition. 
+                                   When LB.Return_Lists==CANDIDATE_LISTS,
+                                   this array contains GIDs for all input 
+                                   objs as given by ZOLTAN_OBJ_LIST_FN. */
   ZOLTAN_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
                                    non-local objects in this processor's new
-                                   decomposition.                            */
+                                   decomposition.                           
+                                   When LB.Return_Lists==CANDIDATE_LISTS,
+                                   this array contains LIDs for all input 
+                                   objs as given by ZOLTAN_OBJ_LIST_FN. */
   int **import_procs,           /* Returned value:  array of processor IDs for
                                    processors owning the non-local objects in
-                                   this processor's new decomposition.       */
-  int **import_to_part,         /* Returned value:  array of partitions
-                                   to which objects are imported.            */
+                                   this processor's new decomposition.      
+                                   When LB.Return_Lists==CANDIDATE_LISTS,
+                                   the returned array is NULL. */
+  int **import_to_part,         /* Returned value:  array of parts
+                                   to which objects are imported.           
+                                   When LB.Return_Lists==CANDIDATE_LISTS,
+                                   the returned array is NULL. */
+  int *num_export,              /* Returned value only when 
+                                   LB.Return_Lists==CANDIDATE_LISTS; number of
+                                   input objs as given by ZOLTAN_NUM_OBJ_FN */
+  ZOLTAN_ID_PTR *export_global_ids, /* Returned value only when
+                                   LB.Return_Lists==CANDIDATE_LISTS; for each
+                                   input obj (from ZOLTAN_OBJ_LIST_FN), 
+                                   return a candidate obj from the part to which
+                                   the obj is assigned; used in PHG matching */
   double overalloc,             /* amount to overallocate by when realloc
                                    of dot array must be done.     
                                    1.0 = no extra; 1.5 = 50% extra; etc.     */
@@ -331,7 +354,7 @@ static int rcb_fn(
   float *part_sizes             /* Input: Array of size 
                                    zz->LB.Num_Global_Parts * wgtflag 
                                    containing the percentage of work 
-                                   to be assigned to each partition.    */
+                                   to be assigned to each part.    */
 )
 {
   char    yo[] = "rcb_fn";
@@ -348,7 +371,7 @@ static int rcb_fn(
   int     partmid;                  /* 1st part in upper set */
   int     set;                      /* which set processor is in = 0/1 */
   int     old_set;                  /* set processor was in last cut = 0/1 */
-  int     root;                     /* partition that stores last cut */
+  int     root;                     /* part that stores last cut */
   int     num_procs;                /* number of procs in current set */
   int     num_parts;                /* number of parts in current set */
   int     dim;                      /* which of 3 axes median cut is on */
@@ -421,7 +444,7 @@ static int rcb_fn(
   int one_cut_dir= 0;               /* try only one cut direction */
   int level;                        /* recursion level of RCB for preset_dir */
   int *dim_spec = NULL;             /* specified direction for preset_dir */
-  int fp=0;                         /* first partition assigned to this proc */
+  int fp=0;                         /* first part assigned to this proc */
   int np=0;                         /* number of parts assigned to this proc */
   int wgtdim;                       /* max(wgtflag,1) */
   int breakflag;                    /* flag for exiting loop */
@@ -433,6 +456,7 @@ static int rcb_fn(
   double max_box;                   /* largest length of bbox */
   char msg[128];                    /* buffer for error messages */
   double pt[3];
+  int *dindx = NULL, *tmpdindx = NULL;
 
   /* MPI data types and user functions */
 
@@ -489,6 +513,12 @@ static int rcb_fn(
     ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RCB_Build_Structure.");
     goto End;
   }
+#ifdef KDDKDD_DEBUG
+  {int gnvtx;
+   MPI_Allreduce(&pdotnum, &gnvtx, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  printf("%d KDDKDD RCB GDOT %d\n", zz->Proc, gnvtx);
+  }
+#endif
 
   rcb = (RCB_STRUCT *) (zz->LB.Data_Structure);
 
@@ -525,6 +555,27 @@ static int rcb_fn(
     rcbbox->hi[0] = rcbbox->hi[1] = rcbbox->hi[2] = 0;
     timestart = timestop = 0;
     goto EndReporting;
+  }
+
+  /* If using RCB for matching, need to generate candidate lists.
+   * Candidate lists include input GIDs, LIDs as provided by the application.
+   * We need to capture that input here before we move any dots!
+   * We return it in the import lists.
+   * Candidates will be computed after partitioning and returned in the
+   * export lists.
+   */
+  if (zz->LB.Return_Lists == ZOLTAN_LB_CANDIDATE_LISTS) {
+    ierr = Zoltan_RB_Candidates_Copy_Input(zz, dotnum,
+                                           rcb->Global_IDs, rcb->Local_IDs,
+                                           &rcb->Dots, 
+                                           num_import,
+                                           import_global_ids, import_local_ids,
+                                           import_procs, import_to_part);
+    if (ierr < 0) {
+       ZOLTAN_PRINT_ERROR(proc,yo,
+                          "Error returned from Zoltan_RB_Return_Arguments.");
+       goto End;
+    }
   }
 
   /* create mark and list arrays for dots */
@@ -749,7 +800,7 @@ static int rcb_fn(
     }
 
     /* tfs[0] is max number of processors in all sets over all processors -
-     * tfs[1] is max number of partitions in all sets over all processors -
+     * tfs[1] is max number of parts in all sets over all processors -
      * force all processors to go through all levels of parallel rcb */
     if (zz->Tflops_Special) {
       tmp_tfs[0] = num_procs;
@@ -938,7 +989,7 @@ static int rcb_fn(
       }
     }
 
-    if (set)    /* set weight for current partition */
+    if (set)    /* set weight for current part */
       for (j=0; j<wgtdim; j++) weight[j] = weighthi[j];
     else
       for (j=0; j<wgtdim; j++) weight[j] = weightlo[j];
@@ -949,7 +1000,7 @@ static int rcb_fn(
     /* store cut info in tree only if proc "owns" partmid */
     /* test of partmid > 0 prevents treept[0] being set when this cut is 
        only removing low-numbered processors (proclower to procmid-1) that
-       have no partitions in them from the processors remaining to 
+       have no parts in them from the processors remaining to 
        be partitioned. */
     if (partmid > 0 && partmid == fp) {
       treept[partmid].dim = dim;
@@ -964,10 +1015,10 @@ static int rcb_fn(
       /* old_nprocs > 1 test: Don't reset these values if proc is in loop only 
        * because of other procs for Tflops_Special.
        * partmid > 0 test:  Don't reset these values if low-numbered processors
-       * (proclower to procmid-1) have zero partitions and this cut is removing
+       * (proclower to procmid-1) have zero parts and this cut is removing
        * them from the processors remaining to be partitioned. 
        * partmid != partlower + old_nparts test:  Don't reset these values if
-       * cut is removing high-numbered processors with zero partitions from
+       * cut is removing high-numbered processors with zero parts from
        * the processors remaining to be partitioned.
        */
       old_set = set;
@@ -1027,8 +1078,8 @@ static int rcb_fn(
 
   /* have recursed all the way to a single processor sub-domain */
 
-  /* Send dots to correct processors for their partitions.  This is needed
-     most notably when a processor has zero partitions on it, but still has
+  /* Send dots to correct processors for their parts.  This is needed
+     most notably when a processor has zero parts on it, but still has
      some dots after the parallel partitioning. */
 
   ierr = Zoltan_RB_Send_To_Part(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
@@ -1045,8 +1096,8 @@ static int rcb_fn(
    * more partitions if needed. */
 
   if (num_parts > 1) {
-    int *dindx = (int *) ZOLTAN_MALLOC(dotnum * 2 * sizeof(int));
-    int *tmpdindx = dindx + dotnum;
+    dindx = (int *) ZOLTAN_MALLOC(dotnum * 2 * sizeof(int));
+    tmpdindx = dindx + dotnum;
     if (allocflag) {
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&dotlist);
@@ -1081,7 +1132,6 @@ static int rcb_fn(
                counters, treept, dim_spec, level,
                coord, wgts, part_sizes, wgtscale, rcb->Num_Dim, pivot_choice, 
                max_aspect_ratio);
-    ZOLTAN_FREE(&dindx);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from serial_rcb");
       goto End;
@@ -1133,7 +1183,8 @@ EndReporting:
 
   /*  build return arguments */
 
-  if (zz->LB.Return_Lists) {
+  if (zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS && 
+      zz->LB.Return_Lists != ZOLTAN_LB_CANDIDATE_LISTS) {
     /* zz->LB.Return_Lists is true ==> use_ids is true */
     ierr = Zoltan_RB_Return_Arguments(zz, rcb->Global_IDs, rcb->Local_IDs, 
                                       &rcb->Dots, num_import,
@@ -1146,6 +1197,20 @@ EndReporting:
        goto End;
     }
   }
+  else if (zz->LB.Return_Lists == ZOLTAN_LB_CANDIDATE_LISTS) {
+    /* Select a candidate for each part and return it in the export_GIDs. */
+    ierr = Zoltan_RB_Candidates_Output(zz, dotnum, dindx,
+                                       rcb->Global_IDs, rcb->Local_IDs,
+                                       &rcb->Dots, 
+                                       *num_import, *import_global_ids,
+                                       num_export, export_global_ids);
+    if (ierr < 0) {
+       ZOLTAN_PRINT_ERROR(proc,yo,
+                          "Error returned from Zoltan_RB_Return_Candidates.");
+       goto End;
+    }
+  }
+  ZOLTAN_FREE(&dindx);
 
   if (gen_tree) {
     int *displ, *recvcount;
@@ -1298,7 +1363,7 @@ struct rcb_tree *treept = treept_arr;
 static int cut_dimension(
   int lock_direction,        /* flag indicating whether directions are locked */
   struct rcb_tree *treept,   /* tree of RCB cuts */
-  int partmid,               /* lowest partition in set 1. */
+  int partmid,               /* lowest part in set 1. */
   int preset_dir,            /* Set order of directions:     0: don't set,
                                  1: xyz,        2: xzy,      3: yzx,
                                  4: yxz,        5: zxy,      6: zyx  */
@@ -1333,7 +1398,7 @@ int dim;
 
 static int set_preset_dir(
   int proc,                  /* Current processor */
-  int nparts,                /* total number of partitions */
+  int nparts,                /* total number of parts */
   int preset_dir,            /* Set order of directions:     0: don't set,
                                  1: xyz,        2: xzy,      3: yzx,
                                  4: yxz,        5: zxy,      6: zyx  */
@@ -1441,16 +1506,16 @@ static int serial_rcb(
                                 have to realloc for each find_median).*/
   int old_set,               /* Set the objects to be partitioned were in 
                                 for last cut */
-  int root,                  /* partition for which last cut was stored. */
+  int root,                  /* part for which last cut was stored. */
   struct rcb_box *rcbbox,    /* bounding box of RCB sub-domain */
   double *weight,            /* weight(s) for current set */
   int dotnum,                /* number of input dots */
-  int num_parts,             /* number of partitions to create. */
+  int num_parts,             /* number of parts to create. */
   int *dindx,                /* Index into dotpt for dotnum dots to be 
                                 partitioned; reordered in serial_rcb so set0
                                 dots are followed by set1 dots. */
   int *tmpdindx,             /* Temporary memory used in reordering dindx. */
-  int partlower,             /* smallest partition number to be created. */
+  int partlower,             /* smallest part number to be created. */
   int proc,                  /* processor number. */
   int wgtflag,               /* No. of weights per dot. */
   int lock_direction,        /* flag indicating whether directions are locked */
@@ -1478,7 +1543,7 @@ static int serial_rcb(
   double *wgts,
   float *part_sizes,         /* Array of size zz->LB.Num_Global_Parts
                                 containing the percentage of work to be
-                                assigned to each partition.               */
+                                assigned to each part.               */
   double *wgtscale,          /* Array of size wgtflag that gives the
                                 scaling factors for each weight dimension. */
   int ndim,                  /* number of geometric dimensions */
@@ -1715,7 +1780,7 @@ static int serial_rcb(
     }
     memcpy(dindx, tmpdindx, dotnum * sizeof(int));
 
-    /* If set 0 has at least one partition and at least one dot,
+    /* If set 0 has at least one part and at least one dot,
      * call serial_rcb for set 0 */
     new_nparts = partmid - partlower;
     if (new_nparts > 0 && set1 != 0) {
@@ -1737,7 +1802,7 @@ static int serial_rcb(
       }
     }
 
-    /* If set 1 has at least one partition and at least one dot,
+    /* If set 1 has at least one part and at least one dot,
      * call serial_rcb for set 1 */
     new_nparts = partlower + num_parts - partmid;
     if (new_nparts > 0 && set0 != dotnum) {
@@ -1774,8 +1839,8 @@ static void compute_RCB_box(
   MPI_Op box_op,    
   MPI_Datatype box_type,
   MPI_Comm comm,
-  int nproc,                 /* number of processors in partition */
-  int rank,                  /* rank within partition */
+  int nproc,                 /* number of processors */
+  int rank,                  /* rank */
   int proc,                  /* global processor number */
   int Tflops_Special
 )

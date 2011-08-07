@@ -11,7 +11,7 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MatrixMatrix.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"

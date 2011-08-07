@@ -106,7 +106,7 @@ extern char    Par_Nem_File_Name[];        /* The parallel nemesis file name */
 
 
 /* Function prototypes. */
-extern void     write_parExo_data(int, int, int, int, char **, int, char **,
+extern void     write_parExo_data(int, int, int, int, int, char **, int, char **,
                                   char **, int *,
                                   int *, int *, int *, int *, int *,
                                   ELEM_COMM_MAP *, NODE_COMM_MAP *,

@@ -981,7 +981,7 @@ int main (int argc, char **argv)
 
 
    num_ele_vars = 3;
-   /*              0        1         2         3 
+   /*              0        1         2         3   */
    /*              12345678901234567890123456789012 */
    var_names[0] = "this_variable_name_is_short";
    var_names[1] = "this_variable_name_is_just_right";

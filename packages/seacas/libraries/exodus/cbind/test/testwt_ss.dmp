@@ -119,7 +119,7 @@ variables:
 		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
 		:title = "This is a test" ;
-		:maximum_name_length = 5 ;
+		:maximum_name_length = 32 ;
 data:
 
  eb_status = 1, 1, 1, 1, 1, 1, 1, 1 ;
@@ -128,7 +128,7 @@ data:
 
  ns_status = 0, 0 ;
 
- ns_prop1 = 0, 0 ;
+ ns_prop1 = -1, -1 ;
 
  ss_status = 0, 0, 1, 1, 1, 1, 1, 1, 1 ;
 

@@ -33,12 +33,35 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::RecurrenceBasis<ordinal_type, value_type>::
-RecurrenceBasis(const std::string& name_, ordinal_type p_, bool normalize_,
-		value_type quad_zero_tol_) :
+RecurrenceBasis(const std::string& name_, ordinal_type p_, bool normalize_) :
   name(name_),
   p(p_),
   normalize(normalize_),
-  quad_zero_tol(quad_zero_tol_),
+  quad_zero_tol(1.0e-14),
+#ifdef HAVE_STOKHOS_DAKOTA
+  sparse_grid_rule(Pecos::GOLUB_WELSCH),
+  sparse_grid_growth_rule(Pecos::DEFAULT_GROWTH),
+#else
+  sparse_grid_rule(-1),
+  sparse_grid_growth_rule(-1),
+#endif
+  alpha(p+1, value_type(0.0)),
+  beta(p+1, value_type(0.0)),
+  delta(p+1, value_type(0.0)),
+  gamma(p+1, value_type(0.0)),
+  norms(p+1, value_type(0.0))
+{
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::RecurrenceBasis<ordinal_type, value_type>::
+RecurrenceBasis(ordinal_type p_, const RecurrenceBasis& basis) :
+  name(basis.name),
+  p(p_),
+  normalize(basis.normalize),
+  quad_zero_tol(basis.quad_zero_tol),
+  sparse_grid_rule(basis.sparse_grid_rule),
+  sparse_grid_growth_rule(basis.sparse_grid_growth_rule),
   alpha(p+1, value_type(0.0)),
   beta(p+1, value_type(0.0)),
   delta(p+1, value_type(0.0)),

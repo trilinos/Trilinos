@@ -90,8 +90,8 @@ extern void check_exodus_error(
                                     /* EXODUS function returning the error   */
                                );
 
-static void read_coord(int mesh_exoid, int io_ws);
-static void read_elem_blk_ids(int mesh_exoid);
+static void read_coord(int mesh_exoid, int io_ws, int max_name_length);
+static void read_elem_blk_ids(int mesh_exoid, int max_name_length);
 static void read_elem_blk(int mesh_exoid, int io_ws);
 static void extract_elem_blk(void);
 static void extract_global_element_ids(int global_ids[], int Num_Elem, int iproc);
@@ -103,8 +103,8 @@ static void extract_elem_attr(void *elem_attr, int icurrent_elem_blk,
                               int istart_elem, int iend_elem,
                               int natt_p_elem, int indx, int io_ws);
 static void find_elem_block(int *proc_elem_blk, int indx, int proc_for);
-static void read_node_set_ids(int mesh_exoid, int [], int []);
-static void read_side_set_ids(int mesh_exoid, int [], int []);
+static void read_node_set_ids(int mesh_exoid, int [], int [], int max_name_length);
+static void read_side_set_ids(int mesh_exoid, int [], int [], int max_name_length);
 static void read_node_sets(int mesh_exoid, int *, int *, int);
 static void read_side_sets(int mesh_exoid, int *, int *, int);
 
@@ -162,6 +162,7 @@ void load_mesh(int io_ws)
   char  *yo = "load_mesh: ";
   float  version;
   double start_time;
+  int    max_name_length;
 
   char   cTemp[512];
 
@@ -280,6 +281,9 @@ void load_mesh(int io_ws)
               yo, ExoFile);
       exit(1);
     }
+
+    max_name_length = ex_inquire_int(mesh_exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+    ex_set_max_name_length(mesh_exoid, max_name_length);
 
     if (ex_inquire(mesh_exoid, EX_INQ_QA, &Num_QA_Recs, (float *) NULL,
                    (char *) NULL) < 0) {
@@ -434,7 +438,7 @@ void load_mesh(int io_ws)
                              MAX_STR_LENGTH + 1, sizeof(char));
     Elem_Blk_Names     =
       (char **) array_alloc (__FILE__, __LINE__, 2, Num_Elem_Blk,
-                             MAX_STR_LENGTH + 1, sizeof(char));
+                             max_name_length + 1, sizeof(char));
     Elem_Blk_Attr_Names = (char***) array_alloc(__FILE__, __LINE__, 1, Num_Elem_Blk,
 						sizeof(char**));
   } else {
@@ -451,7 +455,7 @@ void load_mesh(int io_ws)
     num_df_in_nsets       = num_nodes_in_node_set + Num_Node_Set;
     Node_Set_Names     =
       (char **) array_alloc (__FILE__, __LINE__, 2, Num_Node_Set,
-                             MAX_STR_LENGTH + 1, sizeof(char));
+                             max_name_length + 1, sizeof(char));
   } else {
     Node_Set_Ids = NULL;
     Node_Set_Names = NULL;
@@ -464,7 +468,7 @@ void load_mesh(int io_ws)
     num_df_in_ssets   = num_elem_in_ssets + Num_Side_Set;
     Side_Set_Names     =
       (char **) array_alloc (__FILE__, __LINE__, 2, Num_Side_Set,
-                             MAX_STR_LENGTH + 1, sizeof(char));
+                             max_name_length + 1, sizeof(char));
   } else {
     Side_Set_Ids = NULL;
     Side_Set_Names = NULL;
@@ -478,7 +482,7 @@ void load_mesh(int io_ws)
   if(Proc == 0)
     start_time = second();
 
-  read_elem_blk_ids(mesh_exoid);
+  read_elem_blk_ids(mesh_exoid, max_name_length);
 
   if(Proc == 0) {
     printf("\tTime to read element block IDs: %.2f\n",
@@ -492,7 +496,7 @@ void load_mesh(int io_ws)
   if(Proc == 0)
     start_time = second();
 
-  read_node_set_ids(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets);
+  read_node_set_ids(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets, max_name_length);
 
   if(Proc == 0) {
     printf("\tTime to read node set IDs: %.2f\n",
@@ -506,7 +510,7 @@ void load_mesh(int io_ws)
   if(Proc == 0)
     start_time = second();
 
-  read_side_set_ids(mesh_exoid, num_elem_in_ssets, num_df_in_ssets);
+  read_side_set_ids(mesh_exoid, num_elem_in_ssets, num_df_in_ssets, max_name_length);
 
   if(Proc == 0) {
     printf("\tTime to read side set IDs: %.2f\n",
@@ -555,7 +559,7 @@ void load_mesh(int io_ws)
   if(Proc == 0)
     start_time = second();
 
-  read_coord(mesh_exoid, io_ws);
+  read_coord(mesh_exoid, io_ws, max_name_length);
 
   if(Proc == 0) {
     printf("\tTime to read nodal coordinates: %.2f\n",
@@ -676,6 +680,8 @@ void load_mesh(int io_ws)
       exit(1);
     }
 
+    ex_set_max_name_length(mesh_exoid, max_name_length);
+    
     /* Set fill mode off... */
     {
     int old_fill;
@@ -686,7 +692,7 @@ void load_mesh(int io_ws)
       printf("%sParallel mesh file id is %d\n", yo, mesh_exoid);
 
     /* Write out a parallel mesh file local to each processor */
-    write_parExo_data(mesh_exoid, iproc, io_ws, Num_QA_Recs+1, QA_Record,
+    write_parExo_data(mesh_exoid, max_name_length, iproc, io_ws, Num_QA_Recs+1, QA_Record,
                       Num_Info_Recs, Info_Record, Elem_Blk_Types,
                       Node_Set_Ids, Side_Set_Ids, Elem_Blk_Ids,
 		      num_nodes_in_node_set, num_elem_in_ssets, Num_Elem_In_Blk,
@@ -820,7 +826,7 @@ void load_mesh(int io_ws)
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void read_elem_blk_ids(int mesh_exoid)
+static void read_elem_blk_ids(int mesh_exoid, int max_name_length)
 
 /* This function reads part of the element block info from the EXODUS II file.
  * It reads all information having a length equal to the number of elements
@@ -872,7 +878,7 @@ static void read_elem_blk_ids(int mesh_exoid)
       if (Num_Attr_Per_Elem[i] > 0) {
 	Elem_Blk_Attr_Names[i] = 
 	  (char **) array_alloc (__FILE__, __LINE__, 2, Num_Attr_Per_Elem[i],
-				 MAX_STR_LENGTH + 1, sizeof(char));
+				 max_name_length + 1, sizeof(char));
 	check_exodus_error(ex_get_attr_names(mesh_exoid, EX_ELEM_BLOCK,
 					     Elem_Blk_Ids[i], Elem_Blk_Attr_Names[i]),
 			   "ex_get_attr_names");
@@ -904,7 +910,7 @@ static void read_elem_blk_ids(int mesh_exoid)
          (Num_Elem_Blk *(MAX_STR_LENGTH+1)*sizeof(char)), 0);
 
   brdcst(Proc, Num_Proc, Elem_Blk_Names[0],
-         (Num_Elem_Blk *(MAX_STR_LENGTH+1)*sizeof(char)), 0);
+         (Num_Elem_Blk *(max_name_length+1)*sizeof(char)), 0);
 
   /*
    * It would be more efficient to pack this into a single array of
@@ -917,7 +923,7 @@ static void read_elem_blk_ids(int mesh_exoid)
   for (i = 0; i < Num_Elem_Blk; i++) {
     if (Num_Attr_Per_Elem[i] > 0) {
       brdcst(Proc, Num_Proc, (char *)Elem_Blk_Attr_Names[i],
-	     (Num_Attr_Per_Elem[i] *(MAX_STR_LENGTH+1)*sizeof(char)), 0);
+	     (Num_Attr_Per_Elem[i] *(max_name_length+1)*sizeof(char)), 0);
     }
   }
 }
@@ -927,7 +933,7 @@ static void read_elem_blk_ids(int mesh_exoid)
 /*****************************************************************************/
 
 static void read_node_set_ids(int mesh_exoid, int num_nodes_in_node_set[],
-                              int num_df_in_nsets[])
+                              int num_df_in_nsets[], int max_name_length)
 
 /*
  * This function reads part of the node set info from the EXODUS II file.  It
@@ -988,7 +994,7 @@ static void read_node_set_ids(int mesh_exoid, int num_nodes_in_node_set[],
            3*Num_Node_Set*sizeof(int), 0);
 
     brdcst(Proc, Num_Proc, Node_Set_Names[0],
-	   (Num_Node_Set *(MAX_STR_LENGTH+1)*sizeof(char)), 0);
+	   (Num_Node_Set *(max_name_length+1)*sizeof(char)), 0);
   }
 
 }
@@ -998,7 +1004,7 @@ static void read_node_set_ids(int mesh_exoid, int num_nodes_in_node_set[],
 /*****************************************************************************/
 
 static void read_side_set_ids(int mesh_exoid, int num_elem_in_ssets[],
-                              int num_df_in_ssets[])
+                              int num_df_in_ssets[], int max_name_length)
 
 /* This function reads part of the side set info from the EXODUS II file.  It
  * reads all information having a length equal to the number of side sets,
@@ -1060,7 +1066,7 @@ static void read_side_set_ids(int mesh_exoid, int num_elem_in_ssets[],
     brdcst(Proc, Num_Proc, (char *)Side_Set_Ids, (3*Num_Side_Set*sizeof(int)),
            0);
     brdcst(Proc, Num_Proc, Side_Set_Names[0],
-	   (Num_Side_Set *(MAX_STR_LENGTH+1)*sizeof(char)), 0);
+	   (Num_Side_Set *(max_name_length+1)*sizeof(char)), 0);
 
   }
 
@@ -1072,7 +1078,7 @@ static void read_side_set_ids(int mesh_exoid, int num_elem_in_ssets[],
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void read_coord(int exoid, int io_ws)
+static void read_coord(int exoid, int io_ws, int max_name_length)
 
 /* Function which reads the nodal coordinates information from an * EXODUS II
  * database for a given processor.
@@ -1260,7 +1266,7 @@ static void read_coord(int exoid, int io_ws)
 
   for(i=0; i < Num_Dim; i++)
     Coord_Name[i] = (char *)array_alloc(__FILE__, __LINE__, 1,
-                                        MAX_STR_LENGTH + 1, sizeof(char));
+                                        max_name_length + 1, sizeof(char));
 
   /* Get the coordinate names */
   if(Proc == 0) {
@@ -1272,7 +1278,7 @@ static void read_coord(int exoid, int io_ws)
 
   /* Broadcast the coordinate names to each processor */
   for(i=0; i < Num_Dim; i++)
-    brdcst(Proc, Num_Proc, Coord_Name[i], (MAX_STR_LENGTH+1)*sizeof(char), 0);
+    brdcst(Proc, Num_Proc, Coord_Name[i], (max_name_length+1)*sizeof(char), 0);
 
   /*  Output the Coordinate Information if Debug_Flag is large enough */
 

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -11,7 +11,9 @@
 #include <stk_util/diag/TimerMetricTraits.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/util/MallocUsed.h>
 #include <stk_util/util/FormatTime.hpp>
+#include <stk_util/util/FormatMemorySize.hpp>
 
 namespace stk {
 namespace diag {
@@ -67,6 +69,12 @@ MetricTraits<MPIByteCount>::value_now()
   return 0;
 }
 
+MetricTraits<HeapAlloc>::Type
+MetricTraits<HeapAlloc>::value_now()
+{
+  return ::malloc_used();
+}
+
 std::string
 MetricTraits<LapCount>::table_header() {
   return "Count";
@@ -92,10 +100,15 @@ MetricTraits<MPIByteCount>::table_header() {
   return "MPI Byte Count";
 }
 
+std::string
+MetricTraits<HeapAlloc>::table_header() {
+  return "Heap Allocated";
+}
+
 
 std::string
 MetricTraits<CPUTime>::format(
-  MetricTraits<CPUTime>::Type   time)
+  MetricTraits<CPUTime>::Type           time)
 {
   return formatTime(time, getTimerTimeFormat());
 }
@@ -103,7 +116,7 @@ MetricTraits<CPUTime>::format(
 
 std::string
 MetricTraits<WallTime>::format(
-  MetricTraits<WallTime>::Type   time)
+  MetricTraits<WallTime>::Type          time)
 {
   return formatTime(time, getTimerTimeFormat());
 }
@@ -111,7 +124,7 @@ MetricTraits<WallTime>::format(
 
 std::string
 MetricTraits<MPICount>::format(
-  MetricTraits<MPICount>::Type   count)
+  MetricTraits<MPICount>::Type          count)
 {
   std::stringstream strout;
 
@@ -130,6 +143,13 @@ MetricTraits<MPIByteCount>::format(
   strout << count;
 
   return strout.str();
+}
+
+std::string
+MetricTraits<HeapAlloc>::format(
+  MetricTraits<HeapAlloc>::Type         count)
+{
+  return formatMemorySize(count);
 }
 
 } // namespace diag

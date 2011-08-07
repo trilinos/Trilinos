@@ -36,6 +36,8 @@
 #include <amesos_btf_decl.h>
 
 using std::vector;
+using std::cout;
+using std::endl;
 
 namespace EpetraExt {
 
@@ -80,9 +82,8 @@ operator()( OriginalTypeRef orig )
   // Create std CRS format (without elements above the threshold)
   vector<int> ia(n+1,0);
   int maxEntries = orig.MaxNumEntries();
-  vector<int> ja_tmp(maxEntries);
+  vector<int> ja(nnz), ja_tmp(nnz);
   vector<double> jva_tmp(maxEntries);
-  vector<int> ja(nnz);
   int cnt;
 
   Epetra_CrsGraph strippedGraph( Copy, OldRowMap, OldColMap, 0 );
@@ -124,7 +125,35 @@ operator()( OriginalTypeRef orig )
 	  }
 	cout << "-----------------------------------------\n";
       }
-    
+  
+    // Transpose the graph, not the values
+    int j=0, next=0;
+    vector<int> ia_tmp(n+1,0);
+
+    // Compute row lengths
+    for (int i = 0; i < n; i++)
+        for (int k = ia[i]; k < ia[i+1]; k++)
+            ++ia_tmp[ ja[k]+1 ];
+
+    // Compute pointers from row lengths
+    ia_tmp[0] = 0;
+    for (int i = 0; i < n; i++)
+        ia_tmp[i+1] += ia_tmp[i];
+
+    // Copy over indices
+    for (int i = 0; i < n; i++) {
+        for (int k = ia[i]; k < ia[i+1]; k++) {
+            j = ja[k];
+            next = ia_tmp[j];
+            ja_tmp[next] = i;
+            ia_tmp[j] = next + 1;
+        }
+    }
+
+    // Reshift ia_tmp
+    for (int i=n-1; i >= 0; i--) ia_tmp[i+1] = ia_tmp[i];
+    ia_tmp[0] = 0;
+
     // Transformation information
     int numMatch = 0;       // number of nonzeros on diagonal after permutation.
     double maxWork =  0.0;  // no limit on how much work to perform in max-trans.
@@ -144,8 +173,8 @@ operator()( OriginalTypeRef orig )
     // if column j of A is the kth column of P*A*Q.  If rowperm[k] < 0, then the 
     // (k,k)th entry in P*A*Q is structurally zero.
     
-    numBlocks_ = amesos_btf_order( n, &ia[0], &ja[0], maxWork, &workPerf,
-			    &colperm[0], &rowperm[0], &blockptr[0], 
+    numBlocks_ = amesos_btf_order( n, &ia_tmp[0], &ja_tmp[0], maxWork, &workPerf,
+			    &rowperm[0], &colperm[0], &blockptr[0], 
 			    &numMatch, &work[0] );
     
     // Reverse ordering of permutation to get upper triangular form, if necessary.
@@ -153,7 +182,7 @@ operator()( OriginalTypeRef orig )
     colPerm_.resize( n ); 
     blockptr.resize( numBlocks_+1 );
     blockPtr_.resize( numBlocks_+1 );
-    if (upperTri_) {
+    if (!upperTri_) {
       for( int i = 0; i < n; ++i )
 	{
 	  rowPerm_[i] = BTF_UNFLIP(rowperm[(n-1)-i]);

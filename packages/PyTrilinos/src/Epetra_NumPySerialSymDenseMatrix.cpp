@@ -28,6 +28,9 @@
 
 #include "Epetra_NumPySerialSymDenseMatrix.h"
 
+namespace PyTrilinos
+{
+
 // Static variables
 // =============================================================================
 PyArrayObject * Epetra_NumPySerialSymDenseMatrix::tmp_array = NULL;
@@ -202,3 +205,5 @@ PyObject * Epetra_NumPySerialSymDenseMatrix::A()
   Py_INCREF(array);
   return PyArray_Return(array);
 }
+
+}  // Namespace PyTrilinos

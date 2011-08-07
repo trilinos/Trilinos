@@ -120,7 +120,7 @@ variables:
 		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
 		:title = "This is a test" ;
-		:maximum_name_length = 8 ;
+		:maximum_name_length = 32 ;
 data:
 
  eb_status = 1, 1, 1, 1, 1 ;

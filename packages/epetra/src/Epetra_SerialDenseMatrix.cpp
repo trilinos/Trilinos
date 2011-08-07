@@ -312,7 +312,7 @@ Epetra_SerialDenseMatrix& Epetra_SerialDenseMatrix::operator+= ( const Epetra_Se
   return(*this);
 }
 //=============================================================================
-void Epetra_SerialDenseMatrix::CopyMat(double* Source,
+void Epetra_SerialDenseMatrix::CopyMat(const double* Source,
                                        int Source_LDA,
                                        int NumRows,
                                        int NumCols, 
@@ -322,7 +322,7 @@ void Epetra_SerialDenseMatrix::CopyMat(double* Source,
 {
   int i;
   double* tptr = Target;
-  double* sptr = Source;
+  const double* sptr = Source;
   if (add) {
     for(int j=0; j<NumCols; ++j) {
       for(i=0; i<NumRows; ++i) {

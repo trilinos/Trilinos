@@ -78,8 +78,8 @@ extern void check_exodus_error(
                                     /* EXODUS function returning the error   */
                                );
 
-static int read_var_param (int exoid);
-static int broadcast_var_param (RESTART_PTR restart);
+static int read_var_param (int exoid, int max_name_length);
+static int broadcast_var_param (RESTART_PTR restart, int max_name_length);
 static int read_vars(int exoid, int index, int blk_cnt, int *eb_ids,
                      int *eb_cnts, int ***eb_map_ptr, int **eb_cnts_local,
 		     int *ss_ids, int *ss_cnts, int *ns_ids, int *ns_cnts,
@@ -150,7 +150,8 @@ void read_restart_params(int io_ws)
 
   int    exoid, cpu_ws=0;
   float  vers;
-
+  int    max_name_length = 0;
+  
   if (Proc == 0) {
     /* Open the ExodusII file */
     if ((exoid=ex_open(Exo_Res_File, EX_READ, &cpu_ws, &io_ws, &vers)) < 0) {
@@ -159,6 +160,9 @@ void read_restart_params(int io_ws)
       exit(1);
     }
 
+    max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+    ex_set_max_name_length(exoid, max_name_length);
+    
     /*
      * Just do a rudimentary check to figure out if the mesh parameters
      * in the results file are the same as the mesh parameters in the
@@ -172,7 +176,7 @@ void read_restart_params(int io_ws)
       }
 
     /* get the time, and the variable names */
-    if (read_var_param(exoid) < 0) {
+    if (read_var_param(exoid, max_name_length) < 0) {
       fprintf(stderr, "%s: Error occured while reading variable parameters\n",
               yo);
       exit(1);
@@ -184,7 +188,7 @@ void read_restart_params(int io_ws)
   }
 
   /* now broadcast the variable parameters to all of the processors */
-  if (broadcast_var_param(&Restart_Info) < 0) {
+  if (broadcast_var_param(&Restart_Info, max_name_length) < 0) {
     fprintf(stderr, "%s: Error occured while broadcasting variable params\n",
             yo);
     exit(1);
@@ -754,18 +758,14 @@ void read_restart_data (int io_ws)
   }
 }
 
-static int read_var_param (int exoid)
+static int read_var_param (int exoid, int max_name_length)
 {
   char  *yo="read_var_param";
 
   int    ret_int, cnt;
 
   /* Get the number of time indices contained in the file */
-  if (ex_inquire(exoid, EX_INQ_TIME, &ret_int, NULL, NULL) < 0) {
-    fprintf(stderr, "%s: Could not get number of time steps from file\n", yo);
-    return -1;
-  }
-
+  ret_int = ex_inquire_int(exoid, EX_INQ_TIME);
 
   /* see if the user want to get all of the time indices */
   if (Restart_Info.Num_Times == -1) {
@@ -821,7 +821,7 @@ static int read_var_param (int exoid)
   if (Restart_Info.NVar_Glob > 0) {
     Restart_Info.GV_Name = (char **) array_alloc(__FILE__, __LINE__, 2,
                                                  Restart_Info.NVar_Glob,
-                                                 MAX_STR_LENGTH+1,
+                                                 max_name_length+1,
                                                  sizeof(char));
 
     /* get the global variable names */
@@ -844,7 +844,7 @@ static int read_var_param (int exoid)
   if (Restart_Info.NVar_Elem > 0) {
     Restart_Info.EV_Name = (char **) array_alloc(__FILE__, __LINE__, 2,
                                                  Restart_Info.NVar_Elem,
-                                                 MAX_STR_LENGTH+1,
+                                                 max_name_length+1,
                                                  sizeof(char));
 
     /* get the elemental variable names */
@@ -879,7 +879,7 @@ static int read_var_param (int exoid)
   if (Restart_Info.NVar_Node > 0) {
     Restart_Info.NV_Name = (char **) array_alloc(__FILE__, __LINE__, 2,
                                                  Restart_Info.NVar_Node,
-                                                 MAX_STR_LENGTH+1,
+                                                 max_name_length+1,
                                                  sizeof(char));
 
     /* get the nodal variable names */
@@ -902,7 +902,7 @@ static int read_var_param (int exoid)
   if (Restart_Info.NVar_Sset > 0) {
     Restart_Info.SSV_Name = (char **) array_alloc(__FILE__, __LINE__, 2,
 						  Restart_Info.NVar_Sset,
-						  MAX_STR_LENGTH+1,
+						  max_name_length+1,
 						  sizeof(char));
 
     /* get the variable names */
@@ -936,7 +936,7 @@ static int read_var_param (int exoid)
   if (Restart_Info.NVar_Nset > 0) {
     Restart_Info.NSV_Name = (char **) array_alloc(__FILE__, __LINE__, 2,
 						  Restart_Info.NVar_Nset,
-						  MAX_STR_LENGTH+1,
+						  max_name_length+1,
 						  sizeof(char));
 
     /* get the variable names */
@@ -984,7 +984,7 @@ static int read_var_param (int exoid)
 
 }
 
-static int broadcast_var_param(RESTART_PTR restart)
+static int broadcast_var_param(RESTART_PTR restart, int max_name_length)
 {
   int    iproc, cnt1, cnt2;
 
@@ -1002,13 +1002,13 @@ static int broadcast_var_param(RESTART_PTR restart)
     if (Restart_Info.NVar_Glob > 0)
       restart->GV_Name = (char **) array_alloc(__FILE__, __LINE__, 2,
                                                restart->NVar_Glob,
-                                               MAX_STR_LENGTH+1,
+                                               max_name_length+1,
                                                sizeof(char));
 
     if (Restart_Info.NVar_Elem > 0) {
       restart->EV_Name = (char **) array_alloc(__FILE__, __LINE__, 2,
                                                restart->NVar_Elem,
-                                               MAX_STR_LENGTH+1,
+                                               max_name_length+1,
                                                sizeof(char));
 
       Restart_Info.GElem_TT = (int *) array_alloc(__FILE__, __LINE__, 1,
@@ -1021,7 +1021,7 @@ static int broadcast_var_param(RESTART_PTR restart)
     if (Restart_Info.NVar_Node > 0)
       restart->NV_Name = (char **) array_alloc(__FILE__, __LINE__, 2,
                                                restart->NVar_Node,
-                                               MAX_STR_LENGTH+1,
+                                               max_name_length+1,
                                                sizeof(char));
   }  /* End "if (Proc != 0)" */
 
@@ -1038,10 +1038,10 @@ static int broadcast_var_param(RESTART_PTR restart)
    */
   if (restart->NVar_Glob > 0)
     brdcst(Proc, Num_Proc, restart->GV_Name[0],
-           (restart->NVar_Glob*(MAX_STR_LENGTH+1)*sizeof(char)), 0);
+           (restart->NVar_Glob*(max_name_length+1)*sizeof(char)), 0);
   if (restart->NVar_Elem > 0) {
     brdcst(Proc, Num_Proc, restart->EV_Name[0],
-           (restart->NVar_Elem*(MAX_STR_LENGTH+1)*sizeof(char)), 0);
+           (restart->NVar_Elem*(max_name_length+1)*sizeof(char)), 0);
 
     /* with the elemental variables, broadcast the truth table as well */
     brdcst(Proc, Num_Proc, (char *) Restart_Info.GElem_TT,
@@ -1063,11 +1063,11 @@ static int broadcast_var_param(RESTART_PTR restart)
 
   if (restart->NVar_Node > 0)
     brdcst(Proc, Num_Proc, restart->NV_Name[0],
-           (restart->NVar_Node*(MAX_STR_LENGTH+1)*sizeof(char)), 0);
+           (restart->NVar_Node*(max_name_length+1)*sizeof(char)), 0);
 
   if (restart->NVar_Nset > 0) {
     brdcst(Proc, Num_Proc, restart->NSV_Name[0],
-           (restart->NVar_Nset*(MAX_STR_LENGTH+1)*sizeof(char)), 0);
+           (restart->NVar_Nset*(max_name_length+1)*sizeof(char)), 0);
 
     /* with the nodeset variables, broadcast the truth table as well */
     brdcst(Proc, Num_Proc, (char *) Restart_Info.GNset_TT,
@@ -1088,7 +1088,7 @@ static int broadcast_var_param(RESTART_PTR restart)
 
   if (restart->NVar_Sset > 0) {
     brdcst(Proc, Num_Proc, restart->SSV_Name[0],
-           (restart->NVar_Sset*(MAX_STR_LENGTH+1)*sizeof(char)), 0);
+           (restart->NVar_Sset*(max_name_length+1)*sizeof(char)), 0);
 
     /* with the sideset variables, broadcast the truth table as well */
     brdcst(Proc, Num_Proc, (char *) Restart_Info.GSset_TT,

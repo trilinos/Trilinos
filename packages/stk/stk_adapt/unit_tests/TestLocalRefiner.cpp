@@ -35,7 +35,7 @@ namespace stk {
     unsigned TestLocalRefiner::
     doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
                      vector< ColorerSetType >& elementColors, unsigned elementType,
-                     vector<NeededEntityType>& needed_entity_ranks,
+                     vector<NeededEntityType>& needed_entity_ranks, 
                      bool only_count, bool doAllElements)
     //bool only_count=false, bool doAllElements=true)
     {
@@ -46,7 +46,7 @@ namespace stk {
       if (m_doProgress)
         {
           m_doProgress = false;
-          progress_meter_num_total = doForAllElements(rank, function, elementColors, elementType, needed_entity_ranks, true, doAllElements);
+          progress_meter_num_total = doForAllElements(rank, function, elementColors, elementType, needed_entity_ranks,  true, doAllElements);
           m_doProgress = true;
           ProgressMeterData pd(ProgressMeterData::INIT, 0.0, "NodeRegistry passes");
           notifyObservers(&pd);
@@ -98,7 +98,7 @@ namespace stk {
 
                 if (!only_count && (doAllElements || elementIsGhost))
                   {
-                    applyNodeRegistryFunctionForSubEntities(function, element, needed_entity_ranks);
+                    apply(function, element, needed_entity_ranks);
                   }
                 
                 if (m_doProgress && (num_elem % progress_meter_when_to_post == 0) )
@@ -122,7 +122,7 @@ namespace stk {
     }
 
     void TestLocalRefiner::
-    applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
@@ -155,7 +155,7 @@ namespace stk {
               //bool is_empty = m_nodeRegistry->is_empty( element, needed_entity_rank, iSubDimOrd);
               //if(1||!is_empty)
 
-              (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+              (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
 
             } // iSubDimOrd
         } // ineed_ent

@@ -562,12 +562,12 @@ namespace Anasazi {
     orthman_(ortho),
     // timers, counters
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
-    timerOp_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Operation Op*x")),
-    timerSortRitzVal_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Sorting Ritz values")),
-    timerCompSF_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Computing Schur form")),
-    timerSortSF_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Sorting Schur form")),
-    timerCompRitzVec_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Computing Ritz vectors")),
-    timerOrtho_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Orthogonalization")),
+    timerOp_(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchur::Operation Op*x")),
+    timerSortRitzVal_(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchur::Sorting Ritz values")),
+    timerCompSF_(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchur::Computing Schur form")),
+    timerSortSF_(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchur::Sorting Schur form")),
+    timerCompRitzVec_(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchur::Computing Ritz vectors")),
+    timerOrtho_(Teuchos::TimeMonitor::getNewTimer("Anasazi: BlockKrylovSchur::Orthogonalization")),
 #endif
     count_ApplyOp_(0),
     // internal data

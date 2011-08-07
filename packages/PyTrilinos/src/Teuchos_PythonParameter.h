@@ -67,7 +67,7 @@
 
 // ****************************************************************** //
 
-namespace Teuchos
+namespace PyTrilinos
 {
 
 // ****************************************************************** //
@@ -82,102 +82,109 @@ enum ResponseToIllegalParameters {raiseError,
 
 // ****************************************************************** //
 
-// The setPythonParameter() function takes a ParameterList, a string
-// name and a python object as input.  An attempt is made to convert
-// the python object to a supported C / C++ type.  If successful,
-// the ParameterList set() method is called using the given name and
-// converted object, and true is returned.  If unsuccessful (ie, the
-// python object represents an unsupported type), false is returned.
-// Typically, a python error will NOT be set except in the case when
-// the python object is a dictionary with unsupported values.
+// The setPythonParameter() function takes a Teuchos::ParameterList, a
+// string name and a python object as input.  An attempt is made to
+// convert the python object to a supported C / C++ type.  If
+// successful, the Teuchos::ParameterList set() method is called using
+// the given name and converted object, and true is returned.  If
+// unsuccessful (ie, the python object represents an unsupported
+// type), false is returned.  Typically, a python error will NOT be
+// set except in the case when the python object is a dictionary with
+// unsupported values.
 
-bool setPythonParameter(ParameterList     & plist,
-			const std::string & name,
-			PyObject          * value);
+bool setPythonParameter(Teuchos::ParameterList & plist,
+			const std::string      & name,
+			PyObject               * value);
 
 // **************************************************************** //
 
 // The getPythonParameter() function is the get counterpart to
-// setPythonParameter().  It takes a ParameterList and string name
-// as input.  If the requested parameter name does not exist, a new
-// reference to None is returned (a type that is guaranteed not to
-// be supported by setPythonParameter()).  If the name exists and
-// its type is supported, it is returned as a new reference to a
-// python object.  If the name exists, but the type is not
-// supported, NULL is returned, to indicate an error.  All returned
-// python object pointers are new references.  This function is
-// coded in such a way that the ParameterList "used" flags are not
-// altered.
+// setPythonParameter().  It takes a Teuchos::ParameterList and string
+// name as input.  If the requested parameter name does not exist, a
+// new reference to None is returned (a type that is guaranteed not to
+// be supported by setPythonParameter()).  If the name exists and its
+// type is supported, it is returned as a new reference to a python
+// object.  If the name exists, but the type is not supported, NULL is
+// returned, to indicate an error.  All returned python object
+// pointers are new references.  This function is coded in such a way
+// that the Teuchos::ParameterList "used" flags are not altered.
 
-PyObject * getPythonParameter(const ParameterList & plist,
-			      const std::string   & name);
+PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
+			      const std::string            & name);
 
 // **************************************************************** //
 
 // Function isEquivalent() is a utility for determining whether a
-// python dictionary is functionally equivalent to a ParameterList.
-// It supports interpreting ParameterList sublists as nested python
-// dictionaries, so it calls itself recursively.
+// python dictionary is functionally equivalent to a
+// Teuchos::ParameterList.  It supports interpreting
+// Teuchos::ParameterList sublists as nested python dictionaries, so
+// it calls itself recursively.
 
-bool isEquivalent(PyObject * dict, const ParameterList & plist);
+bool isEquivalent(PyObject                     * dict,
+		  const Teuchos::ParameterList & plist);
 
 // **************************************************************** //
 
 // Function updatePyDictWithParameterList() takes all of the entries
-// in a ParameterList and updates the given python dictionary to
-// reflect the same values.  If the given python object is not a
-// dictionary, or any of the ParameterList entries are of
+// in a Teuchos::ParameterList and updates the given python dictionary
+// to reflect the same values.  If the given python object is not a
+// dictionary, or any of the Teuchos::ParameterList entries are of
 // unsupported type, the function returns false.
 
-bool updatePyDictWithParameterList(PyObject * dict, const ParameterList & plist,
-				   ResponseToIllegalParameters flag=raiseError);
+bool updatePyDictWithParameterList(PyObject                     * dict,
+				   const Teuchos::ParameterList & plist,
+				   ResponseToIllegalParameters    flag=raiseError);
 
 // **************************************************************** //
 
 // Function updateParameterListWithPyDict() takes all of the entries
-// in a python dictionary and updates the given ParameterList to
-// reflect the same values.  If the given python object is not a
-// dictionary, or if any of the dictionary keys are not strings, or
-// if any of the dictionary values are of unsupported type, then the
+// in a python dictionary and updates the given Teuchos::ParameterList
+// to reflect the same values.  If the given python object is not a
+// dictionary, or if any of the dictionary keys are not strings, or if
+// any of the dictionary values are of unsupported type, then the
 // function returns false.
 
-bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist,
+bool updateParameterListWithPyDict(PyObject                  * dict,
+				   Teuchos::ParameterList    & plist,
 				   ResponseToIllegalParameters flag=raiseError);
 
 // **************************************************************** //
 
 // Function synchronizeParameters() is a function for bringing the
-// given python dictionary and ParameterList into synch with each
-// other.  If a parameter exists for both the ParameterList and the
-// python dictionary, the ParameterList takes precedence.  If the
-// function returns false, it means the given PyObject was not a
-// dictionary or the ParameterList or python dictionary had at least
-// one value of an unsupported type.
+// given python dictionary and Teuchos::ParameterList into synch with
+// each other.  If a parameter exists for both the
+// Teuchos::ParameterList and the python dictionary, the
+// Teuchos::ParameterList takes precedence.  If the function returns
+// false, it means the given PyObject was not a dictionary or the
+// Teuchos::ParameterList or python dictionary had at least one value
+// of an unsupported type.
 
-bool synchronizeParameters(PyObject * dict, ParameterList & plist,
+bool synchronizeParameters(PyObject                  * dict,
+			   Teuchos::ParameterList    & plist,
 			   ResponseToIllegalParameters flag=raiseError);
 
 // **************************************************************** //
 
 // Function pyDictToNewParameterList is a helper function that takes a
 // python dictionary and returns a pointer to an equivalent, new
-// ParameterList.  If dict is not a python dictionary, or dict is
+// Teuchos::ParameterList.  If dict is not a python dictionary, or dict is
 // not a valid dictionary (non-string keys or unsupported value
 // types) then the function returns NULL.
 
-ParameterList * pyDictToNewParameterList(PyObject * dict,
-					 ResponseToIllegalParameters flag=raiseError);
+Teuchos::ParameterList * pyDictToNewParameterList(PyObject                  * dict,
+						  ResponseToIllegalParameters flag=raiseError);
 
 // **************************************************************** //
 
-// Function parameterListToNewPyDict is a helper function that takes
-// a ParameterList and returns a pointer to an equivalent, new
-// python dictionary.  If the ParameterList contains entries of
-// invalid type, then a python error is raised and NULL is returned.
+// Function parameterListToNewPyDict is a helper function that takes a
+// Teuchos::ParameterList and returns a pointer to an equivalent, new
+// python dictionary.  If the Teuchos::ParameterList contains entries
+// of invalid type, then a python error is raised and NULL is
+// returned.
 
-PyObject * parameterListToNewPyDict(const ParameterList & plist,
-				    ResponseToIllegalParameters flag=raiseError);
+PyObject * parameterListToNewPyDict(const Teuchos::ParameterList & plist,
+				    ResponseToIllegalParameters    flag=raiseError);
 
-}    // namespace Teuchos
+}    // Namespace PyTrilinos
 
 #endif // TEUCHOS_PYTHONPARAMETER_H

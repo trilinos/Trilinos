@@ -28,6 +28,18 @@
 // ***********************************************************************
 // @HEADER
 
+%{
+// Teuchos includes
+#include "Teuchos_any.hpp"
+#include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_FILEstream.hpp"
+
+// Teuchos python interface includes
+#include "Teuchos_PythonParameter.h"
+%}
+
 // The python implementation of Teuchos::ParameterList is augmented to
 // "play nice" with python dictionaries, and to some extent, behave
 // like a dictionary.  A constructor is added that takes a dictionary.
@@ -59,17 +71,7 @@ public:
   PrintOptions copy() const;
 };
 %nestedworkaround ParameterList::PrintOptions;
-}
-
-%{
-#include "Teuchos_any.hpp"
-#include "Teuchos_ParameterEntry.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterListAcceptor.hpp"
-
-// Teuchos python interface includes
-#include "Teuchos_PythonParameter.h"
-%}
+}  // Namespace Teuchos
 
 //Teuchos imports
 namespace Teuchos
@@ -89,7 +91,7 @@ class any;
 {
   if (PyDict_Check($input))
   {
-    $1 = Teuchos::pyDictToNewParameterList($input);
+    $1 = PyTrilinos::pyDictToNewParameterList($input);
     if (!$1) SWIG_fail;
     cleanup = true;
   }
@@ -148,7 +150,7 @@ class any;
 {
   if (PyDict_Check($input))
   {
-    tempshared = Teuchos::rcp(Teuchos::pyDictToNewParameterList($input));
+    tempshared = Teuchos::rcp(PyTrilinos::pyDictToNewParameterList($input));
     if (tempshared.is_null()) SWIG_fail;
     $1 = &tempshared;
   }
@@ -402,7 +404,7 @@ Teuchos::ParameterList::__getitem__
   plist['f'] = 2.718
   e = plist['f']"
 %feature("docstring")
-Teuchos::parameterList::update
+Teuchos::ParameterList::update
 "An ``update()`` method has been added to the ``ParameterList`` class
 that can accept either a ``ParameterList`` or a python dictionary.
 Otherwise, it behaves just as the dictionary method, which is
@@ -435,7 +437,7 @@ Teuchos::ParameterList::values
   ParameterList(PyObject * dict, string name = string("ANONYMOUS"))
   {
     Teuchos::ParameterList * plist =
-      Teuchos::pyDictToNewParameterList(dict, Teuchos::raiseError);
+      PyTrilinos::pyDictToNewParameterList(dict, PyTrilinos::raiseError);
     if (plist == NULL) goto fail;
 
     plist->setName(name);
@@ -448,7 +450,7 @@ Teuchos::ParameterList::values
   // Set method: accept only python objects as values
   Teuchos::ParameterList & set(const string &name, PyObject *value)
   {
-    if (!setPythonParameter(*self,name,value))
+    if (!PyTrilinos::setPythonParameter(*self,name,value))
     {
       PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
       goto fail;
@@ -462,7 +464,7 @@ Teuchos::ParameterList::values
   // Get method: return entries as python objects
   PyObject * get(const string &name, PyObject * default_value=NULL) const
   {
-    PyObject * value = getPythonParameter(*self, name);
+    PyObject * value = PyTrilinos::getPythonParameter(*self, name);
     // Type not supported
     if (value == NULL)
     {
@@ -561,7 +563,7 @@ Teuchos::ParameterList::values
   PyObject * type(const std::string & name)
   {
     PyObject * result = NULL;
-    PyObject * value = getPythonParameter(*self,name);
+    PyObject * value  = PyTrilinos::getPythonParameter(*self,name);
     // Type not supported
     if (value == NULL)
     {
@@ -592,7 +594,7 @@ Teuchos::ParameterList::values
   // Comparison operators
   int __cmp__(PyObject * obj) const
   {
-    PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     int result = 0;
     if (dict == NULL) goto fail;
     result = PyObject_Compare(dict,obj);
@@ -605,8 +607,8 @@ Teuchos::ParameterList::values
 
   int __cmp__(const ParameterList & plist) const
   {
-    PyObject * dict1 = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
-    PyObject * dict2 = Teuchos::parameterListToNewPyDict(plist,Teuchos::ignore);
+    PyObject * dict1 = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
+    PyObject * dict2 = PyTrilinos::parameterListToNewPyDict(plist,PyTrilinos::ignore);
     int result = 0;
     if (dict1 == NULL) goto fail;
     if (dict2 == NULL) goto fail;
@@ -624,7 +626,7 @@ Teuchos::ParameterList::values
   // Contains operator
   int __contains__(const std::string & name) const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * keys   = 0;
     PyObject * keyStr = 0;
     int result        = 0;
@@ -647,7 +649,7 @@ Teuchos::ParameterList::values
   // Equals operators
   PyObject * __eq__(PyObject * obj) const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
     result = PyObject_RichCompare(dict,obj,Py_EQ);
@@ -659,8 +661,8 @@ Teuchos::ParameterList::values
 
   PyObject * __eq__(const ParameterList & plist) const
   {
-    PyObject * dict1  = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
-    PyObject * dict2  = Teuchos::parameterListToNewPyDict(plist,Teuchos::ignore);
+    PyObject * dict1  = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
+    PyObject * dict2  = PyTrilinos::parameterListToNewPyDict(plist,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict1 == NULL) goto fail;
     if (dict2 == NULL) goto fail;
@@ -687,7 +689,7 @@ Teuchos::ParameterList::values
   // __iter__ method
   PyObject * __iter__() const
   {
-    PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * iter = 0;
     if (dict == NULL) goto fail;
     iter = PyObject_GetIter(PyDict_Keys(dict));
@@ -701,7 +703,7 @@ Teuchos::ParameterList::values
   // Length operator
   int __len__() const
   {
-    PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     int len = 0;
     if (dict == NULL) goto fail;
     len = PyDict_Size(dict);
@@ -715,7 +717,7 @@ Teuchos::ParameterList::values
   // Not equals operators
   PyObject * __ne__(PyObject * obj) const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
     result = PyObject_RichCompare(dict,obj,Py_NE);
@@ -727,8 +729,8 @@ Teuchos::ParameterList::values
 
   PyObject * __ne__(const ParameterList & plist) const
   {
-    PyObject * dict1  = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
-    PyObject * dict2  = Teuchos::parameterListToNewPyDict(plist,Teuchos::ignore);
+    PyObject * dict1  = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
+    PyObject * dict2  = PyTrilinos::parameterListToNewPyDict(plist,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict1 == NULL) goto fail;
     if (dict2 == NULL) goto fail;
@@ -755,7 +757,7 @@ Teuchos::ParameterList::values
   PyObject * __repr__() const
   {
     std::string reprStr;
-    PyObject * dict    = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict    = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * dictStr = 0;
     PyObject * result = 0;
     if (dict == NULL) goto fail;
@@ -776,7 +778,7 @@ Teuchos::ParameterList::values
   // String conversion method
   PyObject * __str__() const
   {
-    PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * str  = 0;
     if (dict == NULL) goto fail;
     str = PyObject_Str(dict);
@@ -790,7 +792,7 @@ Teuchos::ParameterList::values
   // Has_key method
   int has_key(const std::string & name) const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * keys   = 0;
     PyObject * keyStr = 0;
     int result        = 0;
@@ -812,7 +814,7 @@ Teuchos::ParameterList::values
   // Items method
   PyObject * items() const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
     result = PyDict_Items(dict);
@@ -826,7 +828,7 @@ Teuchos::ParameterList::values
   // Iteritems method
   PyObject * iteritems() const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
     result = PyObject_GetIter(PyDict_Items(dict));
@@ -840,7 +842,7 @@ Teuchos::ParameterList::values
   // Iterkeys method
   PyObject * iterkeys() const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
     result = PyObject_GetIter(PyDict_Keys(dict));
@@ -854,7 +856,7 @@ Teuchos::ParameterList::values
   // Itervalues method
   PyObject * itervalues() const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
     result = PyObject_GetIter(PyDict_Values(dict));
@@ -868,7 +870,7 @@ Teuchos::ParameterList::values
   // Keys method
   PyObject * keys() const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
     result = PyDict_Keys(dict);
@@ -882,9 +884,9 @@ Teuchos::ParameterList::values
   // Update methods
   void update(PyObject * dict, bool strict=true)
   {
-    Teuchos::ResponseToIllegalParameters flag;
-    if (strict) flag = Teuchos::raiseError;
-    else        flag = Teuchos::storeNames;
+    PyTrilinos::ResponseToIllegalParameters flag;
+    if (strict) flag = PyTrilinos::raiseError;
+    else        flag = PyTrilinos::storeNames;
     updateParameterListWithPyDict(dict,*self,flag);
   }
 
@@ -897,7 +899,7 @@ Teuchos::ParameterList::values
   // Values method
   PyObject * values() const
   {
-    PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+    PyObject * dict   = PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::ignore);
     PyObject * result = 0;
     if (dict == NULL) goto fail;
     result = PyDict_Values(dict);
@@ -912,7 +914,7 @@ Teuchos::ParameterList::values
   // ParameterList
   PyObject * asDict() const
   {
-    return Teuchos::parameterListToNewPyDict(*self,Teuchos::storeNames);
+    return PyTrilinos::parameterListToNewPyDict(*self,PyTrilinos::storeNames);
   }
 }    // %extend ParameterList
 

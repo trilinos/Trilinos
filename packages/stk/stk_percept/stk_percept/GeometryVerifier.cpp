@@ -238,24 +238,37 @@ namespace stk
       unsigned foundBad=0;
       jac_data_map jac_data;
 
+      std::cout << "tmp GeometryVerifier 1" << std::endl;
 
       stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
         meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
 
       mesh::Selector select_owned( meta.locally_owned_part() );
+      std::cout << "tmp GeometryVerifier 2 meta.element_rank() = " << meta.element_rank() << std::endl;
 
       const std::vector<mesh::Bucket*> & buckets = bulk.buckets( meta.element_rank() );
 
+      std::cout << "tmp GeometryVerifier 2a" << std::endl;
       for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
         {
           if ( select_owned( **ik ) ) {
+      std::cout << "tmp GeometryVerifier 2b" << std::endl;
 
-          const mesh::Bucket & bucket = **ik ;
+            const mesh::Bucket & bucket = **ik ;
 
-          const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
-          jac_data[bucket_cell_topo_data->name] = jacData();
+      std::cout << "tmp GeometryVerifier 2c" << std::endl;
+            const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+
+            std::cout << "tmp GeometryVerifier 2d " << stk::mesh::fem::get_cell_topology(bucket).getName() << std::endl;
+
+            std::cout << "tmp GeometryVerifier 2d " << bucket_cell_topo_data << " " <<  std::endl;
+            std::cout << "tmp GeometryVerifier 2d " << bucket.size() << std::endl;
+            std::cout << "tmp GeometryVerifier 2d " << bucket_cell_topo_data->name << " " <<  std::endl;
+            jac_data[bucket_cell_topo_data->name] = jacData();
+      std::cout << "tmp GeometryVerifier 2e" << std::endl;
           }
         }
+      std::cout << "tmp GeometryVerifier 3" << std::endl;
 
       for (unsigned ipass = 0; ipass < 1; ipass++)
         {
@@ -284,6 +297,8 @@ namespace stk
               if (0) { std::cout << "bucket_shardsId= " << bucket_shardsId << " name= " << bucket_cell_topo_data->name <<  std::endl; }
 
               if (0) { std::cout << "number_elems= " << number_elems << std::endl;}
+
+              std::cout << "tmp GeometryVerifier 4" << std::endl;
 
               CellTopology cell_topo(bucket_cell_topo_data);
               double volEqui = getEquiVol(cell_topo);
@@ -336,6 +351,8 @@ namespace stk
 
               FieldContainer<double> weightedMeasure(numCells, numCubPoints);
 
+              std::cout << "tmp GeometryVerifier 5" << std::endl;
+
               FieldContainer<double> onesLeft(numCells,  numCubPoints);
               onesLeft.initialize(1.0);
 
@@ -353,6 +370,8 @@ namespace stk
 
               // integrate to get volume
               FunctionSpaceTools::integrate<double>(volume, onesLeft, weightedMeasure,  COMP_BLAS);
+
+              std::cout << "tmp GeometryVerifier 6" << std::endl;
 
               jacData& jdata = jac_data[cell_topo.getName()];
               jdata.numEle += numCells;

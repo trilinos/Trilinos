@@ -32,6 +32,9 @@
 #define PyArray_ANYORDER -1
 #endif
 
+namespace PyTrilinos
+{
+
 // Static variables
 const Epetra_SerialComm   Epetra_NumPyMultiVector::defaultComm = Epetra_SerialComm();
 PyArrayObject           * Epetra_NumPyMultiVector::tmp_array   = NULL               ;
@@ -608,3 +611,5 @@ PyObject * Epetra_NumPyMultiVector::MeanValue() const
   delete [] result;
   return NULL;
 }
+
+}  // Namespace PyTrilinos

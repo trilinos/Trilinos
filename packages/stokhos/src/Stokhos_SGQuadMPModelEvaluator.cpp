@@ -487,7 +487,7 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     for (int qp=0; qp<nqp; qp++) {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"SGQuadMPModelEvaluator -- Polynomial Evaluation",
+	"Stokhos: SGQuadMPModelEvaluator -- Polynomial Evaluation",
 	PolyEvaluation);
 #endif
 
@@ -534,7 +534,7 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 
     {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR("SGQuadMPModelEvaluator -- Model Evaluation");
+      TEUCHOS_FUNC_TIME_MONITOR("Stokhos: SGQuadMPModelEvaluator -- Model Evaluation");
 #endif
       
       // Evaluate multi-point model at quadrature points
@@ -546,7 +546,7 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     for (int qp=0; qp<nqp; qp++) {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"SGQuadMPModelEvaluator -- Polynomial Integration", Integration);
+	"Stokhos: SGQuadMPModelEvaluator -- Polynomial Integration", Integration);
 #endif
 
       int gqp = mp_block_map->GID(qp);

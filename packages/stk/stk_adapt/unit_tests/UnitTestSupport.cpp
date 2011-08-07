@@ -57,7 +57,7 @@ namespace stk {
                       if (diff_2)
                         {
                           //bool diff_3 =
-                            PerceptMesh::mesh_difference(eMesh2, eMesh_gold, diff_msg, true);
+                          PerceptMesh::mesh_difference(eMesh2, eMesh_gold, diff_msg, true);
                         }
                     }
 
@@ -80,7 +80,7 @@ namespace stk {
 
       bool UnitTestSupport::always_do_regression_tests = true;
 
+
     }
   }
 }
-

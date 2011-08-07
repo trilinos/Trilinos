@@ -64,7 +64,6 @@ int ex_get_variable_name (int   exoid,
 {
   int status;
   int varid;
-  size_t  start[2], count[2];
   char errmsg[MAX_ERR_LENGTH];
   const char *vname = NULL;
    

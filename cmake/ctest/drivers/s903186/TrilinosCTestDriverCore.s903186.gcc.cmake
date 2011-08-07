@@ -36,23 +36,23 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCPPUNIT_INCLUDES:STRING=/Users/jmwille/install/cppunit-1.12.1/include"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.4.5")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.4.6")
   
   IF (COMM_TYPE STREQUAL MPI)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/jmwille/install/openmpi-1.4.3"
+      "-DMPI_BASE_DIR:PATH=/Users/jmwille/install/gcc-4.4.6/openmpi-1.4.3"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/jmwille/install/gcc4.4.5/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/jmwille/install/gcc4.4.5/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/jmwille/install/gcc4.4.5/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.4.6/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.4.6/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/jmwille/install/gcc-4.4.6/bin/gfortran"
       )
   
   ENDIF()

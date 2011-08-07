@@ -73,7 +73,13 @@ public:
 
   /** \brief  On the cuda device use unsigned int for indexing */
   typedef unsigned int         size_type ;
+
+  /** \brief  The Cuda device uses the Cuda memory space */
+  typedef DeviceCuda            memory_space ;
+
+  /** \brief  Default mdarray map is index from left */
   typedef MDArrayIndexMapLeft  default_mdarray_map ;
+
 
   /*--------------------------------*/
 

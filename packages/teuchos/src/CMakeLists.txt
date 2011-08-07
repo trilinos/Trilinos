@@ -203,6 +203,7 @@ APPEND_SET(SOURCES
   Teuchos_ErrorPolling.cpp
   Teuchos_Flops.cpp
   Teuchos_GlobalMPISession.cpp
+  Teuchos_LAPACK.cpp
   Teuchos_LabeledObject.cpp
   Teuchos_MPIComm.cpp
   Teuchos_MPISession.cpp
@@ -213,6 +214,7 @@ APPEND_SET(SOURCES
   Teuchos_ParameterListAcceptor.cpp
   Teuchos_ParameterListAcceptorDefaultBase.cpp
   Teuchos_ParameterListNonAcceptor.cpp
+  Teuchos_PerformanceMonitorBase.cpp
   Teuchos_PerformanceMonitorUtils.cpp
   Teuchos_Ptr.cpp
   Teuchos_RCPNode.cpp

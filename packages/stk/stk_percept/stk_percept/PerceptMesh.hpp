@@ -535,6 +535,50 @@ namespace stk {
         return true;
       }
 
+      bool getChildren( const stk::mesh::Entity& element, std::vector<stk::mesh::Entity*>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false)
+      {
+        children.resize(0);
+        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
+        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
+        if (element_to_family_tree_relations.size()==0 )
+          {
+            if (check_for_family_tree)
+              {
+                std::cout << "PerceptMesh::getChildren:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
+                printEntity(std::cout, element);
+                throw std::runtime_error("PerceptMesh::getChildren:: no FAMILY_TREE_RANK relations: element");
+              }
+            else
+              {
+                return false;
+              }
+          }
+
+        if (element_to_family_tree_relations.size() > 2)
+          throw std::logic_error(std::string("PerceptMesh::getChildren:: too many relations = ")+toString(element_to_family_tree_relations.size()));
+
+        if (!isParentElement(element, check_for_family_tree))
+          return false;
+
+        if (only_if_element_is_parent_leaf && !isParentElementLeaf(element, check_for_family_tree))
+          return false;
+
+        unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
+        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
+        stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
+        if (family_tree_relations.size() == 0)
+          {
+            throw std::logic_error(std::string("getChildren:: family_tree_relations size=0 = "));
+          }
+
+        for (unsigned ichild = 1; ichild < family_tree_relations.size(); ichild++)
+          {
+            stk::mesh::Entity *child = family_tree_relations[ichild].entity();
+            children.push_back(child);
+          }
+        return true;
+      }
+
       void printParentChildInfo(const stk::mesh::Entity& element, bool check_for_family_tree=true)
       {
         const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
@@ -638,6 +682,7 @@ namespace stk {
 
       static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
       static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity& node, unsigned *stride=0);
+      static double * field_data_entity(const stk::mesh::FieldBase *field, const mesh::Entity& entity, unsigned *stride=0);
 
       static inline double *
       field_data_inlined(const mesh::FieldBase *field, const mesh::Entity& node)

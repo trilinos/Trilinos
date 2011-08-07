@@ -120,6 +120,10 @@ namespace snl_fei {
 
       int numElemBlocks = matrixGraph_->getNumConnectivityBlocks();
 
+      int nodeType = 0;
+      snl_fei::RecordCollection* nodeRecords = NULL;
+      vspace->getRecordCollection(nodeType, nodeRecords);
+
       int* intData = new int[numElemBlocks*3];
       int* numElemsPerBlock =       intData;
       int* numNodesPerElem =        intData+numElemBlocks;
@@ -190,12 +194,12 @@ namespace snl_fei {
 
         std::map<int,int>& elemIDs = cblock->getConnectivityIDs();
         int numElems = elemIDs.size();
-        fei::Record<int>** nodes = &(cblock->getRowConnectivities()[0]);
+        int* nodes = &(cblock->getRowConnectivities()[0]);
 
         int offset = 0;
         for(int elem=0; elem<numElems; ++elem) {
           for(int n=0; n<numConnectedNodes; ++n) {
-            fei::Record<int>* node = nodes[offset++];
+            fei::Record<int>* node = nodeRecords->getRecordWithLocalID(nodes[offset++]);
             nodeNumPtr[n] = node->getNumber();
           }
 

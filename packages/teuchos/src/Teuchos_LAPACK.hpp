@@ -51,24 +51,6 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_LAPACK_wrappers.hpp"
-
-/* for INTEL_CXML, the second arg may need to be changed to 'one'.  If so
-the appropriate declaration of one will need to be added back into
-functions that include the macro:
-*/
-#if defined (INTEL_CXML)
-        unsigned int one=1;
-#endif
-
-#ifdef CHAR_MACRO
-#undef CHAR_MACRO
-#endif
-#if defined (INTEL_CXML)
-#define CHAR_MACRO(char_var) &char_var, one
-#else
-#define CHAR_MACRO(char_var) &char_var
-#endif
 
 /*! \class Teuchos::LAPACK
     \brief The Templated LAPACK Wrapper Class.
@@ -92,23 +74,13 @@ functions that include the macro:
 	    	<li>These templates are specialized to use the Fortran LAPACK routines for
 		scalar types \c float and \c double.
     
-		<li>If Teuchos is configured with \c --enable-teuchos-std::complex then these templates
+		<li>If Teuchos is configured with \c -DTeuchos_ENABLE_COMPLEX:BOOL=ON then these templates
 		are specialized for scalar types \c std::complex<float> and \c std::complex<double> also.
 
 		<li>A short description is given for each method.  For more detailed documentation, see the
 		LAPACK website (\c http://www.netlib.org/lapack/ ).
 	</ol>
 */
-
-
-extern "C" {
-
-
-typedef int (*gees_nullfptr_t)(double*,double*);
-
-
-} // extern "C"
-
 
 namespace Teuchos
 {
@@ -272,12 +244,12 @@ namespace Teuchos
     void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* H, const OrdinalType ldh, ScalarType* WR, ScalarType* WI, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
     
     /*! Computes for an \c n by \c n nonsymmetric matrix \c A, the eigenvalues, the Schur form \c T, and, optionally, the matrix of Schur vectors \c Z. When \c ScalarType is \c float or \c double, the real Schur form is computed.
-       \note (This is the version used for \c float and \c double, where \c select requires two arguments to represent a std::complex eigenvalue.)
+       \note (This is the version used for \c float and \c double, where \c select requires two arguments to represent a complex eigenvalue.)
     */
     void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*, ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* WR, ScalarType* WI, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const;    
 
     /*! Computes for an \c n by \c n nonsymmetric matrix \c A, the eigenvalues, the Schur form \c T, and, optionally, the matrix of Schur vectors \c Z. When \c ScalarType is \c float or \c double, the real Schur form is computed.
-       \note (This is the version used for \c std::complex<float> and \c std::complex<double>, where \c select requires one arguments to represent a std::complex eigenvalue.)
+       \note (This is the version used for \c std::complex<float> and \c std::complex<double>, where \c select requires one arguments to represent a complex eigenvalue.)
     */
     void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(ScalarType*), const OrdinalType n, ScalarType* A, const OrdinalType lda, OrdinalType* sdim, ScalarType* W, ScalarType* VS, const OrdinalType ldvs, ScalarType* WORK, const OrdinalType lwork, MagnitudeType* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
 
@@ -772,1699 +744,360 @@ namespace Teuchos
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  // BEGIN FLOAT PARTIAL SPECIALIZATION DECLARATION //
+  // BEGIN INT, FLOAT SPECIALIZATION DECLARATION //
 
-  template<typename OrdinalType>
-  class LAPACK<OrdinalType, float>
+  template<>
+  class LAPACK<int, float>
   {    
   public:
     inline LAPACK(void) {}
-    inline LAPACK(const LAPACK<OrdinalType, float>& lapack) {}
+    inline LAPACK(const LAPACK<int, float>& lapack) {}
     inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines
-    void POTRF(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* info) const;
-    void POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const;
-    void PTTRF(const OrdinalType n, float* d, float* e, OrdinalType* info) const;
-    void PTTRS(const OrdinalType n, const OrdinalType nrhs, const float* d, const float* e, float* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POTRI(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* info) const;
-    void POCON(const char UPLO, const OrdinalType n, const float* A, const OrdinalType lda, const float anorm, float* rcond, float* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POEQU(const OrdinalType n, const float* A, const OrdinalType lda, float* S, float* scond, float* amax, OrdinalType* info) const;
-    void PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, const float* AF, const OrdinalType ldaf, const float* B, const OrdinalType ldb, float* X, const OrdinalType ldx, float* FERR, float* BERR, float* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* AF, const OrdinalType ldaf, char EQUED, float* S, float* B, const OrdinalType ldb, float* X, const OrdinalType ldx, float* rcond, float* FERR, float* BERR, float* WORK, OrdinalType* IWORK, OrdinalType* info) const; 
+    void POTRF(const char UPLO, const int n, float* A, const int lda, int * info) const;
+    void POTRS(const char UPLO, const int n, const int nrhs, const float* A, const int lda, float* B, const int ldb, int* info) const;
+    void PTTRF(const int n, float* d, float* e, int* info) const;
+    void PTTRS(const int n, const int nrhs, const float* d, const float* e, float* B, const int ldb, int* info) const;
+    void POTRI(const char UPLO, const int n, float* A, const int lda, int* info) const;
+    void POCON(const char UPLO, const int n, const float* A, const int lda, const float anorm, float* rcond, float* WORK, int* IWORK, int* info) const;
+    void POSV(const char UPLO, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, int* info) const;
+    void POEQU(const int n, const float* A, const int lda, float* S, float* scond, float* amax, int* info) const;
+    void PORFS(const char UPLO, const int n, const int nrhs, float* A, const int lda, const float* AF, const int ldaf, const float* B, const int ldb, float* X, const int ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
+    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, float* A, const int lda, float* AF, const int ldaf, char EQUED, float* S, float* B, const int ldb, float* X, const int ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const; 
 
     // General Linear System Routines
-    void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* S, const float rcond, OrdinalType* rank, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* C, float* D, float* X, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEQRF( const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GETRF(const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
-    void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, const OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GTTRF(const OrdinalType n, float* dl, float* d, float* du, float* du2, OrdinalType* IPIV, OrdinalType* info) const;
-    void GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* dl, const float* d, const float* du, const float* du2, const OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const;
+    void GELS(const char TRANS, const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* WORK, const int lwork, int* info) const;
+    void GELSS(const int m, const int n, const int nrhs, float* A, const int lda, float* B, const int ldb, float* S, const float rcond, int* rank, float* WORK, const int lwork, int* info) const;
+    void GGLSE(const int m, const int n, const int p, float* A, const int lda, float* B, const int ldb, float* C, float* D, float* X, float* WORK, const int lwork, int* info) const;
+    void GEQRF( const int m, const int n, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
+    void GETRF(const int m, const int n, float* A, const int lda, int* IPIV, int* info) const;
+    void GETRS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const int* IPIV, float* B, const int ldb, int* info) const;
+    void GTTRF(const int n, float* dl, float* d, float* du, float* du2, int* IPIV, int* info) const;
+    void GTTRS(const char TRANS, const int n, const int nrhs, const float* dl, const float* d, const float* du, const float* du2, const int* IPIV, float* B, const int ldb, int* info) const;
 
 
-    void GETRI(const OrdinalType n, float* A, const OrdinalType lda, const OrdinalType* IPIV, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GECON(const char NORM, const OrdinalType n, const float* A, const OrdinalType lda, const float anorm, float* rcond, float* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void GESV(const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GEEQU(const OrdinalType m, const OrdinalType n, const float* A, const OrdinalType lda, float* R, float* C, float* rowcond, float* colcond, float* amax, OrdinalType* info) const;
-    void GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, const float* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const float* B, const OrdinalType ldb, float* X, const OrdinalType ldx, float* FERR, float* BERR, float* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, float* R, float* C, float* B, const OrdinalType ldb, float* X, const OrdinalType ldx, float* rcond, float* FERR, float* BERR, float* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void SYTRD(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* D, float* E, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* A, const OrdinalType lda, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const; 
-    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const float* A, const OrdinalType lda, OrdinalType* info) const; 
+    void GETRI(const int n, float* A, const int lda, const int* IPIV, float* WORK, const int lwork, int* info) const;
+    void GECON(const char NORM, const int n, const float* A, const int lda, const float anorm, float* rcond, float* WORK, int* IWORK, int* info) const;
+    void GESV(const int n, const int nrhs, float* A, const int lda, int* IPIV, float* B, const int ldb, int* info) const;
+    void GEEQU(const int m, const int n, const float* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
+    void GERFS(const char TRANS, const int n, const int nrhs, const float* A, const int lda, const float* AF, const int ldaf, const int* IPIV, const float* B, const int ldb, float* X, const int ldx, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
+    void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, float* A, const int lda, float* AF, const int ldaf, int* IPIV, char EQUED, float* R, float* C, float* B, const int ldb, float* X, const int ldx, float* rcond, float* FERR, float* BERR, float* WORK, int* IWORK, int* info) const;
+    void SYTRD(const char UPLO, const int n, float* A, const int lda, float* D, float* E, float* TAU, float* WORK, const int lwork, int* info) const;
+    void GEHRD(const int n, const int ilo, const int ihi, float* A, const int lda, float* TAU, float* WORK, const int lwork, int* info) const;
+    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const float* A, const int lda, float* B, const int ldb, int* info) const; 
+    void TRTRI(const char UPLO, const char DIAG, const int n, const float* A, const int lda, int* info) const; 
 
     // Symmetric eigenvalue routines.
-    void SPEV(const char JOBZ, const char UPLO, const OrdinalType n, float* AP, float* W, float* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const;
-    void SYEV(const char JOBZ, const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* W, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void SYGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* W, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* W, float* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const;
-    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* W, float* WORK, const OrdinalType lwork, float *RWORK, OrdinalType* info) const;
-    void STEQR(const char COMPZ, const OrdinalType n, float* D, float* E, float* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const;
+    void SPEV(const char JOBZ, const char UPLO, const int n, float* AP, float* W, float* Z, const int ldz, float* WORK, int* info) const;
+    void SYEV(const char JOBZ, const char UPLO, const int n, float* A, const int lda, float* W, float* WORK, const int lwork, int* info) const;
+    void SYGV(const int itype, const char JOBZ, const char UPLO, const int n, float* A, const int lda, float* B, const int ldb, float* W, float* WORK, const int lwork, int* info) const;
+    void HEEV(const char JOBZ, const char UPLO, const int n, float* A, const int lda, float* W, float* WORK, const int lwork, float* RWORK, int* info) const;
+    void HEGV(const int itype, const char JOBZ, const char UPLO, const int n, float* A, const int lda, float* B, const int ldb, float* W, float* WORK, const int lwork, float *RWORK, int* info) const;
+    void STEQR(const char COMPZ, const int n, float* D, float* E, float* Z, const int ldz, float* WORK, int* info) const;
 
     // Non-Hermitian eigenvalue routines.
-    void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* H, const OrdinalType ldh, float* WR, float* WI, float* Z, const OrdinalType ldz, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(float*, float*), const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* sdim, float* WR, float* WI, float* VS, const OrdinalType ldvs, float* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const;    
-    void GEES(const char JOBVS, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* sdim, float* WR, float* WI, float* VS, const OrdinalType ldvs, float* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
-    void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, float* A, const OrdinalType lda, float* WR, float* WI, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const;
-    void GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, float *A, const OrdinalType lda, float *B, const OrdinalType ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const OrdinalType ldvl, float *VR, const OrdinalType ldvr, float *WORK, const OrdinalType lwork, OrdinalType *info) const;
+    void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, float* H, const int ldh, float* WR, float* WI, float* Z, const int ldz, float* WORK, const int lwork, int* info) const;
+    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(float*, float*), const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, int* BWORK, int* info) const;    
+    void GEES(const char JOBVS, const int n, float* A, const int lda, int* sdim, float* WR, float* WI, float* VS, const int ldvs, float* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;    
+    void GEEV(const char JOBVL, const char JOBVR, const int n, float* A, const int lda, float* WR, float* WI, float* VL, const int ldvl, float* VR, const int ldvr, float* WORK, const int lwork, int* info) const;
+    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, float* A, const int lda, float* B, const int ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const int ldvl, float* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
+    void GGEV(const char JOBVL, const char JOBVR, const int n, float *A, const int lda, float *B, const int ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const int ldvl, float *VR, const int ldvr, float *WORK, const int lwork, int *info) const;
 
     // SVD routine
-    void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, float* S, float* U, const OrdinalType ldu, float* V, const OrdinalType ldv, float* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const;
+    void GESVD(const char JOBU, const char JOBVT, const int m, const int n, float* A, const int lda, float* S, float* U, const int ldu, float* V, const int ldv, float* WORK, const int lwork, float* RWORK, int* info) const;
 
     // Orthogonal matrix routines.
-    void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const;
+    void ORGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
+    void UNGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
+    void ORGHR(const int n, const int ilo, const int ihi, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
+    void ORMHR(const char SIDE, const char TRANS, const int m, const int n, const int ilo, const int ihi, const float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const;
 
     // Triangular matrix routines.
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, OrdinalType* info) const;
-    void TREVC(const char SIDE, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, float *RWORK, OrdinalType* info) const;
-    void TREXC(const char COMPQ, const OrdinalType n, float* T, const OrdinalType ldt, float* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, float* WORK, OrdinalType* info) const;
+    void TREVC(const char SIDE, const char HOWMNY, int* select, const int n, const float* T, const int ldt, float* VL, const int ldvl, float* VR, const int ldvr, const int mm, int* m, float* WORK, int* info) const;
+    void TREVC(const char SIDE, const int n, const float* T, const int ldt, float* VL, const int ldvl, float* VR, const int ldvr, const int mm, int* m, float* WORK, float *RWORK, int* info) const;
+    void TREXC(const char COMPQ, const int n, float* T, const int ldt, float* Q, const int ldq, int ifst, int ilst, float* WORK, int* info) const;
 
     // Rotation/reflection generators
     void LARTG( const float f, const float g, float* c, float* s, float* r ) const;
-    void LARFG( const OrdinalType n, float* alpha, float* x, const OrdinalType incx, float* tau ) const;
+    void LARFG( const int n, float* alpha, float* x, const int incx, float* tau ) const;
 
     // Matrix balancing routines.
-    void GEBAL(const char JOBZ, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, float* scale, OrdinalType* info) const; 
-    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* scale, const OrdinalType m, float* V, const OrdinalType ldv, OrdinalType* info) const; 
+    void GEBAL(const char JOBZ, const int n, float* A, const int lda, int ilo, int ihi, float* scale, int* info) const; 
+    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const float* scale, const int m, float* V, const int ldv, int* info) const; 
 
     // Random number generators
-    float LARND( const OrdinalType idist, OrdinalType* seed ) const;
-    void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, float* v ) const;    
+    float LARND( const int idist, int* seed ) const;
+    void LARNV( const int idist, int* seed, const int n, float* v ) const;    
 
     // Machine characteristics.
     float LAMCH(const char CMACH) const;
-    OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
+    int ILAENV( const int ispec, const std::string& NAME, const std::string& OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
 
     // Miscellaneous routines.
     float LAPY2(const float x, const float y) const;
 
   };
 
-  // END FLOAT PARTIAL SPECIALIZATION DECLARATION //
+  // END INT, FLOAT SPECIALIZATION DECLARATION //
 
-  // BEGIN FLOAT PARTIAL SPECIALIZATION IMPLEMENTATION //
+  // BEGIN INT, DOUBLE SPECIALIZATION DECLARATION //
 
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::PTTRF(const OrdinalType n, float* d, float* e, OrdinalType* info) const
-  {
-    SPTTRF_F77(&n,d,e,info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::PTTRS(const OrdinalType n, const OrdinalType nrhs, const float* d, const float* e, float* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    SPTTRS_F77(&n,&nrhs,d,e,B,&ldb,info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::POTRF(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    SPOTRF_F77(CHAR_MACRO(UPLO), &n, A, &lda, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    SPOTRS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::POTRI(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    SPOTRI_F77(CHAR_MACRO(UPLO), &n, A, &lda, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::POCON(const char UPLO, const OrdinalType n, const float* A, const OrdinalType lda, const float anorm, float* rcond, float* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    SPOCON_F77(CHAR_MACRO(UPLO), &n, A, &lda, &anorm, rcond, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    SPOSV_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::POEQU(const OrdinalType n, const float* A, const OrdinalType lda, float* S, float* scond, float* amax, OrdinalType* info) const
-  {
-    SPOEQU_F77(&n, A, &lda, S, scond, amax, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, const float* AF, const OrdinalType ldaf, const float* B, const OrdinalType ldb, float* X, const OrdinalType ldx, float* FERR, float* BERR, float* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    SPORFS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* AF, const OrdinalType ldaf, char EQUED, float* S, float* B, const OrdinalType ldb, float* X, const OrdinalType ldx, float* rcond, float* FERR, float* BERR, float* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    SPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHAR_MACRO(EQUED), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* S, const float rcond, OrdinalType* rank, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SGELSS_F77(&m, &n, &nrhs, A, &lda, B, &ldb, S, &rcond, rank, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* C, float* D, float* X, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SGGLSE_F77(&m, &n, &p, A, &lda, B, &ldb, C, D, X, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>  
-  void LAPACK<OrdinalType,float>::GEQRF( const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GETRF(const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const
-  {
-    SGETRF_F77(&m, &n, A, &lda, IPIV, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, const OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    SGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GTTRF(const OrdinalType n, float* dl, float* d, float* du, float* du2, OrdinalType* IPIV, OrdinalType* info) const
-  {
-    SGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* dl, const float* d, const float* du, const float* du2, const OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    SGTTRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, dl, d, du, du2, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GETRI(const OrdinalType n, float* A, const OrdinalType lda, const OrdinalType* IPIV, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GECON(const char NORM, const OrdinalType n, const float* A, const OrdinalType lda, const float anorm, float* rcond, float* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    SGECON_F77(CHAR_MACRO(NORM), &n, A, &lda, &anorm, rcond, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GESV(const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, OrdinalType* IPIV, float* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    SGESV_F77(&n, &nrhs, A, &lda, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GEEQU(const OrdinalType m, const OrdinalType n, const float* A, const OrdinalType lda, float* R, float* C, float* rowcond, float* colcond, float* amax, OrdinalType* info) const
-  {
-    SGEEQU_F77(&m, &n, A, &lda, R, C, rowcond, colcond, amax, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, const float* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const float* B, const OrdinalType ldb, float* X, const OrdinalType ldx, float* FERR, float* BERR, float* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    SGERFS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, float* A, const OrdinalType lda, float* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, float* R, float* C, float* B, const OrdinalType ldb, float* X, const OrdinalType ldx, float* rcond, float* FERR, float* BERR, float* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    SGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHAR_MACRO(EQUED), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::SYTRD(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* D, float* E, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SSYTRD_F77(CHAR_MACRO(UPLO), &n, A, &lda, D, E, TAU, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* A, const OrdinalType lda, float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SGEHRD_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb, OrdinalType* info) const 
-  {
-    STRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const float* A, const OrdinalType lda, OrdinalType* info) const 
-  {
-    STRTRI_F77(CHAR_MACRO(UPLO), CHAR_MACRO(DIAG), &n, A, &lda, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::SPEV(const char JOBZ, const char UPLO, const OrdinalType n, float* AP, float* W, float* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const
-  {
-    SSPEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, AP, W, Z, &ldz, WORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::SYEV(const char JOBZ, const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* W, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SSYEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::SYGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* W, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SSYGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* W, float* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const
-  {
-    SSYEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* W, float* WORK, const OrdinalType lwork, float *RWORK, OrdinalType* info) const
-  {
-    SSYGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::STEQR(const char COMPZ, const OrdinalType n, float* D, float* E, float* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const
-  {
-    SSTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* H, const OrdinalType ldh, float* WR, float* WI, float* Z, const OrdinalType ldz, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SHSEQR_F77(CHAR_MACRO(JOB), CHAR_MACRO(COMPZ), &n, &ilo, &ihi, H, &ldh, WR, WI, Z, &ldz, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(float*, float*), const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* sdim, float* WR, float* WI, float* VS, const OrdinalType ldvs, float* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const    
-  {
-    SGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(SORT), ptr2func, &n, A, &lda, sdim, WR, WI, VS, &ldvs, WORK, &lwork, BWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::GEES(const char JOBVS, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* sdim, float* WR, float* WI, float* VS, const OrdinalType ldvs, float* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
-  {
-    OrdinalType (*nullfptr)(float*,float*) = NULL;
-    const char sort = 'N';
-    SGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, WR, WI, VS, &ldvs, WORK, &lwork, BWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, float* A, const OrdinalType lda, float* WR, float* WI, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SGEEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, WR, WI, VL, &ldvl, VR, &ldvr, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, float* A, const OrdinalType lda, float* S, float* U, const OrdinalType ldu, float* V, const OrdinalType ldv, float* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const {
-    SGESVD_F77(CHAR_MACRO(JOBU), CHAR_MACRO(JOBVT), &m, &n, A, &lda, S, U, &ldu, V, &ldv, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,float>::GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, float* A, const OrdinalType lda, float* B, const OrdinalType ldb, float* ALPHAR, float* ALPHAI, float* BETA, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, float* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const
-  {
-    SGGEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, ilo, ihi, LSCALE, RSCALE, abnrm, bbnrm, RCONDE, RCONDV, WORK, &lwork, IWORK, BWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, float *A, const OrdinalType lda, float *B, const OrdinalType ldb, float *ALPHAR, float *ALPHAI, float *BETA, float *VL, const OrdinalType ldvl, float *VR, const OrdinalType ldvr, float *WORK, const OrdinalType lwork, OrdinalType *info) const
-  {
-    SGGEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SORGHR_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    SORMHR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &ilo, &ihi, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, OrdinalType* info) const
-  {
-    STREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), select, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::TREVC(const char SIDE, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, float* RWORK, OrdinalType* info) const
-  {
-    std::vector<OrdinalType> select(1);
-    const char whch = 'A';
-    STREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::TREXC(const char COMPQ, const OrdinalType n, float* T, const OrdinalType ldt, float* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, float* WORK, OrdinalType* info) const
-  {
-    STREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, WORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::LARTG( const float f, const float g, float* c, float* s, float* r ) const
-  {
-    SLARTG_F77(&f, &g, c, s, r);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::LARFG( const OrdinalType n, float* alpha, float* x, const OrdinalType incx, float* tau ) const
-  {
-    SLARFG_F77(&n, alpha, x, &incx, tau);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::GEBAL(const char JOBZ, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, float* scale, OrdinalType* info) const
-  {
-    SGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo, &ihi, scale, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* scale, const OrdinalType m, float* V, const OrdinalType ldv, OrdinalType* info) const
-  {
-    SGEBAK_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(SIDE), &n, &ilo, &ihi, scale, &m, V, &ldv, info);
-  }
-
-  template<typename OrdinalType>
-  float LAPACK<OrdinalType, float>::LARND( const OrdinalType idist, OrdinalType* seed ) const
-  {
-    return(SLARND_F77(&idist, seed));
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, float* v ) const
-  {
-    SLARNV_F77(&idist, seed, &n, v);
-  }
-
-  template<typename OrdinalType>
-  float LAPACK<OrdinalType, float>::LAMCH(const char CMACH) const
-  {
-    return(SLAMCH_F77(CHAR_MACRO(CMACH)));
-  }
-
-  template<typename OrdinalType>
-  OrdinalType LAPACK<OrdinalType, float>::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
-  {
-    unsigned int opts_length = OPTS.length();
-    // if user queries a Hermitian routine, change it to a symmetric routine
-    std::string temp_NAME = "s" + NAME;
-    if (temp_NAME.substr(1,2) == "he") {
-      temp_NAME.replace(1,2,"sy");
-    }
-    unsigned int name_length = temp_NAME.length();
-#if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
-#else
-    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
-#endif
-  }
- 
-  template<typename OrdinalType>
-  float LAPACK<OrdinalType, float>::LAPY2(const float x, const float y) const
-  {
-#ifdef HAVE_TEUCHOS_BLASFLOAT
-    return SLAPY2_F77(&x, &y);
-#else
-    typedef ScalarTraits<float> ST;
-    const float xabs = ST::magnitude(x);
-    const float yabs = ST::magnitude(y);
-    const float w = TEUCHOS_MAX(xabs, yabs);
-    const float z = TEUCHOS_MIN(xabs, yabs);
-    if ( z == 0.0 ) {
-      return w;
-    }
-    const float z_over_w = z/w;
-    return w*ST::squareroot( 1.0+(z_over_w*z_over_w));
-#endif
-  }
-
-  // END FLOAT PARTIAL SPECIALIZATION IMPLEMENTATION //
-
-  // BEGIN DOUBLE PARTIAL SPECIALIZATION DECLARATION //
-
-  template<typename OrdinalType>
-  class LAPACK<OrdinalType, double>
+  template<>
+  class LAPACK<int, double>
   {    
   public:
     inline LAPACK(void) {}
-    inline LAPACK(const LAPACK<OrdinalType, double>& lapack) {}
+    inline LAPACK(const LAPACK<int, double>& lapack) {}
     inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines
-    void PTTRF(const OrdinalType n, double* d, double* e, OrdinalType* info) const;
-    void PTTRS(const OrdinalType n, const OrdinalType nrhs, const double* d, const double* e, double* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POTRF(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* info) const;
-    void POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POTRI(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* info) const;
-    void POCON(const char UPLO, const OrdinalType n, const double* A, const OrdinalType lda, const double anorm, double* rcond, double* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POEQU(const OrdinalType n, const double* A, const OrdinalType lda, double* S, double* scond, double* amax, OrdinalType* info) const;
-    void PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, const double* AF, const OrdinalType ldaf, const double* B, const OrdinalType ldb, double* X, const OrdinalType ldx, double* FERR, double* BERR, double* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* AF, const OrdinalType ldaf, char EQUED, double* S, double* B, const OrdinalType ldb, double* X, const OrdinalType ldx, double* rcond, double* FERR, double* BERR, double* WORK, OrdinalType* IWORK, OrdinalType* info) const; 
+    void PTTRF(const int n, double* d, double* e, int* info) const;
+    void PTTRS(const int n, const int nrhs, const double* d, const double* e, double* B, const int ldb, int* info) const;
+    void POTRF(const char UPLO, const int n, double* A, const int lda, int* info) const;
+    void POTRS(const char UPLO, const int n, const int nrhs, const double* A, const int lda, double* B, const int ldb, int* info) const;
+    void POTRI(const char UPLO, const int n, double* A, const int lda, int* info) const;
+    void POCON(const char UPLO, const int n, const double* A, const int lda, const double anorm, double* rcond, double* WORK, int* IWORK, int* info) const;
+    void POSV(const char UPLO, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, int* info) const;
+    void POEQU(const int n, const double* A, const int lda, double* S, double* scond, double* amax, int* info) const;
+    void PORFS(const char UPLO, const int n, const int nrhs, double* A, const int lda, const double* AF, const int ldaf, const double* B, const int ldb, double* X, const int ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
+    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, double* A, const int lda, double* AF, const int ldaf, char EQUED, double* S, double* B, const int ldb, double* X, const int ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const; 
 
     // General linear system routines
-    void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* S, const double rcond, OrdinalType* rank, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* C, double* D, double* X, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEQRF( const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GETRF(const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
-    void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, const OrdinalType* IPIV, double* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GTTRF(const OrdinalType n, double* dl, double* d, double* du, double* du2, OrdinalType* IPIV, OrdinalType* info) const;
-    void GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const double* dl, const double* d, const double* du, const double* du2, const OrdinalType* IPIV, double* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GETRI(const OrdinalType n, double* A, const OrdinalType lda, const OrdinalType* IPIV, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GECON(const char NORM, const OrdinalType n, const double* A, const OrdinalType lda, const double anorm, double* rcond, double* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void GESV(const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, OrdinalType* IPIV, double* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GEEQU(const OrdinalType m, const OrdinalType n, const double* A, const OrdinalType lda, double* R, double* C, double* rowcond, double* colcond, double* amax, OrdinalType* info) const;
-    void GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, const double* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const double* B, const OrdinalType ldb, double* X, const OrdinalType ldx, double* FERR, double* BERR, double* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, double* R, double* C, double* B, const OrdinalType ldb, double* X, const OrdinalType ldx, double* rcond, double* FERR, double* BERR, double* WORK, OrdinalType* IWORK, OrdinalType* info) const;
-    void SYTRD(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* D, double* E, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb, OrdinalType* info) const; 
-    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const double* A, const OrdinalType lda, OrdinalType* info) const;
+    void GELS(const char TRANS, const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* WORK, const int lwork, int* info) const;
+    void GELSS(const int m, const int n, const int nrhs, double* A, const int lda, double* B, const int ldb, double* S, const double rcond, int* rank, double* WORK, const int lwork, int* info) const;
+    void GGLSE(const int m, const int n, const int p, double* A, const int lda, double* B, const int ldb, double* C, double* D, double* X, double* WORK, const int lwork, int* info) const;
+    void GEQRF( const int m, const int n, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
+    void GETRF(const int m, const int n, double* A, const int lda, int* IPIV, int* info) const;
+    void GETRS(const char TRANS, const int n, const int nrhs, const double* A, const int lda, const int* IPIV, double* B, const int ldb, int* info) const;
+    void GTTRF(const int n, double* dl, double* d, double* du, double* du2, int* IPIV, int* info) const;
+    void GTTRS(const char TRANS, const int n, const int nrhs, const double* dl, const double* d, const double* du, const double* du2, const int* IPIV, double* B, const int ldb, int* info) const;
+    void GETRI(const int n, double* A, const int lda, const int* IPIV, double* WORK, const int lwork, int* info) const;
+    void GECON(const char NORM, const int n, const double* A, const int lda, const double anorm, double* rcond, double* WORK, int* IWORK, int* info) const;
+    void GESV(const int n, const int nrhs, double* A, const int lda, int* IPIV, double* B, const int ldb, int* info) const;
+    void GEEQU(const int m, const int n, const double* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
+    void GERFS(const char TRANS, const int n, const int nrhs, const double* A, const int lda, const double* AF, const int ldaf, const int* IPIV, const double* B, const int ldb, double* X, const int ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
+    void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, double* A, const int lda, double* AF, const int ldaf, int* IPIV, char EQUED, double* R, double* C, double* B, const int ldb, double* X, const int ldx, double* rcond, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const;
+    void SYTRD(const char UPLO, const int n, double* A, const int lda, double* D, double* E, double* TAU, double* WORK, const int lwork, int* info) const;
+    void GEHRD(const int n, const int ilo, const int ihi, double* A, const int lda, double* TAU, double* WORK, const int lwork, int* info) const;
+    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const double* A, const int lda, double* B, const int ldb, int* info) const; 
+    void TRTRI(const char UPLO, const char DIAG, const int n, const double* A, const int lda, int* info) const;
 
     // Symmetric eigenproblem routines.
-    void SPEV(const char JOBZ, const char UPLO, const OrdinalType n, double* AP, double* W, double* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const;
-    void SYEV(const char JOBZ, const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* W, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void SYGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* W, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* W, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const;
-    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* W, double* WORK, const OrdinalType lwork, double *RWORK, OrdinalType* info) const;
-    void STEQR(const char COMPZ, const OrdinalType n, double* D, double* E, double* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const;
+    void SPEV(const char JOBZ, const char UPLO, const int n, double* AP, double* W, double* Z, const int ldz, double* WORK, int* info) const;
+    void SYEV(const char JOBZ, const char UPLO, const int n, double* A, const int lda, double* W, double* WORK, const int lwork, int* info) const;
+    void SYGV(const int itype, const char JOBZ, const char UPLO, const int n, double* A, const int lda, double* B, const int ldb, double* W, double* WORK, const int lwork, int* info) const;
+    void HEEV(const char JOBZ, const char UPLO, const int n, double* A, const int lda, double* W, double* WORK, const int lwork, double* RWORK, int* info) const;
+    void HEGV(const int itype, const char JOBZ, const char UPLO, const int n, double* A, const int lda, double* B, const int ldb, double* W, double* WORK, const int lwork, double *RWORK, int* info) const;
+    void STEQR(const char COMPZ, const int n, double* D, double* E, double* Z, const int ldz, double* WORK, int* info) const;
 
     // Non-Hermitian eigenproblem routines.
-    void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* H, const OrdinalType ldh, double* WR, double* WI, double* Z, const OrdinalType ldz, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(double*, double*), const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* sdim, double* WR, double* WI, double* VS, const OrdinalType ldvs, double* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const;    
-    void GEES(const char JOBVS, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* sdim, double* WR, double* WI, double* VS, const OrdinalType ldvs, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
-    void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, double* A, const OrdinalType lda, double* WR, double* WI, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const;
-    void GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, double *A, const OrdinalType lda, double *B, const OrdinalType ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const OrdinalType ldvl, double *VR, const OrdinalType ldvr, double *WORK, const OrdinalType lwork, OrdinalType *info) const;
+    void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, double* H, const int ldh, double* WR, double* WI, double* Z, const int ldz, double* WORK, const int lwork, int* info) const;
+    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(double*, double*), const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, int* BWORK, int* info) const;    
+    void GEES(const char JOBVS, const int n, double* A, const int lda, int* sdim, double* WR, double* WI, double* VS, const int ldvs, double* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;    
+    void GEEV(const char JOBVL, const char JOBVR, const int n, double* A, const int lda, double* WR, double* WI, double* VL, const int ldvl, double* VR, const int ldvr, double* WORK, const int lwork, int* info) const;
+    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, double* A, const int lda, double* B, const int ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const int ldvl, double* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const int lwork, int* IWORK, int* BWORK, int* info) const;
+    void GGEV(const char JOBVL, const char JOBVR, const int n, double *A, const int lda, double *B, const int ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const int ldvl, double *VR, const int ldvr, double *WORK, const int lwork, int *info) const;
 
 
     // SVD routine
-    void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, double* S, double* U, const OrdinalType ldu, double* V, const OrdinalType ldv, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const;
+    void GESVD(const char JOBU, const char JOBVT, const int m, const int n, double* A, const int lda, double* S, double* U, const int ldu, double* V, const int ldv, double* WORK, const int lwork, double* RWORK, int* info) const;
 
     // Orthogonal matrix routines.
-    void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const;
+    void ORGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
+    void UNGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
+    void ORGHR(const int n, const int ilo, const int ihi, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
+    void ORMHR(const char SIDE, const char TRANS, const int m, const int n, const int ilo, const int ihi, const double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const;
 
     // Triangular matrix routines.
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, OrdinalType* info) const;
-    void TREVC(const char SIDE, const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, double* RWORK, OrdinalType* info) const;
-    void TREXC(const char COMPQ, const OrdinalType n, double* T, const OrdinalType ldt, double* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, double* WORK, OrdinalType* info) const;
+    void TREVC(const char SIDE, const char HOWMNY, int* select, const int n, const double* T, const int ldt, double* VL, const int ldvl, double* VR, const int ldvr, const int mm, int* m, double* WORK, int* info) const;
+    void TREVC(const char SIDE, const int n, const double* T, const int ldt, double* VL, const int ldvl, double* VR, const int ldvr, const int mm, int* m, double* WORK, double* RWORK, int* info) const;
+    void TREXC(const char COMPQ, const int n, double* T, const int ldt, double* Q, const int ldq, int ifst, int ilst, double* WORK, int* info) const;
 
     // Rotation/reflection generators
     void LARTG( const double f, const double g, double* c, double* s, double* r ) const;
-    void LARFG( const OrdinalType n, double* alpha, double* x, const OrdinalType incx, double* tau ) const;
+    void LARFG( const int n, double* alpha, double* x, const int incx, double* tau ) const;
 
     // Matrix balancing routines.
-    void GEBAL(const char JOBZ, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, double* scale, OrdinalType* info) const; 
-    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* scale, const OrdinalType m, double* V, const OrdinalType ldv, OrdinalType* info) const; 
+    void GEBAL(const char JOBZ, const int n, double* A, const int lda, int ilo, int ihi, double* scale, int* info) const; 
+    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const double* scale, const int m, double* V, const int ldv, int* info) const; 
 
     // Random number generators
-    double LARND( const OrdinalType idist, OrdinalType* seed ) const;
-    void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, double* v ) const;    
+    double LARND( const int idist, int* seed ) const;
+    void LARNV( const int idist, int* seed, const int n, double* v ) const;    
 
     // Machine characteristic routines.
     double LAMCH(const char CMACH) const;
-    OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
+    int ILAENV( const int ispec, const std::string& NAME, const std::string& OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
 
     // Miscellaneous routines.
     double LAPY2(const double x, const double y) const;
 
   };
 
-  // END DOUBLE PARTIAL SPECIALIZATION DECLARATION //
-
-  // BEGIN DOUBLE PARTIAL SPECIALIZATION IMPLEMENTATION //
-
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::PTTRF(const OrdinalType n, double* d, double* e, OrdinalType* info) const
-  {
-    DPTTRF_F77(&n,d,e,info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::PTTRS(const OrdinalType n, const OrdinalType nrhs, const double* d, const double* e, double* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    DPTTRS_F77(&n,&nrhs,d,e,B,&ldb,info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::POTRF(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    DPOTRF_F77(CHAR_MACRO(UPLO), &n, A, &lda, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    DPOTRS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::POTRI(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    DPOTRI_F77(CHAR_MACRO(UPLO), &n, A, &lda, info);
-  }
-  
-  template<typename OrdinalType>
-    void LAPACK<OrdinalType, double>::POCON(const char UPLO, const OrdinalType n, const double* A, const OrdinalType lda, const double anorm, double* rcond, double* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    DPOCON_F77(CHAR_MACRO(UPLO), &n, A, &lda, &anorm, rcond, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    DPOSV_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::POEQU(const OrdinalType n, const double* A, const OrdinalType lda, double* S, double* scond, double* amax, OrdinalType* info) const
-  {
-    DPOEQU_F77(&n, A, &lda, S, scond, amax, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, const double* AF, const OrdinalType ldaf, const double* B, const OrdinalType ldb, double* X, const OrdinalType ldx, double* FERR, double* BERR, double* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    DPORFS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-    void LAPACK<OrdinalType, double>::POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* AF, const OrdinalType ldaf, char EQUED, double* S, double* B, const OrdinalType ldb, double* X, const OrdinalType ldx, double* rcond, double* FERR, double* BERR, double* WORK, OrdinalType* IWORK, OrdinalType* info) const 
-  {
-    DPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHAR_MACRO(EQUED), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GELSS(const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* S, const double rcond, OrdinalType* rank, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DGELSS_F77(&m, &n, &nrhs, A, &lda, B, &ldb, S, &rcond, rank, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GGLSE(const OrdinalType m, const OrdinalType n, const OrdinalType p, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* C, double* D, double* X, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DGGLSE_F77(&m, &n, &p, A, &lda, B, &ldb, C, D, X, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>  
-  void LAPACK<OrdinalType,double>::GEQRF( const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GETRF(const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const
-  {
-    DGETRF_F77(&m, &n, A, &lda, IPIV, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, const OrdinalType* IPIV, double* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    DGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GTTRF(const OrdinalType n, double* dl, double* d, double* du, double* du2, OrdinalType* IPIV, OrdinalType* info) const
-  {
-    DGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const double* dl, const double* d, const double* du, const double* du2, const OrdinalType* IPIV, double* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    DGTTRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, dl, d, du, du2, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GETRI(const OrdinalType n, double* A, const OrdinalType lda, const OrdinalType* IPIV, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GECON(const char NORM, const OrdinalType n, const double* A, const OrdinalType lda, const double anorm, double* rcond, double* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    DGECON_F77(CHAR_MACRO(NORM), &n, A, &lda, &anorm, rcond, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GESV(const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, OrdinalType* IPIV, double* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    DGESV_F77(&n, &nrhs, A, &lda, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GEEQU(const OrdinalType m, const OrdinalType n, const double* A, const OrdinalType lda, double* R, double* C, double* rowcond, double* colcond, double* amax, OrdinalType* info) const
-  {
-    DGEEQU_F77(&m, &n, A, &lda, R, C, rowcond, colcond, amax, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, const double* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const double* B, const OrdinalType ldb, double* X, const OrdinalType ldx, double* FERR, double* BERR, double* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    DGERFS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, double* A, const OrdinalType lda, double* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, double* R, double* C, double* B, const OrdinalType ldb, double* X, const OrdinalType ldx, double* rcond, double* FERR, double* BERR, double* WORK, OrdinalType* IWORK, OrdinalType* info) const
-  {
-    DGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHAR_MACRO(EQUED), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, IWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::SYTRD(const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* D, double* E, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DSYTRD_F77(CHAR_MACRO(UPLO), &n, A, &lda, D, E, TAU, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DGEHRD_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const double* A, const OrdinalType lda, double* B, const OrdinalType ldb, OrdinalType* info) const 
-  {
-    DTRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
- 
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const double* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    DTRTRI_F77(CHAR_MACRO(UPLO), CHAR_MACRO(DIAG), &n, A, &lda, info);
-  }
- 
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::SPEV(const char JOBZ, const char UPLO, const OrdinalType n, double* AP, double* W, double* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const
-  {
-    DSPEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, AP, W, Z, &ldz, WORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::SYEV(const char JOBZ, const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* W, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DSYEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::SYGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* W, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DSYGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* W, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const
-  {
-    DSYEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* W, double* WORK, const OrdinalType lwork, double *RWORK, OrdinalType* info) const
-  {
-    DSYGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,double>::STEQR(const char COMPZ, const OrdinalType n, double* D, double* E, double* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const
-  {
-    DSTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* H, const OrdinalType ldh, double* WR, double* WI, double* Z, const OrdinalType ldz, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DHSEQR_F77(CHAR_MACRO(JOB), CHAR_MACRO(COMPZ), &n, &ilo, &ihi, H, &ldh, WR, WI, Z, &ldz, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(double*, double*), const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* sdim, double* WR, double* WI, double* VS, const OrdinalType ldvs, double* WORK, const OrdinalType lwork, OrdinalType* BWORK, OrdinalType* info) const    
-  {
-    DGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(SORT), ptr2func, &n, A, &lda, sdim, WR, WI, VS, &ldvs, WORK, &lwork, BWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GEES(const char JOBVS, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType* sdim, double* WR, double* WI, double* VS, const OrdinalType ldvs, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
-  {
-    //OrdinalType (*nullfptr)(double*,double*) = NULL;
-    gees_nullfptr_t nullfptr = 0;
-    const char sort = 'N';
-    DGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, WR, WI, VS, &ldvs, WORK, &lwork, BWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, double* A, const OrdinalType lda, double* WR, double* WI, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DGEEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, WR, WI, VL, &ldvl, VR, &ldvr, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, double* A, const OrdinalType lda, double* S, double* U, const OrdinalType ldu, double* V, const OrdinalType ldv, double* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const {
-    DGESVD_F77(CHAR_MACRO(JOBU), CHAR_MACRO(JOBVT), &m, &n, A, &lda, S, U, &ldu, V, &ldv, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, double* A, const OrdinalType lda, double* B, const OrdinalType ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, double* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const
-  {
-    DGGEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, ilo, ihi, LSCALE, RSCALE, abnrm, bbnrm, RCONDE, RCONDV, WORK, &lwork, IWORK, BWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GGEV(const char JOBVL, const char JOBVR, const OrdinalType n, double *A, const OrdinalType lda, double *B, const OrdinalType ldb, double *ALPHAR, double *ALPHAI, double *BETA, double *VL, const OrdinalType ldvl, double *VR, const OrdinalType ldvr, double *WORK, const OrdinalType lwork, OrdinalType *info) const
-  {
-    DGGEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DORGHR_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    DORMHR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &ilo, &ihi, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, OrdinalType* info) const
-  {
-    DTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), select, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::TREVC(const char SIDE, const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, double* RWORK, OrdinalType* info) const
-  {
-    std::vector<OrdinalType> select(1);
-    const char whch = 'A';
-    DTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::TREXC(const char COMPQ, const OrdinalType n, double* T, const OrdinalType ldt, double* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, double* WORK, OrdinalType* info) const
-  {
-    DTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, WORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::LARTG( const double f, const double g, double* c, double* s, double* r ) const
-  {
-    DLARTG_F77(&f, &g, c, s, r);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::LARFG( const OrdinalType n, double* alpha, double* x, const OrdinalType incx, double* tau ) const
-  {
-    DLARFG_F77(&n, alpha, x, &incx, tau);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GEBAL(const char JOBZ, const OrdinalType n, double* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, double* scale, OrdinalType* info) const
-  {
-    DGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo, &ihi, scale, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* scale, const OrdinalType m, double* V, const OrdinalType ldv, OrdinalType* info) const
-  {
-    DGEBAK_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(SIDE), &n, &ilo, &ihi, scale, &m, V, &ldv, info);
-  }
-
-  template<typename OrdinalType>
-  double LAPACK<OrdinalType, double>::LARND( const OrdinalType idist, OrdinalType* seed ) const
-  {
-    return(DLARND_F77(&idist, seed));
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, double* v ) const
-  {
-    DLARNV_F77(&idist, seed, &n, v);
-  }
-
-  template<typename OrdinalType>
-  double LAPACK<OrdinalType, double>::LAMCH(const char CMACH) const
-  {
-    return(DLAMCH_F77(CHAR_MACRO(CMACH)));
-  }
-
-  template<typename OrdinalType>
-  OrdinalType LAPACK<OrdinalType, double>::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
-  {
-    unsigned int opts_length = OPTS.length();
-    // if user queries a Hermitian routine, change it to a symmetric routine
-    std::string temp_NAME = "d" + NAME;
-    if (temp_NAME.substr(1,2) == "he") {
-      temp_NAME.replace(1,2,"sy");
-    }
-    unsigned int name_length = temp_NAME.length();
-#if defined(INTEL_CXML)
-    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
-#else
-    return ::ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
-#endif
-  }
- 
-  template<typename OrdinalType>
-  double LAPACK<OrdinalType, double>::LAPY2(const double x, const double y) const
-  {
-    return DLAPY2_F77(&x, &y);
-  }
-
-  // END DOUBLE PARTIAL SPECIALIZATION IMPLEMENTATION //
+  // END INT, DOUBLE SPECIALIZATION DECLARATION //
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
-  // BEGIN COMPLEX<FLOAT> PARTIAL SPECIALIZATION DECLARATION //
+  // BEGIN INT, COMPLEX<FLOAT> SPECIALIZATION DECLARATION //
 
-  template<typename OrdinalType>
-  class LAPACK<OrdinalType, std::complex<float> >
+  template<>
+  class LAPACK<int, std::complex<float> >
   {    
   public:
     inline LAPACK(void) {}
-    inline LAPACK(const LAPACK<OrdinalType, std::complex<float> >& lapack) {}
+    inline LAPACK(const LAPACK<int, std::complex<float> >& lapack) {}
     inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines
-    void PTTRF(const OrdinalType n, std::complex<float>* d, std::complex<float>* e, OrdinalType* info) const;
-    void PTTRS(const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* d, const std::complex<float>* e, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POTRF(const char UPLO, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* info) const;
-    void POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POTRI(const char UPLO, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* info) const;
-    void POCON(const char UPLO, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, const float anorm, float* rcond, std::complex<float>* WORK, float* rwork, OrdinalType* info) const;
-    void POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POEQU(const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, float* S, float* scond, float* amax, OrdinalType* info) const;
-    void PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, const std::complex<float>* AF, const OrdinalType ldaf, const std::complex<float>* B, const OrdinalType ldb, std::complex<float>* X, const OrdinalType ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
-    void POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, std::complex<float>* AF, const OrdinalType ldaf, char EQUED, float* S, std::complex<float>* B, const OrdinalType ldb, std::complex<float>* X, const OrdinalType ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const; 
+    void PTTRF(const int n, std::complex<float>* d, std::complex<float>* e, int* info) const;
+    void PTTRS(const int n, const int nrhs, const std::complex<float>* d, const std::complex<float>* e, std::complex<float>* B, const int ldb, int* info) const;
+    void POTRF(const char UPLO, const int n, std::complex<float>* A, const int lda, int* info) const;
+    void POTRS(const char UPLO, const int n, const int nrhs, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, int* info) const;
+    void POTRI(const char UPLO, const int n, std::complex<float>* A, const int lda, int* info) const;
+    void POCON(const char UPLO, const int n, const std::complex<float>* A, const int lda, const float anorm, float* rcond, std::complex<float>* WORK, float* rwork, int* info) const;
+    void POSV(const char UPLO, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, int* info) const;
+    void POEQU(const int n, const std::complex<float>* A, const int lda, float* S, float* scond, float* amax, int* info) const;
+    void PORFS(const char UPLO, const int n, const int nrhs, std::complex<float>* A, const int lda, const std::complex<float>* AF, const int ldaf, const std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
+    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* AF, const int ldaf, char EQUED, float* S, std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const; 
 
     // General Linear System Routines
-    void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEQRF( const OrdinalType m, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, std::complex<float>* TAU, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, std::complex<float>* A, const OrdinalType lda, const std::complex<float>* TAU, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GETRF(const OrdinalType m, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
-    void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GTTRF(const OrdinalType n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, OrdinalType* IPIV, OrdinalType* info) const;
-    void GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* dl, const std::complex<float>* d, const std::complex<float>* du, const std::complex<float>* du2, const OrdinalType* IPIV, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GETRI(const OrdinalType n, std::complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GECON(const char NORM, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
-    void GESV(const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, OrdinalType* IPIV, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GEEQU(const OrdinalType m, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, float* R, float* C, float* rowcond, float* colcond, float* amax, OrdinalType* info) const;
-    void GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* A, const OrdinalType lda, const std::complex<float>* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const std::complex<float>* B, const OrdinalType ldb, std::complex<float>* X, const OrdinalType ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
-    void GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, std::complex<float>* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, float* R, float* C, std::complex<float>* B, const OrdinalType ldb, std::complex<float>* X, const OrdinalType ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
-    void GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<float>* A, const OrdinalType lda, std::complex<float>* TAU, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const; 
-    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, OrdinalType* info) const;
+    void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, std::complex<float>* WORK, const int lwork, int* info) const;
+    void GEQRF( const int m, const int n, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
+    void UNGQR(const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
+    void GETRF(const int m, const int n, std::complex<float>* A, const int lda, int* IPIV, int* info) const;
+    void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
+    void GTTRF(const int n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, int* IPIV, int* info) const;
+    void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* dl, const std::complex<float>* d, const std::complex<float>* du, const std::complex<float>* du2, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
+    void GETRI(const int n, std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* WORK, const int lwork, int* info) const;
+    void GECON(const char NORM, const int n, const std::complex<float>* A, const int lda, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, int* info) const;
+    void GESV(const int n, const int nrhs, std::complex<float>* A, const int lda, int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
+    void GEEQU(const int m, const int n, const std::complex<float>* A, const int lda, float* R, float* C, float* rowcond, float* colcond, float* amax, int* info) const;
+    void GERFS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const std::complex<float>* AF, const int ldaf, const int* IPIV, const std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
+    void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* AF, const int ldaf, int* IPIV, char EQUED, float* R, float* C, std::complex<float>* B, const int ldb, std::complex<float>* X, const int ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, int* info) const;
+    void GEHRD(const int n, const int ilo, const int ihi, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
+    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, int* info) const; 
+    void TRTRI(const char UPLO, const char DIAG, const int n, const std::complex<float>* A, const int lda, int* info) const;
 
     // Symmetric eigenvalue routines.
-    void STEQR(const char COMPZ, const OrdinalType n, float* D, float* E, std::complex<float>* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const;
-    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, float* W, std::complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const;
-    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, float* W, std::complex<float>* WORK, const OrdinalType lwork, float *RWORK, OrdinalType* info) const;
+    void STEQR(const char COMPZ, const int n, float* D, float* E, std::complex<float>* Z, const int ldz, float* WORK, int* info) const;
+    void HEEV(const char JOBZ, const char UPLO, const int n, std::complex<float>* A, const int lda, float* W, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
+    void HEGV(const int itype, const char JOBZ, const char UPLO, const int n, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* W, std::complex<float>* WORK, const int lwork, float *RWORK, int* info) const;
 
     // Non-Hermitian eigenvalue routines.
-    void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<float>* H, const OrdinalType ldh, std::complex<float>* W, std::complex<float>* Z, const OrdinalType ldz, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(std::complex<float>*), const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* sdim, std::complex<float>* W, std::complex<float>* VS, const OrdinalType ldvs, std::complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
-    void GEES(const char JOBVS, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* sdim, float* WR, float* WI, std::complex<float>* VS, const OrdinalType ldvs, std::complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
-    void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, std::complex<float>* W, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, std::complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const;
-//    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, float* ALPHAR, float* ALPHAI, std::complex<float>* BETA, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, std::complex<float>* work, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const;
+    void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, std::complex<float>* H, const int ldh, std::complex<float>* W, std::complex<float>* Z, const int ldz, std::complex<float>* WORK, const int lwork, int* info) const;
+    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<float>*), const int n, std::complex<float>* A, const int lda, int* sdim, std::complex<float>* W, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;    
+    void GEES(const char JOBVS, const int n, std::complex<float>* A, const int lda, int* sdim, float* WR, float* WI, std::complex<float>* VS, const int ldvs, std::complex<float>* WORK, const int lwork, float* RWORK, int* BWORK, int* info) const;    
+    void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<float>* A, const int lda, std::complex<float>* W, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
+//    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* ALPHAR, float* ALPHAI, std::complex<float>* BETA, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, int* ilo, int* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, std::complex<float>* work, const int lwork, int* IWORK, int* BWORK, int* info) const;
 
     // SVD routine
-    void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, float* S, std::complex<float>* U, const OrdinalType ldu, std::complex<float>* V, const OrdinalType ldv, std::complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const;
+    void GESVD(const char JOBU, const char JOBVT, const int m, const int n, std::complex<float>* A, const int lda, float* S, std::complex<float>* U, const int ldu, std::complex<float>* V, const int ldv, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
 
     // Triangular matrix routines.
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const std::complex<float>* T, const OrdinalType ldt, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
-    void TREVC(const char SIDE, const OrdinalType n, const std::complex<float>* T, const OrdinalType ldt, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const;
-    void TREXC(const char COMPQ, const OrdinalType n, std::complex<float>* T, const OrdinalType ldt, std::complex<float>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, std::complex<float>* WORK, OrdinalType* info) const;
+    void TREVC(const char SIDE, const char HOWMNY, int* select, const int n, const std::complex<float>* T, const int ldt, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, const int mm, int* m, std::complex<float>* WORK, float* RWORK, int* info) const;
+    void TREVC(const char SIDE, const int n, const std::complex<float>* T, const int ldt, std::complex<float>* VL, const int ldvl, std::complex<float>* VR, const int ldvr, const int mm, int* m, std::complex<float>* WORK, float* RWORK, int* info) const;
+    void TREXC(const char COMPQ, const int n, std::complex<float>* T, const int ldt, std::complex<float>* Q, const int ldq, int ifst, int ilst, std::complex<float>* WORK, int* info) const;
 
     // Rotation/reflection generators
     void LARTG( const std::complex<float> f, const std::complex<float> g, float* c, std::complex<float>* s, std::complex<float>* r ) const;
-    void LARFG( const OrdinalType n, std::complex<float>* alpha, std::complex<float>* x, const OrdinalType incx, std::complex<float>* tau ) const;
+    void LARFG( const int n, std::complex<float>* alpha, std::complex<float>* x, const int incx, std::complex<float>* tau ) const;
 
     // Matrix balancing routines.
-    void GEBAL(const char JOBZ, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, float* scale, OrdinalType* info) const; 
-    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* scale, const OrdinalType m, std::complex<float>* V, const OrdinalType ldv, OrdinalType* info) const; 
+    void GEBAL(const char JOBZ, const int n, std::complex<float>* A, const int lda, int ilo, int ihi, float* scale, int* info) const; 
+    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const float* scale, const int m, std::complex<float>* V, const int ldv, int* info) const; 
 
     // Random number generators
-    std::complex<float> LARND( const OrdinalType idist, OrdinalType* seed ) const;
-    void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, std::complex<float>* v ) const;    
+    std::complex<float> LARND( const int idist, int* seed ) const;
+    void LARNV( const int idist, int* seed, const int n, std::complex<float>* v ) const;    
 
     // Machine characteristics
-    OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
+    int ILAENV( const int ispec, const std::string& NAME, const std::string& OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
 
   };
 
-  // END COMPLEX<FLOAT> PARTIAL SPECIALIZATION DECLARATION //
+  // END INT, COMPLEX<FLOAT> SPECIALIZATION DECLARATION //
 
-  // BEGIN COMPLEX<FLOAT> PARTIAL SPECIALIZATION IMPLEMENTATION //
+  // BEGIN INT, COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
 
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::PTTRF(const OrdinalType n, std::complex<float>* d, std::complex<float>* e, OrdinalType* info) const
-  {
-    CPTTRF_F77(&n,d,e,info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::PTTRS(const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* d, const std::complex<float>* e, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    CPTTRS_F77(&n,&nrhs,d,e,B,&ldb,info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::POTRF(const char UPLO, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    CPOTRF_F77(CHAR_MACRO(UPLO), &n, A, &lda, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    CPOTRS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::POTRI(const char UPLO, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    CPOTRI_F77(CHAR_MACRO(UPLO), &n, A, &lda, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::POCON(const char UPLO, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
-  {
-    CPOCON_F77(CHAR_MACRO(UPLO), &n, A, &lda, &anorm, rcond, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    CPOSV_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::POEQU(const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, float* S, float* scond, float* amax, OrdinalType* info) const
-  {
-    CPOEQU_F77(&n, A, &lda, S, scond, amax, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, const std::complex<float>* AF, const OrdinalType ldaf, const std::complex<float>* B, const OrdinalType ldb, std::complex<float>* X, const OrdinalType ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
-  {
-    CPORFS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, std::complex<float>* AF, const OrdinalType ldaf, char EQUED, float* S, std::complex<float>* B, const OrdinalType ldb, std::complex<float>* X, const OrdinalType ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
-  {
-    CPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHAR_MACRO(EQUED), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    CGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>  
-  void LAPACK<OrdinalType,std::complex<float> >::GEQRF( const OrdinalType m, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, std::complex<float>* TAU, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    CGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, std::complex<float>* A, const OrdinalType lda, const std::complex<float>* TAU, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    CUNGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GETRF(const OrdinalType m, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const
-  {
-    CGETRF_F77(&m, &n, A, &lda, IPIV, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, std::complex<float>* B , const OrdinalType ldb, OrdinalType* info) const
-  {
-    CGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GTTRF(const OrdinalType n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, OrdinalType* IPIV, OrdinalType* info) const
-  {
-    CGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* dl, const std::complex<float>* d, const std::complex<float>* du, const std::complex<float>* du2, const OrdinalType* IPIV, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    CGTTRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, dl, d, du, du2, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GETRI(const OrdinalType n, std::complex<float>* A, const OrdinalType lda, const OrdinalType* IPIV, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    CGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GECON(const char NORM, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, const float anorm, float* rcond, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
-  {
-    CGECON_F77(CHAR_MACRO(NORM), &n, A, &lda, &anorm, rcond, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GESV(const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, OrdinalType* IPIV, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    CGESV_F77(&n, &nrhs, A, &lda, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GEEQU(const OrdinalType m, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, float* R, float* C, float* rowcond, float* colcond, float* amax, OrdinalType* info) const
-  {
-    CGEEQU_F77(&m, &n, A, &lda, R, C, rowcond, colcond, amax, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* A, const OrdinalType lda, const std::complex<float>* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const std::complex<float>* B, const OrdinalType ldb, std::complex<float>* X, const OrdinalType ldx, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
-  {
-    CGERFS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, std::complex<float>* A, const OrdinalType lda, std::complex<float>* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, float* R, float* C, std::complex<float>* B, const OrdinalType ldb, std::complex<float>* X, const OrdinalType ldx, float* rcond, float* FERR, float* BERR, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
-  {
-    CGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHAR_MACRO(EQUED), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<float>* A, const OrdinalType lda, std::complex<float>* TAU, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    CGEHRD_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, OrdinalType* info) const 
-  {
-    CTRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const std::complex<float>* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    CTRTRI_F77(CHAR_MACRO(UPLO), CHAR_MACRO(DIAG), &n, A, &lda, info);
-  }
- 
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::STEQR(const char COMPZ, const OrdinalType n, float* D, float* E, std::complex<float>* Z, const OrdinalType ldz, float* WORK, OrdinalType* info) const
-  {
-    CSTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, std::complex<float> * A, const OrdinalType lda, float * W, std::complex<float> * WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const
-  {
-    CHEEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, RWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<float> >::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, std::complex<float> * A, const OrdinalType lda, std::complex<float> * B, const OrdinalType ldb, float * W, std::complex<float> * WORK, const OrdinalType lwork, float *RWORK, OrdinalType* info) const
-  {
-    CHEGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, RWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<float>* H, const OrdinalType ldh, std::complex<float>* W, std::complex<float>* Z, const OrdinalType ldz, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    CHSEQR_F77(CHAR_MACRO(JOB), CHAR_MACRO(COMPZ), &n, &ilo, &ihi, H, &ldh, W, Z, &ldz, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(std::complex<float>*), const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* sdim, std::complex<float>* W, std::complex<float>* VS, const OrdinalType ldvs, std::complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
-  {
-    CGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(SORT), ptr2func, &n, A, &lda, sdim, W, VS, &ldvs, WORK, &lwork, RWORK, BWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::GEES(const char JOBVS, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType* sdim, float* WR, float* WI, std::complex<float>* VS, const OrdinalType ldvs, std::complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
-  {
-    OrdinalType (*nullfptr)(std::complex<float>*) = NULL;
-    std::vector< std::complex<float> > W(n);
-    const char sort = 'N';
-    CGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, &W[0], VS, &ldvs, WORK, &lwork, RWORK, BWORK, info);
-    for (int i=0; i<n; i++) {
-      WR[i] = W[i].real();
-      WI[i] = W[i].imag();
-    }
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, std::complex<float>* W, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, std::complex<float>* WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const
-  {
-    CGEEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, W, VL, &ldvl, VR, &ldvr, WORK, &lwork, RWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, std::complex<float> * A, const OrdinalType lda, float* S, std::complex<float> * U, const OrdinalType ldu, std::complex<float> * V, const OrdinalType ldv, std::complex<float> * WORK, const OrdinalType lwork, float* RWORK, OrdinalType* info) const {
-    CGESVD_F77(CHAR_MACRO(JOBU), CHAR_MACRO(JOBVT), &m, &n, A, &lda, S, U, &ldu, V, &ldv, WORK, &lwork, RWORK, info);
-  }
-
-/*
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, std::complex<float>* B, const OrdinalType ldb, float* ALPHAR, float* ALPHAI, std::complex<float>* BETA, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, float* LSCALE, float* RSCALE, float* abnrm, float* bbnrm, float* RCONDE, float* RCONDV, std::complex<float>* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const
-  {
-    std::vector< std::complex<float> > ALPHA(n);
-    CGGEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, B, &ldb, &ALPHA[0], BETA, VL, &ldvl, VR, &ldvr, ilo, ihi, LSCALE, RSCALE, abnrm, bbnrm, RCONDE, RCONDV, WORK, &lwork, IWORK, BWORK, info);
-    for (int i=0; i<n; i++) {
-      ALPHAR[i] = ALPHA[i].real();
-      ALPHAI[i] = ALPHA[i].imag();
-    }
-  }
-*/  
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const std::complex<float>* T, const OrdinalType ldt, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
-  {
-    CTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), select, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::TREVC(const char SIDE, const OrdinalType n, const std::complex<float>* T, const OrdinalType ldt, std::complex<float>* VL, const OrdinalType ldvl, std::complex<float>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<float>* WORK, float* RWORK, OrdinalType* info) const
-  {
-    std::vector<OrdinalType> select(1);
-    const char whch = 'A';
-    CTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::TREXC(const char COMPQ, const OrdinalType n, std::complex<float>* T, const OrdinalType ldt, std::complex<float>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, std::complex<float>* WORK, OrdinalType* info) const
-  {
-    CTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::LARTG( const std::complex<float> f, const std::complex<float> g, float* c, std::complex<float>* s, std::complex<float>* r ) const
-  {
-    CLARTG_F77(&f, &g, c, s, r);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::LARFG( const OrdinalType n, std::complex<float>* alpha, std::complex<float>* x, const OrdinalType incx, std::complex<float>* tau ) const
-  {
-    CLARFG_F77(&n, alpha, x, &incx, tau);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::GEBAL(const char JOBZ, const OrdinalType n, std::complex<float>* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, float* scale, OrdinalType* info) const
-  {
-    CGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo, &ihi, scale, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* scale, const OrdinalType m, std::complex<float>* V, const OrdinalType ldv, OrdinalType* info) const
-  {
-    CGEBAK_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(SIDE), &n, &ilo, &ihi, scale, &m, V, &ldv, info);
-  }
-
-  template<typename OrdinalType>
-  std::complex<float> LAPACK<OrdinalType, std::complex<float> >::LARND( const OrdinalType idist, OrdinalType* seed ) const
-  {
-    return(CLARND_F77(&idist, seed));
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<float> >::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, std::complex<float>* v ) const
-  {
-    CLARNV_F77(&idist, seed, &n, v);
-  }
-
-  template<typename OrdinalType>
-  OrdinalType LAPACK<OrdinalType, std::complex<float> >::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
-  {
-    unsigned int opts_length = OPTS.length();
-    std::string temp_NAME = "c" + NAME;
-    unsigned int name_length = temp_NAME.length();
-#if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
-#else
-    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
-#endif
-  }
-
-  // END COMPLEX<FLOAT> PARTIAL SPECIALIZATION IMPLEMENTATION //
-
-  // BEGIN COMPLEX<DOUBLE> PARTIAL SPECIALIZATION DECLARATION //
-
-  template<typename OrdinalType>
-  class LAPACK<OrdinalType, std::complex<double> >
+  template<>
+  class LAPACK<int, std::complex<double> >
   {    
   public:
     inline LAPACK(void) {}
-    inline LAPACK(const LAPACK<OrdinalType, std::complex<double> >& lapack) {}
+    inline LAPACK(const LAPACK<int, std::complex<double> >& lapack) {}
     inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines
-    void PTTRF(const OrdinalType n, std::complex<double>* d, std::complex<double>* e, OrdinalType* info) const;
-    void PTTRS(const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* d, const std::complex<double>* e, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POTRF(const char UPLO, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* info) const;
-    void POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POTRI(const char UPLO, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* info) const;
-    void POCON(const char UPLO, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
-    void POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void POEQU(const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, double* S, double* scond, double* amax, OrdinalType* info) const;
-    void PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, const std::complex<double>* AF, const OrdinalType ldaf, const std::complex<double>* B, const OrdinalType ldb, std::complex<double>* X, const OrdinalType ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
-    void POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, std::complex<double>* AF, const OrdinalType ldaf, char EQUED, double* S, std::complex<double>* B, const OrdinalType ldb, std::complex<double>* X, const OrdinalType ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const; 
+    void PTTRF(const int n, std::complex<double>* d, std::complex<double>* e, int* info) const;
+    void PTTRS(const int n, const int nrhs, const std::complex<double>* d, const std::complex<double>* e, std::complex<double>* B, const int ldb, int* info) const;
+    void POTRF(const char UPLO, const int n, std::complex<double>* A, const int lda, int* info) const;
+    void POTRS(const char UPLO, const int n, const int nrhs, const std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, int* info) const;
+    void POTRI(const char UPLO, const int n, std::complex<double>* A, const int lda, int* info) const;
+    void POCON(const char UPLO, const int n, const std::complex<double>* A, const int lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, int* info) const;
+    void POSV(const char UPLO, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, int* info) const;
+    void POEQU(const int n, const std::complex<double>* A, const int lda, double* S, double* scond, double* amax, int* info) const;
+    void PORFS(const char UPLO, const int n, const int nrhs, std::complex<double>* A, const int lda, const std::complex<double>* AF, const int ldaf, const std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
+    void POSVX(const char FACT, const char UPLO, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* AF, const int ldaf, char EQUED, double* S, std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const; 
 
     // General Linear System Routines
-    void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEQRF( const OrdinalType m, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, std::complex<double>* TAU, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, std::complex<double>* A, const OrdinalType lda, const std::complex<double>* TAU, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GETRF(const OrdinalType m, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const;
-    void GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GTTRF(const OrdinalType n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, OrdinalType* IPIV, OrdinalType* info) const;
-    void GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* dl, const std::complex<double>* d, const std::complex<double>* du, const std::complex<double>* du2, const OrdinalType* IPIV, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GETRI(const OrdinalType n, std::complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GECON(const char NORM, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
-    void GESV(const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, OrdinalType* IPIV, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const;
-    void GEEQU(const OrdinalType m, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, double* R, double* C, double* rowcond, double* colcond, double* amax, OrdinalType* info) const;
-    void GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* A, const OrdinalType lda, const std::complex<double>* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const std::complex<double>* B, const OrdinalType ldb, std::complex<double>* X, const OrdinalType ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
-    void GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, std::complex<double>* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, double* R, double* C, std::complex<double>* B, const OrdinalType ldb, std::complex<double>* X, const OrdinalType ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
-    void GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<double>* A, const OrdinalType lda, std::complex<double>* TAU, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const; 
-    void TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, OrdinalType* info) const;
+    void GELS(const char TRANS, const int m, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, std::complex<double>* WORK, const int lwork, int* info) const;
+    void GEQRF( const int m, const int n, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
+    void UNGQR(const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
+    void GETRF(const int m, const int n, std::complex<double>* A, const int lda, int* IPIV, int* info) const;
+    void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
+    void GTTRF(const int n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, int* IPIV, int* info) const;
+    void GTTRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* dl, const std::complex<double>* d, const std::complex<double>* du, const std::complex<double>* du2, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
+    void GETRI(const int n, std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* WORK, const int lwork, int* info) const;
+    void GECON(const char NORM, const int n, const std::complex<double>* A, const int lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, int* info) const;
+    void GESV(const int n, const int nrhs, std::complex<double>* A, const int lda, int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
+    void GEEQU(const int m, const int n, const std::complex<double>* A, const int lda, double* R, double* C, double* rowcond, double* colcond, double* amax, int* info) const;
+    void GERFS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const std::complex<double>* AF, const int ldaf, const int* IPIV, const std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
+    void GESVX(const char FACT, const char TRANS, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* AF, const int ldaf, int* IPIV, char EQUED, double* R, double* C, std::complex<double>* B, const int ldb, std::complex<double>* X, const int ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, int* info) const;
+    void GEHRD(const int n, const int ilo, const int ihi, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
+    void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int n, const int nrhs, const std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, int* info) const; 
+    void TRTRI(const char UPLO, const char DIAG, const int n, const std::complex<double>* A, const int lda, int* info) const;
 
     // Symmetric eigenvalue routines.
-    void STEQR(const char COMPZ, const OrdinalType n, double* D, double* E, std::complex<double>* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const;
-    void HEEV(const char JOBZ, const char UPLO, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, double* W, std::complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const;
-    void HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, double* W, std::complex<double>* WORK, const OrdinalType lwork, double *RWORK, OrdinalType* info) const;
+    void STEQR(const char COMPZ, const int n, double* D, double* E, std::complex<double>* Z, const int ldz, double* WORK, int* info) const;
+    void HEEV(const char JOBZ, const char UPLO, const int n, std::complex<double>* A, const int lda, double* W, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
+    void HEGV(const int itype, const char JOBZ, const char UPLO, const int n, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, double* W, std::complex<double>* WORK, const int lwork, double *RWORK, int* info) const;
 
     // Non-hermitian eigenvalue routines.
-    void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<double>* H, const OrdinalType ldh, std::complex<double>* W, std::complex<double>* Z, const OrdinalType ldz, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const;
-    void GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(std::complex<double>*), const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* sdim, std::complex<double>* W, std::complex<double>* VS, const OrdinalType ldvs, std::complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
-    void GEES(const char JOBVS, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* sdim, double* WR, double* WI, std::complex<double>* VS, const OrdinalType ldvs, std::complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const;    
-    void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, std::complex<double>* W, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, std::complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const;
-//    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, double* ALPHAR, double* ALPHAI, std::complex<double>* BETA, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, std::complex<double>* work, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const;
+    void HSEQR(const char JOB, const char COMPZ, const int n, const int ilo, const int ihi, std::complex<double>* H, const int ldh, std::complex<double>* W, std::complex<double>* Z, const int ldz, std::complex<double>* WORK, const int lwork, int* info) const;
+    void GEES(const char JOBVS, const char SORT, int (*ptr2func)(std::complex<double>*), const int n, std::complex<double>* A, const int lda, int* sdim, std::complex<double>* W, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;    
+    void GEES(const char JOBVS, const int n, std::complex<double>* A, const int lda, int* sdim, double* WR, double* WI, std::complex<double>* VS, const int ldvs, std::complex<double>* WORK, const int lwork, double* RWORK, int* BWORK, int* info) const;    
+    void GEEV(const char JOBVL, const char JOBVR, const int n, std::complex<double>* A, const int lda, std::complex<double>* W, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
+//    void GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const int n, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, double* ALPHAR, double* ALPHAI, std::complex<double>* BETA, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, int* ilo, int* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, std::complex<double>* work, const int lwork, int* IWORK, int* BWORK, int* info) const;
 
     // SVD routine
-    void GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, double* S, std::complex<double>* U, const OrdinalType ldu, std::complex<double>* V, const OrdinalType ldv, std::complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const;
+    void GESVD(const char JOBU, const char JOBVT, const int m, const int n, std::complex<double>* A, const int lda, double* S, std::complex<double>* U, const int ldu, std::complex<double>* V, const int ldv, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
 
     // Triangular matrix routines.
-    void TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const std::complex<double>* T, const OrdinalType ldt, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
-    void TREVC(const char SIDE, const OrdinalType n, const std::complex<double>* T, const OrdinalType ldt, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const;
-    void TREXC(const char COMPQ, const OrdinalType n, std::complex<double>* T, const OrdinalType ldt, std::complex<double>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, std::complex<double>* WORK, OrdinalType* info) const;
+    void TREVC(const char SIDE, const char HOWMNY, int* select, const int n, const std::complex<double>* T, const int ldt, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, const int mm, int* m, std::complex<double>* WORK, double* RWORK, int* info) const;
+    void TREVC(const char SIDE, const int n, const std::complex<double>* T, const int ldt, std::complex<double>* VL, const int ldvl, std::complex<double>* VR, const int ldvr, const int mm, int* m, std::complex<double>* WORK, double* RWORK, int* info) const;
+    void TREXC(const char COMPQ, const int n, std::complex<double>* T, const int ldt, std::complex<double>* Q, const int ldq, int ifst, int ilst, std::complex<double>* WORK, int* info) const;
 
     // Rotation/reflection generators
     void LARTG( const std::complex<double> f, const std::complex<double> g, double* c, std::complex<double>* s, std::complex<double>* r ) const;
-    void LARFG( const OrdinalType n, std::complex<double>* alpha, std::complex<double>* x, const OrdinalType incx, std::complex<double>* tau ) const;
+    void LARFG( const int n, std::complex<double>* alpha, std::complex<double>* x, const int incx, std::complex<double>* tau ) const;
 
     // Matrix balancing routines.
-    void GEBAL(const char JOBZ, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, double* scale, OrdinalType* info) const; 
-    void GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* scale, const OrdinalType m, std::complex<double>* V, const OrdinalType ldv, OrdinalType* info) const; 
+    void GEBAL(const char JOBZ, const int n, std::complex<double>* A, const int lda, int ilo, int ihi, double* scale, int* info) const; 
+    void GEBAK(const char JOBZ, const char SIDE, const int n, const int ilo, const int ihi, const double* scale, const int m, std::complex<double>* V, const int ldv, int* info) const; 
 
     // Random number generators
-    std::complex<double> LARND( const OrdinalType idist, OrdinalType* seed ) const;
-    void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, std::complex<double>* v ) const;    
+    std::complex<double> LARND( const int idist, int* seed ) const;
+    void LARNV( const int idist, int* seed, const int n, std::complex<double>* v ) const;    
 
     // Machine characteristics
-    OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
+    int ILAENV( const int ispec, const std::string& NAME, const std::string& OPTS, const int N1 = -1, const int N2 = -1, const int N3 = -1, const int N4 = -1 ) const;
 
   };
 
-  // END COMPLEX<DOUBLE> PARTIAL SPECIALIZATION DECLARATION //
-
-  // BEGIN COMPLEX<DOUBLE> PARTIAL SPECIALIZATION IMPLEMENTATION //
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::PTTRF(const OrdinalType n, std::complex<double>* d, std::complex<double>* e, OrdinalType* info) const
-  {
-    ZPTTRF_F77(&n,d,e,info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::PTTRS(const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* d, const std::complex<double>* e, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    ZPTTRS_F77(&n,&nrhs,d,e,B,&ldb,info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::POTRF(const char UPLO, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    ZPOTRF_F77(CHAR_MACRO(UPLO), &n, A, &lda, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::POTRS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    ZPOTRS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::POTRI(const char UPLO, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    ZPOTRI_F77(CHAR_MACRO(UPLO), &n, A, &lda, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::POCON(const char UPLO, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
-  {
-    ZPOCON_F77(CHAR_MACRO(UPLO), &n, A, &lda, &anorm, rcond, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    ZPOSV_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::POEQU(const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, double* S, double* scond, double* amax, OrdinalType* info) const
-  {
-    ZPOEQU_F77(&n, A, &lda, S, scond, amax, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::PORFS(const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, const std::complex<double>* AF, const OrdinalType ldaf, const std::complex<double>* B, const OrdinalType ldb, std::complex<double>* X, const OrdinalType ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
-  {
-    ZPORFS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, std::complex<double>* AF, const OrdinalType ldaf, char EQUED, double* S, std::complex<double>* B, const OrdinalType ldb, std::complex<double>* X, const OrdinalType ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
-  {
-    ZPOSVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, CHAR_MACRO(EQUED), S, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    ZGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>  
-  void LAPACK<OrdinalType,std::complex<double> >::GEQRF( const OrdinalType m, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, std::complex<double>* TAU, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    ZGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, std::complex<double>* A, const OrdinalType lda, const std::complex<double>* TAU, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    ZUNGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GETRF(const OrdinalType m, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* IPIV, OrdinalType* info) const
-  {
-    ZGETRF_F77(&m, &n, A, &lda, IPIV, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GETRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    ZGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GTTRF(const OrdinalType n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, OrdinalType* IPIV, OrdinalType* info) const
-  {
-    ZGTTRF_F77(&n, dl, d, du, du2, IPIV, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GTTRS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* dl, const std::complex<double>* d, const std::complex<double>* du, const std::complex<double>* du2, const OrdinalType* IPIV, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    ZGTTRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, dl, d, du, du2, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GETRI(const OrdinalType n, std::complex<double>* A, const OrdinalType lda, const OrdinalType* IPIV, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    ZGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GECON(const char NORM, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, const double anorm, double* rcond, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
-  {
-    ZGECON_F77(CHAR_MACRO(NORM), &n, A, &lda, &anorm, rcond, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GESV(const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, OrdinalType* IPIV, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const
-  {
-    ZGESV_F77(&n, &nrhs, A, &lda, IPIV, B, &ldb, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GEEQU(const OrdinalType m, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, double* R, double* C, double* rowcond, double* colcond, double* amax, OrdinalType* info) const
-  {
-    ZGEEQU_F77(&m, &n, A, &lda, R, C, rowcond, colcond, amax, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GERFS(const char TRANS, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* A, const OrdinalType lda, const std::complex<double>* AF, const OrdinalType ldaf, const OrdinalType* IPIV, const std::complex<double>* B, const OrdinalType ldb, std::complex<double>* X, const OrdinalType ldx, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
-  {
-    ZGERFS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, B, &ldb, X, &ldx, FERR, BERR, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GESVX(const char FACT, const char TRANS, const OrdinalType n, const OrdinalType nrhs, std::complex<double>* A, const OrdinalType lda, std::complex<double>* AF, const OrdinalType ldaf, OrdinalType* IPIV, char EQUED, double* R, double* C, std::complex<double>* B, const OrdinalType ldb, std::complex<double>* X, const OrdinalType ldx, double* rcond, double* FERR, double* BERR, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
-  {
-    ZGESVX_F77(CHAR_MACRO(FACT), CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, AF, &ldaf, IPIV, CHAR_MACRO(EQUED), R, C, B, &ldb, X, &ldx, rcond, FERR, BERR, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<double>* A, const OrdinalType lda, std::complex<double>* TAU, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    ZGEHRD_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::TRTRS(const char UPLO, const char TRANS, const char DIAG, const OrdinalType n, const OrdinalType nrhs, const std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, OrdinalType* info) const 
-  {
-    ZTRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &n, &nrhs, A, &lda, B, &ldb, info);
-  }
- 
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::TRTRI(const char UPLO, const char DIAG, const OrdinalType n, const std::complex<double>* A, const OrdinalType lda, OrdinalType* info) const
-  {
-    ZTRTRI_F77(CHAR_MACRO(UPLO), CHAR_MACRO(DIAG), &n, A, &lda, info);
-  }
- 
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::STEQR(const char COMPZ, const OrdinalType n, double* D, double* E, std::complex<double>* Z, const OrdinalType ldz, double* WORK, OrdinalType* info) const
-  {
-    ZSTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::HEEV(const char JOBZ, const char UPLO, const OrdinalType n, std::complex<double> * A, const OrdinalType lda, double * W, std::complex<double> * WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const
-  {
-    ZHEEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, RWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType,std::complex<double> >::HEGV(const OrdinalType itype, const char JOBZ, const char UPLO, const OrdinalType n, std::complex<double> * A, const OrdinalType lda, std::complex<double> * B, const OrdinalType ldb, double * W, std::complex<double> * WORK, const OrdinalType lwork, double *RWORK, OrdinalType* info) const
-  {
-    ZHEGV_F77(&itype, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, B, &ldb, W, WORK, &lwork, RWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, std::complex<double>* H, const OrdinalType ldh, std::complex<double>* W, std::complex<double>* Z, const OrdinalType ldz, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* info) const
-  {
-    ZHSEQR_F77(CHAR_MACRO(JOB), CHAR_MACRO(COMPZ), &n, &ilo, &ihi, H, &ldh, W, Z, &ldz, WORK, &lwork, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::GEES(const char JOBVS, const char SORT, OrdinalType (*ptr2func)(std::complex<double>*), const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* sdim, std::complex<double>* W, std::complex<double>* VS, const OrdinalType ldvs, std::complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
-  {
-    ZGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(SORT), ptr2func, &n, A, &lda, sdim, W, VS, &ldvs, WORK, &lwork, RWORK, BWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::GEES(const char JOBVS, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType* sdim, double* WR, double* WI, std::complex<double>* VS, const OrdinalType ldvs, std::complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* BWORK, OrdinalType* info) const    
-  {
-    OrdinalType (*nullfptr)(std::complex<double>*) = NULL;
-    std::vector< std::complex<double> > W(n);
-    const char sort = 'N';
-    ZGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, &W[0], VS, &ldvs, WORK, &lwork, RWORK, BWORK, info);
-    for (int i=0; i<n; i++) {
-      WR[i] = W[i].real();
-      WI[i] = W[i].imag();
-    }
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, std::complex<double>* W, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, std::complex<double>* WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const
-  {
-    ZGEEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, W, VL, &ldvl, VR, &ldvr, WORK, &lwork, RWORK, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::GESVD(const char JOBU, const char JOBVT, const OrdinalType m, const OrdinalType n, std::complex<double> * A, const OrdinalType lda, double* S, std::complex<double> * U, const OrdinalType ldu, std::complex<double> * V, const OrdinalType ldv, std::complex<double> * WORK, const OrdinalType lwork, double* RWORK, OrdinalType* info) const {
-    ZGESVD_F77(CHAR_MACRO(JOBU), CHAR_MACRO(JOBVT), &m, &n, A, &lda, S, U, &ldu, V, &ldv, WORK, &lwork, RWORK, info);
-  }
-
-/*
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::GGEVX(const char BALANC, const char JOBVL, const char JOBVR, const char SENSE, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, std::complex<double>* B, const OrdinalType ldb, double* ALPHAR, double* ALPHAI, std::complex<double>* BETA, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, OrdinalType* ilo, OrdinalType* ihi, double* LSCALE, double* RSCALE, double* abnrm, double* bbnrm, double* RCONDE, double* RCONDV, std::complex<double>* WORK, const OrdinalType lwork, OrdinalType* IWORK, OrdinalType* BWORK, OrdinalType* info) const
-  {
-    std::vector< std::complex<double> > ALPHA(n);
-    ZGGEVX_F77(CHAR_MACRO(BALANC), CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), CHAR_MACRO(SENSE), &n, A, &lda, B, &ldb, &ALPHA[0], BETA, VL, &ldvl, VR, &ldvr, ilo, ihi, LSCALE, RSCALE, abnrm, bbnrm, RCONDE, RCONDV, WORK, &lwork, IWORK, BWORK, info);
-    for (int i=0; i<n; i++) {
-      ALPHAR[i] = ALPHA[i].real();
-      ALPHAI[i] = ALPHA[i].imag();
-    }
-  }
-*/
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::TREVC(const char SIDE, const char HOWMNY, OrdinalType* select, const OrdinalType n, const std::complex<double>* T, const OrdinalType ldt, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
-  {
-    ZTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(HOWMNY), select, &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::TREVC(const char SIDE, const OrdinalType n, const std::complex<double>* T, const OrdinalType ldt, std::complex<double>* VL, const OrdinalType ldvl, std::complex<double>* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, std::complex<double>* WORK, double* RWORK, OrdinalType* info) const
-  {
-    std::vector<OrdinalType> select(1);
-    const char whch = 'A';
-    ZTREVC_F77(CHAR_MACRO(SIDE), CHAR_MACRO(whch), &select[0], &n, T, &ldt, VL, &ldvl, VR, &ldvr, &mm, m, WORK, RWORK, info);
-  }
-  
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::TREXC(const char COMPQ, const OrdinalType n, std::complex<double>* T, const OrdinalType ldt, std::complex<double>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, std::complex<double>* WORK, OrdinalType* info) const
-  {
-    ZTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::LARTG( const std::complex<double> f, const std::complex<double> g, double* c, std::complex<double>* s, std::complex<double>* r ) const
-  {
-    ZLARTG_F77(&f, &g, c, s, r);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::LARFG( const OrdinalType n, std::complex<double>* alpha, std::complex<double>* x, const OrdinalType incx, std::complex<double>* tau ) const
-  {
-    ZLARFG_F77(&n, alpha, x, &incx, tau);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::GEBAL(const char JOBZ, const OrdinalType n, std::complex<double>* A, const OrdinalType lda, OrdinalType ilo, OrdinalType ihi, double* scale, OrdinalType* info) const
-  {
-    ZGEBAL_F77(CHAR_MACRO(JOBZ),&n, A, &lda, &ilo, &ihi, scale, info);
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::GEBAK(const char JOBZ, const char SIDE, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* scale, const OrdinalType m, std::complex<double>* V, const OrdinalType ldv, OrdinalType* info) const
-  {
-    ZGEBAK_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(SIDE), &n, &ilo, &ihi, scale, &m, V, &ldv, info);
-  }
-
-  template<typename OrdinalType>
-  std::complex<double> LAPACK<OrdinalType, std::complex<double> >::LARND( const OrdinalType idist, OrdinalType* seed ) const
-  {
-    return(ZLARND_F77(&idist, seed));
-  }
-
-  template<typename OrdinalType>
-  void LAPACK<OrdinalType, std::complex<double> >::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, std::complex<double>* v ) const
-  {
-    ZLARNV_F77(&idist, seed, &n, v);
-  }
-
-  template<typename OrdinalType>
-  OrdinalType LAPACK<OrdinalType, std::complex<double> >::ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1, const OrdinalType N2, const OrdinalType N3, const OrdinalType N4 ) const
-  {
-    unsigned int opts_length = OPTS.length();
-    std::string temp_NAME = "z" + NAME;
-    unsigned int name_length = temp_NAME.length();
-#if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
-#else
-    return ::ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
-#endif
-  }
-
-  // END COMPLEX<DOUBLE> PARTIAL SPECIALIZATION IMPLEMENTATION //
+  // END INT, COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
 
 #endif // HAVE_TEUCHOS_COMPLEX
 

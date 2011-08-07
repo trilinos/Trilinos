@@ -3,13 +3,13 @@
 #include <cstring>
 #include "exodusII.h"
 
-char **get_name_array(int size) {
+char **get_name_array(int size, int length) {
   char **names = NULL;
   if (size > 0) {
     names = new char* [size];
     for (int i=0; i < size; i++) {
-      names[i] = new char [MAX_STR_LENGTH+1];
-      std::memset(names[i], '\0', MAX_STR_LENGTH+1);
+      names[i] = new char [length+1];
+      std::memset(names[i], '\0', length+1);
     }
   }
   return names;

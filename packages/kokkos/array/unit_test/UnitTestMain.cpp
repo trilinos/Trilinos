@@ -91,6 +91,8 @@ void test_device_host()
 namespace Test {
 void test_device_tpi();
 void test_device_cuda();
+void test_device_tbb();
+void test_device_ferry();
 }
 
 //----------------------------------------------------------------------------
@@ -100,6 +102,8 @@ int main()
   Test::test_device_host();
   Test::test_device_tpi();
   Test::test_device_cuda();
+  Test::test_device_tbb();
+  Test::test_device_ferry();
 
   return 0 ;
 }

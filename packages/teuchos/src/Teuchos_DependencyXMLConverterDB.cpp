@@ -79,12 +79,24 @@ DependencyXMLConverterDB::getConverter(const XMLObject& xmlObject)
   std::string dependencyType = xmlObject.getRequired(
     DependencyXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(dependencyType);
+  #ifdef HAVE_TEUCHOS_DEBUG
+  std::ostringstream sout;
+  printKnownConverters(sout);
+  #endif
+  std::string extraError = 
+  #ifdef HAVE_TEUCHOS_DEBUG
+  sout.str();
+  #else
+  "";
+  #endif
+
   TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindDependencyConverterException,
     "Could not find a DependencyXMLConverter for a dependency of type " <<
     dependencyType << "!" << std::endl <<
     "Try adding an appropriate converter to the DependencyXMLConverterDB " <<
-    "in order to solve this problem." << std::endl << std::endl);
+    "in order to solve this problem." << std::endl << std::endl << extraError
+    );
   return it->second;
 }
 

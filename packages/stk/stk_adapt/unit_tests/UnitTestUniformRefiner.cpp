@@ -13,6 +13,7 @@
 
 #include <stk_percept/Util.hpp>
 #include <stk_percept/ExceptionWatch.hpp>
+#include <stk_percept/GeometryVerifier.hpp>
 #include <stk_percept/function/StringFunction.hpp>
 #include <stk_percept/function/FieldFunction.hpp>
 #include <stk_percept/function/ConstantFunction.hpp>
@@ -20,10 +21,8 @@
 
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <stk_adapt/UniformRefiner.hpp>
-#include <unit_tests/TestLocalRefinerTri_N.hpp>
-#include <unit_tests/TestLocalRefinerTri_N_1.hpp>
-#include <unit_tests/TestLocalRefinerTri_N_2.hpp>
-#include <unit_tests/TestLocalRefinerTri_N_3.hpp>
+
+#include <stk_percept/fixtures/SingleTetFixture.hpp>
 
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -210,9 +209,11 @@ namespace stk {
       //=====================================================================================================================================================================================================
       //=====================================================================================================================================================================================================
 
+
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
 
 #if 1
 
@@ -249,6 +250,14 @@ namespace stk {
 
             //fixture.meta_data.commit();
             eMesh.commit();
+
+            if (0)
+              {
+                percept::GeometryVerifier gv(true);
+                std::cout << "tmp GeometryVerifier= " << eMesh.getBulkData() << std::endl;
+                bool igb = gv.isGeometryBad(*eMesh.getBulkData(), true);
+                std::cout << "tmp isGeometryBad= " << igb << std::endl;
+              }
 
             fixture.generate_mesh();
 
@@ -320,456 +329,6 @@ namespace stk {
 
 #endif
 
-#if 1
-      //=============================================================================
-      //=============================================================================
-      //=============================================================================
-
-      //STKUNIT_UNIT_TEST(unit_localRefiner, break_tri_to_tri_N_1)
-      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_N_1)
-      {
-        EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        if (p_size <= 3)
-          {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
-
-            // start_demo_local_refiner_break_tri_to_tri_1
-
-            const unsigned n = 4;
-            const unsigned nx = n , ny = n;
-
-            bool createEdgeSets = false;
-            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
-
-            bool isCommitted = false;
-            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
-
-            Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
-            int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
-            eMesh.commit();
-
-            fixture.generate_mesh();
-
-            //eMesh.printInfo("local tri mesh",2);
-            save_or_diff(eMesh, output_files_loc+"local_tri_N_1_0_"+post_fix[p_size]+".e");
-
-            TestLocalRefinerTri_N_1 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
-            breaker.setRemoveOldElements(false);
-            breaker.doBreak();
-
-            //eMesh.dumpElementsCompact();
-
-            //eMesh.printInfo("local tri mesh refined", 2);
-            save_or_diff(eMesh, output_files_loc+"local_tri_N_1_1_"+post_fix[p_size]+".e");
-
-            //MPI_Barrier( MPI_COMM_WORLD );
-            //exit(123);
-
-            //breaker.unrefineAll();
-            ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
-            breaker.unrefineTheseElements(elements_to_unref);
-
-            // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_1_1_unref_"+post_fix[p_size]+".e");
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_1_1_unref_"+post_fix[p_size]+".e");
-
-            // end_demo
-          }
-
-      }
-#endif
-
-#if 1
-      //=============================================================================
-      //=============================================================================
-      //=============================================================================
-
-      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_N_2)
-      {
-        EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        if (p_size <= 3)
-          {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
-
-            // start_demo_local_refiner_break_tri_to_tri_2
-
-            const unsigned n = 4;
-            const unsigned nx = n , ny = n;
-
-            bool createEdgeSets = false;
-            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
-
-            bool isCommitted = false;
-            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
-
-            Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
-            int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
-            eMesh.commit();
-
-            fixture.generate_mesh();
-
-            //eMesh.printInfo("local tri mesh",2);
-            save_or_diff(eMesh, output_files_loc+"local_tri_N_2_0_"+post_fix[p_size]+".e");
-
-            TestLocalRefinerTri_N_2 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
-            breaker.setRemoveOldElements(false);
-            for (int ipass=0; ipass < 4; ipass++)
-              {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
-                breaker.doBreak();
-              }
-
-            //eMesh.dumpElementsCompact();
-
-            //eMesh.printInfo("local tri mesh refined", 2);
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
-
-            //MPI_Barrier( MPI_COMM_WORLD );
-            //exit(123);
-#if 1           
-
-            //breaker.unrefineAll();
-            ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
-            breaker.unrefineTheseElements(elements_to_unref);
-
-            // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_2_1_unref_"+post_fix[p_size]+".e");
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_2_1_unref_"+post_fix[p_size]+".e");
-            //exit(123);
-#endif
-            // end_demo
-          }
-
-      }
-#endif
-
-#if 1
-      //=============================================================================
-      //=============================================================================
-      //=============================================================================
-
-      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_N_3_1)
-      {
-        EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        if (p_size <= 3)
-          {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
-
-            // start_demo_local_refiner_break_tri_to_tri_2
-
-            const unsigned n = 2;
-            const unsigned nx = n , ny = n;
-
-            bool createEdgeSets = false;
-            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
-
-            bool isCommitted = false;
-            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
-
-            Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
-            int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
-            eMesh.commit();
-
-            fixture.generate_mesh();
-
-            //eMesh.printInfo("local tri mesh",2);
-            save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_0_"+post_fix[p_size]+".e");
-
-            TestLocalRefinerTri_N_3 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
-            breaker.setRemoveOldElements(false);
-            breaker.setAlwaysInitializeNodeRegistry(false);
-            for (int ipass=0; ipass < 4; ipass++)
-              {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
-                breaker.doBreak();
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_1_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
-              }
-
-            //eMesh.dumpElementsCompact();
-
-            //eMesh.printInfo("local tri mesh refined", 2);
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_1_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_3_1_1_"+post_fix[p_size]+".e");
-
-            //MPI_Barrier( MPI_COMM_WORLD );
-#if 1
-
-            for (int iunref_pass=0; iunref_pass < 4; iunref_pass++)
-              {
-                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
-                ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
-                breaker.unrefineTheseElements(elements_to_unref);
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_1_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
-                //breaker.unrefineAll();
-              }
-
-            // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_3_1_1_unref_"+post_fix[p_size]+".e");
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_1_unref_"+post_fix[p_size]+".e");
-            //exit(123);
-#endif
-            // end_demo
-          }
-
-      }
-#endif
-
-#if 1
-      //=============================================================================
-      //=============================================================================
-      //=============================================================================
-
-      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_N_3_2)
-      {
-        EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        if (p_size <= 3)
-          {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
-
-            // start_demo_local_refiner_break_tri_to_tri_2
-
-            const unsigned n = 2;
-            const unsigned nx = n , ny = n;
-
-            bool createEdgeSets = false;
-            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
-
-            bool isCommitted = false;
-            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
-
-            Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
-            int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
-            eMesh.commit();
-
-            fixture.generate_mesh();
-
-            //eMesh.printInfo("local tri mesh",2);
-            save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_0_"+post_fix[p_size]+".e");
-
-            TestLocalRefinerTri_N_3 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
-            breaker.setRemoveOldElements(false);
-            breaker.setAlwaysInitializeNodeRegistry(false);
-            for (int ipass=0; ipass < 8; ipass++)
-              {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
-                breaker.doBreak();
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
-              }
-
-            //eMesh.dumpElementsCompact();
-
-            //eMesh.printInfo("local tri mesh refined", 2);
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
-
-            //MPI_Barrier( MPI_COMM_WORLD );
-#if 1
-
-            for (int iunref_pass=0; iunref_pass < 7; iunref_pass++)
-              {
-                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
-                ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
-                breaker.unrefineTheseElements(elements_to_unref);
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_unref_ipass"+toString(iunref_pass)+"_"+post_fix[p_size]+".e");
-                //breaker.unrefineAll();
-              }
-
-
-
-            // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_unref_"+post_fix[p_size]+".e");
-
-            if (1)
-              {
-                for (int ipass=8; ipass < 16; ipass++)
-                  {
-                    std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
-                    breaker.doBreak();
-                    eMesh.saveAs(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
-                  }
-
-                //eMesh.dumpElementsCompact();
-
-                // FIXME FIXME FIXME
-                breaker.deleteParentElements();
-
-                //eMesh.printInfo("local tri mesh refined", 2);
-
-                //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
-                eMesh.saveAs(output_files_loc+"local_tri_N_3_2_16_"+post_fix[p_size]+".e");
-              }
-
-
-            //exit(123);
-#endif
-            // end_demo
-          }
-
-      }
-#endif
-
-// FIXME
-#if 0  
-      //=============================================================================
-      //=============================================================================
-      //=============================================================================
-
-      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_N_3)
-      {
-        EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        if (p_size <= 3)
-          {
-            std::string post_fix[4] = {"np0", "np1", "np2", "np3"};
-
-            // start_demo_local_refiner_break_tri_to_tri_2
-
-            const unsigned n = 4;
-            const unsigned nx = n , ny = n;
-
-            bool createEdgeSets = false;
-            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
-
-            bool isCommitted = false;
-            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
-
-            Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
-            int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
-            eMesh.commit();
-
-            fixture.generate_mesh();
-
-            //eMesh.printInfo("local tri mesh",2);
-            save_or_diff(eMesh, output_files_loc+"local_tri_N_3_0_"+post_fix[p_size]+".e");
-
-            TestLocalRefinerTri_N_3 breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
-            breaker.setRemoveOldElements(false);
-            for (int ipass=0; ipass < 4; ipass++)
-              {
-                std::cout << "P[" << eMesh.getRank() << "] ipass= " << ipass << std::endl;
-                breaker.doBreak();
-              }
-
-            //eMesh.dumpElementsCompact();
-
-            //eMesh.printInfo("local tri mesh refined", 2);
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_"+post_fix[p_size]+".e");
-            eMesh.saveAs(output_files_loc+"local_tri_N_3_2_"+post_fix[p_size]+".e");
-
-            //MPI_Barrier( MPI_COMM_WORLD );
-            //exit(123);
-#if 1
-
-            for (int iunref_pass=0; iunref_pass < 2; iunref_pass++)
-              {
-                std::cout << "P[" << eMesh.getRank() << "] iunref_pass= " << iunref_pass << std::endl;
-                ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
-                breaker.unrefineTheseElements(elements_to_unref);
-                //breaker.unrefineAll();
-              }
-
-            // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_3_2_unref_"+post_fix[p_size]+".e");
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_unref_"+post_fix[p_size]+".e");
-            exit(123);
-#endif
-            // end_demo
-          }
-
-      }
-#endif
-
-#if 0
-      //=============================================================================
-      //=============================================================================
-      //=============================================================================
-
-
-      //STKUNIT_UNIT_TEST(unit_tmp, break_tri_to_tri_N)
-      STKUNIT_UNIT_TEST(unit1_uniformRefiner, break_tri_to_tri_N)
-      {
-        EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        if (p_size <= 3)
-          {
-            // start_demo_local_refiner_break_tri_to_tri_1
-
-            const unsigned n = 4;
-            const unsigned nx = n , ny = n;
-
-            bool createEdgeSets = false;
-            percept::QuadFixture<double, shards::Triangle<3> > fixture( pm , nx , ny, createEdgeSets);
-
-            bool isCommitted = false;
-            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data, isCommitted);
-
-            Local_Tri3_Tri3_N break_tri_to_tri_N(eMesh);
-            int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-            eMesh.addField("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
-            eMesh.commit();
-
-            fixture.generate_mesh();
-
-            eMesh.printInfo("local tri mesh", printInfoLevel);
-            save_or_diff(eMesh, output_files_loc+"local_tri_N_0.e");
-
-            TestLocalRefinerTri_N breaker(eMesh, break_tri_to_tri_N, proc_rank_field);
-            breaker.setRemoveOldElements(false);
-            breaker.doBreak();
-
-            eMesh.printInfo("local tri mesh refined", printInfoLevel);
-            //eMesh.dumpElements();
-            save_or_diff(eMesh, output_files_loc+"local_tri_N_1.e");
-
-            //breaker.unrefineAll();
-            ElementUnrefineCollection elements_to_unref = breaker.buildTestUnrefList();
-            breaker.unrefineTheseElements(elements_to_unref);
-
-            // FIXME
-            eMesh.saveAs( output_files_loc+"local_tri_N_1_unref.e");
-            //save_or_diff(eMesh, output_files_loc+"local_tri_N_1_unref.e");
-
-            //exit(123);
-            // end_demo
-          }
-
-      }
-#endif
 
       //=============================================================================
       //=============================================================================

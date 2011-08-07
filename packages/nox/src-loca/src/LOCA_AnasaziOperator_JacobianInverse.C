@@ -104,8 +104,8 @@ LOCA::AnasaziOperator::JacobianInverse::transformEigenvalue(double& ev_r,
 
 NOX::Abstract::Group::ReturnType 
 LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient(
-				         const NOX::Abstract::Vector& evec_r,
-					 const NOX::Abstract::Vector& evec_i,
+				         NOX::Abstract::Vector& evec_r,
+					 NOX::Abstract::Vector& evec_i,
 					 double& rq_r, double& rq_i) const
 {
   string callingFunction = 

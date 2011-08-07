@@ -46,17 +46,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-
-void func_a()
-{
-  TEST_FOR_EXCEPTION(true, std::logic_error, "This is an exception I throw!");
-}
-
-
-void func_b()
-{
-  func_a();
-}
+#include "SimpleThrowFunctions.hpp"
 
 
 int main(int argc, char* argv[])

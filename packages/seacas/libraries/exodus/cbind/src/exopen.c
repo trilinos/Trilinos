@@ -122,9 +122,12 @@ int ex_open_int (const char  *path,
 		 int    run_version)
 {
    int exoid;
-   int status;
+   int status, stat_att, stat_dim;
+   nc_type att_type = NC_NAT;
+   size_t att_len = 0;
    int old_fill;
    int file_wordsize;
+   int dim_str_name;
    char errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
@@ -178,15 +181,31 @@ int ex_open_int (const char  *path,
     } 
 
     /* turn off automatic filling of netCDF variables */
-
-    if ((status = nc_set_fill (exoid, NC_NOFILL, &old_fill)) != NC_NOERR)
-    {
+    if ((status = nc_set_fill (exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
              "Error: failed to set nofill mode in file id %d",
               exoid);
       ex_err("ex_open", errmsg, exerrval);
       return (EX_FATAL);
+    }
+
+    stat_att = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
+    stat_dim = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name);
+    if(stat_att != NC_NOERR || stat_dim != NC_NOERR) {
+      nc_redef(exoid);
+      if (stat_att != NC_NOERR) {
+	int max_so_far = 32;
+	status=nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far);
+      }
+
+      /* If the DIM_STR_NAME variable does not exist on the database, we need to add it now. */
+      if(stat_dim != NC_NOERR) {
+	/* Not found; set to default value of 32+1. */
+	int max_name = ex_max_name_length < 32 ? 32 : ex_max_name_length;
+	status = nc_def_dim(exoid, DIM_STR_NAME, max_name+1, &dim_str_name);
+      }
+      nc_enddef (exoid);
     }
   }
   else 
@@ -210,8 +229,7 @@ int ex_open_int (const char  *path,
    }
    
 /* check ExodusII file version - old version 1.x files are not supported */
-   if (*version < 2.0)
-   {
+   if (*version < 2.0) {
      exerrval  = EX_FATAL;
      sprintf(errmsg,"Error: Unsupported file version %.2f in file id: %d",
              *version, exoid);

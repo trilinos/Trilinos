@@ -37,6 +37,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=${CTEST_SCRIPT_DIRECTORY}/intel-12.0.4-options.cmake"
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
       "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
+      "-DTrilinos_ENABLE_Mesquite:BOOL=OFF"
+      "-DTrilinos_ENABLE_Sundance:BOOL=OFF"
     )
 
   #   "-DCMAKE_CXX_FLAGS:STRING=-diag-disable 597"

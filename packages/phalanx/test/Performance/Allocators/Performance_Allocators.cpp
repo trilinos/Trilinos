@@ -37,6 +37,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "CellData.hpp"
 #include "Traits.hpp"
@@ -155,6 +156,8 @@ RCP< FieldManager<Traits> > buildFieldManager(std::size_t num_cells)
 
 int main(int argc, char *argv[]) 
 {
+  GlobalMPISession mpi_session(&argc, &argv);
+
   try {
     
     RCP<Time> time_total = TimeMonitor::getNewTimer("Total Run Time");

@@ -42,6 +42,7 @@
 
 #include <iosfwd>
 #include <typeinfo>
+#include <string>
 
 #include <Kokkos_MemoryView.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
@@ -70,6 +71,11 @@ public:
 
   /** \brief  On the host device use size_t for indexing */
   typedef size_t                size_type ;
+
+  /** \brief  The Host device uses the Host memory space */
+  typedef DeviceHost            memory_space ;
+
+  /** \brief  Default mdarray map is index from right */
   typedef MDArrayIndexMapRight  default_mdarray_map ;
 
   /*--------------------------------*/

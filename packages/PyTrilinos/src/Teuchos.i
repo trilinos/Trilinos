@@ -87,7 +87,6 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_iostream_helpers.hpp"
 
 // Teuchos includes
-#include "Teuchos_FILEstream.hpp"
 #include "Teuchos_Version.hpp"
 #include "Teuchos_NullIteratorTraits.hpp"
 #include "Teuchos_RCPDecl.hpp"

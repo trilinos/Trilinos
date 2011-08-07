@@ -68,7 +68,7 @@ int ex_put_names (int   exoid,
 {
   int status;
   int varid; 
-  size_t num_entity, i;
+  size_t num_entity;
   char errmsg[MAX_ERR_LENGTH];
 
   const char *vname = NULL;

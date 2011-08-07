@@ -9,7 +9,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   RowMatrixTransposer_UnitTests
   SOURCES
     RowMatrixTransposer_UnitTests
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetratestlib

@@ -31,7 +31,6 @@
 
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
-//#include "NumPyImporter.h"
 
 #include "PythonException.h"
 #ifdef HAVE_INTTYPES_H
@@ -44,6 +43,9 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
+
+namespace PyTrilinos
+{
 
 class Epetra_NumPyVector : public Epetra_Vector
 {
@@ -117,5 +119,7 @@ private:
   PyArrayObject   * array;
 
 };
+
+}  // Namespace PyTrilinos
 
 #endif

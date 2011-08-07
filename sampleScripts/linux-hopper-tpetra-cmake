@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# This configure worked for me (Kurtis Nusbaum <klnusbaum@gmail.com>) on 
+# NERSC's hopper machine as of 21/07/2011.
+
+if [ $# != 0 ] 
+then
+echo ""
+echo "NOTE: Before running this configure, I needed to run the "
+echo "following module commands. You might need to as well. "
+echo "module swap PrgEng-pgi PrgEnv-gnu"
+echo "module load git"
+echo "module load cmake"
+echo "This configure script is also designed for an \"out of source\""
+echo "build. You should create a build directory within your TRILINOS_HOME"
+echo "and run this script from in there."
+echo ""
+else
+cmake \
+-D MPI_CXX_COMPILER="CC" \
+-D MPI_C_COMPILER="cc" \
+-D MPI_Fortran_COMPILER="ftn" \
+-D Teuchos_ENABLE_STACKTRACE:BOOL=OFF \
+-D Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON \
+-D Trilinos_ENABLE_Tpetra:BOOL=ON \
+-D Tpetra_ENABLE_TESTS:BOOL=ON \
+-D Tpetra_ENABLE_EXAMPLES:BOOL=ON \
+-D Tpetra_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Teuchos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D CMAKE_INSTALL_PREFIX:PATH="$HOME/opt/Trilinos/tpetraEval" \
+-D BLAS_LIBRARY_DIRS="$LIBSCI_BASE_DIR/gnu/lib" \
+-D BLAS_LIBRARY_NAMES="sci" \
+-D LAPACK_LIBRARY_DIRS="$LIBSCI_BASE_DIR/gnu/lib" \
+-D LAPACK_LIBRARY_NAMES="sci" \
+-D CMAKE_CXX_FLAGS="-O3 -ffast-math -funroll-loops" \
+\
+..
+fi

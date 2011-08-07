@@ -34,7 +34,7 @@ namespace stk {
     }
 
     void TestLocalRefinerTri_N::
-    applyNodeRegistryFunctionForSubEntities(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    apply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
                 
@@ -95,11 +95,11 @@ namespace stk {
                       if (delta < 0) delta = -delta;
                       if ( delta > 4 && (node0.identifier() + node1.identifier() < 30))
                         {
-                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                         }
                       if ( (node0.identifier() + node1.identifier() > 20))
                         {
-                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd);
+                          (m_nodeRegistry ->* function)(element, needed_entity_ranks[ineed_ent], iSubDimOrd, true);
                         }
                     }
                 }
@@ -108,7 +108,7 @@ namespace stk {
         } // ineed_ent
     }
 
-    ElementUnrefineCollection TestLocalRefinerTri_N::buildTestUnrefList()
+    ElementUnrefineCollection TestLocalRefinerTri_N::buildTestUnrefineList()
     {
       ElementUnrefineCollection elements_to_unref;
 
