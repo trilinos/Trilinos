@@ -24,11 +24,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
      PyTrilinos TriKota Optika  # We don't have TPLs for these
      Sundance Stokhos # Currently have failures and nor currently needed by CASL
      TrilinosFramework # Has 11 failing tests for some reason so disabling for now
-     CASLRAVE # Does not build with GCC yet
      )
   SET(EXTRA_CONFIGURE_OPTIONS
     -DTrilinos_ENABLE_TriKota:BOOL=OFF
-    -DTrilinos_ENABLE_CASLRAVE=OFF
     # Allow user to override these by putting theirs at the bottom
     ${EXTRA_CONFIGURE_OPTIONS}
     )
