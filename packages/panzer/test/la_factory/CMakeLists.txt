@@ -11,3 +11,12 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
   NUM_MPI_PROCS 2
   )
+
+IF(${PACKAGE_NAME}_ENABLE_Stokhos)
+   PACKAGE_ADD_EXECUTABLE_AND_TEST(
+     tSGEpetraLinearObjFactory
+     SOURCES tSGEpetraLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+     COMM mpi
+     NUM_MPI_PROCS 2
+     )
+ENDIF()
