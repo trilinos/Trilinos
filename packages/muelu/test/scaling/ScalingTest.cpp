@@ -365,7 +365,11 @@ int main(int argc, char *argv[]) {
       X->putScalar( (SC) 0.0);
   
       H->PrintResidualHistory(true);
+    mtime[ctime]=M.getNewTimer("Fixed Point Solve");
+    mtime[ctime]->start();
       H->Iterate(*RHS,its,*X);
+    mtime[ctime]->stop();
+    ctime++;
   
       //X->norm2(norms);
       //*out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
