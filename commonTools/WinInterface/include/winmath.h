@@ -96,5 +96,88 @@ inline double drand48()
   return (double(rand()) / RAND_MAX);
 }
 
+float tgammaf(float z){
+  static unsigned int c = 9;
+  static float lanczos_coefficients[] = {1.000000000000000174663f,
+                                         5716.400188274341379136f,
+                                         -14815.30426768413909044f,
+                                         14291.49277657478554025f,
+                                         -6348.160217641458813289f,
+                                         1301.608286058321874105f,
+                                         -108.1767053514369634679f,
+                                         2.605696505611755827729f,
+                                         -0.7423452510201416151527e-2f,
+                                         0.5384136432509564062961e-7f,
+                                         -0.4023533141268236372067e-8f
+                                        };
+  float return_val = 0.0f;
+
+  z -= 1.0f;
+  float temp = z + c + 0.5f;
+  float A = lanczos_coefficients[0];
+  int i = 0;
+  for(i = 1; i < c+2; ++i){
+    A += lanczos_coefficients[i]/(z+i);
+  }
+  return_val = sqrt(2 * M_PI)* pow(temp, z + 0.5f) * exp(-temp) * A;
+
+  return return_val;
+}
+
+double tgamma(double z){
+  static unsigned int c = 9;
+  static double lanczos_coefficients[] = {1.000000000000000174663,
+                                         5716.400188274341379136,
+                                         -14815.30426768413909044,
+                                         14291.49277657478554025,
+                                         -6348.160217641458813289,
+                                         1301.608286058321874105,
+                                         -108.1767053514369634679,
+                                         2.605696505611755827729,
+                                         -0.7423452510201416151527e-2,
+                                         0.5384136432509564062961e-7,
+                                         -0.4023533141268236372067e-8
+                                        };
+  double return_val = 0.0;
+
+  z -= 1.0;
+  double temp = z + c + 0.5;
+  double A = lanczos_coefficients[0];
+  int i = 0;
+  for(i = 1; i < c+2; ++i){
+    A += lanczos_coefficients[i]/(z+i);
+  }
+  return_val = sqrt(2 * M_PI)* pow(temp, z + 0.5) * exp(-temp) * A;
+
+  return return_val;
+}
+
+long double tgammal(long double z){
+  static unsigned int c = 9;
+  static long double lanczos_coefficients[] = {1.000000000000000174663,
+                                         5716.400188274341379136,
+                                         -14815.30426768413909044,
+                                         14291.49277657478554025,
+                                         -6348.160217641458813289,
+                                         1301.608286058321874105,
+                                         -108.1767053514369634679,
+                                         2.605696505611755827729,
+                                         -0.7423452510201416151527e-2,
+                                         0.5384136432509564062961e-7,
+                                         -0.4023533141268236372067e-8
+                                        };
+  long double return_val = 0.0;
+
+  z -= 1.0;
+  long double temp = z + c + 0.5;
+  long double A = lanczos_coefficients[0];
+  int i = 0;
+  for(i = 1; i < c+2; ++i){
+    A += lanczos_coefficients[i]/(z+i);
+  }
+  return_val = sqrt(2 * M_PI)* pow(temp, z + 0.5) * exp(-temp) * A;
+
+  return return_val;
+}
 
 #endif
