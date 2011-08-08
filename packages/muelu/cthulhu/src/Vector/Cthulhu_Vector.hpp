@@ -121,37 +121,6 @@ namespace Cthulhu {
 //     //! Advanced constructor accepting parallel buffer view.
 //     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) = 0;
 
-
-// Implements DistObjectInterface
-    // TODO: create a real Cthulhu::DistObject ?
-    
-    //! @name Import/Export Methods
-    //@{ 
-
-    //! Import
-//     virtual void doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
-//                           const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
-
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doImport; // overloading, not hiding
-    virtual void doImport(const Vector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
-                          const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
-
-//     //! Export (using an Importer)
-//     virtual void doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest,
-//                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
-
-    //! Export (using an Importer)
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport; // overloading, not hiding
-    virtual void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
-                  const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
-
-    //! Export (using an Exporter)
-    //    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport; // overloading, not hiding
-    virtual void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
-                  const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) = 0;
-
-    //@}
-
   }; // class Vector
 
 #ifdef CTHULHU_NOT_IMPLEMENTED

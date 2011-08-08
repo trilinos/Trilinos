@@ -482,7 +482,13 @@ namespace Cthulhu {
 
     RCP< Epetra_IntVector > getEpetra_IntVector() const { CTHULHU_DEBUG_ME; return vec_; }
 
-    // From DistObject
+    const RCP<const Comm<int> > getComm() const {
+      CTHULHU_DEBUG_ME; 
+      
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO getComm Epetra MultiVector not implemented");
+    }
+
+    // Implementing DistObject
     const Teuchos::RCP<const Map<int,int> > getMap() const { 
       CTHULHU_DEBUG_ME; 
       
@@ -490,17 +496,7 @@ namespace Cthulhu {
       return rcp ( new Cthulhu::EpetraMap(map) );
     }
 
-    const RCP<const Comm<int> > getComm() const {
-      CTHULHU_DEBUG_ME; 
-      
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO getComm Epetra MultiVector not implemented");
-    }
-
-    // end of "Implementing Epetra interface"
-
-    // Implementing DistObject
-    
-    inline void doImport(const Vector<int, int, int> &source, 
+    inline void doImport(const DistObject<int, int, int> &source, 
                          const Import<int, int> &importer, CombineMode CM) {
       CTHULHU_DEBUG_ME;
 
@@ -512,7 +508,7 @@ namespace Cthulhu {
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
-    void doExport(const Vector<int, int, int> &dest,
+    void doExport(const DistObject<int, int, int> &dest,
                   const Import<int, int>& importer, CombineMode CM) {
       CTHULHU_DEBUG_ME;
 
@@ -524,7 +520,14 @@ namespace Cthulhu {
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
-    void doExport(const Vector<int, int, int> &dest,
+    virtual void doImport(const DistObject<int, int, int> &source,
+                          const Export<int, int>& exporter, CombineMode CM) {
+      
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+    }
+
+
+    void doExport(const DistObject<int, int, int> &dest,
                   const Export<int, int>& exporter, CombineMode CM) {
       CTHULHU_DEBUG_ME;
 
@@ -535,27 +538,6 @@ namespace Cthulhu {
       int err = vec_->Export(v, *tExporter.getEpetra_Export(), Cthulhu2Epetra_CombineMode(CM)); 
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
-
-
-    inline void doImport(const MultiVector<int, int, int> &source, 
-                         const Import<int, int> &importer, CombineMode CM) {
-
-      TEST_FOR_EXCEPTION(1, std::runtime_error, "NOT IMPLEMENTED");
-    }
-
-    void doExport(const MultiVector<int, int, int> &dest,
-                  const Import<int, int>& importer, CombineMode CM) {
- 
-      TEST_FOR_EXCEPTION(1, std::runtime_error, "NOT IMPLEMENTED");
-    }
-
-
-    void doExport(const MultiVector<int, int, int> &dest,
-                  const Export<int, int>& exporter, CombineMode CM) {
- 
-      TEST_FOR_EXCEPTION(1, std::runtime_error, "NOT IMPLEMENTED");
-    }
-
 
   private:
     RCP< Epetra_IntVector > vec_;

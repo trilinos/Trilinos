@@ -10,7 +10,7 @@
 #include <Kokkos_DefaultArithmetic.hpp>
 
 #include "Cthulhu_ConfigDefs.hpp"
-//#include "Cthulhu_DistObject.hpp" TODO
+#include "Cthulhu_DistObject.hpp"
 //#include "Cthulhu_MultiVector.hpp"
 #include "Cthulhu_Map.hpp"
 
@@ -34,7 +34,7 @@ namespace Cthulhu {
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
   template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class MultiVector : public Teuchos::Describable { //: public DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> { // TODO
+  class MultiVector : public DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
   public:
 
@@ -308,38 +308,6 @@ namespace Cthulhu {
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
-
-    //@}
-
-    // From DistObject:
-
-    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const =0;
-    //virtual const RCP<const Comm<int> > getComm() const = 0; // not implemented in Tpetra ??
-
-    // Implements DistObjectInterface
-    // TODO: create a real Cthulhu::DistObject ?
-    
-    //! @name Import/Export Methods
-    //@{ 
-    
-    //! Import
-    //     virtual void doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
-    //                           const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
-
-    virtual void doImport(const MultiVector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
-                          const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
-    
-    //     //! Export (using an Importer)
-    //     virtual void doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest,
-    //                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
-    
-    //! Export (using an Importer)
-    virtual void doExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
-                  const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
-
-    //! Export (using an Exporter)
-    virtual void doExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
-                  const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) = 0;
 
     //@}
 
