@@ -77,6 +77,7 @@ namespace Cthulhu {
     inline const viewLabel_t SwitchToDefaultView() { return SwitchToView(GetDefaultViewLabel()); }
 
     inline const viewLabel_t & GetDefaultViewLabel() const { return defaultViewLabel_; }
+
     inline const viewLabel_t & GetCurrentViewLabel() const { return currentViewLabel_; }
 
     //@}
@@ -147,6 +148,7 @@ namespace Cthulhu {
     }
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
+    //! This might be <tt>null</tt> until fillComplete() is called.
     inline const RCP<const Map> getColMap() const { return getColMap(GetCurrentViewLabel()); }
 
     //! \brief Returns the Map that describes the column distribution in this matrix.

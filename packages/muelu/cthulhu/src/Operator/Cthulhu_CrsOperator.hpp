@@ -37,6 +37,7 @@ class CrsOperator : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node,Local
 
   typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+  typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
   typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #ifdef HAVE_CTHULHU_TPETRA
   typedef Cthulhu::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
@@ -55,13 +56,8 @@ public:
     // Set matrix data
     matrixData_ = CrsMatrixFactory::Build(rowMap, maxNumEntriesPerRow, pftype);
 
-    // Create default view
-    this->defaultViewLabel_ = "point";
-    CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());    
-    
-    // Set current view
-    this->currentViewLabel_ = this->GetDefaultViewLabel();
-    this->SwitchToDefaultView(); // JG: this line is useless (for the moment).
+    // Default view
+    CreateDefaultView();
   }
 
   CrsOperator(RCP<CrsMatrix> &matrix)
@@ -69,13 +65,8 @@ public:
     // Set matrix data
     matrixData_ = matrix;
 
-    // Create default view
-    this->defaultViewLabel_ = "point";
-    CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());    
-    
-    // Set current view
-    this->currentViewLabel_ = this->GetDefaultViewLabel();
-    this->SwitchToDefaultView(); // JG: this line is useless (for the moment).
+    // Default view
+    CreateDefaultView();
   }
   
   //! Destructor
@@ -121,6 +112,10 @@ public:
     */ 
   inline void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, OptimizeOption os = DoOptimizeStorage) {
     matrixData_->fillComplete(domainMap, rangeMap, os);
+
+    // Update default view with the colMap
+    // because colMap can be <tt>null</tt> until fillComplete() is called.
+    Operator::operatorViewTable_.get(Operator::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
   }
 
   /*! \brief Signal that data entry is complete. 
@@ -139,6 +134,10 @@ public:
   //TODO : Get ride of "Tpetra"::OptimizeOption
   inline void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) {
     matrixData_->fillComplete(os);
+
+    // Update default view with the colMap
+    // because colMap can be <tt>null</tt> until fillComplete() is called.
+    Operator::operatorViewTable_.get(Operator::GetDefaultViewLabel())->SetColMap(matrixData_->getColMap());
   }
 
   //@}
@@ -175,50 +174,50 @@ public:
   //! Returns the current number of entries on this node in the specified local row.
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
   inline size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
-    return  matrixData_->getNumEntriesInLocalRow(localRow);
+    return matrixData_->getNumEntriesInLocalRow(localRow);
   }
 
   //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
   /** Undefined if isFillActive().
    */
   inline global_size_t getGlobalNumDiags() const {
-    return  matrixData_->getGlobalNumDiags();
+    return matrixData_->getGlobalNumDiags();
   }
 
   //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
   /** Undefined if isFillActive().
    */
   inline size_t getNodeNumDiags() const {
-    return  matrixData_->getNodeNumDiags();
+    return matrixData_->getNodeNumDiags();
   }
 
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   /** Undefined if isFillActive().
    */
   inline size_t getGlobalMaxNumRowEntries() const {
-    return  matrixData_->getGlobalMaxNumRowEntries();
+    return matrixData_->getGlobalMaxNumRowEntries();
   }
 
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   /** Undefined if isFillActive().
    */
   inline size_t getNodeMaxNumRowEntries() const {
-    return  matrixData_->getNodeMaxNumRowEntries();
+    return matrixData_->getNodeMaxNumRowEntries();
   }
 
   //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
   inline bool isLocallyIndexed() const {
-    return  matrixData_->isLocallyIndexed();
+    return matrixData_->isLocallyIndexed();
   }
 
   //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
   inline bool isGloballyIndexed() const {
-    return  matrixData_->isGloballyIndexed();
+    return matrixData_->isGloballyIndexed();
   }
 
   //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
   inline bool isFillComplete() const {
-    return  matrixData_->isFillComplete();
+    return matrixData_->isFillComplete();
   }
 
   //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
@@ -362,6 +361,21 @@ public:
 
   //@}
   
+
+private:
+
+  // Default view is created after fillComplete()
+  // Because ColMap might not be available before fillComplete(). 
+  void CreateDefaultView() {
+    
+    // Create default view
+    this->defaultViewLabel_ = "point";
+    CreateView(this->GetDefaultViewLabel(), matrixData_->getRowMap(), matrixData_->getColMap());    
+    
+    // Set current view
+    this->currentViewLabel_ = this->GetDefaultViewLabel();
+  }
+
 private:
   RCP<CrsMatrix> matrixData_;
 

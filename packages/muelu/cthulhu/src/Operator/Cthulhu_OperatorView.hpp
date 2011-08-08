@@ -43,11 +43,16 @@ namespace Cthulhu {
     //! \brief Returns the Map that describes the column distribution in this matrix.
     inline const RCP<const Map> & GetColMap() const { return colMap_; }
   
+    //! Returns the Map that describes the row distribution in this matrix.
+    inline void SetRowMap(const RCP<const Map> & rowMap) { rowMap_ = rowMap; }
+  
+    //! \brief Set the Map that describes the column distribution in this matrix.
+    inline void SetColMap(const RCP<const Map> & colMap) { colMap_ = colMap; }
     //@}
   
   private:
-    const RCP<const Map> rowMap_;
-    const RCP<const Map> colMap_;
+    RCP<const Map> rowMap_;
+    RCP<const Map> colMap_;
 
   }; // class OperatorView
 

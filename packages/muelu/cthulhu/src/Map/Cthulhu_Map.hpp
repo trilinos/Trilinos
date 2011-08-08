@@ -143,3 +143,6 @@ namespace Cthulhu {
 
 #define CTHULHU_MAP_SHORT
 #endif // CTHULHU_MAP_DECL_HPP
+
+
+//TODO: operator == to test if the underlying map is the same. Because two different Cthulhu:Map may wrap the same Epetra::Map
