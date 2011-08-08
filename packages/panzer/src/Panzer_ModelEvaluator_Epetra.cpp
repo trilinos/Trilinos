@@ -48,6 +48,11 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
   ghostedContainer_ = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->ghostedContainer_);
   container_ = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs_->container_);
 
+  lof_->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X |
+                                   panzer::EpetraLinearObjContainer::DxDt |
+                                   panzer::EpetraLinearObjContainer::F |
+                                   panzer::EpetraLinearObjContainer::Mat, *ghostedContainer_); 
+
   isInitialized_ = true;
 }
 

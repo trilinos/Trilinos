@@ -124,8 +124,9 @@ namespace panzer {
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
  
-    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
+    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
           = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
@@ -150,16 +151,19 @@ namespace panzer {
     panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
     ae_tm.buildObjects(builder);
 
-    // RCP<Epetra_Map> ghosted_map = linObjFactory->getGhostedMap();
-    // RCP<Epetra_CrsGraph> ghosted_graph = linObjFactory->getGhostedGraph();
-    
-    panzer::AssemblyEngineInArgs input(
-             linObjFactory->buildGhostedLinearObjContainer(),
-             linObjFactory->buildLinearObjContainer());
-    // input.x = rcp(new Epetra_Vector(*ghosted_map));
-    // input.dxdt = rcp(new Epetra_Vector(*ghosted_map));
-    // input.f = rcp(new Epetra_Vector(*ghosted_map));
-    // input.j = rcp(new Epetra_CrsMatrix(Copy, *ghosted_graph));
+    RCP<panzer::EpetraLinearObjContainer> eGhosted 
+       = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildGhostedLinearObjContainer());
+    RCP<panzer::EpetraLinearObjContainer> eGlobal
+       = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildLinearObjContainer());
+    eLinObjFactory->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X |
+                                               panzer::EpetraLinearObjContainer::DxDt |
+                                               panzer::EpetraLinearObjContainer::F |
+                                               panzer::EpetraLinearObjContainer::Mat,*eGhosted);
+    eLinObjFactory->initializeContainer(panzer::EpetraLinearObjContainer::X |
+                                        panzer::EpetraLinearObjContainer::DxDt |
+                                        panzer::EpetraLinearObjContainer::F |
+                                        panzer::EpetraLinearObjContainer::Mat,*eGlobal);
+    panzer::AssemblyEngineInArgs input(eGhosted,eGlobal);
 
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);

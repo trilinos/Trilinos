@@ -14,7 +14,6 @@
 
 // Scalar types
 #include "Sacado.hpp"
-#include "Sacado_PCE_OrthogPoly.hpp"
 
 // traits Base Class
 #include "Phalanx_Traits_Base.hpp"

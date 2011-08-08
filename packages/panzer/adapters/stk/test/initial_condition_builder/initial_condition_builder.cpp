@@ -154,6 +154,7 @@ namespace panzer {
 
     
     Teuchos::RCP<panzer::LinearObjContainer> loc = elof->buildLinearObjContainer();
+    elof->initializeContainer(panzer::EpetraLinearObjContainer::X,*loc);
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
     eloc->x->PutScalar(0.0);
     panzer::evaluateInitialCondition(fmb.getWorksets(), phx_ic_field_managers, loc, 0.0);

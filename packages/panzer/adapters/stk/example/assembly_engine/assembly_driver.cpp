@@ -192,8 +192,9 @@ int main(int argc,char * argv[])
          = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
 
    // construct some linear algebra object, build object to pass to evaluators
-   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
+   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
    // setup field manager build
    /////////////////////////////////////////////////////////////
@@ -235,6 +236,14 @@ int main(int argc,char * argv[])
          = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildGhostedLinearObjContainer());
    RCP<panzer::EpetraLinearObjContainer> container 
          = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(linObjFactory->buildLinearObjContainer());
+   eLinObjFactory->initializeContainer(panzer::EpetraLinearObjContainer::X |
+                                       panzer::EpetraLinearObjContainer::DxDt |
+                                       panzer::EpetraLinearObjContainer::F |
+                                       panzer::EpetraLinearObjContainer::Mat,*container);
+   eLinObjFactory->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X |
+                                              panzer::EpetraLinearObjContainer::DxDt |
+                                              panzer::EpetraLinearObjContainer::F |
+                                              panzer::EpetraLinearObjContainer::Mat,*ghostCont);
 
    panzer::AssemblyEngineInArgs input(ghostCont,container);
 
