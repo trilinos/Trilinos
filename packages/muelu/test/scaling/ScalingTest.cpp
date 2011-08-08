@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_MUELU_AMESOS2
       if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
       Teuchos::ParameterList paramList; //unused
-      coarseProto = rcp( new Amesos2Smoother("Superlu", paramList) );
+      coarseProto = rcp( new Amesos2Smoother("amesos2_superlu", paramList) );
 #else
       std::cout  << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
       return EXIT_FAILURE;
