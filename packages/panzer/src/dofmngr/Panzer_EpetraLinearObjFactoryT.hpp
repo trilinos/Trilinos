@@ -46,10 +46,10 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildLinearObjContainer() const
 {
    Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer);
-   container->x    = getEpetraVector();
-   container->dxdt = getEpetraVector();
-   container->f    = getEpetraVector();
-   container->A    = getEpetraMatrix();
+   // container->x    = getEpetraVector();
+   // container->dxdt = getEpetraVector();
+   // container->f    = getEpetraVector();
+   // container->A    = getEpetraMatrix();
 
    return container;
 }
@@ -58,10 +58,10 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildGhostedLinearObjContainer() const
 {
    Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer);
-   container->x    = getGhostedEpetraVector();
-   container->dxdt = getGhostedEpetraVector();
-   container->f    = getGhostedEpetraVector();
-   container->A    = getGhostedEpetraMatrix();
+   // container->x    = getGhostedEpetraVector();
+   // container->dxdt = getGhostedEpetraVector();
+   // container->f    = getGhostedEpetraVector();
+   // container->A    = getGhostedEpetraMatrix();
 
    return container;
 }
@@ -131,6 +131,68 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostEpetraVector(con
    RCP<Epetra_Import> importer = getGhostedImport();
    out.PutScalar(0.0);
    out.Import(in,*importer,Insert);
+}
+
+// Functions for initalizing a container
+/////////////////////////////////////////////////////////////////////
+
+template <typename Traits,typename LocalOrdinalT>
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeContainer(int mem,LinearObjContainer & loc) const
+{
+   EpetraLinearObjContainer & eloc = Teuchos::dyn_cast<EpetraLinearObjContainer>(loc);
+   initializeContainer(mem,eloc);
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeContainer(int mem,EpetraLinearObjContainer & loc) const
+{
+   typedef EpetraLinearObjContainer ELOC;
+
+   loc.clear();
+
+   if((mem & ELOC::X) == ELOC::X)
+      loc.x = getEpetraVector();
+
+   if((mem & ELOC::DxDt) == ELOC::DxDt)
+      loc.dxdt = getEpetraVector();
+    
+   if((mem & ELOC::F) == ELOC::F)
+      loc.f = getEpetraVector();
+
+   if((mem & ELOC::Mat) == ELOC::Mat)
+      loc.A = getEpetraMatrix();
+
+   // container->x    = getGhostedEpetraVector();
+   // container->dxdt = getGhostedEpetraVector();
+   // container->f    = getGhostedEpetraVector();
+   // container->A    = getGhostedEpetraMatrix();
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeGhostedContainer(int mem,LinearObjContainer & loc) const
+{
+   EpetraLinearObjContainer & eloc = Teuchos::dyn_cast<EpetraLinearObjContainer>(loc);
+   initializeGhostedContainer(mem,eloc);
+}
+
+template <typename Traits,typename LocalOrdinalT>
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeGhostedContainer(int mem,EpetraLinearObjContainer & loc) const
+{
+   typedef EpetraLinearObjContainer ELOC;
+
+   loc.clear();
+
+   if((mem & ELOC::X) == ELOC::X)
+      loc.x = getGhostedEpetraVector();
+
+   if((mem & ELOC::DxDt) == ELOC::DxDt)
+      loc.dxdt = getGhostedEpetraVector();
+    
+   if((mem & ELOC::F) == ELOC::F)
+      loc.f = getGhostedEpetraVector();
+
+   if((mem & ELOC::Mat) == ELOC::Mat)
+      loc.A = getGhostedEpetraMatrix();
 }
 
 // "Get" functions

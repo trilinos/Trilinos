@@ -72,6 +72,36 @@ public:
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const
    { return Teuchos::rcp(new ScatterInitialCondition_Epetra<EvalT,Traits,LocalOrdinalT,int>(gidProvider_)); }
 
+/*************** Generic helper functions for container setup *******************/
+   
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   void initializeContainer(int,LinearObjContainer & loc) const;
+
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   void initializeContainer(int mem,EpetraLinearObjContainer & loc) const;
+
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   void initializeGhostedContainer(int,LinearObjContainer & loc) const;
+
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   void initializeGhostedContainer(int mem,EpetraLinearObjContainer & loc) const;
+
 /*************** Epetra based methods *******************/
 
    //! get the map from the matrix

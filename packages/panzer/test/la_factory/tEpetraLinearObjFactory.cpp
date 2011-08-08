@@ -398,4 +398,251 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
    }
 }
 
+TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContianer)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   #else
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+   #endif
+
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcp_dynamic_cast;
+
+   int myRank = eComm->MyPID();
+   int numProc = eComm->NumProc();
+ 
+   typedef EpetraLinearObjContainer ELOC;
+
+   RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
+         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
+
+   std::vector<int> ownedIndices, ownedAndSharedIndices;
+   indexer->getOwnedIndices(ownedIndices);
+   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
+ 
+   // setup factory
+   Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > la_factory
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
+
+   RCP<LinearObjContainer> container = la_factory->buildLinearObjContainer();
+   RCP<LinearObjContainer> ghostedContainer = la_factory->buildGhostedLinearObjContainer();
+
+   RCP<EpetraLinearObjContainer> eContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(container);
+   RCP<EpetraLinearObjContainer> eGhostedContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(ghostedContainer);
+
+   // tests global initialize
+   {
+      // Generic code
+      /////////////////////////////////////////////////////////////
+   
+      // test individial initializers
+      la_factory->initializeContainer(ELOC::X,*container);
+      TEST_ASSERT(eContainer->x!=Teuchos::null);
+      TEST_EQUALITY(eContainer->dxdt, Teuchos::null)
+      TEST_EQUALITY(eContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eContainer->A,    Teuchos::null)
+      TEST_EQUALITY(eContainer->x->MyLength(),(int) ownedIndices.size());
+   
+      la_factory->initializeContainer(ELOC::DxDt,*container);
+      TEST_EQUALITY(eContainer->x,    Teuchos::null)
+      TEST_ASSERT(eContainer->dxdt!=Teuchos::null);
+      TEST_EQUALITY(eContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eContainer->A,    Teuchos::null)
+      TEST_EQUALITY(eContainer->dxdt->MyLength(),(int) ownedIndices.size());
+   
+      la_factory->initializeContainer(ELOC::F,*container);
+      TEST_EQUALITY(eContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eContainer->dxdt, Teuchos::null)
+      TEST_ASSERT(eContainer->f!=Teuchos::null);
+      TEST_EQUALITY(eContainer->A,    Teuchos::null)
+      TEST_EQUALITY(eContainer->f->MyLength(),(int) ownedIndices.size());
+   
+      la_factory->initializeContainer(ELOC::Mat,*container);
+      TEST_EQUALITY(eContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eContainer->dxdt, Teuchos::null)
+      TEST_EQUALITY(eContainer->f,    Teuchos::null)
+      TEST_ASSERT(eContainer->A!=Teuchos::null);
+      TEST_EQUALITY(eContainer->A->NumMyRows(),(int) ownedIndices.size());
+   
+      // jacobian and residual vector output
+      la_factory->initializeContainer(ELOC::F | ELOC::Mat,*container);
+      TEST_EQUALITY(eContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eContainer->dxdt, Teuchos::null)
+      TEST_ASSERT(eContainer->f!=Teuchos::null);
+      TEST_ASSERT(eContainer->A!=Teuchos::null);
+   
+      // x and time dertivative input
+      la_factory->initializeContainer(ELOC::X | ELOC::DxDt,*container);
+      TEST_ASSERT(eContainer->x!=Teuchos::null);
+      TEST_ASSERT(eContainer->dxdt!=Teuchos::null);
+      TEST_EQUALITY(eContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eContainer->A,    Teuchos::null)
+   
+      // everything
+      la_factory->initializeContainer(ELOC::X | ELOC::DxDt | ELOC::F | ELOC::Mat,*container);
+      TEST_ASSERT(eContainer->x!=Teuchos::null);
+      TEST_ASSERT(eContainer->dxdt!=Teuchos::null);
+      TEST_ASSERT(eContainer->f!=Teuchos::null);
+      TEST_ASSERT(eContainer->A!=Teuchos::null);
+   
+      // Epetra specific code
+      /////////////////////////////////////////////////////////////
+   
+      // test individial initializers
+      la_factory->initializeContainer(ELOC::X,*eContainer);
+      TEST_ASSERT(eContainer->x!=Teuchos::null);
+      TEST_EQUALITY(eContainer->dxdt, Teuchos::null)
+      TEST_EQUALITY(eContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eContainer->A,    Teuchos::null)
+   
+      la_factory->initializeContainer(ELOC::DxDt,*eContainer);
+      TEST_EQUALITY(eContainer->x,    Teuchos::null)
+      TEST_ASSERT(eContainer->dxdt!=Teuchos::null);
+      TEST_EQUALITY(eContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eContainer->A,    Teuchos::null)
+   
+      la_factory->initializeContainer(ELOC::F,*eContainer);
+      TEST_EQUALITY(eContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eContainer->dxdt, Teuchos::null)
+      TEST_ASSERT(eContainer->f!=Teuchos::null);
+      TEST_EQUALITY(eContainer->A,    Teuchos::null)
+   
+      la_factory->initializeContainer(ELOC::Mat,*eContainer);
+      TEST_EQUALITY(eContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eContainer->dxdt, Teuchos::null)
+      TEST_EQUALITY(eContainer->f,    Teuchos::null)
+      TEST_ASSERT(eContainer->A!=Teuchos::null);
+   
+      // jacobian and residual vector output
+      la_factory->initializeContainer(ELOC::F | ELOC::Mat,*eContainer);
+      TEST_EQUALITY(eContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eContainer->dxdt, Teuchos::null)
+      TEST_ASSERT(eContainer->f!=Teuchos::null);
+      TEST_ASSERT(eContainer->A!=Teuchos::null);
+   
+      // x and time dertivative input
+      la_factory->initializeContainer(ELOC::X | ELOC::DxDt,*eContainer);
+      TEST_ASSERT(eContainer->x!=Teuchos::null);
+      TEST_ASSERT(eContainer->dxdt!=Teuchos::null);
+      TEST_EQUALITY(eContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eContainer->A,    Teuchos::null)
+   
+      // everything
+      la_factory->initializeContainer(ELOC::X | ELOC::DxDt | ELOC::F | ELOC::Mat,*eContainer);
+      TEST_ASSERT(eContainer->x!=Teuchos::null);
+      TEST_ASSERT(eContainer->dxdt!=Teuchos::null);
+      TEST_ASSERT(eContainer->f!=Teuchos::null);
+      TEST_ASSERT(eContainer->A!=Teuchos::null);
+   }
+
+   // tests ghosted initialize
+   {
+      // Generic code
+      /////////////////////////////////////////////////////////////
+   
+      // test individial initializers
+      la_factory->initializeGhostedContainer(ELOC::X,*ghostedContainer);
+      TEST_ASSERT(eGhostedContainer->x!=Teuchos::null);
+      TEST_EQUALITY(eGhostedContainer->dxdt, Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->A,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->x->MyLength(),(int) ownedAndSharedIndices.size());
+   
+      la_factory->initializeGhostedContainer(ELOC::DxDt,*ghostedContainer);
+      TEST_EQUALITY(eGhostedContainer->x,    Teuchos::null)
+      TEST_ASSERT(eGhostedContainer->dxdt!=Teuchos::null);
+      TEST_EQUALITY(eGhostedContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->A,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->dxdt->MyLength(),(int) ownedAndSharedIndices.size());
+   
+      la_factory->initializeGhostedContainer(ELOC::F,*ghostedContainer);
+      TEST_EQUALITY(eGhostedContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->dxdt, Teuchos::null)
+      TEST_ASSERT(eGhostedContainer->f!=Teuchos::null);
+      TEST_EQUALITY(eGhostedContainer->A,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->f->MyLength(),(int) ownedAndSharedIndices.size());
+   
+      la_factory->initializeGhostedContainer(ELOC::Mat,*ghostedContainer);
+      TEST_EQUALITY(eGhostedContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->dxdt, Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->f,    Teuchos::null)
+      TEST_ASSERT(eGhostedContainer->A!=Teuchos::null);
+      TEST_EQUALITY(eGhostedContainer->A->NumMyRows(),(int) ownedAndSharedIndices.size());
+   
+      // jacobian and residual vector output
+      la_factory->initializeGhostedContainer(ELOC::F | ELOC::Mat,*ghostedContainer);
+      TEST_EQUALITY(eGhostedContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->dxdt, Teuchos::null)
+      TEST_ASSERT(eGhostedContainer->f!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->A!=Teuchos::null);
+   
+      // x and time dertivative input
+      la_factory->initializeGhostedContainer(ELOC::X | ELOC::DxDt,*ghostedContainer);
+      TEST_ASSERT(eGhostedContainer->x!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->dxdt!=Teuchos::null);
+      TEST_EQUALITY(eGhostedContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->A,    Teuchos::null)
+   
+      // everything
+      la_factory->initializeGhostedContainer(ELOC::X | ELOC::DxDt | ELOC::F | ELOC::Mat,*ghostedContainer);
+      TEST_ASSERT(eGhostedContainer->x!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->dxdt!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->f!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->A!=Teuchos::null);
+   
+      // Epetra specific code
+      /////////////////////////////////////////////////////////////
+   
+      // test individial initializers
+      la_factory->initializeGhostedContainer(ELOC::X,*eGhostedContainer);
+      TEST_ASSERT(eGhostedContainer->x!=Teuchos::null);
+      TEST_EQUALITY(eGhostedContainer->dxdt, Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->A,    Teuchos::null)
+   
+      la_factory->initializeGhostedContainer(ELOC::DxDt,*eGhostedContainer);
+      TEST_EQUALITY(eGhostedContainer->x,    Teuchos::null)
+      TEST_ASSERT(eGhostedContainer->dxdt!=Teuchos::null);
+      TEST_EQUALITY(eGhostedContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->A,    Teuchos::null)
+   
+      la_factory->initializeGhostedContainer(ELOC::F,*eGhostedContainer);
+      TEST_EQUALITY(eGhostedContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->dxdt, Teuchos::null)
+      TEST_ASSERT(eGhostedContainer->f!=Teuchos::null);
+      TEST_EQUALITY(eGhostedContainer->A,    Teuchos::null)
+   
+      la_factory->initializeGhostedContainer(ELOC::Mat,*eGhostedContainer);
+      TEST_EQUALITY(eGhostedContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->dxdt, Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->f,    Teuchos::null)
+      TEST_ASSERT(eGhostedContainer->A!=Teuchos::null);
+   
+      // jacobian and residual vector output
+      la_factory->initializeGhostedContainer(ELOC::F | ELOC::Mat,*eGhostedContainer);
+      TEST_EQUALITY(eGhostedContainer->x,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->dxdt, Teuchos::null)
+      TEST_ASSERT(eGhostedContainer->f!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->A!=Teuchos::null);
+   
+      // x and time dertivative input
+      la_factory->initializeGhostedContainer(ELOC::X | ELOC::DxDt,*eGhostedContainer);
+      TEST_ASSERT(eGhostedContainer->x!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->dxdt!=Teuchos::null);
+      TEST_EQUALITY(eGhostedContainer->f,    Teuchos::null)
+      TEST_EQUALITY(eGhostedContainer->A,    Teuchos::null)
+   
+      // everything
+      la_factory->initializeGhostedContainer(ELOC::X | ELOC::DxDt | ELOC::F | ELOC::Mat,*eGhostedContainer);
+      TEST_ASSERT(eGhostedContainer->x!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->dxdt!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->f!=Teuchos::null);
+      TEST_ASSERT(eGhostedContainer->A!=Teuchos::null);
+   }
+
+}
+
 }

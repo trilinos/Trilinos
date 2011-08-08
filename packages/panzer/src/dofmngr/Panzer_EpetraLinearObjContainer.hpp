@@ -17,6 +17,7 @@ namespace panzer {
 
 class EpetraLinearObjContainer : public LinearObjContainer {
 public:
+   typedef enum { X=0x1, DxDt=0x2, F=0x4, Mat=0x8} Members;
 
    virtual void initialize() 
    {
@@ -24,6 +25,15 @@ public:
       if(dxdt!=Teuchos::null) dxdt->PutScalar(0.0);
       if(f!=Teuchos::null) f->PutScalar(0.0);
       if(A!=Teuchos::null) A->PutScalar(0.0);
+   }
+
+   //! Wipe out stored data.
+   void clear()
+   {
+      x = Teuchos::null;
+      dxdt = Teuchos::null;
+      f = Teuchos::null;
+      A = Teuchos::null;
    }
    
    Teuchos::RCP<Epetra_Vector> x, dxdt, f;
