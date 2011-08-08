@@ -1,5 +1,4 @@
 #include"Isorropia_EpetraMatcher.hpp"
-using namespace std;
 
 int main(int argc, char** argv) {
 
@@ -40,7 +39,7 @@ int main(int argc, char** argv) {
 		
 		Teuchos::ParameterList paramlist;
 		paramlist.set(argv[2],4);
-		Isorropia_EpetraMatcher pm(matrixPtr,paramlist);
+		Isorropia::Epetra::Isorropia_EpetraMatcher pm(matrixPtr,paramlist);
 		pm.match();
 	}
 	else

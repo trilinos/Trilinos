@@ -61,7 +61,8 @@ USA
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
-namespace std{
+namespace Isorropia {
+namespace Epetra {
 class Isorropia_EpetraMatcher {
 private:
     int* mateU_;
@@ -77,31 +78,15 @@ private:
     double *CRS_vals_;
     bool finish_;
     int U_,V_,E_,avgDegU_,k_star_,icm_,BFSInd_,numThread_,Qst_,Qend_,matched_,choice_;
+   const Epetra_CrsMatrix *A_;
 
 #ifdef ISORROPIA_HAVE_OMP
     omp_lock_t *scannedV_;
 #endif
 
-
-public:
-    /// Interface Functions
-    Isorropia_EpetraMatcher(const Epetra_CrsMatrix*, const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
-    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
-    Isorropia_EpetraMatcher(const Epetra_CrsGraph *,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
-    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
-    void extractRowPermutationCopy(int, int&, int* ) const;
-    void extractColumnPermutationCopy(int, int&, int*) const;
-    void getMatchedEdges(int,int&,int*) const;
-    int getNumberOfMatchedVertices();
-    Epetra_Map* getPermutedRowMap();
-    Epetra_Map* getPermutedColumnMap();
-
-    virtual ~Isorropia_EpetraMatcher();
-
-    //Matching Functions
     void delete_matched_v();
     void filler();
-    int match();
+    
     int match_dfs();
     int match_hk();
     int construct_layered_graph();
@@ -111,7 +96,25 @@ public:
     int dfs_augment();
     int augment_matching(int);
     int DW_phase();
+
+public:
+    /// Interface Functions
+    Isorropia_EpetraMatcher(const Epetra_CrsMatrix*, const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Isorropia_EpetraMatcher(const Epetra_CrsGraph *,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    void extractRowPermutationCopy(int, int&, int* ) const;
+    void extractColumnPermutationCopy(int, int&, int*) const;
+    int getNumberOfMatchedVertices();
+    Epetra_Map* getPermutedRowMap();
+    Epetra_Map* getPermutedColumnMap();
+    int match();
+    virtual ~Isorropia_EpetraMatcher();
+
+    //Matching Functions
+    
 };
-} //namespace std
+}
+}
 #endif
 
