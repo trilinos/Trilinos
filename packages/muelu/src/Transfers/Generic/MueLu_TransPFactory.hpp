@@ -74,7 +74,7 @@ namespace MueLu {
       //RCP<Operator> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
       //      RCP<Operator> R = Utils::TwoMatrixMultiply(I,false,P,true);
 
-      RCP<Operator> R= Utils::Transpose(P,true);
+      RCP<Operator> R= Utils2<SC,LO,GO>::Transpose(P,true);
 
       coarseLevel.SetR(R);
 

@@ -629,67 +629,6 @@ namespace MueLu {
      comm->barrier();
    } //PauseForDebugger
 
-    /*! @brief Transpose a Cthulhu::Operator
-
-      Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
-      In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
-    */
-
-   static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
-   {
-     string TorE = "epetra";
-     RCP<Epetra_CrsMatrix> epetraOp;
-     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
-     try {
-       epetraOp = Op2NonConstEpetraCrs(Op);
-     }
-     catch (...) {
-       TorE = "tpetra";
-     }
-
-     if (TorE=="tpetra") {
-       try {
-         tpetraOp = Op2TpetraCrs(Op);
-       }
-       catch (...) {
-         throw(Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices"));
-       }
-     } //if
-
-     if (TorE == "tpetra") {
-       //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
-       //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
-       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=simple_Transpose(tpetraOp);
-       RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
-       RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
-       RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
-       return AAAA;
-
-     } else {
-       //epetra case
-       /*
-       Epetra_RowMatrixTransposer et(&*epetraOp);
-       Epetra_CrsMatrix *A;
-       int rv = et.CreateTranspose(false,A);
-       if (rv != 0) {
-         std::ostringstream buf;
-         buf << rv;
-         std::string msg = "Utils::Transpose: Epetra::RowMatrixTransposer returned value of " + buf.str();
-         throw(Exceptions::RuntimeError(msg));
-       }
-       RCP<Epetra_CrsMatrix> rcpA(A);
-       */
-// //        RCP<Epetra_CrsMatrix> rcpA = simple_EpetraTranspose(epetraOp);
-// //        RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
-// //        RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
-// //        RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
-// //        return AAAA;
-       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
-       return Teuchos::null;
-     }
-     
-   } //Transpose
-
 
    /*! @brief Simple transpose for Tpetra::CrsMatrix types
 
@@ -917,7 +856,137 @@ namespace MueLu {
 
    } //ScaleMatrix()
 
-  }; // class
+  }; // class Utils
+
+/*
+  Separate class for Utilities that need a specialization for Epetra.
+*/
+  template <class Scalar, 
+            class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node          = Kokkos::DefaultNode::DefaultNodeType,
+            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+  class Utils2 {
+
+#include "MueLu_UseShortNames.hpp"
+
+public:
+
+    /*! @brief Transpose a Cthulhu::Operator
+
+      Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
+      In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
+    */
+
+   static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
+   {
+     string TorE = "epetra";
+     RCP<Epetra_CrsMatrix> epetraOp;
+     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
+     try {
+       epetraOp = Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
+     }
+     catch (...) {
+       TorE = "tpetra";
+     }
+
+     if (TorE=="tpetra") {
+       try {
+         tpetraOp = Utils<SC,LO,GO,NO,LMO>::Op2TpetraCrs(Op);
+       }
+       catch (...) {
+         throw(Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices"));
+       }
+     } //if
+
+     if (TorE == "tpetra") {
+       //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
+       //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
+       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
+       RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
+       RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
+       RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
+       return AAAA;
+
+     } else {
+       //epetra case
+       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
+       return Teuchos::null;
+     }
+     
+   } //Transpose
+  }; // class Utils2
+
+
+  // specialization Utils2 for SC=double
+  template<>
+  class Utils2<double,int,int>//, Kokkos::DefaultNode::DefaultNodeType,
+               //Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps >
+  {
+   typedef Cthulhu::Operator<double,int,int> Operator;
+   typedef double SC;
+   typedef int LO;
+   typedef int GO;
+   typedef Kokkos::DefaultNode::DefaultNodeType NO;
+   typedef Kokkos::DefaultKernels<double,int,NO>::SparseOps LMO;
+
+public:
+
+   static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
+   {
+     string TorE = "epetra";
+     RCP<Epetra_CrsMatrix> epetraOp;
+     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
+     try {
+       epetraOp = Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
+     }
+     catch (...) {
+       TorE = "tpetra";
+     }
+
+     if (TorE=="tpetra") {
+       try {
+         tpetraOp = Utils<SC,LO,GO,NO,LMO>::Op2TpetraCrs(Op);
+       }
+       catch (...) {
+         throw(Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices"));
+       }
+     } //if
+
+     if (TorE == "tpetra") {
+       //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
+       //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
+       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
+       RCP<Cthulhu::TpetraCrsMatrix<SC> > AA = rcp(new Cthulhu::TpetraCrsMatrix<SC>(A) );
+       RCP<Cthulhu::CrsMatrix<SC> > AAA = Teuchos::rcp_implicit_cast<Cthulhu::CrsMatrix<SC> >(AA);
+       RCP<Cthulhu::CrsOperator<SC> > AAAA = rcp( new Cthulhu::CrsOperator<SC> (AAA) );
+       return AAAA;
+
+     } else {
+       //epetra case
+       /*
+       Epetra_RowMatrixTransposer et(&*epetraOp);
+       Epetra_CrsMatrix *A;
+       int rv = et.CreateTranspose(false,A);
+       if (rv != 0) {
+         std::ostringstream buf;
+         buf << rv;
+         std::string msg = "Utils::Transpose: Epetra::RowMatrixTransposer returned value of " + buf.str();
+         throw(Exceptions::RuntimeError(msg));
+       }
+       RCP<Epetra_CrsMatrix> rcpA(A);
+       */
+       RCP<Epetra_CrsMatrix> rcpA = Utils<SC,LO,GO,NO,LMO>::simple_EpetraTranspose(epetraOp);
+       RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
+       RCP<Cthulhu::CrsMatrix<SC> > AAA = Teuchos::rcp_implicit_cast<Cthulhu::CrsMatrix<SC> >(AA);
+       RCP<Cthulhu::CrsOperator<SC> > AAAA = rcp( new Cthulhu::CrsOperator<SC>(AAA) );
+       return AAAA;
+//       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
+//       return Teuchos::null;
+     }
+     
+   } //Transpose
+  }; //specialization to Scalar=double
 
 } //namespace MueLu
 #define MUELU_UTILITIES_SHORT
