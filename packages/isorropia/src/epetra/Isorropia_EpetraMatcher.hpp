@@ -54,6 +54,7 @@ USA
 #include <fstream>
 #include <string>
 #include <vector>
+#include<algorithm>
 
 #ifdef MIN
 #undef MIN
@@ -63,6 +64,17 @@ USA
 
 namespace Isorropia {
 namespace Epetra {
+
+/** An implementation of the Matcher interface that operates on
+    Epetra matrices and Graphs.
+    
+    One of the use of Maximum Cardinality Matching is that it provides nonzero
+    diagonal for the sparse matrices. This multithreaded version of the
+    matching algorithms provides an interface to solve the Bipartite Matching
+    problem as well as it also provides permutation to get zero free diagonal
+    for input sparse matrices.
+\ingroup matcher_grp
+*/
 class Isorropia_EpetraMatcher {
 private:
     int* mateU_;
@@ -85,7 +97,7 @@ private:
 #endif
 
     void delete_matched_v();
-    void filler();
+    void complete_nonperfect_permutation();
     
     int match_dfs();
     int match_hk();
@@ -98,21 +110,87 @@ private:
     int DW_phase();
 
 public:
-    /// Interface Functions
     Isorropia_EpetraMatcher(const Epetra_CrsMatrix*, const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
-    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
-    Isorropia_EpetraMatcher(const Epetra_CrsGraph *,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
-    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
-    void extractRowPermutationCopy(int, int&, int* ) const;
-    void extractColumnPermutationCopy(int, int&, int*) const;
-    int getNumberOfMatchedVertices();
-    Epetra_Map* getPermutedRowMap();
-    Epetra_Map* getPermutedColumnMap();
-    int match();
-    virtual ~Isorropia_EpetraMatcher();
+    /** Constructor
 
-    //Matching Functions
+    \param[in] Epetra_CRSMatrix* which holds the compressed row matrix form the graph
+    \param[in] paramlist this parameter list is used to select the algorithm. The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg
+    , parallel DFS and parallel Pothen-Fan respectively. The default is the "PHKDW".
     
+\ingroup matching_grp
+    */
+    
+    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    /** Constructor
+
+    \param[in] Epetra_CRSMatrix* which holds the compressed row matrix form the graph
+    \param[in] paramlist this parameter list is used to select the algorithm. The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg
+    , parallel DFS and parallel Pothen-Fan respectively. The default is the "PHKDW"
+    
+\ingroup matching_grp
+    */
+    
+    Isorropia_EpetraMatcher(const Epetra_CrsGraph *,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    /** Constructor
+
+    \param[in] Epetra_CRSGraph which holds the graph
+    \param[in] paramlist this parameter list is used to select the algorithm. The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg
+    , parallel DFS and parallel Pothen-Fan respectively. The default is the "PHKDW"
+    
+\ingroup matching_grp
+    */
+    
+    Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph>,const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
+    /** Constructor
+
+    \param[in] Epetra_CRSGraph which holds the graph
+    \param[in] paramlist this parameter list is used to select the algorithm. The input is a string. "PHK","PHKDW", "PDFS" and "PPF" for parallel Hopcroft-Karp, parallel Hopcroft-Karp with Duff-Wiberg
+    , parallel DFS and parallel Pothen-Fan respectively. The default is the "PHKDW".
+    
+\ingroup matching_grp
+    */
+    
+     virtual ~Isorropia_EpetraMatcher();
+    /** Destructor
+\ingroup matching_grp
+    */
+    
+    void getMatchedColumnsForRowsCopy(int, int&, int* ) const;
+    /** Provides the matched columns corresponding to each row
+   
+    \param[in] The length of the array provided by the user
+    \param[out] The amount of data copied into the array
+    \param[in] The user array
+
+\ingroup matching_grp
+    */
+    void getMatchedRowsForColumnsCopy(int, int&, int*) const;
+    /** Provides the matched rows corresponding to each column
+
+    \param[in] The length of the array provided by the user
+    \param[out] The amount of data copied into the array
+    \param[in] The user array
+    
+\ingroup matching_grp
+    */
+    int getNumberOfMatchedVertices();
+    /** Provides the number of vertices in the Maximum Cardinality Matching set.
+\ingroup matching_grp
+    */
+    Epetra_Map* getPermutedRowMap();
+    /** Provides the row map which is actually the complete row permutation
+\ingroup matching_grp
+    */
+    Epetra_Map* getPermutedColumnMap();
+    /** Provides the column map which is actually the complete column
+     * permutation
+\ingroup matching_grp
+    */
+    int match();
+    /** Computes the maximum cardinality mathcing, user should call this
+     * function after calling the constructor.
+\ingroup matching_grp
+    */
 };
 }
 }

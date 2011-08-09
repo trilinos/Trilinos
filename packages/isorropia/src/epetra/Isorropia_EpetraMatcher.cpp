@@ -7,7 +7,6 @@
 //============================================================================
 
 #include"Isorropia_EpetraMatcher.hpp"
-#include<algorithm>
 
 namespace Isorropia {
 #ifdef HAVE_EPETRA
@@ -22,7 +21,9 @@ std::vector<int> med;
 
 Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrixPtr,const Teuchos::ParameterList& paramlist)
 {
-    int rc=0,i;
+	//Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix>(matrixPtr,false), paramlist);
+	
+	int rc=0,i;
     A_=matrixPtr; 
     rc=matrixPtr->ExtractCrsDataPointers(CRS_pointers_,CRS_indices_,CRS_vals_);
     
@@ -34,16 +35,199 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrix
     E_=matrixPtr->NumGlobalNonzeros();
     
     choice_=1;
-    if(paramlist.isParameter("PHKDW"))
+    std::string str(paramlist.get<std::string>("Matching Algorithm"));
+    std::cout<<str<<endl;
+    if(str.compare("PHKDW")==0)
         choice_=1;
     else 
-        if(paramlist.isParameter("PHK"))
+        if(str.compare("PHK")==0)
             choice_=2;
         else
-            if(paramlist.isParameter("PDFS"))
+            if(str.compare("PDFS")==0)
                 choice_=3;
             else
-                if(paramlist.isParameter("PPF"))
+                if(str.compare("PPF")==0)
+                    choice_=4;
+    
+#ifdef ISORROPIA_MATCHING_STATS
+    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
+    std::cout<<"choice: "<<choice_<<endl;
+#endif
+    
+    finish_=false;
+    avgDegU_=E_/U_+1;
+    mateU_=new int[U_];
+    mateV_=new int[V_];
+        
+    if(choice_==1 || choice_==2)
+    {
+        LU_=new int[U_];
+        LV_=new int[V_];
+        Queue_=new int[U_];
+    }
+    if(choice_==1 || choice_==4)
+        lookahead_=new int[U_];
+    
+    if(choice_==3 || choice_==4)
+        unmatchedU_=new int[U_];
+    
+    for(i=0;i<U_;i++)
+    {   
+        mateU_[i]=-1;
+        if(choice_==1 || choice_==4)
+            lookahead_[i]=CRS_pointers_[i];
+        if(choice_==1 || choice_==2)
+        {   
+            LU_[i]=-1;
+            Queue_[i]=-1;
+        }
+        if(choice_==3||choice_==4)
+            unmatchedU_[i]=i;
+    }
+    
+#ifdef ISORROPIA_HAVE_OMP
+    scannedV_=new omp_lock_t[V_];
+#endif
+    parent_=new int[V_];
+    
+    for(i=0;i<V_;i++)
+    {   
+#ifdef ISORROPIA_HAVE_OMP
+        omp_init_lock(&scannedV_[i]);
+#endif
+        mateV_[i]=-1;
+        parent_[i]=-1;
+        if(choice_==1 || choice_==2)
+            LV_[i]=-1;
+    }
+    
+#ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel
+    numThread_=omp_get_num_threads();
+#endif
+    std::cout<<"finished:"<<endl;
+}
+
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::ParameterList& paramlist)
+{
+    
+    A_=matrixPtr.getRawPtr(); 
+    Isorropia_EpetraMatcher(A_,paramlist);
+    
+    /*int rc=0,i;
+    rc=matrixPtr->ExtractCrsDataPointers(CRS_pointers_,CRS_indices_,CRS_vals_);
+    if(rc!=0)
+        std::cout<<"Input Processing Failed"<<endl;
+        
+    U_=matrixPtr->NumGlobalRows();
+    V_=MatrixPtr->NumGlobalCols();
+    E_=matrixPtr->NumGlobalNonzeros();
+    
+    choice_=1;
+    std::string str(paramlist.get<std::string>("Matching Algorithm"));
+    if(str.compare("PHKDW")==0)
+        choice_=1;
+    else 
+        if(str.compare("PHK")==0)
+            choice_=2;
+        else
+            if(str.compare("PDFS")==0)
+                choice_=3;
+            else
+                if(str.compare("PPF")==0)
+                    choice_=4;
+    
+#ifdef ISORROPIA_MATCHING_STATS
+    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
+    std::cout<<"choice: "<<choice_<<endl;
+#endif
+    
+    finish_=false;
+    avgDegU_=E_/U_+1;
+    mateU_=new int[U_];
+    mateV_=new int[V_];
+        
+    if(choice_==1 || choice_==2)
+    {
+        LU_=new int[U_];
+        LV_=new int[V_];
+        Queue_=new int[U_];
+    }
+    if(choice_==1 || choice_==4)
+        lookahead_=new int[U_];
+    
+    if(choice_==3 || choice_==4)
+        unmatchedU_=new int[U_];
+    
+    for(i=0;i<U_;i++)
+    {   
+        mateU_[i]=-1;
+        if(choice_==1 || choice_==4)
+            lookahead_[i]=CRS_pointers_[i];
+        if(choice_==1 || choice_==2)
+        {   
+            LU_[i]=-1;
+            Queue_[i]=-1;
+        }
+        if(choice_==3||choice_==4)
+            unmatchedU_[i]=i;
+    }
+    
+#ifdef ISORROPIA_HAVE_OMP
+    scannedV_=new omp_lock_t[V_];
+#endif
+    parent_=new int[V_];
+    
+    for(i=0;i<V_;i++)
+    {   
+#ifdef ISORROPIA_HAVE_OMP
+        omp_init_lock(&scannedV_[i]);
+#endif
+        mateV_[i]=-1;
+        parent_[i]=-1;
+        if(choice_==1 || choice_==2)
+            LV_[i]=-1;
+    }
+    
+#ifdef ISORROPIA_HAVE_OMP
+    #pragma omp parallel
+    numThread_=omp_get_num_threads();
+#endif
+
+    std::cout<<"finished:"<<endl;*/
+}
+
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& paramlist)
+{
+    U_=graphPtr->NumMyRows();
+    V_=graphPtr->NumMyCols();
+    E_=graphPtr->NumMyNonzeros();
+    int i,j,num,sum, *ind;
+    CRS_pointers_=new int[U_+1];
+    CRS_indices_=new int[E_];
+    sum=0;
+    for(i=0;i<U_;i++)
+    {
+        graphPtr->ExtractMyRowView(i,num,ind);
+        CRS_pointers_[i]=sum;
+        for(j=0;j<num;j++)
+            CRS_indices_[sum+j]=ind[j];
+        sum=sum+num;    
+    }
+    CRS_pointers_[U_]=sum;
+    
+    choice_=1;
+    std::string str(paramlist.get<std::string>("Matching Algorithm"));
+    if(str.compare("PHKDW")==0)
+        choice_=1;
+    else 
+        if(str.compare("PHK")==0)
+            choice_=2;
+        else
+            if(str.compare("PDFS")==0)
+                choice_=3;
+            else
+                if(str.compare("PPF")==0)
                     choice_=4;
     
 #ifdef ISORROPIA_MATCHING_STATS
@@ -104,36 +288,44 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrix
 #endif
 }
 
-Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::ParameterList& paramlist)
+Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph> graphPtr,const Teuchos::ParameterList& paramlist)
 {
-    int rc=0,i;
-    //A_=(const Epetra_CrsMatrix*)matrixPtr;
-    rc=matrixPtr->ExtractCrsDataPointers(CRS_pointers_,CRS_indices_,CRS_vals_);
-    
-    if(rc==0)
-        std::cout<<"Input Processing Done"<<endl;
-    else
-        std::cout<<"Input Processing Failed"<<endl;
-        
-    U_=matrixPtr->NumGlobalRows();
-    V_=matrixPtr->NumGlobalCols();
-    E_=matrixPtr->NumGlobalNonzeros();
-    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
+    U_=graphPtr->NumMyRows();
+    V_=graphPtr->NumMyCols();
+    E_=graphPtr->NumMyNonzeros();
+    int i,j,num,sum, *ind;
+    CRS_pointers_=new int[U_+1];
+    CRS_indices_=new int[E_];
+    sum=0;
+    for(i=0;i<U_;i++)
+    {
+        graphPtr->ExtractMyRowView(i,num,ind);
+        CRS_pointers_[i]=sum;
+        for(j=0;j<num;j++)
+            CRS_indices_[sum+j]=ind[j];
+        sum=sum+num;    
+    }
+    CRS_pointers_[U_]=sum;
     
     choice_=1;
-    if(paramlist.isParameter("PHKDW"))
+    std::string str(paramlist.get<std::string>("Matching Algorithm"));
+    if(str.compare("PHKDW")==0)
         choice_=1;
     else 
-        if(paramlist.isParameter("PHK"))
+        if(str.compare("PHK")==0)
             choice_=2;
         else
-            if(paramlist.isParameter("PDFS"))
+            if(str.compare("PDFS")==0)
                 choice_=3;
             else
-                if(paramlist.isParameter("PPF"))
+                if(str.compare("PPF")==0)
                     choice_=4;
     
+#ifdef ISORROPIA_MATCHING_STATS
+    std::cout<<"(U,V,E):"<<U_<<","<<V_<<","<<E_<<endl;
     std::cout<<"choice: "<<choice_<<endl;
+#endif
+    
     finish_=false;
     avgDegU_=E_/U_+1;
     mateU_=new int[U_];
@@ -185,44 +377,6 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMa
     #pragma omp parallel
     numThread_=omp_get_num_threads();
 #endif
-}
-
-Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& paramlist)
-{
-    int rows=graphPtr->NumMyRows();
-    int edges=graphPtr->NumMyNonzeros();
-    int i,j,num,sum, *ind;
-    CRS_pointers_=new int[rows+1];
-    CRS_indices_=new int[edges];
-    sum=0;
-    for(i=0;i<rows;i++)
-    {
-        graphPtr->ExtractMyRowView(i,num,ind);
-        CRS_pointers_[i]=sum;
-        for(j=0;j<num;j++)
-            CRS_indices_[sum+j]=ind[j];
-        sum=sum+num;    
-    }
-    CRS_pointers_[rows]=sum;
-}
-
-Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsGraph> graphPtr,const Teuchos::ParameterList& paramlist)
-{
-    int rows=graphPtr->NumMyRows();
-    int edges=graphPtr->NumMyNonzeros();
-    int i,j,num,sum, *ind;
-    CRS_pointers_=new int[rows+1];
-    CRS_indices_=new int[edges];
-    sum=0;
-    for(i=0;i<rows;i++)
-    {
-        graphPtr->ExtractMyRowView(i,num,ind);
-        CRS_pointers_[i]=sum;
-        for(j=0;j<num;j++)
-            CRS_indices_[sum+j]=ind[j];
-        sum=sum+num;    
-    }
-    CRS_pointers_[rows]=sum;
 }
 
 
@@ -249,13 +403,13 @@ Isorropia_EpetraMatcher::~Isorropia_EpetraMatcher()
     
 }
 
-void Isorropia_EpetraMatcher::extractRowPermutationCopy(int len, int& size, int* array) const
+void Isorropia_EpetraMatcher::getMatchedColumnsForRowsCopy(int len, int& size, int* array) const
 {
     const int *ptr=&mateU_[0];
     size=MIN(size,len);
     memcpy (array, ptr, size * sizeof(int));
 }
-void Isorropia_EpetraMatcher::extractColumnPermutationCopy(int len, int& size, int* array) const
+void Isorropia_EpetraMatcher::getMatchedRowsForColumnsCopy(int len, int& size, int* array) const
 {
     const int *ptr=&mateV_[0];
     size=MIN(size,len);
@@ -269,6 +423,7 @@ int Isorropia_EpetraMatcher::getNumberOfMatchedVertices()
 Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
 {
     int *ptr=new int[U_];
+    complete_nonperfect_permutation();
     for(int i=0;i<U_;i++)
         //ptr[i]=A_->GID(mateV_[i]);
         ptr[i]=mateV_[i];
@@ -283,6 +438,7 @@ Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
 Epetra_Map* Isorropia_EpetraMatcher::getPermutedColumnMap()
 {
     int *ptr=new int[V_];
+    complete_nonperfect_permutation();
     for(int i=0;i<V_;i++)
         //ptr[i]=A_->GID(mateV_[i]);
         ptr[i]=mateU_[i];
@@ -295,7 +451,7 @@ Epetra_Map* Isorropia_EpetraMatcher::getPermutedColumnMap()
     return map;
 }
 
-void Isorropia_EpetraMatcher::filler()
+void Isorropia_EpetraMatcher::complete_nonperfect_permutation()
 {
     int i,j,rowfill,colfill,flag;
     
