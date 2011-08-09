@@ -31,6 +31,7 @@
 #include <Epetra_CrsGraph.h>
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
+#include <Epetra_Util.h>
 
 #include <amesos_amd.h>
 
@@ -54,20 +55,40 @@ operator()( OriginalTypeRef orig )
   // Check if the graph is on one processor.
   int myMatProc = -1, matProc = -1;
   int myPID = orig.Comm().MyPID();
+  int numProcs = orig.Comm().NumProc();
   for (int proc=0; proc<orig.Comm().NumProc(); proc++) 
   {
     if (orig.NumGlobalNonzeros() == orig.NumMyNonzeros())
       myMatProc = myPID;
   }
   orig.Comm().MaxAll( &myMatProc, &matProc, 1 );
-  
+
+  // Get some information about the parallel distribution.
+  int maxMyRows = 0;
+  int n = orig.NumMyRows();
+  std::vector<int> numGlobalElem( numProcs );
+  orig.Comm().GatherAll(&n, &numGlobalElem[0], 1);
+  orig.Comm().MaxAll(&n, &maxMyRows, 1);
+
+  Teuchos::RCP<Epetra_CrsGraph> serialGraph;
+  Teuchos::RCP<Epetra_Map> serialMap;
+
   if( orig.RowMap().DistributedGlobal() && matProc == -1)
-    { std::cout << "FAIL for Global!\n"; abort(); }
+  {
+    // The matrix is distributed and needs to be moved to processor zero.
+    // Set the zero processor as the master.
+    matProc = 0;
+    serialMap = Teuchos::rcp( new Epetra_Map( Epetra_Util::Create_Root_Map( dynamic_cast<const Epetra_Map&>(orig.RowMap()), matProc ) ) );
+
+    Epetra_Import serialImporter( *serialMap, OldRowMap );
+    serialGraph = Teuchos::rcp( new Epetra_CrsGraph( Copy, *serialMap, 0 ) );
+    serialGraph->Import( *origObj_, serialImporter, Insert );
+    serialGraph->FillComplete();
+  }
   if( orig.IndicesAreGlobal() && matProc == -1)
     { std::cout << "FAIL for Global Indices!\n"; abort(); }
  
   int nGlobal = orig.NumGlobalRows(); 
-  int n = orig.NumMyRows();
   int nnz = orig.NumMyNonzeros();
   
   if( debug_ )
