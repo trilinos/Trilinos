@@ -1,0 +1,22 @@
+# Standard ignores
+*~
+*.pyc
+\#*#
+.#*
+checkin_message
+flat_headers/
+old_and_busted/
+TAGS
+*.bak[0-9]*
+*.swp
+*.exe
+*.o
+*.aux
+*.log
+*.bbl
+*.out
+*.blg
+*.toc
+tags
+devGuide.pdf
+html
