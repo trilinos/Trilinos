@@ -32,8 +32,20 @@
     \brief  Example solution of a div-curl system on a hexahedral mesh using
             curl-conforming (edge) elements.
 
-            This example uses Pamgen to generate a hexahedral mesh, Intrepid to 
-            build mass and stiffness matrices, and ML to solve.
+
+           This example uses the following Trilinos packages:
+    \li        Pamgen to generate a Hexahedral mesh.
+    \li        Intrepid to build the discretization matrices and right-hand side.
+    \li        Epetra to handle the global matrix and vector.
+    \li        ML to solve the linear system.
+
+
+           For more details on the formulation see
+
+    \li     P. Bochev, K. Peterson, C. Siefert, "Analysis and Computation
+            of Compatible Least-Squares Methods for Div-Curl Equations",
+            SIAM J. Numerical Analysis, vol 49, pp 159-191, 2011. 
+
 
     \verbatim
 
@@ -62,14 +74,24 @@
 
      ./TrilinosCouplings_examples_scaling_Example_CurlLSFEM.exe  inputfile.xml
 
+
         inputfile.xml (optional)  -  xml input file containing Pamgen mesh description
                                      and material parameters for each Pamgen block,
                                      if not present code attempts to read CurlLSFEMin.xml.
                                       
-
      \endverbatim
+
+      Input files available in Trilinos for use with the CurlLSFEM driver:
+
+       \li CurlLSFEMin.xml - basic input file with box mesh and one mesh block
+       \li Ninja.xml - input file with distorted mesh (shaped like Ninja star) and one mesh block
+       \li CurlLSFEMblock_in_block.xml - input file with box mesh with a center block with different material values.
+
  **/
 
+/**************************************************************/
+/*                          Includes                          */
+/**************************************************************/
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -131,11 +153,21 @@
 
 #define ABS(x) ((x)>0?(x):-(x))
 
+
+/*** Uncomment if you would like output data for plotting ***/
 //#define DUMP_DATA
-//#define DUMP_DATAE
 
 using namespace std;
 using namespace Intrepid;
+
+
+/*********************************************************/
+/*                     Typedefs                          */
+/*********************************************************/
+typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
+typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
+typedef Intrepid::CellTools<double>      IntrepidCTools;
+
 
 struct fecomp{
   bool operator () ( topo_entity* x,  topo_entity*  y )const
@@ -145,6 +177,24 @@ struct fecomp{
   }
 };
 
+/**********************************************************************************/
+/***************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
+/**********************************************************************************/
+
+/** \brief  ML Preconditioner
+
+    \param  ProblemType        [in]    problem type
+    \param  MLList             [in]    ML parameter list
+    \param  CurlCurl           [in]    H(curl) stiffness matrix 
+    \param  D0clean            [in]    Edge to node stiffness matrix
+    \param  M0inv              [in]    H(grad) mass matrix inverse
+    \param  M1                 [in]    H(curl) mass matrix
+    \param  xh                 [out]   solution vector
+    \param  b                  [in]    right-hand-side vector
+    \param  TotalErrorResidual [out]   error residual
+    \param  TotalErrorExactSol [out]   error in xh
+
+ */
 void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Teuchos::ParameterList   & MLList,
                                            Epetra_CrsMatrix   & CurlCurl,
@@ -154,10 +204,22 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Epetra_MultiVector & xh,
                                            Epetra_MultiVector & b,
                                            double & TotalErrorResidual,
-                                             double & TotalErrorExactSol);
+                                           double & TotalErrorExactSol);
 
 
-// Functions to evaluate exact solution and derivatives
+/**********************************************************************************/
+/******** FUNCTION DECLARATIONS FOR EXACT SOLUTION AND SOURCE TERMS ***************/
+/**********************************************************************************/
+
+/** \brief  Exact solution evaluation.
+
+    \param  uExact0            [out]   first component of exact solution at (x,y,z)
+    \param  uExact1            [out]   second component of exact solution at (x,y,z)
+    \param  uExact2            [out]   third component of exact solution at (x,y,z)
+    \param  x                  [in]    x coordinate
+    \param  y                  [in]    y coordinate
+    \param  z                  [in]    z coordinate
+ */
 int evalu(double & uExact0, 
           double & uExact1, 
           double & uExact2,  
@@ -165,11 +227,30 @@ int evalu(double & uExact0,
           double & y, 
           double & z);
 
+/** \brief  Divergence of exact solution.
+
+    \param  x                  [in]    x coordinate
+    \param  y                  [in]    y coordinate
+    \param  z                  [in]    z coordinate
+    \param  mu                 [in]    material parameter
+
+    \return Value of the divergence of exact solution at (x,y,z)
+ */
 double evalDivu(double & x, 
                 double & y, 
                 double & z, 
                 double & mu);
 
+/** \brief  Curl of exact solution.
+
+    \param  curlu0            [out]   first component of curl of exact solution
+    \param  curlu1            [out]   second component of curl of exact solution
+    \param  curlu2            [out]   third component of curl of exact solution
+    \param  x                  [in]    x coordinate
+    \param  y                  [in]    y coordinate
+    \param  z                  [in]    z coordinate
+    \param  mu                 [in]    material parameter
+ */
 int evalCurlu(double & curlu0, 
               double & curlu1, 
               double & curlu2, 
@@ -178,12 +259,31 @@ int evalCurlu(double & curlu0,
               double & z,  
               double & mu);
 
+/** \brief  Gradient of Divergence of exact solution
+
+    \param  gradDivu0          [out]   first (x) component of grad div of exact solution
+    \param  gradDivu1          [out]   second (y) component of grad div of exact solution
+    \param  gradDivu2          [out]   third (z) component of grad div of exact solution
+    \param  x                  [in]    x coordinate
+    \param  y                  [in]    y coordinate
+    \param  z                  [in]    z coordinate
+    \param  mu                 [in]    material parameter
+ */
 int evalGradDivu(double & gradDivu0, 
                  double & gradDivu1, 
                  double & gradDivu2, 
                  double & x, double & y, 
                  double & z, double & mu);
 
+/**********************************************************************************/
+/**********************************************************************************/
+/**********************************************************************************/
+
+
+
+/**********************************************************************************/
+/******************************** MAIN ********************************************/
+/**********************************************************************************/
 int main(int argc, char *argv[]) {
 
   int error = 0;
@@ -244,7 +344,10 @@ int main(int argc, char *argv[]) {
 
   std::vector < int > edge_comm_procs;
 
-// ************************************ GET INPUTS **************************************
+
+/**********************************************************************************/
+/********************************** GET XML INPUTS ********************************/
+/**********************************************************************************/
 
   // Command line for xml file, otherwise use default
     std::string   xmlInFileName;
@@ -275,35 +378,36 @@ int main(int argc, char *argv[]) {
     std::string meshInput = Teuchos::getParameter<std::string>(inputList,"meshInput");
     
 
-// *********************************** CELL TOPOLOGY **********************************
+/**********************************************************************************/
+/***************************** GET CELL TOPOLOGY **********************************/
+/**********************************************************************************/
 
    // Get cell topology for base hexahedron
-    typedef shards::CellTopology    CellTopology;
-    CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+    shards::CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
    // Get dimensions 
-    int numNodesPerElem = hex_8.getNodeCount();
-    int numEdgesPerElem = hex_8.getEdgeCount();
-    int numFacesPerElem = hex_8.getSideCount();
+    int numNodesPerElem = cellType.getNodeCount();
+    int numEdgesPerElem = cellType.getEdgeCount();
+    int numFacesPerElem = cellType.getSideCount();
     int numNodesPerEdge = 2;
     int numNodesPerFace = 4;
     int numEdgesPerFace = 4;
-    int spaceDim = hex_8.getDimension();
+    int spaceDim = cellType.getDimension();
 
    // Build reference element edge to node map
     FieldContainer<int> refEdgeToNode(numEdgesPerElem,numNodesPerEdge);
     for (int i=0; i<numEdgesPerElem; i++){
-        refEdgeToNode(i,0)=hex_8.getNodeMap(1, i, 0);
-        refEdgeToNode(i,1)=hex_8.getNodeMap(1, i, 1);
+        refEdgeToNode(i,0)=cellType.getNodeMap(1, i, 0);
+        refEdgeToNode(i,1)=cellType.getNodeMap(1, i, 1);
     }
 
    // Build reference element face to node map
     FieldContainer<int> refFaceToNode(numFacesPerElem,numNodesPerFace);
     for (int i=0; i<numFacesPerElem; i++){
-        refFaceToNode(i,0)=hex_8.getNodeMap(2, i, 0);
-        refFaceToNode(i,1)=hex_8.getNodeMap(2, i, 1);
-        refFaceToNode(i,2)=hex_8.getNodeMap(2, i, 2);
-        refFaceToNode(i,3)=hex_8.getNodeMap(2, i, 3);
+        refFaceToNode(i,0)=cellType.getNodeMap(2, i, 0);
+        refFaceToNode(i,1)=cellType.getNodeMap(2, i, 1);
+        refFaceToNode(i,2)=cellType.getNodeMap(2, i, 2);
+        refFaceToNode(i,3)=cellType.getNodeMap(2, i, 3);
     }
 
    // Build reference element face to edge map (Hardcoded for now)
@@ -322,7 +426,10 @@ int main(int argc, char *argv[]) {
         refFaceToEdge(5,2)=6; refFaceToEdge(5,3)=7;
         
 
-// *********************************** GENERATE MESH ************************************
+/**********************************************************************************/
+/******************************* GENERATE MESH ************************************/
+/**********************************************************************************/
+
 
   if (MyPID == 0) {
     std::cout << "Generating mesh ... \n\n";
@@ -665,10 +772,6 @@ int main(int argc, char *argv[]) {
     numFacesGlobal = numFaces;
 #endif
 
-   // Define global epetra maps
-    Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
-    Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
-
 
  // Print mesh size information
   if (MyPID == 0) {
@@ -679,43 +782,6 @@ int main(int argc, char *argv[]) {
   }
 
 
-#ifdef DUMP_DATAE
-  // Output element to face connectivity
-   std::stringstream e2nfname;
-      e2nfname << "elem2node";
-      e2nfname << MyPID << ".dat";
-   std::stringstream e2efname;
-      e2efname << "elem2edge";
-      e2efname << MyPID << ".dat";
-
-    ofstream el2eout(e2efname.str().c_str());
-    ofstream el2nout(e2nfname.str().c_str());
-    for (int i=0; i<numElems; i++) {
-      for (int m=0; m<numNodesPerElem; m++) {
-        el2nout << globalNodeIds[elemToNode(i,m)] << "  ";
-      }
-      el2nout << "\n";
-      for (int n=0; n<numEdgesPerElem; n++) {
-        el2eout << globalEdgeIds[elemToEdge(i,n)] << "  ";
-      }
-      el2eout << "\n";
-    }
-    el2nout.close();
-    el2eout.close();
-
-   // Output edge to node connectivity
-   std::stringstream ed2nfname;
-      ed2nfname << "edge2node";
-      ed2nfname << MyPID << ".dat";
-    ofstream e2nout(ed2nfname.str().c_str());
-    for (int j=0; j<numEdges; j++) {
-       if (edgeIsOwned[j]){
-         e2nout << globalNodeIds[edgeToNode(j,0)] << "  ";
-         e2nout << globalNodeIds[edgeToNode(j,1)] << "\n";
-       }
-    }
-    e2nout.close();
-#endif
 
    // Container indicating whether a face is on the boundary (1-yes 0-no)
     FieldContainer<int> edgeOnBoundary(numEdges);
@@ -789,6 +855,116 @@ int main(int argc, char *argv[]) {
        }
 #endif
 
+/**********************************************************************************/
+/********************************* GET CUBATURE ***********************************/
+/**********************************************************************************/
+
+   // Get numerical integration points and weights for cell
+    DefaultCubatureFactory<double>  cubFactory;                                   
+    int cubDegree = 2;
+    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree); 
+
+    int cubDim       = hexCub->getDimension();
+    int numCubPoints = hexCub->getNumPoints();
+
+    FieldContainer<double> cubPoints(numCubPoints, cubDim);
+    FieldContainer<double> cubWeights(numCubPoints);
+
+    hexCub->getCubature(cubPoints, cubWeights);
+
+ /**********************************************************************************/
+ /*     Get numerical integration points and weights for hexahedron face           */
+ /*                  (needed for rhs boundary term)                                */
+ /**********************************************************************************/
+
+    // Define topology of the face parametrization domain as [-1,1]x[-1,1]
+    shards::CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+
+    // Define cubature 
+    DefaultCubatureFactory<double>  cubFactoryFace;
+    Teuchos::RCP<Cubature<double> > hexFaceCubature = cubFactoryFace.create(paramQuadFace, 3);
+    int cubFaceDim    = hexFaceCubature -> getDimension();
+    int numFacePoints = hexFaceCubature -> getNumPoints();
+
+    // Define storage for cubature points and weights on [-1,1]x[-1,1]
+    FieldContainer<double> paramFaceWeights(numFacePoints);
+    FieldContainer<double> paramFacePoints(numFacePoints,cubFaceDim);
+
+    // Define storage for cubature points on workset faces
+    hexFaceCubature -> getCubature(paramFacePoints, paramFaceWeights);
+
+ /**********************************************************************************/
+ /*     Get numerical integration points and weights for hexahedron edge           */
+ /*           (needed for inhomogeneous boundary terms)                            */
+ /**********************************************************************************/
+
+    // Define topology of the edge parametrization domain as [-1,1]
+    shards::CellTopology paramEdge(shards::getCellTopologyData<shards::Line<2> >() );
+
+    // Define cubature
+    DefaultCubatureFactory<double>  cubFactoryEdge;
+    Teuchos::RCP<Cubature<double> > hexEdgeCubature = cubFactoryEdge.create(paramEdge, 3);
+    int cubEdgeDim    = hexEdgeCubature -> getDimension();
+    int numEdgePoints = hexEdgeCubature -> getNumPoints();
+
+    // Define storage for cubature points and weights on [-1,1]
+    FieldContainer<double> paramEdgeWeights(numEdgePoints);
+    FieldContainer<double> paramEdgePoints(numEdgePoints,cubEdgeDim);
+
+    // Define storage for cubature points on workset faces
+    hexEdgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
+
+   if(MyPID==0) {std::cout << "Getting cubature                            "
+                 << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+
+
+/**********************************************************************************/
+/*********************************** GET BASIS ************************************/
+/**********************************************************************************/
+
+   // Define basis 
+    Basis_HCURL_HEX_I1_FEM<double, FieldContainer<double> > hexHCurlBasis;
+    Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
+
+    int numFieldsC = hexHCurlBasis.getCardinality();
+    int numFieldsG = hexHGradBasis.getCardinality();
+
+  // Evaluate basis at cubature points
+     FieldContainer<double> HGVals(numFieldsG, numCubPoints); 
+     FieldContainer<double> HCVals(numFieldsC, numCubPoints, spaceDim); 
+     FieldContainer<double> HCurls(numFieldsC, numCubPoints, spaceDim); 
+     FieldContainer<double> worksetCVals(numFieldsC, numFacePoints, spaceDim); 
+
+     hexHCurlBasis.getValues(HCVals, cubPoints, OPERATOR_VALUE);
+     hexHCurlBasis.getValues(HCurls, cubPoints, OPERATOR_CURL);
+     hexHGradBasis.getValues(HGVals, cubPoints, OPERATOR_VALUE);
+
+   if(MyPID==0) {std::cout << "Getting basis                               "
+                 << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+
+
+/**********************************************************************************/
+/********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
+/**********************************************************************************/
+
+   // Define global epetra maps
+    Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
+    Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
+
+    Epetra_FECrsMatrix StiffMatrixC(Copy, globalMapC, numFieldsC);
+    Epetra_FECrsMatrix MassMatrixC (Copy, globalMapC, numFieldsC);
+    Epetra_FECrsMatrix MassMatrixG (Copy, globalMapG, numFieldsG);
+    Epetra_FEVector    rhsVector   (globalMapC);
+
+  if(MyPID==0) {std::cout << "Build global maps                           "
+                 << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
+
+
+/**********************************************************************************/
+/************************** OUTPUT CONNECTIVITY (FOR PLOTTING) ********************/
+/**********************************************************************************/
+
+
    // Build the coordinate vectors for ML solver (including owned nodes only)
     Epetra_Vector Nx(globalMapG), Ny(globalMapG),Nz(globalMapG);
     for(int i=0,nlid=0;i<numNodes;i++)
@@ -800,13 +976,65 @@ int main(int argc, char *argv[]) {
       }
 
 
-// **************************** INCIDENCE MATRIX **************************************
+#ifdef DUMP_DATA
+  // Put coordinates in multivector for output
+    Epetra_MultiVector nCoord(globalMapG,3);
 
-   // Node to edge incidence matrix
-  if (MyPID == 0) {
-    std::cout << "Building incidence matrix ... \n\n";
-  }
+     int ownedNode = 0;
+     for (int inode=0; inode<numNodes; inode++) {
+       if (nodeIsOwned[inode]) {
+          nCoord[0][ownedNode]=nodeCoord(inode,0);
+          nCoord[1][ownedNode]=nodeCoord(inode,1);
+          nCoord[2][ownedNode]=nodeCoord(inode,2);
+          ownedNode++;
+       }
+     }
+     EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
 
+    // Put element to node mapping in multivector for output
+     Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
+     Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
+     for (int ielem=0; ielem<numElems; ielem++) {
+        for (int inode=0; inode<numNodesPerElem; inode++) {
+          elem2node[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
+        }
+      }
+     EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
+
+    // Put element to edge mapping in multivector for output
+     Epetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);
+     for (int ielem=0; ielem<numElems; ielem++) {
+        for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
+          elem2edge[iedge][ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
+        }
+      }
+     EpetraExt::MultiVectorToMatrixMarketFile("elem2edge.dat",elem2edge,0,0,false);
+
+    // Put edge to node mapping in multivector for output
+     Epetra_MultiVector edge2node(globalMapC, numNodesPerEdge);
+     int ownedEdge = 0;
+     for (int iedge=0; iedge<numEdges; iedge++) {
+       if (edgeIsOwned[iedge]) {
+         for (int inode=0; inode<numNodesPerEdge; inode++) {
+           edge2node[inode][ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
+         }
+         ownedEdge++;
+        }
+      }
+     EpetraExt::MultiVectorToMatrixMarketFile("edge2node.dat",edge2node,0,0,false);
+
+    // Define multi-vector for cell edge sign (fill during cell loop)
+     Epetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
+
+    if(MyPID==0) {Time.ResetStartTime();}
+#endif
+
+
+/**********************************************************************************/
+/*************************BUILD INCIDENCE MATRIX***********************************/
+/**********************************************************************************/
+
+  // Edge to node incidence matrix
     Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);
 
     // Grab edge coordinates (for dumping to disk)
@@ -830,98 +1058,20 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    DGrad.GlobalAssemble(globalMapG,globalMapC); 
+    DGrad.FillComplete(MassMatrixG.RowMap(),MassMatrixC.RowMap()); 
+
+  if(MyPID==0) {std::cout << "Building incidence matrix                   "
+                 << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
 
-
-
-// ************************************ CUBATURE **************************************
-
-   // Get numerical integration points and weights for cell
-  if (MyPID == 0) {
-    std::cout << "Getting cubature ... \n\n";
-  }
-
-    DefaultCubatureFactory<double>  cubFactory;                                   
-    int cubDegree = 2;
-    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(hex_8, cubDegree); 
-
-    int cubDim       = hexCub->getDimension();
-    int numCubPoints = hexCub->getNumPoints();
-
-    FieldContainer<double> cubPoints(numCubPoints, cubDim);
-    FieldContainer<double> cubWeights(numCubPoints);
-
-    hexCub->getCubature(cubPoints, cubWeights);
-
-  
-   // Get numerical integration points and weights for hexahedron face
-    //             (needed for rhs boundary term)
-
-    // Define topology of the face parametrization domain as [-1,1]x[-1,1]
-    CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-
-    // Define cubature 
-    DefaultCubatureFactory<double>  cubFactoryFace;
-    Teuchos::RCP<Cubature<double> > hexFaceCubature = cubFactoryFace.create(paramQuadFace, 3);
-    int cubFaceDim    = hexFaceCubature -> getDimension();
-    int numFacePoints = hexFaceCubature -> getNumPoints();
-
-    // Define storage for cubature points and weights on [-1,1]x[-1,1]
-    FieldContainer<double> paramGaussWeights(numFacePoints);
-    FieldContainer<double> paramGaussPoints(numFacePoints,cubFaceDim);
-
-    // Define storage for cubature points on workset faces
-    hexFaceCubature -> getCubature(paramGaussPoints, paramGaussWeights);
-
-  // Get numerical integration points and weights for hexahedron edge
-     //         (needed for inhomogeneous boundary terms)
-
-    // Define topology of the edge parametrization domain as [-1,1]
-    CellTopology paramEdge(shards::getCellTopologyData<shards::Line<2> >() );
-
-    // Define cubature
-    DefaultCubatureFactory<double>  cubFactoryEdge;
-    Teuchos::RCP<Cubature<double> > hexEdgeCubature = cubFactoryEdge.create(paramEdge, 3);
-    int cubEdgeDim    = hexEdgeCubature -> getDimension();
-    int numEdgePoints = hexEdgeCubature -> getNumPoints();
-
-    // Define storage for cubature points and weights on [-1,1]
-    FieldContainer<double> paramEdgeWeights(numEdgePoints);
-    FieldContainer<double> paramEdgePoints(numEdgePoints,cubEdgeDim);
-
-    // Define storage for cubature points on workset faces
-    hexEdgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
-
-// ************************************** BASIS ***************************************
-
-   // Define basis 
-  if (MyPID == 0) {
-    std::cout << "Getting basis ... \n\n";
-  }
-    Basis_HCURL_HEX_I1_FEM<double, FieldContainer<double> > hexHCurlBasis;
-    Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
-
-    int numFieldsC = hexHCurlBasis.getCardinality();
-    int numFieldsG = hexHGradBasis.getCardinality();
-
-  // Evaluate basis at cubature points
-     FieldContainer<double> hexGVals(numFieldsG, numCubPoints); 
-     FieldContainer<double> hexCVals(numFieldsC, numCubPoints, spaceDim); 
-     FieldContainer<double> hexCurls(numFieldsC, numCubPoints, spaceDim); 
-     FieldContainer<double> worksetCVals(numFieldsC, numFacePoints, spaceDim); 
-
-     hexHCurlBasis.getValues(hexCVals, cubPoints, OPERATOR_VALUE);
-     hexHCurlBasis.getValues(hexCurls, cubPoints, OPERATOR_CURL);
-     hexHGradBasis.getValues(hexGVals, cubPoints, OPERATOR_VALUE);
-
-// *********************** INHOMOGENEOUS BC ***********************
-
-    typedef CellTools<double>  CellTools;
-    typedef FunctionSpaceTools fst;
+/**********************************************************************************/
+/******************** INHOMOGENEOUS BOUNDARY CONDITIONS ***************************/
+/**********************************************************************************/
 
     FieldContainer<double> bndyEdgeVal(numEdgeOnBndy);
-    FieldContainer<int> bndyEdgeToEdge(numEdges);
-    FieldContainer<bool> bndyEdgeDone(numEdges);
+    FieldContainer<int>    bndyEdgeToEdge(numEdges);
+    FieldContainer<bool>   bndyEdgeDone(numEdges);
     FieldContainer<double> refEdgePoints(numEdgePoints,spaceDim);
     FieldContainer<double> bndyEdgePoints(1,numEdgePoints,spaceDim);
     FieldContainer<double> bndyEdgeJacobians(1,numEdgePoints,spaceDim,spaceDim);
@@ -942,23 +1092,23 @@ int main(int argc, char *argv[]) {
           if(edgeOnBoundary(elemToEdge(ielem,iedge)) && !bndyEdgeDone(elemToEdge(ielem,iedge))){
 
           // map evaluation points from reference edge to reference cell
-             CellTools::mapToReferenceSubcell(refEdgePoints,
+             IntrepidCTools::mapToReferenceSubcell(refEdgePoints,
                                    paramEdgePoints,
-                                   1, iedge, hex_8);
+                                   1, iedge, cellType);
 
           // calculate Jacobian
-             CellTools::setJacobian(bndyEdgeJacobians, refEdgePoints,
-                         nodes, hex_8);
+             IntrepidCTools::setJacobian(bndyEdgeJacobians, refEdgePoints,
+                         nodes, cellType);
 
           // map evaluation points from reference cell to physical cell
-             CellTools::mapToPhysicalFrame(bndyEdgePoints,
+             IntrepidCTools::mapToPhysicalFrame(bndyEdgePoints,
                                 refEdgePoints,
-                                nodes, hex_8);
+                                nodes, cellType);
 
           // Compute edge tangents
-             CellTools::getPhysicalEdgeTangents(edgeTan,
+             IntrepidCTools::getPhysicalEdgeTangents(edgeTan,
                                               bndyEdgeJacobians,
-                                              iedge, hex_8);
+                                              iedge, cellType);
 
           // evaluate exact solution at edge center and dot with normal
            for(int nPt = 0; nPt < numEdgePoints; nPt++){
@@ -983,357 +1133,474 @@ int main(int argc, char *argv[]) {
        }
     }
 
+   // Count of boundary edges
+    int numBCEdges=0;
+    for (int i=0; i<numEdges; i++){
+      if (edgeOnBoundary(i) && edgeIsOwned[i]){
+        numBCEdges++;
+      }
+    }
 
+   // Vector for use in applying BCs
+    Epetra_MultiVector v(globalMapC,true);
+    v.PutScalar(0.0);
 
-// ******** LOOP OVER ELEMENTS TO CREATE LOCAL MASS and STIFFNESS MATRICES *************
+    // Set v to boundary values on Dirichlet edges
+     int * BCEdges = new int [numBCEdges];
+     int indbc=0;
+     int iOwned=0;
+     for (int i=0; i<numEdges; i++){
+       if (edgeIsOwned[i]){
+         if (edgeOnBoundary(i)){
+            BCEdges[indbc]=iOwned;
+            indbc++;
+            v[0][iOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
+         }
+         iOwned++;
+       }
+     }
 
+  if(MyPID==0) {std::cout << "Boundary Condition Setup                    "
+                 << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
 
-  if (MyPID == 0) {
-    std::cout << "Building mass and stiffness matrices ... \n\n";
+/**********************************************************************************/
+/******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
+/**********************************************************************************/
+
+ // Define desired workset size and count how many worksets there are on this processor's mesh block
+  int desiredWorksetSize = numElems;                      // change to desired workset size!
+  //int desiredWorksetSize = 100;                      // change to desired workset size!
+  int numWorksets        = numElems/desiredWorksetSize;
+
+  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
+  if(numWorksets*desiredWorksetSize < numElems) numWorksets += 1;
+
+ if (MyPID == 0) {
+    std::cout << "Building discretization matrix and right hand side... \n\n";
+    std::cout << "\tDesired workset size:                 " << desiredWorksetSize <<"\n";
+    std::cout << "\tNumber of worksets (per processor):   " << numWorksets <<"\n\n";
+    Time.ResetStartTime();
   }
 
- // Settings and data structures for mass and stiffness matrices
-    typedef ArrayTools art;
-    int numCells = 1; 
+ for(int workset = 0; workset < numWorksets; workset++){
 
-   // Containers for nodes and edge signs 
-    FieldContainer<double> hexNodes(numCells, numNodesPerElem, spaceDim);
-    FieldContainer<double> hexEdgeSigns(numCells, numFieldsC);
+    // Compute cell numbers where the workset starts and ends
+    int worksetSize  = 0;
+    int worksetBegin = (workset + 0)*desiredWorksetSize;
+    int worksetEnd   = (workset + 1)*desiredWorksetSize;
+
+    // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
+     worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
+
+    // Now we know the actual workset size and can allocate the array for the cell nodes
+     worksetSize  = worksetEnd - worksetBegin;
+     FieldContainer<double> cellWorkset(worksetSize, numNodesPerElem, spaceDim);
+     FieldContainer<double> worksetEdgeSigns(worksetSize, numEdgesPerElem);
+
+    // Copy coordinates into cell workset
+    int cellCounter = 0;
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+      // Physical cell coordinates
+       for (int inode=0; inode<numNodesPerElem; inode++) {
+         cellWorkset(cellCounter,inode,0) = nodeCoord(elemToNode(cell,inode),0);
+         cellWorkset(cellCounter,inode,1) = nodeCoord(elemToNode(cell,inode),1);
+         cellWorkset(cellCounter,inode,2) = nodeCoord(elemToNode(cell,inode),2);
+       }
+
+      // Edge signs
+       for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
+          if (elemToNode(cell,refEdgeToNode(iedge,0))==edgeToNode(elemToEdge(cell,iedge),0) &&
+              elemToNode(cell,refEdgeToNode(iedge,1))==edgeToNode(elemToEdge(cell,iedge),1))
+              worksetEdgeSigns(cellCounter,iedge) = 1.0;
+          else 
+              worksetEdgeSigns(cellCounter,iedge) = -1.0;
+        }
+
+      // modify signs for edges that are owned by another processor
+      // (Note: this is particular to the numbering of edges used in Pamgen!!)
+       if (!faceIsOwned[elemToFace(cell,0)]) {
+            worksetEdgeSigns(cellCounter,0)=-1.0*worksetEdgeSigns(cellCounter,0);
+            worksetEdgeSigns(cellCounter,4)=-1.0*worksetEdgeSigns(cellCounter,4);
+        }
+       if (!faceIsOwned[elemToFace(cell,1)]) {
+            worksetEdgeSigns(cellCounter,1)=-1.0*worksetEdgeSigns(cellCounter,1);
+            worksetEdgeSigns(cellCounter,5)=-1.0*worksetEdgeSigns(cellCounter,5);
+        }
+       if (!faceIsOwned[elemToFace(cell,2)]) {
+            worksetEdgeSigns(cellCounter,2)=-1.0*worksetEdgeSigns(cellCounter,2);
+            worksetEdgeSigns(cellCounter,6)=-1.0*worksetEdgeSigns(cellCounter,6);
+        }
+       if (!faceIsOwned[elemToFace(cell,3)]) {
+            worksetEdgeSigns(cellCounter,3)=-1.0*worksetEdgeSigns(cellCounter,3);
+            worksetEdgeSigns(cellCounter,7)=-1.0*worksetEdgeSigns(cellCounter,7);
+        }
+
+#ifdef DUMP_DATA
+       for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
+          edgeSign[iedge][cell] = worksetEdgeSigns(cellCounter,iedge); 
+       }
+#endif
+
+        cellCounter++;
+
+     } // end loop over workset cells
+
+ /**********************************************************************************/
+ /*                                Allocate arrays                                 */
+ /**********************************************************************************/
+
    // Containers for Jacobian
-    FieldContainer<double> hexJacobian(numCells, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> hexJacobInv(numCells, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> hexJacobDet(numCells, numCubPoints);
-   // Containers for element HGRAD mass matrix
-    FieldContainer<double> massMatrixG(numCells, numFieldsG, numFieldsG);
-    FieldContainer<double> weightedMeasure(numCells, numCubPoints);
-    FieldContainer<double> weightedMeasureMuInv(numCells, numCubPoints);
-    FieldContainer<double> hexGValsTransformed(numCells, numFieldsG, numCubPoints);
-    FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
-   // Containers for element HCURL mass matrix
-    FieldContainer<double> massMatrixC(numCells, numFieldsC, numFieldsC);
-    FieldContainer<double> hexCValsTransformed(numCells, numFieldsC, numCubPoints, spaceDim);
-    FieldContainer<double> hexCValsTransformedWeighted(numCells, numFieldsC, numCubPoints, spaceDim);
-   // Containers for element HCURL stiffness matrix
-    FieldContainer<double> stiffMatrixC(numCells, numFieldsC, numFieldsC);
-    FieldContainer<double> weightedMeasureMu(numCells, numCubPoints);    
-    FieldContainer<double> hexCurlsTransformed(numCells, numFieldsC, numCubPoints, spaceDim);
-    FieldContainer<double> hexCurlsTransformedWeighted(numCells, numFieldsC, numCubPoints, spaceDim);
-   // Containers for right hand side vectors
-    FieldContainer<double> rhsDatag(numCells, numCubPoints, cubDim);
-    FieldContainer<double> rhsDatah(numCells, numCubPoints, cubDim);
-    FieldContainer<double> gC(numCells, numFieldsC);
-    FieldContainer<double> hC(numCells, numFieldsC);
-    FieldContainer<double> hCBoundary(numCells, numFieldsC);
-    FieldContainer<double> refGaussPoints(numFacePoints,spaceDim);
-    FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
-    FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetJacobInv(numCells, numFacePoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetFaceN(numCells, numFacePoints, spaceDim);
-    FieldContainer<double> worksetVFieldVals(numCells, numFacePoints, spaceDim);
-    FieldContainer<double> worksetCValsTransformed(numCells, numFieldsC, numFacePoints, spaceDim);
-    FieldContainer<double> divuFace(numCells, numFacePoints);
-    FieldContainer<double> worksetFieldDotNormal(numCells, numFieldsC, numFacePoints);
+    FieldContainer<double> worksetJacobian (worksetSize, numCubPoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetJacobInv (worksetSize, numCubPoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetJacobDet (worksetSize, numCubPoints);
 
    // Container for cubature points in physical space
-    FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
+    FieldContainer<double> worksetCubPoints (worksetSize,numCubPoints, cubDim);
 
-    
-   // Global arrays in Epetra format
-    Epetra_FECrsMatrix MassG(Copy, globalMapG, numFieldsG);
-    Epetra_FECrsMatrix MassC(Copy, globalMapC, numFieldsC);
-    Epetra_FECrsMatrix StiffC(Copy, globalMapC, numFieldsC);
-    Epetra_FEVector rhsC(globalMapC);
+   // Containers for element HGRAD mass matrix
+    FieldContainer<double> massMatrixHGrad           (worksetSize, numFieldsG, numFieldsG);
+    FieldContainer<double> weightedMeasure           (worksetSize, numCubPoints);
+    FieldContainer<double> weightedMeasureMuInv      (worksetSize, numCubPoints);
+    FieldContainer<double> HGValsTransformed         (worksetSize, numFieldsG, numCubPoints);
+    FieldContainer<double> HGValsTransformedWeighted (worksetSize, numFieldsG, numCubPoints);
 
-#ifdef DUMP_DATAE
-    std::stringstream eSignfname;
-      eSignfname << "edgeSigns";
-      eSignfname << MyPID << ".dat";
-    ofstream fSignsout(eSignfname.str().c_str());
-#endif
+   // Containers for element HCURL mass matrix
+    FieldContainer<double> massMatrixHCurl           (worksetSize, numFieldsC, numFieldsC);
+    FieldContainer<double> HCValsTransformed         (worksetSize, numFieldsC, numCubPoints, spaceDim);
+    FieldContainer<double> HCValsTransformedWeighted (worksetSize, numFieldsC, numCubPoints, spaceDim);
 
- // *** Element loop ***
-    for (int k=0; k<numElems; k++) {
+   // Containers for element HCURL stiffness matrix
+    FieldContainer<double> stiffMatrixHCurl          (worksetSize, numFieldsC, numFieldsC);
+    FieldContainer<double> weightedMeasureMu         (worksetSize, numCubPoints);
+    FieldContainer<double> HCurlsTransformed         (worksetSize, numFieldsC, numCubPoints, spaceDim);
+    FieldContainer<double> HCurlsTransformedWeighted (worksetSize, numFieldsC, numCubPoints, spaceDim);
 
-     // Physical cell coordinates
-      for (int i=0; i<numNodesPerElem; i++) {
-         hexNodes(0,i,0) = nodeCoord(elemToNode(k,i),0);
-         hexNodes(0,i,1) = nodeCoord(elemToNode(k,i),1);
-         hexNodes(0,i,2) = nodeCoord(elemToNode(k,i),2);
-      }
+   // Containers for right hand side vectors
+    FieldContainer<double> rhsDatag           (worksetSize, numCubPoints, cubDim);
+    FieldContainer<double> rhsDatah           (worksetSize, numCubPoints, cubDim);
+    FieldContainer<double> gC                 (worksetSize, numFieldsC);
+    FieldContainer<double> hC                 (worksetSize, numFieldsC);
 
-     // Edge signs
-      for (int j=0; j<numEdgesPerElem; j++) {
-          if (elemToNode(k,refEdgeToNode(j,0))==edgeToNode(elemToEdge(k,j),0) &&
-              elemToNode(k,refEdgeToNode(j,1))==edgeToNode(elemToEdge(k,j),1))
-              hexEdgeSigns(0,j) = 1.0;
-          else 
-              hexEdgeSigns(0,j) = -1.0;
-       }
-       
-
-      // modify signs for edges whose signs were defined on another processor
-       if (!faceIsOwned[elemToFace(k,0)]) {
-            hexEdgeSigns(0,0)=-1.0*hexEdgeSigns(0,0);
-            hexEdgeSigns(0,4)=-1.0*hexEdgeSigns(0,4);
-        }
-       if (!faceIsOwned[elemToFace(k,1)]) {
-            hexEdgeSigns(0,1)=-1.0*hexEdgeSigns(0,1);
-            hexEdgeSigns(0,5)=-1.0*hexEdgeSigns(0,5);
-        }
-       if (!faceIsOwned[elemToFace(k,2)]) {
-            hexEdgeSigns(0,2)=-1.0*hexEdgeSigns(0,2);
-            hexEdgeSigns(0,6)=-1.0*hexEdgeSigns(0,6);
-        }
-       if (!faceIsOwned[elemToFace(k,3)]) {
-            hexEdgeSigns(0,3)=-1.0*hexEdgeSigns(0,3);
-            hexEdgeSigns(0,7)=-1.0*hexEdgeSigns(0,7);
-        }
+  // Containers for right hand side boundary term
+    FieldContainer<double> hCBoundary         (1, numFieldsC);
+    FieldContainer<double> refFacePoints      (numFacePoints,spaceDim);
+    FieldContainer<double> cellNodes          (1, numNodesPerElem, spaceDim);
+    FieldContainer<double> worksetFacePoints  (1, numFacePoints, spaceDim);
+    FieldContainer<double> faceJacobians      (1, numFacePoints, spaceDim, spaceDim);
+    FieldContainer<double> faceJacobInv       (1, numFacePoints, spaceDim, spaceDim);
+    FieldContainer<double> faceNormal         (1, numFacePoints, spaceDim);
+    FieldContainer<double> bcFaceCVals        (numFieldsC, numFacePoints, spaceDim);
+    FieldContainer<double> faceVFieldVals     (1, numFacePoints, spaceDim);
+    FieldContainer<double> bcCValsTransformed (1, numFieldsC, numFacePoints, spaceDim);
+    FieldContainer<double> divuFace           (1, numFacePoints);
+    FieldContainer<double> bcFieldDotNormal   (1, numFieldsC, numFacePoints);
+    FieldContainer<double> bcEdgeSigns        (1, numFieldsC);
 
 
-#ifdef DUMP_DATAE
-     for (int j=0; j<numEdgesPerElem; j++) {
-        fSignsout << hexEdgeSigns(0,j) << "  ";
-      } 
-      fSignsout << "\n";
-#endif
+ /**********************************************************************************/
+ /*                                Calculate Jacobians                             */
+ /**********************************************************************************/
 
-       // Compute cell Jacobians, their inverses and their determinants
-       CellTools::setJacobian(hexJacobian, cubPoints, hexNodes, hex_8);
-       CellTools::setJacobianInv(hexJacobInv, hexJacobian );
-       CellTools::setJacobianDet(hexJacobDet, hexJacobian );
+      IntrepidCTools::setJacobian   (worksetJacobian, cubPoints, cellWorkset, cellType);
+      IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
+      IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
 
-// ************************** Compute element HGrad mass matrices *******************************
-  
-     // transform to physical coordinates 
-      fst::HGRADtransformVALUE<double>(hexGValsTransformed, hexGVals);
-      
+   if(MyPID==0) {std::cout << "Calculate Jacobians                         "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+
+ /**********************************************************************************/
+ /*                          Compute HGRAD Mass Matrix                             */
+ /**********************************************************************************/
+
+     // transform to physical coordinates
+      IntrepidFSTools::HGRADtransformVALUE<double>(HGValsTransformed, HGVals);
+
      // compute weighted measure
-      fst::computeCellMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
+      IntrepidFSTools::computeCellMeasure<double>(weightedMeasure, worksetJacobDet, cubWeights);
 
-      // combine mu value with weighted measure
-      for (int nC = 0; nC < numCells; nC++){
-        for (int nPt = 0; nPt < numCubPoints; nPt++){
-          weightedMeasureMuInv(nC,nPt) = weightedMeasure(nC,nPt) / muVal(k);
-        }
-      }
-      
      // multiply values with weighted measure
-      fst::multiplyMeasure<double>(hexGValsTransformedWeighted,
-                                   weightedMeasureMuInv, hexGValsTransformed);
+      IntrepidFSTools::multiplyMeasure<double>(HGValsTransformedWeighted,
+                                   weightedMeasure, HGValsTransformed);
 
      // integrate to compute element mass matrix
-      fst::integrate<double>(massMatrixG,
-                             hexGValsTransformed, hexGValsTransformedWeighted, COMP_CPP);
+      IntrepidFSTools::integrate<double>(massMatrixHGrad,
+                             HGValsTransformed, HGValsTransformedWeighted, COMP_BLAS);
 
-      // assemble into global matrix
-      int err = 0;
-      for (int row = 0; row < numFieldsG; row++){
-        for (int col = 0; col < numFieldsG; col++){
-            int rowIndex = globalNodeIds[elemToNode(k,row)];
-            int colIndex = globalNodeIds[elemToNode(k,col)];
-            double val = massMatrixG(0,row,col);
-            MassG.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-         }
-      }
+   if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
-// ************************** Compute element HCurl mass matrices *******************************
+      
+ /**********************************************************************************/
+ /*                          Compute HCURL Mass Matrix                             */
+ /**********************************************************************************/
 
-     // transform to physical coordinates 
-      fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, 
-                                   hexCVals);
+     // transform to physical coordinates
+      IntrepidFSTools::HCURLtransformVALUE<double>(HCValsTransformed, worksetJacobInv,
+                                   HCVals);
 
      // multiply by weighted measure
-      fst::multiplyMeasure<double>(hexCValsTransformedWeighted,
-                                   weightedMeasure, hexCValsTransformed);
+      IntrepidFSTools::multiplyMeasure<double>(HCValsTransformedWeighted,
+                                   weightedMeasure, HCValsTransformed);
 
      // integrate to compute element mass matrix
-      fst::integrate<double>(massMatrixC,
-                             hexCValsTransformed, hexCValsTransformedWeighted,
-                             COMP_CPP);
+      IntrepidFSTools::integrate<double>(massMatrixHCurl,
+                             HCValsTransformed, HCValsTransformedWeighted,
+                             COMP_BLAS);
 
      // apply edge signs
-      fst::applyLeftFieldSigns<double>(massMatrixC, hexEdgeSigns);
-      fst::applyRightFieldSigns<double>(massMatrixC, hexEdgeSigns);
+      IntrepidFSTools::applyLeftFieldSigns<double> (massMatrixHCurl, worksetEdgeSigns);
+      IntrepidFSTools::applyRightFieldSigns<double>(massMatrixHCurl, worksetEdgeSigns);
+
+   if(MyPID==0) {std::cout << "Compute HCURL Mass Matrix                   "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
 
-     // assemble into global matrix
-      err = 0;
-      for (int row = 0; row < numFieldsC; row++){
-        for (int col = 0; col < numFieldsC; col++){
-            int rowIndex = globalEdgeIds[elemToEdge(k,row)];
-            int colIndex = globalEdgeIds[elemToEdge(k,col)];
-            double val = massMatrixC(0,row,col);
-            MassC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-         }
-      }
+ /**********************************************************************************/
+ /*                     Compute HCURL Stiffness Matrix                             */
+ /**********************************************************************************/
 
-// ************************ Compute element HCurl stiffness matrices *****************************
-
-      // transform to physical coordinates 
-      fst::HCURLtransformCURL<double>(hexCurlsTransformed, hexJacobian, hexJacobDet, 
-                                      hexCurls);
-
-      // combine mu value with weighted measure
-      for (int nC = 0; nC < numCells; nC++){
-        for (int nPt = 0; nPt < numCubPoints; nPt++){
-          weightedMeasureMu(nC,nPt) = weightedMeasure(nC,nPt) * muVal(k);
-          //weightedMeasureMu(nC,nPt) = weightedMeasure(nC,nPt);
-         }
-      }
+      // transform to physical coordinates
+      IntrepidFSTools::HCURLtransformCURL<double>(HCurlsTransformed, worksetJacobian, worksetJacobDet,
+                                      HCurls);
 
      // multiply by weighted measure
-      fst::multiplyMeasure<double>(hexCurlsTransformedWeighted,
-                                   weightedMeasureMu, hexCurlsTransformed);
+      IntrepidFSTools::multiplyMeasure<double>(HCurlsTransformedWeighted,
+                                   weightedMeasure, HCurlsTransformed);
 
      // integrate to compute element stiffness matrix
-      fst::integrate<double>(stiffMatrixC,
-                             hexCurlsTransformed, hexCurlsTransformedWeighted,
-                             COMP_CPP);
+      IntrepidFSTools::integrate<double>(stiffMatrixHCurl,
+                             HCurlsTransformed, HCurlsTransformedWeighted,
+                             COMP_BLAS);
 
      // apply edge signs
-      fst::applyLeftFieldSigns<double>(stiffMatrixC, hexEdgeSigns);
-      fst::applyRightFieldSigns<double>(stiffMatrixC, hexEdgeSigns);
+      IntrepidFSTools::applyLeftFieldSigns<double> (stiffMatrixHCurl, worksetEdgeSigns);
+      IntrepidFSTools::applyRightFieldSigns<double>(stiffMatrixHCurl, worksetEdgeSigns);
 
-     // assemble into global matrix
-      err = 0;
-      for (int row = 0; row < numFieldsC; row++){
-        for (int col = 0; col < numFieldsC; col++){
-            int rowIndex = globalEdgeIds[elemToEdge(k,row)];
-            int colIndex = globalEdgeIds[elemToEdge(k,col)];
-            double val = stiffMatrixC(0,row,col);
-            StiffC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-         }
-      }
+   if(MyPID==0) {std::cout << "Compute HCURL Stiffness Matrix              "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
-// ******************************* Build right hand side ************************************
+
+ /**********************************************************************************/
+ /*                          Build Right Hand Side                                 */
+ /**********************************************************************************/
 
       // transform integration points to physical points
-       CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
+       IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPoints, cellWorkset, cellType);
 
       // evaluate right hand side functions at physical points
-       for (int nPt = 0; nPt < numCubPoints; nPt++){
+       for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
-          double x = physCubPoints(0,nPt,0);
-          double y = physCubPoints(0,nPt,1);
-          double z = physCubPoints(0,nPt,2);
-          double du1, du2, du3;
+        // Compute cell ordinal relative to the current workset
+         int worksetCellOrdinal = cell - worksetBegin;
 
-          evalCurlu(du1, du2, du3, x, y, z, muVal(k));
-          rhsDatag(0,nPt,0) = du1;
-          rhsDatag(0,nPt,1) = du2;
-          rhsDatag(0,nPt,2) = du3;
-         
-          evalGradDivu(du1, du2, du3,  x, y, z, muVal(k));
-          rhsDatah(0,nPt,0) = du1;
-          rhsDatah(0,nPt,1) = du2;
-          rhsDatah(0,nPt,2) = du3;
+         for (int nPt = 0; nPt < numCubPoints; nPt++){
+            double x = worksetCubPoints(worksetCellOrdinal,nPt,0);
+            double y = worksetCubPoints(worksetCellOrdinal,nPt,1);
+            double z = worksetCubPoints(worksetCellOrdinal,nPt,2);
+            double du1, du2, du3;
+
+            evalCurlu(du1, du2, du3, x, y, z, muVal(cell));
+            rhsDatag(worksetCellOrdinal,nPt,0) = du1;
+            rhsDatag(worksetCellOrdinal,nPt,1) = du2;
+            rhsDatag(worksetCellOrdinal,nPt,2) = du3;
+
+            evalGradDivu(du1, du2, du3,  x, y, z, muVal(cell));
+            rhsDatah(worksetCellOrdinal,nPt,0) = du1;
+            rhsDatah(worksetCellOrdinal,nPt,1) = du2;
+            rhsDatah(worksetCellOrdinal,nPt,2) = du3;
+          }
        }
 
      // integrate (g,curl w) term
-      fst::integrate<double>(gC, rhsDatag, hexCurlsTransformedWeighted,
-                             COMP_CPP);
+      IntrepidFSTools::integrate<double>(gC, rhsDatag, HCurlsTransformedWeighted,
+                             COMP_BLAS);
 
      // integrate (h,div w) term
-      fst::integrate<double>(hC, rhsDatah, hexCValsTransformedWeighted,
-                             COMP_CPP);
+      IntrepidFSTools::integrate<double>(hC, rhsDatah, HCValsTransformedWeighted,
+                             COMP_BLAS);
+    // apply signs
+      IntrepidFSTools::applyFieldSigns<double>(gC, worksetEdgeSigns);
+      IntrepidFSTools::applyFieldSigns<double>(hC, worksetEdgeSigns);
 
-     // apply signs
-      fst::applyFieldSigns<double>(gC, hexEdgeSigns);
-      fst::applyFieldSigns<double>(hC, hexEdgeSigns);
 
-    // evaluate boundary term
-      for (int i = 0; i < numFacesPerElem; i++){
-        if (faceOnBoundary(elemToFace(k,i))){
+    // evaluate RHS boundary term
+     for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+      // Compute cell ordinal relative to the current workset
+       int worksetCellOrdinal = cell - worksetBegin;
+
+      // evaluate boundary term
+       for (int iface = 0; iface < numFacesPerElem; iface++){
+          if (faceOnBoundary(elemToFace(cell,iface))){
+
+            // cell nodal coordinates
+             for (int inode =0; inode < numNodesPerElem; inode++){
+                 cellNodes(0,inode,0) = cellWorkset(worksetCellOrdinal,inode,0);
+                 cellNodes(0,inode,1) = cellWorkset(worksetCellOrdinal,inode,1);
+                 cellNodes(0,inode,2) = cellWorkset(worksetCellOrdinal,inode,2);
+              }
+
+            // cell edge signs
+              for (int iedge =0; iedge < numEdgesPerElem; iedge++){
+                  bcEdgeSigns(0,iedge) = worksetEdgeSigns(worksetCellOrdinal,iedge);
+              }
            
-         // map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
-            CellTools::mapToReferenceSubcell(refGaussPoints,
-                                   paramGaussPoints,
-                                   2, i, hex_8);
+            // map Gauss points on quad to reference face: paramFacePoints -> refFacePoints
+              IntrepidCTools::mapToReferenceSubcell(refFacePoints,
+                                   paramFacePoints,
+                                   2, iface, cellType);
 
-         // get basis values at points on reference cell
-           hexHCurlBasis.getValues(worksetCVals, refGaussPoints, OPERATOR_VALUE);
+            // get basis values at points on reference cell
+              hexHCurlBasis.getValues(bcFaceCVals, refFacePoints, OPERATOR_VALUE);
 
-         // compute Jacobians at Gauss pts. on reference face for all parent cells
-           CellTools::setJacobian(worksetJacobians,
-                         refGaussPoints,
-                         hexNodes, hex_8);
-           CellTools::setJacobianInv(worksetJacobInv, worksetJacobians );
+            // compute Jacobians at Gauss pts. on reference face for all parent cells
+              IntrepidCTools::setJacobian(faceJacobians,
+                                          refFacePoints,
+                                          cellNodes, cellType);
+              IntrepidCTools::setJacobianInv(faceJacobInv, faceJacobians );
 
-         // transform to physical coordinates 
-            fst::HCURLtransformVALUE<double>(worksetCValsTransformed, worksetJacobInv, 
-                                   worksetCVals);
+            // transform to physical coordinates 
+              IntrepidFSTools::HCURLtransformVALUE<double>(bcCValsTransformed, faceJacobInv, 
+                                                           bcFaceCVals);
 
-         // map Gauss points on quad from ref. face to face workset: refGaussPoints -> worksetGaussPoints
-            CellTools::mapToPhysicalFrame(worksetGaussPoints,
-                                refGaussPoints,
-                                hexNodes, hex_8);
+            // map Gauss points on quad from ref. face to face workset: refFacePoints -> worksetFacePoints
+              IntrepidCTools::mapToPhysicalFrame(worksetFacePoints,
+                                                 refFacePoints,
+                                                 cellNodes, cellType);
 
-         // Compute face normals
-            CellTools::getPhysicalFaceNormals(worksetFaceN,
-                                              worksetJacobians,
-                                              i, hex_8);
+            // Compute face normals
+               IntrepidCTools::getPhysicalFaceNormals(faceNormal,
+                                              faceJacobians,
+                                              iface, cellType);
 
-         // evaluate div u at face points
-           for(int nPt = 0; nPt < numFacePoints; nPt++){
-
-             double x = worksetGaussPoints(0, nPt, 0);
-             double y = worksetGaussPoints(0, nPt, 1);
-             double z = worksetGaussPoints(0, nPt, 2);
-
-             divuFace(0,nPt)=evalDivu(x, y, z, muVal(k));
-           }
-
-          // compute the dot product and multiply by Gauss weights
-           for (int nF = 0; nF < numFieldsC; nF++){
+            // evaluate div u at face points
               for(int nPt = 0; nPt < numFacePoints; nPt++){
-                 worksetFieldDotNormal(0,nF,nPt)=0.0;
-                  for (int dim = 0; dim < spaceDim; dim++){
-                      worksetFieldDotNormal(0,nF,nPt) += worksetCValsTransformed(0,nF,nPt,dim)
-                                              * worksetFaceN(0,nPt,dim) * paramGaussWeights(nPt);
-                  } //dim
-              } //nPt
-           } //nF
 
-          // integrate 
-          fst::integrate<double>(hCBoundary, divuFace, worksetFieldDotNormal,
+                double x = worksetFacePoints(0, nPt, 0);
+                double y = worksetFacePoints(0, nPt, 1);
+                double z = worksetFacePoints(0, nPt, 2);
+   
+                divuFace(0,nPt)=evalDivu(x, y, z, muVal(cell));
+              }
+
+            // compute the dot product and multiply by Gauss weights
+               for (int nF = 0; nF < numFieldsC; nF++){
+                  for(int nPt = 0; nPt < numFacePoints; nPt++){
+                     bcFieldDotNormal(0,nF,nPt)=0.0;
+                        for (int dim = 0; dim < spaceDim; dim++){
+                           bcFieldDotNormal(0,nF,nPt) += bcCValsTransformed(0,nF,nPt,dim)
+                                              * faceNormal(0,nPt,dim) * paramFaceWeights(nPt);
+                        } //dim
+                    } //nPt
+                } //nF
+
+            // integrate 
+               IntrepidFSTools::integrate<double>(hCBoundary, divuFace, bcFieldDotNormal,
                              COMP_CPP);
 
-          // apply signs
-           fst::applyFieldSigns<double>(hCBoundary, hexEdgeSigns);
+            // apply signs
+              IntrepidFSTools::applyFieldSigns<double>(hCBoundary, bcEdgeSigns);
 
-          // add into hC term
-            for (int nF = 0; nF < numFieldsC; nF++){
-                hC(0,nF) = hC(0,nF) - hCBoundary(0,nF);
-            }
+            // add into hC term
+              for (int nF = 0; nF < numFieldsC; nF++){
+                  hC(worksetCellOrdinal,nF) = hC(worksetCellOrdinal,nF) - hCBoundary(0,nF);
+              }
           
-        } // if faceOnBoundary
-      } // numFaces
+             } // if faceOnBoundary
+
+         } // numFaces
+
+     }// *** workset cell loop **
 
 
-    // assemble into global vector
-     for (int row = 0; row < numFieldsC; row++){
-           int rowIndex = globalEdgeIds[elemToEdge(k,row)];
-           double val = gC(0,row)-hC(0,row);
-           rhsC.SumIntoGlobalValues(1, &rowIndex, &val);
-     }
+  if(MyPID==0) {std::cout << "Compute right-hand side                     "
+                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
-     
-    } // *** end element loop ***
+
+ /**********************************************************************************/
+ /*                         Assemble into Global Matrix                            */
+ /**********************************************************************************/
+
+   // Loop over workset cells
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+      // Compute cell ordinal relative to the current workset
+      int worksetCellOrdinal = cell - worksetBegin;
+
+
+      /*** Assemble H(grad) mass matrix ***/
+
+      // loop over nodes for matrix row
+      for (int cellNodeRow = 0; cellNodeRow < numFieldsG; cellNodeRow++){
+
+        int localNodeRow  = elemToNode(cell, cellNodeRow);
+        int globalNodeRow = globalNodeIds[localNodeRow];
+
+       // loop over nodes for matrix column
+        for (int cellNodeCol = 0; cellNodeCol < numFieldsG; cellNodeCol++){
+
+          int localNodeCol  = elemToNode(cell, cellNodeCol);
+          int globalNodeCol = globalNodeIds[localNodeCol];
+          double massGContribution = massMatrixHGrad(worksetCellOrdinal, cellNodeRow, cellNodeCol);
+
+          MassMatrixG.InsertGlobalValues(1, &globalNodeRow, 1, &globalNodeCol, &massGContribution);
+
+        }// *** cell node col loop ***
+      }// *** cell node row loop ***
+
+
+      /*** Assemble H(curl) mass matrix, stiffness matrix and right-hand side ***/
+
+      // loop over edges for matrix row
+      for (int cellEdgeRow = 0; cellEdgeRow < numFieldsC; cellEdgeRow++){
+
+        int localEdgeRow  = elemToEdge(cell, cellEdgeRow);
+        int globalEdgeRow = globalEdgeIds[localEdgeRow];
+        double rhsContribution = gC(worksetCellOrdinal, cellEdgeRow) - hC(worksetCellOrdinal, cellEdgeRow);
+
+        rhsVector.SumIntoGlobalValues(1, &globalEdgeRow, &rhsContribution);
+
+       // loop over edges for matrix column
+        for (int cellEdgeCol = 0; cellEdgeCol < numFieldsC; cellEdgeCol++){
+
+          int localEdgeCol  = elemToEdge(cell, cellEdgeCol);
+          int globalEdgeCol = globalEdgeIds[localEdgeCol];
+
+          double massCContribution  = massMatrixHCurl (worksetCellOrdinal, cellEdgeRow, cellEdgeCol);
+          double stiffCContribution = stiffMatrixHCurl(worksetCellOrdinal, cellEdgeRow, cellEdgeCol);
+
+          MassMatrixC.InsertGlobalValues (1, &globalEdgeRow, 1, &globalEdgeCol, &massCContribution);
+          StiffMatrixC.InsertGlobalValues(1, &globalEdgeRow, 1, &globalEdgeCol, &stiffCContribution);
+
+
+        }// *** cell edge col loop ***
+      }// *** cell edge row loop ***
+
+    }// *** workset cell loop **
+  }// *** workset loop ***
+
+  if(MyPID==0) {std::cout << "Assemble Matrices                           "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+
+/**********************************************************************************/
+/********************* ASSEMBLE OVER MULTIPLE PROCESSORS **************************/
+/**********************************************************************************/
 
     // Assemble over multiple processors, if necessary
-    MassG.GlobalAssemble();  MassG.FillComplete();
-    MassC.GlobalAssemble();  MassC.FillComplete();
-    StiffC.GlobalAssemble(); StiffC.FillComplete();
-    rhsC.GlobalAssemble();
+    MassMatrixG.GlobalAssemble();  MassMatrixG.FillComplete();
+    StiffMatrixC.GlobalAssemble(); StiffMatrixC.FillComplete();
+    MassMatrixC.GlobalAssemble();  MassMatrixC.FillComplete();
+    rhsVector.GlobalAssemble();
 
-    DGrad.GlobalAssemble(globalMapG,globalMapC); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap()); 
+
+  if(MyPID==0) {std::cout << "Global assembly                             "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
 
 #ifdef DUMP_DATA
-   // Matrices and Vector before adjusting due to BCs
-   EpetraExt::RowMatrixToMatlabFile("mag_m1_0_matrix.dat",MassC);
-   EpetraExt::RowMatrixToMatlabFile("mag_k1_0_matrix.dat",StiffC);
-   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs1_clean.dat",rhsC,0,0,false);
-
     // Node Coordinates
     EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
     EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
@@ -1343,80 +1610,57 @@ int main(int argc, char *argv[]) {
     EpetraExt::VectorToMatrixMarketFile("ecoordx.dat",EDGE_X);
     EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
     EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);     
+
+    // Edge signs
+    EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
 #endif
 
+
+/**********************************************************************************/
+/*********************** ADJUST MATRICES AND RHS FOR BCs **************************/
+/**********************************************************************************/
   
-   // Build the inverse diagonal for MassG
-   Epetra_Vector DiagG(MassG.RowMap());
+   // Build the inverse diagonal for MassMatrixG
+   Epetra_Vector DiagG(MassMatrixG.RowMap());
    DiagG.PutScalar(1.0);
-   MassG.Multiply(false,DiagG,DiagG);
-   for(int i=0;i<DiagG.MyLength();i++) DiagG[i]=1.0/DiagG[i];
-   Epetra_CrsMatrix MassGinv(Copy,MassG.RowMap(),MassG.RowMap(),1);
+   MassMatrixG.Multiply(false,DiagG,DiagG);
    for(int i=0;i<DiagG.MyLength();i++) {
-     int CID=MassG.GCID(i);
-     MassGinv.InsertGlobalValues(MassG.GRID(i),1,&(DiagG[i]),&CID);
+       DiagG[i]=1.0/DiagG[i];
    }
-   MassGinv.FillComplete();
+   Epetra_CrsMatrix MassMatrixGinv(Copy,MassMatrixG.RowMap(),MassMatrixG.RowMap(),1);
+   for(int i=0;i<DiagG.MyLength();i++) {
+     int CID=MassMatrixG.GCID(i);
+     MassMatrixGinv.InsertGlobalValues(MassMatrixG.GRID(i),1,&(DiagG[i]),&CID);
+   }
+   MassMatrixGinv.FillComplete();
    
    // Zero out entries that correspond to boundary nodes
    for(int i=0;i<numNodes;i++) {
      if (nodeOnBoundary(i)){
       double val=0.0;
       int index = globalNodeIds[i];
-      MassGinv.ReplaceGlobalValues(index,1,&val,&index);
+      MassMatrixGinv.ReplaceGlobalValues(index,1,&val,&index);
      }
    }
 
-   std::cout << "Adjust for boundary conditions... "<< "\n";
+  // Get the full matrix operator
+   ML_Epetra::ML_RefMaxwell_11_Operator MatrixC(StiffMatrixC,DGrad,MassMatrixGinv,MassMatrixC);
 
-  // Count of boundary edges
-    int numBCEdges=0;
-    for (int i=0; i<numEdges; i++){
-      if (edgeOnBoundary(i) && edgeIsOwned[i]){
-        numBCEdges++;
-      }
-    }
-    std::cout<< "numBCEdges " <<numBCEdges<<"\n";
+  // Apply it to v
+   Epetra_MultiVector rhsDir(globalMapC,true);
+   MatrixC.Apply(v,rhsDir);
 
-  // Vector for use in applying BCs
-   Epetra_MultiVector v(globalMapC,true);
-   v.PutScalar(0.0);
+  // Update right-hand side
+   rhsVector.Update(-1.0,rhsDir,1.0);
 
-   // Set v to boundary values on Dirichlet edges
-    int * BCEdges = new int [numBCEdges];
-    int indbc=0;
+   // Adjust rhs due to Dirichlet boundary conditions
+    indbc=0;
     int indOwned=0;
     for (int i=0; i<numEdges; i++){
       if (edgeIsOwned[i]){
         if (edgeOnBoundary(i)){
-           BCEdges[indbc]=indOwned;
            indbc++;
-           v[0][indOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
-        }
-        indOwned++;
-      }
-    }
-
-  // Get the full matrix
-   ML_Epetra::ML_RefMaxwell_11_Operator MatrixC(StiffC,DGrad,MassGinv,MassC);
-
-  // Apply it to v
-   Epetra_MultiVector rhsDir(globalMapC,true);
-   //rhsDir.PutScalar(0.0);
-   MatrixC.Apply(v,rhsDir);
-
-  // Update right-hand side
-   rhsC.Update(-1.0,rhsDir,1.0);
-
-
-   // Adjust rhs due to Dirichlet boundary conditions
-    indbc=0;
-    indOwned=0;
-    for (int i=0; i<numEdges; i++){
-      if (edgeIsOwned[i]){
-        if (edgeOnBoundary(i)){
-           indbc++;
-           rhsC[0][indOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
+           rhsVector[0][indOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
            rhsDir[0][indOwned]=0.0;
         }
         indOwned++;
@@ -1425,13 +1669,19 @@ int main(int argc, char *argv[]) {
 
    // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
    //  and add one to diagonal.
-    ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffC);
-    std::cout<< "indbc " <<indbc<<"\n";
+    ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffMatrixC);
 
     delete [] BCEdges;
 
+ if(MyPID==0) {std::cout << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
+                  << " sec \n"; Time.ResetStartTime();}
 
-   // Solve!
+
+/**********************************************************************************/
+/*********************************** SOLVE ****************************************/
+/**********************************************************************************/
+
+   // Parameter list for ML
    Teuchos::ParameterList MLList,dummy;
    double TotalErrorResidual=0, TotalErrorExactSol=0;   
    ML_Epetra::SetDefaultsRefMaxwell(MLList);
@@ -1468,23 +1718,26 @@ int main(int argc, char *argv[]) {
   if (MyPID == 0) {
    cout<<MLList2<<endl;
   }
-   
 
-   Epetra_FEVector xh(rhsC);
+   Epetra_FEVector xh(rhsVector);
 
-   MassC.SetLabel("M1");
-   StiffC.SetLabel("K1");
+   MassMatrixC.SetLabel("M1");
+   StiffMatrixC.SetLabel("K1");
    DGrad.SetLabel("D0");
-   MassGinv.SetLabel("M0^{-1}");
+   MassMatrixGinv.SetLabel("M0^{-1}");
    
    char probType[12] = "curl_lsfem";
 
-   TestMultiLevelPreconditioner_CurlLSFEM(probType,MLList2,StiffC,
-                                          DGrad,MassGinv,MassC,
-                                          xh,rhsC,
+   TestMultiLevelPreconditioner_CurlLSFEM(probType,MLList2,StiffMatrixC,
+                                          DGrad,MassMatrixGinv,MassMatrixC,
+                                          xh,rhsVector,
                                           TotalErrorResidual, TotalErrorExactSol);
 
-    // ********  Calculate Error in Solution ***************
+/**********************************************************************************/
+/**************************** CALCULATE ERROR *************************************/
+/**********************************************************************************/
+
+  if (MyPID == 0) {Time.ResetStartTime();}
 
      double L2err = 0.0;
      double HCurlerr = 0.0;
@@ -1501,11 +1754,14 @@ int main(int argc, char *argv[]) {
      uCoeff.Import(xh, solnImporter, Insert);
 #endif
      
+     int numCells = 1;
+     FieldContainer<double> hexEdgeSigns(numCells, numFieldsC);
+     FieldContainer<double> hexNodes(numCells, numFieldsG, spaceDim);
 
    // Get cubature points and weights for error calc (may be different from previous)
      DefaultCubatureFactory<double>  cubFactoryErr;
      int cubDegErr = 3;
-     Teuchos::RCP<Cubature<double> > hexCubErr = cubFactoryErr.create(hex_8, cubDegErr);
+     Teuchos::RCP<Cubature<double> > hexCubErr = cubFactoryErr.create(cellType, cubDegErr);
      int cubDimErr       = hexCubErr->getDimension();
      int numCubPointsErr = hexCubErr->getNumPoints();
      FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
@@ -1519,14 +1775,13 @@ int main(int argc, char *argv[]) {
      FieldContainer<double> hexJacobDetE(numCells, numCubPointsErr);
      FieldContainer<double> weightedMeasureE(numCells, numCubPointsErr);
 
- // Evaluate basis values and curls at cubature points
+   // Evaluate basis values and curls at cubature points
      FieldContainer<double> uhCVals(numFieldsC, numCubPointsErr, spaceDim);
      FieldContainer<double> uhCValsTrans(numCells,numFieldsC, numCubPointsErr, spaceDim);
      FieldContainer<double> uhCurls(numFieldsC, numCubPointsErr, spaceDim);
      FieldContainer<double> uhCurlsTrans(numCells, numFieldsC, numCubPointsErr, spaceDim);
      hexHCurlBasis.getValues(uhCVals, cubPointsErr, OPERATOR_VALUE);
      hexHCurlBasis.getValues(uhCurls, cubPointsErr, OPERATOR_CURL);
-
 
    // Loop over elements
     for (int k=0; k<numElems; k++){
@@ -1570,19 +1825,19 @@ int main(int argc, char *argv[]) {
         }
 
     // compute cell Jacobians, their inverses and their determinants
-       CellTools::setJacobian(hexJacobianE, cubPointsErr, hexNodes, hex_8);
-       CellTools::setJacobianInv(hexJacobInvE, hexJacobianE );
-       CellTools::setJacobianDet(hexJacobDetE, hexJacobianE );
+       IntrepidCTools::setJacobian(hexJacobianE, cubPointsErr, hexNodes, cellType);
+       IntrepidCTools::setJacobianInv(hexJacobInvE, hexJacobianE );
+       IntrepidCTools::setJacobianDet(hexJacobDetE, hexJacobianE );
 
       // transform integration points to physical points
-       CellTools::mapToPhysicalFrame(physCubPointsE, cubPointsErr, hexNodes, hex_8);
+       IntrepidCTools::mapToPhysicalFrame(physCubPointsE, cubPointsErr, hexNodes, cellType);
 
       // transform basis values to physical coordinates
-       fst::HCURLtransformVALUE<double>(uhCValsTrans, hexJacobInvE, uhCVals);
-       fst::HCURLtransformCURL<double>(uhCurlsTrans, hexJacobianE, hexJacobDetE, uhCurls);
+       IntrepidFSTools::HCURLtransformVALUE<double>(uhCValsTrans, hexJacobInvE, uhCVals);
+       IntrepidFSTools::HCURLtransformCURL<double>(uhCurlsTrans, hexJacobianE, hexJacobDetE, uhCurls);
 
       // compute weighted measure
-       fst::computeCellMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
+       IntrepidFSTools::computeCellMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
 
      // loop over cubature points
        for (int nPt = 0; nPt < numCubPointsErr; nPt++){
@@ -1591,8 +1846,8 @@ int main(int argc, char *argv[]) {
           double x = physCubPointsE(0,nPt,0);
           double y = physCubPointsE(0,nPt,1);
           double z = physCubPointsE(0,nPt,2);
-          double mu = 1.0;
           evalu(uExact1, uExact2, uExact3, x, y, z);
+          double mu = 1.0; // use mu=1 to get the curl without material parameter
           evalCurlu(curluExact1, curluExact2, curluExact3, x, y, z, mu);
 
          // calculate approximate solution and curls
@@ -1636,6 +1891,7 @@ int main(int argc, char *argv[]) {
        HCurlerr+=HCurlerrElem;
      }
 
+
 #ifdef HAVE_MPI
    // sum over all processors
     Comm.SumAll(&L2err,&L2errTot,1);
@@ -1654,9 +1910,6 @@ int main(int argc, char *argv[]) {
   }
 
 
-#ifdef DUMP_DATAE
-   fSignsout.close();
-#endif
  // delete mesh
  Delete_Pamgen_Mesh();
 
@@ -1696,12 +1949,20 @@ int main(int argc, char *argv[]) {
 
    return 0;
 }
+/**********************************************************************************/
+/********************************* END MAIN ***************************************/
+/**********************************************************************************/
 
 
 /*************************************************************************************/
+/****************************** Multiply Ones ****************************************/
 /*************************************************************************************/
-/*************************************************************************************/
-// Multiplies Ax = y, where all non-zero entries of A are replaced with the value 1.0
+/** \brief Multiplies Ax = y, where all non-zero entries of A are replaced with the value 1.0
+
+    \param  A                [in]    matrix
+    \param  x                [in]    vector
+    \param  y                [in]    vector
+ */
 int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y){
   if(!A.Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
@@ -1757,8 +2018,18 @@ int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector
 }
 
 /*************************************************************************************/
+/**************************** GET ML RESIDUAL ****************************************/
 /*************************************************************************************/
-/*************************************************************************************/
+/** \brief Compute ML solution residual
+
+    \param  A                  [in]    discrete operator
+    \param  lhs                [in]    solution vector
+    \param  rhs                [in]    right hand side vector
+    \param  Time               [in]    elapsed time for output
+    \param  TotalErrorResidual [out]   error residual
+    \param  TotalErrorExactSol [out]   error in xh (not an appropriate measure 
+                                                    for H(curl) basis functions)
+ */
 void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector &lhs,const Epetra_MultiVector &rhs,const Epetra_MultiVector &xexact,Epetra_Time & Time, double & TotalErrorExactSol, double& TotalErrorResidual){
   // ==================================================== //  
   // compute difference between exact solution and ML one //
@@ -1778,10 +2049,11 @@ void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector
   Ax.Update(1.0, rhs, -1.0);
   Ax.Norm2(&Norm);
   
+// NOTE: (x_exact - x) does not make sense for H(curl) or H(grad) basis functions
   if (A.Comm().MyPID() == 0) {
     cout << msg << "......Using " << A.Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
-    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
+//    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
   }
   
@@ -1789,7 +2061,9 @@ void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector
   TotalErrorResidual += Norm;
 }
 
-
+/*************************************************************************************/
+/*************************** ML PRECONDITIONER****************************************/
+/*************************************************************************************/
 void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Teuchos::ParameterList   & MLList,
                                            Epetra_CrsMatrix   & CurlCurl,
@@ -1885,34 +2159,43 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
     delete [] BCedges;
 }
 
+/**********************************************************************************/
+/************ USER DEFINED FUNCTIONS FOR EXACT SOLUTION ***************************/
+/**********************************************************************************/
+
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
  {
+
+/*
+   // Exact solution 1 - homogeneous boundary conditions, nonzero divergence
     uExact0 = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
     uExact1 = exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
     uExact2 = exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
- /*
+*/
     
-    uExact0 = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
-    uExact1 = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
-    uExact2 = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
    
+/*
+   // Exact solution 2 - homogeneous boundary conditions, nonzero divergence
     uExact0 = cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
     uExact1 = sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
     uExact2 = sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
- 
 */
- /*
- 
-    uExact0 = x*(y*y - 1.0)*(z*z-1.0);
-    uExact1 = y*(x*x - 1.0)*(z*z-1.0);
-    uExact2 = z*(x*x - 1.0)*(y*y-1.0);
 
+/*
+   // Exact solution 3 - homogeneous boundary conditions, zero divergence
     uExact0 = (y*y - 1.0)*(z*z-1.0);
     uExact1 = (x*x - 1.0)*(z*z-1.0);
     uExact2 = (x*x - 1.0)*(y*y-1.0);
  
  */
+
+   // Exact solution 4 - patch test with inhomogeneous boundary conditions,
+   //                    zero divergence, linear field should be recovered
+    uExact0 = 1.0 + 2.0*y + 3.0*z;
+    uExact1 = 1.0 + x + 3.0*z;
+    uExact2 = 1.0 + x + 2.0*y;
+
   
    return 0;
  }
@@ -1921,25 +2204,30 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
  double evalDivu(double & x, double & y, double & z, double & mu)
  {
   
-   double divu = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
+  
+/*
+   // Exact solution 1 - homogeneous boundary conditions, nonzero divergence
+    double divu = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  + exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  + exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
- /*
-
-   double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
-                 -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
-                 -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-
-   double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
-  */
-
-/*
-   double divu = (y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
-                 + (x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
-                 + (x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
 */
 
-  // double divu = 0.0;
+/*
+   // Exact solution 2 - homogeneous boundary conditions, nonzero divergence
+   double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+*/
+
+
+/*
+   // Exact solution 3 - homogeneous boundary conditions, zero divergence
+     double divu = 0.0;
+*/
+
+
+   // Exact solution 4 - patch test with inhomogeneous boundary conditions,
+   //                    zero divergence, linear field should be recovered
+     double divu = 0.0;
+
 
    return mu*divu;
  }
@@ -1949,52 +2237,48 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
  int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z, double &mu)
  {
   
-   double duxdy = exp(x+y+z)*(z*z-1.0)*(y*y+2.0*y-1.0);
-   double duxdz = exp(x+y+z)*(y*y-1.0)*(z*z+2.0*z-1.0);
-   double duydx = exp(x+y+z)*(z*z-1.0)*(x*x+2.0*x-1.0);
-   double duydz = exp(x+y+z)*(x*x-1.0)*(z*z+2.0*z-1.0);
-   double duzdx = exp(x+y+z)*(y*y-1.0)*(x*x+2.0*x-1.0);
-   double duzdy = exp(x+y+z)*(x*x-1.0)*(y*y+2.0*y-1.0);
+/*
+   // Exact solution 1 - homogeneous boundary conditions, nonzero divergence
+    double duxdy = exp(x+y+z)*(z*z-1.0)*(y*y+2.0*y-1.0);
+    double duxdz = exp(x+y+z)*(y*y-1.0)*(z*z+2.0*z-1.0);
+    double duydx = exp(x+y+z)*(z*z-1.0)*(x*x+2.0*x-1.0);
+    double duydz = exp(x+y+z)*(x*x-1.0)*(z*z+2.0*z-1.0);
+    double duzdx = exp(x+y+z)*(y*y-1.0)*(x*x+2.0*x-1.0);
+    double duzdy = exp(x+y+z)*(x*x-1.0)*(y*y+2.0*y-1.0);
+*/
+
+/*
+   // Exact solution 2 - homogeneous boundary conditions, nonzero divergence
+    double duxdy = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
+    double duxdz = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+    double duydx = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
+    double duydz = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
+    double duzdx = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+    double duzdy = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
+*/
 
  /*
- 
-   double duxdy = cos(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0) + 2.0*y);
-   double duxdz = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0) + 2.0*z);
-   double duydx = cos(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0) + 2.0*x);
-   double duydz = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0) + 2.0*z);
-   double duzdx = cos(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0) + 2.0*x);
-   double duzdy = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*(y+1.0)*(y-1.0) + 2.0*y);
-
- 
-   double duxdy = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
-   double duxdz = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
-   double duydx = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
-   double duydz = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
-   double duzdx = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
-   double duzdy = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
- 
- */
-
- /*
-   double duxdy = 2.0*x*y*(z*z-1);
-   double duxdz = 2.0*x*z*(y*y-1);
-   double duydx = 2.0*y*x*(z*z-1);
-   double duydz = 2.0*y*z*(x*x-1);
-   double duzdx = 2.0*z*x*(y*y-1);
-   double duzdy = 2.0*z*y*(x*x-1);
-  
+   // Exact solution 3 - homogeneous boundary conditions, zero divergence
    double duxdy = 2.0*y*(z*z-1);
    double duxdz = 2.0*z*(y*y-1);
    double duydx = 2.0*x*(z*z-1);
    double duydz = 2.0*z*(x*x-1);
    double duzdx = 2.0*x*(y*y-1);
    double duzdy = 2.0*y*(x*x-1);
-   
 */
 
-   curlu0 = mu*(duzdy - duydz);
-   curlu1 = mu*(duxdz - duzdx);
-   curlu2 = mu*(duydx - duxdy);
+   // Exact solution 4 - patch test with inhomogeneous boundary conditions,
+   //                    zero divergence, linear field should be recovered
+    double duxdy = 2.0;
+    double duxdz = 3.0;
+    double duydx = 1.0;
+    double duydz = 3.0;
+    double duzdx = 1.0;
+    double duzdy = 2.0;
+
+    curlu0 = mu*(duzdy - duydz);
+    curlu1 = mu*(duxdz - duzdx);
+    curlu2 = mu*(duydx - duxdy);
 
    return 0;
  }
@@ -2003,45 +2287,36 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
  int evalGradDivu(double & gradDivu0, double & gradDivu1, double & gradDivu2, double & x, double & y, double & z, double & mu)
 {
    
+/* 
+   // Exact solution 1 - homogeneous boundary conditions, nonzero divergence
+    gradDivu0 = exp(x+y+z)*((y*y-1.0)*(z*z-1.0)+(x*x+2.0*x-1.0)*(z*z-1.0)+(x*x+2.0*x-1.0)*(y*y-1.0));
+    gradDivu1 = exp(x+y+z)*((y*y+2.0*y-1.0)*(z*z-1.0)+(x*x-1.0)*(z*z-1.0)+(x*x-1.0)*(y*y+2.0*y-1.0));
+    gradDivu2 = exp(x+y+z)*((y*y-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(y*y-1.0));
+*/
  
-   gradDivu0 = exp(x+y+z)*((y*y-1.0)*(z*z-1.0)+(x*x+2.0*x-1.0)*(z*z-1.0)+(x*x+2.0*x-1.0)*(y*y-1.0));
-   gradDivu1 = exp(x+y+z)*((y*y+2.0*y-1.0)*(z*z-1.0)+(x*x-1.0)*(z*z-1.0)+(x*x-1.0)*(y*y+2.0*y-1.0));
-   gradDivu2 = exp(x+y+z)*((y*y-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(y*y-1.0));
- 
-  /*
-   
-    gradDivu0 = -M_PI*M_PI*cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
-                  -M_PI*sin(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0)+2.0*x)
-                  -M_PI*sin(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0)+2.0*x);
-    gradDivu1 = -M_PI*sin(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0)+2.0*y)
-                  -M_PI*M_PI*cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
-                  -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*(y+1.0)*(y-1.0)+2.0*y);
-    gradDivu2 = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0)+2.0*z)
-                  -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0)+2.0*z)
-                  -M_PI*M_PI*cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-  
+/*
+   // Exact solution 2 - homogeneous boundary conditions, nonzero divergence
+    gradDivu0 = -3.0*M_PI*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+    gradDivu1 = -3.0*M_PI*M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
+    gradDivu2 = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+*/
 
-   gradDivu0 = -3.0*M_PI*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
-   gradDivu1 = -3.0*M_PI*M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
-   gradDivu2 = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+/*
+   // Exact solution 3 - homogeneous boundary conditions, zero divergence
+    gradDivu0 = 0;
+    gradDivu1 = 0;
+    gradDivu2 = 0;
+*/
 
- */
-
- /*
-   gradDivu0 = 2.0*x*((z*z-1.0)+(y*y-1.0));
-   gradDivu1 = 2.0*y*((z*z-1.0)+(x*x-1.0));
-   gradDivu2 = 2.0*z*((x*x-1.0)+(y*y-1.0));
-
- 
-   gradDivu0 = 0;
-   gradDivu1 = 0;
-   gradDivu2 = 0;
-  */
+   // Exact solution 4 - patch test with inhomogeneous boundary conditions,
+   //                    zero divergence, linear field should be recovered
+    gradDivu0 = 0;
+    gradDivu1 = 0;
+    gradDivu2 = 0;
 
    gradDivu0 = gradDivu0 * mu;
    gradDivu1 = gradDivu1 * mu;
    gradDivu2 = gradDivu2 * mu;
-   
 
    return 0;
 }
