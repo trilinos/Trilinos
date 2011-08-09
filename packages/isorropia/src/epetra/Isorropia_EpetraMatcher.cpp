@@ -105,22 +105,22 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsMatrix * matrix
     #pragma omp parallel
     numThread_=omp_get_num_threads();
 #endif
-    std::cout<<"finished:"<<endl;
+    //std::cout<<"finished:"<<endl;
 }
 
 Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMatrix> matrixPtr,const Teuchos::ParameterList& paramlist)
 {
     
-    A_=matrixPtr.getRawPtr(); 
-    Isorropia_EpetraMatcher(A_,paramlist);
+    //A_=matrixPtr.getRawPtr(); 
+    //Isorropia_EpetraMatcher(A_,paramlist);
     
-    /*int rc=0,i;
+    int rc=0,i;
     rc=matrixPtr->ExtractCrsDataPointers(CRS_pointers_,CRS_indices_,CRS_vals_);
     if(rc!=0)
         std::cout<<"Input Processing Failed"<<endl;
         
     U_=matrixPtr->NumGlobalRows();
-    V_=MatrixPtr->NumGlobalCols();
+    V_=matrixPtr->NumGlobalCols();
     E_=matrixPtr->NumGlobalNonzeros();
     
     choice_=1;
@@ -194,7 +194,7 @@ Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(Teuchos::RCP<const Epetra_CrsMa
     numThread_=omp_get_num_threads();
 #endif
 
-    std::cout<<"finished:"<<endl;*/
+    std::cout<<"finished:"<<endl;
 }
 
 Isorropia_EpetraMatcher::Isorropia_EpetraMatcher(const Epetra_CrsGraph * graphPtr,const Teuchos::ParameterList& paramlist)
@@ -1058,6 +1058,7 @@ int Isorropia_EpetraMatcher::match_hk()
 
 int Isorropia_EpetraMatcher::match()
 {
+    //std::cout<<"mathc"<<std::endl;
     switch(choice_)
     {
         case 1:match_hk(); 
