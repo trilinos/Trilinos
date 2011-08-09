@@ -1212,7 +1212,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
             CTEST_TEST(
               BUILD "${CTEST_BINARY_DIRECTORY}"
               PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
-              INCLUDE "^${PACKAGE}_"
+              INCLUDE_LABEL "^${PACKAGE}$"
               #NUMBER_FAILED  TEST_NUM_FAILED
               )
             # See if a 'LastTestsFailed*.log' file exists to determine if there
