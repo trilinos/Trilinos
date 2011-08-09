@@ -885,6 +885,67 @@ namespace Cthulhu {
     void setObjectLabel (const std::string &objectLabel) { CTHULHU_DEBUG_ME; //mtx_->setObjectLabel(objectLabel); TODO
     }
 
+    //@{
+    // Implements DistObject interface
+
+    const Teuchos::RCP<const Map<int,int> > getMap() const { 
+      CTHULHU_DEBUG_ME; 
+      
+      RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(mtx_->Map()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
+    }
+    
+    inline void doImport(const DistObject<char, int, int> &source, 
+                         const Import<int, int> &importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+
+      CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      RCP<const Epetra_CrsMatrix> v = tSource.getEpetra_CrsMatrix();
+      int err = mtx_->Import(*v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM));
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    }
+
+    void doExport(const DistObject<char, int, int> &dest,
+                  const Import<int, int>& importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      
+      CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      RCP<const Epetra_CrsMatrix> v = tDest.getEpetra_CrsMatrix();
+      int err = mtx_->Export(*v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    }
+
+    void doImport(const DistObject<char, int, int> &source,
+                  const Export<int, int>& exporter, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+
+      CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      RCP<const Epetra_CrsMatrix> v = tSource.getEpetra_CrsMatrix();
+      int err = mtx_->Import(*v, *tExporter.getEpetra_Export(), Cthulhu2Epetra_CombineMode(CM));
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+
+    }
+
+    void doExport(const DistObject<char, int, int> &dest,
+                  const Export<int, int>& exporter, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      
+      CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      RCP<const Epetra_CrsMatrix> v = tDest.getEpetra_CrsMatrix();
+      int err = mtx_->Export(*v, *tExporter.getEpetra_Export(), Cthulhu2Epetra_CombineMode(CM)); 
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    }
+
+    //@}
+
   private:
     
     RCP<Epetra_CrsMatrix> mtx_;

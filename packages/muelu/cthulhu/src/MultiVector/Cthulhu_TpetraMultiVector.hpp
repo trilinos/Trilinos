@@ -38,9 +38,9 @@ namespace Cthulhu {
 
     // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
     typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
-    typedef TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TTpetraMultiVector;
-    typedef TpetraImport<LocalOrdinal, GlobalOrdinal, Node> TTpetraImport;
-    typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TTpetraExport;
+    typedef TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVectorClass;
+    typedef TpetraImport<LocalOrdinal, GlobalOrdinal, Node> TpetraImportClass;
+    typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TpetraExportClass;
 
   public:
 
@@ -380,26 +380,22 @@ namespace Cthulhu {
     //@}
 
     RCP< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; }
-
-    // From DistObject
+ 
+    //{@
+    // Implements DistObject interface
+    
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { 
       CTHULHU_DEBUG_ME; 
       return rcp( new TpetraMapClass(vec_->getMap()) );
     }
-
-//     const RCP<const Comm<int> > getComm() const {
-//       CTHULHU_DEBUG_ME; 
-      
-//       //      return vec_->getComm();
-//     }
     
     inline void doImport(const DistObject<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
                          const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) { 
       CTHULHU_DEBUG_ME;
-      CTHULHU_DYNAMIC_CAST(const TTpetraMultiVector, source, tSource, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments.");
-      CTHULHU_DYNAMIC_CAST(const TTpetraImport, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraImportClass, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
 
-      RCP<const Tpetra::DistObject<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
+      RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
       this->getTpetra_MultiVector()->doImport(*v, *tImporter.getTpetra_Import(), Cthulhu2Tpetra_CombineMode(CM));
     }
 
@@ -407,8 +403,8 @@ namespace Cthulhu {
                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) {
       CTHULHU_DEBUG_ME;
       
-      CTHULHU_DYNAMIC_CAST(const TTpetraMultiVector, dest, tDest, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments.");
-      CTHULHU_DYNAMIC_CAST(const TTpetraImport, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, dest, tDest, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraImportClass, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
 
       RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_MultiVector();
       this->getTpetra_MultiVector()->doExport(*v, *tImporter.getTpetra_Import(), Cthulhu2Tpetra_CombineMode(CM)); 
@@ -418,21 +414,28 @@ namespace Cthulhu {
     void doImport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source,
                   const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
 
-      TEST_FOR_EXCEPTION(true, std::runtime_error, "Not Implemented.");
-    }
+      CTHULHU_DEBUG_ME;
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraExportClass, exporter, tExporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+      
+      RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
+      this->getTpetra_MultiVector()->doImport(*v, *tExporter.getTpetra_Export(), Cthulhu2Tpetra_CombineMode(CM));
 
+    }
 
     void doExport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
                   const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
       CTHULHU_DEBUG_ME;
       
-      CTHULHU_DYNAMIC_CAST(const TTpetraMultiVector, dest, tDest, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments.");
-      CTHULHU_DYNAMIC_CAST(const TTpetraExport, exporter, tExporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, dest, tDest, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraExportClass, exporter, tExporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
 
       RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_MultiVector();
       this->getTpetra_MultiVector()->doExport(*v, *tExporter.getTpetra_Export(), Cthulhu2Tpetra_CombineMode(CM)); 
 
     }
+
+    //@}
 
   private:
     RCP< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec_;

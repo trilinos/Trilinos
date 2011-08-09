@@ -50,10 +50,13 @@ namespace Cthulhu {
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps> 
   class TpetraCrsMatrix : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
     
-              // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
-              typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
-              typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraMultiVectorClass;
-              typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
+    // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
+    typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraMultiVectorClass;
+    typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
+    typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraCrsMatrixClass;
+    typedef TpetraImport<LocalOrdinal, GlobalOrdinal, Node> TpetraImportClass;
+    typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TpetraExportClass;    
 
   public:
     //! @name Constructor/Destructor Methods
@@ -598,6 +601,62 @@ namespace Cthulhu {
 
     /** TODO : interface of Teuchos_LabeledObject.hpp **/
     void setObjectLabel (const std::string &objectLabel) { CTHULHU_DEBUG_ME; mtx_->setObjectLabel(objectLabel); }
+
+    //{@
+    // Implements DistObject interface
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { 
+      CTHULHU_DEBUG_ME; 
+      return rcp( new TpetraMapClass(mtx_->getMap()) );
+    }
+
+    inline void doImport(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> &source, 
+                         const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) { 
+      CTHULHU_DEBUG_ME;
+      CTHULHU_DYNAMIC_CAST(const TpetraCrsMatrixClass, source, tSource, "Cthulhu::TpetraCrsMatrix::doImport only accept Cthulhu::TpetraCrsMatrix as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraImportClass, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_CrsMatrix();
+      mtx_->doImport(*v, *tImporter.getTpetra_Import(), Cthulhu2Tpetra_CombineMode(CM));
+    }
+
+    void doExport(const DistObject<char,LocalOrdinal,GlobalOrdinal,Node> &dest,
+                  const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      
+      CTHULHU_DYNAMIC_CAST(const TpetraCrsMatrixClass, dest, tDest, "Cthulhu::TpetraCrsMatrix::doImport only accept Cthulhu::TpetraCrsMatrix as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraImportClass, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_CrsMatrix();
+      mtx_->doExport(*v, *tImporter.getTpetra_Import(), Cthulhu2Tpetra_CombineMode(CM)); 
+
+    }
+
+    void doImport(const DistObject<char,LocalOrdinal,GlobalOrdinal,Node> &source,
+                  const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      CTHULHU_DYNAMIC_CAST(const TpetraCrsMatrixClass, source, tSource, "Cthulhu::TpetraCrsMatrix::doImport only accept Cthulhu::TpetraCrsMatrix as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraExportClass, exporter, tExporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_CrsMatrix();
+      mtx_->doImport(*v, *tExporter.getTpetra_Export(), Cthulhu2Tpetra_CombineMode(CM));
+
+    }
+
+
+    void doExport(const DistObject<char,LocalOrdinal,GlobalOrdinal,Node> &dest,
+                  const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      
+      CTHULHU_DYNAMIC_CAST(const TpetraCrsMatrixClass, dest, tDest, "Cthulhu::TpetraCrsMatrix::doImport only accept Cthulhu::TpetraCrsMatrix as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraExportClass, exporter, tExporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_CrsMatrix();
+      mtx_->doExport(*v, *tExporter.getTpetra_Export(), Cthulhu2Tpetra_CombineMode(CM)); 
+
+    }
+
+    // @}
+
 
   private:
     

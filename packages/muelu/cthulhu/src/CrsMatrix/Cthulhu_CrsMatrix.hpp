@@ -7,7 +7,7 @@
 
 #include "Cthulhu_ConfigDefs.hpp"
 //#include "Cthulhu_RowMatrix.hpp"
-//TODO #include "Cthulhu_DistObject.hpp"
+#include "Cthulhu_DistObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Cthulhu_CrsGraph.hpp"
 //TODO ??? #include "Cthulhu_CrsMatrixMultiplyOp_decl.hpp"
@@ -15,8 +15,6 @@
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_Vector.hpp"
 #include "Cthulhu_MultiVector.hpp"
-
-//#include "Tpetra_Map.hpp" //TODO TMP
 
 #include "Cthulhu_Debug.hpp"
 
@@ -49,8 +47,8 @@ namespace Cthulhu {
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
-  class CrsMatrix // : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>//, public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> { //TODO
-    : public Teuchos::LabeledObject { // TODO: Describable
+  class CrsMatrix // : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> //TODO
+    : public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
 
   public:
 

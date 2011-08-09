@@ -522,10 +522,15 @@ namespace Cthulhu {
 
     virtual void doImport(const DistObject<int, int, int> &source,
                           const Export<int, int>& exporter, CombineMode CM) {
-      
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
-    }
+      CTHULHU_DEBUG_ME;
 
+      CTHULHU_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+      
+      const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
+      int err = vec_->Import(v, *tExporter.getEpetra_Export(), Cthulhu2Epetra_CombineMode(CM)); 
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+    }
 
     void doExport(const DistObject<int, int, int> &dest,
                   const Export<int, int>& exporter, CombineMode CM) {

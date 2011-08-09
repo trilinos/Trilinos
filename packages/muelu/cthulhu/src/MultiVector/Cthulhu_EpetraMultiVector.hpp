@@ -418,12 +418,6 @@ scalarThis) {
       return rcp ( new Cthulhu::EpetraMap(map) );
     }
 
-    const RCP<const Comm<int> > getComm() const {
-      CTHULHU_DEBUG_ME; 
-      
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO getComm Epetra MultiVector not implemented");
-    }
-    
     inline void doImport(const DistObject<double, int, int> &source, 
                          const Import<int, int> &importer, CombineMode CM) {
       CTHULHU_DEBUG_ME;
@@ -450,9 +444,14 @@ scalarThis) {
 
     void doImport(const DistObject<double,int,int> &source,
                   const Export<int, int>& exporter, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
 
-      
-      TEST_FOR_EXCEPTION(true, std::runtime_error, "Not Implemented.");
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      RCP<Epetra_MultiVector> v = tSource.getEpetra_MultiVector();
+      int err = this->getEpetra_MultiVector()->Import(*v, *tExporter.getEpetra_Export(), Cthulhu2Epetra_CombineMode(CM));
+      TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
     void doExport(const DistObject<double, int, int> &dest,
