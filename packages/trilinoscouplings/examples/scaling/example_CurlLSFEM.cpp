@@ -1320,9 +1320,18 @@ int main(int argc, char *argv[]) {
      // compute weighted measure
       IntrepidFSTools::computeCellMeasure<double>(weightedMeasure, worksetJacobDet, cubWeights);
 
+     // combine mu value with weighted measure
+      cellCounter = 0;
+      for(int cell = worksetBegin; cell < worksetEnd; cell++){
+         for (int nPt = 0; nPt < numCubPoints; nPt++){
+          weightedMeasureMuInv(cellCounter,nPt) = weightedMeasure(cellCounter,nPt) / muVal(cell);
+        }
+        cellCounter++;
+      }
+
      // multiply values with weighted measure
       IntrepidFSTools::multiplyMeasure<double>(HGValsTransformedWeighted,
-                                   weightedMeasure, HGValsTransformed);
+                                               weightedMeasureMuInv, HGValsTransformed);
 
      // integrate to compute element mass matrix
       IntrepidFSTools::integrate<double>(massMatrixHGrad,
@@ -1364,6 +1373,15 @@ int main(int argc, char *argv[]) {
       // transform to physical coordinates
       IntrepidFSTools::HCURLtransformCURL<double>(HCurlsTransformed, worksetJacobian, worksetJacobDet,
                                       HCurls);
+
+     // combine mu value with weighted measure
+      cellCounter = 0;
+      for(int cell = worksetBegin; cell < worksetEnd; cell++){
+         for (int nPt = 0; nPt < numCubPoints; nPt++){
+          weightedMeasureMu(cellCounter,nPt) = weightedMeasure(cellCounter,nPt) * muVal(cell);
+        }
+        cellCounter++;
+      }
 
      // multiply by weighted measure
       IntrepidFSTools::multiplyMeasure<double>(HCurlsTransformedWeighted,
