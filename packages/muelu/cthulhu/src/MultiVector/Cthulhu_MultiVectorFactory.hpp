@@ -16,8 +16,6 @@
 #include "Cthulhu_EpetraMap.hpp"
 #endif // HAVE_CTHULHU_EPETRA
 
-#include "Cthulhu_Debug.hpp"
-
 // This factory creates Cthulhu::MultiVector. User don't have to specify the exact class of object that he want to create (ie: a Cthulhu::TpetraMultiVector or a Cthulhu::EpetraMultiVector).
 // Each Build() method takes at least one Cthulhu object in argument (a Map or another MultiVector) and Build() methods return a MultiVector created by using the same underlying library (Epetra or Tpetra).
 

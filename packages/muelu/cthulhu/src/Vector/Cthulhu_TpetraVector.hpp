@@ -49,7 +49,7 @@ namespace Cthulhu {
     TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true)
       : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,1,zeroOut)
     {
-      CTHULHU_DEBUG_ME;
+      
     }
     
 #ifdef CTHULHU_NOT_IMPLEMENTED
@@ -61,16 +61,16 @@ namespace Cthulhu {
     TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A)
       : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,A,map->getNodeNumElements(),1)
     {
-      CTHULHU_DEBUG_ME;
+      
     }
     
     /** \brief TpetraVector constructor to wrap a Tpetra::Vector object
      */
-    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(vec) { CTHULHU_DEBUG_ME; }
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(vec) {  }
     //TODO: removed const of Tpetra::Vector
 
     //! Destructor.  
-    inline ~TpetraVector() { CTHULHU_DEBUG_ME; };
+    inline ~TpetraVector() {  };
 
     //@}
 
@@ -80,22 +80,22 @@ namespace Cthulhu {
     //! Replace current value at the specified location with specified value.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-    inline void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue(globalRow,0,value); };
+    inline void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {  this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue(globalRow,0,value); };
 
     //! Adds specified value to existing value at the specified location.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-    inline void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(globalRow, 0, value); };
+    inline void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) {  this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(globalRow, 0, value); };
 
     //! Replace current value at the specified location with specified values.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-    inline void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue(myRow, 0, value); };
+    inline void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) {  this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue(myRow, 0, value); };
 
     //! Adds specified value to existing value at the specified location.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-    inline void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(myRow, 0, value); };
+    inline void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) {  this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(myRow, 0, value); };
 
     //@}
 
@@ -113,39 +113,39 @@ namespace Cthulhu {
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
     //! Computes dot product of this Vector against input Vector x.
     Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { 
-      CTHULHU_DEBUG_ME; 
+       
       CTHULHU_DYNAMIC_CAST(const TpetraVector, a, tA, "This Cthulhu::TpetraVector method only accept Cthulhu::TpetraVector as input arguments.");
       return getTpetra_Vector()->dot(*tA.getTpetra_Vector()); 
     }
 
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
     //! Return 1-norm of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const { CTHULHU_DEBUG_ME; return getTpetra_Vector()->norm1(); }
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const {  return getTpetra_Vector()->norm1(); }
 
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
     //! Compute 2-norm of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const { CTHULHU_DEBUG_ME; return getTpetra_Vector()->norm2(); }
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const {  return getTpetra_Vector()->norm2(); }
 
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
     //! Compute Inf-norm of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const { CTHULHU_DEBUG_ME; return getTpetra_Vector()->normInf(); }
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const {  return getTpetra_Vector()->normInf(); }
 
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted; // overloading, not hiding
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const { 
-      CTHULHU_DEBUG_ME; 
+       
       CTHULHU_DYNAMIC_CAST(const TpetraVector, weights, tWeights, "This Cthulhu::TpetraVector method only accept Cthulhu::TpetraVector as input arguments.");
       return getTpetra_Vector()->normWeighted(*tWeights.getTpetra_Vector()); 
     }
 
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
     //! Compute mean (average) value of this Vector.
-    Scalar meanValue() const { CTHULHU_DEBUG_ME; return getTpetra_Vector()->meanValue(); }
+    Scalar meanValue() const {  return getTpetra_Vector()->meanValue(); }
 
     // Note: Added to Cthulhu. Not present in Tpetra
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::maxValue; // overloading, not hiding
     //! Compute max value of this Vector.
-    Scalar maxValue() const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+    Scalar maxValue() const {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
       //return getTpetra_Vector()->maxValue(); 
     }
     //@} 
@@ -155,7 +155,7 @@ namespace Cthulhu {
 
     /** \brief Return a simple one-line description of this object. */
     inline std::string description() const { 
-      CTHULHU_DEBUG_ME; 
+       
       return getTpetra_Vector()->description();       
     };
 
@@ -169,9 +169,9 @@ namespace Cthulhu {
     // protected:
 
     //     //! Advanced constructor accepting parallel buffer view.
-    //     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) { CTHULHU_DEBUG_ME; vec_->(); };
+    //     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) {  vec_->(); };
 
-    RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { CTHULHU_DEBUG_ME; return this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->getVectorNonConst(0); }
+    RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const {  return this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->getVectorNonConst(0); }
     
   }; // class TpetraVector
 

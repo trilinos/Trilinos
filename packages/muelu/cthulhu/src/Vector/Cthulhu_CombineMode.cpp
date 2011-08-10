@@ -8,7 +8,7 @@
 #ifdef HAVE_CTHULHU_EPETRA
 
 //! Convert a Cthulhu Combine Mode to an Epetra Combine Mode.
-const Epetra_CombineMode Cthulhu2Epetra_CombineMode(const Cthulhu::CombineMode& CM) { CTHULHU_DEBUG_ME;
+const Epetra_CombineMode Cthulhu2Epetra_CombineMode(const Cthulhu::CombineMode& CM) { 
   
   if (CM == Cthulhu::ADD)
     return Add;
@@ -26,7 +26,7 @@ const Epetra_CombineMode Cthulhu2Epetra_CombineMode(const Cthulhu::CombineMode& 
 #ifdef HAVE_CTHULHU_TPETRA
 
 //! Convert a Cthulhu Combine Mode to a Tpetra Combine Mode.
-const Tpetra::CombineMode Cthulhu2Tpetra_CombineMode(const Cthulhu::CombineMode& CM) { CTHULHU_DEBUG_ME;
+const Tpetra::CombineMode Cthulhu2Tpetra_CombineMode(const Cthulhu::CombineMode& CM) { 
   
   if (CM == Cthulhu::ADD)
     return Tpetra::ADD;

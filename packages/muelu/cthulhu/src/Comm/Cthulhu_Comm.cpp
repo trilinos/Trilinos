@@ -9,7 +9,7 @@ namespace Cthulhu {
   using Teuchos::RCP;
 
   //! Convert a Teuchos_Comm to an Epetra_Comm.
-  const RCP<const Epetra_Comm> Teuchos2Epetra_Comm(const RCP<const Teuchos::Comm<int> > & comm) { CTHULHU_DEBUG_ME;
+  const RCP<const Epetra_Comm> Teuchos2Epetra_Comm(const RCP<const Teuchos::Comm<int> > & comm) { 
 #ifdef HAVE_MPI
     const RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
     if (mpiComm != Teuchos::null) {
@@ -23,7 +23,7 @@ namespace Cthulhu {
   }
 
   //! Convert an Epetra_Comm.to a Teuchos_Comm
-  const RCP<const Teuchos::Comm<int> > Epetra2Teuchos_Comm(RCP<const Epetra_Comm> & comm) { CTHULHU_DEBUG_ME;
+  const RCP<const Teuchos::Comm<int> > Epetra2Teuchos_Comm(RCP<const Epetra_Comm> & comm) { 
 #ifdef HAVE_MPI
     const RCP<const Epetra_MpiComm> mpiComm = Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>(comm);
     if (mpiComm != Teuchos::null) 

@@ -15,7 +15,7 @@ namespace Cthulhu {
     */
     Teuchos::RCP< const EpetraMap >
     createWeightedContigMapWithNode(int myWeight, global_size_t numElements, 
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
+                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { 
       Teuchos::RCP< EpetraMap > map;
       int sumOfWeights, elemsLeft, localNumElements;
       const int numImages = comm->getSize(), 

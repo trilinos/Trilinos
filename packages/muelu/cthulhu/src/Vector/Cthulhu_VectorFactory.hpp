@@ -16,8 +16,6 @@
 #include "Cthulhu_EpetraIntVector.hpp"
 #endif
 
-#include "Cthulhu_Debug.hpp"
-
 // This factory creates Cthulhu::Vector. User don't have to specify the exact class of object that he want to create (ie: a Cthulhu::TpetraVector or a Cthulhu::EpetraVector).
 // Each Build() method takes at least one Cthulhu object in argument (a Map or another Vector) and Build() methods return a Vector created by using the same underlying library (Epetra or Tpetra).
 

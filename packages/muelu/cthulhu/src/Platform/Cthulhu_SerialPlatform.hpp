@@ -6,7 +6,6 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
 
@@ -54,22 +53,22 @@ namespace Cthulhu {
 
   template<class Node>
   SerialPlatform<Node>::SerialPlatform(const Teuchos::RCP<Node> &node) 
-  : node_(node) { CTHULHU_DEBUG_ME;
+  : node_(node) { 
     comm_ = Teuchos::rcp(new Teuchos::SerialComm<int>() );
   }
 
   template<class Node>
-  SerialPlatform<Node>::~SerialPlatform() { CTHULHU_DEBUG_ME; }
+  SerialPlatform<Node>::~SerialPlatform() {  }
 
   template<class Node>
   const Teuchos::RCP< const Teuchos::SerialComm<int> >
-  SerialPlatform<Node>::getComm() const { CTHULHU_DEBUG_ME;
+  SerialPlatform<Node>::getComm() const { 
     return comm_;
   }
 
   template<class Node>
   const Teuchos::RCP< Node >
-  SerialPlatform<Node>::getNode() const { CTHULHU_DEBUG_ME;
+  SerialPlatform<Node>::getNode() const { 
     return node_; 
   }
 

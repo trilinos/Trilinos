@@ -18,8 +18,6 @@
 #include "Cthulhu_Export.hpp"
 #include "Cthulhu_CombineMode.hpp"
 
-#include "Cthulhu_Debug.hpp"
-
 namespace Cthulhu {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -42,7 +40,7 @@ namespace Cthulhu {
     //@{ 
 
     //! MultiVector destructor.
-    virtual ~MultiVector() { CTHULHU_DEBUG_ME; }
+    virtual ~MultiVector() {  }
 
     //@}
 

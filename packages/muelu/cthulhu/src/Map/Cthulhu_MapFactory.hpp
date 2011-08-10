@@ -15,8 +15,6 @@
 #include "Cthulhu_EpetraMap.hpp"
 #endif
 
-#include "Cthulhu_Debug.hpp"
-
 // This factory creates Cthulhu::Map. User have to specify the exact class of object that he want to create (ie: a Cthulhu::TpetraMap or a Cthulhu::EpetraMap).
 
 namespace Cthulhu {
@@ -94,7 +92,7 @@ namespace Cthulhu {
     \relates TpetraMap
     */
     Teuchos::RCP<const MapClass>
-    createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
@@ -109,7 +107,7 @@ namespace Cthulhu {
     \relates TpetraMap
     */
     Teuchos::RCP< const MapClass >
-    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
+    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new TpetraMapClass(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
@@ -125,7 +123,7 @@ namespace Cthulhu {
     */
     Teuchos::RCP< const MapClass >
     createUniformContigMapWithNode(UnderlyingLib lib, global_size_t numElements,
-                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
+                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new TpetraMapClass(Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
@@ -142,7 +140,7 @@ namespace Cthulhu {
     \relates TpetraMap
     */
     Teuchos::RCP< const MapClass>
-    createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createUniformContigMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
@@ -159,7 +157,7 @@ namespace Cthulhu {
     \relates TpetraMap
     */
     Teuchos::RCP< const MapClass >
-    createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal>(numElements, localNumElements, comm)));
@@ -175,7 +173,7 @@ namespace Cthulhu {
     */
     Teuchos::RCP< const MapClass >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, 
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new TpetraMapClass(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
@@ -192,7 +190,7 @@ namespace Cthulhu {
     */
     Teuchos::RCP< const MapClass >
     createWeightedContigMapWithNode(UnderlyingLib lib, int thisNodeWeight, global_size_t numElements, 
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
+                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
 
     }
 #endif
@@ -285,7 +283,7 @@ namespace Cthulhu {
     \relates TpetraMap
     */
     static Teuchos::RCP<const MapClass>
-    createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp( new TpetraMapClass(Tpetra::createLocalMap<int,int>(numElements, comm)));
@@ -304,7 +302,7 @@ namespace Cthulhu {
     \relates TpetraMap
     */
     static Teuchos::RCP< const MapClass >
-    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { CTHULHU_DEBUG_ME;
+    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new TpetraMapClass(Tpetra::createLocalMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
@@ -330,7 +328,7 @@ namespace Cthulhu {
     */
     static Teuchos::RCP< const MapClass >
     createUniformContigMapWithNode(UnderlyingLib lib, global_size_t numElements,
-                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { CTHULHU_DEBUG_ME;
+                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new TpetraMapClass(Tpetra::createUniformContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
@@ -357,7 +355,7 @@ namespace Cthulhu {
     \relates TpetraMap
     */
     static Teuchos::RCP< const MapClass>
-    createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp( new TpetraMapClass(Tpetra::createUniformContigMap<int,int>(numElements, comm)));
@@ -378,7 +376,7 @@ namespace Cthulhu {
     \relates TpetraMap
     */
     static Teuchos::RCP< const MapClass >
-    createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp( new TpetraMapClass(Tpetra::createContigMap<int,int>(numElements, localNumElements, comm)));
@@ -398,7 +396,7 @@ namespace Cthulhu {
     */
     static Teuchos::RCP< const MapClass >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, 
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { CTHULHU_DEBUG_ME;
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp( new TpetraMapClass(Tpetra::createContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, localNumElements, comm, node)));
@@ -425,7 +423,7 @@ namespace Cthulhu {
     */
     static Teuchos::RCP< const MapClass >
     createWeightedContigMapWithNode(UnderlyingLib lib, int thisNodeWeight, global_size_t numElements, 
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { CTHULHU_DEBUG_ME;
+                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { 
       
     }
 #endif

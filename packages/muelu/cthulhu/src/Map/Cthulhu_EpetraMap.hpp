@@ -59,7 +59,6 @@ to do more tests.
 #include <Teuchos_ArrayView.hpp>
 
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Debug.hpp"
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_Comm.hpp"
 #include "Cthulhu_EpetraExceptions.hpp"
@@ -105,7 +104,7 @@ namespace Cthulhu {
     EpetraMap(global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
               LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) 
     {
-      CTHULHU_DEBUG_ME;       
+             
 
       // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
       // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
@@ -168,7 +167,7 @@ namespace Cthulhu {
     EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, int indexBase, 
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
     {
-      CTHULHU_DEBUG_ME; 
+       
 
       // This test come from Tpetra
       using Teuchos::outArg;
@@ -279,17 +278,17 @@ namespace Cthulhu {
     EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, 
 	      const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
     { 
-      CTHULHU_DEBUG_ME; 
+       
 
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), elementList.getRawPtr(), 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
     
     /** \brief EpetraMap constructor to wrap a Epetra_BlockMap object.
      */
-    EpetraMap(const Teuchos::RCP<const Epetra_BlockMap > &map) : map_(map) { CTHULHU_DEBUG_ME;}
+    EpetraMap(const Teuchos::RCP<const Epetra_BlockMap > &map) : map_(map) { }
 
     //! EpetraMap destructor. 
-    ~EpetraMap() { CTHULHU_DEBUG_ME;}
+    ~EpetraMap() { }
 
     //@}
 
@@ -297,39 +296,39 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the number of elements in this Map.
-    inline global_size_t getGlobalNumElements() const { CTHULHU_DEBUG_ME; return map_->NumGlobalElements(); }
+    inline global_size_t getGlobalNumElements() const {  return map_->NumGlobalElements(); }
 
     //! Returns the number of elements belonging to the calling node.
-    inline size_t getNodeNumElements() const { CTHULHU_DEBUG_ME; return map_->NumMyElements(); }
+    inline size_t getNodeNumElements() const {  return map_->NumMyElements(); }
 
     //! Returns the index base for this Map.
-    inline int getIndexBase() const { CTHULHU_DEBUG_ME; return map_->IndexBase(); }
+    inline int getIndexBase() const {  return map_->IndexBase(); }
 
     //! Returns minimum local index
-    inline int getMinLocalIndex() const { CTHULHU_DEBUG_ME; return map_->MinLID(); }
+    inline int getMinLocalIndex() const {  return map_->MinLID(); }
 
     //! Returns maximum local index
-    inline int getMaxLocalIndex() const { CTHULHU_DEBUG_ME; return map_->MaxLID(); }
+    inline int getMaxLocalIndex() const {  return map_->MaxLID(); }
 
     //! Returns minimum global index owned by this node
-    inline int getMinGlobalIndex() const { CTHULHU_DEBUG_ME; return map_->MinMyGID(); }
+    inline int getMinGlobalIndex() const {  return map_->MinMyGID(); }
 
     //! Returns maximum global index owned by this node
-    inline int getMaxGlobalIndex() const { CTHULHU_DEBUG_ME; return map_->MaxMyGID(); }
+    inline int getMaxGlobalIndex() const {  return map_->MaxMyGID(); }
 
     //! Return the minimum global index over all nodes
-    inline int getMinAllGlobalIndex() const { CTHULHU_DEBUG_ME; return map_->MinAllGID(); }
+    inline int getMinAllGlobalIndex() const {  return map_->MinAllGID(); }
 
     //! Return the maximum global index over all nodes
-    inline int getMaxAllGlobalIndex() const { CTHULHU_DEBUG_ME; return map_->MaxAllGID(); }
+    inline int getMaxAllGlobalIndex() const {  return map_->MaxAllGID(); }
 
     //! \brief Return the local index for a given global index
     /** If the global index is not owned by this node, returns Teuchos::OrdinalTraits<int>::invalid(). */
-    int getLocalElement(int globalIndex) const { CTHULHU_DEBUG_ME; return map_->LID(globalIndex); };
+    int getLocalElement(int globalIndex) const {  return map_->LID(globalIndex); };
 
     //! Return the global index for a given local index
     /** If the local index is not valid for this node, returns Teuchos::OrdinalTraits<int>::invalid(). */
-    int getGlobalElement(int localIndex) const { CTHULHU_DEBUG_ME; return map_->GID(localIndex); };
+    int getGlobalElement(int localIndex) const {  return map_->GID(localIndex); };
 
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
     /** 
@@ -338,7 +337,7 @@ namespace Cthulhu {
      */
     Cthulhu::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const int> & GIDList, 
                                             const Teuchos::ArrayView<      int> & nodeIDList, 
-                                            const Teuchos::ArrayView<      int> & LIDList) const { CTHULHU_DEBUG_ME; 
+                                            const Teuchos::ArrayView<      int> & LIDList) const {  
 
       map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr()); 
       
@@ -351,7 +350,7 @@ namespace Cthulhu {
                Otherwise, returns AllIDsPresent.
      */
     Cthulhu::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const int> & GIDList, 
-                                            const Teuchos::ArrayView<      int> & nodeIDList) const { CTHULHU_DEBUG_ME; 
+                                            const Teuchos::ArrayView<      int> & nodeIDList) const {  
 
       // JG Note: It's not on the documentation of Epetra_BlockMap but it is in fact safe to call
       // EpetraMap RemoteIDList with LIDList == 0.
@@ -363,7 +362,7 @@ namespace Cthulhu {
     };
 
     //! Return a list of the global indices owned by this node.
-    Teuchos::ArrayView<const int> getNodeElementList() const { CTHULHU_DEBUG_ME;
+    Teuchos::ArrayView<const int> getNodeElementList() const { 
       int* nodeElementList = map_->MyGlobalElements(); // Pointer to *internal* array containing list of global IDs assigned to the calling processor. 
       int  numMyElements   = map_->NumMyElements();    // Number of elements on the calling processor.
       
@@ -373,18 +372,18 @@ namespace Cthulhu {
     };
 
     //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
-    bool isNodeLocalElement(int localIndex) const { CTHULHU_DEBUG_ME; 
+    bool isNodeLocalElement(int localIndex) const {  
       return map_->MyLID(localIndex); 
     };
 
     //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
-    bool isNodeGlobalElement(int globalIndex) const { CTHULHU_DEBUG_ME; return map_->MyGID(globalIndex); };
+    bool isNodeGlobalElement(int globalIndex) const {  return map_->MyGID(globalIndex); };
 
     //! Returns true if this Map is distributed contiguously; returns false otherwise.
-    bool isContiguous() const { CTHULHU_DEBUG_ME; return map_->LinearMap(); };
+    bool isContiguous() const {  return map_->LinearMap(); };
 
     //! Returns true if this Map is distributed across more than one node; returns false otherwise.
-    bool isDistributed() const { CTHULHU_DEBUG_ME; return map_->DistributedGlobal(); };
+    bool isDistributed() const {  return map_->DistributedGlobal(); };
 
     //@}
 
@@ -393,7 +392,7 @@ namespace Cthulhu {
 
     //! Returns true if \c map is compatible with this Map.
     /** Note that an EpetraMap is never compatible with an TpetraMap. **/
-    bool isCompatible (const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> &map) const { CTHULHU_DEBUG_ME; 
+    bool isCompatible (const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> &map) const {  
       try
 	{
           const EpetraMap & epetraMap = dynamic_cast<const EpetraMap &>(map);
@@ -409,7 +408,7 @@ namespace Cthulhu {
 
     //! Returns true if \c map is identical to this Map.
     /** Note that an EpetraMap is never the 'same as' a TpetraMap. **/
-    bool isSameAs (const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> &map) const { CTHULHU_DEBUG_ME; 
+    bool isSameAs (const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> &map) const {  
       try
 	{
           const EpetraMap & epetraMap = dynamic_cast<const EpetraMap &>(map);
@@ -427,14 +426,14 @@ namespace Cthulhu {
     //@{ Misc. 
 
     //! Get the Comm object for this Map
-    const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const { CTHULHU_DEBUG_ME;  //removed &
+    const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const {   //removed &
       RCP<const Epetra_Comm> rcpComm = rcpFromRef(map_->Comm());
       const Teuchos::RCP<const Teuchos::Comm<int> > r = Epetra2Teuchos_Comm(rcpComm);
       return r;
     };
 
     //! Get the Node object for this Map
-    const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const { CTHULHU_DEBUG_ME;  //removed &
+    const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const {   //removed &
       return Kokkos::DefaultNode::getDefaultNode();
     };
 
@@ -444,7 +443,7 @@ namespace Cthulhu {
 
     //! \brief Return a simple one-line description of this object.
     std::string description() const { 
-      CTHULHU_DEBUG_ME; 
+       
     
       // This implementation come from Tpetra_Map_def.hpp (without modification)
       std::ostringstream oss;
@@ -459,7 +458,7 @@ namespace Cthulhu {
 
     //! Print the object with some verbosity level to a \c FancyOStream object.
     void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       const Teuchos::RCP<const Teuchos::Comm<int> > comm_ = getComm();
 
@@ -537,12 +536,12 @@ namespace Cthulhu {
     //@}
 
     /** \brief Get the underlying Epetra map.. */
-    const Epetra_BlockMap& getEpetra_BlockMap() const { CTHULHU_DEBUG_ME; return *map_; }
+    const Epetra_BlockMap& getEpetra_BlockMap() const {  return *map_; }
     
     /** \brief Get the underlying Epetra map. This method cast the underlying EpetraBlockMap to an EpetraMap.
         Try to use getEpetra_BlockMap() instead of getEpetra_Map() as much as possible. See the note in the top of the file Cthulhu_EpetraMap.hpp for more information. 
     */
-    const Epetra_Map& getEpetra_Map() const { CTHULHU_DEBUG_ME; return (Epetra_Map &)*map_; } //TODO: write a note about that. It's the same in Epetra_CrsMatrix.h to get the map.
+    const Epetra_Map& getEpetra_Map() const {  return (Epetra_Map &)*map_; } //TODO: write a note about that. It's the same in Epetra_CrsMatrix.h to get the map.
 
     inline UnderlyingLib lib() const { return Cthulhu::UseEpetra; };
 
@@ -567,7 +566,7 @@ namespace Cthulhu {
     Teuchos::RCP< const EpetraMap > createContigMapWithNode(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node);
 
     inline Teuchos::RCP< const EpetraMap >
-    createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
       return createLocalMapWithNode(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
     }
 
@@ -578,7 +577,7 @@ namespace Cthulhu {
     \relates EpetraMap
     */
     inline Teuchos::RCP< const EpetraMap >
-    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
+    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { 
       Teuchos::RCP< EpetraMap > map;
       map = Teuchos::rcp( new EpetraMap((Cthulhu::global_size_t)numElements, // num elements, global and local
                                         0,                                   // index base is zero
@@ -594,7 +593,7 @@ namespace Cthulhu {
     */
     inline Teuchos::RCP< const EpetraMap >
     createUniformContigMapWithNode(global_size_t numElements,
-                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
+                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { 
       Teuchos::RCP< EpetraMap > map;
       map = Teuchos::rcp( new EpetraMap(numElements,        // num elements, global and local
                                         0,                  //index base is zero
@@ -611,7 +610,7 @@ namespace Cthulhu {
     \relates EpetraMap
     */
     inline Teuchos::RCP< const EpetraMap >
-    createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
       return createUniformContigMapWithNode(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
     }
 
@@ -624,7 +623,7 @@ namespace Cthulhu {
     \relates EpetraMap
     */
     inline Teuchos::RCP< const EpetraMap >
-    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
       return createContigMapWithNode(numElements, localNumElements, comm, Kokkos::DefaultNode::getDefaultNode() );
     }
 
@@ -636,7 +635,7 @@ namespace Cthulhu {
     */
     inline Teuchos::RCP< const EpetraMap >
     createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { 
       Teuchos::RCP< EpetraMap > map;
       map = Teuchos::rcp( new EpetraMap(numElements,localNumElements,
                                         0,  // index base is zero
@@ -662,13 +661,13 @@ namespace Cthulhu {
 
 /** \brief  Returns true if \c map is identical to this map. Implemented in Cthulhu::EpetraMap::isSameAs().
     \relates Cthulhu::EpetraMap */
-inline bool operator== (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { CTHULHU_DEBUG_ME;
+inline bool operator== (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { 
   return map1.isSameAs(map2);
 }
 
 /** \brief Returns true if \c map is not identical to this map. Implemented in Cthulhu::EpetraMap::isSameAs().
     \relates Cthulhu::EpetraMap */
-inline bool operator!= (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { CTHULHU_DEBUG_ME;
+inline bool operator!= (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { 
   return !map1.isSameAs(map2);
 }
 

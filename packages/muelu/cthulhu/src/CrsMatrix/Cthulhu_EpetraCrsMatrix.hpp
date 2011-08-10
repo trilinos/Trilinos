@@ -20,9 +20,6 @@
 #include "Cthulhu_EpetraVector.hpp"
 #include "Cthulhu_Trans.hpp"
 
-#include "Cthulhu_Debug.hpp"
-
-
 namespace Cthulhu {
 
   //! \brief A class for constructing and using sparse compressed matrices with row access.
@@ -56,7 +53,7 @@ namespace Cthulhu {
 
     //! Constructor specifying the number of non-zeros for all rows.
     EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile) 
-    { CTHULHU_DEBUG_ME;
+    { 
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, rowMap, eRowMap, "Cthulhu::EpetraCrsMatrix constructors only accept Cthulhu::EpetraMap as input arguments.");
 
       //TODO: test constblk and blksize=1 for the Map ?
@@ -66,7 +63,7 @@ namespace Cthulhu {
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Constructor specifying the number of non-zeros for each row.
     EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile)
-    { CTHULHU_DEBUG_ME;
+    { 
 
     }
 
@@ -74,7 +71,7 @@ namespace Cthulhu {
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
     EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile)
-    { CTHULHU_DEBUG_ME;
+    { 
 
     }
     
@@ -82,7 +79,7 @@ namespace Cthulhu {
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
     EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile)
-    { CTHULHU_DEBUG_ME;
+    { 
 
     } 
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -90,13 +87,13 @@ namespace Cthulhu {
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Constructor specifying a pre-constructed graph.
     // TODO: need a CrsGraph
-    explicit EpetraCrsMatrix(const RCP<const CrsGraph<int,int,LocalMatOps> > &graph) { CTHULHU_DEBUG_ME; }
+    explicit EpetraCrsMatrix(const RCP<const CrsGraph<int,int,LocalMatOps> > &graph) {  }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix> &mtx) : mtx_(mtx) { CTHULHU_DEBUG_ME; }
+    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix> &mtx) : mtx_(mtx) {  }
 
     // !Destructor.
-    virtual ~EpetraCrsMatrix() { CTHULHU_DEBUG_ME; CTHULHU_DEBUG_ME_PRINT; }
+     virtual ~EpetraCrsMatrix() { }
 
     //@}
 
@@ -116,7 +113,7 @@ namespace Cthulhu {
         \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
     */
     inline void insertGlobalValues(int globalRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) { 
-      CTHULHU_DEBUG_ME; 
+       
       CTHULHU_ERR_CHECK(mtx_->InsertGlobalValues(globalRow, vals.size(), vals.getRawPtr(), cols.getRawPtr())); 
     }
 
@@ -133,7 +130,7 @@ namespace Cthulhu {
        \note If the matrix row already contains entries at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
        \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
     */
-    inline void insertLocalValues(int localRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) { CTHULHU_DEBUG_ME; mtx_->insertLocalValues(localRow, cols, vals); }
+    inline void insertLocalValues(int localRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) {  mtx_->insertLocalValues(localRow, cols, vals); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -145,7 +142,7 @@ namespace Cthulhu {
     \note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
     inline void replaceGlobalValues(int globalRow, 
                                     const ArrayView<const int> &cols,
-                                    const ArrayView<const double>        &vals) { CTHULHU_DEBUG_ME; mtx_->replaceGlobalValues(globalRow, cols, vals); }
+                                    const ArrayView<const double>        &vals) {  mtx_->replaceGlobalValues(globalRow, cols, vals); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -154,7 +151,7 @@ namespace Cthulhu {
      */
     inline void replaceLocalValues(int localRow, 
                                    const ArrayView<const int> &cols,
-                                   const ArrayView<const double>       &vals) { CTHULHU_DEBUG_ME; mtx_->replaceLocalValues(localRow, cols, vals); }
+                                   const ArrayView<const double>       &vals) {  mtx_->replaceLocalValues(localRow, cols, vals); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -166,7 +163,7 @@ namespace Cthulhu {
     */
     inline void sumIntoGlobalValues(int globalRow, 
                                     const ArrayView<const int> &cols,
-                                    const ArrayView<const double>        &vals) { CTHULHU_DEBUG_ME; mtx_->sumIntoGlobalValues(globalRow, cols, vals); }
+                                    const ArrayView<const double>        &vals) {  mtx_->sumIntoGlobalValues(globalRow, cols, vals); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -178,16 +175,16 @@ namespace Cthulhu {
     */
     inline void sumIntoLocalValues(int globalRow, 
                                    const ArrayView<const int>  &cols,
-                                   const ArrayView<const double>        &vals) { CTHULHU_DEBUG_ME; mtx_->sumIntoLocalValues(globalRow, cols, vals); } 
+                                   const ArrayView<const double>        &vals) {  mtx_->sumIntoLocalValues(globalRow, cols, vals); } 
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Set all matrix entries equal to scalarThis.
-    inline void setAllTodouble(const double &alpha) { CTHULHU_DEBUG_ME; mtx_->setAllTodouble(alpha); }
+    inline void setAllTodouble(const double &alpha) {  mtx_->setAllTodouble(alpha); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Scale the current values of a matrix, this = alpha*this. 
-    inline void scale(const double &alpha) { CTHULHU_DEBUG_ME; mtx_->Scale(alpha); }
+    inline void scale(const double &alpha) {  mtx_->Scale(alpha); }
 
     //@}
 
@@ -196,7 +193,7 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! \brief Communicate non-local contributions to other nodes.
-    inline void globalAssemble() { CTHULHU_DEBUG_ME; mtx_->globalAssemble(); }
+    inline void globalAssemble() {  mtx_->globalAssemble(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -208,7 +205,7 @@ namespace Cthulhu {
       \post  <tt>isFillActive() == true<tt>
       \post  <tt>isFillComplete() == false<tt>
     */
-    inline void resumeFill() { CTHULHU_DEBUG_ME; mtx_->resumeFill(); }
+    inline void resumeFill() {  mtx_->resumeFill(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
@@ -223,7 +220,7 @@ namespace Cthulhu {
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */ 
     inline void fillComplete(const RCP<const Map<int,int> > &domainMap, const RCP<const Map<int,int> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { 
-      CTHULHU_DEBUG_ME; 
+       
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, domainMap, tDomainMap, "Cthulhu::EpetraCrsMatrix::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, rangeMap,  tRangeMap,  "Cthulhu::EpetraCrsMatrix::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
       mtx_->FillComplete(tDomainMap->getEpetra_Map(), tRangeMap->getEpetra_Map()); // TODO: os 
@@ -243,12 +240,12 @@ namespace Cthulhu {
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */
     // TODO: Cthulhu::OptimizeOption
-    inline void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) { CTHULHU_DEBUG_ME; if (os == Cthulhu::DoOptimizeStorage) mtx_->FillComplete(true); else mtx_->FillComplete(false); }
+    inline void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) {  if (os == Cthulhu::DoOptimizeStorage) mtx_->FillComplete(true); else mtx_->FillComplete(false); }
 
 
     //! leftScale
     inline void leftScale(const Vector<double,int,int>& x){
-      CTHULHU_DEBUG_ME; 
+       
       CTHULHU_DYNAMIC_CAST(const EpetraVector, x, tX, "Cthulhu::EpetraCrsMatrix->leftScale() only accept Cthulhu::EpetraVector as input arguments.");
       mtx_->LeftScale(*tX.getEpetra_Vector());
     }
@@ -261,7 +258,7 @@ namespace Cthulhu {
 
     //! Returns the communicator.
     inline const RCP<const Comm<int> > getComm() const {
-      CTHULHU_DEBUG_ME; 
+       
       
       RCP<const Epetra_Comm> rcpComm = rcpFromRef(mtx_->Comm());
       return Epetra2Teuchos_Comm(rcpComm);
@@ -269,12 +266,12 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the underlying node.
-    inline RCP<Node> getNode() const { CTHULHU_DEBUG_ME; return mtx_->getNode(); }
+    inline RCP<Node> getNode() const {  return mtx_->getNode(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Returns the Map that describes the row distribution in this matrix.
     inline const RCP<const Cthulhu::Map<int,int> > getRowMap() const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       // The Epetra map is owned by the underlying Epetra matrix and freed when the matrix is deleted.
       // I have to make a copy of the map to be sure that the RCP<Map> returned by this method will remain valid even if the matrix is deleted.
@@ -286,7 +283,7 @@ namespace Cthulhu {
      
     //! \brief Returns the Map that describes the column distribution in this matrix.
     inline const RCP<const Cthulhu::Map<int,int> > getColMap() const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       // The Epetra map is owned by the underlying Epetra matrix and freed when the matrix is deleted.
       // I have to make a copy of the map to be sure that the RCP<Map> returned by this method will remain valid even if the matrix is deleted.
@@ -298,11 +295,11 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the RowGraph associated with this matrix. 
-    inline RCP<const RowGraph<int,int> > getGraph() const { CTHULHU_DEBUG_ME; return mtx_->Graph(); }
+    inline RCP<const RowGraph<int,int> > getGraph() const {  return mtx_->Graph(); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Returns the CrsGraph associated with this matrix. 
-    inline RCP<const CrsGraph<int,int> > getCrsGraph() const { CTHULHU_DEBUG_ME; 
+    inline RCP<const CrsGraph<int,int> > getCrsGraph() const {  
       RCP<const Epetra_CrsGraph> const_graph = rcp(new Epetra_CrsGraph(mtx_->Graph()));
 
       RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(const_graph); //TODO: can I avoid the const_cast ?
@@ -312,95 +309,95 @@ namespace Cthulhu {
     //! Returns the number of global rows in this matrix.
     /** Undefined if isFillActive().
      */
-    inline global_size_t getGlobalNumRows() const { CTHULHU_DEBUG_ME; return mtx_->NumGlobalRows(); }
+    inline global_size_t getGlobalNumRows() const {  return mtx_->NumGlobalRows(); }
 
     //! \brief Returns the number of global columns in the matrix.
     /** Undefined if isFillActive().
      */
-    inline global_size_t getGlobalNumCols() const { CTHULHU_DEBUG_ME; return mtx_->NumGlobalCols(); }
+    inline global_size_t getGlobalNumCols() const {  return mtx_->NumGlobalCols(); }
 
     //! Returns the number of matrix rows owned on the calling node.
-    inline size_t getNodeNumRows() const { CTHULHU_DEBUG_ME; return mtx_->NumMyRows(); }
+    inline size_t getNodeNumRows() const {  return mtx_->NumMyRows(); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the number of columns connected to the locally owned rows of this matrix.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
-    inline size_t getNodeNumCols() const { CTHULHU_DEBUG_ME; return mtx_->getNodeNumCols(); }
+    inline size_t getNodeNumCols() const {  return mtx_->getNodeNumCols(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the index base for global indices for this matrix. 
-    inline int getIndexBase() const { CTHULHU_DEBUG_ME; return mtx_->getIndexBase(); }
+    inline int getIndexBase() const {  return mtx_->getIndexBase(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Returns the global number of entries in this matrix.
-    inline global_size_t getGlobalNumEntries() const { CTHULHU_DEBUG_ME; return mtx_->NumGlobalNonzeros(); }
+    inline global_size_t getGlobalNumEntries() const {  return mtx_->NumGlobalNonzeros(); }
 
     //! Returns the local number of entries in this matrix.
-    inline size_t getNodeNumEntries() const { CTHULHU_DEBUG_ME; return mtx_->NumMyNonzeros(); }
+    inline size_t getNodeNumEntries() const {  return mtx_->NumMyNonzeros(); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! \brief Returns the current number of entries on this node in the specified global row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this matrix. */
-    inline size_t getNumEntriesInGlobalRow(int globalRow) const { CTHULHU_DEBUG_ME; return mtx_->getNumEntriesInGlobalRow(globalRow); }
+    inline size_t getNumEntriesInGlobalRow(int globalRow) const {  return mtx_->getNumEntriesInGlobalRow(globalRow); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Returns the current number of entries on this node in the specified local row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
-    inline size_t getNumEntriesInLocalRow(int localRow) const { CTHULHU_DEBUG_ME; return mtx_->NumMyEntries(localRow); }
+    inline size_t getNumEntriesInLocalRow(int localRow) const {  return mtx_->NumMyEntries(localRow); }
 
     //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
     /** Undefined if isFillActive().
      */
-    inline global_size_t getGlobalNumDiags() const { CTHULHU_DEBUG_ME; return mtx_->NumGlobalDiagonals(); }
+    inline global_size_t getGlobalNumDiags() const {  return mtx_->NumGlobalDiagonals(); }
 
     //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
     /** Undefined if isFillActive().
      */
-    inline size_t getNodeNumDiags() const { CTHULHU_DEBUG_ME; return mtx_->NumMyDiagonals(); }
+    inline size_t getNodeNumDiags() const {  return mtx_->NumMyDiagonals(); }
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
     /** Undefined if isFillActive().
      */
-    inline size_t getGlobalMaxNumRowEntries() const { CTHULHU_DEBUG_ME; return mtx_->GlobalMaxNumEntries(); }
+    inline size_t getGlobalMaxNumRowEntries() const {  return mtx_->GlobalMaxNumEntries(); }
 
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
     /** Undefined if isFillActive().
      */
-    inline size_t getNodeMaxNumRowEntries() const { CTHULHU_DEBUG_ME; return mtx_->MaxNumEntries(); }
+    inline size_t getNodeMaxNumRowEntries() const {  return mtx_->MaxNumEntries(); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! \brief Indicates whether the matrix has a well-defined column map. 
-    inline bool hasColMap() const { CTHULHU_DEBUG_ME; return mtx_->hasColMap(); } 
+    inline bool hasColMap() const {  return mtx_->hasColMap(); } 
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! \brief Indicates whether the matrix is lower triangular.
     /** Undefined if isFillActive().
      */
-    inline bool isLowerTriangular() const { CTHULHU_DEBUG_ME; return mtx_->isLowerTriangular(); }
+    inline bool isLowerTriangular() const {  return mtx_->isLowerTriangular(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! \brief Indicates whether the matrix is upper triangular.
     /** Undefined if isFillActive().
      */
-    inline bool isUpperTriangular() const { CTHULHU_DEBUG_ME; return mtx_->isUpperTriangular(); }
+    inline bool isUpperTriangular() const {  return mtx_->isUpperTriangular(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
-    inline bool isLocallyIndexed() const { CTHULHU_DEBUG_ME; return mtx_->IndicesAreLocal(); }
+    inline bool isLocallyIndexed() const {  return mtx_->IndicesAreLocal(); }
 
     //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
-    inline bool isGloballyIndexed() const { CTHULHU_DEBUG_ME; return mtx_->IndicesAreGlobal(); }
+    inline bool isGloballyIndexed() const {  return mtx_->IndicesAreGlobal(); }
 
     //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
-    inline bool isFillComplete() const { CTHULHU_DEBUG_ME; return mtx_->Filled(); }
+    inline bool isFillComplete() const {  return mtx_->Filled(); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns \c true if resumeFill() has been called and the matrix is in edit mode.
-    inline bool isFillActive() const { CTHULHU_DEBUG_ME; return mtx_->isFillActive(); }
+    inline bool isFillActive() const {  return mtx_->isFillActive(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -411,17 +408,17 @@ namespace Cthulhu {
        during a mat-vec, requires minimal memory traffic. One limitation of
        optimized storage is that no new indices can be added to the matrix.
     */
-    inline bool isStorageOptimized() const { CTHULHU_DEBUG_ME; return mtx_->isStorageOptimized(); }
+    inline bool isStorageOptimized() const {  return mtx_->isStorageOptimized(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns \c true if the matrix was allocated with static data structures.
-    inline Cthulhu::ProfileType getProfileType() const { CTHULHU_DEBUG_ME; return mtx_->getProfileType(); } // TODO Cthulhu::ProfileType
+    inline Cthulhu::ProfileType getProfileType() const {  return mtx_->getProfileType(); } // TODO Cthulhu::ProfileType
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Indicates that the graph is static, so that new entries cannot be added to this matrix. */
-    inline bool isStaticGraph() const { CTHULHU_DEBUG_ME; return mtx_->isStaticGraph(); }
+    inline bool isStaticGraph() const {  return mtx_->isStaticGraph(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -440,7 +437,7 @@ namespace Cthulhu {
                                  const ArrayView<int> &Indices,
                                  const ArrayView<double> &Values,
                                  size_t &NumEntries
-                                 ) const { CTHULHU_DEBUG_ME; mtx_->getGlobalRowCopy(GlobalRow, Indices, Values, NumEntries); }
+                                 ) const {  mtx_->getGlobalRowCopy(GlobalRow, Indices, Values, NumEntries); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
@@ -462,7 +459,7 @@ namespace Cthulhu {
                                 const ArrayView<double> &Values,
                                 size_t &NumEntries
                                 ) const { 
-      CTHULHU_DEBUG_ME; 
+       
       
       int numEntries=-1;
       CTHULHU_ERR_CHECK(mtx_->ExtractMyRowCopy(LocalRow, Indices.size(), numEntries, Values.getRawPtr(), Indices.getRawPtr()));
@@ -480,7 +477,7 @@ namespace Cthulhu {
       Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
     */
     inline void getGlobalRowView(int GlobalRow, ArrayView<const int> &indices, ArrayView<const double> &values) const { 
-      CTHULHU_DEBUG_ME; 
+       
     
       int      numEntries;
       double * eValues;
@@ -504,7 +501,7 @@ namespace Cthulhu {
       Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
     */
     inline void getLocalRowView(int LocalRow, ArrayView<const int> &indices, ArrayView<const double> &values) const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       int      numEntries;
       double * eValues;
@@ -521,7 +518,7 @@ namespace Cthulhu {
     /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
       the zero and non-zero diagonals owned by this node. */
     inline void getLocalDiagCopy(Vector<double,int,int> &diag) const { 
-      CTHULHU_DEBUG_ME; 
+       
       
       CTHULHU_DYNAMIC_CAST(EpetraVector, diag, eDiag, "Cthulhu::EpetraCrsMatrix.getLocalDiagCopy() only accept Cthulhu::EpetraVector as input arguments.");
       mtx_->ExtractDiagonalCopy(*eDiag.getEpetra_Vector()); 
@@ -544,7 +541,7 @@ namespace Cthulhu {
     */
 #ifdef CTHULHU_NOT_IMPLEMENTED
     template <class Domaindouble, class Rangedouble>
-    inline void multiply(const MultiVector<Domaindouble,int,int> & X, MultiVector<Rangedouble,int,int> &Y, Teuchos::ETransp trans, Rangedouble alpha, Rangedouble beta) const { CTHULHU_DEBUG_ME; mtx_->multiply(X, Y, trans, alpha, beta); }
+    inline void multiply(const MultiVector<Domaindouble,int,int> & X, MultiVector<Rangedouble,int,int> &Y, Teuchos::ETransp trans, Rangedouble alpha, Rangedouble beta) const {  mtx_->multiply(X, Y, trans, alpha, beta); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     // TODO Note: Do we need to use a Tpetra::CrsMatrixMultiplyOp ?? 
@@ -552,7 +549,7 @@ namespace Cthulhu {
 
     // TODO : templated type
     inline void multiply(const MultiVector<double,int,int> & X, MultiVector<double,int,int> &Y, Teuchos::ETransp trans, double alpha, double beta) const {
-      CTHULHU_DEBUG_ME; 
+       
 
       TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
       
@@ -574,7 +571,7 @@ namespace Cthulhu {
     Both are required to have constant stride. However, unlike multiply(), it is permissible for <tt>&X == &Y</tt>. No runtime checking will be performed in a non-debug build.
     */
     template <class Domaindouble, class Rangedouble>
-    inline void solve(const MultiVector<Rangedouble,int,int> & Y, MultiVector<Domaindouble,int,int> &X, Teuchos::ETransp trans) const { CTHULHU_DEBUG_ME; mtx_->solve(Y, X, trans); }
+    inline void solve(const MultiVector<Rangedouble,int,int> & Y, MultiVector<Domaindouble,int,int> &X, Teuchos::ETransp trans) const {  mtx_->solve(Y, X, trans); }
 #endif // CTHULHU_NOT_IMPLEMENTED
           
     //@}
@@ -590,7 +587,7 @@ namespace Cthulhu {
                       Teuchos::ETransp mode = Teuchos::NO_TRANS,
                       double alpha = ScalarTraits<double>::one(),
                       double beta = ScalarTraits<double>::zero()) const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
       
@@ -608,13 +605,13 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Indicates whether this operator supports applying the adjoint operator.
-    inline bool hasTransposeApply() const { CTHULHU_DEBUG_ME; return mtx_->hasTransposeApply(); }
+    inline bool hasTransposeApply() const {  return mtx_->hasTransposeApply(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! \brief Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
     inline const RCP<const Map<int,int> > getDomainMap() const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       // The Epetra map is owned by the underlying Epetra matrix and freed when the matrix is deleted.
       // I have to make a copy of the map to be sure that the RCP<Map> returned by this method will remain valid even if the matrix is deleted.
@@ -627,7 +624,7 @@ namespace Cthulhu {
     //! Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
     inline const RCP<const Map<int,int> > getRangeMap() const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       // The Epetra map is owned by the underlying Epetra matrix and freed when the matrix is deleted.
       // I have to make a copy of the map to be sure that the RCP<Map> returned by this method will remain valid even if the matrix is deleted.
@@ -644,7 +641,7 @@ namespace Cthulhu {
 
     /** \brief Return a simple one-line description of this object. */
     inline std::string description() const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       // This implementation come from Tpetra_CrsMatrix_def.hpp (without modification)
       std::ostringstream oss;
@@ -667,7 +664,7 @@ namespace Cthulhu {
     
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       typedef int LocalOrdinal;
       typedef int GlobalOrdinal;
@@ -831,26 +828,26 @@ namespace Cthulhu {
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! @name Methods implementing Cthulhu::DistObject
     //@{
-    inline bool checkSizes(const DistObject<char, int,int>& source) { CTHULHU_DEBUG_ME; return mtx_->checkSizes(); }
+    inline bool checkSizes(const DistObject<char, int,int>& source) {  return mtx_->checkSizes(); }
 
     inline void copyAndPermute(const DistObject<char, int,int>& source,
                                size_t numSameIDs,
                                const ArrayView<const int> &permuteToLIDs,
-                               const ArrayView<const int> &permuteFromLIDs) { CTHULHU_DEBUG_ME; mtx_->copyAndPermute(); }
+                               const ArrayView<const int> &permuteFromLIDs) {  mtx_->copyAndPermute(); }
 
     inline void packAndPrepare(const DistObject<char, int,int>& source,
                                const ArrayView<const int> &exportLIDs,
                                Array<char> &exports,
                                const ArrayView<size_t> & numPacketsPerLID,
                                size_t& constantNumPackets,
-                               Distributor &distor) { CTHULHU_DEBUG_ME; mtx_->packAndPrepare(); }
+                               Distributor &distor) {  mtx_->packAndPrepare(); }
 
     inline void unpackAndCombine(const ArrayView<const int> &importLIDs,
                                  const ArrayView<const char> &imports,
                                  const ArrayView<size_t> &numPacketsPerLID,
                                  size_t constantNumPackets,
                                  Distributor &distor,
-                                 CombineMode CM) { CTHULHU_DEBUG_ME; mtx_->unpackAndCombine(); }
+                                 CombineMode CM) {  mtx_->unpackAndCombine(); }
     //@}
 #endif // CTHULHU_NOT_IMPLEMENTED
 
@@ -866,30 +863,30 @@ namespace Cthulhu {
     Currently, the implementation simply calls resumeFill() and then fillComplete(OptimizeStorage). As such, it is 
     required to be called by all nodes that participate in the associated communicator.
     */
-    inline CTHULHU_DEPRECATED void optimizeStorage() { CTHULHU_DEBUG_ME; }
+    inline CTHULHU_DEPRECATED void optimizeStorage() {  }
     
     //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
-    inline CTHULHU_DEPRECATED void getGlobalRowView(int GlobalRow, ArrayRCP<const int> &indices, ArrayRCP<const double> &values) const { CTHULHU_DEBUG_ME; } 
+    inline CTHULHU_DEPRECATED void getGlobalRowView(int GlobalRow, ArrayRCP<const int> &indices, ArrayRCP<const double> &values) const {  } 
     
     //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
-    inline CTHULHU_DEPRECATED void getLocalRowView(int LocalRow, ArrayRCP<const int> &indices, ArrayRCP<const double> &values) const { CTHULHU_DEBUG_ME; } 
+    inline CTHULHU_DEPRECATED void getLocalRowView(int LocalRow, ArrayRCP<const int> &indices, ArrayRCP<const double> &values) const {  } 
     
     //@}
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-    RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { CTHULHU_DEBUG_ME; return mtx_; }
+    RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const {  return mtx_; }
 
-    RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { CTHULHU_DEBUG_ME; return mtx_; }
+    RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const {  return mtx_; }
 
     /** TODO : interface of Teuchos_LabeledObject.hpp **/
-    void setObjectLabel (const std::string &objectLabel) { CTHULHU_DEBUG_ME; //mtx_->setObjectLabel(objectLabel); TODO
+    void setObjectLabel (const std::string &objectLabel) {  //mtx_->setObjectLabel(objectLabel); TODO
     }
 
     //@{
     // Implements DistObject interface
 
     const Teuchos::RCP<const Map<int,int> > getMap() const { 
-      CTHULHU_DEBUG_ME; 
+       
       
       RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(mtx_->Map()));
       return rcp ( new Cthulhu::EpetraMap(map) );
@@ -897,7 +894,7 @@ namespace Cthulhu {
     
     inline void doImport(const DistObject<char, int, int> &source, 
                          const Import<int, int> &importer, CombineMode CM) {
-      CTHULHU_DEBUG_ME;
+      
 
       CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
@@ -909,7 +906,7 @@ namespace Cthulhu {
 
     void doExport(const DistObject<char, int, int> &dest,
                   const Import<int, int>& importer, CombineMode CM) {
-      CTHULHU_DEBUG_ME;
+      
       
       CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
@@ -921,7 +918,7 @@ namespace Cthulhu {
 
     void doImport(const DistObject<char, int, int> &source,
                   const Export<int, int>& exporter, CombineMode CM) {
-      CTHULHU_DEBUG_ME;
+      
 
       CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
       CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
@@ -934,7 +931,7 @@ namespace Cthulhu {
 
     void doExport(const DistObject<char, int, int> &dest,
                   const Export<int, int>& exporter, CombineMode CM) {
-      CTHULHU_DEBUG_ME;
+      
       
       CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
       CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");

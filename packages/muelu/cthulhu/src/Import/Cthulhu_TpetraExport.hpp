@@ -39,7 +39,7 @@ namespace Cthulhu {
     //! Constructs a Export object from the source and target Maps.
     TpetraExport(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, 
             const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target)       
-    { CTHULHU_DEBUG_ME;
+    { 
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, source, tSource, "Cthulhu::TpetraExport constructors only accept Cthulhu::TpetraMap as input arguments.");
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, target, tTarget, "Cthulhu::TpetraExport constructors only accept Cthulhu::TpetraMap as input arguments.");
       export_ = rcp(new Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node>(tSource->getTpetra_Map(), tTarget->getTpetra_Map()));
@@ -47,15 +47,15 @@ namespace Cthulhu {
  
     //! copy constructor. 
     TpetraExport(const Export<LocalOrdinal,GlobalOrdinal,Node> & export2) {
-      CTHULHU_DEBUG_ME;
+      
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraExport, export2, tExport, "Cthulhu::TpetraExport copy constructors only accept Cthulhu::TpetraExport as input arguments.");
       export_ = rcp(new TpetraExport<LocalOrdinal,GlobalOrdinal,Node>(tExport->getTpetra_Map()));
     }
 
-    TpetraExport(const Teuchos::RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> > &export2) : export_(export2) { CTHULHU_DEBUG_ME; }
+    TpetraExport(const Teuchos::RCP<const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> > &export2) : export_(export2) {  }
 
     //! destructor.
-    virtual ~TpetraExport() { CTHULHU_DEBUG_ME; }
+    virtual ~TpetraExport() {  }
 
     //@}
 
@@ -63,45 +63,45 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the number of entries that are identical between the source and target maps, up to the first different ID.
-    inline size_t getNumSameIDs() const { CTHULHU_DEBUG_ME; return export_->getNumSameIDs(); }
+    inline size_t getNumSameIDs() const {  return export_->getNumSameIDs(); }
 
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
-    inline size_t getNumPermuteIDs() const { CTHULHU_DEBUG_ME; return export_->getNumPermuteIDs(); }
+    inline size_t getNumPermuteIDs() const {  return export_->getNumPermuteIDs(); }
 
     //! List of entries in the source Map that are permuted. (non-persisting view)
-    inline Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const { CTHULHU_DEBUG_ME; return export_->getPermuteFromLIDs(); }
+    inline Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const {  return export_->getPermuteFromLIDs(); }
 
     //! List of entries in the target Map that are permuted. (non-persisting view)
-    inline Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const { CTHULHU_DEBUG_ME; return export_->getPermuteToLIDs(); }
+    inline Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const {  return export_->getPermuteToLIDs(); }
 
     //! Returns the number of entries that are not on the calling image.
-    inline size_t getNumRemoteIDs() const { CTHULHU_DEBUG_ME; return export_->getNumRemoteIDs(); }
+    inline size_t getNumRemoteIDs() const {  return export_->getNumRemoteIDs(); }
 
     //! List of entries in the target Map that are coming from other images. (non-persisting view)
-    inline Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const { CTHULHU_DEBUG_ME; return export_->getRemoteLIDs(); }
+    inline Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const {  return export_->getRemoteLIDs(); }
 
     //! Returns the number of entries that must be sent by the calling image to other images.
-    inline size_t getNumExportIDs() const { CTHULHU_DEBUG_ME; return export_->getNumExportIDs(); }
+    inline size_t getNumExportIDs() const {  return export_->getNumExportIDs(); }
 
     //! List of entries in the source Map that will be sent to other images. (non-persisting view)
-    inline Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const { CTHULHU_DEBUG_ME; return export_->getExportLIDs(); }
+    inline Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const {  return export_->getExportLIDs(); }
 
     //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getExportImageIDs() const { CTHULHU_DEBUG_ME; return export_->getExportImageIDs(); }
+    inline Teuchos::ArrayView<const int> getExportImageIDs() const {  return export_->getExportImageIDs(); }
 
     //! Returns the Source Map used to construct this exporter.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getSourceMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMapClass(export_->getSourceMap())); };
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getSourceMap() const {  return rcp( new TpetraMapClass(export_->getSourceMap())); };
 
     //! Returns the Target Map used to construct this exporter.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getTargetMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMapClass(export_->getTargetMap())); };
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getTargetMap() const {  return rcp( new TpetraMapClass(export_->getTargetMap())); };
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline Distributor & getDistributor() const { CTHULHU_DEBUG_ME; return export_->getDistributor(); }
+    inline Distributor & getDistributor() const {  return export_->getDistributor(); }
 #endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Assignment operator
-    inline Export<LocalOrdinal,GlobalOrdinal,Node>& operator = (const Export<LocalOrdinal,GlobalOrdinal,Node> & Source) { CTHULHU_DEBUG_ME; return }
+    inline Export<LocalOrdinal,GlobalOrdinal,Node>& operator = (const Export<LocalOrdinal,GlobalOrdinal,Node> & Source) {  return }
 
     //@}
 
@@ -109,12 +109,12 @@ namespace Cthulhu {
     //@{ 
 
     //! Print method 
-    inline void print(std::ostream& os) const { CTHULHU_DEBUG_ME; } 
+    inline void print(std::ostream& os) const {  } 
 
     //@}
 #endif
 
-    RCP< const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Export() const { CTHULHU_DEBUG_ME; return export_; }
+    RCP< const Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Export() const {  return export_; }
     
   private:
     

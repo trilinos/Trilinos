@@ -1,8 +1,6 @@
 #ifndef CTHULHU_CONFIGDEFS_HPP
 #define CTHULHU_CONFIGDEFS_HPP
 
-#include "Cthulhu_Debug.hpp"
-
 #ifndef __cplusplus
 #define __cplusplus
 #endif // ifndef __cplusplus
@@ -185,7 +183,7 @@ namespace Cthulhu {
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
     typedef Arg1 result_type;
-    inline Arg1 operator()(const Arg1 &arg1, const Arg2 &arg2) { CTHULHU_DEBUG_ME;return arg1;}
+    inline Arg1 operator()(const Arg1 &arg1, const Arg2 &arg2) { return arg1;}
   };
 
   template <class Arg1, class Arg2>
@@ -194,7 +192,7 @@ namespace Cthulhu {
     typedef Arg1 first_argument_type;
     typedef Arg2 second_argument_type;
     typedef Arg2 result_type;
-    inline Arg2 operator()(const Arg1 &arg1, const Arg2 &arg2) { CTHULHU_DEBUG_ME;return arg2;}
+    inline Arg2 operator()(const Arg1 &arg1, const Arg2 &arg2) { return arg2;}
   };
 
 } // end of Cthulu namespace

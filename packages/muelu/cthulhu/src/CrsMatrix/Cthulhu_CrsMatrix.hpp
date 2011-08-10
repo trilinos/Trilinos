@@ -16,8 +16,6 @@
 #include "Cthulhu_Vector.hpp"
 #include "Cthulhu_MultiVector.hpp"
 
-#include "Cthulhu_Debug.hpp"
-
 namespace Cthulhu {
 
   //! \brief A class for constructing and using sparse compressed matrices with row access.
@@ -56,7 +54,7 @@ namespace Cthulhu {
     //@{ 
 
     // !Destructor.
-    virtual ~CrsMatrix() { CTHULHU_DEBUG_ME; }
+    virtual ~CrsMatrix() {  }
 
     //@}
 

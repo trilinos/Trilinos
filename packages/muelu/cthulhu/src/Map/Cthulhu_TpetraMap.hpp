@@ -213,7 +213,7 @@ namespace Cthulhu {
     */
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
-    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
+    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
       return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
     }
 
@@ -227,7 +227,7 @@ namespace Cthulhu {
     */
     template <class LocalOrdinal, class GlobalOrdinal>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
-    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
+    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
       return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal>(numElements, localNumElements, comm)));
     }
 
@@ -240,7 +240,7 @@ namespace Cthulhu {
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
     createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
       return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
     }
   } // useTpetra namespace
@@ -252,14 +252,14 @@ namespace Cthulhu {
 /** \brief  Returns true if \c map is identical to this map. Implemented in Cthulhu::TpetraMap::isSameAs().
     \relates Cthulhu::TpetraMap */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator== (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { CTHULHU_DEBUG_ME;
+bool operator== (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
   return map1.isSameAs(map2);
 }
 
 /** \brief Returns true if \c map is not identical to this map. Implemented in Cthulhu::TpetraMap::isSameAs().
     \relates Cthulhu::TpetraMap */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator!= (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { CTHULHU_DEBUG_ME;
+bool operator!= (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
   return !map1.isSameAs(map2);
 }
 

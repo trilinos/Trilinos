@@ -26,7 +26,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Destructor.  
-    virtual ~Vector() { CTHULHU_DEBUG_ME; }
+    virtual ~Vector() {  }
 
     //@}
 

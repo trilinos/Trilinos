@@ -2,7 +2,6 @@
 #define CTHULHU_BLOCKMAP_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Debug.hpp"
 
 #include "Cthulhu_Map.hpp"
 
@@ -22,7 +21,7 @@ class BlockMap : public Teuchos::Describable {
   //@{
 
   //! BlockMap destructor.
-  virtual ~BlockMap(){ CTHULHU_DEBUG_ME; }
+  virtual ~BlockMap(){  }
 
   //@}
 

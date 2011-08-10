@@ -30,7 +30,7 @@ namespace Cthulhu {
     //@{ 
 
     //! destructor.
-    virtual ~Import() { CTHULHU_DEBUG_ME; }
+    virtual ~Import() {  }
 
     //@}
 

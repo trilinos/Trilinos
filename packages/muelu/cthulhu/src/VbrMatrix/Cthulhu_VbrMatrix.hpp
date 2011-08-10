@@ -13,8 +13,6 @@
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 
-#include "Cthulhu_Debug.hpp"
-
 /** \file Cthulhu_VbrMatrix.hpp
 
   Declarations for the class Cthulhu::VbrMatrix.

@@ -17,8 +17,6 @@
 #include "Cthulhu_EpetraCrsMatrix.hpp"
 #endif
 
-#include "Cthulhu_Debug.hpp"
-
 // This factory creates Cthulhu::CrsMatrix. User don't have to specify the exact class of object that he want to create (ie: a Cthulhu::TpetraCrsMatrix or a Cthulhu::EpetraCrsMatrix).
 // Each Build() method takes at least one Cthulhu object in argument (a Map or another CrsMatrix) and Build() methods return a CrsMatrix created by using the same underlying library (Epetra or Tpetra).
 

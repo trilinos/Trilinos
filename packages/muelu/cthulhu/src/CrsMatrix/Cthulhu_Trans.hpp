@@ -8,7 +8,6 @@
 #include <Teuchos_BLAS_types.hpp>
 
 #include "Cthulhu_Exceptions.hpp"
-#include "Cthulhu_Debug.hpp"
 
 //! Convert a Teuchos::ETransp to a boolean (for Epetra).
 bool Teuchos2Epetra_Trans(Teuchos::ETransp trans);

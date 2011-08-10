@@ -6,7 +6,6 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
 
@@ -57,33 +56,33 @@ namespace Cthulhu {
 
   template <class Node>
   MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
-  : node_(node) { CTHULHU_DEBUG_ME;
+  : node_(node) { 
     comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
   }
 
   template <class Node>
   MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node)
-  : node_(node) { CTHULHU_DEBUG_ME;
+  : node_(node) { 
     comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
   } 
 
   template <class Node>
-  MpiPlatform<Node>::~MpiPlatform() { CTHULHU_DEBUG_ME; }
+  MpiPlatform<Node>::~MpiPlatform() {  }
 
   template <class Node>
-  MpiPlatform<Node>::MpiPlatform(const MpiPlatform<Node> &platform) { CTHULHU_DEBUG_ME;
+  MpiPlatform<Node>::MpiPlatform(const MpiPlatform<Node> &platform) { 
     comm_ = platform.comm_;
   }
 
   template <class Node>
   Teuchos::RCP< const Teuchos::Comm<int> > 
-  MpiPlatform<Node>::getComm() const { CTHULHU_DEBUG_ME;
+  MpiPlatform<Node>::getComm() const { 
     return comm_;
   }
 
   template <class Node>
   Teuchos::RCP<Node> MpiPlatform<Node>::getNode() const 
-  { CTHULHU_DEBUG_ME; return node_; }
+  {  return node_; }
 
 } // namespace Cthulhu
 

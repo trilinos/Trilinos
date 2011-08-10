@@ -36,14 +36,14 @@ namespace Cthulhu {
     explicit EpetraVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut=true) 
       : EpetraMultiVector(map,1,zeroOut)
     {
-      CTHULHU_DEBUG_ME;
+      
     }
     
     //! EpetraVector constructor.
     EpetraVector(const RCP<Epetra_Vector> &source)
     : EpetraMultiVector(source)
     {
-      CTHULHU_DEBUG_ME;
+      
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
@@ -57,7 +57,7 @@ namespace Cthulhu {
 #endif
 
     //! Destructor.  
-    inline ~EpetraVector() { CTHULHU_DEBUG_ME; };
+    inline ~EpetraVector() {  };
 
     //@}
 
@@ -67,22 +67,22 @@ namespace Cthulhu {
     //! Replace current value at the specified location with specified value.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-    inline void replaceGlobalValue(int globalRow, const double &value) { CTHULHU_DEBUG_ME; this->EpetraMultiVector::replaceGlobalValue(globalRow,0,value); };
+    inline void replaceGlobalValue(int globalRow, const double &value) {  this->EpetraMultiVector::replaceGlobalValue(globalRow,0,value); };
 
     //! Adds specified value to existing value at the specified location.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-    inline void sumIntoGlobalValue(int globalRow, const double &value) { CTHULHU_DEBUG_ME; this->EpetraMultiVector::sumIntoGlobalValue(globalRow, 0, value); };
+    inline void sumIntoGlobalValue(int globalRow, const double &value) {  this->EpetraMultiVector::sumIntoGlobalValue(globalRow, 0, value); };
 
     //! Replace current value at the specified location with specified values.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-    inline void replaceLocalValue(int myRow, const double &value) { CTHULHU_DEBUG_ME; this->EpetraMultiVector::replaceLocalValue(myRow, 0, value); };
+    inline void replaceLocalValue(int myRow, const double &value) {  this->EpetraMultiVector::replaceLocalValue(myRow, 0, value); };
 
     //! Adds specified value to existing value at the specified location.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-    inline void sumIntoLocalValue(int myRow, const double &value) { CTHULHU_DEBUG_ME; this->EpetraMultiVector::sumIntoLocalValue(myRow, 0, value); };
+    inline void sumIntoLocalValue(int myRow, const double &value) {  this->EpetraMultiVector::sumIntoLocalValue(myRow, 0, value); };
 #endif
     //@}
 
@@ -100,7 +100,7 @@ namespace Cthulhu {
     using EpetraMultiVector::dot; // overloading, not hiding
     //! Computes dot product of this Vector against input Vector x.
     double dot(const Vector<double,int,int> &a) const { 
-      CTHULHU_DEBUG_ME; 
+       
       CTHULHU_DYNAMIC_CAST(const EpetraVector, a, tA, "This Cthulhu::EpetraVector method only accept Cthulhu::EpetraVector as input arguments.");
       //      return getEpetra_Vector()->Dot(*tA.getEpetra_Vector()); 
 
@@ -112,19 +112,19 @@ namespace Cthulhu {
 
     using EpetraMultiVector::norm1; // overloading, not hiding
     //! Return 1-norm of this Vector.
-    Teuchos::ScalarTraits<double>::magnitudeType norm1() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->Norm1(&r); return r; }
+    Teuchos::ScalarTraits<double>::magnitudeType norm1() const {  double r; getEpetra_MultiVector()->Norm1(&r); return r; }
 
     using EpetraMultiVector::norm2; // overloading, not hiding
     //! Compute 2-norm of this Vector.
-    Teuchos::ScalarTraits<double>::magnitudeType norm2() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->Norm2(&r); return r; }
+    Teuchos::ScalarTraits<double>::magnitudeType norm2() const {  double r; getEpetra_MultiVector()->Norm2(&r); return r; }
 
     using EpetraMultiVector::normInf; // overloading, not hiding
     //! Compute Inf-norm of this Vector.
-    Teuchos::ScalarTraits<double>::magnitudeType normInf() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->NormInf(&r); return r; }
+    Teuchos::ScalarTraits<double>::magnitudeType normInf() const {  double r; getEpetra_MultiVector()->NormInf(&r); return r; }
 
     using EpetraMultiVector::normWeighted; // overloading, not hiding
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    Teuchos::ScalarTraits<double>::magnitudeType normWeighted(const Vector<double,int,int> &weights) const { CTHULHU_DEBUG_ME;
+    Teuchos::ScalarTraits<double>::magnitudeType normWeighted(const Vector<double,int,int> &weights) const { 
       CTHULHU_DYNAMIC_CAST(const EpetraVector, weights, tWeights, "This Cthulhu::EpetraVector method only accept Cthulhu::EpetraVector as input arguments.");
       double r; 
       getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), &r); return r; 
@@ -132,12 +132,12 @@ namespace Cthulhu {
 
     using EpetraMultiVector::meanValue; // overloading, not hiding
     //! Compute mean (average) value of this Vector.
-    double meanValue() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->MeanValue(&r); return r; }
+    double meanValue() const {  double r; getEpetra_MultiVector()->MeanValue(&r); return r; }
 
     // Note: Added to Cthulhu. Not present in Tpetra
     using EpetraMultiVector::maxValue; // overloading, not hiding
     //! Compute max value of this Vector.
-    double maxValue() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->MaxValue(&r); return r; }
+    double maxValue() const {  double r; getEpetra_MultiVector()->MaxValue(&r); return r; }
     //@} 
 
     //! @name Overridden from Teuchos::Describable 
@@ -145,7 +145,7 @@ namespace Cthulhu {
 
     /** \brief Return a simple one-line description of this object. */
     inline std::string description() const { 
-      CTHULHU_DEBUG_ME; 
+       
 
       // This implementation come from Epetra_Vector_def.hpp (without modification)
       std::ostringstream oss;
@@ -157,7 +157,7 @@ namespace Cthulhu {
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
-      CTHULHU_DEBUG_ME; 
+       
       
       if (verbLevel > Teuchos::VERB_NONE)
         getEpetra_Vector()->Print(out);
@@ -226,9 +226,9 @@ namespace Cthulhu {
     // protected:
 
     //     //! Advanced constructor accepting parallel buffer view.
-    //     Vector(const Teuchos::RCP<const Map<int,int> > &map, Teuchos::ArrayRCP<double> data) { CTHULHU_DEBUG_ME; vec_->(); };
+    //     Vector(const Teuchos::RCP<const Map<int,int> > &map, Teuchos::ArrayRCP<double> data) {  vec_->(); };
 
-    Epetra_Vector * getEpetra_Vector() const { CTHULHU_DEBUG_ME; return (*this->EpetraMultiVector::getEpetra_MultiVector())(0); }
+    Epetra_Vector * getEpetra_Vector() const {  return (*this->EpetraMultiVector::getEpetra_MultiVector())(0); }
 
   }; // class EpetraVector
 

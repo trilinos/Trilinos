@@ -7,8 +7,6 @@
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_Exceptions.hpp"
 
-#include "Cthulhu_Debug.hpp"
-
 namespace Cthulhu {
   
   template <class Scalar, 

@@ -48,7 +48,7 @@ namespace Cthulhu {
     //     DistObject(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source);
 
     //! destructor
-    virtual ~DistObject() { CTHULHU_DEBUG_ME; }
+    virtual ~DistObject() {  }
 
     //@}
 

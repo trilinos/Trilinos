@@ -15,8 +15,6 @@
 #include "Cthulhu_EpetraImport.hpp"
 #endif
 
-#include "Cthulhu_Debug.hpp"
-
 namespace Cthulhu {
   
   template <class LocalOrdinal  = int, 

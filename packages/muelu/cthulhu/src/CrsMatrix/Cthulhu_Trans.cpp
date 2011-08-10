@@ -11,7 +11,7 @@
 //   };
 
 //! Convert a Teuchos::ETransp to a boolean (for Epetra).
-bool Teuchos2Epetra_Trans(Teuchos::ETransp trans) { CTHULHU_DEBUG_ME;
+bool Teuchos2Epetra_Trans(Teuchos::ETransp trans) { 
   if (trans == Teuchos::NO_TRANS)
     return false;
   else if (trans == Teuchos::TRANS)

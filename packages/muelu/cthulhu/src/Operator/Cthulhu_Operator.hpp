@@ -17,8 +17,6 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
 
-#include "Cthulhu_Debug.hpp"
-
 /** \file Cthulhu_Operator.hpp
 
 Declarations for the class Cthulhu::Operator.

@@ -18,8 +18,6 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
 
-#include "Cthulhu_Debug.hpp"
-
 /** \file Cthulhu_Operator.hpp
 
   Declarations for the class Cthulhu::Operator.
@@ -357,7 +355,7 @@ public:
   //! Returns the CrsGraph associated with this matrix. 
   RCP<const CrsGraph> getCrsGraph() const { return matrixData_->getCrsGraph(); }
 
-  RCP<CrsMatrix> getCrsMatrix() const { CTHULHU_DEBUG_ME; return matrixData_; }
+  RCP<CrsMatrix> getCrsMatrix() const {  return matrixData_; }
 
   //@}
   

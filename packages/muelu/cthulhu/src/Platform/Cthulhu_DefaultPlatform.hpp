@@ -9,7 +9,6 @@
 #endif
 
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
 

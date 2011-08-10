@@ -6,8 +6,6 @@
 
 #include <Teuchos_Describable.hpp>
 
-#include "Cthulhu_Debug.hpp"
-
 /** \file Cthulhu_Operator.hpp
 
 Declarations for the class Cthulhu::Operator.
