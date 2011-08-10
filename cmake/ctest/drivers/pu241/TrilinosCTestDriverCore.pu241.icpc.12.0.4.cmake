@@ -18,12 +18,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   #SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )
   #SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS )
 
-  # We don't have TPLs for PyTrilinos, Optika, and TriKota
-  # There is some strange problem with TrilinosFramework causing an strange error.
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES
-     PyTrilinos TriKota Optika 
-     TrilinosFramework 
-     )
+    PyTrilinos Mesquite Sundance Optika  # Don't need these for CASL
+    TriKota # Not building with Intel yet.
+    TrilinosFramework # Brings down tests with error
+    )
   
   SET_DEFAULT(COMPILER_VERSION "ICPC-12.0.4")
   
