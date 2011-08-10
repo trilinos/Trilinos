@@ -2,6 +2,7 @@
 #define PANZER_ASSEMBLY_ENGINE_INARGS_HPP
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 class Epetra_Vector;
 class Epetra_CrsMatrix;
@@ -16,7 +17,11 @@ namespace panzer {
 
     AssemblyEngineInArgs(const Teuchos::RCP<panzer::LinearObjContainer> & ghostedContainer,
                          const Teuchos::RCP<panzer::LinearObjContainer> & container)
-       : ghostedContainer_(ghostedContainer), container_(container)
+       : ghostedContainer_(ghostedContainer), container_(container) 
+       , alpha(Teuchos::ScalarTraits<double>::nan())   // also setup some painful and
+       , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
+       , time(Teuchos::ScalarTraits<double>::nan())
+       , evaluate_transient_terms(false)
     { }
 
     Teuchos::RCP<panzer::LinearObjContainer> ghostedContainer_;
