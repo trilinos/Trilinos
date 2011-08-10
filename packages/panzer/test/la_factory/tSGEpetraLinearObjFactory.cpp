@@ -19,6 +19,8 @@
 
 #include "Stokhos_HermiteBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
+#include "Stokhos_QuadOrthogPolyExpansion.hpp"
+#include "Stokhos_TensorProductQuadrature.hpp"
 
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
@@ -38,14 +40,21 @@ using Teuchos::rcpFromRef;
 
 namespace panzer {
 
-Teuchos::RCP<Stokhos::OrthogPolyBasis<int,double> > buildBasis(int numDim,int order)
+Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDim,int order)
 {
    Teuchos::Array<Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(numDim);
    for(int i=0;i<numDim;i++)
       bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(order));
    Teuchos::RCP<Stokhos::ProductBasis<int,double> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
-   return basis;
+   // build Cijk and "expansion"
+   int kExpOrder = basis->size();
+   // if(!fullExpansion)
+   //    kExpOrder = numDim+1;
+   Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(kExpOrder);
+   Teuchos::RCP<Stokhos::Quadrature<int,double> > quadrature = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+
+   return Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis,Cijk,quadrature));
 }
 
 TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, basic)
@@ -66,7 +75,7 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, basic)
 
    // panzer::pauseToAttach();
 
-   RCP<Stokhos::OrthogPolyBasis<int,double> > sgBasis = buildBasis(3,8);
+   RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
    RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
          = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
  
@@ -74,7 +83,7 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, basic)
    RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > epetraFactory
          = rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
    RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,short> > la_factory
-         = rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,short>(epetraFactory,sgBasis));
+         = rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,short>(epetraFactory,sgExpansion));
    
    RCP<panzer::LinearObjContainer> ghostedContainer = la_factory->buildGhostedLinearObjContainer(); 
    RCP<panzer::LinearObjContainer> container = la_factory->buildLinearObjContainer(); 
@@ -88,8 +97,8 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, basic)
          = rcp_dynamic_cast<panzer::SGEpetraLinearObjContainer>(container,true);
 
    // make sure we have correct number of sub containers
-   TEST_EQUALITY(sgBasis->size(),sgGhostedContainer->end()-sgGhostedContainer->begin());
-   TEST_EQUALITY(sgBasis->size(),sgContainer->end()-sgContainer->begin());
+   TEST_EQUALITY(sgExpansion->size(),sgGhostedContainer->end()-sgGhostedContainer->begin());
+   TEST_EQUALITY(sgExpansion->size(),sgContainer->end()-sgContainer->begin());
 
    // make sure all "sub-containers" are epetra containers
    panzer::SGEpetraLinearObjContainer::const_iterator itr;
@@ -122,7 +131,7 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, initializeContainer)
 
    // panzer::pauseToAttach();
 
-   RCP<Stokhos::OrthogPolyBasis<int,double> > sgBasis = buildBasis(3,8);
+   RCP<Stokhos::OrthogPolyExpansion<int,double> > sgExpansion = buildExpansion(3,5);
    RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
          = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
 
@@ -134,7 +143,7 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, initializeContainer)
    RCP<panzer::EpetraLinearObjFactory<panzer::Traits,short> > epetraFactory
          = rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
    RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,short> > la_factory
-         = rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,short>(epetraFactory,sgBasis));
+         = rcp(new panzer::SGEpetraLinearObjFactory<panzer::Traits,short>(epetraFactory,sgExpansion));
    
    RCP<panzer::LinearObjContainer> ghostedContainer = la_factory->buildGhostedLinearObjContainer(); 
    RCP<panzer::LinearObjContainer> container = la_factory->buildLinearObjContainer(); 

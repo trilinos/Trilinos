@@ -11,9 +11,9 @@ UniqueGlobalIndexer::UniqueGlobalIndexer(int rank,int procCount)
 
 int UniqueGlobalIndexer::getFieldNum(const std::string & str) const
 {
-   if(str=="U") 
+   if(str=="TEMPERATURE") 
       return 0;
-   else if(str=="T") 
+   else if(str=="ION_TEMPERATURE") 
       return 1;
    else  
       TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << str << "\" in unit_test::UniqueGlobalIndexer, try \'U\' or \'T\'");
@@ -30,7 +30,7 @@ bool UniqueGlobalIndexer::fieldInBlock(const std::string & field, const std::str
    if(block!="block_0") 
       return false;
  
-   if(field=="U" || field=="T")
+   if(field=="TEMPERATURE" || field=="ION_TEMPERATURE")
       return true;
 
    return false;
@@ -183,10 +183,10 @@ const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::st
    if(fieldNums.size()==0) {
       fieldNums.resize(8);
 
-      fieldNums[0] = getFieldNum("U"); fieldNums[1] = getFieldNum("T");
-      fieldNums[2] = getFieldNum("U"); fieldNums[3] = getFieldNum("T");
-      fieldNums[4] = getFieldNum("U"); fieldNums[5] = getFieldNum("T");
-      fieldNums[6] = getFieldNum("U"); fieldNums[7] = getFieldNum("T");
+      fieldNums[0] = getFieldNum("TEMPERATURE"); fieldNums[1] = getFieldNum("ION_TEMPERATURE");
+      fieldNums[2] = getFieldNum("TEMPERATURE"); fieldNums[3] = getFieldNum("ION_TEMPERATURE");
+      fieldNums[4] = getFieldNum("TEMPERATURE"); fieldNums[5] = getFieldNum("ION_TEMPERATURE");
+      fieldNums[6] = getFieldNum("TEMPERATURE"); fieldNums[7] = getFieldNum("ION_TEMPERATURE");
    }
 
    return fieldNums;

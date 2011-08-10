@@ -103,6 +103,7 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_SGEpetraLinearObjFactory.hpp
   dofmngr/Panzer_SGEpetraLinearObjFactoryT.hpp
   dofmngr/Panzer_EpetraLinearObjContainer.hpp
+  dofmngr/Panzer_SGEpetraLinearObjContainer.hpp
   dofmngr/Panzer_UniqueGlobalIndexerFactory.hpp
   dofmngr/Panzer_DOFManagerFactory.hpp
   dofmngr/Panzer_DOFManagerFactoryT.hpp
@@ -171,6 +172,7 @@ APPEND_SET(SOURCES
   dofmngr/Panzer_BlockedDOFManager.cpp
   dofmngr/Panzer_EpetraLinearObjFactory.cpp
   dofmngr/Panzer_SGEpetraLinearObjFactory.cpp
+  dofmngr/Panzer_SGEpetraLinearObjContainer.cpp
   )
 
 #

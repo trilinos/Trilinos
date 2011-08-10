@@ -16,6 +16,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_SGEpetraLinearObjContainer.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -26,33 +27,6 @@
 
 namespace panzer {
 
-/** Linear object container for SG-Epetra objects.
-  */
-class SGEpetraLinearObjContainer : public LinearObjContainer {
-public:
-   typedef std::vector<Teuchos::RCP<EpetraLinearObjContainer> > CoeffVector;
-   typedef CoeffVector::iterator iterator;
-   typedef CoeffVector::const_iterator const_iterator;
-
-   SGEpetraLinearObjContainer(const CoeffVector & coeffs,
-                              const Teuchos::RCP<Stokhos::OrthogPolyBasis<int,double> > & basis);
-
-   virtual void initialize();
-
-   CoeffVector::iterator begin() { return coeffs_.begin(); }
-   CoeffVector::iterator end() { return coeffs_.end(); }
-
-   CoeffVector::const_iterator begin() const { return coeffs_.begin(); }
-   CoeffVector::const_iterator end() const { return coeffs_.end(); }
-
-   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > getBasis() const
-   { return basis_; }
-
-private:
-   CoeffVector coeffs_;
-   Teuchos::RCP<Stokhos::OrthogPolyBasis<int,double> > basis_;
-};
-
 /** Linear object factory for constructing Stochastic Galerkin epetra
   * linear object containers. Also handles some of the global to ghosting (and vice-versa)
   * communication.
@@ -62,7 +36,7 @@ class SGEpetraLinearObjFactory : public LinearObjFactory<Traits> {
 public:
 
    SGEpetraLinearObjFactory(const Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > & epetraFact,
-                            const Teuchos::RCP<Stokhos::OrthogPolyBasis<int,double> > & basis);
+                            const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion);
 
    virtual ~SGEpetraLinearObjFactory();
 
@@ -120,7 +94,7 @@ public:
 
 protected:
    Teuchos::RCP<EpetraLinearObjFactory<Traits,LocalOrdinalT> > epetraFact_;
-   Teuchos::RCP<Stokhos::OrthogPolyBasis<int,double> > basis_;
+   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion_;
 };
 
 }

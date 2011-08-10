@@ -21,7 +21,7 @@ namespace panzer {
 namespace unit_test {
 
 /** This a dummy global indexer used for testing. It has two fields
-  *    "U" and "T"
+  *    "TEMPERATURE" and "ION_TEMPERATURE"
   * There is one element block called "block_0" with two elements. Each element
   * resides on a different processor.
   */
