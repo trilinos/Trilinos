@@ -5,7 +5,6 @@
 #include <Teuchos_Describable.hpp>
 
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Debug.hpp"
 
 /** \file Cthulhu_Map.hpp 
 
@@ -27,7 +26,7 @@ namespace Cthulhu {
   public:
 
     //! Map destructor. 
-    virtual ~Map() { CTHULHU_DEBUG_ME; };
+    virtual ~Map() { };
 
     //@}
 
@@ -143,6 +142,3 @@ namespace Cthulhu {
 
 #define CTHULHU_MAP_SHORT
 #endif // CTHULHU_MAP_DECL_HPP
-
-
-//TODO: operator == to test if the underlying map is the same. Because two different Cthulhu:Map may wrap the same Epetra::Map

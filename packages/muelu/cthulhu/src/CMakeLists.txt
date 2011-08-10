@@ -36,6 +36,7 @@ SET(HEADERS "")
 SET(SOURCES 
   CrsMatrix/Cthulhu_Trans.cpp
   Comm/Cthulhu_Comm.cpp
+  Comm/Cthulhu_LookupStatus.cpp
   Map/Cthulhu_EpetraMap.cpp
   )
 
