@@ -318,5 +318,18 @@ namespace Intrepid {
   }
 
 
+  template<class Scalar, class ArrayScalar>
+  void Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>::getDofCoords( ArrayScalar & dofCoords ) const
+  {
+    for (int i=0;i<latticePts_.dimension(0);i++)
+      {
+	for (int j=0;j<latticePts_.dimension(1);j++)
+	  {
+	    dofCoords(i,j) = latticePts_(i,j);
+	  }
+      }
+    return;
+  }
+
 }// namespace Intrepid
 #endif

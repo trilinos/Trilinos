@@ -35,9 +35,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, construct, Scal
   TEST_EQUALITY(inArgs.Np(), 0);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
-  Simple2DTpetraModelEvaluator, construct )
-
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_DOUBLE)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_DOUBLE(
+    Simple2DTpetraModelEvaluator, construct )
+#endif
+    
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_FLOAT(
+    Simple2DTpetraModelEvaluator, construct )
+#endif
+    
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, eval, Scalar )
 {
@@ -103,8 +110,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, eval, Scalar )
 
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
-  Simple2DTpetraModelEvaluator, eval )
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_DOUBLE)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_DOUBLE(
+      Simple2DTpetraModelEvaluator, eval )
+#endif
+    
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_FLOAT(
+      Simple2DTpetraModelEvaluator, eval )
+#endif
+    
 
 
 } // namespace

@@ -1,5 +1,4 @@
 #include"Isorropia_EpetraMatcher.hpp"
-using namespace std;
 
 int main(int argc, char** argv) {
 
@@ -39,9 +38,14 @@ int main(int argc, char** argv) {
 		#endif
 		
 		Teuchos::ParameterList paramlist;
-		paramlist.set(argv[2],4);
-		Isorropia_EpetraMatcher pm(matrixPtr,paramlist);
-		pm.match();
+		paramlist.set("Matching Algorithm",argv[2]);
+        Isorropia::Epetra::Isorropia_EpetraMatcher pm(matrixPtr,paramlist);
+		
+        //Teuchos::RCP<const Epetra_CrsMatrix> r(Teuchos::RCP<const
+        //Epetra_CrsMatrix>(matrixPtr,true));
+        //Isorropia::Epetra::Isorropia_EpetraMatcher pm(r,paramlist);
+        
+        pm.match();
 	}
 	else
 		cout<<"Specify input file.."<<endl;

@@ -50,16 +50,20 @@ namespace Intrepid {
 	    a tensor product of points
 */
 template<class Scalar, class ArrayScalar> 
-class Basis_HGRAD_QUAD_Cn_FEM : public TensorBasis<Scalar,ArrayScalar>
+class Basis_HGRAD_QUAD_Cn_FEM : 
+    public TensorBasis<Scalar,ArrayScalar>,
+    public DofCoordsInterface<ArrayScalar> 
 {
 private:
-  
+  FieldContainer<double> ptsx_;
+  FieldContainer<double> ptsy_;
+
   /** \brief Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
    */
   void initializeTags();
   
 public:
-
+  virtual ~Basis_HGRAD_QUAD_Cn_FEM() {;}
   /** \brief Constructor.
   */
   Basis_HGRAD_QUAD_Cn_FEM( const int orderx , const int ordery,
@@ -92,6 +96,8 @@ public:
                  const ArrayScalar &    inputPoints,
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
+
+  virtual void getDofCoords( ArrayScalar & dofCoords ) const;
 };
 }// namespace Intrepid
 

@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
       *outStream << "Testing " << EIntrepidBurkardtToString(rule) << "\n";
       // compute integrals
       if (rule==BURK_HERMITE)
-	maxOrder = 14;
+	maxOrder = 10;
       else if (rule==BURK_TRAPEZOIDAL) 
 	maxOrder = 2;
       else 
@@ -254,13 +254,11 @@ int main(int argc, char *argv[]) {
       }
       else if (rule==BURK_GENZKEISTER) {
 	reltol *= 1.0e+02;
-	int o_ghk[8] = {1,3,9,19,35,37,41,43};
-	for (int i=0; i < 8; i++) {
-	  int l = o_ghk[i];
-	  if (i==0) 
-	    maxDeg = 1;
-	  else
-	    maxDeg = (int)(1.5*(double)l+0.5);
+	int o_ghk[4] = {1,3, 9,19};
+	int p_ghk[4] = {1,5,15,29};
+	for (int i=0; i < 4; i++) {
+	  int l  = o_ghk[i];
+	  maxDeg = p_ghk[i];
 	  for (int j=0; j <= maxDeg; j++) {
 	    analyticInt = evalInt(j,rule);
 	    testInt     = evalQuad(maxDeg,j,rule);
