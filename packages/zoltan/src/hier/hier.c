@@ -1405,6 +1405,7 @@ End:
   if (dd) Zoltan_DD_Destroy(&dd);
   Zoltan_Destroy(&hpp.hierzz);
   if (hpp.hier_comm != MPI_COMM_NULL) MPI_Comm_free(&hpp.hier_comm);
+  if (hpp.spec != NULL) ZOLTAN_FREE(&hpp.spec);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
