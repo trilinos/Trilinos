@@ -22,9 +22,7 @@
 #endif
 #include <Epetra_SerialComm.h>
 
-#include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Exceptions.hpp"
-#include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
 
