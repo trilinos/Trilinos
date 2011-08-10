@@ -1,119 +1,60 @@
-/*
-Important note: 
-
-While Tpetra object take in argument a Tpetra::Map, Epetra objects take in argument a BlockMap.
-So this adapter wraps an Epetra_BlockMap. In the current Epetra implementation, an Epetra_Map is just a Epetra_BlockMap.
-
-More details:
--------------
-There is an important difference between Epetra and Tpetra. 
-Tpetra uses Map everywhere but in VbrMatrix. In Epetra, a lot of
-thinks use BlockMap instead of a Map (basically, all the constructors
-of Vector, Graph, Import etc...). So I think that the Cthulhu::Map
-should be a Epetra_BlockMap when we use Epetra in Cthulhu.
-
-But I faced a problem with the CrsMatrix class. Most Epetra_CrsMatrix
-constructors need an Epetra_Map (ie: not a BlockMap) as input
-argument. It is not consistent with the rest of the code. For
-instance, that prevent you to create a CrsMatrix from the Map of any
-DistObject because by inheritence, a Map is a BlockMap but the inverse
-statment is false. CrsGraph constructors use BlockMap and thus can
-either take an Epetra_Map or an Epetra_BlockMap. It seems very strange
-to me that the interface of CrsMatrix constructors are not the same as
-the interface of CrsGraph.
-
-I took a look on the implementation of Epetra_CrsMatrix. Here are some comments:
-- Epetra_CrsMatrix don't use specifically the fact that it is a Map
-  and not a BlockMap. The map is just given as input argument to the
-  graph constructor.
-- You can create a CrsMatrix from a CrsGraph using another
-  constructor. In this case, you don't need a Map. Note that CrsGraph
-  don't know anything about Map but stores a BlockMap instead. So a
-  CrsMatrix don't really use a Map.
-- Epetra_CrsMatrix::ColMap() return a Map just by casting the BlockMap
-  of the underlying graph object:
-    const Epetra_Map& ColMap() const {return((Epetra_Map &) Graph_.ColMap());}
-- I also checked the implementation of Epetra_Map. Basically, there is
-  no difference at all between a Map and a BlockMap. So casting a
-  BlockMap to a Map should be safe.
-Finally, I think that all of that is just a design problem of Epetra.
-
-To solve this problem, I cast the Epetra_BlockMap to a Epetra_Map like
-it is done in Epetra_CrsMatrix::ColMap(). I need to do that only in
-two spot: the constructors of CrsMatrix and
-CrsMatrix::fillComplete(map,map). I think it is OK but maybe I need
-to do more tests.
-*/
-
 #ifndef CTHULHU_EPETRAMAP_HPP
 #define CTHULHU_EPETRAMAP_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Cthulhu_EpetraConfigDefs.hpp"
 
-#ifndef HAVE_CTHULHU_EPETRA
-#error This file should be included only if HAVE_CTHULHU_EPETRA is defined.
-#endif
-
-#include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_Describable.hpp>
 #include <Teuchos_ArrayView.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_Comm.hpp"
-#include "Cthulhu_EpetraExceptions.hpp"
-
-#include <Epetra_BlockMap.h>
 #include <Epetra_Map.h>
+#include <Epetra_BlockMap.h>
 
-namespace Tpetra { //TODO
-typedef size_t global_size_t;
+#include "Cthulhu_Map.hpp"
+
+#include "Cthulhu_EpetraExceptions.hpp"
+#include "Cthulhu_LookupStatus.hpp"
+#include "Cthulhu_Comm.hpp"
+
+namespace Tpetra { //TODO to be removed
+  typedef size_t global_size_t;
 }
-
-/** \file Cthulhu_EpetraMap.hpp 
-
-    The declarations for the class Cthulhu::EpetraMap and related non-member constructors.
-*/
 
 namespace Cthulhu {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward dec
-  template <class LO, class GO, class N> class Directory;
-#endif
+  const Epetra_Map & toEpetra(const Cthulhu::Map<int, int> &map);
 
-  /** \brief A class for partitioning distributed objects.
+  class EpetraMap
+    : public Cthulhu::Map<int,int> {
 
-   This class is templated on \c int and \c int. 
-   The \c int type, if omitted, defaults to the \c int type.
-  */
-  class EpetraMap : public Cthulhu::Map<int,int> {
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
   public:
 
     //! @name Constructor/Destructor Methods
-    //@{ 
+    //@{
 
     // Implementation note for constructors: the Epetra_Comm is cloned in the constructor of Epetra_BlockMap. We don't need to keep a reference on it.
 
     /** \brief EpetraMap constructor with Cthulhu-defined contiguous uniform distribution.
      *   The elements are distributed among nodes so that the subsets of global elements
-     *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
+     *   are non-overlapping and contiguous and as evenly distributed across the nodes as
      *   possible.
      */
-    EpetraMap(global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-              LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) 
+    EpetraMap(global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+              LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode())
     {
-             
+            
 
       // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
       // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
       std::string errPrefix;
       errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,indexBase,comm,lOrG): ";
-      
+     
       if (lg == GloballyDistributed) {
         const int myImageID = comm->getRank();
-        
+       
         // check that numGlobalElements,indexBase is equivalent across images
         global_size_t rootNGE = numGlobalElements;
         int rootIB  = indexBase;
@@ -149,7 +90,7 @@ namespace Cthulhu {
           }
         }
       }
-      
+     
       // Note: validity of numGlobalElements checked by Epetra.
 
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
@@ -157,17 +98,17 @@ namespace Cthulhu {
 
     /** \brief EpetraMap constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
-     *  are non-overlapping and contiguous 
-     *  
+     *  are non-overlapping and contiguous
+     * 
      *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
+     *  Otherwise, it must be equal to the sum of the local elements across all
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, int indexBase, 
-              const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
+    EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, int indexBase,
+              const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode())
     {
-       
+      
 
       // This test come from Tpetra
       using Teuchos::outArg;
@@ -180,18 +121,18 @@ namespace Cthulhu {
 
       std::string errPrefix;
       errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,numLocal,indexBase,platform): ";
-      
+     
       // get a internodal communicator from the Platform
       const int myImageID = comm->getRank();
-      
+     
       global_size_t global_sum;
       { // begin scoping block
-        // for communicating failures 
+        // for communicating failures
         int localChecks[2], globalChecks[2];
-        /* compute the global size 
+        /* compute the global size
            we are computing the number of global elements because exactly ONE of the following is true:
            - the user didn't specify it, and we need it
-           - the user did specify it, but we need to 
+           - the user did specify it, but we need to
            + validate it against the sum of the local sizes, and
            + ensure that it is the same on all nodes
         */
@@ -231,23 +172,23 @@ namespace Cthulhu {
         if (globalChecks[0] != -1) {
           if (globalChecks[1] == 1) {
             TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                               errPrefix << "numLocal is not valid on at least one node (possibly node " 
+                               errPrefix << "numLocal is not valid on at least one node (possibly node "
                                << globalChecks[0] << ").");
           }
           else if (globalChecks[1] == 2) {
             TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                               errPrefix << "numGlobal is not valid on at least one node (possibly node " 
+                               errPrefix << "numGlobal is not valid on at least one node (possibly node "
                                << globalChecks[0] << ").");
           }
           else if (globalChecks[1] == 3) {
             TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                               errPrefix << "numGlobal doesn't match sum of numLocal (== " 
-                               << global_sum << ") on at least one node (possibly node " 
+                               errPrefix << "numGlobal doesn't match sum of numLocal (== "
+                               << global_sum << ") on at least one node (possibly node "
                                << globalChecks[0] << ").");
           }
           else if (globalChecks[1] == 4) {
             TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                               errPrefix << "indexBase is not the same on all nodes (examine node " 
+                               errPrefix << "indexBase is not the same on all nodes (examine node "
                                << globalChecks[0] << ").");
           }
           else {
@@ -256,7 +197,7 @@ namespace Cthulhu {
                                errPrefix << "logic error. Please contact the Tpetra team.");
           }
         }
-        
+       
       }
 
       // set numGlobalElements
@@ -266,185 +207,121 @@ namespace Cthulhu {
 
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, numLocalElements, 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
-        
+       
     /** \brief EpetraMap constructor with user-defined non-contiguous (arbitrary) distribution.
-     *  
+     * 
      *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
+     *  Otherwise, it must be equal to the sum of the local elements across all
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
 // TODO: UnitTest FAILED
-    EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, 
-	      const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
-    { 
-       
+    EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase,
+	      const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode())
+    {
+      
 
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), elementList.getRawPtr(), 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
-    
+   
     /** \brief EpetraMap constructor to wrap a Epetra_BlockMap object.
      */
     EpetraMap(const Teuchos::RCP<const Epetra_BlockMap > &map) : map_(map) { }
 
-    //! EpetraMap destructor. 
+    //! EpetraMap destructor.
     ~EpetraMap() { }
 
     //@}
 
-    //! @name EpetraMap Attribute Methods
-    //@{ 
+    //! @name Map Attribute Methods
+    //@{
 
     //! Returns the number of elements in this Map.
-    inline global_size_t getGlobalNumElements() const {  return map_->NumGlobalElements(); }
+    global_size_t getGlobalNumElements() const { return map_->NumGlobalElements(); }
 
     //! Returns the number of elements belonging to the calling node.
-    inline size_t getNodeNumElements() const {  return map_->NumMyElements(); }
+    size_t getNodeNumElements() const { return map_->NumMyElements(); }
 
     //! Returns the index base for this Map.
-    inline int getIndexBase() const {  return map_->IndexBase(); }
+    int getIndexBase() const { return map_->IndexBase(); }
 
-    //! Returns minimum local index
-    inline int getMinLocalIndex() const {  return map_->MinLID(); }
+    //! Returns minimum local index.
+    int getMinLocalIndex() const { return map_->MinLID(); }
 
-    //! Returns maximum local index
-    inline int getMaxLocalIndex() const {  return map_->MaxLID(); }
+    //! Returns maximum local index.
+    int getMaxLocalIndex() const { return map_->MaxLID(); }
 
-    //! Returns minimum global index owned by this node
-    inline int getMinGlobalIndex() const {  return map_->MinMyGID(); }
+    //! Returns minimum global index owned by this node.
+    int getMinGlobalIndex() const { return map_->MinMyGID(); }
 
-    //! Returns maximum global index owned by this node
-    inline int getMaxGlobalIndex() const {  return map_->MaxMyGID(); }
+    //! Returns maximum global index owned by this node.
+    int getMaxGlobalIndex() const { return map_->MaxMyGID(); }
 
-    //! Return the minimum global index over all nodes
-    inline int getMinAllGlobalIndex() const {  return map_->MinAllGID(); }
+    //! Return the minimum global index over all nodes.
+    int getMinAllGlobalIndex() const { return map_->MinAllGID(); }
 
-    //! Return the maximum global index over all nodes
-    inline int getMaxAllGlobalIndex() const {  return map_->MaxAllGID(); }
+    //! Return the maximum global index over all nodes.
+    int getMaxAllGlobalIndex() const { return map_->MaxAllGID(); }
 
-    //! \brief Return the local index for a given global index
-    /** If the global index is not owned by this node, returns Teuchos::OrdinalTraits<int>::invalid(). */
-    int getLocalElement(int globalIndex) const {  return map_->LID(globalIndex); };
+    //! Return the local index for a given global index.
+    int getLocalElement(GlobalOrdinal globalIndex) const { return map_->LID(globalIndex); }
 
-    //! Return the global index for a given local index
-    /** If the local index is not valid for this node, returns Teuchos::OrdinalTraits<int>::invalid(). */
-    int getGlobalElement(int localIndex) const {  return map_->GID(localIndex); };
-
-    //! Returns the node IDs and corresponding local indices for a given list of global indices.
-    /** 
-      \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
-               Otherwise, returns AllIDsPresent.
-     */
-    Cthulhu::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const int> & GIDList, 
-                                            const Teuchos::ArrayView<      int> & nodeIDList, 
-                                            const Teuchos::ArrayView<      int> & LIDList) const {  
-
-      map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr()); 
-      
-      return Cthulhu::AllIDsPresent; // JG TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
-    };
-
-    //! Returns the node IDs for a given list of global indices.
-    /** 
-      \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
-               Otherwise, returns AllIDsPresent.
-     */
-    Cthulhu::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const int> & GIDList, 
-                                            const Teuchos::ArrayView<      int> & nodeIDList) const {  
-
-      // JG Note: It's not on the documentation of Epetra_BlockMap but it is in fact safe to call
-      // EpetraMap RemoteIDList with LIDList == 0.
-      // (because RemoteIDList only call directory->GetDirectoryEntries and this method accept LocalEntries=0)
-
-      map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0); 
-
-      return Cthulhu::AllIDsPresent; // JG TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
-    };
-
-    //! Return a list of the global indices owned by this node.
-    Teuchos::ArrayView<const int> getNodeElementList() const { 
-      int* nodeElementList = map_->MyGlobalElements(); // Pointer to *internal* array containing list of global IDs assigned to the calling processor. 
-      int  numMyElements   = map_->NumMyElements();    // Number of elements on the calling processor.
-      
-      // JG Note: this method return a const array, so it is safe to use directly the internal array.
-
-      return ArrayView<const int>(nodeElementList, numMyElements);
-    };
+    //! Return the global index for a given local index.
+    int getGlobalElement(LocalOrdinal localIndex) const { return map_->GID(localIndex); }
 
     //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
-    bool isNodeLocalElement(int localIndex) const {  
-      return map_->MyLID(localIndex); 
-    };
+    bool isNodeLocalElement(LocalOrdinal localIndex) const { return map_->MyLID(localIndex); }
 
     //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
-    bool isNodeGlobalElement(int globalIndex) const {  return map_->MyGID(globalIndex); };
+    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const { return map_->MyGID(globalIndex); }
 
     //! Returns true if this Map is distributed contiguously; returns false otherwise.
-    bool isContiguous() const {  return map_->LinearMap(); };
+    bool isContiguous() const { return map_->LinearMap(); }
 
     //! Returns true if this Map is distributed across more than one node; returns false otherwise.
-    bool isDistributed() const {  return map_->DistributedGlobal(); };
+    bool isDistributed() const { return map_->DistributedGlobal(); }
 
     //@}
 
     //! @name Boolean Tests
-    //@{ 
+    //@{
 
-    //! Returns true if \c map is compatible with this Map.
-    /** Note that an EpetraMap is never compatible with an TpetraMap. **/
-    bool isCompatible (const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> &map) const {  
-      try
-	{
-          const EpetraMap & epetraMap = dynamic_cast<const EpetraMap &>(map);
-          return map_->PointSameAs(epetraMap.getEpetra_BlockMap()); 
-	}
-      catch (const std::bad_cast& e)
-	{
-          // We consider that an EpetraMap is never compatible with a map stored in another format (ie: a TpetraMap).
-          // TODO: or throw exception ?
-          return false;
-        }
-    }
+    //! Returns true if map is compatible with this Map.
+    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return map_->PointSameAs(toEpetra(map)); }
 
-    //! Returns true if \c map is identical to this Map.
-    /** Note that an EpetraMap is never the 'same as' a TpetraMap. **/
-    bool isSameAs (const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> &map) const {  
-      try
-	{
-          const EpetraMap & epetraMap = dynamic_cast<const EpetraMap &>(map);
-          return map_->SameAs(epetraMap.getEpetra_BlockMap()); 
-	}
-      catch (const std::bad_cast& e)
-	{
-          // We consider that an EpetraMap is never the 'same as' a map stored in an other formats (ie: TpetraMap).
-          return false;
-	}
-    }
+    //! Returns true if map is identical to this Map.
+    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return map_->SameAs(toEpetra(map)); }
 
     //@}
 
-    //@{ Misc. 
+    //! @name Map Attribute Methods
+    //@{
 
-    //! Get the Comm object for this Map
-    const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const {   //removed &
-      RCP<const Epetra_Comm> rcpComm = rcpFromRef(map_->Comm());
-      const Teuchos::RCP<const Teuchos::Comm<int> > r = Epetra2Teuchos_Comm(rcpComm);
-      return r;
-    };
-
-    //! Get the Node object for this Map
-    const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const {   //removed &
-      return Kokkos::DefaultNode::getDefaultNode();
-    };
-
-    //@}
-
-    //@{ Implements Teuchos::Describable 
-
-    //! \brief Return a simple one-line description of this object.
-    std::string description() const { 
-       
+    //! Returns the node IDs and corresponding local indices for a given list of global indices.
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< int > &LIDList) const { return toCthulhu(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
     
+    //! Returns the node IDs for a given list of global indices.
+    // Note: It's not on the documentation of Epetra_BlockMap but it is in fact safe to call EpetraMap RemoteIDList(...,LIDList) with LIDList == 0.
+    // (because RemoteIDList only call directory->GetDirectoryEntries and this method accept LocalEntries=0)
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const int > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { return toCthulhu(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
+    
+    //! Return a list of the global indices owned by this node.
+    Teuchos::ArrayView< const int > getNodeElementList() const {
+      int* nodeElementList = map_->MyGlobalElements(); // Pointer to *internal* array containing list of global IDs assigned to the calling processor.
+      int  numMyElements   = map_->NumMyElements();    // Number of elements on the calling processor.
+     
+      // Note: this method return a const array, so it is safe to use directly the internal array.
+
+      return ArrayView< const int >(nodeElementList, numMyElements);
+    }
+
+    //@}
+
+    //! @name Implements Teuchos::Describable
+    //@{
+
+    //! Return a simple one-line description of this object.
+    std::string description() const {
       // This implementation come from Tpetra_Map_def.hpp (without modification)
       std::ostringstream oss;
       oss << Teuchos::Describable::description();
@@ -453,13 +330,12 @@ namespace Cthulhu {
           << ", isContiguous() = " << isContiguous()
           << ", isDistributed() = " << isDistributed()
           << "}";
-      return oss.str();
+     return oss.str();
     };
 
     //! Print the object with some verbosity level to a \c FancyOStream object.
-    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { 
-       
-
+    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const {
+      
       const Teuchos::RCP<const Teuchos::Comm<int> > comm_ = getComm();
 
       // This implementation come from Tpetra_Map_def.hpp (without modification)
@@ -471,23 +347,23 @@ namespace Cthulhu {
       using Teuchos::VERB_MEDIUM;
       using Teuchos::VERB_HIGH;
       using Teuchos::VERB_EXTREME;
-      
+     
       const size_t nME = getNodeNumElements();
       Teuchos::ArrayView<const int> myEntries = getNodeElementList();
       int myImageID = comm_->getRank();
       int numImages = comm_->getSize();
-      
+     
       Teuchos::EVerbosityLevel vl = verbLevel;
       if (vl == VERB_DEFAULT) vl = VERB_LOW;
-      
+     
       size_t width = 1;
       for (size_t dec=10; dec<getGlobalNumElements(); dec *= 10) {
         ++width;
       }
       width = std::max<size_t>(width,12) + 2;
-      
+     
       Teuchos::OSTab tab(out);
-      
+     
       if (vl == VERB_NONE) {
         // do nothing
       }
@@ -498,7 +374,7 @@ namespace Cthulhu {
         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
           if (myImageID == imageCtr) {
             if (myImageID == 0) { // this is the root node (only output this info once)
-              out << endl 
+              out << endl
                   << "Number of Global Entries = " << getGlobalNumElements()  << endl
                   << "Maximum of all GIDs      = " << getMaxAllGlobalIndex() << endl
                   << "Minimum of all GIDs      = " << getMinAllGlobalIndex() << endl
@@ -517,7 +393,7 @@ namespace Cthulhu {
                   << std::setw(width) << "Global Index"
                   << endl;
               for (size_t i=0; i < nME; i++) {
-                out << std::setw(width) << myImageID 
+                out << std::setw(width) << myImageID
                     << std::setw(width) << i
                     << std::setw(width) << myEntries[i]
                     << endl;
@@ -535,140 +411,50 @@ namespace Cthulhu {
 
     //@}
 
-    /** \brief Get the underlying Epetra map.. */
-    const Epetra_BlockMap& getEpetra_BlockMap() const {  return *map_; }
-    
-    /** \brief Get the underlying Epetra map. This method cast the underlying EpetraBlockMap to an EpetraMap.
-        Try to use getEpetra_BlockMap() instead of getEpetra_Map() as much as possible. See the note in the top of the file Cthulhu_EpetraMap.hpp for more information. 
-    */
-    const Epetra_Map& getEpetra_Map() const {  return (Epetra_Map &)*map_; } //TODO: write a note about that. It's the same in Epetra_CrsMatrix.h to get the map.
+    //! @name Misc.
+    //@{
 
-    inline UnderlyingLib lib() const { return Cthulhu::UseEpetra; };
+    //! Get the Comm object for this Map
+    const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const { //removed &
+      RCP<const Epetra_Comm> rcpComm = rcpFromRef(map_->Comm());
+      const Teuchos::RCP<const Teuchos::Comm<int> > r = Epetra2Teuchos_Comm(rcpComm);
+      return r;
+    }
+    
+    //! Get the Node object for this Map
+    const Teuchos::RCP<Node> getNode() const { //removed &
+      return Kokkos::DefaultNode::getDefaultNode();
+    }
+    
+    //@}
+
+    //! @name Cthulhu specific
+    //@{
+
+    //! Get the library used by this object (Tpetra or Epetra?)
+    UnderlyingLib lib() const { return Cthulhu::UseEpetra; }
+
+    //! Get the underlying Epetra map
+    const Epetra_BlockMap& getEpetra_BlockMap() const { return *map_; }
+    const Epetra_Map& getEpetra_Map() const { return (Epetra_Map &)*map_; } // Ugly, but the same is done in Epetra_CrsMatrix.h to get the map.
+
+    //@}
 
   private:
 
     RCP<const Epetra_BlockMap> map_;
+    //const RCP< const Epetra::Map< LocalOrdinal, GlobalOrdinal, Node > > map_;
 
   }; // EpetraMap class
 
-  namespace useEpetra {
-    /** \brief Non-member function to create a locally replicated Map with the default node.
-
-    This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates EpetraMap
-    */
-    
-    // JG TODO: mv decl/defs
-    Teuchos::RCP< const EpetraMap > createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node);
-    Teuchos::RCP< const EpetraMap > createContigMapWithNode(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node);
-
-    inline Teuchos::RCP< const EpetraMap >
-    createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
-      return createLocalMapWithNode(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
-    }
-
-    /** \brief Non-member function to create a locally replicated Map with a specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates EpetraMap
-    */
-    inline Teuchos::RCP< const EpetraMap >
-    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { 
-      Teuchos::RCP< EpetraMap > map;
-      map = Teuchos::rcp( new EpetraMap((Cthulhu::global_size_t)numElements, // num elements, global and local
-                                        0,                                   // index base is zero
-                                        comm, LocallyReplicated, node));
-      return map.getConst();
-    }
-
-    /** \brief Non-member function to create a uniform, contiguous Map with a user-specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates EpetraMap
-    */
-    inline Teuchos::RCP< const EpetraMap >
-    createUniformContigMapWithNode(global_size_t numElements,
-                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { 
-      Teuchos::RCP< EpetraMap > map;
-      map = Teuchos::rcp( new EpetraMap(numElements,        // num elements, global and local
-                                        0,                  //index base is zero
-                                        comm, GloballyDistributed, node));
-      return map.getConst();
-    }
-
-    /** \brief Non-member function to create a uniform, contiguous Map with the default node.
-
-    This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates EpetraMap
-    */
-    inline Teuchos::RCP< const EpetraMap >
-    createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
-      return createUniformContigMapWithNode(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
-    }
-
-    /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
-
-    This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates EpetraMap
-    */
-    inline Teuchos::RCP< const EpetraMap >
-    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
-      return createContigMapWithNode(numElements, localNumElements, comm, Kokkos::DefaultNode::getDefaultNode() );
-    }
-
-    /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates EpetraMap
-    */
-    inline Teuchos::RCP< const EpetraMap >
-    createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { 
-      Teuchos::RCP< EpetraMap > map;
-      map = Teuchos::rcp( new EpetraMap(numElements,localNumElements,
-                                        0,  // index base is zero
-                                        comm, node) );
-      return map.getConst();
-    }
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates EpetraMap
-    */
-    Teuchos::RCP< const EpetraMap >
-    createWeightedContigMapWithNode(int myWeight, global_size_t numElements, 
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node);
-#endif
-
-  } // useEpetra namespace
-
 } // Cthulhu namespace
 
-/** \brief  Returns true if \c map is identical to this map. Implemented in Cthulhu::EpetraMap::isSameAs().
-    \relates Cthulhu::EpetraMap */
-inline bool operator== (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { 
-  return map1.isSameAs(map2);
-}
+// /** \brief  Returns true if \c map is identical to this map. Implemented in Cthulhu::EpetraMap::isSameAs().
+//     \relates Cthulhu::EpetraMap */
+// bool operator== (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2);
 
-/** \brief Returns true if \c map is not identical to this map. Implemented in Cthulhu::EpetraMap::isSameAs().
-    \relates Cthulhu::EpetraMap */
-inline bool operator!= (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { 
-  return !map1.isSameAs(map2);
-}
+// /** \brief Returns true if \c map is not identical to this map. Implemented in Cthulhu::EpetraMap::isSameAs().
+//     \relates Cthulhu::EpetraMap */
+// bool operator!= (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2);
 
 #endif // CTHULHU_EPETRAMAP_HPP

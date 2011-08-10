@@ -1,9 +1,9 @@
 #include "Cthulhu_LookupStatus.hpp"
 #include "Cthulhu_Exceptions.hpp"
 
-#ifdef HAVE_CTHULHU_TPETRA
-
 namespace Cthulhu {
+
+#ifdef HAVE_CTHULHU_TPETRA
 
   const Tpetra::LookupStatus toTpetra(Cthulhu::LookupStatus LS) {
     
@@ -26,7 +26,16 @@ namespace Cthulhu {
     TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown LookupStatus"); 
     
   }
-  
-}
 
 #endif // HAVE_CTHULHU_TPETRA
+
+#ifdef HAVE_CTHULHU_TPETRA
+
+  const Cthulhu::LookupStatus toCthulhu(int) {
+    return Cthulhu::AllIDsPresent; // TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
+  }
+  
+#endif // HAVE_CTHULHU_TPETRA
+
+} // namespace cthulhu
+

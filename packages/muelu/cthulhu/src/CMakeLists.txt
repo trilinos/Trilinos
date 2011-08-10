@@ -34,10 +34,10 @@ CONFIGURE_FILE(
 
 SET(HEADERS "")
 SET(SOURCES 
+  Map/Cthulhu_EpetraMap.cpp
   CrsMatrix/Cthulhu_Trans.cpp
   Comm/Cthulhu_Comm.cpp
   Comm/Cthulhu_LookupStatus.cpp
-  Map/Cthulhu_EpetraMap.cpp
   )
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
