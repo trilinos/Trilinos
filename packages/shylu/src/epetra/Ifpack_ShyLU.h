@@ -43,7 +43,7 @@
 // AztecOO includes
 #include "AztecOO.h"
 
-
+#include "shylu.h"
 #include "shylu_util.h"
 
 // Ifpack includes

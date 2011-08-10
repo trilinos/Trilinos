@@ -1,3 +1,5 @@
+#ifndef SHYLU_H
+#define SHYLU_H
 
 #include "Epetra_CrsMatrix.h" 
 #include "Epetra_Map.h" 
@@ -64,3 +66,5 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);
+
+#endif // SHYLU_H

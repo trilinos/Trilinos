@@ -6,7 +6,6 @@
 
 */
 
-#include "shylu.h"
 #include "Ifpack_ShyLU.h"
 #include "Teuchos_Time.hpp"
 
