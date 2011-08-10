@@ -20,4 +20,3 @@ NOTE
 ----
 Doxyfile.in is for cmake, Doxyfile is if you want to build the docs
 in the source tree.  Both of these files include the same file, "Doxyfile.options".
-
