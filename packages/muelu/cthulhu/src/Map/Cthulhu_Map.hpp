@@ -96,6 +96,17 @@ namespace Cthulhu {
 
     //@}
 
+    //! @name Misc.
+    //@{
+
+    //! Get the Comm object for this Map.
+    virtual const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const = 0;
+
+    //! Get the Node object for this Map.
+    virtual const Teuchos::RCP< Node >  getNode() const = 0;
+
+    //@}
+
     //! @name Implements Teuchos::Describable
     //@{
 
@@ -104,17 +115,6 @@ namespace Cthulhu {
 
     //! Print the object with some verbosity level to a FancyOStream object.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
-
-    //@}
-
-    //! @name Misc.
-    //@{
-
-    //! Get the Comm object for this Map.
-    virtual const Teuchos::RCP< const Teuchos::Comm< int > > getComm() const = 0;
-
-    //! Get the Node object for this Map.
-    virtual const Teuchos::RCP< Node > getNode() const = 0;
 
     //@}
 

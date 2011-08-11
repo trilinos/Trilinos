@@ -4,17 +4,10 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 #include <Kokkos_CrsMatrix.hpp>
-
 #include "Cthulhu_ConfigDefs.hpp"
-//#include "Cthulhu_RowMatrix.hpp"
 #include "Cthulhu_DistObject.hpp"
-#include "Teuchos_Describable.hpp"
 #include "Cthulhu_CrsGraph.hpp"
-//TODO ??? #include "Cthulhu_CrsMatrixMultiplyOp_decl.hpp"
-
-#include "Cthulhu_Map.hpp"
 #include "Cthulhu_Vector.hpp"
-#include "Cthulhu_MultiVector.hpp"
 
 namespace Cthulhu {
 
@@ -29,52 +22,49 @@ namespace Cthulhu {
     //@{ 
 
     // !Destructor.
-    virtual ~CrsMatrix() {  }
+    virtual ~CrsMatrix() { }
 
     //@}
 
     //! @name Insertion/Removal Methods
-    //@{ 
+    //@{
 
     //! Insert matrix entries, using global IDs.
-    virtual void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals) = 0;
+    virtual void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals)= 0;
 
-    //! Scale the current values of a matrix, this = alpha*this. 
-    virtual void scale(const Scalar &alpha) = 0;
+    //! Scale the current values of a matrix, this = alpha*this.
+    virtual void scale(const Scalar &alpha)= 0;
 
     //@}
 
     //! @name Transformational Methods
-    //@{ 
+    //@{
 
     //! Signal that data entry is complete, specifying domain and range maps.
-    virtual void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage) = 0;
+    virtual void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage)= 0;
 
-    //! Signal that data entry is complete. 
-    virtual void fillComplete(OptimizeOption os=DoOptimizeStorage) = 0;
-
-    //! Row-scale the matrix
-    void leftScale(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& x); //TODO
+    //! Signal that data entry is complete.
+    virtual void fillComplete(OptimizeOption os=DoOptimizeStorage)= 0;
 
     //@}
 
     //! @name Methods implementing RowMatrix
-    //@{ 
+    //@{
 
     //! Returns the Map that describes the row distribution in this matrix.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getRowMap() const = 0;
+    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const = 0;
 
     //! Returns the Map that describes the column distribution in this matrix.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getColMap() const = 0;
+    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const = 0;
 
-    //! Returns the CrsGraph associated with this matrix. 
+    //! Returns the CrsGraph associated with this matrix.
     virtual RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > getCrsGraph() const = 0;
 
     //! Number of global elements in the row map of this matrix.
-    virtual global_size_t getGlobalNumRows() const  = 0;
+    virtual global_size_t getGlobalNumRows() const = 0;
 
     //! Number of global columns in the matrix.
-    virtual global_size_t getGlobalNumCols() const  = 0;
+    virtual global_size_t getGlobalNumCols() const = 0;
 
     //! Returns the number of matrix rows owned on the calling node.
     virtual size_t getNodeNumRows() const = 0;
@@ -88,10 +78,10 @@ namespace Cthulhu {
     //! Returns the current number of entries on this node in the specified local row.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! Returns the number of global diagonal entries, based on global row/column index comparisons. 
+    //! Returns the number of global diagonal entries, based on global row/column index comparisons.
     virtual global_size_t getGlobalNumDiags() const = 0;
 
-    //! Returns the number of local diagonal entries, based on global row/column index comparisons. 
+    //! Returns the number of local diagonal entries, based on global row/column index comparisons.
     virtual size_t getNodeNumDiags() const = 0;
 
     //! Returns the maximum number of entries across all rows/columns on all nodes.
@@ -110,7 +100,7 @@ namespace Cthulhu {
     virtual bool isFillComplete() const = 0;
 
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
-    virtual void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView<Scalar > &Values, size_t &NumEntries) const = 0;
+    virtual void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const = 0;
 
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     virtual void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
@@ -119,25 +109,25 @@ namespace Cthulhu {
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices.
-    virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &diag) const = 0;
+    virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const = 0;
 
     //@}
 
     //! @name Methods implementing Operator
-    //@{ 
+    //@{
 
     //! Computes the sparse matrix-multivector multiplication.
-    virtual void apply(const MultiVector<Scalar,LocalOrdinal, GlobalOrdinal, Node > & X, MultiVector<Scalar,LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS, Scalar alpha = ScalarTraits<Scalar >::one(), Scalar beta = ScalarTraits<Scalar >::zero()) const = 0;
+    virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const = 0;
 
-    //! Returns the Map associated with the domain of this operator.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getDomainMap() const = 0;
+    //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
+    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const = 0;
 
-    //! Returns the Map associated with the domain of this operator.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getRangeMap() const = 0;
+    //! 
+    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const = 0;
 
     //@}
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
 
     //! Return a simple one-line description of this object.
@@ -148,9 +138,9 @@ namespace Cthulhu {
 
     //@}
 
-  }; // class CrsMatrix
+  }; // CrsMatrix class
 
-} // namespace Cthulhu
+} // Cthulhu namespace
 
 #define CTHULHU_CRSMATRIX_SHORT
-#endif
+#endif // CTHULHU_CRSMATRIX_HPP

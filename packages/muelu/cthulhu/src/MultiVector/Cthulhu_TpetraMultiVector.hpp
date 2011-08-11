@@ -18,6 +18,7 @@
 #include "Cthulhu_TpetraExport.hpp"
 
 #include "Cthulhu_Exceptions.hpp"
+#include "Cthulhu_CombineMode.hpp"
 
 namespace Cthulhu {
 
