@@ -4,15 +4,13 @@ echo
 echo "Starting continuous integration Trilinos testing iteration on pu241: `date`"
 echo
 
-. /usr/share/Modules/init/bash
-module use /opt/casl_vri_dev_env/fissile_four/modules
-module load casl-dev
-module load intel/12.0.4
-umask u=rwx,g=rwx,o=
-
 BASEDIR=/home/casl-vri-admin/CIDashboards
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/pu241
 TRILINOS_REPOSITORY_LOCATION="cgbaker@software.sandia.gov:/space/git/Trilinos"
+
+. $DRIVER_SCRIPT_DIR/load_intel_12.0.4_env
+
+umask u=rwx,g=rwx,o=
 
 export TDD_PARALLEL_LEVEL=4
 export TDD_CTEST_TEST_TYPE=Continuous
