@@ -1,0 +1,40 @@
+$TMPL_HEADERS
+
+$TMPL_INCLUDES
+
+namespace Cthulhu {
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration
+  template <class S, class LO, class GO, class N, class SpMatOps>
+  class CrsMatrix;
+#endif
+
+  struct RowInfo {
+    size_t localRow;
+    size_t allocSize;
+    size_t numEntries;
+    size_t offset1D;
+  };
+
+  enum ELocalGlobal {
+    LocalIndices,
+    GlobalIndices
+  };
+
+  $TMPL_TEMPLATE_PARAM
+  class $TMPL_CLASS
+  $TMPL_INHERITANCE
+  {
+
+  public:
+
+$TMPL_DESTRUCTOR
+
+$TMPL_PUBLIC_FUNCTIONS
+
+  }; // $TMPL_CLASS class
+
+} // Cthulhu namespace
+
+$TMPL_FOOTERS

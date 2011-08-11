@@ -1,0 +1,38 @@
+$TMPL_HEADERS
+
+$TMPL_INCLUDES
+
+namespace Cthulhu {
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration of Vector, needed to prevent circular inclusions
+  template<class S, class LO, class GO, class N> class Vector;
+#endif
+
+  $TMPL_TEMPLATE_PARAM
+  class $TMPL_CLASS
+  $TMPL_INHERITANCE
+  {
+
+  public:
+
+$TMPL_DESTRUCTOR
+
+$TMPL_PUBLIC_FUNCTIONS
+
+    //! @name Cthulhu specific
+    //@{
+ 
+    //! Set seed for Random function.
+    virtual void setSeed(unsigned int seed)= 0;
+
+    //! Compute max value of each vector in multi-vector.
+    virtual void maxValue(const Teuchos::ArrayView< Scalar > &maxs) const= 0;
+
+    //@}
+
+  }; // $TMPL_CLASS class
+
+} // Cthulhu namespace
+
+$TMPL_FOOTERS

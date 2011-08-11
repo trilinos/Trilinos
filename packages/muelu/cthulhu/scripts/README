@@ -1,0 +1,13 @@
+HOW TO GENERATE XML SOURCE FILES
+--------------------------------
+
+$cd package/tpetra/doc
+** edit doxygen configuration file 'Doxygen': GENERATE_XML           = YES
+$doxygen Doxygen
+
+
+HOW TO GENERATE CTHULHU HEADERS
+-------------------------------
+
+$cd cthulhu/script/
+$python interfaces.py
