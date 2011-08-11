@@ -246,6 +246,8 @@ int main(int argc,char * argv[])
                                               panzer::EpetraLinearObjContainer::Mat,*ghostCont);
 
    panzer::AssemblyEngineInArgs input(ghostCont,container);
+   input.alpha = 0;
+   input.beta = 1;
 
    // evaluate physics
    out << "EVALUTE" << std::endl;
