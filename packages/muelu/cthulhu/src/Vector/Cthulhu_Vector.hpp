@@ -30,48 +30,6 @@ namespace Cthulhu {
 
     //@}
 
-    //! @name Post-construction modification routines
-    //@{ 
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Replace current value at the specified location with specified value.
-    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
-     */
-    virtual void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) = 0;
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Adds specified value to existing value at the specified location.
-    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
-     */
-    virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) = 0;
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Replace current value at the specified location with specified values.
-    /** \pre \c localRow must be a valid local element on this node, according to the row map.
-     */
-    virtual void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) = 0;
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Adds specified value to existing value at the specified location.
-    /** \pre \c localRow must be a valid local element on this node, according to the row map.
-     */
-    virtual void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) = 0;
-#endif
-
-    //@}
-
-#ifdef CTHULHU_TODO
-    //! @name Extraction methods
-    //@{
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy = 0; // overloading, not hiding
-    //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-    void get1dCopy(Teuchos::ArrayView<Scalar> A) const;
-    //@}
-#endif
-
     //! @name Mathematical methods
     //@{ 
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
@@ -116,23 +74,9 @@ namespace Cthulhu {
 
     //@}
 
-//   protected:
-
-//     //! Advanced constructor accepting parallel buffer view.
-//     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) = 0;
-
   }; // class Vector
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-  /** \brief Non-member function to create a Vector from a specified Map.
-  
-  \relates Vector
-  */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
-#endif
-} // namespace Cthulhu
+}
 
 #define CTHULHU_VECTOR_SHORT
 #endif // CTHULHU_VECTOR_DECL_HPP

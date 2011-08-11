@@ -129,22 +129,6 @@ namespace Cthulhu {
         communicator associated with this graph.
     */
     //@{ 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! \brief Communicate non-local contributions to other nodes.
-    virtual void globalAssemble() = 0;
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    /*! Resume fill operations.
-      After calling fillComplete(), resumeFill() must be called before initiating any changes to the graph.
-
-      resumeFill() may be called repeatedly. 
-
-      \post  <tt>isFillActive() == true<tt>
-      \post  <tt>isFillComplete() == false<tt>
-    */
-    virtual void resumeFill() = 0;
-#endif
 
     /*! \brief Signal that data entry is complete, specifying domain and range maps. 
 
@@ -182,11 +166,6 @@ namespace Cthulhu {
     //! Returns the communicator.
     virtual const RCP<const Comm<int> > getComm() const = 0;
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Returns the underlying node.
-    virtual RCP<Node> getNode() const = 0;
-#endif
-
     //! Returns the Map that describes the row distribution in this graph.
     virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const = 0;
 
@@ -201,11 +180,6 @@ namespace Cthulhu {
 
     //! Returns the importer associated with this graph.
     virtual RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const = 0;
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Returns the exporter associated with this graph.
-    virtual RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > getExporter() const = 0;
-#endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Returns the number of global rows in the graph.
     /** Undefined if isFillActive().
@@ -243,18 +217,6 @@ namespace Cthulhu {
     //! Returns the current number of entries on this node in the specified local row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! \brief Returns the total number of indices allocated for the graph, across all rows on this node.
-    /*! This is the allocation available to the user. Actual allocation may be larger, for example, after 
-      calling fillComplete(), and thus this does not necessarily reflect the memory consumption of the 
-      this graph.  
-
-      This quantity is computed during the actual allocation. Therefore, if <tt>indicesAreAllocated() == false</tt>,
-      this method returns <tt>OrdinalTraits<size_t>::invalid()</tt>.
-    */
-    virtual size_t getNodeAllocationSize() const = 0;
-#endif
 
     //! \brief Returns the current number of allocated entries for this node in the specified global row .
     /** Throws exception std::runtime_error if the specified global row does not belong to this node. */
@@ -306,11 +268,6 @@ namespace Cthulhu {
     //! Returns \c true if fillComplete() has been called and the graph is in compute mode.
     virtual bool isFillComplete() const = 0;
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
-    virtual bool isFillActive() const = 0;
-#endif
-
     //! \brief Returns \c true if storage has been optimized.
     /**
        Optimized storage means that the allocation of each row is equal to the
@@ -319,47 +276,6 @@ namespace Cthulhu {
        optimized storage is that no new indices can be added to the graph.
     */
     virtual bool isStorageOptimized() const = 0;
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Returns \c true if the graph was allocated with static data structures.
-    virtual ProfileType getProfileType() const = 0;
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Extract a list of elements in a specified global row of the graph. Put into pre-allocated storage.
-    /*!
-      \param LocalRow - (In) Global row number for which indices are desired.
-      \param Indices - (Out) Global column indices corresponding to values.
-      \param NumIndices - (Out) Number of indices.
-
-      Note: A std::runtime_error exception is thrown indices is not large enough to hold the column indices associated
-      with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is 
-      returned as OrdinalTraits<size_t>::invalid().
-    */
-    virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow, 
-                                 const ArrayView<GlobalOrdinal> &Indices, 
-                                 size_t &NumIndices
-                                 ) const = 0;
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Extract a list of elements in a specified local row of the graph. Put into storage allocated by calling routine.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices - (Out) Local column indices corresponding to values.
-      \param NumIndices - (Out) Number of indices.
-
-      Note: A std::runtime_error exception is thrown indices is not large enough to hold the column indices associated
-      with row \c LocalRow. If \c LocalRow is not valid for this node, then \c indices is unchanged and \c NumIndices is 
-      returned as OrdinalTraits<size_t>::invalid().
-
-      \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
-    */
-    virtual void getLocalRowCopy(LocalOrdinal LocalRow, 
-                                const ArrayView<LocalOrdinal> &indices, 
-                                size_t &NumIndices
-                                ) const = 0;
-#endif
 
     //! Extract a const, non-persisting view of global indices in a specified row of the graph.
     /*!
@@ -396,73 +312,6 @@ namespace Cthulhu {
 
     //@}
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! @name Methods implementing Cthulhu::DistObject
-    //@{
-    virtual bool checkSizes(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>& source) = 0;
-
-    virtual void copyAndPermute(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                               size_t numSameIDs,
-                               const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                               const ArrayView<const LocalOrdinal> &permuteFromLIDs) = 0;
-
-    virtual void packAndPrepare(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                               const ArrayView<const LocalOrdinal> &exportLIDs,
-                               Array<GlobalOrdinal> &exports,
-                               const ArrayView<size_t> & numPacketsPerLID,
-                               size_t& constantNumPackets,
-                               Distributor &distor) = 0;
-
-    virtual void unpackAndCombine(const ArrayView<const LocalOrdinal> &importLIDs,
-                                 const ArrayView<const GlobalOrdinal> &imports,
-                                 const ArrayView<size_t> &numPacketsPerLID,
-                                 size_t constantNumPackets,
-                                 Distributor &distor,
-                                 CombineMode CM) = 0;
-    //@}
-#endif // CTHULHU_NOT_IMPLEMENTED
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! \name Advanced methods, at increased risk of deprecation.
-    //@{
-
-    //! Get an ArrayRCP of the row-offsets.
-    /*! Returns null if optimizeStorage() hasn't been called.
-      The returned buffer exists in host-memory.
-    */
-    virtual ArrayRCP<const size_t>       getNodeRowBegs() const = 0;
-
-    //! Get an ArrayRCP of the packed column-indices.
-    /*! Returns null if optimizeStorage() hasn't been called.
-      The returned buffer exists in host-memory.
-    */
-    virtual ArrayRCP<const LocalOrdinal> getNodePackedIndices() const = 0;
-
-    //@}
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! \name Deprecated methods; will be removed at some point in the near future.
-    //@{
-
-    /** \brief Re-allocate the data into contiguous storage.
-
-    This method is deprecated and will be removed in a future version of Cthulhu, as 
-    the implementation of storage optimization has been below Cthulhu to Kokkos.
-
-    Currently, the implementation simply calls resumeFill() and then fillComplete(OptimizeStorage). As such, it is 
-    required to be called by all nodes that participate in the associated communicator.
-    */
-    CTHULHU_DEPRECATED virtual void optimizeStorage() = 0;
-
-    //! Deprecated. Get a persisting const view of the elements in a specified global row of the graph.
-    CTHULHU_DEPRECATED virtual ArrayRCP<const GlobalOrdinal> getGlobalRowView(GlobalOrdinal GlobalRow) const = 0;
-
-    //! Deprecated. Get a persisting const view of the elements in a specified local row of the graph.
-    CTHULHU_DEPRECATED virtual ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const = 0;
-
-    //@}
-#endif // CTHULHU_NOT_IMPLEMENTED
   }; // class CrsGraph
 
 } // namespace Cthulhu

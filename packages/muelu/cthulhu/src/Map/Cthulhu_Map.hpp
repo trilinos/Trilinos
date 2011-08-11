@@ -18,8 +18,13 @@ namespace Cthulhu {
 
   public:
 
-    //! Map destructor. 
-    virtual ~Map() { };
+    //! @name Constructor/Destructor Methods
+    //@{ 
+
+    // !Destructor.
+    virtual ~Map() { }
+
+    //@}
 
     //! @name Map Attribute Methods
     //@{

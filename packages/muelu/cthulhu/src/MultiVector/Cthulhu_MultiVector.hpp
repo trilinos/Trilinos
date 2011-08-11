@@ -47,34 +47,6 @@ namespace Cthulhu {
     //! @name Post-construction modification routines
     //@{ 
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Replace current value at the specified (globalRow, vectorIndex) location with specified value.
-    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
-     */
-    virtual void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Adds specified value to existing value at the specified (globalRow, vectorIndex) location.
-    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
-     */
-    virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Replace current value at the specified (myRow, vectorIndex) location with specified value.
-    /** \pre \c localRow must be a valid local element on this node, according to the row map.
-     */
-    virtual void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Adds specified value to existing value at the specified (myRow, vectorIndex) location.
-    /** \pre \c localRow must be a valid local element on this node, according to the row map.
-     */
-    virtual void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
     //! Initialize all values in a multi-vector with specified value.
     virtual void putScalar(const Scalar &value) =0;
 
@@ -85,83 +57,6 @@ namespace Cthulhu {
     /** Note: not a method of the Tpetra interface. Added for MueLu. */
     virtual void setSeed(unsigned int seed) =0;
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Replace the underlying Map with a compatible one.
-    virtual void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
-    virtual void reduce() =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! = Operator.
-    /*! \param In A - Multivector to copy
-     */
-    virtual MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
-
-    //@}
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! @name Data Copy and View get methods
-    /** These methods are used to get the data underlying the MultiVector. They return data in one of three forms: 
-        - a MultiVector with a subset of the columns of the target MultiVector
-        - a raw C pointer or array of raw C pointers
-        - one of the Teuchos memory management classes
-        Not all of these methods are valid for a particular MultiVector. For instance, calling a method that accesses a 
-        view of the data in a 1-D format (i.e., get1dView) requires that the target MultiVector has constant stride.
-    */
-    //@{
-
-    //! Returns a MultiVector with copies of selected columns.
-    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const =0;
-
-    //! Returns a MultiVector with copies of selected columns.
-    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const =0;
-
-    //! Returns a const MultiVector with const views of selected columns.
-    virtual Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const =0;
-
-    //! Returns a const MultiVector with const views of selected columns.
-    virtual Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const size_t> &cols) const =0;
-
-    //! Returns a MultiVector with views of selected columns.
-    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng) =0;
-
-    //! Returns a MultiVector with views of selected columns.
-    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const size_t> &cols) =0;
-
-    //! \brief Returns a const MultiVector view of a subset of rows.
-    /** 
-        Returns a const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
-
-        \param In subMap - The row map for the new MultiVector.
-        \param In offset - The offset into the data of <tt>(*this)</tt>.
-
-        \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
-    */
-    virtual Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const =0;
-
-    //! \brief Returns a non-const MultiVector view of a subset of rows.
-    /** 
-        Returns a non-const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
-
-        \param In subMap - The row map for the new MultiVector.
-        \param In offset - The offset into the data of <tt>(*this)</tt>.
-
-        \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
-    */
-    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) =0;
-
-    //! Const Vector access function.
-    virtual Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const =0;
-
-    //! Vector access function.
-    virtual Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(size_t j) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
-
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
     virtual Teuchos::ArrayRCP<const Scalar> getData(size_t j) const =0;
@@ -169,46 +64,6 @@ namespace Cthulhu {
     //! Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
     virtual Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j) =0;
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-    virtual void get1dCopy(Teuchos::ArrayView<Scalar> A, size_t LDA) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Return multi-vector values in user-provided array of pointers (using Teuchos memory management classes).
-    virtual void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
-    virtual Teuchos::ArrayRCP<const Scalar> get1dView() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Return const persisting pointers to values.
-    virtual Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.  Teuchos::ArrayRCP<Scalar> get1dViewNonConst() =0;
-    virtual Teuchos::ArrayRCP<Scalar> get1dViewNonConst() =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Return non-const persisting pointers to values.
-    virtual Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst() =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Return a const reference to the underlying Kokkos::MultiVector object (advanced use only)
-    virtual const Kokkos::MultiVector<Scalar,Node> & getLocalMV() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Return a non-const reference to the underlying Kokkos::MultiVector object (advanced use only)
-    virtual Kokkos::MultiVector<Scalar,Node> & getLocalMVNonConst() =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@}
 
@@ -226,14 +81,6 @@ namespace Cthulhu {
 
     //! Scale the current values of a multi-vector, this = alpha*this.
     virtual void scale(const Scalar &alpha) =0;
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
-    virtual void scale(Teuchos::ArrayView<const Scalar> alpha) =0;
-
-    //! Replace multi-vector values with scaled values of A, this = alpha*A.
-    virtual void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
-#endif
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
     virtual void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta) =0;
@@ -286,16 +133,6 @@ namespace Cthulhu {
 
     //! Returns the global vector length of vectors in the multi-vector.
     virtual global_size_t getGlobalLength() const =0;
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.
-    virtual size_t getStride() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! Returns true if this multi-vector has constant stride between vectors. WARNING: This may vary from node to node.
-    virtual bool isConstantStride() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@} 
 

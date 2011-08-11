@@ -6,6 +6,8 @@
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Exceptions.hpp"
 
+#include "Tpetra_Map.hpp"
+
 #include "Cthulhu_Map.hpp"
 
 #ifdef HAVE_CTHULHU_TPETRA
