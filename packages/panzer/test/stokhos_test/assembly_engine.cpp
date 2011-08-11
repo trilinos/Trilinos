@@ -146,7 +146,7 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
 
   fmb->setupVolumeFieldManagers(volume_worksets,physicsBlocks,*cm_factory,closure_models,indexer,*linObjFactory,user_data);
 
-  // fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
+  fmb->setupBCFieldManagers(bc_worksets,physicsBlocks,eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
   panzer::AssemblyEngine_TemplateManager<panzer::Traits,short,int> ae_tm;
   panzer::AssemblyEngine_TemplateBuilder<short,int> builder(fmb,linObjFactory);
@@ -256,7 +256,6 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
   ipb.physics_block_id = "4";
   ipb.eq_sets.push_back(ies_1);
   ipb.eq_sets.push_back(ies_2);
-
 
   {
     std::size_t bc_id = 0;

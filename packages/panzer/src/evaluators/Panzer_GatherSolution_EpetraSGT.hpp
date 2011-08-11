@@ -224,8 +224,6 @@ evaluateFields(typename Traits::EvalData workset)
      seed_value = workset.beta;
    }
 
-   std::cout << "See values = " << seed_value << std::endl;
-
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs

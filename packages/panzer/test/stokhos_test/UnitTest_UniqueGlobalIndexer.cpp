@@ -107,8 +107,65 @@ const std::pair<std::vector<int>,std::vector<int> > &
 UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                 int subcellDim,int subcellId) const
 {
-   TEST_FOR_EXCEPTION(true,std::runtime_error,
-                      "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
+   typedef std::pair<std::vector<int>,std::vector<int> > VectorPair;
+
+   // TEST_FOR_EXCEPTION(true,std::runtime_error,
+   //                    "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
+   TEST_FOR_EXCEPTION(not ((fieldNum==0 || fieldNum==1) && blockId=="block_0"), std::runtime_error,
+                   "unit_test::UniqueGlobalIndexer - Invalid field or block id specified");
+
+   if(field0_closures_==Teuchos::null || field1_closures_==Teuchos::null) {
+      field0_closures_ = Teuchos::rcp(new std::map<std::pair<int,int>,VectorPair>); 
+
+      {
+         VectorPair vp;
+
+         vp = std::make_pair(std::vector<int>(2),std::vector<int>(2));
+         vp.first[0] = 0; vp.first[1] = 2;
+         vp.second[0] = 0; vp.second[1] = 1;
+         (*field0_closures_)[std::make_pair(1,0)] = vp;
+
+         vp = std::make_pair(std::vector<int>(2),std::vector<int>(2));
+         vp.first[0] = 2; vp.first[1] = 4;
+         vp.second[0] = 1; vp.second[1] = 2;
+         (*field0_closures_)[std::make_pair(1,1)] = vp;
+      }
+
+      field1_closures_ = Teuchos::rcp(new std::map<std::pair<int,int>,VectorPair>); 
+      {
+         VectorPair vp;
+
+         vp = std::make_pair(std::vector<int>(2),std::vector<int>(2));
+         vp.first[0] = 1; vp.first[1] = 3;
+         vp.second[0] = 0; vp.second[1] = 1;
+         (*field1_closures_)[std::make_pair(1,0)] = vp;
+
+         vp = std::make_pair(std::vector<int>(2),std::vector<int>(2));
+         vp.first[0] = 3; vp.first[1] = 5;
+         vp.second[0] = 1; vp.second[1] = 2;
+         (*field1_closures_)[std::make_pair(1,1)] = vp;
+      }
+   }
+
+   std::stringstream ss;
+   ss << "(subcellDim,subcellId) = (" << subcellDim << "," << subcellId << ") on fieldNum = " << fieldNum;
+
+   if(fieldNum==0) {
+      std::map<std::pair<int,int>, VectorPair>::const_iterator itr 
+            = field0_closures_->find(std::make_pair(subcellDim,subcellId));
+      TEST_FOR_EXCEPTION(itr==field0_closures_->end(),std::runtime_error,
+                         "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure has not added "+ss.str()+" yet");
+
+      return itr->second;
+   }
+   else {
+      std::map<std::pair<int,int>, VectorPair>::const_iterator itr 
+            = field1_closures_->find(std::make_pair(subcellDim,subcellId));
+      TEST_FOR_EXCEPTION(itr==field1_closures_->end(),std::runtime_error,
+                         "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure has not added "+ss.str()+" yet");
+
+      return itr->second;
+   } 
 }
 
 void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const

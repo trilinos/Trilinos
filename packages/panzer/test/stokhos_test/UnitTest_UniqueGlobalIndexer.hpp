@@ -127,6 +127,9 @@ private:
    mutable Teuchos::RCP<std::vector<short> > elements_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field0Offset_; // local element IDs
    mutable Teuchos::RCP<std::vector<int> > field1Offset_; // local element IDs
+
+   mutable Teuchos::RCP<std::map<std::pair<int,int>,std::pair<std::vector<int>,std::vector<int> > > > field0_closures_;
+   mutable Teuchos::RCP<std::map<std::pair<int,int>,std::pair<std::vector<int>,std::vector<int> > > > field1_closures_;
 };
 
 } // end unit test

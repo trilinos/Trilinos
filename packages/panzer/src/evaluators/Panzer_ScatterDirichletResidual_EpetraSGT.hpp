@@ -1,4 +1,8 @@
+#include "Panzer_config.hpp"
 #ifdef HAVE_STOKHOS
+
+#include "Panzer_SGEpetraLinearObjContainer.hpp"
+
 // **********************************************************************
 // Specialization: SGResidual
 // **********************************************************************
@@ -48,9 +52,8 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::SGResidual, Traits,
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
-
   fieldIds_.resize(scatterFields_.size());
+
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
@@ -70,7 +73,6 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::SGResidual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-#if 0
    std::vector<GO> GIDs;
    std::vector<int> LIDs;
  
@@ -78,10 +80,10 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         // = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer->f; 
+   Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
+         = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.linContainer);
+   Teuchos::RCP<Epetra_Vector> r_template = (*sgEpetraContainer->begin())->f;
+   const Epetra_BlockMap & map = r_template->Map();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -97,7 +99,7 @@ evaluateFields(typename Traits::EvalData workset)
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
       for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = r->Map().LID(GIDs[i]);
+         LIDs[i] = map.LID(GIDs[i]);
 
       std::vector<bool> is_owned(GIDs.size(), false);
       globalIndexer_->ownedIndices(GIDs,is_owned);
@@ -120,11 +122,16 @@ evaluateFields(typename Traits::EvalData workset)
                continue;
 
             int basisId = basisIdMap[basis];
-            (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+            const ScalarT & field = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+
+            // loop over stochastic basis scatter field values to residual vectors
+            int stochIndex = 0;
+            panzer::SGEpetraLinearObjContainer::iterator itr; 
+            for(itr=sgEpetraContainer->begin();itr!=sgEpetraContainer->end();++itr,++stochIndex)
+               (*(*itr)->f)[lid] = field.coeff(stochIndex);
          }
       }
    }
-#endif
 }
 
 // **********************************************************************
@@ -198,21 +205,17 @@ template<typename Traits,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::SGJacobian, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-#if 0
    std::vector<GO> GIDs;
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-   // Teuchos::RCP<Epetra_Vector> r = workset.residual_vector;
-   // Teuchos::RCP<Epetra_CrsMatrix> Jac = workset.jacobian_matrix;
 
-   Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         // = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer->f; 
-   Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer->A;
+   Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
+         = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.linContainer);
+   Teuchos::RCP<Epetra_CrsMatrix> Jac_template = (*sgEpetraContainer->begin())->A;
+   const Epetra_BlockMap & map = Jac_template->RowMap();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -228,7 +231,7 @@ evaluateFields(typename Traits::EvalData workset)
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
       for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = r->Map().LID(GIDs[i]);
+         LIDs[i] = map.LID(GIDs[i]);
 
       std::vector<bool> is_owned(GIDs.size(), false);
       globalIndexer_->ownedIndices(GIDs,is_owned);
@@ -247,40 +250,46 @@ evaluateFields(typename Traits::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
+            int gid = GIDs[offset];
+            int basisId = basisIdMap[basis];
             if(lid<0) // not on this processor
                continue;
 
-            // zero out matrix row
-            {
-               int numEntries = 0;
-               int * rowIndices = 0;
-               double * rowValues = 0;
-
-               Jac->ExtractMyRowView(lid,numEntries,rowValues,rowIndices);
-
-               for(int i=0;i<numEntries;i++)
-                  rowValues[i] = 0.0;
-            }
- 
-            int basisId = basisIdMap[basis];
-            int gid = GIDs[offset];
             const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+
+            // loop over stochastic basis scatter field values to residual vectors
+            int stochIndex = 0;
+            panzer::SGEpetraLinearObjContainer::iterator itr; 
+            for(itr=sgEpetraContainer->begin();itr!=sgEpetraContainer->end();++itr,++stochIndex) {
+               Teuchos::RCP<Epetra_Vector> r = (*itr)->f;
+               Teuchos::RCP<Epetra_CrsMatrix> Jac = (*itr)->A;
+
+               // zero out matrix row
+               {
+                  int numEntries = 0;
+                  int * rowIndices = 0;
+                  double * rowValues = 0;
+   
+                  Jac->ExtractMyRowView(lid,numEntries,rowValues,rowIndices);
+   
+                  for(int i=0;i<numEntries;i++)
+                     rowValues[i] = 0.0;
+               }
     
-            (*r)[lid] = scatterField.val();
-    
-            // loop over the sensitivity indices: all DOFs on a cell
-            std::vector<double> jacRow(scatterField.size(),0.0);
-    
-            for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
-               jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
-            TEUCHOS_ASSERT(jacRow.size()==GIDs.size());
-    
-            int err = Jac->ReplaceGlobalValues(gid, scatterField.size(), &jacRow[0],&GIDs[0]);
-            TEUCHOS_ASSERT(err==0); 
+               (*r)[lid] = scatterField.val().coeff(stochIndex);
+       
+               // loop over the sensitivity indices: all DOFs on a cell
+               std::vector<double> jacRow(scatterField.size(),0.0);
+       
+               for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
+                  jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex).coeff(stochIndex);
+       
+               int err = Jac->ReplaceGlobalValues(gid, scatterField.size(), &jacRow[0],&GIDs[0]);
+               TEUCHOS_ASSERT(err==0); 
+            }
          }
       }
    }
-#endif
 }
 
 // **********************************************************************
