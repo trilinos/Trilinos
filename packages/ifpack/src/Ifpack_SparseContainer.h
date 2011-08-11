@@ -161,37 +161,37 @@ public:
   }
   
   //! Returns a pointer to the internally stored map.
-  const Epetra_Map* Map() const
+  Teuchos::RCP<const Epetra_Map> Map() const
   {
     return(Map_);
   }
 
   //! Returns a pointer to the internally stored solution multi-vector.
-  const Epetra_MultiVector* LHS() const
+  Teuchos::RCP<const Epetra_MultiVector> LHS() const
   {
     return(LHS_);
   }
 
   //! Returns a pointer to the internally stored rhs multi-vector.
-  const Epetra_MultiVector* RHS() const
+  Teuchos::RCP<const Epetra_MultiVector> RHS() const
   {
     return(RHS_);
   }
 
   //! Returns a pointer to the internally stored matrix.
-  const Epetra_CrsMatrix* Matrix() const
+  Teuchos::RCP<const Epetra_CrsMatrix> Matrix() const
   {
     return(Matrix_);
   }
 
   //! Returns a pointer to the internally stored ID's.
-  const Epetra_IntSerialDenseVector* ID() const
+  const Epetra_IntSerialDenseVector& ID() const
   {
     return(GID_);
   }
 
   //! Returns a pointer to the internally stored inverse operator.
-  const T* Inverse() const
+  Teuchos::RCP<const T> Inverse() const
   {
     return(Inverse_);
   }
