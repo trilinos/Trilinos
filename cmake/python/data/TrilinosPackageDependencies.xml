@@ -841,8 +841,8 @@
   </Package>
   <Package name="STK" dir="stk">
     <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="SEACAS,FEI,AztecOO,ThreadPool,Zoltan,Intrepid,Sacado"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASIoss,FEI,AztecOO,ThreadPool,Zoltan,Intrepid,Sacado"/>
+    <TEST_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASNemesis"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
     <LIB_OPTIONAL_DEP_TPLS value="BoostLib,OpenNURBS"/>
