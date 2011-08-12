@@ -230,38 +230,30 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
         const Epetra_CrsGraph & LocalBlockGraph,
         const Epetra_Comm & GlobalComm ) 
 {
-  const Epetra_BlockMap & BaseMap = BaseGraph.RowMap();
-  int BaseIndex = BaseMap.IndexBase();
-  int Offset = BlockUtility::CalculateOffset(BaseMap);
+  const Epetra_BlockMap & BaseRowMap = BaseGraph.RowMap();
+  const Epetra_BlockMap & BaseColMap = BaseGraph.ColMap();
+  int ROffset = BlockUtility::CalculateOffset(BaseRowMap);
+  int COffset = BlockUtility::CalculateOffset(BaseColMap);
 
   //Get Base Global IDs
   const Epetra_BlockMap & BlockRowMap = LocalBlockGraph.RowMap();
   const Epetra_BlockMap & BlockColMap = LocalBlockGraph.ColMap();
+  
   int NumBlockRows = BlockRowMap.NumMyElements();
   vector<int> RowIndices(NumBlockRows);
   BlockRowMap.MyGlobalElements(&RowIndices[0]);
-  int Size = BaseMap.NumMyElements();
-  int TotalSize = NumBlockRows * Size;
-  vector<int> GIDs(Size);
-  BaseMap.MyGlobalElements( &GIDs[0] );
 
-  vector<int> GlobalGIDs( TotalSize );
-  for( int i = 0; i < NumBlockRows; ++i )
-  {
-    for( int j = 0; j < Size; ++j )
-      GlobalGIDs[i*Size+j] = GIDs[j] + RowIndices[i] * Offset;
-  }
-
-  int GlobalSize;
-  GlobalComm.SumAll( &TotalSize, &GlobalSize, 1 );
-
-  Epetra_Map GlobalMap( GlobalSize, TotalSize, &GlobalGIDs[0], BaseIndex, GlobalComm );
+  int Size = BaseRowMap.NumMyElements();
+  
+  Epetra_Map *GlobalRowMap = 
+    GenerateBlockMap(BaseRowMap, BlockRowMap, GlobalComm);
+  
 
   int MaxIndices = BaseGraph.MaxNumIndices();
   vector<int> Indices(MaxIndices);
 
   Epetra_CrsGraph * GlobalGraph = new Epetra_CrsGraph( Copy, 
-                               dynamic_cast<Epetra_BlockMap&>(GlobalMap),
+                               dynamic_cast<Epetra_BlockMap&>(*GlobalRowMap),
                                0 );
 
   int NumBlockIndices, NumBaseIndices;
@@ -272,12 +264,12 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
     
     for( int j = 0; j < Size; ++j )
     {
-      int GlobalRow = GlobalMap.GID(j+i*Size);
+      int GlobalRow = GlobalRowMap->GID(j+i*Size);
 
       BaseGraph.ExtractMyRowView( j, NumBaseIndices, BaseIndices );
       for( int k = 0; k < NumBlockIndices; ++k )
       {
-        int ColOffset = BlockColMap.GID(BlockIndices[k]) * Offset;
+        int ColOffset = BlockColMap.GID(BlockIndices[k]) * COffset;
 
         for( int l = 0; l < NumBaseIndices; ++l )
           Indices[l] = BaseGraph.GCID(BaseIndices[l]) + ColOffset;
@@ -287,7 +279,21 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
     }
   }
 
-  GlobalGraph->FillComplete();
+  const Epetra_BlockMap & BaseDomainMap = BaseGraph.DomainMap();
+  const Epetra_BlockMap & BaseRangeMap = BaseGraph.RangeMap();
+  const Epetra_BlockMap & BlockDomainMap = LocalBlockGraph.DomainMap();
+  const Epetra_BlockMap & BlockRangeMap = LocalBlockGraph.RangeMap();
+
+  Epetra_Map *GlobalDomainMap = 
+    GenerateBlockMap(BaseDomainMap, BlockDomainMap, GlobalComm);
+  Epetra_Map *GlobalRangeMap = 
+    GenerateBlockMap(BaseRangeMap, BlockRangeMap, GlobalComm);
+
+  GlobalGraph->FillComplete(*GlobalDomainMap, *GlobalRangeMap);
+
+  delete GlobalDomainMap;
+  delete GlobalRangeMap;
+  delete GlobalRowMap;
 
   return GlobalGraph;
 }
