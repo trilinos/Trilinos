@@ -1,0 +1,54 @@
+$TMPL_HEADERS
+
+$TMPL_INCLUDES
+
+#include "Cthulhu_Import.hpp"
+#include "Cthulhu_Exceptions.hpp"
+
+#include "Cthulhu_TpetraMap.hpp"
+//#include "Tpetra_Import.hpp"
+
+namespace Cthulhu {
+
+  // TODO: move that elsewhere
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &import);
+  //
+
+  $TMPL_TEMPLATE_PARAM
+  class $TMPL_CLASS
+  $TMPL_INHERITANCE
+  {
+
+  public:
+
+$TMPL_PUBLIC_FUNCTIONS
+
+    //! @name Cthulhu specific
+    //@{
+
+    //! TpetraImport constructor to wrap a Tpetra::Import object
+    TpetraImport(const RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) : import_(import) {  }
+
+    RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Import() const { return import_; }
+
+    //@}
+    
+  private:
+    
+    RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > import_;
+
+  }; // TpetraImport class
+
+  // TODO: move that elsewhere
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &import) {
+    // TODO: throw exception
+    const TpetraImport<LocalOrdinal,GlobalOrdinal,Node> & tpetraImport = dynamic_cast<const TpetraImport<LocalOrdinal,GlobalOrdinal,Node> &>(import);
+    return *tpetraImport.getTpetra_Import();
+  }
+  //
+
+} // Cthulhu namespace
+
+$TMPL_FOOTERS

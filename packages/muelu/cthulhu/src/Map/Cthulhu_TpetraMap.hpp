@@ -11,11 +11,19 @@
 #include "Cthulhu_LookupStatus.hpp" //TODO: merge with TpetraUtils.hpp
 #include "Cthulhu_TpetraUtils.hpp"
 
+#include "Cthulhu_Exceptions.hpp"
+
 namespace Cthulhu {
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> &map);
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map);
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &map);
   //
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -163,6 +171,18 @@ namespace Cthulhu {
     // TODO: throw exception
     const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> & tpetraMap = dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &>(map);
     return *tpetraMap.getTpetra_Map();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
+    CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, map, tpetraMap, "toTpetra");
+    return tpetraMap->getTpetra_Map();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+    return rcp( new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
   }
   //
 
