@@ -73,10 +73,25 @@ def buildTemplateParam( XMLfile ):
         str += type + ' ' + name + defvalStr + ', ' # str == 'class GlobalOrdinal = LocalOrdinal, '
         #print(str)
     
-    templateParamNodeStr = 'template <' + str.rstrip(', ') + '>' # template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-    #print(templateParamNodeStr) 
+    templateParamStr = 'template <' + str.rstrip(', ') + '>' # template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+    #print(templateParamStr) 
 
-    templateParamStr = "  " + templateParamNodeStr
+    return templateParamStr
+
+def buildTemplateParam2( XMLfile ):
+    tree = etree.parse(XMLfile)
+    root = tree.getroot() # root == <doxygen>
+    classNode = root[0]   # classNode == <compounddef>
+    
+    templateParamNode = classNode.xpath('templateparamlist')[0];
+    str = ''
+    for child in templateParamNode:
+        name   = child.xpath('declname')[0].text    # == 'GlobalOrdinal'
+        str += name + ', ' # str == 'GlobalOrdinal, '
+        #print(str)
+    
+    templateParamStr = str.rstrip(', ') # LocalOrdinal, GlobalOrdinal, Node
+    #print(templateParamStr) 
 
     return templateParamStr
 ####
