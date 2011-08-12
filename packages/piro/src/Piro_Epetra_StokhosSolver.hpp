@@ -28,19 +28,11 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_EPETRA_STOKHOSSOLVER_H
-#define PIRO_EPETRA_STOKHOSSOLVER_H
+#ifndef PIRO_EPETRA_STOKHOS_SOLVER_H
+#define PIRO_EPETRA_STOKHOS_SOLVER_H
 
 #include "EpetraExt_ModelEvaluator.h"
-#include "Piro_Epetra_StokhosNOXObserver.hpp"
-
-#include "Stokhos_SGModelEvaluator.hpp"
-#include "Stokhos_OrthogPolyBasis.hpp"
-#include "Stokhos_Quadrature.hpp"
-#include "Stokhos_OrthogPolyExpansion.hpp"
-#include "Stokhos_Sparse3Tensor.hpp"
-#include "Stokhos_ParallelData.hpp"
-#include "EpetraExt_MultiComm.h"
+#include "Piro_Epetra_StokhosSolverFactory.hpp"
 
 namespace Piro {
 namespace Epetra {
@@ -66,7 +58,7 @@ namespace Epetra {
 
     //! Setup rest of model evaluator
     void setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
-	       Teuchos::RCP<NOX::Epetra::Observer> noxObserver = Teuchos::null);
+	       const Teuchos::RCP<NOX::Epetra::Observer>& noxObserver = Teuchos::null);
 
 
     //@}
@@ -77,7 +69,13 @@ namespace Epetra {
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
     
+    /** \brief . */
+    Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
+
+    /** \brief . */
     Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
+    
+    /** \brief . */
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
 
     /** \brief . */
@@ -89,10 +87,17 @@ namespace Epetra {
     /** \brief . */
     void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
 
+    //@}
+
+    /** \name Accessors */
+    //@{
+
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >
-    getBasis() const { return basis; }
+    getBasis() const { return sg_solver_factory.getBasis(); }
+
     Teuchos::RCP<const Stokhos::Quadrature<int,double> >
-    getQuad() const { return quad; }
+    getQuad() const { return sg_solver_factory.getQuad(); }
+
     Teuchos::RCP<Stokhos::SGModelEvaluator>
     get_sg_model() const { return sg_nonlin_model; }
 
@@ -141,56 +146,24 @@ namespace Epetra {
     Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> 
     create_g_mv_sg(int l, int num_vecs, Epetra_DataAccess CV = Copy, 
 		   const Epetra_MultiVector* v = NULL) const;
+
+    //@}
     
   private:
+
     /** \brief . */
     Teuchos::RCP<const Epetra_Map> get_x_map() const;
     /** \brief . */
     Teuchos::RCP<const Epetra_Map> get_f_map() const;
     /** \brief . */
     Teuchos::RCP<const Epetra_Vector> get_x_init() const;
-    /** \brief . */
-    Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
-    /** \brief . */
-    Teuchos::RCP<const Epetra_Map> get_p_sg_map(int l) const;
-    /** \brief . */
-    void setProblemParamDefaults(Teuchos::ParameterList* appParams_);
-    /** \brief . */
-    void setSolverParamDefaults(Teuchos::ParameterList* appParams_);
-
-    Teuchos::RCP<const Teuchos::ParameterList>
-     getValidSGParameters() const;
-
-    //@}
     
   private:
     
-    enum SG_METHOD {
-      SG_AD,
-      SG_GLOBAL,
-      SG_NI,
-      SG_MPNI
-    };
-
-    enum SG_SOLVER { 
-      SG_KRYLOV, 
-      SG_GS, 
-      SG_JACOBI 
-    };
-
     Teuchos::RCP<Teuchos::ParameterList> piroParams;
-
-    SG_METHOD sg_method;
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis;
-    Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad;
-    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion;
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
-    Teuchos::RCP<const EpetraExt::MultiComm> sg_comm;
-    Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data;
-
-    //These are set in the constructor and used in evalModel
-    Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver;
+    Piro::Epetra::StokhosSolverFactory sg_solver_factory;
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_nonlin_model;
+    Teuchos::RCP<Stokhos::SGInverseModelEvaluator> sg_solver;
     
   };
   
