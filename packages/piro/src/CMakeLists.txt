@@ -61,8 +61,10 @@ ENDIF()
 # Optional StochasticGalerkin capability, depending upon Stokhos and NOX
 IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX) 
   APPEND_SET(HEADERS Piro_Epetra_StokhosNOXObserver.hpp
+  		     Piro_Epetra_StokhosSolverFactory.hpp
   		     Piro_Epetra_StokhosSolver.hpp) 
   APPEND_SET(SOURCES Piro_Epetra_StokhosNOXObserver.cpp
+  		     Piro_Epetra_StokhosSolverFactory.cpp
   		     Piro_Epetra_StokhosSolver.cpp)
 ENDIF()
 #
