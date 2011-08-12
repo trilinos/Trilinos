@@ -65,8 +65,8 @@ int main(int argc, char** argv) {
         //std::cout<<t2S<<std::endl;
 	}
 	else
-		std::cout<<std::endl<<"./Isorropia_parallel_matching.exe \<\"mtx file\"\> \<\"Algorithm \
-        choice\"\>"<<std::endl<<"Algorithm Choice: PHK, PHKDW, PDFS,PPF"\
+		std::cout<<std::endl<<"./Isorropia_parallel_matching.exe \"mtx file\" \"Algorithm \
+        choice\""<<std::endl<<"Algorithm Choice: PHK, PHKDW, PDFS,PPF"\
         <<std::endl<<std::endl;
 	
 	return 0;
