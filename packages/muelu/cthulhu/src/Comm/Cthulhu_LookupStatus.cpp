@@ -27,6 +27,28 @@ namespace Cthulhu {
     
   }
 
+  const Tpetra::ProfileType toTpetra(Cthulhu::ProfileType PT) {
+
+    if (PT == Cthulhu::StaticProfile)
+      return Tpetra::StaticProfile;
+    if (PT == Cthulhu::DynamicProfile)
+      return Tpetra::DynamicProfile;
+    
+    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown ProfileType"); 
+
+  }
+
+  const Tpetra::OptimizeOption toTpetra(Cthulhu::OptimizeOption PT) {
+
+    if (PT == Cthulhu::DoOptimizeStorage)
+      return Tpetra::DoOptimizeStorage;
+    if (PT == Cthulhu::DoNotOptimizeStorage)
+      return Tpetra::DoNotOptimizeStorage;
+    
+    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
+
+  }
+
 #endif // HAVE_CTHULHU_TPETRA
 
 #ifdef HAVE_CTHULHU_TPETRA

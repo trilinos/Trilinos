@@ -25,6 +25,11 @@
 
 namespace Cthulhu {
 
+  // TODO: move that elsewhere
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Tpetra::Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &map);
+  //
+
   //! \brief A class for constructing and using dense, distributors vectors.
   /*!
     This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
@@ -160,6 +165,15 @@ namespace Cthulhu {
     RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const {  return this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->getVectorNonConst(0); }
     
   }; // class TpetraVector
+
+  // TODO: move that elsewhere
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Tpetra::Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
+    typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
+    CTHULHU_DYNAMIC_CAST(      TpetraVectorClass, x, tX, "toTpetra");
+    return *tX.getTpetra_Vector();
+  }
+  //
 
 } // namespace Cthulhu
 

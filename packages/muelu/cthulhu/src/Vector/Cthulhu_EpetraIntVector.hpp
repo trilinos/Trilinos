@@ -504,7 +504,7 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
       const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
-      int err = vec_->Import(v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
+      int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
@@ -516,7 +516,7 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
       const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
-      int err = vec_->Import(v, *tImporter.getEpetra_Import(), Cthulhu2Epetra_CombineMode(CM)); 
+      int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
@@ -528,7 +528,7 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
       
       const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
-      int err = vec_->Import(v, *tExporter.getEpetra_Export(), Cthulhu2Epetra_CombineMode(CM)); 
+      int err = vec_->Import(v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 
@@ -540,7 +540,7 @@ namespace Cthulhu {
       CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
       const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
-      int err = vec_->Export(v, *tExporter.getEpetra_Export(), Cthulhu2Epetra_CombineMode(CM)); 
+      int err = vec_->Export(v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
       TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
     }
 

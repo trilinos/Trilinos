@@ -71,6 +71,9 @@ def buildFuncLineTpetra( functionNode ):
     if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
     if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
 
+    # hack for CrsMatrix
+    if name == "TpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''
+
     if name in conf_RemoveRefFunctionList: declStr = declStr.replace('&', '')
     
     descStr = "    //! " + briefdescription.lstrip().rstrip() + "\n"

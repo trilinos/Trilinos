@@ -4,11 +4,14 @@
 #include "Cthulhu_ConfigDefs.hpp"
 
 #ifdef HAVE_CTHULHU_EPETRA
-
 #include <Epetra_CombineMode.h>
 
-//! Convert a Cthulhu Combine Mode to an Epetra Combine Mode.
-const Epetra_CombineMode Cthulhu2Epetra_CombineMode(const Cthulhu::CombineMode& CM);
+namespace Cthulhu {
+
+  //! Convert a Cthulhu Combine Mode to an Epetra Combine Mode.
+  Epetra_CombineMode toEpetra(Cthulhu::CombineMode CM);
+
+}
 
 #endif
 
@@ -16,8 +19,12 @@ const Epetra_CombineMode Cthulhu2Epetra_CombineMode(const Cthulhu::CombineMode& 
 
 #include <Tpetra_ConfigDefs.hpp>
 
-//! Convert a Cthulhu Combine Mode to a Tpetra Combine Mode.
-const Tpetra::CombineMode Cthulhu2Tpetra_CombineMode(const Cthulhu::CombineMode& CM);
+namespace Cthulhu {
+
+  //! Convert a Cthulhu Combine Mode to a Tpetra Combine Mode.
+  Tpetra::CombineMode toTpetra(Cthulhu::CombineMode CM);
+
+}
 
 #endif
 
