@@ -76,11 +76,11 @@ for file in os.listdir(conf_dir):
         
         className = buildClassDefinition(conf_XMLclass)
         out = out.substitute(
-            TMPL_HEADERS=buildHeader(className, 'interface.py'),
+            TMPL_HEADERS=buildHeader(className, 'interfaces.py'),
             TMPL_INCLUDES=buildInclude(conf_XMLheaders, conf_SkipHeaderList),
             TMPL_TEMPLATE_PARAM=buildTemplateParam(conf_XMLclass),
             TMPL_CLASS=className,
-            TMPL_INHERITANCE=parser.get('inheritance', 'parent').rstrip(),
+            TMPL_INHERITANCE='  ' + parser.get('inheritance', 'parent').rstrip(),
             TMPL_DESTRUCTOR=buildDestructor(className),
             TMPL_PUBLIC_FUNCTIONS=buildClassFunctions(conf_XMLclass, conf_SkipFunctionList, buildFuncLineInterface),
             TMPL_FOOTERS=buildFooter(className)
