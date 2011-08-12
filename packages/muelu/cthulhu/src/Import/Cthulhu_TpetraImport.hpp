@@ -16,6 +16,9 @@ namespace Cthulhu {
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &import);
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import);
   //
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -80,6 +83,11 @@ namespace Cthulhu {
     // TODO: throw exception
     const TpetraImport<LocalOrdinal,GlobalOrdinal,Node> & tpetraImport = dynamic_cast<const TpetraImport<LocalOrdinal,GlobalOrdinal,Node> &>(import);
     return *tpetraImport.getTpetra_Import();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {
+    return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(import));
   }
   //
 

@@ -1,0 +1,59 @@
+$TMPL_HEADERS
+
+#include "Cthulhu_TpetraConfigDefs.hpp"
+
+#include "Tpetra_CrsGraph.hpp"
+
+namespace Cthulhu {
+ 
+  // TODO: move that elsewhere
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toCthulhu(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph);
+  //
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration
+  template <class S, class LO, class GO, class N, class SpMatOps>
+  class CrsMatrix;
+#endif
+  
+  $TMPL_TEMPLATE_PARAM
+  class $TMPL_CLASS
+  $TMPL_INHERITANCE
+  {
+
+  public:
+
+$TMPL_PUBLIC_FUNCTIONS
+
+    //! @name Cthulhu specific
+    //@{
+
+    //! TpetraCrsGraph constructor to wrap a Tpetra::CrsGraph object
+    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &graph) : graph_(graph) { }
+
+    //! Get the underlying Tpetra graph
+    RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_CrsGraph() const { return graph_; }
+    
+    //@}
+    
+  private:
+    
+    RCP< Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph_;
+
+  }; // $TMPL_CLASS class
+
+  // TODO: move that elsewhere
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toCthulhu(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph) { //TODO: return TpetraCrsGraph instead of CrsGraph
+    // typedef TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraphClass;
+    // CTHULHU_RCP_DYNAMIC_CAST(const TpetraCrsGraphClass, graph, tGraph, "toTpetra");
+
+    RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tGraph = Teuchos::rcp_const_cast<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(graph); //TODO: can I avoid the const_cast ?
+    return rcp ( new Cthulhu::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tGraph) );
+  }
+  //
+
+} // Cthulhu namespace
+
+$TMPL_FOOTERS
