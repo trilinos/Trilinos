@@ -21,9 +21,6 @@
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_CrsGraph.hpp"
 #include "Cthulhu_TpetraImport.hpp"
-//#include "Cthulhu_RowGraph.hpp"
-//#include "Cthulhu_DistObject.hpp"
-//#include "Cthulhu_Util.hpp"
 
 namespace Cthulhu {
   
@@ -237,11 +234,6 @@ namespace Cthulhu {
     //! Returns the importer associated with this graph.
     inline RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const {  return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(graph_->getImporter())); };
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Returns the exporter associated with this graph.
-    inline RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > getExporter() const {  return graph_->getExporter(); };
-#endif // CTHULHU_NOT_IMPLEMENTED
-
     //! Returns the number of global rows in the graph.
     /** Undefined if isFillActive().
      */
@@ -351,11 +343,6 @@ namespace Cthulhu {
     */
     inline bool isStorageOptimized() const {  return graph_->isStorageOptimized(); };
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Returns \c true if the graph was allocated with static data structures.
-    inline ProfileType getProfileType() const {  return graph_->getProfileType(); };
-#endif
-
     //! Extract a list of elements in a specified global row of the graph. Put into pre-allocated storage.
     /*!
       \param LocalRow - (In) Global row number for which indices are desired.
@@ -423,33 +410,6 @@ namespace Cthulhu {
 
     //@}
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! @name Methods implementing Cthulhu::DistObject
-    //@{
-
-    inline bool checkSizes(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>& source) {  return graph_->checkSizes(source); };
-
-    inline void copyAndPermute(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                               size_t numSameIDs,
-                               const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                               const ArrayView<const LocalOrdinal> &permuteFromLIDs) {  graph_->copyAndPermute(sourcem numSameIDs, permuteToLIDs, permuteFromLIDs); };
-
-    inline void packAndPrepare(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                               const ArrayView<const LocalOrdinal> &exportLIDs,
-                               Array<GlobalOrdinal> &exports,
-                               const ArrayView<size_t> & numPacketsPerLID,
-                               size_t& constantNumPackets,
-                               Distributor &distor) {  graph_->packAndPrepare(source, exportLIDs, exports, numPacketsPerLID, constantNumPackets, distor); };
-
-    inline void unpackAndCombine(const ArrayView<const LocalOrdinal> &importLIDs,
-                                 const ArrayView<const GlobalOrdinal> &imports,
-                                 const ArrayView<size_t> &numPacketsPerLID,
-                                 size_t constantNumPackets,
-                                 Distributor &distor,
-                                 CombineMode CM) {  graph_->unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets, distor, CM); };
-    //@}
-#endif // CTHULHU_NOT_IMPLEMENTED
-
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
 
@@ -466,29 +426,6 @@ namespace Cthulhu {
     inline ArrayRCP<const LocalOrdinal> getNodePackedIndices() const {  return graph_->getNodePackedIndices(); };
 
     //@}
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! \name Deprecated methods; will be removed at some point in the near future.
-    //@{
-
-    /** \brief Re-allocate the data into contiguous storage.
-
-    This method is deprecated and will be removed in a future version of Cthulhu, as 
-    the implementation of storage optimization has been below Cthulhu to Kokkos.
-
-    Currently, the implementation simply calls resumeFill() and then fillComplete(OptimizeStorage). As such, it is 
-    required to be called by all nodes that participate in the associated communicator.
-    */
-    CTHULHU_DEPRECATED inline void optimizeStorage() {  graph_->optimizeStorage(); };
-
-    //! Deprecated. Get a persisting const view of the elements in a specified global row of the graph.
-    CTHULHU_DEPRECATED inline ArrayRCP<const GlobalOrdinal> getGlobalRowView(GlobalOrdinal GlobalRow) const {  return graph_->getGlobalRowView(GlobalRow); };
-
-    //! Deprecated. Get a persisting const view of the elements in a specified local row of the graph.
-    CTHULHU_DEPRECATED inline ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const {  return graph_->getLocalRowView(LocalRow); };
-
-    //@}
-#endif
 
     RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_CrsGraph() const {  return graph_; }
     

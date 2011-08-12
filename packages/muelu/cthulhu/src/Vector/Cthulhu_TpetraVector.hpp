@@ -52,11 +52,6 @@ namespace Cthulhu {
       
     }
     
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! TpetraVector copy constructor.
-    TpetraVector(const TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
-#endif
-
     //! \brief Set multi-vector values from an array using Teuchos memory management classes. (copy)
     TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A)
       : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,A,map->getNodeNumElements(),1)
@@ -98,15 +93,6 @@ namespace Cthulhu {
     inline void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) {  this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(myRow, 0, value); };
 
     //@}
-
-#ifdef CTHULHU_TODO
-    //! @name Extraction methods
-    //@{
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy; // overloading, not hiding
-    //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-    void get1dCopy(Teuchos::ArrayView<Scalar> A) const;
-    //@}
-#endif
 
     //! @name Mathematical methods
     //@{ 
@@ -175,15 +161,6 @@ namespace Cthulhu {
     
   }; // class TpetraVector
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-  /** \brief Non-member function to create a Vector from a specified Map.
-  
-  \relates Vector
-  */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
-#endif
 } // namespace Cthulhu
 
 #define CTHULHU_TPETRAVECTOR_SHORT

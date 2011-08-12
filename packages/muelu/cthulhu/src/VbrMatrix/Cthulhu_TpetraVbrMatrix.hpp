@@ -11,41 +11,8 @@
 
 #include <Tpetra_VbrMatrix.hpp>
 
-/** \file Cthulhu_TpetraVbrMatrix.hpp
-
-  Declarations for the class Cthulhu::VbrMatrix.
-*/
 namespace Cthulhu {
 
-//! \brief VbrMatrix: Variable block row matrix.
-/**
-The VbrMatrix class has two significant 'states', distinguished by whether or not
-storage has been optimized (packed) or not.
-
-When the matrix is in the non-optimized-storage state, internal data
-storage is in a non-contiguous data-structure that allows for
-convenient insertion of data.
-
-When the matrix is in the optimized-storage state, internal data is stored in
-contiguous (packed) arrays. When in this state, existing entries may be updated
-and replaced, but no new entries (indices and/or coefficients) may be inserted.
-In other words, the sparsity pattern or structure of the matrix may not be
-changed.
-
-Use of the matrix as an Operator (performing matrix-vector multiplication) is
-only allowed when it is in the optimized-storage state.
-
-VbrMatrix has two constructors, one which leaves the matrix in the optimized-
-storage state, and another which leaves the matrix in the non-optimized-storage
-state.
-
-When the VbrMatrix is constructed in the non-optimized-storage state, (and then
-filled using methods such as setGlobalBlockEntry etc.), it can then be transformed
-to the optimized-storage state by calling the method fillComplete().
-
-Once in the optimized-storage state, the VbrMatrix can not be returned to the
-non-optimized-storage state.
-*/
   template <class Scalar, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
@@ -58,72 +25,11 @@ non-optimized-storage state.
     //! @name Constructor/Destructor Methods
     //@{
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Constructor specifying the row-map and the max number of (block) non-zeros for all rows.
-    /*! After this constructor completes, the VbrMatrix is in the non-packed,
-      non-optimized-storage, isFillComplete()==false state.
-      Block-entries (rectangular, dense submatrices) may be inserted using class
-      methods such as setGlobalBlockEntry(...), declared below.
-    */
-    // TODO VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Constructor specifying a pre-filled block-graph.
-    /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
-      start out in the optimized-storage state, i.e., isFillComplete()==true.
-      The graph provided to this constructor must be already filled.
-      (If blkGraph->isFillComplete() != true, an exception is thrown.)
-
-      Entries in the input BlockCrsGraph correspond to block-entries in the
-      VbrMatrix. In other words, the VbrMatrix will have a block-row corresponding
-      to each row in the graph, and a block-entry corresponding to each column-
-      index in the graph.
-    */
-    //TODO: need BlockCrsGraph
-    VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
-#endif // CTHULHU_NOT_IMPLEMENTED
-
     TpetraVbrMatrix(const Teuchos::RCP<const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {  } //TODO
 
     //! Destructor
     virtual ~TpetraVbrMatrix();
 
-    //@}
-
-    //! @name Advanced Mathematical operations
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Multiply this matrix by a MultiVector.
-    /*! \c X is required to be post-imported, i.e., described by the column map
-      of the matrix. \c Y is required to be pre-exported, i.e., described by
-      the row map of the matrix.
-      See also the Operator::apply method which is implemented below.
-    */
-    //TODO virtual
-    template <class DomainScalar, class RangeScalar>
-    void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
-#endif // CTHULHU_NOT_IMPLEMENTED
-    //@}
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Triangular Solve -- Matrix must be triangular.
-    /*! Find X such that A*X = Y.
-      \c X is required to be post-imported, i.e., described by the column map
-      of the matrix. \c Y is required to be pre-exported, i.e., described by
-      the row map of the matrix.
-
-      Both \c X and \c Y are required to have constant stride.
-
-      Note that if the diagonal block-entries are stored, they must be triangular.
-      I.e., the matrix structure must be block-triangular, and any diagonal blocks
-      must be "point"-triangular, meaning that coefficients on the "wrong" side of the
-      point-diagonal must be zero.
-    */
-    //TODO virtual
-    template <class DomainScalar, class RangeScalar>
-    void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
-#endif // CTHULHU_NOT_IMPLEMENTED
     //@}
 
     //! @name Operator Methods
@@ -379,15 +285,6 @@ non-optimized-storage state.
                                                LocalOrdinal& numPtCols,
                                                Teuchos::ArrayRCP<Scalar>& blockEntry) {  mtx_->getLocalBlockEntryViewNonConst(localBlockRow, localBlockCol, numPtRows, numPtCols, blockEntry); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Return a copy of the (point-entry) diagonal values.
-    /*!
-      Throws an exception if the input-vector's map is not the same as
-      getBlockRowMap()->getPointMap().
-    */
-    //TODO:Vector  
-    inline void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const {  mtx_->getLocalDiagCopy(diag); }
-#endif // CTHULHU_NOT_IMPLEMENTED
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -408,56 +305,6 @@ non-optimized-storage state.
   };//class VbrMatrix
   
 }//namespace Cthulhu
-
-//----------------------------------------------------------------------------
-// Description of arrays representing the VBR format:
-//
-// (For more description, see this URL (valid as of 5/26/2010):
-// http://docs.sun.com/source/817-0086-10/prog-sparse-support.html)
-// ...and of course more can be found using google...
-// The old Aztec manual was a great resource for this but I can't
-// find a copy of that these days...
-//
-//
-// Here is a brief description of the 6 arrays that are required to
-// represent a VBR matrix in packed (contiguous-memory-storage) format:
-//
-// rptr: length num_block_rows + 1
-//       rptr[i]: the pt-row corresponding to the i-th block-row
-//       Note: rptr is getBlockRowMap()->getNodeFirstPointInBlocks().
-//
-// cptr: length num_distinct_block_cols + 1
-//       cptr[j]: the pt-col corresponding to the j-th block-col
-//       Note: cptr is getBlockColMap()->getNodeFirstPointInBlocks().
-//
-// bptr: length num_block_rows + 1
-//       bptr[i]: location in bindx of the first nonzero block-entry
-//                of the i-th block-row
-//       Note: bptr is blkGraph_->getNodeRowOffsets();
-//
-// bindx: length num-nonzero-block-entries
-//        bindx[j]: block-col-index of j-th block-entry
-//        Note: bindx is blkGraph_->getNodePackedIndices();
-//
-// indx: length num-nonzero-block-entries + 1
-//       indx[j]: location in vals of the beginning of the j-th
-//       block-entry
-//
-// vals: length num-nonzero-scalar-entries
-//
-//
-// Some example look-ups:
-//
-// int nbr = num_block_rows;
-// int total_num_block_nonzeros = bptr[nbr];
-// int total_num_scalar_nonzeros = indx[num_block_nonzeros];
-// 
-// //get arrays for i-th block-row:
-// int* bindx_i = &bindx[bptr[i]];
-// double* vals_i = &val[indx[bptr[i]]];
-// int num_block_nonzeros_in_row_i = bptr[i+1]-bptr[i];
-// 
-//----------------------------------------------------------------------------
 
 #define CTHULHU_TPETRAVBRMATRIX_SHORT
 #endif //CTHULHU_VBRMATRIX_DECL_HPP

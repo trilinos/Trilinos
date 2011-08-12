@@ -6,24 +6,11 @@
 #include <Teuchos_as.hpp>
 #include "Cthulhu_Map.hpp"
 #include <iterator>
-
 #include "Cthulhu_Import.hpp"
 #include "Cthulhu_Exceptions.hpp"
 
 namespace Cthulhu {
 
-  //! \brief This class builds an object containing information necesary for efficiently importing off-processor entries.
-  /*! Import is used to construct a communication plan that can be called repeatedly by computational
-      classes to efficiently import entries from other nodes.
-      For example, an exporter is used when we start out with a multiple-ownership distribution,
-      and we want to merge that into a uniquely-owned distribution.
-
-      This class currently has one constructor, taking two Map objects
-      specifying the distributions of the distributed objects on which the Export class will operate.
-
-      This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
-      The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
-  */
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class TpetraImport: public Import<LocalOrdinal, GlobalOrdinal, Node> {
 
@@ -37,8 +24,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Constructs a Import object from the source and target Maps.
-    TpetraImport(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, 
-            const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target)       
+    TpetraImport(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target)       
     { 
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, source, tSource, "Cthulhu::TpetraImport constructors only accept Cthulhu::TpetraMap as input arguments.");
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, target, tTarget, "Cthulhu::TpetraImport constructors only accept Cthulhu::TpetraMap as input arguments.");
@@ -47,7 +33,6 @@ namespace Cthulhu {
  
     //! copy constructor. 
     TpetraImport(const Import<LocalOrdinal,GlobalOrdinal,Node> & import) {
-      
       CTHULHU_RCP_DYNAMIC_CAST(const TTpetraImport, import, tImport, "Cthulhu::TpetraImport copy constructors only accept Cthulhu::TpetraImport as input arguments.");
       import_ = rcp(new TpetraImport<LocalOrdinal,GlobalOrdinal,Node>(tImport->getTpetra_Map()));
     }
@@ -63,58 +48,39 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the number of entries that are identical between the source and target maps, up to the first different ID.
-    inline size_t getNumSameIDs() const {  return import_->getNumSameIDs(); }
+    inline size_t getNumSameIDs() const { return import_->getNumSameIDs(); }
 
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
-    inline size_t getNumPermuteIDs() const {  return import_->getNumPermuteIDs(); }
+    inline size_t getNumPermuteIDs() const { return import_->getNumPermuteIDs(); }
 
     //! List of entries in the source Map that are permuted. (non-persisting view)
-    inline Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const {  return import_->getPermuteFromLIDs(); }
+    inline Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const { return import_->getPermuteFromLIDs(); }
 
     //! List of entries in the target Map that are permuted. (non-persisting view)
-    inline Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const {  return import_->getPermuteToLIDs(); }
+    inline Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const { return import_->getPermuteToLIDs(); }
 
     //! Returns the number of entries that are not on the calling image.
-    inline size_t getNumRemoteIDs() const {  return import_->getNumRemoteIDs(); }
+    inline size_t getNumRemoteIDs() const { return import_->getNumRemoteIDs(); }
 
     //! List of entries in the target Map that are coming from other images. (non-persisting view)
-    inline Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const {  return import_->getRemoteLIDs(); }
+    inline Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const { return import_->getRemoteLIDs(); }
 
     //! Returns the number of entries that must be sent by the calling image to other images.
-    inline size_t getNumExportIDs() const {  return import_->getNumExportIDs(); }
+    inline size_t getNumExportIDs() const { return import_->getNumExportIDs(); }
 
     //! List of entries in the source Map that will be sent to other images. (non-persisting view)
-    inline Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const {  return import_->getExportLIDs(); }
+    inline Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const { return import_->getExportLIDs(); }
 
     //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getExportImageIDs() const {  return import_->getExportImageIDs(); }
+    inline Teuchos::ArrayView<const int> getExportImageIDs() const { return import_->getExportImageIDs(); }
 
     //! Returns the Source Map used to construct this importer.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getSourceMap() const {  return rcp( new TpetraMapClass(import_->getSourceMap())); };
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getSourceMap() const { return rcp( new TpetraMapClass(import_->getSourceMap())); };
 
     //! Returns the Target Map used to construct this importer.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getTargetMap() const {  return rcp( new TpetraMapClass(import_->getTargetMap())); };
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getTargetMap() const { return rcp( new TpetraMapClass(import_->getTargetMap())); };
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    inline Distributor & getDistributor() const {  return import_->getDistributor(); }
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Assignment operator
-    inline Import<LocalOrdinal,GlobalOrdinal,Node>& operator = (const Import<LocalOrdinal,GlobalOrdinal,Node> & Source) {  return }
-
-    //@}
-
-    //! @name I/O Methods
-    //@{ 
-
-    //! Print method 
-    inline void print(std::ostream& os) const {  } 
-
-    //@}
-#endif
-
-    RCP< const Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Import() const {  return import_; }
+    RCP< const Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Import() const { return import_; }
     
   private:
     

@@ -54,11 +54,6 @@ namespace Cthulhu {
       vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), NumVectors, zeroOut));
     }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! TpetraMultiVector copy constructor.
-    TpetraMultiVector(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source){  }
-#endif // CTHULHU_NOT_IMPLEMENTED
-
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors) {
@@ -117,20 +112,8 @@ namespace Cthulhu {
       Teuchos::ScalarTraits<Scalar>::seedrandom(seed);
     }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Replace the underlying Map with a compatible one.
-    inline void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) {  vec_->replaceMap(map); }
-#endif // CTHULHU_NOT_IMPLEMENTED
-
     //! Instruct a local (non-distributed) TpetraMultiVector to sum values across all nodes.
     inline void reduce() {  vec_->reduce(); }
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! = Operator.
-    /*! \param In A - Multivector to copy
-     */
-    inline TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) {  return vec_->(source); }
-#endif // CTHULHU_NOT_IMPLEMENTED
 
     //@}
 
@@ -143,48 +126,6 @@ namespace Cthulhu {
         view of the data in a 1-D format (i.e., get1dView) requires that the target TpetraMultiVector has constant stride.
     */
     //@{
-#ifdef CTHULHU_NOT_IMPLEMENTED
-
-    //! Returns a MultiVector with copies of selected columns.
-    inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const {  return vec_->subCopy(colRng); }
-
-    //! Returns a TpetraMultiVector with copies of selected columns.
-    inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const {  return vec_->subCopy(cols); }
-
-    //! Returns a const MultiVector with const views of selected columns.
-    inline Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const {  return vec_->subView(colRng); }
-
-    //! Returns a const MultiVector with const views of selected columns.
-    inline Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const size_t> &cols) const {  return vec_->subView(cols); }
-
-    //! Returns a MultiVector with views of selected columns.
-    inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng) {  return vec_->subViewNonConst(colRng); }
-
-    //! Returns a MultiVector with views of selected columns.
-    inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const size_t> &cols) {  return vec_->subViewNonConst(cols); }
-
-    //! \brief Returns a const MultiVector view of a subset of rows.
-    /** 
-        Returns a const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
-
-        \param In subMap - The row map for the new MultiVector.
-        \param In offset - The offset into the data of <tt>(*this)</tt>.
-
-        \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
-    */
-    inline Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const {  return vec_->offsetView(subMap, offset); }
-
-    //! \brief Returns a non-const MultiVector view of a subset of rows.
-    /** 
-        Returns a non-const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
-
-        \param In subMap - The row map for the new MultiVector.
-        \param In offset - The offset into the data of <tt>(*this)</tt>.
-
-        \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
-    */
-    inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) {  return vec_->offsetViewNonConst(subMap, offset); }
-#endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Const Vector access function.
     inline Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const { 
@@ -333,11 +274,6 @@ namespace Cthulhu {
     }
 
     //! Element-wise multiply of a Vector A with a TpetraMultiVector B.
-    /** Forms this = scalarThis * this + scalarAB * B @ A
-     *  where @ denotes element-wise multiplication.
-     *  B must be the same shape (size and num-vectors) as this, while
-     *  A is the same size but a single vector (column).
-     */
     inline void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) {
       
       //TODO CTHULHU_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
@@ -442,15 +378,6 @@ namespace Cthulhu {
 
   }; // class TpetraMultiVector
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-  /** \brief Non-member function to create a TpetraMultiVector from a specified Map.
-      \relates TpetraMultiVector
-  */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createTpetraMultiVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t numVectors) {  }
-#endif // CTHULHU_NOT_IMPLEMENTED
-  
 } // namespace Cthulhu
 
 #define CTHULHU_TPETRAMULTIVECTOR_SHORT

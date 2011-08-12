@@ -17,12 +17,6 @@
 
 namespace Cthulhu {
 
-/*!
-  @class TpetraBlockMap
-  @brief Block-entry counterpart to Cthulhu::Map.
-
-  BlockMap doesn't inherit Cthulhu::Map
-*/
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node> {
  public:
@@ -84,9 +78,6 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
 
   //! @name Attribute Accessor Methods
   //@{
-#ifdef CTHULHU_NOT_IMPLEMENTED
-  inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getPointMap() const {  return map_->getPointMap(); }
-#endif
 
   inline global_size_t getGlobalNumBlocks() const {  return map_->getGlobalNumBlocks(); }
 
@@ -143,13 +134,6 @@ private:
 
 
 };//class TpetraBlockMap
-
-// //-----------------------------------------------------------------
-// template<class LocalOrdinal,class GlobalOrdinal,class Node>
-// Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> >
-// convertTpetraBlockMapToTpetraPointMap(const Teuchos::RCP<const Cthulhu::TpetraBlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap) { 
-//   return rcp(new TpetraMapClass(convertTpetraBlockMapToTpetraPointMap(blockMap.getTpetra_BlockMap())));
-// }
 
 }//namespace Cthulhu
 
