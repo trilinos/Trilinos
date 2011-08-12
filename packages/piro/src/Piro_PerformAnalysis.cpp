@@ -158,13 +158,16 @@ Piro::PerformDakotaAnalysis(
   string dakotaOut= dakotaParams.get("Output File","dakota.out");
   string dakotaErr= dakotaParams.get("Error File","dakota.err");
   string dakotaRes= dakotaParams.get("Restart File","dakota_restart.out");
+  int p_index = dakotaParams.get("Parameter Vector Index", 0);
+  int g_index = dakotaParams.get("Response Vector Index", 0);
 
   TriKota::Driver dakota(dakotaIn.c_str(), dakotaOut.c_str(),
                          dakotaErr.c_str(), dakotaRes.c_str());
 
   RCP<TriKota::ThyraDirectApplicInterface> trikota_interface =
     rcp(new TriKota::ThyraDirectApplicInterface
-         (dakota.getProblemDescDB(), rcp(&piroModel,false)), false);
+         (dakota.getProblemDescDB(), rcp(&piroModel,false), p_index, g_index), 
+	false);
 
   dakota.run(trikota_interface.get());
 
@@ -173,7 +176,7 @@ Piro::PerformDakotaAnalysis(
     finalValues = dakota.getFinalSolution().all_continuous_variables();
 
   // Copy Dakota parameters into Thyra
-  p = Thyra::createMember(piroModel.get_p_space(0));
+  p = Thyra::createMember(piroModel.get_p_space(p_index));
   {
       Thyra::DetachedVectorView<double> global_p(p);
       for (int i = 0; i < finalValues.length(); ++i) 
