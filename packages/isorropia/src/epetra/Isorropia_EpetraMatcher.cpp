@@ -405,7 +405,7 @@ Isorropia_EpetraMatcher::~Isorropia_EpetraMatcher()
 
 void Isorropia_EpetraMatcher::getMatchedColumnsForRowsCopy(int len, int& size, int* array) const
 {
-    const int *ptr=&mateU_[0];
+    const int *ptr=&mateU_[0];    
     size=MIN(size,len);
     memcpy (array, ptr, size * sizeof(int));
 }
@@ -425,30 +425,42 @@ Epetra_Map* Isorropia_EpetraMatcher::getPermutedRowMap()
     int *ptr=new int[U_];
     complete_nonperfect_permutation();
     for(int i=0;i<U_;i++)
-        //ptr[i]=A_->GID(mateV_[i]);
-        ptr[i]=mateV_[i];
-
-    //if(A_->Comm().numProc()==1)
+        ptr[i]=(A_->RowMap()).GID(mateU_[i]);
+   
+    std::cout<<"Ptr: ";
+    for(int i=0;i<U_;i++)
+        std::cout<<ptr[i]<<",";
+    std::cout<<std::endl;
+   
+   if(A_->Comm().NumProc()==1)
+   {
         Epetra_Map* map=new Epetra_Map(-1,U_,ptr,0,A_->Comm());
-    //else
-       // return NULL;
-
-    return map;
+        std::cout<<"Map created..!!"<<std::endl;
+        return map;
+   }
+   else
+   {
+        std::cout<<"Shared Memmory.."<<std::endl;
+        return NULL;
+   }
 }
 Epetra_Map* Isorropia_EpetraMatcher::getPermutedColumnMap()
 {
     int *ptr=new int[V_];
     complete_nonperfect_permutation();
     for(int i=0;i<V_;i++)
-        //ptr[i]=A_->GID(mateV_[i]);
-        ptr[i]=mateU_[i];
+        ptr[i]=(A_->ColMap()).GID(mateV_[i]);
 
-    //if(A_->Comm().numProc()==1)
+    if(A_->Comm().NumProc()==1)
+    {
         Epetra_Map* map=new Epetra_Map(-1,V_,ptr,0,A_->Comm());
-    //else
-       // return NULL;
-
-    return map;
+        return map;
+    }
+    else
+    {
+        std::cout<<"Shared Memory.."<<std::endl;
+        return NULL;
+    }
 }
 
 void Isorropia_EpetraMatcher::complete_nonperfect_permutation()
@@ -526,22 +538,30 @@ void Isorropia_EpetraMatcher::complete_nonperfect_permutation()
     }
 }
 
-void Isorropia_EpetraMatcher::delete_matched_v()
+void Isorropia_EpetraMatcher::delete_matched_v() 
 {
+    // This function only applicable to HK and HKDW.
+    // It removes the matched vertices in the last layer of the layered graph.
+
 #ifdef ISORROPIA_HAVE_OMP
     int i,j;
     #pragma omp parallel for private(j)
     for(i=Qst_;i<Qend_;i++)
     {   
         j=Queue_[i];
-        if(LV_[j]==k_star_ && mateV_[j]!=-1)
-            omp_test_lock(&scannedV_[j]);
+        if(LV_[j]==k_star_ && mateV_[j]!=-1) // k_star is the last layer and
+            omp_test_lock(&scannedV_[j]);    // mateV[j]!=-1 means matched..! 
     }
 #endif
 }
 
 int Isorropia_EpetraMatcher::augment_matching(int tv)
 {
+    //This function increases the matching size by one with the help of a
+    //augmenting path. The input is an integer which is the id of the last
+    //columns vertex of the augmenting path. We trace the whole path by
+    //backtraking using parent array. while tracing back we flip the unmatched
+    //edges to matched edges.
     int u,v,t,lnt=1;
     v=tv;
     while(true)
@@ -561,15 +581,19 @@ int Isorropia_EpetraMatcher::augment_matching(int tv)
 
 int Isorropia_EpetraMatcher::construct_layered_graph()
 {
+    //This function is used by the HK and HKDW. This is the BFS phase of HK/HKDW
+    //where we implicitely build the layered sub graph out of the original
+    //graph.
+
     int k,i,j,t,tst,tend,fflag,s,tid,mem,pqind;
     Qst_=Qend_=tst=tend=k=fflag=0;
 #ifdef ISORROPIA_MATCHING_STATS
     maxL=0;
     minL=U_+V_+1;
 #endif
-    int* Qsize=new int[numThread_];
-    int** localQ=new int*[numThread_];
-    int* startInd=new int[numThread_];
+    int* Qsize=new int[numThread_]; // holds current localQ size for each thread
+    int** localQ=new int*[numThread_]; // localQ for each thread
+    int* startInd=new int[numThread_]; // the tail of the localQ for each thread
     
     
 #ifdef ISORROPIA_HAVE_OMP
@@ -583,7 +607,7 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
         LV_[i]=-1;
     }
     
-    for(i=0;i<U_;i++)    
+    for(i=0;i<U_;i++)    // Collecting all remaining unmatched row vertices
     {
         if(mateU_[i]==-1)
         {
@@ -600,11 +624,11 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
         return 0;
     }
     else
-        BFSInd_=Qend_;
+        BFSInd_=Qend_; // BFSInd keeps record of the vertices in Layer 0.
     
     while(true)
     {
-        //mem=MIN(((avgDegU_*(Qend_-Qst_))/numThread_),V_);
+        //mem=MIN(((avgDegU_*(Qend_-Qst_))/numThread_),V_); 
         mem=V_;
         for(i=0;i<numThread_;i++)
         {
@@ -616,7 +640,7 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
 #ifdef ISORROPIA_HAVE_OMP
         #pragma omp parallel for private(i,t,j,pqind,tid)
 #endif
-        for(s=Qst_;s<Qend_;s++)
+        for(s=Qst_;s<Qend_;s++) // start of layer construction
         {
 #ifdef ISORROPIA_HAVE_OMP
             tid=omp_get_thread_num();
@@ -624,25 +648,28 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
             
             pqind=startInd[tid];
                     
-            i=Queue_[s];
-            for(t=CRS_pointers_[i];t<CRS_pointers_[i+1];t++) 
+            i=Queue_[s]; // starting with a unmatched row vertex          
+            for(t=CRS_pointers_[i];t<CRS_pointers_[i+1];t++) //scanning adj list
             {
                 j=CRS_indices_[t];                      
-                if(mateU_[i]!=j)
+                if(mateU_[i]!=j) // making sure that it is not already paired 
                 {   
-                    if(mateV_[j]==-1)
+                    if(mateV_[j]==-1) // if unmatched then aug path found
                     {   
                         fflag=1;
                         LV_[j]=k+1;
                     }
-                    else
+                    else // else adding it to the layer graph
                     {
+                        //making sure that it has not already in the prev layer
                         if(fflag==0 && (LV_[j]==-1 || LV_[j]==k+1))
                         {
                             if(LV_[j]==-1)
                             {   
-                                if(Qsize[tid]==pqind)
+                                if(Qsize[tid]==pqind) 
                                 {
+                                    //localQ for this thread is overloaded so
+                                    //add some new space.
                                     int newsize=pqind+avgDegU_;
                                     Qsize[tid]=newsize;
                                     int * temp=new int[newsize];
@@ -667,6 +694,8 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
             startInd[tid]=pqind;
         }   
         
+        // A layer has been constructed now collect all the vertices from localQ
+        // which is local to each thread to the global Queue.
         Qst_=Qend_;
         tst=Qst_;
         for(int ii=0;ii<numThread_;ii++)
@@ -677,12 +706,12 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
         for(i=0;i<numThread_;i++)
             delete [] localQ[i];
         
-        if(fflag>0)
+        if(fflag>0) // means we found at least one augmenting path
         {   
             k_star_=k+1;
             break;
         }
-        else
+        else  // otherwise construct the next layer
             k=k+2;
         
         if((Qend_-Qst_)==0)
@@ -700,6 +729,11 @@ int Isorropia_EpetraMatcher::construct_layered_graph()
 
 int Isorropia_EpetraMatcher::recursive_path_finder(int k, int p)
 {
+    //This function is used by HK and HKDW. This the DFS phase of the HK/HKDW
+    //where we try to find the vertex disjoint augmenting path from the just
+    //created layered graph. The input is the layer number, k and the vertex id,
+    //p. This function goes down layer by layer (by using k) recursively to find
+    //a vertex disjoint path starting from layer 0.
     int i,ind,res=0,lock=0;
     
     if(k>k_star_)
@@ -708,15 +742,15 @@ int Isorropia_EpetraMatcher::recursive_path_finder(int k, int p)
     for(i=CRS_pointers_[p];i<CRS_pointers_[p+1];i++)
     {
         ind=CRS_indices_[i];
-        if(LV_[ind]==k+1)
+        if(LV_[ind]==k+1) //making sure that the vertex is in the next layer
         {
 #ifdef ISORROPIA_HAVE_OMP
-            lock=omp_test_lock(&scannedV_[ind]);
+            lock=omp_test_lock(&scannedV_[ind]); 
 #endif
-            if(lock>0)
+            if(lock>0) // unlocked means this vertex is not part of other paths
             {
                 parent_[ind]=p;
-                if(mateV_[ind]==-1)
+                if(mateV_[ind]==-1) // we found a vertex disjoint path
                     return ind;
                 else
                 {
@@ -733,11 +767,18 @@ int Isorropia_EpetraMatcher::recursive_path_finder(int k, int p)
 
 int Isorropia_EpetraMatcher::dfs_path_finder(int u)
 {
+    //This function is almost similar to the previous function which is to find
+    //a vertex disjoint path. It is used for the algorithm DFS, PPF and in HKDW. The
+    //difference is that this function operates on the original graph not on the
+    //layerd subgraph. It also does the incorporates the lookahead mechanism and
+    //scanning adjacency list alternately from backward and from forward in
+    //alternate iterations for PPF and HKDW.
+
     int i,ind=-1,res=0,lock=0;
     
-    if(choice_==1 || choice_==4)
+    if(choice_==1 || choice_==4) // for HKDW and PPF 
     {
-        for(i=lookahead_[u];i<CRS_pointers_[u+1];i++)
+        for(i=lookahead_[u];i<CRS_pointers_[u+1];i++) // the lookahead scheme
         {
             ind=CRS_indices_[i];
             assert(ind>=0 && ind<V_);
@@ -756,7 +797,7 @@ int Isorropia_EpetraMatcher::dfs_path_finder(int u)
         }
     
     
-        if(icm_%2==1)   
+        if(icm_%2==1) // odd number iteration so scan the adj list forward dir 
         {   
             for(i=CRS_pointers_[u];i<CRS_pointers_[u+1];i++)
             {
@@ -774,7 +815,7 @@ int Isorropia_EpetraMatcher::dfs_path_finder(int u)
                 }
             }
         }
-        else
+        else // even number iteration so scan from backward
         {
             for(i=CRS_pointers_[u+1]-1;i>=CRS_pointers_[u];i--)
             {
@@ -793,7 +834,7 @@ int Isorropia_EpetraMatcher::dfs_path_finder(int u)
             }
         }
     }
-    else
+    else // for DFS.. no lookahead and diferent directional scanning
     {   
         for(i=CRS_pointers_[u];i<CRS_pointers_[u+1];i++)
         {
@@ -821,6 +862,10 @@ int Isorropia_EpetraMatcher::dfs_path_finder(int u)
 
 int Isorropia_EpetraMatcher::find_set_del_M()
 {
+    //This function starts the BFS phase for the HK and HKDW. It starts from the
+    //layer 0 vertices and tries to find a vertex disjoint path from each of
+    //these vertices.
+
     int i,j,count=0;
     delete_matched_v();
     
@@ -856,6 +901,10 @@ int Isorropia_EpetraMatcher::find_set_del_M()
 
 int Isorropia_EpetraMatcher::DW_phase()
 {
+    //This is the additional Duff and Wiberg phase for the HKDW. This function
+    //does nothing but first unset the locks and then runs PPF from the
+    //remaining unmatched row vertices after the BFS phase of HK.
+
     int i,count=0;
     
 #ifdef ISORROPIA_HAVE_OMP
@@ -864,14 +913,14 @@ int Isorropia_EpetraMatcher::DW_phase()
     for(i=0;i<V_;i++)
     {   
 #ifdef ISORROPIA_HAVE_OMP
-        omp_unset_lock(&scannedV_[i]);
+        omp_unset_lock(&scannedV_[i]); // unsetting the locks
 #endif
     }
     
 #ifdef ISORROPIA_HAVE_OMP
     #pragma omp parallel for
 #endif
-    for(i=0;i<BFSInd_;i++)
+    for(i=0;i<BFSInd_;i++) // calling the PPF
     {
         int u=Queue_[i];
         if(mateU_[u]==-1)
@@ -903,6 +952,9 @@ int Isorropia_EpetraMatcher::DW_phase()
 
 int Isorropia_EpetraMatcher::dfs_augment()
 {
+
+    //This function is the starter function for PPF and DFS. It unsets the locks
+    //the call dfs_path_finder and then call the augment_matching.
 
     int i,flag=0,flag1=0,count=0,totc=0,index=U_;
     icm_=0;
@@ -995,6 +1047,7 @@ int Isorropia_EpetraMatcher::dfs_augment()
 
 int Isorropia_EpetraMatcher::match_dfs()
 {
+    // Forking function for DFS based algorithm
     int totc=0;
     icm_=0;
     double start,end;
@@ -1015,6 +1068,7 @@ int Isorropia_EpetraMatcher::match_dfs()
 
 int Isorropia_EpetraMatcher::match_hk()
 {
+    // Forking function for HK based algorithm
     int totc=0,count=0;
     icm_=0;
     double start,end;
@@ -1058,6 +1112,8 @@ int Isorropia_EpetraMatcher::match_hk()
 
 int Isorropia_EpetraMatcher::match()
 {
+    // User interface function for the matching..
+
     //std::cout<<"mathc"<<std::endl;
     switch(choice_)
     {
@@ -1071,6 +1127,19 @@ int Isorropia_EpetraMatcher::match()
                  break;
         default:match_hk();
     }
+    
+    std::cout<<"MateU: ";
+    for(int i=0; i<5;i++)
+        std::cout<<mateU_[i]<<",";
+     std::cout<<std::endl;
+    
+    for(int i=0;i<5;i++)
+        mateV_[mateU_[i]]=i;
+    //std::cout<<"MateV: ";
+    
+    //for(int i=0; i<5;i++)
+        //std::cout<<mateV_[i]<<",";
+     //std::cout<<std::endl;
     return 0;
 }
 }// Epetra namespace
