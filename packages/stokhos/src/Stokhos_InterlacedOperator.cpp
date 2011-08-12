@@ -141,14 +141,14 @@ SumIntoGlobalBlock_Deterministic(double alpha,const Epetra_RowMatrix & determBlo
 
     // Convert to BlockMatrix Global numbering scheme
     for( int l = 0; l < NumIndices; ++l ) {
-       Indices[l] = Col +  Offset_*determColMap.GID(Indices[l]);
+       Indices[l] = Col +  COffset_*determColMap.GID(Indices[l]);
        Values[l] *= alpha;
     }
 
     int BaseRow = determMap.GID(i);
-    ierr = this->SumIntoGlobalValues(Offset_*BaseRow + Row, NumIndices, &Values[0], &Indices[0]);
+    ierr = this->SumIntoGlobalValues(ROffset_*BaseRow + Row, NumIndices, &Values[0], &Indices[0]);
     if (ierr != 0) cout << "WARNING InterlacedOperator::SumIntoBlock_Deterministic SumIntoGlobalValues err = " << ierr <<
-            "\n\t  Row " << Offset_*BaseRow + Row << ", Col start " << Indices[0] << endl;
+            "\n\t  Row " << ROffset_*BaseRow + Row << ", Col start " << Indices[0] << endl;
 
   }
 }

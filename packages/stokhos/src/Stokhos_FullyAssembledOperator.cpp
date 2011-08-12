@@ -36,6 +36,8 @@ FullyAssembledOperator(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
   const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
   const Teuchos::RCP<const Epetra_CrsGraph>& base_graph,
+  const Teuchos::RCP<const Epetra_Map>& domain_sg_map_,
+  const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
   const Teuchos::RCP<Teuchos::ParameterList>& params) : 
   EpetraExt::BlockCrsMatrix(*base_graph, 
 			    *(epetraCijk_->getStochasticGraph()), 
@@ -43,6 +45,8 @@ FullyAssembledOperator(
   sg_comm(sg_comm_),
   sg_basis(sg_basis_),
   epetraCijk(epetraCijk_),
+  domain_sg_map(domain_sg_map_),
+  range_sg_map(range_sg_map_),
   Cijk(epetraCijk->getParallelCijk()),
   block_ops(),
   scale_op(true),
@@ -99,6 +103,8 @@ setupOperator(
       }
     }
   }
+
+  this->FillComplete(*domain_sg_map, *range_sg_map);
 }
 
 Teuchos::RCP< Stokhos::EpetraOperatorOrthogPoly > 

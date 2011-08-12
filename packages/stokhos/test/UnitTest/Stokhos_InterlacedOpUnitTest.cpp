@@ -17,7 +17,7 @@
 #endif
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Map.h"
-
+#include "EpetraExt_BlockUtility.h"
 #include "EpetraExt_RowMatrixOut.h"
 
 TEUCHOS_UNIT_TEST(interlaced_op, test)
@@ -85,6 +85,11 @@ TEUCHOS_UNIT_TEST(interlaced_op, test)
       W_sg_blocks->setCoeffPtr(i,crsMat); // allocate a bunch of matrices   
    }
 
+   Teuchos::RCP<const Epetra_Map> sg_map = 
+     Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+		    *determRowMap, *(epetraCijk->getStochasticRowMap()), 
+		    *(epetraCijk->getMultiComm())));
+
    // build an interlaced operator (object under test) and a benchmark
    // fully assembled operator
    ///////////////////////////////////////////////////////////////////////
@@ -93,7 +98,7 @@ TEUCHOS_UNIT_TEST(interlaced_op, test)
    op.PutScalar(0.0);
    op.setupOperator(W_sg_blocks);  
 
-   Stokhos::FullyAssembledOperator full_op(sg_comm,basis,epetraCijk,determGraph,params);
+   Stokhos::FullyAssembledOperator full_op(sg_comm,basis,epetraCijk,determGraph,sg_map,sg_map,params);
    full_op.PutScalar(0.0);
    full_op.setupOperator(W_sg_blocks);  
 

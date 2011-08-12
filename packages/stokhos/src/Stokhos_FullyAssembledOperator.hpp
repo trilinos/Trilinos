@@ -57,6 +57,8 @@ namespace Stokhos {
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
       const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk,
       const Teuchos::RCP<const Epetra_CrsGraph>& base_graph,
+      const Teuchos::RCP<const Epetra_Map>& domain_sg_map,
+      const Teuchos::RCP<const Epetra_Map>& range_sg_map,
       const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
@@ -97,6 +99,12 @@ namespace Stokhos {
 
     //! Stores Epetra Cijk tensor
     Teuchos::RCP<const Stokhos::EpetraSparse3Tensor> epetraCijk;
+
+    //! Stores domain SG map
+    Teuchos::RCP<const Epetra_Map> domain_sg_map;
+
+    //! Stores range SG map
+    Teuchos::RCP<const Epetra_Map> range_sg_map;
 
     //! Short-hand for Cijk
     typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;

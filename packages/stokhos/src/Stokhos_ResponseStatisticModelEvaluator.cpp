@@ -157,10 +157,17 @@ Stokhos::ResponseStatisticModelEvaluator::createOutArgs() const
     for (int j=0; j<num_p; j++) {
       outArgs.setSupports(OUT_ARG_DgDp, i, j, 
 			  me_outargs.supports(OUT_ARG_DgDp, i, j));
-      outArgs.setSupports(OUT_ARG_DgDp, i+num_g, j, 
-			  me_outargs.supports(OUT_ARG_DgDp, i, j));
-      outArgs.setSupports(OUT_ARG_DgDp, i+2*num_g, j, 
-			  me_outargs.supports(OUT_ARG_DgDp, i, j));
+
+      DerivativeSupport ds = me_outargs.supports(OUT_ARG_DgDp, i, j);
+      DerivativeSupport ds_stat;
+      if (ds.supports(DERIV_MV_BY_COL))
+	ds_stat.plus(DERIV_MV_BY_COL);
+      if (ds.supports(DERIV_TRANS_MV_BY_ROW))
+	ds_stat.plus(DERIV_TRANS_MV_BY_ROW);
+      if (ds.supports(DERIV_LINEAR_OP))
+	ds_stat.plus(DERIV_TRANS_MV_BY_ROW);
+      outArgs.setSupports(OUT_ARG_DgDp, i+num_g, j, ds_stat);
+      outArgs.setSupports(OUT_ARG_DgDp, i+2*num_g, j, ds_stat);
     }
   }
   
@@ -224,20 +231,27 @@ Stokhos::ResponseStatisticModelEvaluator::evalModel(const InArgs& inArgs,
 	  Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(i);
 	  Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(j);
 	  DerivativeSupport ds = me_outargs.supports(OUT_ARG_DgDp,i,j);
-	  if (ds.supports(DERIV_LINEAR_OP))
-	    dgdp = Derivative(me->create_DgDp_op(i,j));
-	  else if (ds.supports(DERIV_MV_BY_COL))
-	    dgdp = 
-	      Derivative(Teuchos::rcp(new Epetra_MultiVector(
-					*g_map, 
-					p_map->NumMyElements())),
-			 DERIV_MV_BY_COL);
+	  EDerivativeMultiVectorOrientation mvOrientation;
+	  if (dgdp_mean != Teuchos::null)
+	    mvOrientation = outArgs.get_DgDp(i+num_g,j).getMultiVectorOrientation();
 	  else
+	    mvOrientation = outArgs.get_DgDp(i+2*num_g,j).getMultiVectorOrientation();
+	  if (mvOrientation == DERIV_TRANS_MV_BY_ROW && 
+	      ds.supports(DERIV_LINEAR_OP))
+	    dgdp = Derivative(me->create_DgDp_op(i,j));
+	  else if (mvOrientation == DERIV_TRANS_MV_BY_ROW)
 	    dgdp = 
 	      Derivative(Teuchos::rcp(new Epetra_MultiVector(
 					*p_map, 
 					g_map->NumMyElements())),
 			 DERIV_TRANS_MV_BY_ROW);
+	  else
+	    dgdp = 
+	      Derivative(Teuchos::rcp(new Epetra_MultiVector(
+					*g_map, 
+					p_map->NumMyElements())),
+			 DERIV_MV_BY_COL);
+	  
 	}
 	me_outargs.set_DgDp(i, j, dgdp);
 
@@ -293,7 +307,7 @@ Stokhos::ResponseStatisticModelEvaluator::evalModel(const InArgs& inArgs,
 	    if (dgdp_mean != Teuchos::null) {
 	      X_sg.init(0.0);
 	      for (int l=0; l<n; l++)
-		X_sg[0][l][l] = (*g_sg)[0][l];
+		X_sg[0][l][l] = 1.0;
 	      TEST_FOR_EXCEPTION(
 		outArgs.get_DgDp(i+num_g,j).getMultiVectorOrientation() == DERIV_MV_BY_COL, 
 		std::logic_error,
