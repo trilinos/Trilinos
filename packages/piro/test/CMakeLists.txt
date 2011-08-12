@@ -15,6 +15,8 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
     MockModelEval_A.cpp
     MockModelEval_A.hpp
+    MockModelEval_C.cpp
+    MockModelEval_C.hpp
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
@@ -80,6 +82,26 @@ IF (Piro_ENABLE_NOX)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
 
+  IF (Piro_ENABLE_Stokhos) 
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      SGAnalysisDriver
+      SOURCES 
+      Main_SGAnalysisDriver.cpp
+      MockModelEval_C.cpp
+      MockModelEval_C.hpp
+      NUM_MPI_PROCS 1
+      ARGS -v
+      PASS_REGULAR_EXPRESSION "TEST PASSED"
+    )
+
+    PACKAGE_COPY_FILES_TO_BINARY_DIR(copySGTestInputFiles
+      DEST_FILES input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
+      SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
+      SOURCE_PREFIX "_"
+      EXEDEPS SGAnalysisDriver
+    )
+  ENDIF()
+
   PACKAGE_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
     DEST_FILES   input_Solve_NOX_1.xml
                  input_Solve_NOX_2.xml
@@ -92,9 +114,10 @@ IF (Piro_ENABLE_NOX)
           input_Analysis_Dakota.xml dak.in
           input_Analysis_MOOCHO.xml input_Analysis_OptiPack.xml 
           input_Solve_RythmosMatrixFree_Fails.xml
+	  input_SGSolve.xml 
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
-    EXEDEPS EpetraSolver ThyraSolver AnalysisDriver
+    EXEDEPS EpetraSolver ThyraSolver AnalysisDriver UnitTests
   )
 
 ENDIF()
