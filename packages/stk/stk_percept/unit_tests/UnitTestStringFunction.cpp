@@ -563,7 +563,7 @@ STKUNIT_UNIT_TEST(function, stringFunction_expressions)
     double v_loc = eval(x, y, z, t, sf);                                \
     double ve_loc = expr;                                               \
     /* std::cout << "expr= " << str << " x = " << x << " ve= " << ve_loc << " v= " << v_loc << std::endl; */ \
-    STKUNIT_EXPECT_DOUBLE_EQ(v_loc, ve_loc);                                    \
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(v_loc, ve_loc);                                    \
                                                                         \
   }
 
