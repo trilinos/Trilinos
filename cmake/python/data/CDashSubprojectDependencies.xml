@@ -823,7 +823,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
-    <Dependency name="Thyra" type="ILR"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="OptiPack" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
