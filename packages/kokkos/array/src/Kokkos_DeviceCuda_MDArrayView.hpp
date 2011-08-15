@@ -52,7 +52,7 @@
 namespace Kokkos {
 
 template< typename ValueType >
-class MDArrayView< ValueType , DeviceCuda , DeviceCuda::mdarray_map >
+class MDArrayView< ValueType , DeviceCuda >
 {
 public:
   typedef ValueType                value_type ;
@@ -314,19 +314,19 @@ private:
       parallel_for( size , Impl::AssignContiguous<value_type,device_type>( m_memory.ptr_on_device() , 0 ) );
     }
 
-  template< typename V , class D , class M >
+  template< typename V , class D >
   friend
-  MDArrayView< V , D , M >
+  MDArrayView< V , D >
   create_labeled_mdarray( const std::string & label ,
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
-  template< typename V , class DeviceDst , class MapDst , bool ,
-                         class DeviceSrc , class MapSrc , bool >
+  template< typename V , class DeviceDst , class DeviceSrc ,
+            bool , bool , bool >
   friend
   class Impl::MDArrayDeepCopy ;
 
-  template< typename V , class D , class MapDst , class MapSrc , unsigned R >
+  template< typename V , class MDArrayDst , class MDArraySrc , unsigned >
   friend
   class Impl::MDArrayDeepCopyFunctor ;
 };
@@ -341,14 +341,16 @@ namespace Impl {
 
 /** \brief  Deep copy device to device */
 template< typename ValueType >
-class MDArrayDeepCopy< ValueType , DeviceCuda , DeviceCuda::mdarray_map , false ,
-                                   DeviceCuda , DeviceCuda::mdarray_map , false >
+class MDArrayDeepCopy< ValueType , DeviceCuda , DeviceCuda ,
+                       true  /* same memory space */ ,
+                       true  /* same mdarray map */ ,
+                       false /* contiguous memory */ >
 {
 public:
   typedef DeviceCuda            device_type ;
   typedef DeviceCuda::size_type size_type ;
 
-  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::mdarray_map > array_type ;
+  typedef MDArrayView< ValueType , DeviceCuda > array_type ;
 
         ValueType * const dst ;
   const ValueType * const src ;
@@ -376,14 +378,16 @@ public:
 
 /** \brief  Copy Host to Cuda specialization */
 template< typename ValueType >
-class MDArrayDeepCopy< ValueType ,
-                       DeviceCuda , DeviceCuda::mdarray_map , false ,
-                       DeviceHost , DeviceCuda::mdarray_map , true >
+class MDArrayDeepCopy< ValueType , DeviceCuda ,
+                       Serial< HostMemory , DeviceCuda::mdarray_map > ,
+                       false /* same memory space */ ,
+                       true  /* same mdarray map */ ,
+                       false /* contiguous memory */ >
 {
 public:
-  typedef DeviceCuda::size_type                          size_type ;
-  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::mdarray_map > dst_type ;
-  typedef MDArrayView< ValueType , DeviceHost , DeviceCuda::mdarray_map > src_type ;
+  typedef DeviceCuda::size_type                 size_type ;
+  typedef MDArrayView< ValueType , DeviceCuda > dst_type ;
+  typedef typename dst_type::HostView           src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
@@ -408,13 +412,16 @@ public:
 /** \brief  Copy Cuda to Host specialization */
 template< typename ValueType >
 class MDArrayDeepCopy< ValueType ,
-                       DeviceHost , DeviceCuda::mdarray_map , true ,
-                       DeviceCuda , DeviceCuda::mdarray_map , false >
+                       Serial< HostMemory , DeviceCuda::mdarray_map > ,
+                       DeviceCuda ,
+                       false /* same memory space */ ,
+                       true  /* same mdarray map */ ,
+                       false /* contiguous memory */ >
 {
 public:
-  typedef DeviceCuda::size_type                          size_type ;
-  typedef MDArrayView< ValueType , DeviceHost , DeviceCuda::mdarray_map > dst_type ;
-  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::mdarray_map > src_type ;
+  typedef DeviceCuda::size_type                 size_type ;
+  typedef MDArrayView< ValueType , DeviceCuda > src_type ;
+  typedef typename src_type::HostView           dst_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {

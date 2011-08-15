@@ -45,6 +45,7 @@
 #include <vector>
 
 #include <Kokkos_MemoryView.hpp>
+#include <impl/Kokkos_MDArrayIndexMap.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
 
 #define KOKKOS_DEVICE_CUDA  Kokkos::DeviceCuda
@@ -190,6 +191,7 @@ public:
 /*--------------------------------------------------------------------------*/
 
 #include <impl/Kokkos_MemoryView_macros.hpp>
+#include <impl/Kokkos_BasicFunctors_macros.hpp>
 
 #include <Kokkos_DeviceClear_macros.hpp>
 
