@@ -51,6 +51,9 @@ namespace Impl {
 template< typename ValueType , class DeviceType >
 class DeepCopyContiguous ;
 
+template< typename ValueType , class DeviceType >
+class AssignContiguous ;
+
 template< typename ValueType >
 class DeepCopyContiguous< ValueType , KOKKOS_MACRO_DEVICE >
 {
@@ -72,6 +75,29 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( size_type iwork ) const
   { dst[ iwork ] = src[ iwork ]; }
+};
+
+template< typename ValueType >
+class AssignContiguous< ValueType , KOKKOS_MACRO_DEVICE >
+{
+private:
+  ValueType * dst ;
+  ValueType   src ;
+
+public:
+  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef device_type::size_type  size_type ;
+
+  AssignContiguous( const AssignContiguous & rhs )
+    : dst( rhs.dst ), src( rhs.src ) {}
+
+  AssignContiguous( ValueType * arg_dst , const ValueType & arg_src )
+    : dst( arg_dst ), src( arg_src ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type iwork ) const
+  { dst[ iwork ] = src ; }
 };
 
 }

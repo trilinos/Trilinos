@@ -267,7 +267,12 @@ private:
                size_t n4 , size_t n5 , size_t n6 , size_t n7 )
     : m_memory()
     , m_map( nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 )
-    { memory_space::allocate_memory_view( m_memory , m_map.size() , label ); }
+    {
+      memory_space::allocate_memory_view( m_memory , m_map.size() , label );
+      value_type * dst = m_memory.ptr_on_device();
+      value_type * const dst_end = dst + m_map.size();
+      while ( dst_end != dst ) *dst++ = 0 ;
+    }
 
   template< typename V , class D >
   friend

@@ -306,6 +306,8 @@ private:
       }
 
       device_type::allocate_memory_view( m_memory , size , label );
+
+      parallel_for( size , Impl::AssignContiguous<value_type,device_type>( m_memory.ptr_on_device() , 0 ) );
     }
 
   template< typename V , class D , class M >
