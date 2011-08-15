@@ -13,18 +13,9 @@
 namespace Cthulhu {
 
   //! \brief This class builds an object containing information necesary for efficiently importing off-processor entries.
-  /*! Import is used to construct a communication plan that can be called repeatedly by computational
-      classes to efficiently import entries from other nodes.
-      For example, an exporter is used when we start out with a multiple-ownership distribution,
-      and we want to merge that into a uniquely-owned distribution.
-
-      This class currently has one constructor, taking two Map objects
-      specifying the distributions of the distributed objects on which the Export class will operate.
-
-      This class is templated on LocalOrdinal and GlobalOrdinal. 
-      The GlobalOrdinal type, if omitted, defaults to the LocalOrdinal type.
-  */
-  class EpetraImport: public Import<int,int> {
+  class EpetraImport
+    : public Import<int,int>
+  {
 
   public:
 
@@ -32,8 +23,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Constructs a Import object from the source and target Maps.
-    EpetraImport(const Teuchos::RCP<const Map<int,int> > & source, 
-		 const Teuchos::RCP<const Map<int,int> > & target)       
+    EpetraImport(const Teuchos::RCP<const Map<int,int> > & source, const Teuchos::RCP<const Map<int,int> > & target)       
     { 
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, source, tSource, "Cthulhu::EpetraImport constructors only accept Cthulhu::EpetraMap as input arguments.");
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, target, tTarget, "Cthulhu::EpetraImport constructors only accept Cthulhu::EpetraMap as input arguments.");
@@ -41,19 +31,11 @@ namespace Cthulhu {
     }
  
     //! copy constructor. 
-    EpetraImport(const Import<int,int> & import) 
-      : import_(EpetraImportConstructorHelper(import))
-    {
-      
-    }
-
+    EpetraImport(const Import<int,int> & import) : import_(EpetraImportConstructorHelper(import)) { }
     static RCP<Epetra_Import> EpetraImportConstructorHelper(const Import<int,int> & import) {
-      
       CTHULHU_DYNAMIC_CAST(const EpetraImport, import, tImport, "Cthulhu::EpetraImport copy constructors only accept Cthulhu::EpetraImport as input arguments.");
       return rcp(new Epetra_Import(*tImport.getEpetra_Import()));
     }
-
-    EpetraImport(const Teuchos::RCP<const Epetra_Import> &import) : import_(import) {  }
 
     //! destructor.
     ~EpetraImport() {}
@@ -69,44 +51,6 @@ namespace Cthulhu {
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
     size_t getNumPermuteIDs() const {  return import_->NumPermuteIDs(); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    //! List of entries in the source Map that are permuted. (non-persisting view)
-    Teuchos::ArrayView<const int> getPermuteFromLIDs() const { 
-       
-      return import_->PermuteFromLIDs(); 
-    }
-
-    //! List of entries in the target Map that are permuted. (non-persisting view)
-    Teuchos::ArrayView<const int> getPermuteToLIDs() const { 
-       
-      return import_->PermuteToLIDs(); 
-    }
-
-    //! Returns the number of entries that are not on the calling image.
-    size_t getNumRemoteIDs() const {  return import_->NumRemoteIDs(); }
-
-    //! List of entries in the target Map that are coming from other images. (non-persisting view)
-    Teuchos::ArrayView<const int> getRemoteLIDs() const { 
-       
-      return import_->RemoteLIDs(); 
-    }
-
-    //! Returns the number of entries that must be sent by the calling image to other images.
-    size_t getNumExportIDs() const {  return import_->getNumExportIDs(); }
-
-    //! List of entries in the source Map that will be sent to other images. (non-persisting view)
-    Teuchos::ArrayView<const int> getExportLIDs() const { 
-       
-      return import_->ExportLIDs(); 
-    }
-
-    //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
-    Teuchos::ArrayView<const int> getExportImageIDs() const { 
-       
-      return import_->ExportImageIDs(); 
-    }
-#endif
-
     //! Returns the Source Map used to construct this importer.
     const Teuchos::RCP<const Map<int,int> > getSourceMap() const { 
       RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(import_->SourceMap()));
@@ -119,26 +63,18 @@ namespace Cthulhu {
       return rcp ( new Cthulhu::EpetraMap(map) );
     }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    Distributor & getDistributor() const {  return import_->Distributor(); }
-#endif
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! Assignment operator
-    Import<int,int>& operator = (const Import<int,int> & Source) {  return }
-
     //@}
 
-    //! @name I/O Methods
-    //@{ 
+    //! @name Cthulhu specific
+    //@{
 
-    //! Print method 
-    void print(std::ostream& os) const {  } 
+    //! EpetraImport constructor to wrap a Epetra_Import object
+    EpetraImport(const Teuchos::RCP<const Epetra_Import> &import) : import_(import) { }
 
-    //@}
-#endif
-
+    //! Get the underlying Epetra import
     RCP< const Epetra_Import > getEpetra_Import() const {  return import_; }
+
+    //@}
     
   private:
     

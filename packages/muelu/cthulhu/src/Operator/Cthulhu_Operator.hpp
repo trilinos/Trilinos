@@ -72,11 +72,11 @@ namespace Cthulhu {
       return oldViewLabel;
     }
 
-    inline const viewLabel_t SwitchToDefaultView() { return SwitchToView(GetDefaultViewLabel()); }
+    const viewLabel_t SwitchToDefaultView() { return SwitchToView(GetDefaultViewLabel()); }
 
-    inline const viewLabel_t & GetDefaultViewLabel() const { return defaultViewLabel_; }
+    const viewLabel_t & GetDefaultViewLabel() const { return defaultViewLabel_; }
 
-    inline const viewLabel_t & GetCurrentViewLabel() const { return currentViewLabel_; }
+    const viewLabel_t & GetCurrentViewLabel() const { return currentViewLabel_; }
 
     //@}
 
@@ -137,7 +137,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the Map that describes the row distribution in this matrix.
-    inline const RCP<const Map> getRowMap() const { return getRowMap(GetCurrentViewLabel()); }
+    const RCP<const Map> getRowMap() const { return getRowMap(GetCurrentViewLabel()); }
 
     //! Returns the Map that describes the row distribution in this matrix.
     const RCP<const Map> & getRowMap(viewLabel_t viewLabel) const { 
@@ -147,7 +147,7 @@ namespace Cthulhu {
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
     //! This might be <tt>null</tt> until fillComplete() is called.
-    inline const RCP<const Map> getColMap() const { return getColMap(GetCurrentViewLabel()); }
+    const RCP<const Map> getColMap() const { return getColMap(GetCurrentViewLabel()); }
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
     const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 

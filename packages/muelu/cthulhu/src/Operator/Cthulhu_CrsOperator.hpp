@@ -88,7 +88,7 @@ public:
       \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
       \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
   */
-  inline void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) { 
+  void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) { 
     matrixData_->insertGlobalValues(globalRow, cols, vals);
   }
 
@@ -108,7 +108,7 @@ public:
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */ 
-  inline void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, OptimizeOption os = DoOptimizeStorage) {
+  void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, OptimizeOption os = DoOptimizeStorage) {
     matrixData_->fillComplete(domainMap, rangeMap, os);
 
     // Update default view with the colMap
@@ -130,7 +130,7 @@ public:
   \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
   */
   //TODO : Get ride of "Tpetra"::OptimizeOption
-  inline void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) {
+  void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) {
     matrixData_->fillComplete(os);
 
     // Update default view with the colMap
@@ -143,78 +143,78 @@ public:
   //! Returns the number of global rows in this matrix.
   /** Undefined if isFillActive().
    */
-  inline global_size_t getGlobalNumRows() const { 
+  global_size_t getGlobalNumRows() const { 
     return matrixData_->getGlobalNumRows();
   }
 
   //! \brief Returns the number of global columns in the matrix.
   /** Undefined if isFillActive().
    */
-  inline global_size_t getGlobalNumCols() const {
+  global_size_t getGlobalNumCols() const {
     return matrixData_->getGlobalNumCols();
   }
 
   //! Returns the number of matrix rows owned on the calling node.
-  inline size_t getNodeNumRows() const {
+  size_t getNodeNumRows() const {
     return matrixData_->getNodeNumRows();
   }
 
   //! Returns the global number of entries in this matrix.
-  inline global_size_t getGlobalNumEntries() const {
+  global_size_t getGlobalNumEntries() const {
     return matrixData_->getGlobalNumEntries();
   }
 
   //! Returns the local number of entries in this matrix.
-  inline size_t getNodeNumEntries() const {
+  size_t getNodeNumEntries() const {
     return matrixData_->getNodeNumEntries();
   }
 
   //! Returns the current number of entries on this node in the specified local row.
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
-  inline size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
+  size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
     return matrixData_->getNumEntriesInLocalRow(localRow);
   }
 
   //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
   /** Undefined if isFillActive().
    */
-  inline global_size_t getGlobalNumDiags() const {
+  global_size_t getGlobalNumDiags() const {
     return matrixData_->getGlobalNumDiags();
   }
 
   //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
   /** Undefined if isFillActive().
    */
-  inline size_t getNodeNumDiags() const {
+  size_t getNodeNumDiags() const {
     return matrixData_->getNodeNumDiags();
   }
 
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   /** Undefined if isFillActive().
    */
-  inline size_t getGlobalMaxNumRowEntries() const {
+  size_t getGlobalMaxNumRowEntries() const {
     return matrixData_->getGlobalMaxNumRowEntries();
   }
 
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   /** Undefined if isFillActive().
    */
-  inline size_t getNodeMaxNumRowEntries() const {
+  size_t getNodeMaxNumRowEntries() const {
     return matrixData_->getNodeMaxNumRowEntries();
   }
 
   //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
-  inline bool isLocallyIndexed() const {
+  bool isLocallyIndexed() const {
     return matrixData_->isLocallyIndexed();
   }
 
   //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
-  inline bool isGloballyIndexed() const {
+  bool isGloballyIndexed() const {
     return matrixData_->isGloballyIndexed();
   }
 
   //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
-  inline bool isFillComplete() const {
+  bool isFillComplete() const {
     return matrixData_->isFillComplete();
   }
 
@@ -249,7 +249,7 @@ public:
 
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
-  inline void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const {
+  void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const {
      matrixData_->getGlobalRowView(GlobalRow, indices, values);
   }
 
@@ -263,14 +263,14 @@ public:
 
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
-  inline void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const {
+  void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const {
      matrixData_->getLocalRowView(LocalRow, indices, values);
   }
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
     the zero and non-zero diagonals owned by this node. */
-  inline void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
+  void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
     matrixData_->getLocalDiagCopy(diag);
   }
 
@@ -290,7 +290,7 @@ public:
   will be accumulated into \c Y.
   */
   //TODO virtual=0 // TODO: Add default parameters ?
-//   inline void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
+//   void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
 //      matrixData_->multiply(X, Y, trans, alpha, beta);
 //   }
 
@@ -313,13 +313,13 @@ public:
   
   //! \brief Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  inline const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
+  const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
     return matrixData_->getDomainMap();
   }
 
   //! Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  inline const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
+  const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
     return matrixData_->getRangeMap();
   }
 

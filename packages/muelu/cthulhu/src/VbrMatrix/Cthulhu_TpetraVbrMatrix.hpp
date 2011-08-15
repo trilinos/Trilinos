@@ -38,12 +38,12 @@ namespace Cthulhu {
     //! Returns the Map associated with the domain of this operator.
     /*! Note that this is a point-entry map, not a block-map.
      */
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const {  return mtx_->getDomainMap(); }
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const {  return mtx_->getDomainMap(); }
 
     //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
     /*! Note that this is a point-entry map, not a block-map.
      */
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const {  return mtx_->getRangeMap(); }
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const {  return mtx_->getRangeMap(); }
 
     //! \brief Computes the operator-multivector application.
     /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{trans}} \cdot X + \beta \cdot Y\f$. However, the details of operation
@@ -51,7 +51,7 @@ namespace Cthulhu {
       - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
       - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
     */
-    inline void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+    void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                       MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                       Teuchos::ETransp trans = Teuchos::NO_TRANS,
                       Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
@@ -61,12 +61,12 @@ namespace Cthulhu {
     /*! Find X such that A*X = Y.
       Both \c X and \c Y are required to have constant stride.
     */
-    inline void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
+    void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
                              MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                              Teuchos::ETransp trans) const {  mtx_->applyInverse(Y,X,trans); }
 
     //! Indicates whether this operator supports applying the adjoint operator.
-    inline bool hasTransposeApply() const {  return mtx_->hasTransposeApply(); }
+    bool hasTransposeApply() const {  return mtx_->hasTransposeApply(); }
 
     //@}
 
@@ -74,25 +74,25 @@ namespace Cthulhu {
     //@{
 
     //! Returns the block-row map.
-    inline const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRowMap() const {  return mtx_->getBlockRowMap(); }
+    const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRowMap() const {  return mtx_->getBlockRowMap(); }
 
     //! Returns the block-column map.
-    inline const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockColMap() const {  return mtx_->getBlockColMap(); }
+    const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockColMap() const {  return mtx_->getBlockColMap(); }
 
     //! Returns the block-domain map.
-    inline const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockDomainMap() const {  return mtx_->getBlockDomainMap(); }
+    const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockDomainMap() const {  return mtx_->getBlockDomainMap(); }
 
     //! Returns the block-range map.
-    inline const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRangeMap() const {  return mtx_->getBlockRangeMap(); }
+    const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRangeMap() const {  return mtx_->getBlockRangeMap(); }
 
     //! Returns the point-row map.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointRowMap() const {  return mtx_->getPointRowMap(); }
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointRowMap() const {  return mtx_->getPointRowMap(); }
 
     //! Returns the point-column map.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointColMap() const {  return mtx_->getPointColMap(); }
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointColMap() const {  return mtx_->getPointColMap(); }
 
     //! Return true if fillComplete has been called, false otherwise.
-    inline bool isFillComplete() const {  return mtx_->isFillComplete(); }
+    bool isFillComplete() const {  return mtx_->isFillComplete(); }
     //@}
 
     //! @name Insertion Methods
@@ -102,7 +102,7 @@ namespace Cthulhu {
     /*!
       This method may be called any time (before or after fillComplete()).
     */
-    inline void putScalar(Scalar s) {  mtx_->putScalar(s); }
+    void putScalar(Scalar s) {  mtx_->putScalar(s); }
 
     //!Copy the contents of the input block-entry into the matrix.
     /*!
@@ -114,7 +114,7 @@ namespace Cthulhu {
 
       This method may be called any time (before or after fillComplete()).
     */
-    inline void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry) {  mtx_->setGlobalBlockEntry(globalBlockRow, globalBlockCol, blockEntry); }
+    void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry) {  mtx_->setGlobalBlockEntry(globalBlockRow, globalBlockCol, blockEntry); }
 
     //!Copy the contents of the input block-entry into the matrix.
     /*!
@@ -124,7 +124,7 @@ namespace Cthulhu {
       The coefficients of the specified block-entry will be
       over-written (replaced) by the input block-entry.
     */
-    inline void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry) {  mtx_->setLocalBlockEntry(localBlockRow, localBlockCol, blockEntry); }
+    void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry) {  mtx_->setLocalBlockEntry(localBlockRow, localBlockCol, blockEntry); }
 
     //!Add the contents of the input block-entry into the matrix.
     /*!
@@ -136,7 +136,7 @@ namespace Cthulhu {
 
       This method may be called any time (before or after fillComplete()).
     */
-    inline void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry) {  mtx_->sumIntoGlobalBlockEntry(globalBlockRow, globalBlockCol, blockEntry); }
+    void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry) {  mtx_->sumIntoGlobalBlockEntry(globalBlockRow, globalBlockCol, blockEntry); }
 
     //!Add the contents of the input block-entry into the matrix.
     /*!
@@ -146,7 +146,7 @@ namespace Cthulhu {
       The contents of the input block-entry will be added to the values that are
       already present in the matrix.
     */
-    inline void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry) {  mtx_->sumIntoLocalBlockEntry(localBlockRow, localBlockCol, blockEntry); }
+    void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry) {  mtx_->sumIntoLocalBlockEntry(localBlockRow, localBlockCol, blockEntry); }
 
     //!Copy the contents of the input block-entry into the matrix.
     /*!
@@ -158,7 +158,7 @@ namespace Cthulhu {
 
       This method may be called any time (before or after fillComplete()).
     */
-    inline void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry) {  mtx_->setGlobalBlockEntry(globalBlockRow, globalBlockCol, blkRowSize, blkColSize, LDA, blockEntry); }
+    void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry) {  mtx_->setGlobalBlockEntry(globalBlockRow, globalBlockCol, blkRowSize, blkColSize, LDA, blockEntry); }
 
     //!Copy the contents of the input block-entry into the matrix.
     /*!
@@ -168,7 +168,7 @@ namespace Cthulhu {
       The coefficients for the specified block-entry will be
       over-written (replaced) by the input block-entry.
     */
-    inline void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry) {  mtx_->setLocalBlockEntry(localBlockRow, localBlockCol, blkRowSize, blkColSize, LDA, blockEntry); }
+    void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry) {  mtx_->setLocalBlockEntry(localBlockRow, localBlockCol, blkRowSize, blkColSize, LDA, blockEntry); }
 
     //!Add the contents of the input block-entry into the matrix.
     /*!
@@ -180,7 +180,7 @@ namespace Cthulhu {
 
       This method may be called any time (before or after fillComplete()).
     */
-    inline void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry) {  mtx_->sumIntoGlobalBlockEntry(globalBlockRow, globalBlockCol, blkRowSize, blkColSize, LDA, blockEntry); }
+    void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry) {  mtx_->sumIntoGlobalBlockEntry(globalBlockRow, globalBlockCol, blkRowSize, blkColSize, LDA, blockEntry); }
 
     //!Add the contents of the input block-entry into the matrix.
     /*!
@@ -190,7 +190,7 @@ namespace Cthulhu {
       The contents of the input block-entry will be added to the values that are
       already present in the matrix.
     */
-    inline void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry) {  mtx_->sumIntoLocalBlockEntry(localBlockRow, localBlockCol, blkRowSize, blkColSize, LDA, blockEntry); }
+    void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry) {  mtx_->sumIntoLocalBlockEntry(localBlockRow, localBlockCol, blkRowSize, blkColSize, LDA, blockEntry); }
 
     //@}
 
@@ -201,13 +201,13 @@ namespace Cthulhu {
     /*!
       This method also sets the domain and range maps.
     */
-    inline void fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap) {  mtx_->fillComplete(blockDomainMap, blockRangeMap); }
+    void fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap) {  mtx_->fillComplete(blockDomainMap, blockRangeMap); }
 
     //! Transition the matrix to the packed, optimized-storage state.
     /*!
       This method internally calls fillComplete(getBlockRowMap(),getBlockRowMap()).
     */
-    inline void fillComplete() {  mtx_->fillComplete(); }
+    void fillComplete() {  mtx_->fillComplete(); }
     //@}
 
     //! @name Extraction Methods
@@ -222,7 +222,7 @@ namespace Cthulhu {
       This method may be called any time (before or after fillComplete()), but will
       throw an exception if the specified block-entry doesn't already exist.
     */
-    inline void getGlobalBlockEntryView(GlobalOrdinal globalBlockRow,
+    void getGlobalBlockEntryView(GlobalOrdinal globalBlockRow,
                                         GlobalOrdinal globalBlockCol,
                                         LocalOrdinal& numPtRows,
                                         LocalOrdinal& numPtCols,
@@ -239,7 +239,7 @@ namespace Cthulhu {
       view won't be copied back to the GPU until your ArrayRCP is destroyed
       or set to Teuchos::null.
     */
-    inline void getGlobalBlockEntryViewNonConst(GlobalOrdinal globalBlockRow,
+    void getGlobalBlockEntryViewNonConst(GlobalOrdinal globalBlockRow,
                                                 GlobalOrdinal globalBlockCol,
                                                 LocalOrdinal& numPtRows,
                                                 LocalOrdinal& numPtCols,
@@ -256,7 +256,7 @@ namespace Cthulhu {
       This method may only be called after fillComplete() has been called, and will
       throw an exception if the specified block-entry doesn't already exist.
     */
-    inline void getLocalBlockEntryView(LocalOrdinal localBlockRow,
+    void getLocalBlockEntryView(LocalOrdinal localBlockRow,
                                        LocalOrdinal localBlockCol,
                                        LocalOrdinal& numPtRows, 
                                        LocalOrdinal& numPtCols,
@@ -279,7 +279,7 @@ namespace Cthulhu {
       This method may only be called after fillComplete() has been called, and will
       throw an exception if the specified block-entry doesn't already exist.
     */
-    inline void getLocalBlockEntryViewNonConst(LocalOrdinal localBlockRow,
+    void getLocalBlockEntryViewNonConst(LocalOrdinal localBlockRow,
                                                LocalOrdinal localBlockCol,
                                                LocalOrdinal& numPtRows,
                                                LocalOrdinal& numPtCols,
@@ -289,11 +289,11 @@ namespace Cthulhu {
 
     //! @name Overridden from Teuchos::Describable
     //@{
-    inline std::string description() const {  return mtx_->description(); }
+    std::string description() const {  return mtx_->description(); }
 
     /** \brief Print the object with some verbosity level to a FancyOStream object.
      */
-    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {  mtx_->describable(); }
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {  mtx_->describable(); }
     //@}
 
     RCP< const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_VbrMatrix() const {  return mtx_; }

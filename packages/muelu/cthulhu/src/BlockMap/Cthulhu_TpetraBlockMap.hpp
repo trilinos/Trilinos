@@ -79,51 +79,51 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
   //! @name Attribute Accessor Methods
   //@{
 
-  inline global_size_t getGlobalNumBlocks() const {  return map_->getGlobalNumBlocks(); }
+  global_size_t getGlobalNumBlocks() const {  return map_->getGlobalNumBlocks(); }
 
   //! Return number of blocks on the local processor.
-  inline size_t getNodeNumBlocks() const {  return map_->getNodeNumBlocks(); }
+  size_t getNodeNumBlocks() const {  return map_->getNodeNumBlocks(); }
 
-  inline Teuchos::ArrayView<const GlobalOrdinal> getNodeBlockIDs() const {  return map_->getNodeBlockIDs(); }
+  Teuchos::ArrayView<const GlobalOrdinal> getNodeBlockIDs() const {  return map_->getNodeBlockIDs(); }
 
-  inline bool isBlockSizeConstant() const {  return map_->isBlockSizeConstant(); }
+  bool isBlockSizeConstant() const {  return map_->isBlockSizeConstant(); }
 
   //! Return ArrayRCP of first-local-point in local blocks.
-  inline Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks() const {  return map_->getNodeFirstPointInBlocks(); }
+  Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks() const {  return map_->getNodeFirstPointInBlocks(); }
 
   //! Return device-resident ArrayRCP of first-local-point in local blocks.
   /*! This version of this method is primarily used internally by VbrMatrix
       for passing data to the matrix-vector-product kernel.
   */
-  inline Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks_Device() const {  return map_->getNodeFirstPointInBlocks_Device(); }
+  Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks_Device() const {  return map_->getNodeFirstPointInBlocks_Device(); }
 
   //! Return the globalBlockID corresponding to the given localBlockID
   /*! If localBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
   */
-  inline GlobalOrdinal getGlobalBlockID(LocalOrdinal localBlockID) const {  return map_->getGlobalBlockID(localBlockID); }
+  GlobalOrdinal getGlobalBlockID(LocalOrdinal localBlockID) const {  return map_->getGlobalBlockID(localBlockID); }
 
   //! Return the localBlockID corresponding to the given globalBlockID
   /*! If globalBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
   */
-  inline LocalOrdinal getLocalBlockID(GlobalOrdinal globalBlockID) const {  return map_->getLocalBlockID(globalBlockID); }
+  LocalOrdinal getLocalBlockID(GlobalOrdinal globalBlockID) const {  return map_->getLocalBlockID(globalBlockID); }
 
   //! Return the block-size for localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline LocalOrdinal getLocalBlockSize(LocalOrdinal localBlockID) const {  return map_->getLocalBlockSize(localBlockID); }
+  LocalOrdinal getLocalBlockSize(LocalOrdinal localBlockID) const {  return map_->getLocalBlockSize(localBlockID); }
 
   //! Return the first local point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline LocalOrdinal getFirstLocalPointInLocalBlock(LocalOrdinal localBlockID) const {  return map_->getFirstLocalPointInLocalBlock(localBlockID); }
+  LocalOrdinal getFirstLocalPointInLocalBlock(LocalOrdinal localBlockID) const {  return map_->getFirstLocalPointInLocalBlock(localBlockID); }
 
   //! Return the first global point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline GlobalOrdinal getFirstGlobalPointInLocalBlock(LocalOrdinal localBlockID) const {  return map_->getFirstGlobalPointInLocalBlock(localBlockID); }
+  GlobalOrdinal getFirstGlobalPointInLocalBlock(LocalOrdinal localBlockID) const {  return map_->getFirstGlobalPointInLocalBlock(localBlockID); }
 
   //@}
 

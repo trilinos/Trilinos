@@ -36,16 +36,16 @@ namespace Cthulhu {
     //! @name Map access methods
     //@{
     //! Returns the Map that describes the row distribution in this matrix.
-    inline const RCP<const Map> & GetRowMap() const { return rowMap_; }
+    const RCP<const Map> & GetRowMap() const { return rowMap_; }
   
     //! \brief Returns the Map that describes the column distribution in this matrix.
-    inline const RCP<const Map> & GetColMap() const { return colMap_; }
+    const RCP<const Map> & GetColMap() const { return colMap_; }
   
     //! Returns the Map that describes the row distribution in this matrix.
-    inline void SetRowMap(const RCP<const Map> & rowMap) { rowMap_ = rowMap; }
+    void SetRowMap(const RCP<const Map> & rowMap) { rowMap_ = rowMap; }
   
     //! \brief Set the Map that describes the column distribution in this matrix.
-    inline void SetColMap(const RCP<const Map> & colMap) { colMap_ = colMap; }
+    void SetColMap(const RCP<const Map> & colMap) { colMap_ = colMap; }
     //@}
   
   private:

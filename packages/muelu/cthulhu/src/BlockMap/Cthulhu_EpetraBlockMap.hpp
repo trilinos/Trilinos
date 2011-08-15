@@ -85,57 +85,57 @@ class EpetraBlockMap : public Cthulhu::BlockMap<int,int> {
   //! @name Attribute Accessor Methods
   //@{
 #ifdef CTHULHU_NOT_IMPLEMENTED
-  inline const Teuchos::RCP<const Map<int,int> >& getPointMap() const {  return map_->getPointMap(); }
+  const Teuchos::RCP<const Map<int,int> >& getPointMap() const {  return map_->getPointMap(); }
 #endif
 
-  inline global_size_t getGlobalNumBlocks() const {  return map_->NumGlobalElements(); }
+  global_size_t getGlobalNumBlocks() const {  return map_->NumGlobalElements(); }
 
   //! Return number of blocks on the local processor.
-  inline size_t getNodeNumBlocks() const {  return map_->NumMyElements(); }
+  size_t getNodeNumBlocks() const {  return map_->NumMyElements(); }
 
-  //TODO inline Teuchos::ArrayView<const int> getNodeBlockIDs() const {  return map_->getNodeBlockIDs(); }
+  //TODO Teuchos::ArrayView<const int> getNodeBlockIDs() const {  return map_->getNodeBlockIDs(); }
 
-  inline bool isBlockSizeConstant() const {  return map_->ConstantElementSize(); }
+  bool isBlockSizeConstant() const {  return map_->ConstantElementSize(); }
 
   //! Return ArrayRCP of first-local-point in local blocks.
-  //TODO inline Teuchos::ArrayRCP<const int> getNodeFirstPointInBlocks() const {  return map_->FirstPointInElementList(); }
+  //TODO Teuchos::ArrayRCP<const int> getNodeFirstPointInBlocks() const {  return map_->FirstPointInElementList(); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
   //! Return device-resident ArrayRCP of first-local-point in local blocks.
   /*! This version of this method is primarily used internally by VbrMatrix
       for passing data to the matrix-vector-product kernel.
   */
-  inline Teuchos::ArrayRCP<const int> getNodeFirstPointInBlocks_Device() const {  return map_->getNodeFirstPointInBlocks_Device(); }
+  Teuchos::ArrayRCP<const int> getNodeFirstPointInBlocks_Device() const {  return map_->getNodeFirstPointInBlocks_Device(); }
 #endif
 
   //! Return the globalBlockID corresponding to the given localBlockID
   /*! If localBlockID is not present on this processor, returns Teuchos::OrdinalTraits<int>::invalid().
   */
-  inline int getGlobalBlockID(int localBlockID) const {  return map_->GID(localBlockID); }
+  int getGlobalBlockID(int localBlockID) const {  return map_->GID(localBlockID); }
 
   //! Return the localBlockID corresponding to the given globalBlockID
   /*! If globalBlockID is not present on this processor, returns Teuchos::OrdinalTraits<int>::invalid().
   */
-  inline int getLocalBlockID(int globalBlockID) const {  return map_->LID(globalBlockID); }
+  int getLocalBlockID(int globalBlockID) const {  return map_->LID(globalBlockID); }
 
   //! Return the block-size for localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline int getLocalBlockSize(int localBlockID) const {  return map_->ElementSize(localBlockID); }
+  int getLocalBlockSize(int localBlockID) const {  return map_->ElementSize(localBlockID); }
 
   //! Return the first local point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline int getFirstLocalPointInLocalBlock(int localBlockID) const {  return map_->FirstPointInElement(localBlockID); }
+  int getFirstLocalPointInLocalBlock(int localBlockID) const {  return map_->FirstPointInElement(localBlockID); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
   //! Return the first global point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown. //TODO: throw !
    */
-  inline int getFirstGlobalPointInLocalBlock(int localBlockID) const {  return; }
+  int getFirstGlobalPointInLocalBlock(int localBlockID) const {  return; }
 #endif
 
   //@}

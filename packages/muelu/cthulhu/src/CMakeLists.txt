@@ -36,7 +36,12 @@ SET(HEADERS "")
 SET(SOURCES 
   Map/Cthulhu_EpetraMap.cpp
   Map/Cthulhu_TpetraUtils.cpp
+  CrsGraph/Cthulhu_EpetraCrsGraph.cpp
   CrsMatrix/Cthulhu_Trans.cpp
+  CrsMatrix/Cthulhu_EpetraCrsMatrix.cpp
+  MultiVector/Cthulhu_EpetraMultiVector.cpp
+  Vector/Cthulhu_EpetraVector.cpp
+  Vector/Cthulhu_EpetraIntVector.cpp
   Comm/Cthulhu_Comm.cpp
   Comm/Cthulhu_LookupStatus.cpp
   )
