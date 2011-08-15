@@ -22,7 +22,22 @@ namespace panzer_stk {
   * "Field Names" of type <code>Teuchos::RCP<std::vector<std::string> ></code>
   * and "Basis" of type <code>Teuchos::RCP<panzer::Basis></code>.
   */
-template<typename EvalT, typename Traits> class GatherFields;
+template<typename EvalT, typename Traits> 
+class GatherFields
+  : public PHX::EvaluatorWithBaseImpl<Traits>,
+    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits> {
+
+public:
+  GatherFields(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh,const Teuchos::ParameterList & p) {}
+  
+  void postRegistrationSetup(typename Traits::SetupData d,
+			     PHX::FieldManager<Traits>& vm) {}
+  
+  void evaluateFields(typename Traits::EvalData d) { TEUCHOS_ASSERT(false); }
+public:
+
+  GatherFields();
+};
 
 // **************************************************************
 // **************************************************************
@@ -57,33 +72,6 @@ private:
   std::vector<VariableField*> stkFields_;
  
   Teuchos::RCP<const STK_Interface> mesh_;
-
-  GatherFields();
-};
-
-// **************************************************************
-// Jacobian
-// **************************************************************
-template<typename Traits>
-class GatherFields<panzer::Traits::Jacobian,Traits>
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits> {
-  
-public:
-  GatherFields(const Teuchos::RCP<const STK_Interface> & mesh,const Teuchos::ParameterList& p);
-  
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData d);
-
-private:
-
-  typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
-
-  std::vector<std::string> fieldIds_; // field names needing reading
-
-  std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::NODE> > gatherFields_;
 
   GatherFields();
 };

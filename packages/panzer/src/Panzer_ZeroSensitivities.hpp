@@ -24,7 +24,19 @@ namespace panzer {
     s.zero();
   }
 
-  
+#ifdef HAVE_STOKHOS
+  //! Specialization for Residual
+  inline void zeroSensitivities(Traits::SGType & s)
+  {
+  }
+
+
+  //! Specialization for Residual
+  inline void zeroSensitivities(Traits::SGFadType & s)
+  {
+    s.zero();
+  }
+#endif
 
 } // namespace charon
 

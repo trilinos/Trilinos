@@ -6,6 +6,11 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
+// add embedded UQ
+#ifdef HAVE_STOKHOS
+   #include "Stokhos_Sacado.hpp"
+#endif
+
 // mpl (Meta Programming Library) templates
 #include "Sacado_mpl_vector.hpp"
 #include "Sacado_mpl_find.hpp"
@@ -27,8 +32,9 @@
 
 // add embedded UQ
 #ifdef HAVE_STOKHOS
-   #include "Sacado_PCE_OrthogPoly.hpp"
    #include "Stokhos_StandardStorage.hpp"
+   #include "Sacado_PCE_OrthogPoly.hpp"
+   #include "Stokhos_OrthogPolyExpansion.hpp"
 #endif
 
 namespace panzer {

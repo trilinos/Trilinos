@@ -32,7 +32,7 @@ panzer_stk::GatherFields<panzer::Traits::Residual, Traits>::
     this->addEvaluatedField(gatherFields_[fd]);
   }
 
-  this->setName("STK-Gather Fields");
+  this->setName("Gather STK Fields");
 }
 
 // **********************************************************************
@@ -81,54 +81,3 @@ evaluateFields(typename Traits::EvalData workset)
       }
    }
 }
-
-// **********************************************************************
-// Specialization: Jacobian
-// **********************************************************************
-
-template<typename Traits>
-panzer_stk::GatherFields<panzer::Traits::Jacobian, Traits>::
-  GatherFields(const Teuchos::RCP<const STK_Interface> & mesh,const Teuchos::ParameterList& p)
-{ 
-  using panzer::Cell;
-  using panzer::NODE;
-
-  const std::vector<std::string>& names = 
-    *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
-
-  Teuchos::RCP<panzer::Basis> basis = 
-    p.get< Teuchos::RCP<panzer::Basis> >("Basis");
-
-  gatherFields_.resize(names.size());
-  for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    gatherFields_[fd] = 
-      PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
-    this->addEvaluatedField(gatherFields_[fd]);
-  }
-
-  this->setName("Gather STK Fields");
-}
-
-// **********************************************************************
-template<typename Traits> 
-void panzer_stk::GatherFields<panzer::Traits::Jacobian, Traits>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
-{
-  for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
-    // get field ID from DOF manager
-    std::string fieldName = gatherFields_[fd].fieldTag().name();
-
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
-  }
-}
-
-// **********************************************************************
-template<typename Traits>
-void panzer_stk::GatherFields<panzer::Traits::Jacobian, Traits>::
-evaluateFields(typename Traits::EvalData workset)
-{ 
-}
-
-// **********************************************************************
