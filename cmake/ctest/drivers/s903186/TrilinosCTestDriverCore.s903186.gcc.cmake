@@ -34,6 +34,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DMesquite_ENABLE_TESTS:BOOL=ON"
     "-DCPPUNIT_LIBRARY:STRING=/Users/jmwille/install/cppunit-1.12.1/lib/libcppunit.a"
     "-DCPPUNIT_INCLUDES:STRING=/Users/jmwille/install/cppunit-1.12.1/include"
+    "-DTPL_ENABLE_MATLAB=OFF"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.6.1")
