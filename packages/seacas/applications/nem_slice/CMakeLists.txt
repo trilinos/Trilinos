@@ -27,3 +27,5 @@ PACKAGE_ADD_LIBRARY(nem_slice_app_lib SOURCES ${SOURCES} DEPLIBS ${ZOLTAN_DEP} e
 PACKAGE_ADD_EXECUTABLE(nem_slice NOEXEPREFIX NOEXESUFFIX SOURCES elb_main.c DEPLIBS ${ZOLTAN_DEP} nem_slice_app_lib COMM serial)
 install_executable(nem_slice)
 
+SUBPACKAGE_POSTPROCESS()
+

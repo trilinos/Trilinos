@@ -19,3 +19,5 @@ SET(SOURCES builtin.c  main.c     stat.c    getopt.c  getopt1.c
 PACKAGE_ADD_EXECUTABLE(aprepro NOEXEPREFIX NOEXESUFFIX SOURCES ${SOURCES} DEPLIBS m)
 install_executable(aprepro)
 
+SUBPACKAGE_POSTPROCESS()
+

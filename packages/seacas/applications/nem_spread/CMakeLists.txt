@@ -24,3 +24,5 @@ PACKAGE_ADD_LIBRARY(nem_spread_app_lib SOURCES ${SOURCES} DEPLIBS exodus nemesis
 PACKAGE_ADD_EXECUTABLE(nem_spread NOEXEPREFIX NOEXESUFFIX SOURCES pe_exoII_2par_exoII.c DEPLIBS nem_spread_app_lib COMM serial)
 install_executable(nem_spread)
 
+SUBPACKAGE_POSTPROCESS()
+

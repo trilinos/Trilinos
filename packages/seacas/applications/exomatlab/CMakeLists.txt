@@ -17,3 +17,5 @@ PACKAGE_ADD_LIBRARY(exomatlab_app_lib SOURCES ${SOURCES} DEPLIBS Ioss)
 PACKAGE_ADD_EXECUTABLE(exomatlab NOEXEPREFIX NOEXESUFFIX SOURCES exomatlab.C DEPLIBS exomatlab_app_lib COMM serial)
 install_executable(exomatlab)
 
+SUBPACKAGE_POSTPROCESS()
+
