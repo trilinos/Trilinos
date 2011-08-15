@@ -9,7 +9,7 @@
 #include "Cthulhu_Exceptions.hpp"
 
 #include "Cthulhu_TpetraMap.hpp"
-//#include "Tpetra_Import.hpp"
+#include "Tpetra_Import.hpp"
 
 namespace Cthulhu {
 

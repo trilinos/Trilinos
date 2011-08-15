@@ -9,7 +9,7 @@
 #include "Cthulhu_Exceptions.hpp"
 
 #include "Cthulhu_TpetraMap.hpp"
-//#include "Tpetra_Export.hpp"
+#include "Tpetra_Export.hpp"
 
 // Note: 'export' is a reserved keyword in C++. Do not use 'export' as a variable name.
 
