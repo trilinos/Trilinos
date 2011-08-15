@@ -132,9 +132,6 @@ namespace Cthulhu {
     //! Set seed for Random function.
     virtual void setSeed(unsigned int seed)= 0;
 
-    //! Compute max value of each vector in multi-vector.
-    virtual void maxValue(const Teuchos::ArrayView< Scalar > &maxs) const= 0;
-
     //@}
 
   }; // MultiVector class

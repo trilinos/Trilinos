@@ -134,10 +134,6 @@ namespace Cthulhu {
     //! Compute mean (average) value of this Vector.
     double meanValue() const {  double r; getEpetra_MultiVector()->MeanValue(&r); return r; }
 
-    // Note: Added to Cthulhu. Not present in Tpetra
-    using EpetraMultiVector::maxValue; // overloading, not hiding
-    //! Compute max value of this Vector.
-    double maxValue() const {  double r; getEpetra_MultiVector()->MaxValue(&r); return r; }
     //@} 
 
     //! @name Overridden from Teuchos::Describable 

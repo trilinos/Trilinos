@@ -68,8 +68,8 @@ def buildFuncLineTpetra( functionNode ):
     if "const =0" in argsstring: return '' #hack for CrsMatrix
 
     # hack for MultiVector
-    if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
-    if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
+#    if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
+#    if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
 
     # hack for CrsMatrix
     if name == "TpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''

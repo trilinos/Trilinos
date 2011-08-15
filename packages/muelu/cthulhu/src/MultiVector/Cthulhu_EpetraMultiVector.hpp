@@ -328,10 +328,6 @@ namespace Cthulhu {
     //! Compute mean (average) value of each vector in multi-vector.
     inline void meanValue(const Teuchos::ArrayView<double> &means) const {  vec_->MeanValue(means.getRawPtr()); } //TODO: modify ArrayView size ??
 
-    // Added, not present in Tpetra
-    //! Compute max value of each vector in multi-vector.
-    inline void maxValue(const Teuchos::ArrayView<double> &maxs) const {  vec_->MaxValue(maxs.getRawPtr()); } //TODO: size() ?
-
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const double &alpha, const MultiVector<double,int,int> &A, const MultiVector<double,int,int> &B, const double &beta) { 
        

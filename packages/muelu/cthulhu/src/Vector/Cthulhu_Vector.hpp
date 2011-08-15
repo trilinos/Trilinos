@@ -64,15 +64,6 @@ namespace Cthulhu {
 
     //@}
 
-    //! @name Cthulhu specific
-    //@{
-
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::maxValue; // overloading, not hiding
-    //! Compute max value of this Vector.
-    virtual Scalar maxValue() const = 0;
-
-    //@}
-
   }; // Vector class
 
 } // Cthulhu namespace

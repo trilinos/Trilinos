@@ -23,15 +23,6 @@ $TMPL_DESTRUCTOR
 
 $TMPL_PUBLIC_FUNCTIONS
 
-    //! @name Cthulhu specific
-    //@{
-
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::maxValue; // overloading, not hiding
-    //! Compute max value of this Vector.
-    virtual Scalar maxValue() const = 0;
-
-    //@}
-
   }; // $TMPL_CLASS class
 
 } // Cthulhu namespace
