@@ -12,3 +12,4 @@ HOW TO GENERATE CTHULHU HEADERS
 $cd cthulhu/script/
 $python interfaces.py
 $python tpetra.py
+$python epetra.py

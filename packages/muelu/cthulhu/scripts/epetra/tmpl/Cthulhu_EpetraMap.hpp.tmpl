@@ -1,0 +1,64 @@
+$TMPL_HEADERS
+
+#include "Cthulhu_EpetraConfigDefs.hpp"
+
+#include "Cthulhu_Map.hpp"
+
+#include <Epetra_Map.h>
+#include <Epetra_BlockMap.h>
+
+#include "Cthulhu_LookupStatus.hpp"
+#include "Cthulhu_Comm.hpp"
+
+namespace Tpetra { //TODO to be removed
+  typedef size_t global_size_t;
+}
+
+namespace Cthulhu {
+
+  // TODO: move that elsewhere
+  const Epetra_Map & toEpetra(const Map<int,int> &map);
+  //const RCP< const Epetra_Map > & toEpetra(const RCP< const Map<int, int> > &map);
+  const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &map);
+  //
+
+  class $TMPL_CLASS
+  $TMPL_INHERITANCE
+  {
+
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+
+  public:
+
+$TMPL_PUBLIC_FUNCTIONS
+
+    //! @name Cthulhu specific
+    //@{
+
+    //! EpetraMap constructor to wrap a Epetra_Map object
+    EpetraMap(const Teuchos::RCP<const Epetra_BlockMap> &map) 
+      : map_(map) { }
+
+    //! Get the library used by this object (Epetra or Epetra?)
+    UnderlyingLib lib() const { return Cthulhu::UseEpetra; }
+
+    //! Get the underlying Epetra map
+    //const RCP< const Epetra_Map > & getEpetra_Map() const { return map_; }
+    const Epetra_BlockMap& getEpetra_BlockMap() const { return *map_; }
+    const Epetra_Map& getEpetra_Map() const { return (Epetra_Map &)*map_; } // Ugly, but the same is done in Epetra_CrsMatrix.h to get the map.
+
+    //@}
+   
+  private:
+
+    RCP<const Epetra_BlockMap> map_;
+    //const RCP< const Epetra_BlockMap > map_;
+    //const RCP< const Epetra::Map< LocalOrdinal, GlobalOrdinal, Node > > map_;
+
+  }; // $TMPL_CLASS class
+
+} // Cthulhu namespace
+
+$TMPL_FOOTERS

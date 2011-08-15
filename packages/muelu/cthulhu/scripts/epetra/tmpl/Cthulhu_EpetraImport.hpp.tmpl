@@ -1,0 +1,61 @@
+$TMPL_HEADERS
+
+#include "Cthulhu_EpetraConfigDefs.hpp"
+
+#include "Cthulhu_Import.hpp"
+#include "Cthulhu_Exceptions.hpp"
+
+#include "Cthulhu_EpetraMap.hpp"
+#include "Epetra_Import.hpp"
+
+namespace Cthulhu {
+
+  // TODO: move that elsewhere
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Epetra_Import<LocalOrdinal,GlobalOrdinal,Node> & toEpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &import);
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > &import);
+  //
+
+  class $TMPL_CLASS
+  $TMPL_INHERITANCE
+  {
+
+  public:
+
+$TMPL_PUBLIC_FUNCTIONS
+
+    //! @name Cthulhu specific
+    //@{
+
+    //! EpetraImport constructor to wrap a Epetra_Import object
+    EpetraImport(const RCP<const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > &import) : import_(import) {  }
+
+    RCP< const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > getEpetra_Import() const { return import_; }
+
+    //@}
+    
+  private:
+    
+    RCP<const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > import_;
+
+  }; // EpetraImport class
+
+  // TODO: move that elsewhere
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Epetra_Import<LocalOrdinal,GlobalOrdinal,Node> & toEpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &import) {
+    // TODO: throw exception
+    const EpetraImport<LocalOrdinal,GlobalOrdinal,Node> & tpetraImport = dynamic_cast<const EpetraImport<LocalOrdinal,GlobalOrdinal,Node> &>(import);
+    return *tpetraImport.getEpetra_Import();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {
+    return rcp( new EpetraImport<LocalOrdinal, GlobalOrdinal, Node>(import));
+  }
+  //
+
+} // Cthulhu namespace
+
+$TMPL_FOOTERS

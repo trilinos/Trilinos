@@ -21,8 +21,8 @@ namespace Cthulhu {
       This class currently has one constructor, taking two Map objects
       specifying the distributions of the distributed objects on which the Export class will operate.
 
-      This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
-      The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
+      This class is templated on LocalOrdinal and GlobalOrdinal. 
+      The GlobalOrdinal type, if omitted, defaults to the LocalOrdinal type.
   */
   class EpetraImport: public Import<int,int> {
 
@@ -64,72 +64,68 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the number of entries that are identical between the source and target maps, up to the first different ID.
-    inline size_t getNumSameIDs() const {  return import_->NumSameIDs(); }
+    size_t getNumSameIDs() const {  return import_->NumSameIDs(); }
 
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
-    inline size_t getNumPermuteIDs() const {  return import_->NumPermuteIDs(); }
+    size_t getNumPermuteIDs() const {  return import_->NumPermuteIDs(); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! List of entries in the source Map that are permuted. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getPermuteFromLIDs() const { 
+    Teuchos::ArrayView<const int> getPermuteFromLIDs() const { 
        
       return import_->PermuteFromLIDs(); 
     }
 
     //! List of entries in the target Map that are permuted. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getPermuteToLIDs() const { 
+    Teuchos::ArrayView<const int> getPermuteToLIDs() const { 
        
       return import_->PermuteToLIDs(); 
     }
 
     //! Returns the number of entries that are not on the calling image.
-    inline size_t getNumRemoteIDs() const {  return import_->NumRemoteIDs(); }
+    size_t getNumRemoteIDs() const {  return import_->NumRemoteIDs(); }
 
     //! List of entries in the target Map that are coming from other images. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getRemoteLIDs() const { 
+    Teuchos::ArrayView<const int> getRemoteLIDs() const { 
        
       return import_->RemoteLIDs(); 
     }
 
     //! Returns the number of entries that must be sent by the calling image to other images.
-    inline size_t getNumExportIDs() const {  return import_->getNumExportIDs(); }
+    size_t getNumExportIDs() const {  return import_->getNumExportIDs(); }
 
     //! List of entries in the source Map that will be sent to other images. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getExportLIDs() const { 
+    Teuchos::ArrayView<const int> getExportLIDs() const { 
        
       return import_->ExportLIDs(); 
     }
 
     //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getExportImageIDs() const { 
+    Teuchos::ArrayView<const int> getExportImageIDs() const { 
        
       return import_->ExportImageIDs(); 
     }
 #endif
 
     //! Returns the Source Map used to construct this importer.
-    inline const Teuchos::RCP<const Map<int,int> > getSourceMap() const { 
-       
-
+    const Teuchos::RCP<const Map<int,int> > getSourceMap() const { 
       RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(import_->SourceMap()));
       return rcp ( new Cthulhu::EpetraMap(map) );
     }
 
     //! Returns the Target Map used to construct this importer.
-    inline const Teuchos::RCP<const Map<int,int> > getTargetMap() const { 
-       
-
+    const Teuchos::RCP<const Map<int,int> > getTargetMap() const { 
       RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(import_->TargetMap()));
       return rcp ( new Cthulhu::EpetraMap(map) );
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline Distributor & getDistributor() const {  return import_->Distributor(); }
+    Distributor & getDistributor() const {  return import_->Distributor(); }
 #endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Assignment operator
-    inline Import<int,int>& operator = (const Import<int,int> & Source) {  return }
+    Import<int,int>& operator = (const Import<int,int> & Source) {  return }
 
     //@}
 
@@ -137,7 +133,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Print method 
-    inline void print(std::ostream& os) const {  } 
+    void print(std::ostream& os) const {  } 
 
     //@}
 #endif

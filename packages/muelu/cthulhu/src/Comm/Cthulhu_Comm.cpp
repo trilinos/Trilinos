@@ -36,5 +36,11 @@ namespace Cthulhu {
         TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot convert an Epetra_Comm to a Teuchos::Comm: The exact type of the Epetra_Comm object is unknown");
   }
 
+
+  const RCP<const Teuchos::Comm<int> > toCthulhu(const Epetra_Comm & comm) {
+    RCP<const Epetra_Comm> rcpComm = rcpFromRef(comm);
+    return Epetra2Teuchos_Comm(rcpComm);
+  }
+
 }
 #endif

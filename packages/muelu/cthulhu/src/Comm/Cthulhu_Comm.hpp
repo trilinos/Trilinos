@@ -33,6 +33,8 @@ namespace Cthulhu {
   
   //! Convert an Epetra_Comm.to a Teuchos_Comm
   const RCP<const Teuchos::Comm<int> > Epetra2Teuchos_Comm(RCP<const Epetra_Comm> & comm);
+
+  const RCP<const Teuchos::Comm<int> > toCthulhu(const Epetra_Comm & comm);
   
 }
 #endif // HAVE_CTHULHU_EPETRA
