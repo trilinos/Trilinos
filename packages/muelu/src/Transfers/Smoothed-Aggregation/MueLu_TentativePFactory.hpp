@@ -113,34 +113,6 @@ namespace MueLu {
 
     //! @name Static methods.
     //@{
-    /*! @brief Make tentative prolongator.
-      TODO this signature does not match MueMat
-    */
-    static void MakeTentativeOldVersion(Level const &fineLevel, Level &coarseLevel)
-    {
-      RCP< Operator > Op = fineLevel.Get< RCP<Operator> >("A");
-      GO nFineDofs = Op->getGlobalNumRows();
-      GO nCoarseDofs = nFineDofs/3;
-      if (nCoarseDofs*3 != nFineDofs)
-        throw(Exceptions::NotImplemented("MakeTentative: currently #fine DOFS must be a multiple of 3"));
-      RCP< Operator > Ptent = rcp( new CrsOperator(Op->getRowMap(), 2) );
-      std::vector<SC> Values(1);
-      Values[0] = 1.0/sqrt(3.0);
-      std::vector<LO> Indices(1);
-      Teuchos::ArrayView<SC> av(&Values[0],1);
-      Teuchos::ArrayView<GO> iv(&Indices[0],1);
-      for (int i=0; i<nFineDofs; i++) {
-        Indices[0] = i / 3;
-        Ptent->insertGlobalValues(i,iv,av);
-      }
-
-      RCP<Map> domainMap = MapFactory::Build(Op->getRowMap()->lib(), nCoarseDofs, Op->getRowMap()->getIndexBase(), Op->getRowMap()->getComm());
-      Ptent->fillComplete(domainMap, Op->getRowMap());
-
-      //MatrixPrint(Op);
-      coarseLevel.Set("Ptent",Ptent);
-    } //MakeTentativeOldVersion()
-
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
     /*! @brief Make tentative prolongator with QR.
@@ -285,14 +257,19 @@ namespace MueLu {
       ArrayRCP<GO> rowPtr(nFineDofs+1);
       for (GO i=0; i<=nFineDofs; ++i)
         rowPtr[i] = i*NSDim;
-      ArrayRCP<GO> colPtr(nFineDofs*NSDim,0);
-      ArrayRCP<SC> valPtr(nFineDofs*NSDim,0.);
+      ArrayRCP<GO> colPtr(maxAggSize*NSDim,0);
+      ArrayRCP<SC> valPtr(maxAggSize*NSDim,0.);
 
       // Ptentative's row map is such that all DoF's in an aggregate
       // are local and consecutive.  Use fineA's domain map to FillComplete.
+
       //FIXME this won't work for Epetra, b/c we can't insert into off-processor rows
-      //RCP<Operator> Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim));
-      RCP<Operator> Ptentative = rcp(new CrsOperator(fineA->getRowMap(), NSDim));
+      rowMapForPtent = fineA->getRowMap();
+
+      RCP<Operator> Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim));
+
+      //FIXME this won't work for Epetra, b/c we can't insert into off-processor rows
+      //RCP<Operator> Ptentative = rcp(new CrsOperator(fineA->getRowMap(), NSDim));
 
       //used in the case of just one nullspace vector
       Teuchos::Array<Magnitude> norms(NSDim);
@@ -300,175 +277,151 @@ namespace MueLu {
 
       Teuchos::LAPACK<LO,SC> lapack;
 
-      //TODO Is it more efficient to extract the nullspace in aggregate order all at once,
-      //TODO instead of one aggregate at a time?
+      if (comm->getRank() == 1) sleep(2);
+      if (comm->getRank() == 3) sleep(4);
+
       //*****************************************************************
       //Loop over all aggregates and calculate local QR decompositions.
       //*****************************************************************
       GO ctr=0; //for indexing into Ptent data vectors
       for (LO agg=0; agg<numAggs; ++agg)
-        {
-          LO myAggSize = aggSizes[agg];
+      {
+        LO myAggSize = aggSizes[agg];
+        std::cout << "(pid " << comm->getRank() << ") aggregate " << agg << ": {";
+        for (LO k=0; k<myAggSize; ++k) {
+          if (k>0) std::cout << ",";
+          std::cout << aggToRowMap[agg][k];
+        }
+        std::cout << "}" << std::endl;
 
-          // For each aggregate, extract the corresponding piece of the nullspace and put it in the flat array,
-          // "localQR" (in column major format) for the QR routine.
-          for (size_t j=0; j<NSDim; ++j) {
-            for (LO k=0; k<myAggSize; ++k) {
-              //aggToRowMap[i][k] is the kth DOF in the ith aggregate
-              //fineNS[j][n] is the nth entry in the jth NS vector
-              try{
-                localQR[j* myAggSize + k] = fineNS[j][ aggToRowMap[agg][k] ];
-              }
-              catch(...) {
-                std::cerr << "caught an error!" << std::endl;
-              }
-            } //for (LO k=0 ...
-          } //for (LO j=0 ...
+        // For each aggregate, extract the corresponding piece of the nullspace and put it in the flat array,
+        // "localQR" (in column major format) for the QR routine.
+        for (size_t j=0; j<NSDim; ++j) {
+          for (LO k=0; k<myAggSize; ++k) {
+            //aggToRowMap[i][k] is the kth DOF in the ith aggregate
+            //fineNS[j][n] is the nth entry in the jth NS vector
+            try{
+              localQR[j* myAggSize + k] = fineNS[j][ aggToRowMap[agg][k] ];
+            }
+            catch(...) {
+              std::cerr << "caught an error!" << std::endl;
+            }
+          } //for (LO k=0 ...
+        } //for (LO j=0 ...
 
-          int intFineNSDim = NSDim;
+        int intFineNSDim = NSDim;
 
-          if (NSDim == 1) {
-            //only one nullspace vector, so normalize by hand
-            Magnitude dtemp=0;
-            for (LO k=0; k<myAggSize; ++k) {dtemp += localQR[k]*localQR[k];}
-            dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
-            tau[0] = localQR[0];
-            localQR[0] = dtemp;
-          } else {
-            //Perform the QR.  Upon return, R is stored explicitly, Q is stored implicitly as product
-            //of reflection matrices.
-            lapack.GEQRF( myAggSize, intFineNSDim, localQR.getRawPtr(), myAggSize,
-                          tau.getRawPtr(), work.getRawPtr(), workSize, &info );
-          }
+        if (NSDim == 1) {
+          //only one nullspace vector, so normalize by hand
+          Magnitude dtemp=0;
+          for (LO k=0; k<myAggSize; ++k) {dtemp += localQR[k]*localQR[k];}
+          dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
+          tau[0] = localQR[0];
+          localQR[0] = dtemp;
+        } else {
+          //Perform the QR.  Upon return, R is stored explicitly, Q is stored implicitly as product
+          //of reflection matrices.
+          lapack.GEQRF( myAggSize, intFineNSDim, localQR.getRawPtr(), myAggSize,
+                        tau.getRawPtr(), work.getRawPtr(), workSize, &info );
+        }
 
-          if (info != 0) {
-            std::ostringstream buf;
-            buf << info;
-            std::string msg = "MakeTentativeWithQR: dgeqrf (LAPACK QR routine) returned error code " + buf.str();
-            throw(Exceptions::RuntimeError(msg));
-          }
+        if (info != 0) {
+          std::ostringstream buf;
+          buf << info;
+          std::string msg = "MakeTentativeWithQR: dgeqrf (LAPACK QR routine) returned error code " + buf.str();
+          throw(Exceptions::RuntimeError(msg));
+        }
 
-          // LAPACK may have determined a better length for the work array.  Returns it in work[0],
-          // so we cast to avoid compiler warnings.
-          if ( work[0] > workSize) {
-            workSize = (int) work[0];
-            work = ArrayRCP<SC>(workSize);
-          } else
-            workSize = (int) work[0]; //TODO huh, think about this -- should it ever shrink?
+        // LAPACK may have determined a better length for the work array.  Returns it in work[0],
+        // so we cast to avoid compiler warnings.
+        if ( work[0] > workSize) {
+          workSize = (int) work[0];
+          work = ArrayRCP<SC>(workSize);
+        } else
+          workSize = (int) work[0]; //TODO huh, think about this -- should it ever shrink?
 
-          // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
-          // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
-          // This stores the (offset+k)th entry only if it is local according to the coarseMap.
-          Xpetra::global_size_t offset=agg*NSDim;
-          for (size_t j=0; j<NSDim; ++j) {
-            for (size_t k=0; k<=j; ++k) {
-              try {
-                if (coarseMap->isNodeLocalElement(offset+k))
-                  coarseNS[j][offset+k] = localQR[ myAggSize*j + k ]; //TODO is offset+k the correct local ID?!
-              }
-              catch(...) {
-                std::cout << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
-              }
+        // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
+        // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
+        // This stores the (offset+k)th entry only if it is local according to the coarseMap.
+        Xpetra::global_size_t offset=agg*NSDim;
+        for (size_t j=0; j<NSDim; ++j) {
+          for (size_t k=0; k<=j; ++k) {
+            try {
+              if (coarseMap->isNodeLocalElement(offset+k))
+                coarseNS[j][offset+k] = localQR[ myAggSize*j + k ]; //TODO is offset+k the correct local ID?!
+            }
+            catch(...) {
+              std::cout << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
             }
           }
+        }
 
-          // Calculate Q, the tentative prolongator, explicitly.  This requires calling a second LAPACK routine.
+        // Calculate Q, the tentative prolongator, explicitly.  This requires calling a second LAPACK routine.
 
-          if (NSDim == 1) {
-            //again, only one nullspace vector, so calculate Q by hand
-            Magnitude dtemp = localQR[0];
-            localQR[0] = tau[0];
-            dtemp = 1 / dtemp;
-            for (LO i=0; i<myAggSize; ++i)
-              localQR[i] *= dtemp;
-          } else {
-            lapack.ORGQR( myAggSize, intFineNSDim, intFineNSDim, localQR.getRawPtr(),
-                          myAggSize, tau.getRawPtr(), work.getRawPtr(), workSize, &info );
-          }
+        if (NSDim == 1) {
+          //again, only one nullspace vector, so calculate Q by hand
+          Magnitude dtemp = localQR[0];
+          localQR[0] = tau[0];
+          dtemp = 1 / dtemp;
+          for (LO i=0; i<myAggSize; ++i)
+            localQR[i] *= dtemp;
+        } else {
+          lapack.ORGQR( myAggSize, intFineNSDim, intFineNSDim, localQR.getRawPtr(),
+                        myAggSize, tau.getRawPtr(), work.getRawPtr(), workSize, &info );
+        }
 
-          if (info != 0) {
-            std::ostringstream buf;
-            buf << info;
-            std::string msg = "MakeTentativeWithQR: dorgqr (LAPACK auxiliary QR routine) returned error code "
-              + buf.str();
-            throw(Exceptions::RuntimeError(msg));
-          }
+        if (info != 0) {
+          std::ostringstream buf;
+          buf << info;
+          std::string msg = "MakeTentativeWithQR: dorgqr (LAPACK auxiliary QR routine) returned error code "
+            + buf.str();
+          throw(Exceptions::RuntimeError(msg));
+        }
 
-          // LAPACK may have determined a better length for the work array.  Returns it in work[0],
-          // so we cast to avoid compiler warnings.
-          if ( work[0] > workSize) {
-            workSize = (int) work[0];
-            work = ArrayRCP<SC>(workSize);
-          } else
-            workSize = (int) work[0]; //TODO huh, think about this -- should it ever shrink?
+        // LAPACK may have determined a better length for the work array.  Returns it in work[0],
+        // so we cast to avoid compiler warnings.
+        if ( work[0] > workSize) {
+          workSize = (int) work[0];
+          work = ArrayRCP<SC>(workSize);
+        } else
+          workSize = (int) work[0]; //TODO huh, think about this -- should it ever shrink?
 
-          //Save the part of tentative P (the Q factor) corresponding to the current aggregate
-          //in a CSR format.  This saves the entire Q factor as if it were dense.
-          for (GO j=0; j<myAggSize; ++j) {
-            for (size_t k=0; k<NSDim; ++k) {
-              GO index = ctr++;
-              //FIXME -- what happens if the map is blocked?
-              try{
-                colPtr[index] = coarseMap->getGlobalElement(agg * NSDim + k);
-                valPtr[index] = localQR[k*myAggSize+j];
+        //Insert the Q factor nonzeros corresponding to the current aggregate into Ptentative.
+        for (GO j=0; j<myAggSize; ++j) {
+          LO nnz=0;
+          for (size_t k=0; k<NSDim; ++k) {
+            //FIXME -- what happens if the map is blocked?
+            try{
+              if (localQR[k*myAggSize+j] != 0.) {
+                colPtr[nnz] = coarseMap->getGlobalElement(agg * NSDim + k);
+                valPtr[nnz] = localQR[k*myAggSize+j];
+                ++nnz;
               }
-              catch(...) {
-                std::cout << "caught error in colPtr/valPtr insert, index="<<index<<std::endl;
-              }
-            } //for (size_t k=0; k<NSDim; ++k) {
-          }
+            }
+            catch(...) {
+              std::cout << "caught error in colPtr/valPtr insert, current index="<<nnz<<std::endl;
+            }
+          } //for (size_t k=0; k<NSDim; ++k)
 
-        } // for (LO agg=0; agg<numAggs; ++agg)
+          try{
+            std::cout << "(pid " << comm->getRank() << ") (rowmap) inserting global row " << rowMapForPtent->getGlobalElement(ctr) << std::endl;
+            Ptentative->insertGlobalValues(rowMapForPtent->getGlobalElement(ctr++),
+                                           colPtr.view(0,nnz),
+                                           valPtr.view(0,nnz));
+          }
+          catch(...) {
+            std::cout << "pid " << fineA->getRowMap()->getComm()->getRank() << "caught error during Ptent row insertion, local row "
+               << ctr-1 << ", global row "
+               << rowMapForPtent->getGlobalElement(ctr-1)
+               <<std::endl;
+          }
+        } //for (GO j=0; j<myAggSize; ++j)
+
+      } // for (LO agg=0; agg<numAggs; ++agg)
 
       // ***********************************************************
       // ************* end of aggregate-wise QR ********************
       // ***********************************************************
-
-      //Remove all zeros in the tentative prolongator data arrays.
-      GO k = rowPtr[0];
-      GO nNonzeros=0;
-      GO index = k;
-      for (GO i=0; i<nFineDofs; ++i)
-        {
-          for (GO j=k; j< rowPtr[i+1]; ++j) {
-            if (valPtr[j] != 0.0) {
-              try{
-                valPtr[index] = valPtr[j];
-                colPtr[index] = colPtr[j];
-              }
-              catch(...) {
-                std::cout << "caught error in valPtr insert, index="<<index<< std::endl;
-              }
-              ++index;
-              ++nNonzeros;
-            }
-          }
-          k = rowPtr[i+1];
-          rowPtr[i+1] = index;
-        } //for (GO i=0...
-
-      //Insert into the final tentative prolongator matrix.
-      //Since now the Q may have rows that it does not own,
-      //check each row to see if it's local.  If so, insert it.  Otherwise, skip it.
-      for (GO i=0; i<nFineDofs; ++i)
-        {
-          //j=rowPtr[i], j1 = rowPtr[i+1]
-          //columns are in colPtr[j] ... colPtr[j1]-1
-          //values are in valPtr[j] ... valPtr[j1]-1
-          if (rowMapForPtent->isNodeLocalElement(i)) {
-            try{
-              GO start = rowPtr[i];
-              GO nnz = rowPtr[i+1] - rowPtr[i];
-
-              Ptentative->insertGlobalValues(rowMapForPtent->getGlobalElement(i),
-                                             colPtr.view(start,nnz),
-                                             valPtr.view(start,nnz));
-            }
-            catch(...) {
-              std::cout << "pid " << fineA->getRowMap()->getComm()->getRank() << "caught error in insertGlobalValue, i="<<i<<std::endl;
-            }
-          }
-        } //for (GO i=0; i<nFineDofs; ++i)
 
       Ptentative->fillComplete(coarseMap,fineA->getDomainMap()); //(domain,range) of Ptentative
 
@@ -478,7 +431,7 @@ namespace MueLu {
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(fineA->getRowMap()->getComm()));
 
-    } //MakeTentativeWithQR()
+    } //MakeTentative()
 
     static void BuildAggregates() {
       throw(Exceptions::NotImplemented("TentativePFactory: BuildAggregates not implemented"));
