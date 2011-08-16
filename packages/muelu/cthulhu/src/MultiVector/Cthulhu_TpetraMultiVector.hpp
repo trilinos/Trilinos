@@ -164,9 +164,17 @@ namespace Cthulhu {
     void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta){ vec_->multiply(transA, transB, alpha, toTpetra(A), toTpetra(B), beta); }
 
     //! Element-wise multiply of a Vector A with a MultiVector B.
-    void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis){ vec_->elementWiseMultiply(scalarAB, toTpetra(A), toTpetra(B), scalarThis); }
+    //    void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis){ vec_->elementWiseMultiply(scalarAB, toTpetra(A), toTpetra(B), scalarThis); }
 
-    //@}
+    //! Element-wise multiply of a Vector A with a TpetraMultiVector B.
+    void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) {
+      //TODO CTHULHU_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+      //TODO as an argument, hence the following typedef.
+      typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> tpv;
+      CTHULHU_DYNAMIC_CAST(const tpv, A, tA, "Cthulhu::TpetraMultiVectorMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, B, tB, "Cthulhu::TpetraMultiVectorMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+      vec_->elementWiseMultiply(scalarAB, *tA.getTpetra_Vector(), *tB.getTpetra_MultiVector(), scalarThis); }
+    //@} 
 
     //! @name Attribute access functions
     //@{

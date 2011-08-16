@@ -28,6 +28,7 @@ namespace Cthulhu {
 
     // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
     typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraCrsMatrixClass;
+    typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
 
   public:
 
@@ -138,7 +139,11 @@ namespace Cthulhu {
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const { mtx_->getLocalRowView(LocalRow, indices, values); }
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices.
-    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { mtx_->getLocalDiagCopy(toTpetra(diag)); }
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { 
+      CTHULHU_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Cthulhu::TpetraCrsMatrix.getLocalDiagCopy() only accept Cthulhu::TpetraVector as input arguments.");
+      mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector()); 
+      // mtx_->getLocalDiagCopy(toTpetra(diag)); 
+    }
 
     //@}
 
