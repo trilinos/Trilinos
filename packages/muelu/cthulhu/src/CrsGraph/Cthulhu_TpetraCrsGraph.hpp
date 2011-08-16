@@ -5,13 +5,15 @@
 
 #include "Cthulhu_TpetraConfigDefs.hpp"
 
+#include "Cthulhu_CrsGraph.hpp"
+
 #include "Tpetra_CrsGraph.hpp"
 
 namespace Cthulhu {
  
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toCthulhu(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph);
+  RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toCthulhu(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > );
   //
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -55,13 +57,13 @@ namespace Cthulhu {
     //@{
 
     //! Insert graph indices, using global IDs.
-    void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &indices){ graph_->insertGlobalIndices(globalRow, indices); }
+    void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &indices) { graph_->insertGlobalIndices(globalRow, indices); }
 
     //! Insert graph indices, using local IDs.
-    void insertLocalIndices(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices){ graph_->insertLocalIndices(localRow, indices); }
+    void insertLocalIndices(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices) { graph_->insertLocalIndices(localRow, indices); }
 
     //! Remove all graph indices from the specified local row.
-    void removeLocalIndices(LocalOrdinal localRow){ graph_->removeLocalIndices(localRow); }
+    void removeLocalIndices(LocalOrdinal localRow) { graph_->removeLocalIndices(localRow); }
 
     //@}
 
@@ -69,10 +71,10 @@ namespace Cthulhu {
     //@{
 
     //! Signal that data entry is complete, specifying domain and range maps.
-    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage){ graph_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), toTpetra(os)); }
+    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage) { graph_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), toTpetra(os)); }
 
     //! Signal that data entry is complete.
-    void fillComplete(OptimizeOption os=DoOptimizeStorage){ graph_->fillComplete(toTpetra(os)); }
+    void fillComplete(OptimizeOption os=DoOptimizeStorage) { graph_->fillComplete(toTpetra(os)); }
 
     //@}
 

@@ -18,7 +18,7 @@ namespace Cthulhu {
 
   // TODO: move that elsewhere
   // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  // const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> toTpetraCrsMatrix(const Cthulhu::DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &mtx);
+  // const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> toTpetraCrsMatrix(const Cthulhu::DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &);
   //
 
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
@@ -60,10 +60,10 @@ namespace Cthulhu {
     //@{
 
     //! Insert matrix entries, using global IDs.
-    void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals){ mtx_->insertGlobalValues(globalRow, cols, vals); }
+    void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals) { mtx_->insertGlobalValues(globalRow, cols, vals); }
 
     //! Scale the current values of a matrix, this = alpha*this.
-    void scale(const Scalar &alpha){ mtx_->scale(alpha); }
+    void scale(const Scalar &alpha) { mtx_->scale(alpha); }
 
     //@}
 
@@ -71,10 +71,10 @@ namespace Cthulhu {
     //@{
 
     //! Signal that data entry is complete, specifying domain and range maps.
-    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage){ mtx_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), toTpetra(os)); }
+    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage) { mtx_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), toTpetra(os)); }
 
     //! Signal that data entry is complete.
-    void fillComplete(OptimizeOption os=DoOptimizeStorage){ mtx_->fillComplete(toTpetra(os)); }
+    void fillComplete(OptimizeOption os=DoOptimizeStorage) { mtx_->fillComplete(toTpetra(os)); }
 
     //@}
 
@@ -175,8 +175,10 @@ namespace Cthulhu {
     //! Implements DistObject interface
     //{@
 
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
     const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(mtx_->getMap()) ); }
 
+    //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, 
                   const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { 
 
@@ -186,6 +188,7 @@ namespace Cthulhu {
       mtx_->doImport(*v, toTpetra(importer), toTpetra(CM));
     }
 
+    //! Export.
     void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest,
                   const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
 
@@ -195,6 +198,7 @@ namespace Cthulhu {
 
     }
 
+    //! Import (using an Exporter).
     void doImport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &source,
                   const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
 
@@ -204,6 +208,7 @@ namespace Cthulhu {
 
     }
 
+    //! Export (using an Importer).
     void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest,
                   const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
 

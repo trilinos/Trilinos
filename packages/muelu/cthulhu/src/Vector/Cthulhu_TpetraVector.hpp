@@ -19,10 +19,10 @@ namespace Cthulhu {
 
   // TODO: move that elsewhere
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Tpetra::Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &map);
+  Tpetra::Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &);
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Tpetra::Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &map);
+  const Tpetra::Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &);
   //
 
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>

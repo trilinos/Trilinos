@@ -59,10 +59,10 @@ namespace Cthulhu {
     //@{
 
     //! Initialize all values in a multi-vector with specified value.
-    void putScalar(const Scalar &value){ vec_->PutScalar(value); }
+    void putScalar(const Scalar &value) { vec_->PutScalar(value); }
 
     //! Set multi-vector values to random numbers.
-    void randomize(){ vec_->Random(); }
+    void randomize() { vec_->Random(); }
 
     //@}
 
@@ -70,7 +70,7 @@ namespace Cthulhu {
     //@{
 
     //! 
-    Teuchos::ArrayRCP< const Scalar > getData(size_t j) const ;
+    Teuchos::ArrayRCP< const Scalar > getData(size_t j) const;
 
     //! 
     Teuchos::ArrayRCP< Scalar > getDataNonConst(size_t j);
@@ -81,43 +81,43 @@ namespace Cthulhu {
     //@{
 
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i]).
-    void dot(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Teuchos::ArrayView< Scalar > &dots) const ;
+    void dot(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Teuchos::ArrayView< Scalar > &dots) const;
 
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this).
-    void abs(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A){ vec_->Abs(toEpetra(A)); }
+    void abs(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { vec_->Abs(toEpetra(A)); }
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A){ vec_->Reciprocal(toEpetra(A)); }
+    void reciprocal(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { vec_->Reciprocal(toEpetra(A)); }
 
     //! Scale the current values of a multi-vector, this = alpha*this.
-    void scale(const Scalar &alpha){ vec_->Scale(alpha); }
+    void scale(const Scalar &alpha) { vec_->Scale(alpha); }
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta){ vec_->Update(alpha, toEpetra(A), beta); }
+    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta) { vec_->Update(alpha, toEpetra(A), beta); }
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &gamma){ vec_->Update(alpha, toEpetra(A), beta, toEpetra(B), gamma); }
+    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &gamma) { vec_->Update(alpha, toEpetra(A), beta, toEpetra(B), gamma); }
 
     //! Compute 1-norm of each vector in multi-vector.
-    void norm1(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const ;
+    void norm1(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const;
 
     //! Compute 2-norm of each vector in multi-vector.
-    void norm2(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const ;
+    void norm2(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const;
 
     //! Compute Inf-norm of each vector in multi-vector.
-    void normInf(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const ;
+    void normInf(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const;
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    void normWeighted(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights, const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const ;
+    void normWeighted(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights, const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const;
 
     //! Compute mean (average) value of each vector in multi-vector.
-    void meanValue(const Teuchos::ArrayView< Scalar > &means) const ;
+    void meanValue(const Teuchos::ArrayView< Scalar > &means) const;
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta){ vec_->Multiply(toEpetra(transA), toEpetra(transB), alpha, toEpetra(A), toEpetra(B), beta); }
+    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta) { vec_->Multiply(toEpetra(transA), toEpetra(transB), alpha, toEpetra(A), toEpetra(B), beta); }
 
     //! Element-wise multiply of a Vector A with a MultiVector B.
-    void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis){ vec_->Multiply(scalarAB, toEpetra(A), toEpetra(B), scalarThis); }
+    void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis) { vec_->Multiply(scalarAB, toEpetra(A), toEpetra(B), scalarThis); }
 
     //@}
 
@@ -139,10 +139,10 @@ namespace Cthulhu {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
 
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const ;
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
 

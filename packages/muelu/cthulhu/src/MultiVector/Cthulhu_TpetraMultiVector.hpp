@@ -67,25 +67,25 @@ namespace Cthulhu {
     //@{
 
     //! Replace current value at the specified (globalRow, vectorIndex) location with specified value.
-    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value){ vec_->replaceGlobalValue(globalRow, vectorIndex, value); }
+    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { vec_->replaceGlobalValue(globalRow, vectorIndex, value); }
 
     //! Adds specified value to existing value at the specified (globalRow, vectorIndex) location.
-    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value){ vec_->sumIntoGlobalValue(globalRow, vectorIndex, value); }
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { vec_->sumIntoGlobalValue(globalRow, vectorIndex, value); }
 
     //! Replace current value at the specified (myRow, vectorIndex) location with specified value.
-    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value){ vec_->replaceLocalValue(myRow, vectorIndex, value); }
+    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { vec_->replaceLocalValue(myRow, vectorIndex, value); }
 
     //! Adds specified value to existing value at the specified (myRow, vectorIndex) location.
-    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value){ vec_->sumIntoLocalValue(myRow, vectorIndex, value); }
+    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { vec_->sumIntoLocalValue(myRow, vectorIndex, value); }
 
     //! Initialize all values in a multi-vector with specified value.
-    void putScalar(const Scalar &value){ vec_->putScalar(value); }
+    void putScalar(const Scalar &value) { vec_->putScalar(value); }
 
     //! Set multi-vector values to random numbers.
-    void randomize(){ vec_->randomize(); }
+    void randomize() { vec_->randomize(); }
 
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
-    void reduce(){ vec_->reduce(); }
+    void reduce() { vec_->reduce(); }
 
     //@}
 
@@ -96,7 +96,7 @@ namespace Cthulhu {
     Teuchos::ArrayRCP< const Scalar > getData(size_t j) const { return vec_->getData(j); }
 
     //! 
-    Teuchos::ArrayRCP< Scalar > getDataNonConst(size_t j){ return vec_->getDataNonConst(j); }
+    Teuchos::ArrayRCP< Scalar > getDataNonConst(size_t j) { return vec_->getDataNonConst(j); }
 
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
     void get1dCopy(Teuchos::ArrayView< Scalar > A, size_t LDA) const { vec_->get1dCopy(A, LDA); }
@@ -111,10 +111,10 @@ namespace Cthulhu {
     Teuchos::ArrayRCP< Teuchos::ArrayRCP< const Scalar > > get2dView() const { return vec_->get2dView(); }
 
     //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous. Teuchos::ArrayRCP<Scalar> get1dViewNonConst();.
-    Teuchos::ArrayRCP< Scalar > get1dViewNonConst(){ return vec_->get1dViewNonConst(); }
+    Teuchos::ArrayRCP< Scalar > get1dViewNonConst() { return vec_->get1dViewNonConst(); }
 
     //! Return non-const persisting pointers to values.
-    Teuchos::ArrayRCP< Teuchos::ArrayRCP< Scalar > > get2dViewNonConst(){ return vec_->get2dViewNonConst(); }
+    Teuchos::ArrayRCP< Teuchos::ArrayRCP< Scalar > > get2dViewNonConst() { return vec_->get2dViewNonConst(); }
 
     //@}
 
@@ -125,25 +125,25 @@ namespace Cthulhu {
     void dot(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Teuchos::ArrayView< Scalar > &dots) const { vec_->dot(toTpetra(A), dots); }
 
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this).
-    void abs(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A){ vec_->abs(toTpetra(A)); }
+    void abs(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { vec_->abs(toTpetra(A)); }
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A){ vec_->reciprocal(toTpetra(A)); }
+    void reciprocal(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { vec_->reciprocal(toTpetra(A)); }
 
     //! Scale the current values of a multi-vector, this = alpha*this.
-    void scale(const Scalar &alpha){ vec_->scale(alpha); }
+    void scale(const Scalar &alpha) { vec_->scale(alpha); }
 
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
-    void scale(Teuchos::ArrayView< const Scalar > alpha){ vec_->scale(alpha); }
+    void scale(Teuchos::ArrayView< const Scalar > alpha) { vec_->scale(alpha); }
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
-    void scale(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A){ vec_->scale(alpha, toTpetra(A)); }
+    void scale(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { vec_->scale(alpha, toTpetra(A)); }
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta){ vec_->update(alpha, toTpetra(A), beta); }
+    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta) { vec_->update(alpha, toTpetra(A), beta); }
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &gamma){ vec_->update(alpha, toTpetra(A), beta, toTpetra(B), gamma); }
+    void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &gamma) { vec_->update(alpha, toTpetra(A), beta, toTpetra(B), gamma); }
 
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { vec_->norm1(norms); }
@@ -161,7 +161,7 @@ namespace Cthulhu {
     void meanValue(const Teuchos::ArrayView< Scalar > &means) const { vec_->meanValue(means); }
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta){ vec_->multiply(transA, transB, alpha, toTpetra(A), toTpetra(B), beta); }
+    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta) { vec_->multiply(transA, transB, alpha, toTpetra(A), toTpetra(B), beta); }
 
     //! Element-wise multiply of a Vector A with a MultiVector B.
     //    void elementWiseMultiply(Scalar scalarAB, const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, Scalar scalarThis){ vec_->elementWiseMultiply(scalarAB, toTpetra(A), toTpetra(B), scalarThis); }
@@ -229,7 +229,6 @@ namespace Cthulhu {
 
     }
 
-    //!TODO:comment add
     void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
       
       CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, dest, tDest, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()

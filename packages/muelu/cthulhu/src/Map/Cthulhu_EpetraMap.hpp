@@ -20,10 +20,10 @@ namespace Tpetra { //TODO to be removed
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  const Epetra_Map & toEpetra(const Map<int,int> &map);
-  const Epetra_Map & toEpetra(const RCP< const Map<int, int> > &map);
-  //const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &map);
-  const RCP< const Map<int, int> > toCthulhu(const Epetra_BlockMap &map);
+  const Epetra_Map & toEpetra(const Map<int,int> &);
+  const Epetra_Map & toEpetra(const RCP< const Map<int, int> > &);
+  //const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &);
+  const RCP< const Map<int, int> > toCthulhu(const Epetra_BlockMap &);
   //
 
   class EpetraMap
@@ -90,13 +90,13 @@ namespace Cthulhu {
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { return map_->GID(localIndex); }
 
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const ;
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const;
 
     //! Returns the node IDs for a given list of global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const ;
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const;
 
     //! Return a list of the global indices owned by this node.
-    Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const ;
+    Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const;
 
     //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
     bool isNodeLocalElement(LocalOrdinal localIndex) const { return map_->MyLID(localIndex); }
@@ -130,7 +130,7 @@ namespace Cthulhu {
     const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return toCthulhu(map_->Comm()); }
 
     //! Get the Node object for this Map.
-    const Teuchos::RCP< Node >  getNode() const ;
+    const Teuchos::RCP< Node >  getNode() const;
 
     //@}
 
@@ -138,10 +138,10 @@ namespace Cthulhu {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
 
     //! Print the object with some verbosity level to a FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const ;
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
 

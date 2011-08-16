@@ -14,7 +14,7 @@
 #include <Epetra_CrsGraph.h>
 
 namespace Cthulhu {
- 
+
   // TODO: move that elsewhere
   RCP< const CrsGraph<int, int> > toCthulhu(const Epetra_CrsGraph& graph);
   //
@@ -65,7 +65,7 @@ namespace Cthulhu {
     void insertLocalIndices(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices);
 
     //! Remove all graph indices from the specified local row.
-    void removeLocalIndices(LocalOrdinal localRow){ graph_->RemoveMyIndices(localRow); }
+    void removeLocalIndices(LocalOrdinal localRow) { graph_->RemoveMyIndices(localRow); }
 
     //@}
 
@@ -168,10 +168,10 @@ namespace Cthulhu {
     bool isStorageOptimized() const { return graph_->StorageOptimized(); }
 
     //! Extract a const, non-persisting view of global indices in a specified row of the graph.
-    void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &Indices) const ;
+    void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &Indices) const;
 
     //! Extract a const, non-persisting view of local indices in a specified row of the graph.
-    void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const ;
+    void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const;
 
     //@}
 
@@ -179,10 +179,10 @@ namespace Cthulhu {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const ;
+    std::string description() const;
 
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const ;
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
 

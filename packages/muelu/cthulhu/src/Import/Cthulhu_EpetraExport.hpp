@@ -16,7 +16,7 @@
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  const Epetra_Export & toEpetra(const Export<int, int> &exp);
+  const Epetra_Export & toEpetra(const Export<int, int> &);
   //
 
   class EpetraExport
