@@ -27,6 +27,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DCMAKE_C_COMPILER:FILEPATH=/home/jmwille/install/gcc-4.6./bin/gcc"
   "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/jmwille/install/gcc-4.6.1/bin/gfortran"
   "-DBoost_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/boost_1_46_1"
+  "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/netcdf-4.1.3/include"
+  "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.4.4/netcdf-4.1.3/lib"
   )
 
 #

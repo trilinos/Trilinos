@@ -25,6 +25,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   "-DMPI_BASE_DIR:PATH=/home/jmwille/install/gcc-4.6.1/openmpi-1.4.3"
   "-DBoost_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/boost_1_46_1"
+  "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/netcdf-4.1.3/include"
+  "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.4.4/netcdf-4.1.3/lib"
   )
 
 #
