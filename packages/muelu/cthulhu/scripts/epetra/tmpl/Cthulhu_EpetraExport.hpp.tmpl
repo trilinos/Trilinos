@@ -3,9 +3,9 @@ $TMPL_HEADERS
 #include "Cthulhu_EpetraConfigDefs.hpp"
 
 #include "Cthulhu_Export.hpp"
-#include "Cthulhu_Exceptions.hpp"
 
-#include "Cthulhu_EpetraMap.hpp"
+#include "Cthulhu_EpetraMap.hpp"//TMP
+
 #include "Epetra_Export.h"
 
 // Note: 'export' is a reserved keyword in C++. Do not use 'export' as a variable name.
@@ -34,7 +34,8 @@ $TMPL_PUBLIC_FUNCTIONS
     //! EpetraExport constructor to wrap a Epetra_Export object
     EpetraExport(const RCP<const Epetra_Export> &exp) : export_(exp) {  }
 
-    RCP< const Epetra_Export > getEpetra_Export() const { return export_; }
+    //! Get the underlying Epetra export
+    RCP< const Epetra_Export> getEpetra_Export() const { return export_; }
 
     //@}
     
@@ -43,15 +44,6 @@ $TMPL_PUBLIC_FUNCTIONS
     RCP<const Epetra_Export> export_;
 
   }; // EpetraExport class
-
-  // TODO: move that elsewhere
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-    const Epetra_Export & toEpetra(const Export<int, int> &exp) {
-    // TODO: throw exception
-    const EpetraExport & tpetraExport = dynamic_cast<const EpetraExport &>(exp);
-    return *tpetraExport.getEpetra_Export();
-  }
-  //
 
 } // Cthulhu namespace
 
