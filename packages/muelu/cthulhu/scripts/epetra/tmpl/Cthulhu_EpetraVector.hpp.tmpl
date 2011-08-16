@@ -3,14 +3,14 @@ $TMPL_HEADERS
 #include "Cthulhu_EpetraConfigDefs.hpp"
 
 #include "Cthulhu_Vector.hpp"
-#include "Cthulhu_MultiVector.hpp"
-
+#include "Cthulhu_EpetraMultiVector.hpp"
 #include "Cthulhu_EpetraMap.hpp" //TMP
 #include "Cthulhu_CombineMode.hpp"
 #include "Cthulhu_EpetraImport.hpp"
 #include "Cthulhu_EpetraExport.hpp"
+#include "Cthulhu_Exceptions.hpp"
 
-#include "Epetra_Vector.h"
+#include <Epetra_Vector.h>
 
 namespace Cthulhu {
 
@@ -38,48 +38,21 @@ namespace Cthulhu {
     using EpetraMultiVector::normWeighted; // overloading, not hiding
     using EpetraMultiVector::meanValue;    // overloading, not hiding
 
-    //! @name Constructor/Destructor Methods
-    //@{ 
-
-    //! Sets all vector entries to zero.
-    EpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true)
-      : EpetraMultiVector(map,1,zeroOut) { }
-    
-    //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
-    EpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView< const Scalar > &A)
-      : EpetraMultiVector(map,A,map->getNodeNumElements(),1) { }
-
-    //! Destructor.
-    virtual ~EpetraVector() { }
-
-    //@}
-
 $TMPL_PUBLIC_FUNCTIONS
 
     //! @name Cthulhu specific
     //@{
 
-    //! EpetraMultiVector constructor to wrap a Epetra_MultiVector object
+    //! EpetraMultiVector constructor to wrap a Epetra_Vector object
     EpetraVector(const Teuchos::RCP<Epetra_Vector> &vec) : EpetraMultiVector(vec) { } // TODO: removed const of Epetra::Vector
 
-    //! Get the underlying Epetra multivector
-    RCP<Epetra_Vector> getEpetra_Vector() const { return this->EpetraMultiVector::getEpetra_MultiVector()->getVectorNonConst(0); }
+    //! Get the underlying Epetra vector
+    Epetra_Vector * getEpetra_Vector() const {  return (*this->EpetraMultiVector::getEpetra_MultiVector())(0); }
+    //RCP<Epetra_Vector> getEpetra_Vector() const { return this->EpetraMultiVector::getEpetra_MultiVector()->getVectorNonConst(0); }
 
     //@}
     
   }; // EpetraVector class
-
-  // TODO: move that elsewhere
-  Epetra_Vector & toEpetra(Vector<double, int, int> &map);
-    CTHULHU_DYNAMIC_CAST(      EpetraVector, x, tX, "toEpetra");
-    return *tX.getEpetra_Vector();
-  }
-
-  const Epetra_Vector & toEpetra(const Vector<double, int, int> &map);
-    CTHULHU_DYNAMIC_CAST(const EpetraVector, x, tX, "toEpetra");
-    return *tX.getEpetra_Vector();
-  }
-  //
 
 } // Cthulhu namespace
 

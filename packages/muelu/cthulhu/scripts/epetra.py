@@ -28,7 +28,7 @@ def buildFuncLineEpetra( functionNode ):
     type = functionNode.xpath('type')[0].xpath("string()")
     
     # <argsstring>
-    argsstring = functionNode.xpath('argsstring')[0].text.replace('typename ','')
+    argsstring = functionNode.xpath('argsstring')[0].text
 
     #hack for Vector
     if 'magnitudeType' in type: type = 'typename ' + type
@@ -62,7 +62,7 @@ def buildFuncLineEpetra( functionNode ):
         declStr = type + " " + name + argsstring
     else:
         declStr = name + argsstring
-    declStr.rstrip()
+    declStr = declStr.rstrip().replace('typename ','')
 
     if 'TPETRA_DEPRECATED' in type: return ''
     if "const =0" in argsstring: return '' #hack for CrsMatrix
@@ -70,7 +70,10 @@ def buildFuncLineEpetra( functionNode ):
     # hack for MultiVector
     if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
     if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
-    if name == "EpetraMultiVector" and 'ArrayView' in argsstring: return ''
+    if className == "EpetraVector" and 'ArrayView' in argsstring: return ''
+
+    # hack for Vector
+    if name == 'EpetraVector' and 'Map' in argsstring: declStr = 'explicit ' + declStr
 
     # hack for CrsMatrix
     if name == "EpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''
@@ -119,7 +122,6 @@ out_dir = '../src/'
 for file in os.listdir(conf_dir):
     basename, extension = os.path.splitext(file)
     if extension == ".conf":
-
 #### READ CONFIG ####
         parser = SafeConfigParser()
         parser.read(conf_dir + file)

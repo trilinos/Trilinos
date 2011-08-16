@@ -1,7 +1,11 @@
 #include "Cthulhu_EpetraVector.hpp"
 
+//TODO: replace double -> Scalar etc.
+
 namespace Cthulhu {
 
+  EpetraVector::EpetraVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut) : EpetraMultiVector(map,1,zeroOut) { }
+  
   double EpetraVector::dot(const Vector<double,int,int> &a) const { 
        
       CTHULHU_DYNAMIC_CAST(const EpetraVector, a, tA, "This Cthulhu::EpetraVector method only accept Cthulhu::EpetraVector as input arguments.");
