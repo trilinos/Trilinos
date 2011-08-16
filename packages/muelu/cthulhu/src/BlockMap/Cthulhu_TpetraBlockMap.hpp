@@ -18,7 +18,9 @@
 namespace Cthulhu {
 
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node> {
+class TpetraBlockMap 
+  : public BlockMap<LocalOrdinal,GlobalOrdinal,Node>
+{
  public:
   
   // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.

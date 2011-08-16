@@ -15,10 +15,9 @@
 
 namespace Cthulhu {
  
-/*   // TODO: move that elsewhere */
-/*   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> */
-/*   RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toCthulhu(RCP< const Epetra_CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph); */
-/*   // */
+  // TODO: move that elsewhere
+  RCP< const CrsGraph<int, int> > toCthulhu(const Epetra_CrsGraph& graph);
+  //
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration
@@ -203,17 +202,6 @@ namespace Cthulhu {
     RCP<Epetra_CrsGraph> graph_;
 
   }; // EpetraCrsGraph class
-
-/*   // TODO: move that elsewhere */
-/*   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps> */
-/*   RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toCthulhu(RCP< const Epetra_CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph) { //TODO: return EpetraCrsGraph instead of CrsGraph */
-/*     // typedef EpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> EpetraCrsGraphClass; */
-/*     // CTHULHU_RCP_DYNAMIC_CAST(const EpetraCrsGraphClass, graph, tGraph, "toEpetra"); */
-
-/*     RCP<Epetra_CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tGraph = Teuchos::rcp_const_cast<Epetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(graph); //TODO: can I avoid the const_cast ? */
-/*     return rcp ( new Cthulhu::EpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tGraph) ); */
-/*   } */
-/*   // */
 
 } // Cthulhu namespace
 

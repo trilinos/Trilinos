@@ -17,6 +17,7 @@ namespace Cthulhu {
 #ifdef HAVE_CTHULHU_EPETRA  
   const Cthulhu::LookupStatus  toCthulhu(int);
   const bool                   toEpetra(Cthulhu::ProfileType);
+  const bool                   toEpetra(Cthulhu::OptimizeOption);
 #endif // HAVE_CTHULHU_TPETRA
 
 }

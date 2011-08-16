@@ -27,7 +27,7 @@ namespace Cthulhu {
   //
 
   class EpetraMap
-    : public Cthulhu::Map<int, int>
+    : public Map<int, int>
   {
 
     typedef int LocalOrdinal;

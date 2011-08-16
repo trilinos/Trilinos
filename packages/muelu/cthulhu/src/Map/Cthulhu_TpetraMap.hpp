@@ -28,7 +28,7 @@ namespace Cthulhu {
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class TpetraMap
-    : public Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> {
+    : public Map<LocalOrdinal,GlobalOrdinal,Node> {
 
   public:
 

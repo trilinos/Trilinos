@@ -14,7 +14,14 @@
 
 namespace Cthulhu {
 
-  class EpetraIntVector : public Vector<int,int,int> {
+  class EpetraIntVector
+    : public Vector<int,int,int>
+  {
+
+    typedef int Scalar;
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
     
   public:
 

@@ -19,9 +19,19 @@
 
 namespace Cthulhu {
 
+  // TODO: move that elsewhere
+  Epetra_Vector & toEpetra(Vector<double, int, int> &);
+  const Epetra_Vector & toEpetra(const Vector<double, int, int> &);
+  //
+
   class EpetraVector
     : public Vector<double,int,int>,  public EpetraMultiVector
   {
+
+    typedef double Scalar;
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
     
   public:
     using EpetraMultiVector::dot; // overloading, not hiding

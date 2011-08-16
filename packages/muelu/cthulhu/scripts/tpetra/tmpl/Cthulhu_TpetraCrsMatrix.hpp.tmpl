@@ -33,8 +33,10 @@ $TMPL_PUBLIC_FUNCTIONS
     //! Implements DistObject interface
     //{@
 
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
     const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(mtx_->getMap()) ); }
 
+    //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, 
                   const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { 
 
@@ -44,6 +46,7 @@ $TMPL_PUBLIC_FUNCTIONS
       mtx_->doImport(*v, toTpetra(importer), toTpetra(CM));
     }
 
+    //! Export.
     void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest,
                   const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
 
@@ -53,6 +56,7 @@ $TMPL_PUBLIC_FUNCTIONS
 
     }
 
+    //! Import (using an Exporter).
     void doImport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &source,
                   const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
 
@@ -62,6 +66,7 @@ $TMPL_PUBLIC_FUNCTIONS
 
     }
 
+    //! Export (using an Importer).
     void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest,
                   const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
 

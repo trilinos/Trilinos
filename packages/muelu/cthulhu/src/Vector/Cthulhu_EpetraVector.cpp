@@ -101,4 +101,16 @@ namespace Cthulhu {
 //       }
     }
 
+  // TODO: move that elsewhere
+  Epetra_Vector & toEpetra(Vector<double, int, int> &x) {
+    CTHULHU_DYNAMIC_CAST(      EpetraVector, x, tX, "toEpetra");
+    return *tX.getEpetra_Vector();
+  }
+  
+  const Epetra_Vector & toEpetra(const Vector<double, int, int> &x) {
+    CTHULHU_DYNAMIC_CAST(const EpetraVector, x, tX, "toEpetra");
+    return *tX.getEpetra_Vector();
+  }
+  //
+
 }

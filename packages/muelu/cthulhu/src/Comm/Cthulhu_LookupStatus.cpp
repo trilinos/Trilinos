@@ -5,17 +5,6 @@ namespace Cthulhu {
 
 #ifdef HAVE_CTHULHU_TPETRA
 
-  const Tpetra::LookupStatus toTpetra(Cthulhu::LookupStatus LS) {
-    
-    if (LS == Cthulhu::AllIDsPresent)
-      return Tpetra::AllIDsPresent;
-    if (LS == Cthulhu::IDNotPresent)
-      return Tpetra::IDNotPresent;
-    
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown LookupStatus"); 
-    
-  }
-
   const Cthulhu::LookupStatus toCthulhu(Tpetra::LookupStatus LS) {
     
     if (LS == Tpetra::AllIDsPresent)
@@ -51,7 +40,7 @@ namespace Cthulhu {
 
 #endif // HAVE_CTHULHU_TPETRA
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_CTHULHU_EPETRA
 
   const Cthulhu::LookupStatus toCthulhu(int) {
     return Cthulhu::AllIDsPresent; // TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
@@ -67,7 +56,18 @@ namespace Cthulhu {
     TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown ProfileType"); 
   }
 
-#endif // HAVE_CTHULHU_TPETRA
+  const bool toEpetra(Cthulhu::OptimizeOption os) {
+
+    if (os == Cthulhu::DoOptimizeStorage)
+      return true;
+    if (os == Cthulhu::DoNotOptimizeStorage)
+      return false;
+    
+    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
+
+  }
+
+#endif // HAVE_CTHULHU_EPETRA
 
 } // namespace cthulhu
 

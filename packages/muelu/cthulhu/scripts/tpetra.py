@@ -62,7 +62,7 @@ def buildFuncLineTpetra( functionNode ):
         declStr = type + " " + name + argsstring
     else:
         declStr = name + argsstring
-    declStr.rstrip()
+    declStr = declStr.rstrip()
 
     if 'TPETRA_DEPRECATED' in type: return ''
     if "const =0" in argsstring: return '' #hack for CrsMatrix

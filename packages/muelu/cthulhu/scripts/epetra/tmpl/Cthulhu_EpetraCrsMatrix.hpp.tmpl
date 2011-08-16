@@ -2,32 +2,30 @@ $TMPL_HEADERS
 
 #include "Cthulhu_EpetraConfigDefs.hpp"
 
-#include "Epetra_CrsMatrix.hpp"
-
 #include "Cthulhu_CrsMatrix.hpp"
+
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_Map.h>
+
 #include "Cthulhu_EpetraMap.hpp"
-#include "Cthulhu_EpetraMultiVector.hpp"
 #include "Cthulhu_EpetraVector.hpp"
+#include "Cthulhu_EpetraMultiVector.hpp"
 #include "Cthulhu_EpetraCrsGraph.hpp"
+
+#include "Cthulhu_LookupStatus.hpp"
 #include "Cthulhu_Exceptions.hpp"
 
 namespace Cthulhu {
-
-  // TODO: move that elsewhere
-  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  // const Epetra_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> toEpetraCrsMatrix(const Cthulhu::DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &mtx);
-  //
 
   class $TMPL_CLASS
   $TMPL_INHERITANCE
   {
 
+    typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
-
-    // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
-    typedef EpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> EpetraCrsMatrixClass;
+    typedef Kokkos::DefaultKernels<void,int,Node>::SparseOps LocalMatOps;
 
   public:
 
@@ -36,74 +34,42 @@ $TMPL_PUBLIC_FUNCTIONS
     //! Implements DistObject interface
     //{@
 
-    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return rcp( new EpetraMap< LocalOrdinal, GlobalOrdinal, Node >(mtx_->getMap()) ); }
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return toCthulhu(mtx_->Map()); }
 
-    void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, 
-                  const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { 
+    //! Import.
+    void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
 
-      CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrixClass, source, tSource, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");//TODO: remove and use toEpetra()
-      RCP< const Epetra_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getEpetra_CrsMatrix();
-      //mtx_->doImport(toEpetraCrsMatrix(source), *tImporter.getEpetra_Import(), toEpetra(CM));
-      mtx_->doImport(*v, toEpetra(importer), toEpetra(CM));
-    }
+    //! Export.
+    void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest, const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM);
 
-    void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest,
-                  const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
+    //! Import (using an Exporter).
+    void doImport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &source, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
 
-      CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrixClass, dest, tDest, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");//TODO: remove and use toEpetra()
-      RCP< const Epetra_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getEpetra_CrsMatrix();
-      mtx_->doExport(*v, toEpetra(importer), toEpetra(CM)); 
+    //! Export (using an Importer).
+    void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
 
-    }
-
-    void doImport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &source,
-                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
-
-      CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrixClass, source, tSource, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");//TODO: remove and use toEpetra()
-      RCP< const Epetra_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getEpetra_CrsMatrix();
-      mtx_->doImport(*v, toEpetra(exporter), toEpetra(CM));
-
-    }
-
-    void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest,
-                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
-
-      CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrixClass, dest, tDest, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");//TODO: remove and use toEpetra()
-      RCP< const Epetra_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getEpetra_CrsMatrix();
-      mtx_->doExport(*v, toEpetra(exporter), toEpetra(CM)); 
-
-    }
-
-    // @}
+    //@}
 
     //! @name Cthulhu specific
     //@{
 
     //! EpetraCrsMatrix constructor to wrap a Epetra_CrsMatrix object
-    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {  }
+    EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix > &mtx) : mtx_(mtx) {  }
 
     //! Get the underlying Epetra matrix
-    RCP<const Epetra_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getEpetra_CrsMatrix() const { return mtx_; }
+    RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { return mtx_; }
     
     //! Get the underlying Epetra matrix
-    RCP<Epetra_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getEpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
+    RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
  
    //@}
     
   private:
     
-    RCP< Epetra_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
+    RCP<Epetra_CrsMatrix> mtx_;
 
   }; // EpetraImport class
-
-  // TODO: move that elsewhere
-  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  // const Epetra_DistObject<char, LocalOrdinal, GlobalOrdinal, Node> toEpetraCrsMatrix(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &mtx) {
-  //   typedef EpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> EpetraCrsMatrixClass;
-  //   CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrixClass, mtx, tMtx, "toEpetra");
-  //   return *tMtx.getEpetra_CrsMatrix();
-  // }
-  //
 
 } // Cthulhu namespace
 

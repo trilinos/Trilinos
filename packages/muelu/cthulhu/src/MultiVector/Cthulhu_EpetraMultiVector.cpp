@@ -52,7 +52,6 @@ namespace Cthulhu {
   void EpetraMultiVector::doImport(const DistObject<double, int, int> &source, 
                 const Import<int, int> &importer, CombineMode CM) {
       
-
     CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
     CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
@@ -63,7 +62,6 @@ namespace Cthulhu {
 
   void EpetraMultiVector::doExport(const DistObject<double, int, int> &dest,
                 const Import<int, int>& importer, CombineMode CM) {
-      
       
     CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
     CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
@@ -76,7 +74,6 @@ namespace Cthulhu {
   void EpetraMultiVector::doImport(const DistObject<double,int,int> &source,
                 const Export<int, int>& exporter, CombineMode CM) {
       
-
     CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
     CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
@@ -88,7 +85,6 @@ namespace Cthulhu {
   void EpetraMultiVector::doExport(const DistObject<double, int, int> &dest,
                 const Export<int, int>& exporter, CombineMode CM) {
       
-      
     CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
     CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
 
@@ -96,5 +92,18 @@ namespace Cthulhu {
     int err = this->getEpetra_MultiVector()->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
     TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
+
+  // TODO: move that elsewhere
+  const Epetra_MultiVector & toEpetra(const MultiVector<double, int, int> & x) {
+    CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, x, tX, "toEpetra");
+    return *tX.getEpetra_MultiVector();
+  }
+
+  Epetra_MultiVector & toEpetra(MultiVector<double, int, int> & x) {
+    CTHULHU_DYNAMIC_CAST(      EpetraMultiVector, x, tX, "toEpetra");
+    return *tX.getEpetra_MultiVector();
+  }
+  //
+
 
 } // namespace Cthulhu

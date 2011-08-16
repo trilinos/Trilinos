@@ -10,45 +10,44 @@ $TMPL_HEADERS
 #include "Cthulhu_EpetraImport.hpp"
 #include "Cthulhu_EpetraExport.hpp"
 
-#include "Epetra_Vector.hpp"
+#include "Epetra_Vector.h"
 
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Epetra_Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> & toEpetra(Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &map);
+  Epetra_Vector & toEpetra(Vector<double, int, int> &map);
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Epetra_Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> & toEpetra(const Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> &map);
+  const Epetra_Vector & toEpetra(const Vector<double, int, int> &map);
   //
 
   class $TMPL_CLASS
   $TMPL_INHERITANCE
   {
 
+    typedef double Scalar;
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
   public:
 
-    using EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::dot;          // overloading, not hiding
-    using EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm1;        // overloading, not hiding
-    using EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::norm2;        // overloading, not hiding
-    using EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::normInf;      // overloading, not hiding
-    using EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::normWeighted; // overloading, not hiding
-    using EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::meanValue;    // overloading, not hiding
+    using EpetraMultiVector::dot;          // overloading, not hiding
+    using EpetraMultiVector::norm1;        // overloading, not hiding
+    using EpetraMultiVector::norm2;        // overloading, not hiding
+    using EpetraMultiVector::normInf;      // overloading, not hiding
+    using EpetraMultiVector::normWeighted; // overloading, not hiding
+    using EpetraMultiVector::meanValue;    // overloading, not hiding
 
     //! @name Constructor/Destructor Methods
     //@{ 
 
     //! Sets all vector entries to zero.
     EpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true)
-      : EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,1,zeroOut) { }
+      : EpetraMultiVector(map,1,zeroOut) { }
     
     //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
     EpetraVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView< const Scalar > &A)
-      : EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,A,map->getNodeNumElements(),1) { }
+      : EpetraMultiVector(map,A,map->getNodeNumElements(),1) { }
 
     //! Destructor.
     virtual ~EpetraVector() { }
@@ -61,27 +60,23 @@ $TMPL_PUBLIC_FUNCTIONS
     //@{
 
     //! EpetraMultiVector constructor to wrap a Epetra_MultiVector object
-    EpetraVector(const Teuchos::RCP<Epetra_Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(vec) { } // TODO: removed const of Epetra::Vector
+    EpetraVector(const Teuchos::RCP<Epetra_Vector> &vec) : EpetraMultiVector(vec) { } // TODO: removed const of Epetra::Vector
 
     //! Get the underlying Epetra multivector
-    RCP< Epetra_Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getEpetra_Vector() const { return this->EpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getEpetra_MultiVector()->getVectorNonConst(0); }
+    RCP<Epetra_Vector> getEpetra_Vector() const { return this->EpetraMultiVector::getEpetra_MultiVector()->getVectorNonConst(0); }
 
     //@}
     
   }; // EpetraVector class
 
   // TODO: move that elsewhere
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Epetra_Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toEpetra(Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
-    typedef EpetraVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > EpetraVectorClass;
-    CTHULHU_DYNAMIC_CAST(      EpetraVectorClass, x, tX, "toEpetra");
+  Epetra_Vector & toEpetra(Vector<double, int, int> &map);
+    CTHULHU_DYNAMIC_CAST(      EpetraVector, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Epetra_Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toEpetra(const Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
-    typedef EpetraVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > EpetraVectorClass;
-    CTHULHU_DYNAMIC_CAST(const EpetraVectorClass, x, tX, "toEpetra");
+  const Epetra_Vector & toEpetra(const Vector<double, int, int> &map);
+    CTHULHU_DYNAMIC_CAST(const EpetraVector, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
   //

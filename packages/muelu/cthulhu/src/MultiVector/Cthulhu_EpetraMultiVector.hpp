@@ -15,12 +15,25 @@
 
 namespace Cthulhu {
 
+  // TODO: move that elsewhere
+  const Epetra_MultiVector & toEpetra(const MultiVector<double, int, int> &);
+
+  Epetra_MultiVector & toEpetra(MultiVector<double, int, int> &);
+  //
+
   // #ifndef DOXYGEN_SHOULD_SKIP_THIS
   //   // forward declaration of Vector, needed to prevent circular inclusions
   //   template<class S, class LO, class GO, class N> class Vector;
   // #endif
 
-  class EpetraMultiVector : public virtual Cthulhu::MultiVector<double,int,int> {
+  class EpetraMultiVector
+    : public virtual MultiVector<double,int,int>
+  {
+
+    typedef double Scalar;
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
   public:
 

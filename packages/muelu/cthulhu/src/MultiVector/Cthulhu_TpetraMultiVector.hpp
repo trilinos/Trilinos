@@ -18,10 +18,10 @@ namespace Cthulhu {
 
   // TODO: move that elsewhere
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> & toTpetra(const MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &map);
+  const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> & toTpetra(const MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &);
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> & toTpetra(MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &map);
+  Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> & toTpetra(MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &);
   //
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS

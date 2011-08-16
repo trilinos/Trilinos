@@ -23,6 +23,11 @@ namespace Cthulhu {
   BlockMap doesn't inherit Cthulhu::Map
 */
 class EpetraBlockMap : public Cthulhu::BlockMap<int,int> {
+
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+
  public:
 
   //! @name Constructor/Destructor Methods

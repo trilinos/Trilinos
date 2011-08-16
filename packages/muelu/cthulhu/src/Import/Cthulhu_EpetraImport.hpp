@@ -25,6 +25,10 @@ namespace Cthulhu {
     : public Import<int,int>
   {
 
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+
   public:
 
     //! @name Constructor/Destructor Methods

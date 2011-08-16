@@ -6,15 +6,14 @@ $TMPL_HEADERS
 #include "Cthulhu_Exceptions.hpp"
 
 #include "Cthulhu_EpetraMap.hpp"
-#include "Epetra_Export.hpp"
+#include "Epetra_Export.h"
 
 // Note: 'export' is a reserved keyword in C++. Do not use 'export' as a variable name.
 
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Epetra_Export<LocalOrdinal,GlobalOrdinal,Node> & toEpetra(const Export<LocalOrdinal,GlobalOrdinal,Node> &exp);
+  const Epetra_Export & toEpetra(const Export<int, int> &exp);
   //
 
   class $TMPL_CLASS
@@ -33,23 +32,23 @@ $TMPL_PUBLIC_FUNCTIONS
     //@{
 
     //! EpetraExport constructor to wrap a Epetra_Export object
-    EpetraExport(const RCP<const Epetra_Export< LocalOrdinal, GlobalOrdinal, Node > > &exp) : export_(exp) {  }
+    EpetraExport(const RCP<const Epetra_Export> &exp) : export_(exp) {  }
 
-    RCP< const Epetra_Export< LocalOrdinal, GlobalOrdinal, Node > > getEpetra_Export() const { return export_; }
+    RCP< const Epetra_Export > getEpetra_Export() const { return export_; }
 
     //@}
     
   private:
     
-    RCP<const Epetra_Export< LocalOrdinal, GlobalOrdinal, Node > > export_;
+    RCP<const Epetra_Export> export_;
 
   }; // EpetraExport class
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Epetra_Export<LocalOrdinal,GlobalOrdinal,Node> & toEpetra(const Export<LocalOrdinal,GlobalOrdinal,Node> &exp) {
+    const Epetra_Export & toEpetra(const Export<int, int> &exp) {
     // TODO: throw exception
-    const EpetraExport<LocalOrdinal,GlobalOrdinal,Node> & tpetraExport = dynamic_cast<const EpetraExport<LocalOrdinal,GlobalOrdinal,Node> &>(exp);
+    const EpetraExport & tpetraExport = dynamic_cast<const EpetraExport &>(exp);
     return *tpetraExport.getEpetra_Export();
   }
   //

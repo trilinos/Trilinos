@@ -62,4 +62,13 @@ namespace Cthulhu {
   
   void EpetraCrsGraph::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { } //TODO: throw exception or implements it
 
+  // TODO: move that elsewhere
+  RCP< const CrsGraph<int, int> > toCthulhu(const Epetra_CrsGraph &g) {
+    RCP<const Epetra_CrsGraph> const_graph = rcp(new Epetra_CrsGraph(g));
+    
+    RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(const_graph); //TODO: can I avoid the const_cast ?
+    return rcp ( new Cthulhu::EpetraCrsGraph(graph) );
+  }
+  //
+
 } // namespace Cthulhu

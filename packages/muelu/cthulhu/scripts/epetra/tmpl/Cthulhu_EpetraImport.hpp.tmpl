@@ -6,16 +6,14 @@ $TMPL_HEADERS
 #include "Cthulhu_Exceptions.hpp"
 
 #include "Cthulhu_EpetraMap.hpp"
-#include "Epetra_Import.hpp"
+#include "Epetra_Import.h"
 
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Epetra_Import<LocalOrdinal,GlobalOrdinal,Node> & toEpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &import);
+  const Epetra_Import & toEpetra(const Import<int, int> &import);
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > &import);
+  RCP< const Import<int, int> toCthulhu(const RCP< const Epetra_Import > &import);
   //
 
   class $TMPL_CLASS
@@ -47,16 +45,14 @@ $TMPL_PUBLIC_FUNCTIONS
   }; // EpetraImport class
 
   // TODO: move that elsewhere
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Epetra_Import<LocalOrdinal,GlobalOrdinal,Node> & toEpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &import) {
+  const Epetra_Import & toEpetra(const Import<int, int> &import) {
     // TODO: throw exception
-    const EpetraImport<LocalOrdinal,GlobalOrdinal,Node> & tpetraImport = dynamic_cast<const EpetraImport<LocalOrdinal,GlobalOrdinal,Node> &>(import);
+    const EpetraImport & tpetraImport = dynamic_cast<const EpetraImport &>(import);
     return *tpetraImport.getEpetra_Import();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {
-    return rcp( new EpetraImport<LocalOrdinal, GlobalOrdinal, Node>(import));
+  RCP< const Import<int, int> > toCthulhu(const RCP< const Epetra_Import > &import) {
+    return rcp( new EpetraImport(import));
   }
   //
 
