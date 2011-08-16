@@ -35,6 +35,7 @@ CONFIGURE_FILE(
 SET(HEADERS "")
 SET(SOURCES 
   Map/Cthulhu_EpetraMap.cpp
+  Import/Cthulhu_EpetraImport.cpp
   Map/Cthulhu_TpetraUtils.cpp
   CrsGraph/Cthulhu_EpetraCrsGraph.cpp
   CrsMatrix/Cthulhu_Trans.cpp

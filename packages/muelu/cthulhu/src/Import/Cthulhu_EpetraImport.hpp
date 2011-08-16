@@ -5,12 +5,20 @@
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_as.hpp>
 #include "Cthulhu_Map.hpp"
+#include "Cthulhu_EpetraMap.hpp"
 #include <iterator>
 
 #include "Cthulhu_Import.hpp"
 #include "Epetra_Import.h"
 
 namespace Cthulhu {
+
+  // TODO: move that elsewhere
+  //   const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &import);
+
+  //  RCP< const Import<int, int > > toCthulhu(const Epetra_Import &import);
+  RCP< const Import<int, int > > toCthulhu(const Epetra_Import *import);
+  //
 
   //! \brief This class builds an object containing information necesary for efficiently importing off-processor entries.
   class EpetraImport

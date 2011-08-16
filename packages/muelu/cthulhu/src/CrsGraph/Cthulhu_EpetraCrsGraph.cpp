@@ -1,6 +1,22 @@
 #include "Cthulhu_EpetraCrsGraph.hpp"
 
+#include "Cthulhu_LookupStatus.hpp"
+
 namespace Cthulhu {
+
+  EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype)
+    : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
+  
+  // TODO: convert array size_t to int
+  //   EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype)
+  //     : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), NumEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)))) { }
+  
+  EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype)
+    : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), toEpetra(colMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
+
+  // TODO: convert array size_t to int
+  //   EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype)
+  //     : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), toEpetra(colMap), NumEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)))) { }
 
   void EpetraCrsGraph::insertGlobalIndices(int globalRow, const ArrayView<const int> &indices) { 
     int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
@@ -31,5 +47,19 @@ namespace Cthulhu {
 
     indices = ArrayView<const int>(eIndices, numEntries);
   }
+
+  void EpetraCrsGraph::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os){ 
+    graph_->FillComplete(toEpetra(domainMap), toEpetra(rangeMap)); 
+    if (os == DoOptimizeStorage) graph_->OptimizeStorage();
+  }
+  
+  void EpetraCrsGraph::fillComplete(OptimizeOption os){ 
+    graph_->FillComplete();
+    if (os == DoOptimizeStorage) graph_->OptimizeStorage();
+  }
+
+  std::string EpetraCrsGraph::description() const { return "NotImplemented"; }
+  
+  void EpetraCrsGraph::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { } //TODO: throw exception or implements it
 
 } // namespace Cthulhu

@@ -38,11 +38,11 @@ namespace Cthulhu {
 
   }
 
-  const Tpetra::OptimizeOption toTpetra(Cthulhu::OptimizeOption PT) {
+  const Tpetra::OptimizeOption toTpetra(Cthulhu::OptimizeOption os) {
 
-    if (PT == Cthulhu::DoOptimizeStorage)
+    if (os == Cthulhu::DoOptimizeStorage)
       return Tpetra::DoOptimizeStorage;
-    if (PT == Cthulhu::DoNotOptimizeStorage)
+    if (os == Cthulhu::DoNotOptimizeStorage)
       return Tpetra::DoNotOptimizeStorage;
     
     TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
@@ -56,7 +56,17 @@ namespace Cthulhu {
   const Cthulhu::LookupStatus toCthulhu(int) {
     return Cthulhu::AllIDsPresent; // TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
   }
-  
+
+  const bool toEpetra(Cthulhu::ProfileType PT) {
+    
+    if (PT == Cthulhu::StaticProfile)
+      return true;
+    if (PT == Cthulhu::DynamicProfile)
+      return false;
+    
+    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown ProfileType"); 
+  }
+
 #endif // HAVE_CTHULHU_TPETRA
 
 } // namespace cthulhu

@@ -287,13 +287,18 @@ namespace Cthulhu {
     return epetraMap.getEpetra_Map();
   }
 
-  //   const RCP< const Epetra_Map > & toEpetra(const RCP< const Map<int, int> > &map) {
-  //     CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, map, epetraMap, "toEpetra");
-  //     return epetraMap->getEpetra_Map();
-  //   }
+  const Epetra_Map & toEpetra(const RCP< const Map<int, int> > &map) {
+    CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, map, epetraMap, "toEpetra");
+    return epetraMap->getEpetra_Map();
+  }
 
-  const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &map) {
-    return rcp( new EpetraMap(map) );
+//   const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &map) {
+//     return rcp( new EpetraMap(map) );
+//   }
+
+  const RCP< const Map<int, int> > toCthulhu(const Epetra_BlockMap &map) {
+    RCP<const Epetra_BlockMap> m = rcp(new Epetra_BlockMap(map));
+    return rcp( new EpetraMap(m) );
   }
   //
 

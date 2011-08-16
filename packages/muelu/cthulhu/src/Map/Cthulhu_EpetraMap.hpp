@@ -21,8 +21,9 @@ namespace Cthulhu {
 
   // TODO: move that elsewhere
   const Epetra_Map & toEpetra(const Map<int,int> &map);
-  //const RCP< const Epetra_Map > & toEpetra(const RCP< const Map<int, int> > &map);
-  const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &map);
+  const Epetra_Map & toEpetra(const RCP< const Map<int, int> > &map);
+  //const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &map);
+  const RCP< const Map<int, int> > toCthulhu(const Epetra_BlockMap &map);
   //
 
   class EpetraMap

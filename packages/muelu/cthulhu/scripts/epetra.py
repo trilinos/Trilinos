@@ -99,7 +99,7 @@ def buildFuncLineEpetra( functionNode ):
 
     # consructor
     if name == className:
-        defStr += "\n      " + ": " + conf_memberName + "(Teuchos::rcp(new " + fullClassName + "< "+templateParam+" >"
+        defStr += "\n      " + ": " + conf_memberName + "(Teuchos::rcp(new " + fullClassName.replace('Tpetra::','Epetra_')
         defStr += "(" + paramStr + "))) { }"
       
     #destructor
@@ -143,7 +143,7 @@ for file in os.listdir(conf_dir):
         out = Template(template)
         
         className = buildClassDefinition(conf_XMLclass, 'Epetra')
-        templateParam = buildTemplateParam2(conf_XMLclass)
+#unused        templateParam = buildTemplateParam2(conf_XMLclass)
         
         out = out.substitute(
             TMPL_HEADERS=buildHeader(className, 'epetra.py'),

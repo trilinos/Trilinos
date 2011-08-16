@@ -9,16 +9,14 @@
 namespace Cthulhu {
 
 #ifdef HAVE_CTHULHU_TPETRA  
-  const Tpetra::LookupStatus toTpetra(Cthulhu::LookupStatus); //unused
-  const Cthulhu::LookupStatus toCthulhu(Tpetra::LookupStatus);
-
-  const Tpetra::ProfileType toTpetra(Cthulhu::ProfileType);
+  const Cthulhu::LookupStatus  toCthulhu(Tpetra::LookupStatus);
+  const Tpetra::ProfileType    toTpetra(Cthulhu::ProfileType);
   const Tpetra::OptimizeOption toTpetra(Cthulhu::OptimizeOption);
 #endif // HAVE_CTHULHU_TPETRA
 
 #ifdef HAVE_CTHULHU_EPETRA  
-  // const int toEpetra(Cthulhu::LookupStatus);
-  const Cthulhu::LookupStatus toCthulhu(int);
+  const Cthulhu::LookupStatus  toCthulhu(int);
+  const bool                   toEpetra(Cthulhu::ProfileType);
 #endif // HAVE_CTHULHU_TPETRA
 
 }
