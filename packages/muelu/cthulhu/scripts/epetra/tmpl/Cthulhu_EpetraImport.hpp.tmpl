@@ -1,19 +1,19 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_EpetraConfigDefs.hpp"
+#include "Cthulhu_ConfigDefs.hpp"
 
 #include "Cthulhu_Import.hpp"
-#include "Cthulhu_Exceptions.hpp"
 
-#include "Cthulhu_EpetraMap.hpp"
+#include "Cthulhu_EpetraMap.hpp"//TMP
+
 #include "Epetra_Import.h"
 
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  const Epetra_Import & toEpetra(const Import<int, int> &import);
+  //   const Epetra_Import & toEpetra(const Import<int, int> &import);
 
-  RCP< const Import<int, int> toCthulhu(const RCP< const Epetra_Import > &import);
+  RCP< const Import<int, int > > toCthulhu(const Epetra_Import *import);
   //
 
   class $TMPL_CLASS
@@ -32,29 +32,18 @@ $TMPL_PUBLIC_FUNCTIONS
     //@{
 
     //! EpetraImport constructor to wrap a Epetra_Import object
-    EpetraImport(const RCP<const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > &import) : import_(import) {  }
+    EpetraImport(const RCP<const Epetra_Import> &import) : import_(import) { }
 
-    RCP< const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > getEpetra_Import() const { return import_; }
+    //! Get the underlying Epetra import
+    RCP< const Epetra_Import> getEpetra_Import() const { return import_; }
 
     //@}
     
   private:
     
-    RCP<const Epetra_Import< LocalOrdinal, GlobalOrdinal, Node > > import_;
+    RCP<const Epetra_Import> import_;
 
   }; // EpetraImport class
-
-  // TODO: move that elsewhere
-  const Epetra_Import & toEpetra(const Import<int, int> &import) {
-    // TODO: throw exception
-    const EpetraImport & tpetraImport = dynamic_cast<const EpetraImport &>(import);
-    return *tpetraImport.getEpetra_Import();
-  }
-
-  RCP< const Import<int, int> > toCthulhu(const RCP< const Epetra_Import > &import) {
-    return rcp( new EpetraImport(import));
-  }
-  //
 
 } // Cthulhu namespace
 
