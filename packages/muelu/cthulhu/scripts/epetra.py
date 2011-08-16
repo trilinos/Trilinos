@@ -28,7 +28,7 @@ def buildFuncLineEpetra( functionNode ):
     type = functionNode.xpath('type')[0].xpath("string()")
     
     # <argsstring>
-    argsstring = functionNode.xpath('argsstring')[0].text
+    argsstring = functionNode.xpath('argsstring')[0].text.replace('typename ','')
 
     #hack for Vector
     if 'magnitudeType' in type: type = 'typename ' + type
@@ -68,8 +68,9 @@ def buildFuncLineEpetra( functionNode ):
     if "const =0" in argsstring: return '' #hack for CrsMatrix
 
     # hack for MultiVector
-#    if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
-#    if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
+    if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
+    if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
+    if name == "EpetraMultiVector" and 'ArrayView' in argsstring: return ''
 
     # hack for CrsMatrix
     if name == "EpetraCrsMatrix" and "const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph" in argsstring: return ''

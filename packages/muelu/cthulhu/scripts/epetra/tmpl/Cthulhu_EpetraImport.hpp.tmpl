@@ -11,7 +11,7 @@ $TMPL_HEADERS
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  //   const Epetra_Import & toEpetra(const Import<int, int> &import);
+  //   const Epetra_Import & toEpetra(const Import<int, int> &);
 
   RCP< const Import<int, int > > toCthulhu(const Epetra_Import *import);
   //

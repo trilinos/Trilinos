@@ -4,23 +4,21 @@
 
 #include "Cthulhu_Trans.hpp"
 
-//   enum ETransp { 	
-//     NO_TRANS,	/*!< Not transposed */ 
-//     TRANS, 		/*!< Transposed */
-//     CONJ_TRANS 	/*!< Conjugate transposed */
-//   };
-
-//! Convert a Teuchos::ETransp to a boolean (for Epetra).
-bool Teuchos2Epetra_Trans(Teuchos::ETransp trans) { 
-  if (trans == Teuchos::NO_TRANS)
-    return false;
-  else if (trans == Teuchos::TRANS)
-    return true;
-  else { 
-    TEST_FOR_EXCEPTION((trans != Teuchos::NO_TRANS) && (trans == Teuchos::TRANS), Cthulhu::Exceptions::NotImplemented, "Cannot convert Teuchos::ETransp to a boolean.");
+namespace Cthulhu {
+  
+  //! Convert a Teuchos::ETransp to a boolean (for Epetra).
+  bool toEpetra(Teuchos::ETransp trans) { 
+    if (trans == Teuchos::NO_TRANS)
+      return false;
+    else if (trans == Teuchos::TRANS)
+      return true;
+    else { 
+      TEST_FOR_EXCEPTION((trans != Teuchos::NO_TRANS) && (trans == Teuchos::TRANS), Cthulhu::Exceptions::NotImplemented, "Cannot convert Teuchos::ETransp to a boolean.");
+    }
+    
+    return false; // to skip compilation warning msg.
   }
 
-  return false; // to skip compilation warning msg.
-}
+} // Cthulhu namespace
 
 #endif

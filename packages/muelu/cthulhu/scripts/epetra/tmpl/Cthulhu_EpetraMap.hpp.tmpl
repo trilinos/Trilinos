@@ -17,9 +17,9 @@ namespace Tpetra { //TODO to be removed
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  const Epetra_Map & toEpetra(const Map<int,int> &map);
-  //const RCP< const Epetra_Map > & toEpetra(const RCP< const Map<int, int> > &map);
-  const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &map);
+  const Epetra_Map & toEpetra(const Map<int,int> &);
+  //const RCP< const Epetra_Map > & toEpetra(const RCP< const Map<int, int> > &);
+  const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &);
   //
 
   class $TMPL_CLASS

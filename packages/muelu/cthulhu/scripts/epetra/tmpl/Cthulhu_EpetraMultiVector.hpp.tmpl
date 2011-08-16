@@ -3,26 +3,27 @@ $TMPL_HEADERS
 #include "Cthulhu_EpetraConfigDefs.hpp"
 
 #include "Cthulhu_MultiVector.hpp"
+#include "Cthulhu_Vector.hpp"
 
-#include "Cthulhu_EpetraMap.hpp" //TMP
-#include "Cthulhu_CombineMode.hpp"
-#include "Cthulhu_EpetraImport.hpp"
+#include "Cthulhu_EpetraMap.hpp" 
 #include "Cthulhu_EpetraExport.hpp"
+#include "Cthulhu_CombineMode.hpp"
+#include "Cthulhu_Trans.hpp"
 
-#include "Epetra_MultiVector.h"
+#include <Epetra_MultiVector.h>
 
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  const Epetra_MultiVector & toEpetra(const MultiVector<double,int,int> &map);
+  const Epetra_MultiVector & toEpetra(const MultiVector<double,int,int> &);
 
-  Epetra_MultiVector & toEpetra(MultiVector<double, int,int> &map);
+  Epetra_MultiVector & toEpetra(MultiVector<double, int,int> &);
   //
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of EpetraVector, needed to prevent circular inclusions
-  template<class S, class LO, class GO, class N> class EpetraVector;
-#endif
+  // #ifndef DOXYGEN_SHOULD_SKIP_THIS
+  //   // forward declaration of EpetraVector, needed to prevent circular inclusions
+  //   template<class S, class LO, class GO, class N> class EpetraVector;
+  // #endif
 
   class $TMPL_CLASS
   $TMPL_INHERITANCE
@@ -37,41 +38,23 @@ namespace Cthulhu {
 
 $TMPL_PUBLIC_FUNCTIONS
 
+    //! Implements DistObject interface
     //{@
-    // Implements DistObject interface
-    
-    const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { return toCthulhu(vec_->getMap()); }
-    
-    void doImport(const DistObject< Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) { 
-      
-      CTHULHU_DYNAMIC_CAST(const EpetraMultiVectorClass, source, tSource, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments."); //TODO: remove and use toEpetra()
-      RCP< const Epetra_MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getEpetra_MultiVector();
-      this->getEpetra_MultiVector()->doImport(*v, toEpetra(importer), toEpetra(CM));
-    }
 
-    void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) {
-            
-      CTHULHU_DYNAMIC_CAST(const EpetraMultiVectorClass, dest, tDest, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments."); //TODO: remove and use toEpetra()
-      RCP< const Epetra_MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getEpetra_MultiVector();
-      this->getEpetra_MultiVector()->doExport(*v, toEpetra(importer), toEpetra(CM)); 
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return toCthulhu(vec_->Map()); }
 
-    }
+    //! Import.
+    void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
 
-    void doImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
+    //! Export.
+    void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM);
 
-      CTHULHU_DYNAMIC_CAST(const EpetraMultiVectorClass, source, tSource, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments."); //TODO: remove and use toEpetra()
-      RCP< const Epetra_MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getEpetra_MultiVector();
-      this->getEpetra_MultiVector()->doImport(*v, toEpetra(exporter), toEpetra(CM));
+    //! Import (using an Exporter).
+    void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
 
-    }
-
-    void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
-      
-      CTHULHU_DYNAMIC_CAST(const EpetraMultiVectorClass, dest, tDest, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments."); //TODO: remove and use toEpetra()
-      RCP< const Epetra_MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getEpetra_MultiVector();
-      this->getEpetra_MultiVector()->doExport(*v, toEpetra(exporter), toEpetra(CM)); 
-
-    }
+    //! Export (using an Importer).
+    void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
 
     //@}
 
@@ -79,13 +62,13 @@ $TMPL_PUBLIC_FUNCTIONS
     //@{
 
     //! EpetraMultiVector constructor to wrap a Epetra_MultiVector object
-    EpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : vec_(vec) { } //TODO removed const
+    EpetraMultiVector(const RCP<Epetra_MultiVector> &vec) : vec_(vec) { } //TODO removed const
 
     //! Get the underlying Epetra multivector
-    RCP< Epetra_MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getEpetra_MultiVector() const { return vec_; }
+    RCP<Epetra_MultiVector> getEpetra_MultiVector() const { return vec_; }
 
     //! Set seed for Random function.
-    void setSeed(unsigned int seed) { Teuchos::ScalarTraits< Scalar >::seedrandom(seed); }
+    void setSeed(unsigned int seed) { vec_->SetSeed(seed); }
  
     //@}
     
@@ -94,18 +77,6 @@ $TMPL_PUBLIC_FUNCTIONS
     RCP< Epetra_MultiVector > vec_;
     
   }; // $TMPL_CLASS class
-
-  // TODO: move that elsewhere
-  const Epetra_MultiVector & toEpetra(const MultiVector< double, int, int> &x) {
-      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, x, tX, "toEpetra");
-      return *tX.getEpetra_MultiVector();
-  }
-
-  Epetra_MultiVector & toEpetra(MultiVector< double, int, int> &x) {
-      CTHULHU_DYNAMIC_CAST(      EpetraMultiVector, x, tX, "toEpetra");
-      return *tX.getEpetra_MultiVector();
-  }
-  //
 
 } // Cthulhu namespace
 

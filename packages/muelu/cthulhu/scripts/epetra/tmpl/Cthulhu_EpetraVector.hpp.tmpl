@@ -15,9 +15,9 @@ $TMPL_HEADERS
 namespace Cthulhu {
 
   // TODO: move that elsewhere
-  Epetra_Vector & toEpetra(Vector<double, int, int> &map);
+  Epetra_Vector & toEpetra(Vector<double, int, int> &);
 
-  const Epetra_Vector & toEpetra(const Vector<double, int, int> &map);
+  const Epetra_Vector & toEpetra(const Vector<double, int, int> &);
   //
 
   class $TMPL_CLASS

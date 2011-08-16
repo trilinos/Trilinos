@@ -58,7 +58,7 @@ namespace Cthulhu {
     CTHULHU_DYNAMIC_CAST(      EpetraMultiVector, Y, eY, "Cthulhu::EpetraCrsMatrix->apply() only accept Cthulhu::EpetraMultiVector as input arguments.");
 
     TEST_FOR_EXCEPTION((mode != Teuchos::NO_TRANS) && (mode != Teuchos::TRANS), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraCrsMatrix->apply() only accept mode == NO_TRANS or mode == TRANS");
-    bool eTrans = Teuchos2Epetra_Trans(mode);
+    bool eTrans = toEpetra(mode);
 
     // /!\ UseTranspose value
     TEST_FOR_EXCEPTION(mtx_->UseTranspose(), Cthulhu::Exceptions::NotImplemented, "An exception is throw to let you know that Cthulhu::EpetraCrsMatrix->apply() do not take into account the UseTranspose() parameter of Epetra_CrsMatrix.");

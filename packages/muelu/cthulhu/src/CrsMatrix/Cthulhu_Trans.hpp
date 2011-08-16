@@ -9,8 +9,12 @@
 
 #include "Cthulhu_Exceptions.hpp"
 
-//! Convert a Teuchos::ETransp to a boolean (for Epetra).
-bool Teuchos2Epetra_Trans(Teuchos::ETransp trans);
+namespace Cthulhu {
+
+  //! Convert a Teuchos::ETransp to a boolean (for Epetra).
+  bool toEpetra(Teuchos::ETransp);
+
+}
 
 #endif // HAVE_CTHULHU_EPETRA
 

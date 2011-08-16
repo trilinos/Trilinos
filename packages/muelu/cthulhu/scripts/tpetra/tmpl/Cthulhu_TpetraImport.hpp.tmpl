@@ -12,10 +12,10 @@ namespace Cthulhu {
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &import);
+  const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import);
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &);
   //
 
   $TMPL_TEMPLATE_PARAM
