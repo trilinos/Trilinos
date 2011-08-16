@@ -19,6 +19,16 @@
   const RCP<type > & newObj = Teuchos::rcp_dynamic_cast<type >(obj);    \
   TEST_FOR_EXCEPTION(newObj == Teuchos::null, Cthulhu::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); 
 
+#ifdef HAVE_CTHULHU_EPETRA
+#define CTHULHU_FACTORY_ERROR_IF_EPETRA(lib)                            \
+  if ((lib) == UseEpetra)                                               \
+        TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
+#else
+#define CTHULHU_FACTORY_ERROR_IF_EPETRA(lib)
+#endif
+
+#define CTHULHU_FACTORY_END TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::BadCast, "Unknown map->lib() type. Did you compile with Epetra and Tpetra support?");
+
 namespace Cthulhu {
   namespace Exceptions {
     

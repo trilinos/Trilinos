@@ -1,12 +1,7 @@
 #ifndef CTHULHU_MAPFACTORY_HPP
 #define CTHULHU_MAPFACTORY_HPP
 
-#include <Kokkos_DefaultNode.hpp>
-
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Exceptions.hpp"
-
-#include "Tpetra_Map.hpp"
 
 #include "Cthulhu_Map.hpp"
 
@@ -17,6 +12,8 @@
 #include "Cthulhu_EpetraMap.hpp"
 #endif
 
+#include "Cthulhu_Exceptions.hpp"
+
 // This factory creates Cthulhu::Map. User have to specify the exact class of object that he want to create (ie: a Cthulhu::TpetraMap or a Cthulhu::EpetraMap).
 
 namespace Cthulhu {
@@ -24,294 +21,216 @@ namespace Cthulhu {
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class MapFactory {
     
-    typedef Map<LocalOrdinal,GlobalOrdinal, Node> MapClass;
-
-#ifdef HAVE_CTHULHU_TPETRA
-    typedef TpetraMap< LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
-#endif
-
   private:
     //! Private constructor. This is a static class. 
     MapFactory() {}
     
   public:
     
-    /** \brief Map constructor with Cthulhu-defined contiguous uniform distribution.
-     *   The elements are distributed among nodes so that the subsets of global elements
-     *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
-     *   possible.
-     */
-    //TODO: replace Tpetra::LocalGlobal by Cthulhu::LocalGlobal
-    static Teuchos::RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                          Cthulhu::LocalGlobal lg=Cthulhu::GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
+    //! Map constructor with Cthulhu-defined contiguous uniform distribution.
+    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalGlobal lg=Cthulhu::GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
+
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)
-        return Teuchos::rcp( new TpetraMapClass(numGlobalElements, indexBase, comm, lg, node) );
+        return Teuchos::rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg, node) );
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_ERROR_IF_EPETRA(lib);
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Map constructor with a user-defined contiguous distribution.
-     *  The elements are distributed among the nodes so that the subsets of global elements
-     *  are non-overlapping and contiguous 
-     *  
-     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
-     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-     *  If this verification fails, a std::invalid_argument exception will be thrown.
-     */
-    static Teuchos::RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
-                          const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
+    //! Map constructor with a user-defined contiguous distribution.
+    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
+
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)       
-        return rcp( new TpetraMapClass(numGlobalElements, numLocalElements, indexBase, comm, node) );
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, numLocalElements, indexBase, comm, node) );
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_ERROR_IF_EPETRA(lib);
+      CTHULHU_FACTORY_END;
     }
         
-    /** \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
-     *  
-     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
-     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-     *  If this verification fails, a std::invalid_argument exception will be thrown.
-     */
-    static Teuchos::RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase,
-                          const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
+    //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
+    static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
+
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMapClass(numGlobalElements, elementList, indexBase, comm, node) );
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm, node) );
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_ERROR_IF_EPETRA(lib);
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a locally replicated Map with the default node.
-
-    This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    Teuchos::RCP<const MapClass>
-    createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
+    //! Create a locally replicated Map with the default node.
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal, Node> >
+    createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_ERROR_IF_EPETRA(lib);
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a locally replicated Map with a specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    Teuchos::RCP< const MapClass >
-    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
+    //! Create a locally replicated Map with a specified node.
+    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
+    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMapClass(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_ERROR_IF_EPETRA(lib);
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a uniform, contiguous Map with a user-specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    Teuchos::RCP< const MapClass >
+    //! Create a uniform, contiguous Map with a user-specified node.
+    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createUniformContigMapWithNode(UnderlyingLib lib, global_size_t numElements,
-                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
+                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMapClass(Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_ERROR_IF_EPETRA(lib);
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a uniform, contiguous Map with the default node.
-
-    This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    Teuchos::RCP< const MapClass>
-    createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
+    //! Create a uniform, contiguous Map with the default node.
+    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node> >
+    createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createUniformContigMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_ERROR_IF_EPETRA(lib);
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
-
-    This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    Teuchos::RCP< const MapClass >
-    createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
+    //! Create a (potentially) non-uniform, contiguous Map with the default node.
+    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
+    createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
         return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal>(numElements, localNumElements, comm)));
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_ERROR_IF_EPETRA(lib);
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    Teuchos::RCP< const MapClass >
+    //! Create a (potentially) non-uniform, contiguous Map with a user-specified node.
+    Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, 
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMapClass(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_ERROR_IF_EPETRA(lib);
+      CTHULHU_FACTORY_END;
     }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    Teuchos::RCP< const MapClass >
-    createWeightedContigMapWithNode(UnderlyingLib lib, int thisNodeWeight, global_size_t numElements, 
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
-
-    }
-#endif
   };
 
   template <>
-  class MapFactory<int, int, Kokkos::DefaultNode::DefaultNodeType> {
-      
-    typedef Map<int, int> MapClass;
+  class MapFactory<int, int> {
 
-#ifdef HAVE_CTHULHU_TPETRA
-    typedef TpetraMap<int, int> TpetraMapClass;
-#endif
-
+    typedef int LocalOrdinal;
+    typedef int GlobalOrdinal;
+    typedef Kokkos::DefaultNode::DefaultNodeType Node;
+    
   private:
     //! Private constructor. This is a static class. 
     MapFactory() {}
     
   public:
     
-    /** \brief Map constructor with Cthulhu-defined contiguous uniform distribution.
-     *   The elements are distributed among nodes so that the subsets of global elements
-     *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
-     *   possible.
-     */
-    //TODO: replace Tpetra::LocalGlobal by Cthulhu::LocalGlobal
-    static RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                          LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
+    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
+
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)
-        return rcp( new TpetraMapClass(numGlobalElements, indexBase, comm, lg, node) );
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, indexBase, comm, lg, node) );
 #endif
+
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
         return rcp( new EpetraMap(numGlobalElements, indexBase, comm, lg, node) );
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Map constructor with a user-defined contiguous distribution.
-     *  The elements are distributed among the nodes so that the subsets of global elements
-     *  are non-overlapping and contiguous 
-     *  
-     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
-     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-     *  If this verification fails, a std::invalid_argument exception will be thrown.
-     */
-    static RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, int indexBase,
-                          const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
+    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
+
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra)       
-        return rcp( new TpetraMapClass(numGlobalElements, numLocalElements, indexBase, comm, node) );
-
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, numLocalElements, indexBase, comm, node) );
 #endif
+
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
         return rcp( new EpetraMap(numGlobalElements, numLocalElements, indexBase, comm, node) );
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_END;
     }
         
-    /** \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
-     *  
-     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
-     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-     *  If this verification fails, a std::invalid_argument exception will be thrown.
-     */
-    static RCP<MapClass> Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase,
-                          const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
+    static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
+
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMapClass(numGlobalElements, elementList, indexBase, comm, node) );
-
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (numGlobalElements, elementList, indexBase, comm, node) );
 #endif
+
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
         return rcp( new EpetraMap(numGlobalElements, elementList, indexBase, comm, node) );
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a locally replicated Map with the default node.
-
-    This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    static Teuchos::RCP<const MapClass>
-    createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
+    static Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal, Node> >
+    createLocalMap(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMapClass(Tpetra::createLocalMap<int,int>(numElements, comm)));
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMap<int,int>(numElements, comm)));
 #endif
+
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
         return MapFactory<int, int, Kokkos::DefaultNode::DefaultNodeType>::createLocalMapWithNode(lib, numElements, comm, Kokkos::DefaultNode::getDefaultNode());
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a locally replicated Map with a specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    static Teuchos::RCP< const MapClass >
-    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { 
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
+    createLocalMapWithNode(UnderlyingLib lib, size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMapClass(Tpetra::createLocalMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createLocalMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
 #endif
+
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
         {
+
           Teuchos::RCP< EpetraMap > map;
           map = Teuchos::rcp( new EpetraMap((Cthulhu::global_size_t)numElements, // num elements, global and local
                                             0,                                   // index base is zero
@@ -319,25 +238,23 @@ namespace Cthulhu {
           return map.getConst();
         }
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a uniform, contiguous Map with a user-specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    static Teuchos::RCP< const MapClass >
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createUniformContigMapWithNode(UnderlyingLib lib, global_size_t numElements,
-                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { 
+                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp(new TpetraMapClass(Tpetra::createUniformContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
+        return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, node)));
 #endif
+
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
         {
+
           Teuchos::RCP< EpetraMap > map;
           map = Teuchos::rcp( new EpetraMap(numElements,        // num elements, global and local
                                             0,                  //index base is zero
@@ -345,67 +262,55 @@ namespace Cthulhu {
           return map.getConst();
         }
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a uniform, contiguous Map with the default node.
-
-    This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    static Teuchos::RCP< const MapClass>
-    createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node> >
+    createUniformContigMap(UnderlyingLib lib, global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMapClass(Tpetra::createUniformContigMap<int,int>(numElements, comm)));
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createUniformContigMap<int,int>(numElements, comm)));
 #endif
+
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
         return MapFactory<int, int, Kokkos::DefaultNode::DefaultNodeType>::createUniformContigMapWithNode(lib, numElements, comm, Kokkos::DefaultNode::getDefaultNode());
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
-
-    This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    static Teuchos::RCP< const MapClass >
-    createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
+    createContigMap(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMapClass(Tpetra::createContigMap<int,int>(numElements, localNumElements, comm)));
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMap<int,int>(numElements, localNumElements, comm)));
 #endif
+
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
         return MapFactory<int, int, Kokkos::DefaultNode::DefaultNodeType>::createContigMapWithNode(lib, numElements, localNumElements, comm, Kokkos::DefaultNode::getDefaultNode() );
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_END;
     }
 
-    /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    static Teuchos::RCP< const MapClass >
+    static Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal, Node>  >
     createContigMapWithNode(UnderlyingLib lib, global_size_t numElements, size_t localNumElements, 
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { 
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) {
+ 
 #ifdef HAVE_CTHULHU_TPETRA
       if (lib == UseTpetra) 
-        return rcp( new TpetraMapClass(Tpetra::createContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, localNumElements, comm, node)));
+        return rcp( new TpetraMap<LocalOrdinal,GlobalOrdinal, Node> (Tpetra::createContigMapWithNode<int,int,Kokkos::DefaultNode::DefaultNodeType>(numElements, localNumElements, comm, node)));
 #endif
+
 #ifdef HAVE_CTHULHU_EPETRA
       if (lib == UseEpetra)
         {
+
           Teuchos::RCP< EpetraMap > map;
           map = Teuchos::rcp( new EpetraMap(numElements,localNumElements,
                                             0,  // index base is zero
@@ -413,22 +318,9 @@ namespace Cthulhu {
           return map.getConst();
         }
 #endif
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::RuntimeError,"Cannot create a map"); return Teuchos::null;
+
+      CTHULHU_FACTORY_END;
     }
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
-
-    The Map is configured to use zero-based indexing.
-
-    \relates TpetraMap
-    */
-    static Teuchos::RCP< const MapClass >
-    createWeightedContigMapWithNode(UnderlyingLib lib, int thisNodeWeight, global_size_t numElements, 
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node) { 
-      
-    }
-#endif
 
   };
 
@@ -436,3 +328,4 @@ namespace Cthulhu {
 
 #define CTHULHU_MAPFACTORY_SHORT
 #endif
+//TODO: removed unused methods
