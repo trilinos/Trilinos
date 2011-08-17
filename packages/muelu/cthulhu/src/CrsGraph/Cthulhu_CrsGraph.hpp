@@ -8,8 +8,6 @@
 #include <Teuchos_CompileTimeAssert.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
-#include <Kokkos_CrsGraph.hpp>
-#include <Kokkos_NodeHelpers.hpp>
 #include "Cthulhu_ConfigDefs.hpp"
 
 #include <Cthulhu_Map.hpp>

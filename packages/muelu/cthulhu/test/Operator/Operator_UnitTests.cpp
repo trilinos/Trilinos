@@ -29,7 +29,6 @@ namespace {
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::Comm;
-  using Kokkos::SerialNode;
 
   using Cthulhu::DefaultPlatform;
   using Cthulhu::Operator;

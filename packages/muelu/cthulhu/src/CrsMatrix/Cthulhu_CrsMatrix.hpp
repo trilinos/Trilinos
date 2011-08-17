@@ -5,7 +5,6 @@
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
-#include <Kokkos_CrsMatrix.hpp>
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_DistObject.hpp"
 #include "Cthulhu_CrsGraph.hpp"

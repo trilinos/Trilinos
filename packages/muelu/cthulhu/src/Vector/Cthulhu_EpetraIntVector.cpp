@@ -99,8 +99,8 @@ namespace Cthulhu {
   }
 
   void EpetraIntVector::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { 
-    typedef Kokkos::MultiVector<double> KMV;
-    typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+//     typedef Kokkos::MultiVector<double> KMV;
+//     typedef Kokkos::DefaultArithmetic<KMV>   MVT;
 
     // This implementation come from Tpetra_Vector_def.hpp (without modification) // JG: true?
     using std::endl;

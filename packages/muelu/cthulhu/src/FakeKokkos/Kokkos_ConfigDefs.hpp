@@ -1,0 +1,4 @@
+#ifndef FAKEKOKKOS_CONFIGDEFS_H
+#define FAKEKOKKOS_CONFIGDEFS_H
+
+#endif

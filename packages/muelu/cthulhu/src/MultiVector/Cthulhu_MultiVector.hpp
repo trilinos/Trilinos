@@ -7,8 +7,6 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_Range1D.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_DefaultArithmetic.hpp>
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_DistObject.hpp"
 #include "Cthulhu_Map.hpp"
