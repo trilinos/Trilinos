@@ -15,7 +15,7 @@ SET(EXTRA_EXCLUDE_PACKAGES Zoltan STK Mesquite Claps FEI Phdmesh NOX Piro Sundan
 #Disabling STK below also so it is not turned on by TrilinosCouplings
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DBUILD_SHARED_LIBS:BOOL=ON"
-  "-DSWIG_EXECUTABLE:FILEPATH=/Users/jmwille/install/bin/swig"
+  "-DSWIG_EXECUTABLE:FILEPATH=/Users/jmwille/install/swig-2.0.4/bin/swig"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DTrilinos_ENABLE_STK:BOOL=OFF"
