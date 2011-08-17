@@ -509,6 +509,44 @@ public:
   }
 };
 
+template< typename ValueType , class MapDst , class DeviceSrc , bool Contig >
+class MDArrayDeepCopy< ValueType , Serial< HostMemory , MapDst > , DeviceSrc ,
+                       false  /* Different Memory Space */ ,
+                       false  /* Different MDArray Maps */ ,
+                       Contig /* Don't care */ >
+{
+private:
+
+  typedef Serial< HostMemory , MapDst >     device_host ;
+  typedef typename DeviceSrc ::mdarray_map  map_src ;
+public:
+
+  typedef Serial< HostMemory , map_src >  DeviceTmp ;
+
+  typedef MDArrayView<ValueType,device_host> dst_type ;
+  typedef MDArrayView<ValueType,DeviceTmp>   tmp_type ;
+  typedef MDArrayView<ValueType,DeviceSrc>   src_type ;
+
+  // Both the devices and the maps are different.
+  // Copy to a temporary on the destination with the source map
+  // and then remap the temporary to the final array.
+  static
+  void run( const dst_type & dst , const src_type & src )
+  {
+    size_t dims[ MDArrayMaxRank ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+    dst.dimensions( dims );
+
+    tmp_type tmp = create_labeled_mdarray<tmp_type>(
+                                "temporary" ,
+                                dims[0] , dims[1] , dims[2] , dims[3] ,
+                                dims[4] , dims[5] , dims[6] , dims[7] );
+
+    MDArrayDeepCopy< ValueType , DeviceTmp ,  DeviceSrc >::run( tmp , src );
+    MDArrayDeepCopy< ValueType , device_host, DeviceTmp >::run( dst , tmp );
+  }
+};
+
 //----------------------------------------------------------------------------
 /** \brief  Deep copy from Host to Device,
  *          with different maps,
@@ -549,6 +587,43 @@ public:
 
     MDArrayDeepCopy< ValueType , DeviceTmp , DeviceHost >::run( tmp , src );
     MDArrayDeepCopy< ValueType , DeviceDst , DeviceTmp > ::run( dst , tmp );
+  }
+};
+
+template< typename ValueType , class DeviceDst , class MapSrc , bool Contig >
+class MDArrayDeepCopy< ValueType , DeviceDst , Serial< HostMemory , MapSrc > ,
+                       false  /* Different Memory Space */ ,
+                       false  /* Different MDArray Maps */ ,
+                       Contig /* Don't care */ >
+{
+private:
+  typedef typename DeviceDst ::mdarray_map  map_dst ;
+  typedef Serial< HostMemory , MapSrc >     device_host ;
+public:
+
+  typedef Serial< HostMemory , map_dst >  DeviceTmp ;
+
+  typedef MDArrayView<ValueType,DeviceDst>   dst_type ;
+  typedef MDArrayView<ValueType,DeviceTmp>   tmp_type ;
+  typedef MDArrayView<ValueType,device_host> src_type ;
+
+  // Both the devices and the maps are different.
+  // Copy to a temporary on the destination with the source map
+  // and then remap the temporary to the final array.
+  static
+  void run( const dst_type & dst , const src_type & src )
+  {
+    size_t dims[ MDArrayMaxRank ] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+    dst.dimensions( dims );
+
+    tmp_type tmp = create_labeled_mdarray<tmp_type>(
+                                "temporary" ,
+                                dims[0] , dims[1] , dims[2] , dims[3] ,
+                                dims[4] , dims[5] , dims[6] , dims[7] );
+
+    MDArrayDeepCopy< ValueType , DeviceTmp , device_host >::run( tmp , src );
+    MDArrayDeepCopy< ValueType , DeviceDst , DeviceTmp  > ::run( dst , tmp );
   }
 };
 

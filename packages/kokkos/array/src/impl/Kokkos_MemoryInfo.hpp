@@ -41,6 +41,7 @@
 #define KOKKOS_MEMORYINFO_HPP
 
 #include <cstddef>
+#include <string>
 #include <typeinfo>
 #include <set>
 
