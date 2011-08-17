@@ -11,7 +11,7 @@
 #include "Cthulhu_BlockMap.hpp"
 
 #include "Epetra_BlockMap.h"
-#include "Cthulhu_Comm.hpp"
+#include "Cthulhu_EpetraUtils.hpp"
 #include "Cthulhu_EpetraExceptions.hpp"
 
 namespace Cthulhu {

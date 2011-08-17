@@ -34,10 +34,8 @@ CONFIGURE_FILE(
 
 SET(HEADERS "")
 SET(SOURCES 
-  Utils/Cthulhu_TpetraUtils.cpp
-  Utils/Cthulhu_Comm.cpp
-  Utils/Cthulhu_LookupStatus.cpp
-  Utils/Cthulhu_Trans.cpp
+  Utils/Cthulhu_Utils.cpp
+  Utils/Cthulhu_EpetraUtils.cpp
   Map/Cthulhu_EpetraMap.cpp
   Import/Cthulhu_EpetraImport.cpp
   Export/Cthulhu_EpetraExport.cpp

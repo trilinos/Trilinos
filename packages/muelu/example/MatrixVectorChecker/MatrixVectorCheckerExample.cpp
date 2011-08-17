@@ -12,12 +12,12 @@
 // #include <Galeri_CrsMatrices.h>
 
 // Using MueLu:
+#include <Cthulhu_ConfigDefs.hpp>
 #include <Cthulhu_Parameters.hpp>
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_MapFactory.hpp>
 #include <Cthulhu_CrsOperator.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_Example.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>

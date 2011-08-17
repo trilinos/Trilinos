@@ -10,8 +10,8 @@
 
 #include "Cthulhu_EpetraMap.hpp" 
 #include "Cthulhu_EpetraExport.hpp"
-#include "Cthulhu_CombineMode.hpp"
-#include "Cthulhu_Trans.hpp"
+#include "Cthulhu_Utils.hpp"
+#include "Cthulhu_EpetraUtils.hpp"
 
 #include <Epetra_MultiVector.h>
 

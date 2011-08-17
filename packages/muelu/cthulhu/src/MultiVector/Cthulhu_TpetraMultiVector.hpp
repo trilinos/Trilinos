@@ -8,7 +8,7 @@
 #include "Cthulhu_MultiVector.hpp"
 
 #include "Cthulhu_TpetraMap.hpp" //TMP
-#include "Cthulhu_CombineMode.hpp"
+#include "Cthulhu_Utils.hpp"
 #include "Cthulhu_TpetraImport.hpp"
 #include "Cthulhu_TpetraExport.hpp"
 

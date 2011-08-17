@@ -2,6 +2,7 @@
 
 #include "Cthulhu_EpetraImport.hpp" 
 #include "Cthulhu_EpetraExport.hpp" 
+#include "Cthulhu_Exceptions.hpp" 
 
 namespace Cthulhu {
 

@@ -9,7 +9,7 @@
 
 #include "Cthulhu_EpetraMap.hpp"
 #include "Cthulhu_EpetraImport.hpp"
-#include "Cthulhu_Comm.hpp"
+#include "Cthulhu_EpetraUtils.hpp"
 
 #include <Epetra_CrsGraph.h>
 

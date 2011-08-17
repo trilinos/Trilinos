@@ -1,6 +1,6 @@
 #include "Cthulhu_EpetraCrsGraph.hpp"
 
-#include "Cthulhu_LookupStatus.hpp"
+#include "Cthulhu_Utils.hpp"
 
 namespace Cthulhu {
 

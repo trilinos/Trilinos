@@ -3,6 +3,7 @@
 #ifdef HAVE_CTHULHU_EPETRA
 
 #include "Cthulhu_EpetraMap.hpp"
+#include "Cthulhu_EpetraUtils.hpp"
 
 #include "Cthulhu_EpetraExceptions.hpp"
 
@@ -59,7 +60,7 @@ namespace Cthulhu {
      
     // Note: validity of numGlobalElements checked by Epetra.
 
-    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
+    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, 1, indexBase, *toEpetra(comm))))));
   }
 
   EpetraMap::EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, int indexBase,
@@ -157,17 +158,16 @@ namespace Cthulhu {
 
     // set numGlobalElements
     if (numGlobalElements == GSTI) {
-      numGlobalElements = global_sum;
-    }
+      numGlobalElements = global_sum;}
 
-    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, numLocalElements, 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
+    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, numLocalElements, 1, indexBase, *toEpetra(comm))))));
   }
        
   // TODO: UnitTest FAILED
   EpetraMap::EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase,
                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node)
   {
-    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), elementList.getRawPtr(), 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
+    IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
   }
    
 

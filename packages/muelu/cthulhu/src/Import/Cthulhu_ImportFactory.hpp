@@ -27,7 +27,7 @@ namespace Cthulhu {
     
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
-      TEST_FOR_EXCEPTION(source->lib() == target->lib(), Cthulhu::Exceptions::RuntimeError, "");
+      TEST_FOR_EXCEPTION(source->lib() != target->lib(), Cthulhu::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_CTHULHU_TPETRA
       if (source->lib() == UseTpetra)
@@ -54,7 +54,7 @@ namespace Cthulhu {
   public:
     
     static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
-      TEST_FOR_EXCEPTION(source->lib() == target->lib(), Cthulhu::Exceptions::RuntimeError, "");
+      TEST_FOR_EXCEPTION(source->lib() != target->lib(), Cthulhu::Exceptions::RuntimeError, "");
     
 #ifdef HAVE_CTHULHU_TPETRA
       if (source->lib() == UseTpetra)

@@ -15,7 +15,7 @@
 #include "Cthulhu_EpetraMultiVector.hpp"
 #include "Cthulhu_EpetraCrsGraph.hpp"
 
-#include "Cthulhu_LookupStatus.hpp"
+#include "Cthulhu_Utils.hpp"
 #include "Cthulhu_Exceptions.hpp"
 
 namespace Cthulhu {
