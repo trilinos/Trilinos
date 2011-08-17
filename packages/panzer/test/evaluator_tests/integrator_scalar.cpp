@@ -381,6 +381,7 @@ UNIT_TEST_GROUP(JacobianType)
    typedef Traits::SGResidual SGResidualType;
    typedef Traits::SGJacobian SGJacobianType;
 
+   // these are failing with Stokhos enabled! 8/18/2011
    UNIT_TEST_GROUP(SGResidualType)
    UNIT_TEST_GROUP(SGJacobianType)
 #endif
