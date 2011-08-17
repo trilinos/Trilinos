@@ -129,8 +129,19 @@ namespace panzer {
     
     cell_tools.setJacobianDet(jac_det, jac);
     
-    Intrepid::FunctionSpaceTools::
-      computeCellMeasure<Scalar>(weighted_measure, jac_det, cub_weights);
+    if (!int_rule->isSide()) {
+       Intrepid::FunctionSpaceTools::
+         computeCellMeasure<Scalar>(weighted_measure, jac_det, cub_weights);
+    }
+    else if(int_rule->spatial_dimension==3) {
+       Intrepid::FunctionSpaceTools::
+         computeFaceMeasure<Scalar>(weighted_measure, jac, cub_weights,int_rule->side,*int_rule->topology);
+    }
+    else if(int_rule->spatial_dimension==2) {
+       Intrepid::FunctionSpaceTools::
+         computeEdgeMeasure<Scalar>(weighted_measure, jac, cub_weights,int_rule->side,*int_rule->topology);
+    }
+    else TEUCHOS_ASSERT(false);
     
     // Shakib contravarient metric tensor
     typedef typename 
