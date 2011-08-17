@@ -101,38 +101,34 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 				const Scalar arg_l,
 				const Scalar arg_q,
 				const Scalar delta_t,
-				const bool arg_scale       )
-		: coords(     arg_p )
-		, velocity(     arg_v )
-		, force_new(   arg_f )
-		, vorticity(   arg_vort )
-		, rotation(     arg_r )
-		, stress_new(   arg_sn )
-		, rot_stress(   arg_rstrss )
-		, rot_stret(   arg_rstret )
-		, gradop12(     arg_g )
-		, elem_mass(   arg_em )
-		, elem_dilmod(   arg_ed )
-		, elem_shrmod(   arg_es )
-		, elem_t_step(   arg_et )
-		, intern_energy( arg_ie )
-		, mid_vol(     arg_mv )
+				const bool arg_scale): 
 
-		, hgop(       arg_hg )
-		, hg_resist(   arg_hgr )
-		, hg_energy(   arg_hge )
-
-		, two_mu(     arg_tmu )
-		, bulk_mod(     arg_blk )
-
-		, hg_stiff(     arg_hgs )
-		, hg_visc(     arg_hgv )
-		, linBulkVisc(   arg_l )
-		, quadBulkVisc(   arg_q )
-		, dt(       delta_t )
-
-  , scaleHGRotation( arg_scale )
-  {}
+				coords			( arg_p ),
+				velocity		( arg_v ),
+				force_new		( arg_f ),
+				vorticity		( arg_vort ),
+				rotation		( arg_r ),
+				stress_new		( arg_sn ),
+				rot_stress		( arg_rstrss ),
+				rot_stret		( arg_rstret ),
+				gradop12		( arg_g ),
+				elem_mass		( arg_em ),
+				elem_dilmod		( arg_ed ),
+				elem_shrmod		( arg_es ),
+				elem_t_step		( arg_et ),
+				intern_energy	( arg_ie ),
+				mid_vol			( arg_mv ),
+				hgop			( arg_hg ),
+				hg_resist		( arg_hgr ),
+				hg_energy		( arg_hge ),
+				two_mu			( arg_tmu ),
+				bulk_mod		( arg_blk ),
+				hg_stiff		( arg_hgs ),
+				hg_visc			( arg_hgv ),
+				linBulkVisc		( arg_l ),
+				quadBulkVisc	( arg_q ),
+				dt				( delta_t ),
+				scaleHGRotation	( arg_scale ){}
 
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -281,13 +277,13 @@ struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 		gradop12(ielem, 2, 7) = (x[4] *  t2) - (x[6] *  t1)  + (x[5] * R75) - (x[3] *  t6) - (x[2] * R74) + (x[0] * R54); 
 
 		mid_vol(ielem) = ONE12TH * (gradop12(ielem, 0, 0) * x[0] +
-				      gradop12(ielem, 0, 1) * x[1] +
-				      gradop12(ielem, 0, 2) * x[2] +
-				      gradop12(ielem, 0, 3) * x[3] +
-				      gradop12(ielem, 0, 4) * x[4] +
-				      gradop12(ielem, 0, 5) * x[5] +
-				      gradop12(ielem, 0, 6) * x[6] +
-				      gradop12(ielem, 0, 7) * x[7] );
+									gradop12(ielem, 0, 1) * x[1] +
+									gradop12(ielem, 0, 2) * x[2] +
+									gradop12(ielem, 0, 3) * x[3] +
+									gradop12(ielem, 0, 4) * x[4] +
+									gradop12(ielem, 0, 5) * x[5] +
+									gradop12(ielem, 0, 6) * x[6] +
+									gradop12(ielem, 0, 7) * x[7] );
 
 	}
 

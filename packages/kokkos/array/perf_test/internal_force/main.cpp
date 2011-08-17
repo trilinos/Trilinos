@@ -5,23 +5,20 @@ namespace test{
 
   void test_Host(int b, int e, int r);
   void test_TPI(int b, int e, int r, int t);
-//  void test_Cuda(int b, int e, int r);
+  void test_Cuda(int b, int e, int r);
 
-  void test_Original_Host(int b, int e, int r);
-  void test_Original_MP(int b, int e, int r, int t);
-//  void test_Original_Cuda(int b, int e, int r);
 }
 
 int main( int argc , char ** argv ){
 
   int threads, runs;
-  int beg = 20;
-  int end = 21;
+  int beg = 22;
+  int end = 23;
 
   if (argc > 1)
     threads = atoi(argv[1]);
   else
-    threads = 1;
+    threads = 4;
 
   if (argc > 2)
     runs = atoi(argv[2]);
@@ -37,11 +34,7 @@ int main( int argc , char ** argv ){
 /*  ./fe_test.exe 8 10                    					*/  
 /************************************************************/
   
-  std::cout << std::endl << "\t\tStarting..." << std::endl;
-  
-  test::test_Original_Host(beg, end, runs);  
-  test::test_Original_MP(beg, end, runs, threads);  
-//  test::test_Original_Cuda(beg, end, runs);
+  std::cout << std::endl << "\tStarting..." << std::endl;
 
   test::test_Host(beg, end, runs);
   test::test_TPI (beg, end, runs, threads);

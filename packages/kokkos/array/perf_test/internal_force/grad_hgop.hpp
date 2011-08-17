@@ -32,9 +32,7 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 
 	const array_type position;    
 	const array_type velocity;
-	const array_type mid_pos;
 	const array_type mid_vol;
-	const array_type gradop12;
 	const array_type vel_grad;
 	const array_type hgop;
 
@@ -42,17 +40,13 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 
   	grad_hgop(  const array_type & arg_p,
              	const array_type & arg_v,
-             	const array_type & arg_m,
              	const array_type & arg_mv,
-             	const array_type & arg_g,
              	const array_type & arg_vg,
              	const array_type & arg_hg,
              	const Scalar delta_t )
     : position( arg_p )
     , velocity( arg_v )
-    , mid_pos ( arg_m )
     , mid_vol ( arg_mv )
-    , gradop12( arg_g )
     , vel_grad( arg_vg )
     , hgop    ( arg_hg )
     , dt( delta_t )
@@ -80,14 +74,14 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 		vx[7] = velocity(ielem, 0, 7);
 
 	//  load X coordinate information
-		mid_pos(ielem, 0, 0) = x[0] = position(ielem, 0, 0) + dt_scale * vx[0];
-		mid_pos(ielem, 0, 1) = x[1] = position(ielem, 0, 1) + dt_scale * vx[1];
-		mid_pos(ielem, 0, 2) = x[2] = position(ielem, 0, 2) + dt_scale * vx[2];
-		mid_pos(ielem, 0, 3) = x[3] = position(ielem, 0, 3) + dt_scale * vx[3];
-		mid_pos(ielem, 0, 4) = x[4] = position(ielem, 0, 4) + dt_scale * vx[4];
-		mid_pos(ielem, 0, 5) = x[5] = position(ielem, 0, 5) + dt_scale * vx[5];
-		mid_pos(ielem, 0, 6) = x[6] = position(ielem, 0, 6) + dt_scale * vx[6];
-		mid_pos(ielem, 0, 7) = x[7] = position(ielem, 0, 7) + dt_scale * vx[7];
+		x[0] = position(ielem, 0, 0) + dt_scale * vx[0];
+		x[1] = position(ielem, 0, 1) + dt_scale * vx[1];
+		x[2] = position(ielem, 0, 2) + dt_scale * vx[2];
+		x[3] = position(ielem, 0, 3) + dt_scale * vx[3];
+		x[4] = position(ielem, 0, 4) + dt_scale * vx[4];
+		x[5] = position(ielem, 0, 5) + dt_scale * vx[5];
+		x[6] = position(ielem, 0, 6) + dt_scale * vx[6];
+		x[7] = position(ielem, 0, 7) + dt_scale * vx[7];
 
 	//  calc X difference vectors
 		Scalar R42=(x[3] - x[1]);
@@ -125,14 +119,14 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 		vz[7] = velocity(ielem, 2, 7);
 	  
 	//  Load Z information
-		mid_pos(ielem, 2, 0) = z[0] = position(ielem, 2, 0) + dt_scale * vz[0];
-		mid_pos(ielem, 2, 1) = z[1] = position(ielem, 2, 1) + dt_scale * vz[1];
-		mid_pos(ielem, 2, 2) = z[2] = position(ielem, 2, 2) + dt_scale * vz[2];
-		mid_pos(ielem, 2, 3) = z[3] = position(ielem, 2, 3) + dt_scale * vz[3];
-		mid_pos(ielem, 2, 4) = z[4] = position(ielem, 2, 4) + dt_scale * vz[4];
-		mid_pos(ielem, 2, 5) = z[5] = position(ielem, 2, 5) + dt_scale * vz[5];
-		mid_pos(ielem, 2, 6) = z[6] = position(ielem, 2, 6) + dt_scale * vz[6];
-		mid_pos(ielem, 2, 7) = z[7] = position(ielem, 2, 7) + dt_scale * vz[7];
+		z[0] = position(ielem, 2, 0) + dt_scale * vz[0];
+		z[1] = position(ielem, 2, 1) + dt_scale * vz[1];
+		z[2] = position(ielem, 2, 2) + dt_scale * vz[2];
+		z[3] = position(ielem, 2, 3) + dt_scale * vz[3];
+		z[4] = position(ielem, 2, 4) + dt_scale * vz[4];
+		z[5] = position(ielem, 2, 5) + dt_scale * vz[5];
+		z[6] = position(ielem, 2, 6) + dt_scale * vz[6];
+		z[7] = position(ielem, 2, 7) + dt_scale * vz[7];
 
 
 	//	Some data is used by other functors, as well as this one, so we make a 
@@ -143,14 +137,14 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 
 
 	//  Calculate Y gradient from X and Z data
-		gradop12(ielem, 1, 0) = grad_y[0] = (z[1] *  t1) - (z[2] * R42) - (z[3] *  t5)  + (z[4] *  t4) + (z[5] * R52) - (z[7] * R54); 
-		gradop12(ielem, 1, 1) = grad_y[1] = (z[2] *  t2) + (z[3] * R31) - (z[0] *  t1)  - (z[5] *  t6) + (z[6] * R63) - (z[4] * R61); 
-		gradop12(ielem, 1, 2) = grad_y[2] = (z[3] *  t3) + (z[0] * R42) - (z[1] *  t2)  - (z[6] *  t4) + (z[7] * R74) - (z[5] * R72); 
-		gradop12(ielem, 1, 3) = grad_y[3] = (z[0] *  t5) - (z[1] * R31) - (z[2] *  t3)  + (z[7] *  t6) + (z[4] * R81) - (z[6] * R83); 
-		gradop12(ielem, 1, 4) = grad_y[4] = (z[5] *  t3) + (z[6] * R86) - (z[7] *  t2)  - (z[0] *  t4) - (z[3] * R81) + (z[1] * R61); 
-		gradop12(ielem, 1, 5) = grad_y[5] = (z[6] *  t5) - (z[4] *  t3)  - (z[7] * R75) + (z[1] *  t6) - (z[0] * R52) + (z[2] * R72);
-		gradop12(ielem, 1, 6) = grad_y[6] = (z[7] *  t1) - (z[5] *  t5)  - (z[4] * R86) + (z[2] *  t4) - (z[1] * R63) + (z[3] * R83);
-		gradop12(ielem, 1, 7) = grad_y[7] = (z[4] *  t2) - (z[6] *  t1)  + (z[5] * R75) - (z[3] *  t6) - (z[2] * R74) + (z[0] * R54); 
+		grad_y[0] = (z[1] *  t1) - (z[2] * R42) - (z[3] *  t5)  + (z[4] *  t4) + (z[5] * R52) - (z[7] * R54); 
+		grad_y[1] = (z[2] *  t2) + (z[3] * R31) - (z[0] *  t1)  - (z[5] *  t6) + (z[6] * R63) - (z[4] * R61); 
+		grad_y[2] = (z[3] *  t3) + (z[0] * R42) - (z[1] *  t2)  - (z[6] *  t4) + (z[7] * R74) - (z[5] * R72); 
+		grad_y[3] = (z[0] *  t5) - (z[1] * R31) - (z[2] *  t3)  + (z[7] *  t6) + (z[4] * R81) - (z[6] * R83); 
+		grad_y[4] = (z[5] *  t3) + (z[6] * R86) - (z[7] *  t2)  - (z[0] *  t4) - (z[3] * R81) + (z[1] * R61); 
+		grad_y[5] = (z[6] *  t5) - (z[4] *  t3)  - (z[7] * R75) + (z[1] *  t6) - (z[0] * R52) + (z[2] * R72);
+		grad_y[6] = (z[7] *  t1) - (z[5] *  t5)  - (z[4] * R86) + (z[2] *  t4) - (z[1] * R63) + (z[3] * R83);
+		grad_y[7] = (z[4] *  t2) - (z[6] *  t1)  + (z[5] * R75) - (z[3] *  t6) - (z[2] * R74) + (z[0] * R54); 
 
 
 	//   calc Z difference vectors
@@ -188,25 +182,25 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 		vy[7] = velocity(ielem, 1, 7);
 	  
 	//  Load Y information
-		mid_pos(ielem, 1, 0) = y[0] = position(ielem, 1, 0) + dt_scale * vy[0];
-		mid_pos(ielem, 1, 1) = y[1] = position(ielem, 1, 1) + dt_scale * vy[1];
-		mid_pos(ielem, 1, 2) = y[2] = position(ielem, 1, 2) + dt_scale * vy[2];
-		mid_pos(ielem, 1, 3) = y[3] = position(ielem, 1, 3) + dt_scale * vy[3];
-		mid_pos(ielem, 1, 4) = y[4] = position(ielem, 1, 4) + dt_scale * vy[4];
-		mid_pos(ielem, 1, 5) = y[5] = position(ielem, 1, 5) + dt_scale * vy[5];
-		mid_pos(ielem, 1, 6) = y[6] = position(ielem, 1, 6) + dt_scale * vy[6];
-		mid_pos(ielem, 1, 7) = y[7] = position(ielem, 1, 7) + dt_scale * vy[7];
+		y[0] = position(ielem, 1, 0) + dt_scale * vy[0];
+		y[1] = position(ielem, 1, 1) + dt_scale * vy[1];
+		y[2] = position(ielem, 1, 2) + dt_scale * vy[2];
+		y[3] = position(ielem, 1, 3) + dt_scale * vy[3];
+		y[4] = position(ielem, 1, 4) + dt_scale * vy[4];
+		y[5] = position(ielem, 1, 5) + dt_scale * vy[5];
+		y[6] = position(ielem, 1, 6) + dt_scale * vy[6];
+		y[7] = position(ielem, 1, 7) + dt_scale * vy[7];
 
 
 	//  Calculate X gradient from Y and Z data
-		gradop12(ielem, 0, 0) = grad_x[0] = (y[1] *  t1) - (y[2] * R42) - (y[3] *  t5) + (y[4] *  t4) + (y[5] * R52) - (y[7] * R54); 
-		gradop12(ielem, 0, 1) = grad_x[1] = (y[2] *  t2) + (y[3] * R31) - (y[0] *  t1) - (y[5] *  t6) + (y[6] * R63) - (y[4] * R61); 
-		gradop12(ielem, 0, 2) = grad_x[2] = (y[3] *  t3) + (y[0] * R42) - (y[1] *  t2) - (y[6] *  t4) + (y[7] * R74) - (y[5] * R72); 
-		gradop12(ielem, 0, 3) = grad_x[3] = (y[0] *  t5) - (y[1] * R31) - (y[2] *  t3) + (y[7] *  t6) + (y[4] * R81) - (y[6] * R83); 
-		gradop12(ielem, 0, 4) = grad_x[4] = (y[5] *  t3) + (y[6] * R86) - (y[7] *  t2) - (y[0] *  t4) - (y[3] * R81) + (y[1] * R61); 
-		gradop12(ielem, 0, 5) = grad_x[5] = (y[6] *  t5) - (y[4] *  t3) - (y[7] * R75) + (y[1] *  t6) - (y[0] * R52) + (y[2] * R72);
-		gradop12(ielem, 0, 6) = grad_x[6] = (y[7] *  t1) - (y[5] *  t5) - (y[4] * R86) + (y[2] *  t4) - (y[1] * R63) + (y[3] * R83);
-		gradop12(ielem, 0, 7) = grad_x[7] = (y[4] *  t2) - (y[6] *  t1) + (y[5] * R75) - (y[3] *  t6) - (y[2] * R74) + (y[0] * R54); 
+		grad_x[0] = (y[1] *  t1) - (y[2] * R42) - (y[3] *  t5) + (y[4] *  t4) + (y[5] * R52) - (y[7] * R54); 
+		grad_x[1] = (y[2] *  t2) + (y[3] * R31) - (y[0] *  t1) - (y[5] *  t6) + (y[6] * R63) - (y[4] * R61); 
+		grad_x[2] = (y[3] *  t3) + (y[0] * R42) - (y[1] *  t2) - (y[6] *  t4) + (y[7] * R74) - (y[5] * R72); 
+		grad_x[3] = (y[0] *  t5) - (y[1] * R31) - (y[2] *  t3) + (y[7] *  t6) + (y[4] * R81) - (y[6] * R83); 
+		grad_x[4] = (y[5] *  t3) + (y[6] * R86) - (y[7] *  t2) - (y[0] *  t4) - (y[3] * R81) + (y[1] * R61); 
+		grad_x[5] = (y[6] *  t5) - (y[4] *  t3) - (y[7] * R75) + (y[1] *  t6) - (y[0] * R52) + (y[2] * R72);
+		grad_x[6] = (y[7] *  t1) - (y[5] *  t5) - (y[4] * R86) + (y[2] *  t4) - (y[1] * R63) + (y[3] * R83);
+		grad_x[7] = (y[4] *  t2) - (y[6] *  t1) + (y[5] * R75) - (y[3] *  t6) - (y[2] * R74) + (y[0] * R54); 
 
 
 	//  calc Y difference vectors
@@ -235,14 +229,14 @@ struct grad_hgop<Scalar, KOKKOS_MACRO_DEVICE>{
 		t6 =(R75 + R31);
 
 	//  Calculate Z gradient from X and Y data
-		gradop12(ielem, 2, 0) = grad_z[0] = (x[1] *  t1) - (x[2] * R42) - (x[3] *  t5)  + (x[4] *  t4) + (x[5] * R52) - (x[7] * R54); 
-		gradop12(ielem, 2, 1) = grad_z[1] = (x[2] *  t2) + (x[3] * R31) - (x[0] *  t1)  - (x[5] *  t6) + (x[6] * R63) - (x[4] * R61); 
-		gradop12(ielem, 2, 2) = grad_z[2] = (x[3] *  t3) + (x[0] * R42) - (x[1] *  t2)  - (x[6] *  t4) + (x[7] * R74) - (x[5] * R72); 
-		gradop12(ielem, 2, 3) = grad_z[3] = (x[0] *  t5) - (x[1] * R31) - (x[2] *  t3)  + (x[7] *  t6) + (x[4] * R81) - (x[6] * R83); 
-		gradop12(ielem, 2, 4) = grad_z[4] = (x[5] *  t3) + (x[6] * R86) - (x[7] *  t2)  - (x[0] *  t4) - (x[3] * R81) + (x[1] * R61); 
-		gradop12(ielem, 2, 5) = grad_z[5] = (x[6] *  t5) - (x[4] *  t3)  - (x[7] * R75) + (x[1] *  t6) - (x[0] * R52) + (x[2] * R72);
-		gradop12(ielem, 2, 6) = grad_z[6] = (x[7] *  t1) - (x[5] *  t5)  - (x[4] * R86) + (x[2] *  t4) - (x[1] * R63) + (x[3] * R83);
-		gradop12(ielem, 2, 7) = grad_z[7] = (x[4] *  t2) - (x[6] *  t1)  + (x[5] * R75) - (x[3] *  t6) - (x[2] * R74) + (x[0] * R54); 
+		grad_z[0] = (x[1] *  t1) - (x[2] * R42) - (x[3] *  t5)  + (x[4] *  t4) + (x[5] * R52) - (x[7] * R54); 
+		grad_z[1] = (x[2] *  t2) + (x[3] * R31) - (x[0] *  t1)  - (x[5] *  t6) + (x[6] * R63) - (x[4] * R61); 
+		grad_z[2] = (x[3] *  t3) + (x[0] * R42) - (x[1] *  t2)  - (x[6] *  t4) + (x[7] * R74) - (x[5] * R72); 
+		grad_z[3] = (x[0] *  t5) - (x[1] * R31) - (x[2] *  t3)  + (x[7] *  t6) + (x[4] * R81) - (x[6] * R83); 
+		grad_z[4] = (x[5] *  t3) + (x[6] * R86) - (x[7] *  t2)  - (x[0] *  t4) - (x[3] * R81) + (x[1] * R61); 
+		grad_z[5] = (x[6] *  t5) - (x[4] *  t3)  - (x[7] * R75) + (x[1] *  t6) - (x[0] * R52) + (x[2] * R72);
+		grad_z[6] = (x[7] *  t1) - (x[5] *  t5)  - (x[4] * R86) + (x[2] *  t4) - (x[1] * R63) + (x[3] * R83);
+		grad_z[7] = (x[4] *  t2) - (x[6] *  t1)  + (x[5] * R75) - (x[3] *  t6) - (x[2] * R74) + (x[0] * R54); 
 
   	}
 
