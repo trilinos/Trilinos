@@ -69,7 +69,7 @@ namespace {
         default:
            std::string msg = "Only 1-4 MPI processes are supported.";
            //throw(MueLu::Exceptions::NotImplemented(msg));
-           out << msg << endl;
+           out << msg << std::endl;
            break;
       }
 

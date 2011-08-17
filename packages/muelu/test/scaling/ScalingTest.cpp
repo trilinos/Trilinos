@@ -21,6 +21,8 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_AggregationOptions.hpp"
 
+#include "MueLu_Exceptions.hpp"
+
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsOperator.hpp>
 #include <Cthulhu_Vector.hpp>
@@ -52,11 +54,13 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 /**********************************************************************************/
 
 // Belos
+#ifdef MUELU_HAVE_BELOS
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
+#endif
 
 // How many timers do we need?
 #define ntimers 3
@@ -123,7 +127,7 @@ int main(int argc, char *argv[]) {
 #elif defined(HAVE_MUELU_IFPACK2)
   coarseSolver="ifpack2";
 #else
-  throw(Exceptions::RuntimeError("Either Amesos2 or Ifpack2 must be enabled."));
+  throw(MueLu::Exceptions::RuntimeError("Either Amesos2 or Ifpack2 must be enabled."));
 #endif
   clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   clp.setOption("its",&its,"number of multigrid cycles");
@@ -262,7 +266,7 @@ int main(int argc, char *argv[]) {
       smooProto = rcp( new Ifpack2Smoother("CHEBYSHEV",ifpackList) );
     }
 #else
-#error
+  throw(MueLu::Exceptions::RuntimeError("Ifpack2 must be enabled."));
 #endif
   }
   if (smooProto == Teuchos::null) {
@@ -380,7 +384,10 @@ int main(int argc, char *argv[]) {
   // Use AMG as a preconditioner in Belos
   if (amgAsPrecond)
   {
+#if defined(HAVE_MUELU_BELOS) && defined(MUELU_HAVE_BELOS)
 #define BELOS_SOLVER
+#endif
+
 #ifdef BELOS_SOLVER
 
     X->putScalar( (SC) 0.0);

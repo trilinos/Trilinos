@@ -7,6 +7,11 @@
 
 #cmakedefine HAVE_MUELU_EPETRAEXT
 
+// Epetra support enabled iif Epetra+EpetraExt available
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+#define HAVE_MUELU_EPETRA_AND_EPETRAEXT
+#endif
+
 #cmakedefine HAVE_MUELU_TPETRA
 
 #cmakedefine HAVE_MUELU_IFPACK

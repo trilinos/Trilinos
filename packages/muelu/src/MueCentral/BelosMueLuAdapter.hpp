@@ -51,7 +51,7 @@
 //
 
 namespace Belos { 
-  // TODO: Should this file be moved to Belos ? The relation between Belos and MueLu is: Belos uses MueLu as a Preconditionner. So it makes more sense to me.
+  // TODO: Should this file be moved to Belos ? The relation between Belos and MueLu is: Belos uses MueLu as a Preconditionner. So maybe.
 
   // Here are a list of the Belos adapters for MueLu. To use Belos::LinearProblem<ScalarType,MV,OP> with:
   // A - MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>, turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp
@@ -60,6 +60,7 @@ namespace Belos {
   // D - MV=Cthulhu::MultiVector<...>   and OP=Cthulhu::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuCthulhuPrecOp => TODO: this description have to be improved
   // TODO: I can also quickly implements couples Tpetra::MultiVector/Cthulhu::Operator and Epetra_MultiVector/Cthulhu::Operator=> it's more for debugging...because it skip the CthulhuMultiVecTrait
 
+#ifdef HAVE_CTHULHU_EPETRA_AND_EPETRAEXT
   // -----------------------------------------------------------------------------------------------------------------------------------
   //  A: MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>
   // -----------------------------------------------------------------------------------------------------------------------------------
@@ -135,6 +136,7 @@ namespace Belos {
   
     Teuchos::RCP<Hierarchy> Hierarchy_;
   };
+#endif
 
   // -----------------------------------------------------------------------------------------------------------------------------------
   //  D: MV=Cthulhu::MultiVector<...>   and OP=Cthulhu::Operator<...>
@@ -298,6 +300,7 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
+#ifdef MUELU_HAVE_EPETRA_AND_EPETRAEXT
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
       TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
@@ -313,6 +316,7 @@ namespace Belos {
 
       Op_->apply(tX,tY);
     }
+#endif
 
   private:
   
@@ -397,6 +401,7 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
+#ifdef MUELU_HAVE_EPETRA_AND_EPETRAEXT
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
 
       TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
@@ -413,6 +418,7 @@ namespace Belos {
       Hierarchy_->Iterate( tX, 1, tY , true);
       
     }
+#endif
 
   private:
   

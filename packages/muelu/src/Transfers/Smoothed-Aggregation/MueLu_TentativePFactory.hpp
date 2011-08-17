@@ -192,9 +192,8 @@ namespace MueLu {
       // and call the Map constructor that takes arbitrary distributions.
 
       //FIXME work around until Cthulhu view table is fixed
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
       RCP<const Epetra_CrsMatrix> epA;
-      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA;
-#ifdef HAVE_MUELU_EPETRAEXT
       try {
         epA = Utils::Op2EpetraCrs(fineA);
       }
@@ -202,19 +201,29 @@ namespace MueLu {
         ;//do nothing
       }
 #endif
+
+#ifdef HAVE_MUELU_TPETRA
+      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA;
       try {
         tpA = Utils::Op2TpetraCrs(fineA);
       }
       catch(...) {
         ;//do nothing
       }
+#endif
       std::vector<GO> globalIdsForPtent;
       for (int i=0; i< aggToRowMap.size(); ++i) {
         for (int k=0; k< aggToRowMap[i].size(); ++k) {
-          if (epA != Teuchos::null)
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
+          if (epA != Teuchos::null) {
             globalIdsForPtent.push_back(epA->ColMap().GID(aggToRowMap[i][k]));
-          else if (tpA != Teuchos::null)
+          }
+#endif
+#ifdef HAVE_MUELU_TPETRA
+          if (tpA != Teuchos::null) {
             globalIdsForPtent.push_back(tpA->getColMap()->getGlobalElement(aggToRowMap[i][k]));
+          }
+#endif
         }
       }
 

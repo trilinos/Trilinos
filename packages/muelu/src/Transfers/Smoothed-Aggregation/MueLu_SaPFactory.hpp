@@ -7,7 +7,7 @@
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
 #endif
 

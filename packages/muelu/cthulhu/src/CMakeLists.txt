@@ -33,18 +33,24 @@ CONFIGURE_FILE(
 #
 
 SET(HEADERS "")
+
 SET(SOURCES 
   Utils/Cthulhu_Utils.cpp
   Utils/Cthulhu_EpetraUtils.cpp
-  Map/Cthulhu_EpetraMap.cpp
-  Import/Cthulhu_EpetraImport.cpp
-  Export/Cthulhu_EpetraExport.cpp
-  MultiVector/Cthulhu_EpetraMultiVector.cpp
-  CrsGraph/Cthulhu_EpetraCrsGraph.cpp
-  CrsMatrix/Cthulhu_EpetraCrsMatrix.cpp
-  Vector/Cthulhu_EpetraVector.cpp
-  Vector/Cthulhu_EpetraIntVector.cpp
+  Platform/Cthulhu_DefaultPlatform.cpp
   )
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  APPEND_GLOB(SOURCES 
+    Map/Cthulhu_EpetraMap.cpp
+    Import/Cthulhu_EpetraImport.cpp
+    Export/Cthulhu_EpetraExport.cpp
+    MultiVector/Cthulhu_EpetraMultiVector.cpp
+    CrsGraph/Cthulhu_EpetraCrsGraph.cpp
+    CrsMatrix/Cthulhu_EpetraCrsMatrix.cpp
+    Vector/Cthulhu_EpetraVector.cpp
+    Vector/Cthulhu_EpetraIntVector.cpp
+    )
+ENDIF()
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -62,7 +68,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vector)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Operator)
 
-APPEND_GLOB(SOURCES */*.cpp)
+#APPEND_GLOB(SOURCES */*.cpp)
 APPEND_GLOB(HEADERS */*.hpp)
 #APPEND_GLOB(HEADERS ${DIR}/*/*.cpp)
 #APPEND_GLOB(HEADERS ${DIR}/*/*.hpp)

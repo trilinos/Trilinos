@@ -136,7 +136,7 @@ void dumpAggregates(Aggregates & aggregates) {
   snprintf(filename, 200, "aggregates-%d.data", myPid);
   std::ofstream out(filename);
   if (!out.is_open())
-    cout << "Unable to open file";
+    std::cout << "Unable to open file";
   else
     {
 

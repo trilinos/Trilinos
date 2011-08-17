@@ -1,5 +1,4 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Cthulhu_DefaultPlatform.hpp"
 
 #include "MueLu_config.hpp"
 

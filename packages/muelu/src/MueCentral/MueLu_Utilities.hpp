@@ -14,7 +14,7 @@
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 #include <Cthulhu_MultiVectorFactory.hpp>
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
 #include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_EpetraVector.hpp>
 #include <Cthulhu_EpetraMultiVector.hpp>
@@ -25,7 +25,7 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Memory.hpp"
 
-#ifdef HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 #endif
@@ -44,7 +44,7 @@ namespace MueLu {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
   using Cthulhu::EpetraCrsMatrix;   // TODO: mv in Cthulhu_UseShortNamesScalar
   using Cthulhu::EpetraMultiVector;
 #endif
@@ -66,7 +66,7 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
-#ifdef HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
     //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Cthulhu::MultiVector.
     static RCP<const Epetra_MultiVector> MV2EpetraMV(RCP<MultiVector> const Vec) {
       //rcp<const EpetraMultiVector> tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
@@ -230,7 +230,7 @@ namespace MueLu {
         throw(Exceptions::RuntimeError("B is not fill-completed"));
 
       if (C->getRowMap()->lib() == Cthulhu::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
         RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
         RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
@@ -287,7 +287,7 @@ namespace MueLu {
       }
 
       if (A->getRowMap()->lib() == Cthulhu::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
         RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
         
@@ -340,7 +340,7 @@ namespace MueLu {
         C = rcp( new CrsOperator(A->getRowMap(), 5) );
 
       if (C->getRowMap()->lib() == Cthulhu::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
         RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
         RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
@@ -378,7 +378,7 @@ namespace MueLu {
     }
 
     static void MatrixPrint(RCP<Operator> const &Op, std::string const &label) {
-#ifdef HAVE_MUELU_EPETRA 
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT 
       RCP<const Epetra_CrsMatrix> epOp = Op2EpetraCrs(Op);
       int mypid = epOp->RowMap().Comm().MyPID();
       if (mypid == 0)
@@ -476,6 +476,7 @@ namespace MueLu {
      */
    static void ScaleMatrix(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doInverse=true)
    {
+#ifdef HAVE_MUELU_TPETRA
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpOp;
       try {
         tpOp = Op2NonConstTpetraCrs(Op);
@@ -491,6 +492,9 @@ namespace MueLu {
       }
       else
         tpOp->leftScale(x);
+#else
+      throw(Exceptions::RuntimeError("Sorry, haven't implemented matrix scaling for epetra"));
+#endif // HAVE_MUELU_TPETRA
    } //ScaleMatrix()
 
     /*! @brief Get reciprocal of Operator diagonal
@@ -572,10 +576,10 @@ namespace MueLu {
    static void Write(std::string const & fileName, Operator const & Op) {
     CrsOperator const & crsOp = dynamic_cast<CrsOperator const &>(Op);
     RCP<const CrsMatrix> tmp_CrsMtx = crsOp.getCrsMatrix();
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
     const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
-    const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx != Teuchos::null) {
-#ifdef HAVE_MUELU_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
       RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
       int rv = EpetraExt::RowMatrixToMatrixMarketFile(fileName.c_str(), *A);
       if (rv != 0) {
@@ -587,15 +591,18 @@ namespace MueLu {
 #else
       throw(Exceptions::RuntimeError("Compiled without EpetraExt"));
 #endif
-    } else if (tmp_TCrsMtx != Teuchos::null) {
+    } 
+#endif // HAVE_MUELU_EPETRA_AND_EPETRAEXT
 
+#ifdef HAVE_MUELU_TPETRA
+    const RCP<const TpetraCrsMatrix> &tmp_TCrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);    
+    if (tmp_TCrsMtx != Teuchos::null) {
       RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = tmp_TCrsMtx->getTpetra_CrsMatrix();
       Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >::writeSparseFile(fileName,A);
+    } 
+#endif // HAVE_MUELU_TPETRA
 
-    } else {
-
-      throw(Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing"));
-    }
+    throw(Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing"));
 
    } //Write
 
@@ -634,6 +641,7 @@ namespace MueLu {
 
       Note:  This is very inefficient, as it inserts one entry at a time.
    */
+#ifdef HAVE_MUELU_TPETRA
    static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > simple_Transpose(RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > const &A)
    {
       LocalOrdinal N=A->getNodeNumRows();
@@ -655,7 +663,9 @@ namespace MueLu {
       
       return AT;
     } //simple_Transpose
+#endif // HAVE_MUELU_TPETRA
 
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
    /*! @brief Simple transpose for Epetra_CrsMatrix types
 
       Note:  This is very inefficient, as it inserts one entry at a time.
@@ -681,6 +691,7 @@ namespace MueLu {
       
       return AT;
     } //simple_Transpose
+#endif
 
     /*! @brief Power method.
 
@@ -749,17 +760,19 @@ namespace MueLu {
                                 bool doFillComplete=true,
                                 bool doOptimizeStorage=true)
    {
-      string TorE = "epetra";
+     std::string TorE = "epetra";
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
       RCP<const Epetra_CrsMatrix> epOp;
-      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpOp;
-
       try {
         epOp = Op2NonConstEpetraCrs(Op);
       }
       catch (...){
         TorE = "tpetra";
       }
+#endif
 
+#ifdef HAVE_MUELU_TPETRA
+      RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpOp;
       if (TorE=="tpetra") {
         try {
           tpOp = Op2NonConstTpetraCrs(Op);
@@ -768,6 +781,7 @@ namespace MueLu {
           throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled"));
         }
       } //if
+#endif
 
       Teuchos::ArrayRCP<SC> sv(scalingVector.size());
       if (doInverse) {
@@ -779,7 +793,7 @@ namespace MueLu {
       }
 
       if (TorE == "tpetra") {
-
+#ifdef HAVE_MUELU_TPETRA
         const RCP<const Tpetra::Map<LO,GO,NO> > rowMap = tpOp->getRowMap();
         const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp->getDomainMap();
         const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap = tpOp->getRangeMap();
@@ -838,7 +852,13 @@ namespace MueLu {
           else
             tpOp->fillComplete(domainMap,rangeMap,Tpetra::DoNotOptimizeStorage);
         }
-      } else if (TorE == "epetra") {
+#else
+        throw(Exceptions::RuntimeError("Tpetra"));   
+#endif // HAVE_MUELU_TPETRA
+      } 
+
+      if (TorE == "epetra") {
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
         Epetra_Map const &rowMap = epOp->RowMap();
         int nnz;
         double *vals;
@@ -848,11 +868,13 @@ namespace MueLu {
           for (int j=0; j<nnz; ++j)
             vals[j] *= sv[i];
         }
-
-      } else {
-        //throw should already have occured, thus should never get here
-        throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled"));
+#else
+        throw(Exceptions::RuntimeError("Epetra"));   
+#endif // HAVE_MUELU_EPETRA_AND_EPETRAEXT
       }
+
+      //throw should already have occured, thus should never get here
+      throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled"));
 
    } //ScaleMatrix()
 
@@ -880,16 +902,20 @@ public:
 
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
    {
-     string TorE = "epetra";
+     std::string TorE = "epetra";
+
+#ifdef MUELU_HAVE_EPETRA
      RCP<Epetra_CrsMatrix> epetraOp;
-     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
      try {
        epetraOp = Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
      }
      catch (...) {
        TorE = "tpetra";
      }
+#endif
 
+#ifdef MUELU_HAVE_TPETRA
+     RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
      if (TorE=="tpetra") {
        try {
          tpetraOp = Utils<SC,LO,GO,NO,LMO>::Op2TpetraCrs(Op);
@@ -898,8 +924,10 @@ public:
          throw(Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices"));
        }
      } //if
+#endif
 
      if (TorE == "tpetra") {
+#ifdef MUELU_HAVE_TPETRA
        //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
        //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
@@ -907,12 +935,14 @@ public:
        RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
        RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
        return AAAA;
+#else
+         throw(Exceptions::RuntimeError("Tpetra"));
+#endif
+     } 
 
-     } else {
-       //epetra case
-       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
-       return Teuchos::null;
-     }
+     //epetra case
+     std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
+     return Teuchos::null;
      
    } //Transpose
   }; // class Utils2
@@ -934,7 +964,9 @@ public:
 
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false)
    {
-     string TorE = "epetra";
+     std::string TorE = "epetra";
+
+#ifdef MUELU_HAVE_EPETRA
      RCP<Epetra_CrsMatrix> epetraOp;
      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
      try {
@@ -943,7 +975,9 @@ public:
      catch (...) {
        TorE = "tpetra";
      }
+#endif
 
+#ifdef MUELU_HAVE_TPETRA
      if (TorE=="tpetra") {
        try {
          tpetraOp = Utils<SC,LO,GO,NO,LMO>::Op2TpetraCrs(Op);
@@ -952,8 +986,10 @@ public:
          throw(Exceptions::RuntimeError("Utils::Transpose: Can only transpose Crs matrices"));
        }
      } //if
+#endif
 
      if (TorE == "tpetra") {
+#ifdef MUELU_HAVE_TPETRA
        //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
        //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
@@ -961,8 +997,11 @@ public:
        RCP<Cthulhu::CrsMatrix<SC> > AAA = Teuchos::rcp_implicit_cast<Cthulhu::CrsMatrix<SC> >(AA);
        RCP<Cthulhu::CrsOperator<SC> > AAAA = rcp( new Cthulhu::CrsOperator<SC> (AAA) );
        return AAAA;
-
+#else
+       throw(Exceptions::RuntimeError("Tpetra"));
+#endif
      } else {
+#ifdef MUELU_HAVE_EPETRA
        //epetra case
        /*
        Epetra_RowMatrixTransposer et(&*epetraOp);
@@ -983,6 +1022,9 @@ public:
        return AAAA;
 //       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
 //       return Teuchos::null;
+#else
+       throw(Exceptions::RuntimeError("Epetra"));
+#endif
      }
      
    } //Transpose
