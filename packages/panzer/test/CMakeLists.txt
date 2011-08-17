@@ -7,6 +7,7 @@ ADD_SUBDIRECTORY(physics_block)
 ADD_SUBDIRECTORY(epetra_gatherscatter)
 ADD_SUBDIRECTORY(la_factory)
 ADD_SUBDIRECTORY(vector_tm)
+ADD_SUBDIRECTORY(normals)
 
 IF(${PACKAGE_NAME}_ENABLE_Stokhos)
    ADD_SUBDIRECTORY(stokhos_test)

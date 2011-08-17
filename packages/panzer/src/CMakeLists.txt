@@ -126,6 +126,8 @@ APPEND_SET(HEADERS
   evaluators/Panzer_Integrator_BasisTimesScalarT.hpp
   evaluators/Panzer_Integrator_GradBasisDotVector.hpp
   evaluators/Panzer_Integrator_GradBasisDotVectorT.hpp
+  evaluators/Panzer_Normals.hpp
+  evaluators/Panzer_NormalsT.hpp
   evaluators/Panzer_ScalarToVector.hpp
   evaluators/Panzer_ScalarToVectorT.hpp
   evaluators/Panzer_ScatterResidual_Epetra.hpp
