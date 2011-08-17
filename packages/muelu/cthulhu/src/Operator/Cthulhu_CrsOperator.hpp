@@ -7,7 +7,6 @@
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Exceptions.hpp"
 
-#include "Cthulhu_BlockMap.hpp"
 #include "Cthulhu_MultiVector.hpp"
 #include "Cthulhu_CrsGraph.hpp"
 #include "Cthulhu_CrsMatrix.hpp"

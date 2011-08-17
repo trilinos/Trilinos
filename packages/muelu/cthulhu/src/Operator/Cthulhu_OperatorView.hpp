@@ -2,7 +2,6 @@
 #define CTHULHU_OPERATORVIEW_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_BlockMap.hpp"
 
 #include <Teuchos_Describable.hpp>
 

@@ -34,33 +34,33 @@ CONFIGURE_FILE(
 
 SET(HEADERS "")
 SET(SOURCES 
+  Utils/Cthulhu_TpetraUtils.cpp
+  Utils/Cthulhu_Comm.cpp
+  Utils/Cthulhu_LookupStatus.cpp
+  Utils/Cthulhu_Trans.cpp
   Map/Cthulhu_EpetraMap.cpp
   Import/Cthulhu_EpetraImport.cpp
-  Map/Cthulhu_TpetraUtils.cpp
-  CrsGraph/Cthulhu_EpetraCrsGraph.cpp
-  CrsMatrix/Cthulhu_Trans.cpp
-  CrsMatrix/Cthulhu_EpetraCrsMatrix.cpp
+  Export/Cthulhu_EpetraExport.cpp
   MultiVector/Cthulhu_EpetraMultiVector.cpp
+  CrsGraph/Cthulhu_EpetraCrsGraph.cpp
+  CrsMatrix/Cthulhu_EpetraCrsMatrix.cpp
   Vector/Cthulhu_EpetraVector.cpp
   Vector/Cthulhu_EpetraIntVector.cpp
-  Comm/Cthulhu_Comm.cpp
-  Comm/Cthulhu_LookupStatus.cpp
   )
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # JG TODO: Is it the good macro to call ?
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Def)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Map)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Comm)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/VbrMatrix)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vector)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/MultiVector)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/BlockMap)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Platform)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsGraph)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/DistObject)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Utils)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Map)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Import)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Export)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/DistObject)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsGraph)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/MultiVector)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vector)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Operator)
 

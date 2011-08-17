@@ -9,60 +9,60 @@
 
 namespace Cthulhu {
 
-	//! \brief A implementation of the Platform class for MPI-based platforms.
+  //! \brief A implementation of the Platform class for MPI-based platforms.
   /*!
     This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
     type, if omitted, defaults to the \c LocalOrdinal type.
-   */
+  */
   template<class Node=Kokkos::DefaultNode::DefaultNodeType>
-	class MpiPlatform : public Teuchos::Describable {
-    public:
+  class MpiPlatform : public Teuchos::Describable {
+  public:
     //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.
-      typedef Node NodeType;
-      //! @name Constructor/Destructor Methods
-      //@{ 
+    typedef Node NodeType;
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
-      //! Constructor
-      explicit MpiPlatform(Teuchos::RCP<Node> node);
+    //! Constructor
+    explicit MpiPlatform(Teuchos::RCP<Node> node);
 
-      //! Constructor
-      MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);
+    //! Constructor
+    MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);
 
-      //! Destructor
-      ~MpiPlatform();
+    //! Destructor
+    ~MpiPlatform();
 
-      //@}
+    //@}
 
-      //! @name Class Creation and Accessor Methods
-      //@{ 
+    //! @name Class Creation and Accessor Methods
+    //@{ 
 
-      //! Comm Instance
-      Teuchos::RCP< const Teuchos::Comm<int> > getComm() const;
+    //! Comm Instance
+    Teuchos::RCP< const Teuchos::Comm<int> > getComm() const;
 
-      //! Get Get a node for parallel computation.
-      Teuchos::RCP<Node> getNode() const;
+    //! Get Get a node for parallel computation.
+    Teuchos::RCP<Node> getNode() const;
 
-      //@}
+    //@}
 
-    protected: 
-      //! Node object instantiated for the platform.
-      Teuchos::RCP<Node> node_;
+  protected: 
+    //! Node object instantiated for the platform.
+    Teuchos::RCP<Node> node_;
 
-    private:
-      Teuchos::RCP<Teuchos::MpiComm<int> > comm_;
-      MpiPlatform(const MpiPlatform<Node> &platform);
+  private:
+    Teuchos::RCP<Teuchos::MpiComm<int> > comm_;
+    MpiPlatform(const MpiPlatform<Node> &platform);
   };
 
   template <class Node>
   MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
-  : node_(node) { 
+    : node_(node) { 
     comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
   }
 
   template <class Node>
   MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node)
-  : node_(node) { 
+    : node_(node) { 
     comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
   } 
 

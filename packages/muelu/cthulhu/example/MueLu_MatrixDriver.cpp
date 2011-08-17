@@ -10,22 +10,22 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_MapFactory.hpp>
-#include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_Operator.hpp>
-#include <Cthulhu_Example.hpp>
-#include <Cthulhu_Parameters.hpp>
-
 // Gallery
 #define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
-//#define CTHULHU_MAPFACTORY_SHORT
-#include <Cthulhu_UseShortNamesOrdinal.hpp>
+#include "Cthulhu_ConfigDefs.hpp"
 
+#include <Cthulhu_Map.hpp>
+#include <Cthulhu_MapFactory.hpp>
+#include <Cthulhu_CrsMatrix.hpp>
+#include <Cthulhu_Operator.hpp>
 
+#include <Cthulhu_Parameters.hpp>
+
+#include "Cthulhu_UseDefaultTypes.hpp"
+#include "Cthulhu_UseShortNames.hpp"
 
 /*
   This driver simply generates a Cthulhu matrix, prints it to screen, and exits.
