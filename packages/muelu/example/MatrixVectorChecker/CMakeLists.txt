@@ -6,16 +6,16 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 ### MatrixVectorCheckerExample:
 
-# TODO: IF (Cthulhu_ENABLE_Epetra) or IF (Cthulhu_ENABLE_Tpetra)
+# TODO: IF (Xpetra_ENABLE_Epetra) or IF (Xpetra_ENABLE_Tpetra)
 
 PACKAGE_ADD_EXECUTABLE(
   MatrixVectorCheckerExample
   SOURCES MatrixVectorCheckerExample.cpp
   COMM serial mpi
-  DEPLIBS muelu muelu-cthulhu
+  DEPLIBS muelu muelu-xpetra
   )
 
-IF (Cthulhu_ENABLE_Epetra)
+IF (Xpetra_ENABLE_Epetra)
   PACKAGE_ADD_TEST(
     MatrixVectorCheckerExample
     NAME "MatrixVectorChecker Epetra"
@@ -26,7 +26,7 @@ IF (Cthulhu_ENABLE_Epetra)
     )
 ENDIF()
 
-IF (Cthulhu_ENABLE_Tpetra)
+IF (Xpetra_ENABLE_Tpetra)
   PACKAGE_ADD_TEST(
     MatrixVectorCheckerExample
     NAME "MatrixVectorChecker Epetra"
@@ -42,14 +42,14 @@ ENDIF()
 
 ### read_MatrixMarket:
 
-# Note: this example don't use cthulhu. Only need Epetra + Galeri.
+# Note: this example don't use xpetra. Only need Epetra + Galeri.
 IF (${PACKAGE_NAME}_ENABLE_Epetra) 
   IF (${PACKAGE_NAME}_ENABLE_Galeri)
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       read_MatrixMarket
       SOURCES MueLu_read_MatrixMarket.cpp
       COMM serial
-      DEPLIBS muelu muelu-cthulhu
+      DEPLIBS muelu muelu-xpetra
       )
   ENDIF()
 ENDIF()

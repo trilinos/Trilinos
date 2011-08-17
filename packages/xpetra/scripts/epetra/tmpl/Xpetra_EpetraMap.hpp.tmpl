@@ -1,26 +1,26 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_EpetraConfigDefs.hpp"
+#include "Xpetra_EpetraConfigDefs.hpp"
 
-#include "Cthulhu_Map.hpp"
+#include "Xpetra_Map.hpp"
 
 #include <Epetra_Map.h>
 #include <Epetra_BlockMap.h>
 
-#include "Cthulhu_Utils.hpp"
-#include "Cthulhu_EpetraUtils.hpp"
+#include "Xpetra_Utils.hpp"
+#include "Xpetra_EpetraUtils.hpp"
 
 namespace Tpetra { //TODO to be removed
   typedef size_t global_size_t;
 }
 
-namespace Cthulhu {
+namespace Xpetra {
 
   // TODO: move that elsewhere
   const Epetra_Map & toEpetra(const Map<int,int> &);
   const Epetra_Map & toEpetra(const RCP< const Map<int, int> > &);
-  //const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &);
-  const RCP< const Map<int, int> > toCthulhu(const Epetra_BlockMap &);
+  //const RCP< const Map<int, int> > toXpetra(const RCP< const Epetra_Map > &);
+  const RCP< const Map<int, int> > toXpetra(const Epetra_BlockMap &);
   //
 
   class $TMPL_CLASS
@@ -35,7 +35,7 @@ namespace Cthulhu {
 
 $TMPL_PUBLIC_FUNCTIONS
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! EpetraMap constructor to wrap a Epetra_Map object
@@ -43,7 +43,7 @@ $TMPL_PUBLIC_FUNCTIONS
       : map_(map) { }
 
     //! Get the library used by this object (Epetra or Epetra?)
-    UnderlyingLib lib() const { return Cthulhu::UseEpetra; }
+    UnderlyingLib lib() const { return Xpetra::UseEpetra; }
 
     //! Get the underlying Epetra map
     //const RCP< const Epetra_Map > & getEpetra_Map() const { return map_; }
@@ -60,6 +60,6 @@ $TMPL_PUBLIC_FUNCTIONS
 
   }; // $TMPL_CLASS class
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 $TMPL_FOOTERS

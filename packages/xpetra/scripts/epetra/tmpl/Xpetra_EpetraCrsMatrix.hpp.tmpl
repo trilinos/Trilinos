@@ -1,21 +1,21 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_EpetraConfigDefs.hpp"
+#include "Xpetra_EpetraConfigDefs.hpp"
 
-#include "Cthulhu_CrsMatrix.hpp"
+#include "Xpetra_CrsMatrix.hpp"
 
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
 
-#include "Cthulhu_EpetraMap.hpp"
-#include "Cthulhu_EpetraVector.hpp"
-#include "Cthulhu_EpetraMultiVector.hpp"
-#include "Cthulhu_EpetraCrsGraph.hpp"
+#include "Xpetra_EpetraMap.hpp"
+#include "Xpetra_EpetraVector.hpp"
+#include "Xpetra_EpetraMultiVector.hpp"
+#include "Xpetra_EpetraCrsGraph.hpp"
 
-#include "Cthulhu_Utils.hpp"
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Utils.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   class $TMPL_CLASS
   $TMPL_INHERITANCE
@@ -35,7 +35,7 @@ $TMPL_PUBLIC_FUNCTIONS
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return toCthulhu(mtx_->Map()); }
+    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return toXpetra(mtx_->Map()); }
 
     //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
@@ -51,7 +51,7 @@ $TMPL_PUBLIC_FUNCTIONS
 
     //@}
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! EpetraCrsMatrix constructor to wrap a Epetra_CrsMatrix object
@@ -71,6 +71,6 @@ $TMPL_PUBLIC_FUNCTIONS
 
   }; // EpetraImport class
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 $TMPL_FOOTERS

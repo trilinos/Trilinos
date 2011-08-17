@@ -1,21 +1,21 @@
-#ifndef CTHULHU_CRSMATRIX_FACTORY_HPP
-#define CTHULHU_CRSMATRIX_FACTORY_HPP
+#ifndef XPETRA_CRSMATRIX_FACTORY_HPP
+#define XPETRA_CRSMATRIX_FACTORY_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-#include "Cthulhu_CrsMatrix.hpp"
+#include "Xpetra_CrsMatrix.hpp"
 
-#ifdef HAVE_CTHULHU_TPETRA
-#include "Cthulhu_TpetraCrsMatrix.hpp"
+#ifdef HAVE_XPETRA_TPETRA
+#include "Xpetra_TpetraCrsMatrix.hpp"
 #endif
 
-#ifdef HAVE_CTHULHU_EPETRA
-#include "Cthulhu_EpetraCrsMatrix.hpp"
+#ifdef HAVE_XPETRA_EPETRA
+#include "Xpetra_EpetraCrsMatrix.hpp"
 #endif
 
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
   
   template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
   class CrsMatrixFactory {
@@ -27,15 +27,15 @@ namespace Cthulhu {
   public:
     
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile) {
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
       if (rowMap->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(rowMap, maxNumEntriesPerRow, pftype) );
 #endif
 
-      CTHULHU_FACTORY_ERROR_IF_EPETRA(rowMap->lib());
-      CTHULHU_FACTORY_END;
+      XPETRA_FACTORY_ERROR_IF_EPETRA(rowMap->lib());
+      XPETRA_FACTORY_END;
     }
     
   };
@@ -55,24 +55,24 @@ namespace Cthulhu {
     
   public:
     
-    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile) {
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
       if (rowMap->lib() == UseTpetra)
         return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(rowMap, maxNumEntriesPerRow, pftype) );
 #endif
 
-#ifdef HAVE_CTHULHU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
 #endif
 
-      CTHULHU_FACTORY_END;
+      XPETRA_FACTORY_END;
     }
 
   };
 
 }
 
-#define CTHULHU_CRSMATRIX_FACTORY_SHORT
+#define XPETRA_CRSMATRIX_FACTORY_SHORT
 #endif

@@ -2,8 +2,8 @@
 #define MUELU_GRAPH_HPP
 
 #include <Teuchos_ArrayView.hpp>
-#include <Cthulhu_ConfigDefs.hpp>
-#include <Cthulhu_CrsGraph.hpp>
+#include <Xpetra_ConfigDefs.hpp>
+#include <Xpetra_CrsGraph.hpp>
 
 #include "MueLu_Exceptions.hpp"
 
@@ -32,7 +32,7 @@ namespace MueLu {
     inline size_t GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
     inline size_t GetNodeNumEdges()    const { return graph_->getNodeNumEntries(); }
     
-    inline Cthulhu::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
+    inline Xpetra::global_size_t GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
 
     inline const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
     inline const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }

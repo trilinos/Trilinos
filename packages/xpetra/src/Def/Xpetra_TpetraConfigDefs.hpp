@@ -1,10 +1,10 @@
-#ifndef CTHULHU_TPETRACONFIGDEFS_HPP
-#define CTHULHU_TPETRACONFIGDEFS_HPP
+#ifndef XPETRA_TPETRACONFIGDEFS_HPP
+#define XPETRA_TPETRACONFIGDEFS_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-#ifndef HAVE_CTHULHU_TPETRA
-#error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
+#ifndef HAVE_XPETRA_TPETRA
+#error This file should be included only if HAVE_XPETRA_TPETRA is defined.
 #endif
 
-#endif // CTHULHU_TPETRACONFIGDEFS_HPP
+#endif // XPETRA_TPETRACONFIGDEFS_HPP

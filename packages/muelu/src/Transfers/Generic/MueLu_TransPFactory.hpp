@@ -2,7 +2,7 @@
 #define MUELU_TRANSPFACTORY_HPP
 
 #include <iostream>
-#include "Cthulhu_CrsOperator.hpp"
+#include "Xpetra_CrsOperator.hpp"
 #include "MueLu_RFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities.hpp"

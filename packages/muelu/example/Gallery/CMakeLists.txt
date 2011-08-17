@@ -23,5 +23,5 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     )
 ENDIF()
 
-# Note: this example only use muelu/gallery (do not requiere MueLu or Cthulhu)
+# Note: this example only use muelu/gallery (do not requiere MueLu or Xpetra)
 # muelu/gallery requiere Tpetra (TODO: direct dependency to build muelu/gallery)

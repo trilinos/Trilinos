@@ -4,17 +4,17 @@
 #include "BelosOperator.hpp"
 #include "BelosMultiVec.hpp"
 
-#ifdef HAVE_CTHULHU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
 #include "BelosEpetraAdapter.hpp"
 #endif
 
-#ifdef HAVE_CTHULHU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
 #include "BelosTpetraAdapter.hpp"
 #endif
 
 #include "MueLu_Hierarchy.hpp"
 
-#include "BelosMueLuAdapterMultiVector.hpp" // this defines the MultiVecTraits for Cthulhu::MultiVector
+#include "BelosMueLuAdapterMultiVector.hpp" // this defines the MultiVecTraits for Xpetra::MultiVector
 
 // Here is some documentation about the adapter interface of Belos (not MueLu specific, 06/2011):
 // Belos uses the traits techniques for its adapters. Traits OP and MV must be implemented for your operator and multivector classes.
@@ -57,10 +57,10 @@ namespace Belos {
   // A - MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>, turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp
   // B - MV=Epetra_MultiVector          and OP=Epetra_Operator            , turns your MueLu::Hierarchy into a Belos::MueLuEpetraPrecOp (TODO: not available yet, and it is actually an adapter Epetra/MueLu)
   // C - MV=Tpetra::MultiVector<...>    and OP=Tpetra_Operator<...>       , turns your MueLu::Hierarchy into a Belos::MueLuTpetraPrecOp (TODO: not available yet)
-  // D - MV=Cthulhu::MultiVector<...>   and OP=Cthulhu::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuCthulhuPrecOp => TODO: this description have to be improved
-  // TODO: I can also quickly implements couples Tpetra::MultiVector/Cthulhu::Operator and Epetra_MultiVector/Cthulhu::Operator=> it's more for debugging...because it skip the CthulhuMultiVecTrait
+  // D - MV=Xpetra::MultiVector<...>   and OP=Xpetra::Operator<...>     , turns your MueLu::Hierarchy into a Belos::MueLuXpetraPrecOp => TODO: this description have to be improved
+  // TODO: I can also quickly implements couples Tpetra::MultiVector/Xpetra::Operator and Epetra_MultiVector/Xpetra::Operator=> it's more for debugging...because it skip the XpetraMultiVecTrait
 
-#ifdef HAVE_CTHULHU_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_XPETRA_EPETRA_AND_EPETRAEXT
   // -----------------------------------------------------------------------------------------------------------------------------------
   //  A: MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>
   // -----------------------------------------------------------------------------------------------------------------------------------
@@ -70,14 +70,14 @@ namespace Belos {
   // with ScalarType=, MV=Belos::MultiVec<ScalarType> and OP=Belos::Operator<ScalarType>
   //
   // Note: this adapter is implemented only for Epetra (and ScalarType=double), because the interface Belos::Operator and Belos::MultiVec is only implemented for Epetra in Belos.
-  // For Tpetra, you can use directly the adapter provided for Belos::LinearProblem where OP=Tpetra::Operator<...> or OP=Cthulhu::Operator<...>
+  // For Tpetra, you can use directly the adapter provided for Belos::LinearProblem where OP=Tpetra::Operator<...> or OP=Xpetra::Operator<...>
   //
   // TODO: This adapter may also be used for OP=Epetra_Operator if we implements the interface Epetra_Operator by adding inheritence to public virtual Epetra_Operator and a bunch of methods
   // (see also the class Belos::EpetraPrecOp in package/belos/epetra/src/ for guidance)
   class MueLuEpetraPrecOp : public Belos::Operator<double> { 
     
     typedef MueLu::Hierarchy<double,int, int, Kokkos::DefaultNode::DefaultNodeType, Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps> Hierarchy; // TODO: remove template parameters of Hierarchy
-    typedef Cthulhu::MultiVector<double, int, int> MultiVector;
+    typedef Xpetra::MultiVector<double, int, int> MultiVector;
 
   public:
     
@@ -107,8 +107,8 @@ namespace Belos {
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 
-      const Cthulhu::EpetraMultiVector eX(Teuchos::rcpFromRef(temp_x));
-      Cthulhu::EpetraMultiVector eY(Teuchos::rcpFromRef(y));
+      const Xpetra::EpetraMultiVector eX(Teuchos::rcpFromRef(temp_x));
+      Xpetra::EpetraMultiVector eY(Teuchos::rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       eY.putScalar(0.0);
@@ -139,31 +139,31 @@ namespace Belos {
 #endif
 
   // -----------------------------------------------------------------------------------------------------------------------------------
-  //  D: MV=Cthulhu::MultiVector<...>   and OP=Cthulhu::Operator<...>
+  //  D: MV=Xpetra::MultiVector<...>   and OP=Xpetra::Operator<...>
   // -----------------------------------------------------------------------------------------------------------------------------------
 
-  // JG Notes about the implementation of Belos adapters for Cthulhu objects:
-  // To use Belos with Cthulhu, we need here a common ancestor between classes Cthulhu::Operator and MueLu::Hierarchy
+  // JG Notes about the implementation of Belos adapters for Xpetra objects:
+  // To use Belos with Xpetra, we need here a common ancestor between classes Xpetra::Operator and MueLu::Hierarchy
   // and then implement the Belos::OperatorTraits for this new class hierarchy ancestor.
   //
   // There is several way to do that:
-  // 1) Cthulhu::Operator can be the common ancestor:
-  //  - 1a) MueLu::Hierarchy implements directly Cthulhu::Operator
+  // 1) Xpetra::Operator can be the common ancestor:
+  //  - 1a) MueLu::Hierarchy implements directly Xpetra::Operator
   //  - 1b) MueLu::Hierarchy is wrapped to an object that implements this interface
   // 2) Creates a new common interface and:
-  // - 2a) Both MueLu::Hierarchy and Cthulhu::Operator inherit from it directly.
-  // - 2b) Wrap both MueLu::Hierarchy and Cthulhu::Operator to respect the new interface.
+  // - 2a) Both MueLu::Hierarchy and Xpetra::Operator inherit from it directly.
+  // - 2b) Wrap both MueLu::Hierarchy and Xpetra::Operator to respect the new interface.
   //
-  // PB of 1): Right now, Cthulhu::Operator is way to complicated to be the common interface.
-  //           At some point, Cthulhu::Operator should correspond to the Tpetra::Operator interface and the old one should be renamed
+  // PB of 1): Right now, Xpetra::Operator is way to complicated to be the common interface.
+  //           At some point, Xpetra::Operator should correspond to the Tpetra::Operator interface and the old one should be renamed
   //           1a) is the approach of Ifpack in some sense: Ifpack Preconditionner implements Epetra_Operator but there is problem 
   //           with Apply vs ApplyInverse and so it ends up with an approach more similar to 1b).
   //
   // PB of 2b): If the new interface is only for Belos, we should not introduce inheritence dependency to it
-  //            Approach 2b) is very close to 1a) if the Cthulhu::Operator is changed to be === to Tpetra::Operator
+  //            Approach 2b) is very close to 1a) if the Xpetra::Operator is changed to be === to Tpetra::Operator
   //
   // Righ now, I adopt the approach 2b). The common interface is OperatorT. 
-  // This approach is very similar with what is done with Belos::Operator but here, we don't need to wrap Cthulhu::MultiVector
+  // This approach is very similar with what is done with Belos::Operator but here, we don't need to wrap Xpetra::MultiVector
   // I think that the OperatorT interface should be provided by Belos and replace the Belos::Operator
 
   //
@@ -219,27 +219,27 @@ namespace Belos {
   //@{
 
   /** \brief MueLuOpFailure is thrown when a return value from an MueLu
-   * call on an Cthulhu::Operator or MueLu::Hierarchy is non-zero.
+   * call on an Xpetra::Operator or MueLu::Hierarchy is non-zero.
    */
   class MueLuOpFailure : public BelosError {public:
     MueLuOpFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
   // TODO: doc
-  // TODO: should be it named CthulhuOp (if Cthulhu used by other packages) ?
+  // TODO: should be it named XpetraOp (if Xpetra used by other packages) ?
   template <class Scalar, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
   class MueLuOp : 
-    public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ,
-    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  // mainly for debug: allow to skip the code of Cthulhu::MultiVectorTraits
+    public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ,
+    public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >  // mainly for debug: allow to skip the code of Xpetra::MultiVectorTraits
     //,public OperatorT<Epetra_MultiVector>  jglonglong
   {  
     
-    typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
-    typedef Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+    typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
+    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMultiVector;
 
   public:
@@ -285,8 +285,8 @@ namespace Belos {
 
       TMultiVector & temp_x = const_cast<TMultiVector &>(x);
 
-      const Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(Teuchos::rcpFromRef(temp_x));
-      Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(Teuchos::rcpFromRef(y));
+      const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(Teuchos::rcpFromRef(temp_x));
+      Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(Teuchos::rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
@@ -308,8 +308,8 @@ namespace Belos {
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 
-      const Cthulhu::EpetraMultiVector tX(Teuchos::rcpFromRef(temp_x));
-      Cthulhu::EpetraMultiVector tY(Teuchos::rcpFromRef(y));
+      const Xpetra::EpetraMultiVector tX(Teuchos::rcpFromRef(temp_x));
+      Xpetra::EpetraMultiVector tY(Teuchos::rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
@@ -330,13 +330,13 @@ namespace Belos {
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
             class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > 
   class MueLuPrecOp : 
-    public OperatorT<Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >,
+    public OperatorT<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >,
     public OperatorT<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     //,public OperatorT<Epetra_MultiVector>  jglonglong
   { 
     
     typedef MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Hierarchy;
-    typedef Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+    typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMultiVector; //TODO: remove for readability
 
   public:
@@ -385,8 +385,8 @@ namespace Belos {
 
       TMultiVector & temp_x = const_cast<TMultiVector &>(x);
 
-      const Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(Teuchos::rcpFromRef(temp_x));
-      Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(Teuchos::rcpFromRef(y));
+      const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(Teuchos::rcpFromRef(temp_x));
+      Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(Teuchos::rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
@@ -409,8 +409,8 @@ namespace Belos {
 
       Epetra_MultiVector & temp_x = const_cast<Epetra_MultiVector &>(x);
 
-      const Cthulhu::EpetraMultiVector tX(Teuchos::rcpFromRef(temp_x));
-      Cthulhu::EpetraMultiVector tY(Teuchos::rcpFromRef(y));
+      const Xpetra::EpetraMultiVector tX(Teuchos::rcpFromRef(temp_x));
+      Xpetra::EpetraMultiVector tY(Teuchos::rcpFromRef(y));
 
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);

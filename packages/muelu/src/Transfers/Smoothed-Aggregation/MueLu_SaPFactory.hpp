@@ -1,11 +1,11 @@
 #ifndef MUELU_SAPFACTORY_HPP
 #define MUELU_SAPFACTORY_HPP
 
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_CrsOperator.hpp>
-#include <Cthulhu_Vector.hpp>
-#include <Cthulhu_VectorFactory.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
@@ -148,7 +148,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
 
       //Build final prolongator
 
-      //FIXME Cthulhu::Operator should calculate/stash max eigenvalue
+      //FIXME Xpetra::Operator should calculate/stash max eigenvalue
       //FIXME SC lambdaMax = Op->GetDinvALambda();
 
       if (dampingFactor_ != 0) {

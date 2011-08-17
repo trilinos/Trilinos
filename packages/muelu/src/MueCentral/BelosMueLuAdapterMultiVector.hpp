@@ -1,20 +1,20 @@
 // This file is mostly a copy of belos/tpetra/src/BelosTpetraAdapter.hpp
 
-#ifndef BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP //TODO: mv into Cthulhu ?
+#ifndef BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP //TODO: mv into Xpetra ?
 #define BELOS_MUELU_MULTIVECTOR_ADAPTER_HPP
 
 #include <Kokkos_NodeTrace.hpp>
 
-/*! \file BelosCthulhuAdapter.hpp
-    \brief Provides several interfaces between Belos virtual classes and Cthulhu concrete classes.
+/*! \file BelosXpetraAdapter.hpp
+    \brief Provides several interfaces between Belos virtual classes and Xpetra concrete classes.
 */
 
 // TODO: the assumption is made that the solver, multivector and operator are templated on the same scalar. this will need to be modified.
 
-#include <Cthulhu_MultiVector.hpp>
-#include <Cthulhu_MultiVectorFactory.hpp>
-#include <Cthulhu_MapFactory.hpp>
-//#include <Cthulhu_Operator.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_MapFactory.hpp>
+//#include <Xpetra_Operator.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -31,49 +31,49 @@ namespace Belos {
 
   ////////////////////////////////////////////////////////////////////
   //
-  // Implementation of the Belos::MultiVecTraits for Cthulhu::MultiVector.
+  // Implementation of the Belos::MultiVecTraits for Xpetra::MultiVector.
   //
   ////////////////////////////////////////////////////////////////////
 
-  /*!  \brief Template specialization of Belos::MultiVecTraits class using the Cthulhu::MultiVector class.
+  /*!  \brief Template specialization of Belos::MultiVecTraits class using the Xpetra::MultiVector class.
 
-    This interface will ensure that any Cthulhu::MultiVector will be accepted by the Belos
+    This interface will ensure that any Xpetra::MultiVector will be accepted by the Belos
     templated solvers.  */
   template<class Scalar, class LO, class GO, class Node>
-  class MultiVecTraits<Scalar, Cthulhu::MultiVector<Scalar,LO,GO,Node> >
+  class MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar,LO,GO,Node> >
   {
   public:
-#ifdef HAVE_BELOS_CTHULHU_TIMERS
+#ifdef HAVE_BELOS_XPETRA_TIMERS
     static Teuchos::RCP<Teuchos::Time> mvTimesMatAddMvTimer_, mvTransMvTimer_;
 #endif
 
-    static Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > Clone( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
+    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
     { 
-      return Cthulhu::MultiVectorFactory<Scalar,LO,GO,Node>::Build(mv.getMap(),numvecs);
+      return Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(mv.getMap(),numvecs);
     }
 
-    static Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
+    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 #ifdef JG_TODO
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV)")
-        xreturn Cthulhu::MultiVectorFactory<Scalar,LO,GO,Node>::Build( mv );
+        xreturn Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build( mv );
 #endif //JG_TODO 
     }
 
-    static Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     { 
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 
 #ifdef JG_TODO
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::CloneCopy(mv,index): numvecs must be greater than zero.");
-#ifdef HAVE_CTHULHU_DEBUG
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneCopy(mv,index): numvecs must be greater than zero.");
+#ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::runtime_error,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::CloneCopy(mv,index): indices must be >= zero.");
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneCopy(mv,index): indices must be >= zero.");
       TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::runtime_error,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::CloneCopy(mv,index): indices must be < mv.getNumVectors().");
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneCopy(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
@@ -87,8 +87,8 @@ namespace Belos {
 #endif //JG_TODO
     }
 
-    static Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > 
-    CloneCopy (const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, 
+    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
+    CloneCopy (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 	       const Teuchos::Range1D& index)
     { 
       KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
@@ -98,7 +98,7 @@ namespace Belos {
       if (! validRange)
 	{
 	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Cthulhu::MultiVector<...> >::"
+	  os << "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<...> >::"
 	    "CloneCopy(mv,index=[" << index.lbound() << ", " << index.ubound() 
 	     << "]): ";
 	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
@@ -118,17 +118,17 @@ namespace Belos {
     }
 
 
-    static Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 #ifdef JG_TODO
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
-#ifdef HAVE_CTHULHU_DEBUG
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
+#ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::CloneView(mv,index): indices must be >= zero.");
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
       TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
@@ -143,8 +143,8 @@ namespace Belos {
     }
 
 
-    static Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > 
-    CloneViewNonConst (Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, 
+    static Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > 
+    CloneViewNonConst (Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 		       const Teuchos::Range1D& index)
     {
       // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
@@ -154,7 +154,7 @@ namespace Belos {
       if (! validRange)
 	{
 	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Cthulhu::MultiVector<...> >::"
+	  os << "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<...> >::"
 	    "CloneViewNonConst(mv,index=[" << index.lbound() << ", " 
 	     << index.ubound() << "]): ";
 	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
@@ -173,19 +173,19 @@ namespace Belos {
     }
 
 
-    static Teuchos::RCP<const Cthulhu::MultiVector<Scalar,LO,GO,Node> > CloneView(const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 
 #ifdef JG_TODO
 
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
-#ifdef HAVE_CTHULHU_DEBUG
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
+#ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::CloneView(mv,index): indices must be >= zero.");
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
       TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
@@ -200,8 +200,8 @@ namespace Belos {
 #endif // JG_TODO
     }
 
-    static Teuchos::RCP<const Cthulhu::MultiVector<Scalar,LO,GO,Node> > 
-    CloneView (const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, 
+    static Teuchos::RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > 
+    CloneView (const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
 	       const Teuchos::Range1D& index)
     {
       // FIXME (mfh 11 Jan 2011) Should check for overflowing int!
@@ -211,7 +211,7 @@ namespace Belos {
       if (! validRange)
 	{
 	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, Cthulhu::MultiVector<...> >::"
+	  os << "Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<...> >::"
 	    "CloneView(mv, index=[" << index.lbound() << ", " 
 	     << index.ubound() << "]): ";
 	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
@@ -229,59 +229,59 @@ namespace Belos {
       return mv.subView (index);
     }
 
-    static int GetVecLength( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
+    static int GetVecLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { return mv.getGlobalLength(); }
 
-    static int GetNumberVecs( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
+    static int GetNumberVecs( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { return mv.getNumVectors(); }
 
-    static bool HasConstantStride( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
+    static bool HasConstantStride( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { return mv.isConstantStride(); }
 
-    static void MvTimesMatAddMv( Scalar alpha, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, 
+    static void MvTimesMatAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
-                                 Scalar beta, Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
+                                 Scalar beta, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 
 #ifdef JG_TODO
 
       KOKKOS_NODE_TRACE("Belos::MVT::MvTimesMatAddMv()")
-#ifdef HAVE_BELOS_CTHULHU_TIMERS
+#ifdef HAVE_BELOS_XPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
 #endif
       // create local map
       Teuchos::SerialComm<int> scomm;
-      Teuchos::RCP<Cthulhu::Map<LO,GO,Node> > LocalMap = Cthulhu::MapFactory<LO,GO,Node>::Build(A.getMap()->lib(), B.numRows(), 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Cthulhu::LocallyReplicated, A.getMap()->getNode());
+      Teuchos::RCP<Xpetra::Map<LO,GO,Node> > LocalMap = Xpetra::MapFactory<LO,GO,Node>::Build(A.getMap()->lib(), B.numRows(), 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Xpetra::LocallyReplicated, A.getMap()->getNode());
       // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
       Teuchos::ArrayView<const Scalar> Bvalues(B.values(),B.stride()*B.numCols());
       // create locally replicated MultiVector with a copy of this data
-      Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > B_mv = Cthulhu::MultiVectorFactory<Scalar,LO,GO,Node>::Build(LocalMap,Bvalues,B.stride(),B.numCols());
+      Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > B_mv = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(LocalMap,Bvalues,B.stride(),B.numCols());
       // multiply
       mv.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A, *B_mv, beta);
 
 #endif //JG_TODO
     }
 
-    static void MvAddMv( Scalar alpha, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, Scalar beta, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& B, Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
+    static void MvAddMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, Scalar beta, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
       mv.update(alpha,A,beta,B,Teuchos::ScalarTraits<Scalar>::zero());
     }
 
-    static void MvScale ( Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha )
+    static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha )
     { mv.scale(alpha); }
 
-    static void MvScale ( Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
+    static void MvScale ( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
     { mv.scale(alphas); }
 
-    static void MvTransMv( Scalar alpha, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
+    static void MvTransMv( Scalar alpha, const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
     { 
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 
 #ifdef JG_TODO
 
       KOKKOS_NODE_TRACE("Belos::MVT::MvTransMv()")
-#ifdef HAVE_BELOS_CTHULHU_TIMERS
+#ifdef HAVE_BELOS_XPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
       // form alpha * A^H * B, then copy into SDM
@@ -294,10 +294,10 @@ namespace Belos {
                 strideC  = C.stride();
       Teuchos::SerialComm<int> scomm;
       // create local map with serial comm
-      Teuchos::RCP<Cthulhu::Map<LO,GO,Node> > LocalMap = Cthulhu::MapFactory<LO,GO,Node>::Build(A.getMap()->lib(), numRowsC, 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Cthulhu::LocallyReplicated, A.getMap()->getNode());
+      Teuchos::RCP<Xpetra::Map<LO,GO,Node> > LocalMap = Xpetra::MapFactory<LO,GO,Node>::Build(A.getMap()->lib(), numRowsC, 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Xpetra::LocallyReplicated, A.getMap()->getNode());
       // create local multivector to hold the result
       const bool INIT_TO_ZERO = true;
-      Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > C_mv = Cthulhu::MultiVectorFactory<Scalar,LO,GO,Node>::Build(LocalMap,numColsC, INIT_TO_ZERO);
+      Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > C_mv = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(LocalMap,numColsC, INIT_TO_ZERO);
       // multiply result into local multivector
       C_mv->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,alpha,A,B,Teuchos::ScalarTraits<Scalar>::zero());
       // get comm
@@ -330,23 +330,23 @@ namespace Belos {
 #endif // JG_TODO
     }
 
-    static void MvDot( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, const Cthulhu::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
+    static void MvDot( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const Xpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
     {
       TEST_FOR_EXCEPTION(A.getNumVectors() != B.getNumVectors(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::MvDot(A,B,dots): A and B must have the same number of vectors.");
-#ifdef HAVE_CTHULHU_DEBUG
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::MvDot(A,B,dots): A and B must have the same number of vectors.");
+#ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION(dots.size() < (typename std::vector<int>::size_type)A.getNumVectors(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::MvDot(A,B,dots): dots must have room for all dot products.");
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::MvDot(A,B,dots): dots must have room for all dot products.");
 #endif
       Teuchos::ArrayView<Scalar> av(dots);
       A.dot(B,av(0,A.getNumVectors()));
     }
 
-    static void MvNorm(const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm)
+    static void MvNorm(const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm)
     { 
-#ifdef HAVE_CTHULHU_DEBUG
+#ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.getNumVectors(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::MvNorm(mv,normvec): normvec must have room for all norms.");
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::MvNorm(mv,normvec): normvec must have room for all norms.");
 #endif
       Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> av(normvec);
       switch (type) {
@@ -362,19 +362,19 @@ namespace Belos {
       }
     }
 
-    static void SetBlock( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
+    static void SetBlock( const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
       TEST_FOR_EXCEPTION(1,std::invalid_argument,"NOT IMPLEMENTED");
 
 #ifdef JG_TODO
       KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
-#ifdef HAVE_CTHULHU_DEBUG
+#ifdef HAVE_XPETRA_DEBUG
       TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Cthulhu::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
+          "Belos::MultiVecTraits<Scalar,Xpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
 #endif
-      Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > mvsub = CloneViewNonConst(mv,index);
+      Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > mvsub = CloneViewNonConst(mv,index);
       if ((typename std::vector<int>::size_type)A.getNumVectors() > index.size()) {
-        Teuchos::RCP<const Cthulhu::MultiVector<Scalar,LO,GO,Node> > Asub = A.subView(Teuchos::Range1D(0,index.size()-1));
+        Teuchos::RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > Asub = A.subView(Teuchos::Range1D(0,index.size()-1));
         (*mvsub) = (*Asub);
       }
       else {
@@ -385,16 +385,16 @@ namespace Belos {
     }
 
     static void
-    SetBlock (const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, 
+    SetBlock (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
 	      const Teuchos::Range1D& index, 
-	      Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv)
+	      Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
       KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
 
       // Range1D bounds are signed; size_t is unsigned.
-      // Assignment of Cthulhu::MultiVector is a deep copy.
+      // Assignment of Xpetra::MultiVector is a deep copy.
 
-      // Cthulhu::MultiVector::getNumVectors() returns size_t.  It's
+      // Xpetra::MultiVector::getNumVectors() returns size_t.  It's
       // fair to assume that the number of vectors won't overflow int,
       // since the typical use case of multivectors involves few
       // columns, but it's friendly to check just in case.
@@ -403,7 +403,7 @@ namespace Belos {
       if (overflow)
 	{
 	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Cthulhu::MultiVector<Scalar, ..."
+	  os <<	"Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
 	    "> >::SetBlock(A, index=[" << index.lbound() << ", " 
 	     << index.ubound() << "], mv): ";
 	  TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
@@ -424,7 +424,7 @@ namespace Belos {
       if (! validIndex || ! validSource)
 	{
 	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Cthulhu::MultiVector<Scalar, ..."
+	  os <<	"Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
 	    "> >::SetBlock(A, index=[" << index.lbound() << ", " 
 	     << index.ubound() << "], mv): ";
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
@@ -439,8 +439,8 @@ namespace Belos {
 			     "'A' input argument.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
-      typedef Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > MV_ptr;
-      typedef Teuchos::RCP<const Cthulhu::MultiVector<Scalar,LO,GO,Node> > const_MV_ptr;
+      typedef Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > MV_ptr;
+      typedef Teuchos::RCP<const Xpetra::MultiVector<Scalar,LO,GO,Node> > const_MV_ptr;
 
       // View of the relevant column(s) of the target multivector mv.
       // We avoid view creation overhead by only creating a view if
@@ -460,24 +460,24 @@ namespace Belos {
       else
 	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
-      // Assignment of Cthulhu::MultiVector objects via operator=()
+      // Assignment of Xpetra::MultiVector objects via operator=()
       // assumes that both arguments have compatible Maps.  If
-      // HAVE_CTHULHU_DEBUG is defined at compile time, operator=()
+      // HAVE_XPETRA_DEBUG is defined at compile time, operator=()
       // will throw an std::runtime_error if the Maps are
       // incompatible.
       *mv_view = *A_view; 
     }
 
     static void
-    Assign (const Cthulhu::MultiVector<Scalar,LO,GO,Node>& A, 
-	    Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv)
+    Assign (const Xpetra::MultiVector<Scalar,LO,GO,Node>& A, 
+	    Xpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
       KOKKOS_NODE_TRACE("Belos::MVT::Assign()")
 
       // Range1D bounds are signed; size_t is unsigned.
-      // Assignment of Cthulhu::MultiVector is a deep copy.
+      // Assignment of Xpetra::MultiVector is a deep copy.
 
-      // Cthulhu::MultiVector::getNumVectors() returns size_t.  It's
+      // Xpetra::MultiVector::getNumVectors() returns size_t.  It's
       // fair to assume that the number of vectors won't overflow int,
       // since the typical use case of multivectors involves few
       // columns, but it's friendly to check just in case.
@@ -486,7 +486,7 @@ namespace Belos {
       if (overflow)
 	{
 	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Cthulhu::MultiVector<Scalar, ..."
+	  os <<	"Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
 	    "> >::Assign(A, mv): ";
 	  TEST_FOR_EXCEPTION(maxInt < A.getNumVectors(), std::range_error,
 			     os.str() << "Number of columns in the input multi"
@@ -502,7 +502,7 @@ namespace Belos {
       if (numColsA > numColsMv)
 	{
 	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, Cthulhu::MultiVector<Scalar, ..."
+	  os <<	"Belos::MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, ..."
 	    "> >::Assign(A, mv): ";
 	  TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
 			     os.str() << "Input multivector 'A' has " 
@@ -510,32 +510,32 @@ namespace Belos {
 			     "'mv' has only " << numColsMv << " columns.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
 	}
-      // Assignment of Cthulhu::MultiVector objects via operator=()
+      // Assignment of Xpetra::MultiVector objects via operator=()
       // assumes that both arguments have compatible Maps.  If
-      // HAVE_CTHULHU_DEBUG is defined at compile time, operator=()
+      // HAVE_XPETRA_DEBUG is defined at compile time, operator=()
       // will throw an std::runtime_error if the Maps are
       // incompatible.
       if (numColsA == numColsMv)
 	mv = A;
       else
 	{
-	  Teuchos::RCP<Cthulhu::MultiVector<Scalar,LO,GO,Node> > mv_view = 
+	  Teuchos::RCP<Xpetra::MultiVector<Scalar,LO,GO,Node> > mv_view = 
 	    CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
 	  *mv_view = A;
 	}
     }
 
 
-    static void MvRandom( Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv )
+    static void MvRandom( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { 
       KOKKOS_NODE_TRACE("Belos::MVT::randomize()")
       mv.randomize(); 
     }
 
-    static void MvInit( Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
+    static void MvInit( Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
     { mv.putScalar(alpha); }
 
-    static void MvPrint( const Cthulhu::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
+    static void MvPrint( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
     { mv.print(os); }
 
   };        

@@ -21,15 +21,15 @@
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
 /**********************************************************************************/
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_CrsOperator.hpp>
-#include <Cthulhu_Vector.hpp>
-#include <Cthulhu_VectorFactory.hpp>
-#include <Cthulhu_MultiVectorFactory.hpp>
-#include <Cthulhu_Parameters.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Parameters.hpp>
 
 // Gallery
-#define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.
+#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
     //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
   MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-  Cthulhu::Parameters cthulhuParameters(clp);             // manage parameters of cthulhu
+  Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
   LO maxLevels = 2;
@@ -82,16 +82,16 @@ int main(int argc, char *argv[]) {
   }
   
   matrixParameters.check();
-  cthulhuParameters.check();
+  xpetraParameters.check();
   // TODO: check custom parameters
 
   if (comm->getRank() == 0) {
     matrixParameters.print();
-    cthulhuParameters.print();
+    xpetraParameters.print();
     // TODO: print custom parameters
   }
 
-  if (cthulhuParameters.GetLib() != Cthulhu::UseEpetra) {
+  if (xpetraParameters.GetLib() != Xpetra::UseEpetra) {
     std::cout << "This example is Epetra only" << std::endl;
     return EXIT_FAILURE;
   }
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
-  const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
   /**********************************************************************************/
   /*                                                                                */
@@ -171,12 +171,12 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList ifpackList;
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
-  if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
+  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
     smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 #endif
-  } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
+  } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
     smooProto = rcp( new Ifpack2Smoother("RELAXATION",ifpackList) );
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
 
   RCP<SmootherPrototype> coarseProto;
-  if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
+  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_AMESOS
     Teuchos::ParameterList amesosList;
     amesosList.set("PrintTiming",true);
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
 #endif
 
 
-  } else if (cthulhuParameters.GetLib() == Cthulhu::UseTpetra) {
+  } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
   Teuchos::ParameterList ifpack2List;
   ifpack2List.set("fact: ilut level-of-fill",99); // TODO ??
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
   X->norm2(norms);
   std::cout << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
   
-  if (cthulhuParameters.GetLib() == Cthulhu::UseEpetra) {
+  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
     std::cout << "- - - - - - - - - - :" << std::endl;
     std::cout << "Epetra Belos run:" << std::endl;
 

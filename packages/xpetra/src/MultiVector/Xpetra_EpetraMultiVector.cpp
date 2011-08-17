@@ -1,10 +1,10 @@
-#include "Cthulhu_EpetraMultiVector.hpp"
+#include "Xpetra_EpetraMultiVector.hpp"
 
-#include "Cthulhu_EpetraImport.hpp" 
-#include "Cthulhu_EpetraExport.hpp" 
-#include "Cthulhu_Exceptions.hpp" 
+#include "Xpetra_EpetraImport.hpp" 
+#include "Xpetra_EpetraExport.hpp" 
+#include "Xpetra_Exceptions.hpp" 
 
-namespace Cthulhu {
+namespace Xpetra {
 
   Teuchos::ArrayRCP<const double> EpetraMultiVector::getData(size_t j) const { 
     double ** arrayOfPointers;
@@ -29,7 +29,7 @@ namespace Cthulhu {
   }
 
   void EpetraMultiVector::dot(const MultiVector<double,int,int> &A, const Teuchos::ArrayView<double> &dots) const { 
-    CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
     vec_->Dot(*eA.getEpetra_MultiVector(), dots.getRawPtr());
   }
 
@@ -40,14 +40,14 @@ namespace Cthulhu {
   void EpetraMultiVector::normInf(const Teuchos::ArrayView< Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const { vec_->NormInf(norms.getRawPtr()); }
 
   void EpetraMultiVector::normWeighted(const MultiVector<double,int,int> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { 
-    CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, weights, eWeights, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, weights, eWeights, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
     vec_->NormWeighted(*eWeights.getEpetra_MultiVector(), norms.getRawPtr()); 
   }
 
   void EpetraMultiVector::meanValue(const Teuchos::ArrayView<double> &means) const {  vec_->MeanValue(means.getRawPtr()); } //TODO: modify ArrayView size ??
 
   std::string EpetraMultiVector::description() const {  
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
     return "TODO"; 
   }
 
@@ -57,8 +57,8 @@ namespace Cthulhu {
 
   void EpetraMultiVector::doImport(const DistObject<double, int, int> &source, const Import<int, int> &importer, CombineMode CM) {
       
-    CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     RCP<Epetra_MultiVector> v = tSource.getEpetra_MultiVector();
     int err = this->getEpetra_MultiVector()->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -67,8 +67,8 @@ namespace Cthulhu {
 
   void EpetraMultiVector::doExport(const DistObject<double, int, int> &dest, const Import<int, int>& importer, CombineMode CM) {
       
-    CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     RCP<Epetra_MultiVector> v = tDest.getEpetra_MultiVector();
     int err = this->getEpetra_MultiVector()->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
@@ -77,8 +77,8 @@ namespace Cthulhu {
 
   void EpetraMultiVector::doImport(const DistObject<double,int,int> &source, const Export<int, int>& exporter, CombineMode CM) {
       
-    CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, source, tSource, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     RCP<Epetra_MultiVector> v = tSource.getEpetra_MultiVector();
     int err = this->getEpetra_MultiVector()->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -87,8 +87,8 @@ namespace Cthulhu {
 
   void EpetraMultiVector::doExport(const DistObject<double, int, int> &dest, const Export<int, int>& exporter, CombineMode CM) {
       
-    CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraMultiVector as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraMultiVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, dest, tDest, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraMultiVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     RCP<Epetra_MultiVector> v = tDest.getEpetra_MultiVector();
     int err = this->getEpetra_MultiVector()->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
@@ -97,15 +97,15 @@ namespace Cthulhu {
 
   // TODO: move that elsewhere
   const Epetra_MultiVector & toEpetra(const MultiVector<double, int, int> & x) {
-    CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, x, tX, "toEpetra");
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, x, tX, "toEpetra");
     return *tX.getEpetra_MultiVector();
   }
 
   Epetra_MultiVector & toEpetra(MultiVector<double, int, int> & x) {
-    CTHULHU_DYNAMIC_CAST(      EpetraMultiVector, x, tX, "toEpetra");
+    XPETRA_DYNAMIC_CAST(      EpetraMultiVector, x, tX, "toEpetra");
     return *tX.getEpetra_MultiVector();
   }
   //
 
 
-} // namespace Cthulhu
+} // namespace Xpetra

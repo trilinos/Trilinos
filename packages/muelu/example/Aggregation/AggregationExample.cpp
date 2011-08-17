@@ -9,14 +9,14 @@
 #include "Teuchos_VerboseObject.hpp"
 #include <Teuchos_FancyOStream.hpp>
 
-// Cthulhu
-#include <Cthulhu_Parameters.hpp>
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_MapFactory.hpp>
-#include <Cthulhu_CrsOperator.hpp>
+// Xpetra
+#include <Xpetra_Parameters.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_CrsOperator.hpp>
 
 // Gallery
-#define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.
+#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp(false);
   
   MueLu::Gallery::Parameters<GO> matrixParameters(clp); // manage parameters of the test case
-  Cthulhu::Parameters cthulhuParameters(clp);       // manage parameters of cthulhu
+  Xpetra::Parameters xpetraParameters(clp);       // manage parameters of xpetra
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -51,17 +51,17 @@ int main(int argc, char *argv[]) {
   }
   
   matrixParameters.check();
-  cthulhuParameters.check();
+  xpetraParameters.check();
 
   if (comm->getRank() == 0) {
     matrixParameters.print();
-    cthulhuParameters.print();
+    xpetraParameters.print();
   }
 
   /**********************************************************************************/
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
-  const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
   /**********************************************************************************/
   /*                                                                                */

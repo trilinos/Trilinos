@@ -8,11 +8,11 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayViewDecl.hpp>
 
-#include <Cthulhu_ConfigDefs.hpp>
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_Vector.hpp>
-#include <Cthulhu_VectorFactory.hpp>
+#include <Xpetra_ConfigDefs.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 namespace MueLu {
 
@@ -37,8 +37,8 @@ using Teuchos::RCP;
 //
 //      7) print if  abs(y[i] - tCRS[i])/z[i] > 1.e-8
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node, typename LocalMatOps>
-//int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
-int MatrixVectorChecker(const Teuchos::RCP<const Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
+//int MatrixVectorChecker(const RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
+int MatrixVectorChecker(const Teuchos::RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
 #include "MueLu_UseShortNames.hpp"
 
   // const RCP<const Map> & colMap = mat->getColMap(); // unused

@@ -1,21 +1,21 @@
-#ifndef CTHULHU_TPETRABLOCKMAP_HPP
-#define CTHULHU_TPETRABLOCKMAP_HPP
+#ifndef XPETRA_TPETRABLOCKMAP_HPP
+#define XPETRA_TPETRABLOCKMAP_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-#ifndef HAVE_CTHULHU_TPETRA
-#error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
+#ifndef HAVE_XPETRA_TPETRA
+#error This file should be included only if HAVE_XPETRA_TPETRA is defined.
 #endif
 
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_BlockMap.hpp"
+#include "Xpetra_Map.hpp"
+#include "Xpetra_BlockMap.hpp"
 
 #include "Tpetra_BlockMap.hpp"
 #include "Tpetra_Map.hpp"
 
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class TpetraBlockMap 
@@ -23,7 +23,7 @@ class TpetraBlockMap
 {
  public:
   
-  // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
+  // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
   typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
 
   //! @name Constructor/Destructor Methods
@@ -67,7 +67,7 @@ class TpetraBlockMap
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
                  const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
     
-    CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, pointMap, tPointMap, "Cthulhu::TpetraBlockMap constructors only accept Cthulhu::TpetraMap as input arguments.");
+    XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, pointMap, tPointMap, "Xpetra::TpetraBlockMap constructors only accept Xpetra::TpetraMap as input arguments.");
     map_ = rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(tPointMap->getTpetra_Map(), myGlobalBlockIDs, myBlockSizes, node));
   }
 
@@ -137,7 +137,7 @@ private:
 
 };//class TpetraBlockMap
 
-}//namespace Cthulhu
+}//namespace Xpetra
 
-#define CTHULHU_TPETRABLOCKMAP_SHORT
+#define XPETRA_TPETRABLOCKMAP_SHORT
 #endif

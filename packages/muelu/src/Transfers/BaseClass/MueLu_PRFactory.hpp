@@ -21,7 +21,7 @@ class PRFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,N
 
   protected:
 
-     Cthulhu::global_size_t maxCoarseSize_;
+     Xpetra::global_size_t maxCoarseSize_;
      bool reUseGraph_;
      bool reUseAggregates_;
 

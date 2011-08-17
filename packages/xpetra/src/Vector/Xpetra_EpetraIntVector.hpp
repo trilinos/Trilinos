@@ -1,18 +1,18 @@
-#ifndef CTHULHU_EPETRAINTVECTOR_HPP
-#define CTHULHU_EPETRAINTVECTOR_HPP
+#ifndef XPETRA_EPETRAINTVECTOR_HPP
+#define XPETRA_EPETRAINTVECTOR_HPP
 
-#include "Cthulhu_EpetraConfigDefs.hpp"
+#include "Xpetra_EpetraConfigDefs.hpp"
 
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_MultiVector.hpp"
-#include "Cthulhu_Vector.hpp"
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_Vector.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-#include "Cthulhu_EpetraMap.hpp"
-#include "Cthulhu_EpetraMultiVector.hpp"
+#include "Xpetra_EpetraMap.hpp"
+#include "Xpetra_EpetraMultiVector.hpp"
 #include "Epetra_IntVector.h"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   class EpetraIntVector
     : public Vector<int,int,int>
@@ -31,7 +31,7 @@ namespace Cthulhu {
     //! Sets all vector entries to zero.
     explicit EpetraIntVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut=true) 
     {
-      CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Cthulhu::EpetraCrsMatrix constructors only accept Cthulhu::EpetraMap as input arguments.");
+      XPETRA_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Xpetra::EpetraCrsMatrix constructors only accept Xpetra::EpetraMap as input arguments.");
       vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
     }
     
@@ -167,13 +167,13 @@ namespace Cthulhu {
     RCP< Epetra_IntVector > getEpetra_IntVector() const {  return vec_; }
 
     const RCP<const Comm<int> > getComm() const {
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO getComm Epetra MultiVector not implemented");
+      TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO getComm Epetra MultiVector not implemented");
     }
 
     // Implementing DistObject
     const Teuchos::RCP<const Map<int,int> > getMap() const { 
       RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(vec_->Map()));
-      return rcp ( new Cthulhu::EpetraMap(map) );
+      return rcp ( new Xpetra::EpetraMap(map) );
     }
 
     void doImport(const DistObject<int, int, int> &source, const Import<int, int> &importer, CombineMode CM);
@@ -189,6 +189,6 @@ namespace Cthulhu {
     
   }; // class EpetraIntVector
 
-} // namespace Cthulhu
+} // namespace Xpetra
 
-#endif // CTHULHU_EPETRAINTVECTOR_HPP
+#endif // XPETRA_EPETRAINTVECTOR_HPP

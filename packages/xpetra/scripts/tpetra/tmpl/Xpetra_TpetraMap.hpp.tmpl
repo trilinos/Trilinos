@@ -1,25 +1,25 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_TpetraConfigDefs.hpp"
+#include "Xpetra_TpetraConfigDefs.hpp"
 
 #include <Tpetra_Map.hpp>
 
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_Utils.hpp"
+#include "Xpetra_Map.hpp"
+#include "Xpetra_Utils.hpp"
 
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> &);
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &);
+  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &);
   //
 
   $TMPL_TEMPLATE_PARAM
@@ -30,7 +30,7 @@ namespace Cthulhu {
 
 $TMPL_PUBLIC_FUNCTIONS
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! TpetraMap constructor to wrap a Tpetra::Map object
@@ -38,7 +38,7 @@ $TMPL_PUBLIC_FUNCTIONS
       : map_(map) { }
 
     //! Get the library used by this object (Tpetra or Epetra?)
-    UnderlyingLib lib() const { return Cthulhu::UseTpetra; }
+    UnderlyingLib lib() const { return Xpetra::UseTpetra; }
 
     //! Get the underlying Tpetra map
     const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & getTpetra_Map() const { return map_; }
@@ -62,12 +62,12 @@ $TMPL_PUBLIC_FUNCTIONS
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & toTpetra(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
     typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMapClass;
-    CTHULHU_RCP_DYNAMIC_CAST(const TpetraMapClass, map, tpetraMap, "toTpetra");
+    XPETRA_RCP_DYNAMIC_CAST(const TpetraMapClass, map, tpetraMap, "toTpetra");
     return tpetraMap->getTpetra_Map();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+  const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
     return rcp( new TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map));
   }
   //
@@ -98,18 +98,18 @@ $TMPL_PUBLIC_FUNCTIONS
     }
   } // useTpetra namespace
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 // TODO: remove?
 //!  Returns true if \c map is identical to this map. Implemented in TpetraMap::isSameAs().
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator== (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
+bool operator== (const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
   return map1.isSameAs(map2);
 }
 
 //! Returns true if \c map is not identical to this map. Implemented in TpetraMap::isSameAs().
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator!= (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
+bool operator!= (const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
   return !map1.isSameAs(map2);
 }
 

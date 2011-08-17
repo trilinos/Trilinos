@@ -4,7 +4,7 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
-#include <Cthulhu_EpetraComm.hpp>
+#include <Xpetra_EpetraComm.hpp>
 
 #include "Tpetra_DefaultPlatform.hpp"
 

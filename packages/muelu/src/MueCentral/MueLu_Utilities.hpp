@@ -8,16 +8,16 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_OperatorFactory.hpp>
-#include <Cthulhu_Vector.hpp>
-#include <Cthulhu_VectorFactory.hpp>
-#include <Cthulhu_MultiVectorFactory.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_OperatorFactory.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
-#include <Cthulhu_EpetraCrsMatrix.hpp>
-#include <Cthulhu_EpetraVector.hpp>
-#include <Cthulhu_EpetraMultiVector.hpp>
+#include <Xpetra_EpetraCrsMatrix.hpp>
+#include <Xpetra_EpetraVector.hpp>
+#include <Xpetra_EpetraMultiVector.hpp>
 #include "Epetra_RowMatrixTransposer.h"
 #endif
 
@@ -31,9 +31,9 @@
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
-#include <Cthulhu_TpetraCrsMatrix.hpp>
-#include <Cthulhu_TpetraVector.hpp>
-#include <Cthulhu_TpetraMultiVector.hpp>
+#include <Xpetra_TpetraCrsMatrix.hpp>
+#include <Xpetra_TpetraVector.hpp>
+#include <Xpetra_TpetraMultiVector.hpp>
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_RowMatrixTransposer_decl.hpp"
@@ -45,8 +45,8 @@ namespace MueLu {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
-  using Cthulhu::EpetraCrsMatrix;   // TODO: mv in Cthulhu_UseShortNamesScalar
-  using Cthulhu::EpetraMultiVector;
+  using Xpetra::EpetraCrsMatrix;   // TODO: mv in Xpetra_UseShortNamesScalar
+  using Xpetra::EpetraMultiVector;
 #endif
 
 /*!
@@ -54,7 +54,7 @@ namespace MueLu {
   @brief MueLu utility class.
 
   This class provides a number of static helper methods.  Some are temporary and will eventually
-  go away, while others should be moved to Cthulhu.
+  go away, while others should be moved to Xpetra.
 */
   template <class Scalar, 
             class LocalOrdinal  = int, 
@@ -67,27 +67,27 @@ namespace MueLu {
 
   public:
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
-    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Cthulhu::MultiVector.
+    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Xpetra::MultiVector.
     static RCP<const Epetra_MultiVector> MV2EpetraMV(RCP<MultiVector> const Vec) {
       //rcp<const EpetraMultiVector> tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
       RCP<const EpetraMultiVector > tmpVec;
       tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
       if (tmpVec == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::MultiVector to Cthulhu::EpetraMultiVector failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed"));
       RCP<const Epetra_MultiVector> epVec = tmpVec->getEpetra_MultiVector();
       return epVec;
     } //MV2EpetraMV
 
-    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Cthulhu::MultiVector.
+    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Xpetra::MultiVector.
     static RCP<Epetra_MultiVector> MV2NonConstEpetraMV(RCP<MultiVector> Vec) {
       RCP<const EpetraMultiVector> tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
       if (tmpVec == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::MultiVector to Cthulhu::EpetraMultiVector failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::EpetraMultiVector failed"));
       RCP<Epetra_MultiVector> epVec = tmpVec->getEpetra_MultiVector();
       return epVec;
     } //MV2EpetraMV
 
-    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Cthulhu::MultiVector.
+    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Xpetra::MultiVector.
     static Epetra_MultiVector& MV2NonConstEpetraMV(MultiVector &Vec) {
       EpetraMultiVector const &tmpVec = dynamic_cast<EpetraMultiVector const&>(Vec);
       RCP<Epetra_MultiVector> epVec = tmpVec.getEpetra_MultiVector();
@@ -100,67 +100,67 @@ namespace MueLu {
       return *epVec;
     } //MV2EpetraMV
 
-    //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Cthulhu::Operator.
+    //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Xpetra::Operator.
    static RCP<const Epetra_CrsMatrix> Op2EpetraCrs(RCP<Operator> Op) {
       RCP<const Epetra_CrsMatrix> A;
       // Get the underlying Epetra Mtx
       RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
       if (crsOp == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::Operator to Cthulhu::CrsOperator failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::Operator to Xpetra::CrsOperator failed"));
       RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
       const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
       if (tmp_ECrsMtx == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::CrsMatrix to Cthulhu::EpetraCrsMatrix failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed"));
       A = tmp_ECrsMtx->getEpetra_CrsMatrix();
       return A;
     } //Op2EpetraCrs
 
 
-    //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Cthulhu::Operator.
+    //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Xpetra::Operator.
    static RCP<Epetra_CrsMatrix> Op2NonConstEpetraCrs(RCP<Operator> Op) {
       RCP<Epetra_CrsMatrix> A;
       // Get the underlying Epetra Mtx
       RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
       if (crsOp == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::Operator to Cthulhu::CrsOperator failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::Operator to Xpetra::CrsOperator failed"));
       RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
       const RCP<const EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const EpetraCrsMatrix>(tmp_CrsMtx);
       if (tmp_ECrsMtx == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::CrsMatrix to Cthulhu::EpetraCrsMatrix failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed"));
       A = tmp_ECrsMtx->getEpetra_CrsMatrixNonConst();
       return A;
     } //Op2NonConstEpetraCrs
 #endif
 
 #ifdef HAVE_MUELU_TPETRA
-    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Cthulhu::MultiVector.
+    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Xpetra::MultiVector.
     static RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > MV2TpetraMV(RCP<MultiVector> const Vec) {
       //rcp<const TpetraMultiVector> tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
       RCP<const TpetraMultiVector > tmpVec;
       tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
       if (tmpVec == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::MultiVector to Cthulhu::TpetraMultiVector failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed"));
       RCP<const Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec->getTpetra_MultiVector();
       return tpVec;
     } //MV2TpetraMV
 
-    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Cthulhu::MultiVector.
+    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Xpetra::MultiVector.
     static RCP<Tpetra::MultiVector<SC,LO,GO,NO> > MV2NonConstTpetraMV(RCP<MultiVector> Vec) {
       RCP<const TpetraMultiVector> tmpVec = rcp_dynamic_cast<TpetraMultiVector>(Vec);
       if (tmpVec == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::MultiVector to Cthulhu::TpetraMultiVector failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::MultiVector to Xpetra::TpetraMultiVector failed"));
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec->getTpetra_MultiVector();
       return tpVec;
     } //MV2TpetraMV
 
-    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Cthulhu::MultiVector.
+    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Xpetra::MultiVector.
     static Tpetra::MultiVector<SC,LO,GO,NO> & MV2NonConstTpetraMV(MultiVector &Vec) {
       TpetraMultiVector const &tmpVec = dynamic_cast<TpetraMultiVector const&>(Vec);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec.getTpetra_MultiVector();
       return *tpVec;
     } //MV2TpetraMV
 
-    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Cthulhu::MultiVector.
+    //! @brief Helper utility to pull out the underlying Tpetra::MultiVector from an Xpetra::MultiVector.
     static RCP<Tpetra::MultiVector<SC,LO,GO,NO> > MV2NonConstTpetraMV2(MultiVector &Vec) {
       TpetraMultiVector const &tmpVec = dynamic_cast<TpetraMultiVector const&>(Vec);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpVec = tmpVec.getTpetra_MultiVector();
@@ -172,32 +172,32 @@ namespace MueLu {
       RCP<Tpetra::MultiVector<SC,LO,GO,NO>  const> tpVec = tmpVec.getTpetra_MultiVector();
       return *tpVec;
     } //MV2TpetraMV
-    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Cthulhu::Operator.
+    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Xpetra::Operator.
     static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > Op2TpetraCrs(RCP<Operator> Op) {
      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A;
       // Get the underlying Tpetra Mtx
       RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
       if (crsOp == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::Operator to Cthulhu::CrsOperator failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::Operator to Xpetra::CrsOperator failed"));
       RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
       const RCP<const TpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
       if (tmp_ECrsMtx == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::CrsMatrix to Cthulhu::TpetraCrsMatrix failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed"));
       A = tmp_ECrsMtx->getTpetra_CrsMatrix();
       return A;
     } //Op2TpetraCrs
 
-    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Cthulhu::Operator.
+    //! @brief Helper utility to pull out the underlying Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> from an Xpetra::Operator.
    static RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > Op2NonConstTpetraCrs(RCP<Operator> Op) {
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A;
       // Get the underlying Tpetra Mtx
       RCP<const CrsOperator> crsOp = rcp_dynamic_cast<const CrsOperator>(Op);
       if (crsOp == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::Operator to Cthulhu::CrsOperator failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::Operator to Xpetra::CrsOperator failed"));
       RCP<const CrsMatrix> tmp_CrsMtx = crsOp->getCrsMatrix();
       const RCP<const TpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const TpetraCrsMatrix>(tmp_CrsMtx);
       if (tmp_ECrsMtx == Teuchos::null)
-        throw(Exceptions::BadCast("Cast from Cthulhu::CrsMatrix to Cthulhu::TpetraCrsMatrix failed"));
+        throw(Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix failed"));
       A = tmp_ECrsMtx->getTpetra_CrsMatrixNonConst();
       return A;
     } //Op2NonConstTpetraCrs
@@ -206,7 +206,7 @@ namespace MueLu {
 
     /*! @brief Helper function to do matrix-matrix multiply "in-place"
 
-      Returns RCP to non-constant Cthulhu::Operator.
+      Returns RCP to non-constant Xpetra::Operator.
 
       @param A left matrix
       @param transposeA if true, use the transpose of A
@@ -229,7 +229,7 @@ namespace MueLu {
       if (!B->isFillComplete())
         throw(Exceptions::RuntimeError("B is not fill-completed"));
 
-      if (C->getRowMap()->lib() == Cthulhu::UseEpetra) {
+      if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
         RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
@@ -246,7 +246,7 @@ namespace MueLu {
 #else
         throw(Exceptions::RuntimeError("MueLu must be compiled with EpetraExt."));
 #endif
-      } else if(C->getRowMap()->lib() == Cthulhu::UseTpetra) {
+      } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = Op2TpetraCrs(A);
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2TpetraCrs(B);
@@ -286,7 +286,7 @@ namespace MueLu {
         throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
       }
 
-      if (A->getRowMap()->lib() == Cthulhu::UseEpetra) {
+      if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
         RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
@@ -303,7 +303,7 @@ namespace MueLu {
 #else
       throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
 #endif
-      } else if(A->getRowMap()->lib() == Cthulhu::UseTpetra) {
+      } else if(A->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = Op2TpetraCrs(A);
         RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2NonConstTpetraCrs(B);
@@ -339,7 +339,7 @@ namespace MueLu {
         //FIXME 5 is a complete guess as to the #nonzeros per row
         C = rcp( new CrsOperator(A->getRowMap(), 5) );
 
-      if (C->getRowMap()->lib() == Cthulhu::UseEpetra) {
+      if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
         RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
         RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
@@ -358,7 +358,7 @@ namespace MueLu {
 #else
       throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
 #endif
-      } else if(C->getRowMap()->lib() == Cthulhu::UseTpetra) {
+      } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA = Op2TpetraCrs(A);
         RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpB = Op2TpetraCrs(B);
@@ -571,7 +571,7 @@ namespace MueLu {
 
    /*! @brief Save matrix to file in Matrix Market format.
 
-     TODO Move this to Cthulhu?
+     TODO Move this to Xpetra?
    */
    static void Write(std::string const & fileName, Operator const & Op) {
     CrsOperator const & crsOp = dynamic_cast<CrsOperator const &>(Op);
@@ -894,7 +894,7 @@ namespace MueLu {
 
 public:
 
-    /*! @brief Transpose a Cthulhu::Operator
+    /*! @brief Transpose a Xpetra::Operator
 
       Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
       In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
@@ -953,7 +953,7 @@ public:
   class Utils2<double,int,int>//, Kokkos::DefaultNode::DefaultNodeType,
                //Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps >
   {
-   typedef Cthulhu::Operator<double,int,int> Operator;
+   typedef Xpetra::Operator<double,int,int> Operator;
    typedef double SC;
    typedef int LO;
    typedef int GO;
@@ -993,9 +993,9 @@ public:
        //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
        //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
-       RCP<Cthulhu::TpetraCrsMatrix<SC> > AA = rcp(new Cthulhu::TpetraCrsMatrix<SC>(A) );
-       RCP<Cthulhu::CrsMatrix<SC> > AAA = Teuchos::rcp_implicit_cast<Cthulhu::CrsMatrix<SC> >(AA);
-       RCP<Cthulhu::CrsOperator<SC> > AAAA = rcp( new Cthulhu::CrsOperator<SC> (AAA) );
+       RCP<Xpetra::TpetraCrsMatrix<SC> > AA = rcp(new Xpetra::TpetraCrsMatrix<SC>(A) );
+       RCP<Xpetra::CrsMatrix<SC> > AAA = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
+       RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC> (AAA) );
        return AAAA;
 #else
        throw(Exceptions::RuntimeError("Tpetra"));
@@ -1017,8 +1017,8 @@ public:
        */
        RCP<Epetra_CrsMatrix> rcpA = Utils<SC,LO,GO,NO,LMO>::simple_EpetraTranspose(epetraOp);
        RCP<EpetraCrsMatrix> AA = rcp(new EpetraCrsMatrix(rcpA) );
-       RCP<Cthulhu::CrsMatrix<SC> > AAA = Teuchos::rcp_implicit_cast<Cthulhu::CrsMatrix<SC> >(AA);
-       RCP<Cthulhu::CrsOperator<SC> > AAAA = rcp( new Cthulhu::CrsOperator<SC>(AAA) );
+       RCP<Xpetra::CrsMatrix<SC> > AAA = Teuchos::rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
+       RCP<Xpetra::CrsOperator<SC> > AAAA = rcp( new Xpetra::CrsOperator<SC>(AAA) );
        return AAAA;
 //       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
 //       return Teuchos::null;

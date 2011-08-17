@@ -5,25 +5,25 @@
 
 #include "Teuchos_as.hpp"
 
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_DefaultPlatform.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_DefaultPlatform.hpp"
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 #include "Tpetra_ConfigDefs.hpp" //TODO
 #include "Tpetra_DefaultPlatform.hpp" //TODO
-#include "Cthulhu_TpetraMap.hpp"
+#include "Xpetra_TpetraMap.hpp"
 #endif
 
-#ifdef HAVE_CTHULHU_EPETRA
-#include "Cthulhu_EpetraMap.hpp"
+#ifdef HAVE_XPETRA_EPETRA
+#include "Xpetra_EpetraMap.hpp"
 #endif
 
 // FINISH: add testing of operator==, operator!=, operator=, copy construct
 // put these into test_same_as and test_is_compatible
 
 namespace {
-#ifdef HAVE_CTHULHU_EPETRA
-  typedef Cthulhu::EpetraMap EpetraMap;
+#ifdef HAVE_XPETRA_EPETRA
+  typedef Xpetra::EpetraMap EpetraMap;
 #endif
   using Teuchos::Array;
   using Teuchos::as;
@@ -33,8 +33,8 @@ namespace {
   using Teuchos::outArg;
   using Teuchos::Tuple;
   using Teuchos::tuple;
-  using Cthulhu::global_size_t;
-  using Cthulhu::DefaultPlatform;
+  using Xpetra::global_size_t;
+  using Xpetra::DefaultPlatform;
   using std::sort;
   using std::find;
   using Teuchos::broadcast;
@@ -342,12 +342,12 @@ namespace {
       //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, M, LO, GO )
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      typedef Cthulhu::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
+      typedef Xpetra::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
       UNIT_TEST_GROUP_ORDINAL_(TpetraMap ## LO ## GO, LO, GO)
 
     UNIT_TEST_GROUP_ORDINAL(char , int)
-#ifdef HAVE_CTHULHU_EPETRA
-      UNIT_TEST_GROUP_ORDINAL_(Cthulhu::EpetraMap, int , int)
+#ifdef HAVE_XPETRA_EPETRA
+      UNIT_TEST_GROUP_ORDINAL_(Xpetra::EpetraMap, int , int)
 #endif
     UNIT_TEST_GROUP_ORDINAL(int , int)
 
@@ -362,15 +362,15 @@ namespace {
       //JG TODO FAILED: TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, M, LO, GO )
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      typedef Cthulhu::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
+      typedef Xpetra::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
       UNIT_TEST_GROUP_ORDINAL_(TpetraMap ## LO ## GO, LO, GO)
 
     // UNIT_TEST_GROUP_ORDINAL(char , int)
 
-#ifdef HAVE_CTHULHU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
       UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , int)
 #endif
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
       UNIT_TEST_GROUP_ORDINAL(int , int)
 #endif
 

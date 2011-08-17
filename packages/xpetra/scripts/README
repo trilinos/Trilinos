@@ -6,10 +6,10 @@ $cd package/tpetra/doc
 $doxygen Doxygen
 
 
-HOW TO GENERATE CTHULHU HEADERS
+HOW TO GENERATE XPETRA HEADERS
 -------------------------------
 
-$cd cthulhu/script/
+$cd xpetra/script/
 $python interfaces.py
 $python tpetra.py
 $python epetra.py

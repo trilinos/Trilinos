@@ -4,7 +4,7 @@
 #include <Teuchos_Describable.hpp>
 
 #include "MueLu_Graph.hpp"
-#include "Cthulhu_VectorFactory.hpp"
+#include "Xpetra_VectorFactory.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -54,7 +54,7 @@ namespace MueLu {
      inline bool IsRoot(LO i)                     { return isRoot_[i];           } // Local
      inline void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;          } // Local
      
-     inline const RCP<const Cthulhu::Map<LO,GO> > GetMap() { return GetVertex2AggId()->getMap(); }
+     inline const RCP<const Xpetra::Map<LO,GO> > GetMap() { return GetVertex2AggId()->getMap(); }
 
      /*! @brief Compute sizes of all the aggregates.
 

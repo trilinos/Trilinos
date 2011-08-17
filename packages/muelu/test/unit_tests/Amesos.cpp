@@ -23,7 +23,7 @@ namespace {
     //that method has these input arguments:
     //Teuchos::FancyOStream& out, bool& success
 
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
         out << "version: " << MueLu::Version() << std::endl;
 
@@ -46,7 +46,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST(Amesos, KLUSolve)
   {
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
         out << "version: " << MueLu::Version() << std::endl;
 

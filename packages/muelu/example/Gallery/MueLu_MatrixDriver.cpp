@@ -19,7 +19,7 @@
 /*
   This driver simply generates a Tpetra matrix, prints it to screen, and exits.
 
-  THIS EXAMPLE DOES NOT USE CTHULHU.
+  THIS EXAMPLE DOES NOT USE XPETRA.
 
   Use the "--help" option to get verbose help.
 */

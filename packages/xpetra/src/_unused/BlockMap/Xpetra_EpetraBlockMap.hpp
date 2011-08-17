@@ -1,28 +1,28 @@
-#ifndef CTHULHU_EPETRABLOCKMAP_HPP
-#define CTHULHU_EPETRABLOCKMAP_HPP
+#ifndef XPETRA_EPETRABLOCKMAP_HPP
+#define XPETRA_EPETRABLOCKMAP_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-#ifndef HAVE_CTHULHU_EPETRA
-#error This file should be included only if HAVE_CTHULHU_EPETRA is defined.
+#ifndef HAVE_XPETRA_EPETRA
+#error This file should be included only if HAVE_XPETRA_EPETRA is defined.
 #endif
 
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_BlockMap.hpp"
+#include "Xpetra_Map.hpp"
+#include "Xpetra_BlockMap.hpp"
 
 #include "Epetra_BlockMap.h"
-#include "Cthulhu_EpetraUtils.hpp"
-#include "Cthulhu_EpetraExceptions.hpp"
+#include "Xpetra_EpetraUtils.hpp"
+#include "Xpetra_EpetraExceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
 /*!
   @class EpetraBlockMap
-  @brief Block-entry counterpart to Cthulhu::Map.
+  @brief Block-entry counterpart to Xpetra::Map.
 
-  BlockMap doesn't inherit Cthulhu::Map
+  BlockMap doesn't inherit Xpetra::Map
 */
-class EpetraBlockMap : public Cthulhu::BlockMap<int,int> {
+class EpetraBlockMap : public Xpetra::BlockMap<int,int> {
 
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
@@ -89,7 +89,7 @@ class EpetraBlockMap : public Cthulhu::BlockMap<int,int> {
 
   //! @name Attribute Accessor Methods
   //@{
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
   const Teuchos::RCP<const Map<int,int> >& getPointMap() const {  return map_->getPointMap(); }
 #endif
 
@@ -105,7 +105,7 @@ class EpetraBlockMap : public Cthulhu::BlockMap<int,int> {
   //! Return ArrayRCP of first-local-point in local blocks.
   //TODO Teuchos::ArrayRCP<const int> getNodeFirstPointInBlocks() const {  return map_->FirstPointInElementList(); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+#ifdef XPETRA_NOT_IMPLEMENTED_FOR_EPETRA
   //! Return device-resident ArrayRCP of first-local-point in local blocks.
   /*! This version of this method is primarily used internally by VbrMatrix
       for passing data to the matrix-vector-product kernel.
@@ -135,7 +135,7 @@ class EpetraBlockMap : public Cthulhu::BlockMap<int,int> {
    */
   int getFirstLocalPointInLocalBlock(int localBlockID) const {  return map_->FirstPointInElement(localBlockID); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+#ifdef XPETRA_NOT_IMPLEMENTED_FOR_EPETRA
   //! Return the first global point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown. //TODO: throw !
@@ -155,11 +155,11 @@ private:
 
 // //-----------------------------------------------------------------
 // template<class int,class int,class Node>
-// Teuchos::RCP<const Cthulhu::Map<int,int> >
-// convertEpetraBlockMapToEpetraPointMap(const Teuchos::RCP<const Cthulhu::EpetraBlockMap<int,int> >& blockMap) { 
+// Teuchos::RCP<const Xpetra::Map<int,int> >
+// convertEpetraBlockMapToEpetraPointMap(const Teuchos::RCP<const Xpetra::EpetraBlockMap<int,int> >& blockMap) { 
 //   return rcp(new EpetraMap(convertEpetraBlockMapToEpetraPointMap(blockMap.getEpetra_BlockMap())));
 // }
 
-}//namespace Cthulhu
+}//namespace Xpetra
 
 #endif

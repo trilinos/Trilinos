@@ -1,5 +1,5 @@
-#ifndef CTHULHU_CONFIGDEFS_HPP
-#define CTHULHU_CONFIGDEFS_HPP
+#ifndef XPETRA_CONFIGDEFS_HPP
+#define XPETRA_CONFIGDEFS_HPP
 
 #ifndef __cplusplus
 #define __cplusplus
@@ -37,7 +37,7 @@
 
 // end of undoing autoconf's work section
 
-#include <Cthulhu_config.hpp>
+#include <Xpetra_config.hpp>
 #include <Teuchos_ConfigDefs.hpp>
 #include <Kokkos_ConfigDefs.hpp>
 
@@ -51,28 +51,28 @@ namespace Cthulu {
 }
 
 // these make some of the macros in Cthulu_Util.hpp much easier to describe
-#ifdef HAVE_CTHULHU_THROW_EFFICIENCY_WARNINGS
-  #define CTHULHU_THROWS_EFFICIENCY_WARNINGS 1
+#ifdef HAVE_XPETRA_THROW_EFFICIENCY_WARNINGS
+  #define XPETRA_THROWS_EFFICIENCY_WARNINGS 1
 #else
-  #define CTHULHU_THROWS_EFFICIENCY_WARNINGS 0
+  #define XPETRA_THROWS_EFFICIENCY_WARNINGS 0
 #endif
 
-#ifdef HAVE_CTHULHU_PRINT_EFFICIENCY_WARNINGS
-  #define CTHULHU_PRINTS_EFFICIENCY_WARNINGS 1
+#ifdef HAVE_XPETRA_PRINT_EFFICIENCY_WARNINGS
+  #define XPETRA_PRINTS_EFFICIENCY_WARNINGS 1
 #else
-  #define CTHULHU_PRINTS_EFFICIENCY_WARNINGS 0
+  #define XPETRA_PRINTS_EFFICIENCY_WARNINGS 0
 #endif
 
-#ifdef HAVE_CTHULHU_THROW_ABUSE_WARNINGS
-  #define CTHULHU_THROWS_ABUSE_WARNINGS 1
+#ifdef HAVE_XPETRA_THROW_ABUSE_WARNINGS
+  #define XPETRA_THROWS_ABUSE_WARNINGS 1
 #else
-  #define CTHULHU_THROWS_ABUSE_WARNINGS 0
+  #define XPETRA_THROWS_ABUSE_WARNINGS 0
 #endif
 
-#ifdef HAVE_CTHULHU_PRINT_ABUSE_WARNINGS
-  #define CTHULHU_PRINTS_ABUSE_WARNINGS 1
+#ifdef HAVE_XPETRA_PRINT_ABUSE_WARNINGS
+  #define XPETRA_PRINTS_ABUSE_WARNINGS 1
 #else
-  #define CTHULHU_PRINTS_ABUSE_WARNINGS 0
+  #define XPETRA_PRINTS_ABUSE_WARNINGS 0
 #endif
 
 #include <functional>
@@ -95,7 +95,7 @@ namespace Cthulu {
 #endif
 
 //! Namespace for Cthulu classes and methods
-namespace Cthulhu {
+namespace Xpetra {
   /** \brief Global size_t object. 
   
       Set at configure time, this type is intended to support scenarios where the global memory allocation is larger than that of a single node.
@@ -202,6 +202,6 @@ namespace Cthulhu {
 namespace CthuluExamples {
 }
 
-#define CTHULHU_ERR_CHECK(arg) { int r = arg; if (r < 0) { std::cout << "r = " << r << std::endl; assert(r>=0); } ; }; // TODO: throw exceptions
+#define XPETRA_ERR_CHECK(arg) { int r = arg; if (r < 0) { std::cout << "r = " << r << std::endl; assert(r>=0); } ; }; // TODO: throw exceptions
 
-#endif // CTHULHU_CONFIGDEFS_HPP
+#endif // XPETRA_CONFIGDEFS_HPP

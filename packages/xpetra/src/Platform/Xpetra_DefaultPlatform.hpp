@@ -1,16 +1,16 @@
-#ifndef CTHULHU_DEFAULT_PLATFORM_HPP
-#define CTHULHU_DEFAULT_PLATFORM_HPP
+#ifndef XPETRA_DEFAULT_PLATFORM_HPP
+#define XPETRA_DEFAULT_PLATFORM_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_SerialPlatform.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_SerialPlatform.hpp"
 #ifdef HAVE_MPI
-#  include "Cthulhu_MpiPlatform.hpp"
+#  include "Xpetra_MpiPlatform.hpp"
 #endif
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   /** \brief Returns a default platform appropriate for the enviroment.
 
@@ -39,6 +39,6 @@ namespace Cthulhu {
 
   };
 
-} // namespace Cthulhu
+} // namespace Xpetra
 
-#endif // CTHULHU_DEFAULT_PLATFORM_HPP
+#endif // XPETRA_DEFAULT_PLATFORM_HPP

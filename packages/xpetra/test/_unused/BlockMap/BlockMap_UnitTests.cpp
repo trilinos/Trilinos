@@ -3,22 +3,22 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-#include "Cthulhu_BlockMap.hpp"
-#include "Cthulhu_DefaultPlatform.hpp"
+#include "Xpetra_BlockMap.hpp"
+#include "Xpetra_DefaultPlatform.hpp"
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_as.hpp"
 //#include "Tpetra_Map.hpp"
 //#include "Tpetra_BlockMap.hpp"
-#include "Cthulhu_TpetraMap.hpp"
-#include "Cthulhu_TpetraBlockMap.hpp"
+#include "Xpetra_TpetraMap.hpp"
+#include "Xpetra_TpetraBlockMap.hpp"
 #endif
 
-#ifdef HAVE_CTHULHU_EPETRA
-#include "Cthulhu_EpetraMap.hpp"
-#include "Cthulhu_EpetraBlockMap.hpp"
+#ifdef HAVE_XPETRA_EPETRA
+#include "Xpetra_EpetraMap.hpp"
+#include "Xpetra_EpetraBlockMap.hpp"
 #endif
 
 namespace {
@@ -33,16 +33,16 @@ namespace {
   using Teuchos::tuple;
   //using Tpetra::Map;
   //using Tpetra::BlockMap;
-#ifdef HAVE_CTHULHU_TPETRA
-  using Cthulhu::TpetraMap;
-  using Cthulhu::TpetraBlockMap;
+#ifdef HAVE_XPETRA_TPETRA
+  using Xpetra::TpetraMap;
+  using Xpetra::TpetraBlockMap;
   using Tpetra::global_size_t;
 #endif
-#ifdef HAVE_CTHULHU_EPETRA
-  using Cthulhu::EpetraMap;
-  using Cthulhu::EpetraBlockMap;
+#ifdef HAVE_XPETRA_EPETRA
+  using Xpetra::EpetraMap;
+  using Xpetra::EpetraBlockMap;
 #endif
-  using Cthulhu::DefaultPlatform;
+  using Xpetra::DefaultPlatform;
   using std::sort;
   using std::find;
   using Teuchos::broadcast;
@@ -137,7 +137,7 @@ namespace {
     TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInLocalBlock(blkLIDs[1]), firstPt[1]);
 
     //and this BlockMap should have the same point-map:
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     const M& tmapref = *tmap;
     const M& tmap2ref = *(blkmap2.getPointMap());
     TEST_IS_SAME_AS(tmapref, tmap2ref, true);
@@ -193,7 +193,7 @@ namespace {
     TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInLocalBlock(blkLIDs[1]), firstPt[1]);
 
     //and this BlockMap should have the same point-map:
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     const M& tmapref = *tmap;
     const M& tmap2ref = *(blkmap2.getPointMap());
     TEST_IS_SAME_AS(tmapref, tmap2ref, true);
@@ -280,7 +280,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMap, ConstructorBadLengths2, BM, M, LO, GO )
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      typedef Cthulhu::TpetraBlockMap<LO,GO> TpetraBlockMap ## LO ## GO; \
+      typedef Xpetra::TpetraBlockMap<LO,GO> TpetraBlockMap ## LO ## GO; \
       UNIT_TEST_GROUP_ORDINAL_(TpetraBlockMap ## LO ## GO, LO, GO)
 
     UNIT_TEST_GROUP_ORDINAL( char , int )
@@ -294,10 +294,10 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMap, ConstructorBadLengths1, BM, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockMap, ConstructorBadLengths2, BM, M, LO, GO )
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      typedef Cthulhu::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
-      typedef Cthulhu::TpetraBlockMap<LO,GO> TpetraBlockMap ## LO ## GO; \
+      typedef Xpetra::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
+      typedef Xpetra::TpetraBlockMap<LO,GO> TpetraBlockMap ## LO ## GO; \
       UNIT_TEST_GROUP_ORDINAL_(TpetraBlockMap ## LO ## GO, TpetraMap ## LO ## GO, LO, GO)
 
     // UNIT_TEST_GROUP_ORDINAL(char , int)

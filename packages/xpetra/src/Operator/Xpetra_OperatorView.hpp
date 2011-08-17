@@ -1,21 +1,21 @@
-#ifndef CTHULHU_OPERATORVIEW_HPP
-#define CTHULHU_OPERATORVIEW_HPP
+#ifndef XPETRA_OPERATORVIEW_HPP
+#define XPETRA_OPERATORVIEW_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
 #include <Teuchos_Describable.hpp>
 
-/** \file Cthulhu_Operator.hpp
+/** \file Xpetra_Operator.hpp
 
-Declarations for the class Cthulhu::Operator.
+Declarations for the class Xpetra::Operator.
 */
-namespace Cthulhu {
+namespace Xpetra {
 
   template <class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType>
   class OperatorView { // TODO : virtual public Teuchos::Describable {
-    typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+    typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 
   public:
   
@@ -53,7 +53,7 @@ namespace Cthulhu {
 
   }; // class OperatorView
 
-} // namespace Cthulhu
+} // namespace Xpetra
 
-#define CTHULHU_OPERATORVIEW_SHORT
-#endif //CTHULHU_OPERATOR_VIEW_DECL_HPP
+#define XPETRA_OPERATORVIEW_SHORT
+#endif //XPETRA_OPERATOR_VIEW_DECL_HPP

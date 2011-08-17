@@ -18,7 +18,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, NotSetup)
   {
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseTpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
         out << "version: " << MueLu::Version() << std::endl;
 
@@ -41,7 +41,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, GaussSeidel)
   {
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseTpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
 
         //FIXME this will probably fail in parallel b/c it becomes block Jacobi
@@ -91,7 +91,7 @@ namespace {
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, Chebyshev)
   {
 
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseTpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
         out << "version: " << MueLu::Version() << std::endl;
 
@@ -153,7 +153,7 @@ namespace {
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, ILU)
   {
 
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseTpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
       {
         //FIXME this will probably fail in parallel b/c it becomes block Jacobi
 

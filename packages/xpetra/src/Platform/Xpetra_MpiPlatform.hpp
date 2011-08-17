@@ -1,13 +1,13 @@
-#ifndef CTHULHU_MPIPLATFORM_HPP
-#define CTHULHU_MPIPLATFORM_HPP
+#ifndef XPETRA_MPIPLATFORM_HPP
+#define XPETRA_MPIPLATFORM_HPP
 
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   //! \brief A implementation of the Platform class for MPI-based platforms.
   /*!
@@ -84,7 +84,7 @@ namespace Cthulhu {
   Teuchos::RCP<Node> MpiPlatform<Node>::getNode() const 
   {  return node_; }
 
-} // namespace Cthulhu
+} // namespace Xpetra
 
-#endif // CTHULHU_MPIPLATFORM_HPP
+#endif // XPETRA_MPIPLATFORM_HPP
 

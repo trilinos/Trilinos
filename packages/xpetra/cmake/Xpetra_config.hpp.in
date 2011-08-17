@@ -1,5 +1,5 @@
 
-#cmakedefine HAVE_CTHULHU_EPETRA
+#cmakedefine HAVE_XPETRA_EPETRA
 
-#cmakedefine HAVE_CTHULHU_TPETRA
+#cmakedefine HAVE_XPETRA_TPETRA
 

@@ -1,19 +1,19 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_EpetraConfigDefs.hpp"
+#include "Xpetra_EpetraConfigDefs.hpp"
 
-#include "Cthulhu_Import.hpp"
+#include "Xpetra_Import.hpp"
 
-#include "Cthulhu_EpetraMap.hpp"//TMP
+#include "Xpetra_EpetraMap.hpp"//TMP
 
 #include "Epetra_Import.h"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   // TODO: move that elsewhere
   //   const Epetra_Import & toEpetra(const Import<int, int> &);
 
-  RCP< const Import<int, int > > toCthulhu(const Epetra_Import *import);
+  RCP< const Import<int, int > > toXpetra(const Epetra_Import *import);
   //
 
   class $TMPL_CLASS
@@ -28,7 +28,7 @@ namespace Cthulhu {
 
 $TMPL_PUBLIC_FUNCTIONS
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! EpetraImport constructor to wrap a Epetra_Import object
@@ -45,6 +45,6 @@ $TMPL_PUBLIC_FUNCTIONS
 
   }; // EpetraImport class
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 $TMPL_FOOTERS

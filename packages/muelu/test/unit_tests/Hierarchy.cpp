@@ -105,8 +105,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_PRFactoryOnly)
   out << "Providing just PR factory to FillHierarchy." << std::endl;
   Teuchos::ParameterList status;
   status = H.FillHierarchy(PRFact);
-  TEUCHOS_TEST_EQUALITY(status.get("fine nnz",(Cthulhu::global_size_t)-1), 295, out, success);
-  TEUCHOS_TEST_EQUALITY(status.get("total nnz",(Cthulhu::global_size_t)-1), 422, out, success);
+  TEUCHOS_TEST_EQUALITY(status.get("fine nnz",(Xpetra::global_size_t)-1), 295, out, success);
+  TEUCHOS_TEST_EQUALITY(status.get("total nnz",(Xpetra::global_size_t)-1), 422, out, success);
   TEUCHOS_TEST_EQUALITY(status.get("start level",-1), 0, out, success);
   TEUCHOS_TEST_EQUALITY(status.get("end level",-1), 1, out, success);
   TEUCHOS_TEST_FLOATING_EQUALITY(status.get("operator complexity",(SC)-1.0),1.43051,1e-5,out,success);
@@ -139,7 +139,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy_BothFactories)
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 {
-  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
 
 
@@ -175,7 +175,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
 {
-  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -227,7 +227,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 {
-  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -247,7 +247,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 {
-  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -281,7 +281,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
 
 TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 {
-  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -378,7 +378,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 
 TEUCHOS_UNIT_TEST(Hierarchy,IterateWithImplicitRestriction)
 {
-  MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
     {
 
   out << "version: " << MueLu::Version() << std::endl;

@@ -3,4 +3,4 @@
 #include "MueLu_TestHelpers.hpp"
 
 // static members initialization of the class MueLu::TestHelpers::Parameters
-Cthulhu::Parameters MueLu::TestHelpers::Parameters::cthulhuParameters = Cthulhu::Parameters(Teuchos::UnitTestRepository::getCLP());
+Xpetra::Parameters MueLu::TestHelpers::Parameters::xpetraParameters = Xpetra::Parameters(Teuchos::UnitTestRepository::getCLP());

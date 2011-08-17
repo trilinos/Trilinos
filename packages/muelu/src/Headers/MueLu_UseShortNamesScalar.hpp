@@ -1,6 +1,6 @@
 // New definition of types using the types Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
 
-#include <Cthulhu_UseShortNamesScalar.hpp>
+#include <Xpetra_UseShortNamesScalar.hpp>
 
 #ifdef MUELU_LEVEL_SHORT
 typedef MueLu::Level<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Level;

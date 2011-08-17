@@ -5,8 +5,8 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "MueLu_Needs.hpp"
-#include "Cthulhu_Operator.hpp"
-#include "Cthulhu_Vector.hpp"
+#include "Xpetra_Operator.hpp"
+#include "Xpetra_Vector.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include <sstream>
 

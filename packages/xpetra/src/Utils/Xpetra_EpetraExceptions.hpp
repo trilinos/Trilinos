@@ -1,13 +1,13 @@
-#ifndef CTHULHU_EPETRA_EXCEPTIONS_HPP
-#define CTHULHU_EPETRA_EXCEPTIONS_HPP
+#ifndef XPETRA_EPETRA_EXCEPTIONS_HPP
+#define XPETRA_EPETRA_EXCEPTIONS_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-#ifndef HAVE_CTHULHU_EPETRA
-#error This file should be included only if HAVE_CTHULHU_EPETRA is defined.
+#ifndef HAVE_XPETRA_EPETRA
+#error This file should be included only if HAVE_XPETRA_EPETRA is defined.
 #endif
 
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Exceptions.hpp"
 
 // This macro takes in argument a source code line.
 // It catchs exceptions that could be throwed by 'sourceCode'

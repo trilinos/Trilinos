@@ -12,7 +12,7 @@ TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/epetraext.tag=$(TRILINOS_HOME)/packages/epetraext/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/muelu-cthulhu.tag=$(TRILINOS_HOME)/MueLu/muelu/cthulhu/doc/html 
+  $(TRILINOS_HOME)/packages/common/tag_files/muelu-xpetra.tag=$(TRILINOS_HOME)/MueLu/muelu/xpetra/doc/html 
 
 #
 # Package options

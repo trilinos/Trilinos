@@ -1,30 +1,30 @@
-#include "Cthulhu_EpetraIntVector.hpp"
-#include "Cthulhu_EpetraImport.hpp"
-#include "Cthulhu_EpetraExport.hpp"
+#include "Xpetra_EpetraIntVector.hpp"
+#include "Xpetra_EpetraImport.hpp"
+#include "Xpetra_EpetraExport.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   int EpetraIntVector::dot(const Vector<int,int,int> &a) const { 
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
     return -1;
   }
 
-  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::norm1() const {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
+  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::norm1() const {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::norm2() const {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
+  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::norm2() const {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::normInf() const {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
+  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::normInf() const {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::normWeighted(const Vector<int,int,int> &weights) const { TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
+  Teuchos::ScalarTraits<int>::magnitudeType EpetraIntVector::normWeighted(const Vector<int,int,int> &weights) const { TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  int EpetraIntVector::meanValue() const {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
+  int EpetraIntVector::meanValue() const {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  int EpetraIntVector::maxValue() const {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
+  int EpetraIntVector::maxValue() const {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
 
-  void EpetraIntVector::randomize() {   TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraIntVector::randomize(): Functionnality not available in Epetra"); }
+  void EpetraIntVector::randomize() {   TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVector::randomize(): Functionnality not available in Epetra"); }
 
   void EpetraIntVector::setSeed(unsigned int seed) {
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraIntVector::setSeed(): Functionnality not available in Epetra");
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVector::setSeed(): Functionnality not available in Epetra");
   }
 
   Teuchos::ArrayRCP<const int> EpetraIntVector::getData(size_t j) const {  
@@ -42,49 +42,49 @@ namespace Cthulhu {
   }
 
   void EpetraIntVector::dot(const MultiVector<int,int,int> &A, const Teuchos::ArrayView<int> &dots) const { 
-    //CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
   void EpetraIntVector::abs(const MultiVector<int,int,int> &A) { 
-    //CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
   void EpetraIntVector::reciprocal(const MultiVector<int,int,int> &A) { 
-    //CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::scale(const int &alpha) {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
+  void EpetraIntVector::scale(const int &alpha) {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
   void EpetraIntVector::update(const int &alpha, const MultiVector<int,int,int> &A, const int &beta) { 
-    // CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+    // XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
   void EpetraIntVector::update(const int &alpha, const MultiVector<int,int,int> &A, const int &beta, const MultiVector<int,int,int> &B, const int &gamma) {
-    //CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
-    //CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, B, eB, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    //XPETRA_DYNAMIC_CAST(const EpetraMultiVector, B, eB, "This Xpetra::EpetraMultiVector method only accept Xpetra::EpetraMultiVector as input arguments.");
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
+  void EpetraIntVector::norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
+  void EpetraIntVector::norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const {  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
+  void EpetraIntVector::normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const {  TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::normWeighted(const MultiVector<int,int,int> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
+  void EpetraIntVector::normWeighted(const MultiVector<int,int,int> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<int>::magnitudeType> &norms) const { TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::meanValue(const Teuchos::ArrayView<int> &means) const {        TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
+  void EpetraIntVector::meanValue(const Teuchos::ArrayView<int> &means) const {        TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::maxValue(const Teuchos::ArrayView<int> &maxs) const {        TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
+  void EpetraIntVector::maxValue(const Teuchos::ArrayView<int> &maxs) const {        TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
 
-  void EpetraIntVector::multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int> &A, const MultiVector<int,int,int> &B, const int &beta) { TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "Not available in Epetra"); }
+  void EpetraIntVector::multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const int &alpha, const MultiVector<int,int,int> &A, const MultiVector<int,int,int> &B, const int &beta) { TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Not available in Epetra"); }
 
   void EpetraIntVector::elementWiseMultiply(int scalarAB, const Vector<int,int,int> &A, const MultiVector<int,int,int> &B, int scalarThis) {   
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "Cthulhu_EpetraIntVector: elementWiseMultiply not implemented because Epetra_IntVector does not support this operation");
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra_EpetraIntVector: elementWiseMultiply not implemented because Epetra_IntVector does not support this operation");
   }
 
   size_t EpetraIntVector::getNumVectors() const { return 1; }
@@ -119,8 +119,8 @@ namespace Cthulhu {
   void EpetraIntVector::doImport(const DistObject<int, int, int> &source, 
                                  const Import<int, int> &importer, CombineMode CM) {
 
-    CTHULHU_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraIntVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
     int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
@@ -130,8 +130,8 @@ namespace Cthulhu {
   void EpetraIntVector::doExport(const DistObject<int, int, int> &dest,
                                  const Import<int, int>& importer, CombineMode CM) {
 
-    CTHULHU_DYNAMIC_CAST(const EpetraIntVector, dest, tDest, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraIntVector, dest, tDest, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraIntVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
     int err = vec_->Import(v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
@@ -141,8 +141,8 @@ namespace Cthulhu {
   void EpetraIntVector::doImport(const DistObject<int, int, int> &source,
                                  const Export<int, int>& exporter, CombineMode CM) {
     
-    CTHULHU_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraIntVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
     
     const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
     int err = vec_->Import(v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
@@ -152,12 +152,12 @@ namespace Cthulhu {
   void EpetraIntVector::doExport(const DistObject<int, int, int> &dest,
                                  const Export<int, int>& exporter, CombineMode CM) {
 
-    CTHULHU_DYNAMIC_CAST(const EpetraIntVector, dest, tDest, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraIntVector, dest, tDest, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraIntVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraIntVector::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
     int err = vec_->Export(v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
     TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-} // namespace Cthulhu
+} // namespace Xpetra

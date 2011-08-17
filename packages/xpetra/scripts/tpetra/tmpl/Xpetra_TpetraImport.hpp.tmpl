@@ -1,21 +1,21 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_TpetraConfigDefs.hpp"
+#include "Xpetra_TpetraConfigDefs.hpp"
 
-#include "Cthulhu_Import.hpp"
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Import.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-#include "Cthulhu_TpetraMap.hpp"
+#include "Xpetra_TpetraMap.hpp"
 #include "Tpetra_Import.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & toTpetra(const Import<LocalOrdinal,GlobalOrdinal,Node> &);
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &);
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &);
   //
 
   $TMPL_TEMPLATE_PARAM
@@ -27,7 +27,7 @@ namespace Cthulhu {
 
 $TMPL_PUBLIC_FUNCTIONS
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! TpetraImport constructor to wrap a Tpetra::Import object
@@ -52,11 +52,11 @@ $TMPL_PUBLIC_FUNCTIONS
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toCthulhu(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {
+  RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > toXpetra(const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > &import) {
     return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(import));
   }
   //
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 $TMPL_FOOTERS

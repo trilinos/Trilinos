@@ -1,10 +1,10 @@
-#ifndef CTHULHU_USEDEFAULTTYPES_HPP
-#define CTHULHU_USEDEFAULTTYPES_HPP
+#ifndef XPETRA_USEDEFAULTTYPES_HPP
+#define XPETRA_USEDEFAULTTYPES_HPP
 
 #include <Kokkos_DefaultNode.hpp> // Note: we should not need this header for Epetra
 #include <Kokkos_DefaultKernels.hpp>
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 

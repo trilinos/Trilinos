@@ -1,8 +1,8 @@
 // @HEADER
 // @HEADER
 
-#ifndef CTHULHU_DOXYGEN_DOCUMENTATION_HPP
-#define CTHULHU_DOXYGEN_DOCUMENTATION_HPP
+#ifndef XPETRA_DOXYGEN_DOCUMENTATION_HPP
+#define XPETRA_DOXYGEN_DOCUMENTATION_HPP
 
 /*!
 
@@ -23,7 +23,7 @@
 
 \section overview Overview
 
-Cthulhu
+Xpetra
 
 \section news News
 
@@ -36,7 +36,7 @@ Cthulhu
   To reports bugs or make enhancement requests, visit the <A HREF="http://software.sandia.gov/bugzilla/">Trilinos Bugzilla (Bug Tracking) Database</A>, and use the following instructions.
       <UL>
       <LI>Click on "Enter a new bug report"
-      <LI>Choose "Cthulhu"
+      <LI>Choose "Xpetra"
       <LI>Either login or create a new account
       <LI>Submit your bug report
       </UL>
@@ -105,7 +105,7 @@ Long Term:
 
 \ref faq2
 
-\section faq1 1. Why name the code Cthulhu?  
+\section faq1 1. Why name the code Xpetra?  
 Why not?
 
 \section faq2 2. Put your question here?
@@ -116,4 +116,4 @@ Answer your question here.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-#endif //ifndef CTHULHU_DOXYGEN_DOCUMENTATION_HPP
+#endif //ifndef XPETRA_DOXYGEN_DOCUMENTATION_HPP

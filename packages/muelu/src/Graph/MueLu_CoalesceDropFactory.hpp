@@ -1,7 +1,7 @@
 #ifndef MUELU_COALESCEDROPFACTORY_HPP
 #define MUELU_COALESCEDROPFACTORY_HPP
 
-#include "Cthulhu_Operator.hpp"
+#include "Xpetra_Operator.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Graph.hpp"
 

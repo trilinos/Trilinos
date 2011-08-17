@@ -82,7 +82,7 @@ def buildFuncLineTpetra( functionNode ):
     if name != className and name != "~"+className:
         defStr += " { "
         if len(type) > 0 and type != 'void': defStr += 'return '
-        if type in conf_TypeWrapped: defStr += "toCthulhu("
+        if type in conf_TypeWrapped: defStr += "toXpetra("
         defStr += conf_memberName + "->" + name
         defStr += "(" + paramStr
         if type in conf_TypeWrapped: defStr += ")"

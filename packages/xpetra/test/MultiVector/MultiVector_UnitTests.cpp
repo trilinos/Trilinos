@@ -1,5 +1,5 @@
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Cthulhu_UnitTestHelpers.hpp>
+#include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
@@ -10,20 +10,20 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_Range1D.hpp>
 
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_DefaultPlatform.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_DefaultPlatform.hpp"
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 //#include "Tpetra_MultiVector.hpp"
 //#include "Tpetra_Vector.hpp"
-#include "Cthulhu_TpetraMultiVector.hpp"
-#include "Cthulhu_TpetraVector.hpp"
+#include "Xpetra_TpetraMultiVector.hpp"
+#include "Xpetra_TpetraVector.hpp"
 #endif
 
-// #include "Cthulhu_EpetraMultiVector.hpp"
-// #include "Cthulhu_EpetraVector.hpp"
+// #include "Xpetra_EpetraMultiVector.hpp"
+// #include "Xpetra_EpetraVector.hpp"
 
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
@@ -89,15 +89,15 @@ namespace {
 
 //   using Tpetra::Map;
 //   using Tpetra::MultiVector;
-  using Cthulhu::global_size_t;
-  using Cthulhu::DefaultPlatform;
-  using Cthulhu::GloballyDistributed;
+  using Xpetra::global_size_t;
+  using Xpetra::DefaultPlatform;
+  using Xpetra::GloballyDistributed;
 
   //  using Tpetra::createContigMapWithNode;
   //  using Tpetra::createLocalMapWithNode;
-#ifdef HAVE_CTHULHU_TPETRA
-  using Cthulhu::useTpetra::createContigMapWithNode;
-  using Cthulhu::useTpetra::createLocalMapWithNode;
+#ifdef HAVE_XPETRA_TPETRA
+  using Xpetra::useTpetra::createContigMapWithNode;
+  using Xpetra::useTpetra::createLocalMapWithNode;
 #endif
 
   using Kokkos::SerialNode;
@@ -202,7 +202,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NonMemberConstructors, MV, V, Ordinal, Scalar , Node )
   {
     RCP<Node> node = getNode<Node>();
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -211,7 +211,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     RCP<MV> mvec = Tpetra::createMultiVector<Scalar>(map,numVecs);
     RCP<V>   vec = Tpetra::createVector<Scalar>(map);
     TEST_EQUALITY(mvec->getNumVectors(), numVecs);
@@ -223,7 +223,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, basic, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -234,7 +234,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     MV mvec(map,numVecs,true);
     TEST_EQUALITY( mvec.getNumVectors(), numVecs );
     TEST_EQUALITY( mvec.getLocalLength(), numLocal );
@@ -257,7 +257,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadConstNumVecs, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -265,7 +265,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 13;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     TEST_THROW(MV mvec(map,0),  std::invalid_argument);
     if (std::numeric_limits<size_t>::is_signed) {
       TEST_THROW(MV mvec(map,INVALID), std::invalid_argument);
@@ -277,7 +277,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadConstLDA, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     // numlocal > LDA
     // ergo, the arrayview doesn't contain enough data to specify the entries
@@ -289,7 +289,7 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVecs = 2;
     // multivector has two vectors, each proc having two values per vector
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
@@ -309,7 +309,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NonContigView, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     if (ScalarTraits<Scalar>::isOrdinal) return;
     
@@ -323,7 +323,7 @@ namespace {
     // create a Map
     const size_t numLocal = 53; // making this larger reduces the change that A below will have no non-zero entries, i.e., that C = abs(A) is still equal to A (we assume it is not)
     const size_t numVecs = 7;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     //
     // we will create a non-contig subview of the vector; un-viewed vectors should not be changed
     Tuple<size_t,4> inView1 = tuple<size_t>(1,4,3,2);
@@ -513,7 +513,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Describable, MV, V, Ordinal , Scalar, Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
@@ -521,19 +521,19 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create Map
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
     // test labeling
     const string lbl("mvecA");
     MV mvecA(map,2);
     string desc1 = mvecA.description();
     if (myImageID==0) out << desc1 << endl;
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     mvecA.setObjectLabel(lbl);
 #endif
     string desc2 = mvecA.description();
     if (myImageID==0) out << desc2 << endl;
     if (myImageID==0) {
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       TEST_EQUALITY( mvecA.getObjectLabel(), lbl );
 #endif
     }
@@ -569,20 +569,20 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadMultiply, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
 #endif
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
       // create local Maps
-      RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
+      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
         map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
       MV mvecA(map3l,2),
          mvecB(map2l,3),
@@ -590,7 +590,7 @@ namespace {
       // failures, 8 combinations:
       // [NTC],[NTC]: A,B don't match
       // [NTC],[NTC]: C doesn't match A,B
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,S1,mvecA,mvecA,S0), std::runtime_error);   // 2x2: 3x2 x 3x2
       TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,S1,mvecA,mvecB,S0), std::runtime_error);   // 2x2: 3x2 x 3x2
       TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,S1,mvecB,mvecA,S0), std::runtime_error);   // 2x2: 3x2 x 3x2
@@ -603,9 +603,9 @@ namespace {
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
-      RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node),
+      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node),
                                             map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
-      RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
+      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
                                             map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
@@ -613,7 +613,7 @@ namespace {
          mv2lx3(map2l,3),
          mv3lx2(map3l,2),
          mv3lx3(map3l,3);
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       // non-matching input lengths
       TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv2nx2,S0), std::runtime_error);   // (2 x 3n) x (2n x 2) not compat
       TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,S1,mv2nx2,mv3nx2,S0), std::runtime_error);   // (2 x 2n) x (3n x 2) not compat
@@ -625,15 +625,15 @@ namespace {
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node), 
+      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node), 
                                             map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node); 
-      RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
+      RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
                                             map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2x3(map2l,3),
          mv3x2(map3l,2);
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       // non-matching input lengths
       TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx2,mv2x3,S0), std::runtime_error);   // (3n x 2) x (3 x 2) (trans) not compat
       TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,S1,mv3nx2,mv3x2,S0), std::runtime_error);   // (3n x 2) x (3 x 2) (nontrans) not compat
@@ -649,7 +649,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Multiply, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -657,15 +657,15 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     const int numImages = comm->getSize();
 #endif
     // create a Map
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node), 
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node), 
                                           map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node); 
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > lmap3 = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > lmap3 = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
                                           lmap2 = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
     const Mag    M0 = ScalarTraits<Mag>::zero();
@@ -685,7 +685,7 @@ namespace {
       Teuchos::Array<Scalar> check3(9,2); // each entry (of nine) is the product [1 1]*[1 1]' = 2
       // test
       ArrayRCP<const Scalar> tmpView;
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       mv3x3l.multiply(NO_TRANS  ,NO_TRANS  ,S1,mv3x2l,mv2x3l,S0);
       tmpView = mv3x3l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,9),check3,M0);
       mv2x2l.multiply(NO_TRANS  ,CONJ_TRANS,S1,mv2x3l,mv2x3l,S0);
@@ -715,7 +715,7 @@ namespace {
       SerialDenseMatrix<int,Scalar> sdm2x2(2,2), sdm3x3(3,3);
       // test: perform local Tpetra::MultiVector multiply and Teuchos::SerialDenseMatrix multiply, then check that answers are equivalent
       ArrayRCP<const Scalar> tmpView;
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       {
         tmv3x3.multiply(NO_TRANS,NO_TRANS,S1,tmv3x2,tmv2x3,S0);
         sdm3x3.multiply(NO_TRANS,NO_TRANS,S1,sdm3x2,sdm2x3,S0);
@@ -742,7 +742,7 @@ namespace {
       }
 #endif
     }
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
       MV mv3nx2(map3n,2),
@@ -788,13 +788,13 @@ namespace {
       tmpView = mv3nx2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,M0);
     }
 #endif
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
   }
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ElementWiseMultiply, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -804,8 +804,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     RCP<Node> node = getNode<Node>();
     // create a Map
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
-#ifdef CTHULHU_NOT_IMPLEMENTED
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
+#ifdef XPETRA_NOT_IMPLEMENTED
     const Mag    M0 = ScalarTraits<Mag>::zero();
     const Scalar S1 = ScalarTraits<Scalar>::one();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
@@ -824,20 +824,20 @@ namespace {
       Teuchos::Array<Scalar> check2(6,1); // each entry (of six) is 1
       // test
       ArrayRCP<const Scalar> tmpView;
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       C.elementWiseMultiply(S1, A, B, S0);
       tmpView = C.get1dView();
       TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,6),check2,M0);
 #endif
     }
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadConstAA, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     // constructor takes ArrayView<ArrayView<Scalar> A, NumVectors
     // A.size() == NumVectors
@@ -848,7 +848,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     // multivector has two vectors, each proc having two values per vector
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node),
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node),
       map3 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
@@ -862,21 +862,21 @@ namespace {
     // individual ArrayViews could be too small
     TEST_THROW(MV mvec(map3,arrOfarr(),2), std::runtime_error);
 #endif
-#endif //HAVE_CTHULHU_TPETRA
+#endif //HAVE_XPETRA_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadDot, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,1,comm,node),
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,1,comm,node),
                                           map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
     {
       MV mv12(map1,1),
@@ -905,14 +905,14 @@ namespace {
       TEST_THROW(v2.dot(v1,dots()),std::runtime_error);
 #endif
     }
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, OrthoDot, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -925,7 +925,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     const bool zeroOut = true;
     MV mvec1(map,numVectors,zeroOut),
        mvec2(map,numVectors,zeroOut);
@@ -986,7 +986,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CopyView, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -999,7 +999,7 @@ namespace {
     // create a Map
     const size_t numLocal = 7;
     const size_t numVectors = 13;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     MV A(map,numVectors,false);
     {
       A.randomize();
@@ -1017,7 +1017,7 @@ namespace {
                  Ac_aft (inds1.size());
       A.norm2(A_bef());
       // get view and its norms
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       RCP<MV> Av = A.subViewNonConst(inds1);
       Av->norm2(Av_bef());
       // get copy and its norms
@@ -1060,7 +1060,7 @@ namespace {
                  Ac_bef(inds.size()),
                  Ac_aft (inds.size());
       A.norm2(A_bef());
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       // get view and its norms
       RCP<MV> Av = A.subViewNonConst(inds);
       Av->norm2(Av_bef());
@@ -1098,7 +1098,7 @@ namespace {
       for (size_t vc=0; vc < 2; ++vc) {
         // vc == 0 -> view
         // vc == 1 -> copy
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
         for (size_t t=0; t < 4; ++t) {
           //  t |   outer   |   inner
           // ---|-----------|-----------
@@ -1208,7 +1208,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, OffsetView, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -1226,11 +1226,11 @@ namespace {
     Array<size_t> even(tuple<size_t>(1,3,5));
     Array<size_t>  odd(tuple<size_t>(0,2,4));
     TEST_FOR_EXCEPTION( even.size() != odd.size(), std::logic_error, "Test setup assumption violated.");
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > fullMap = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal1,comm,node);
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal2,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > fullMap = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal1,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal2,comm,node);
     RCP<MV> A = rcp(new MV(fullMap,numVectors,false));
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     {
       // contig source multivector
       RCP<MV> A1 = A->offsetViewNonConst(map1, 0);
@@ -1278,7 +1278,7 @@ namespace {
       }
     }
 #endif
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     {
       // non-contig source multivector
       RCP<MV> A1e = A->subViewNonConst(even)->offsetViewNonConst(map1, 0);
@@ -1326,7 +1326,7 @@ namespace {
       }
     }
 #endif
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     {
       RCP<const MV> A1 = A->offsetView(map1, 0);
       RCP<const MV> A2 = A->offsetView(map2, numLocal1);
@@ -1364,7 +1364,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ZeroScaleUpdate, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     
@@ -1376,7 +1376,7 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVectors = 2;
     const size_t LDA = 2;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2, 4, 4}
     // values(0,4) = {1, 1, 2, 2} = [1 2]
@@ -1443,14 +1443,14 @@ namespace {
       C.norm2(norms);
       //TODO:FAILED  TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ScaleAndAssign, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     if (ScalarTraits<Scalar>::isOrdinal) return;
     Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
@@ -1464,7 +1464,7 @@ namespace {
     // create a Map
     const size_t numLocal = 23;
     const size_t numVectors = 11;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     // Use random multivector A
     // Set B = A * 2 manually.
     // Therefore, if C = 2*A, then C == B
@@ -1483,7 +1483,7 @@ namespace {
     // * get 1-vector subview(ArrayView), MultiVector::operator=
     // * get data view, assign
     TEST_FOR_EXCEPT(numVectors < 4);
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     for (size_t j = 0; j < numVectors; ++j) {
       // assign j-th vector of B to 2 * j-th vector of A
       switch (j % 4) {
@@ -1568,14 +1568,14 @@ namespace {
       C.norm2(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, ZeroScaleUpdate, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -1583,7 +1583,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2}
     // values(0,2) = {1, 1} = [1]
@@ -1653,14 +1653,14 @@ namespace {
       //TODO FAILED: TEST_EQUALITY(norm,M0);
       //TODO FAILED: TEST_EQUALITY(norm,norms[0]);
     }
-#endif //HAVE_CTHULHU_TPETRA
+#endif //HAVE_XPETRA_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CopyConst, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -1671,7 +1671,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     {
       // create random MV
       MV mvorig(map,numVectors);
@@ -1679,7 +1679,7 @@ namespace {
       // create non-const subview, test copy constructor
       TEST_FOR_EXCEPT(numVectors != 7);
       Tuple<size_t,3> inds = tuple<size_t>(1,3,5);
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       RCP<MV> mvview = mvorig.subViewNonConst(inds);
 #endif
       Array<Mag> norig(numVectors), nsub(inds.size()), ncopy(inds.size());
@@ -1687,7 +1687,7 @@ namespace {
       for (size_t j=0; j < as<size_t>(inds.size()); ++j) {
         nsub[j] = norig[inds[j]];
       }
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
       MV mvcopy(*mvview);
       mvcopy.normInf(ncopy());
       TEST_COMPARE_FLOATING_ARRAYS(ncopy,nsub,M0);
@@ -1729,21 +1729,21 @@ namespace {
       //            TEST_COMPARE_FLOATING_ARRAYS(ncopy1,ones,M0);
       //            TEST_COMPARE_FLOATING_ARRAYS(ncopy2,twos,M0);
     }
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, CopyConst, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
     // create random MV
     V morig(map);
     morig.randomize();
@@ -1776,7 +1776,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, Indexing, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar>              SCT;
     typedef typename SCT::magnitudeType Magnitude;
@@ -1784,7 +1784,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,100,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,100,comm,node);
     // create two random Vector objects
     V v1(map), v2(map);
     v1.randomize();
@@ -1813,7 +1813,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, SingleVecNormalize, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
     // error turned out to be a neglected return in both implementations of update(), 
@@ -1829,14 +1829,14 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVectors = 6;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     // create random MV
     MV mv(map,numVectors);
     mv.randomize();
     // compute the norms
     Array<Magnitude> norms(numVectors);
     mv.norm2(norms());
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
     for (size_t j=0; j<numVectors; ++j) {
       // get a view of column j, normalize it using update()
       RCP<MV> mvj = mv.subViewNonConst(tuple<size_t>(j));
@@ -1872,7 +1872,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountDot, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -1884,7 +1884,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -1915,7 +1915,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountDotNonTrivLDA, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     // same as CountDot, but the A,LDA has a non-trivial LDA (i.e., LDA != myLen)
     
@@ -1929,7 +1929,7 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVectors = 3;
     const size_t LDA = 3;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(9);
     // A = {0, 0, -1, 1, 1, -1, 2, 2, -1} = [0   1  2]
     //                                      [0   1  2]
@@ -1960,14 +1960,14 @@ namespace {
     // check the answers
     TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,answer,M0);
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountNorm1, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -1979,7 +1979,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -2021,7 +2021,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, CountNormInf, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -2032,7 +2032,7 @@ namespace {
     // create a Map
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -2060,7 +2060,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Norm2, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
@@ -2071,7 +2071,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     MV mvec(map,numVectors);
     // randomize the multivector
     mvec.randomize();
@@ -2096,7 +2096,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NormWeighted, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -2108,7 +2108,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     MV    mvec(map,numVectors),
        weights(map,numVectors),
        weight1(map,1);
@@ -2154,7 +2154,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, BadCombinations, MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -2165,7 +2165,7 @@ namespace {
     // create a Map
     const Scalar rnd = ScalarTraits<Scalar>::random();
     // two maps: one has two entires per node, the other disagrees on node 0
-    RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node),
+    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node),
                                           map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,myImageID == 0 ? 1 : 2,comm,node);
     // multivectors from different maps are incompatible for all ops
     // multivectors from the same map are compatible only if they have the same number of
@@ -2206,7 +2206,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, Typedefs,        MV, V, Ordinal, Scalar , Node )
   {
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
     typedef typename MV::scalar_type scalar_type;
     typedef typename MV::local_ordinal_type local_ordinal_type;
     typedef typename MV::global_ordinal_type global_ordinal_type;
@@ -2230,7 +2230,7 @@ namespace {
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
   //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NonMemberConstructors, MV, V, ORDINAL, SCALAR, NODE )
   //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, NonContigView     , MV, V, ORDINAL, SCALAR, NODE ) 
   //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Typedefs          , MV, V, ORDINAL, SCALAR, NODE )
@@ -2264,7 +2264,7 @@ typedef std::complex<double> ComplexDouble;
 
 #else
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE )
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
 
 #define UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR)                     \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, SerialNode )
@@ -2342,9 +2342,9 @@ typedef std::complex<double> ComplexDouble;
     UNIT_TEST_ALLCPUNODES(MV, V, ORDINAL, ComplexDouble) \
     UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(MV, V, ORDINAL)
 
-#ifdef HAVE_CTHULHU_TPETRA
-  typedef Cthulhu::TpetraMultiVector<double,int,int, Kokkos::SerialNode> MMultiVector;//TODO: remove 'M' prefix
-  typedef Cthulhu::TpetraVector<double,int,int, Kokkos::SerialNode> MVector;
+#ifdef HAVE_XPETRA_TPETRA
+  typedef Xpetra::TpetraMultiVector<double,int,int, Kokkos::SerialNode> MMultiVector;//TODO: remove 'M' prefix
+  typedef Xpetra::TpetraVector<double,int,int, Kokkos::SerialNode> MVector;
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)

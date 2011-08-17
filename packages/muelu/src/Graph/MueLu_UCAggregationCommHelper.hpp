@@ -3,10 +3,10 @@
 
 #include <exception>
 
-#include <Cthulhu_VectorFactory.hpp>
-#include <Cthulhu_ImportFactory.hpp>
-#include <Cthulhu_ExportFactory.hpp>
-#include <Cthulhu_MapFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_ExportFactory.hpp>
+#include <Xpetra_MapFactory.hpp>
 
 namespace MueLu {
 
@@ -154,7 +154,7 @@ namespace MueLu {
 
       postComm_->putScalar(0.0);
 
-      NonUnique2NonUnique(weight_, *postComm_, Cthulhu::ABSMAX);
+      NonUnique2NonUnique(weight_, *postComm_, Xpetra::ABSMAX);
    
       // Let every processor know who is the procWinner. For nonunique
       // copies of the same Gid, this corresponds to the processor with
@@ -184,7 +184,7 @@ namespace MueLu {
         
         for (size_t i=0; i < nodeNumElements; i++) weight[i]=postComm[i]; 
       }
-      NonUnique2NonUnique(*candidateWinners_, *postComm_, Cthulhu::ABSMAX);
+      NonUnique2NonUnique(*candidateWinners_, *postComm_, Xpetra::ABSMAX);
 
       // Note: 
       //                      associated CandidateWinners[]
@@ -241,8 +241,8 @@ namespace MueLu {
 
 #endif
 
-        // Cthulhu::EpetraMap winnerMap(-1, numMyWinners, myWinners, 0, weightMap->getComm());    
-        Cthulhu::global_size_t g = -1; //TODO for Tpetra -1 == ??
+        // Xpetra::EpetraMap winnerMap(-1, numMyWinners, myWinners, 0, weightMap->getComm());    
+        Xpetra::global_size_t g = -1; //TODO for Tpetra -1 == ??
         RCP<Map> winnerMap = MapFactory::Build(weightMap->lib(), g, myWinners(), 0, weightMap->getComm());
        
         // Pull the Winners out of companion
@@ -259,7 +259,7 @@ namespace MueLu {
         RCP<const Import> winnerImport = ImportFactory::Build(weightMap, winnerMap);
         try
           {
-            justWinners->doImport(*companion, *winnerImport, Cthulhu::INSERT);
+            justWinners->doImport(*companion, *winnerImport, Xpetra::INSERT);
           }
         catch(std::exception& e)
           {
@@ -280,12 +280,12 @@ namespace MueLu {
         //RCP<Export> pushWinners = ExportFactory::Build(winnerMap, weightMap); // VERSION4
         try
           {
-	    companion->doImport(*justWinners, *pushWinners, Cthulhu::INSERT);   // VERSION1 Slow
-//             if (weightMap->lib() == Cthulhu::UseEpetra)
-//               justWinners->doExport(*companion, *winnerImport, Cthulhu::INSERT);  // VERSION2 Tpetra doc is wrong
-//             else if (weightMap->lib() == Cthulhu::UseTpetra)
-//               companion->doExport(*justWinners, *winnerImport, Cthulhu::INSERT);     // VERSION3 - TODO: will certainly not work with Epetra? (change Cthulhu?)
-	    //companion->doExport(*justWinners, *pushWinners, Cthulhu::INSERT);     // VERSION4
+	    companion->doImport(*justWinners, *pushWinners, Xpetra::INSERT);   // VERSION1 Slow
+//             if (weightMap->lib() == Xpetra::UseEpetra)
+//               justWinners->doExport(*companion, *winnerImport, Xpetra::INSERT);  // VERSION2 Tpetra doc is wrong
+//             else if (weightMap->lib() == Xpetra::UseTpetra)
+//               companion->doExport(*justWinners, *winnerImport, Xpetra::INSERT);     // VERSION3 - TODO: will certainly not work with Epetra? (change Xpetra?)
+	    //companion->doExport(*justWinners, *pushWinners, Xpetra::INSERT);     // VERSION4
 //             else throw "lib()";
           }
         catch(std::exception& e)
@@ -341,14 +341,14 @@ namespace MueLu {
     //                              values associated with the same GlobalId are
     //                              combined into a unique value on all processors.
     //
-    void NonUnique2NonUnique(const Vector &source, Vector &dest, const Cthulhu::CombineMode what) const
+    void NonUnique2NonUnique(const Vector &source, Vector &dest, const Xpetra::CombineMode what) const
     {
       RCP<Vector> temp = VectorFactory::Build(import_->getSourceMap());
      
       try
         {
           temp->doExport(source, *import_, what);
-          dest.doImport(*temp,   *import_, Cthulhu::INSERT);
+          dest.doImport(*temp,   *import_, Xpetra::INSERT);
         }
       catch(std::exception& e)
         {

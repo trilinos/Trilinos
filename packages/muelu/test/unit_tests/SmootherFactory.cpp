@@ -35,7 +35,7 @@ namespace {
     //we are now in a class method declared by the above macro, and
     //that method has these input arguments:
     //Teuchos::FancyOStream& out, bool& success
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
       {
  
         out << "version: " << MueLu::Version() << std::endl;
@@ -56,7 +56,7 @@ namespace {
     //we are now in a class method declared by the above macro, and
     //that method has these input arguments:
     //Teuchos::FancyOStream& out, bool& success
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
       {
  
         out << "version: " << MueLu::Version() << std::endl;
@@ -74,7 +74,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST(SmootherFactory, SetSmootherPrototypes)
   {
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
       {
  
         out << "version: " << MueLu::Version() << std::endl;
@@ -101,7 +101,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST(SmootherFactory, Build)
   {
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)   //TODO: to be remove in the future
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
       {
         out << "version: " << MueLu::Version() << std::endl;
         out << "Testing SmootherFactory::Build method" << std::endl;

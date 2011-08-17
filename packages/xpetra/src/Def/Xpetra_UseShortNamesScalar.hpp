@@ -1,4 +1,4 @@
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
 // Get rid of template parameters
 
@@ -6,50 +6,50 @@
 
 // Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by Scalar, LocalOrdinal, GlobalOrdinal, Node).
 
-#ifdef CTHULHU_CRSMATRIX_SHORT
-typedef Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+#ifdef XPETRA_CRSMATRIX_SHORT
+typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
 #endif
 
-#ifdef CTHULHU_VECTOR_SHORT
-typedef Cthulhu::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Vector;
+#ifdef XPETRA_VECTOR_SHORT
+typedef Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Vector;
 #endif
 
-#ifdef CTHULHU_MULTIVECTOR_SHORT
-typedef Cthulhu::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+#ifdef XPETRA_MULTIVECTOR_SHORT
+typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
 #endif
 
-#ifdef CTHULHU_OPERATOR_SHORT
-typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
+#ifdef XPETRA_OPERATOR_SHORT
+typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
 #endif
 
-#ifdef CTHULHU_CRSOPERATOR_SHORT
-typedef Cthulhu::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator;
+#ifdef XPETRA_CRSOPERATOR_SHORT
+typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator;
 #endif
 
-#ifdef CTHULHU_VECTORFACTORY_SHORT
-typedef Cthulhu::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> VectorFactory;
+#ifdef XPETRA_VECTORFACTORY_SHORT
+typedef Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> VectorFactory;
 #endif
 
-#ifdef CTHULHU_CRSMATRIXFACTORY_SHORT
-typedef Cthulhu::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
+#ifdef XPETRA_CRSMATRIXFACTORY_SHORT
+typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
 #endif
 
-#ifdef CTHULHU_MULTIVECTORFACTORY_SHORT
-typedef Cthulhu::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
+#ifdef XPETRA_MULTIVECTORFACTORY_SHORT
+typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
 #endif
 
-#ifdef CTHULHU_OPERATORFACTORY_SHORT
-typedef Cthulhu::OperatorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorFactory;
+#ifdef XPETRA_OPERATORFACTORY_SHORT
+typedef Xpetra::OperatorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorFactory;
 #endif
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 
-#ifdef CTHULHU_TPETRACRSMATRIX_SHORT
-typedef Cthulhu::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+#ifdef XPETRA_TPETRACRSMATRIX_SHORT
+typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
 
-#ifdef CTHULHU_TPETRAMULTIVECTOR_SHORT
-typedef Cthulhu::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
+#ifdef XPETRA_TPETRAMULTIVECTOR_SHORT
+typedef Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
 #endif
 
 #endif //

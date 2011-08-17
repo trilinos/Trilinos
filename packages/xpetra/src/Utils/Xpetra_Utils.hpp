@@ -1,52 +1,52 @@
-#ifndef CTHULHU_LOOKUPSTATUS_HPP
-#define CTHULHU_LOOKUPSTATUS_HPP
+#ifndef XPETRA_LOOKUPSTATUS_HPP
+#define XPETRA_LOOKUPSTATUS_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
-#ifdef HAVE_CTHULHU_TPETRA  
+#include "Xpetra_ConfigDefs.hpp"
+#ifdef HAVE_XPETRA_TPETRA  
 #include "Tpetra_ConfigDefs.hpp"
 #endif
 
-#ifdef HAVE_CTHULHU_EPETRA  
+#ifdef HAVE_XPETRA_EPETRA  
 #include "Epetra_CombineMode.h"
 #endif
 
-namespace Cthulhu {
+namespace Xpetra {
 
-#ifdef HAVE_CTHULHU_TPETRA  
+#ifdef HAVE_XPETRA_TPETRA  
   
-  //! Convert a Tpetra::LookupStatus to a Cthulhu::LookupStatus.
-  Cthulhu::LookupStatus  toCthulhu(Tpetra::LookupStatus);
+  //! Convert a Tpetra::LookupStatus to a Xpetra::LookupStatus.
+  Xpetra::LookupStatus  toXpetra(Tpetra::LookupStatus);
 
-  //! Convert a Cthulhu::OptimizeOption to a Tpetra::OptimizeOption.
-  Tpetra::ProfileType    toTpetra(Cthulhu::ProfileType);
+  //! Convert a Xpetra::OptimizeOption to a Tpetra::OptimizeOption.
+  Tpetra::ProfileType    toTpetra(Xpetra::ProfileType);
 
-  //! Convert a Cthulhu::OptimizeOption to a Tpetra::OptimizeOption.
-  Tpetra::OptimizeOption toTpetra(Cthulhu::OptimizeOption);
+  //! Convert a Xpetra::OptimizeOption to a Tpetra::OptimizeOption.
+  Tpetra::OptimizeOption toTpetra(Xpetra::OptimizeOption);
 
-  //! Convert a Cthulhu::CombineMode to a Tpetra::CombineMode.
-  Tpetra::CombineMode    toTpetra(Cthulhu::CombineMode CM);
+  //! Convert a Xpetra::CombineMode to a Tpetra::CombineMode.
+  Tpetra::CombineMode    toTpetra(Xpetra::CombineMode CM);
 
-  //! Convert a Cthulhu::LocalGlobal to a Tpetra::LocalGlobal.  
+  //! Convert a Xpetra::LocalGlobal to a Tpetra::LocalGlobal.  
   Tpetra::LocalGlobal    toTpetra(LocalGlobal lg);
 
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
 
-#ifdef HAVE_CTHULHU_EPETRA  
+#ifdef HAVE_XPETRA_EPETRA  
   
-  //! Convert a Epetra return value to a Cthulhu::LookupStatus.
-  Cthulhu::LookupStatus  toCthulhu(int);
+  //! Convert a Epetra return value to a Xpetra::LookupStatus.
+  Xpetra::LookupStatus  toXpetra(int);
   
-  //! Convert a Cthulhu::ProfileType to an Epetra StaticProfil boolean
-  bool                   toEpetra(Cthulhu::ProfileType);
+  //! Convert a Xpetra::ProfileType to an Epetra StaticProfil boolean
+  bool                   toEpetra(Xpetra::ProfileType);
   
-  //! Convert a Cthulhu::OptimizeOption to an Epetra OptimizeDataStorage boolean
-  bool                   toEpetra(Cthulhu::OptimizeOption);
+  //! Convert a Xpetra::OptimizeOption to an Epetra OptimizeDataStorage boolean
+  bool                   toEpetra(Xpetra::OptimizeOption);
   
-  //! Convert a Cthulhu::CombineMode to an Epetra_CombineMode.
-  Epetra_CombineMode     toEpetra(Cthulhu::CombineMode CM);
+  //! Convert a Xpetra::CombineMode to an Epetra_CombineMode.
+  Epetra_CombineMode     toEpetra(Xpetra::CombineMode CM);
 
-#endif // HAVE_CTHULHU_EPETRA
+#endif // HAVE_XPETRA_EPETRA
 
 }
 
-#endif // CTHULHU_LOOKUPSTATUS_HPP
+#endif // XPETRA_LOOKUPSTATUS_HPP

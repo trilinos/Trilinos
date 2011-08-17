@@ -1,6 +1,6 @@
-#include "Cthulhu_EpetraCrsMatrix.hpp"
+#include "Xpetra_EpetraCrsMatrix.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   EpetraCrsMatrix::EpetraCrsMatrix(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype)
     : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
@@ -17,13 +17,13 @@ namespace Cthulhu {
   //         : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(rowMap), toEpetra(colMap), NumEntriesPerRowToAlloc, toEpetra(pftype)))) { }
 
   void EpetraCrsMatrix::insertGlobalValues(int globalRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) { 
-    CTHULHU_ERR_CHECK(mtx_->InsertGlobalValues(globalRow, vals.size(), vals.getRawPtr(), cols.getRawPtr())); 
+    XPETRA_ERR_CHECK(mtx_->InsertGlobalValues(globalRow, vals.size(), vals.getRawPtr(), cols.getRawPtr())); 
   }
 
   //TODO: throw same exception as Tpetra
   void EpetraCrsMatrix::getLocalRowCopy(int LocalRow, const ArrayView<int> &Indices, const ArrayView<double> &Values, size_t &NumEntries) const { 
     int numEntries=-1;
-    CTHULHU_ERR_CHECK(mtx_->ExtractMyRowCopy(LocalRow, Indices.size(), numEntries, Values.getRawPtr(), Indices.getRawPtr()));
+    XPETRA_ERR_CHECK(mtx_->ExtractMyRowCopy(LocalRow, Indices.size(), numEntries, Values.getRawPtr(), Indices.getRawPtr()));
     NumEntries = numEntries;
   }
 
@@ -32,7 +32,7 @@ namespace Cthulhu {
     double * eValues;
     int    * eIndices;
       
-    CTHULHU_ERR_CHECK(mtx_->ExtractGlobalRowView(GlobalRow, numEntries, eValues, eIndices));
+    XPETRA_ERR_CHECK(mtx_->ExtractGlobalRowView(GlobalRow, numEntries, eValues, eIndices));
     if (numEntries == 0) { eValues = NULL; eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
     indices = ArrayView<const int>(eIndices, numEntries);
@@ -44,7 +44,7 @@ namespace Cthulhu {
     double * eValues;
     int    * eIndices;
       
-    CTHULHU_ERR_CHECK(mtx_->ExtractMyRowView(LocalRow, numEntries, eValues, eIndices));
+    XPETRA_ERR_CHECK(mtx_->ExtractMyRowView(LocalRow, numEntries, eValues, eIndices));
     if (numEntries == 0) { eValues = NULL; eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
     indices = ArrayView<const int>(eIndices, numEntries);
@@ -52,18 +52,18 @@ namespace Cthulhu {
   }
 
   void EpetraCrsMatrix::apply(const MultiVector<double,int,int> & X, MultiVector<double,int,int> &Y, Teuchos::ETransp mode, double alpha, double beta) const { 
-    TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
+    TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
       
-    CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, X, eX, "Cthulhu::EpetraCrsMatrix->apply() only accept Cthulhu::EpetraMultiVector as input arguments.");
-    CTHULHU_DYNAMIC_CAST(      EpetraMultiVector, Y, eY, "Cthulhu::EpetraCrsMatrix->apply() only accept Cthulhu::EpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraMultiVector, X, eX, "Xpetra::EpetraCrsMatrix->apply() only accept Xpetra::EpetraMultiVector as input arguments.");
+    XPETRA_DYNAMIC_CAST(      EpetraMultiVector, Y, eY, "Xpetra::EpetraCrsMatrix->apply() only accept Xpetra::EpetraMultiVector as input arguments.");
 
-    TEST_FOR_EXCEPTION((mode != Teuchos::NO_TRANS) && (mode != Teuchos::TRANS), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraCrsMatrix->apply() only accept mode == NO_TRANS or mode == TRANS");
+    TEST_FOR_EXCEPTION((mode != Teuchos::NO_TRANS) && (mode != Teuchos::TRANS), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix->apply() only accept mode == NO_TRANS or mode == TRANS");
     bool eTrans = toEpetra(mode);
 
     // /!\ UseTranspose value
-    TEST_FOR_EXCEPTION(mtx_->UseTranspose(), Cthulhu::Exceptions::NotImplemented, "An exception is throw to let you know that Cthulhu::EpetraCrsMatrix->apply() do not take into account the UseTranspose() parameter of Epetra_CrsMatrix.");
+    TEST_FOR_EXCEPTION(mtx_->UseTranspose(), Xpetra::Exceptions::NotImplemented, "An exception is throw to let you know that Xpetra::EpetraCrsMatrix->apply() do not take into account the UseTranspose() parameter of Epetra_CrsMatrix.");
       
-    CTHULHU_ERR_CHECK(mtx_->Multiply(eTrans, *eX.getEpetra_MultiVector(), *eY.getEpetra_MultiVector()));
+    XPETRA_ERR_CHECK(mtx_->Multiply(eTrans, *eX.getEpetra_MultiVector(), *eY.getEpetra_MultiVector()));
   }
 
   std::string EpetraCrsMatrix::description() const { 
@@ -245,8 +245,8 @@ namespace Cthulhu {
   void EpetraCrsMatrix::doImport(const DistObject<char, int, int> &source, 
                                  const Import<int, int> &importer, CombineMode CM) {
 
-    CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     RCP<const Epetra_CrsMatrix> v = tSource.getEpetra_CrsMatrix();
     int err = mtx_->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
@@ -256,8 +256,8 @@ namespace Cthulhu {
   void EpetraCrsMatrix::doExport(const DistObject<char, int, int> &dest,
                                  const Import<int, int>& importer, CombineMode CM) {
       
-    CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     RCP<const Epetra_CrsMatrix> v = tDest.getEpetra_CrsMatrix();
     int err = mtx_->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
@@ -267,8 +267,8 @@ namespace Cthulhu {
   void EpetraCrsMatrix::doImport(const DistObject<char, int, int> &source,
                                  const Export<int, int>& exporter, CombineMode CM) {
 
-    CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     RCP<const Epetra_CrsMatrix> v = tSource.getEpetra_CrsMatrix();
     int err = mtx_->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
@@ -279,8 +279,8 @@ namespace Cthulhu {
   void EpetraCrsMatrix::doExport(const DistObject<char, int, int> &dest,
                                  const Export<int, int>& exporter, CombineMode CM) {
       
-    CTHULHU_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraCrsMatrix as input arguments.");
-    CTHULHU_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Cthulhu::EpetraCrsMatrix::doImport only accept Cthulhu::EpetraImport as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
 
     RCP<const Epetra_CrsMatrix> v = tDest.getEpetra_CrsMatrix();
     int err = mtx_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM)); 

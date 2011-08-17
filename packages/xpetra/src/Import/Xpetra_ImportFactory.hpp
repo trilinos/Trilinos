@@ -1,20 +1,20 @@
-#ifndef CTHULHU_IMPORTFACTORY_HPP
-#define CTHULHU_IMPORTFACTORY_HPP
+#ifndef XPETRA_IMPORTFACTORY_HPP
+#define XPETRA_IMPORTFACTORY_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-#include "Cthulhu_Import.hpp"
+#include "Xpetra_Import.hpp"
 
-#ifdef HAVE_CTHULHU_TPETRA
-#include "Cthulhu_TpetraImport.hpp"
+#ifdef HAVE_XPETRA_TPETRA
+#include "Xpetra_TpetraImport.hpp"
 #endif
-#ifdef HAVE_CTHULHU_EPETRA
-#include "Cthulhu_EpetraImport.hpp"
+#ifdef HAVE_XPETRA_EPETRA
+#include "Xpetra_EpetraImport.hpp"
 #endif
 
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
   
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class ImportFactory {
@@ -27,15 +27,15 @@ namespace Cthulhu {
     
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
-      TEST_FOR_EXCEPTION(source->lib() != target->lib(), Cthulhu::Exceptions::RuntimeError, "");
+      TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
         return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
 #endif
 
-      CTHULHU_FACTORY_ERROR_IF_EPETRA(source->lib());
-      CTHULHU_FACTORY_END;
+      XPETRA_FACTORY_ERROR_IF_EPETRA(source->lib());
+      XPETRA_FACTORY_END;
     }
     
   };
@@ -54,24 +54,24 @@ namespace Cthulhu {
   public:
     
     static RCP<Import<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
-      TEST_FOR_EXCEPTION(source->lib() != target->lib(), Cthulhu::Exceptions::RuntimeError, "");
+      TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
     
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
       if (source->lib() == UseTpetra)
         return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(source, target));
 #endif
     
-#ifdef HAVE_CTHULHU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
       if (source->lib() == UseEpetra)
         return rcp( new EpetraImport(source, target));
 #endif
 
-      CTHULHU_FACTORY_END;
+      XPETRA_FACTORY_END;
     }
     
   };
 
 }
 
-#define CTHULHU_IMPORTFACTORY_SHORT
+#define XPETRA_IMPORTFACTORY_SHORT
 #endif

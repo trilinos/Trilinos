@@ -1,17 +1,17 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_TpetraConfigDefs.hpp"
+#include "Xpetra_TpetraConfigDefs.hpp"
 
-#include "Cthulhu_MultiVector.hpp"
+#include "Xpetra_MultiVector.hpp"
 
-#include "Cthulhu_TpetraMap.hpp" //TMP
-#include "Cthulhu_Utils.hpp"
-#include "Cthulhu_TpetraImport.hpp"
-#include "Cthulhu_TpetraExport.hpp"
+#include "Xpetra_TpetraMap.hpp" //TMP
+#include "Xpetra_Utils.hpp"
+#include "Xpetra_TpetraImport.hpp"
+#include "Xpetra_TpetraExport.hpp"
 
 #include "Tpetra_MultiVector.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   // TODO: move that elsewhere
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -31,7 +31,7 @@ namespace Cthulhu {
   $TMPL_INHERITANCE
   {
 
-    // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
+    // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
     typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraMultiVectorClass;
 
   public:
@@ -41,18 +41,18 @@ $TMPL_PUBLIC_FUNCTIONS
     //{@
     // Implements DistObject interface
     
-    const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { return toCthulhu(vec_->getMap()); }
+    const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { return toXpetra(vec_->getMap()); }
     
     void doImport(const DistObject< Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) { 
       
-      CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
+      XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Xpetra::TpetraMultiVector::doImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
       RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
       this->getTpetra_MultiVector()->doImport(*v, toTpetra(importer), toTpetra(CM));
     }
 
     void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) {
             
-      CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, dest, tDest, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
+      XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, dest, tDest, "Xpetra::TpetraMultiVector::doImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
       RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_MultiVector();
       this->getTpetra_MultiVector()->doExport(*v, toTpetra(importer), toTpetra(CM)); 
 
@@ -60,7 +60,7 @@ $TMPL_PUBLIC_FUNCTIONS
 
     void doImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
 
-      CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
+      XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Xpetra::TpetraMultiVector::doImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
       RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
       this->getTpetra_MultiVector()->doImport(*v, toTpetra(exporter), toTpetra(CM));
 
@@ -68,7 +68,7 @@ $TMPL_PUBLIC_FUNCTIONS
 
     void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
       
-      CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, dest, tDest, "Cthulhu::TpetraMultiVector::doImport only accept Cthulhu::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
+      XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, dest, tDest, "Xpetra::TpetraMultiVector::doImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
       RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_MultiVector();
       this->getTpetra_MultiVector()->doExport(*v, toTpetra(exporter), toTpetra(CM)); 
 
@@ -76,7 +76,7 @@ $TMPL_PUBLIC_FUNCTIONS
 
     //@}
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
@@ -100,18 +100,18 @@ $TMPL_PUBLIC_FUNCTIONS
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(const MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
     typedef TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > TpetraMultiVectorClass;
-      CTHULHU_DYNAMIC_CAST(const TpetraMultiVectorClass, x, tX, "toTpetra");
+      XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, x, tX, "toTpetra");
       return *tX.getTpetra_MultiVector();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Tpetra::MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(MultiVector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
     typedef TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > TpetraMultiVectorClass;
-      CTHULHU_DYNAMIC_CAST(      TpetraMultiVectorClass, x, tX, "toTpetra");
+      XPETRA_DYNAMIC_CAST(      TpetraMultiVectorClass, x, tX, "toTpetra");
       return *tX.getTpetra_MultiVector();
   }
   //
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 $TMPL_FOOTERS

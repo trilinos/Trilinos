@@ -1,17 +1,17 @@
-#ifndef CTHULHU_TPETRAVBRMATRIX_HPP
-#define CTHULHU_TPETRAVBRMATRIX_HPP
+#ifndef XPETRA_TPETRAVBRMATRIX_HPP
+#define XPETRA_TPETRAVBRMATRIX_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-#ifndef HAVE_CTHULHU_TPETRA
-#error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
+#ifndef HAVE_XPETRA_TPETRA
+#error This file should be included only if HAVE_XPETRA_TPETRA is defined.
 #endif
 
-#include "Cthulhu_VbrMatrix.hpp"
+#include "Xpetra_VbrMatrix.hpp"
 
 #include <Tpetra_VbrMatrix.hpp>
 
-namespace Cthulhu {
+namespace Xpetra {
 
   template <class Scalar, 
             class LocalOrdinal  = int, 
@@ -304,7 +304,7 @@ namespace Cthulhu {
   
   };//class VbrMatrix
   
-}//namespace Cthulhu
+}//namespace Xpetra
 
-#define CTHULHU_TPETRAVBRMATRIX_SHORT
-#endif //CTHULHU_VBRMATRIX_DECL_HPP
+#define XPETRA_TPETRAVBRMATRIX_SHORT
+#endif //XPETRA_VBRMATRIX_DECL_HPP

@@ -12,18 +12,18 @@
 // #include <Galeri_CrsMatrices.h>
 
 // Using MueLu:
-#include <Cthulhu_ConfigDefs.hpp>
-#include <Cthulhu_Parameters.hpp>
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_MapFactory.hpp>
-#include <Cthulhu_CrsOperator.hpp>
-#include <Cthulhu_CrsMatrix.hpp>
+#include <Xpetra_ConfigDefs.hpp>
+#include <Xpetra_Parameters.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_CrsMatrix.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
 
 // MueLu Gallery :
-#define CTHULHU_ENABLED
+#define XPETRA_ENABLED
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   Teuchos::CommandLineProcessor clp(false);
   
   MueLu::Gallery::Parameters<GO> matrixParameters(clp);   // manage parameters of the test case
-  Cthulhu::Parameters cthulhuParameters(clp);         // manage parameters of cthulhu
+  Xpetra::Parameters xpetraParameters(clp);         // manage parameters of xpetra
   
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -54,15 +54,15 @@ int main(int argc, char *argv[])
   }
   
   matrixParameters.check();
-  cthulhuParameters.check();
+  xpetraParameters.check();
 
   matrixParameters.print();
-  cthulhuParameters.print();
+  xpetraParameters.print();
 
   /**********************************************************************************/
   /* CREATE INITAL MATRIX                                                           */
   /**********************************************************************************/
-  const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<const Operator>   Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
 
   // Using Galeri:
@@ -84,5 +84,5 @@ int main(int argc, char *argv[])
 }
 
 // JG TODO:
-// - add a method CreateMap for cthulhu/gallery (as Galeri)
+// - add a method CreateMap for xpetra/gallery (as Galeri)
 // - wrap galeri matrix for the new MatrixVectorChecker

@@ -1,17 +1,17 @@
-#ifndef CTHULHU_OPERATORFACTORY_HPP
-#define CTHULHU_OPERATORFACTORY_HPP
+#ifndef XPETRA_OPERATORFACTORY_HPP
+#define XPETRA_OPERATORFACTORY_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Operator.hpp"
-#include "Cthulhu_CrsOperator.hpp"
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_Operator.hpp"
+#include "Xpetra_CrsOperator.hpp"
+#include "Xpetra_Map.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
   
   template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
   class OperatorFactory {
-#include "Cthulhu_UseShortNames.hpp"
+#include "Xpetra_UseShortNames.hpp"
 
   private:
     //! Private constructor. This is a static class.
@@ -20,7 +20,7 @@ namespace Cthulhu {
   public:
     
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<Operator> Build(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile) {
+    static RCP<Operator> Build(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) {
       // if const block size && blocksize == 1
 
       return rcp( new CrsOperator(rowMap, maxNumEntriesPerRow, pftype) );
@@ -31,12 +31,12 @@ namespace Cthulhu {
 
       // else
 
-      // TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"?");
+      // TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"?");
     }
     
   };
 
 }
 
-#define CTHULHU_OPERATORFACTORY_SHORT
+#define XPETRA_OPERATORFACTORY_SHORT
 #endif

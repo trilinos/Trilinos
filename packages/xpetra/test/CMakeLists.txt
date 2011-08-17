@@ -19,6 +19,6 @@ ADD_SUBDIRECTORIES(
 # BlockMultiVector
 # VbrMatrix
 
-# Tests specifically written for Cthulhu:
+# Tests specifically written for Xpetra:
   Operator
   )

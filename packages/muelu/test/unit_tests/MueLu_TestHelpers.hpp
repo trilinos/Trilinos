@@ -9,12 +9,12 @@
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-// Cthulhu
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_DefaultPlatform.hpp"
-#include "Cthulhu_Parameters.hpp"
-#include "Cthulhu_MapFactory.hpp"
-#include "Cthulhu_CrsOperator.hpp"
+// Xpetra
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_DefaultPlatform.hpp"
+#include "Xpetra_Parameters.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_CrsOperator.hpp"
 
 // MueLu
 #include "MueLu_Exceptions.hpp"
@@ -27,7 +27,7 @@ namespace MueLu {
 
   namespace TestHelpers {
     
-    using Cthulhu::global_size_t;
+    using Xpetra::global_size_t;
     using Teuchos::RCP;
 
     class Parameters {
@@ -37,14 +37,14 @@ namespace MueLu {
       
     public:
       
-      static Cthulhu::Parameters cthulhuParameters;
+      static Xpetra::Parameters xpetraParameters;
       
       inline static RCP<const Teuchos::Comm<int> > getDefaultComm() {
-        return Cthulhu::DefaultPlatform::getDefaultPlatform().getComm();
+        return Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
       }
       
-      inline static Cthulhu::UnderlyingLib getLib() {
-        return MueLu::TestHelpers::Parameters::cthulhuParameters.GetLib();
+      inline static Xpetra::UnderlyingLib getLib() {
+        return MueLu::TestHelpers::Parameters::xpetraParameters.GetLib();
       }
     };
 
@@ -135,11 +135,11 @@ namespace MueLu {
 
 // Macro to skip a test when Epetra is used with Ordinal != int
 #define MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal) \
-  if (!(MueLu::TestHelpers::Parameters::getLib() == Cthulhu::UseEpetra && (Teuchos::OrdinalTraits<LocalOrdinal>::name() != string("int") || Teuchos::OrdinalTraits<GlobalOrdinal>::name() != string("int"))))
+  if (!(MueLu::TestHelpers::Parameters::getLib() == Xpetra::UseEpetra && (Teuchos::OrdinalTraits<LocalOrdinal>::name() != string("int") || Teuchos::OrdinalTraits<GlobalOrdinal>::name() != string("int"))))
 
 // Macro to skip a test when Epetra is used with Scalar != double or Ordinal != int
 #define MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal) \
-  if (!(MueLu::TestHelpers::Parameters::getLib() == Cthulhu::UseEpetra && Teuchos::ScalarTraits<Scalar>::name() != string("double"))) \
+  if (!(MueLu::TestHelpers::Parameters::getLib() == Xpetra::UseEpetra && Teuchos::ScalarTraits<Scalar>::name() != string("double"))) \
     MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal)
 
 
@@ -150,6 +150,6 @@ namespace MueLu {
 //
 
 //TODO: add directly to Teuchos ?
-#include "../cthulhu/test/Cthulhu_UnitTestHelpers.hpp" // declaration of TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL
+#include "../xpetra/test/Xpetra_UnitTestHelpers.hpp" // declaration of TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL
 
 #endif // ifndef MUELU_TEST_HELPERS_H

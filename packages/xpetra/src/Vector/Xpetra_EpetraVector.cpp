@@ -1,14 +1,14 @@
-#include "Cthulhu_EpetraVector.hpp"
+#include "Xpetra_EpetraVector.hpp"
 
 //TODO: replace double -> Scalar etc.
 
-namespace Cthulhu {
+namespace Xpetra {
 
   EpetraVector::EpetraVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut) : EpetraMultiVector(map,1,zeroOut) { }
   
   double EpetraVector::dot(const Vector<double,int,int> &a) const { 
        
-      CTHULHU_DYNAMIC_CAST(const EpetraVector, a, tA, "This Cthulhu::EpetraVector method only accept Cthulhu::EpetraVector as input arguments.");
+      XPETRA_DYNAMIC_CAST(const EpetraVector, a, tA, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
       //      return getEpetra_Vector()->Dot(*tA.getEpetra_Vector()); 
 
       // other way: use the MultiVector Dot instead of VectorDot:
@@ -24,7 +24,7 @@ namespace Cthulhu {
     Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normInf() const {  double r; getEpetra_MultiVector()->NormInf(&r); return r; }
 
     Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normWeighted(const Vector<double,int,int> &weights) const { 
-      CTHULHU_DYNAMIC_CAST(const EpetraVector, weights, tWeights, "This Cthulhu::EpetraVector method only accept Cthulhu::EpetraVector as input arguments.");
+      XPETRA_DYNAMIC_CAST(const EpetraVector, weights, tWeights, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
       double r; 
       getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), &r); return r; 
     }
@@ -60,7 +60,7 @@ namespace Cthulhu {
 //       using Teuchos::VERB_EXTREME;
 //       Teuchos::EVerbosityLevel vl = verbLevel;
 
-//       TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
+//       TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
 
 //       if (vl == VERB_DEFAULT) vl = VERB_LOW;
 //       Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
@@ -107,12 +107,12 @@ namespace Cthulhu {
 
   // TODO: move that elsewhere
   Epetra_Vector & toEpetra(Vector<double, int, int> &x) {
-    CTHULHU_DYNAMIC_CAST(      EpetraVector, x, tX, "toEpetra");
+    XPETRA_DYNAMIC_CAST(      EpetraVector, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
   
   const Epetra_Vector & toEpetra(const Vector<double, int, int> &x) {
-    CTHULHU_DYNAMIC_CAST(const EpetraVector, x, tX, "toEpetra");
+    XPETRA_DYNAMIC_CAST(const EpetraVector, x, tX, "toEpetra");
     return *tX.getEpetra_Vector();
   }
   //

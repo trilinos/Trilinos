@@ -1,13 +1,13 @@
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-#ifdef HAVE_CTHULHU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
 
-#include "Cthulhu_EpetraMap.hpp"
-#include "Cthulhu_EpetraUtils.hpp"
+#include "Xpetra_EpetraMap.hpp"
+#include "Xpetra_EpetraUtils.hpp"
 
-#include "Cthulhu_EpetraExceptions.hpp"
+#include "Xpetra_EpetraExceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   // Implementation note for constructors: the Epetra_Comm is cloned in the constructor of Epetra_BlockMap. We don't need to keep a reference on it.
   // TODO: use toEpetra() function here.
@@ -176,9 +176,9 @@ namespace Cthulhu {
 
 
 
-  LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< int > &LIDList) const { return toCthulhu(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
+  LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< int > &LIDList) const { return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
     
-  LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const int > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { return toCthulhu(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
+  LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const int > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
     
   Teuchos::ArrayView< const int > EpetraMap::getNodeElementList() const { return ArrayView< const int >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
 
@@ -288,15 +288,15 @@ namespace Cthulhu {
   }
 
   const Epetra_Map & toEpetra(const RCP< const Map<int, int> > &map) {
-    CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, map, epetraMap, "toEpetra");
+    XPETRA_RCP_DYNAMIC_CAST(const EpetraMap, map, epetraMap, "toEpetra");
     return epetraMap->getEpetra_Map();
   }
 
-//   const RCP< const Map<int, int> > toCthulhu(const RCP< const Epetra_Map > &map) {
+//   const RCP< const Map<int, int> > toXpetra(const RCP< const Epetra_Map > &map) {
 //     return rcp( new EpetraMap(map) );
 //   }
 
-  const RCP< const Map<int, int> > toCthulhu(const Epetra_BlockMap &map) {
+  const RCP< const Map<int, int> > toXpetra(const Epetra_BlockMap &map) {
     RCP<const Epetra_BlockMap> m = rcp(new Epetra_BlockMap(map));
     return rcp( new EpetraMap(m) );
   }

@@ -21,15 +21,15 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_AggregationOptions.hpp"
 
-#include <Cthulhu_Map.hpp>
-#include <Cthulhu_CrsOperator.hpp>
-#include <Cthulhu_Vector.hpp>
-#include <Cthulhu_VectorFactory.hpp>
-#include <Cthulhu_MultiVectorFactory.hpp>
-#include <Cthulhu_Parameters.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Parameters.hpp>
 
 // Gallery
-#define CTHULHU_ENABLED // == Gallery have to be build with the support of Cthulhu matrices.
+#define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include <MueLu_GalleryParameters.hpp>
 #include <MueLu_MatrixFactory.hpp>
 
@@ -48,19 +48,19 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
  
-RCP<SmootherPrototype> gimmeGaussSeidelProto(Cthulhu::UnderlyingLib lib) {
+RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 
   RCP<SmootherPrototype> smooProto;
   Teuchos::ParameterList ifpackList;
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   
-  if (lib == Cthulhu::UseEpetra) {
+  if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_IFPACK
     ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
     smooProto = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
 #endif
-  } else if (lib == Cthulhu::UseTpetra) {
+  } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_IFPACK2
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
     smooProto = rcp( new Ifpack2Smoother("RELAXATION", ifpackList) );
@@ -73,9 +73,9 @@ RCP<SmootherPrototype> gimmeGaussSeidelProto(Cthulhu::UnderlyingLib lib) {
   return smooProto;
 }
 
-RCP<SmootherPrototype> gimmeCoarseProto(Cthulhu::UnderlyingLib lib, const std::string& coarseSolver, int rank) {
+RCP<SmootherPrototype> gimmeCoarseProto(Xpetra::UnderlyingLib lib, const std::string& coarseSolver, int rank) {
   RCP<SmootherPrototype> coarseProto;
-  if (lib == Cthulhu::UseEpetra) {
+  if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_AMESOS
     if (rank == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
     Teuchos::ParameterList amesosList;
@@ -83,7 +83,7 @@ RCP<SmootherPrototype> gimmeCoarseProto(Cthulhu::UnderlyingLib lib, const std::s
     coarseProto = rcp( new AmesosSmoother("Amesos_Klu",amesosList) );
     //#elif HAVE_MUELU_IFPACK...
 #endif
-  } else if (lib == Cthulhu::UseTpetra) {
+  } else if (lib == Xpetra::UseTpetra) {
     if (coarseSolver=="amesos2") {
 #ifdef HAVE_MUELU_AMESOS2
       if (rank == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
@@ -121,7 +121,7 @@ RCP<SmootherPrototype> gimmeCoarseProto(Cthulhu::UnderlyingLib lib, const std::s
 }
 
 
-RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Cthulhu::UnderlyingLib lib, const std::string& coarseSolver, int rank) {
+RCP<SmootherPrototype> gimmeMergedSmoother(int nSmoothers, Xpetra::UnderlyingLib lib, const std::string& coarseSolver, int rank) {
   ArrayRCP<RCP<SmootherPrototype> > smootherList(nSmoothers);
 
   for (int i=0; i<nSmoothers; i++)
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   // It's a nice size for 1D and perfect aggregation. (6561=3^8)
   //Nice size for 1D and perfect aggregation on small numbers of processors. (8748=4*3^7)
   MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-  Cthulhu::Parameters cthulhuParameters(clp);             // manage parameters of cthulhu
+  Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
   // custom parameters
   int nSmoothers=2;
@@ -169,12 +169,12 @@ int main(int argc, char *argv[]) {
   }
   
   matrixParameters.check();
-  cthulhuParameters.check();
+  xpetraParameters.check();
   // TODO: check custom parameters
 
   if (comm->getRank() == 0) {
     matrixParameters.print();
-    cthulhuParameters.print();
+    xpetraParameters.print();
     // TODO: print custom parameters
   }
 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
-  const RCP<const Map> map = MapFactory::Build(cthulhuParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+  const RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
   RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Operator vs. CrsOperator
   /**********************************************************************************/
   /*                                                                                */
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
   RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
 
-  RCP<SmootherPrototype> smooProto = gimmeMergedSmoother(nSmoothers, cthulhuParameters.GetLib(), coarseSolver, comm->getRank());
+  RCP<SmootherPrototype> smooProto = gimmeMergedSmoother(nSmoothers, xpetraParameters.GetLib(), coarseSolver, comm->getRank());
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
@@ -232,9 +232,9 @@ int main(int argc, char *argv[]) {
 
   RCP<SmootherPrototype> coarseProto;
   if (maxLevels != 1) {
-    coarseProto = gimmeCoarseProto(cthulhuParameters.GetLib(), coarseSolver, comm->getRank());
+    coarseProto = gimmeCoarseProto(xpetraParameters.GetLib(), coarseSolver, comm->getRank());
   } else {
-    coarseProto = gimmeMergedSmoother(nSmoothers, cthulhuParameters.GetLib(), coarseSolver, comm->getRank());
+    coarseProto = gimmeMergedSmoother(nSmoothers, xpetraParameters.GetLib(), coarseSolver, comm->getRank());
   }
   if (coarseProto == Teuchos::null) return EXIT_FAILURE;
   SmootherFactory coarseSolveFact(coarseProto);

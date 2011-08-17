@@ -1,16 +1,16 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_TpetraConfigDefs.hpp"
+#include "Xpetra_TpetraConfigDefs.hpp"
 
-#include "Cthulhu_Export.hpp"
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Export.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-#include "Cthulhu_TpetraMap.hpp"
+#include "Xpetra_TpetraMap.hpp"
 #include "Tpetra_Export.hpp"
 
 // Note: 'export' is a reserved keyword in C++. Do not use 'export' as a variable name.
 
-namespace Cthulhu {
+namespace Xpetra {
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -26,7 +26,7 @@ namespace Cthulhu {
 
 $TMPL_PUBLIC_FUNCTIONS
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! TpetraExport constructor to wrap a Tpetra::Export object
@@ -51,6 +51,6 @@ $TMPL_PUBLIC_FUNCTIONS
   }
   //
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 $TMPL_FOOTERS

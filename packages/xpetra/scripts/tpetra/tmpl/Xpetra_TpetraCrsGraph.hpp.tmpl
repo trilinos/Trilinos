@@ -1,16 +1,16 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_TpetraConfigDefs.hpp"
+#include "Xpetra_TpetraConfigDefs.hpp"
 
-#include "Cthulhu_CrsGraph.hpp"
+#include "Xpetra_CrsGraph.hpp"
 
 #include "Tpetra_CrsGraph.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
  
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toCthulhu(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > );
+  RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toXpetra(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > );
   //
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -28,7 +28,7 @@ namespace Cthulhu {
 
 $TMPL_PUBLIC_FUNCTIONS
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! TpetraCrsGraph constructor to wrap a Tpetra::CrsGraph object
@@ -47,15 +47,15 @@ $TMPL_PUBLIC_FUNCTIONS
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toCthulhu(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph) { //TODO: return TpetraCrsGraph instead of CrsGraph
+  RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toXpetra(RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph) { //TODO: return TpetraCrsGraph instead of CrsGraph
     // typedef TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraphClass;
-    // CTHULHU_RCP_DYNAMIC_CAST(const TpetraCrsGraphClass, graph, tGraph, "toTpetra");
+    // XPETRA_RCP_DYNAMIC_CAST(const TpetraCrsGraphClass, graph, tGraph, "toTpetra");
 
     RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tGraph = Teuchos::rcp_const_cast<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >(graph); //TODO: can I avoid the const_cast ?
-    return rcp ( new Cthulhu::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tGraph) );
+    return rcp ( new Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(tGraph) );
   }
   //
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 $TMPL_FOOTERS

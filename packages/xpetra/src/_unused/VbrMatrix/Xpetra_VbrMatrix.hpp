@@ -1,23 +1,23 @@
-#ifndef CTHULHU_VBRMATRIX_HPP
-#define CTHULHU_VBRMATRIX_HPP
+#ifndef XPETRA_VBRMATRIX_HPP
+#define XPETRA_VBRMATRIX_HPP
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 #include <Kokkos_VbrMatrix.hpp>
 
-#include "Cthulhu_ConfigDefs.hpp"
-// #include "Cthulhu_Operator.hpp"
-#include "Cthulhu_BlockMap.hpp"
-#include "Cthulhu_MultiVector.hpp"
-// #include "Cthulhu_BlockCrsGraph.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+// #include "Xpetra_Operator.hpp"
+#include "Xpetra_BlockMap.hpp"
+#include "Xpetra_MultiVector.hpp"
+// #include "Xpetra_BlockCrsGraph.hpp"
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 
-/** \file Cthulhu_VbrMatrix.hpp
+/** \file Xpetra_VbrMatrix.hpp
 
-  Declarations for the class Cthulhu::VbrMatrix.
+  Declarations for the class Xpetra::VbrMatrix.
 */
-namespace Cthulhu {
+namespace Xpetra {
 
 //! \brief VbrMatrix: Variable block row matrix.
 /**
@@ -53,7 +53,7 @@ template <class Scalar,
           class GlobalOrdinal = LocalOrdinal, 
           class Node          = Kokkos::DefaultNode::DefaultNodeType, 
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
-class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+class VbrMatrix { //: public Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
  public:
 
   //! @name Constructor/Destructor Methods
@@ -64,11 +64,11 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
 
   //@}
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+#ifdef XPETRA_NOT_IMPLEMENTED_FOR_EPETRA
 
   //! @name Advanced Mathematical operations
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
   //! Multiply this matrix by a MultiVector.
   /*! \c X is required to be post-imported, i.e., described by the column map
       of the matrix. \c Y is required to be pre-exported, i.e., described by
@@ -78,11 +78,11 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
   //TODO virtual
   template <class DomainScalar, class RangeScalar>
   void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
-#endif // CTHULHU_NOT_IMPLEMENTED
+#endif // XPETRA_NOT_IMPLEMENTED
 
   //@}
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
       \c X is required to be post-imported, i.e., described by the column map
@@ -99,7 +99,7 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
   //TODO virtual
   template <class DomainScalar, class RangeScalar>
   void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
-#endif // CTHULHU_NOT_IMPLEMENTED
+#endif // XPETRA_NOT_IMPLEMENTED
 
   //@}
 
@@ -356,15 +356,15 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
                                      LocalOrdinal& numPtCols,
                                      Teuchos::ArrayRCP<Scalar>& blockEntry) =0;
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef XPETRA_NOT_IMPLEMENTED
   //! Return a copy of the (point-entry) diagonal values.
   /*!
     Throws an exception if the input-vector's map is not the same as
     getBlockRowMap()->getPointMap().
   */
   //TODO: need Vector  
-virtual void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
+virtual void getLocalDiagCopy(Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const =0;
+#endif // XPETRA_NOT_IMPLEMENTED
   //@}
 
   //! @name Overridden from Teuchos::Describable
@@ -376,11 +376,11 @@ virtual void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,
   virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
   //@}
 
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+#endif // XPETRA_NOT_IMPLEMENTED_FOR_EPETRA
 
 };//class VbrMatrix
 
-}//namespace Cthulhu
+}//namespace Xpetra
 
-#define CTHULHU_VBRMATRIX_SHORT
-#endif //CTHULHU_VBRMATRIX_DECL_HPP
+#define XPETRA_VBRMATRIX_SHORT
+#endif //XPETRA_VBRMATRIX_DECL_HPP

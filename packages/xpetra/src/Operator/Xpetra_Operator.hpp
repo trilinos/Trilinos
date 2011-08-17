@@ -1,26 +1,26 @@
-#ifndef CTHULHU_OPERATOR_HPP
-#define CTHULHU_OPERATOR_HPP
+#ifndef XPETRA_OPERATOR_HPP
+#define XPETRA_OPERATOR_HPP
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-#include "Cthulhu_MultiVector.hpp"
-#include "Cthulhu_CrsGraph.hpp"
-#include "Cthulhu_CrsMatrix.hpp"
-#include "Cthulhu_CrsMatrixFactory.hpp"
-#include "Cthulhu_OperatorView.hpp"
+#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_CrsGraph.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_CrsMatrixFactory.hpp"
+#include "Xpetra_OperatorView.hpp"
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
 
-/** \file Cthulhu_Operator.hpp
+/** \file Xpetra_Operator.hpp
 
-Declarations for the class Cthulhu::Operator.
+Declarations for the class Xpetra::Operator.
 */
-namespace Cthulhu {
+namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
@@ -31,14 +31,14 @@ namespace Cthulhu {
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
   class Operator : virtual public Teuchos::Describable {
     
-    typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-    typedef Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
-    typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
-#ifdef HAVE_CTHULHU_TPETRA
-    typedef Cthulhu::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+    typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+    typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
+#ifdef HAVE_XPETRA_TPETRA
+    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
-    typedef Cthulhu::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
-    typedef Cthulhu::OperatorView<LocalOrdinal, GlobalOrdinal, Node> OperatorView;
+    typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
+    typedef Xpetra::OperatorView<LocalOrdinal, GlobalOrdinal, Node> OperatorView;
 
   public:
   
@@ -53,19 +53,19 @@ namespace Cthulhu {
     //! @name View management methods
     //@{
     void CreateView(viewLabel_t viewLabel, const RCP<const Map> & rowMap, const RCP<const Map> & colMap) {
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == true, Cthulhu::Exceptions::RuntimeError, "Cthulhu::Operator.CreateView(): a view labeled '" + viewLabel + "' already exist.");
+      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == true, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.CreateView(): a view labeled '" + viewLabel + "' already exist.");
       RCP<OperatorView> view = rcp(new OperatorView(rowMap, colMap));
       operatorViewTable_.put(viewLabel, view);
     }
     
     void RemoveView(const viewLabel_t viewLabel) {
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Cthulhu::Exceptions::RuntimeError, "Cthulhu::Operator.RemoveView(): view '" + viewLabel + "' does not exist.");
-      TEST_FOR_EXCEPTION(viewLabel == GetDefaultViewLabel(), Cthulhu::Exceptions::RuntimeError, "Cthulhu::Operator.RemoveView(): view '" + viewLabel + "' is the default view and cannot be removed.");
+      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' does not exist.");
+      TEST_FOR_EXCEPTION(viewLabel == GetDefaultViewLabel(), Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' is the default view and cannot be removed.");
       operatorViewTable_.remove(viewLabel);
     }
     
     const viewLabel_t SwitchToView(const viewLabel_t viewLabel) {
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Cthulhu::Exceptions::RuntimeError, "Cthulhu::Operator.SwitchToView(): view '" + viewLabel + "' does not exist.");
+      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.SwitchToView(): view '" + viewLabel + "' does not exist.");
       viewLabel_t oldViewLabel = GetCurrentViewLabel();
       currentViewLabel_ = viewLabel;
       return oldViewLabel;
@@ -128,7 +128,7 @@ namespace Cthulhu {
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */
     //TODO : Get ride of "Tpetra"::OptimizeOption
-    virtual void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) =0;
+    virtual void fillComplete(Xpetra::OptimizeOption os = Xpetra::DoOptimizeStorage) =0;
 
     //@}
 
@@ -140,7 +140,7 @@ namespace Cthulhu {
 
     //! Returns the Map that describes the row distribution in this matrix.
     const RCP<const Map> & getRowMap(viewLabel_t viewLabel) const { 
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Cthulhu::Exceptions::RuntimeError, "Cthulhu::Operator.GetRowMap(): view '" + viewLabel + "' does not exist.");
+      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetRowMap(): view '" + viewLabel + "' does not exist.");
       return operatorViewTable_.get(viewLabel)->GetRowMap(); 
     }
 
@@ -150,7 +150,7 @@ namespace Cthulhu {
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
     const RCP<const Map> & getColMap(viewLabel_t viewLabel) const { 
-      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Cthulhu::Exceptions::RuntimeError, "Cthulhu::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
+      TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.GetColMap(): view '" + viewLabel + "' does not exist.");
       return operatorViewTable_.get(viewLabel)->GetColMap(); 
     }
 
@@ -288,11 +288,11 @@ namespace Cthulhu {
 
     //! \brief Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    virtual const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const =0;
+    virtual const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const =0;
 
     //! Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    virtual const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const =0;
+    virtual const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const =0;
 
     //@}
 
@@ -323,7 +323,7 @@ namespace Cthulhu {
   
   }; //class Operator
 
-} //namespace Cthulhu
+} //namespace Xpetra
 
-#define CTHULHU_OPERATOR_SHORT
-#endif //CTHULHU_OPERATOR_DECL_HPP
+#define XPETRA_OPERATOR_SHORT
+#endif //XPETRA_OPERATOR_DECL_HPP

@@ -8,12 +8,12 @@ TAGFILES += \
 #
 # Package options
 #
-PROJECT_NAME           = "Cthulhu"
+PROJECT_NAME           = "Xpetra"
 OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../src ./Cthulhu_DoxygenDocumentation.hpp
+INPUT                  = ../src ./Xpetra_DoxygenDocumentation.hpp
 #FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
@@ -31,4 +31,4 @@ EXTRACT_PRIVATE        = YES
 #
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
-GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu-cthulhu.tag
+GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu-xpetra.tag

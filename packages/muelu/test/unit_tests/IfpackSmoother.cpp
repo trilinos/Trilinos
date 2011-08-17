@@ -19,7 +19,7 @@ namespace {
   // TODO added by JG: This test should be factorized for every smoothers, to avoid code duplication
   TEUCHOS_UNIT_TEST(IfpackSmoother, NotSetup)
   {
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
         out << "version: " << MueLu::Version() << std::endl;
 
@@ -42,7 +42,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST(IfpackSmoother, GaussSeidel)
   {
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
 
         //FIXME this will probably fail in parallel b/c it becomes block Jacobi
@@ -92,7 +92,7 @@ namespace {
   TEUCHOS_UNIT_TEST(IfpackSmoother, Chebyshev)
   {
 
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
         out << "version: " << MueLu::Version() << std::endl;
 
@@ -154,7 +154,7 @@ namespace {
   TEUCHOS_UNIT_TEST(IfpackSmoother, ILU)
   {
 
-    MUELU_TEST_ONLY_FOR(Cthulhu::UseEpetra)
+    MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)
       {
         //FIXME this will probably fail in parallel b/c it becomes block Jacobi
 

@@ -358,7 +358,7 @@ namespace MueLu {
 
       MueLu::UCAggregationCommHelper<double,LO,GO,NO,LMO> myWidget(uniqueMap, nonUniqueMap);
 
-      RCP<Cthulhu::Vector<double,LO,GO,NO> > distWeights = Cthulhu::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
+      RCP<Xpetra::Vector<double,LO,GO,NO> > distWeights = Xpetra::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
 
       // Aggregated vertices not "definitively" assigned to processors are
       // arbitrated by ArbitrateAndCommunicate(). There is some
@@ -504,13 +504,13 @@ namespace MueLu {
       //         std::cout << "exp_nrows=" << exp_nRows << " (nVertices= " << nVertices << ", numGhost=" << graph.GetNodeNumGhost() << ")" << std::endl;
       //         std::cout << "nonUniqueMap=" << nonUniqueMap->getNodeNumElements() << std::endl;
 
-      RCP<Cthulhu::Vector<double,LO,GO,NO> > temp_ = Cthulhu::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
+      RCP<Xpetra::Vector<double,LO,GO,NO> > temp_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
       temp_->putScalar(1.);  
 
-      RCP<Cthulhu::Vector<double,LO,GO,NO> > tempOutput_ = Cthulhu::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
+      RCP<Xpetra::Vector<double,LO,GO,NO> > tempOutput_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
       tempOutput_->putScalar(0.); 
 
-      myWidget.NonUnique2NonUnique(*temp_, *tempOutput_, Cthulhu::ADD);
+      myWidget.NonUnique2NonUnique(*temp_, *tempOutput_, Xpetra::ADD);
 
       std::vector<bool> gidNotShared(exp_nRows);
       {
@@ -948,7 +948,7 @@ namespace MueLu {
 
       //! @brief Attempt to clean up aggregates that are too small.
     int RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                        RCP<Cthulhu::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<double,LO,GO,NO,LMO> & myWidget) const
+                        RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::UCAggregationCommHelper<double,LO,GO,NO,LMO> & myWidget) const
     {
       int myPid = aggregates.GetMap()->getComm()->getRank();
         

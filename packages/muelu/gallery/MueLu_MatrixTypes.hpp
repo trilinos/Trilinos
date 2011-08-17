@@ -1,5 +1,5 @@
 /*
-  Direct translation of parts of Galeri to use Tpetra or Cthulhu rather than Epetra.
+  Direct translation of parts of Galeri to use Tpetra or Xpetra rather than Epetra.
 */
 
 // TODO: rename variables (camelCase)
@@ -11,14 +11,14 @@
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_RCP.hpp"
 
-//#define CTHULHU_ENABLED //TODO!
-#ifdef CTHULHU_ENABLED
+//#define XPETRA_ENABLED //TODO!
+#ifdef XPETRA_ENABLED
 // needed for the specialized traits:
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_CrsMatrix.hpp"
-#include "Cthulhu_CrsMatrixFactory.hpp"
-#include "Cthulhu_Operator.hpp"
-#include "Cthulhu_OperatorFactory.hpp"
+#include "Xpetra_Map.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_CrsMatrixFactory.hpp"
+#include "Xpetra_Operator.hpp"
+#include "Xpetra_OperatorFactory.hpp"
 #endif
 #include "MueLu_Memory.hpp"
 
@@ -63,8 +63,8 @@ namespace MueLu {
     /* Default traits */
     /* These traits work for the following couples of (Map,Matrix):
        - Map = Tpetra::Map<...>,       and Matrix = Tpetra::CrsMatrix<...>  
-       - Map = Cthulhu::TpetraMap<...> and Matrix = Cthulhu::TpetraCrsMatrix<...>
-       - Map = Cthulhu::EpetraMap,     and Matrix = Cthulhu::EpetraCrsMatrix
+       - Map = Xpetra::TpetraMap<...> and Matrix = Xpetra::TpetraCrsMatrix<...>
+       - Map = Xpetra::EpetraMap,     and Matrix = Xpetra::EpetraCrsMatrix
     */
     template <class Map, class Matrix>
     class MatrixTraits 
@@ -75,28 +75,28 @@ namespace MueLu {
       };
     };
 
-#ifdef CTHULHU_ENABLED
+#ifdef XPETRA_ENABLED
 
     /* Specialized traits for:
-       - Map = Cthulhu::Map<...>, Matrix = Cthulhu::CrsMatrix<...> */
+       - Map = Xpetra::Map<...>, Matrix = Xpetra::CrsMatrix<...> */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MatrixTraits <Cthulhu::Map<LocalOrdinal,GlobalOrdinal, Node>, Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
+    class MatrixTraits <Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
     {
     public:
-      static RCP<Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
-      // Use the CrsMatrixFactory to decide what kind of matrix to create (Cthulhu::TpetraCrsMatrix or Cthulhu::EpetraCrsMatrix).
-      { return Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap,  maxNumEntriesPerRow); };
+      static RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
+      // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix or Xpetra::EpetraCrsMatrix).
+      { return Xpetra::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap,  maxNumEntriesPerRow); };
     };
 
     /* Specialized traits for:
-       - Map = Cthulhu::Map<...>, Matrix = Cthulhu::Operator<...> */
+       - Map = Xpetra::Map<...>, Matrix = Xpetra::Operator<...> */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-    class MatrixTraits <Cthulhu::Map<LocalOrdinal,GlobalOrdinal, Node>, Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
+    class MatrixTraits <Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
     {
     public:
-      static RCP<Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
-      // Use the CrsMatrixFactory to decide what kind of matrix to create (Cthulhu::TpetraCrsMatrix or Cthulhu::EpetraCrsMatrix).
-      { return Cthulhu::OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap, maxNumEntriesPerRow); };
+      static RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
+      // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix or Xpetra::EpetraCrsMatrix).
+      { return Xpetra::OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap, maxNumEntriesPerRow); };
     };
 
 #endif
@@ -191,7 +191,7 @@ namespace MueLu {
             }
 
           // put the off-diagonal entries
-          // Cthulhu wants ArrayViews (sigh)
+          // Xpetra wants ArrayViews (sigh)
           Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
           Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
           mtx->insertGlobalValues(MyGlobalElements[i], iv, av);
@@ -301,7 +301,7 @@ namespace MueLu {
               ++NumEntries;
             }
           // put the off-diagonal entries
-          // Cthulhu wants ArrayViews (sigh)
+          // Xpetra wants ArrayViews (sigh)
           Teuchos::ArrayView<Scalar> av(&Values[0],NumEntries);
           Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0],NumEntries);
           mtx->insertGlobalValues(MyGlobalElements[i], iv, av);

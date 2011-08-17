@@ -196,8 +196,8 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      {
 
        RCP<Operator> A = Levels_[startLevel]->GetA();
-       Cthulhu::global_size_t fineNnz = A->getGlobalNumEntries();
-       Cthulhu::global_size_t totalNnz = fineNnz;
+       Xpetra::global_size_t fineNnz = A->getGlobalNumEntries();
+       Xpetra::global_size_t totalNnz = fineNnz;
 
        bool goodBuild=true;
        int i = startLevel;
@@ -405,7 +405,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                                      // ^^ nonzero initial guess
      
 	       // update X+=P * coarseX
-	       //P->apply(*coarseX,X,Teuchos::NO_TRANS,1.0,1.0);  //Cthulhu throws an error if linAlgebra==0
+	       //P->apply(*coarseX,X,Teuchos::NO_TRANS,1.0,1.0);  //Xpetra throws an error if linAlgebra==0
            RCP<MultiVector> correction = MultiVectorFactory::Build(P->getRangeMap(),X.getNumVectors());
            P->apply(*coarseX,*correction,Teuchos::NO_TRANS,1.0,0.0);
            X.update(1.0,*correction,1.0);

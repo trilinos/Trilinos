@@ -1,18 +1,18 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_TpetraConfigDefs.hpp"
+#include "Xpetra_TpetraConfigDefs.hpp"
 
-#include "Cthulhu_Vector.hpp"
-#include "Cthulhu_MultiVector.hpp"
+#include "Xpetra_Vector.hpp"
+#include "Xpetra_MultiVector.hpp"
 
-#include "Cthulhu_TpetraMap.hpp" //TMP
-#include "Cthulhu_Utils.hpp"
-#include "Cthulhu_TpetraImport.hpp"
-#include "Cthulhu_TpetraExport.hpp"
+#include "Xpetra_TpetraMap.hpp" //TMP
+#include "Xpetra_Utils.hpp"
+#include "Xpetra_TpetraImport.hpp"
+#include "Xpetra_TpetraExport.hpp"
 
 #include "Tpetra_Vector.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   // TODO: move that elsewhere
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -54,7 +54,7 @@ namespace Cthulhu {
 
 $TMPL_PUBLIC_FUNCTIONS
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
@@ -71,18 +71,18 @@ $TMPL_PUBLIC_FUNCTIONS
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Tpetra::Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
     typedef TpetraVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > TpetraVectorClass;
-    CTHULHU_DYNAMIC_CAST(      TpetraVectorClass, x, tX, "toTpetra");
+    XPETRA_DYNAMIC_CAST(      TpetraVectorClass, x, tX, "toTpetra");
     return *tX.getTpetra_Vector();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const Tpetra::Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> & toTpetra(const Vector< Scalar,LocalOrdinal, GlobalOrdinal, Node> &x) {
     typedef TpetraVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > TpetraVectorClass;
-    CTHULHU_DYNAMIC_CAST(const TpetraVectorClass, x, tX, "toTpetra");
+    XPETRA_DYNAMIC_CAST(const TpetraVectorClass, x, tX, "toTpetra");
     return *tX.getTpetra_Vector();
   }
   //
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 $TMPL_FOOTERS

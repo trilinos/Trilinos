@@ -1,9 +1,9 @@
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_DefaultPlatform.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_DefaultPlatform.hpp"
 
-Teuchos::RCP<Cthulhu::DefaultPlatform::DefaultPlatformType> Cthulhu::DefaultPlatform::platform_ = Teuchos::null;
+Teuchos::RCP<Xpetra::DefaultPlatform::DefaultPlatformType> Xpetra::DefaultPlatform::platform_ = Teuchos::null;
 
-namespace Cthulhu {
+namespace Xpetra {
 
   DefaultPlatform::DefaultPlatformType &DefaultPlatform::getDefaultPlatform() {
     if (!platform_.get()) {

@@ -1,13 +1,13 @@
-#ifndef CTHULHU_SERIALPLATFORM_HPP
-#define CTHULHU_SERIALPLATFORM_HPP
+#ifndef XPETRA_SERIALPLATFORM_HPP
+#define XPETRA_SERIALPLATFORM_HPP
 
 #include <Teuchos_DefaultSerialComm.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   //! \brief A implementation of the Platform class for serial platforms.
   /*!
@@ -72,6 +72,6 @@ namespace Cthulhu {
     return node_; 
   }
 
-} // namespace Cthulhu
+} // namespace Xpetra
 
-#endif // CTHULHU_SERIALPLATFORM_HPP
+#endif // XPETRA_SERIALPLATFORM_HPP

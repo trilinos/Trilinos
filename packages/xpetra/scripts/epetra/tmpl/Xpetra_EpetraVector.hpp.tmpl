@@ -1,18 +1,18 @@
 $TMPL_HEADERS
 
-#include "Cthulhu_EpetraConfigDefs.hpp"
+#include "Xpetra_EpetraConfigDefs.hpp"
 
-#include "Cthulhu_Vector.hpp"
-#include "Cthulhu_EpetraMultiVector.hpp"
-#include "Cthulhu_EpetraMap.hpp" //TMP
-#include "Cthulhu_Utils.hpp"
-#include "Cthulhu_EpetraImport.hpp"
-#include "Cthulhu_EpetraExport.hpp"
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Vector.hpp"
+#include "Xpetra_EpetraMultiVector.hpp"
+#include "Xpetra_EpetraMap.hpp" //TMP
+#include "Xpetra_Utils.hpp"
+#include "Xpetra_EpetraImport.hpp"
+#include "Xpetra_EpetraExport.hpp"
+#include "Xpetra_Exceptions.hpp"
 
 #include <Epetra_Vector.h>
 
-namespace Cthulhu {
+namespace Xpetra {
 
   // TODO: move that elsewhere
   Epetra_Vector & toEpetra(Vector<double, int, int> &);
@@ -40,7 +40,7 @@ namespace Cthulhu {
 
 $TMPL_PUBLIC_FUNCTIONS
 
-    //! @name Cthulhu specific
+    //! @name Xpetra specific
     //@{
 
     //! EpetraMultiVector constructor to wrap a Epetra_Vector object
@@ -54,6 +54,6 @@ $TMPL_PUBLIC_FUNCTIONS
     
   }; // EpetraVector class
 
-} // Cthulhu namespace
+} // Xpetra namespace
 
 $TMPL_FOOTERS

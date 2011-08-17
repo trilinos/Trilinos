@@ -17,6 +17,6 @@ SET(SOURCES "")
 #    SOURCES ${SOURCES}
 #    ARGS ""
 #    COMM serial
-#    DEPLIBS muelu muelu-cthulhu
+#    DEPLIBS muelu muelu-xpetra
 #  )
 

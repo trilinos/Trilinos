@@ -2,17 +2,17 @@
 #define MUELU_TENTATIVEPFACTORY_HPP
 
 #include <iostream>
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_MapFactory.hpp"
+#include "Xpetra_Map.hpp"
+#include "Xpetra_MapFactory.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp" // TODO: inheritence of TentativePFactory
 #include "MueLu_Level.hpp"
 #include "MueLu_PFactory.hpp"
-#include "Cthulhu_MultiVectorFactory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_Utilities.hpp"
-#include "Cthulhu_ImportFactory.hpp"
+#include "Xpetra_ImportFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -191,7 +191,7 @@ namespace MueLu {
       // convert LIDs in aggToRowmap to GIDs, put them in an ArrayView,
       // and call the Map constructor that takes arbitrary distributions.
 
-      //FIXME work around until Cthulhu view table is fixed
+      //FIXME work around until Xpetra view table is fixed
 #ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
       RCP<const Epetra_CrsMatrix> epA;
       try {
@@ -234,7 +234,7 @@ namespace MueLu {
       RCP<const Map > rowMapForPtent =
         MapFactory::Build(
                           fineA->getRowMap()->lib(),
-                          Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(),
+                          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                           gidsForPtent,
                           indexBase,
                           fineA->getRowMap()->getComm()
@@ -252,8 +252,8 @@ namespace MueLu {
       //Allocate storage for the coarse nullspace.
 
       RCP<const Map > coarseMap = MapFactory::Build(fineA->getRowMap()->lib(),
-                                                    Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(), nCoarseDofs,
-                                                    indexBase, fineA->getRowMap()->getComm()); //JG:Cthulhu::global_size_t>?
+                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), nCoarseDofs,
+                                                    indexBase, fineA->getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
 
       RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
       ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);
@@ -266,7 +266,7 @@ namespace MueLu {
       const RCP<const Map> uniqueMap    = fineA->getDomainMap(); //FIXME won't work for systems
       RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
       RCP<MultiVector> fineNullspaceWithOverlap = MultiVectorFactory::Build(nonUniqueMap,NSDim);
-      fineNullspaceWithOverlap->doImport(*fineNullspace,*importer,Cthulhu::INSERT);
+      fineNullspaceWithOverlap->doImport(*fineNullspace,*importer,Xpetra::INSERT);
 
       // Pull out the nullspace vectors so that we can have random access.
       // (Question -- do we have to do this?)
@@ -354,7 +354,7 @@ namespace MueLu {
           // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
           // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
           // This stores the (offset+k)th entry only if it is local according to the coarseMap.
-          Cthulhu::global_size_t offset=agg*NSDim;
+          Xpetra::global_size_t offset=agg*NSDim;
           for (size_t j=0; j<NSDim; ++j) {
             for (size_t k=0; k<=j; ++k) {
               try {

@@ -1,21 +1,21 @@
-#ifndef CTHULHU_VECTORFACTORY_HPP
-#define CTHULHU_VECTORFACTORY_HPP
+#ifndef XPETRA_VECTORFACTORY_HPP
+#define XPETRA_VECTORFACTORY_HPP
 
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
-#include "Cthulhu_Vector.hpp"
+#include "Xpetra_Vector.hpp"
 
-#ifdef HAVE_CTHULHU_TPETRA
-#include "Cthulhu_TpetraVector.hpp"
+#ifdef HAVE_XPETRA_TPETRA
+#include "Xpetra_TpetraVector.hpp"
 #endif
-#ifdef HAVE_CTHULHU_EPETRA
-#include "Cthulhu_EpetraVector.hpp"
-#include "Cthulhu_EpetraIntVector.hpp"
+#ifdef HAVE_XPETRA_EPETRA
+#include "Xpetra_EpetraVector.hpp"
+#include "Xpetra_EpetraIntVector.hpp"
 #endif
 
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
   
   template <class Scalar, class LocalOrdinal  = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class VectorFactory {
@@ -29,13 +29,13 @@ namespace Cthulhu {
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
         return rcp( new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, zeroOut) );
 #endif
 
-      CTHULHU_FACTORY_ERROR_IF_EPETRA(map->lib());
-      CTHULHU_FACTORY_END;
+      XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
+      XPETRA_FACTORY_END;
     }
     
   };
@@ -56,17 +56,17 @@ namespace Cthulhu {
     
     static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
         return rcp( new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, zeroOut) );
 #endif
 
-#ifdef HAVE_CTHULHU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
       if (map->lib() == UseEpetra)
         return rcp( new EpetraVector(map, zeroOut) );
 #endif
 
-      CTHULHU_FACTORY_END;
+      XPETRA_FACTORY_END;
     }
     
   };
@@ -87,23 +87,23 @@ namespace Cthulhu {
     
     static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
         return rcp( new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, zeroOut) );
 #endif
 
-#ifdef HAVE_CTHULHU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
       if (map->lib() == UseEpetra)
         return rcp( new EpetraIntVector(map, zeroOut) );
 #endif
 
-      CTHULHU_FACTORY_END;
+      XPETRA_FACTORY_END;
     }
 
   };
 
 }
 
-#define CTHULHU_VECTORFACTORY_SHORT
+#define XPETRA_VECTORFACTORY_SHORT
 #endif
 // TODO: one factory for both Vector and MultiVector ?

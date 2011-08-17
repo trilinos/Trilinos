@@ -1,115 +1,115 @@
-#include "Cthulhu_Utils.hpp"
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_Utils.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 
-  Cthulhu::LookupStatus toCthulhu(Tpetra::LookupStatus ls) {
+  Xpetra::LookupStatus toXpetra(Tpetra::LookupStatus ls) {
     
     if (ls == Tpetra::AllIDsPresent)
-      return Cthulhu::AllIDsPresent;
+      return Xpetra::AllIDsPresent;
     if (ls == Tpetra::IDNotPresent)
-      return Cthulhu::IDNotPresent;
+      return Xpetra::IDNotPresent;
     
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown LookupStatus"); 
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown LookupStatus"); 
     
   }
 
-  Tpetra::ProfileType toTpetra(Cthulhu::ProfileType pt) {
+  Tpetra::ProfileType toTpetra(Xpetra::ProfileType pt) {
 
-    if (pt == Cthulhu::StaticProfile)
+    if (pt == Xpetra::StaticProfile)
       return Tpetra::StaticProfile;
-    if (pt == Cthulhu::DynamicProfile)
+    if (pt == Xpetra::DynamicProfile)
       return Tpetra::DynamicProfile;
     
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown ProfileType"); 
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown ProfileType"); 
 
   }
 
-  Tpetra::OptimizeOption toTpetra(Cthulhu::OptimizeOption os) {
+  Tpetra::OptimizeOption toTpetra(Xpetra::OptimizeOption os) {
 
-    if (os == Cthulhu::DoOptimizeStorage)
+    if (os == Xpetra::DoOptimizeStorage)
       return Tpetra::DoOptimizeStorage;
-    if (os == Cthulhu::DoNotOptimizeStorage)
+    if (os == Xpetra::DoNotOptimizeStorage)
       return Tpetra::DoNotOptimizeStorage;
     
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
 
   }
 
-  Tpetra::CombineMode toTpetra(Cthulhu::CombineMode cm) { 
+  Tpetra::CombineMode toTpetra(Xpetra::CombineMode cm) { 
   
-    if (cm == Cthulhu::ADD)
+    if (cm == Xpetra::ADD)
       return Tpetra::ADD;
   
-    if (cm == Cthulhu::INSERT)
+    if (cm == Xpetra::INSERT)
       return Tpetra::INSERT;
   
-    if (cm == Cthulhu::ABSMAX) {
+    if (cm == Xpetra::ABSMAX) {
       return Tpetra::ABSMAX;
     }
   
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Tpetra::CombineMode: unsupported CombineMode."); 
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Cannot convert Xpetra::CombineMode to Tpetra::CombineMode: unsupported CombineMode."); 
 
   }
 
   Tpetra::LocalGlobal toTpetra(LocalGlobal lg) {
 
-    if (lg == Cthulhu::LocallyReplicated)
+    if (lg == Xpetra::LocallyReplicated)
       return Tpetra::LocallyReplicated;
-    if (lg == Cthulhu::GloballyDistributed)
+    if (lg == Xpetra::GloballyDistributed)
       return Tpetra::GloballyDistributed;
     
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown LocalGlobal"); 
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown LocalGlobal"); 
 
   }
 
-#endif // HAVE_CTHULHU_TPETRA
+#endif // HAVE_XPETRA_TPETRA
 
-#ifdef HAVE_CTHULHU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
 
-  Cthulhu::LookupStatus toCthulhu(int) {
-    return Cthulhu::AllIDsPresent; // TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
+  Xpetra::LookupStatus toXpetra(int) {
+    return Xpetra::AllIDsPresent; // TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
   }
 
-  bool toEpetra(Cthulhu::ProfileType pt) {
+  bool toEpetra(Xpetra::ProfileType pt) {
     
-    if (pt == Cthulhu::StaticProfile)
+    if (pt == Xpetra::StaticProfile)
       return true;
-    if (pt == Cthulhu::DynamicProfile)
+    if (pt == Xpetra::DynamicProfile)
       return false;
     
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown ProfileType"); 
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown ProfileType"); 
   }
 
-  bool toEpetra(Cthulhu::OptimizeOption os) {
+  bool toEpetra(Xpetra::OptimizeOption os) {
 
-    if (os == Cthulhu::DoOptimizeStorage)
+    if (os == Xpetra::DoOptimizeStorage)
       return true;
-    if (os == Cthulhu::DoNotOptimizeStorage)
+    if (os == Xpetra::DoNotOptimizeStorage)
       return false;
     
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Unknown OptimizeOption"); 
 
   }
   
-  Epetra_CombineMode toEpetra(Cthulhu::CombineMode cm) { 
+  Epetra_CombineMode toEpetra(Xpetra::CombineMode cm) { 
     // Note: all the CombineMode are not supported.
     // According to Chris B., the behavior in Tpetra is the same as Epetra but I prefer to limit my tests for now.
     // See also the discussion of March 22 on the Tpetra developers mailing list.
 
-    if (cm == Cthulhu::ADD)
+    if (cm == Xpetra::ADD)
       return Add;
-    if (cm == Cthulhu::INSERT)
+    if (cm == Xpetra::INSERT)
       return Insert;
-    if (cm == Cthulhu::ABSMAX)
+    if (cm == Xpetra::ABSMAX)
       return AbsMax;
   
-    TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unsupported CombineMode."); 
+    TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::RuntimeError, "Cannot convert Xpetra::CombineMode to Epetra_CombineMode: unsupported CombineMode."); 
 
   }
 
-#endif // HAVE_CTHULHU_EPETRA
+#endif // HAVE_XPETRA_EPETRA
 
-} // namespace cthulhu
+} // namespace xpetra

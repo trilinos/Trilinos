@@ -1,72 +1,72 @@
-#include "Cthulhu_ConfigDefs.hpp"
+#include "Xpetra_ConfigDefs.hpp"
 
 // Get rid of template parameters
 
 // New definition of types using the types LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
-#ifdef CTHULHU_MAP_SHORT
-typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+#ifdef XPETRA_MAP_SHORT
+typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 #endif
 
-#ifdef CTHULHU_MAPFACTORY_SHORT
-typedef Cthulhu::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
+#ifdef XPETRA_MAPFACTORY_SHORT
+typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
 #endif
 
-#ifdef CTHULHU_CRSGRAPH_SHORT
-typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
+#ifdef XPETRA_CRSGRAPH_SHORT
+typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #endif
 
-#ifdef CTHULHU_VECTOR_SHORT
-typedef Cthulhu::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVector;
-typedef Cthulhu::Vector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalVector;
+#ifdef XPETRA_VECTOR_SHORT
+typedef Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVector;
+typedef Xpetra::Vector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalVector;
 typedef LocalOrdinalVector  LOVector;
 typedef GlobalOrdinalVector GOVector;
 #endif
 
-#ifdef CTHULHU_MULTIVECTOR_SHORT
-typedef Cthulhu::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalMultiVector;
-typedef Cthulhu::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalMultiVector;
+#ifdef XPETRA_MULTIVECTOR_SHORT
+typedef Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalMultiVector;
+typedef Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalMultiVector;
 typedef LocalOrdinalMultiVector  LOMultiVector;
 typedef GlobalOrdinalMultiVector GOMultiVector;
 #endif
 
-#ifdef CTHULHU_VECTORFACTORY_SHORT
-typedef Cthulhu::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVectorFactory;
-typedef Cthulhu::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalVectorFactory;
+#ifdef XPETRA_VECTORFACTORY_SHORT
+typedef Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVectorFactory;
+typedef Xpetra::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalVectorFactory;
 typedef LocalOrdinalVectorFactory  LOVectorFactory;
 typedef GlobalOrdinalVectorFactory GOVectorFactory;
 #endif
 
-#ifdef CTHULHU_MULTIVECTORFACTORY_SHORT
-typedef Cthulhu::MultiVectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalMultiVectorFactory;
-typedef Cthulhu::MultiVectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalMultiVectorFactory;
+#ifdef XPETRA_MULTIVECTORFACTORY_SHORT
+typedef Xpetra::MultiVectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalMultiVectorFactory;
+typedef Xpetra::MultiVectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalMultiVectorFactory;
 typedef LocalOrdinalMultiVectorFactory  LOMultiVectorFactory;
 typedef GlobalOrdinalMultiVectorFactory GOMultiVectorFactory;
 #endif
 
-#ifdef CTHULHU_IMPORT_SHORT
-typedef Cthulhu::Import<LocalOrdinal, GlobalOrdinal, Node> Import;
+#ifdef XPETRA_IMPORT_SHORT
+typedef Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> Import;
 #endif
 
-#ifdef CTHULHU_EXPORT_SHORT
-typedef Cthulhu::Export<LocalOrdinal, GlobalOrdinal, Node> Export;
+#ifdef XPETRA_EXPORT_SHORT
+typedef Xpetra::Export<LocalOrdinal, GlobalOrdinal, Node> Export;
 #endif
 
-#ifdef CTHULHU_IMPORTFACTORY_SHORT
-typedef Cthulhu::ImportFactory<LocalOrdinal, GlobalOrdinal, Node> ImportFactory;
+#ifdef XPETRA_IMPORTFACTORY_SHORT
+typedef Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node> ImportFactory;
 #endif
 
-#ifdef CTHULHU_EXPORTFACTORY_SHORT
-typedef Cthulhu::ExportFactory<LocalOrdinal, GlobalOrdinal, Node> ExportFactory;
+#ifdef XPETRA_EXPORTFACTORY_SHORT
+typedef Xpetra::ExportFactory<LocalOrdinal, GlobalOrdinal, Node> ExportFactory;
 #endif
 
-#ifdef HAVE_CTHULHU_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 
-#ifdef CTHULHU_TPETRAMAP_SHORT
-typedef Cthulhu::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+#ifdef XPETRA_TPETRAMAP_SHORT
+typedef Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
 #endif
 
-#ifdef CTHULHU_TPETRACRSGRAPH_SHORT
-typedef Cthulhu::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraph;
+#ifdef XPETRA_TPETRACRSGRAPH_SHORT
+typedef Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraph;
 #endif
 
 #endif

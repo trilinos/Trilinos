@@ -1,8 +1,8 @@
-#include "Cthulhu_EpetraCrsGraph.hpp"
+#include "Xpetra_EpetraCrsGraph.hpp"
 
-#include "Cthulhu_Utils.hpp"
+#include "Xpetra_Utils.hpp"
 
-namespace Cthulhu {
+namespace Xpetra {
 
   EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype)
     : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
@@ -20,19 +20,19 @@ namespace Cthulhu {
 
   void EpetraCrsGraph::insertGlobalIndices(int globalRow, const ArrayView<const int> &indices) { 
     int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
-    CTHULHU_ERR_CHECK(graph_->InsertGlobalIndices(globalRow, indices.size(), indices_rawPtr)); 
+    XPETRA_ERR_CHECK(graph_->InsertGlobalIndices(globalRow, indices.size(), indices_rawPtr)); 
   }
 
   void EpetraCrsGraph::insertLocalIndices(int localRow, const ArrayView<const int> &indices) { 
     int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
-    CTHULHU_ERR_CHECK(graph_->InsertMyIndices(localRow, indices.size(), indices_rawPtr)); 
+    XPETRA_ERR_CHECK(graph_->InsertMyIndices(localRow, indices.size(), indices_rawPtr)); 
   }
 
   void EpetraCrsGraph::getGlobalRowView(int GlobalRow, ArrayView<const int> &Indices) const { 
     int      numEntries;
     int    * eIndices;
       
-    CTHULHU_ERR_CHECK(graph_->ExtractGlobalRowView(GlobalRow, numEntries, eIndices));
+    XPETRA_ERR_CHECK(graph_->ExtractGlobalRowView(GlobalRow, numEntries, eIndices));
     if (numEntries == 0) { eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
     Indices = ArrayView<const int>(eIndices, numEntries);
@@ -42,7 +42,7 @@ namespace Cthulhu {
     int      numEntries;
     int    * eIndices;
       
-    CTHULHU_ERR_CHECK(graph_->ExtractMyRowView(LocalRow, numEntries, eIndices));
+    XPETRA_ERR_CHECK(graph_->ExtractMyRowView(LocalRow, numEntries, eIndices));
     if (numEntries == 0) { eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
     indices = ArrayView<const int>(eIndices, numEntries);
@@ -63,12 +63,12 @@ namespace Cthulhu {
   void EpetraCrsGraph::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { } //TODO: throw exception or implements it
 
   // TODO: move that elsewhere
-  RCP< const CrsGraph<int, int> > toCthulhu(const Epetra_CrsGraph &g) {
+  RCP< const CrsGraph<int, int> > toXpetra(const Epetra_CrsGraph &g) {
     RCP<const Epetra_CrsGraph> const_graph = rcp(new Epetra_CrsGraph(g));
     
     RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(const_graph); //TODO: can I avoid the const_cast ?
-    return rcp ( new Cthulhu::EpetraCrsGraph(graph) );
+    return rcp ( new Xpetra::EpetraCrsGraph(graph) );
   }
   //
 
-} // namespace Cthulhu
+} // namespace Xpetra

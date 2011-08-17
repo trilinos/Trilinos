@@ -17,7 +17,7 @@
 // 2) Inside of MueLu to enhance the readability.
 //
 // template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-//  class TpetraMultiVector : public virtual Cthulhu::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+//  class TpetraMultiVector : public virtual Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 // 
 //  #include <MueLu_UseShortNames.hpp>
 //

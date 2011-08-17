@@ -62,7 +62,7 @@ PACKAGE_ADD_EXECUTABLE(
   UnitTests
   SOURCES ${SOURCES}
   COMM serial mpi
-  DEPLIBS muelu muelu-cthulhu
+  DEPLIBS muelu muelu-xpetra
   )
 
 PACKAGE_ADD_TEST(

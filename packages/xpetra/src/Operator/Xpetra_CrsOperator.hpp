@@ -1,27 +1,27 @@
-#ifndef CTHULHU_CRSOPERATOR_HPP
-#define CTHULHU_CRSOPERATOR_HPP
+#ifndef XPETRA_CRSOPERATOR_HPP
+#define XPETRA_CRSOPERATOR_HPP
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 
-#include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Exceptions.hpp"
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_Exceptions.hpp"
 
-#include "Cthulhu_MultiVector.hpp"
-#include "Cthulhu_CrsGraph.hpp"
-#include "Cthulhu_CrsMatrix.hpp"
-#include "Cthulhu_CrsMatrixFactory.hpp"
+#include "Xpetra_MultiVector.hpp"
+#include "Xpetra_CrsGraph.hpp"
+#include "Xpetra_CrsMatrix.hpp"
+#include "Xpetra_CrsMatrixFactory.hpp"
 
-#include "Cthulhu_Operator.hpp"
+#include "Xpetra_Operator.hpp"
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
 
-/** \file Cthulhu_Operator.hpp
+/** \file Xpetra_Operator.hpp
 
-  Declarations for the class Cthulhu::Operator.
+  Declarations for the class Xpetra::Operator.
 */
-namespace Cthulhu {
+namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
@@ -32,15 +32,15 @@ template <class Scalar,
           class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
 class CrsOperator : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
-  typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
-  typedef Cthulhu::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
-  typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
-#ifdef HAVE_CTHULHU_TPETRA
-  typedef Cthulhu::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+  typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+  typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
+  typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
+#ifdef HAVE_XPETRA_TPETRA
+  typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
-  typedef Cthulhu::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
-  typedef Cthulhu::OperatorView<LocalOrdinal, GlobalOrdinal, Node> OperatorView;
+  typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
+  typedef Xpetra::OperatorView<LocalOrdinal, GlobalOrdinal, Node> OperatorView;
 
 public:
   
@@ -48,7 +48,7 @@ public:
   //@{
 
   //! Constructor
-  CrsOperator(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile) 
+  CrsOperator(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile) 
   {
     // Set matrix data
     matrixData_ = CrsMatrixFactory::Build(rowMap, maxNumEntriesPerRow, pftype);
@@ -129,7 +129,7 @@ public:
   \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
   */
   //TODO : Get ride of "Tpetra"::OptimizeOption
-  void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) {
+  void fillComplete(Xpetra::OptimizeOption os = Xpetra::DoOptimizeStorage) {
     matrixData_->fillComplete(os);
 
     // Update default view with the colMap
@@ -312,13 +312,13 @@ public:
   
   //! \brief Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
+  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
     return matrixData_->getDomainMap();
   }
 
   //! Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
-  const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
+  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
     return matrixData_->getRangeMap();
   }
 
@@ -330,7 +330,7 @@ public:
   /** \brief Return a simple one-line description of this object. */
   std::string description() const { 
     std::ostringstream oss;
-    oss << "Cthulhu_CrsOperator.description()" << std::endl;
+    oss << "Xpetra_CrsOperator.description()" << std::endl;
     return oss.str();
   }
   
@@ -378,10 +378,10 @@ private:
 
 }; //class Operator
 
-} //namespace Cthulhu
+} //namespace Xpetra
 
-#define CTHULHU_CRSOPERATOR_SHORT
-#endif //CTHULHU_CRSOPERATOR_DECL_HPP
+#define XPETRA_CRSOPERATOR_SHORT
+#endif //XPETRA_CRSOPERATOR_DECL_HPP
 
-//NOTE: if CrsMatrix and VbrMatrix share a common interface for fillComplete() etc, I can move some stuff in Cthulhu_Operator.hpp
+//NOTE: if CrsMatrix and VbrMatrix share a common interface for fillComplete() etc, I can move some stuff in Xpetra_Operator.hpp
 //TODO: getUnderlyingMatrix() method

@@ -1,1 +1,1 @@
-Files of this directory are used only if Kokkos is not enabled (ie: if you want to use Cthulhu with only Epetra and disable Tpetra)
+Files of this directory are used only if Kokkos is not enabled (ie: if you want to use Xpetra with only Epetra and disable Tpetra)

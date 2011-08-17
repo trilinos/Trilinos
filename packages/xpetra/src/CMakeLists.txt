@@ -6,23 +6,23 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-  GLOBAL_SET(HAVE_CTHULHU_TPETRA ON)
-  GLOBAL_SET(Cthulhu_ENABLE_Tpetra ON)
+  GLOBAL_SET(HAVE_XPETRA_TPETRA ON)
+  GLOBAL_SET(Xpetra_ENABLE_Tpetra ON)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  GLOBAL_SET(HAVE_CTHULHU_EPETRA ON)
-  GLOBAL_SET(Cthulhu_ENABLE_Epetra ON)
+  GLOBAL_SET(HAVE_XPETRA_EPETRA ON)
+  GLOBAL_SET(Xpetra_ENABLE_Epetra ON)
 ENDIF()
 
 CONFIGURE_FILE(
-  ../cmake/Cthulhu_config.hpp.in 
-  ${CMAKE_CURRENT_BINARY_DIR}/Cthulhu_config.hpp
+  ../cmake/Xpetra_config.hpp.in 
+  ${CMAKE_CURRENT_BINARY_DIR}/Xpetra_config.hpp
   )
 
 # Note: cannot use the macro PACKAGE_CONFIGURE_FILE() because 
-# Cthulhu_config.h.in is not in ${PACKAGE_SOURCE_DIR}/cmake
-## PACKAGE_CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Cthulhu_config.h)
+# Xpetra_config.h.in is not in ${PACKAGE_SOURCE_DIR}/cmake
+## PACKAGE_CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Xpetra_config.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -35,20 +35,20 @@ CONFIGURE_FILE(
 SET(HEADERS "")
 
 SET(SOURCES 
-  Utils/Cthulhu_Utils.cpp
-  Utils/Cthulhu_EpetraUtils.cpp
-  Platform/Cthulhu_DefaultPlatform.cpp
+  Utils/Xpetra_Utils.cpp
+  Utils/Xpetra_EpetraUtils.cpp
+  Platform/Xpetra_DefaultPlatform.cpp
   )
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
   APPEND_GLOB(SOURCES 
-    Map/Cthulhu_EpetraMap.cpp
-    Import/Cthulhu_EpetraImport.cpp
-    Export/Cthulhu_EpetraExport.cpp
-    MultiVector/Cthulhu_EpetraMultiVector.cpp
-    CrsGraph/Cthulhu_EpetraCrsGraph.cpp
-    CrsMatrix/Cthulhu_EpetraCrsMatrix.cpp
-    Vector/Cthulhu_EpetraVector.cpp
-    Vector/Cthulhu_EpetraIntVector.cpp
+    Map/Xpetra_EpetraMap.cpp
+    Import/Xpetra_EpetraImport.cpp
+    Export/Xpetra_EpetraExport.cpp
+    MultiVector/Xpetra_EpetraMultiVector.cpp
+    CrsGraph/Xpetra_EpetraCrsGraph.cpp
+    CrsMatrix/Xpetra_EpetraCrsMatrix.cpp
+    Vector/Xpetra_EpetraVector.cpp
+    Vector/Xpetra_EpetraIntVector.cpp
     )
 ENDIF()
 
@@ -88,7 +88,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 #
 
 PACKAGE_ADD_LIBRARY(
-  muelu-cthulhu
+  muelu-xpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
