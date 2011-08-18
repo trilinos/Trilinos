@@ -8,6 +8,7 @@ ADD_SUBDIRECTORY(epetra_gatherscatter)
 ADD_SUBDIRECTORY(la_factory)
 ADD_SUBDIRECTORY(vector_tm)
 ADD_SUBDIRECTORY(evaluator_tests)
+ADD_SUBDIRECTORY(response_library)
 
 IF(${PACKAGE_NAME}_ENABLE_Stokhos)
    ADD_SUBDIRECTORY(stokhos_test)
