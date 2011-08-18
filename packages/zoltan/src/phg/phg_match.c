@@ -2361,6 +2361,7 @@ static int pmatching_rcb (ZZ *zz,
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
     goto End;
   }
+
   if (Zoltan_Set_Fn(zz2, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) rcb_get_num_geom,
 		    (void *) hg) == ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Fn()\n");
@@ -2414,6 +2415,11 @@ static int pmatching_rcb (ZZ *zz,
   }
 
   if (Zoltan_Set_Param(zz2, "REMAP", "0") == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
+
+  if (Zoltan_Set_Param(zz2, "CHECK_GEOM", "0")== ZOLTAN_FATAL) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
