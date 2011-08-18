@@ -778,7 +778,7 @@ namespace MueLu {
           tpOp = Op2NonConstTpetraCrs(Op);
         }
         catch(...) {
-          throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled"));
+          throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled (Err.1)"));
         }
       } //if
 #endif
@@ -869,12 +869,13 @@ namespace MueLu {
             vals[j] *= sv[i];
         }
 #else
-        throw(Exceptions::RuntimeError("Epetra"));   
+        throw(Exceptions::RuntimeError("Epetra (Err. 1)"));   
 #endif // HAVE_MUELU_EPETRA_AND_EPETRAEXT
       }
 
-      //throw should already have occured, thus should never get here
-      throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled"));
+      if (TorE != "epetra" && TorE != "tpetra")
+        //throw should already have occured, thus should never get here
+        throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled (Err. 2)"));
 
    } //ScaleMatrix()
 
@@ -904,7 +905,7 @@ public:
    {
      std::string TorE = "epetra";
 
-#ifdef MUELU_HAVE_EPETRA
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
      RCP<Epetra_CrsMatrix> epetraOp;
      try {
        epetraOp = Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
@@ -914,7 +915,7 @@ public:
      }
 #endif
 
-#ifdef MUELU_HAVE_TPETRA
+#ifdef HAVE_MUELU_TPETRA
      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
      if (TorE=="tpetra") {
        try {
@@ -927,7 +928,7 @@ public:
 #endif
 
      if (TorE == "tpetra") {
-#ifdef MUELU_HAVE_TPETRA
+#ifdef HAVE_MUELU_TPETRA
        //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
        //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
@@ -966,7 +967,7 @@ public:
    {
      std::string TorE = "epetra";
 
-#ifdef MUELU_HAVE_EPETRA
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
      RCP<Epetra_CrsMatrix> epetraOp;
      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpetraOp;
      try {
@@ -977,7 +978,7 @@ public:
      }
 #endif
 
-#ifdef MUELU_HAVE_TPETRA
+#ifdef HAVE_MUELU_TPETRA
      if (TorE=="tpetra") {
        try {
          tpetraOp = Utils<SC,LO,GO,NO,LMO>::Op2TpetraCrs(Op);
@@ -989,7 +990,7 @@ public:
 #endif
 
      if (TorE == "tpetra") {
-#ifdef MUELU_HAVE_TPETRA
+#ifdef HAVE_MUELU_TPETRA
        //     Tpetra::RowMatrixTransposer<SC,LO,GO,NO,LMO> transposer(*tpetraOp); //more than meets the eye
        //     RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A = transposer.createTranspose(optimizeTranspose ? Tpetra::DoOptimizeStorage : Tpetra::DoNotOptimizeStorage); //couldn't have just used a bool...
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
@@ -1001,7 +1002,7 @@ public:
        throw(Exceptions::RuntimeError("Tpetra"));
 #endif
      } else {
-#ifdef MUELU_HAVE_EPETRA
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
        //epetra case
        /*
        Epetra_RowMatrixTransposer et(&*epetraOp);
@@ -1023,7 +1024,7 @@ public:
 //       std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
 //       return Teuchos::null;
 #else
-       throw(Exceptions::RuntimeError("Epetra"));
+       throw(Exceptions::RuntimeError("Epetra (Err. 2)"));
 #endif
      }
      

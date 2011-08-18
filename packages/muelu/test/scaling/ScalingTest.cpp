@@ -54,7 +54,7 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 /**********************************************************************************/
 
 // Belos
-#ifdef MUELU_HAVE_BELOS
+#ifdef HAVE_MUELU_BELOS
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
@@ -384,7 +384,7 @@ int main(int argc, char *argv[]) {
   // Use AMG as a preconditioner in Belos
   if (amgAsPrecond)
   {
-#if defined(HAVE_MUELU_BELOS) && defined(MUELU_HAVE_BELOS)
+#if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA)
 #define BELOS_SOLVER
 #endif
 

@@ -1,7 +1,7 @@
 
 #cmakedefine HAVE_MPI
 
-#cmakedefine MUELU_DEBUG
+#cmakedefine HAVE_MUELU_DEBUG
 
 #cmakedefine HAVE_MUELU_EPETRA
 
