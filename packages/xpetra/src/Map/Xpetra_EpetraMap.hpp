@@ -156,7 +156,7 @@ namespace Xpetra {
     UnderlyingLib lib() const { return Xpetra::UseEpetra; }
 
     //! clone Xpetra::EpetraMap
-    virtual RCP<Cthulhu::Map< LocalOrdinal, GlobalOrdinal, Node> > Clone() const { return Teuchos::rcp(new Cthulhu::EpetraMap(map_)); };
+    virtual RCP<Xpetra::Map< LocalOrdinal, GlobalOrdinal, Node> > Clone() const { return Teuchos::rcp(new Xpetra::EpetraMap(map_)); };
 
     //! Get the underlying Epetra map
     //const RCP< const Epetra_Map > & getEpetra_Map() const { return map_; }
