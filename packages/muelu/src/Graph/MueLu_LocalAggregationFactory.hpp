@@ -140,9 +140,10 @@ namespace MueLu {
     if (coalesceDropFact_ != Teuchos::null)
       coalesceDropFact_->Build(currentLevel);
     RCP<Graph> graph;
-    currentLevel.CheckOut("Graph",graph);
+    currentLevel.Get("Graph",graph);
+    currentLevel.Release("Graph");
     RCP<Aggregates> aggregates = Build(*graph);
-    currentLevel.Save("Aggregates",aggregates);
+    currentLevel.Set("Aggregates",aggregates);
 
     timer->stop();
     MemUtils::ReportTimeAndMemory(*timer, *(graph->GetComm()));

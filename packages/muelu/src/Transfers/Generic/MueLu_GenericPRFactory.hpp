@@ -72,9 +72,9 @@ class GenericPRFactory : public PRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
     bool Build(Level &fineLevel, Level &coarseLevel) const {
 
       //FIXME what if map is a block map .... I'm pretty sure maxCoarseSize_ will always be point DOFs
-      if (fineLevel.GetA()->getRowMap()->getComm()->getRank() == 0)
+      if (fineLevel.template Get< Teuchos::RCP<Operator> >("A")->getRowMap()->getComm()->getRank() == 0)
         std::cout << "warning: if map is blocked, this comparison to maxCoarseSize_ will be wrong!" << std::endl;
-      if (fineLevel.GetA()->getRowMap()->getGlobalNumElements() <= PRFactory::maxCoarseSize_)
+      if (fineLevel.template Get< Teuchos::RCP<Operator> >("A")->getRowMap()->getGlobalNumElements() <= PRFactory::maxCoarseSize_)
         return false;
       
       //FIXME cache output level here

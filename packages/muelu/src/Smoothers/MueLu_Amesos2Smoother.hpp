@@ -11,7 +11,6 @@
 
 namespace MueLu {
 
-template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
 class Level;
 
 /*!
@@ -98,11 +97,11 @@ class Level;
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
       //MueLu_cout(Teuchos::VERB_HIGH) << "Amesos2Smoother::Setup()" << std::endl;
-      A_ = level.GetA();
+      A_ = level.template Get< Teuchos::RCP<Operator> >("A");
 
 // OLD AMESOS2     
-//       X_ = MultiVectorFactory::Build(level.GetR()->getRangeMap(),1);
-//       B_ = MultiVectorFactory::Build(level.GetR()->getRangeMap(),1);
+//       X_ = MultiVectorFactory::Build(level.template Get< Teuchos::RCP<Operator> >("R")->getRangeMap(),1);
+//       B_ = MultiVectorFactory::Build(level.template Get< Teuchos::RCP<Operator> >("R")->getRangeMap(),1);
 //
       RCP<Tpetra_CrsMatrix>   tA = Utils::Op2NonConstTpetraCrs(A_);
 //       RCP<Tpetra_MultiVector> tX = Utils::MV2NonConstTpetraMV(X_);

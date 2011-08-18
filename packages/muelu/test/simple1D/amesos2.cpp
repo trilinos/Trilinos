@@ -139,15 +139,15 @@ int main(int argc, char *argv[]) {
 
   RCP<MueLu::Hierarchy<SC,LO,GO,NO,LMO> > H = rcp( new Hierarchy() );
   H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-  RCP<MueLu::Level<SC,LO,GO,NO,LMO> > Finest = rcp( new MueLu::Level<SC,LO,GO,NO,LMO>() );
+  RCP<MueLu::Level> Finest = rcp( new MueLu::Level() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
-  Finest->SetA(Op);
-  Finest->Save("Nullspace",nullSpace);
+  Finest->Set("A",Op);
+  Finest->Set("Nullspace",nullSpace);
   Finest->Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                 //FIXME is implemented
 
-  Finest->Save("NullSpace",nullSpace);
+  Finest->Set("NullSpace",nullSpace);
   H->SetLevel(Finest);
 
   RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
@@ -195,8 +195,8 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList status;
   status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
-  //RCP<MueLu::Level<SC,LO,GO,NO,LMO> > coarseLevel = H.GetLevel(1);
-  //RCP<Operator> P = coarseLevel->GetP();
+  //RCP<MueLu::Level> coarseLevel = H.GetLevel(1);
+  //RCP<Operator> P = coarseLevel->template Get< Teuchos::RCP<Operator> >("P");
   //fileName = "Pfinal.mm";
   //Utils::Write(fileName,P);
   if (comm->getRank() == 0) {

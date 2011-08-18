@@ -11,7 +11,6 @@
 
 namespace MueLu {
 
-template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
 class Level;
 
 /*!
@@ -156,7 +155,7 @@ class Level;
     */
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
-      A_ = level.GetA();
+      A_ = level.template Get< Teuchos::RCP<Operator> >("A");
 
       // output information
       std::ostringstream buf; buf << level.GetLevelID();

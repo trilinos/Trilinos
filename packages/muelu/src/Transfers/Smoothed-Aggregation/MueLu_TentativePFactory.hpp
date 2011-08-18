@@ -100,8 +100,8 @@ namespace MueLu {
       aggregationFact_->Build(fineLevel);
       MakeTentative(fineLevel,coarseLevel);
       RCP<Operator> Ptent;
-      coarseLevel.CheckOut("Ptent",Ptent);
-      coarseLevel.SetP(Ptent);
+      coarseLevel.Release("Ptent");//??
+      coarseLevel.Set("P", Ptent);
 
       return true;
     }
@@ -114,7 +114,7 @@ namespace MueLu {
     */
     static void MakeTentativeOldVersion(Level const &fineLevel, Level &coarseLevel)
     {
-      Teuchos::RCP< Operator > Op = fineLevel.GetA();
+      Teuchos::RCP< Operator > Op = fineLevel.template Get< Teuchos::RCP<Operator> >("A");
       GO nFineDofs = Op->getGlobalNumRows();
       GO nCoarseDofs = nFineDofs/3;
       if (nCoarseDofs*3 != nFineDofs)
@@ -134,7 +134,7 @@ namespace MueLu {
       Ptent->fillComplete(domainMap, Op->getRowMap());
 
       //MatrixPrint(Op);
-      coarseLevel.Save("Ptent",Ptent);
+      coarseLevel.Set("Ptent",Ptent);
     } //MakeTentativeOldVersion()
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
@@ -150,23 +150,25 @@ namespace MueLu {
       Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TentativePFactory::MakeTentative"));
       timer->start(true);
 
-      Teuchos::RCP< Operator > fineA = fineLevel.GetA();
+      Teuchos::RCP< Operator > fineA = fineLevel.template Get< Teuchos::RCP<Operator> >("A");
       RCP<const Teuchos::Comm<int> > comm = fineA->getRowMap()->getComm();
 
       RCP<Aggregates> aggregates;
-      fineLevel.CheckOut("Aggregates",aggregates);
+      fineLevel.Get("Aggregates",aggregates);
+      fineLevel.Release("Aggregates");
       GO numAggs = aggregates->GetNumAggregates();
 
       //get the fine grid nullspace
       RCP<MultiVector> fineNullspace;
-      if (fineLevel.IsSaved("Nullspace"))
-        fineLevel.CheckOut("Nullspace",fineNullspace);
-      else {
+      if (fineLevel.IsAvailable("Nullspace")) {
+        fineLevel.Get("Nullspace",fineNullspace);
+        fineLevel.Release("Nullspace");
+      } else {
         //throw(Exceptions::NotImplemented("MakeTentativeWithQR:  nullspace generation not implemented yet"));
         //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
         fineNullspace = MultiVectorFactory::Build(fineA->getDomainMap(),1);
         fineNullspace->putScalar(1.0);
-        fineLevel.Save("Nullspace",fineNullspace);
+        fineLevel.Set("Nullspace",fineNullspace);
       }
       const size_t NSDim = fineNullspace->getNumVectors();
       GO nCoarseDofs = numAggs*NSDim;
@@ -467,8 +469,8 @@ namespace MueLu {
 
       Ptentative->fillComplete(coarseMap,fineA->getDomainMap()); //(domain,range) of Ptentative
 
-      coarseLevel.Save("Nullspace",coarseNullspace);
-      coarseLevel.Save("Ptent",Ptentative);
+      coarseLevel.Set("Nullspace",coarseNullspace);
+      coarseLevel.Set("Ptent",Ptentative);
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(fineA->getRowMap()->getComm()));

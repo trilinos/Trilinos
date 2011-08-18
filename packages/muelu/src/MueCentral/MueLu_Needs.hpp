@@ -6,27 +6,27 @@
 
 #include "MueLu_Exceptions.hpp"
 
-#define MueLu_cout(minimumVerbLevel) \
-    if (this->getVerbLevel() >= minimumVerbLevel) *(this->getOStream())
+#define MueLu_cout(minimumVerbLevel)                                    \
+  if (this->getVerbLevel() >= minimumVerbLevel) *(this->getOStream())
 
 namespace MueLu {
   
-/*!
- @class Needs
- @brief Class that allows cross-factory communication of data needs.
+  /*!
+    @class Needs
+    @brief Class that allows cross-factory communication of data needs.
 
- Maintains a list of 'Needs' for a given Level. For example, a restriction factory that
- transposes the tentative prolongator 'Needs' the prolongator factory to save this.
+    Maintains a list of 'Needs' for a given Level. For example, a restriction factory that
+    transposes the tentative prolongator 'Needs' the prolongator factory to save this.
 
- Derives from Teuchos::VerboseObject.
+    Derives from Teuchos::VerboseObject.
 
-*/
-class Needs : public Teuchos::VerboseObject<Needs> {
+  */
+  class Needs : public Teuchos::VerboseObject<Needs> {
 
-/*
-  //! Friendly print.  FIXME pretty print doesn't work ;(
-  friend std::ostream& operator<<(std::ostream &os, Needs const &foo);
-*/
+    /*
+    //! Friendly print.  FIXME pretty print doesn't work ;(
+    friend std::ostream& operator<<(std::ostream &os, Needs const &foo);
+    */
 
   private:
 
@@ -56,13 +56,13 @@ class Needs : public Teuchos::VerboseObject<Needs> {
     //! @name Access methods
     //@{
     //! Store need label and its associated data. This does not increment the storage counter.
-    template <typename T>
-    void Save(const std::string ename, const T &entry) {
+    template <class T>
+    void Set(const std::string ename, const T &entry) {
       if ( !countTable_.isParameter(ename) ) {
         countTable_.set(ename,0);
       }
       dataTable_.set(ename,entry);
-    } //Save
+    } //Set
 
     //! Indicate that an object is needed. This increments the storage counter.
     void Request(const std::string ename) {
@@ -71,10 +71,8 @@ class Needs : public Teuchos::VerboseObject<Needs> {
     } //Request
 
 
-  // TODO from JG: see new version of MueMat Needs -> distinguish get data and decrement!
-    //! Get data and decrement the storage counter associated with it.
-    template <typename T>
-    void CheckOut(const std::string ename, T &value) {
+    //! Decrement the storage counter.
+    void Release(const std::string ename) {
       if (!countTable_.isParameter(ename)) {
         std::string msg =  "Checkout: " + ename + " not found in countTable_";
         throw(Exceptions::RuntimeError(msg));
@@ -82,31 +80,39 @@ class Needs : public Teuchos::VerboseObject<Needs> {
         std::string msg =  "Checkout: you must first Request " + ename;
         throw(Exceptions::RuntimeError(msg));
       } else {
-        value = dataTable_.get<T>(ename);
         int currentCount = countTable_.get(ename,0);
         if (currentCount == 1) {
-          countTable_.remove(ename);
-          dataTable_.remove(ename);
+          //          countTable_.remove(ename);
+          //          dataTable_.remove(ename);
         } else {
           countTable_.set(ename,--currentCount);
         }
       }
-    } //CheckOut
+    } //Release
 
-    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).
-    
-        This should be used only for local needs or for debugging purposes.
-    */
-    template <typename T>
-    void Examine(const std::string ename, T &value) {
-      if (!countTable_.isParameter(ename)) {
-        Teuchos::OSTab tab(out_);
-        std::string msg =  "Examine: " + ename + " not found in countTable_";
-        throw(Exceptions::RuntimeError(msg));
+    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
+    // Usage: Level->template Get< Teuchos::RCP<Operator> >("A") or
+    //        Level->Get< Teuchos::RCP<Operator> >("A")
+    template <class T>
+    T & Get(const std::string& ename) {
+      if (countTable_.isParameter(ename)) {
+        return dataTable_.get<T>(ename);
       } else {
-        value = dataTable_.get<T>(ename);
-      }
-    } //Examine
+        throw(Exceptions::RuntimeError("Get: " + ename + " not found in countTable_"));
+      } 
+    }
+
+    template <class T>
+    //    void Get(const std::string& ename, T &value) { value = Get<T>(ename); }
+    void Get(const std::string& ename, T &value) {
+      if (countTable_.isParameter(ename)) {
+        value =  dataTable_.get<T>(ename);
+      } else {
+        throw(Exceptions::RuntimeError("Get: " + ename + " not found in countTable_"));
+      } 
+    }
+
+
     //@}
 
     //! @name Utilities.
@@ -123,7 +129,7 @@ class Needs : public Teuchos::VerboseObject<Needs> {
     } //RawPrint
 
     //! Test whether a need's value has been saved.
-    bool IsSaved(const std::string ename) {
+    bool IsAvailable(const std::string ename) {
       if (dataTable_.isParameter(ename)) return true;
       else                               return false;
     }
@@ -136,8 +142,8 @@ class Needs : public Teuchos::VerboseObject<Needs> {
 
     /*! @brief Return the number of outstanding requests for a need.
 
-        Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or
-        hasn't been saved.
+    Throws a <tt>Exceptions::RuntimeError</tt> exception if the need either hasn't been requested or
+    hasn't been saved.
     */
     int NumRequests(const std::string ename) {
       //FIXME should we return 0 instead of throwing an exception?
@@ -151,22 +157,22 @@ class Needs : public Teuchos::VerboseObject<Needs> {
 
     //@}
 
-}; //class Needs
+  }; //class Needs
 
-/*
-//! NeedsTable pretty print
-std::ostream& operator<<(std::ostream &os, Needs const &foo) {
+  /*
+  //! NeedsTable pretty print
+  std::ostream& operator<<(std::ostream &os, Needs const &foo) {
   std::cout << "name  |  #requests  |  value" << std::endl;
   std::cout << "============================" << std::endl;
   for (Teuchos::ParameterList::ConstIterator param=foo.countTable_.begin(); param!=foo.countTable_.end() ; param++) {
-    const std::string pname = foo.countTable_.name(param);
-    const int& numRequests = foo.countTable_.get<int>(pname);
-    const Teuchos::ParameterEntry &someEntry = foo.dataTable_.getEntry(pname);
-    std::cout << pname << " | " << numRequests << " | " << someEntry << std::endl;
+  const std::string pname = foo.countTable_.name(param);
+  const int& numRequests = foo.countTable_.get<int>(pname);
+  const Teuchos::ParameterEntry &someEntry = foo.dataTable_.getEntry(pname);
+  std::cout << pname << " | " << numRequests << " | " << someEntry << std::endl;
   }
   return os;
-}
-*/
+  }
+  */
 
 } //namespace MueLu
 

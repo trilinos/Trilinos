@@ -115,15 +115,17 @@ namespace MueLu {
       localAggregationFactory_.Build(currentLevel);
 
       RCP<Graph> graph;
-      currentLevel.CheckOut("Graph",graph);
+      currentLevel.Get("Graph",graph);
+      currentLevel.Release("Graph");
       
       RCP<Aggregates> aggregates;
-      currentLevel.CheckOut("Aggregates",aggregates);
+      currentLevel.Get("Aggregates",aggregates);
+      currentLevel.Release("Aggregates");
      
       std::string name =  "UC_CleanUp";
       AggregateLeftOvers(*aggregates, name, *graph);
 
-      currentLevel.Save("Aggregates",aggregates);
+      currentLevel.Set("Aggregates",aggregates);
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(graph->GetComm()));

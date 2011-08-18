@@ -59,7 +59,7 @@ namespace {
 
     Level levelOne, levelTwo;
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(240);
-    levelOne.SetA(A);
+    levelOne.Set("A",A);
 
     GenericPRFactory genericPR = GenericPRFactory();
     genericPR.SetMaxCoarseSize(500);

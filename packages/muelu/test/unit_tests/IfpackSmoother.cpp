@@ -59,7 +59,7 @@ namespace {
         ifpackList.set("relaxation: zero starting solution", false);
         RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
         Level aLevel;
-        aLevel.SetA(Op);
+        aLevel.Set("A",Op);
 
         RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
         RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getDomainMap(),1);
@@ -107,7 +107,7 @@ namespace {
         ifpackList.set("chebyshev: zero starting solution", false);
         RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("Chebyshev",ifpackList) );
         Level aLevel;
-        aLevel.SetA(Op);
+        aLevel.Set("A",Op);
 
         RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
         RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getDomainMap(),1);
@@ -167,7 +167,7 @@ namespace {
         Teuchos::ParameterList  ifpackList;
         RCP<IfpackSmoother>  smoother = rcp( new IfpackSmoother("ILU",ifpackList) );
         Level aLevel;
-        aLevel.SetA(Op);
+        aLevel.Set("A",Op);
 
         RCP<MultiVector> Xtrue = MultiVectorFactory::Build(Op->getDomainMap(),1);
         RCP<MultiVector> X = MultiVectorFactory::Build(Op->getDomainMap(),1);
