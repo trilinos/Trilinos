@@ -161,7 +161,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         //sapTimer = rcp(new Teuchos::Time("SaPFactory:I * Ptent"));
         //sapTimer->start(true);
         //Teuchos::ParameterList matrixList;
-        //RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.template Get< Teuchos::RCP<Operator> >("A")->getRowMap(),matrixList);
+        //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.template Get< Teuchos::RCP<Operator> >("A")->getRowMap(),matrixList);
         //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
         //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
         //sapTimer->stop();

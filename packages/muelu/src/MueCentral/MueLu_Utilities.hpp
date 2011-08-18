@@ -934,7 +934,7 @@ public:
        RCP<Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > A=Utils<SC,LO,GO>::simple_Transpose(tpetraOp);
        RCP<TpetraCrsMatrix> AA = rcp(new TpetraCrsMatrix(A) );
        RCP<CrsMatrix> AAA = Teuchos::rcp_implicit_cast<CrsMatrix>(AA);
-       RCP<CrsOperator> AAAA = rcp( new CrsOperator(AAA) );
+       RCP<Operator> AAAA = rcp( new CrsOperator(AAA) );
        return AAAA;
 #else
          throw(Exceptions::RuntimeError("Tpetra"));

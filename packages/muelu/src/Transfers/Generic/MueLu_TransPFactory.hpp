@@ -69,7 +69,7 @@ namespace MueLu {
       Teuchos::ParameterList matrixList;
       RCP<Operator> P = coarseLevel.template Get< Teuchos::RCP<Operator> >("P");
       //doesn't work -- bug in EpetraExt?
-      //RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
+      //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
       //      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);
       //RCP<Operator> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
       //      RCP<Operator> R = Utils::TwoMatrixMultiply(I,false,P,true);
