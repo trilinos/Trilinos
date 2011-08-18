@@ -4,6 +4,9 @@ SET(TPL_ENABLE_Zlib    ON      CACHE BOOL "")
 SET(TPL_ENABLE_TCL     ON      CACHE BOOL "")
 SET(TPL_ENABLE_Netcdf ON CACHE BOOL "")
 
+# We don't have the MATLAB TPL for SEACAS
+SET(TPL_ENABLE_MATLAB OFF CACHE BOOL "" FORCE)
+
 SET(ANT_PATH         /usr/bin                                                     CACHE FILEPATH "")
 SET(TCLSH_PATH       /usr/bin                                                     CACHE FILEPATH "")
 SET(TCL_LIBRARY_NAMES "tcl8.5"                                                    CACHE STRING   "")
