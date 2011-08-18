@@ -127,6 +127,9 @@ namespace Cthulhu {
     //! Get the library used by this object (Tpetra or Epetra?)
     virtual UnderlyingLib lib() const = 0;
 
+    //! clone Cthulhu::Map
+    virtual RCP<Cthulhu::Map< LocalOrdinal, GlobalOrdinal, Node> > Clone() const = 0;
+
     //@}
 
   }; // Map class

@@ -155,6 +155,9 @@ namespace Cthulhu {
     //! Get the library used by this object (Epetra or Epetra?)
     UnderlyingLib lib() const { return Cthulhu::UseEpetra; }
 
+    //! clone Cthulhu::EpetraMap
+    virtual RCP<Cthulhu::Map< LocalOrdinal, GlobalOrdinal, Node> > Clone() const { return Teuchos::rcp(new Cthulhu::EpetraMap(map_)); };
+
     //! Get the underlying Epetra map
     //const RCP< const Epetra_Map > & getEpetra_Map() const { return map_; }
     const Epetra_BlockMap& getEpetra_BlockMap() const { return *map_; }
