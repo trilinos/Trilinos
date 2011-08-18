@@ -31,7 +31,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 if(${DAYOFWEEK} MATCHES "Saturday")
 TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG_DEV2
-  ctest_linux_nightly_serial_development_debug_gcc_4.6.0_zan.cmake
+  ctest_linux_nightly_serial_development_debug_gcc_4.6.1_zan.cmake
   CTEST_INSTALLER_TYPE dev
   RUN_SERIAL
   TIMEOUT_MINUTES 240
@@ -40,7 +40,7 @@ endif()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV2 
-  ctest_linux_nightly_mpi_development_opt_gcc_4.6.0_zan.cmake
+  ctest_linux_nightly_mpi_development_opt_gcc_4.6.1_zan.cmake
   CTEST_INSTALLER_TYPE dev
   RUN_SERIAL
   TIMEOUT_MINUTES 240

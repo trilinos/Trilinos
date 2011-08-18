@@ -1,0 +1,384 @@
+===================================
+Setting up a Trilinos CDash server:
+===================================
+
+
+[ These notes were recorded during the transition to the CDash installation
+  on testing.sandia.gov leading up to July 2011. ]
+
+
+CDash runs as a php web app on a web server that is (or can connect to) a
+database server. Typically, this means running on a web server with a LAMP
+software stack installed. (Linux+Apache+MySQL+php)
+
+The typical setup instructions are:
+
+
+- Use a good quality database-server-grade machine as hardware:
+  ...ideally, this will obviously have:
+  -- fast disk, (100G or even more free for the MySQL database)
+  -- lots of RAM (16G or more)
+  -- fast multi-CPU
+
+
+- Make sure your server has all the pre-requisites installed
+
+  http://public.kitware.com/Wiki/CDash:Installation
+  http://public.kitware.com/Wiki/CDash:Installation#System_Requirements
+
+- MySQL 5.x
+
+- php 5.3 or higher, with:
+  - xslt enabled
+  - curl enabled
+
+Possible Problem:
+When first loading the CDash CDASH_ROOT/install.php page, I got this notice:
+  Your PHP install does not support xslt, please install the PHP_XSLT package.
+  WAMP Hint: uncomment extension=php_xsl.dll in php.ini.
+
+
+- Add a MySQL user 'cdash' specifically for the CDash code to access the CDash
+MySQL database (see notes below regarding "Creating a MySQL 'cdash' user" -
+this user needs permission to create a database, or you need to create the
+database yourself first, and then give this user permissions in the database
+as outlined below)
+
+
+- Get the source tree for CDash onto the server (trunk/HEAD from the
+repository or a release)
+
+
+- Add a minimal config file at "CDASH_ROOT/cdash/config.local.php"
+
+
+- Make this CDash instance available via http (put it in /var/www/html or
+wherever your apache htdocs go...)
+
+
+- Make sure the following directories have write access by the apache user.
+The CDash php code writes files into these directories.
+
+  CDASH_ROOT/backup
+  CDASH_ROOT/rss
+  CDASH_ROOT/upload
+
+
+- Visit "http://myserver.some.org/CDash" which runs the CDash install.php
+  page on the first visit
+
+
+- Correct any issues noted on the CDash install page
+
+
+- Make the appropriate set of people sign up for accounts on this new CDash
+server and make them server admins
+
+
+- Create your project via the CDash admin pages
+
+
+- Try a test submission to the new CDash server
+
+
+- Switch your project's CTestConfig.cmake file to point to the new CDash
+server
+
+
+- You can monitor the status of the asynchronous submission processing by
+going to the "http://myserver.some.org/CDash/monitor.php" page. A link to
+that page may be found on the CDash admin page. You must be logged in as a
+CDash admin in order to view either of those pages.
+
+
+==========================
+Trilinos specific caveats:
+==========================
+
+- Make sure emails are being sent properly
+  If you're not receiving a test email, check your spam folder, too...
+
+
+==============
+php.ini stuff:
+==============
+
+- Make sure the timezone setting in php.ini is correct
+
+You can find what php.ini is loaded by visiting
+http://myserver.some.org/CDash/svninfo.php and logging in as the CDash admin
+
+This prevents php warnings like these from showing up in the apache http
+error logs:
+
+  [Thu Jul 28 12:08:37 2011] [error] [client 127.0.0.1] PHP Warning:
+  date(): It is not safe to rely on the system's timezone settings. You
+  are *required* to use the date.timezone setting or
+  the date_default_timezone_set() function. In case you used any of those
+  methods and you are still getting this warning, you most likely
+  misspelled the timezone identifier. We selected 'America/Denver' for
+  'MDT/-6.0/DST' instead in /var/www/html/cdash/cdash/createRSS.php on
+  line 99
+
+
+============
+MySQL stuff:
+============
+
+- Tuning the MySQL server:
+
+  http://genomewiki.ucsc.edu/index.php/Tuning-primer.sh
+
+  http://mysqltuner.com
+
+
+- max_allowed_packet:
+
+You should increase the size of the MySQL max_allowed_packet setting. Setting
+it to 256MB is sufficient to handle test output up to more than 100MB.
+
+Add this line to "/etc/my.cnf"
+
+  max_allowed_packet = 256MB
+
+Running this command should do that for you:
+
+  mysql --max_allowed_packet=256MB
+
+Or: "change /etc/my.cnf and restart mysqld"
+
+The default is 16, the max is 1 GB.  The system will be smart about what
+packet size is actually used, so a larger max packet size than necessary
+isn't harmful.
+
+
+- Case Sensitivity
+
+On some servers, MySQL queries are case sensitive. If you are searching for
+something that should be there in a CDash "filtered results" page and it is
+not there, try searching with the exact case. You may have to reset a MySQL
+server setting to get case insensitive searches.
+
+
+- MySQL error code 28 means your disk is full
+
+
+- phpmyadmin
+
+Install a phpmyadmin that connects to the CDash MySQL server. After running
+for a day or two with the expected submission and user interactivity level,
+look at the phpmyadmin status page. Scrolling down through there, you should
+see some fields that are highlighted in bold or red. Read through those
+reports carefully for suggestions on how you can tune your MySQL server to
+optimize it for the actual traffic that you're getting.
+
+
+- Slow Queries
+
+You can turn on MySQL slow query logging if you are having speed/performance
+issues, but turning it on will slow things down by a bit. So keeping if off
+for best possible performance is recommended. Turn it on only to diagnose
+issues and identify slow queries. Don't just leave it on all the time.
+
+
+- Optimizing
+
+For best performance, the MySQL database should be checked and/or optimized
+periodically (every week or two?)
+
+For example, on cdash.org, when it was based on MyISAM tables, we ran this
+command every 2 weeks:
+  myisamchk --force --repair \
+    --key_buffer_size=64M --sort_buffer_size=64M \
+    --read_buffer_size=1M --write_buffer_size=1M \
+    /path/to/datadir/*/*.MYI
+
+
+==============================
+apache .htaccess restrictions
+==============================
+
+With the following .htaccess, submissions work despite the fact that general
+read access by folks is otherwise restricted (to internal network addresses,
+or requiring passwords, or any other htaccess restriction...):
+
+
+[xxx@testing cdash]$ pwd
+/var/www/html/cdash
+
+
+[xxx@testing cdash]$ cat .htaccess
+<Files dailyupdatescurl.php>
+    Options +ExecCGI +Indexes +Includes
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+<Files processsubmissions.php>
+    Options +ExecCGI +Indexes +Includes
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+<Files submit.php>
+    Options +ExecCGI +Indexes +Includes
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+
+The three files mentioned require unauthenticated access for a
+non-https-enabled ctest to be able to submit to them... If you have apache
+access restrictions in place for the CDash server, you'll need to allow these
+if you want the default installations of ctest to be able to submit to the
+server from anywhere.
+
+
+======================================
+Using External (apache) Authentication
+======================================
+
+"The idea is that you set your apache with Basic Auth. Usually by
+placing a .htaccess at the CDash level:
+
+ AuthType Basic
+ AuthName "By Invitation Only"
+ AuthUserFile /usr/local/apache/passwd/passwords
+ Require valid-user
+
+This will let apache deal with the authentication and redirect to
+CDash with credentials. And then setting the CDash variable
+
+ $CDASH_EXTERNAL_AUTH = '1';
+
+will tell CDash to use the credential provided by apache instead of
+its own."
+
+
+==============================
+Creating a MySQL 'cdash' user:
+==============================
+
+I need the CREATE USER privilege to do this myself.
+
+mysql> create user cdash IDENTIFIED BY PASSWORD 'xxxxxxxxxxxxxxxx';
+ERROR 1227 (42000): Access denied; you need the CREATE USER privilege
+for this operation
+
+
+Here are my privileges as I can see them on a mysql that works:
+
+mysql> show grants;
++-----------------------------------------------------------------------------------------+
+| Grants for xxxx@localhost                  |
++-----------------------------------------------------------------------------------------+
+| GRANT FILE ON *.* TO 'xxxx'@'localhost' IDENTIFIED BY PASSWORD 'XXXXX' |
+| GRANT ALL PRIVILEGES ON `cdashtrilinos`.* TO'xxxx'@'localhost'                   |
++-----------------------------------------------------------------------------------------+
+2 rows in set (0.01 sec)
+
+
+Additional mysql help info:
+
+mysql> help create user;
+Name: 'CREATE USER'
+Description:
+Syntax:
+CREATE USER user [IDENTIFIED BY [PASSWORD] 'password']
+   [, user [IDENTIFIED BY [PASSWORD] 'password']] ...
+
+The CREATE USER statement was added in MySQL 5.0.2. This statement
+creates new MySQL accounts. To use it, you must have the global CREATE
+USER privilege or the INSERT privilege for the mysql database. For each
+account, CREATE USER creates a new record in the mysql.user table that
+has no privileges. An error occurs if the account already exists. Each
+account is named using the same format as for the GRANT statement; for
+example, 'jeffrey'@'localhost'. The user and host parts of the account
+name correspond to the User and Host column values of the user table
+row for the account.
+
+The account can be given a password with the optional IDENTIFIED BY
+clause. The user value and the password are given the same way as for
+the GRANT statement. In particular, to specify the password in plain
+text, omit the PASSWORD keyword. To specify the password as the hashed
+value as returned by the PASSWORD() function, include the PASSWORD
+keyword. See [grant].
+
+
+=======================
+MySQL privileges:
+=======================
+
+You can see your own privileges from within mysql by executing:
+
+mysql> show grants;
++------------------------------------------------------------------------------------------+
+| Grants for xxxx@localhost                                                          |
++------------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'xxxx'@'localhost' IDENTIFIED BY PASSWORD 'xxxxxxxxxxxxxxxx' | 
+| GRANT ALL PRIVILEGES ON `cdashtrilinos`.* TO 'xxxx'@'localhost'                    | 
++------------------------------------------------------------------------------------------+
+2 rows in set (0.00 sec)
+
+If I give my testuser the "FILE" global privilege, then I can do the
+mysqlimport operation that I've been attempting on server.name.here.
+I've been testing it locally on my own machine.
+
+
+As 'xxxx':
+mysql> show grants;
++-----------------------------------------------------------------------------------------+
+| Grants for xxxx@localhost
+                  |
++-----------------------------------------------------------------------------------------+
+| GRANT FILE ON *.* TO 'xxxx'@'localhost' IDENTIFIED BY PASSWORD
+'xxxxxxxxxxxxxxxx' |
+| GRANT ALL PRIVILEGES ON `cdashtrilinos`.* TO
+'xxxx'@'localhost'                   |
++-----------------------------------------------------------------------------------------+
+
+
+As 'cdash':
+mysql> show grants;
++-------------------------------------------------------------------------------------+
+| Grants for cdash@localhost
+              |
++-------------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO 'cdash'@'localhost' IDENTIFIED BY PASSWORD
+'xxxxxxxxxxxxxxxx' |
++-------------------------------------------------------------------------------------+
+
+
+I need "GRANT ALL PRIVILEGES" for the "cdashtrilinos" database on the "cdash"
+mysql user account. I tried to grant it myself (as "xxxx"), but could not.
+
+
+=======================
+"Crashed" MySQL Tables:
+=======================
+
+In mysql, the command:
+
+  show table status;
+
+will show tables in the current database, and their statuses... tables
+that need repair will report a Comment something like "Table
+'./database-name/table-name' is marked as crashed and should be
+repaired" and most of the rest of the table status fields will report
+as "NULL" - You can then attempt to repair such tables with the mysql
+command:
+
+  repair table table-name;
+
+The cdash database had 7 of its 84 tables listed with the "crashed"
+status. Repairing them took about 45 minutes. (One table by itself
+took more than 18 minutes to repair.)
+
+Google "mysql repair table" for more info.
+
+
+====================================================
+Copying MySQL Databases from one machine to another:
+====================================================
+
+- http://dev.mysql.com/doc/refman/5.0/en/copying-databases.html

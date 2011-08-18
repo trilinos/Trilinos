@@ -4,7 +4,7 @@ ADD_SUBDIRECTORY(environment)
 ADD_SUBDIRECTORY(diag)
 ADD_SUBDIRECTORY(parallel)
 
-IF ( Trilinos_ENABLE_SEACAS )
+IF ( ${PACKAGE_NAME}_ENABLE_SEACASIoss )
   ADD_SUBDIRECTORY(unit_test_support)
 ENDIF()
 

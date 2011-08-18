@@ -32,15 +32,25 @@
     \brief  Example solution of a Poisson equation on a hexahedral mesh using
             nodal (Hgrad) elements.
 
-            This example uses Pamgen to generate a hexahedral mesh, Intrepid to
-            build the stiffness matrix and right-hand side, and ML to solve.
+           This example uses the following Trilinos packages:
+    \li     Pamgen to generate a Hexahedral mesh.
+    \li     Sacado to form the source term from user-specified manufactured solution.
+    \li     Intrepid to build the discretization matrix and right-hand side.
+    \li     Epetra to handle the global matrix and vector.
+    \li     Isorropia to partition the matrix. (Optional)
+    \li     ML to solve the linear system.
+
 
     \verbatim
 
      Poisson system:
  
-            div grad u = f in Omega
-                     u = 0 on Gamma
+            div A grad u = f in Omega
+                       u = g on Gamma
+
+      where
+             A is a symmetric, positive definite material tensor
+             f is a given source term
 
      Corresponding discrete linear system for nodal coefficients(x):
 
@@ -56,17 +66,28 @@
     \remark Usage:
     \code   ./TrilinosCouplings_examples_scaling_example_Poisson.exe \endcode
 
-    \remark Example requires Pamgen formatted mesh input file named Poisson.xml.
+    \remark Example driver requires input file named Poisson.xml with Pamgen 
+            formatted mesh description and settings for Isorropia (a version 
+            is included in the Trilinos repository with this driver).
+
+    \remark The exact solution (u) and material tensor (A) are set in the
+            functions "exactSolution" and "materialTensor" and may be
+            modified by the user.
+            
 */
 
+/*** Uncomment if you would like output data for plotting ***/
 //#define DUMP_DATA
+
+/**************************************************************/
+/*                          Includes                          */
+/**************************************************************/
 
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
-//#include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
 #include "Intrepid_ArrayTools.hpp"
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
@@ -124,6 +145,39 @@
 #include "Isorropia_EpetraPartitioner.hpp"
 #endif
 
+// Sacado includes
+#include "Sacado.hpp"
+
+using namespace std;
+using namespace Intrepid;
+
+
+/*********************************************************/
+/*                     Typedefs                          */
+/*********************************************************/
+typedef Sacado::Fad::SFad<double,3>      Fad3; //# ind. vars fixed at 3
+typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
+typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
+typedef Intrepid::CellTools<double>      IntrepidCTools;
+
+
+
+/**********************************************************************************/
+/***************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
+/**********************************************************************************/
+
+/** \brief  ML Preconditioner
+
+    \param  ProblemType        [in]    problem type
+    \param  MLList             [in]    ML parameter list 
+    \param  A                  [in]    discrete operator matrix
+    \param  xexact             [in]    exact solution
+    \param  b                  [in]    right-hand-side vector
+    \param  uh                 [out]   solution vector
+    \param  TotalErrorResidual [out]   error residual
+    \param  TotalErrorExactSol [out]   error in uh
+
+ */
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 				 Teuchos::ParameterList   & MLList,
                                  Epetra_CrsMatrix   & A,
@@ -134,19 +188,108 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  double & TotalErrorExactSol);
 
 
-using namespace std;
-using namespace Intrepid;
+
+/**********************************************************************************/
+/******** FUNCTION DECLARATIONS FOR EXACT SOLUTION AND SOURCE TERMS ***************/
+/**********************************************************************************/
+
+/** \brief  User-defined exact solution.
+
+    \param  x           [in]    x-coordinate of the evaluation point
+    \param  y           [in]    y-coordinate of the evaluation point
+    \param  z           [in]    z-coordinate of the evaluation point
+
+    \return Value of the exact solution at (x,y,z)
+ */
+template<typename Scalar>
+const Scalar exactSolution(const Scalar& x, const Scalar& y, const Scalar& z);
+
+/** \brief  User-defined material tensor.
+
+    \param  material    [out]   3 x 3 material tensor evaluated at (x,y,z)
+    \param  x           [in]    x-coordinate of the evaluation point
+    \param  y           [in]    y-coordinate of the evaluation point
+    \param  z           [in]    z-coordinate of the evaluation point
+
+    \warning Symmetric and positive definite tensor is required for every (x,y,z).
+*/
+template<typename Scalar>
+void materialTensor(Scalar material[][3], const Scalar&  x, const Scalar&  y, const Scalar&  z);
+
+/** \brief  Computes gradient of the exact solution. Requires user-defined exact solution.
+
+    \param  gradExact  [out]   gradient of the exact solution evaluated at (x,y,z)
+    \param  x          [in]    x-coordinate of the evaluation point
+    \param  y          [in]    y-coordinate of the evaluation point
+    \param  z          [in]    z-coordinate of the evaluation point
+ */
+template<typename Scalar>
+void exactSolutionGrad(Scalar gradExact[3], const Scalar& x, const Scalar& y, const Scalar& z);
 
 
-// Functions to evaluate exact solution and derivatives
-double evalu(double & x, double & y, double & z);
-int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3);
-double evalDivGradu(double & x, double & y, double & z);
+/** \brief Computes source term: f = -div(A.grad u).  Requires user-defined exact solution
+           and material tensor.
+
+    \param  x          [in]    x-coordinate of the evaluation point
+    \param  y          [in]    y-coordinate of the evaluation point
+    \param  z          [in]    z-coordinate of the evaluation point
+
+    \return Source term corresponding to the user-defined exact solution evaluated at (x,y,z)
+ */
+template<typename Scalar>
+const Scalar sourceTerm(Scalar& x, Scalar& y, Scalar& z);
+
+
+/** \brief Computation of the material tensor at array of points in physical space.
+
+    \param worksetMaterialValues      [out]     Rank-2, 3 or 4 array with dimensions (C,P), (C,P,D) or (C,P,D,D)
+                                                with the values of the material tensor
+    \param evaluationPoints           [in]      Rank-3 (C,P,D) array with the evaluation points in physical frame
+*/
+template<class ArrayOut, class ArrayIn>
+void evaluateMaterialTensor(ArrayOut &        worksetMaterialValues,
+                            const ArrayIn &   evaluationPoints);
+
+
+/** \brief Computation of the source term at array of points in physical space.
+
+    \param sourceTermValues           [out]     Rank-2 (C,P) array with the values of the source term
+    \param evaluationPoints           [in]      Rank-3 (C,P,D) array with the evaluation points in physical frame
+*/
+template<class ArrayOut, class ArrayIn>
+void evaluateSourceTerm(ArrayOut &       sourceTermValues,
+                        const ArrayIn &  evaluationPoints);
+
+/** \brief Computation of the exact solution at array of points in physical space.
+
+    \param exactSolutionValues        [out]     Rank-2 (C,P) array with the values of the exact solution
+    \param evaluationPoints           [in]      Rank-3 (C,P,D) array with the evaluation points in physical frame
+*/
+template<class ArrayOut, class ArrayIn>
+void evaluateExactSolution(ArrayOut &       exactSolutionValues,
+                           const ArrayIn &  evaluationPoints);
+
+
+/** \brief Computation of the gradient of the exact solution at array of points in physical space.
+
+    \param exactSolutionGradValues    [out]     Rank-3 (C,P,D) array with the values of the gradient of the exact solution
+    \param evaluationPoints           [in]      Rank-3 (C,P,D) array with the evaluation points in physical frame
+*/
+template<class ArrayOut, class ArrayIn>
+void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
+                               const ArrayIn &  evaluationPoints);
+
+
+/**********************************************************************************/
+/******************************** MAIN ********************************************/
+/**********************************************************************************/
 
 int main(int argc, char *argv[]) {
+
   int error = 0;
   int numProcs=1;
   int rank=0;
+
 #ifdef HAVE_MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   rank=mpiSession.getRank();
@@ -155,6 +298,7 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
+
   int MyPID = Comm.MyPID();
   Epetra_Time Time(Comm);
 
@@ -178,19 +322,15 @@ int main(int argc, char *argv[]) {
     << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
     << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
     << "|                                                                             |\n" \
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-    << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen             |\n" \
-    << "|  ML's website:       http://trilinos.sandia.gov/packages/ml                 |\n" \
-    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+    << "|  Intrepid's website:   http://trilinos.sandia.gov/packages/intrepid         |\n" \
+    << "|  Pamgen's website:     http://trilinos.sandia.gov/packages/pamgen           |\n" \
+    << "|  ML's website:         http://trilinos.sandia.gov/packages/ml               |\n" \
+    << "|  Isorropia's website:  http://trilinos.sandia.gov/packages/isorropia        |\n" \
+    << "|  Trilinos website:     http://trilinos.sandia.gov                           |\n" \
     << "|                                                                             |\n" \
     << "===============================================================================\n";
   }
 
-  long long *  node_comm_proc_ids   = NULL;
-  long long *  node_cmap_node_cnts  = NULL;
-  long long *  node_cmap_ids        = NULL;
-  long long ** comm_node_ids        = NULL;
-  long long ** comm_node_proc_ids   = NULL;
 
 #ifdef HAVE_MPI
   if (MyPID == 0) {
@@ -202,7 +342,9 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-// ************************************ GET INPUTS **************************************
+/**********************************************************************************/
+/********************************** GET XML INPUTS ********************************/
+/**********************************************************************************/
 
   // Command line for xml file, otherwise use default
     std::string   xmlMeshInFileName, xmlSolverInFileName;
@@ -236,10 +378,10 @@ int main(int argc, char *argv[]) {
      Teuchos::updateParametersFromXmlFile(xmlSolverInFileName,&inputSolverList);
    } else if (MyPID == 0) std::cout << "Using default solver values ..." << std::endl;
 
-  // Get pamgen mesh definition
+   // Get pamgen mesh definition
     std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,"meshInput");
 
-    // Get Isorropia and Zoltan parameters.
+   // Get Isorropia and Zoltan parameters.
     Teuchos::ParameterList iso_paramlist = inputMeshList.sublist
                                                     ("Isorropia Input") ;
     if (MyPID == 0) {
@@ -248,22 +390,31 @@ int main(int argc, char *argv[]) {
     }
 
 
-// *********************************** CELL TOPOLOGY **********************************
+/**********************************************************************************/
+/***************************** GET CELL TOPOLOGY **********************************/
+/**********************************************************************************/
 
    // Get cell topology for base hexahedron
-    typedef shards::CellTopology    CellTopology;
-    CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+    shards::CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
    // Get dimensions 
-    int numNodesPerElem = hex_8.getNodeCount();
-    int spaceDim = hex_8.getDimension();
+    int numNodesPerElem = cellType.getNodeCount();
+    int spaceDim = cellType.getDimension();
     int dim = 3;
 
-// *********************************** GENERATE MESH ************************************
+/**********************************************************************************/
+/******************************* GENERATE MESH ************************************/
+/**********************************************************************************/
 
   if (MyPID == 0) {
     std::cout << "Generating mesh ... \n\n";
   }
+
+  long long *  node_comm_proc_ids   = NULL;
+  long long *  node_cmap_node_cnts  = NULL;
+  long long *  node_cmap_ids        = NULL;
+  long long ** comm_node_ids        = NULL;
+  long long ** comm_node_proc_ids   = NULL;
 
    // Generate mesh with Pamgen
     long long maxInt = 9223372036854775807LL;
@@ -341,7 +492,6 @@ int main(int argc, char *argv[]) {
       }
     }
  
-
    // Read node coordinates and place in field container
     FieldContainer<double> nodeCoord(numNodes,dim);
     double * nodeCoordx = new double [numNodes];
@@ -423,37 +573,10 @@ int main(int argc, char *argv[]) {
 			 comm_node_ids,
 			 rank);    
 
+
     if(MyPID==0) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
 
-
-#ifdef DUMP_DATA
-    // Print coords
-    std::stringstream fname;
-      fname << "coords";
-      fname << MyPID << ".dat";
-    FILE *f=fopen(fname.str().c_str(),"w");
-    for (int i=0; i<numNodes; i++) {
-      if (nodeIsOwned[i]) {
-       fprintf(f,"%22.16e %22.16e %22.16e\n",nodeCoord(i,0),nodeCoord(i,1),nodeCoord(i,2));
-      }
-    }
-    fclose(f);
-
-  // Output element to node connectivity
-    std::stringstream efname;
-      efname << "elem2node";
-      efname << MyPID << ".dat";
-    ofstream el2nout(efname.str().c_str());
-    for (int i=0; i<numElems; i++) {
-      for (int m=0; m<numNodesPerElem; m++) {
-        el2nout << globalNodeIds[elemToNode(i,m)] << "  ";
-      }
-      el2nout << "\n";
-    }
-    el2nout.close();
-#endif
-  
    // Container indicating whether a node is on the boundary (1-yes 0-no)
     FieldContainer<int> nodeOnBoundary(numNodes);
 
@@ -470,10 +593,10 @@ int main(int argc, char *argv[]) {
           im_ex_get_side_set_l(id,sideSetIds[i],sideSetElemList,sideSetSideList);
           for (int j=0; j<numSidesInSet; j++) {
              
-             int sideNode0 = hex_8.getNodeMap(2,sideSetSideList[j]-1,0);
-             int sideNode1 = hex_8.getNodeMap(2,sideSetSideList[j]-1,1);
-             int sideNode2 = hex_8.getNodeMap(2,sideSetSideList[j]-1,2);
-             int sideNode3 = hex_8.getNodeMap(2,sideSetSideList[j]-1,3);
+             int sideNode0 = cellType.getNodeMap(2,sideSetSideList[j]-1,0);
+             int sideNode1 = cellType.getNodeMap(2,sideSetSideList[j]-1,1);
+             int sideNode2 = cellType.getNodeMap(2,sideSetSideList[j]-1,2);
+             int sideNode3 = cellType.getNodeMap(2,sideSetSideList[j]-1,3);
              
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
@@ -487,18 +610,17 @@ int main(int argc, char *argv[]) {
     delete [] sideSetIds;
 
    if(MyPID ==0) {cout << msg << "Boundary Conds   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+ 
 
 
-// ************************************ CUBATURE **************************************
-
-  if (MyPID == 0) {
-    std::cout << "Getting cubature ... \n\n";
-  }
+/**********************************************************************************/
+/********************************* GET CUBATURE ***********************************/
+/**********************************************************************************/
 
    // Get numerical integration points and weights
     DefaultCubatureFactory<double>  cubFactory;                                   
     int cubDegree = 2;
-    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(hex_8, cubDegree); 
+    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree); 
 
     int cubDim       = hexCub->getDimension();
     int numCubPoints = hexCub->getNumPoints();
@@ -508,55 +630,32 @@ int main(int argc, char *argv[]) {
 
     hexCub->getCubature(cubPoints, cubWeights);
 
-   if(MyPID ==0) {cout << msg << "Cubature   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+   if(MyPID==0) {std::cout << "Getting cubature                            "
+                 << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
-// ************************************** BASIS ***************************************
 
-  if (MyPID == 0) {
-     std::cout << "Getting basis ... \n\n";
-  }
+
+/**********************************************************************************/
+/*********************************** GET BASIS ************************************/
+/**********************************************************************************/
 
    // Define basis 
      Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
      int numFieldsG = hexHGradBasis.getCardinality();
-     FieldContainer<double> hexGVals(numFieldsG, numCubPoints); 
-     FieldContainer<double> hexGrads(numFieldsG, numCubPoints, spaceDim); 
+     FieldContainer<double> HGBValues(numFieldsG, numCubPoints); 
+     FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim); 
 
   // Evaluate basis values and gradients at cubature points
-     hexHGradBasis.getValues(hexGVals, cubPoints, OPERATOR_VALUE);
-     hexHGradBasis.getValues(hexGrads, cubPoints, OPERATOR_GRAD);
+     hexHGradBasis.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
+     hexHGradBasis.getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
 
-   if(MyPID ==0) {cout << msg << "Basis   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+   if(MyPID==0) {std::cout << "Getting basis                               "
+                 << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
-// ******** LOOP OVER ELEMENTS TO CREATE LOCAL STIFFNESS MATRIX *************
 
-  if (MyPID == 0) {
-    std::cout << "Building stiffness matrix and right hand side ... \n\n";
-  }
-
- // Settings and data structures for mass and stiffness matrices
-    typedef CellTools<double>  CellTools;
-    typedef FunctionSpaceTools fst;
-    int numCells = 1; 
-
-   // Container for nodes
-    FieldContainer<double> hexNodes(numCells, numNodesPerElem, spaceDim);
-   // Containers for Jacobian
-    FieldContainer<double> hexJacobian(numCells, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> hexJacobInv(numCells, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> hexJacobDet(numCells, numCubPoints);
-   // Containers for element HGRAD stiffness matrix
-    FieldContainer<double> localStiffMatrix(numCells, numFieldsG, numFieldsG);
-    FieldContainer<double> weightedMeasure(numCells, numCubPoints);
-    FieldContainer<double> hexGradsTransformed(numCells, numFieldsG, numCubPoints, spaceDim);
-    FieldContainer<double> hexGradsTransformedWeighted(numCells, numFieldsG, numCubPoints, spaceDim);
-   // Containers for right hand side vectors
-    FieldContainer<double> rhsData(numCells, numCubPoints);
-    FieldContainer<double> localRHS(numCells, numFieldsG);
-    FieldContainer<double> hexGValsTransformed(numCells, numFieldsG, numCubPoints);
-    FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
-   // Container for cubature points in physical space
-    FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
+/**********************************************************************************/
+/********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
+/**********************************************************************************/
 
     // Count owned nodes
     int ownedNodes=0;
@@ -572,124 +671,329 @@ int main(int argc, char *argv[]) {
         ownedGIDs[oidx]=(int)globalNodeIds[i];
         oidx++;
       }
-    // Generate epetra map    
+    // Generate epetra map for nodes
     Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
 
 
     // Global arrays in Epetra format
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 20*numFieldsG);
-    Epetra_FEVector rhs(globalMapG);
+    Epetra_FEVector rhsVector(globalMapG);
 
-    
- // *** Element loop ***
-    for (int k=0; k<numElems; k++) {
-
-     // Physical cell coordinates
-      for (int i=0; i<numNodesPerElem; i++) {
-         hexNodes(0,i,0) = nodeCoord(elemToNode(k,i),0);
-         hexNodes(0,i,1) = nodeCoord(elemToNode(k,i),1);
-         hexNodes(0,i,2) = nodeCoord(elemToNode(k,i),2);
-      }
-
-    // Compute cell Jacobians, their inverses and their determinants
-       CellTools::setJacobian(hexJacobian, cubPoints, hexNodes, hex_8);
-       CellTools::setJacobianInv(hexJacobInv, hexJacobian );
-       CellTools::setJacobianDet(hexJacobDet, hexJacobian );
-
-// ************************** Compute element HGrad stiffness matrices *******************************
-  
-     // transform to physical coordinates 
-      fst::HGRADtransformGRAD<double>(hexGradsTransformed, hexJacobInv, hexGrads);
-      
-     // compute weighted measure
-      fst::computeCellMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
-
-     // multiply values with weighted measure
-      fst::multiplyMeasure<double>(hexGradsTransformedWeighted,
-                                   weightedMeasure, hexGradsTransformed);
-
-     // integrate to compute element stiffness matrix
-      fst::integrate<double>(localStiffMatrix,
-                             hexGradsTransformed, hexGradsTransformedWeighted, COMP_CPP);
-
-      // assemble into global matrix
-      for (int row = 0; row < numFieldsG; row++){
-        for (int col = 0; col < numFieldsG; col++){
-            int rowIndex = globalNodeIds[elemToNode(k,row)];
-            int colIndex = globalNodeIds[elemToNode(k,col)];
-            double val = localStiffMatrix(0,row,col);
-            StiffMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-         }
-      }
+   if(MyPID==0) {std::cout << msg << "Build global maps                           "
+                 << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
 
 
-// ******************************* Build right hand side ************************************
+#ifdef DUMP_DATA
+/**********************************************************************************/
+/**** PUT COORDINATES AND NODAL VALUES IN ARRAYS FOR OUTPUT (FOR PLOTTING ONLY) ***/
+/**********************************************************************************/
 
-      // transform integration points to physical points
-       CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
+  // Put coordinates in multivector for output
+    Epetra_MultiVector nCoord(globalMapG,3);
+    Epetra_MultiVector nBound(globalMapG,1);
 
-      // evaluate right hand side functions at physical points
-       for (int nPt = 0; nPt < numCubPoints; nPt++){
-
-          double x = physCubPoints(0,nPt,0);
-          double y = physCubPoints(0,nPt,1);
-          double z = physCubPoints(0,nPt,2);
-
-          rhsData(0,nPt) = evalDivGradu(x, y, z);
-       }
-
-     // transform basis values to physical coordinates 
-      fst::HGRADtransformVALUE<double>(hexGValsTransformed, hexGVals);
-      
-     // multiply values with weighted measure
-      fst::multiplyMeasure<double>(hexGValsTransformedWeighted,
-                                   weightedMeasure, hexGValsTransformed);
-
-     // integrate rhs term
-      fst::integrate<double>(localRHS, rhsData, hexGValsTransformedWeighted,
-                             COMP_CPP);
-
-    // assemble into global vector
-     for (int row = 0; row < numFieldsG; row++){
-           int rowIndex = globalNodeIds[elemToNode(k,row)];
-           double val = -localRHS(0,row);
-           rhs.SumIntoGlobalValues(1, &rowIndex, &val);
-      }
- 
-     
- } // *** end element loop ***
-
-
-  // Assemble over multiple processors
-   StiffMatrix.GlobalAssemble(); StiffMatrix.FillComplete();
-   rhs.GlobalAssemble();
-
-   if(MyPID == 0) {cout << msg << "Matrix Assembly  = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
-
-  // Adjust matrix and rhs due to Dirichlet boundary conditions
-    int numBCNodes=0;
-    for (int i=0; i<numNodes; i++){
-        if (nodeOnBoundary(i) && nodeIsOwned[i]){
-            numBCNodes++;
-        }
-    }
-    int * BCNodes = new int [numBCNodes];
-    int indbc=0;
-    int indOwned=0;
-    for (int i=0; i<numNodes; i++){
-       if (nodeIsOwned[i]){
-          if (nodeOnBoundary(i)){
-             BCNodes[indbc]=indOwned;
-             indbc++;
-             rhs[0][indOwned]=0;
-          }
+     int indOwned = 0;
+     for (int inode=0; inode<numNodes; inode++) {
+       if (nodeIsOwned[inode]) {
+          nCoord[0][indOwned]=nodeCoord(inode,0);
+          nCoord[1][indOwned]=nodeCoord(inode,1);
+          nCoord[2][indOwned]=nodeCoord(inode,2);
+          nBound[0][indOwned]=nodeOnBoundary(inode);
           indOwned++;
        }
+     }
+     EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
+     EpetraExt::MultiVectorToMatrixMarketFile("nodeOnBound.dat",nBound,0,0,false);
+
+    // Put element to node mapping in multivector for output
+     Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
+     Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
+     for (int ielem=0; ielem<numElems; ielem++) {
+        for (int inode=0; inode<numNodesPerElem; inode++) {
+          elem2node[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
+        }
+      }
+     EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
+
+    if(MyPID==0) {Time.ResetStartTime();}
+
+#endif
+
+/**********************************************************************************/
+/************************** DIRICHLET BC SETUP ************************************/
+/**********************************************************************************/
+
+  int numBCNodes = 0;
+  for (int inode = 0; inode < numNodes; inode++){
+     if (nodeOnBoundary(inode) && nodeIsOwned[inode]){
+        numBCNodes++;
+     }
+  }
+
+  // Vector for use in applying BCs
+   Epetra_MultiVector v(globalMapG,true);
+   v.PutScalar(0.0);
+
+   // Set v to boundary values on Dirichlet nodes
+    int * BCNodes = new int [numBCNodes];
+    int indbc=0;
+    int iOwned=0;
+    for (int inode=0; inode<numNodes; inode++){
+      if (nodeIsOwned[inode]){
+        if (nodeOnBoundary(inode)){
+           BCNodes[indbc]=iOwned;
+           indbc++;
+           double x  = nodeCoord(inode, 0);
+           double y  = nodeCoord(inode, 1);
+           double z  = nodeCoord(inode, 2);
+           v[0][iOwned]=exactSolution(x, y, z);
+        }
+         iOwned++;
+      }
     }
-   // ML routine that zeroes out Dirichlet rows and columns and adds 1 to diagonal 
+
+   if(MyPID==0) {std::cout << msg << "Get Dirichlet boundary values               "
+                 << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
+
+
+/**********************************************************************************/
+/******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
+/**********************************************************************************/
+
+
+ // Define desired workset size and count how many worksets there are on this processor's mesh block
+  int desiredWorksetSize = numElems;                      // change to desired workset size!
+  //int desiredWorksetSize = 100;                      // change to desired workset size!
+  int numWorksets        = numElems/desiredWorksetSize;
+
+  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
+  if(numWorksets*desiredWorksetSize < numElems) numWorksets += 1;
+
+ if (MyPID == 0) {
+    std::cout << "Building discretization matrix and right hand side... \n\n";
+    std::cout << "\tDesired workset size:                 " << desiredWorksetSize <<"\n";
+    std::cout << "\tNumber of worksets (per processor):   " << numWorksets <<"\n\n";
+    Time.ResetStartTime();
+  }
+
+  for(int workset = 0; workset < numWorksets; workset++){
+
+    // Compute cell numbers where the workset starts and ends
+    int worksetSize  = 0;
+    int worksetBegin = (workset + 0)*desiredWorksetSize;
+    int worksetEnd   = (workset + 1)*desiredWorksetSize;
+
+    // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
+     worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
+
+    // Now we know the actual workset size and can allocate the array for the cell nodes
+     worksetSize  = worksetEnd - worksetBegin;
+     FieldContainer<double> cellWorkset(worksetSize, numNodesPerElem, spaceDim);
+
+    // Copy coordinates into cell workset
+    int cellCounter = 0;
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+      for (int node = 0; node < numNodesPerElem; node++) {
+        cellWorkset(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
+        cellWorkset(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
+        cellWorkset(cellCounter, node, 2) = nodeCoord( elemToNode(cell, node), 2);
+      }
+      cellCounter++;
+    }
+
+ /**********************************************************************************/
+ /*                                Allocate arrays                                 */
+ /**********************************************************************************/
+
+   // Containers for Jacobians, integration measure & cubature points in workset cells
+    FieldContainer<double> worksetJacobian  (worksetSize, numCubPoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetJacobInv  (worksetSize, numCubPoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetJacobDet  (worksetSize, numCubPoints);
+    FieldContainer<double> worksetCubWeights(worksetSize, numCubPoints);
+    FieldContainer<double> worksetCubPoints (worksetSize, numCubPoints, cubDim);
+
+    // Containers for basis values transformed to workset cells and them multiplied by cubature weights
+    FieldContainer<double> worksetHGBValues        (worksetSize, numFieldsG, numCubPoints);
+    FieldContainer<double> worksetHGBValuesWeighted(worksetSize, numFieldsG, numCubPoints);
+    FieldContainer<double> worksetHGBGrads         (worksetSize, numFieldsG, numCubPoints, spaceDim);
+    FieldContainer<double> worksetHGBGradsWeighted (worksetSize, numFieldsG, numCubPoints, spaceDim);
+
+    // Containers for diffusive & advective fluxes & non-conservative adv. term and reactive terms
+    FieldContainer<double> worksetDiffusiveFlux(worksetSize, numFieldsG, numCubPoints, spaceDim);
+
+    // Containers for material values and source term. Require user-defined functions
+    FieldContainer<double> worksetMaterialVals (worksetSize, numCubPoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetSourceTerm   (worksetSize, numCubPoints);
+
+    // Containers for workset contributions to the discretization matrix and the right hand side
+    FieldContainer<double> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
+    FieldContainer<double> worksetRHS         (worksetSize, numFieldsG);
+
+   if(MyPID==0) {std::cout << msg << "Allocate arrays                             "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+
+ /**********************************************************************************/
+ /*                                Calculate Jacobians                             */
+ /**********************************************************************************/
+
+      IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, cellType);
+      IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
+      IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
+
+   if(MyPID==0) {std::cout << msg << "Calculate Jacobians                         "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+ /**********************************************************************************/
+ /*          Cubature Points to Physical Frame and Compute Data                    */
+ /**********************************************************************************/
+
+   // map cubature points to physical frame
+    IntrepidCTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, cellType);
+
+   // get A at cubature points
+    evaluateMaterialTensor (worksetMaterialVals, worksetCubPoints);
+
+   // get source term at cubature points
+    evaluateSourceTerm (worksetSourceTerm, worksetCubPoints);
+
+   if(MyPID==0) {std::cout << msg << "Map to physical frame and get source term   "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+
+/**********************************************************************************/
+ /*                         Compute Stiffness Matrix                               */
+ /**********************************************************************************/
+
+    // Transform basis gradients to physical frame:
+    IntrepidFSTools::HGRADtransformGRAD<double>(worksetHGBGrads,                // DF^{-T}(grad u)
+                                                worksetJacobInv,   HGBGrads);
+
+    // Compute integration measure for workset cells:
+    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeights,              // Det(DF)*w = J*w
+                                                worksetJacobDet, cubWeights);
+
+
+    // Multiply transformed (workset) gradients with weighted measure
+    IntrepidFSTools::multiplyMeasure<double>(worksetHGBGradsWeighted,           // DF^{-T}(grad u)*J*w
+                                             worksetCubWeights, worksetHGBGrads);
+
+
+   // Compute the diffusive flux:
+    IntrepidFSTools::tensorMultiplyDataField<double>(worksetDiffusiveFlux,      //  A*(DF^{-T}(grad u)
+                                                     worksetMaterialVals,
+                                                     worksetHGBGrads);
+
+    // Integrate to compute workset diffusion contribution to global matrix:
+    IntrepidFSTools::integrate<double>(worksetStiffMatrix,                      // (DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
+                                       worksetHGBGradsWeighted,
+                                       worksetDiffusiveFlux, COMP_BLAS);
+
+   if(MyPID==0) {std::cout << msg << "Compute stiffness matrix                    "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+
+ /**********************************************************************************/
+ /*                                   Compute RHS                                  */
+ /**********************************************************************************/
+
+   // Transform basis values to physical frame:
+    IntrepidFSTools::HGRADtransformVALUE<double>(worksetHGBValues,              // clones basis values (u)
+                                                 HGBValues);
+
+   // Multiply transformed (workset) values with weighted measure
+    IntrepidFSTools::multiplyMeasure<double>(worksetHGBValuesWeighted,          // (u)*J*w
+                                             worksetCubWeights, worksetHGBValues);
+
+   // Integrate worksetSourceTerm against weighted basis function set
+    IntrepidFSTools::integrate<double>(worksetRHS,                             // f.(u)*J*w
+                                       worksetSourceTerm,
+                                       worksetHGBValuesWeighted,  COMP_BLAS);
+
+
+   if(MyPID==0) {std::cout << msg << "Compute right-hand side                     "
+                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+ /**********************************************************************************/
+ /*                         Assemble into Global Matrix                            */
+ /**********************************************************************************/
+
+    //"WORKSET CELL" loop: local cell ordinal is relative to numElems
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+      // Compute cell ordinal relative to the current workset
+      int worksetCellOrdinal = cell - worksetBegin;
+
+      // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
+      for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
+
+        int localRow  = elemToNode(cell, cellRow);
+        int globalRow = globalNodeIds[localRow];
+        double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
+
+        rhsVector.SumIntoGlobalValues(1, &globalRow, &sourceTermContribution);
+
+        // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
+        for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
+
+          int localCol  = elemToNode(cell, cellCol);
+          int globalCol = globalNodeIds[localCol];
+          double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
+
+          StiffMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
+
+        }// *** cell col loop ***
+      }// *** cell row loop ***
+    }// *** workset cell loop **
+  }// *** workset loop ***
+
+/**********************************************************************************/
+/********************* ASSEMBLE OVER MULTIPLE PROCESSORS **************************/
+/**********************************************************************************/
+
+  StiffMatrix.GlobalAssemble();
+  StiffMatrix.FillComplete();
+  rhsVector.GlobalAssemble();
+
+   if(MyPID==0) {std::cout << msg << "Global assembly                             "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+/**********************************************************************************/
+/******************************* ADJUST MATRIX DUE TO BC **************************/
+/**********************************************************************************/
+
+  // Apply stiffness matrix to v
+   Epetra_MultiVector rhsDir(globalMapG,true);
+   StiffMatrix.Apply(v,rhsDir);
+
+  // Update right-hand side
+   rhsVector.Update(-1.0,rhsDir,1.0);
+
+    // Adjust rhs due to Dirichlet boundary conditions
+   iOwned=0;
+   for (int inode=0; inode<numNodes; inode++){
+      if (nodeIsOwned[inode]){
+        if (nodeOnBoundary(inode)){
+           rhsVector[0][iOwned]=v[0][iOwned];
+        }
+        iOwned++;
+      }
+    }
+
+   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
+   //  and add one to diagonal.
     ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, StiffMatrix);
 
+
     delete [] BCNodes;
+
+   if(MyPID==0) {std::cout << msg << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
+                  << " sec \n"; Time.ResetStartTime();}
+
+
+/**********************************************************************************/
+/************************** PARTITION MATRIX WITH ISORROPIA ***********************/
+/**********************************************************************************/
 
 #ifdef TC_HAVE_ISORROPIA
     if(MyPID==0)
@@ -725,7 +1029,7 @@ int main(int argc, char *argv[]) {
     {
         // Redistribute the matrix and the rhs.
         bal_matrix = redist.redistribute(StiffMatrix) ;
-        bal_rhs = redist.redistribute(rhs) ;
+        bal_rhs = redist.redistribute(rhsVector) ;
     }
     catch (std::exception& exc)
     {
@@ -752,181 +1056,239 @@ int main(int argc, char *argv[]) {
 	}
 #endif
 
-#ifdef DUMP_DATA   
+#ifdef DUMP_DATA
   // Dump matrices to disk
-    EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
+  EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+  EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhsVector,0,0,false);
 #endif
 
+/**********************************************************************************/
+/*********************************** SOLVE ****************************************/
+/**********************************************************************************/
 
-   // Run the solver
-   Teuchos::ParameterList MLList = inputSolverList;
-   ML_Epetra::SetDefaults("SA",MLList,0,0,false);
-   Epetra_FEVector xexact(globalMapG);
-   Epetra_FEVector uh(globalMapG);
-   double TotalErrorResidual=0, TotalErrorExactSol=0;
+ // Run the solver
+  Teuchos::ParameterList MLList = inputSolverList;
+  ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
+  Epetra_FEVector exactNodalVals(globalMapG);
+  Epetra_FEVector femCoefficients(globalMapG);
+  double TotalErrorResidual = 0.0;
+  double TotalErrorExactSol = 0.0;
 
-   // Get exact solution at nodes
-    for (int i = 0; i<numNodes; i++) {
-       if (nodeIsOwned[i]){
-          double x = nodeCoord(i,0);
-          double y = nodeCoord(i,1);
-          double z = nodeCoord(i,2);
-          double exactu = evalu(x, y, z);
-          int rowindex=globalNodeIds[i];
-          xexact.SumIntoGlobalValues(1, &rowindex, &exactu);
-       }
+  // Get exact solution at nodes
+  for (int i = 0; i<numNodes; i++) {
+     if (nodeIsOwned[i]){
+      double x = nodeCoord(i,0);
+      double y = nodeCoord(i,1);
+      double z = nodeCoord(i,2);
+      double exactu = exactSolution(x, y, z);
+
+      int rowindex=globalNodeIds[i];
+      exactNodalVals.SumIntoGlobalValues(1, &rowindex, &exactu);
     }
-    xexact.GlobalAssemble();
-       
-   char probType[10] = "laplace";
+  }
+  exactNodalVals.GlobalAssemble();
+
+  char probType[10] = "laplace";
+
    
 #ifdef TC_HAVE_ISORROPIA
-    TestMultiLevelPreconditionerLaplace(probType, MLList, *bal_matrix, xexact,
-                                       *bal_rhs, uh, TotalErrorResidual,
-                                        TotalErrorExactSol);
+    TestMultiLevelPreconditionerLaplace(probType,           MLList, 
+                                        *bal_matrix,        exactNodalVals,
+                                        *bal_rhs,           femCoefficients, 
+                                        TotalErrorResidual, TotalErrorExactSol);
+                                        
 #else
-    TestMultiLevelPreconditionerLaplace(probType, MLList, StiffMatrix, xexact,
-                                        rhs, uh, TotalErrorResidual,
-                                        TotalErrorExactSol);
+    TestMultiLevelPreconditionerLaplace(probType,             MLList,
+                                       StiffMatrix,          exactNodalVals,
+                                       rhsVector,            femCoefficients,
+                                       TotalErrorResidual,   TotalErrorExactSol);
 #endif
 
-   // ********  Calculate Error in Solution *************** 
-     double L2err = 0.0;
-     double L2errTot = 0.0;
-     double H1err = 0.0;
-     double H1errTot = 0.0;
-     double Linferr = 0.0;
-     double LinferrTot = 0.0;
+/**********************************************************************************/
+/**************************** CALCULATE ERROR *************************************/
+/**********************************************************************************/
 
+   if (MyPID == 0) {Time.ResetStartTime();}
+
+  double L2err = 0.0;
+  double L2errTot = 0.0;
+  double H1err = 0.0;
+  double H1errTot = 0.0;
+  double Linferr = 0.0;
+  double LinferrTot = 0.0;
 
 #ifdef HAVE_MPI
-   // Import solution onto current processor
-     Epetra_Map  solnMap(numNodesGlobal, numNodesGlobal, 0, Comm);
-     Epetra_Import  solnImporter(solnMap, globalMapG);
-     Epetra_Vector  uCoeff(solnMap);
-     uCoeff.Import(uh, solnImporter, Insert);
+  // Import solution onto current processor
+  //int numNodesGlobal = globalMapG.NumGlobalElements();
+  Epetra_Map     solnMap(numNodesGlobal, numNodesGlobal, 0, Comm);
+  Epetra_Import  solnImporter(solnMap, globalMapG);
+  Epetra_Vector  uCoeff(solnMap);
+  uCoeff.Import(femCoefficients, solnImporter, Insert);
 #endif
 
+   // Define desired workset size
+     desiredWorksetSize = numElems;
+     int numWorksetsErr    = numElems/desiredWorksetSize;
 
-   // Get cubature points and weights for error calc (may be different from previous)
-     DefaultCubatureFactory<double>  cubFactoryErr;                                   
+    // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
+     if(numWorksetsErr*desiredWorksetSize < numElems) numWorksetsErr += 1;
+
+    // Get cubature points and weights for error calc (may be different from previous)
+     Intrepid::DefaultCubatureFactory<double>  cubFactoryErr;
      int cubDegErr = 3;
-     Teuchos::RCP<Cubature<double> > hexCubErr = cubFactoryErr.create(hex_8, cubDegErr); 
-     int cubDimErr       = hexCubErr->getDimension();
-     int numCubPointsErr = hexCubErr->getNumPoints();
-     FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
-     FieldContainer<double> cubWeightsErr(numCubPointsErr);
-     hexCubErr->getCubature(cubPointsErr, cubWeightsErr);
+     Teuchos::RCP<Intrepid::Cubature<double> > cellCubatureErr = cubFactoryErr.create(cellType, cubDegErr);
+     int cubDimErr       = cellCubatureErr->getDimension();
+     int numCubPointsErr = cellCubatureErr->getNumPoints();
+     Intrepid::FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
+     Intrepid::FieldContainer<double> cubWeightsErr(numCubPointsErr);
+     cellCubatureErr->getCubature(cubPointsErr, cubWeightsErr);
 
-   // Containers for Jacobian
-     FieldContainer<double> hexJacobianE(numCells, numCubPointsErr, spaceDim, spaceDim);
-     FieldContainer<double> hexJacobInvE(numCells, numCubPointsErr, spaceDim, spaceDim);
-     FieldContainer<double> hexJacobDetE(numCells, numCubPointsErr);
-     FieldContainer<double> weightedMeasureE(numCells, numCubPointsErr);
+    // Evaluate basis values and gradients at cubature points
+     Intrepid::FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr);
+     Intrepid::FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim);
+     hexHGradBasis.getValues(uhGVals, cubPointsErr, Intrepid::OPERATOR_VALUE);
+     hexHGradBasis.getValues(uhGrads, cubPointsErr, Intrepid::OPERATOR_GRAD);
 
-  // Evaluate basis values and gradients at cubature points
-     FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr); 
-     FieldContainer<double> uhGValsTrans(numCells,numFieldsG, numCubPointsErr); 
-     FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim); 
-     FieldContainer<double> uhGradsTrans(numCells, numFieldsG, numCubPointsErr, spaceDim); 
-     hexHGradBasis.getValues(uhGVals, cubPointsErr, OPERATOR_VALUE);
-     hexHGradBasis.getValues(uhGrads, cubPointsErr, OPERATOR_GRAD);
+   // Loop over worksets
+     for(int workset = 0; workset < numWorksetsErr; workset++){
 
+      // compute cell numbers where the workset starts and ends
+       int worksetSize  = 0;
+       int worksetBegin = (workset + 0)*desiredWorksetSize;
+       int worksetEnd   = (workset + 1)*desiredWorksetSize;
 
-   // Loop over elements
-    for (int k=0; k<numElems; k++){
+      // when numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
+       worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
 
-      double L2errElem = 0.0;
-      double H1errElem = 0.0;
-      double uExact; 
-      double graduExact1, graduExact2, graduExact3;
+      // now we know the actual workset size and can allocate the array for the cell nodes
+       worksetSize  = worksetEnd - worksetBegin;
+       Intrepid::FieldContainer<double> cellWorksetEr(worksetSize, numNodesPerElem, spaceDim);
+       Intrepid::FieldContainer<double> worksetApproxSolnCoef(worksetSize, numNodesPerElem);
 
-     // physical cell coordinates
-      for (int i=0; i<numNodesPerElem; i++) {
-         hexNodes(0,i,0) = nodeCoord(elemToNode(k,i),0);
-         hexNodes(0,i,1) = nodeCoord(elemToNode(k,i),1);
-         hexNodes(0,i,2) = nodeCoord(elemToNode(k,i),2);
-      }
+      // loop over cells to fill arrays with coordinates and discrete solution coefficient
+        int cellCounter = 0;
+        for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
-    // compute cell Jacobians, their inverses and their determinants
-       CellTools::setJacobian(hexJacobianE, cubPointsErr, hexNodes, hex_8);
-       CellTools::setJacobianInv(hexJacobInvE, hexJacobianE );
-       CellTools::setJacobianDet(hexJacobDetE, hexJacobianE );
+            for (int node = 0; node < numNodesPerElem; node++) {
+                cellWorksetEr(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
+                cellWorksetEr(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
+                cellWorksetEr(cellCounter, node, 2) = nodeCoord( elemToNode(cell, node), 2);
 
-      // transform integration points to physical points
-       FieldContainer<double> physCubPointsE(numCells,numCubPointsErr, cubDimErr);
-       CellTools::mapToPhysicalFrame(physCubPointsE, cubPointsErr, hexNodes, hex_8);
+                int rowIndex  = globalNodeIds[elemToNode(cell, node)];
+#ifdef HAVE_MPI
+               worksetApproxSolnCoef(cellCounter, node) = uCoeff.Values()[rowIndex];
+#else
+               worksetApproxSolnCoef(cellCounter, node) = femCoefficients.Values()[rowIndex];
+#endif
+            }
 
-      // transform basis values to physical coordinates 
-       fst::HGRADtransformVALUE<double>(uhGValsTrans, uhGVals);
-       fst::HGRADtransformGRAD<double>(uhGradsTrans, hexJacobInvE, uhGrads);
+             cellCounter++;
+
+       } // end cell loop
+
+      // Containers for Jacobian
+       Intrepid::FieldContainer<double> worksetJacobianE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
+       Intrepid::FieldContainer<double> worksetJacobInvE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
+       Intrepid::FieldContainer<double> worksetJacobDetE(worksetSize, numCubPointsErr);
+       Intrepid::FieldContainer<double> worksetCubWeightsE(worksetSize, numCubPointsErr);
+
+      // Containers for basis values and gradients in physical space
+       Intrepid::FieldContainer<double> uhGValsTrans(worksetSize,numFieldsG, numCubPointsErr);
+       Intrepid::FieldContainer<double> uhGradsTrans(worksetSize, numFieldsG, numCubPointsErr, spaceDim);
+
+      // compute cell Jacobians, their inverses and their determinants
+       IntrepidCTools::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetEr, cellType);
+       IntrepidCTools::setJacobianInv(worksetJacobInvE, worksetJacobianE );
+       IntrepidCTools::setJacobianDet(worksetJacobDetE, worksetJacobianE );
+
+      // map cubature points to physical frame
+       Intrepid::FieldContainer<double> worksetCubPoints(worksetSize, numCubPointsErr, cubDimErr);
+       IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPointsErr, cellWorksetEr, cellType);
+
+      // evaluate exact solution and gradient at cubature points
+       Intrepid::FieldContainer<double> worksetExactSoln(worksetSize, numCubPointsErr);
+       Intrepid::FieldContainer<double> worksetExactSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+       evaluateExactSolution(worksetExactSoln, worksetCubPoints);
+       evaluateExactSolutionGrad(worksetExactSolnGrad, worksetCubPoints);
+
+      // transform basis values to physical coordinates
+       IntrepidFSTools::HGRADtransformVALUE<double>(uhGValsTrans, uhGVals);
+       IntrepidFSTools::HGRADtransformGRAD<double>(uhGradsTrans, worksetJacobInvE, uhGrads);
 
       // compute weighted measure
-       fst::computeCellMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
+       IntrepidFSTools::computeCellMeasure<double>(worksetCubWeightsE, worksetJacobDetE, cubWeightsErr);
 
-      // loop over cubature points
-       for (int nPt = 0; nPt < numCubPointsErr; nPt++){
+      // evaluate the approximate solution and gradient at cubature points
+       Intrepid::FieldContainer<double> worksetApproxSoln(worksetSize, numCubPointsErr);
+       Intrepid::FieldContainer<double> worksetApproxSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+       IntrepidFSTools::evaluate<double>(worksetApproxSoln, worksetApproxSolnCoef, uhGValsTrans);
+       IntrepidFSTools::evaluate<double>(worksetApproxSolnGrad, worksetApproxSolnCoef, uhGradsTrans);
 
-         // get exact solution and gradients
-          double x = physCubPointsE(0,nPt,0);
-          double y = physCubPointsE(0,nPt,1);
-          double z = physCubPointsE(0,nPt,2);
-          uExact = evalu(x, y, z);
-          evalGradu(x, y, z, graduExact1, graduExact2, graduExact3);
+      // get difference between approximate and exact solutions
+       Intrepid::FieldContainer<double> worksetDeltaSoln(worksetSize, numCubPointsErr);
+       Intrepid::FieldContainer<double> worksetDeltaSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+       IntrepidRSTools::subtract(worksetDeltaSoln, worksetApproxSoln, worksetExactSoln);
+       IntrepidRSTools::subtract(worksetDeltaSolnGrad, worksetApproxSolnGrad, worksetExactSolnGrad);
 
-         // calculate approximate solution and gradients
-          double uApprox = 0.0;
-          double graduApprox1 = 0.0;
-          double graduApprox2= 0.0;
-          double graduApprox3 = 0.0;
-          for (int i = 0; i < numFieldsG; i++){
-             int rowIndex = globalNodeIds[elemToNode(k,i)];
+      // take absolute values
+       IntrepidRSTools::absval(worksetDeltaSoln);
+       IntrepidRSTools::absval(worksetDeltaSolnGrad);
+     // apply cubature weights to differences in values and grads for use in integration
+       Intrepid::FieldContainer<double> worksetDeltaSolnWeighted(worksetSize, numCubPointsErr);
+       Intrepid::FieldContainer<double> worksetDeltaSolnGradWeighted(worksetSize, numCubPointsErr, spaceDim);
+       IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnWeighted,
+                                                worksetCubWeightsE, worksetDeltaSoln);
+       IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnGradWeighted,
+                                                worksetCubWeightsE, worksetDeltaSolnGrad);
+
+      // integrate to get errors on each element
+       Intrepid::FieldContainer<double> worksetL2err(worksetSize);
+       Intrepid::FieldContainer<double> worksetH1err(worksetSize);
+       IntrepidFSTools::integrate<double>(worksetL2err, worksetDeltaSoln,
+                                          worksetDeltaSolnWeighted, Intrepid::COMP_BLAS);
+       IntrepidFSTools::integrate<double>(worksetH1err, worksetDeltaSolnGrad,
+                                          worksetDeltaSolnGradWeighted, Intrepid::COMP_BLAS);
+
+      // loop over cells to get errors for total workset
+       cellCounter = 0;
+       for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+          // loop over cubature points
+           for(int nPt = 0; nPt < numCubPointsErr; nPt++){
+
+               Linferr = std::max(Linferr, worksetDeltaSoln(cellCounter,nPt));
+
+            }
+
+             L2err += worksetL2err(cellCounter);
+             H1err += worksetH1err(cellCounter);
+
+         cellCounter++;
+
+      } // end cell loop
+
+    } // end loop over worksets
+
 #ifdef HAVE_MPI
-             double uh1 = uCoeff.Values()[rowIndex];
+     // sum over all processors
+     Comm.SumAll(&L2err,&L2errTot,1);
+     Comm.SumAll(&H1err,&H1errTot,1);
+     Comm.MaxAll(&Linferr,&LinferrTot,1);
 #else
-             double uh1 = uh.Values()[rowIndex];
-#endif
-             uApprox += uh1*uhGValsTrans(0,i,nPt); 
-             graduApprox1 += uh1*uhGradsTrans(0,i,nPt,0); 
-             graduApprox2 += uh1*uhGradsTrans(0,i,nPt,1); 
-             graduApprox3 += uh1*uhGradsTrans(0,i,nPt,2); 
-          }
-
-         // evaluate the error at cubature points
-          Linferr = std::max(Linferr, abs(uExact - uApprox));
-
-          L2errElem+=(uExact - uApprox)*(uExact - uApprox)*weightedMeasureE(0,nPt);
-          H1errElem+=((graduExact1 - graduApprox1)*(graduExact1 - graduApprox1))
-                     *weightedMeasureE(0,nPt);
-          H1errElem+=((graduExact2 - graduApprox2)*(graduExact2 - graduApprox2))
-                     *weightedMeasureE(0,nPt);
-          H1errElem+=((graduExact3 - graduApprox3)*(graduExact3 - graduApprox3))
-                     *weightedMeasureE(0,nPt);
-        }
-
-       L2err+=L2errElem;
-       H1err+=H1errElem;
-     }
-    
-
-#ifdef HAVE_MPI
-   // sum over all processors
-    Comm.SumAll(&L2err,&L2errTot,1);
-    Comm.SumAll(&H1err,&H1errTot,1);
-    Comm.MaxAll(&Linferr,&LinferrTot,1);
-#else
-    L2errTot = L2err;
-    H1errTot = H1err;
-    LinferrTot = Linferr;
+     L2errTot = L2err;
+     H1errTot = H1err;
+     LinferrTot = Linferr;
 #endif
 
 
-   if (MyPID == 0) {
+  if (MyPID == 0) {
     std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
     std::cout << "H1 Error:  " << sqrt(H1errTot) <<"\n";
-    std::cout << "LInf Error:  " << LinferrTot <<"\n";
-   }
+    std::cout << "LInf Error:  " << LinferrTot <<"\n\n";
+  }
+
+   if(MyPID==0) {std::cout << msg << "Calculate error                             "
+                  << Time.ElapsedTime() << " s \n"; Time.ResetStartTime();}
 
 
    // Cleanup
@@ -962,66 +1324,208 @@ int main(int argc, char *argv[]) {
    return 0;
 
 }
+/**********************************************************************************/
+/********************************* END MAIN ***************************************/
+/**********************************************************************************/
+
+/**********************************************************************************/
+/************ USER DEFINED FUNCTIONS FOR EXACT SOLUTION ***************************/
+/**********************************************************************************/
+
+template<typename Scalar>
+const Scalar exactSolution(const Scalar& x, const Scalar& y, const Scalar& z) {
+
+  // Patch test: tri-linear function is in the FE space and should be recovered
+   return 1. + x + y + z + x*y + x*z + y*z + x*y*z;
+
+  // Analytic solution with homogeneous Dirichlet boundary data
+  // return sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
+
+  // Analytic solution with inhomogeneous Dirichlet boundary data
+  // return exp(x + y + z)/(1. + x*y + y*z + x*y*z);
+}
 
 
-// Calculates value of exact solution u
- double evalu(double & x, double & y, double & z)
- {
-   // u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)
-  // double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+template<typename Scalar>
+void materialTensor(Scalar material[][3], const Scalar& x, const Scalar& y, const Scalar& z) {
 
-  // or
+  material[0][0] = 1.;
+  material[0][1] = 0.;
+  material[0][2] = 0.;
+  //
+  material[1][0] = 0.;
+  material[1][1] = 1.;
+  material[1][2] = 0.;
+  //
+  material[2][0] = 0.;
+  material[2][1] = 0.;
+  material[2][2] = 1.;
+}
 
-   // u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)*exp(x+y+z)
-   double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
+/**********************************************************************************/
+/************** AUXILIARY FUNCTIONS FROM EXACT SOLUTION ***************************/
+/**********************************************************************************/
 
-   return exactu;
- }
+/************ Grad of Exact Solution ****************/
+template<typename Scalar>
+void exactSolutionGrad(Scalar gradExact[3], const Scalar& x, const Scalar& y, const Scalar& z) {
 
-// Calculates gradient of exact solution u
- int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3)
- {
-   //  for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)
-   /*
-        gradu1 = M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
-        gradu2 = M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
-        gradu3 = M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
-   */
-  
+  // To enable derivatives of the gradient (i.e., 2nd derivatives of the exact solution) need 2 levels of fad types
+  Sacado::Fad::SFad<Scalar,3> fad_x = x;
+  Sacado::Fad::SFad<Scalar,3> fad_y = y;
+  Sacado::Fad::SFad<Scalar,3> fad_z = z;
+  Sacado::Fad::SFad<Scalar,3> u;
 
-  // or
+  // Indicate the independent variables
+  fad_x.diff(0,3);
+  fad_y.diff(1,3);
+  fad_z.diff(2,3);
 
-   // for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)*exp(x+y+z)
-     gradu1 = (M_PI*cos(M_PI*x)+sin(M_PI*x))
-                  *sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-     gradu2 = (M_PI*cos(M_PI*y)+sin(M_PI*y))
-                  *sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z);
-     gradu3 = (M_PI*cos(M_PI*z)+sin(M_PI*z))
-                  *sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z);
-  
-   return 0;
- }
+  u = exactSolution(fad_x, fad_y, fad_z);
 
-// Calculates Laplacian of exact solution u
- double evalDivGradu(double & x, double & y, double & z)
- {
-   //  for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)
-   //double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+  gradExact[0] = u.dx(0);
+  gradExact[1] = u.dx(1);
+  gradExact[2] = u.dx(2);
+}
 
-  // or
+/************ Source Term (RHS) ****************/
+template<typename Scalar>
+const Scalar sourceTerm(Scalar& x, Scalar& y, Scalar& z){
 
-   // for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)*exp(x+y+z)
-   double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*y)*sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*z)*sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z)
-                    + 3.0*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-  
-  
-   
-   return divGradu;
- }
+  Scalar u;
+  Scalar grad_u[3];
+  Scalar flux[3];
+  Scalar material[3][3];
+  Scalar f = 0.;
 
+  // Indicate the independent variables
+  x.diff(0,3);
+  y.diff(1,3);
+  z.diff(2,3);
+
+  // Get exact solution and its gradient
+  u = exactSolution(x, y, z);
+  exactSolutionGrad(grad_u, x, y, z);
+
+  // Get material tensor
+  materialTensor<Scalar>(material, x, y, z);
+
+  // Compute total flux = (A.grad u)
+  for(int i = 0; i < 3; i++){
+
+    // Add diffusive flux
+    for(int j = 0; j < 3; j++){
+      flux[i] += material[i][j]*grad_u[j];
+    }
+  }
+
+  // Compute source term (right hand side): f = -div(A.grad u)
+  f = -(flux[0].dx(0) + flux[1].dx(1) + flux[2].dx(2));
+
+  return f;
+}
+
+/**********************************************************************************/
+/*************************** EVALUATION METHODS ***********************************/
+/**********************************************************************************/
+
+/************ Material Tensor ****************/
+template<class ArrayOut, class ArrayIn>
+void evaluateMaterialTensor(ArrayOut &        matTensorValues,
+                             const ArrayIn &   evaluationPoints){
+
+  int numWorksetCells  = evaluationPoints.dimension(0);
+  int numPoints        = evaluationPoints.dimension(1);
+  int spaceDim         = evaluationPoints.dimension(2);
+
+  double material[3][3];
+
+  for(int cell = 0; cell < numWorksetCells; cell++){
+    for(int pt = 0; pt < numPoints; pt++){
+
+      double x = evaluationPoints(cell, pt, 0);
+      double y = evaluationPoints(cell, pt, 1);
+      double z = evaluationPoints(cell, pt, 2);
+
+      materialTensor<double>(material, x, y, z);
+
+      for(int row = 0; row < spaceDim; row++){
+        for(int col = 0; col < spaceDim; col++){
+          matTensorValues(cell, pt, row, col) = material[row][col];
+        }
+      }
+    }
+  }
+}
+/************ Source Term (RHS) ****************/
+template<class ArrayOut, class ArrayIn>
+void evaluateSourceTerm(ArrayOut &       sourceTermValues,
+                        const ArrayIn &  evaluationPoints){
+
+  int numWorksetCells  = evaluationPoints.dimension(0);
+  int numPoints = evaluationPoints.dimension(1);
+
+  for(int cell = 0; cell < numWorksetCells; cell++){
+    for(int pt = 0; pt < numPoints; pt++){
+
+      Sacado::Fad::SFad<double,3> x = evaluationPoints(cell, pt, 0);
+      Sacado::Fad::SFad<double,3> y = evaluationPoints(cell, pt, 1);
+      Sacado::Fad::SFad<double,3> z = evaluationPoints(cell, pt, 2);
+
+      sourceTermValues(cell, pt) = sourceTerm<Sacado::Fad::SFad<double,3> >(x, y, z).val();
+    }
+  }
+}
+
+/************ Exact Solution ****************/
+template<class ArrayOut, class ArrayIn>
+void evaluateExactSolution(ArrayOut &       exactSolutionValues,
+                           const ArrayIn &  evaluationPoints){
+
+  int numWorksetCells  = evaluationPoints.dimension(0);
+  int numPoints = evaluationPoints.dimension(1);
+
+  for(int cell = 0; cell < numWorksetCells; cell++){
+    for(int pt = 0; pt < numPoints; pt++){
+
+      double x = evaluationPoints(cell, pt, 0);
+      double y = evaluationPoints(cell, pt, 1);
+      double z = evaluationPoints(cell, pt, 2);
+
+      exactSolutionValues(cell, pt) = exactSolution<double>(x, y, z);
+    }
+  }
+}
+/************ Grad of Exact Solution ****************/
+template<class ArrayOut, class ArrayIn>
+void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
+                               const ArrayIn &  evaluationPoints){
+
+  int numWorksetCells  = evaluationPoints.dimension(0);
+  int numPoints = evaluationPoints.dimension(1);
+  int spaceDim  = evaluationPoints.dimension(2);
+
+  double gradient[3];
+
+  for(int cell = 0; cell < numWorksetCells; cell++){
+    for(int pt = 0; pt < numPoints; pt++){
+
+      double x = evaluationPoints(cell, pt, 0);
+      double y = evaluationPoints(cell, pt, 1);
+      double z = evaluationPoints(cell, pt, 2);
+
+      exactSolutionGrad<double>(gradient, x, y, z);
+
+      for(int row = 0; row < spaceDim; row++){
+        exactSolutionGradValues(cell, pt, row) = gradient[row];
+      }
+    }
+  }
+}
+
+/**********************************************************************************/
+/******************************* TEST ML ******************************************/
+/**********************************************************************************/
 
 // Test ML
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],

@@ -49,6 +49,7 @@
 
 #define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
 #define KOKKOS_MACRO_DEVICE                       Kokkos::DeviceTPI
+#define KOKKOS_MACRO_DEVICE_MEMORY                Kokkos::HostMemory
 #define KOKKOS_MACRO_DEVICE_FUNCTION              /* */
 #define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION     /* */
 #define KOKKOS_MACRO_DEVICE_CAN_THROW( expr )  expr

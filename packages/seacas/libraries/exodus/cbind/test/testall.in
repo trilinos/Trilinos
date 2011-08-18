@@ -41,7 +41,7 @@ set PREFIX = ""
 set SUFFIX = ".exe"
 set BINDIR = @CMAKE_CURRENT_BINARY_DIR@
 set SRCDIR = @CMAKE_CURRENT_SOURCE_DIR@
-set NCDUMP = @SEACAS_Netcdf_EXECUTABLE_NCDUMP@
+set NCDUMP = @SEACASExodus_Netcdf_EXECUTABLE_NCDUMP@
 echo "************************************************************************"
 echo "************************************************************************"
 rm -f test.output

@@ -250,14 +250,16 @@ namespace Teuchos
   RCP<T> 
   PerformanceMonitorBase<T>::lookupCounter (const std::string& name)
   {
-    // If we change how we store the counters, the find() as well as
-    // the iterator type will have to change.
-    typename Array<RCP<T> >::const_iterator it = 
-      std::find (counters().begin(), counters.end(), name);
-    if (it == counters().end())
-      return null;
-    else
-      return *it;
+    Array<RCP<T> >& ctrs = counters();
+
+    // This will have to change if we change how we store the
+    // counters.
+    for (typename Array<RCP<T> >::const_iterator it = ctrs.begin(); 
+	 it != ctrs.end(); ++it)
+      if ((*it)->name() == name)
+	return *it;
+      
+    return null;
   }
 
   template<class T>

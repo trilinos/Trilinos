@@ -40,6 +40,7 @@
 #ifndef KOKKOS_DEVICEHOST_PARALLELFOR_HPP
 #define KOKKOS_DEVICEHOST_PARALLELFOR_HPP
 
+#include <Kokkos_DeviceHost.hpp>
 #include <Kokkos_ParallelFor.hpp>
 
 namespace Kokkos {

@@ -19,7 +19,7 @@ namespace test{
 
 			for(int j = 0; j < runs; j++){
 
-				time = run_cuda_kernel(n);
+		//		time = run_cuda_kernel(n);
 				if (time < min)
 					min = time;
 

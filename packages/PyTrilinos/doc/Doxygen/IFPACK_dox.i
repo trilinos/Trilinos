@@ -7943,33 +7943,32 @@ char* Ifpack_SparseContainer< T >::Label() const
 
 Returns the label of this container. ";
 
-%feature("docstring")  Ifpack_SparseContainer::Map "const Epetra_Map*
-Ifpack_SparseContainer< T >::Map() const
+%feature("docstring")  Ifpack_SparseContainer::Map "Teuchos::RCP<const Epetra_Map> Ifpack_SparseContainer< T >::Map()
+const
 
 Returns a pointer to the internally stored map. ";
 
-%feature("docstring")  Ifpack_SparseContainer::LHS "const
-Epetra_MultiVector* Ifpack_SparseContainer< T >::LHS() const
+%feature("docstring")  Ifpack_SparseContainer::LHS "Teuchos::RCP<const Epetra_MultiVector> Ifpack_SparseContainer< T
+>::LHS() const
 
 Returns a pointer to the internally stored solution multi-vector. ";
 
-%feature("docstring")  Ifpack_SparseContainer::RHS "const
-Epetra_MultiVector* Ifpack_SparseContainer< T >::RHS() const
+%feature("docstring")  Ifpack_SparseContainer::RHS "Teuchos::RCP<const Epetra_MultiVector> Ifpack_SparseContainer< T
+>::RHS() const
 
 Returns a pointer to the internally stored rhs multi-vector. ";
 
-%feature("docstring")  Ifpack_SparseContainer::Matrix "const
-Epetra_CrsMatrix* Ifpack_SparseContainer< T >::Matrix() const
+%feature("docstring")  Ifpack_SparseContainer::Matrix "Teuchos::RCP<const Epetra_CrsMatrix> Ifpack_SparseContainer< T
+>::Matrix() const
 
 Returns a pointer to the internally stored matrix. ";
 
 %feature("docstring")  Ifpack_SparseContainer::ID "const
-Epetra_IntSerialDenseVector* Ifpack_SparseContainer< T >::ID() const
+Epetra_IntSerialDenseVector& Ifpack_SparseContainer< T >::ID() const
 
 Returns a pointer to the internally stored ID's. ";
 
-%feature("docstring")  Ifpack_SparseContainer::Inverse "const T*
-Ifpack_SparseContainer< T >::Inverse() const
+%feature("docstring")  Ifpack_SparseContainer::Inverse "Teuchos::RCP<const T> Ifpack_SparseContainer< T >::Inverse() const
 
 Returns a pointer to the internally stored inverse operator. ";
 

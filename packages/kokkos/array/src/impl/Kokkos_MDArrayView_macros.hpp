@@ -47,25 +47,17 @@
 
 namespace Kokkos {
 
-namespace Impl {
-template< typename ValueType , class DeviceType ,
-          class MapDst , class MapSrc , unsigned Rank >
-class MDArrayDeepCopyFunctor ;
-}
-
-// Assumes the MapOption is a composition.
-
-template< typename ValueType , class MapOption >
-class MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapOption >
+template< typename ValueType >
+class MDArrayView< ValueType , KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef ValueType                           value_type ;
   typedef KOKKOS_MACRO_DEVICE                 device_type ;
-  typedef MapOption                           map_option ;
+  typedef typename device_type::mdarray_map   mdarray_map ;
   typedef typename device_type::memory_space  memory_space ;
   typedef typename device_type::size_type     size_type ;
 
-  typedef MDArrayView< value_type , DeviceHost , map_option > HostView ;
+  typedef MDArrayView< value_type , Serial< HostMemory , mdarray_map > > HostView ;
 
   /*------------------------------------------------------------------*/
   enum { Contiguous = true };
@@ -238,8 +230,8 @@ public:
 
 private:
 
-  MemoryView< value_type , memory_space >           m_memory ;
-  Impl::MDArrayIndexMap< device_type , map_option > m_map ;
+  MemoryView< value_type , memory_space >            m_memory ;
+  Impl::MDArrayIndexMap< memory_space , mdarray_map > m_map ;
 
   inline
   MDArrayView( const std::string & label ,
@@ -247,393 +239,340 @@ private:
                size_t n4 , size_t n5 , size_t n6 , size_t n7 )
     : m_memory()
     , m_map( nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 )
-    { memory_space::allocate_memory_view( m_memory , m_map.size() , label ); }
+    {
+      memory_space::allocate_memory_view( m_memory , m_map.size() , label );
+      parallel_for( m_map.size() , Impl::AssignContiguous<value_type,device_type>( m_memory.ptr_on_device() , 0 ) );
+    }
 
-  template< typename V , class D , class M >
+  template< typename V , class D >
   friend
-  MDArrayView< V , D , M >
+  MDArrayView< V , D >
   create_labeled_mdarray( const std::string & label ,
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
-  template< typename V , class DeviceDst , class MapDst , bool ,
-                         class DeviceSrc , class MapSrc , bool >
+  template< typename V , class DeviceDst , class DeviceSrc ,
+            bool , bool , bool >
   friend
   class Impl::MDArrayDeepCopy ;
-
-  template< typename V , class D , class MapDst , class MapSrc , unsigned R >
-  friend
-  class Impl::MDArrayDeepCopyFunctor ;
 };
 
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
+
+namespace Kokkos {
+namespace Impl {
+
+template< class MDArrayDst , class MDArraySrc >
+class MDArrayDeepCopyFunctor< KOKKOS_MACRO_DEVICE , MDArrayDst , MDArraySrc , 8 >
+{
+public:
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
+
+  MDArrayDst dst ; 
+  MDArraySrc src ; 
+
+  MDArrayDeepCopyFunctor( const MDArrayDst & arg_dst ,
+                          const MDArraySrc & arg_src )
+    : dst( arg_dst ), src( arg_src ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < dst.dimension(1) ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < dst.dimension(2) ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < dst.dimension(3) ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < dst.dimension(4) ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < dst.dimension(5) ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < dst.dimension(6) ; ++i6 ) {
+    for ( size_type i7 = 0 ; i7 < dst.dimension(7) ; ++i7 ) {
+      dst(i0,i1,i2,i3,i4,i5,i6,i7) = src(i0,i1,i2,i3,i4,i5,i6,i7);
+    }}}}}}}
+  }
+};
+
+template< class MDArrayDst , class MDArraySrc >
+class MDArrayDeepCopyFunctor< KOKKOS_MACRO_DEVICE , MDArrayDst , MDArraySrc , 7 >
+{
+public:
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
+
+  MDArrayDst dst ; 
+  MDArraySrc src ; 
+
+  MDArrayDeepCopyFunctor( const MDArrayDst & arg_dst ,
+                          const MDArraySrc & arg_src )
+    : dst( arg_dst ), src( arg_src ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < dst.dimension(1) ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < dst.dimension(2) ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < dst.dimension(3) ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < dst.dimension(4) ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < dst.dimension(5) ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < dst.dimension(6) ; ++i6 ) {
+      dst(i0,i1,i2,i3,i4,i5,i6) = src(i0,i1,i2,i3,i4,i5,i6);
+    }}}}}}
+  }
+};
+
+template< class MDArrayDst , class MDArraySrc >
+class MDArrayDeepCopyFunctor< KOKKOS_MACRO_DEVICE , MDArrayDst , MDArraySrc , 6 >
+{
+public:
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
+
+  MDArrayDst dst ; 
+  MDArraySrc src ; 
+
+  MDArrayDeepCopyFunctor( const MDArrayDst & arg_dst ,
+                          const MDArraySrc & arg_src )
+    : dst( arg_dst ), src( arg_src ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < dst.dimension(1) ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < dst.dimension(2) ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < dst.dimension(3) ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < dst.dimension(4) ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < dst.dimension(5) ; ++i5 ) {
+      dst(i0,i1,i2,i3,i4,i5) = src(i0,i1,i2,i3,i4,i5);
+    }}}}}
+  }
+};
+
+template< class MDArrayDst , class MDArraySrc >
+class MDArrayDeepCopyFunctor< KOKKOS_MACRO_DEVICE , MDArrayDst , MDArraySrc , 5 >
+{
+public:
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
+
+  MDArrayDst dst ; 
+  MDArraySrc src ; 
+
+  MDArrayDeepCopyFunctor( const MDArrayDst & arg_dst ,
+                          const MDArraySrc & arg_src )
+    : dst( arg_dst ), src( arg_src ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < dst.dimension(1) ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < dst.dimension(2) ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < dst.dimension(3) ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < dst.dimension(4) ; ++i4 ) {
+      dst(i0,i1,i2,i3,i4) = src(i0,i1,i2,i3,i4);
+    }}}}
+  }
+};
+
+template< class MDArrayDst , class MDArraySrc >
+class MDArrayDeepCopyFunctor< KOKKOS_MACRO_DEVICE , MDArrayDst , MDArraySrc , 4 >
+{
+public:
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
+
+  MDArrayDst dst ; 
+  MDArraySrc src ; 
+
+  MDArrayDeepCopyFunctor( const MDArrayDst & arg_dst ,
+                          const MDArraySrc & arg_src )
+    : dst( arg_dst ), src( arg_src ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < dst.dimension(1) ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < dst.dimension(2) ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < dst.dimension(3) ; ++i3 ) {
+      dst(i0,i1,i2,i3) = src(i0,i1,i2,i3);
+    }}}
+  }
+};
+
+template< class MDArrayDst , class MDArraySrc >
+class MDArrayDeepCopyFunctor< KOKKOS_MACRO_DEVICE , MDArrayDst , MDArraySrc , 3 >
+{
+public:
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
+
+  MDArrayDst dst ; 
+  MDArraySrc src ; 
+
+  MDArrayDeepCopyFunctor( const MDArrayDst & arg_dst ,
+                          const MDArraySrc & arg_src )
+    : dst( arg_dst ), src( arg_src ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < dst.dimension(1) ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < dst.dimension(2) ; ++i2 ) {
+      dst(i0,i1,i2) = src(i0,i1,i2);
+    }}
+  }
+};
+
+template< class MDArrayDst , class MDArraySrc >
+class MDArrayDeepCopyFunctor< KOKKOS_MACRO_DEVICE , MDArrayDst , MDArraySrc , 2 >
+{
+public:
+  typedef KOKKOS_MACRO_DEVICE    device_type ;
+  typedef device_type::size_type size_type ;
+
+  MDArrayDst dst ; 
+  MDArraySrc src ; 
+
+  MDArrayDeepCopyFunctor( const MDArrayDst & arg_dst ,
+                          const MDArraySrc & arg_src )
+    : dst( arg_dst ), src( arg_src ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < dst.dimension(1) ; ++i1 ) {
+      dst(i0,i1) = src(i0,i1);
+    }
+  }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Impl {
 
-//----------------------------------------------------------------------------
-// Deep copy functors for same device and different maps.
-
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
-
-template< typename ValueType , class MapDst , class MapSrc >
-class MDArrayDeepCopyFunctor<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,8>
+/** \brief  Different maps on the same memory space */
+template< typename ValueType , class DeviceSrc , bool Contig >
+class MDArrayDeepCopy< ValueType , KOKKOS_MACRO_DEVICE , DeviceSrc ,
+                       true   /* Same Memory Space */ ,
+                       false  /* Different MDArray Maps */ ,
+                       Contig /* Don't care */ >
 {
 public:
-  enum { RANK = 8 };
+  typedef KOKKOS_MACRO_DEVICE    DeviceDst ;
 
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
-
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapDst > dst_type ;
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapSrc > src_type ;
-
-  dst_type dst ;
-  src_type src ;
-
-  MDArrayDeepCopyFunctor( const dst_type & arg_dst ,
-                          const src_type & arg_src )
-    : dst( arg_dst ), src( arg_src ) {}
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  {
-    size_type indices[ RANK ];
-
-    dst.m_map.reverse_index( iwork , indices );
-
-    dst( indices[0] , indices[1] , indices[2] , indices[3] ,
-         indices[4] , indices[5] , indices[6] , indices[7] ) =
-
-    src( indices[0] , indices[1] , indices[2] , indices[3] ,
-         indices[4] , indices[5] , indices[6] , indices[7] );
-  }
-};
-
-template< typename ValueType , class MapDst , class MapSrc >
-class MDArrayDeepCopyFunctor<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,7>
-{
-public:
-  enum { RANK = 7 };
-
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
-
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapDst > dst_type ;
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapSrc > src_type ;
-
-  dst_type dst ;
-  src_type src ;
-
-  MDArrayDeepCopyFunctor( const dst_type & arg_dst ,
-                          const src_type & arg_src )
-    : dst( arg_dst ), src( arg_src ) {}
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  {
-    size_type indices[ RANK ];
-
-    dst.m_map.reverse_index( iwork , indices );
-
-    dst( indices[0] , indices[1] , indices[2] , indices[3] ,
-         indices[4] , indices[5] , indices[6] ) =
-
-    src( indices[0] , indices[1] , indices[2] , indices[3] ,
-         indices[4] , indices[5] , indices[6] );
-  }
-};
-
-template< typename ValueType , class MapDst , class MapSrc >
-class MDArrayDeepCopyFunctor<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,6>
-{
-public:
-  enum { RANK = 6 };
-
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
-
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapDst > dst_type ;
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapSrc > src_type ;
-
-  dst_type dst ;
-  src_type src ;
-
-  MDArrayDeepCopyFunctor( const dst_type & arg_dst ,
-                          const src_type & arg_src )
-    : dst( arg_dst ), src( arg_src ) {}
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  {
-    size_type indices[ RANK ];
-
-    dst.m_map.reverse_index( iwork , indices );
-
-    dst( indices[0] , indices[1] , indices[2] , indices[3] ,
-         indices[4] , indices[5] ) =
-
-    src( indices[0] , indices[1] , indices[2] , indices[3] ,
-         indices[4] , indices[5] );
-  }
-};
-
-template< typename ValueType , class MapDst , class MapSrc >
-class MDArrayDeepCopyFunctor<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,5>
-{
-public:
-  enum { RANK = 5 };
-
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
-
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapDst > dst_type ;
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapSrc > src_type ;
-
-  dst_type dst ;
-  src_type src ;
-
-  MDArrayDeepCopyFunctor( const dst_type & arg_dst ,
-                          const src_type & arg_src )
-    : dst( arg_dst ), src( arg_src ) {}
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  {
-    size_type indices[ RANK ];
-
-    dst.m_map.reverse_index( iwork , indices );
-
-    dst( indices[0] , indices[1] , indices[2] , indices[3] , indices[4] ) =
-    src( indices[0] , indices[1] , indices[2] , indices[3] , indices[4] );
-  }
-};
-
-template< typename ValueType , class MapDst , class MapSrc >
-class MDArrayDeepCopyFunctor<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,4>
-{
-public:
-  enum { RANK = 4 };
-
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
-
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapDst > dst_type ;
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapSrc > src_type ;
-
-  dst_type dst ;
-  src_type src ;
-
-  MDArrayDeepCopyFunctor( const dst_type & arg_dst ,
-                          const src_type & arg_src )
-    : dst( arg_dst ), src( arg_src ) {}
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  {
-    size_type indices[ RANK ];
-
-    dst.m_map.reverse_index( iwork , indices );
-
-    dst( indices[0] , indices[1] , indices[2] , indices[3] ) =
-    src( indices[0] , indices[1] , indices[2] , indices[3] );
-  }
-};
-
-template< typename ValueType , class MapDst , class MapSrc >
-class MDArrayDeepCopyFunctor<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,3>
-{
-public:
-  enum { RANK = 3 };
-
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
-
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapDst > dst_type ;
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapSrc > src_type ;
-
-  dst_type dst ;
-  src_type src ;
-
-  MDArrayDeepCopyFunctor( const dst_type & arg_dst ,
-                          const src_type & arg_src )
-    : dst( arg_dst ), src( arg_src ) {}
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  {
-    size_type indices[ RANK ];
-
-    dst.m_map.reverse_index( iwork , indices );
-
-    dst( indices[0] , indices[1] , indices[2] ) =
-    src( indices[0] , indices[1] , indices[2] );
-  }
-};
-
-template< typename ValueType , class MapDst , class MapSrc >
-class MDArrayDeepCopyFunctor<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,2>
-{
-public:
-  enum { RANK = 2 };
-
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
-
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapDst > dst_type ;
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapSrc > src_type ;
-
-  dst_type dst ;
-  src_type src ;
-
-  MDArrayDeepCopyFunctor( const dst_type & arg_dst ,
-                          const src_type & arg_src )
-    : dst( arg_dst ), src( arg_src ) {}
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  {
-    size_type indices[ RANK ];
-
-    dst.m_map.reverse_index( iwork , indices );
-
-    dst( indices[0] , indices[1] ) = src( indices[0] , indices[1] );
-  }
-};
-
-template< typename ValueType , class MapDst , class MapSrc >
-class MDArrayDeepCopyFunctor<ValueType,KOKKOS_MACRO_DEVICE,MapDst,MapSrc,1>
-{
-public:
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
-
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapDst > dst_type ;
-  typedef MDArrayView< ValueType , KOKKOS_MACRO_DEVICE , MapSrc > src_type ;
-
-  dst_type dst ;
-  src_type src ;
-
-  MDArrayDeepCopyFunctor( const dst_type & arg_dst ,
-                          const src_type & arg_src )
-    : dst( arg_dst ), src( arg_src ) {}
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  {
-    dst( iwork ) = src( iwork );
-  }
-};
-
-//----------------------------------------------------------------------------
-// Deep copy functor for same map and contiguous:
-// map is irrelavent.
-
-template< typename ValueType >
-class MDArrayDeepCopyFunctor<ValueType,KOKKOS_MACRO_DEVICE,void,void,0>
-{
-public:
-  typedef KOKKOS_MACRO_DEVICE    device_type ;
-  typedef device_type::size_type size_type ;
-
-  ValueType * dst ;
-  ValueType * src ;
-
-  MDArrayDeepCopyFunctor( ValueType * arg_dst ,
-                          ValueType * arg_src )
-    : dst( arg_dst ), src( arg_src ) {}
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void operator()( size_type iwork ) const
-  { dst[ iwork ] = src[ iwork ]; }
-};
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-/** \brief  Deep copy with same DeviceType, same Map, and contiguous */
-
-template< typename ValueType , class MapOpt >
-class MDArrayDeepCopy< ValueType , KOKKOS_MACRO_DEVICE , MapOpt , true ,
-                                   KOKKOS_MACRO_DEVICE , MapOpt , true >
-{
-public:
-  typedef KOKKOS_MACRO_DEVICE device_type ;
-  typedef device_type::size_type size_type ;
-
-  typedef MDArrayView< ValueType , device_type , MapOpt > array_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , device_type , void , void , 0 > functor_type ;
-
-  static void run( const array_type & dst , const array_type & src )
-  {
-    parallel_for( dst.size() ,
-                  functor_type( dst.m_memory.ptr_on_device() ,
-                                src.m_memory.ptr_on_device() ) );
-
-  }
-};
-
-/** \brief  Deep copy with same DeviceType and different Maps */
-
-template< typename ValueType , 
-          class MapDst , bool ContigDst ,
-          class MapSrc , bool ContigSrc >
-class MDArrayDeepCopy< ValueType ,
-                       KOKKOS_MACRO_DEVICE , MapDst , ContigDst ,
-                       KOKKOS_MACRO_DEVICE , MapSrc , ContigSrc >
-{ 
-public:
-  typedef KOKKOS_MACRO_DEVICE device_type ;
-  typedef device_type::size_type size_type ;
+  typedef MDArrayView<ValueType, DeviceDst > dst_type ;
+  typedef MDArrayView<ValueType, DeviceSrc > src_type ;
   
-  typedef MDArrayView< ValueType , device_type , MapSrc > src_type ;
-  typedef MDArrayView< ValueType , device_type , MapDst > dst_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 8 > deep8 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 7 > deep7 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 6 > deep6 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 5 > deep5 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 4 > deep4 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 3 > deep3 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 2 > deep2 ;
-  typedef MDArrayDeepCopyFunctor< ValueType , device_type , MapDst , MapSrc , 1 > deep1 ;
-
-  static
-  void run( const dst_type & dst , const src_type & src )
+  static void run( const dst_type & dst , const src_type & src )
   {
-    const size_t n = dst.size();
+    switch( dst.rank() ) {
+    case 8 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceDst , dst_type , src_type , 8 >( dst , src ) );
+      break ;
+    
+    case 7 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceDst , dst_type , src_type , 7 >( dst , src ) );
+      break ;
 
-    switch ( dst.rank() ) {
-    case 8 : parallel_for( n , deep8( dst , src ) ); break ;
-    case 7 : parallel_for( n , deep7( dst , src ) ); break ;
-    case 6 : parallel_for( n , deep6( dst , src ) ); break ;
-    case 5 : parallel_for( n , deep5( dst , src ) ); break ;
-    case 4 : parallel_for( n , deep4( dst , src ) ); break ;
-    case 3 : parallel_for( n , deep3( dst , src ) ); break ;
-    case 2 : parallel_for( n , deep2( dst , src ) ); break ;
-    case 1 : parallel_for( n , deep1( dst , src ) ); break ;
+    case 6 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceDst , dst_type , src_type , 6 >( dst , src ) );
+      break ;
+    
+    case 5 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceDst , dst_type , src_type , 5 >( dst , src ) );
+      break ;
+
+    case 4 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceDst , dst_type , src_type , 4 >( dst , src ) );
+      break ;
+
+    case 3 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceDst , dst_type , src_type , 3 >( dst , src ) );
+      break ;
+
+    case 2 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceDst , dst_type , src_type , 2 >( dst , src ) );
+
+    case 1 :
+      parallel_for( dst.dimension(0), Impl::DeepCopyContiguous< ValueType , DeviceDst >( dst.m_memory.ptr_on_device() , src.m_memory.ptr_on_device() ) );
+      break ;
+
+    default: break ;
     }
   }
 };
 
-//----------------------------------------------------------------------------
+/** \brief  Different maps on the same memory space */
+template< typename ValueType , class DeviceDst , bool Contig >
+class MDArrayDeepCopy< ValueType , DeviceDst , KOKKOS_MACRO_DEVICE ,
+                       true   /* Same Memory Space */ ,
+                       false  /* Different MDArray Maps */ ,
+                       Contig /* Don't care */ >
+{
+public:
+  typedef KOKKOS_MACRO_DEVICE    DeviceSrc ;
 
-#endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
+  typedef MDArrayView<ValueType, DeviceDst > dst_type ;
+  typedef MDArrayView<ValueType, DeviceSrc > src_type ;
+  
+  static void run( const dst_type & dst , const src_type & src )
+  {
+    switch( dst.rank() ) {
+    case 8 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 8 >( dst , src ) );
+      break ;
+    
+    case 7 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 7 >( dst , src ) );
+      break ;
+
+    case 6 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 6 >( dst , src ) );
+      break ;
+    
+    case 5 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 5 >( dst , src ) );
+      break ;
+
+    case 4 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 4 >( dst , src ) );
+      break ;
+
+    case 3 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 3 >( dst , src ) );
+      break ;
+
+    case 2 :
+      parallel_for( dst.dimension(0), Impl::MDArrayDeepCopyFunctor< DeviceSrc , dst_type , src_type , 2 >( dst , src ) );
+
+    case 1 :
+      parallel_for( dst.dimension(0), Impl::DeepCopyContiguous< ValueType , DeviceSrc >( dst.m_memory.ptr_on_device() , src.m_memory.ptr_on_device() ) );
+      break ;
+
+    default: break ;
+    }
+  }
+};
 
 } // namespace Impl
 } // namespace Kokkos
+
 
 #endif
 

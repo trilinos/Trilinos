@@ -93,6 +93,12 @@ public:
   {
     return m_ptr_on_device != rhs.m_ptr_on_device || m_count != rhs.m_count ;
   }
+
+  /** \brief  Because memory is contiguous this is exposed */
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  value_type * ptr_on_device() const { return m_memory.ptr_on_device(); }
+
   
   /*------------------------------------------------------------------*/
 

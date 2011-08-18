@@ -52,15 +52,15 @@
 namespace Kokkos {
 
 template< typename ValueType >
-class MDArrayView< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map >
+class MDArrayView< ValueType , DeviceCuda >
 {
 public:
-  typedef ValueType                       value_type ;
-  typedef DeviceCuda                      device_type ;
-  typedef DeviceCuda::default_mdarray_map map_option ;
-  typedef DeviceCuda::size_type           size_type ;
+  typedef ValueType                value_type ;
+  typedef DeviceCuda               device_type ;
+  typedef DeviceCuda::mdarray_map  mdarray_map ;
+  typedef DeviceCuda::size_type    size_type ;
 
-  typedef MDArrayView< value_type , DeviceHost , map_option > HostView ;
+  typedef MDArrayView< value_type , Serial< HostMemory , mdarray_map > > HostView ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Not contiguous due to the need to pad for memory alignment */
@@ -100,7 +100,11 @@ public:
   /** \brief  Because memory is contiguous this is exposed */
   inline
   __device__
-  value_type * ptr_on_device() const { return m_memory.ptr_on_device(); }
+  value_type * ptr_on_device() const {
+	if (rank() == 1) 
+		throw std::runtime_error("Rank is not equation to 1");
+
+	 return m_memory.ptr_on_device(); }
 #endif
 
   /*------------------------------------------------------------------*/
@@ -268,12 +272,10 @@ public:
 
 private:
 
-  enum { MAX_RANK = 8 };
-
   MemoryView< value_type , device_type >  m_memory ;
   size_type                               m_rank ;
   size_type                               m_stride ;
-  size_type                               m_dims[ MAX_RANK ];
+  size_type                               m_dims[ MDArrayMaxRank ];
 
   inline
   MDArrayView( const std::string & label ,
@@ -308,21 +310,23 @@ private:
       }
 
       device_type::allocate_memory_view( m_memory , size , label );
+
+      parallel_for( size , Impl::AssignContiguous<value_type,device_type>( m_memory.ptr_on_device() , 0 ) );
     }
 
-  template< typename V , class D , class M >
+  template< typename V , class D >
   friend
-  MDArrayView< V , D , M >
+  MDArrayView< V , D >
   create_labeled_mdarray( const std::string & label ,
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
-  template< typename V , class DeviceDst , class MapDst , bool ,
-                         class DeviceSrc , class MapSrc , bool >
+  template< typename V , class DeviceDst , class DeviceSrc ,
+            bool , bool , bool >
   friend
   class Impl::MDArrayDeepCopy ;
 
-  template< typename V , class D , class MapDst , class MapSrc , unsigned R >
+  template< typename V , class MDArrayDst , class MDArraySrc , unsigned >
   friend
   class Impl::MDArrayDeepCopyFunctor ;
 };
@@ -337,14 +341,16 @@ namespace Impl {
 
 /** \brief  Deep copy device to device */
 template< typename ValueType >
-class MDArrayDeepCopy< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map , false ,
-                                   DeviceCuda , DeviceCuda::default_mdarray_map , false >
+class MDArrayDeepCopy< ValueType , DeviceCuda , DeviceCuda ,
+                       true  /* same memory space */ ,
+                       true  /* same mdarray map */ ,
+                       false /* contiguous memory */ >
 {
 public:
   typedef DeviceCuda            device_type ;
   typedef DeviceCuda::size_type size_type ;
 
-  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map > array_type ;
+  typedef MDArrayView< ValueType , DeviceCuda > array_type ;
 
         ValueType * const dst ;
   const ValueType * const src ;
@@ -372,14 +378,16 @@ public:
 
 /** \brief  Copy Host to Cuda specialization */
 template< typename ValueType >
-class MDArrayDeepCopy< ValueType ,
-                       DeviceCuda , DeviceCuda::default_mdarray_map , false ,
-                       DeviceHost , DeviceCuda::default_mdarray_map , true >
+class MDArrayDeepCopy< ValueType , DeviceCuda ,
+                       Serial< HostMemory , DeviceCuda::mdarray_map > ,
+                       false /* same memory space */ ,
+                       true  /* same mdarray map */ ,
+                       false /* contiguous memory */ >
 {
 public:
-  typedef DeviceCuda::size_type                          size_type ;
-  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map > dst_type ;
-  typedef MDArrayView< ValueType , DeviceHost , DeviceCuda::default_mdarray_map > src_type ;
+  typedef DeviceCuda::size_type                 size_type ;
+  typedef MDArrayView< ValueType , DeviceCuda > dst_type ;
+  typedef typename dst_type::HostView           src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
@@ -404,13 +412,16 @@ public:
 /** \brief  Copy Cuda to Host specialization */
 template< typename ValueType >
 class MDArrayDeepCopy< ValueType ,
-                       DeviceHost , DeviceCuda::default_mdarray_map , true ,
-                       DeviceCuda , DeviceCuda::default_mdarray_map , false >
+                       Serial< HostMemory , DeviceCuda::mdarray_map > ,
+                       DeviceCuda ,
+                       false /* same memory space */ ,
+                       true  /* same mdarray map */ ,
+                       false /* contiguous memory */ >
 {
 public:
-  typedef DeviceCuda::size_type                          size_type ;
-  typedef MDArrayView< ValueType , DeviceHost , DeviceCuda::default_mdarray_map > dst_type ;
-  typedef MDArrayView< ValueType , DeviceCuda , DeviceCuda::default_mdarray_map > src_type ;
+  typedef DeviceCuda::size_type                 size_type ;
+  typedef MDArrayView< ValueType , DeviceCuda > src_type ;
+  typedef typename src_type::HostView           dst_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {

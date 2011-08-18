@@ -1,148 +1,148 @@
-
 INCLUDE(PackageLibraryMacros)
 
 IF(NOT TriKota_ENABLE_DakotaCMake)
 
-#
-IF (NOT EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/configure)
-  MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota needs to 
- be untarred into the Trikota Directory before running cmake!")
-ENDIF()
+  # DAKOTA built with autoconf-generated configure/make
 
-# Dakota requires on Boost. Check if the user set a
-# path first, otherwise point into Dakota's boost.
-IF (NOT EXISTS ${Boost_INCLUDE_DIRS}/boost/type.hpp)
+  # autoreconf -i must already be run to create configure
+  IF (NOT EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/configure)
+    MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Autoconfed Dakota needs to 
+      be untarred into the Trikota Directory before running cmake!")
+  ENDIF()
 
-#  Explain what is going on with Boost paths: (too verbose)
-##    MESSAGE("   TriKota: Boost headers not found in Boost_INCLUDE_DIRS
-##    path <${Boost_INCLUDE_DIRS}>. Resetting path to Boost version distributed
-##    within Dakota: ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost")
-
-  IF (EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost/boost/type.hpp)
-    SET(Boost_INCLUDE_DIRS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost)
-    SET(Boost_LIBRARY_DIRS ${PACKAGE_BINARY_DIR}/Dakota/install/lib)
-    SET(TriKota_Dakota_Boost ON)
+  # Dakota requires on Boost. Check if the user set a
+  # path first, otherwise point into Dakota's boost.
+  IF (NOT EXISTS ${Boost_INCLUDE_DIRS}/boost/type.hpp)
+    
+    # Explain what is going on with Boost paths: (too verbose)
+    ##  MESSAGE("   TriKota: Boost headers not found in Boost_INCLUDE_DIRS
+    ##  path <${Boost_INCLUDE_DIRS}>. Resetting path to Boost version
+    ##  distributed with Dakota: ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost")
+    IF (EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost/boost/type.hpp)
+      SET(Boost_INCLUDE_DIRS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost)
+      SET(Boost_LIBRARY_DIRS ${PACKAGE_BINARY_DIR}/Dakota/install/lib)
+      SET(TriKota_Dakota_Boost ON)
+    ELSE()
+      MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota requires
+        Boost, and the headers were not found in ${Boost_INCLUDE_DIRS}
+        nor inside of Dakota at ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost.")
+    ENDIF()
   ELSE()
-    MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota requires
-     Boost, and the headers were not found in ${Boost_INCLUDE_DIRS}
-     nor inside of Dakota at ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost. ")
-  ENDIF()
-ELSE()
-  IF (NOT EXISTS ${Boost_LIBRARY_DIRS}/libboost_signals.a)
+    IF (NOT EXISTS ${Boost_LIBRARY_DIRS}/libboost_signals.a)
       MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota (Colin) now requires
-       Boost Signals library: looking for   
-       ${Boost_LIBRARY_DIRS}/libboost_signals.a ")
+        Boost Signals library: looking for  
+        ${Boost_LIBRARY_DIRS}/libboost_signals.a ")
+    ENDIF()
+    SET(TriKota_Dakota_Boost OFF)
   ENDIF()
-  SET(TriKota_Dakota_Boost OFF)
-ENDIF()
 
-#
-# Configure Dakota libraries
-#   Skip configuring if dakota_config.h already exists,
-#   unless -DTriKota_ENABLE_DakotaReconfigure:BOOL=ON
-#
-SET(${PACKAGE_NAME}_ENABLE_DakotaReconfigure OFF CACHE BOOL
+  #
+  # Configure Dakota libraries
+  #   Skip configuring if dakota_config.h already exists,
+  #   unless -DTriKota_ENABLE_DakotaReconfigure:BOOL=ON
+  #
+  SET(${PACKAGE_NAME}_ENABLE_DakotaReconfigure OFF CACHE BOOL
     "Whether to force reconfiguration of Dakota")
 
-FILE(MAKE_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota)
+  FILE(MAKE_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota)
 
-IF(NOT ${PACKAGE_NAME}_ENABLE_DakotaReconfigure 
-  AND EXISTS ${PACKAGE_BINARY_DIR}/Dakota/dakota_config.h)
+  IF(NOT ${PACKAGE_NAME}_ENABLE_DakotaReconfigure 
+    AND EXISTS ${PACKAGE_BINARY_DIR}/Dakota/dakota_config.h)
 
-SET(TriKota_Rebuild_Dakota OFF)
+    SET(TriKota_Rebuild_Dakota OFF)
 
-EXECUTE_PROCESS(
-  COMMAND echo "   TriKota: Dakota already configured, skipping reconfigure."
-  WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
-)
+    EXECUTE_PROCESS(
+      COMMAND echo "   TriKota: Dakota already configured, skipping reconfigure."
+      WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
+      )
 
-ELSE()
+  ELSE()
 
-SET(TriKota_Rebuild_Dakota ON)
+    SET(TriKota_Rebuild_Dakota ON)
 
-SET(DAKOTA_CONFIGURE_COMMAND ${PACKAGE_SOURCE_DIR}/Dakota/configure
-    CC=${CMAKE_C_COMPILER} 
-    CXX=${CMAKE_CXX_COMPILER} 
-    FC=${CMAKE_Fortran_COMPILER} 
-    F77=${CMAKE_Fortran_COMPILER}
-    --prefix=${PACKAGE_BINARY_DIR}/Dakota/install
-    --with-teuchos-include=${PACKAGE_SOURCE_DIR}/../teuchos/src
-    --with-teuchos-lib=${PACKAGE_BINARY_DIR}/../teuchos/src
-    --disable-tests
-    --with-plugin 
-    --without-graphics
-    --without-dot 
-    --without-nlpql 
-    --without-npsol)
-IF(TPL_ENABLE_MPI)
-  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
-    MPICXX=${CMAKE_CXX_COMPILER})
-ELSE()
-  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
-    --disable-mpi)
-ENDIF()
-IF(BUILD_SHARED_LIBS)
-  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
-    --enable-shared
-    --disable-static)
-ELSE()
-  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
-    --disable-shared
-    --enable-static)
-ENDIF()
-IF(NOT TriKota_Dakota_Boost)
-  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
-    --with-boost=${Boost_INCLUDE_DIRS}
-    --with-boost-libdir=${Boost_LIBRARY_DIRS})
-ENDIF()
+    SET(DAKOTA_CONFIGURE_COMMAND ${PACKAGE_SOURCE_DIR}/Dakota/configure
+        CC=${CMAKE_C_COMPILER} 
+        CXX=${CMAKE_CXX_COMPILER} 
+	FC=${CMAKE_Fortran_COMPILER} 
+	F77=${CMAKE_Fortran_COMPILER}
+	--prefix=${PACKAGE_BINARY_DIR}/Dakota/install
+	--with-teuchos-include=${PACKAGE_SOURCE_DIR}/../teuchos/src
+	--with-teuchos-lib=${PACKAGE_BINARY_DIR}/../teuchos/src
+	--disable-tests
+	--with-plugin 
+	--without-graphics
+	--without-dot 
+	--without-nlpql 
+	--without-npsol)
+    IF(TPL_ENABLE_MPI)
+      SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+	MPICXX=${CMAKE_CXX_COMPILER})
+    ELSE()
+      SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+	--disable-mpi)
+    ENDIF()
+    IF(BUILD_SHARED_LIBS)
+      SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+	--enable-shared
+	--disable-static)
+    ELSE()
+      SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+	--disable-shared
+	--enable-static)
+    ENDIF()
+    IF(NOT TriKota_Dakota_Boost)
+      SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+	--with-boost=${Boost_INCLUDE_DIRS}
+	--with-boost-libdir=${Boost_LIBRARY_DIRS})
+    ENDIF()
 
-EXECUTE_PROCESS(
-  COMMAND echo "-->TriKota: Launching Dakota configure script -- takes several minutes."
-  WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
-)
+    EXECUTE_PROCESS(
+      COMMAND echo "-->TriKota: Launching Dakota configure script -- takes several minutes."
+      WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
+      )
 
-EXECUTE_PROCESS(
-  WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
-  COMMAND ${DAKOTA_CONFIGURE_COMMAND}
-  OUTPUT_FILE ${PACKAGE_BINARY_DIR}/Dakota/configure.out
-  )
+    EXECUTE_PROCESS(
+      WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
+      COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+      OUTPUT_FILE ${PACKAGE_BINARY_DIR}/Dakota/configure.out
+      )
 
-EXECUTE_PROCESS(
-  COMMAND echo "<--TriKota: Finished Dakota configure script."
-  WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
-)
+    EXECUTE_PROCESS(
+      COMMAND echo "<--TriKota: Finished Dakota configure script."
+      WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
+      )
 
-ENDIF()
+  ENDIF()
 
-# Customize the build process, by adding a custom make
-# target, which makes Dakota (in source tree) and then
-# uses Dakota's PREFIX to install it in the build tree.
-#   Reverting to "make" from "make -j 4" which might
-#   have been causing problems by being launched within
-#   another make -j 4 at the Trilinos level
+  # Customize the build process, by adding a custom make
+  # target, which makes Dakota (in source tree) and then
+  # uses Dakota's PREFIX to install it in the build tree.
+  #   Reverting to "make" from "make -j 4" which might
+  #   have been causing problems by being launched within
+  #   another make -j 4 at the Trilinos level
+  
+  IF(TriKota_Rebuild_Dakota)
 
-IF(TriKota_Rebuild_Dakota)
+    ADD_CUSTOM_TARGET( TriKota_Dakota_libs ALL
+      COMMAND make -j4
+      WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
+      )
 
-ADD_CUSTOM_TARGET( TriKota_Dakota_libs ALL
-   COMMAND make -j4
-   WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
-  )
+    ADD_CUSTOM_TARGET( TriKota_Dakota_install ALL
+      COMMAND make install
+      WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
+      )
 
-ADD_CUSTOM_TARGET( TriKota_Dakota_install ALL
-   COMMAND make install
-   WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
-  )
+    ## Make must finish before make install, for ampl
+    ADD_DEPENDENCIES(TriKota_Dakota_install  TriKota_Dakota_libs)
+    
+  ENDIF()
 
-## Make must finish before make install, for ampl
-ADD_DEPENDENCIES(TriKota_Dakota_install  TriKota_Dakota_libs)
+  SET(Dakota_INCLUDE_DIRS 
+    ${CMAKE_CURRENT_BINARY_DIR}/../Dakota
+    ${CMAKE_CURRENT_BINARY_DIR}/../Dakota/install/include)
 
-ENDIF()
-
-SET(Dakota_INCLUDE_DIRS 
-  ${CMAKE_CURRENT_BINARY_DIR}/../Dakota
-  ${CMAKE_CURRENT_BINARY_DIR}/../Dakota/install/include)
-
-SET(DAKOTA_LIBS
+  SET(DAKOTA_LIBS
     dakota pecos lhs surfpack conmin
     ddace fsudace jega optpp
     psuade newmat ncsuopt sparsegrid 
@@ -150,15 +150,15 @@ SET(DAKOTA_LIBS
     utilib 3po hopspack 
     cport amplsolver nidr dl 
     boost_signals boost_regex
-  )
+    )
 
-LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib
-                 ${Boost_LIBRARY_DIRS})
+  LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib
+                   ${Boost_LIBRARY_DIRS})
 
-# Create a cache variable to store definitions needed when including Dakota
-# headers
-SET(TRIKOTA_DAKOTA_DEFINITIONS "-DHAVE_CONFIG_H" CACHE INTERNAL "")
-ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
+  # Create a cache variable to store definitions needed when including Dakota
+  # headers
+  SET(TRIKOTA_DAKOTA_DEFINITIONS "-DHAVE_CONFIG_H" CACHE INTERNAL "")
+  ADD_DEFINITIONS(${TRIKOTA_DAKOTA_DEFINITIONS})
 
 ENDIF() # IF(NOT TriKota_ENABLE_DakotaCMake)
 
@@ -198,42 +198,44 @@ APPEND_SET(SOURCES
 
 IF(TriKota_ENABLE_DakotaCMake)
 
-# The DEPLIBS part is to tell CMake that trikota depends on the specified
-# Dakota libraries.  The IMPORTEDLIBS part is to get the PACKAGE_ADD_LIBRARY
-# macro to put the Dakota libraries TriKota_LIBRARIES when writing
-# TriKotaConfig.cmake and Makefile.export.TriKota.  There should be a better
-# way of doing this...
-PACKAGE_ADD_LIBRARY(
-  trikota
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS ${Dakota_EXTRA_LIBRARIES}
-  IMPORTEDLIBS ${Dakota_LIBRARIES}
-  )
+  # DAKOTA built with CMake
 
-ELSE()
+  # The DEPLIBS part is to tell CMake that trikota depends on the specified
+  # Dakota libraries.  The IMPORTEDLIBS part is to get the PACKAGE_ADD_LIBRARY
+  # macro to put the Dakota libraries TriKota_LIBRARIES when writing
+  # TriKotaConfig.cmake and Makefile.export.TriKota.  There should be a better
+  # way of doing this...
+  PACKAGE_ADD_LIBRARY(
+    trikota
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS ${Dakota_EXTRA_LIBRARIES}
+    IMPORTEDLIBS ${Dakota_LIBRARIES}
+    )
 
+ELSE() # IF(TriKota_ENABLE_DakotaCMake)
+
+  # DAKOTA built with autoconf-generated configure/make
 
   LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}
-${PACKAGE_BINARY_DIR}/Dakota/install/lib/)
+    ${PACKAGE_BINARY_DIR}/Dakota/install/lib/)
 
-PACKAGE_ADD_LIBRARY(
-  trikota
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS ${DAKOTA_LIBS}
-  )
+  PACKAGE_ADD_LIBRARY(
+    trikota
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS ${DAKOTA_LIBS}
+    )
 
-IF(TriKota_Rebuild_Dakota)
+  IF(TriKota_Rebuild_Dakota)
+    ADD_DEPENDENCIES(trikota TriKota_Dakota_install)
+  ENDIF()
 
-ADD_DEPENDENCIES(trikota TriKota_Dakota_install)
-
-ENDIF()
-
-# Custom "make install" command to copy contents of Dakota lib&include
-INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/lib/ DESTINATION lib)
-INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/include/ DESTINATION include)
-# Temporary fix, to be removed by boostsignals TPL
-INSTALL(FILES ${Boost_LIBRARY_DIRS}/libboost_signals.a  DESTINATION lib)
+  # Custom "make install" command to copy contents of Dakota lib&include
+  INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/lib/ DESTINATION lib)
+  INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/include/
+    DESTINATION include)
+  # Temporary fix, to be removed by boostsignals TPL
+  INSTALL(FILES ${Boost_LIBRARY_DIRS}/libboost_signals.a  DESTINATION lib)
 
 ENDIF() # IF(TriKota_ENABLE_DakotaCMake)

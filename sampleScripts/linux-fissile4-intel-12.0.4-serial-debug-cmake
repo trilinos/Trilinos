@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# For building SERIAL DEBUG build with Intel 11.064 on CASL fissile 4 machines
+
+# NOTE: You must do 'source /opt/casldev/env/casl_dev_env.sh' before running this!
+
+EXTRA_ARGS=$@
+
+if [ "$TRILINOS_DIR" == "" ]; then
+  TRILINOS_DIR=../../../Trilinos
+fi
+
+TRILINOS_DIR_ABS=$(readlink -f $TRILINOS_DIR)
+echo "TRILINOS_DIR_ABS = $TRILINOS_DIR_ABS"
+
+DRIVERS_BASE_DIR=$TRILINOS_DIR_ABS/cmake/ctest/drivers/pu241
+
+cmake \
+-D Trilinos_CONFIGURE_OPTIONS_FILE:FILEPATH=$DRIVERS_BASE_DIR/intel-12.0.4-options.cmake \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \
+-D Teuchos_ENABLE_STACKTRACE:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D DART_TESTING_TIMEOUT:STRING=180.0 \
+$EXTRA_ARGS \
+$TRILINOS_DIR_ABS
+
+# -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \

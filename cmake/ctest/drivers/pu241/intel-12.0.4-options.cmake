@@ -7,6 +7,7 @@ SET(PVM_INCLUDE_DIRS /opt/intel-11.1.064/tpls/pvm3/include                      
 SET(HDF5_LIBRARY_NAMES "hdf5_hl;hdf5"                                             CACHE STRING   "")
 SET(HDF5_LIBRARY_DIRS /opt/intel-11.1.064/tpls/hdf5-1.8.5-patch1/lib              CACHE FILEPATH "")
 SET(HDF5_INCLUDE_DIRS /opt/intel-11.1.064/tpls/hdf5-1.8.5-patch1/include          CACHE FILEPATH "")
+SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "")
 
 SET(INTEL_BIN /opt/intel/Compiler/composerxe-2011.4.191/bin/intel64)
 

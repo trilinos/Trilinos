@@ -221,14 +221,25 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
     )
 
-IF(${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
+IF (${PACKAGE_NAME}_ENABLE_ThyraEpetraExtAdapters)
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_DEBUG)
+  IF (${PACKAGE_NAME}_ENABLE_DEBUG)
+    SET(STEPPER_VALITATOR_ARGS ARGS)
+  ELSE()
+    SET(STEPPER_VALITATOR_ARGS ARGS --not-unit-test=Rythmos_StepperValidator_ImplicitRK_UnitTest)
+  ENDIF()
+
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
       StepperValidator_UnitTest
       SOURCES Rythmos_StepperValidator_UnitTest.cpp Rythmos_UnitTest.cpp
       DEPLIBS rythmos_test_models
       NUM_MPI_PROCS 1
+      ${STEPPER_VALITATOR_ARGS}
       STANDARD_PASS_OUTPUT
       )
+
 ENDIF()
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(

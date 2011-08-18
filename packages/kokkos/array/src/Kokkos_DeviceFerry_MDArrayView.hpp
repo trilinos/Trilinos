@@ -52,14 +52,15 @@ namespace Kokkos {
 namespace Impl {
 
 /** \brief  Copy Host to Ferry specialization */
-template< typename ValueType , class MapOpt >
-class MDArrayDeepCopy< ValueType ,
-                       DeviceFerry , MapOpt , true ,
-                       DeviceHost , MapOpt , true >
+template< typename ValueType >
+class MDArrayDeepCopy< ValueType , DeviceFerry , DeviceHost ,
+                       false  /* not same memory space */ ,
+                       true   /* same mdarray map */ ,
+                       true   /* contiguous memory */ >
 {
 public:
-  typedef MDArrayView< ValueType , DeviceFerry , MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
+  typedef MDArrayView< ValueType , DeviceFerry > dst_type ;
+  typedef MDArrayView< ValueType , DeviceHost  > src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
@@ -83,14 +84,15 @@ public:
 
 
 /** \brief  Copy Ferry to Host specialization */
-template< typename ValueType , class MapOpt >
-class MDArrayDeepCopy< ValueType ,
-                       DeviceHost , MapOpt , true ,
-                       DeviceFerry , MapOpt , true >
+template< typename ValueType >
+class MDArrayDeepCopy< ValueType , DeviceHost , DeviceFerry ,
+                       false  /* not same memory space */ ,
+                       true   /* same mdarray map */ ,
+                       true   /* contiguous */ >
 {
 public:
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceFerry , MapOpt > src_type ;
+  typedef MDArrayView< ValueType , DeviceHost  > dst_type ;
+  typedef MDArrayView< ValueType , DeviceFerry > src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {

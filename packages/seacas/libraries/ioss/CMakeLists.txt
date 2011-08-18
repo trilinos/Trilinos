@@ -1,1 +1,7 @@
+INCLUDE(SubPackageMacros)
+
+SUBPACKAGE(Ioss)
+
 SUBDIRS(src)
+
+SUBPACKAGE_POSTPROCESS()

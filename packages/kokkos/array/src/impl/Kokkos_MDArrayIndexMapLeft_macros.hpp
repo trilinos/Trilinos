@@ -48,16 +48,15 @@
 namespace Kokkos {
 namespace Impl {
 
-template< class DeviceType , class MapOption > class MDArrayIndexMap ;
-
 template<>
-class MDArrayIndexMap< KOKKOS_MACRO_DEVICE , MDArrayIndexMapLeft > {
+class MDArrayIndexMap< KOKKOS_MACRO_DEVICE_MEMORY ,
+                       Kokkos::Impl::MDArrayIndexMapLeft , 1 > {
 public:
 
-  typedef KOKKOS_MACRO_DEVICE     device_type;
-  typedef device_type::size_type  size_type ;
+  typedef KOKKOS_MACRO_DEVICE_MEMORY  memory_space ;
+  typedef memory_space::size_type     size_type ;
 
-  enum { MAX_RANK = 8 };
+  enum { Contiguous = true };
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -279,13 +278,13 @@ public:
   MDArrayIndexMap( size_t arg_rank, const size_t * const arg_dims )
     : m_rank(arg_rank)
   {
-    KOKKOS_MACRO_CHECK( require_less( arg_rank , MAX_RANK ) );
+    KOKKOS_MACRO_CHECK( require_less( arg_rank , MDArrayMaxRank ) );
     size_type i = 0 ;
     for ( ; i < m_rank ; ++i ) {
       m_dims[i] = arg_dims[i] ;
       KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
     }
-    for ( ; i < MAX_RANK ; ++i ) { m_dims[i] = 0 ; }
+    for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
   }
 
   template < class IndexMap >
@@ -295,13 +294,13 @@ public:
   MDArrayIndexMap( const IndexMap & rhs )
     : m_rank( rhs.rank() )
   {
-    KOKKOS_MACRO_CHECK( require_less( m_rank , MAX_RANK ) );
+    KOKKOS_MACRO_CHECK( require_less( m_rank , MDArrayMaxRank ) );
     size_type i = 0 ;
     for ( ; i < m_rank ; ++i ) {
       m_dims[i] = rhs.dimension(i);
       KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
     }
-    for ( ; i < MAX_RANK ; ++i ) { m_dims[i] = 0 ; }
+    for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
   }
 
   template < class IndexMap >
@@ -311,20 +310,20 @@ public:
   {
     if (this != & rhs ) {
       m_rank = rhs.rank();
-      KOKKOS_MACRO_CHECK( require_less( m_rank , MAX_RANK ) );
+      KOKKOS_MACRO_CHECK( require_less( m_rank , MDArrayMaxRank ) );
       size_type i = 0 ;
       for ( ; i < m_rank ; ++i ) {
         m_dims[i] = rhs.m_dims[i] ;
         KOKKOS_MACRO_CHECK( require_less( 0 , m_dims[i] ) );
       }
-      for ( ; i < MAX_RANK ; ++i ) { m_dims[i] = 0 ; }
+      for ( ; i < MDArrayMaxRank ; ++i ) { m_dims[i] = 0 ; }
     }
     return *this;
   }
 
 private:
   size_type  m_rank;
-  size_type  m_dims[MAX_RANK];
+  size_type  m_dims[MDArrayMaxRank];
 };
 
 } // Impl namespace

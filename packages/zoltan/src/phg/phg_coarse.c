@@ -172,7 +172,7 @@ int Zoltan_PHG_Coarsening
   double *coordbuf=NULL, *coordrecbuf=NULL, *cb=NULL, *cb_end=NULL;
   int *ahvertex=NULL;
   int *msg_size=NULL;     /* TODO64 - would we ever need ZOLTAN_GNO_TYPE for message sizes? */
-  double *coorcount = NULL; /* No. of vertices represented by the cooresponding c_hg->coor */
+  double *coorcount = NULL; /* No. of vertices represented by the corresponding c_hg->coor */
   int gno_size, alt_field_count, int_size, float_size;
   ZOLTAN_GNO_TYPE tmp_gno;
   ZOLTAN_GNO_TYPE *gnoptr;
@@ -422,8 +422,8 @@ int Zoltan_PHG_Coarsening
 
     msg_size[i] = (b - (char *)gnoptr) / sizeof(int);
   }    
-  if (hg->coor) { /* Only process coords for coarse graph if fine graph has them */
-    if (count && hg->nDim &&
+  if (hg->nDim) { /* Only process coords for coarse graph if fine graph has them */
+    if (count &&
 	!(coordbuf = (double *) ZOLTAN_MALLOC(count * hg->nDim * sizeof(double))))
       MEMORY_ERROR;
 
@@ -438,8 +438,8 @@ int Zoltan_PHG_Coarsening
   Zoltan_Comm_Create(comm_plan, count, listproc, hgc->row_comm, PLAN_TAG, 
                       &size); /* we'll ignore the size because of resize*/
   
-  if (hg->coor) {
-    if (size && hg->nDim &&
+  if (hg->nDim) {
+    if (size &&
 	!(coordrecbuf = (double *) ZOLTAN_MALLOC(size * hg->nDim * sizeof(double))))
       MEMORY_ERROR;
 
@@ -448,7 +448,7 @@ int Zoltan_PHG_Coarsening
 		   (char *)coordrecbuf);
   
     /* Allocate coordinate array for coarse hgraph */
-    if (c_hg->nVtx && hg->nDim && (
+    if (c_hg->nVtx && (
          !(c_hg->coor = (double *) ZOLTAN_CALLOC(c_hg->nVtx * hg->nDim, sizeof(double)))
       || !(coorcount  = (double *) ZOLTAN_CALLOC(c_hg->nVtx, sizeof(double)))))
       MEMORY_ERROR;
@@ -511,7 +511,7 @@ int Zoltan_PHG_Coarsening
     sz = intptr[1 + alt_field_count];
     floatptr = (float *)(intptr + 2 + alt_field_count + sz);
     b = (char *)(floatptr + hg->VtxWeightDim);
-    if (hg->coor)
+    if (hg->nDim)
       doubleptr = (double *)coordrecbuf;
     
     source_lno              = *intptr++;
@@ -530,7 +530,7 @@ int Zoltan_PHG_Coarsening
     (*LevelData)[(*LevelCnt)++] = lno;              /* to lookup in part[] */
 
     lno = (int)LevelMap[lno];
-    if (hg->coor) {
+    if (hg->nDim) {
       for (j = 0; j < hg->nDim; j++){
 	c_hg->coor[lno * hg->nDim + j] += *doubleptr++;
       }
@@ -545,10 +545,10 @@ int Zoltan_PHG_Coarsening
         ++ahindex[*intptr++];
   }
 
-  if (hg->coor) {
+  if (c_hg->nDim) {
     /* Average coordinates */
     for (i = 0; i < c_hg->nVtx; i++)
-      for (j = 0; j < hg->nDim; j++)
+      for (j = 0; j < c_hg->nDim; j++)
 	c_hg->coor[i * hg->nDim + j] = c_hg->coor[i * hg->nDim + j] / coorcount[i];
     ZOLTAN_FREE(&coorcount);
   }

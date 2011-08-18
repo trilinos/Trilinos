@@ -608,11 +608,11 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
       tmap[i] = (part[i] == partid) ? nhg->nVtx++ : -1; 
 
   /* save vertex weights, edge weights, and coordinates if they exist */
-  if (nhg->nVtx && ohg->vwgt && nhg->VtxWeightDim &&
+  if (nhg->nVtx && ohg->vwgt && nhg->VtxWeightDim &&  /* KDDKDD DO WE NEED CHECK OF ohg->vwgt HERE? */
       !(nhg->vwgt=(float*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(float)*nhg->VtxWeightDim)))
       MEMORY_ERROR;
-  if (nhg->nVtx && ohg->coor && nhg->nDim &&
-      !(nhg->coor=(double *)ZOLTAN_MALLOC(nhg->nVtx * sizeof(double) * nhg->nDim + 1)))
+  if (nhg->nVtx && nhg->nDim &&
+      !(nhg->coor=(double *)ZOLTAN_MALLOC(nhg->nVtx * sizeof(double) * nhg->nDim)))
       MEMORY_ERROR;
   if (nhg->nVtx && hgp->UseFixedVtx &&
       !(nhg->fixed_part = (int*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(int))))
@@ -648,11 +648,9 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
                      nhg->VtxWeightDim * sizeof(float)); 
           } else
               pw[0] += 1.0;
-	  if (nhg->nDim && ohg->coor) {
+	  if (nhg->nDim) 
 	    for (j = 0; j < nhg->nDim; j++)
-	      memcpy(&nhg->coor[v*nhg->nDim + j], &ohg->coor[i*nhg->nDim + j],
-		     sizeof(double));
-	  }
+	      nhg->coor[v*nhg->nDim + j] = ohg->coor[i*nhg->nDim + j];
       } else {
           pw[1] += (nhg->VtxWeightDim) ? ohg->vwgt[i*nhg->VtxWeightDim] : 1.0;
       }

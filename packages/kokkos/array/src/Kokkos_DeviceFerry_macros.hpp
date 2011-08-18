@@ -54,6 +54,7 @@
 
 #define KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION /* */
 #define KOKKOS_MACRO_DEVICE                      Kokkos::DeviceFerry
+#define KOKKOS_MACRO_DEVICE_MEMORY               Kokkos::DeviceFerry
 #define KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION    __declspec(target(mic))
 #define KOKKOS_MACRO_DEVICE_FUNCTION_FERRY 		 _Shared
 #define KOKKOS_MACRO_DEVICE_FUNCTION             __declspec(target(mic))

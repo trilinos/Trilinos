@@ -107,6 +107,18 @@ int main(int argc, char *argv[]) {
   Comm.Barrier();
 
   EPETRA_TEST_ERR( fevec4(Comm, verbose), ierr);
+
+  Comm.Barrier();
+  if (verbose)cout << endl;
+  Comm.Barrier();
+
+  EPETRA_TEST_ERR( fevec5(Comm, verbose), ierr);
+
+  Comm.Barrier();
+  if (verbose)cout << endl;
+  Comm.Barrier();
+
+  EPETRA_TEST_ERR( fevec6(Comm, verbose), ierr);
   delete epetra_comm;
 
 #ifdef EPETRA_MPI

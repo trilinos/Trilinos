@@ -41,10 +41,9 @@
 #define KOKKOS_DEVICETPI_MDARRAYVIEW_HPP
 
 #include <Kokkos_MDArrayView.hpp>
+#include <Kokkos_DeviceHost_MDArrayView.hpp>
 
 #include <Kokkos_DeviceTPI_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
 #include <impl/Kokkos_MDArrayView_macros.hpp>
 #include <Kokkos_DeviceClear_macros.hpp>
 
@@ -54,45 +53,53 @@ namespace Impl {
 /*------------------------------------------------------------------------*/
 /** \brief  Copy Host to TPI specialization with same map and contiguous */
 
-template< typename ValueType , class MapOpt >
+template< typename ValueType >
 class MDArrayDeepCopy< ValueType ,
-                       DeviceTPI ,  MapOpt , true ,
-                       DeviceHost , MapOpt , true >
+                       DeviceTPI  ,
+                       Serial< HostMemory , DeviceTPI::mdarray_map > ,
+                       true /* Same memory space */ ,
+                       true /* Same map */ ,
+                       true /* Contiguous */ >
 {
+private:
+  typedef Serial< HostMemory , DeviceTPI::mdarray_map > device_host ;
 public:
-  typedef MDArrayView< ValueType , DeviceTPI ,  MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > src_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceTPI , void , void , 0 > functor_type ;
+  typedef MDArrayView< ValueType , DeviceTPI   > dst_type ;
+  typedef MDArrayView< ValueType , device_host > src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
+    typedef DeepCopyContiguous<ValueType,DeviceTPI> functor_type ;
+
     parallel_for( dst.size() ,
                   functor_type( dst.m_memory.ptr_on_device() ,
                                 src.m_memory.ptr_on_device() ) );
-
   }
 };
 
 
 /** \brief  Copy TPI to Host specialization with same map and contiguou */
-template< typename ValueType , class MapOpt >
+template< typename ValueType >
 class MDArrayDeepCopy< ValueType ,
-                       DeviceHost , MapOpt , true ,
-                       DeviceTPI ,  MapOpt , true >
+                       Serial< HostMemory , DeviceTPI::mdarray_map > ,
+                       DeviceTPI ,
+                       true /* Same memory space */ ,
+                       true /* Same map */ ,
+                       true /* Contiguous */ >
 {
+private:
+  typedef Serial< HostMemory , DeviceTPI::mdarray_map > device_host ;
 public:
-  typedef MDArrayView< ValueType , DeviceHost , MapOpt > dst_type ;
-  typedef MDArrayView< ValueType , DeviceTPI , MapOpt > src_type ;
-
-  typedef MDArrayDeepCopyFunctor< ValueType , DeviceTPI , void , void , 0 > functor_type ;
+  typedef MDArrayView< ValueType , device_host > dst_type ;
+  typedef MDArrayView< ValueType , DeviceTPI >   src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
+    typedef DeepCopyContiguous<ValueType,DeviceTPI> functor_type ;
+
     parallel_for( dst.size() ,
                   functor_type( dst.m_memory.ptr_on_device() ,
                                 src.m_memory.ptr_on_device() ) );
-
   }
 };
 

@@ -2384,7 +2384,11 @@ static int pmatching_rcb (ZZ *zz,
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
     goto End;
   }
-    
+
+  if (Zoltan_Set_Param(zz2, "DEBUG_LEVEL", "0") == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "fatal: error returned from Zoltan_Set_Param()\n");
+    goto End;
+  }
 
   if ((hgp->rcb_red <= 0) || (hgp->rcb_red > 1)) {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid hybrid reduction factor. Using default value 0.1.");

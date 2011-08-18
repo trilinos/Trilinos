@@ -25,7 +25,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCLAPACK_DIR=C:/trilinos_projects/clapack_build"
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTPL_Boost_INCLUDE_DIRS=C:/trilinos_projects/boost_1_40_0"
+    "-DBoost_INCLUDE_DIRS=C:/trilinos_projects/boost_1_40_0"
+    "-DTPL_ENABLE_Netcdf=OFF"
     )
 
   IF (COMM_TYPE STREQUAL MPI)
