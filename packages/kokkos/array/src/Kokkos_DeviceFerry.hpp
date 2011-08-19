@@ -45,6 +45,7 @@
 #include <vector>
 
 #include <Kokkos_MemoryView.hpp>
+#include <impl/Kokkos_MDArrayIndexMap.hpp>
 #include <impl/Kokkos_ViewTracker.hpp>
 
 #define KOKKOS_DEVICE_FERRY  Kokkos::DeviceFerry
@@ -94,6 +95,7 @@ public:
    *          then deallocate this allocated memory.
    */
   template< typename ValueType >
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   static void clear_memory_view( MemoryView< ValueType , DeviceFerry > & lhs )
     {
 #if ! defined( __MIC__ )
@@ -111,8 +113,10 @@ public:
    */
    
   template< typename ValueType >
-  static void assign_memory_view(       MemoryView< ValueType , DeviceFerry > & lhs ,
-                           const MemoryView< ValueType , DeviceFerry > & rhs )
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  static void assign_memory_view(
+          MemoryView< ValueType , DeviceFerry > & lhs ,
+    const MemoryView< ValueType , DeviceFerry > & rhs )
     {
       clear_memory_view( lhs );
 #if ! defined( __MIC__ )
@@ -155,6 +159,7 @@ public:
 /*--------------------------------------------------------------------------*/
 
 #include <impl/Kokkos_MemoryView_macros.hpp>
+#include <impl/Kokkos_BasicFunctors_macros.hpp>
 
 #include <Kokkos_DeviceClear_macros.hpp>
 

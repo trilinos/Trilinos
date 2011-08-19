@@ -37,6 +37,9 @@ INCLUDE(ParseVariableArguments)
 #   ${TPL_NAME}_INCLUDE_DIRS:PATH: List of paths to search first for header
 #      files defined in REQUIRED_HEADERS.
 #
+#   ${TPL_NAME}_INCLUDE_NAMES:STIRNG: List of include names to be looked for
+#      instead of what is specified in REQUIRED_HEADERS.
+#
 #   ${TPL_NAME}_LIBRARY_DIRS:PATH: The list of directories to search first
 #      for libraies defined in REQUIRED_LIBS_NAMES.
 #
@@ -153,8 +156,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       PRINT_VAR(${TPL_NAME}_LIBRARY_DIRS)
-      PRINT_VAR(${TPL_NAME}_LIBRARY_NAMES)
       PRINT_VAR(${TPL_NAME}_INCLUDE_DIRS)
+      PRINT_VAR(PARSE_REQUIRED_HEADERS)
     ENDIF()
 
   ENDIF()
@@ -406,9 +409,13 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     ENDIF()
 
   ELSE()
-
-    # Library has no header files so just set them to null
-    GLOBAL_NULL_SET(TPL_${TPL_NAME}_INCLUDE_DIRS)
+  
+    IF (${TPL_NAME}_INCLUDE_DIRS)
+      ADVANCED_SET(TPL_${TPL_NAME}_INCLUDE_DIRS ${${TPL_NAME}_INCLUDE_DIRS} CACHE PATH "User provided include dirs in the absence of include files.")
+    ELSE()
+      # Library has no header files, no user override, so just set them to null
+      GLOBAL_NULL_SET(TPL_${TPL_NAME}_INCLUDE_DIRS)
+    ENDIF()
 
   ENDIF()
 

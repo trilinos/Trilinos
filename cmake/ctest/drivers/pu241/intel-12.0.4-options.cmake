@@ -1,4 +1,8 @@
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/mkl-12.0.4-options.cmake)
+# hijack these to get modules paths into the include list; needed by CASLRAVE/ANC
+SET(BLAS_INCLUDE_DIRS   ${MKLROOT}/include/intel64/lp64                     CACHE PATH  "Path to MKL BLAS Fortran modules compatible with Intel fortran")
+SET(LAPACK_INCLUDE_DIRS ${BLAS_INCLUDE_DIRS}                                CACHE PATH  "Path to MKL LAPACK Fortran modules compatible with Intel fortran")
+
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/boost-1.46.1-options.cmake)
 INCLUDE(${TRILINOS_HOME_DIR}/cmake/ctest/drivers/pu241/casl-vri-tpls.cmake)
 
