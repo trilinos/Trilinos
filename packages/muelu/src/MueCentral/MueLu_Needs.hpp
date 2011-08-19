@@ -91,7 +91,7 @@ namespace MueLu {
     } //Release
 
     /*! @brief Get data without decrementing associated storage counter (i.e., read-only access). */
-    // Usage: Level->template Get< Teuchos::RCP<Operator> >("A") or
+    // Usage: Level->Get< Teuchos::RCP<Operator> >("A") or
     //        Level->Get< Teuchos::RCP<Operator> >("A")
     template <class T>
     T & Get(const std::string& ename) {

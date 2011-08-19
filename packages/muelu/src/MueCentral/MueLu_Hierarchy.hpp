@@ -195,7 +195,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                                           int startLevel=0, int numDesiredLevels=10 )
      {
 
-       RCP<Operator> A = Levels_[startLevel]->template Get< Teuchos::RCP<Operator> >("A");
+       RCP<Operator> A = Levels_[startLevel]->Get< Teuchos::RCP<Operator> >("A");
        Xpetra::global_size_t fineNnz = A->getGlobalNumEntries();
        Xpetra::global_size_t totalNnz = fineNnz;
 
@@ -219,8 +219,8 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            Levels_.resize(i+1); //keep only entries 0..i
            break;
          }
-         //RCP<Operator> A = Levels_[i+1]->template Get< Teuchos::RCP<Operator> >("A");
-         totalNnz += Levels_[i+1]->template Get< Teuchos::RCP<Operator> >("A")->getGlobalNumEntries();
+         //RCP<Operator> A = Levels_[i+1]->Get< Teuchos::RCP<Operator> >("A");
+         totalNnz += Levels_[i+1]->Get< Teuchos::RCP<Operator> >("A")->getGlobalNumEntries();
          ++i;
        } //while
 
@@ -346,20 +346,20 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                  << std::setiosflags(std::ios::left)
                  << std::setprecision(3) << i;
            *out_ << "           residual = "
-                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->template Get< Teuchos::RCP<Operator> >("A")),X,B)
+                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< Teuchos::RCP<Operator> >("A")),X,B)
                  << std::endl;
          }
-         RCP<SmootherPrototype> preSmoo = Fine->template Get< Teuchos::RCP<SmootherPrototype> >("PreSmoother");
-         RCP<SmootherPrototype> postSmoo = Fine->template Get< Teuchos::RCP<SmootherPrototype> >("PostSmoother");
+         RCP<SmootherPrototype> preSmoo = Fine->Get< Teuchos::RCP<SmootherPrototype> >("PreSmoother");
+         RCP<SmootherPrototype> postSmoo = Fine->Get< Teuchos::RCP<SmootherPrototype> >("PostSmoother");
 
          //X.norm2(norms);
-         if (Fine->template Get< Teuchos::RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
+         if (Fine->Get< Teuchos::RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
            std::ostringstream buf;
            buf << startLevel;
            std::string msg = "Level " + buf.str() + ": level A's domain map is not compatible with X";
            throw(Exceptions::Incompatible(msg));
          }
-         if (Fine->template Get< Teuchos::RCP<Operator> >("A")->getRangeMap()->isCompatible(*(B.getMap())) == false) {
+         if (Fine->Get< Teuchos::RCP<Operator> >("A")->getRangeMap()->isCompatible(*(B.getMap())) == false) {
            std::ostringstream buf;
            buf << startLevel;
            std::string msg = "Level " + buf.str() + ": level A's range map is not compatible with B";
@@ -381,9 +381,9 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
              preSmoo->Apply(X, B, zeroGuess);
            }
 
-           RCP<MultiVector> residual = Utils::Residual(*(Fine->template Get< Teuchos::RCP<Operator> >("A")),X,B);
+           RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< Teuchos::RCP<Operator> >("A")),X,B);
 
-           RCP<Operator> P = Coarse->template Get< Teuchos::RCP<Operator> >("P");
+           RCP<Operator> P = Coarse->Get< Teuchos::RCP<Operator> >("P");
            RCP<Operator> R;
            RCP<MultiVector> coarseRhs, coarseX;
            if (implicitTranspose_) {
@@ -391,7 +391,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
              coarseX = MultiVectorFactory::Build(P->getDomainMap(),X.getNumVectors());
              P->apply(*residual,*coarseRhs,Teuchos::TRANS,1.0,0.0);
            } else {
-             R = Coarse->template Get< Teuchos::RCP<Operator> >("R");
+             R = Coarse->Get< Teuchos::RCP<Operator> >("R");
              coarseRhs = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
              coarseX = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
              R->apply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);

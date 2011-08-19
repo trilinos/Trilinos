@@ -39,8 +39,8 @@ class RAPFactory : public TwoLevelFactoryBase<Scalar,LocalOrdinal,GlobalOrdinal,
 
       Teuchos::OSTab tab(this->getOStream());
       //MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
-      RCP<Operator> P = coarseLevel.template Get< Teuchos::RCP<Operator> >("P");
-      RCP<Operator> A = fineLevel.template Get< Teuchos::RCP<Operator> >("A");
+      RCP<Operator> P = coarseLevel.Get< Teuchos::RCP<Operator> >("P");
+      RCP<Operator> A = fineLevel.Get< Teuchos::RCP<Operator> >("A");
 Teuchos::RCP<Teuchos::Time> apTimer = rcp(new Teuchos::Time("RAP::A_times_P"));
 apTimer->start(true);
       RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,P,false);
@@ -56,7 +56,7 @@ MemUtils::ReportTimeAndMemory(*apTimer, *(P->getRowMap()->getComm()));
         RCP<Operator> RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
         coarseLevel.Set("A",RAP);
       } else {
-        RCP<Operator> R = coarseLevel.template Get< Teuchos::RCP<Operator> >("R");
+        RCP<Operator> R = coarseLevel.Get< Teuchos::RCP<Operator> >("R");
 Teuchos::RCP<Teuchos::Time> rapTimer = rcp(new Teuchos::Time("RAP::R_times_AP"));
 rapTimer->start(true);
         RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,false,AP,false);

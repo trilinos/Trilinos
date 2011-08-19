@@ -114,7 +114,7 @@ namespace MueLu {
     */
     static void MakeTentativeOldVersion(Level const &fineLevel, Level &coarseLevel)
     {
-      Teuchos::RCP< Operator > Op = fineLevel.template Get< Teuchos::RCP<Operator> >("A");
+      Teuchos::RCP< Operator > Op = fineLevel.Get< Teuchos::RCP<Operator> >("A");
       GO nFineDofs = Op->getGlobalNumRows();
       GO nCoarseDofs = nFineDofs/3;
       if (nCoarseDofs*3 != nFineDofs)
@@ -150,7 +150,7 @@ namespace MueLu {
       Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TentativePFactory::MakeTentative"));
       timer->start(true);
 
-      Teuchos::RCP< Operator > fineA = fineLevel.template Get< Teuchos::RCP<Operator> >("A");
+      Teuchos::RCP< Operator > fineA = fineLevel.Get< Teuchos::RCP<Operator> >("A");
       RCP<const Teuchos::Comm<int> > comm = fineA->getRowMap()->getComm();
 
       RCP<Aggregates> aggregates;

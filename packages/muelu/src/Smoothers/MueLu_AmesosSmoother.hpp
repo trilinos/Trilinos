@@ -110,7 +110,7 @@ class Level;
       Teuchos::OSTab tab(out_);
       //MueLu_cout(Teuchos::VERB_HIGH) << "AmesosSmoother::Setup()" << std::endl;
 
-      A_ = level.template Get< Teuchos::RCP<Operator> >("A");
+      A_ = level.Get< Teuchos::RCP<Operator> >("A");
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       AmesosLinearProblem_ = rcp(new Epetra_LinearProblem());
       AmesosLinearProblem_->SetOperator(epA.get());

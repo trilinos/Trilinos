@@ -38,7 +38,7 @@ public:
   //@}
 
   void Build(Level &currentLevel) {
-    Teuchos::RCP<Operator> A = currentLevel.template Get< Teuchos::RCP<Operator> >("A");
+    Teuchos::RCP<Operator> A = currentLevel.Get< Teuchos::RCP<Operator> >("A");
     Teuchos::RCP<Graph> graph = Teuchos::rcp(new Graph(A->getCrsGraph(), "graph of A"));
     currentLevel.Set("Graph",graph);
   } //Build

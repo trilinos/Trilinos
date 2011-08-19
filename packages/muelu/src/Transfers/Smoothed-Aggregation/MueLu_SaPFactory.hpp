@@ -109,7 +109,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       RCP<Operator> finalP;
 
       if (reUseP_) {
-        if (coarseLevel.template Get< Teuchos::RCP<Operator> >("P") == Teuchos::null)
+        if (coarseLevel.Get< Teuchos::RCP<Operator> >("P") == Teuchos::null)
           throw(std::runtime_error("SaPFactory: you have asked to reuse P, but it doesn't exist"));
         if (coarseLevel.IsAvailable("Nullspace") == false)
           throw(std::runtime_error("SaPFactory: you have asked to reuse cnull, but it doesn't exist"));
@@ -161,13 +161,13 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         //sapTimer = rcp(new Teuchos::Time("SaPFactory:I * Ptent"));
         //sapTimer->start(true);
         //Teuchos::ParameterList matrixList;
-        //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.template Get< Teuchos::RCP<Operator> >("A")->getRowMap(),matrixList);
+        //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.Get< Teuchos::RCP<Operator> >("A")->getRowMap(),matrixList);
         //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
         //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
         //sapTimer->stop();
         //MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
-        Teuchos::RCP< Operator > Op = fineLevel.template Get< Teuchos::RCP<Operator> >("A");
+        Teuchos::RCP< Operator > Op = fineLevel.Get< Teuchos::RCP<Operator> >("A");
         sapTimer = rcp(new Teuchos::Time("SaPFactory:APtent"));
         sapTimer->start(true);
 

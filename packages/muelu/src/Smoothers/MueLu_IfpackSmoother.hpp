@@ -150,7 +150,7 @@ class Level;
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
 
-      A_ = level.template Get< Teuchos::RCP<Operator> >("A");
+      A_ = level.Get< Teuchos::RCP<Operator> >("A");
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       Ifpack factory;
       prec_ = rcp(factory.Create(ifpackType_, &(*epA), overlap_));
