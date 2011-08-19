@@ -2338,19 +2338,46 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
   else
       isSequential = 0;
   
+
+  /* number of colors in a proc is calculated */
+  for (i=0; i<nvtx; i++) {
+      if (color[i] > numofcolor)
+          numofcolor = color[i];
+  }
+  /* total number of colors in all procs is calculated */
+  if (isSequential)
+      globnumofcolor = numofcolor;
+  else
+      MPI_Allreduce(&numofcolor, &globnumofcolor, 1, MPI_INT, MPI_MAX, zz->Communicator);
+  
+  howmanynodeinthatcolorglobal = (int *)ZOLTAN_MALLOC(sizeof(int) * (globnumofcolor + 1));
+  if (!isSequential)
+      howmanynodeinthatcolor = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+
+  sorted_color = (int *)ZOLTAN_MALLOC(sizeof(int) * 2 * (globnumofcolor));
+  permutation = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+  dummy = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+  prefixcount = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+  colorindex = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
+
+  if (recoloring_permutation == REVERSE)
+      dummyvisit = (int *)ZOLTAN_MALLOC(nvtx * sizeof(int));
+  
   for (j=0; j<recoloring_num_of_iterations; j++) {
-      /* number of colors iin a proc is calculated */
-      for (i=0; i<nvtx; i++) {
-          if (color[i] > numofcolor)
-	      numofcolor = color[i];
+      if (j != 0) { /*already done for iteration 1 */
+          /* number of colors in a proc is calculated */
+          for (i=0; i<nvtx; i++) {
+	      if (color[i] > numofcolor)
+	          numofcolor = color[i];
+          }
+
+          /* total number of colors in all procs is calculated */
+          if (isSequential)
+	      globnumofcolor = numofcolor;
+          else
+	      MPI_Allreduce(&numofcolor, &globnumofcolor, 1, MPI_INT, MPI_MAX, zz->Communicator);
       }
-      /* total number of colors in all procs is calculated */
-      if (isSequential)
-          globnumofcolor = numofcolor;
-      else
-          MPI_Allreduce(&numofcolor, &globnumofcolor, 1, MPI_INT, MPI_MAX, zz->Communicator);
-      
-      howmanynodeinthatcolorglobal = (int *)ZOLTAN_MALLOC(sizeof(int) * (globnumofcolor + 1));
+
       memset(howmanynodeinthatcolorglobal, 0, sizeof(int) * (globnumofcolor + 1));
       
       /* number of vertices at each color classes in a proc is calculated */
@@ -2359,7 +2386,6 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
 	      howmanynodeinthatcolorglobal[color[i]]++;
       }
       else {
-          howmanynodeinthatcolor = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
           memset(howmanynodeinthatcolor, 0, sizeof(int) * (globnumofcolor+1));
           for (i=0; i<nvtx; i++)
               howmanynodeinthatcolor[color[i]]++;
@@ -2371,8 +2397,6 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
           if (!isSequential)
               MPI_Allreduce(howmanynodeinthatcolor, howmanynodeinthatcolorglobal, globnumofcolor+1, MPI_INT, MPI_SUM, zz->Communicator);
           
-          sorted_color = (int *)ZOLTAN_MALLOC(sizeof(int) * 2 * (globnumofcolor));
-          permutation = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
           
           /* colors are sorted based on their counts */
           for (i=0; i < 2*globnumofcolor; i+=2) {
@@ -2388,7 +2412,6 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
           for (i=0; i<2*globnumofcolor; i+=2)
 	      permutation[sorted_color[i]] = i/2+1;
       
-          dummy = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
           memset(dummy, 0, sizeof(int) * (globnumofcolor+1));
           /* color ids are changed acc to new permutation calculated */
           for (i=0; i<lastlno; i++)
@@ -2409,8 +2432,6 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
       }   
       
       /* color indexes are stored to keep track of each color classes */
-      prefixcount = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
-      colorindex = (int *)ZOLTAN_MALLOC(sizeof(int)*(globnumofcolor+1));
       memset(prefixcount, 0, sizeof(int) * (globnumofcolor+1));
       memset(colorindex, 0, sizeof(int) * (globnumofcolor+1));
       colorindex[0] = prefixcount[0]=0;
@@ -2457,7 +2478,6 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
           /* for  asynchronous coloring, a new visiting order is obtained based on previous coloring and recoloring is done just like previous coloring */
           else if (recoloring_type == ASYNCHRONOUS) {
               if (recoloring_permutation == REVERSE) {
-                  dummyvisit = (int *)ZOLTAN_MALLOC(nvtx * sizeof(int));
                   for (i=0; i<nvtx; i++)
                       dummyvisit[nvtx-i-1] = visit[i];
                   for (i=0; i<nvtx; i++)
@@ -2490,7 +2510,6 @@ static int Recoloring(ZZ *zz, int recoloring_permutation, int recoloring_type,
       else {
 	  *nColor = 0;
           if (recoloring_permutation == REVERSE) {
-              dummyvisit = (int *)ZOLTAN_MALLOC(nvtx*sizeof(int));
               for (i=0; i<nvtx; i++)
                   dummyvisit[nvtx-i-1] = visit[i];
               for (i=0; i<nvtx; i++)
