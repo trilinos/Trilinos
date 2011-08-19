@@ -242,7 +242,7 @@ namespace MueLu {
       RCP<Operator> Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim));
 
       // Set up storage for the rows of the local Qs that belong to other processors.
-      // FIXME This is inefficient and should be done within the main loop below with std::vector's.
+      // FIXME This is inefficient and could be done within the main loop below with std::vector's.
       RCP<const Map> colMap = fineA->getColMap();
       std::vector<GO> ghostElts;
       for (LO j=0; j<numAggs; ++j)
@@ -441,37 +441,48 @@ namespace MueLu {
       // ***********************************************************
 
       // Import ghost parts of Q factors and insert into Ptentative.
-      // FIXME targetQColumns & targetQvals are much too big.  They should
-      // FIXME be only as long as the number of rows actually imported.
-      // FIXME This might require a special map?
-      RCP<MultiVector> targetQcolumns = MultiVectorFactory::Build(rowMapForPtent,NSDim);
-      targetQcolumns->doImport(*ghostQcolumns,*importer,Xpetra::INSERT);
-      RCP<MultiVector> targetQvalues = MultiVectorFactory::Build(rowMapForPtent,NSDim);
-      targetQvalues->doImport(*ghostQvalues,*importer,Xpetra::INSERT);
+      // First import just the global row numbers.
       RCP<MultiVector> targetQrowNums = MultiVectorFactory::Build(rowMapForPtent,1);
       targetQrowNums->putScalar(-1.0);
       targetQrowNums->doImport(*ghostQrowNums,*importer,Xpetra::INSERT);
-
-      ArrayRCP< ArrayRCP<SC> > targetQvals(NSDim);
-      ArrayRCP<ArrayRCP<SC> > targetQcols(NSDim);
-      for (size_t i=0; i<NSDim; ++i) {
-        targetQvals[i] = targetQvalues->getDataNonConst(i);
-        targetQcols[i] = targetQcolumns->getDataNonConst(i);
-      }
       ArrayRCP< SC > targetQrows = targetQrowNums->getDataNonConst(0);
-      /*
-      for (typename Teuchos::ArrayRCP<LO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i) {
-        if (*i > maxAggSize) maxAggSize = *i;
-      */
 
-      GO i=0;
-      for (typename ArrayRCP<SC>::iterator r=targetQrows.begin(); r!=targetQrows.end(); ++r, ++i) {
-        for (size_t j=0; j<NSDim; ++j) {
-          valPtr[j] = targetQvals[j][i];
-          colPtr[j] = (GO) targetQcols[j][i];
+      // Now create map based on just the row numbers imported.
+      Teuchos::Array<GO> gidsToImport;
+      for (typename ArrayRCP<SC>::iterator r=targetQrows.begin(); r!=targetQrows.end(); ++r) {
+        if (*r > -1.0) {
+          gidsToImport.push_back((GO)*r);
         }
-        if (*r > -1.0)
-          Ptentative->insertGlobalValues((GO)*r, colPtr.view(0,NSDim), valPtr.view(0,NSDim));
+      }
+      RCP<const Map > reducedMap = MapFactory::Build( fineA->getRowMap()->lib(),
+                          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                          gidsToImport, indexBase, fineA->getRowMap()->getComm()    );
+
+      // Import using the row numbers that this processor will receive.
+      importer = ImportFactory::Build(ghostQMap, reducedMap);
+
+      RCP<MultiVector> targetQcolumns = MultiVectorFactory::Build(reducedMap,NSDim);
+      targetQcolumns->doImport(*ghostQcolumns,*importer,Xpetra::INSERT);
+      RCP<MultiVector> targetQvalues = MultiVectorFactory::Build(reducedMap,NSDim);
+      targetQvalues->doImport(*ghostQvalues,*importer,Xpetra::INSERT);
+
+      ArrayRCP< ArrayRCP<SC> > targetQvals;
+      ArrayRCP<ArrayRCP<SC> > targetQcols;
+      if (targetQvalues->getLocalLength() > 0) {
+        targetQvals.resize(NSDim);
+        targetQcols.resize(NSDim);
+        for (size_t i=0; i<NSDim; ++i) {
+          targetQvals[i] = targetQvalues->getDataNonConst(i);
+          targetQcols[i] = targetQcolumns->getDataNonConst(i);
+        }
+      }
+
+      for (typename ArrayRCP<GO>::iterator r=gidsToImport.begin(); r!=gidsToImport.end(); ++r) {
+        for (size_t j=0; j<NSDim; ++j) {
+          valPtr[j] = targetQvals[j][reducedMap->getLocalElement(*r)];
+          colPtr[j] = (GO) targetQcols[j][reducedMap->getLocalElement(*r)];
+        }
+        Ptentative->insertGlobalValues((GO)*r, colPtr.view(0,NSDim), valPtr.view(0,NSDim));
       }
 
       Ptentative->fillComplete(coarseMap,fineA->getDomainMap()); //(domain,range) of Ptentative
