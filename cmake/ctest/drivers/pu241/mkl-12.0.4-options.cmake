@@ -8,5 +8,5 @@ SET(LAPACK_LIBRARY_NAMES "mkl_lapack95_lp64"                                    
 SET(LAPACK_LIBRARY_DIRS  "${MKLROOT}/lib/intel64"                                   CACHE FILEPATH "")
 
 # hijack these to get modules paths into the include list; needed by CASLRAVE/ANC
-SET(TPL_BLAS_INCLUDE_DIRS   ${MKLROOT}/include/intel64/lp64                         CACHE PATH     "")
-SET(TPL_LAPACK_INCLUDE_DIRS ${TPL_BLAS_INCLUDE_DIRS}                                CACHE PATH     "")
+SET(BLAS_INCLUDE_DIRS   ${MKLROOT}/include/intel64/lp64                     CACHE PATH     "")
+SET(LAPACK_INCLUDE_DIRS ${BLAS_INCLUDE_DIRS}                                CACHE PATH     "")
