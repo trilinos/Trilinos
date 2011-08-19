@@ -263,16 +263,12 @@ namespace MueLu {
                                                     indexBase, fineA->getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
       //Vector to hold bits of Q that go to other processors.
       RCP<MultiVector> ghostQvalues = MultiVectorFactory::Build(ghostQMap,NSDim);
-      //RCP<Xpetra::MultiVector<GO> > ghostQcolumns = Xpetra::MultiVectorFactory<GO>::Build(ghostQMap,NSDim);
       RCP<MultiVector> ghostQcolumns = MultiVectorFactory::Build(ghostQMap,NSDim);
-      //RCP<Xpetra::MultiVector<GO> > ghostQrowNums = Xpetra::MultiVectorFactory<GO>::Build(ghostQMap,1);
       RCP<MultiVector> ghostQrowNums = MultiVectorFactory::Build(ghostQMap,1);
       ArrayRCP< ArrayRCP<SC> > ghostQvals;
-      //ArrayRCP< ArrayRCP<GO> > ghostQcols;
       ArrayRCP< ArrayRCP<SC> > ghostQcols;
-      //ArrayRCP< GO > ghostQrows;
       ArrayRCP< SC > ghostQrows;
-      if (ghostElts.size() > 0) {
+      if (ghostQvalues->getLocalLength() > 0) {
         ghostQvals.resize(NSDim);
         ghostQcols.resize(NSDim);
         for (size_t i=0; i<NSDim; ++i) {
@@ -445,38 +441,37 @@ namespace MueLu {
       // ***********************************************************
 
       // Import ghost parts of Q factors and insert into Ptentative.
-      //RCP<Xpetra::MultiVector<GO> > targetQcolumns = Xpetra::MultiVectorFactory<GO>::Build(rowMapForPtent,NSDim);
+      // FIXME targetQColumns & targetQvals are much too big.  They should
+      // FIXME be only as long as the number of rows actually imported.
+      // FIXME This might require a special map?
       RCP<MultiVector> targetQcolumns = MultiVectorFactory::Build(rowMapForPtent,NSDim);
       targetQcolumns->doImport(*ghostQcolumns,*importer,Xpetra::INSERT);
       RCP<MultiVector> targetQvalues = MultiVectorFactory::Build(rowMapForPtent,NSDim);
       targetQvalues->doImport(*ghostQvalues,*importer,Xpetra::INSERT);
-      //RCP<Xpetra::MultiVector<GO> > targetQrowNums = Xpetra::MultiVectorFactory<GO>::Build(rowMapForPtent,1);
       RCP<MultiVector> targetQrowNums = MultiVectorFactory::Build(rowMapForPtent,1);
       targetQrowNums->putScalar(-1.0);
       targetQrowNums->doImport(*ghostQrowNums,*importer,Xpetra::INSERT);
 
-      ArrayRCP< ArrayRCP<SC> > targetQvals;
-      //ArrayRCP< ArrayRCP<GO> > targetQcols;
-      ArrayRCP<ArrayRCP<SC> > targetQcols;
-      //ArrayRCP< GO > targetQrows;
-      ArrayRCP< SC > targetQrows;
-      //if ( /*something*/ > 0) {
-        targetQvals.resize(NSDim);
-        targetQcols.resize(NSDim);
-        for (size_t i=0; i<NSDim; ++i) {
-          targetQvals[i] = targetQvalues->getDataNonConst(i);
-          targetQcols[i] = targetQcolumns->getDataNonConst(i);
-        }
-        targetQrows = targetQrowNums->getDataNonConst(0);
-      //}
+      ArrayRCP< ArrayRCP<SC> > targetQvals(NSDim);
+      ArrayRCP<ArrayRCP<SC> > targetQcols(NSDim);
+      for (size_t i=0; i<NSDim; ++i) {
+        targetQvals[i] = targetQvalues->getDataNonConst(i);
+        targetQcols[i] = targetQcolumns->getDataNonConst(i);
+      }
+      ArrayRCP< SC > targetQrows = targetQrowNums->getDataNonConst(0);
+      /*
+      for (typename Teuchos::ArrayRCP<LO>::iterator i=aggSizes.begin(); i!=aggSizes.end(); ++i) {
+        if (*i > maxAggSize) maxAggSize = *i;
+      */
 
-      for (LO i=0; i<targetQrows.size(); ++i) {
+      GO i=0;
+      for (typename ArrayRCP<SC>::iterator r=targetQrows.begin(); r!=targetQrows.end(); ++r, ++i) {
         for (size_t j=0; j<NSDim; ++j) {
           valPtr[j] = targetQvals[j][i];
           colPtr[j] = (GO) targetQcols[j][i];
         }
-        if (targetQrows[i] > -1.0)
-          Ptentative->insertGlobalValues((GO)targetQrows[i], colPtr.view(0,NSDim), valPtr.view(0,NSDim));
+        if (*r > -1.0)
+          Ptentative->insertGlobalValues((GO)*r, colPtr.view(0,NSDim), valPtr.view(0,NSDim));
       }
 
       Ptentative->fillComplete(coarseMap,fineA->getDomainMap()); //(domain,range) of Ptentative
