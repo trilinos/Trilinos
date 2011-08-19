@@ -187,7 +187,7 @@ namespace Xpetra {
 
       XPETRA_FACTORY_END;
     }
-        
+
     static RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(UnderlyingLib lib, global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
 
 #ifdef HAVE_XPETRA_TPETRA
