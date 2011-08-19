@@ -168,39 +168,10 @@ namespace MueLu {
       // convert LIDs in aggToRowmap to GIDs, put them in an ArrayView,
       // and call the Map constructor that takes arbitrary distributions.
 
-      //FIXME work around until Xpetra view table is fixed
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
-      RCP<const Epetra_CrsMatrix> epA;
-      try {
-        epA = Utils::Op2EpetraCrs(fineA);
-      }
-      catch(...) {
-        ;//do nothing
-      }
-#endif
-
-#ifdef HAVE_MUELU_TPETRA
-      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA;
-      try {
-        tpA = Utils::Op2TpetraCrs(fineA);
-      }
-      catch(...) {
-        ;//do nothing
-      }
-#endif
       std::vector<GO> globalIdsForPtent;
       for (int i=0; i< aggToRowMap.size(); ++i) {
         for (int k=0; k< aggToRowMap[i].size(); ++k) {
-#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
-          if (epA != Teuchos::null) {
-            globalIdsForPtent.push_back(epA->ColMap().GID(aggToRowMap[i][k]));
-          }
-#endif
-#ifdef HAVE_MUELU_TPETRA
-          if (tpA != Teuchos::null) {
-            globalIdsForPtent.push_back(tpA->getColMap()->getGlobalElement(aggToRowMap[i][k]));
-          }
-#endif
+          globalIdsForPtent.push_back(fineA->getColMap()->getGlobalElement(aggToRowMap[i][k]));
         }
       }
 
@@ -270,98 +241,42 @@ namespace MueLu {
 
       RCP<Operator> Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim));
 
-      //FIXME this won't work for Epetra, b/c we can't insert into off-processor rows
-      //RCP<Operator> Ptentative = rcp(new CrsOperator(fineA->getRowMap(), NSDim));
-
       // Set up storage for the rows of the local Qs that belong to other processors.
       // FIXME This is inefficient and should be done within the main loop below with std::vector's.
-      RCP<const Map> rowMap = fineA->getRowMap();
-      LO mypid = rowMapForPtent->getComm()->getRank();
       RCP<const Map> colMap = fineA->getColMap();
       std::vector<GO> ghostElts;
-      LO tmpCnt=0;
       for (LO j=0; j<numAggs; ++j)
       {
         for (LO k=0; k<aggSizes[j]; ++k) {
-                                                                              //FIXME is this right || ?
-                                                                              //                    vv
-          if ( rowMapForPtent->getGlobalElement( aggToRowMap[j][k] ) == Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid() ) {
+          //TODO is the use of Xpetra::global_size_t below correct?
+          if (rowMapForPtent->getGlobalElement(aggToRowMap[j][k]) == (GO) Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid() )
+          {
             ghostElts.push_back(colMap->getGlobalElement(aggToRowMap[j][k]));
-            tmpCnt++;
           }
         }
       }
-      std::cout << "(pid " << mypid << ") found " << tmpCnt << " ghost elts" << std::endl;
       Teuchos::ArrayView<GO> ghostGIDs(&ghostElts[0],ghostElts.size());
 
       RCP<const Map > ghostQMap = MapFactory::Build(fineA->getRowMap()->lib(),
-                                                    Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid(),
+                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                                     ghostGIDs,
-                                                    indexBase, fineA->getRowMap()->getComm()); //JG:Cthulhu::global_size_t>?
-
-      sleep(1);
-      fineA->getRowMap()->getComm()->barrier();
-
-      RCP<Teuchos::FancyOStream> myout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      myout->setOutputToRootOnly(-1);
-      myout->precision(12);
-      *myout << "\n********* ghostQMap ***********\n" << std::endl;
-      ghostQMap->describe(*myout,Teuchos::VERB_EXTREME);
-
-      sleep(1);
-      fineA->getRowMap()->getComm()->barrier();
-
+                                                    indexBase, fineA->getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
       //Vector to hold bits of Q that go to other processors.
       RCP<MultiVector> ghostQvalues = MultiVectorFactory::Build(ghostQMap,NSDim);
-      RCP<Cthulhu::MultiVector<GO> > ghostQcolumns = Cthulhu::MultiVectorFactory<GO>::Build(ghostQMap,NSDim);
-      RCP<Cthulhu::MultiVector<GO> > ghostQrowNums = Cthulhu::MultiVectorFactory<GO>::Build(ghostQMap,1);
-      //ArrayRCP< ArrayRCP<SC> > ghostQvals(NSDim);
-      //ArrayRCP< ArrayRCP<GO> > ghostQcols(NSDim);
+      RCP<Xpetra::MultiVector<GO> > ghostQcolumns = Xpetra::MultiVectorFactory<GO>::Build(ghostQMap,NSDim);
+      RCP<Xpetra::MultiVector<GO> > ghostQrowNums = Xpetra::MultiVectorFactory<GO>::Build(ghostQMap,1);
       ArrayRCP< ArrayRCP<SC> > ghostQvals;
       ArrayRCP< ArrayRCP<GO> > ghostQcols;
       ArrayRCP< GO > ghostQrows;
       if (ghostElts.size() > 0) {
-        std::cout << mypid << ": ghostElts.size() = " << ghostElts.size() << std::endl;
         ghostQvals.resize(NSDim);
         ghostQcols.resize(NSDim);
-        std::cout << mypid << ": ghostQvals.size() = " << ghostQvals.size() << std::endl;
         for (size_t i=0; i<NSDim; ++i) {
           ghostQvals[i] = ghostQvalues->getDataNonConst(i);
           ghostQcols[i] = ghostQcolumns->getDataNonConst(i);
         }
         ghostQrows = ghostQrowNums->getDataNonConst(0);
       }
-
-      std::cout << mypid << "NSDim = " << NSDim << std::endl;
-
-      if (ghostElts.size() > 0) {
-      GO ttt=0;
-      GO sss=0;
-      for (typename Teuchos::ArrayRCP< Teuchos::ArrayRCP<GO> >::iterator it = ghostQcols.begin(); it != ghostQcols.end(); ++it) {
-        sss=0;
-        for (typename Teuchos::ArrayRCP<GO>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2) {
-          std::cout << "ghostQcols[" << ttt << "][" << sss << "]" << std::endl;
-          ++sss;
-        }
-        ++ttt;
-      }
-      ttt=sss=0;
-      for (typename Teuchos::ArrayRCP< Teuchos::ArrayRCP<SC> >::iterator it = ghostQvals.begin(); it != ghostQvals.end(); ++it) {
-        sss=0;
-        for (typename Teuchos::ArrayRCP<SC>::iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2) {
-          std::cout << "ghostQvals[" << ttt << "][" << sss << "]" << std::endl;
-          ++sss;
-        }
-        ++ttt;
-      }
-      } //if (ghostelts.size()>0)
-
-      /*
-      RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
-      ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);
-      for (size_t i=0; i<NSDim; ++i)
-        coarseNS[i] = coarseNullspace->getDataNonConst(i);
-      */
 
       //importer to handle moving Q
       importer = ImportFactory::Build(ghostQMap, fineA->getRowMap());
@@ -372,9 +287,6 @@ namespace MueLu {
 
       Teuchos::LAPACK<LO,SC> lapack;
 
-      if (comm->getRank() == 1) sleep(2); //FIXME for debugging
-      if (comm->getRank() == 3) sleep(4); //FIXME for debugging
-
       //*****************************************************************
       //Loop over all aggregates and calculate local QR decompositions.
       //*****************************************************************
@@ -382,13 +294,6 @@ namespace MueLu {
       for (LO agg=0; agg<numAggs; ++agg)
       {
         LO myAggSize = aggSizes[agg];
-        std::cout << "(pid " << comm->getRank() << ") aggregate " << agg << ": {";
-        for (LO k=0; k<myAggSize; ++k) {
-          if (k>0) std::cout << ",";
-          std::cout << aggToRowMap[agg][k];
-        }
-        std::cout << "}" << std::endl;
-
         // For each aggregate, extract the corresponding piece of the nullspace and put it in the flat array,
         // "localQR" (in column major format) for the QR routine.
         for (size_t j=0; j<NSDim; ++j) {
@@ -486,26 +391,19 @@ namespace MueLu {
         //to be communicated later to the owning processor.
         //FIXME -- what happens if maps are blocked?
         for (GO j=0; j<myAggSize; ++j) {
-          //TODO check whether row associated with current DOF is local
-          //TODO if yes, insert it
-          //TODO if no, save it in the ghost array to be sent off
+          //This loop checks whether row associated with current DOF is local, according to rowMapForPtent.
+          //If it is, the row is inserted.  If not, the row number, columns, and values are saved in
+          //MultiVectors that will be sent to other processors.
           LO localRow = aggToRowMap[agg][j];
-                                                                            //FIXME is this right || ?
-                                                                            //                    vv
-          if (rowMapForPtent->getGlobalElement(localRow) == Teuchos::OrdinalTraits<Cthulhu::global_size_t>::invalid()) {
-            //store in ghostQ
-            std::cout << "(pid " << comm->getRank() << ") saving in ghostQ global row " << fineA->getColMap()->getGlobalElement(localRow) << std::endl;
-            //try{
+          //TODO is the use of Xpetra::global_size_t below correct?
+          if (rowMapForPtent->getGlobalElement(localRow) == (GO) Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid())
+          {
             ghostQrows[qctr] = fineA->getColMap()->getGlobalElement(localRow);
             for (size_t k=0; k<NSDim; ++k) {
               ghostQcols[k][qctr] = coarseMap->getGlobalElement(agg*NSDim+k);
               ghostQvals[k][qctr] = localQR[k*myAggSize+j];
             }
             ++qctr;
-            //} //try
-            //catch(...) {
-            //  std::cout << "error w/ ghostQ, qctr =" << qctr-1 << ", agg=" << agg << std::endl;
-            //} //catch
           } else {
             LO nnz=0;
             for (size_t k=0; k<NSDim; ++k) {
@@ -522,14 +420,13 @@ namespace MueLu {
             } //for (size_t k=0; k<NSDim; ++k)
   
             try{
-              std::cout << "(pid " << comm->getRank() << ") (rowmap) inserting global row " << rowMapForPtent->getGlobalElement(localRow) << std::endl;
-              //Ptentative->insertGlobalValues(rowMapForPtent->getGlobalElement(ctr++), //TODO  notice the change!!
               Ptentative->insertGlobalValues(rowMapForPtent->getGlobalElement(localRow),
                                              colPtr.view(0,nnz),
                                              valPtr.view(0,nnz));
             }
             catch(...) {
-              std::cout << "pid " << fineA->getRowMap()->getComm()->getRank() << "caught error during Ptent row insertion, local row "
+              std::cout << "pid " << fineA->getRowMap()->getComm()->getRank()
+                 << "caught error during Ptent row insertion, local row "
                  << localRow << ", global row "
                  << rowMapForPtent->getGlobalElement(localRow)
                  << std::endl;
@@ -543,13 +440,13 @@ namespace MueLu {
       // ************* end of aggregate-wise QR ********************
       // ***********************************************************
 
-      // now communicate ghost parts of Q factors to the correct processors
-      RCP<Cthulhu::MultiVector<GO> > targetQcolumns = Cthulhu::MultiVectorFactory<GO>::Build(rowMap,NSDim);
-      targetQcolumns->doImport(*ghostQcolumns,*importer,Cthulhu::INSERT);
-      RCP<MultiVector> targetQvalues = MultiVectorFactory::Build(rowMap,NSDim);
-      targetQvalues->doImport(*ghostQvalues,*importer,Cthulhu::INSERT);
-      RCP<Cthulhu::MultiVector<GO> > targetQrowNums = Cthulhu::MultiVectorFactory<GO>::Build(rowMap,1);
-      targetQrowNums->doImport(*ghostQrowNums,*importer,Cthulhu::INSERT);
+      // Import ghost parts of Q factors and insert into Ptentative.
+      RCP<Xpetra::MultiVector<GO> > targetQcolumns = Xpetra::MultiVectorFactory<GO>::Build(rowMapForPtent,NSDim);
+      targetQcolumns->doImport(*ghostQcolumns,*importer,Xpetra::INSERT);
+      RCP<MultiVector> targetQvalues = MultiVectorFactory::Build(rowMapForPtent,NSDim);
+      targetQvalues->doImport(*ghostQvalues,*importer,Xpetra::INSERT);
+      RCP<Xpetra::MultiVector<GO> > targetQrowNums = Xpetra::MultiVectorFactory<GO>::Build(rowMapForPtent,1);
+      targetQrowNums->doImport(*ghostQrowNums,*importer,Xpetra::INSERT);
 
       ArrayRCP< ArrayRCP<SC> > targetQvals;
       ArrayRCP< ArrayRCP<GO> > targetQcols;
@@ -557,7 +454,6 @@ namespace MueLu {
       //if ( /*something*/ > 0) {
         targetQvals.resize(NSDim);
         targetQcols.resize(NSDim);
-        std::cout << mypid << ": targetQvals.size() = " << targetQvals.size() << std::endl;
         for (size_t i=0; i<NSDim; ++i) {
           targetQvals[i] = targetQvalues->getDataNonConst(i);
           targetQcols[i] = targetQcolumns->getDataNonConst(i);
@@ -565,7 +461,7 @@ namespace MueLu {
         targetQrows = targetQrowNums->getDataNonConst(0);
       //}
 
-      for (size_t i=0; i<targetQrows.size(); ++i) {
+      for (LO i=0; i<targetQrows.size(); ++i) {
         for (size_t j=0; j<NSDim; ++j) {
           valPtr[j] = targetQvals[j][i];
           colPtr[j] = targetQcols[j][i];
@@ -573,9 +469,6 @@ namespace MueLu {
         Ptentative->insertGlobalValues(targetQrows[i], colPtr.view(0,NSDim), valPtr.view(0,NSDim));
       }
 
-      std::cout << "pid " << fineA->getRowMap()->getComm()->getRank()
-                << ": just before fillComplete" << std::endl;
-      fineA->getRowMap()->getComm()->barrier();
       Ptentative->fillComplete(coarseMap,fineA->getDomainMap()); //(domain,range) of Ptentative
 
       coarseLevel.Set("Nullspace",coarseNullspace);
