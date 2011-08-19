@@ -53,7 +53,10 @@ class GenericPRFactory : public PRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node
       else
         PFact_ = rcp(new TentativePFactory());
 
-      RFact_ = RFact;
+      if (RFact != Teuchos::null)
+        RFact_ = RFact;
+      else
+        RFact_ = rcp(new TransPFactory());
 
       PRFactory::reUseAggregates_ = PFact_->ReUseAggregates();
       PRFactory::reUseGraph_      = PFact_->ReUseGraph();
