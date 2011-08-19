@@ -224,9 +224,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetCoarsestSolver)
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
 {
-  MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future
-    {
-
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<Level> levelOne = rcp(new Level() );
@@ -239,7 +236,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_NoArgs)
   H.SetLevel(levelOne);
 
   H.FullPopulate();
-    }
 } //FullPopulate
 
 TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
