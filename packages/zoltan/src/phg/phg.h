@@ -59,6 +59,7 @@ struct PHGPartParamsStruct {
                                     for all requested partitions. */
   int kway;                      /* 1 -> direct kway, 0->recursive bisection */
   float rcb_red;                 /* Reduction factor using RCB */
+  int rcb_levels;                /* Max number of levels to which RCB should be applied */
   int redl;                      /* Reduction limit (constant). */
   int nCand;                     /* Maximum number of candidates per round;
                                     currently only used in agglomerative matching */

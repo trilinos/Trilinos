@@ -2473,6 +2473,17 @@ static int pmatching_rcb (ZZ *zz,
 
  } 
 #endif    
+
+  /* 
+   * Perform RCB matching only on rcb_levels levels.  If done,
+   * switch to agglomerative matching.
+   */
+  if (hg->info+1 >= hgp->rcb_levels) {
+    hgp->matching = pmatching_agg_ipm;
+    sprintf(hgp->redm_str, "agg");
+  }
+  if (zz->Proc == 0) printf("KDDKDD RCB_MATCHING %d %x\n", hg->info, hgp->matching);
+
  End:
   Zoltan_Destroy(&zz2);
   ZOLTAN_FREE(&procmatch);
