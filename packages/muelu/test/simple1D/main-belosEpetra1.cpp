@@ -50,8 +50,6 @@
 int main(int argc, char *argv[]) {
 #ifdef HAVE_MUELU_AMESOS
 
-  using Teuchos::RCP;
- 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -258,8 +256,6 @@ int main(int argc, char *argv[]) {
     typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
     
     using Teuchos::ParameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
 
     RCP<Epetra_CrsMatrix> eA = MueLu::Utils<SC,LO,GO,NO,LMO>::Op2NonConstEpetraCrs(Op);
     RCP<Epetra_MultiVector> eX = MueLu::Utils<SC,LO,GO,NO,LMO>::MV2NonConstEpetraMV(X);

@@ -1,9 +1,9 @@
 #ifndef MUELU_HIERARCHY_HPP
 #define MUELU_HIERARCHY_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Types.hpp"
 #include "MueLu_Level.hpp"
 
@@ -39,13 +39,13 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
   private:
 
     //! vector of Level objects
-    std::vector<Teuchos::RCP<Level> > Levels_;
+    std::vector<RCP<Level> > Levels_;
     //! print residual history during iteration
     bool printResidualHistory_;
     bool implicitTranspose_;
 
   protected:
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    RCP<Teuchos::FancyOStream> out_;
 
   public:
 
@@ -72,13 +72,13 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      // TODO from JG: behavior should be explain or changed. 
      //               Right now, we change the LevelID of the input level and push it at the end of hierarchy.
      //               Certainly better to take the LevelID of the input level into account
-     void SetLevel(Teuchos::RCP<Level> const& level) {
+     void SetLevel(RCP<Level> const& level) {
        Levels_.push_back(level);
        level->SetLevelID(Levels_.size());
      }
 
      //! Retrieve a certain level from hierarchy.
-     Teuchos::RCP<Level>& GetLevel(int const levelID) {
+     RCP<Level>& GetLevel(int const levelID) {
        return Levels_[levelID];
      }
 
@@ -121,9 +121,9 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
        Note: Empty factories are simply skipped.
      */
-     Teuchos::ParameterList FullPopulate(Teuchos::RCP<PRFactory> PRFact=Teuchos::null,
-                       Teuchos::RCP<TwoLevelFactoryBase> AcFact=Teuchos::null,
-                       Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
+     Teuchos::ParameterList FullPopulate(RCP<PRFactory> PRFact=Teuchos::null,
+                       RCP<TwoLevelFactoryBase> AcFact=Teuchos::null,
+                       RCP<SmootherFactory> SmooFact=Teuchos::null,
                        int const &startLevel=0, int const &numDesiredLevels=10 )
      {
        if (PRFact == Teuchos::null) {
@@ -195,7 +195,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                                           int startLevel=0, int numDesiredLevels=10 )
      {
 
-       RCP<Operator> A = Levels_[startLevel]->Get< Teuchos::RCP<Operator> >("A");
+       RCP<Operator> A = Levels_[startLevel]->Get< RCP<Operator> >("A");
        Xpetra::global_size_t fineNnz = A->getGlobalNumEntries();
        Xpetra::global_size_t totalNnz = fineNnz;
 
@@ -219,8 +219,8 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            Levels_.resize(i+1); //keep only entries 0..i
            break;
          }
-         //RCP<Operator> A = Levels_[i+1]->Get< Teuchos::RCP<Operator> >("A");
-         totalNnz += Levels_[i+1]->Get< Teuchos::RCP<Operator> >("A")->getGlobalNumEntries();
+         //RCP<Operator> A = Levels_[i+1]->Get< RCP<Operator> >("A");
+         totalNnz += Levels_[i+1]->Get< RCP<Operator> >("A")->getGlobalNumEntries();
          ++i;
        } //while
 
@@ -282,7 +282,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
        }
 
        for (int i=startLevel; i<=lastLevel; i++) {
-         Teuchos::RCP<SmootherPrototype> preSm, postSm;
+         RCP<SmootherPrototype> preSm, postSm;
          smooFact.Build(Levels_[i], preSm, postSm);
          if (preSm != Teuchos::null) Levels_[i]->Set("PreSmoother", preSm);
          if (postSm != Teuchos::null) Levels_[i]->Set("PostSmoother", postSm);
@@ -346,20 +346,20 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
                  << std::setiosflags(std::ios::left)
                  << std::setprecision(3) << i;
            *out_ << "           residual = "
-                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< Teuchos::RCP<Operator> >("A")),X,B)
+                 << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")),X,B)
                  << std::endl;
          }
-         RCP<SmootherPrototype> preSmoo = Fine->Get< Teuchos::RCP<SmootherPrototype> >("PreSmoother");
-         RCP<SmootherPrototype> postSmoo = Fine->Get< Teuchos::RCP<SmootherPrototype> >("PostSmoother");
+         RCP<SmootherPrototype> preSmoo = Fine->Get< RCP<SmootherPrototype> >("PreSmoother");
+         RCP<SmootherPrototype> postSmoo = Fine->Get< RCP<SmootherPrototype> >("PostSmoother");
 
          //X.norm2(norms);
-         if (Fine->Get< Teuchos::RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
+         if (Fine->Get< RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
            std::ostringstream buf;
            buf << startLevel;
            std::string msg = "Level " + buf.str() + ": level A's domain map is not compatible with X";
            throw(Exceptions::Incompatible(msg));
          }
-         if (Fine->Get< Teuchos::RCP<Operator> >("A")->getRangeMap()->isCompatible(*(B.getMap())) == false) {
+         if (Fine->Get< RCP<Operator> >("A")->getRangeMap()->isCompatible(*(B.getMap())) == false) {
            std::ostringstream buf;
            buf << startLevel;
            std::string msg = "Level " + buf.str() + ": level A's range map is not compatible with B";
@@ -381,9 +381,9 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
              preSmoo->Apply(X, B, zeroGuess);
            }
 
-           RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< Teuchos::RCP<Operator> >("A")),X,B);
+           RCP<MultiVector> residual = Utils::Residual(*(Fine->Get< RCP<Operator> >("A")),X,B);
 
-           RCP<Operator> P = Coarse->Get< Teuchos::RCP<Operator> >("P");
+           RCP<Operator> P = Coarse->Get< RCP<Operator> >("P");
            RCP<Operator> R;
            RCP<MultiVector> coarseRhs, coarseX;
            if (implicitTranspose_) {
@@ -391,7 +391,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
              coarseX = MultiVectorFactory::Build(P->getDomainMap(),X.getNumVectors());
              P->apply(*residual,*coarseRhs,Teuchos::TRANS,1.0,0.0);
            } else {
-             R = Coarse->Get< Teuchos::RCP<Operator> >("R");
+             R = Coarse->Get< RCP<Operator> >("R");
              coarseRhs = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
              coarseX = MultiVectorFactory::Build(R->getRangeMap(),X.getNumVectors());
              R->apply(*residual,*coarseRhs,Teuchos::NO_TRANS,1.0,0.0);
@@ -427,7 +427,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 std::ostream& operator<<(std::ostream& os, Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &hierarchy) {
   os << "Printing Hierarchy object" << std::endl;
-  typename std::vector< Teuchos::RCP<Level> >::const_iterator i;
+  typename std::vector< RCP<Level> >::const_iterator i;
   for (i=hierarchy.Levels_.begin(); i != hierarchy.Levels_.end(); ++i)
     os << *(*i) << std::endl;
   return os;

@@ -2,7 +2,10 @@
 #define MUELU_TRANSPFACTORY_HPP
 
 #include <iostream>
+
 #include "Xpetra_CrsOperator.hpp"
+
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_RFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Utilities.hpp"
@@ -46,10 +49,10 @@ namespace MueLu {
    FIXME so disabling it right now.
     bool BuildR(Level & fineLevel, Level & coarseLevel) {
 
-      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::BuildR"));
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::BuildR"));
       timer->start(true);
 
-      RCP<Operator> P = coarseLevel.Get< Teuchos::RCP<Operator> >("P");
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
       RCP<Operator> R = Utils::Transpose(P,true); //true indicated optimize storage
       coarseLevel.Set("R", R);
 
@@ -62,12 +65,12 @@ namespace MueLu {
 
     bool BuildR(Level & fineLevel, Level & coarseLevel) {
 
-      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR"));
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::OldBuildR"));
       timer->start(true);
 
       Teuchos::OSTab tab(this->out_);
       Teuchos::ParameterList matrixList;
-      RCP<Operator> P = coarseLevel.Get< Teuchos::RCP<Operator> >("P");
+      RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
       //doesn't work -- bug in EpetraExt?
       //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
       //      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);

@@ -1,6 +1,7 @@
 #ifndef MUELU_RFACTORY_HPP
 #define MUELU_RFACTORY_HPP
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp" //TODO: inheritence of RFactory
 #include "MueLu_Exceptions.hpp"
 
@@ -25,7 +26,7 @@ class RFactory : public Teuchos::VerboseObject<RFactory<Scalar,LocalOrdinal,Glob
   private:
 
   protected:
-     Teuchos::RCP<Teuchos::FancyOStream> out_;
+     RCP<Teuchos::FancyOStream> out_;
 
   public:
     //! @name Constructors/Destructors.

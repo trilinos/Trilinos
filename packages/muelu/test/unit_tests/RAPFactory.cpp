@@ -14,11 +14,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::rcp;
-  using Teuchos::RCP;
-  using namespace MueLu::TestHelpers;
+namespace MueLuTests {
   
   TEUCHOS_UNIT_TEST(RAPFactory, Constructor)
   {
@@ -44,13 +40,13 @@ namespace {
     SaPFactory sapFactory;
     sapFactory.BuildP(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.Get< Teuchos::RCP<Operator> >("P");
-    RCP<Operator> A = fineLevel.Get< Teuchos::RCP<Operator> >("A");
+    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
+    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
 
     TransPFactory transPFactory;
     transPFactory.BuildR(fineLevel,coarseLevel);
 
-    RCP<Operator> R = coarseLevel.Get< Teuchos::RCP<Operator> >("R");
+    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R");
 
     RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
     RCP<MultiVector> workVec2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
@@ -66,7 +62,7 @@ namespace {
     RAPFactory rap;
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< Teuchos::RCP<Operator> >("A");
+    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A");
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
@@ -96,8 +92,8 @@ namespace {
     SaPFactory sapFactory;
     sapFactory.BuildP(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.Get< Teuchos::RCP<Operator> >("P");
-    RCP<Operator> A = fineLevel.Get< Teuchos::RCP<Operator> >("A");
+    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
+    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A");
 
     //std::string filename = "A.dat";
     //Utils::Write(filename,Op);
@@ -122,7 +118,7 @@ namespace {
     rap.SetImplicitTranspose(true);
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> coarseOp = coarseLevel.Get< Teuchos::RCP<Operator> >("A");
+    RCP<Operator> coarseOp = coarseLevel.Get< RCP<Operator> >("A");
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
@@ -138,5 +134,5 @@ namespace {
     TEUCHOS_TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12, out, success);
   } //Correctness test
 
-}//namespace <anonymous>
+}//namespace MueLuTests
 

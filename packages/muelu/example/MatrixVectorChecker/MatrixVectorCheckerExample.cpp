@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv, &blackhole);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   /**********************************************************************************/
   /* SET TEST PARAMETERS                                                            */

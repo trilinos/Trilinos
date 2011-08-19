@@ -1,6 +1,7 @@
 #ifndef MUELU_AMESOS_SMOOTHER_HPP
 #define MUELU_AMESOS_SMOOTHER_HPP
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities.hpp"
@@ -35,14 +36,14 @@ class Level;
     //! pointer to Amesos solver object
     RCP<Amesos_BaseSolver> prec_;
     //! matrix operator 
-    Teuchos::RCP<Operator> A_;
+    RCP<Operator> A_;
     //! parameter list that is used by Amesos internally
     Teuchos::ParameterList list_;
     //! Problem that Amesos uses internally.
     RCP<Epetra_LinearProblem> AmesosLinearProblem_;
 
   protected:
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    RCP<Teuchos::FancyOStream> out_;
 
   public:
 
@@ -110,7 +111,7 @@ class Level;
       Teuchos::OSTab tab(out_);
       //MueLu_cout(Teuchos::VERB_HIGH) << "AmesosSmoother::Setup()" << std::endl;
 
-      A_ = level.Get< Teuchos::RCP<Operator> >("A");
+      A_ = level.Get< RCP<Operator> >("A");
       RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
       AmesosLinearProblem_ = rcp(new Epetra_LinearProblem());
       AmesosLinearProblem_->SetOperator(epA.get());

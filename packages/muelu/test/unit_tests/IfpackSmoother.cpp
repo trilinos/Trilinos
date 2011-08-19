@@ -10,11 +10,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using namespace MueLu::TestHelpers;
+namespace MueLuTests {
 
   // TODO added by JG: This test should be factorized for every smoothers, to avoid code duplication
   TEUCHOS_UNIT_TEST(IfpackSmoother, NotSetup)
@@ -196,4 +192,4 @@ namespace {
       }
   } //ILU
 
-}//namespace <anonymous>
+}//namespace MueLuTests

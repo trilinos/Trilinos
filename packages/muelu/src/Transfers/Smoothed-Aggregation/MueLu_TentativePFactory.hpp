@@ -2,17 +2,21 @@
 #define MUELU_TENTATIVEPFACTORY_HPP
 
 #include <iostream>
+
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_LAPACK.hpp"
+
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MapFactory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_ImportFactory.hpp"
+
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp" // TODO: inheritence of TentativePFactory
 #include "MueLu_Level.hpp"
 #include "MueLu_PFactory.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_Utilities.hpp"
-#include "Xpetra_ImportFactory.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -33,7 +37,7 @@ namespace MueLu {
   private:
 
     //! Factory that creates aggregates from matrix graph
-    Teuchos::RCP<UCAggregationFactory> aggregationFact_;
+    RCP<UCAggregationFactory> aggregationFact_;
     //! use QR decomposition for improving nullspace information per default
     bool QR_;
 
@@ -114,12 +118,12 @@ namespace MueLu {
     */
     static void MakeTentativeOldVersion(Level const &fineLevel, Level &coarseLevel)
     {
-      Teuchos::RCP< Operator > Op = fineLevel.Get< Teuchos::RCP<Operator> >("A");
+      RCP< Operator > Op = fineLevel.Get< RCP<Operator> >("A");
       GO nFineDofs = Op->getGlobalNumRows();
       GO nCoarseDofs = nFineDofs/3;
       if (nCoarseDofs*3 != nFineDofs)
         throw(Exceptions::NotImplemented("MakeTentative: currently #fine DOFS must be a multiple of 3"));
-      Teuchos::RCP< Operator > Ptent = Teuchos::rcp( new CrsOperator(Op->getRowMap(), 2) );
+      RCP< Operator > Ptent = rcp( new CrsOperator(Op->getRowMap(), 2) );
       std::vector<SC> Values(1);
       Values[0] = 1.0/sqrt(3.0);
       std::vector<LO> Indices(1);
@@ -145,12 +149,11 @@ namespace MueLu {
     */
     static void MakeTentative(Level &fineLevel, Level &coarseLevel)
     {
-      using Teuchos::ArrayRCP;
 
-      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TentativePFactory::MakeTentative"));
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TentativePFactory::MakeTentative"));
       timer->start(true);
 
-      Teuchos::RCP< Operator > fineA = fineLevel.Get< Teuchos::RCP<Operator> >("A");
+      RCP< Operator > fineA = fineLevel.Get< RCP<Operator> >("A");
       RCP<const Teuchos::Comm<int> > comm = fineA->getRowMap()->getComm();
 
       RCP<Aggregates> aggregates;

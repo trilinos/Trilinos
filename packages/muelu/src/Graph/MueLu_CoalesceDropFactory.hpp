@@ -2,6 +2,8 @@
 #define MUELU_COALESCEDROPFACTORY_HPP
 
 #include "Xpetra_Operator.hpp"
+
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Graph.hpp"
 
@@ -38,8 +40,8 @@ public:
   //@}
 
   void Build(Level &currentLevel) {
-    Teuchos::RCP<Operator> A = currentLevel.Get< Teuchos::RCP<Operator> >("A");
-    Teuchos::RCP<Graph> graph = Teuchos::rcp(new Graph(A->getCrsGraph(), "graph of A"));
+    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A");
+    RCP<Graph> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
     currentLevel.Set("Graph",graph);
   } //Build
 

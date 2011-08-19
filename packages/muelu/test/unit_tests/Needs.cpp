@@ -1,11 +1,10 @@
 #include "Teuchos_UnitTestHarness.hpp"
+#include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 #include "MueLu_Needs.hpp"
 
-namespace {
+namespace MueLuTests {
 
-  using Teuchos::rcp;
-  using Teuchos::RCP;
   using MueLu::Needs;
 
   //this macro declares the unit-test-class:
@@ -90,7 +89,7 @@ namespace {
     std::string aNeed = "knockNeed";
     double trueValue = 42;
     needs.Set(aNeed,trueValue);
-    double expectedValue = 0;
+    //    double expectedValue = 0;
     //JG TODO
 //     TEST_THROW( needs.Get(aNeed,expectedValue), MueLu::Exceptions::RuntimeError );
 //     TEST_THROW( needs.Release(aNeed), MueLu::Exceptions::RuntimeError );
@@ -134,4 +133,4 @@ namespace {
     TEUCHOS_TEST_EQUALITY(trueValue,value, out, success);
   }
 
-}//namespace <anonymous>
+}//namespace MueLuTests

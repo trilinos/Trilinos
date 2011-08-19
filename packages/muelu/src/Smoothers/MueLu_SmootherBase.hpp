@@ -3,12 +3,11 @@
 
 #include <iostream>
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Needs.hpp"
 #include "MueLu_Level.hpp"
 
 namespace MueLu {
-
-  using Teuchos::RCP;
 
   /*!
     @class SmootherBase

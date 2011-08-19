@@ -7,11 +7,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::rcp;
-  using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
+namespace MueLuTests {
 
   // Little utility to generate aggregates.
   RCP<Aggregates> gimmeAggregates(RCP<Operator> const &A)
@@ -102,4 +98,4 @@ namespace {
   } //GetNumAggregates
 
 
-} // namespace <anonymous>
+} // namespace MueLuTests

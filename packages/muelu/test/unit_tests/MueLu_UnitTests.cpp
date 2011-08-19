@@ -16,8 +16,6 @@ specific unit test suites.
 
 int main(int argc, char* argv[])
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 

@@ -1,14 +1,13 @@
 #ifndef MUELU_LINKEDLIST_HPP
 #define MUELU_LINKEDLIST_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 /* ------------------------------------------------------------------------- */
 /* linked list structures from ML for holding free node information          */
 /* ------------------------------------------------------------------------- */
 
 namespace MueLu {
-
-// using Teuchos::ArrayView;
-// using Teuchos::ArrayRCP;
 
   typedef struct MueLu_Node_Struct
   {

@@ -1,6 +1,8 @@
 #ifndef MUELU_GAUSSSEIDEL_HPP
 #define MUELU_GAUSSSEIDEL_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 namespace MueLu {
 
 template
@@ -15,7 +17,7 @@ class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,N
     LO nIts_;
     //! relaxation parameter
     SC omega_;
-    Teuchos::RCP<Operator> A_;
+    RCP<Operator> A_;
 
   public:
 
@@ -33,9 +35,9 @@ class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,N
   //@{
 
   //! Set up the smoother. (Right now, just grab A from the Level.)
-  void Setup(Teuchos::RCP<Level> const level)
+  void Setup(RCP<Level> const level)
   {
-    A_ = level.Get< Teuchos::RCP<Operator> >("A");
+    A_ = level.Get< RCP<Operator> >("A");
     SmootherPrototype::IsSetup(true);
   }
 
@@ -47,7 +49,7 @@ class GaussSeidel : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,N
       @param b  right-hand side
       @param InitialGuessIsZero if true, indicates that x is zero, and that some flops might be avoided
   */
-  void Apply(Teuchos::RCP<MultiVector> x, Teuchos::RCP<MultiVector> const b, bool InitialGuessIsZero=false)
+  void Apply(RCP<MultiVector> x, RCP<MultiVector> const b, bool InitialGuessIsZero=false)
   {
      if (InitialGuessIsZero)
        throw(Exceptions::NotImplemented("No logic for handling zero initial guesses"));

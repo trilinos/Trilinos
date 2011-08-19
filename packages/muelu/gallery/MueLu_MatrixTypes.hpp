@@ -7,10 +7,6 @@
 #ifndef MUELU_MATRIXTYPES_HPP
 #define MUELU_MATRIXTYPES_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_ArrayView.hpp"
-#include "Teuchos_RCP.hpp"
-
 //#define XPETRA_ENABLED //TODO!
 #ifdef XPETRA_ENABLED
 // needed for the specialized traits:
@@ -20,14 +16,14 @@
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_OperatorFactory.hpp"
 #endif
+
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Memory.hpp"
 
 namespace MueLu {
   
   namespace Gallery {
     
-    using Teuchos::RCP;
-
     /* prototypes */
     template <typename GlobalOrdinal>
     void GetNeighboursCartesian2d(const GlobalOrdinal i,
@@ -71,7 +67,7 @@ namespace MueLu {
     {
     public:
       static RCP<Matrix> Build(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow) // TODO: pftype
-      { return Teuchos::rcp( new Matrix(rowMap, maxNumEntriesPerRow) );
+      { return rcp( new Matrix(rowMap, maxNumEntriesPerRow) );
       };
     };
 
@@ -161,7 +157,7 @@ namespace MueLu {
       double t1,t2;
 */
 
-      Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
+      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TriDiag global insert"));
       timer->start(true);
 
       for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i)

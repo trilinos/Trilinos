@@ -45,10 +45,8 @@
 #endif
 
 int main(int argc, char *argv[]) {
-
   using Teuchos::RCP;
-  using Teuchos::rcp;
- 
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -176,7 +174,7 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList status;
   status = H->FullPopulate(PRfact,Acfact,SmooFact,0,maxLevels);
   //RCP<MueLu::Level> coarseLevel = H.GetLevel(1);
-  //RCP<Operator> P = coarseLevel->template Get< Teuchos::RCP<Operator> >("P");
+  //RCP<Operator> P = coarseLevel->template Get< RCP<Operator> >("P");
   //fileName = "Pfinal.mm";
   //Utils::Write(fileName,P);
   if (comm->getRank() == 0) {

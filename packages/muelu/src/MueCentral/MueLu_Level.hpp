@@ -2,13 +2,14 @@
 #define MUELU_LEVEL_HPP
 
 #include <iostream>
+#include <sstream>
 
-#include "Teuchos_RefCountPtr.hpp"
-#include "MueLu_Needs.hpp"
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_Vector.hpp"
+
+#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_Needs.hpp"
 #include "MueLu_SmootherPrototype.hpp"
-#include <sstream>
 
 // JG TODO: remove template parameters
 
@@ -28,7 +29,7 @@ namespace MueLu {
     mutable int levelID_;                  // id number associated with level
 
   protected:
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    RCP<Teuchos::FancyOStream> out_;
 
   public:
 
@@ -48,8 +49,8 @@ namespace MueLu {
     //@{
     //! @name Build methods
     //! Builds a new Level object.
-    static Teuchos::RCP<Level> Build(std::ostream &os) {
-      return Teuchos::rcp( new Level() );
+    static RCP<Level> Build(std::ostream &os) {
+      return rcp( new Level() );
     }
     //@}
 

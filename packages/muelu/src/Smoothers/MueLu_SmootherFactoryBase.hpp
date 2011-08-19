@@ -1,6 +1,8 @@
 #ifndef MUELU_SMOOTHERFACTORYBASE_HPP
 #define MUELU_SMOOTHERFACTORYBASE_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #include <iostream>
 
 #include "MueLu_Needs.hpp"

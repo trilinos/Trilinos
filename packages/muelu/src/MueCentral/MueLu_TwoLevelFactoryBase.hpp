@@ -4,6 +4,8 @@
 #include <iostream>
 
 #include "Teuchos_ParameterList.hpp"
+
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Needs.hpp"
 #include "MueLu_Level.hpp"
 

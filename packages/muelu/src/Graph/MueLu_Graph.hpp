@@ -1,10 +1,10 @@
 #ifndef MUELU_GRAPH_HPP
 #define MUELU_GRAPH_HPP
 
-#include <Teuchos_ArrayView.hpp>
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_CrsGraph.hpp>
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Exceptions.hpp"
 
 /******************************************************************************
@@ -13,8 +13,6 @@
 
 namespace MueLu {
 
-  using Teuchos::RCP;
-  
   template <class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 

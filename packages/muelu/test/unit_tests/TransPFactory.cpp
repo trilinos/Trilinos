@@ -8,10 +8,7 @@
 #include "MueLu_UseDefaultTypes.hpp"  
 #include "MueLu_UseShortNames.hpp"  
 
-namespace {
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(TransPFactory, Constructor)
   {
@@ -42,8 +39,8 @@ namespace {
     TransPFactory transPFact;
     transPFact.BuildR(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.Get< Teuchos::RCP<Operator> >("P");
-    RCP<Operator> R = coarseLevel.Get< Teuchos::RCP<Operator> >("R");
+    RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P");
+    RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R");
 
     RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
     RCP<MultiVector> result2  = MultiVectorFactory::Build(R->getRangeMap(),1);
@@ -64,4 +61,4 @@ namespace {
     TEUCHOS_TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12, out, success);
   } //Correctness test
 
-}//namespace <anonymous>
+}//namespace MueLuTests

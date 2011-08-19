@@ -43,10 +43,6 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp" // this header defines Belos::MueLuPrecOp()
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::ArrayRCP;
- 
 RCP<SmootherPrototype> gimmeGaussSeidelProto(Xpetra::UnderlyingLib lib) {
 
   RCP<SmootherPrototype> smooProto;

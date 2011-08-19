@@ -1,6 +1,8 @@
 #ifndef MUELU_IFPACK2_SMOOTHER_HPP
 #define MUELU_IFPACK2_SMOOTHER_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+
 #ifdef HAVE_MUELU_IFPACK2
 
 #include "MueLu_SmootherBase.hpp"
@@ -35,12 +37,12 @@ class Level;
     LO overlap_;
     RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_;
     //! matrix operator 
-    Teuchos::RCP<Operator> A_;
+    RCP<Operator> A_;
     //! parameter list that is used by Ifpack2 internally
     Teuchos::ParameterList list_;
 
   protected:
-    Teuchos::RCP<Teuchos::FancyOStream> out_;
+    RCP<Teuchos::FancyOStream> out_;
 
   public:
 
@@ -155,7 +157,7 @@ class Level;
     */
     void Setup(Level &level) {
       Teuchos::OSTab tab(out_);
-      A_ = level.Get< Teuchos::RCP<Operator> >("A");
+      A_ = level.Get< RCP<Operator> >("A");
 
       // output information
       std::ostringstream buf; buf << level.GetLevelID();

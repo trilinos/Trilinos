@@ -10,11 +10,7 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-namespace {
-
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using namespace MueLu::TestHelpers;
+namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST(Ifpack2Smoother, NotSetup)
   {
@@ -197,4 +193,4 @@ namespace {
       }
   } //ILU
 
-}//namespace <anonymous>
+}//namespace MueLuTests

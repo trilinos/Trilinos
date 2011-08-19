@@ -1,10 +1,9 @@
 #ifndef MUELU_EXCEPTIONS_HPP
 #define MUELU_EXCEPTIONS_HPP
 
-#include <exception>
 #include <Teuchos_Exceptions.hpp>
 
-#include "MueLu_config.hpp"
+#include "MueLu_ConfigDefs.hpp"
 
 namespace MueLu {
   namespace Exceptions {

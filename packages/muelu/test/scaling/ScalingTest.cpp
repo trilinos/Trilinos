@@ -66,10 +66,8 @@ typedef Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
 
 int main(int argc, char *argv[]) {
-
   using Teuchos::RCP;
-  using Teuchos::rcp;
- 
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
@@ -82,7 +80,7 @@ int main(int argc, char *argv[]) {
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor M(myTime);
   int ctime=0;
-  Teuchos::RCP<Teuchos::Time> mtime[ntimers];
+  RCP<Teuchos::Time> mtime[ntimers];
 
   //out->setOutputToRootOnly(-1);
   //out->precision(12);

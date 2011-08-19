@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_Level.hpp"
 
