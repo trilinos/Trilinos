@@ -1,3 +1,5 @@
+// Unmaintained code snippet to use Muelu's aggregation algorithms in ML
+
 #include "ml_aggregate.h"
 #include "ml_epetra_utils.h"
 

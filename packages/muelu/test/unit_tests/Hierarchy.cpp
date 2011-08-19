@@ -277,8 +277,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,FullPopulate_AllArgs)
     }
 } //FullPopulate
 
-#include "MueLu_AggregationOptions.hpp"
-
 TEUCHOS_UNIT_TEST(Hierarchy,Iterate)
 {
   MUELU_TEST_ONLY_FOR(Xpetra::UseEpetra)   //TODO: to be remove in the future

@@ -10,7 +10,6 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_AggregationOptions.hpp"
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */

@@ -19,7 +19,6 @@
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_AggregationOptions.hpp"
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_CrsOperator.hpp>

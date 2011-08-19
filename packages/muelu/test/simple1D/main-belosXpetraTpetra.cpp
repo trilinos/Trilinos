@@ -16,7 +16,6 @@
 #include "MueLu_GenericPRFactory.hpp"
 #include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_AggregationOptions.hpp"
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
