@@ -300,7 +300,7 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-#ifdef MUELU_HAVE_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
       TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 
                          "Belos::MueLuTpetraOp::Apply, transpose mode != NOTRANS not supported."); 
@@ -401,7 +401,7 @@ namespace Belos {
       \note It is expected that any problem with applying this operator to \c x will be
       indicated by an std::exception being thrown.
     */
-#ifdef MUELU_HAVE_EPETRA_AND_EPETRAEXT
+#ifdef HAVE_MUELU_EPETRA_AND_EPETRAEXT
     void Apply ( const Epetra_MultiVector& x, Epetra_MultiVector& y, ETrans trans=NOTRANS ) const {
 
       TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure, 

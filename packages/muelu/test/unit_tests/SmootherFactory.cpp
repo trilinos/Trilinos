@@ -128,11 +128,11 @@ namespace {
 
         RCP<SmootherPrototype>  preSmoo, postSmoo;
         //Check for exception if matrix is not set in Level.
-        //FIXME once Level-GetA() doesn't throw an exception, this must be changed
+        //FIXME once Level-template Get< Teuchos::RCP<Operator> >("A") doesn't throw an exception, this must be changed
         //TEST_THROW(smooFactory->Build(aLevel,preSmoo,postSmoo),MueLu::Exceptions::RuntimeError);
         TEST_THROW(smooFactory->Build(aLevel,preSmoo,postSmoo),std::logic_error);
 
-        aLevel->SetA(A);
+        aLevel->Set("A",A);
 
         //same prototype for pre and post smoothers
         smooFactory->Build(aLevel,preSmoo,postSmoo);

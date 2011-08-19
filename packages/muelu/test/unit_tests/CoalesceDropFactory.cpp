@@ -28,7 +28,7 @@ namespace {
     CoalesceDropFactory cdFact;
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(36);
     Level fineLevel;
-    fineLevel.SetA(A);
+    fineLevel.Set("A",A);
 
     cdFact.Build(fineLevel);
     //FIXME how do we verify that this is correct?

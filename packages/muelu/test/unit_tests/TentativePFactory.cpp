@@ -46,7 +46,7 @@ namespace {
     Level fineLevel;
     fineLevel.SetLevelID(1);
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
-    fineLevel.SetA(A);
+    fineLevel.Set("A",A);
 
     Level coarseLevel;
 
@@ -55,7 +55,7 @@ namespace {
     for (LO NSdim = 2; NSdim >= 1; --NSdim) {
       RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
       nullSpace->randomize();
-      fineLevel.Save("Nullspace",nullSpace);
+      fineLevel.Set("Nullspace",nullSpace);
       fineLevel.Request("Nullspace"); //FIXME putting this in to avoid error until Merge needs business
                                       //FIXME is implemented
       UCAggregationFactory UCAggFact;
@@ -69,10 +69,10 @@ namespace {
       TentativePFactory::MakeTentative(fineLevel,coarseLevel);
 
       RCP<Operator> Ptent; 
-      coarseLevel.Examine("Ptent",Ptent);
+      coarseLevel.Get("Ptent",Ptent);
 
       RCP<MultiVector> coarseNullSpace; 
-      coarseLevel.Examine("Nullspace",coarseNullSpace);
+      coarseLevel.Get("Nullspace",coarseNullSpace);
 
       //check interpolation
       RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(),NSdim);
@@ -107,7 +107,7 @@ namespace {
     Level fineLevel;
     fineLevel.SetLevelID(1);
     RCP<Operator> A = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(199);
-    fineLevel.SetA(A);
+    fineLevel.Set("A",A);
 
     Level coarseLevel;
 
@@ -125,14 +125,14 @@ namespace {
     TentativePFactory::MakeTentative(fineLevel,coarseLevel);
 
     RCP<Operator> Ptent; 
-    coarseLevel.Examine("Ptent",Ptent);
+    coarseLevel.Get("Ptent",Ptent);
 
     RCP<MultiVector> coarseNullSpace; 
-    coarseLevel.Examine("Nullspace",coarseNullSpace);
+    coarseLevel.Get("Nullspace",coarseNullSpace);
 
     //grab default fine level nullspace (vector of all ones)
     RCP<MultiVector> nullSpace; 
-    fineLevel.Examine("Nullspace",nullSpace);
+    fineLevel.Get("Nullspace",nullSpace);
 
     //check interpolation
     LO NSdim = 1;

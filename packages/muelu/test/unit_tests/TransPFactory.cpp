@@ -33,7 +33,7 @@ namespace {
 
     RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     Level fineLevel;
-    fineLevel.SetA(Op);
+    fineLevel.Set("A",Op);
     Level coarseLevel;
 
     SaPFactory sapFactory;
@@ -42,8 +42,8 @@ namespace {
     TransPFactory transPFact;
     transPFact.BuildR(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.GetP();
-    RCP<Operator> R = coarseLevel.GetR();
+    RCP<Operator> P = coarseLevel.Get< Teuchos::RCP<Operator> >("P");
+    RCP<Operator> R = coarseLevel.Get< Teuchos::RCP<Operator> >("R");
 
     RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
     RCP<MultiVector> result2  = MultiVectorFactory::Build(R->getRangeMap(),1);

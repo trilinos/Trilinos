@@ -49,9 +49,9 @@ namespace MueLu {
       Teuchos::RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("TransPFactory::BuildR"));
       timer->start(true);
 
-      RCP<Operator> P = coarseLevel.GetP();
+      RCP<Operator> P = coarseLevel.template Get< Teuchos::RCP<Operator> >("P");
       RCP<Operator> R = Utils::Transpose(P,true); //true indicated optimize storage
-      coarseLevel.SetR(R);
+      coarseLevel.Set("R", R);
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));
@@ -67,16 +67,16 @@ namespace MueLu {
 
       Teuchos::OSTab tab(this->out_);
       Teuchos::ParameterList matrixList;
-      RCP<Operator> P = coarseLevel.GetP();
+      RCP<Operator> P = coarseLevel.template Get< Teuchos::RCP<Operator> >("P");
       //doesn't work -- bug in EpetraExt?
-      //RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
+      //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRangeMap(),matrixList);
       //      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getDomainMap(),matrixList);
       //RCP<Operator> R = Utils::TwoMatrixMultiply(P,true,I,false); //doesn't work -- bug in EpetraExt?
       //      RCP<Operator> R = Utils::TwoMatrixMultiply(I,false,P,true);
 
       RCP<Operator> R= Utils2<SC,LO,GO>::Transpose(P,true);
 
-      coarseLevel.SetR(R);
+      coarseLevel.Set("R", R);
 
       timer->stop();
       MemUtils::ReportTimeAndMemory(*timer, *(P->getRowMap()->getComm()));

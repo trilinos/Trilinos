@@ -12,10 +12,7 @@ PACKAGE(MueLu)
 # B) Set up package-specific options
 #
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
-  MUELU_DEBUG
-  "Build with debug code enabled."
-  OFF )
+PACKAGE_ADD_DEBUG_OPTION()
 
 #
 # C) Add the libraries, tests, and examples

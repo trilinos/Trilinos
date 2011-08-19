@@ -38,19 +38,19 @@ namespace {
 
     RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     Level fineLevel;
-    fineLevel.SetA(Op);
+    fineLevel.Set("A",Op);
     Level coarseLevel;
 
     SaPFactory sapFactory;
     sapFactory.BuildP(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.GetP();
-    RCP<Operator> A = fineLevel.GetA();
+    RCP<Operator> P = coarseLevel.Get< Teuchos::RCP<Operator> >("P");
+    RCP<Operator> A = fineLevel.Get< Teuchos::RCP<Operator> >("A");
 
     TransPFactory transPFactory;
     transPFactory.BuildR(fineLevel,coarseLevel);
 
-    RCP<Operator> R = coarseLevel.GetR();
+    RCP<Operator> R = coarseLevel.Get< Teuchos::RCP<Operator> >("R");
 
     RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
     RCP<MultiVector> workVec2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
@@ -66,7 +66,7 @@ namespace {
     RAPFactory rap;
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> coarseOp = coarseLevel.GetA();
+    RCP<Operator> coarseOp = coarseLevel.Get< Teuchos::RCP<Operator> >("A");
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(R->getRangeMap(),1);
@@ -90,14 +90,14 @@ namespace {
 
     RCP<Operator> Op = MueLu::TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(27*comm->getSize());
     Level fineLevel;
-    fineLevel.SetA(Op);
+    fineLevel.Set("A",Op);
     Level coarseLevel;
 
     SaPFactory sapFactory;
     sapFactory.BuildP(fineLevel,coarseLevel);
 
-    RCP<Operator> P = coarseLevel.GetP();
-    RCP<Operator> A = fineLevel.GetA();
+    RCP<Operator> P = coarseLevel.Get< Teuchos::RCP<Operator> >("P");
+    RCP<Operator> A = fineLevel.Get< Teuchos::RCP<Operator> >("A");
 
     //std::string filename = "A.dat";
     //Utils::Write(filename,Op);
@@ -122,7 +122,7 @@ namespace {
     rap.SetImplicitTranspose(true);
     rap.Build(fineLevel,coarseLevel);
 
-    RCP<Operator> coarseOp = coarseLevel.GetA();
+    RCP<Operator> coarseOp = coarseLevel.Get< Teuchos::RCP<Operator> >("A");
 
     //Calculate result2 = (R*A*P)*X
     RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);

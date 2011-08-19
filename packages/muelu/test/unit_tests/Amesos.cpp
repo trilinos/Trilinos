@@ -57,7 +57,7 @@ namespace {
 
         RCP<Operator> Op = MueLu::TestHelpers::Factory<SC,LO,GO,NO,LMO>::Build1DPoisson(125);
         Level aLevel;
-        aLevel.SetA(Op);
+        aLevel.Set("A",Op);
 
         smoother->Setup(aLevel);
 

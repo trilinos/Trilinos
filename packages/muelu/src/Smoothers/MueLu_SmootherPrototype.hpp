@@ -8,7 +8,6 @@
 
 namespace MueLu {
 
-template <class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
 class Level;
 
 /*!
@@ -48,7 +47,7 @@ class SmootherPrototype : public SmootherBase<Scalar,LocalOrdinal,GlobalOrdinal,
 
     virtual void CopyParameters(RCP<SmootherPrototype>) = 0;
 
-    virtual void Setup(Level<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> &) = 0;
+    virtual void Setup(Level &) = 0;
 
     virtual RCP<SmootherPrototype> Copy() const = 0;
 

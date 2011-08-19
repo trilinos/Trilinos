@@ -109,18 +109,19 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       RCP<Operator> finalP;
 
       if (reUseP_) {
-        if (coarseLevel.GetP() == Teuchos::null)
+        if (coarseLevel.template Get< Teuchos::RCP<Operator> >("P") == Teuchos::null)
           throw(std::runtime_error("SaPFactory: you have asked to reuse P, but it doesn't exist"));
-        if (coarseLevel.IsSaved("Nullspace") == false)
+        if (coarseLevel.IsAvailable("Nullspace") == false)
           throw(std::runtime_error("SaPFactory: you have asked to reuse cnull, but it doesn't exist"));
         return true;
       }
 
       //TODO get or generate fine grid nullspace here
       RCP<MultiVector> fineNullspace;
-      if (fineLevel.IsSaved("Nullspace"))
-        fineLevel.CheckOut("Nullspace",fineNullspace);
-      else {
+      if (fineLevel.IsAvailable("Nullspace")) {
+        fineLevel.Get("Nullspace",fineNullspace);
+        fineLevel.Release("Nullspace");
+      } else {
         //TODO add this functionality
         //throw(Exceptions::NotImplemented("SaPFactory.Build():  nullspace generation not implemented yet"));
         std::cout << "nullspace generation not implemented yet" << std::endl;
@@ -130,12 +131,15 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       coarseLevel.Request("Nullspace");
       initialPFact_->BuildP(fineLevel,coarseLevel);
       RCP<Operator> Ptent;
-      coarseLevel.CheckOut("Ptent",Ptent);
+      coarseLevel.Get("Ptent",Ptent);
+      coarseLevel.Release("Ptent");
       RCP<MultiVector> coarseNullspace;
       if (reUsePtent_) {
         try {
-          coarseLevel.CheckOut("Ptent",Ptent); //FIXME throws an error, replace with recomputation
-          coarseLevel.CheckOut("Nullspace",coarseNullspace); //FIXME throws an error, replace with recomputation
+          coarseLevel.Get("Ptent",Ptent); //FIXME throws an error, replace with recomputation
+          coarseLevel.Release("Ptent"); //FIXME throws an error, replace with recomputation
+          coarseLevel.Get("Nullspace",coarseNullspace); //FIXME throws an error, replace with recomputation
+          coarseLevel.Release("Nullspace"); //FIXME throws an error, replace with recomputation
         }
         catch(...) {
           throw(Exceptions::NotImplemented("SaPFactory.Build(): regeneration of Ptent/nullspace not implemented yet"));
@@ -143,7 +147,7 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
       }
 
       if (coarseLevel.IsRequested("Ptent"))
-        coarseLevel.Save("Ptent",Ptent);
+        coarseLevel.Set("Ptent",Ptent);
       
 
       //Build final prolongator
@@ -157,13 +161,13 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         //sapTimer = rcp(new Teuchos::Time("SaPFactory:I * Ptent"));
         //sapTimer->start(true);
         //Teuchos::ParameterList matrixList;
-        //RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.GetA()->getRowMap(),matrixList);
+        //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.template Get< Teuchos::RCP<Operator> >("A")->getRowMap(),matrixList);
         //RCP<Operator> newPtent = Utils::TwoMatrixMultiply(I,false,Ptent,false);
         //Ptent = newPtent; //I tried a checkout of the original Ptent, and it seems to be gone now (which is good)
         //sapTimer->stop();
         //MemUtils::ReportTimeAndMemory(*sapTimer, *(Op->getRowMap()->getComm()));
 
-        Teuchos::RCP< Operator > Op = fineLevel.GetA();
+        Teuchos::RCP< Operator > Op = fineLevel.template Get< Teuchos::RCP<Operator> >("A");
         sapTimer = rcp(new Teuchos::Time("SaPFactory:APtent"));
         sapTimer->start(true);
 
@@ -218,8 +222,8 @@ class SaPFactory : public PFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node, Local
         finalP = Ptent;
       }
 
-      coarseLevel.SetP(finalP);
-      //coarseLevel.Save("Nullspace",coarseNullspace);
+      coarseLevel.Set("P", finalP);
+      //coarseLevel.Set("Nullspace",coarseNullspace);
 
       //Utils::MatrixPrint(finalP);
 
