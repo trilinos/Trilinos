@@ -168,12 +168,50 @@ namespace MueLu {
       // convert LIDs in aggToRowmap to GIDs, put them in an ArrayView,
       // and call the Map constructor that takes arbitrary distributions.
 
+#define deleteThisCodeOnce_getColMap_works
+#ifdef deleteThisCodeOnce_getColMap_works
+      //FIXME work around until Cthulhu view table is fixed
+      RCP<const Epetra_CrsMatrix> epA;
+      RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> > tpA;
+#ifdef HAVE_MUELU_EPETRAEXT
+      try {
+        epA = Utils::Op2EpetraCrs(fineA);
+      }
+      catch(...) {
+        ;//do nothing
+      }
+#endif
+      try {
+        tpA = Utils::Op2TpetraCrs(fineA);
+      }
+      catch(...) {
+        ;//do nothing
+      }
       std::vector<GO> globalIdsForPtent;
       for (int i=0; i< aggToRowMap.size(); ++i) {
         for (int k=0; k< aggToRowMap[i].size(); ++k) {
+          if (epA != Teuchos::null)
+            globalIdsForPtent.push_back(epA->ColMap().GID(aggToRowMap[i][k]));
+          else if (tpA != Teuchos::null)
+            globalIdsForPtent.push_back(tpA->getColMap()->getGlobalElement(aggToRowMap[i][k]));
+        }
+      }
+#endif //ifdef deleteThisCodeOnce_getColMap_works
+
+#ifdef enableThisCodeOnce_getColMap_works
+      std::vector<GO> globalIdsForPtent;
+      for (int i=0; i< aggToRowMap.size(); ++i) {
+        for (int k=0; k< aggToRowMap[i].size(); ++k) {
+          //just for debugging
+          //RCP<const Map> colMap = fineA->getColMap();
+          //LO lid = aggToRowMap[i][k];
+          //LO mylen = colMap->getNodeNumElements(); //error happens here ... problem with Views?
+          //GO gid = colMap->getGlobalElement(lid);
+          //globalIdsForPtent.push_back(gid);
           globalIdsForPtent.push_back(fineA->getColMap()->getGlobalElement(aggToRowMap[i][k]));
         }
       }
+#endif
 
       Teuchos::ArrayView<GO> gidsForPtent(&globalIdsForPtent[0],globalIdsForPtent.size());
 
